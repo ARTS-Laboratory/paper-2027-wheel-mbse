@@ -15,19 +15,52 @@ RUN THIS IN THE CadQuery ENV (Python 3.12), e.g.:
 
 It reads `best_solution.json`, produced by running `wheel_fea.py` on the optimizer
 (Python 3.14).  The two interpreters share only that JSON file.
+
+Normally you do NOT run this by hand — `wheel_fea.py` invokes it automatically at the
+end of a GA run.  It used to be a separate manual step, which is exactly how
+`wheel.step` came to sit 11 minutes older than the genome it claimed to describe
+while `poster_summary.jpg` showed the current one.  Run standalone, it now warns
+`[STALE]` when the STEP on disk predates `best_solution.json`.
+
+Alongside the STEP it writes `wheel_step_manifest.json`: the genome hash the solid
+was built from, junction-overlap volumes, and the fillet radii OCC actually managed
+versus the ones the optimizer priced into its stress model.  That last pair is worth
+reading — they do not currently agree (see `kt_report`).
 =============================================================================
 """
 
 import os
+import sys
 import json
 import math
+import time
+import hashlib
+import datetime
+import collections
 import numpy as np
 import cadquery as cq
+
+from OCP.ShapeCustom import ShapeCustom
+from OCP.STEPControl import STEPControl_Writer, STEPControl_AsIs
+from OCP.Interface import Interface_Static
+from OCP.IFSelect import IFSelect_ReturnStatus
+from OCP.TopTools import TopTools_IndexedMapOfShape
+from OCP.TopExp import TopExp
+from OCP.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX
+from OCP.BRep import BRep_Tool
+from OCP.TopoDS import TopoDS
+from OCP.GProp import GProp_GProps
+from OCP.BRepGProp import BRepGProp
+from OCP.BRepCheck import BRepCheck_Analyzer
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Check
+from OCP.BRepBuilderAPI import BRepBuilderAPI_Sewing
+from OCP.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
 
 # wheel_fea imports cleanly with only numpy (pygad/matplotlib are lazy in __main__).
 from wheel_fea import (
     generate_bezier_centerline,
     thicken_3taper_curve,
+    stress_concentration_kt,
     HUB_RADIUS_MM,
     RIM_RADIUS_MM,
     SPOKE_WIDTH_MM,
@@ -39,26 +72,94 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # --- User-decided solid parameters -----------------------------------------
 RIM_OUTER_RADIUS_MM = 50.0     # Ø100 outer rim; spokes merge at RIM_RADIUS_MM (Ø97.8)
-HUB_OVERLAP_MM      = 1.0      # extend spoke root inward into the hub disk (clean union)
-RIM_OVERLAP_MM      = 0.0      # spoke tip already reaches ~r49.9 into the band; no push-out
+
+# Embedding radii.  The spoke root is buried this deep inside the hub disk, and the
+# spoke tip is run out this far past the outer diameter before being clipped back to
+# Ø100.  Both regions are wholly absorbed by the hub disk / rim band, so nothing about
+# the extension shape survives into the part — which is exactly why it is safe.
+#
+# These replace the old HUB_OVERLAP_MM / RIM_OVERLAP_MM radial *deltas*, which were
+# applied by moving the last point of each offset-edge array and then interpolating the
+# flank spline THROUGH the moved point.  That is what put a cusp in every spoke:
+#
+#   the first span jumped 3 mm while its clamped tangent pointed 40.7° against a local
+#   curve direction of 76.1°, so the interpolating spline looped — self-intersecting at
+#   (14.548, 2.807) on the bottom flank and (49.517, 2.878) on the top.  The boolean
+#   union trimmed the loops away, but left a 0.041–0.067 mm radius near-cusp behind at
+#   r≈14.78, one per spoke, running the full 22.4 mm height as a knife edge.  OCC calls
+#   that valid — BRepCheck_Analyzer does not test for cusps — and Parasolid refuses to
+#   build a face across it, drops the face, and the spoke imports OPEN.  That, not the
+#   swept surfaces, is what Onshape was rejecting.
+#
+# The embedding is now done with straight tangent segments appended to the wire
+# (`_extend_end`).  A straight line adds no curvature, so it cannot cusp, and because
+# it continues the flank's own end tangent the join is G1 — not even a kink.
+#
+# Keep these SHALLOW.  The spoke meets both rings close to tangent, so a straight
+# extension mostly travels sideways: aiming 3 mm inside the hub never gets there at
+# all (closest approach 11.26 mm) and the run-on needed to try crosses the flanks.
+# Nothing is gained by going deeper — the raw profile already penetrates the hub by
+# 127 mm³ and the rim by 308 mm³, both far above MIN_JUNCTION_OVERLAP_MM3.  The
+# extension only has to bury the blunt end caps just inside each ring.
+HUB_EMBED_RADIUS_MM = HUB_RADIUS_MM - 0.5            # 12.20 mm, just inside the hub disk
+RIM_EMBED_RADIUS_MM = RIM_OUTER_RADIUS_MM + 0.25     # 50.25 mm, clipped back to Ø100
+MIN_JUNCTION_OVERLAP_MM3 = 50.0   # below this the weld is hairline — fail loudly
 N_OUTLINE_PTS       = 48       # interpolation pts per spoke edge (splined → smooth faces)
-# Junction edges lie EXACTLY on the ring cylinders (r = hub/rim radius); a tight
-# tolerance isolates them from the spoke's own polyline facet edges (nearest ≈0.03 mm off).
+# Junction vertices lie EXACTLY on the ring circles (r = hub/rim radius); a tight
+# tolerance isolates them from the spoke's own outline vertices.
 FILLET_TOL_MM       = 0.02
+# Hard floor on curvature radius anywhere in the profile.  The defect above measured
+# 0.041 mm.  0.25 mm is well under any fillet we ask for and well over anything a
+# 0.4 mm nozzle could print, so a violation always means a construction fault.
+MIN_CURVATURE_RADIUS_MM = 0.25
+
+
+def genome_hash(genes):
+    """Short stable fingerprint of a gene dict, so a STEP can be traced to the run
+    that produced it.  Canonicalised (sorted keys, fixed float repr) so the same
+    genome always hashes the same regardless of dict ordering."""
+    canon = json.dumps({k: round(float(v), 12) for k, v in sorted(genes.items())})
+    return hashlib.sha256(canon.encode()).hexdigest()[:7]
 
 
 def load_genome(path=None):
     path = path or os.path.join(HERE, "best_solution.json")
     with open(path) as fh:
         rec = json.load(fh)
+    rec["_source_path"] = path
+    rec["_source_mtime"] = os.path.getmtime(path)
+    rec["_hash"] = genome_hash(rec["genes"])
     return rec
+
+
+def warn_if_stale(rec):
+    """The bug this whole file was audited for: `wheel.step` sat 11 minutes older
+    than `best_solution.json` and nothing said so, so the STEP silently described a
+    previous genome while poster_summary.jpg showed the current one.  Running the
+    exporter clears this; the warning exists for when it is run standalone."""
+    step_path = os.path.join(HERE, "wheel.step")
+    if not os.path.exists(step_path):
+        return
+    step_mtime = os.path.getmtime(step_path)
+    if step_mtime < rec["_source_mtime"]:
+        fmt = lambda t: datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
+        age = rec["_source_mtime"] - step_mtime
+        print(f"  [STALE] the wheel.step on disk predates the genome by {age/60:.1f} min")
+        print(f"          wheel.step         {fmt(step_mtime)}")
+        print(f"          best_solution.json {fmt(rec['_source_mtime'])}")
+        print( "          → it is about to be regenerated from the newer genome.")
 
 
 def spoke_edges_global(genes):
     """
     Return (top, bot) offset-edge point arrays for one spoke, in the global wheel
-    frame (spoke root on the +X hub circle, angle 0), with the ends extended a little
-    into the hub disk / rim band so the boolean union is clean.
+    frame (spoke root on the +X hub circle, angle 0).
+
+    These are the optimizer's thickened curve exactly as `thicken_3taper_curve`
+    defines it — no endpoint surgery.  Embedding into the hub disk and rim band is a
+    separate, purely straight-line step in `spoke_profile`.  Keeping the two apart is
+    the whole fix: the point array that the flank spline interpolates is now smooth by
+    construction, so the spline cannot loop.
     """
     g = genes
     curve, _ = generate_bezier_centerline(
@@ -73,16 +174,61 @@ def spoke_edges_global(genes):
 
     # Downsample but always keep the exact endpoints.
     idx = np.unique(np.linspace(0, len(top) - 1, N_OUTLINE_PTS).astype(int))
-    top = top[idx]
-    bot = bot[idx]
+    return top[idx], bot[idx]
 
-    # Extend the hub end radially inward and the rim end radially outward.
-    for arr in (top, bot):
-        r0 = math.hypot(*arr[0])
-        arr[0] = arr[0] * (r0 - HUB_OVERLAP_MM) / r0
-        r1 = math.hypot(*arr[-1])
-        arr[-1] = arr[-1] * (r1 + RIM_OVERLAP_MM) / r1
-    return top, bot
+
+def _unit(v):
+    n = math.hypot(float(v[0]), float(v[1]))
+    return np.asarray(v, float) / (n or 1.0)
+
+
+def _embed(p_top, p_bot, d, target_r, outward, label, margin=0.05):
+    """Straight-line continuation of BOTH flank ends along the shared direction `d`,
+    by ONE common length, until both are past radius `target_r`.
+
+    One length for both is what makes this safe: the two segments stay parallel, so the
+    quadrilateral they close with the end cap is a trapezoid and cannot self-intersect
+    at any depth.  Giving each flank its own length — or its own direction, or a
+    two-segment path that turns radially when the tangent ray misses the circle — all
+    reintroduce crossings; measured, per-flank tangents gave 6 self-intersections in
+    the root and a two-segment fallback gave 1 more at r=11.83.
+
+    Straight lines only, so no curvature is introduced and a cusp is impossible.
+    Returns (q_top, q_bot).
+    """
+    p_top = np.asarray(p_top, float)
+    p_bot = np.asarray(p_bot, float)
+    d_tan = _unit(d)
+    reach = target_r + margin if outward else target_r - margin
+    span = 4.0 * (target_r + float(np.linalg.norm(p_bot)))
+    L = np.linspace(0.0, span, 20001)[:, None]
+
+    # The junction tangent alone often will not do it.  At the hub the spoke arrives
+    # close to tangent, so travelling backwards along it skims the circle — measured,
+    # the deepest it ever gets is r=11.26 for one flank while the other stays at 13.64,
+    # OUTSIDE the hub.  A root corner left proud of the ring, with the flank curving
+    # back in behind it, traps a 0.1 mm² lune: twelve tiny holes through the wheel.
+    #
+    # So rotate the shared direction toward the ring's radial until the target is
+    # reachable, and take the least rotation that works — as tangential as the geometry
+    # allows, but always buried.  Still one direction and one length for both flanks,
+    # so the extensions stay parallel and cannot cross.
+    radial = _unit((p_top + p_bot) / 2.0) * (1.0 if outward else -1.0)
+    for blend in np.linspace(0.0, 1.0, 21):
+        d = _unit((1.0 - blend) * d_tan + blend * radial)
+        r_top = np.linalg.norm(p_top + L * d, axis=1)
+        r_bot = np.linalg.norm(p_bot + L * d, axis=1)
+        good = ((r_top >= reach) & (r_bot >= reach) if outward
+                else (r_top <= reach) & (r_bot <= reach))
+        if good.any():
+            t = float(L[int(np.argmax(good)), 0])
+            return p_top + t * d, p_bot + t * d
+
+    # Cannot happen for a ring the spoke actually meets, but fail loudly rather than
+    # silently shipping an unwelded spoke.
+    raise RuntimeError(
+        f"no {label} extension direction reaches r={target_r:.2f} mm from "
+        f"r={np.linalg.norm(p_top):.2f}/{np.linalg.norm(p_bot):.2f} mm")
 
 
 def _unit_tan(a, b):
@@ -92,52 +238,215 @@ def _unit_tan(a, b):
     return cq.Vector(float(v[0] / n), float(v[1] / n), 0.0)
 
 
-def build_one_spoke(genes):
+def spoke_profile(genes):
     """
-    Closed profile of one spoke, extruded to the face width.  The two long lateral
-    edges are single B-splines (smooth NURBS faces in the STEP); the two short end
-    caps (blunt rim tip, hub root) are straight lines.  Clamped end tangents pin the
-    spline endpoints so the curve cannot overshoot past the rim / into the hub —
-    the failure mode of splining the whole closed loop through the ~180° corners.
-    Wire runs: top hub→rim, rim cap, bot rim→hub, hub cap (close).
+    Closed PLANAR wire of one spoke.  Not a solid — the whole wheel is assembled in 2D
+    and extruded once at the end, because the part is a constant-section prism and
+    every 3D construction it used to go through (solid booleans, the 3D fillet solver,
+    a tangential outer-diameter trim) was a place to produce geometry OCC accepts and
+    Parasolid does not.
+
+    Wire runs: hub extension → top flank spline (hub→rim) → rim extension → tip cap
+    (outside Ø100, clipped away later) → rim extension → bottom flank spline
+    (rim→hub) → hub extension → close (root cap, buried in the hub disk).
+
+    The two flank splines interpolate the offset points untouched; only straight
+    segments reach into the rings.  See HUB_EMBED_RADIUS_MM for why that matters.
     """
     top, bot = spoke_edges_global(genes)                      # each [N,2], hub→rim
-    top_pts = [(float(x), float(y)) for x, y in top]
-    bot_rev = [(float(x), float(y)) for x, y in bot[::-1]]    # rim→hub
 
+    # Both flanks at one end are continued along the SAME direction — the mean of their
+    # two end tangents, i.e. the centerline's direction — and by the same length.  Give
+    # each flank its own tangent instead and they converge and cross: measured, 6
+    # self-intersections in the root alone, because the two tangents close on each other
+    # faster than the 2.4 mm root thickness can absorb over 3 mm of travel.
+    d_hub = _unit((top[0] - top[1]) + (bot[0] - bot[1]))
+    d_rim = _unit((top[-1] - top[-2]) + (bot[-1] - bot[-2]))
+    q_top_hub, q_bot_hub = _embed(top[0], bot[0], d_hub,
+                                  HUB_EMBED_RADIUS_MM, False, "hub")
+    q_top_rim, q_bot_rim = _embed(top[-1], bot[-1], d_rim,
+                                  RIM_EMBED_RADIUS_MM, True, "rim")
+
+    P = lambda a: (float(a[0]), float(a[1]))
+    top_pts = [P(p) for p in top]
+    bot_rev = [P(p) for p in bot[::-1]]                       # rim→hub
     top_tan = [_unit_tan(top[0], top[1]), _unit_tan(top[-2], top[-1])]
-    bot_tan = [_unit_tan(bot[-1], bot[-2]), _unit_tan(bot[1], bot[0])]  # rim→hub
+    bot_tan = [_unit_tan(bot[-1], bot[-2]), _unit_tan(bot[1], bot[0])]
 
-    wp = (cq.Workplane("XY")
-          .spline(top_pts, tangents=top_tan)                  # hub → rim (top)
-          .lineTo(*bot_rev[0])                                # rim cap
-          .spline(bot_rev, tangents=bot_tan)                  # rim → hub (bot)
-          .close())                                           # hub cap
-    return wp.extrude(SPOKE_WIDTH_MM)
+    return (cq.Workplane("XY")
+            .moveTo(*P(q_top_hub))
+            .lineTo(*P(top[0]))                               # hub extension, top
+            .spline(top_pts, tangents=top_tan)                # top flank, hub → rim
+            .lineTo(*P(q_top_rim))                            # rim extension, top
+            .lineTo(*P(q_bot_rim))                            # tip cap, beyond Ø100
+            .lineTo(*P(bot[-1]))                              # rim extension, bottom
+            .spline(bot_rev, tangents=bot_tan)                # bottom flank, rim → hub
+            .lineTo(*P(q_bot_hub))                            # hub extension, bottom
+            .close()                                          # root cap, buried in hub
+            .wire().val())
 
 
-def build_wheel(genes):
-    """Union of hub disk + 12 patterned spokes + rim band → single solid."""
-    hub = cq.Workplane("XY").circle(HUB_RADIUS_MM).extrude(SPOKE_WIDTH_MM)
-    rim = (cq.Workplane("XY")
-           .circle(RIM_OUTER_RADIUS_MM).circle(RIM_RADIUS_MM)
-           .extrude(SPOKE_WIDTH_MM))
+def profile_health(shape, label="", n=600):
+    """Self-intersection and curvature audit of a planar wire or face, run BEFORE
+    extruding.  Accepts a face because after filleting the junctions live on the
+    profile's INNER wires — the twelve gaps between spokes — not its outer circle.
 
-    spoke0 = build_one_spoke(genes)
-    result = hub
-    for k in range(NUMBER_OF_SPOKES):
-        angle = k * (360.0 / NUMBER_OF_SPOKES)
-        result = result.union(spoke0.rotate((0, 0, 0), (0, 0, 1), angle))
-    result = result.union(rim)
-    return result
+    This is the check that was missing.  Every existing check passed on a part with a
+    41 µm cusp in every spoke, twice over: BRepCheck_Analyzer does not look for cusps,
+    and BRepAlgoAPI_Check only ever saw the post-union solid, by which point the
+    self-intersecting loop had been trimmed off and only the cusp it left remained.
+
+    Returns a dict; prints and raises nothing on its own — callers decide.
+    """
+    worst_r, worst_at = _min_curvature(shape, n)
+
+    # One polyline per closed wire, so crossings BETWEEN edges are caught as well as
+    # within one.  Sample the WIRE, not its edges: Shape.Edges() comes back in TopExp
+    # order, not traversal order, and stitching them in that order manufactures
+    # crossings that do not exist (it reported four, two of them between a hub
+    # extension and the rim tip).  Wire.positionAt walks arc length in wire order.
+    n_bad, m = 0, max(n * 2, 400)
+    for w in shape.Wires():
+        poly = np.array([[p.x, p.y] for p in (w.positionAt(i / m) for i in range(m + 1))])
+        n_bad += len(_self_intersections(poly))
+
+    out = {"min_curvature_radius_mm": round(worst_r, 6),
+           "self_intersections": n_bad,
+           "worst_at": worst_at}
+    tag = f" [{label}]" if label else ""
+    print(f"  profile health{tag}: min curvature radius {worst_r:.4f} mm "
+          f"(floor {MIN_CURVATURE_RADIUS_MM}) | self-intersections {n_bad}")
+    if n_bad:
+        print(f"  [SELF-INTERSECTING PROFILE] {n_bad} crossing(s).  The union trims the "
+              f"loop\n                              away but leaves a cusp behind — that "
+              f"is the Onshape failure.")
+    if worst_r < MIN_CURVATURE_RADIUS_MM:
+        print(f"  [CUSP] curvature radius {worst_r:.4f} mm at "
+              f"{out['worst_at']} is below the {MIN_CURVATURE_RADIUS_MM} mm floor.\n"
+              f"         Parasolid will not build a face across it and the spoke will "
+              f"import open.")
+    return out
+
+
+def _self_intersections(pts):
+    """Crossings between non-adjacent segments of a sampled planar polyline.
+
+    Vectorised over the second index: each segment is tested against every later
+    non-neighbouring one at once, which keeps a ~1200-point profile well under a
+    second.  Returns the crossing points."""
+    P = np.asarray(pts, float)
+    A, D = P[:-1], np.diff(P, axis=0)
+    out = []
+    for i in range(len(A) - 2):
+        q, s = A[i + 2:], D[i + 2:]
+        r = D[i]
+        den = r[0] * s[:, 1] - r[1] * s[:, 0]
+        ok = np.abs(den) > 1e-12
+        if not ok.any():
+            continue
+        qp = q[ok] - A[i]
+        den = den[ok]
+        t = (qp[:, 0] * s[ok][:, 1] - qp[:, 1] * s[ok][:, 0]) / den
+        u = (qp[:, 0] * r[1] - qp[:, 1] * r[0]) / den
+        hit = (t > 1e-9) & (t < 1 - 1e-9) & (u > 1e-9) & (u < 1 - 1e-9)
+        out.extend(A[i] + tv * r for tv in t[hit])
+    return out
+
+
+def check_junction_overlap(spoke_face, hub_face, rim_face):
+    """Measure how much spoke material actually lies inside the hub disk and inside
+    the rim band.  A near-tangent junction can leave these vanishingly small while
+    the boolean still reports a valid single solid — a hairline weld that looks fine
+    in CAD and snaps in PLA.  Measured in 2D and scaled by the face width, which is
+    the same number the old 3D intersection produced and far cheaper.
+
+    Returns (hub_vol, rim_vol) and warns below the floor."""
+    area = lambda s: sum(f.Area() for f in s.Faces())
+    hub_vol = area(hub_face.intersect(spoke_face)) * SPOKE_WIDTH_MM
+    rim_vol = area(rim_face.intersect(spoke_face)) * SPOKE_WIDTH_MM
+    print(f"  junction overlap : hub {hub_vol:7.2f} mm³ | rim {rim_vol:7.2f} mm³ "
+          f"(floor {MIN_JUNCTION_OVERLAP_MM3:.0f})")
+    for label, vol in (("hub", hub_vol), ("rim", rim_vol)):
+        if vol < MIN_JUNCTION_OVERLAP_MM3:
+            print(f"  [WEAK JUNCTION] {label} overlap {vol:.2f} mm³ is below the floor — "
+                  f"this spoke\n                  grazes the ring rather than meeting it. "
+                  f"Deepen {label.upper()}_EMBED_RADIUS_MM,\n                  or constrain "
+                  f"the optimizer's junction angle.")
+    return hub_vol, rim_vol
+
+
+def _unify_planar(shape):
+    """Merge the coplanar faces of a planar boolean result into one face.
+
+    `Shape.clean()` — ShapeUpgrade_UnifySameDomain on the boolean's compound — merges
+    fragments within each argument but leaves the hub disk, the rim annulus and the
+    twelve-spoke band as three separate faces, however far the linear and angular
+    tolerances are loosened.  They sit in a compound rather than a shell, so the
+    unifier does not see them as neighbours.  Sewing first supplies that adjacency,
+    and the unifier then returns a single face (measured: 3 faces of 506.7 + 341.8 +
+    1684.5 mm² become one of 2533.0).  Without this the extrude yields three solids
+    sharing walls instead of one wheel.
+    """
+    sew = BRepBuilderAPI_Sewing(1e-6)
+    for f in shape.Faces():
+        sew.Add(f.wrapped)
+    sew.Perform()
+    up = ShapeUpgrade_UnifySameDomain(sew.SewedShape(), True, True, True)
+    up.Build()
+    return cq.Shape.cast(up.Shape())
+
+
+def build_profile(genes):
+    """The whole wheel as ONE planar face: hub disk + 12 spokes + rim band, clipped to
+    the outer diameter.  Returns (face, (hub_overlap_mm3, rim_overlap_mm3)).
+
+    Assembled with a single n-ary fuse rather than 14 sequential ones: fusing one at a
+    time leaves the pieces unmerged, because each step re-splits what the previous one
+    produced (measured: a compound of 26 faces, invalid).  `clean()` then runs
+    ShapeUpgrade_UnifySameDomain to merge the coplanar fragments and the collinear
+    outer arcs back into single faces and edges.
+    """
+    circle = lambda r: cq.Wire.makeCircle(r, cq.Vector(0, 0, 0), cq.Vector(0, 0, 1))
+    hub = cq.Face.makeFromWires(circle(HUB_RADIUS_MM))
+    rim = cq.Face.makeFromWires(circle(RIM_OUTER_RADIUS_MM), [circle(RIM_RADIUS_MM)])
+    envelope = cq.Face.makeFromWires(circle(RIM_OUTER_RADIUS_MM))
+
+    wire = spoke_profile(genes)
+    profile_health(wire, "spoke profile")
+    spoke0 = cq.Face.makeFromWires(wire)
+    overlaps = check_junction_overlap(spoke0, hub, rim)
+
+    spokes = [spoke0.rotate(cq.Vector(0, 0, 0), cq.Vector(0, 0, 1),
+                            k * 360.0 / NUMBER_OF_SPOKES)
+              for k in range(NUMBER_OF_SPOKES)]
+
+    profile = hub.fuse(rim, *spokes).clean()
+    # The tip runs out to RIM_EMBED_RADIUS_MM; clip it back to the outer diameter.
+    # In 2D that is an exact circle-vs-spline intersection whose arc merges into the
+    # rim's own outer circle — unlike the old 3D `intersect(envelope)`, which cut a
+    # solid at a shallow angle and left a 0.87 mm³ wedge per spoke.
+    profile = _unify_planar(profile.intersect(envelope))
+
+    faces = profile.Faces()
+    if len(faces) != 1:
+        raise RuntimeError(
+            f"profile fuse produced {len(faces)} faces, expected 1 — unification "
+            f"failed, and picking one of them would silently export a fragment of the "
+            f"wheel (a broken spoke face once left just the bare hub disk behind)")
+    return faces[0], overlaps
+
+
+def extrude_profile(face):
+    """One extrusion — the only 3D operation in the whole build."""
+    return cq.Workplane(obj=face).toPending().extrude(SPOKE_WIDTH_MM)
 
 
 def _select_junction_edges(part, target_r):
-    """Vertical edges lying exactly on the ring cylinder r=target_r, selected by
-    GEOMETRY (full-height Z span + ~constant XY) rather than by curve type: the
-    spoke↔ring junctions bound a spline face, so OCC types them BSPLINE — a plain
-    `.edges("|Z")` (linear only) would miss them.  The tight XY/radius tol excludes
-    the blunt tip-cap corners (different radius) and the ring boundary circles (dz≈0)."""
+    """Vertical edges lying on the ring cylinder r=target_r, selected by GEOMETRY
+    (full-height Z span + ~constant XY) rather than by curve type: the spoke↔ring
+    junctions bound a spline face, so OCC types them BSPLINE and a plain `.edges("|Z")`
+    (linear only) would miss them.  The tight XY/radius tolerance excludes the end-cap
+    corners and the ring boundary circles (dz≈0)."""
     out = []
     for e in part.edges().vals():
         bb = e.BoundingBox()
@@ -152,73 +461,312 @@ def _select_junction_edges(part, target_r):
 
 
 def fillet_junctions(part, target_r, radius, label):
-    """
-    Fillet the concave spoke↔ring junction edges on the cylinder r=target_r.
+    """Fillet the spoke↔ring junctions on the extruded solid, all edges at one radius.
 
-    Strategy: try the full requested radius as one batch (fast, uniform). If OCC
-    rejects it, fall back to per-edge with a descending radius search — this
-    naturally rounds only the sharp *notch* side of each shallow spiral junction
-    (the near-tangent side has no corner and OCC declines it), at the largest radius
-    that fits the local material. Symmetric across spokes by construction.
+    These belong in 2D on the profile — an extruded arc is an exact
+    CYLINDRICAL_SURFACE, which is what Parasolid most wants to see.  OCC will not do
+    it: `BRepFilletAPI_MakeFillet2d` (via `Face.fillet2D`) rejects any corner with a
+    B-spline edge on it, which is every spoke-flank corner.  Measured on this profile,
+    only the line↔arc corners took a fillet — half the junctions, the wrong half — and
+    filleting the multi-wire face as a whole returned a single-wire face that
+    BRepCheck called invalid.  So the fillets stay in 3D; the body is what needed
+    rebuilding, not them.
 
-    Returns (part, effective_radii, n_filleted, n_edges).
+    One radius for every edge in one operation, so a 12-fold symmetric part cannot come
+    out with eleven spokes filleted one way and the twelfth another — the failure mode
+    of the old per-edge greedy version, where each success changed the topology under
+    the next probe.  Walking the ladder down and taking the largest radius that the
+    whole batch accepts is also the honest answer to "what does this junction actually
+    allow", which is what `kt_report` prices.
+
+    Returns (part, applied_radius, n_edges).
     """
     edges = _select_junction_edges(part, target_r)
     if not edges:
         print(f"  [{label}] no junction edges near r={target_r:.2f} mm — skipped")
-        return part, [], 0, 0
+        return part, 0.0, 0
 
-    # 1) Uniform batch at (possibly reduced) radius.
-    for r in (radius, radius * 0.6, radius * 0.35):
+    ladder = []
+    r = radius
+    while r > MIN_CURVATURE_RADIUS_MM:
+        ladder.append(round(r, 3))
+        r *= 0.85
+    ladder.append(MIN_CURVATURE_RADIUS_MM)
+
+    for r in ladder:
         try:
             out = part.newObject(edges).fillet(r)
-            note = "" if abs(r - radius) < 1e-9 else f"  (reduced from {radius:.3f})"
-            print(f"  [{label}] filleted all {len(edges)} edges @ R={r:.3f} mm{note}")
-            return out, [r], len(edges), len(edges)
+            if out.val().isValid():
+                note = "" if abs(r - radius) < 1e-9 else f"  (requested {radius:.3f})"
+                print(f"  [{label}] filleted all {len(edges)} junction edges "
+                      f"@ R={r:.3f} mm{note}")
+                return out, r, len(edges)
         except Exception:
             pass
-    print(f"  [{label}] uniform fillet failed at R≤{radius:.3f}; trying per-edge…")
 
-    # 2) Per-edge: fillet each notch at the largest radius it accepts.
-    #    Re-select edges after every successful fillet (topology changes).
-    candidate_radii = [radius, radius * 0.6, radius * 0.35, radius * 0.2, 0.4, 0.25]
-    candidate_radii = sorted({round(x, 3) for x in candidate_radii if x > 0.1}, reverse=True)
-    applied = []
-    done = 0
-    remaining = len(edges)
-    while True:
-        edges = _select_junction_edges(part, target_r)
-        progressed = False
+        # The two junctions on a spoke are not mirror images: at the hub one corner
+        # opens at 21.6° and the other at 2.18°, a wedge nothing can fillet.  Falling
+        # back to the subset that accepts r keeps the useful half rather than losing
+        # both — but only if that subset is a whole multiple of the spoke count, so a
+        # 12-fold symmetric wheel can never come out with one spoke unlike the rest.
+        ok = []
         for e in edges:
-            for r in candidate_radii:
-                try:
-                    part = part.newObject([e]).fillet(r)
-                    applied.append(r)
-                    done += 1
-                    progressed = True
-                    break
-                except Exception:
-                    continue
-            if progressed:
-                break  # topology changed; re-select before continuing
-        if not progressed:
-            break
-    if applied:
-        lo, hi = min(applied), max(applied)
-        rng = f"{lo:.2f} mm" if abs(hi - lo) < 1e-6 else f"{lo:.2f}–{hi:.2f} mm"
-        print(f"  [{label}] filleted {done} notch edge(s) @ R={rng} "
-              f"(the near-tangent sides have no corner to round)")
-    else:
-        print(f"  [{label}] no edge accepted a fillet — junctions left square")
-    return part, applied, done, remaining
+            try:
+                part.newObject([e]).fillet(r)      # probe only, result discarded
+                ok.append(e)
+            except Exception:
+                continue
+        if not ok or len(ok) % NUMBER_OF_SPOKES or len(ok) == len(edges):
+            continue
+        try:
+            out = part.newObject(ok).fillet(r)     # one operation, so they stay equal
+        except Exception:
+            continue
+        if out.val().isValid():
+            print(f"  [{label}] filleted {len(ok)} of {len(edges)} junction edges "
+                  f"@ R={r:.3f} mm  (requested {radius:.3f}; "
+                  f"{len(edges) - len(ok)} too near tangent to accept any radius)")
+            return out, r, len(ok)
+
+    print(f"  [{label}] no radius down to {MIN_CURVATURE_RADIUS_MM} mm was accepted by "
+          f"all {len(edges)} edges — junctions left square")
+    return part, 0.0, len(edges)
 
 
-def report(part, genes, metrics):
+# ---------------------------------------------------------------------------
+# STEP INTEROPERABILITY
+# ---------------------------------------------------------------------------
+# Onshape rejected the exported solid:
+#
+#   wheel_nofillet.step was translated with errors. Parts with faults have been imported.
+#   wheel.step was translated with errors.
+#   The following 1 part(s) failed validation and have been removed:
+#     1 unnamed - number of faults:10
+#
+# The solid is not broken.  Every check OCC can run passes: BRepCheck_Analyzer(full)
+# valid, BRepAlgoAPI_Check with self-intersection clean, one closed manifold shell,
+# 1e-7 mm tolerances throughout, shortest edge 0.907 mm, smallest face 20.3 mm², no
+# degenerate edges, and 3D-curve-vs-pcurve agreement to 5.9e-8 mm.
+#
+# It is a REPRESENTATION problem.  `build_one_spoke` extrudes a B-spline wire, which
+# OCC writes as SURFACE_OF_LINEAR_EXTRUSION — 24 of them, the spoke flanks.  Parasolid
+# (Onshape's kernel) has no such surface type and must approximate every one on
+# import.  That explains why the two files fail differently:
+#
+#   wheel_nofillet.step  51 faces, shortest edge 4.48 mm  → healing closes the drift
+#   wheel.step           99 faces, shortest edge 0.907 mm, plus 48 small fillet faces
+#                        built directly against those approximated supports → the
+#                        fillets no longer meet them in tolerance → 10 faults
+# ---------------------------------------------------------------------------
+
+SWEPT_SURFACE_TYPES = ("SurfaceOfLinearExtrusion", "SurfaceOfRevolution", "OffsetSurface")
+
+
+def despecialize(shape):
+    """Convert swept surfaces to B-splines, leaving planes and cylinders analytic.
+
+    ShapeCustom.ConvertToBSpline_s(shape, extrusion, revolution, offset) touches only
+    the requested surface classes, so the hub bore and the Ø100 OD stay true cylinders
+    and remain selectable as cylindrical faces in Onshape for mates and fillets.  The
+    blunt alternative, BRepBuilderAPI_NurbsConvert, also works and is also exact but
+    splines all 25 cylinders as well — not worth the downstream cost.
+
+    Verified geometry-exact on the current genome: boolean symmetric difference
+    0.00000 mm³ in both directions, shape still valid, tight bbox unchanged.
+
+    ORDER MATTERS.  Running this on the union *before* filleting yields an invalid
+    shape; running it on the final filleted solid is valid.  Call it last.
+    """
+    return cq.Shape.cast(
+        ShapeCustom.ConvertToBSpline_s(_topo(shape), True, False, False))
+
+
+def _topo(x):
+    """Underlying TopoDS_Shape from a Workplane, a Shape, or a raw TopoDS_Shape."""
+    if hasattr(x, "wrapped"):
+        return x.wrapped
+    if hasattr(x, "val"):
+        return x.val().wrapped
+    return x
+
+
+def _surface_census(shape):
+    m = TopTools_IndexedMapOfShape()
+    TopExp.MapShapes_s(_topo(shape), TopAbs_FACE, m)
+    c = collections.Counter()
+    for i in range(1, m.Size() + 1):
+        srf = BRep_Tool.Surface_s(TopoDS.Face_s(m.FindKey(i)))
+        c[srf.DynamicType().Name().replace("Geom_", "")] += 1
+    return dict(c)
+
+
+def _min_curvature(shape, n=400):
+    """Tightest curvature radius over every edge of a shape, and where it occurs.
+
+    Sampled rather than analytic because the interesting edges are B-splines whose
+    worst point is not at a knot.  Cheap: n points per edge, second differences.
+    """
+    obj = shape.val() if hasattr(shape, "val") else shape
+    worst, at = float("inf"), None
+    for e in obj.Edges():
+        pts = np.array([[p.x, p.y, p.z] for p in (e.positionAt(i / n) for i in range(n + 1))])
+        if np.ptp(pts, axis=0).max() < 1e-9:
+            continue
+        d1 = np.gradient(pts, axis=0)
+        d2 = np.gradient(d1, axis=0)
+        cr = np.cross(d1, d2)
+        kap = np.linalg.norm(cr, axis=1) / np.maximum(
+            np.linalg.norm(d1, axis=1) ** 3, 1e-18)
+        i = int(kap.argmax())
+        r = 1.0 / max(float(kap[i]), 1e-12)
+        if r < worst:
+            worst, at = r, [round(float(v), 3) for v in pts[i]]
+    return worst, at
+
+
+def step_health(shape, label=""):
+    """The diagnostics that localised the Onshape failure, run every export so a
+    future geometry change cannot silently reintroduce it.  Returns a dict for the
+    manifest and prints a [STEP RISK] line if a swept surface survives."""
+    s = _topo(shape)
+    census = _surface_census(shape)
+
+    counts = {}
+    for typ, name in ((TopAbs_FACE, "faces"), (TopAbs_EDGE, "edges"),
+                      (TopAbs_VERTEX, "vertices")):
+        m = TopTools_IndexedMapOfShape()
+        TopExp.MapShapes_s(s, typ, m)
+        counts[name] = m.Size()
+
+    em = TopTools_IndexedMapOfShape()
+    TopExp.MapShapes_s(s, TopAbs_EDGE, em)
+    min_edge, n_degen, max_tol = float("inf"), 0, 0.0
+    for i in range(1, em.Size() + 1):
+        e = TopoDS.Edge_s(em.FindKey(i))
+        g = GProp_GProps()
+        BRepGProp.LinearProperties_s(e, g)
+        min_edge = min(min_edge, g.Mass())
+        n_degen += 1 if BRep_Tool.Degenerated_s(e) else 0
+        max_tol = max(max_tol, BRep_Tool.Tolerance_s(e))
+
+    fm = TopTools_IndexedMapOfShape()
+    TopExp.MapShapes_s(s, TopAbs_FACE, fm)
+    min_face = float("inf")
+    for i in range(1, fm.Size() + 1):
+        g = GProp_GProps()
+        BRepGProp.SurfaceProperties_s(TopoDS.Face_s(fm.FindKey(i)), g)
+        min_face = min(min_face, g.Mass())
+
+    valid = bool(BRepCheck_Analyzer(s, True).IsValid())
+    try:
+        chk = BRepAlgoAPI_Check(s, True, True)
+        self_int = not bool(chk.IsValid())
+    except Exception:
+        self_int = None
+
+    min_curv, curv_at = _min_curvature(shape)
+
+    risky = {k: v for k, v in census.items() if k in SWEPT_SURFACE_TYPES}
+    health = {
+        "surface_census": census, "counts": counts,
+        "min_edge_mm": round(min_edge, 6), "min_face_mm2": round(min_face, 4),
+        "max_edge_tolerance_mm": max_tol, "degenerate_edges": n_degen,
+        "brepcheck_valid": valid, "self_intersecting": self_int,
+        "min_curvature_radius_mm": round(min_curv, 6),
+        "min_curvature_at": curv_at,
+        "swept_surfaces_remaining": risky,
+    }
+
+    tag = f" [{label}]" if label else ""
+    print(f"\n  ---- STEP health{tag} ----")
+    print(f"  surfaces         : {census}")
+    print(f"  faces/edges/verts: {counts['faces']} / {counts['edges']} / {counts['vertices']}")
+    print(f"  min edge {min_edge:.4f} mm | min face {min_face:.2f} mm² | "
+          f"max tol {max_tol:.1e} mm | degenerate {n_degen}")
+    print(f"  BRepCheck valid  : {valid}   self-intersecting: {self_int}")
+    print(f"  min curvature R  : {min_curv:.4f} mm (floor {MIN_CURVATURE_RADIUS_MM})"
+          + (f" at {curv_at}" if min_curv < MIN_CURVATURE_RADIUS_MM else ""))
+    if min_curv < MIN_CURVATURE_RADIUS_MM:
+        print(f"  [CUSP] an edge turns inside {MIN_CURVATURE_RADIUS_MM} mm.  Parasolid "
+              f"will not build a face\n         across a cusp — it drops the face and "
+              f"the spoke imports OPEN in Onshape.\n         This is the check that was "
+              f"missing while three rounds of STEP tuning\n         chased the wrong "
+              f"cause; do not ship a solid that trips it.")
+    if risky:
+        print(f"  [STEP RISK] {risky} survive in this solid.  Parasolid has no native")
+        print( "              equivalent and must approximate them on import — this is")
+        print( "              exactly what made Onshape reject the part.  Fix before shipping.")
+    return health
+
+
+def kt_report(genes, metrics, hub_applied, rim_applied):
+    """Compare the fillet radii the optimizer PRICED IN against the ones OCC could
+    actually build.
+
+    `wheel_fea` charges each design a stress-concentration factor Kt derived from the
+    R_hub / R_rim genes.  But a spoke arriving ~6° from tangent to the rim leaves no
+    room for the radius it asked for — OCC quietly delivers a fraction of it, and the
+    built part is sharper, and therefore more stressed, than the model believes.
+    Nothing downstream noticed because main() discarded these return values.
+
+    Returns a list of per-junction dicts for the manifest."""
+    rows = []
+    print("\n  ---- fillet feasibility (requested vs. built) ----")
+    print(f"  {'junction':<9s} {'R_req':>7s} {'R_built':>8s} {'Kt_model':>9s} {'Kt_built':>9s} {'error':>8s}")
+    print("  " + "-" * 56)
+    for label, r_req, applied, t in (
+            ("hub", genes["R_hub"], hub_applied, genes["t0"]),
+            ("rim", genes["R_rim"], rim_applied, genes["t3"])):
+        # The SHARPEST fillet governs the stress concentration, so min() is the
+        # honest statistic even when most edges got the full requested radius.
+        r_built = min(applied) if applied else 0.0
+        kt_model = float(stress_concentration_kt(r_req, t))
+        kt_built = float(stress_concentration_kt(r_built, t)) if r_built > 0 else float("nan")
+        err = (kt_built / kt_model - 1.0) * 100.0 if r_built > 0 else float("nan")
+        print(f"  {label:<9s} {r_req:7.3f} {r_built:8.3f} {kt_model:9.3f} "
+              f"{kt_built:9.3f} {err:+7.1f}%")
+        rows.append({"junction": label, "r_requested_mm": r_req, "r_built_mm": r_built,
+                     "kt_modeled": kt_model, "kt_built": kt_built,
+                     "kt_error_pct": err})
+    print("  " + "-" * 56)
+
+    for row in rows:
+        if row["r_built_mm"] <= 0:
+            print(f"  [SQUARE JUNCTION] the {row['junction']} junction took no fillet at "
+                  f"all.  A sharp\n                    re-entrant corner is a worse "
+                  f"stress riser than the {row['r_requested_mm']:.2f} mm the\n"
+                  f"                    optimizer priced, not a better one — treat the "
+                  f"Kt column above as\n                    a floor, not an estimate.")
+
+    worst = max((r for r in rows if r["r_built_mm"] > 0),
+                key=lambda r: r["kt_error_pct"], default=None)
+    if worst and worst["kt_error_pct"] > 10.0:
+        modeled = metrics.get("max_stress_mpa", float("nan"))
+        scaled = modeled * worst["kt_built"] / worst["kt_modeled"]
+        print(f"  [Kt MISMATCH] the {worst['junction']} fillet was built at "
+              f"{worst['r_built_mm']:.2f} mm, not the {worst['r_requested_mm']:.2f} mm")
+        print(f"                the optimizer assumed — Kt is {worst['kt_error_pct']:+.1f}% "
+              f"higher than modeled.")
+        print(f"                As-built peak stress scales {modeled:.2f} → ~{scaled:.2f} MPa.")
+        print( "                The fix belongs upstream: nothing in wheel_fea.py stops the")
+        print( "                GA proposing a fillet the junction angle cannot accept.")
+    return rows
+
+
+def report(part, genes, metrics, ghash, vol=None):
+    """`vol` must be measured BEFORE despecialize().  BRepGProp.VolumeProperties_s
+    uses low-order quadrature that is materially inaccurate on B-spline faces: the
+    same solid measures 57151 mm³ with analytic spoke flanks and 60199 mm³ once they
+    are splined — a 5.3% phantom gain, on geometry whose boolean symmetric difference
+    is exactly zero.  Measure first, convert second, or the reported PLA mass lies."""
     solid = part.val()
     bb = solid.BoundingBox()
-    vol = solid.Volume()
+    if vol is None:
+        vol = solid.Volume()
     print("\n  ---- solid report ----")
+    print(f"  genome           : {ghash}")
     print(f"  valid (OCC)      : {solid.isValid()}")
+    print(f"  solid count      : {len(part.solids().vals())} (expect 1)")
     print(f"  bounding box     : {bb.xlen:.2f} × {bb.ylen:.2f} × {bb.zlen:.2f} mm "
           f"(expect ≈ {2*RIM_OUTER_RADIUS_MM:.0f} × {2*RIM_OUTER_RADIUS_MM:.0f} × "
           f"{SPOKE_WIDTH_MM:.1f})")
@@ -226,38 +774,104 @@ def report(part, genes, metrics):
     print(f"  solid mass @PLA  : {vol * DENSITY_PLA:.2f} g "
           f"(optimizer wheel-spoke mass was {metrics.get('total_mass_g', float('nan')):.2f} g, "
           f"hub+rim add the rest)")
+    return vol, solid.isValid()
+
+
+def _export_with_settings(shape, path, schema=None, surfacecurve=None):
+    """Write a STEP with temporarily-overridden writer settings.
+
+    The Interface_Static registry is empty until a STEPControl_Writer exists, so one
+    is instantiated first purely to populate it.  Settings are restored afterwards —
+    they are process-global, and a leaked schema would silently affect every later
+    variant in the same run."""
+    writer = STEPControl_Writer()              # also populates the static registry
+    old_schema = Interface_Static.CVal_s("write.step.schema")
+    old_sc = Interface_Static.IVal_s("write.surfacecurve.mode")
+    try:
+        if schema is not None:
+            Interface_Static.SetCVal_s("write.step.schema", schema)
+        if surfacecurve is not None:
+            Interface_Static.SetIVal_s("write.surfacecurve.mode", surfacecurve)
+        # Drive STEPControl_Writer directly rather than cq.exporters.export — the
+        # CadQuery wrapper re-applies its own writer settings, which silently undid
+        # write.surfacecurve.mode (the file still carried all 873 PCURVEs).
+        writer.Transfer(_topo(shape), STEPControl_AsIs)
+        status = writer.Write(path)
+        if status != IFSelect_ReturnStatus.IFSelect_RetDone:
+            raise RuntimeError(f"STEP write returned status {status}")
+    finally:
+        Interface_Static.SetCVal_s("write.step.schema", old_schema)
+        Interface_Static.SetIVal_s("write.surfacecurve.mode", old_sc)
 
 
 def main():
+    t_start = time.time()
     rec = load_genome()
     genes = rec["genes"]
     metrics = rec.get("metrics", {})
     print("=" * 68)
     print("  WHEEL STEP EXPORT")
     print("=" * 68)
+    print(f"  genome {rec['_hash']}  ← {os.path.basename(rec['_source_path'])}")
+    warn_if_stale(rec)
     print(f"  Spokes {NUMBER_OF_SPOKES} | Hub Ø{2*HUB_RADIUS_MM:.1f} (solid) | "
           f"Rim merge Ø{2*RIM_RADIUS_MM:.1f} → outer Ø{2*RIM_OUTER_RADIUS_MM:.1f} | "
           f"Face {SPOKE_WIDTH_MM:.1f} mm")
     print(f"  R_hub={genes['R_hub']:.3f} mm  R_rim={genes['R_rim']:.3f} mm  "
           f"t0={genes['t0']:.2f} t3={genes['t3']:.2f}")
 
-    print("\n  Building union (hub + 12 spokes + rim)…")
-    wheel = build_wheel(genes)
+    print("\n  Building 2D profile (hub + 12 spokes + rim)…")
+    profile, (hub_ovl, rim_ovl) = build_profile(genes)
 
-    # Guaranteed-valid fallback first.
+    # Guaranteed-valid fallback, written before any fillet can complicate it.
     nofillet_path = os.path.join(HERE, "wheel_nofillet.step")
-    cq.exporters.export(wheel, nofillet_path)
+    _export_with_settings(despecialize(extrude_profile(profile)), nofillet_path)
     print(f"  Saved fallback   → {nofillet_path}")
 
-    print("\n  Applying tangent fillets…")
-    wheel, _, _, _ = fillet_junctions(wheel, HUB_RADIUS_MM, genes["R_hub"], "hub")
-    wheel, _, _, _ = fillet_junctions(wheel, RIM_RADIUS_MM, genes["R_rim"], "rim")
+    prof_health = profile_health(profile, "wheel profile")
 
-    report(wheel, genes, metrics)
+    print("\n  Extruding…")
+    wheel = extrude_profile(profile)
+
+    print("\n  Filleting junctions…")
+    wheel, hub_r, hub_n = fillet_junctions(wheel, HUB_RADIUS_MM, genes["R_hub"], "hub")
+    wheel, rim_r, rim_n = fillet_junctions(wheel, RIM_RADIUS_MM, genes["R_rim"], "rim")
+    kt_rows = kt_report(genes, metrics,
+                        [hub_r] if hub_r else [], [rim_r] if rim_r else [])
+
+    # Measure BEFORE despecializing — see report()'s docstring.
+    vol_true = wheel.val().Volume()
+    vol, valid = report(wheel, genes, metrics, rec["_hash"], vol=vol_true)
+
+    print("\n  Converting swept surfaces for Parasolid/Onshape…")
+    wheel_out = despecialize(wheel)
+    health = step_health(wheel_out, "wheel.step")
 
     step_path = os.path.join(HERE, "wheel.step")
-    cq.exporters.export(wheel, step_path)
+    _export_with_settings(wheel_out, step_path)
     print(f"\n  Saved STEP       → {step_path}")
+
+    # Manifest: what this STEP actually is, so it can never again be mistaken for a
+    # build of a different genome.
+    manifest = {
+        "genome_hash": rec["_hash"],
+        "source": os.path.basename(rec["_source_path"]),
+        "source_mtime": datetime.datetime.fromtimestamp(
+            rec["_source_mtime"]).isoformat(timespec="seconds"),
+        "exported_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        "export_seconds": round(time.time() - t_start, 1),
+        "solid": {"valid": bool(valid), "volume_mm3": round(vol, 1),
+                  "mass_g_pla": round(vol * DENSITY_PLA, 2)},
+        "junction_overlap_mm3": {"hub": round(hub_ovl, 2), "rim": round(rim_ovl, 2),
+                                 "floor": MIN_JUNCTION_OVERLAP_MM3},
+        "fillets": {"hub_edges": hub_n, "rim_edges": rim_n, "detail": kt_rows},
+        "profile_health": prof_health,
+        "step_health": health,
+    }
+    manifest_path = os.path.join(HERE, "wheel_step_manifest.json")
+    with open(manifest_path, "w") as fh:
+        json.dump(manifest, fh, indent=2)
+    print(f"  Saved manifest   → {manifest_path}")
     print("  Done.")
 
 

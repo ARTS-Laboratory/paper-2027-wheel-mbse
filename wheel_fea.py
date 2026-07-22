@@ -1,17 +1,39 @@
 """
 =============================================================================
-  COMPLIANT PLA UAV WHEEL — Co-Optimization v2.0
+  COMPLIANT PLA UAV WHEEL — Co-Optimization v2.1
   Senior ME Refactor: Expanded Genome, Rigorous Physics, Enhanced Output
 =============================================================================
 
 CHAIN-OF-THOUGHT ENGINEERING NOTES
 ------------------------------------
+0. WHAT CHANGED IN v2.1  (three defects that made v2.0's numbers untrustworthy)
+   a. The deflection model was a CANTILEVER — hub clamped, rim end free.  A real
+      spoke is fused into a stiff rim ring, which restrains tip rotation and
+      tangential motion, so v2.0 over-predicted compliance by ~4× (straight-beam
+      check: FL³/3EI vs FL³/12EI).  Replaced by a force-method (Castigliano)
+      solve carrying two redundants at the tip.  See BOUNDARY_CONDITION.
+   b. The Euler buckling check was DEAD CODE, twice over.  (i) `F_axial = F·cosθ`
+      is positive for every monotone-x curve, so `clip(-F_axial, 0, None)` was
+      identically zero; the sign convention for compression was inverted.
+      (ii) `Pe = π²EI/(Ke·L)²` used L = one 0.06 mm discretization segment, and
+      the 1/L² made Pe astronomical.  Euler buckling is a global mode over an
+      unbraced length, not a per-element property.  v2.0 runs report
+      buckling_ratio = 0.000 for both reasons.  Now: compression-negative axial
+      force + an equivalent-column check over the whole spoke.
+   c. Mass was INERT as an objective (mass/40 ≈ <1 loss unit against a deflection
+      term scaled at 2500).  Now normalised and weighted — see MASS_WEIGHT.
+   Also: the sector plot's fillet arcs were drawn at an arbitrary diagonal offset
+   rather than tangent to the real geometry, so the figure disagreed with the STEP
+   that wheel_step_export.py builds.  Now constructed properly.
+
 1. GENOME (14 genes)
    - Bezier centerline upgraded from degree-3 (4 pts) to degree-5 (6 pts),
      adding two interior control points [P1..P4] that allow S-curves and
      progressive bend profiles.  P0 (hub) and P5 (rim) remain locked.  Interior
-     control-point y-range is held to ±25 mm (was ±55) to keep the search in
-     physically reasonable, non-lumpy territory.
+     control-point y-range is ±32 mm (v2.0 used ±25, itself down from ±55).  The
+     widening is a direct consequence of 0a: compliance goes as ∫F·y²/(EI) ds, so
+     recovering the ~4× stiffness of the honest boundary condition needs roughly
+     2× the lateral deviation, and the v2.0 winner already sat at cy ≈ 15–17 mm.
    - Thickness parameterized as 4 nodes (t0..t3) across 3 linear-taper zones
      at normalized arc-length breakpoints s=[0, 0.33, 0.67, 1.0].  This lets
      the GA bulk the root/tip independently and create a waisted mid-section.
@@ -32,9 +54,15 @@ CHAIN-OF-THOUGHT ENGINEERING NOTES
       (e/c) to the bending stress for each segment whose radius of curvature
       is within 4× the section height, preventing under-prediction of inner-
       fibre stress.
-   c. Euler column buckling check on each segment (Pe = π²EI / (Ke·L)²) with
-      an effective-length factor Ke=0.7 (one end fixed, one pin).  A penalty
-      fires if any segment's axial compressive load exceeds 0.6·Pe.
+   c. Euler column buckling as an EQUIVALENT-COLUMN check over the whole unbraced
+      spoke: Pe = π²·EI_eff / (Ke·L_total)², where EI_eff is the compliance-
+      weighted (harmonic) mean rigidity so the 3-zone taper is respected, and Ke
+      is keyed to the boundary condition (KE_BY_BC).  A penalty fires when the
+      peak compressive axial load exceeds 0.6·Pe.  Caveat: I = w·t³/12 is
+      correctly the weak axis (out-of-plane is t·w³/12, far stiffer at w=22.4mm),
+      but for an in-plane-curved member Euler is a proxy — the genuinely competing
+      modes are snap-through and lateral-torsional buckling.  Sanity guard, not a
+      certification.
    d. FFF anisotropy knockdown: layer-adhesion strength is ~80 % of bulk
       PLA, so the allowable stress is reduced by 0.80 before applying the
       safety factor.
@@ -63,9 +91,6 @@ import warnings
 import json
 import os
 import numpy as np
-# NOTE: pygad and matplotlib are imported lazily inside __main__ so this module can
-# be imported (for its geometry functions) in a minimal env — e.g. the CadQuery
-# Python 3.12 venv used by wheel_step_export.py — with only numpy present.
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 np.random.seed(42)
@@ -95,8 +120,30 @@ FORCE_PER_SPOKE_NEWTONS  = TOTAL_FORCE_NEWTONS / (NUMBER_OF_SPOKES / 3.0)
 
 TARGET_DEFLECTION_MM     = 2.0     # compliant target (raised from 1.0 for more travel)
 
-# Buckling effective-length factor (one-end fixed, one-end pinned)
-KE_BUCKLING              = 0.7
+# Mass objective scaling.  The old `mass/40` contributed <1 loss unit against a
+# deflection term scaled at 2500, so mass was a tiebreaker rather than an objective.
+# Calibration: a 5 % deflection error costs 2500*0.05² = 6.25, so at WEIGHT=30 about
+# 7.6 g of mass now trades against 5 % of the deflection target.  Tune against the
+# loss-term table that `evaluate_design` reports for the winner.
+MASS_REFERENCE_G         = 36.5    # v2.0 cantilever-era best, as a normaliser
+MASS_WEIGHT              = 30.0
+
+# ---------------------------------------------------------------------------
+# BOUNDARY CONDITION
+# ---------------------------------------------------------------------------
+#  "fixed_guided" — hub clamped; the rim end is clamped against rotation and
+#                   tangential motion but free to translate radially.  Models a spoke
+#                   fused into a stiff rim ring, which is what the part actually is.
+#  "cantilever"   — legacy v2.0 model: hub clamped, rim end entirely free.  Retained
+#                   for regression against `best_solution_cantilever.json`.  It
+#                   over-predicts compliance by ~4× (straight beam: FL³/3EI vs
+#                   FL³/12EI), so it is not a defensible design model.
+BOUNDARY_CONDITION       = "fixed_guided"
+
+# Euler effective-length factor, keyed to the boundary condition rather than fixed at
+# the old hard-coded 0.7 (which was the fixed-pinned figure and no longer matches).
+KE_BY_BC = {"cantilever": 2.0, "fixed_guided": 0.5}
+KE_BUCKLING              = KE_BY_BC[BOUNDARY_CONDITION]
 
 # Piecewise taper breakpoints in normalized arc-length
 TAPER_BREAKPOINTS = np.array([0.0, 1/3, 2/3, 1.0])
@@ -107,7 +154,7 @@ N_CURVE_PTS = 600
 # ---------------------------------------------------------------------------
 # GENOME LAYOUT  (14 genes total)
 # ---------------------------------------------------------------------------
-# Indices:
+# Indices: CP = Control point
 #  0  cx1   — Bezier interior CP1 x
 #  1  cy1   — Bezier interior CP1 y
 #  2  cx2   — Bezier interior CP2 x
@@ -133,16 +180,16 @@ HUB_CLEARANCE_MM = 0.8
 GENE_SPACE = [
     # CP1 — near hub (x must stay in [5%, 30%] of span)
     {"low": S * 0.05,  "high": S * 0.30},   # cx1
-    {"low": -25.0,     "high":  25.0},       # cy1
+    {"low": -32.0,     "high":  32.0},       # cy1
     # CP2 — first third to midspan
     {"low": S * 0.22,  "high": S * 0.55},   # cx2
-    {"low": -25.0,     "high":  25.0},       # cy2
+    {"low": -32.0,     "high":  32.0},       # cy2
     # CP3 — midspan to second third
     {"low": S * 0.45,  "high": S * 0.78},   # cx3
-    {"low": -25.0,     "high":  25.0},       # cy3
+    {"low": -32.0,     "high":  32.0},       # cy3
     # CP4 — near rim (x must stay in [70%, 95%] of span)
     {"low": S * 0.70,  "high": S * 0.95},   # cx4
-    {"low": -25.0,     "high":  25.0},       # cy4
+    {"low": -32.0,     "high":  32.0},       # cy4
     # Piecewise thickness nodes (mm) — 4 nodes, 3 taper zones
     # Lower bound = MIN_WALL_MM so the GA can thin down to the printable floor.
     {"low": MIN_WALL_MM,  "high": 10.0},     # t0 (root, hub side)
@@ -241,12 +288,18 @@ def curved_beam_factor(radius_of_curvature, section_height):
     Returns curvature correction factor for inner-fibre bending stress.
     kb = 1 + (section_height / (4 * R))  (simplified Winkler-Bach).
     Only significant when R < 4h.
+
+    Accepts scalars or arrays.  The array path matters: this used to be called from a
+    599-iteration Python loop inside the fitness function, i.e. ~200M scalar calls per
+    GA run, and it was the single hottest line in the program.
     """
-    if radius_of_curvature <= 0:
-        return 2.5
-    ratio = section_height / (4.0 * radius_of_curvature)
-    kb = 1.0 + ratio
-    return float(np.clip(kb, 1.0, 2.5))
+    R = np.asarray(radius_of_curvature, dtype=float)
+    h = np.asarray(section_height, dtype=float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        kb = 1.0 + h / (4.0 * R)
+    kb = np.where(R <= 0, 2.5, kb)
+    kb = np.clip(kb, 1.0, 2.5)
+    return float(kb) if kb.ndim == 0 else kb
 
 # ---------------------------------------------------------------------------
 # CORE MECHANICAL ANALYSIS
@@ -255,17 +308,42 @@ def curved_beam_factor(radius_of_curvature, section_height):
 def generalized_spoke_mechanics(curve_points, t0, t1, t2, t3,
                                  spoke_width, force_per_spoke,
                                  R_hub_fillet=0.5, R_rim_fillet=0.5,
-                                 youngs_modulus=YOUNGS_MODULUS_PLA_MPA):
+                                 youngs_modulus=YOUNGS_MODULUS_PLA_MPA,
+                                 boundary_condition=None):
     """
-    Upgraded mechanics:
-      - Piecewise-linear 3-taper thickness profile
-      - Kt stress-concentration at hub and rim fillets
-      - Winkler-Bach curved-beam correction per segment
-      - Castigliano deflection (bending + axial)
-      - Euler column buckling check per segment
-      - Returns: deflection_mm, max_stress_mpa, total_mass_g,
-                 buckling_ratio (max axial_load / 0.6*Pe per segment)
+    Force-method (Castigliano) beam analysis of one curved spoke.
+
+    BOUNDARY CONDITIONS
+    -------------------
+    Local frame: hub root at (0,0), rim tip at (S,0); the radial service load F acts
+    at the tip along -x.  Two redundants are carried at the tip:
+        M0 — end moment       (restrains tip rotation)
+        H  — tangential force (restrains tip motion along +y)
+
+      "fixed_guided" : both redundants solved from the compatibility conditions
+                       dU/dM0 = 0 and dU/dH = 0.  Models a spoke fused into a stiff
+                       rim ring — the physically representative case.
+      "cantilever"   : M0 = H = 0.  Legacy free-tip model.  This is not a separate
+                       code path but the same one with the redundants zeroed, which
+                       is algebraically exact: it collapses to M = -F·y and
+                       N = -F·cosθ, giving M·m_F = F·y² and N·n_F = F·cos²θ — term
+                       for term the v2.0 integrands.  That equivalence is the
+                       regression test.
+
+    Internal actions at station s = (x, y), free body taken from s to the tip:
+        M(s) = M0 + H·(S - x) - F·y
+        N(s) = -F·cosθ + H·sinθ            (cosθ, sinθ) = (dx/ds, dy/ds)
+    N is NEGATIVE IN COMPRESSION.  v2.0 used the opposite sign and its buckling
+    check consequently never fired.
+
+    Also included: piecewise-linear 3-taper thickness, Kt stress concentration at the
+    hub/rim fillets, Winkler-Bach curved-beam correction, and an equivalent-column
+    Euler buckling check over the whole unbraced spoke.
+
+    Returns (deflection_mm, max_stress_mpa, total_mass_g, buckling_ratio).
     """
+    if boundary_condition is None:
+        boundary_condition = BOUNDARY_CONDITION
     n_seg = len(curve_points) - 1
 
     # --- Arc-length parameterization ---
@@ -283,23 +361,62 @@ def generalized_spoke_mechanics(curve_points, t0, t1, t2, t3,
     # --- Section properties per segment ---
     I  = spoke_width * thicknesses**3 / 12.0    # second moment of area
     A  = spoke_width * thicknesses               # cross-section area
+    EI = youngs_modulus * I
+    EA = youngs_modulus * A
 
-    # --- Local geometry ---
-    cos_theta = dx / np.where(seg_lengths < 1e-8, 1e-8, seg_lengths)
+    # --- Local geometry at segment midpoints ---
+    safe_len  = np.where(seg_lengths < 1e-8, 1e-8, seg_lengths)
+    cos_theta = dx / safe_len
+    sin_theta = dy / safe_len
+    x_mid     = curve_points[:-1, 0] + dx / 2.0
     y_mid     = curve_points[:-1, 1] + dy / 2.0
 
-    # --- Bending moment (transverse load F × lateral deviation) ---
-    M = force_per_spoke * y_mid
+    # --- Unit-load fields: moment / axial force per unit of each unknown ---
+    #     M = M0·m_M0 + H·m_H + F·m_F ,   N = M0·n_M0 + H·n_H + F·n_F
+    m_M0 = np.ones(n_seg)
+    m_H  = HUB_RIM_SPAN_MM - x_mid
+    m_F  = -y_mid
+    n_M0 = np.zeros(n_seg)
+    n_H  = sin_theta
+    n_F  = -cos_theta
 
-    # --- Axial component (projection of F along spoke axis) ---
-    F_axial = force_per_spoke * cos_theta
+    F = force_per_spoke
 
-    # --- Castigliano deflection contributions ---
-    defl_bending = np.sum((force_per_spoke * y_mid**2) /
-                           (youngs_modulus * I) * seg_lengths)
-    defl_axial   = np.sum((force_per_spoke * cos_theta**2) /
-                           (youngs_modulus * A) * seg_lengths)
-    total_deflection = defl_bending + defl_axial
+    if boundary_condition == "cantilever":
+        M0 = 0.0
+        H  = 0.0
+    else:
+        # Flexibility coefficients  a_ij = ∫ mi·mj/EI ds + ∫ ni·nj/EA ds
+        # and load terms           b_i  = ∫ mi·m_F/EI ds + ∫ ni·n_F/EA ds
+        w_b = seg_lengths / EI          # bending weight per segment
+        w_a = seg_lengths / EA          # axial weight per segment
+        a11 = np.sum(m_M0 * m_M0 * w_b) + np.sum(n_M0 * n_M0 * w_a)
+        a12 = np.sum(m_M0 * m_H  * w_b) + np.sum(n_M0 * n_H  * w_a)
+        a22 = np.sum(m_H  * m_H  * w_b) + np.sum(n_H  * n_H  * w_a)
+        b1  = np.sum(m_M0 * m_F  * w_b) + np.sum(n_M0 * n_F  * w_a)
+        b2  = np.sum(m_H  * m_F  * w_b) + np.sum(n_H  * n_F  * w_a)
+
+        Amat = np.array([[a11, a12], [a12, a22]], dtype=float)
+        # Tiny relative ridge: a near-straight, very thin spoke makes this system
+        # badly conditioned, and a GA will happily propose exactly that.
+        Amat[0, 0] += 1e-12 * (1.0 + abs(a11))
+        Amat[1, 1] += 1e-12 * (1.0 + abs(a22))
+        rhs = -F * np.array([b1, b2], dtype=float)
+        try:
+            M0, H = np.linalg.solve(Amat, rhs)
+        except np.linalg.LinAlgError:
+            M0, H = np.linalg.lstsq(Amat, rhs, rcond=None)[0]
+
+    # --- Internal actions ---
+    M = M0 * m_M0 + H * m_H + F * m_F
+    N = M0 * n_M0 + H * n_H + F * n_F
+
+    # --- Castigliano deflection in the load direction.  By the envelope theorem the
+    #     redundants sit at stationary values of U, so differentiating w.r.t. F while
+    #     holding them fixed is exact — no chain terms needed.
+    defl_bending = np.sum(M * m_F / EI * seg_lengths)
+    defl_axial   = np.sum(N * n_F / EA * seg_lengths)
+    total_deflection = abs(defl_bending + defl_axial)
 
     # --- Radius of curvature per segment (finite-difference of tangent angle) ---
     tangent_angles = np.arctan2(dy, dx)
@@ -308,37 +425,42 @@ def generalized_spoke_mechanics(curve_points, t0, t1, t2, t3,
     with np.errstate(divide="ignore", invalid="ignore"):
         R_curv_interior = np.where(np.abs(d_theta) < 1e-8, 1e6,
                                    seg_len_mid / np.abs(d_theta))
-    # Pad to length n_seg
-    R_curv = np.concatenate([[R_curv_interior[0]],
-                              R_curv_interior,
-                              [R_curv_interior[-1]]])
+    # Segment i>0 takes the turn at node i; segment 0 borrows segment 1's.  One
+    # prepended element is all that is needed to reach n_seg — v2.0 padded both ends
+    # and produced n_seg+1, leaving a trailing element that was never read.
+    R_curv = np.concatenate([[R_curv_interior[0]], R_curv_interior])
 
-    # --- Curved-beam correction factor per segment ---
-    kb = np.array([curved_beam_factor(R_curv[i], thicknesses[i])
-                   for i in range(n_seg)])
+    # --- Curved-beam correction factor per segment (vectorized) ---
+    kb = curved_beam_factor(R_curv, thicknesses)
 
     # --- Bending stress (outer fibre), with curved-beam correction ---
     sigma_bending = np.abs(M) * (thicknesses / 2.0) / I * kb
 
-    # --- Axial stress (compressive positive convention) ---
-    sigma_axial = F_axial / A
+    # --- Axial stress ---
+    sigma_axial = N / A
 
     # --- Kt at hub (segment 0) and rim (segment -1) ---
     Kt_hub = stress_concentration_kt(R_hub_fillet, thicknesses[0])
     Kt_rim = stress_concentration_kt(R_rim_fillet, thicknesses[-1])
 
-    # Apply Kt to the first and last segments
+    # Superposing |bending| + |axial| assumes worst-case sign alignment at every
+    # station — deliberately conservative for a part we intend to print and load.
     sigma_combined = sigma_bending + np.abs(sigma_axial)
     sigma_combined[0]  *= Kt_hub
     sigma_combined[-1] *= Kt_rim
 
     max_stress = float(np.max(sigma_combined))
 
-    # --- Euler buckling check ---
-    # Pe = π² E I / (Ke L)²  per segment
-    Pe = (np.pi**2 * youngs_modulus * I) / ((KE_BUCKLING * seg_lengths)**2 + 1e-12)
-    F_comp = np.clip(-F_axial, 0, None)   # compressive part only
-    buckling_ratio = float(np.max(F_comp / (0.6 * Pe + 1e-12)))
+    # --- Euler buckling: equivalent-column check over the WHOLE unbraced spoke ---
+    # EI_eff is the compliance-weighted (harmonic) mean rigidity, which is the standard
+    # equivalent-column treatment for a stepped/tapered member and so respects the
+    # 3-zone taper.  v2.0 applied Pe per discretization segment (L ≈ 0.06 mm), where
+    # the 1/L² made Pe astronomical and the check could never fire.
+    EI_eff = total_length / (np.sum(seg_lengths / EI) + 1e-30)
+    Ke     = KE_BY_BC[boundary_condition]
+    Pe     = np.pi**2 * EI_eff / ((Ke * total_length)**2 + 1e-12)
+    F_comp = np.clip(-N, 0.0, None)        # compression is negative in N
+    buckling_ratio = float(np.max(F_comp) / (0.6 * Pe + 1e-12))
 
     # --- Mass ---
     total_mass_g = (np.sum(thicknesses * spoke_width * seg_lengths)
@@ -425,7 +547,16 @@ def curve_smoothness_metrics(curve_points, n_sample=60, deadband_deg=1.0):
 # PYGAD FITNESS FUNCTION
 # ---------------------------------------------------------------------------
 
-def pygad_fitness(ga_instance, solution, sol_idx):
+def evaluate_design(solution):
+    """
+    Score one genome.  Returns (metrics, loss_terms) as plain dicts.
+
+    The split exists so the GA can sum the terms while __main__ can print the
+    breakdown: with seven weighted terms spanning four orders of magnitude, the only
+    safe way to tune a weight is to look at what each one actually contributes.  The
+    v2.0 mass term (mass/40) and the dead buckling term were both invisible precisely
+    because nothing ever printed them.
+    """
     (cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
      t0, t1, t2, t3, R_hub, R_rim) = solution
 
@@ -455,37 +586,49 @@ def pygad_fitness(ga_instance, solution, sol_idx):
         R_hub_fillet=R_hub, R_rim_fillet=R_rim)
 
     # -------- Deflection objective (want exactly TARGET) ---------------
-    defl_err   = abs(deflection - TARGET_DEFLECTION_MM) / TARGET_DEFLECTION_MM
-    defl_loss  = 2500.0 * (defl_err**2)
-
-    # -------- Mass objective (minimise) --------------------------------
-    mass_loss  = total_mass / 40.0
-
-    # -------- Stress penalty (smooth quadratic barrier) ----------------
-    #  Scale raised to 4000: at the higher deflection target we lean harder on the
-    #  material, so any genome over the (already SF/FFF-derated) allowable is firmly
-    #  rejected — more compliance without snapping.
-    stress_viol  = max_stress / ALLOWABLE_STRESS_MPA - 1.0
-    stress_penalty = soft_barrier(stress_viol, scale=4000.0)
-
-    # -------- Buckling penalty -----------------------------------------
-    buck_viol  = buckling_ratio - 1.0
-    buck_penalty = soft_barrier(buck_viol, scale=2000.0)
-
-    # -------- Overlap penalty (in-plane hub crowding, gene-driven) ------
-    overlap_pen = spoke_overlap_penalty(t0, R_hub)
+    #  Two-sided on purpose: for a compliant mechanism the travel is the feature, so
+    #  being too stiff is penalised exactly as hard as being too soft.
+    defl_err = abs(deflection - TARGET_DEFLECTION_MM) / TARGET_DEFLECTION_MM
 
     # -------- Smooth-spiral regularization -----------------------------
     #  Penalize curvature reversals (want a single-curvature spiral) and general
     #  wiggle.  Without this the GA settles on lumpy centerlines that still hit the
-    #  deflection target.
+    #  deflection target.  Secondary benefit: it suppresses tight local curvature,
+    #  which is what keeps thicken_3taper_curve's naive normal offset from
+    #  self-intersecting where R drops below t/2.
     n_infl, turn_var = curve_smoothness_metrics(curve_points)
-    smoothness_penalty = 400.0 * n_infl + 120.0 * turn_var
 
-    total_loss = (defl_loss + mass_loss + stress_penalty + buck_penalty
-                  + x_order_penalty + overlap_pen + smoothness_penalty)
+    loss_terms = {
+        "deflection":  2500.0 * (defl_err**2),
+        # Normalised and weighted (v2.0: mass/40, which was <1 loss unit and so acted
+        # only as a tiebreaker).  See MASS_WEIGHT for the calibration.
+        "mass":        MASS_WEIGHT * (total_mass / MASS_REFERENCE_G),
+        # Scale 4000: at this deflection target we lean hard on the material, so any
+        # genome over the (already SF/FFF-derated) allowable is firmly rejected.
+        "stress":      soft_barrier(max_stress / ALLOWABLE_STRESS_MPA - 1.0,
+                                    scale=4000.0),
+        "buckling":    soft_barrier(buckling_ratio - 1.0, scale=2000.0),
+        "x_order":     x_order_penalty,
+        "hub_overlap": spoke_overlap_penalty(t0, R_hub),
+        "smoothness":  400.0 * n_infl + 120.0 * turn_var,
+    }
 
-    return -total_loss   # PyGAD maximises; lower loss → higher fitness
+    metrics = {
+        "deflection_mm":      float(deflection),
+        "max_stress_mpa":     float(max_stress),
+        "total_mass_g":       float(total_mass),
+        "buckling_ratio":     float(buckling_ratio),
+        "deflection_error":   float(defl_err),
+        "stress_utilization": float(max_stress / ALLOWABLE_STRESS_MPA),
+        "n_inflections":      int(n_infl),
+        "turn_variation":     float(turn_var),
+    }
+    return metrics, loss_terms
+
+
+def pygad_fitness(ga_instance, solution, sol_idx):
+    _, loss_terms = evaluate_design(solution)
+    return -float(sum(loss_terms.values()))   # PyGAD maximises; lower loss → higher fitness
 
 
 # ---------------------------------------------------------------------------
@@ -531,6 +674,51 @@ def adaptive_gaussian_mutation(offspring, ga_instance):
     noise = np.random.normal(0.0, 1.0, offspring.shape) * (sigma * _GENE_RANGE)
     offspring = offspring + mask * noise
     return np.clip(offspring, _GENE_LOW, _GENE_HIGH)
+
+# ---------------------------------------------------------------------------
+# DIAGNOSTICS  (weight tuning and bound saturation)
+# ---------------------------------------------------------------------------
+
+GENE_NAMES = ["cx1", "cy1", "cx2", "cy2", "cx3", "cy3", "cx4", "cy4",
+              "t0", "t1", "t2", "t3", "R_hub", "R_rim"]
+
+
+def bound_saturation_report(solution, tol_frac=0.01):
+    """
+    Genes sitting within `tol_frac` of their range from a bound.
+
+    The np.clip in `adaptive_gaussian_mutation` causes boundary accumulation: any
+    Gaussian mass landing outside the box piles up exactly on the limit, so a
+    saturated gene means the search wanted to go further than the box allows.  That
+    is sometimes the answer you want (t0/t1 pinned at MIN_WALL_MM says printability
+    is the active constraint) and sometimes a sign the bound is too tight (cy pinned
+    at ±32 would say the centerline needs more room to hit the deflection target).
+
+    Returns a list of (gene_name, value, "low"|"high", bound_value).
+    """
+    hits = []
+    for name, val, lo, hi in zip(GENE_NAMES, solution, _GENE_LOW, _GENE_HIGH):
+        span = hi - lo
+        if val - lo <= tol_frac * span:
+            hits.append((name, float(val), "low", float(lo)))
+        elif hi - val <= tol_frac * span:
+            hits.append((name, float(val), "high", float(hi)))
+    return hits
+
+
+def print_loss_breakdown(loss_terms):
+    """Per-term contribution to the total loss, as absolute value and % of total."""
+    total = sum(loss_terms.values())
+    print("\n  [LOSS-TERM BREAKDOWN]")
+    print(f"  {'term':<14s} {'value':>12s}  {'share':>8s}")
+    print("  " + "-" * 36)
+    for name, val in sorted(loss_terms.items(), key=lambda kv: -kv[1]):
+        share = (val / total * 100.0) if total > 0 else 0.0
+        print(f"  {name:<14s} {val:12.4f}  {share:7.2f}%")
+    print("  " + "-" * 36)
+    print(f"  {'TOTAL':<14s} {total:12.4f}")
+    print("  Tune weights against this table, not by feel: a term at >90% is "
+          "swamping\n  the landscape, one at <0.1% is inert.")
 
 # ---------------------------------------------------------------------------
 # GEOMETRY HELPERS FOR PLOTTING
@@ -587,6 +775,130 @@ def fillet_arc_points(center, radius, start_angle_deg, end_angle_deg, n=30):
     return (center[0] + radius * np.cos(angles),
             center[1] + radius * np.sin(angles))
 
+
+def tangent_fillet_arc(ring_radius, fillet_radius, junction_point, edge_dir,
+                       outward_normal, outside_ring, n=24, max_reach=6.0):
+    """
+    Circular arc genuinely tangent to BOTH a ring circle (centred on the wheel origin)
+    and a spoke edge, filling the reentrant corner between them.
+
+    v2.0 drew these arcs at an arbitrary diagonal offset from the corner, so the
+    figure disagreed with the tangent fillets `wheel_step_export.fillet_junctions`
+    actually builds.  This solves the real construction.
+
+      ring_radius    : hub or rim circle radius (mm)
+      fillet_radius  : R
+      junction_point : point on the ring circle where the spoke outline crosses it
+      edge_dir       : unit direction of the outline there
+      outward_normal : unit normal pointing OUT of the spoke material
+      outside_ring   : True at the hub (centre at |c| = ring + R, in the free space
+                       outside the hub disk), False at the rim (|c| = ring - R, in
+                       the annulus inside the rim band)
+
+    The centre must be at perpendicular distance R from the edge line AND at
+    |c| = ring_radius ± R from the origin.  Writing the first locus as c = Q + u·d
+    with Q = junction_point + R·n̂_out, the second gives a quadratic in u:
+
+        u² + 2u(Q·d) + |Q|² - Rc² = 0
+
+    Of the two roots we take the one of smaller |u| — the tangency point nearest the
+    junction rather than the one wrapping around the far side of the ring.
+
+    Returns (x, y) arrays, or None when no fillet belongs here: the loci fail to meet
+    (corner not reentrant enough for this R), or the solution sits absurdly far from
+    the junction.  A None is a legitimate answer — on a shallow spiral junction the
+    near-tangent side has no corner to round, which is exactly why
+    `wheel_step_export.fillet_junctions` also declines it.
+    """
+    d = np.asarray(edge_dir, dtype=float)
+    d = d / (np.hypot(d[0], d[1]) or 1.0)
+    nout = np.asarray(outward_normal, dtype=float)
+    nout = nout / (np.hypot(nout[0], nout[1]) or 1.0)
+    P = np.asarray(junction_point, dtype=float)
+
+    Rc = ring_radius + fillet_radius if outside_ring else ring_radius - fillet_radius
+    if Rc <= 0:
+        return None
+
+    Q = P + fillet_radius * nout
+    b = float(Q @ d)
+    c = float(Q @ Q) - Rc * Rc
+    disc = b * b - c
+    if disc < 0.0:
+        return None                          # loci never meet — corner not reentrant
+    root = np.sqrt(disc)
+    u = min(-b + root, -b - root, key=abs)
+    if abs(u) > max_reach * fillet_radius:
+        return None                          # tangency point nowhere near the junction
+
+    centre = Q + u * d
+    r_centre = np.hypot(centre[0], centre[1])
+    if r_centre < 1e-9:
+        return None
+
+    # Tangency points: radial projection onto the ring, and the foot of the
+    # perpendicular from the centre onto the edge line.
+    t_ring = centre * (ring_radius / r_centre)
+    t_edge = P + u * d
+
+    a0 = np.arctan2(t_ring[1] - centre[1], t_ring[0] - centre[0])
+    a1 = np.arctan2(t_edge[1] - centre[1], t_edge[0] - centre[0])
+    delta = (a1 - a0 + np.pi) % (2.0 * np.pi) - np.pi     # sweep the short way
+    return fillet_arc_points(centre, fillet_radius,
+                             np.rad2deg(a0), np.rad2deg(a0 + delta), n=n)
+
+
+def ring_junction_fillets(outline, ring_radius, fillet_radius, n=24):
+    """
+    Every fillet where a closed spoke outline crosses a ring circle.
+
+    Finding the junction by crossing the outline against the circle — rather than by
+    assuming the offset-edge endpoints sit on it — is what makes this correct for the
+    shallow spiral geometry the GA actually evolves.  A spoke leaving the hub at ~20°
+    to the hub tangent has its two root corners at markedly different radii (one
+    inside the hub disk, one well outside), so the endpoints are nowhere near the
+    junction and the end-cap segment can be the thing that crosses.
+
+    `outline` must be the closed polygon in the global frame (hub at the origin).
+    Returns a list of (x, y) arc tuples — typically one per crossing, and a shallow
+    spiral yields one filleted notch per ring rather than two.
+    """
+    pts = np.asarray(outline, dtype=float)
+    r = np.hypot(pts[:, 0], pts[:, 1])
+    inside = r < ring_radius
+
+    # Polygon orientation fixes which normal points out of the material: interior is
+    # on the left of the traversal for a CCW loop, on the right for CW.
+    x, y = pts[:, 0], pts[:, 1]
+    signed_area = 0.5 * np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y)
+    ccw = signed_area > 0.0
+
+    arcs = []
+    n_pts = len(pts)
+    for i in range(n_pts):
+        j = (i + 1) % n_pts
+        if inside[i] == inside[j]:
+            continue                              # segment does not cross the circle
+        denom = r[j] - r[i]
+        if abs(denom) < 1e-12:
+            continue
+        alpha = (ring_radius - r[i]) / denom
+        P = pts[i] + alpha * (pts[j] - pts[i])
+        norm_P = np.hypot(P[0], P[1])
+        if norm_P < 1e-9:
+            continue
+        P = P * (ring_radius / norm_P)            # snap exactly onto the circle
+
+        d = pts[j] - pts[i]
+        d = d / (np.hypot(d[0], d[1]) or 1.0)
+        nout = np.array([d[1], -d[0]]) if ccw else np.array([-d[1], d[0]])
+
+        arc = tangent_fillet_arc(ring_radius, fillet_radius, P, d, nout,
+                                 outside_ring=(ring_radius <= HUB_RADIUS_MM), n=n)
+        if arc is not None:
+            arcs.append(arc)
+    return arcs
+
 # ---------------------------------------------------------------------------
 # CAD OUTPUT FORMATTER
 # ---------------------------------------------------------------------------
@@ -637,17 +949,18 @@ if __name__ == "__main__":
     import pygad
 
     print("=" * 68)
-    print("  COMPLIANT PLA UAV WHEEL — Co-Optimisation v2.0")
+    print("  COMPLIANT PLA UAV WHEEL — Co-Optimisation v2.1")
     print(f"  {NUMBER_OF_SPOKES} spokes | Face width {SPOKE_WIDTH_MM} mm | "
           f"Hub Ø {HUB_RADIUS_MM*2:.1f} mm | Rim Ø {RIM_RADIUS_MM*2:.1f} mm")
     print(f"  Load {FORCE_LBS} lb ({TOTAL_FORCE_NEWTONS:.1f} N total) | "
           f"Target δ = {TARGET_DEFLECTION_MM} mm")
     print(f"  Allowable stress {ALLOWABLE_STRESS_MPA:.1f} MPa "
           f"(PLA 50 MPa × {FFF_KNOCKDOWN} FFF × 1/{SAFETY_FACTOR} SF)")
+    print(f"  Beam model: {BOUNDARY_CONDITION}  (Ke = {KE_BUCKLING})")
     print("=" * 68 + "\n")
 
     ga = pygad.GA(
-        num_generations         = 1200,
+        num_generations         = 300,
         num_parents_mating      = 20,
         fitness_func            = pygad_fitness,
         sol_per_pop             = 300,
@@ -675,11 +988,13 @@ if __name__ == "__main__":
     Kt_hub = stress_concentration_kt(R_hub, t0)
     Kt_rim = stress_concentration_kt(R_rim, t3)
 
-    (defl, max_stress, total_mass,
-     buck_ratio) = generalized_spoke_mechanics(
-        opt_curve, t0, t1, t2, t3,
-        SPOKE_WIDTH_MM, FORCE_PER_SPOKE_NEWTONS,
-        R_hub_fillet=R_hub, R_rim_fillet=R_rim)
+    # Re-score through the same entry point the GA used, so the reported metrics and
+    # the loss breakdown are guaranteed to describe one evaluation rather than two.
+    best_metrics, best_loss_terms = evaluate_design(best_sol)
+    defl       = best_metrics["deflection_mm"]
+    max_stress = best_metrics["max_stress_mpa"]
+    total_mass = best_metrics["total_mass_g"]
+    buck_ratio = best_metrics["buckling_ratio"]
 
     print("\n" + "=" * 68)
     print("  EVOLVED OPTIMAL DESIGN")
@@ -702,7 +1017,22 @@ if __name__ == "__main__":
     print(f"  Buckling ratio           : {buck_ratio:7.3f}  "
           f"({'SAFE' if buck_ratio < 1.0 else 'BUCKLING RISK!'})")
     print(f"  Total wheel mass         : {total_mass:7.2f} g")
+    print(f"  Beam model               : {BOUNDARY_CONDITION} (Ke = {KE_BUCKLING})")
     print("=" * 68)
+
+    print_loss_breakdown(best_loss_terms)
+
+    saturated = bound_saturation_report(best_sol)
+    print("\n  [GENE BOUND SATURATION]  (within 1% of a limit)")
+    if not saturated:
+        print("  none — every gene converged in the interior of its range.")
+    else:
+        for name, val, which, bound in saturated:
+            print(f"  {name:<6s} = {val:9.4f}  pinned at its {which:<4s} bound "
+                  f"({bound:.4f})")
+        print("  A pinned t0/t1/t2/t3 means MIN_WALL_MM (printability) is the active\n"
+              "  constraint — informative.  A pinned cy means the centerline wanted\n"
+              "  more lateral room than GENE_SPACE allows; widen it and re-run.")
 
     print_cad_data(opt_curve, ctrl_pts, t0, t1, t2, t3, R_hub, R_rim)
 
@@ -733,6 +1063,26 @@ if __name__ == "__main__":
             "Kt_hub": float(Kt_hub),
             "Kt_rim": float(Kt_rim),
         },
+        # Additive keys (v2.1).  wheel_step_export.py reads only `genes` and
+        # `metrics.total_mass_g`, so extending the record is safe.
+        # `model` records the physics a genome was optimized under — without it a
+        # saved genome is not interpretable, since a cantilever-era and a
+        # fixed-guided-era solution differ by ~4× in stiffness.
+        "model": {
+            "boundary_condition": BOUNDARY_CONDITION,
+            "ke_buckling": float(KE_BUCKLING),
+            "n_curve_pts": int(N_CURVE_PTS),
+            "youngs_modulus_mpa": float(YOUNGS_MODULUS_PLA_MPA),
+            "allowable_stress_mpa": float(ALLOWABLE_STRESS_MPA),
+            "force_per_spoke_n": float(FORCE_PER_SPOKE_NEWTONS),
+            "target_deflection_mm": float(TARGET_DEFLECTION_MM),
+            "version": "2.1",
+        },
+        "loss_terms": {k: float(v) for k, v in best_loss_terms.items()},
+        "bound_saturation": [
+            {"gene": n, "value": v, "at": w, "bound": b}
+            for n, v, w, b in bound_saturation_report(best_sol)
+        ],
     }
     genome_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                "best_solution.json")
@@ -806,25 +1156,16 @@ if __name__ == "__main__":
                     xytext=(0, 7), ha="center", fontsize=7.5,
                     color=CTRL_COLOR, fontweight="bold")
 
-    # Draw the (now GA-optimized) transition fillets at the hub root and rim tip.
-    # Root corners sit at (HUB_RADIUS, ±t0/2); tip corners at (RIM_RADIUS, ±t3/2)
-    # since the centerline endpoints P0/P5 are locked to y=0.
+    # Draw the (GA-optimized) transition fillets, constructed tangent to both the ring
+    # circle and the spoke outline, so the figure agrees with the STEP that
+    # wheel_step_export.fillet_junctions builds.  A shallow spiral junction only has a
+    # sharp notch on one side, so expect one arc per ring, not two.
     FILLET_CLR = "#ffd54f"
-    fillet_corners = [
-        # (corner_x,        corner_y,   radius, arc_start, arc_end)
-        (HUB_RADIUS_MM,  t0 / 2.0,  R_hub, 180, 270),   # hub, top
-        (HUB_RADIUS_MM, -t0 / 2.0,  R_hub,  90, 180),   # hub, bottom
-        (RIM_RADIUS_MM,  t3 / 2.0,  R_rim, 270, 360),   # rim, top
-        (RIM_RADIUS_MM, -t3 / 2.0,  R_rim,   0,  90),   # rim, bottom
-    ]
-    for j, (cxp, cyp, rad, a0, a1) in enumerate(fillet_corners):
-        sign_y = 1.0 if cyp >= 0 else -1.0
-        # Fillet-arc centre offset diagonally out of the corner into the free space.
-        c_x = cxp + (rad if cxp < RIM_RADIUS_MM * 0.5 else -rad)
-        c_y = cyp + sign_y * rad
-        fx, fy = fillet_arc_points((c_x, c_y), rad, a0, a1, n=24)
-        ax.plot(fx, fy, color=FILLET_CLR, lw=1.6,
-                label="Fillets (R_hub / R_rim)" if j == 0 else None)
+    fillet_arcs = (ring_junction_fillets(spoke_poly_placed, HUB_RADIUS_MM, R_hub)
+                   + ring_junction_fillets(spoke_poly_placed, RIM_RADIUS_MM, R_rim))
+    for j, (fx, fy) in enumerate(fillet_arcs):
+        ax.plot(fx, fy, color=FILLET_CLR, lw=1.8, zorder=6,
+                label="Fillets (tangent, R_hub / R_rim)" if j == 0 else None)
     ax.annotate(f"R_hub = {R_hub:.2f} mm", (HUB_RADIUS_MM, -t0 / 2.0),
                 textcoords="offset points", xytext=(4, -12),
                 fontsize=7, color=FILLET_CLR)
@@ -913,11 +1254,57 @@ if __name__ == "__main__":
 
     fig.suptitle(
         f"Compliant PLA UAV Wheel  —  Co-Optimized Shape & 3-Taper Thickness  "
-        f"[v2.0 | {NUMBER_OF_SPOKES} spokes]",
+        f"[v2.1 | {NUMBER_OF_SPOKES} spokes]",
         fontsize=14, fontweight="bold", color="#eee"
     )
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     out_path = "C:/Users/crfloyd/github/wheel/poster_summary.jpg"
     fig.savefig(out_path, dpi=200, facecolor=fig.get_facecolor())
     print(f"\nSaved summary figure → {out_path}")
+
+    # -----------------------------------------------------------------------
+    # CAD HAND-OFF
+    # -----------------------------------------------------------------------
+    # The optimizer (Python 3.14 + pygad) and the STEP exporter (Python 3.12 +
+    # CadQuery/OCC) cannot share an interpreter, so the export used to be a
+    # second command run by hand.  It got forgotten, and `wheel.step` silently
+    # went on describing a previous genome while the figure showed the new one.
+    # Driving it from here makes the three artefacts land together, always.
+    #
+    # Deliberately non-fatal: a GA run costs minutes, a missing .venv-cad or an
+    # OCC boolean failure must never destroy one.  Worst case we print the
+    # manual command and exit normally.
+    import sys
+    import subprocess
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    cad_python = os.path.join(here, ".venv-cad", "Scripts", "python.exe")
+    manual_cmd = r".venv-cad\Scripts\python wheel_step_export.py"
+
+    print("\n" + "=" * 68)
+    print("  CAD HAND-OFF → wheel_step_export.py")
+    print("=" * 68)
+    # The child writes straight to this stdout; flush ours first or, when the run is
+    # piped to a file, our block-buffered output lands *after* the child's.
+    sys.stdout.flush()
+    if not os.path.isfile(cad_python):
+        print(f"  CadQuery env not found at {cad_python}")
+        print(f"  STEP not regenerated.  Run it yourself with:\n    {manual_cmd}")
+    else:
+        try:
+            # Inherit stdout so the exporter's own report (junction overlaps,
+            # fillet radii, Kt mismatch) shows up in this run's log.
+            proc = subprocess.run(
+                [cad_python, "wheel_step_export.py"],
+                cwd=here, timeout=900, check=False,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            )
+            if proc.returncode != 0:
+                print(f"\n  STEP export exited {proc.returncode} — genome is safe "
+                      f"in best_solution.json.\n  Retry with:\n    {manual_cmd}")
+        except subprocess.TimeoutExpired:
+            print(f"\n  STEP export timed out (>900 s).  Retry with:\n    {manual_cmd}")
+        except OSError as exc:
+            print(f"\n  Could not launch the CAD env ({exc}).\n  Retry with:\n    {manual_cmd}")
+
     print("\nDone.")
