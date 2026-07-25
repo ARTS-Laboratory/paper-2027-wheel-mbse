@@ -46,12 +46,42 @@ def test_gene_names_match_json_keys(record):
     assert len(W.GENE_NAMES) == 14
 
 
-@pytest.mark.parametrize("term", ["deflection", "mass", "stress", "buckling",
-                                  "x_order", "hub_overlap", "smoothness"])
-def test_loss_terms_reproduce(record, scored, term):
+def test_the_artifact_was_produced_by_these_constants(record):
+    """The genome only means something in the frame it was optimised in.
+
+    `HUB_RIM_SPAN_MM` is derived from `RIM_RADIUS_MM`, and the genome's centerline runs
+    from (0,0) to (span,0) — so changing the rim merge radius silently reinterprets
+    every gene on disk.  Without this check the golden test would keep passing while
+    comparing a genome against a DIFFERENT wheel, because it reads its expected values
+    out of the same stale artifact.
+
+    If this fails, the fix is to re-run the GA, not to edit the number.
+    """
+    geom = record["geometry"]
+    assert geom["rim_radius_mm"] == pytest.approx(W.RIM_RADIUS_MM), (
+        f"best_solution.json was produced with RIM_RADIUS_MM="
+        f"{geom['rim_radius_mm']} but the module now says {W.RIM_RADIUS_MM} — the "
+        f"artifact is stale and must be regenerated (`make ga`)")
+    assert geom["hub_radius_mm"] == pytest.approx(W.HUB_RADIUS_MM)
+    assert geom["spoke_width_mm"] == pytest.approx(W.SPOKE_WIDTH_MM)
+    assert geom["number_of_spokes"] == W.NUMBER_OF_SPOKES
+
+
+def test_loss_terms_reproduce(record, scored):
+    """Every term the artifact recorded must still evaluate to the same number.
+
+    Driven by the artifact's own keys rather than a hardcoded list, so ADDING a loss
+    term does not break the golden test — the test's job is that the recorded numbers
+    still reproduce, not that the term set is frozen.  A term that DISAPPEARS still
+    fails, which is the direction that matters.
+    """
     _, loss_terms = scored
-    assert loss_terms[term] == pytest.approx(record["loss_terms"][term],
-                                             rel=TOL, abs=TOL)
+    recorded = record["loss_terms"]
+    assert recorded, "the artifact records no loss terms"
+    missing = sorted(set(recorded) - set(loss_terms))
+    assert not missing, f"evaluate_design no longer produces {missing}"
+    for term, expected in recorded.items():
+        assert loss_terms[term] == pytest.approx(expected, rel=TOL, abs=TOL), term
 
 
 @pytest.mark.parametrize("metric", ["deflection_mm", "max_stress_mpa",

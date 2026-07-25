@@ -1,35 +1,41 @@
 {
-  "genome_hash": "df26647",
+  "genome_hash": "36aed36",
   "source": "best_solution.json",
-  "source_mtime": "2026-07-22T16:28:01",
-  "exported_at": "2026-07-22T16:38:28",
-  "export_seconds": 17.9,
+  "source_mtime": "2026-07-25T12:23:57",
+  "exported_at": "2026-07-25T13:39:14",
+  "export_seconds": 15.0,
   "solid": {
     "valid": true,
-    "volume_mm3": 56486.7,
-    "mass_g_pla": 70.04
+    "volume_mm3": 59547.4,
+    "mass_g_pla": 73.84
   },
   "junction_overlap_mm3": {
-    "hub": 238.52,
-    "rim": 307.8,
+    "hub": 262.03,
+    "rim": 392.37,
     "floor": 50.0
   },
   "fillets": {
-    "hub_edges": 12,
+    "hub_edges": 0,
     "rim_edges": 12,
     "detail": [
       {
         "junction": "hub",
-        "r_requested_mm": 1.645297489242606,
-        "r_built_mm": 1.645,
-        "kt_modeled": 1.8090855296183403,
-        "kt_built": 1.8091806337557155,
-        "kt_error_pct": 0.005257028250915674
+        "r_requested_mm": 1.5597674073242398,
+        "r_built_mm": 0.0,
+        "n_edges_filleted": 0,
+        "n_edges_found": 12,
+        "worst_wedge_deg": 354.0,
+        "kt_modeled": 1.8608661732283212,
+        "kt_built": 3.5,
+        "kt_error_pct": 88.08445498947566
       },
       {
         "junction": "rim",
         "r_requested_mm": 3.0,
         "r_built_mm": 3.0,
+        "n_edges_filleted": 12,
+        "n_edges_found": 24,
+        "worst_wedge_deg": 356.0,
         "kt_modeled": 1.4896335682000246,
         "kt_built": 1.4896335682000246,
         "kt_error_pct": 0.0
@@ -37,35 +43,35 @@
     ]
   },
   "profile_health": {
-    "min_curvature_radius_mm": 9.9548,
+    "min_curvature_radius_mm": 10.789047,
     "self_intersections": 0,
     "worst_at": [
-      -40.868,
-      -5.547,
+      10.964,
+      35.38,
       0.0
     ]
   },
   "step_health": {
     "surface_census": {
+      "CylindricalSurface": 25,
       "Plane": 26,
-      "CylindricalSurface": 49,
       "BSplineSurface": 24
     },
     "counts": {
-      "faces": 99,
-      "edges": 291,
-      "vertices": 194
+      "faces": 75,
+      "edges": 219,
+      "vertices": 146
     },
-    "min_edge_mm": 0.426229,
-    "min_face_mm2": 9.5475,
-    "max_edge_tolerance_mm": 1.0000003427335979e-07,
+    "min_edge_mm": 0.748042,
+    "min_face_mm2": 16.7561,
+    "max_edge_tolerance_mm": 1.0000003458482829e-07,
     "degenerate_edges": 0,
     "brepcheck_valid": true,
     "self_intersecting": false,
-    "min_curvature_radius_mm": 1.645,
+    "min_curvature_radius_mm": 3.0,
     "min_curvature_at": [
-      9.661,
-      -8.305,
+      -5.131,
+      -48.16,
       0.0
     ],
     "swept_surfaces_remaining": {}

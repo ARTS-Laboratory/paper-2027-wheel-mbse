@@ -142,95 +142,128 @@ def get_config(cfg):
 # NODE COORDINATES  (traced / differentiable)
 # ---------------------------------------------------------------------------
 
+def band_sampler(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
+                 t0, t1, t2, t3, n_curve, span_mm, xp=np):
+    """THE evaluator for the spoke band: `sample(s, eta) -> [..., 2]`.
+
+        x(s, eta) = C(s) + eta * (t(s)/2) * N_hat(s),   s and eta in arc-length and
+                                                        [-1, +1] respectively
+
+    Every block that touches the band goes through this one function — the spoke block
+    itself and both junction patches — and that is not tidiness, it is what makes the
+    seams EXACT.  Two constructions that are mathematically identical but differ in
+    which quantity gets interpolated disagree at O(h_curve^2): measured, the junction
+    and the spoke block once put their shared cross-section 3.9e-4 mm apart, which
+    leaves the assembled mesh with a real kink at every one of the 24 junctions and
+    makes a 1e-10 seam assertion impossible to state honestly.
+
+    The centerline is laid out by ARC LENGTH, not by Bezier parameter: the parameter is
+    not proportional to arc length on a curved centerline, so gridding on it would bunch
+    elements where the curve happens to be parameterised densely rather than where the
+    geometry needs resolution.
+
+    Normals come from the ANALYTIC hodograph, not from differencing the sampled curve.
+    `xp.gradient` is one-sided at the two ends, so the flank position there carries O(h)
+    error and the GEOMETRY ITSELF MOVES as the mesh refines: measured, the top-flank tip
+    walked 8.9 um between n_span 32 and 64, halving on every refinement.  A convergence
+    study on that mesh measures the geometry settling down rather than the
+    discretization.  The exact tangents are sampled on the dense uniform-parameter grid
+    and interpolated onto the arc-length grid; interpolating the unnormalised derivative
+    and normalising afterwards keeps the direction right even where the two grids
+    disagree most.
+
+    Returns `(sample, s_dense, curve)`.  `s` and `eta` may be any broadcastable shapes.
+    """
+    curve, ctrl = _geom.bezier_centerline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
+                                          span_mm=span_mm, num_points=n_curve, xp=xp)
+    s_dense = _geom.arc_fractions(curve, xp=xp, at="nodes")
+    d_dense = _geom.bezier_tangent(ctrl, n_curve, xp=xp, normalize=False)
+
+    def sample(s, eta):
+        s = xp.asarray(s, dtype=float)
+        eta = xp.asarray(eta, dtype=float)
+        cx = xp.interp(s, s_dense, curve[:, 0])
+        cy = xp.interp(s, s_dense, curve[:, 1])
+        tx = xp.interp(s, s_dense, d_dense[:, 0])
+        ty = xp.interp(s, s_dense, d_dense[:, 1])
+        # Same +90 degree rotation and same 1e-12 guard as
+        # `_geom.normals_from_tangents`, spelled out here so it works on any shape
+        # rather than only on [N, 2].
+        nx, ny = -ty, tx
+        mag = xp.sqrt(nx * nx + ny * ny) + 1e-12
+        half = _geom.thickness_at_arc_length(s, t0, t1, t2, t3, xp=xp) / 2.0
+        return xp.stack([cx + eta * half * nx / mag,
+                         cy + eta * half * ny / mag], axis=-1)
+
+    return sample, s_dense, curve
+
+
 def spoke_block_coords(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
-                       t0, t1, t2, t3, cfg, span_mm, xp=np):
+                       t0, t1, t2, t3, cfg, span_mm, xp=np, s_range=(0.0, 1.0)):
     """Node positions of one spoke block, shape [n_node_span, n_node_thick, 2].
 
     Smooth in every gene, so `jax.grad` flows straight through to the node coordinates
-    and from there to element energies.
+    and from there to element energies.  Thin wrapper over `band_sampler` — see there
+    for why the arc-length layout and the analytic normals are both load-bearing.
 
-    The centerline is evaluated at `cfg.n_curve` points and the block is laid out on
-    `n_node_span` of them by ARC LENGTH, not by Bezier parameter.  That distinction
-    matters: the Bezier parameter is not proportional to arc length on a curved
-    centerline, so gridding on it would bunch elements where the curve happens to be
-    parameterised densely rather than where the geometry needs resolution.
+    `s_range` trims the block to a sub-interval of arc length.  The full-wheel mesh
+    needs it because the raw band's two ends lie INSIDE the hub disk and the rim band
+    respectively (the root cross-section straddles r=12.7: top flank 11.53, bottom flank
+    13.87), so that material is already owned by those rings and meshing both would
+    double-count it.
     """
-    curve, ctrl = _geom.bezier_centerline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
-                                          span_mm=span_mm, num_points=cfg.n_curve,
-                                          xp=xp)
-    s_dense = _geom.arc_fractions(curve, xp=xp, at="nodes")
-    s_grid = xp.linspace(0.0, 1.0, cfg.n_node_span)
-
-    # Resample the centerline onto uniform arc length.  `interp` is monotone in s_dense
-    # (arc length is strictly increasing for any non-degenerate curve), differentiable,
-    # and available in both backends.
-    cx = xp.interp(s_grid, s_dense, curve[:, 0])
-    cy = xp.interp(s_grid, s_dense, curve[:, 1])
-    centerline = xp.stack([cx, cy], axis=1)
-
-    # Normals from the ANALYTIC hodograph, not from differencing the resampled points.
-    #
-    # This is the difference between a mesh that refines and one that also quietly
-    # moves.  `xp.gradient` is one-sided at the two ends, so the flank position there
-    # carries O(h) error: measured, the top-flank tip walks 8.9 um between n_span 32 and
-    # 64 and halves on every refinement.  A convergence study run on that mesh would be
-    # measuring the geometry settling down, not the discretization.
-    #
-    # The exact tangents are sampled on the dense uniform-parameter grid and
-    # interpolated onto the arc-length grid.  Interpolating the unnormalised derivative
-    # and normalising afterwards keeps the direction right even where the two grids
-    # disagree most.
-    d_dense = _geom.bezier_tangent(ctrl, cfg.n_curve, xp=xp, normalize=False)
-    tx = xp.interp(s_grid, s_dense, d_dense[:, 0])
-    ty = xp.interp(s_grid, s_dense, d_dense[:, 1])
-    normals = _geom.normals_from_tangents(xp.stack([tx, ty], axis=1), xp=xp)
-
-    thick = _geom.thickness_at_arc_length(s_grid, t0, t1, t2, t3, xp=xp)
+    sample, _, _ = band_sampler(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
+                                t0, t1, t2, t3, cfg.n_curve, span_mm, xp=xp)
+    s_grid = xp.linspace(s_range[0], s_range[1], cfg.n_node_span)
     eta = xp.linspace(-1.0, 1.0, cfg.n_node_thick)
-
-    return (centerline[:, None, :]
-            + eta[None, :, None] * (thick[:, None, None] / 2.0) * normals[:, None, :])
+    return sample(s_grid[:, None], eta[None, :])
 
 
-def spoke_block_coords_from_vector(vec, cfg, span_mm, xp=np):
+def spoke_block_coords_from_vector(vec, cfg, span_mm, xp=np, s_range=(0.0, 1.0)):
     """Same, taking the ordered 14-vector the GA and SGD work in.
 
-    Only the first 12 genes reach the mesh — R_hub and R_rim describe the junction
-    fillets, which live in the blocks this module does not build yet.
+    Only the first 12 genes reach the mesh — R_hub and R_rim are the junction fillet
+    radii, and the full-wheel mesh does not build fillets (see `wheel_wheel.py` for the
+    measurement that says the shipped part's fillets are worth 0.29 mm2 of 2521).
     """
     cfg = get_config(cfg)
     return spoke_block_coords(*[vec[i] for i in range(12)],
-                              cfg=cfg, span_mm=span_mm, xp=xp)
+                              cfg=cfg, span_mm=span_mm, xp=xp, s_range=s_range)
 
 
 # ---------------------------------------------------------------------------
 # CONNECTIVITY  (compile-time constant)
 # ---------------------------------------------------------------------------
 
-def spoke_block_connectivity(cfg):
-    """Element-to-node map, [n_elements, nodes_per_element], as a numpy constant.
+def grid_connectivity(n_node_i, n_node_j, order, base=0):
+    """Element-to-node map for ANY structured [n_node_i, n_node_j] node grid.
 
-    Node ids are row-major over the [n_node_span, n_node_thick] grid, i.e.
-    `nid(i, j) = i * n_node_thick + j`.
+    Node ids are row-major over the grid, i.e. `nid(i, j) = base + i * n_node_j + j`.
+    `base` lets a block's elements be emitted directly in global numbering, which is
+    what the full-wheel assembly needs.
 
-    Vertex ordering is COUNTER-CLOCKWISE in the (span, thick) index space, the standard
-    isoparametric convention.  Whether that is counter-clockwise in physical space
-    depends on the sign of the normal, and is checked separately by the Jacobian sign —
+    Vertex ordering is COUNTER-CLOCKWISE in the (i, j) index space, the standard
+    isoparametric convention.  Whether that is counter-clockwise in PHYSICAL space
+    depends on the block's orientation, and is checked separately by the Jacobian sign —
     an element numbered the wrong way round has a negative Jacobian and would silently
-    contribute negative stiffness.
+    contribute negative stiffness.  The full-wheel builder therefore flips whole blocks
+    rather than trusting each one to have been laid out the right way round.
 
-    Q9 ordering follows the usual convention: 4 corners, then 4 midsides (bottom,
-    right, top, left), then the centre.
+    Q9 ordering follows the usual convention and MUST match `wheel_fem._NODE_IJ`:
+    4 corners, then 4 midsides (bottom, right, top, left), then the centre.
     """
-    cfg = get_config(cfg)
-    p, nt = cfg.order, cfg.n_node_thick
+    p = order
+    if (n_node_i - 1) % p or (n_node_j - 1) % p:
+        raise ValueError(f"grid {n_node_i}x{n_node_j} is not a whole number of "
+                         f"order-{p} elements")
+    ni, nj = (n_node_i - 1) // p, (n_node_j - 1) // p
 
     def nid(i, j):
-        return i * nt + j
+        return base + i * n_node_j + j
 
     elems = []
-    for ei in range(cfg.n_span):
-        for ej in range(cfg.n_thick):
+    for ei in range(ni):
+        for ej in range(nj):
             i0, j0 = p * ei, p * ej
             if p == 1:
                 elems.append([nid(i0, j0), nid(i0 + 1, j0),
@@ -243,6 +276,12 @@ def spoke_block_connectivity(cfg):
                     nid(i0 + 1, j0 + 1),
                 ])
     return np.asarray(elems, dtype=np.int32)
+
+
+def spoke_block_connectivity(cfg):
+    """The spoke block's element-to-node map.  Thin wrapper over `grid_connectivity`."""
+    cfg = get_config(cfg)
+    return grid_connectivity(cfg.n_node_span, cfg.n_node_thick, cfg.order)
 
 
 def boundary_nodes(cfg):

@@ -234,10 +234,13 @@ def run_a4a(slendernesses=(8, 16, 32, 64), root_bcs=("plane", "clamped")):
                                                      / TIMOSHENKO_COEFF - 1.0),
             "all_positive": bool(all(r["excess"] > 0 for r in rows)),
         }
-    p = out["plane"]
-    out["pass"] = bool(p["all_positive"]
-                       and 1.7 <= p["fitted_exponent"] <= 2.3
-                       and abs(p["coefficient_error_vs_timoshenko"]) < 0.20)
+    # The verdict is read off the beam-consistent root only; `clamped` is reported as
+    # a diagnostic and is EXPECTED to fail, so it must not vote.
+    if "plane" in out:
+        p = out["plane"]
+        out["pass"] = bool(p["all_positive"]
+                           and 1.7 <= p["fitted_exponent"] <= 2.3
+                           and abs(p["coefficient_error_vs_timoshenko"]) < 0.20)
     return out
 
 
@@ -354,10 +357,78 @@ def _print(report):
               f"one-directional, and now quantified.")
 
 
+def _plot(report, path):
+    """Log-log convergence, with the t^2 reference slope drawn through the data.
+
+    The whole gate is "does this decay at slope 2", so the figure draws the slope-2
+    guide rather than leaving the reader to fit a line by eye.  Both root treatments
+    are on the left panel because the divergence of the clamped one is the single most
+    important thing to be able to see.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    a = report["A4a"]
+    for root_bc, style in (("plane", "o-"), ("clamped", "s--")):
+        if root_bc not in a:
+            continue
+        rows = a[root_bc]["rows"]
+        t = np.array([r["thickness_mm"] for r in rows])
+        e = np.array([r["excess"] for r in rows])
+        pos = e > 0
+        ax1.loglog(t[pos], e[pos], style, label=f'root_bc="{root_bc}"')
+        if (~pos).any():
+            ax1.loglog(t[~pos], -e[~pos], style, mfc="none",
+                       color=ax1.lines[-1].get_color(),
+                       label=f'root_bc="{root_bc}" (NEGATIVE — FE stiffer)')
+    rows = a["plane"]["rows"]
+    t = np.array([r["thickness_mm"] for r in rows])
+    L = wf.HUB_RIM_SPAN_MM
+    ax1.loglog(t, TIMOSHENKO_COEFF * (t / L) ** 2, "k:",
+               label=f"Timoshenko  {TIMOSHENKO_COEFF} (t/L)$^2$")
+    ax1.set_xlabel("thickness t (mm)")
+    ax1.set_ylabel("|excess over $FL^3/3EI$|")
+    ax1.set_title("A4a — straight cantilever vs exact closed form\n"
+                  f"fitted exponent {a['plane']['fitted_exponent']:.3f}, "
+                  f"coefficient {a['plane']['mean_coefficient']:.3f}")
+    ax1.legend(fontsize=8)
+    ax1.grid(True, which="both", alpha=0.3)
+
+    b = report["A4b"]
+    rows = b["rows"]
+    lam = np.array([r["lambda"] for r in rows])
+    e = np.abs([r["rel_error"] for r in rows])
+    ax2.loglog(lam, e, "o-", label="FE vs Castigliano")
+    ax2.loglog(lam, e[0] * lam ** 2, "k:", label="slope 2 through $\\lambda=1$")
+    ax2.set_xlabel("thickness scale $\\lambda$")
+    ax2.set_ylabel("|relative discrepancy|")
+    ax2.set_title("A4b — curved spoke vs Castigliano\n"
+                  f"fitted exponent {b['fitted_exponent']:.3f} "
+                  "(faster than $t^2$: the model's\n"
+                  "several $O(t^2)$ errors partially cancel)")
+    ax2.legend(fontsize=8)
+    ax2.grid(True, which="both", alpha=0.3)
+    ax2.annotate(f"design point: beam model\nover-stiffens by "
+                 f"{rows[0]['rel_error']:.2%}",
+                 xy=(lam[0], e[0]), xytext=(0.35, 0.85),
+                 textcoords="axes fraction", fontsize=9,
+                 arrowprops=dict(arrowstyle="->", lw=0.8))
+
+    fig.suptitle(f"M3 beam-agreement gate — "
+                 f"{'PASS' if report['pass'] else 'FAIL'}", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    return path
+
+
 def main():
     ap = argparse.ArgumentParser(description="M3 beam-agreement gate")
     ap.add_argument("--genome", default="best_solution.json")
     ap.add_argument("--out", default="study_beam_agreement.json")
+    ap.add_argument("--no-plot", action="store_true")
     ap.add_argument("--quick", action="store_true",
                     help="coarser meshes and 3 slenderness levels; for CI, not for "
                          "the recorded result")
@@ -388,6 +459,11 @@ def main():
         json.dump(report, fh, indent=2)
     print(f"\nwrote {os.path.abspath(args.out)}  "
           f"({report['settings']['elapsed_s']} s)")
+    if not args.no_plot:
+        try:
+            print(f"wrote {_plot(report, os.path.splitext(args.out)[0] + '.jpg')}")
+        except Exception as exc:                            # pragma: no cover
+            print(f"(plot skipped: {exc})")
     return 0 if report["pass"] else 1
 
 

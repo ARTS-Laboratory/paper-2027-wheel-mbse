@@ -37,16 +37,21 @@ def vec():
 
 
 @pytest.fixture(scope="module")
-def reference_area():
+def reference_area(vec):
     """Spoke cross-sectional area implied by wheel_fea's own mass integral.
 
-    `total_mass_g = sum(t * width * ds) * rho * n_spokes` (wheel_fea.py:466), so
-    inverting it gives the area of ONE spoke — computed by completely different code
-    (a beam-style line integral, not a mesh), which is what makes it a real check.
+    `total_mass_g = sum(t * width * ds) * rho * n_spokes`, so inverting it gives the area
+    of ONE spoke — computed by completely different code (a beam-style line integral, not
+    a mesh), which is what makes it a real check.
+
+    Evaluated NOW rather than read out of `best_solution.json`, so the reference and the
+    mesh are always in the same geometric frame.  Reading the recorded metric instead
+    made this test fail the moment `RIM_RADIUS_MM` moved — not because the mesh was
+    wrong, but because the artifact still described a 36.2 mm span while the mesh built a
+    35.8 mm one.
     """
-    with open(os.path.join(HERE, "best_solution.json")) as fh:
-        rec = json.load(fh)
-    return rec["metrics"]["total_mass_g"] / (
+    metrics, _ = W.evaluate_design(vec)
+    return metrics["total_mass_g"] / (
         W.DENSITY_PLA * W.NUMBER_OF_SPOKES * W.SPOKE_WIDTH_MM)
 
 

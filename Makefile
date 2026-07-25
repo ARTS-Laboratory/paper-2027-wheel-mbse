@@ -5,7 +5,7 @@
 PY_OPT := .venv-opt/bin/python
 PY_CAD := .venv-cad/bin/python
 
-.PHONY: help env env-opt env-cad test smoke ga export clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -13,6 +13,10 @@ help:
 	@echo "make smoke    fast GA run (seconds) — proves the pipeline is wired up"
 	@echo "make ga       full GA run (minutes), then hands off to the exporter"
 	@echo "make export   rebuild wheel.step from the existing best_solution.json"
+	@echo "make studies  the verification gates: spoke-mesh validity (M2a),"
+	@echo "              full-wheel mesh (M2b), beam agreement (M3), full-wheel"
+	@echo "              FEA (M4).  Each writes a JSON report and exits nonzero"
+	@echo "              on failure.  ~2 min."
 
 env: env-opt env-cad
 
@@ -39,6 +43,15 @@ ga:
 
 export:
 	$(PY_CAD) wheel_step_export.py
+
+# The milestone gates.  These are not tests — they produce measured reports whose
+# numbers are quoted in CLAUDE.md — but they do exit nonzero when a gate fails, so
+# they are safe to run in CI.
+studies:
+	$(PY_OPT) study_mesh_quality.py --samples 2000
+	$(PY_OPT) study_wheel_mesh.py --samples 200
+	$(PY_OPT) study_beam_agreement.py
+	$(PY_OPT) study_wheel_fea.py
 
 clean-pyc:
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +

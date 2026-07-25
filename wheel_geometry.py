@@ -364,6 +364,13 @@ def place_sector(points, hub_radius, angle_deg=0.0, xp=np):
 #
 # 0.1 mm is the smallest threshold with zero misses, and it still retains 95% of the
 # designs that a zero threshold would.  Use it as the barrier's target, not 0.
+# Largest angle, in degrees FROM THE RING TANGENT, at which a spoke may meet its hub or
+# rim circle.  Lives here rather than in `wheel_wheel` because both the optimizer (as a
+# barrier) and the mesher (as a validity guard) need it, and `wheel_fea` cannot import
+# `wheel_wheel` without a cycle.  See `wheel_wheel.arrival_angles` for the measurement:
+# the sense runs the OPPOSITE way from intuition, and the boundary is sharp at 70.6.
+MAX_ARRIVAL_DEG = 65.0
+
 MIN_FOLD_MARGIN_MM = 0.1
 
 

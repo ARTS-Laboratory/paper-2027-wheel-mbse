@@ -98,6 +98,7 @@ from wheel_fea import (
     SPOKE_WIDTH_MM,
     YOUNGS_MODULUS_PLA_MPA,
     FORCE_PER_SPOKE_NEWTONS,
+    TOTAL_FORCE_NEWTONS,
 )
 
 POISSON_RATIO_PLA = 0.35
@@ -329,6 +330,117 @@ def total_energy(coords, conn, u, *, order, lam, mu, width, nonlinear=False):
     energy, _, _ = _element_kernels(order, nonlinear)
     ue = jnp.asarray(u).reshape(-1, 2)[conn_np]
     return float(jnp.sum(energy(coords[conn_np], ue, lam, mu, width)))
+
+
+# ---------------------------------------------------------------------------
+# EDGE TRACTIONS  (consistent nodal loads)
+# ---------------------------------------------------------------------------
+#
+# M4 applies a distributed pressure over an assumed contact patch, and M6 replaces it
+# with penalty contact on the same boundary — so the traction path is not optional and
+# it gets its own patch test.  Lumping a traction equally onto the nodes of a
+# quadratic edge is wrong by a fixed factor (the correct Q9 edge weights are
+# 1/6, 4/6, 1/6, not 1/3 each) and the error is invisible in the total load, which is
+# exactly the kind of mistake an equilibrium check does not catch.
+
+def boundary_edge_segments(cfg, side):
+    """Node ids of each boundary edge segment, plus the element each belongs to.
+
+    Returns (segments [n_seg, order+1], elements [n_seg]).  The owning element is
+    returned so the OUTWARD normal can be determined geometrically — by requiring it
+    to point away from the element centroid — instead of by a per-side sign table that
+    would have to be re-derived for every new block type.
+    """
+    cfg = _mesh.get_config(cfg)
+    p, ns, nt = cfg.order, cfg.n_node_span, cfg.n_node_thick
+    ids = np.arange(ns * nt).reshape(ns, nt)
+
+    if side == "flank_bot":
+        line, elems = ids[:, 0], [(ei, 0) for ei in range(cfg.n_span)]
+    elif side == "flank_top":
+        line, elems = ids[:, -1], [(ei, cfg.n_thick - 1) for ei in range(cfg.n_span)]
+    elif side == "root":
+        line, elems = ids[0, :], [(0, ej) for ej in range(cfg.n_thick)]
+    elif side == "tip":
+        line, elems = ids[-1, :], [(cfg.n_span - 1, ej) for ej in range(cfg.n_thick)]
+    else:
+        raise ValueError(f"unknown side {side!r}")
+
+    segs = np.array([line[k * p:k * p + p + 1] for k in range(len(elems))])
+    # Element ordering must match `spoke_block_connectivity`'s `for ei: for ej:` loop.
+    elem_ids = np.array([ei * cfg.n_thick + ej for ei, ej in elems])
+    return segs, elem_ids
+
+
+def edge_traction_load(coords, conn, cfg, side, traction, width=SPOKE_WIDTH_MM):
+    """Consistent nodal load vector [2N] from a traction on one boundary side.
+
+    `traction` is either a constant (tx, ty) or a callable `f(x, n) -> (tx, ty)` given
+    the Gauss point's physical position and the OUTWARD unit normal there — the
+    callable form is what a pressure (`-p * n`) or a stress state (`sigma @ n`) needs.
+    """
+    cfg = _mesh.get_config(cfg)
+    coords = np.asarray(coords, dtype=float)
+    conn = np.asarray(conn)
+    segs, elem_ids = boundary_edge_segments(cfg, side)
+    gp, gw = _gauss_1d(cfg.order)
+    out = np.zeros(2 * coords.shape[0])
+    const = None if callable(traction) else np.asarray(traction, dtype=float)
+
+    for seg, eid in zip(segs, elem_ids):
+        X = coords[seg]                                  # [p+1, 2]
+        centroid = coords[conn[eid][:4]].mean(axis=0)
+        for xi, w in zip(gp, gw):
+            N, dN = _lagrange_1d(cfg.order, xi)
+            dx = dN @ X                                  # dx/dxi
+            jac = np.linalg.norm(dx)
+            n = np.array([dx[1], -dx[0]]) / jac
+            x = N @ X
+            if n @ (x - centroid) < 0:                   # force it outward
+                n = -n
+            t = const if const is not None else np.asarray(traction(x, n), dtype=float)
+            contrib = np.outer(N, t) * (w * jac * width)  # [p+1, 2]
+            out[2 * seg] += contrib[:, 0]
+            out[2 * seg + 1] += contrib[:, 1]
+    return out
+
+
+def segment_traction_load(coords, segments, traction, n_nodes, order=2,
+                          width=SPOKE_WIDTH_MM, inward_point=(0.0, 0.0)):
+    """Consistent nodal loads from a traction on an arbitrary set of boundary edges.
+
+    The full-wheel version of `edge_traction_load`: `segments` is [n_seg, order+1] of
+    global node ids along a boundary (`WheelMesh.edge_sets`), so no block structure is
+    assumed.  The outward normal is disambiguated by requiring it to point AWAY from
+    `inward_point`, which for either of the wheel's rings is the origin.
+
+    Same quadrature as the block version, and the same reason it matters: on a quadratic
+    edge the correct nodal weights are 1/6, 4/6, 1/6, and lumping equally gives exactly
+    the right resultant with the wrong distribution — an error no equilibrium check can
+    see.
+    """
+    coords = np.asarray(coords, dtype=float)
+    segments = np.asarray(segments)
+    gp, gw = _gauss_1d(order)
+    out = np.zeros(2 * int(n_nodes))
+    const = None if callable(traction) else np.asarray(traction, dtype=float)
+    ref = np.asarray(inward_point, dtype=float)
+
+    for seg in segments:
+        X = coords[seg]
+        for xi, w in zip(gp, gw):
+            N, dN = _lagrange_1d(order, xi)
+            dx = dN @ X
+            jac = np.linalg.norm(dx)
+            n = np.array([dx[1], -dx[0]]) / jac
+            x = N @ X
+            if n @ (x - ref) < 0:
+                n = -n
+            t = const if const is not None else np.asarray(traction(x, n), dtype=float)
+            contrib = np.outer(N, t) * (w * jac * width)
+            out[2 * seg] += contrib[:, 0]
+            out[2 * seg + 1] += contrib[:, 1]
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -663,3 +775,209 @@ def spoke_problem(genes, cfg="coarse", *, bc="fixed_guided", root_bc="clamped",
 def spoke_deflection(genes, cfg="coarse", **kw):
     """Convenience: the tip deflection magnitude, which is what the beam model returns."""
     return abs(solve_linear(spoke_problem(genes, cfg, **kw))["deflection_mm"])
+
+
+# ---------------------------------------------------------------------------
+# THE FULL-WHEEL PROBLEM
+# ---------------------------------------------------------------------------
+#
+# Hub RIGID AND FIXED, ground pressure distributed over an assumed patch on the rim OD.
+#
+# The plan's alternative — hub free in y, loaded with F_y, ground reacting — is the same
+# problem seen from the other frame, but it is SINGULAR as stated: with the load applied
+# as a pressure rather than as a constraint, nothing removes the rigid vertical
+# translation.  Fixing the hub and letting the contact patch rise is well posed, gives
+# the identical number for a linear model, and makes the hub reaction an independent
+# equilibrium check for free.
+#
+# `axle_drop` is therefore the RISE of the contact patch relative to the fixed hub, which
+# is exactly the drop of the axle relative to fixed ground.
+
+# The contact phase is NOT a load parameter — it rolls the wheel, so it lives on
+# `wheel_wheel.build_wheel(phase_deg=...)`.  The ground stays at the bottom.
+CONTACT_PATCH_HALF_DEG = 3.0   # see `study_wheel_fea.py` for the sensitivity sweep
+
+
+def hertz_patch_half_angle_deg(force=TOTAL_FORCE_NEWTONS, radius=50.0,
+                               width=SPOKE_WIDTH_MM, E=YOUNGS_MODULUS_PLA_MPA,
+                               nu=POISSON_RATIO_PLA):
+    """Line-contact half-angle for a SOLID cylinder on a rigid plane, in degrees.
+
+    A lower bound on the real patch, and a small one — about 0.3 degrees here.  The real
+    rim is a 1.1 mm band over spokes rather than a solid cylinder, so it flattens far more
+    and the patch is wider; but the Hertz number is worth having because it says the patch
+    is small enough that resolving it is a mesh-density question, not an afterthought.
+    """
+    e_star = E / (1.0 - nu ** 2)
+    a = np.sqrt(4.0 * force * radius / (np.pi * width * e_star))
+    return float(np.degrees(a / radius))
+
+
+def _ground_traction(half_deg):
+    """Elliptical (Hertz-shaped) ground traction over the patch at the bottom.
+
+    Two choices here, both deliberate.
+
+    VERTICAL, not radial.  For frictionless contact against a rigid FLAT ground the two
+    bodies share a tangent plane, so the traction acts along the ground's normal, which
+    is vertical everywhere in the patch — not along the rim's own radial direction.  The
+    two agree to cos(half-angle), which is 0.1% at 3 degrees but 2% at 12, and using the
+    radial normal also produces a spurious horizontal resultant that the hub then has to
+    react.
+
+    ELLIPTICAL, not uniform.  A uniform patch has a pressure step at its edges, and a
+    step in the traction puts a stress singularity into a model whose peak stress is one
+    of the reported numbers.  The magnitude is arbitrary — the caller rescales the
+    assembled load so the vertical resultant is exactly the wheel load, which also
+    removes any dependence on how the quadrature happened to sample the shape.
+    """
+    centre = np.radians(-90.0)
+    half = np.radians(half_deg)
+
+    def traction(x, n):
+        th = np.arctan2(x[1], x[0])
+        d = (th - centre + np.pi) % (2.0 * np.pi) - np.pi
+        if abs(d) >= half:
+            return (0.0, 0.0)
+        return (0.0, np.sqrt(max(0.0, 1.0 - (d / half) ** 2)))
+
+    return traction
+
+
+def wheel_problem(mesh, *, force=TOTAL_FORCE_NEWTONS,
+                  patch_half_deg=CONTACT_PATCH_HALF_DEG,
+                  E=YOUNGS_MODULUS_PLA_MPA, nu=POISSON_RATIO_PLA, plane="stress",
+                  width=SPOKE_WIDTH_MM, kinematics="linear", rim_modulus_scale=1.0):
+    """The M4 problem: rigid fixed hub, ground pressure on the rim OD.
+
+    `rim_modulus_scale` multiplies the rim band's stiffness only.  Setting it to 1000
+    makes the rim effectively rigid, which is the independent cross-check on the
+    strain-energy compliance split: the axle drop should fall by exactly the rim's
+    reported share.
+    """
+    coords = np.asarray(mesh.coords, dtype=float)
+    lam, mu = lame(E, nu, plane)
+
+    f = segment_traction_load(coords, mesh.edge_sets["rim_outer"],
+                              _ground_traction(patch_half_deg),
+                              n_nodes=mesh.n_nodes, order=mesh.cfg.order, width=width)
+    fy = float(f.reshape(-1, 2)[:, 1].sum())
+    if fy <= 0.0:
+        raise ValueError(
+            f"patch produced a downward or zero vertical resultant ({fy:.4e} N) — "
+            f"half-angle {patch_half_deg} deg may be too small for this mesh to resolve")
+    f *= force / fy                       # exact resultant, whatever the quadrature did
+
+    dm = DofMap(mesh.n_nodes)
+    tie = mesh.node_sets["hub_tie"]
+    dm.fix(tie)
+    dm.free(np.setdiff1d(np.arange(mesh.n_nodes), tie))
+
+    prob = Problem(coords, mesh.conn, mesh.cfg.order, lam, mu, width, dm,
+                   f_nodal=f, nonlinear=(kinematics == "svk"),
+                   meta={"config": mesh.cfg.name, "plane": plane,
+                         "kinematics": kinematics, "E_mpa": float(E), "nu": float(nu),
+                         "width_mm": float(width), "force_n": float(force),
+                         "patch_half_deg": float(patch_half_deg),
+                         "rim_modulus_scale": float(rim_modulus_scale),
+                         "n_elements": mesh.n_elements, "n_nodes": mesh.n_nodes})
+    if rim_modulus_scale != 1.0:
+        prob.meta["rim_scaled"] = True
+    return prob, f
+
+
+def element_strain_energy(coords, conn, u, *, order, lam, mu, width, nonlinear=False):
+    """Strain energy of every element, [n_elem].  The compliance split reads this.
+
+    For a linear body under one load system U = F*delta/2, so the FRACTION of total
+    strain energy stored in a region is exactly that region's fraction of the axle drop.
+    That makes `compliance_split` a measured decomposition rather than a modelling
+    assumption — no substitution experiment or rule of thumb needed, though
+    `rim_modulus_scale` provides one as a cross-check.
+    """
+    coords = jnp.asarray(coords)
+    conn_np = np.asarray(conn)
+    energy, _, _ = _element_kernels(order, nonlinear)
+    ue = jnp.asarray(u).reshape(-1, 2)[conn_np]
+    return np.asarray(energy(coords[conn_np], ue, lam, mu, width))
+
+
+def solve_wheel(mesh, **kw):
+    """Solve and report axle drop, the compliance split, and the equilibrium checks."""
+    scale = kw.get("rim_modulus_scale", 1.0)
+    prob, f = wheel_problem(mesh, **kw)
+
+    if scale != 1.0:
+        # Scaling one region's modulus needs two assemblies, because `Problem` carries a
+        # single (lam, mu).  Cheaper and clearer than threading per-element material
+        # through the element kernel for what is a one-off cross-check.
+        K = _assemble_scaled(mesh, prob, scale)
+        T = prob.T
+        Kr = (T.T @ K @ T).tocsc()
+        fr = T.T @ prob.f_nodal
+        u_red = spla.spsolve(Kr, fr)
+        res = {"u": T @ u_red, "u_reduced": u_red,
+               "residual_rel": float(np.linalg.norm(Kr @ u_red - fr)
+                                     / max(np.linalg.norm(fr), 1e-300)),
+               "n_dof_reduced": int(Kr.shape[0]), "meta": prob.meta}
+        res["energy"] = 0.5 * float(res["u"] @ (K @ res["u"]))
+    else:
+        res = solve_linear(prob)
+
+    u = res["u"]
+    xy = np.asarray(mesh.coords)
+    disp = u.reshape(-1, 2)
+
+    # Axle drop: the rise of the lowest point of the wheel relative to the fixed hub.
+    # Reported two ways because they answer slightly different questions — the centre
+    # node is "how far did the ground move", the patch mean is less sensitive to how the
+    # pressure was distributed.
+    patch_nodes = np.unique(mesh.edge_sets["rim_outer"])
+    th = np.degrees(np.arctan2(xy[patch_nodes, 1], xy[patch_nodes, 0]))
+    d = (th + 90.0 + 180.0) % 360.0 - 180.0
+    half = kw.get("patch_half_deg", CONTACT_PATCH_HALF_DEG)
+    in_patch = patch_nodes[np.abs(d) <= half]
+    centre_node = patch_nodes[np.argmin(np.abs(d))]
+
+    res["axle_drop_mm"] = float(disp[centre_node, 1])
+    res["axle_drop_patch_mean_mm"] = (float(disp[in_patch, 1].mean())
+                                      if in_patch.size else float("nan"))
+    res["n_nodes_in_patch"] = int(in_patch.size)
+
+    # Compliance split, exact for a linear body under one load system.
+    lam, mu = prob.lam, prob.mu
+    e = element_strain_energy(xy, mesh.conn, u, order=mesh.cfg.order, lam=lam, mu=mu,
+                              width=prob.width)
+    if scale != 1.0:
+        e = np.where(mesh.region_mask("rim"), e * scale, e)
+    total = float(e.sum())
+    res["strain_energy_mJ"] = total
+    res["compliance_split"] = {r: float(e[mesh.region_mask(r)].sum() / total)
+                               for r in ("spoke", "hub", "rim")}
+
+    # Equilibrium: the hub reaction must be the applied load, to solver precision.  An
+    # independent check on the whole assembly — mesh, constraints, quadrature, solve —
+    # and nearly free, since K*u is already formed.
+    K = assemble_stiffness(xy, mesh.conn, order=mesh.cfg.order, lam=lam, mu=mu,
+                           width=prob.width)
+    reaction = (K @ u - prob.f_nodal).reshape(-1, 2)
+    tie = mesh.node_sets["hub_tie"]
+    res["applied_force_n"] = [float(prob.f_nodal.reshape(-1, 2)[:, i].sum())
+                              for i in (0, 1)]
+    if scale == 1.0:
+        res["hub_reaction_n"] = [float(reaction[tie, i].sum()) for i in (0, 1)]
+        res["equilibrium_error_n"] = float(np.abs(
+            np.array(res["hub_reaction_n"]) + np.array(res["applied_force_n"])).max())
+    return res
+
+
+def _assemble_scaled(mesh, prob, scale):
+    """K with the rim band's modulus multiplied by `scale`."""
+    xy = np.asarray(mesh.coords)
+    base = assemble_stiffness(xy, mesh.conn, order=mesh.cfg.order, lam=prob.lam,
+                              mu=prob.mu, width=prob.width)
+    rim = mesh.region_mask("rim")
+    extra = assemble_stiffness(xy, mesh.conn[rim], order=mesh.cfg.order,
+                               lam=prob.lam * (scale - 1.0),
+                               mu=prob.mu * (scale - 1.0), width=prob.width)
+    return (base + extra).tocsr()

@@ -230,6 +230,12 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="study_mesh_quality.json")
     ap.add_argument("--no-plot", action="store_true")
+    ap.add_argument("--rows", metavar="PATH",
+                    help="also dump every sampled genome and its metrics here.  Off by "
+                         "default: at the gate's 2000 feasible genomes that is 45769 "
+                         "raw draws and 28 MB of JSON, and it is exactly reproducible "
+                         "from --seed, so it is regenerated rather than committed.  "
+                         "The summary is the artifact.")
     args = ap.parse_args()
 
     print("=" * 70)
@@ -291,8 +297,15 @@ def main():
     with open(out, "w") as fh:
         json.dump({"summary": summary,
                    "shipped_genome_hash": rec["_hash"],
-                   "rows": rows}, fh, indent=1)
+                   "provenance": {"samples": args.samples, "config": args.config,
+                                  "seed": args.seed, "n_rows": len(rows)}},
+                  fh, indent=1)
     print(f"  wrote {out}")
+
+    if args.rows:
+        with open(args.rows, "w") as fh:
+            json.dump(rows, fh)
+        print(f"  wrote {args.rows}  ({len(rows)} rows)")
 
     if not args.no_plot:
         try:

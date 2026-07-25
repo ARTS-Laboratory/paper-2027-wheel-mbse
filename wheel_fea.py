@@ -89,6 +89,7 @@ CHAIN-OF-THOUGHT ENGINEERING NOTES
 
 import warnings
 import json
+import math
 import os
 import numpy as np
 
@@ -105,8 +106,34 @@ np.random.seed(42)
 # ---------------------------------------------------------------------------
 NUMBER_OF_SPOKES    = 12
 HUB_RADIUS_MM       = 25.4 / 2          # 12.7 mm
-RIM_RADIUS_MM       = 97.8 / 2          # 48.9 mm
-HUB_RIM_SPAN_MM     = RIM_RADIUS_MM - HUB_RADIUS_MM   # 36.2 mm
+
+# Where the spokes merge into the rim band.  THIS IS THE RIM-THICKNESS DECISION, because
+# the outer diameter is fixed at Ø100 by requirement: the band is
+# RIM_OUTER_RADIUS_MM - RIM_RADIUS_MM, so thickening it means moving THIS radius inward,
+# which also shortens the spoke.
+#
+# Was 97.8/2 = 48.9, giving a 1.1 mm band.  M4's full-wheel FEA measured what that costs:
+#
+#     band    axle drop   rim share of compliance
+#     1.1 mm    2.85 mm         44.7%      <- as shipped, +43% over the 2.0 mm target
+#     1.3 mm    2.29 mm         39.8%
+#     1.5 mm    1.94 mm         35.5%      <- here
+#     1.8 mm    1.59 mm         30.8%
+#
+# A 1.1 mm band held nearly as much compliance as all twelve spokes combined, and the
+# beam model the GA optimises against cannot see it at all — so the GA was solving the
+# wrong problem, not solving it badly.  1.5 mm is chosen because it brackets the 2.0 mm
+# target with the rim share down to a third, and because at that thickness the beam
+# model happens to become close to unbiased at the design point (measured FEA/beam 1.00
+# there versus 1.43 at 1.1 mm), which is what makes a re-run of the existing GA
+# meaningful rather than merely different.
+#
+# Everything derives from this: the span below, the mesh's ring radius
+# (`wheel_wheel.rim_inner_radius`), and the exporter's rim face.  Changing it
+# REINTERPRETS every gene on disk — `tests/test_golden.py` fails loudly if the artifact
+# was optimised in a different frame.
+RIM_RADIUS_MM       = 48.5
+HUB_RIM_SPAN_MM     = RIM_RADIUS_MM - HUB_RADIUS_MM   # 35.8 mm
 SPOKE_WIDTH_MM      = 22.4              # fixed face width (z-height)
 
 # Material — PLA, FFF anisotropy-corrected
@@ -156,6 +183,10 @@ KE_BUCKLING              = KE_BY_BC[BOUNDARY_CONDITION]
 # the thickness the optimizer prices and the thickness the mesh builds is exactly the
 # kind of disagreement this refactor exists to make impossible.
 TAPER_BREAKPOINTS = _geom.TAPER_BREAKPOINTS
+
+# Mesh-derived design constraints, from the geometry kernel so there is one copy.
+MIN_FOLD_MARGIN_MM = _geom.MIN_FOLD_MARGIN_MM
+MAX_ARRIVAL_DEG = _geom.MAX_ARRIVAL_DEG
 
 # Number of discretization points along Bezier
 N_CURVE_PTS = 600
@@ -566,6 +597,59 @@ def curve_smoothness_metrics(curve_points, n_sample=60, deadband_deg=1.0):
 # PYGAD FITNESS FUNCTION
 # ---------------------------------------------------------------------------
 
+# Barrier weights for the two mesh-derived constraints.  Both are hard model-validity
+# limits rather than preferences, so they are scaled to dominate the objective (~50
+# units total) the moment they are violated, without being cliffs the GA cannot descend.
+FOLD_PENALTY_SCALE    = 3000.0
+ARRIVAL_PENALTY_SCALE = 3000.0
+
+
+def fold_penalty(curve_points, ctrl_pts, t0, t1, t2, t3):
+    """Barrier on the offset band turning inside out.
+
+    `study_mesh_quality.py` measured that roughly 40% of the genomes the other
+    constraints admit have a NEGATIVE-area region: where the centerline's radius of
+    curvature drops below half the local thickness, the outward offset passes the centre
+    of curvature and the flank folds through itself.  That is not a meshing artifact —
+    the part described by such a genome does not exist, and the Castigliano model
+    happily returns a deflection for it anyway.
+
+    `smoothness` was only ever an indirect proxy for this (`:596-598` said so).  This is
+    the direct statement, and it costs one closed-form curvature evaluation.  The
+    threshold of 0.1 mm rather than 0 is measured: at 0 the sweep still admitted 9
+    designs with inverted elements, at 0.1 none, and it still keeps 95% of the space.
+    """
+    margin = _geom.self_intersection_margin(curve_points, ctrl_pts, t0, t1, t2, t3,
+                                            num_points=N_CURVE_PTS)
+    return soft_barrier(_geom.MIN_FOLD_MARGIN_MM - margin, scale=FOLD_PENALTY_SCALE)
+
+
+def arrival_penalty(ctrl_pts):
+    """Barrier on the spoke meeting its ring too close to RADIALLY.
+
+    The centerline endpoints are locked on the hub and rim circles, so the end
+    cross-section — which is normal to the centerline — crosses its ring at
+    (90 - arrival) degrees.  A near-tangent arrival therefore gives a healthy weld; a
+    near-radial one lays the cross-section along the arc, and past about 80 degrees both
+    flanks lie OUTSIDE the ring circle and the spoke touches it at a single point.
+
+    That is a hinge, not a weld — and `BOUNDARY_CONDITION = "fixed_guided"` assumes a
+    moment connection at both ends, so the model would be solving a structure the part
+    does not have.  `study_wheel_mesh.py` measured the boundary at 70.6 degrees;
+    `wheel_wheel.MAX_ARRIVAL_DEG = 65` is that with margin.
+    """
+    d = _geom.forward_difference_matrix(_geom.BEZIER_DEGREE, 1) @ ctrl_pts
+    worst = 0.0
+    # Bezier endpoint tangents are the first and last control-polygon edges exactly, and
+    # the endpoints sit on the +x axis of their ring, so the radial direction is x-hat
+    # and the arrival angle from the tangent is asin(|dx| / |d|).
+    for edge in (d[0], d[-1]):
+        n = math.hypot(float(edge[0]), float(edge[1]))
+        if n > 0.0:
+            worst = max(worst, math.degrees(math.asin(min(1.0, abs(edge[0]) / n))))
+    return soft_barrier((worst - MAX_ARRIVAL_DEG) / 10.0, scale=ARRIVAL_PENALTY_SCALE)
+
+
 def evaluate_design(solution):
     """
     Score one genome.  Returns (metrics, loss_terms) as plain dicts.
@@ -586,7 +670,7 @@ def evaluate_design(solution):
         violation = xs[i] + 2.0 - xs[i + 1]   # must be cx[i]+gap < cx[i+1]
         x_order_penalty += soft_barrier(violation, scale=80.0)
 
-    curve_points, _ = generate_bezier_centerline(
+    curve_points, ctrl_pts = generate_bezier_centerline(
         cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4)
 
     # Check monotone x (soft penalty for fold-back)
@@ -630,6 +714,12 @@ def evaluate_design(solution):
         "x_order":     x_order_penalty,
         "hub_overlap": spoke_overlap_penalty(t0, R_hub),
         "smoothness":  400.0 * n_infl + 120.0 * turn_var,
+        # ---- the two constraints the meshing milestones measured -------------
+        # Both are closed-form (one curvature evaluation, one endpoint tangent), so
+        # they cost nothing next to the Castigliano solve, and both fix cases where the
+        # MODEL ITSELF is invalid rather than merely where the design is poor.
+        "fold":        fold_penalty(curve_points, ctrl_pts, t0, t1, t2, t3),
+        "arrival":     arrival_penalty(ctrl_pts),
     }
 
     metrics = {
