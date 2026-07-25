@@ -626,33 +626,256 @@ def solve_linear(prob):
         "meta": prob.meta,
     }
 
-    named = prob.dofmap.named
-    if prob.load_dir is not None and ("tip_ux" in named or "tip_uy" in named):
-        dx, dy = prob.load_dir
-        disp = 0.0
-        if "tip_ux" in named:
-            disp += dx * u_red[named["tip_ux"]]
-        if "tip_uy" in named:
-            disp += dy * u_red[named["tip_uy"]]
-        # Positive = the tip moved WITH the load.
-        out["deflection_mm"] = float(disp)
-        out["tip"] = {k: float(u_red[v]) for k, v in named.items()
-                      if k.startswith("tip_")}
+    _report_tip(prob, u_red, out)
     return out
+
+
+def _report_tip(prob, u_red, out):
+    """Attach `deflection_mm` / `tip` when the problem carries a rigid tip body."""
+    named = prob.dofmap.named
+    if prob.load_dir is None or not ("tip_ux" in named or "tip_uy" in named):
+        return out
+    dx, dy = prob.load_dir
+    disp = 0.0
+    if "tip_ux" in named:
+        disp += dx * u_red[named["tip_ux"]]
+    if "tip_uy" in named:
+        disp += dy * u_red[named["tip_uy"]]
+    # Positive = the tip moved WITH the load.
+    out["deflection_mm"] = float(disp)
+    out["tip"] = {k: float(u_red[v]) for k, v in named.items()
+                  if k.startswith("tip_")}
+    return out
+
+
+# ---------------------------------------------------------------------------
+# NONLINEAR SOLVE  (M5)
+# ---------------------------------------------------------------------------
+#
+# NEWTON ON THE ENERGY, NOT ON THE RESIDUAL.
+#
+# The total potential is
+#
+#     Pi(u_red; s) = U_int(u_full)  -  s * (f_nodal . u_full + f_reduced . u_red)
+#     u_full       = T @ u_red + s * u_pre
+#
+# and everything the loop needs is a derivative of it: the residual is
+# `grad_{u_red} Pi` and the tangent is its Hessian, exactly as in the linear path.
+# `s` is the load-continuation factor and scales the PRESCRIBED displacement too, so
+# a continuation step is a genuinely proportional load case rather than a partial
+# force applied against fully imposed kinematics.
+#
+# Having Pi in closed form is what makes the Armijo line search free.  Backtracking on
+# ||r|| instead is the common shortcut and it is strictly worse here: ||r|| is not a
+# merit function for a nonconvex problem — it has minima at unstable equilibria — while
+# Pi is the thing physically being minimised, and a Newton direction from an SPD tangent
+# is guaranteed to be a descent direction for it.  So the line search cannot stall on a
+# direction that is genuinely good.
+#
+# A FAILED SOLVE RAISES.  It does not return a best-effort field with a warning.  The
+# Stage-3 gradient is computed at an assumed-converged state, and one silently
+# unconverged solve poisons a gradient in a way that is nearly undebuggable after the
+# fact; the caller's correct response is to reject the design step and shrink it, which
+# it can only do if it is told.
+#
+# TWO CONVERGENCE CRITERIA, BECAUSE A RESIDUAL TOLERANCE ALONE IS NOT ATTAINABLE.
+#
+# The plan asks for a residual below 1e-10 relative.  That is met at service load and is
+# NOT met at 1% of it: the run stalls at 1.2e-9 and burns every iteration trying.  This
+# is not a solver defect and no amount of iterating fixes it.  The reduced tangent of a
+# thin flexure has condition number ~1e8-1e9, so the sparse factorization returns an
+# increment with that much relative error, and the residual it can drive to is bounded
+# below by roughly kappa * eps regardless of the load.  Normalising by ||f|| does not
+# help, because the FLOOR scales with the load exactly as the load does.
+#
+# So the loop also accepts Bathe's ENERGY-INCREMENT criterion: |du . r|, the energy the
+# next step would release, measured against the first step's.  That quantity is
+# dimensionally an energy, is insensitive to conditioning, and says something a residual
+# norm cannot — "the remaining unconverged energy is 1e-14 of the total", which is the
+# statement that actually matters for a result quoted to four figures.  It is reported
+# alongside the residual so a solve can never look converged on a technicality.
+
+class NewtonDivergedError(RuntimeError):
+    """A nonlinear solve did not reach either convergence criterion.
+
+    Carries `.history` (the per-iteration record) so a caller that reduces a step size
+    in response can log *why* without re-running the solve.
+    """
+
+    def __init__(self, message, history=None):
+        super().__init__(message)
+        self.history = list(history or [])
+
+
+def _potential(prob, u_full, u_red, scale):
+    """Total potential energy at a trial state.  The line search's merit function."""
+    U = total_energy(prob.coords, prob.conn, u_full, order=prob.order, lam=prob.lam,
+                     mu=prob.mu, width=prob.width, nonlinear=prob.nonlinear)
+    return U - scale * (float(prob.f_nodal @ u_full) + float(prob.f_reduced @ u_red))
+
+
+def solve_nonlinear(prob, *, steps=1, tol=1e-10, tol_energy=1e-14, max_iter=25,
+                    max_backtracks=20, armijo_c=1e-4, u_reduced0=None):
+    """Newton-Raphson with energy line search and load continuation.
+
+    `steps` splits the load into that many equal proportional increments, each solved
+    from the previous converged state.  One step suffices for this wheel at service
+    load (measured in `study_gnl.py`: 5 iterations, zero backtracks); the machinery
+    exists because the Stage-3 optimizer will visit designs that do not.
+
+    Converged when EITHER the relative reduced residual ||r||/||f_ref|| is below `tol`
+    OR the energy increment |du . r| has fallen to `tol_energy` of the first step's.
+    See the block comment above for why the second criterion is not a fudge — at low
+    load it is the only one that is attainable.
+
+    `u_reduced0` warm-starts from a previous solve, which is the single most valuable
+    performance lever once this sits inside an optimizer loop.
+
+    Returns the same keys as `solve_linear` plus a `newton` block recording, per load
+    step, the iteration count, the residual and energy-increment histories, how many
+    line-search backtracks were taken, and which criterion actually fired.
+
+    Raises `NewtonDivergedError` rather than returning an unconverged field.
+    """
+    T, n_red = prob.T, prob.T.shape[1]
+    kw = dict(order=prob.order, lam=prob.lam, mu=prob.mu, width=prob.width,
+              nonlinear=prob.nonlinear)
+
+    f_ref = float(np.linalg.norm(T.T @ prob.f_nodal + prob.f_reduced))
+    if f_ref == 0.0:                       # pure prescribed-displacement problem
+        f_ref = float(np.linalg.norm(prob.u_pre)) or 1.0
+
+    u_red = (np.zeros(n_red) if u_reduced0 is None
+             else np.asarray(u_reduced0, dtype=float).copy())
+    log = []
+
+    def residual(u_r, scale):
+        u_f = T @ u_r + scale * prob.u_pre
+        fint = internal_force(prob.coords, prob.conn, u_f, **kw)
+        r = T.T @ (fint - scale * prob.f_nodal) - scale * prob.f_reduced
+        return u_f, r, float(np.linalg.norm(r)) / f_ref
+
+    for k in range(1, int(steps) + 1):
+        scale = k / float(steps)
+        resid_hist, dE_hist, backtracks = [], [], 0
+        why, dE_ref = None, None
+
+        for it in range(int(max_iter)):
+            u_full, r, rn = residual(u_red, scale)
+            resid_hist.append(rn)
+            if rn <= tol:
+                why = "residual"
+                break
+
+            K = assemble_stiffness(prob.coords, prob.conn, u_full, **kw)
+            Kr = (T.T @ K @ T).tocsc()
+            du = spla.spsolve(Kr, -r)
+            if not np.all(np.isfinite(du)):
+                raise NewtonDivergedError(
+                    f"tangent solve produced non-finite increment at load step {k}"
+                    f"/{steps}, iteration {it}", log)
+
+            # `slope` is EXACT, because r really is grad Pi rather than an approximation
+            # of it.  So a non-negative value is not line-search noise — it says the
+            # tangent was not positive definite, i.e. this equilibrium is unstable.  Say
+            # that, instead of letting the backtrack loop grind alpha down to nothing.
+            slope = float(r @ du)
+            if slope >= 0.0:
+                raise NewtonDivergedError(
+                    f"Newton direction is not a descent direction (slope {slope:.3e}) "
+                    f"at load step {k}/{steps}, iteration {it} — the tangent is not "
+                    f"positive definite, i.e. this equilibrium is unstable", log)
+
+            dE = abs(slope)
+            dE_hist.append(dE)
+            if dE_ref is None:
+                dE_ref = dE
+            if dE <= tol_energy * dE_ref:
+                # The step is at the floor.  Take it — it can only help — and stop.
+                u_red = u_red + du
+                resid_hist.append(residual(u_red, scale)[2])
+                why = "energy"
+                break
+
+            pi0 = _potential(prob, u_full, u_red, scale)
+            alpha, taken = 1.0, 0
+            while taken < int(max_backtracks):
+                trial = u_red + alpha * du
+                pi = _potential(prob, T @ trial + scale * prob.u_pre, trial, scale)
+                if pi <= pi0 + armijo_c * alpha * slope:
+                    break
+                alpha *= 0.5
+                taken += 1
+            else:
+                raise NewtonDivergedError(
+                    f"line search failed after {max_backtracks} backtracks at load "
+                    f"step {k}/{steps}, iteration {it} (residual {rn:.3e})", log)
+            backtracks += taken
+            u_red = u_red + alpha * du
+
+        log.append({"load_scale": scale, "iterations": len(resid_hist) - 1,
+                    "residual_rel": resid_hist[-1], "residuals": resid_hist,
+                    "energy_increments": dE_hist, "backtracks": backtracks,
+                    "converged": why is not None, "criterion": why,
+                    "energy_increment_rel": (dE_hist[-1] / dE_ref) if dE_hist else 0.0})
+        if why is None:
+            raise NewtonDivergedError(
+                f"load step {k}/{steps} did not converge in {max_iter} iterations "
+                f"(relative residual {resid_hist[-1]:.3e} vs tol {tol:.1e}; energy "
+                f"increment {log[-1]['energy_increment_rel']:.3e} vs tol "
+                f"{tol_energy:.1e})", log)
+
+    u_full = T @ u_red + prob.u_pre
+    out = {
+        "u": u_full,
+        "u_reduced": u_red,
+        "energy": total_energy(prob.coords, prob.conn, u_full, **kw),
+        "residual_rel": log[-1]["residual_rel"],
+        "residual": log[-1]["residual_rel"] * f_ref,
+        "n_dof_reduced": int(n_red),
+        "meta": prob.meta,
+        "newton": {"steps": int(steps), "tol": float(tol),
+                   "tol_energy": float(tol_energy),
+                   "criterion": log[-1]["criterion"],
+                   "energy_increment_rel": log[-1]["energy_increment_rel"],
+                   "total_iterations": sum(s["iterations"] for s in log),
+                   "total_backtracks": sum(s["backtracks"] for s in log),
+                   "history": log},
+    }
+    _report_tip(prob, u_red, out)
+    return out
+
+
+def solve(prob, **kw):
+    """Dispatch on the problem's own kinematics.
+
+    Kept separate from `solve_linear` so that the linear path stays a single sparse
+    solve with no Newton scaffolding around it — that is the path M3's beam gate and
+    M4's refinement ladder run thousands of times.
+    """
+    return solve_nonlinear(prob, **kw) if prob.nonlinear else solve_linear(prob, **kw)
 
 
 # ---------------------------------------------------------------------------
 # STRESS RECOVERY
 # ---------------------------------------------------------------------------
 
-def gauss_stresses(coords, conn, u, *, order, lam, mu, nonlinear=False):
-    """Cauchy (linear) / 2nd Piola-Kirchhoff (SVK) stress at every Gauss point.
+def gauss_stresses(coords, conn, u, *, order, lam, mu, nonlinear=False, cauchy=True):
+    """Cauchy stress at every Gauss point.
 
     Returns dict with `sigma` [n_elem, ngp, 2, 2], `von_mises` [n_elem, ngp], and the
     Gauss points' physical coordinates.  Von Mises is the plane-stress form
     sqrt(sxx^2 - sxx*syy + syy^2 + 3*sxy^2), which assumes sigma_zz = 0 — true by
     construction under plane stress and NOT true under plane strain, where the
     reported value is an underestimate.
+
+    Under SVK the constitutive law returns the 2nd Piola-Kirchhoff stress, which lives
+    on the REFERENCE configuration and is not what a strain gauge measures.  `cauchy`
+    pushes it forward, sigma = F S F^T / det F, so the number is comparable to the
+    linear kernel's.  That is not a detail here: at 1% strain and a few degrees of
+    rotation the push-forward is worth a couple of percent, the same order as the
+    geometric effect M5 sets out to measure, so leaving it out would let the two
+    confound.  `cauchy=False` returns the raw S for anyone who wants it.
     """
     N, dN, _ = _TABLES[order]
     coords = jnp.asarray(coords)
@@ -667,7 +890,12 @@ def gauss_stresses(coords, conn, u, *, order, lam, mu, nonlinear=False):
         grad_u = jnp.einsum("ni,gnj->gij", ue1, dNdx)
         eps = jax.vmap(_strain, in_axes=(0, None))(grad_u, nonlinear)
         tr = eps[:, 0, 0] + eps[:, 1, 1]
-        return lam * tr[:, None, None] * jnp.eye(2)[None] + 2.0 * mu * eps
+        s = lam * tr[:, None, None] * jnp.eye(2)[None] + 2.0 * mu * eps
+        if not (nonlinear and cauchy):
+            return s
+        F = grad_u + jnp.eye(2)[None]
+        detF = F[:, 0, 0] * F[:, 1, 1] - F[:, 0, 1] * F[:, 1, 0]
+        return jnp.einsum("gik,gkl,gjl->gij", F, s, F) / detF[:, None, None]
 
     sigma = np.asarray(jax.jit(jax.vmap(per_elem))(Xe, ue))
     sxx, syy, sxy = sigma[..., 0, 0], sigma[..., 1, 1], sigma[..., 0, 1]
@@ -772,9 +1000,16 @@ def spoke_problem(genes, cfg="coarse", *, bc="fixed_guided", root_bc="clamped",
     return prob
 
 
-def spoke_deflection(genes, cfg="coarse", **kw):
-    """Convenience: the tip deflection magnitude, which is what the beam model returns."""
-    return abs(solve_linear(spoke_problem(genes, cfg, **kw))["deflection_mm"])
+def spoke_deflection(genes, cfg="coarse", *, newton=None, **kw):
+    """Convenience: the tip deflection magnitude, which is what the beam model returns.
+
+    Dispatches on `kinematics`, so `kinematics="svk"` here really does run the Newton
+    loop.  Before M5 it did not — `solve_linear` assembles the tangent at u=0, where the
+    SVK Hessian equals the linear one exactly, so an "svk" spoke deflection was silently
+    a linear answer.
+    """
+    prob = spoke_problem(genes, cfg, **kw)
+    return abs(solve(prob, **(newton or {}))["deflection_mm"])
 
 
 # ---------------------------------------------------------------------------
@@ -902,12 +1137,22 @@ def element_strain_energy(coords, conn, u, *, order, lam, mu, width, nonlinear=F
     return np.asarray(energy(coords[conn_np], ue, lam, mu, width))
 
 
-def solve_wheel(mesh, **kw):
-    """Solve and report axle drop, the compliance split, and the equilibrium checks."""
+def solve_wheel(mesh, *, newton=None, **kw):
+    """Solve and report axle drop, the compliance split, and the equilibrium checks.
+
+    `kinematics="svk"` routes through `solve_nonlinear`; `newton` is its keyword dict.
+    """
     scale = kw.get("rim_modulus_scale", 1.0)
     prob, f = wheel_problem(mesh, **kw)
 
-    if scale != 1.0:
+    if prob.nonlinear:
+        if scale != 1.0:
+            raise NotImplementedError(
+                "rim_modulus_scale is a linear cross-check on the compliance split and "
+                "has no nonlinear path; the scaled assembly is built by hand from a "
+                "single (lam, mu) and would not match the element kernel's tangent")
+        res = solve_nonlinear(prob, **(newton or {}))
+    elif scale != 1.0:
         # Scaling one region's modulus needs two assemblies, because `Problem` carries a
         # single (lam, mu).  Cheaper and clearer than threading per-element material
         # through the element kernel for what is a one-off cross-check.
@@ -944,10 +1189,14 @@ def solve_wheel(mesh, **kw):
                                       if in_patch.size else float("nan"))
     res["n_nodes_in_patch"] = int(in_patch.size)
 
-    # Compliance split, exact for a linear body under one load system.
+    # Compliance split, exact for a linear body under one load system.  Under SVK it is
+    # still an exact decomposition of the stored energy, but U = F*delta/2 no longer
+    # holds, so it stops being exactly a first-order sensitivity of the axle drop.  The
+    # gap between 2U/(F*delta) and 1 is itself a measure of the geometric nonlinearity
+    # and `study_gnl.py` reports it.
     lam, mu = prob.lam, prob.mu
     e = element_strain_energy(xy, mesh.conn, u, order=mesh.cfg.order, lam=lam, mu=mu,
-                              width=prob.width)
+                              width=prob.width, nonlinear=prob.nonlinear)
     if scale != 1.0:
         e = np.where(mesh.region_mask("rim"), e * scale, e)
     total = float(e.sum())
@@ -958,9 +1207,18 @@ def solve_wheel(mesh, **kw):
     # Equilibrium: the hub reaction must be the applied load, to solver precision.  An
     # independent check on the whole assembly — mesh, constraints, quadrature, solve —
     # and nearly free, since K*u is already formed.
-    K = assemble_stiffness(xy, mesh.conn, order=mesh.cfg.order, lam=lam, mu=mu,
-                           width=prob.width)
-    reaction = (K @ u - prob.f_nodal).reshape(-1, 2)
+    if prob.nonlinear:
+        # K @ u is NOT the internal force once the kinematics are nonlinear, so the
+        # equilibrium check has to go through the residual the Newton loop drove to
+        # zero.  Using K @ u here would report a fictitious reaction that happens to be
+        # close, which is the worst possible behaviour for a check.
+        fint = internal_force(xy, mesh.conn, u, order=mesh.cfg.order, lam=lam, mu=mu,
+                              width=prob.width, nonlinear=True)
+        reaction = (fint - prob.f_nodal).reshape(-1, 2)
+    else:
+        K = assemble_stiffness(xy, mesh.conn, order=mesh.cfg.order, lam=lam, mu=mu,
+                               width=prob.width)
+        reaction = (K @ u - prob.f_nodal).reshape(-1, 2)
     tie = mesh.node_sets["hub_tie"]
     res["applied_force_n"] = [float(prob.f_nodal.reshape(-1, 2)[:, i].sum())
                               for i in (0, 1)]
