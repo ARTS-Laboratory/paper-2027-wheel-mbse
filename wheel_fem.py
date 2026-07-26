@@ -34,7 +34,12 @@ strain-energy function.  The two differ by five lines and coincide to O(|grad u|
 so shipping both now costs nothing and lets the finite-rotation test be run against
 BOTH kernels.  That matters: a rigid-body test that passes for the linear kernel too
 is not testing frame indifference, it is testing that the rotation was small.
-M3 verifies with `linear`; M5 switches the default and adds the Newton loop.
+M3 verifies with `linear`; M5 added the Newton loop (`solve_nonlinear`).  The DEFAULT
+stays `linear` in `spoke_problem` and `wheel_problem` — M4's committed report and the
+beam comparisons are linear results and must stay reproducible — so `svk` is opt-in per
+call.  Note that `solve_linear` assembles the tangent at u=0, where the SVK Hessian
+equals the linear one exactly; routing an `svk` problem through it therefore returns a
+LINEAR answer silently.  Go through `solve`, which dispatches on `prob.nonlinear`.
 
 PLANE STRESS, AND WHY IT IS THE RIGHT CHOICE *FOR VALIDATION*
 -------------------------------------------------------------
@@ -336,9 +341,11 @@ def total_energy(coords, conn, u, *, order, lam, mu, width, nonlinear=False):
 # EDGE TRACTIONS  (consistent nodal loads)
 # ---------------------------------------------------------------------------
 #
-# M4 applies a distributed pressure over an assumed contact patch, and M6 replaces it
-# with penalty contact on the same boundary — so the traction path is not optional and
-# it gets its own patch test.  Lumping a traction equally onto the nodes of a
+# M4 applies a distributed pressure over an assumed contact patch; M6 replaced it with
+# penalty contact on the same boundary (see `RigidGroundContact` below, which reuses this
+# quadrature).  Both paths are live — M4's committed report is an assumed-patch result —
+# so the traction path is not optional and it gets its own patch test.  Lumping a
+# traction equally onto the nodes of a
 # quadratic edge is wrong by a fixed factor (the correct Q9 edge weights are
 # 1/6, 4/6, 1/6, not 1/3 each) and the error is invisible in the total load, which is
 # exactly the kind of mistake an equilibrium check does not catch.
@@ -441,6 +448,308 @@ def segment_traction_load(coords, segments, traction, n_nodes, order=2,
             out[2 * seg] += contrib[:, 0]
             out[2 * seg + 1] += contrib[:, 1]
     return out
+
+
+# ---------------------------------------------------------------------------
+# PENALTY CONTACT  (M6)
+# ---------------------------------------------------------------------------
+#
+# CONTACT IS AN ENERGY TERM, WHICH IS WHY IT FITS HERE AT ALL.
+#
+# Everything above derives the internal force and the tangent from one scalar energy.
+# A penalty contact law is a potential too,
+#
+#     Pi_c(u) = integral over Gamma of eps_N * phi(-g(x, u)) dGamma_0,
+#     g       = (Y + u_y) - y_ground          (signed gap; negative = penetration)
+#     phi(z)  = <z>^2 / 2                     (Macaulay bracket)
+#
+# so the contact force is grad Pi_c and the contact tangent is its Hessian, both from
+# `jax.grad` / `jax.hessian` exactly as for the bulk.  There is no separately coded
+# contact stiffness that can drift out of step with the contact force, which is where
+# hand-rolled contact usually dies -- the same argument the module docstring makes
+# for the bulk element.
+#
+# INTEGRATED, NOT LUMPED.  The energy is integrated over the boundary with the same
+# machinery `segment_traction_load` uses, for the same reason: on a quadratic edge the
+# correct nodal weights are 1/6, 4/6, 1/6, and a node-to-surface penalty is the lumped
+# version of this.  Lumping gets the resultant right and the distribution wrong, and no
+# equilibrium check can see the difference.
+#
+# The quadrature is DENSER than the traction rule (`n_quad` below, default 6 against the
+# 3-point element rule) and that is not gold-plating.  The contact patch edge falls
+# *inside* a segment, and the quadrature is the only thing that resolves where: with the
+# 3-point rule the edge can only sit at one of three places per segment, which quantises
+# the patch width and puts a staircase into any sweep over load or phase.  Gauss points
+# are far cheaper here than mesh refinement, since the integrand is 1-D.
+#
+# Integration is over the REFERENCE boundary (`jac` from X alone), consistent with the
+# SVK bulk energy, which is also written on the reference configuration.
+#
+# ON THE SMOOTHNESS OF phi, WHICH IS AN M7 QUESTION ASKED EARLY.
+#
+# <z>^2/2 is C^1 but not C^2: phi'' jumps from 0 to 1 as a point comes into contact.
+# Newton does not mind -- Pi stays C^1, the tangent stays SPD, and the descent-direction
+# guarantee `solve_nonlinear` relies on is untouched -- but a FINITE DIFFERENCE in a gene
+# taken across a change in the contact set is meaningless, and that is precisely the
+# "gene with no finite-difference plateau" failure the plan gates on at M7.
+#
+# So `smoothing_mm` offers a C^2 alternative: phi is replaced by a cubic over a band of
+# that width, chosen to match value, slope AND curvature at both ends of the band, so it
+# is genuinely C^2 rather than merely continuous.  It defaults to 0.0 (sharp), because a
+# smoothing band that is not needed is exactly the kind of free parameter M6 exists to
+# remove.  `study_contact.py` measures whether it is needed.
+
+def _gauss_1d_n(n):
+    """Gauss-Legendre rule with an arbitrary number of points, on [-1, 1]."""
+    p, w = np.polynomial.legendre.leggauss(int(n))
+    return np.asarray(p, dtype=float), np.asarray(w, dtype=float)
+
+
+def _contact_tables(order, n_quad):
+    """Boundary shape functions at the contact Gauss points.
+
+    Returns N [ngp, p+1], dN [ngp, p+1], w [ngp].  Depends only on (order, n_quad), so
+    it is a numpy constant closed over by the traced energy.
+    """
+    gp, gw = _gauss_1d_n(n_quad)
+    N, dN = [], []
+    for xi in gp:
+        n_, d_ = _lagrange_1d(order, xi)
+        N.append(n_)
+        dN.append(d_)
+    return np.asarray(N), np.asarray(dN), gw
+
+
+def _penalty_phi(z, smoothing):
+    """phi(z) ~ <z>^2 / 2, either sharp (C^1) or cubic-smoothed over a band (C^2).
+
+    The smoothed branch is
+
+        z <= 0      : 0
+        0 < z < d   : z^3 / (6d)
+        z >= d      : z^2/2 - d*z/2 + d^2/6
+
+    which matches value, slope and curvature at both z=0 and z=d, so phi'' is continuous
+    everywhere.  As d -> 0 it recovers the sharp bracket.  Note it is NOT an upper or
+    lower bound on it -- it is softer just inside contact and offset by O(d*z) outside,
+    which is why `d` has to be small against the penetration scale rather than merely
+    small in absolute terms.
+    """
+    if smoothing <= 0.0:
+        pos = jnp.maximum(z, 0.0)
+        return 0.5 * pos * pos
+    d = smoothing
+    return jnp.where(
+        z <= 0.0,
+        0.0,
+        jnp.where(z < d,
+                  z ** 3 / (6.0 * d),
+                  0.5 * z * z - 0.5 * d * z + d * d / 6.0),
+    )
+
+
+_CONTACT_CACHE = {}
+
+
+def _contact_kernels(order, n_quad, smoothing):
+    """vmapped (energy, force, stiffness) over boundary segments, jitted.
+
+    Cached per (order, n_quad, smoothing) so the trace happens once per process rather
+    than once per Newton iteration -- and contact is assembled every iteration, unlike
+    the linear bulk tangent.
+    """
+    key = (order, int(n_quad), float(smoothing))
+    if key in _CONTACT_CACHE:
+        return _CONTACT_CACHE[key]
+    N, dN, w = _contact_tables(order, n_quad)
+    N_j, dN_j, w_j = jnp.asarray(N), jnp.asarray(dN), jnp.asarray(w)
+
+    def one(Xs, us, y_ground, eps_n, width):
+        xg = N_j @ Xs                       # [ngp, 2] reference position
+        ug = N_j @ us                       # [ngp, 2] displacement
+        jac = jnp.linalg.norm(dN_j @ Xs, axis=1)
+        gap = (xg[:, 1] + ug[:, 1]) - y_ground
+        phi = _penalty_phi(-gap, smoothing)
+        return eps_n * jnp.sum(phi * jac * w_j) * width
+
+    axes = (0, 0, None, None, None)
+    energy = jax.jit(jax.vmap(one, in_axes=axes))
+    force = jax.jit(jax.vmap(jax.grad(one, argnums=1), in_axes=axes))
+    stiff = jax.jit(jax.vmap(jax.hessian(one, argnums=1), in_axes=axes))
+    _CONTACT_CACHE[key] = (energy, force, stiff)
+    return _CONTACT_CACHE[key]
+
+
+class RigidGroundContact:
+    """Frictionless penalty contact between a boundary and a rigid horizontal line.
+
+    The ground is `y = y_ground` and pushes UP; the wheel's hub is fixed, so in this
+    frame the ground indenting the rim is what the axle drop measures.  Frictionless and
+    flat means the traction acts along the GROUND's normal -- vertical everywhere -- which
+    is the same choice `_ground_traction` documents and for the same reason: using the
+    rim's radial normal instead produces a spurious horizontal resultant.  Here that
+    choice is structural rather than a convention, because only `u_y` enters the gap.
+
+    `eps_n` is a penalty stiffness in N/mm per mm^2 of contact area.  It is not a number
+    to pick but a plateau to demonstrate -- see `study_contact.py`.
+    """
+
+    __slots__ = ("segments", "y_ground", "eps_n", "width", "order", "n_quad",
+                 "smoothing_mm")
+
+    def __init__(self, segments, y_ground, eps_n, *, width=SPOKE_WIDTH_MM, order=2,
+                 n_quad=6, smoothing_mm=0.0):
+        self.segments = np.asarray(segments)
+        self.y_ground = float(y_ground)
+        self.eps_n = float(eps_n)
+        self.width = float(width)
+        self.order = int(order)
+        self.n_quad = int(n_quad)
+        self.smoothing_mm = float(smoothing_mm)
+
+    # -- the three consumers, mirroring the bulk trio ------------------------
+
+    def energy(self, coords, u):
+        """Contact potential, a scalar [mJ]."""
+        Xs, us = self._gather(coords, u)
+        energy, _, _ = _contact_kernels(self.order, self.n_quad, self.smoothing_mm)
+        return float(jnp.sum(energy(Xs, us, self.y_ground, self.eps_n, self.width)))
+
+    def force(self, coords, u):
+        """Contact contribution to the INTERNAL force, [2N].
+
+        Sign convention matches `internal_force`: this is +grad Pi_c, so it enters the
+        residual with the same sign as the bulk internal force.
+        """
+        Xs, us = self._gather(coords, u)
+        _, force, _ = _contact_kernels(self.order, self.n_quad, self.smoothing_mm)
+        fe = np.asarray(force(Xs, us, self.y_ground, self.eps_n, self.width))
+        out = np.zeros(2 * np.asarray(coords).shape[0])
+        np.add.at(out, self._sdof().ravel(), fe.reshape(-1))
+        return out
+
+    def stiffness(self, coords, u):
+        """Contact contribution to the tangent, [2N, 2N] sparse."""
+        Xs, us = self._gather(coords, u)
+        _, _, stiff = _contact_kernels(self.order, self.n_quad, self.smoothing_mm)
+        nsn = self.segments.shape[1]
+        Ke = np.asarray(stiff(Xs, us, self.y_ground, self.eps_n, self.width)) \
+            .reshape(len(self.segments), 2 * nsn, 2 * nsn)
+        sd = self._sdof()
+        rows = np.repeat(sd, 2 * nsn, axis=1).ravel()
+        cols = np.tile(sd, (1, 2 * nsn)).ravel()
+        n_dof = 2 * np.asarray(coords).shape[0]
+        return sp.coo_matrix((Ke.ravel(), (rows, cols)),
+                             shape=(n_dof, n_dof)).tocsr()
+
+    # -- diagnostics the gate reads ----------------------------------------
+
+    def pressure(self, coords, u):
+        """Contact pressure at every quadrature point, with its position and gap.
+
+        Returned rather than reduced so the gate can check the two things a resultant
+        cannot see: that the pressure is nowhere NEGATIVE (a contact model that pulls
+        still balances globally), and where the patch edge actually falls.
+        """
+        coords = np.asarray(coords, dtype=float)
+        segs = self.segments
+        N, dN, w = _contact_tables(self.order, self.n_quad)
+        X = coords[segs]                                   # [nseg, p+1, 2]
+        U = u.reshape(-1, 2)[segs]
+        xg = np.einsum("gi,sij->sgj", N, X)
+        ug = np.einsum("gi,sij->sgj", N, U)
+        jac = np.linalg.norm(np.einsum("gi,sij->sgj", dN, X), axis=2)
+        gap = (xg[:, :, 1] + ug[:, :, 1]) - self.y_ground
+        pen = -gap
+        if self.smoothing_mm <= 0.0:
+            dphi = np.maximum(pen, 0.0)
+        else:
+            d = self.smoothing_mm
+            dphi = np.where(pen <= 0.0, 0.0,
+                            np.where(pen < d, pen ** 2 / (2.0 * d), pen - 0.5 * d))
+        return {
+            "x": xg[:, :, 0].ravel(),
+            "y": xg[:, :, 1].ravel(),
+            "theta_deg": np.degrees(np.arctan2(xg[:, :, 1] + ug[:, :, 1],
+                                               xg[:, :, 0] + ug[:, :, 0])).ravel(),
+            "gap_mm": gap.ravel(),
+            "pressure_mpa": (self.eps_n * dphi).ravel(),
+            "weight": (jac * w[None, :] * self.width).ravel(),
+        }
+
+    def patch_extent(self, coords, u, n_sample=64):
+        """Angular extent of the contact patch, from the ZERO CROSSING of the gap.
+
+        Measured independently of the quadrature, and it has to be.  The obvious measure
+        -- the angular span of the Gauss points whose pressure is positive -- is a
+        SAMPLING STATISTIC, not a property of the solution: it can only report edges at
+        one of `n_quad` places per segment, so refining the quadrature moves it even
+        though the displacement field has not changed.  Measured on the shipped genome,
+        going from 6 to 20 points per segment moved that number from 1.609 to 1.677 deg
+        on the medium mesh while the axle drop moved by 3e-5 relative.
+
+        The gap itself is smooth (a deformed boundary against a straight line), so its
+        zero crossing is well defined and converges.  This resamples the same shape
+        functions at `n_sample` points per segment and interpolates the crossing.
+
+        Returns (half_deg, centre_deg), both nan when nothing is in contact.
+        """
+        coords = np.asarray(coords, dtype=float)
+        xi = np.linspace(-1.0, 1.0, int(n_sample))
+        N = np.array([_lagrange_1d(self.order, x)[0] for x in xi])
+        X = coords[self.segments]
+        U = np.asarray(u).reshape(-1, 2)[self.segments]
+        xg = np.einsum("gi,sij->sgj", N, X) + np.einsum("gi,sij->sgj", N, U)
+        gap = xg[:, :, 1] - self.y_ground
+
+        # Reference angle, so the measure is an arc of the undeformed rim rather than of
+        # a boundary that has itself moved.
+        xr = np.einsum("gi,sij->sgj", N, X)
+        th = np.degrees(np.arctan2(xr[:, :, 1], xr[:, :, 0]))
+        off = (th + 90.0 + 180.0) % 360.0 - 180.0
+
+        o, gp = off.ravel(), gap.ravel()
+        order_ = np.argsort(o)
+        o, gp = o[order_], gp[order_]
+        if not np.any(gp < 0.0):
+            return float("nan"), float("nan")
+
+        edges = []
+        sign = gp < 0.0
+        for i in np.nonzero(sign[:-1] != sign[1:])[0]:
+            g0, g1 = gp[i], gp[i + 1]
+            if g1 == g0:
+                continue
+            edges.append(o[i] + (o[i + 1] - o[i]) * (0.0 - g0) / (g1 - g0))
+        if len(edges) < 2:                      # patch runs off the sampled range
+            inside = o[sign]
+            return float((inside.max() - inside.min()) / 2.0), float(inside.mean())
+        lo, hi = min(edges), max(edges)
+        return float((hi - lo) / 2.0), float((hi + lo) / 2.0)
+
+    def total_force(self, coords, u):
+        """Vertical resultant of the contact pressure [N], by quadrature.
+
+        Computed from the pressure field rather than by summing the nodal force vector,
+        so it is an INDEPENDENT check on the assembly rather than a restatement of it.
+        """
+        p = self.pressure(coords, u)
+        return float(np.sum(p["pressure_mpa"] * p["weight"]))
+
+    def max_penetration(self, coords, u):
+        p = self.pressure(coords, u)
+        return float(max(0.0, -p["gap_mm"].min()))
+
+    # -- internals ---------------------------------------------------------
+
+    def _gather(self, coords, u):
+        Xs = jnp.asarray(coords)[self.segments]
+        us = jnp.asarray(u).reshape(-1, 2)[self.segments]
+        return Xs, us
+
+    def _sdof(self):
+        return (self.segments[:, :, None] * 2 + np.arange(2)[None, None, :]) \
+            .reshape(len(self.segments), -1)
 
 
 # ---------------------------------------------------------------------------
@@ -577,11 +886,11 @@ class Problem:
 
     __slots__ = ("coords", "conn", "order", "lam", "mu", "width", "nonlinear",
                  "T", "u_pre", "dofmap", "f_nodal", "f_reduced", "load_dir",
-                 "meta")
+                 "contact", "meta")
 
     def __init__(self, coords, conn, order, lam, mu, width, dofmap,
                  f_nodal=None, f_reduced=None, load_dir=None, nonlinear=False,
-                 meta=None):
+                 contact=None, meta=None):
         self.coords = np.asarray(coords, dtype=float)
         self.conn = np.asarray(conn)
         self.order = order
@@ -595,6 +904,7 @@ class Problem:
         self.f_reduced = (np.zeros(self.T.shape[1]) if f_reduced is None
                           else np.asarray(f_reduced))
         self.load_dir = load_dir
+        self.contact = contact
         self.meta = dict(meta or {})
 
 
@@ -604,7 +914,20 @@ def solve_linear(prob):
     Returns a dict with the full displacement field, the reduced solution, strain
     energy, an equilibrium residual, and — when the problem carries a rigid tip —
     the tip motion along the load direction.
+
+    RAISES on a contact problem rather than ignoring the contact term.  Contact is
+    inherently nonlinear — the whole content of the model is which points are touching —
+    so a linear solve of it is not an approximation, it is a different problem with no
+    ground in it at all.  Returning that silently would recreate the trap this file
+    already has one of: an `svk` problem routed through here comes back LINEAR without
+    complaint, because the SVK Hessian equals the linear one exactly at u=0.  That one
+    cannot be fixed (the equality is a fact); this one can, so it is.
     """
+    if prob.contact is not None:
+        raise ValueError(
+            "this problem carries penalty contact, which is inherently nonlinear — "
+            "`solve_linear` would silently drop the ground and return a load-free "
+            "field.  Use `solve` (which dispatches) or `solve_nonlinear`.")
     K = assemble_stiffness(prob.coords, prob.conn, order=prob.order, lam=prob.lam,
                            mu=prob.mu, width=prob.width, nonlinear=prob.nonlinear)
     T = prob.T
@@ -708,9 +1031,16 @@ class NewtonDivergedError(RuntimeError):
 
 
 def _potential(prob, u_full, u_red, scale):
-    """Total potential energy at a trial state.  The line search's merit function."""
+    """Total potential energy at a trial state.  The line search's merit function.
+
+    The contact potential is part of Pi, not a side condition — which is exactly why the
+    Armijo search keeps working once contact is switched on: Pi is still the thing being
+    minimised, and a Newton direction from an SPD tangent still descends it.
+    """
     U = total_energy(prob.coords, prob.conn, u_full, order=prob.order, lam=prob.lam,
                      mu=prob.mu, width=prob.width, nonlinear=prob.nonlinear)
+    if prob.contact is not None:
+        U += prob.contact.energy(prob.coords, u_full)
     return U - scale * (float(prob.f_nodal @ u_full) + float(prob.f_reduced @ u_red))
 
 
@@ -742,7 +1072,15 @@ def solve_nonlinear(prob, *, steps=1, tol=1e-10, tol_energy=1e-14, max_iter=25,
               nonlinear=prob.nonlinear)
 
     f_ref = float(np.linalg.norm(T.T @ prob.f_nodal + prob.f_reduced))
-    if f_ref == 0.0:                       # pure prescribed-displacement problem
+    if f_ref == 0.0 and prob.contact is not None:
+        # A displacement-driven contact problem has NO applied force: the contact
+        # pressure is the entire load.  Scaling the residual by 1.0 would silently turn
+        # the relative tolerance into an absolute one, so the reference is the contact
+        # force at u=0 — the load the initial indentation is already applying, which is
+        # the right order of magnitude and is free to evaluate.
+        f0 = prob.contact.force(prob.coords, np.zeros(2 * prob.coords.shape[0]))
+        f_ref = float(np.linalg.norm(T.T @ f0)) or 1.0
+    elif f_ref == 0.0:                     # pure prescribed-displacement problem
         f_ref = float(np.linalg.norm(prob.u_pre)) or 1.0
 
     u_red = (np.zeros(n_red) if u_reduced0 is None
@@ -752,6 +1090,8 @@ def solve_nonlinear(prob, *, steps=1, tol=1e-10, tol_energy=1e-14, max_iter=25,
     def residual(u_r, scale):
         u_f = T @ u_r + scale * prob.u_pre
         fint = internal_force(prob.coords, prob.conn, u_f, **kw)
+        if prob.contact is not None:
+            fint = fint + prob.contact.force(prob.coords, u_f)
         r = T.T @ (fint - scale * prob.f_nodal) - scale * prob.f_reduced
         return u_f, r, float(np.linalg.norm(r)) / f_ref
 
@@ -768,6 +1108,8 @@ def solve_nonlinear(prob, *, steps=1, tol=1e-10, tol_energy=1e-14, max_iter=25,
                 break
 
             K = assemble_stiffness(prob.coords, prob.conn, u_full, **kw)
+            if prob.contact is not None:
+                K = K + prob.contact.stiffness(prob.coords, u_full)
             Kr = (T.T @ K @ T).tocsc()
             du = spla.spsolve(Kr, -r)
             if not np.all(np.isfinite(du)):
@@ -847,13 +1189,22 @@ def solve_nonlinear(prob, *, steps=1, tol=1e-10, tol_energy=1e-14, max_iter=25,
 
 
 def solve(prob, **kw):
-    """Dispatch on the problem's own kinematics.
+    """Dispatch on the problem's own kinematics AND on whether it carries contact.
 
     Kept separate from `solve_linear` so that the linear path stays a single sparse
     solve with no Newton scaffolding around it — that is the path M3's beam gate and
     M4's refinement ladder run thousands of times.
+
+    Contact forces the Newton path regardless of `nonlinear`: a penalty contact law is a
+    nonlinear boundary condition even under linear kinematics, since which points are
+    touching is itself the unknown.  Routing on `prob.nonlinear` alone would send a
+    linear-kinematics contact problem to `solve_linear`, which now raises — but getting
+    the dispatch right here is what makes that guard a backstop rather than the only
+    line of defence.
     """
-    return solve_nonlinear(prob, **kw) if prob.nonlinear else solve_linear(prob, **kw)
+    if prob.nonlinear or prob.contact is not None:
+        return solve_nonlinear(prob, **kw)
+    return solve_linear(prob, **kw)
 
 
 # ---------------------------------------------------------------------------
@@ -1199,10 +1550,7 @@ def solve_wheel(mesh, *, newton=None, **kw):
                               width=prob.width, nonlinear=prob.nonlinear)
     if scale != 1.0:
         e = np.where(mesh.region_mask("rim"), e * scale, e)
-    total = float(e.sum())
-    res["strain_energy_mJ"] = total
-    res["compliance_split"] = {r: float(e[mesh.region_mask(r)].sum() / total)
-                               for r in ("spoke", "hub", "rim")}
+    _attach_compliance_split(res, mesh, e)
 
     # Equilibrium: the hub reaction must be the applied load, to solver precision.  An
     # independent check on the whole assembly — mesh, constraints, quadrature, solve —
@@ -1229,6 +1577,14 @@ def solve_wheel(mesh, *, newton=None, **kw):
     return res
 
 
+def _attach_compliance_split(res, mesh, e):
+    """Region shares of the strain energy, from per-element energies already computed."""
+    total = float(e.sum())
+    res["strain_energy_mJ"] = total
+    res["compliance_split"] = {r: float(e[mesh.region_mask(r)].sum() / total)
+                               for r in ("spoke", "hub", "rim")}
+
+
 def _assemble_scaled(mesh, prob, scale):
     """K with the rim band's modulus multiplied by `scale`."""
     xy = np.asarray(mesh.coords)
@@ -1239,3 +1595,234 @@ def _assemble_scaled(mesh, prob, scale):
                                lam=prob.lam * (scale - 1.0),
                                mu=prob.mu * (scale - 1.0), width=prob.width)
     return (base + extra).tocsr()
+
+
+# ---------------------------------------------------------------------------
+# THE FULL-WHEEL CONTACT PROBLEM  (M6)
+# ---------------------------------------------------------------------------
+#
+# DISPLACEMENT DRIVEN, WHICH THE EXISTING FRAME ALREADY WANTED.
+#
+# `wheel_problem` above records why the hub is fixed rather than the ground: with the
+# load applied as a pressure, nothing else removes the rigid vertical translation.  That
+# argument gets stronger with real contact, because before contact establishes there is
+# no pressure at all, so a force-driven contact problem is singular at its own starting
+# point.  Prescribing the ground's position instead is well posed from the first
+# iteration.
+#
+# It also makes the reported quantity exact rather than inferred: with a rigid FLAT
+# ground indenting by `delta`, the rise of the wheel's lowest point IS `delta`, so the
+# axle drop is an input and the wheel load is the output.  `solve_wheel_contact` then
+# inverts that with a secant iteration to answer the question M4 asked -- what is the
+# axle drop at service load -- and each solve warm-starts from the previous one.
+#
+# The measured centre-node displacement is reported ALONGSIDE the prescribed indentation
+# rather than in place of it.  They differ by exactly the local penetration, so their
+# gap is a free consistency check on the penalty stiffness: if it is not small, `eps_n`
+# is too soft and the answer is being reported for a ground that the wheel sank into.
+
+# N/mm^3.  Pressure is `eps_n * penetration`, so this is "how many MPa per mm of
+# penetration" -- which is what makes the scale pickable at all: the peak pressure here
+# is a few MPa, so 1e4 buys a penetration of ~3e-4 mm, 2e-4 of the 1.5 mm rim band.
+# It is not a tuned constant; `study_contact.py` demonstrates the plateau it sits in.
+DEFAULT_CONTACT_EPS_N = 1.0e4
+
+
+def wheel_contact_problem(mesh, *, indentation_mm, eps_n=DEFAULT_CONTACT_EPS_N,
+                          E=YOUNGS_MODULUS_PLA_MPA, nu=POISSON_RATIO_PLA,
+                          plane="stress", width=SPOKE_WIDTH_MM, kinematics="linear",
+                          n_quad=6, smoothing_mm=0.0):
+    """Rigid fixed hub, rigid frictionless ground indenting the rim OD by `indentation_mm`.
+
+    No applied force: the contact pressure is the entire load.  Compare `wheel_problem`,
+    which assumes both the patch and the pressure shape.
+    """
+    coords = np.asarray(mesh.coords, dtype=float)
+    lam, mu = lame(E, nu, plane)
+
+    # The ground sits below the undeformed OD by the indentation.  `phase_deg` rolls the
+    # wheel (see `wheel_wheel.build_wheel`); the ground never moves, which is the whole
+    # point of the frame and what the periodicity check tests.
+    y_ground = -float(mesh.rim_outer) + float(indentation_mm)
+    contact = RigidGroundContact(mesh.edge_sets["rim_outer"], y_ground, eps_n,
+                                 width=width, order=mesh.cfg.order, n_quad=n_quad,
+                                 smoothing_mm=smoothing_mm)
+
+    dm = DofMap(mesh.n_nodes)
+    tie = mesh.node_sets["hub_tie"]
+    dm.fix(tie)
+    dm.free(np.setdiff1d(np.arange(mesh.n_nodes), tie))
+
+    return Problem(coords, mesh.conn, mesh.cfg.order, lam, mu, width, dm,
+                   nonlinear=(kinematics == "svk"), contact=contact,
+                   meta={"config": mesh.cfg.name, "plane": plane,
+                         "kinematics": kinematics, "E_mpa": float(E), "nu": float(nu),
+                         "width_mm": float(width),
+                         "indentation_mm": float(indentation_mm),
+                         "eps_n": float(eps_n), "n_quad": int(n_quad),
+                         "smoothing_mm": float(smoothing_mm),
+                         "contact": True,
+                         "n_elements": mesh.n_elements, "n_nodes": mesh.n_nodes})
+
+
+def solve_wheel_contact_at(mesh, indentation_mm, *, newton=None, steps=1,
+                           u_reduced0=None, **kw):
+    """One contact solve at a prescribed indentation.  Reports the load it produced.
+
+    `steps` ramps the GROUND down in that many equal increments, warm-starting each from
+    the last.  This is not the same knob as `solve_nonlinear(steps=...)` and cannot be:
+    that one scales `f_nodal` and `u_pre`, and a displacement-driven contact problem has
+    neither -- the ground's position lives in the contact object, so the only way to
+    continue it is to rebuild the problem.  Ramping matters because the difficulty here
+    is the contact SET, not the magnitude: opening the gap gradually lets points come
+    into contact a few at a time instead of all at once from a cold start, which is what
+    the iteration counts respond to.
+
+    One step suffices at the default `eps_n`.  The ramp exists for the stiffer end of the
+    plateau sweep and for the designs the Stage-3 optimizer will visit.
+
+    THE ITERATION BUDGET IS LARGER HERE, AND THE RESIDUAL HISTORY IS NOT MONOTONE.
+    `solve_nonlinear`'s default of 25 is calibrated for smooth SVK, which converges in 5.
+    Contact does not converge that way at all: the iterations are an ACTIVE-SET SEARCH,
+    and until the set of points in contact is right the tangent is the wrong operator, so
+    the residual wanders on a noisy plateau.  Measured on the shipped genome at the
+    default `eps_n`, the last dozen residuals run
+
+        2.4e-4  3.0e-4  1.0e-4  1.2e-4  4.1e-5  4.6e-5  2.7e-5  3.9e-5  2.5e-5  1.3e-5
+        6.0e-5  6.6e-16
+
+    -- rising as often as falling, then dropping fifteen orders of magnitude in ONE step
+    the moment the set settles, because at that point Newton is solving a smooth problem
+    exactly.  So a criterion based on residual DECREASE would read this as divergence and
+    give up one iteration before the answer, and a budget sized from the SVK experience
+    stops in the middle of the plateau.  Neither is a solver defect.
+    """
+    prob = None
+    res = None
+    warm = u_reduced0
+    n = max(1, int(steps))
+    nk = dict(newton or {})
+    nk.setdefault("max_iter", 60)
+    for k in range(1, n + 1):
+        d = float(indentation_mm) * k / n
+        prob = wheel_contact_problem(mesh, indentation_mm=d, **kw)
+        res = solve_nonlinear(prob, **dict(nk, u_reduced0=warm))
+        warm = res["u_reduced"]
+    _attach_contact_report(res, mesh, prob, indentation_mm)
+    res["contact_steps"] = n
+    return res
+
+
+def _attach_contact_report(res, mesh, prob, indentation_mm):
+    """Axle drop, patch geometry, compliance split and equilibrium for a contact solve."""
+    u = res["u"]
+    xy = np.asarray(mesh.coords)
+    disp = u.reshape(-1, 2)
+    con = prob.contact
+
+    # The axle drop is the prescribed indentation by construction.  The centre-node
+    # displacement is reported beside it as the consistency check described above.
+    rim_nodes = np.unique(mesh.edge_sets["rim_outer"])
+    th = np.degrees(np.arctan2(xy[rim_nodes, 1], xy[rim_nodes, 0]))
+    d = (th + 90.0 + 180.0) % 360.0 - 180.0
+    centre_node = rim_nodes[np.argmin(np.abs(d))]
+
+    res["axle_drop_mm"] = float(indentation_mm)
+    res["centre_node_rise_mm"] = float(disp[centre_node, 1])
+    res["max_penetration_mm"] = con.max_penetration(xy, u)
+
+    p = con.pressure(xy, u)
+    live = p["pressure_mpa"] > 0.0
+    res["contact_force_n"] = con.total_force(xy, u)
+    res["min_pressure_mpa"] = float(p["pressure_mpa"].min())
+    res["n_quad_points_in_contact"] = int(live.sum())
+
+    # THE patch measure: the gap's zero crossing, independent of the quadrature.
+    half, centre = con.patch_extent(xy, u)
+    res["patch_half_deg"] = half
+    res["patch_centre_deg"] = centre
+
+    # Both of these are SAMPLED maxima over the quadrature points, so they are reported
+    # as diagnostics and must not be quoted as converged numbers — the same status the
+    # unfilleted junction's peak stress has in M4.  The peak pressure in particular
+    # climbs as `n_quad` rises, because more points sample nearer the true peak.
+    res["peak_pressure_mpa_sampled"] = float(p["pressure_mpa"].max())
+    res["patch_half_deg_sampled"] = (
+        float(np.abs((p["theta_deg"][live] + 90.0 + 180.0) % 360.0 - 180.0).max())
+        if live.any() else 0.0)
+
+    lam, mu = prob.lam, prob.mu
+    e = element_strain_energy(xy, mesh.conn, u, order=mesh.cfg.order, lam=lam, mu=mu,
+                             width=prob.width, nonlinear=prob.nonlinear)
+    _attach_compliance_split(res, mesh, e)
+
+    # Equilibrium.  The contact force enters the internal force, so the hub reaction is
+    # `f_int - f_contact` at the tied nodes and must balance the contact resultant.  The
+    # resultant itself is recomputed by quadrature over the pressure field in
+    # `total_force`, so this is two independent routes to the same number rather than
+    # one number restated.
+    fint = internal_force(xy, mesh.conn, u, order=mesh.cfg.order, lam=lam, mu=mu,
+                          width=prob.width, nonlinear=prob.nonlinear)
+    fc = con.force(xy, u)
+    reaction = (fint + fc).reshape(-1, 2)
+    tie = mesh.node_sets["hub_tie"]
+    res["hub_reaction_n"] = [float(reaction[tie, i].sum()) for i in (0, 1)]
+    # The ground pushes UP along its own normal, so a frictionless flat contact can have
+    # no horizontal resultant at all.  This is structural here rather than a convention:
+    # only u_y enters the gap, so a nonzero fx would mean the assembly is wrong.
+    res["contact_resultant_n"] = [float(-fc.reshape(-1, 2)[:, i].sum()) for i in (0, 1)]
+    # Equal and OPPOSITE, so the check is the sum — same convention as `solve_wheel`,
+    # where it is `hub_reaction + applied_force`.
+    res["equilibrium_error_n"] = float(abs(res["hub_reaction_n"][1]
+                                           + res["contact_force_n"]))
+    return res
+
+
+def solve_wheel_contact(mesh, *, force=TOTAL_FORCE_NEWTONS, newton=None,
+                        tol_rel=1e-8, max_iter=20, delta0=None, **kw):
+    """Solve for the indentation that produces `force`, and report that state.
+
+    A secant iteration on `delta -> contact_force(delta) - force`.  The response is
+    near-linear, so the bracket is not worth the extra solves; a secant from two nearby
+    points converges in a handful.  Every solve after the first warm-starts from the
+    previous converged field, which `solve_nonlinear` supports directly.
+
+    RAISES if it does not converge, for the same reason the Newton loop does: a returned
+    "close enough" state is a wrong load case, and a Stage-3 gradient computed at one is
+    undebuggable after the fact.
+    """
+    # The linear-model axle drop is the natural first guess and costs one linear solve.
+    if delta0 is None:
+        delta0 = solve_wheel(mesh)["axle_drop_mm"]
+    d0 = float(delta0)
+    d1 = d0 * 1.05
+
+    res = solve_wheel_contact_at(mesh, d0, newton=newton, **kw)
+    f0 = res["contact_force_n"]
+    warm = res["u_reduced"]
+    history = [{"indentation_mm": d0, "force_n": f0}]
+
+    for it in range(int(max_iter)):
+        if abs(f0 - force) <= tol_rel * force:
+            res["secant"] = {"iterations": it, "history": history,
+                             "converged": True}
+            res["meta"] = dict(res["meta"], target_force_n=float(force))
+            return res
+        r1 = solve_wheel_contact_at(mesh, d1, newton=newton, u_reduced0=warm, **kw)
+        f1 = r1["contact_force_n"]
+        history.append({"indentation_mm": d1, "force_n": f1})
+        if f1 == f0:
+            raise RuntimeError(
+                f"secant stalled: indentations {d0:.6f} and {d1:.6f} give the same "
+                f"contact force {f1:.6f} N")
+        d_next = d1 - (f1 - force) * (d1 - d0) / (f1 - f0)
+        if not np.isfinite(d_next) or d_next <= 0.0:
+            raise RuntimeError(
+                f"secant produced a non-physical indentation {d_next!r} from "
+                f"({d0:.6f}, {f0:.4f}) and ({d1:.6f}, {f1:.4f})")
+        d0, f0, res, warm = d1, f1, r1, r1["u_reduced"]
+        d1 = d_next
+
+    raise RuntimeError(
+        f"contact load control did not reach {force:.4f} N in {max_iter} iterations; "
+        f"last force {f0:.6f} N at indentation {d0:.6f} mm")

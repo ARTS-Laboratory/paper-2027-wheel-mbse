@@ -15,8 +15,9 @@ help:
 	@echo "make export   rebuild wheel.step from the existing best_solution.json"
 	@echo "make studies  the verification gates: spoke-mesh validity (M2a),"
 	@echo "              full-wheel mesh (M2b), beam agreement (M3), full-wheel"
-	@echo "              FEA (M4).  Each writes a JSON report and exits nonzero"
-	@echo "              on failure.  ~2 min."
+	@echo "              FEA (M4), geometric nonlinearity (M5), real contact"
+	@echo "              (M6), gradients (M7).  Each writes a JSON report and"
+	@echo "              exits nonzero on failure."
 
 env: env-opt env-cad
 
@@ -52,6 +53,9 @@ studies:
 	$(PY_OPT) study_wheel_mesh.py --samples 200
 	$(PY_OPT) study_beam_agreement.py
 	$(PY_OPT) study_wheel_fea.py
+	$(PY_OPT) study_gnl.py
+	$(PY_OPT) study_contact.py
+	$(PY_OPT) study_gradient.py
 
 clean-pyc:
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +

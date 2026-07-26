@@ -57,7 +57,7 @@
     "config": "medium",
     "n_elements": 12288,
     "n_nodes": 53124,
-    "seconds": 0.09,
+    "seconds": 0.08,
     "by_region_mm2": {
      "spoke": 1636.8894550129153,
      "hub": 320.4240572089957,
@@ -83,7 +83,7 @@
     "config": "fine",
     "n_elements": 31200,
     "n_nodes": 132276,
-    "seconds": 0.16,
+    "seconds": 0.14,
     "by_region_mm2": {
      "spoke": 1637.0360397078302,
      "hub": 320.43644453873014,
@@ -238,6 +238,6 @@
   "samples": 200,
   "config": "coarse",
   "seed": 0,
-  "elapsed_s": 6.6
+  "elapsed_s": 6.0
  }
 }

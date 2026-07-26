@@ -22,7 +22,12 @@ it is Stage 2's cheapest available objective.
 WHAT IS BEING SOLVED
 --------------------
 Hub rigid and fixed at r = 7.7 mm, ground pressure distributed over an assumed patch at
-the bottom of the rim, linear plane stress.  No contact algorithm yet — M6 adds that.
+the bottom of the rim, linear plane stress.  No contact algorithm here — M6 added one
+(`study_contact.py`), and measured that the assumed 3-degree patch is about six times
+wider than the real one while costing only ~1% on the axle drop.  So the numbers below
+stand; this file is deliberately left on the assumed patch, because it is what M4's
+committed report was measured with and re-deriving it under contact would silently
+change every quoted value.
 `axle_drop` is the rise of the wheel's lowest point relative to the fixed hub, which is
 the drop of the axle relative to fixed ground.
 

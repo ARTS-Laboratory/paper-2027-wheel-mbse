@@ -3,9 +3,11 @@
   COMPLIANT WHEEL — FULL 360 DEGREE STRUCTURED MESH
 =============================================================================
     mesh = build_wheel(genes, "coarse")
-    mesh.coords     # [n_nodes, 2]   traced, differentiable in the genes
+    mesh.coords     # [n_nodes, 2]
     mesh.conn       # [n_elem, 9]    numpy constant
     mesh.node_sets  # 'hub_tie', 'rim_outer', ...
+
+    mesh_coords(genes, mesh)          # the same coordinates, differentiable (M7)
 
 Seven blocks per 30 degree sector, twelve sectors, one global node numbering with
 single ownership on every shared edge.  `wheel_mesh.py` owns the spoke block; this
@@ -751,12 +753,14 @@ class WheelMesh:
 
     __slots__ = ("coords", "conn", "cfg", "element_block", "element_region",
                  "node_sets", "edge_sets", "seam_error_mm", "n_merged", "rim_outer",
-                 "genes", "span_mm", "n_spokes")
+                 "genes", "span_mm", "n_spokes", "owners", "orientation", "phase_deg",
+                 "_coord_fn")
 
     def __init__(self, coords, conn, cfg, element_block, element_region,
                  node_sets, edge_sets, seam_error_mm, n_merged,
                  rim_outer=RIM_OUTER_RADIUS_MM, genes=None,
-                 span_mm=HUB_RIM_SPAN_MM, n_spokes=NUMBER_OF_SPOKES):
+                 span_mm=HUB_RIM_SPAN_MM, n_spokes=NUMBER_OF_SPOKES,
+                 owners=None, orientation=None, phase_deg=0.0):
         self.coords = coords
         self.conn = conn
         self.cfg = cfg
@@ -779,6 +783,15 @@ class WheelMesh:
         self.genes = None if genes is None else np.asarray(genes, dtype=float)
         self.span_mm = float(span_mm)
         self.n_spokes = int(n_spokes)
+        # The three things `mesh_coords` needs to rebuild these coordinates without
+        # redoing a single discrete decision: which raw node owns each merged one, which
+        # way the flanks were oriented, and the phase the wheel was rolled to.  Carried
+        # on the mesh rather than recomputed so the differentiable path cannot silently
+        # end up describing a DIFFERENT mesh from the one that was solved.
+        self.owners = None if owners is None else np.asarray(owners, dtype=np.int64)
+        self.orientation = orientation
+        self.phase_deg = float(phase_deg)
+        self._coord_fn = None                      # lazily built by `coord_fn`
 
     @property
     def n_nodes(self):
@@ -802,23 +815,22 @@ def _rotate(grid, angle_rad, xp):
     return grid @ R.T
 
 
-def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
-                n_spokes=NUMBER_OF_SPOKES, orientation=None,
-                rim_outer=RIM_OUTER_RADIUS_MM, phase_deg=0.0):
-    """Assemble the full 360 degree mesh.  Differentiable in `genes`.
+def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
+                   phase_deg):
+    """The raw node coordinates of all twelve sectors, before the seams are merged.
 
-    Sector 0's seven blocks are built once and rotated, so the twelve sectors are
-    exact rigid copies rather than twelve independent evaluations that could disagree
-    at the seams by roundoff.
+    THE ENTIRE TRACED HALF OF `build_wheel`, factored out so that `mesh_coords` can run
+    it again under `jax.grad` without also re-running the eager half.  Nothing here
+    makes a discrete decision: the orientation is an argument, the block shapes come out
+    of `sector_blocks`, and every arithmetic operation goes through `xp`.
+
+    Returns (coords_all [n_raw, 2], shapes, offsets, thetas).
     """
-    cfg = get_config(cfg)
-    if orientation is None:
-        orientation = flank_orientation(genes, cfg, span_mm=span_mm)
     sector0 = sector_blocks(genes, cfg, xp=xp, span_mm=span_mm,
                             orientation=orientation, rim_outer=rim_outer)
-    seams = _seam_table(orientation, sector0.pop("_thetas"))
+    thetas = sector0.pop("_thetas")
 
-    grids, offsets, shapes = {}, {}, {}
+    parts, offsets, shapes = [], {}, {}
     cursor = 0
     # `phase_deg` rolls the whole wheel under the ground.  It belongs HERE and not in
     # the load, because the ground does not move: a rolling wheel keeps its contact at
@@ -830,14 +842,127 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
         angle = xp.zeros(()) + np.radians(SECTOR_DEG * k + phase_deg)
         for name in BLOCK_ORDER:
             g = _rotate(sector0[name], angle, xp) if (k or phase_deg) else sector0[name]
-            grids[(k, name)] = g
             shapes[(k, name)] = (int(g.shape[0]), int(g.shape[1]))
             offsets[(k, name)] = cursor
             cursor += shapes[(k, name)][0] * shapes[(k, name)][1]
+            parts.append(g.reshape(-1, 2))
 
-    coords_all = xp.concatenate([grids[(k, n)].reshape(-1, 2)
-                                 for k in range(n_spokes) for n in BLOCK_ORDER], axis=0)
-    n_raw = cursor
+    return xp.concatenate(parts, axis=0), shapes, offsets, thetas
+
+
+def mesh_coords(genes, mesh, xp=None):
+    """`mesh`'s node coordinates as a differentiable function of the genes.
+
+    The mesh's TOPOLOGY IS FROZEN and taken from `mesh` rather than recomputed: the
+    seam-ownership table, and — the one that matters — the flank orientation.  So this
+    is the derivative of a fixed mesh whose nodes move, which is the only derivative
+    that means anything: `flank_orientation` is a discrete decision, and a step that
+    flips it changes which block owns which node.  Such a step has no finite-difference
+    plateau, and should not: it is a real discontinuity of the design space rather than
+    a defect in the gradient.  `study_gradient.py` measures the plateau and would see it.
+
+    `build_wheel` itself is deliberately NOT made traceable.  Its seam check, element
+    orientation pass and validity guards all need concrete coordinates, and they are the
+    reason the mesh can be trusted; wrapping them in a "skip when tracing" branch is how
+    guards stop running.  Instead the traced half is shared (`_sector_coords`) and this
+    function reproduces the eager result, which `study_gradient.py` gate 3 and
+    `tests/test_gradient.py` both check to 1e-9 mm.
+
+    `xp` defaults to `jax.numpy`, imported lazily.  This module is in the numpy half of
+    the import graph — `wheel_geometry`, `wheel_mesh` and this file are all jax-free at
+    module scope — and one convenience import at the top is exactly how that stops being
+    true (`tests/test_import_hygiene.py` records what it costs).  Passing `xp=np`
+    explicitly is what `tests/test_gradient.py` uses to compare the two paths.
+
+    The default path goes through `coord_fn` and is JITTED, which is not an optimisation
+    detail: see that function for the measurement.
+    """
+    if xp is None:
+        return coord_fn(mesh)(genes)
+
+    coords_all, _, _, _ = _sector_coords(
+        genes, mesh.cfg, xp, mesh.span_mm, mesh.n_spokes, mesh.orientation,
+        mesh.rim_outer, mesh.phase_deg)
+    return coords_all[xp.asarray(mesh.owners)]
+
+
+_COORD_FN_CACHE = {}
+_COORD_FN_CACHE_MAX = 32
+
+
+def coord_fn(mesh):
+    """The jitted `genes -> coords` map for one mesh, traced once and reused.
+
+    THE JIT IS LOAD-BEARING, NOT A TUNING CHOICE.  `sector_blocks` unrolls a fixed-count
+    Newton refinement over `n_curve` stations for every ring crossing, so tracing it is
+    expensive — and `jax.vjp` on an untraced closure re-traces on EVERY call.  Measured
+    on the `smoke` mesh, that made the vjp 0.774 s against 0.05 s for the entire rest of
+    the adjoint: without this, 97% of the cost of a Stage-3 gradient is re-deriving a
+    jaxpr that never changes.
+
+    THE CACHE CANNOT BE KEYED ON THE MESH OBJECT, which is the obvious thing and is
+    wrong.  Every finite difference, every sweep point and every optimizer step builds a
+    NEW mesh at new genes, so a per-object cache misses on literally every call it exists
+    to serve while looking like it works.  The key is the STATIC RECIPE instead — element
+    counts, orientation, ownership, phase — which is exactly what the traced function
+    closes over and is identical across all of those calls.  `owners` is hashed by bytes;
+    at 21012 nodes that is ~20 us against the 0.7 s it saves.
+
+    A design at fixed genes is not in the key and must not be: the genes are the traced
+    ARGUMENT.  Phase is, because `_sector_coords` branches on it.
+    """
+    import jax_config  # noqa: F401  — x64 must be set before the first trace
+    import jax
+    import jax.numpy as jnp
+
+    cfg, span, n_spokes = mesh.cfg, mesh.span_mm, mesh.n_spokes
+    orientation, rim_outer, phase = mesh.orientation, mesh.rim_outer, mesh.phase_deg
+    owners_np = np.asarray(mesh.owners)
+    key = (cfg.name, cfg.order, cfg.n_curve, cfg.n_span, cfg.n_thick, cfg.n_weld,
+           cfg.n_collar_r, cfg.n_collar_free, cfg.n_rim_r, cfg.n_rim_free,
+           float(span), int(n_spokes), float(rim_outer), float(phase),
+           np.asarray(orientation).tobytes(), owners_np.tobytes())
+
+    if mesh._coord_fn is not None:
+        return mesh._coord_fn
+    f = _COORD_FN_CACHE.get(key)
+    if f is None:
+        owners = jnp.asarray(owners_np)
+
+        @jax.jit
+        def f(v):                                   # noqa: F811
+            coords_all, _, _, _ = _sector_coords(v, cfg, jnp, span, n_spokes,
+                                                 orientation, rim_outer, phase)
+            return coords_all[owners]
+
+        if len(_COORD_FN_CACHE) >= _COORD_FN_CACHE_MAX:
+            _COORD_FN_CACHE.pop(next(iter(_COORD_FN_CACHE)))
+        _COORD_FN_CACHE[key] = f
+    mesh._coord_fn = f
+    return f
+
+
+def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
+                n_spokes=NUMBER_OF_SPOKES, orientation=None,
+                rim_outer=RIM_OUTER_RADIUS_MM, phase_deg=0.0):
+    """Assemble the full 360 degree mesh.
+
+    Sector 0's seven blocks are built once and rotated, so the twelve sectors are
+    exact rigid copies rather than twelve independent evaluations that could disagree
+    at the seams by roundoff.
+
+    The coordinates it returns are traced when `xp` is `jax.numpy`, but this function as
+    a whole is not differentiable and is not meant to be — the seam check and
+    `_orient_elements` both read concrete values.  `mesh_coords` above is the
+    differentiable path.
+    """
+    cfg = get_config(cfg)
+    if orientation is None:
+        orientation = flank_orientation(genes, cfg, span_mm=span_mm)
+    coords_all, shapes, offsets, thetas = _sector_coords(
+        genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer, phase_deg)
+    seams = _seam_table(orientation, thetas)
+    n_raw = coords_all.shape[0]
 
     # --- merge the seams -----------------------------------------------------
     uf = _UnionFind(n_raw)
@@ -891,7 +1016,8 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
     return WheelMesh(coords, conn, cfg, np.asarray(elem_block),
                      np.asarray(elem_region), node_sets, edge_sets, seam_error,
                      int(n_raw - owners.size), rim_outer=rim_outer,
-                     genes=genes, span_mm=span_mm, n_spokes=n_spokes)
+                     genes=genes, span_mm=span_mm, n_spokes=n_spokes,
+                     owners=owners, orientation=orientation, phase_deg=phase_deg)
 
 
 def _orient_elements(xy, conn, elem_block):
