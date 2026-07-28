@@ -4611,43 +4611,43 @@
   "config": "coarse",
   "cold": [
    {
-    "forward_s": 11.379676103591919,
-    "gradient_s": 0.4705953598022461,
-    "gradient_over_forward": 0.04135402058180775
+    "forward_s": 11.264159917831421,
+    "gradient_s": 0.4481673240661621,
+    "gradient_over_forward": 0.03978701717086802
    },
    {
-    "forward_s": 11.201843976974487,
-    "gradient_s": 0.4858849048614502,
-    "gradient_over_forward": 0.04337543942409767
+    "forward_s": 11.443349123001099,
+    "gradient_s": 0.45648646354675293,
+    "gradient_over_forward": 0.03989098459202092
    },
    {
-    "forward_s": 11.324816942214966,
-    "gradient_s": 0.4900979995727539,
-    "gradient_over_forward": 0.043276461074248325
+    "forward_s": 11.270797967910767,
+    "gradient_s": 0.4492361545562744,
+    "gradient_over_forward": 0.0398584160443032
    }
   ],
   "warm": [
    {
-    "forward_s": 0.2097642421722412,
-    "gradient_s": 0.4794795513153076,
-    "gradient_over_forward": 2.2858021288566346
+    "forward_s": 0.18561673164367676,
+    "gradient_s": 0.47544384002685547,
+    "gradient_over_forward": 2.561427710835636
    },
    {
-    "forward_s": 0.16167688369750977,
-    "gradient_s": 0.6637234687805176,
-    "gradient_over_forward": 4.10524654855616
+    "forward_s": 0.18449115753173828,
+    "gradient_s": 0.44700193405151367,
+    "gradient_over_forward": 2.4228908313647244
    },
    {
-    "forward_s": 0.19597601890563965,
-    "gradient_s": 0.4640061855316162,
-    "gradient_over_forward": 2.3676681877849055
+    "forward_s": 0.19506216049194336,
+    "gradient_s": 0.4601311683654785,
+    "gradient_over_forward": 2.358895068141539
    }
   ],
-  "cold_forward_s": 11.324816942214966,
-  "warm_forward_s": 0.19597601890563965,
-  "gradient_s": 0.4794795513153076,
-  "gradient_over_cold_forward": 0.043276461074248325,
-  "gradient_over_warm_forward": 2.3676681877849055
+  "cold_forward_s": 11.270797967910767,
+  "warm_forward_s": 0.18561673164367676,
+  "gradient_s": 0.4601311683654785,
+  "gradient_over_cold_forward": 0.0398584160443032,
+  "gradient_over_warm_forward": 2.4228908313647244
  },
  "pass": true,
  "settings": {
@@ -4656,6 +4656,6 @@
   "quick": false,
   "service_force_n": 66.7233,
   "indentation_mm": 1.6546481509073006,
-  "elapsed_s": 1079.4
+  "elapsed_s": 1161.4
  }
 }

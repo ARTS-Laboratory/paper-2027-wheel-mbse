@@ -281,6 +281,75 @@ def _element_kernels(order, nonlinear):
 _KERNEL_CACHE = {}
 
 
+def _stress_kernel(order, nonlinear, cauchy):
+    """vmapped `(Xe, ue, lam, mu) -> sigma[n_elem, ngp, 2, 2]` over elements, jitted.
+
+    Split out of `gauss_stresses` so that the reported stress and the quantity M8's
+    optimizer differentiates are THE SAME FUNCTION.  `gauss_stresses` returns numpy and
+    takes `u` as data, so it cannot be a QoI; this returns a traced array and can.  The
+    alternative — a second von Mises written in `wheel_adjoint.py` — is a constitutive
+    law with two definitions, and under SVK the two would differ by the push-forward
+    `F S F^T / det F`: a few percent, in the same direction everywhere, i.e. exactly the
+    bias that reads as physics rather than as a bug.
+
+    `lam`/`mu` are traced arguments with `in_axes=None`, matching `_element_kernels`, so
+    the cache key is the shape-and-branch tuple only and a change of material does not
+    re-trace.
+    """
+    key = (order, nonlinear, cauchy)
+    if key in _STRESS_CACHE:
+        return _STRESS_CACHE[key]
+    _, dN, _ = _TABLES[order]
+    dN_j = jnp.asarray(dN)
+
+    def per_elem(Xe1, ue1, lam, mu):
+        J = jnp.einsum("gnk,ni->gki", dN_j, Xe1)
+        dNdx = jnp.einsum("gnk,gik->gni", dN_j, jnp.linalg.inv(J))
+        grad_u = jnp.einsum("ni,gnj->gij", ue1, dNdx)
+        eps = jax.vmap(_strain, in_axes=(0, None))(grad_u, nonlinear)
+        tr = eps[:, 0, 0] + eps[:, 1, 1]
+        s = lam * tr[:, None, None] * jnp.eye(2)[None] + 2.0 * mu * eps
+        if not (nonlinear and cauchy):
+            return s
+        F = grad_u + jnp.eye(2)[None]
+        detF = F[:, 0, 0] * F[:, 1, 1] - F[:, 0, 1] * F[:, 1, 0]
+        return jnp.einsum("gik,gkl,gjl->gij", F, s, F) / detF[:, None, None]
+
+    _STRESS_CACHE[key] = jax.jit(jax.vmap(per_elem, in_axes=(0, 0, None, None)))
+    return _STRESS_CACHE[key]
+
+
+_STRESS_CACHE = {}
+
+
+def gauss_volume(coords, conn, *, order, width):
+    """Gauss-point volume weights [n_elem, ngp] in mm^3 — `w_g * detJ_g * width`.
+
+    The weights the p-norm stress is averaged with.  An unweighted p-norm over Gauss
+    points would score a mesh rather than a wheel: refining the rim would move the answer
+    by changing how many points sit in a lightly loaded region.
+    """
+    return np.asarray(_volume_kernel(order)(jnp.asarray(coords)[np.asarray(conn)])) * width
+
+
+def _volume_kernel(order):
+    if order in _VOLUME_CACHE:
+        return _VOLUME_CACHE[order]
+    _, dN, w = _TABLES[order]
+    dN_j, w_j = jnp.asarray(dN), jnp.asarray(w)
+
+    def one(Xe):
+        J = jnp.einsum("gnk,ni->gki", dN_j, Xe)
+        detJ = J[:, 0, 0] * J[:, 1, 1] - J[:, 0, 1] * J[:, 1, 0]
+        return detJ * w_j
+
+    _VOLUME_CACHE[order] = jax.jit(jax.vmap(one))
+    return _VOLUME_CACHE[order]
+
+
+_VOLUME_CACHE = {}
+
+
 # ---------------------------------------------------------------------------
 # ASSEMBLY
 # ---------------------------------------------------------------------------
@@ -1227,28 +1296,19 @@ def gauss_stresses(coords, conn, u, *, order, lam, mu, nonlinear=False, cauchy=T
     rotation the push-forward is worth a couple of percent, the same order as the
     geometric effect M5 sets out to measure, so leaving it out would let the two
     confound.  `cauchy=False` returns the raw S for anyone who wants it.
+    The stress itself comes from `_stress_kernel`, which is also what M8's p-norm stress
+    QoI differentiates.  Two copies of a constitutive law is exactly the drift this file's
+    "write the energy, derive everything else" rule exists to prevent, and a QoI that
+    disagreed with the reported stress by a push-forward would be invisible in an
+    optimizer trace.
     """
-    N, dN, _ = _TABLES[order]
+    N, _, _ = _TABLES[order]
     coords = jnp.asarray(coords)
     conn_np = np.asarray(conn)
     Xe = coords[conn_np]
     ue = jnp.asarray(u).reshape(-1, 2)[conn_np]
-    dN_j = jnp.asarray(dN)
 
-    def per_elem(Xe1, ue1):
-        J = jnp.einsum("gnk,ni->gki", dN_j, Xe1)
-        dNdx = jnp.einsum("gnk,gik->gni", dN_j, jnp.linalg.inv(J))
-        grad_u = jnp.einsum("ni,gnj->gij", ue1, dNdx)
-        eps = jax.vmap(_strain, in_axes=(0, None))(grad_u, nonlinear)
-        tr = eps[:, 0, 0] + eps[:, 1, 1]
-        s = lam * tr[:, None, None] * jnp.eye(2)[None] + 2.0 * mu * eps
-        if not (nonlinear and cauchy):
-            return s
-        F = grad_u + jnp.eye(2)[None]
-        detF = F[:, 0, 0] * F[:, 1, 1] - F[:, 0, 1] * F[:, 1, 0]
-        return jnp.einsum("gik,gkl,gjl->gij", F, s, F) / detF[:, None, None]
-
-    sigma = np.asarray(jax.jit(jax.vmap(per_elem))(Xe, ue))
+    sigma = np.asarray(_stress_kernel(order, nonlinear, cauchy)(Xe, ue, lam, mu))
     sxx, syy, sxy = sigma[..., 0, 0], sigma[..., 1, 1], sigma[..., 0, 1]
     vm = np.sqrt(sxx**2 - sxx * syy + syy**2 + 3.0 * sxy**2)
     xy = np.asarray(jnp.einsum("gn,eni->egi", jnp.asarray(N), Xe))

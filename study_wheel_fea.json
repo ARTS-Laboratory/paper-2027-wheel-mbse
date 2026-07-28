@@ -46,7 +46,7 @@
      "hub": 0.013914250136701979,
      "rim": 0.3184086897591976
     },
-    "seconds": 0.4
+    "seconds": 0.5
    },
    {
     "config": "coarse",
@@ -85,7 +85,7 @@
      "hub": 0.014147447911444963,
      "rim": 0.3248919373166721
     },
-    "seconds": 4.2
+    "seconds": 4.1
    }
   ],
   "rim_share_range": 0.006483247557474481,
@@ -806,6 +806,6 @@
   "genome": "best_solution.json",
   "patch_half_deg": 3.0,
   "calculix_cross_check": "not run \u2014 no ccx on this machine",
-  "elapsed_s": 86.4
+  "elapsed_s": 85.5
  }
 }

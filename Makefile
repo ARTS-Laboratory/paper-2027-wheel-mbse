@@ -5,7 +5,7 @@
 PY_OPT := .venv-opt/bin/python
 PY_CAD := .venv-cad/bin/python
 
-.PHONY: help env env-opt env-cad test smoke ga export studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -16,8 +16,13 @@ help:
 	@echo "make studies  the verification gates: spoke-mesh validity (M2a),"
 	@echo "              full-wheel mesh (M2b), beam agreement (M3), full-wheel"
 	@echo "              FEA (M4), geometric nonlinearity (M5), real contact"
-	@echo "              (M6), gradients (M7).  Each writes a JSON report and"
-	@echo "              exits nonzero on failure."
+	@echo "              (M6), gradients (M7), the Stage-3 objective (M8a),"
+	@echo "              the Stage-3 optimizer (M8b-i)."
+	@echo "              Each writes a JSON report and exits nonzero on failure."
+	@echo "make elites   full GA run that also writes stage2_elites.json, the"
+	@echo "              multi-start set Stage 3 begins from"
+	@echo "make stage3   Stage-3 descent from best_solution.json, writing"
+	@echo "              stage3_run.json as it goes and stage3_best.json at the end"
 
 env: env-opt env-cad
 
@@ -42,6 +47,16 @@ smoke:
 ga:
 	$(PY_OPT) wheel_fea.py
 
+# The same run, plus the final population's distinct genomes.  Stage 3 multi-starts from
+# these; nothing else on disk records more than the single winner.
+elites:
+	$(PY_OPT) wheel_fea.py --dump-population
+
+# Stage 3 proper: projected Adam on the FEA objective.  Serial, so the cost is
+# roughly (steps x phases x 0.7 s) at `coarse` — see study_stage3.py's S10.
+stage3:
+	$(PY_OPT) wheel_stage3.py
+
 export:
 	$(PY_CAD) wheel_step_export.py
 
@@ -56,6 +71,8 @@ studies:
 	$(PY_OPT) study_gnl.py
 	$(PY_OPT) study_contact.py
 	$(PY_OPT) study_gradient.py
+	$(PY_OPT) study_objective.py
+	$(PY_OPT) study_stage3.py
 
 clean-pyc:
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +

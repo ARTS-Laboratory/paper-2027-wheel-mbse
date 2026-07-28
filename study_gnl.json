@@ -116,7 +116,7 @@
     "iterations": 5,
     "backtracks": 0,
     "residual_rel": 6.608312525645814e-11,
-    "seconds": 2.16
+    "seconds": 2.14
    },
    {
     "steps": 2,
@@ -132,7 +132,7 @@
     "iterations": 16,
     "backtracks": 0,
     "residual_rel": 6.80166142471815e-11,
-    "seconds": 6.65
+    "seconds": 6.56
    },
    {
     "steps": 8,
@@ -140,7 +140,7 @@
     "iterations": 32,
     "backtracks": 0,
     "residual_rel": 6.61243853136077e-11,
-    "seconds": 12.96
+    "seconds": 13.05
    }
   ],
   "continuation_spread": 1.0680345496894006e-12,
@@ -577,6 +577,6 @@
   "config": "coarse",
   "genome": "best_solution.json",
   "service_force_n": 66.7233,
-  "elapsed_s": 138.8
+  "elapsed_s": 149.2
  }
 }

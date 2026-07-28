@@ -318,7 +318,7 @@ def _corner_coords(nodes_xy, conn):
     return nodes_xy[conn[:, :4]]
 
 
-def scaled_jacobian(nodes_xy, conn):
+def scaled_jacobian(nodes_xy, conn, xp=np):
     """Minimum scaled Jacobian per element, in [-1, 1].
 
     At each of the 4 corners, the Jacobian of the bilinear map normalised by the
@@ -332,6 +332,12 @@ def scaled_jacobian(nodes_xy, conn):
     Note this measures SHAPE, not aspect ratio: a long thin rectangle scores 1.0.  That
     is the right property for validity, and the reason aspect ratio is reported
     separately.
+
+    `xp=jax.numpy` makes this traceable, which is what M8's mesh-validity barrier needs:
+    the barrier has to be differentiable in the genes, and it reaches them through
+    `wheel_wheel.mesh_coords`.  M2b's committed report and every caller of the numpy path
+    are unaffected — `study_objective.py` gate 6 pins the two paths to 1e-12.  `conn` stays
+    a numpy index array either way; it is topology, and topology is frozen.
     """
     P = _corner_coords(nodes_xy, conn)
     out = []
@@ -339,14 +345,14 @@ def scaled_jacobian(nodes_xy, conn):
         a = P[:, (k + 1) % 4] - P[:, k]        # outgoing edge
         b = P[:, (k - 1) % 4] - P[:, k]        # incoming edge
         cross = a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]
-        denom = np.linalg.norm(a, axis=1) * np.linalg.norm(b, axis=1)
-        out.append(cross / np.where(denom > 0, denom, np.inf))
+        denom = xp.linalg.norm(a, axis=1) * xp.linalg.norm(b, axis=1)
+        out.append(cross / xp.where(denom > 0, denom, xp.inf))
     # Corners are traversed consistently, so a valid element has all four the same
     # sign; take the signed extreme nearest zero.
-    stacked = np.stack(out, axis=1)
-    return np.where(stacked.min(axis=1) < 0,
+    stacked = xp.stack(out, axis=1)
+    return xp.where(stacked.min(axis=1) < 0,
                     stacked.min(axis=1),
-                    np.abs(stacked).min(axis=1))
+                    xp.abs(stacked).min(axis=1))
 
 
 def aspect_ratio(nodes_xy, conn):

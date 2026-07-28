@@ -887,7 +887,14 @@ def mesh_coords(genes, mesh, xp=None):
 
 
 _COORD_FN_CACHE = {}
-_COORD_FN_CACHE_MAX = 32
+
+# SIZED BY THE PHASE LATTICE, NOT BY TASTE.  Phase is part of the key (see `coord_fn`), so
+# a Stage-3 step that evaluates an 8-point phase stencil touches 8 entries, and M8's
+# quantized RQMC draws that stencil from a fixed 8x8 = 64-phase lattice.  At 32 the cache
+# evicted an entry it was about to need on every step — a 100% miss rate on the exact
+# workload it exists for, costing the measured 0.774 s re-trace each time.  128 holds the
+# whole lattice with room for a second mesh config at a checkpoint.
+_COORD_FN_CACHE_MAX = 128
 
 
 def coord_fn(mesh):

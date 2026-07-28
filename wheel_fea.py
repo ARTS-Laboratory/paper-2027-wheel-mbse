@@ -88,6 +88,7 @@ CHAIN-OF-THOUGHT ENGINEERING NOTES
 """
 
 import warnings
+import hashlib
 import json
 import math
 import os
@@ -844,6 +845,75 @@ def bound_saturation_report(solution, tol_frac=0.01):
     return hits
 
 
+def dump_population(ga, path="stage2_elites.json", n_keep=16):
+    """Write the final GA population's best distinct genomes for Stage 3 to start from.
+
+    WHY THIS HAS TO EXIST.  The master plan says Stage 3 "multi-starts all 16 elites",
+    and there are no 16 elites anywhere: `best_solution.json` holds ONE genome, pygad is
+    constructed without `save_solutions=True`, and `keep_elitism` is 5 at this population
+    size.  Without this, M8b's multi-start would have to perturb the single shipped
+    genome — and every start would then sit in one basin, which tests far less than
+    "monotone decrease from >= 3 of 4 multi-starts" is meant to test.
+
+    Deduplicated by `genome_hash` because elitism carries identical rows forward between
+    generations, so the raw population contains repeats and a naive top-16 can be four
+    distinct designs wearing sixteen hats.
+
+    Deliberately confined to `__main__`'s call site and gated behind a flag: M0's golden
+    test pins `evaluate_design` and the shipped record, and a milestone that needed a
+    starting set is not a reason to change what a GA run writes by default.
+    """
+    pop = np.asarray(ga.population, dtype=float)
+    fit = np.asarray(ga.last_generation_fitness, dtype=float)
+    order = np.argsort(-fit)                       # pygad maximises: best fitness first
+
+    seen, kept = set(), []
+    for i in order:
+        h = _genome_hash_vector(pop[i])
+        if h in seen:
+            continue
+        seen.add(h)
+        kept.append((pop[i], float(fit[i]), h))
+        if len(kept) >= n_keep:
+            break
+
+    record = {
+        "source": "wheel_fea.py --dump-population",
+        "seed": int(ga.random_seed) if getattr(ga, "random_seed", None) is not None
+        else None,
+        "generations": int(ga.generations_completed),
+        "population_size": int(pop.shape[0]),
+        "n_distinct_in_final_population": int(len({_genome_hash_vector(p)
+                                                   for p in pop})),
+        "elites": [
+            {"rank": r, "genome_hash": h, "fitness": f, "loss": -f,
+             "genes": {name: float(v) for name, v in zip(GENE_NAMES_ORDER, g)}}
+            for r, (g, f, h) in enumerate(kept)],
+    }
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
+    with open(out, "w") as fh:
+        json.dump(record, fh, indent=2)
+    print(f"\n  [STAGE-2 ELITES]  wrote {len(kept)} distinct genomes to {out}")
+    print(f"  final population held {record['n_distinct_in_final_population']} distinct "
+          f"designs out of {pop.shape[0]}")
+    return out
+
+
+GENE_NAMES_ORDER = ("cx1", "cy1", "cx2", "cy2", "cx3", "cy3", "cx4", "cy4",
+                    "t0", "t1", "t2", "t3", "R_hub", "R_rim")
+
+
+def _genome_hash_vector(vec):
+    """`wheel_genome.genome_hash` on a raw vector, without importing that module.
+
+    `wheel_fea` is the numpy-only half of the import graph and `tests/test_import_hygiene`
+    enforces it; the hash is seven characters of sha256 over the same canonical text the
+    other two copies use.
+    """
+    payload = ",".join(f"{float(v):.9g}" for v in vec)
+    return hashlib.sha256(payload.encode()).hexdigest()[:7]
+
+
 def print_loss_breakdown(loss_terms):
     """Per-term contribution to the total loss, as absolute value and % of total."""
     total = sum(loss_terms.values())
@@ -1091,6 +1161,15 @@ if __name__ == "__main__":
                         help="skip the CAD hand-off")
     parser.add_argument("--out", default="best_solution.json",
                         help="genome output path, relative to this file")
+    parser.add_argument("--dump-population", action="store_true",
+                        help="also write the final GA population's best genomes to "
+                             "--elites-out. Stage 3 multi-starts from these; the GA "
+                             "keeps only 5 elites internally and pygad is constructed "
+                             "without save_solutions, so nothing else records them.")
+    parser.add_argument("--elites-out", default="stage2_elites.json",
+                        help="where --dump-population writes, relative to this file")
+    parser.add_argument("--n-elites", type=int, default=16,
+                        help="how many distinct genomes to keep (default 16)")
     parser.add_argument("--cy-bound", type=float, default=CY_BOUND_MM,
                         help=f"lateral half-range for the interior Bezier control "
                              f"points (default {CY_BOUND_MM}). The v2.1 winner has cy1 "
@@ -1155,6 +1234,9 @@ if __name__ == "__main__":
     )
 
     ga.run()
+
+    if args.dump_population:
+        dump_population(ga, args.elites_out, args.n_elites)
 
     best_sol, best_fit, _ = ga.best_solution()
     (cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,

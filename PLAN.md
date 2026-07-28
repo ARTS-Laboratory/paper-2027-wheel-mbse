@@ -1,221 +1,301 @@
-# M7 — Gradients: the adjoint, and whether the objective is smooth in all 14 genes
+# M8b-i — the Stage-3 optimizer, and whether its problem has a solution
 
-> **STATUS: DONE.** All ten gates pass at `coarse` in 1079 s; `study_gradient.json` /
-> `.jpg` are committed. Test suite 201 -> 213.
+> **STATUS: CODE COMPLETE. ALL TEN GATES PASS AT `coarse` IN 9941 s (2 h 46 m).**
+> `wheel_stage3.py`, `study_stage3.py`, `tests/test_stage3.py`, `study_stage3.json` and
+> `.jpg` are new; only the `Makefile` is amended. **No existing module was touched** —
+> the warm-start channel, the tier selector, the `stress_scale` input, the orientation pin
+> and the 128-entry `coord_fn` cache were all built for this in M8a. Test suite 230 -> 249,
+> all green.
 >
-> **The headline.** The adjoint reproduces brute-force differentiation of the same solve
-> to **9.3e-12**, three orders inside the 1e-8 gate, with no finite difference involved.
-> `grad_u Pi` equals the assembled internal + contact force to **exactly zero**. Every
-> live gene has an FD plateau agreeing with the adjoint to better than **2.9e-6**. The
-> gradient costs **0.48 s** at `coarse`.
+> | gate | measured at `coarse` | threshold |
+> |---|---|---|
+> | S1 directional derivative vs an FD ladder of the whole pipeline | **9.5e-6**, 2 rungs | 1e-4, >= 1 |
+> | S2 Adam descends, deterministic 25 steps | **2303.05 -> 953.70**, 2.41x | strictly |
+> | S3 projection exact; no gene frozen against an inward gradient | **0 box, 0 freeze**, 4 genes freed | exact; none |
+> | S4 `stress_scale` used == previous step's measurement | **0.000e+00** over 25 steps | 1e-12 |
+> | S5 a failed solve is a step reject, and a storm terminates | **recovers; restores; stops** | recovers, logged |
+> | S6 the flank-orientation pin is what the meshes are built with | **[1,1]**, 0 flips | exact |
+> | S7 rqmc vs uniform vs iid, step-to-step jitter | **0.148 vs 0.085 vs 0.187** | rqmc < iid |
+> | S8 warm start vs cold, per evaluation | **68.44 -> 66.81 s**, 2.4% | not slower |
+> | S9 **the feasibility verdict** | reported below | **not gated** |
+> | S10 cost per step by tier, and the production projection | reported below | — |
 >
-> **What the plan got right:** the energy formulation collapsed the adjoint to one
-> `jax.grad` of a scalar; `wheel_fem.py` needed no changes at all; the two fillet genes
-> are dead and the census caught it.
+> **M8a's two debts are cleared.** `study_objective.py` ran to completion at `coarse`
+> (PASS, 4030 s) and `make studies` ran the full sweep (**exit 0, all eight gates PASS**).
+> The regression check is now executed rather than argued: two reports came back
+> **byte-identical**, and across the other six **every single differing leaf is a
+> wall-clock timing or a ratio of timings** — 24 of 4283 in `study_gradient`, 5 of 423 in
+> `study_contact`, 1 of 175 in `study_wheel_mesh`. No physics number moved anywhere.
+> `study_objective` was then run a second time independently and reproduced itself to 4
+> leaves of 667, all timing. The only thing not yet executed as one command is `make
+> studies` *including* the new `study_stage3.py` entry; every one of the nine has been run
+> and passed individually.
 >
-> **What the plan got wrong, and the measurements that said so:**
-> 1. *`R_hub` and `R_rim` are dead at the MESH, not through the solve.* `dcoords/dgene` is
->    identically zero — no solver, contact law or step size is involved. Sharper than
->    M6's version of the same finding, and it is what the gate now asserts.
-> 2. *Three gates were measuring the finite difference, not the gradient.* G4, G5 and G9
->    were each written at a single step of 1e-4 of the gene range and each failed at
->    `coarse` by one to eight parts in 1e5. One cause: the REFERENCE's truncation error.
->    Over a ladder the directional disagreement falls 1.2e-2, 8.3e-5, 2.1e-5, 6.2e-7
->    while the adjoint does not move. Tightening the secant from 1e-8 to 1e-11 changed
->    G9 by *nothing at all* — ten identical digits — which is what ruled the secant out.
-> 3. *G6's "no adjacent outliers" was wrong about how a kink looks.* A central difference
->    of step `h` straddles a C¹ kink for every sweep point within `h`, so a sweep finer
->    than `h` must produce a run. Measured: 23 outliers in 6 clusters at h=1e-4, **2 at
->    h=1e-5**, median falling 4.4e-5 -> 3.2e-7. The criterion is now the shrinkage.
-> 4. *The gradient does not cost "10-15% on top of the forward solve" in the way that
->    matters.* Against a cold solve it is 4.3%, meeting the prediction. Against the WARM
->    solve Stage 3 will actually run it is **2.4x**, because a warm contact solve is two
->    Newton iterations while the gradient still needs a full tangent assembly and
->    factorisation. That is the number that sizes M8's phase batch.
+> ## The headline: **the problem is infeasible, and by more than M8a thought**
 >
-> **Unplanned finding, and the most consequential one for M8:** the contact **facets on
-> the rim discretisation as the wheel rolls**. The slope of force(phase) carries a ripple
-> at the quadrature-point spacing worth **17.6% of the slope at `smoke` and 3.8% at
-> `coarse`** — it refines away (4.6x for a 2.5x rim refinement), so it is an artefact
-> rather than a property of the wheel. What it exposes is that the master plan's own
-> mitigation for its risk #7 — "set rim N_theta for >= 8 nodes in the patch" — was
-> written when the patch was *assumed* to be 3° wide. M6 measured 0.484°, so `smoke` gets
-> **0.56** nodes across the patch and `coarse` **1.75**. No config in this project
-> reaches two. M8's phase quadrature cannot assume the spectral accuracy the master plan
-> claims for it until the rim resolves the patch.
+> Each constraint is reachable **alone**. Neither is reachable **with the other**.
 >
-> **A performance fact that is load-bearing rather than tuning:** `jax.vjp` on an untraced
-> closure re-traces `sector_blocks` on every call — 0.774 s against 0.05 s for the entire
-> rest of the adjoint. And the obvious cache, keyed on the mesh object, misses on every
-> call it exists to serve, because every finite difference and every optimizer step builds
-> a new mesh. `wheel_wheel.coord_fn` keys on the static recipe instead.
+> | probe | stress utilisation | deflection error |
+> |---|---|---|
+> | stress only | 1.713 -> **0.972** (min 0.932) | -25.4% -> **-77.0%** |
+> | deflection only | 1.713 -> **1.820** | -25.4% -> **+1.4%** (min abs 0.22%) |
+> | joint, real weights | 1.713 -> **1.203** | -25.4% -> **-54.9%** |
+>
+> Stress can be met, at 77% short of the deflection target. Deflection can be met, at 82%
+> over the allowable. **No design visited by any of the three descents satisfies both**,
+> and the joint run settles in between rather than finding a corner neither single-objective
+> run could see. `study_stage3.jpg`'s third panel is the whole result: the feasible box sits
+> in the corner, untouched, and the frontier sweeps past it.
+>
+> **And M8a's headline understated it by 38%.** `PLAN.md`'s "31.02 MPa against 25.0" is a
+> **`smoke`** measurement — this milestone reproduces it exactly at `smoke` (31.01 MPa,
+> utilisation 1.2406) and measures **42.82 MPa, utilisation 1.7128**, at `coarse`. Peak
+> stress rises with refinement, as a resolved stress concentration does, so the verdict
+> above is a *lower* bound on the infeasibility and the mesh convergence of the stress QoI
+> is now the load-bearing open question. M4's `compliance_split.rim = 0.324` remains the
+> standing explanation for the deflection half: a third of the compliance sits in a rim band
+> no gene touches.
+>
+> **What the plan got right.** Projection rather than sigmoid reparameterisation — 4 genes
+> left their bounds during the 25-step run, and all six start pinned, so a squashing map
+> would have begun with them frozen. The `stress_scale` discipline, which held to *exactly*
+> zero over 25 steps. The prediction that warm-starting needed no change to
+> `wheel_objective` (`delta0` and `axle_drop_mm` are the same number,
+> `wheel_adjoint.py:537`). The quantized lattice: `iid` drew 9 stencils in 9 steps and
+> **never once got a cache repeat**, while `rqmc` paid 4 first visits at 163 s and then ran
+> at 73 s. And the gate-before-consume split itself, which is what stopped a 48-hour
+> production run being launched at an infeasible problem.
+>
+> **What the plan got wrong, and the measurements that said so.**
+>
+> 1. *The T1 pre-check rule deadlocked the feasibility probe, and the first coarse run
+>    reported the deadlock as a result.* The rule was "reject a trial whose barrier sum
+>    exceeds the current point's". The shipped design carries `hub_overlap` = 52.13; the
+>    stress-reducing direction raises it to **55.41**, and halving only walks it back to
+>    **52.54** — still above. Every trial at every scale was refused, all 40 steps were
+>    abandoned, and the probe reported **its own starting point** as the lowest reachable
+>    utilisation: 194 events, **zero accepted steps**, 35 minutes standing still. The error
+>    was conceptual. Every barrier is *already* a weighted term in the objective —
+>    `hub_overlap` at 500·(violation)² is how the optimizer is told — so a screen that also
+>    forbids increasing one overrides the weights and vetoes precisely the constrained trade
+>    the probe exists to make. `T1_REJECT` is now **1e4**, a gross "this will not mesh"
+>    threshold against barriers that sit in the tens.
+> 2. *And S9's gate could not tell a frozen run from a converged one, which is why it
+>    passed.* The pass condition was `loss_end == loss_end` — a NaN check. "The function
+>    returned" counted as success. It now requires every probe to have **accepted at least
+>    one step and moved**, which is the condition that would have caught this
+>    automatically. A bound obtained by never moving is not a bound on anything.
+> 3. *The cost model was out by a factor of 26, in the direction that matters.* The plan
+>    budgeted 0.68 s/phase from M7 — but that figure is a warm single-phase gradient with a
+>    prebuilt mesh, not an objective evaluation. Measured: **18.05 s/phase, 144.4 s for an
+>    8-phase evaluation**, which projects the production run to **48.13 hours serial**
+>    against the plan's 1.8. Independently corroborated by M8a's own `cheap_fraction` of
+>    1.22%, which implies a ~114 s `coarse` evaluation. **Process parallelism is a
+>    precondition for M8b-ii, not an optimization of it.**
+> 4. *T1 is not "~ms", but the tiering argument survives anyway, and quoting either number
+>    alone misleads.* `t1_vector` carries no `@jax.jit`, so `jacrev` runs it eagerly:
+>    **1.06 s** per call at `coarse`, three orders off `wheel_objective.py:33`. As a
+>    *fraction* it is **0.73%** of a full `coarse` evaluation, so refusing a trial for 1 s
+>    instead of spending 144 s on it is still the trade M8a described. At `smoke` the same
+>    second lands against a 7 s solve and becomes 21% — a statement about how cheap the
+>    mesh is, not about T1.
+> 5. *A three-hour study that prints nothing until it finishes is unobservable.* The first
+>    coarse run gave no signal for 3 h 20 m, which is how the deadlock stayed invisible.
+>    Per-section progress is now printed and flushed.
 
 ## Context
 
-M7 is the master plan's gradient milestone:
+M8a's closing line was an open question with numbers attached: *"Whether M8b has a feasible
+problem is now an open question."* Answering it by launching the production run and watching
+it fail to converge was the expensive option, and a Stage-3 run against an infeasible problem
+is indistinguishable from one against a buggy optimizer — in both cases the trajectory stalls
+short of target and in both cases the gradient is correct.
 
-> **M7 — Gradients (~2d).** `custom_vjp` implicit-diff solve; the four gradient checks in
-> order. *Gate:* a gene with no FD plateau means the objective isn't smooth in it — find
-> the term and fix it before Stage 3.
+So M8b splits. **M8b-i is the optimizer, its gate, and a cheap probe that answers the
+question first.** M8b-ii is the process-parallel batch, the multi-fidelity checkpoints and
+the production run — and its scope is now a different question than it was, because the
+answer came back *no*.
 
-Everything downstream of M7 is a projected optimizer that calls one function. A gradient
-that is right to plotting accuracy and no better cannot be told apart from a hard problem
-by any line search, so it would produce a Stage-3 run that looks like it is working and is
-not. M7's deliverable is therefore not an adjoint — that is fifty lines — but a *proved*
-one, plus the measurements of smoothness that say the objective is differentiable at all.
-
-M6 already answered M7's advertised hazard in the unexpected direction: the sharp Macaulay
-bracket has a clean three-decade FD plateau, so the C² smoothing is unnecessary and
-`smoothing_mm` stays 0.0. What M6 surfaced instead — `R_hub` and `R_rim` having no FEA
-gradient — is the finding that shapes this milestone.
-
-**Four scope decisions, taken before writing any code:**
-
-1. **Solve outputs only.** `contact_force` at fixed indentation, `axle_drop` at service
-   force, `strain_energy`, `mass`. The seven loss terms and the p-norm stress are M8's;
-   calibrating their weights against a gradient nothing had verified is the order this
-   gate exists to prevent.
-2. **numpy `value_and_grad` only, no `custom_vjp` wrapper.** Stage 3's optimizer is
-   numpy-side and never traces the outer loop, so a wrapper would be a code path with no
-   consumer. The pieces are separated so that adding one is mechanical.
-3. **The two fillet-blind genes are accepted, classified and gated on**, not fixed.
-   Meshing fillets is its own milestone (`replicated-roaming-quill.md`) and would re-open
-   M2b's mesh-validity gate. Stage 3 keeps a non-gradient term for them.
-4. **`CLAUDE.md` stays deleted.** M7 documents itself in `wheel_adjoint.py`'s docstring
-   and in `study_gradient.py`, the way M5 and M6 currently do.
+**No constant was relaxed.** `TARGET_DEFLECTION_MM`, `ALLOWABLE_STRESS_MPA` and
+`DEFAULT_WEIGHTS` are exactly as M8a ported them. Re-weighting until a trajectory looked
+convergent would have hidden the one result this milestone existed to produce.
 
 ---
 
-## Formulation
+## Architecture — the per-step protocol is the design
 
-**Write the energy, derive everything else — one level up.** `wheel_fem.py` gets the
-internal force and the tangent from `jax.grad` / `jax.hessian` of one element energy so
-they cannot drift apart. The same argument applies with more force to the sensitivity: a
-hand-derived `∂r/∂p` that disagrees with the residual by a term produces a gradient that is
-*plausible* — right direction, wrong length — which is the hardest kind of bug to see from
-an optimizer trace.
+`wheel_stage3.py` is a driver and nothing else: no new physics, no new gradient, no new
+term. What it *does* own is five decisions, each of which fails silently if got wrong — the
+run does not crash, it converges somewhere slightly wrong and looks like a hard problem.
 
-At a converged state the reduced residual is itself a derivative of the potential:
+1. **`stress_scale` is refreshed between steps and pinned within one.** The p-norm→max
+   rescale is exact only for a *constant* factor (`wheel_objective.py:487`); M8a's gate 7
+   measured 10% of error in the assembled gradient while every individual term still matched
+   its own FD to 1e-8. Each evaluation is handed the ratio measured at the previous point,
+   so value and gradient at any one point answer the same question. S4 holds this to exactly
+   zero.
+2. **Phases come from a fixed lattice and meshes are built once per step.**
+   `--phase-scheme {rqmc,uniform,iid}` ships here; `rqmc` is the default. Meshes are built
+   once via `phase_meshes` and passed as `meshes=`, or `objective` rebuilds eight of them
+   per call.
+3. **Flank orientation is pinned for the whole run** and threaded through
+   `phase_meshes(orientation=...)`. It is re-derived every step *for reporting only*; a
+   disagreement is an `orientation_flip` event. S6 checks the pin by watching what
+   `phase_meshes` is actually called with — not by building the flipped mesh, because at the
+   shipped genome the `eta=-1` hub arrival **does not exist** (the flank never reaches
+   r = 12.7 mm), which is the same real geometry M8a's fillet term ran into.
+4. **Warm starting is free and is taken**: the previous step's per-phase drops are the next
+   step's `delta0`. Worth 2.4% per evaluation, measured.
+5. **A failed solve is a step reject.** `wheel_objective` contains no `try`/`except` by
+   design, so the driver owns the policy: halve, retry to `--max-rejects`, then restore the
+   iterate and decay the rate. A non-descent tangent *is* the only buckling signal this repo
+   owns until M9. Five consecutive abandonments now stop the run with a
+   `run_stopped_stuck` event rather than burning the budget in place.
 
-```
-Pi(c, u_f, y) = U_bulk(c, u_f) + Pi_contact(c, u_f, y)
-u_f           = T @ u_r + u_pre                       [T static: the topology is frozen]
-r(c, u_r)     = T^T grad_{u_f} Pi = grad_{u_r} Pi     [ = 0 at the solution ]
-K_r           = hess_{u_r} Pi                         [ what Newton assembled ]
-```
-
-so for a quantity of interest `Q(c, u_f, y)`:
-
-```
-K_r adj_r = -T^T (dQ/du_f)                one sparse solve; K_r is symmetric
-adj_f     = T @ adj_r
-dQ/dc     = dQ/dc|_u + grad_c [ adj_f . grad_{u_f} Pi(c, u_f, y) ]
-dQ/dgenes = vjp_{mesh_coords}(dQ/dc)
-```
-
-The third line is the whole adjoint: one `jax.grad` of a scalar.
-
-**Two things fall out rather than being coded.** The total contact force is `+dPi/dy_ground`
-exactly, so `contact_force` is a derivative of the contact law rather than a second
-quadrature of it — and its agreement with `RigidGroundContact.total_force` becomes evidence
-instead of an assumption. And `dF/d(indentation)` is the same adjoint with the same
-multiplier, contracted against `y_ground` instead of `c`.
-
-**The axle drop at service force is an implicit function, not a differentiated secant.**
-`F(delta*, p) = F_service` gives `d(delta)/dp = -(dF/dp)/(dF/d delta)`, both pieces from
-one adjoint. Differentiating the secant would put its own stopping tolerance into the
-derivative, where it would masquerade as physics — the argument M6's G7 already makes.
-
-**What is not differentiable is named rather than hidden.** `mesh_coords` freezes the flank
-orientation and the seam ownership. Those are discrete decisions and a step that flips one
-is a genuine discontinuity of the design space, not a defect.
+**Projection, not reparameterisation.** `z <- clip(z - step, 0, 1)`. Six of fourteen genes
+sit exactly on a bound at the shipped genome, and a sigmoid map has vanishing gradient there.
+S3 verifies the *implication* rather than hoping a gene moved: a gene on a bound stays there
+if and only if the unprojected step would have left the box.
 
 ---
 
-## Gates — written down before the run
+## The feasibility probe
 
-| # | gate | threshold |
-|---|---|---|
-| 1 | adjoint vs **fully unrolled Newton**, `tiny` config, all 14 genes | 1e-8 relative |
-| 2 | `grad_u Pi` vs the assembled `internal_force + contact.force` | 1e-12 relative |
-| 3 | `mesh_coords` vs `build_wheel`'s own coordinates, every config | < 1e-9 mm |
-| 4 | per-gene FD plateau **vs the adjoint**, all 14, `h ∈ {1e-2…1e-7} × gene range` | ≥ 1 decade within 1e-4 |
-| 5 | 10 random directional derivatives, over a step ladder | 1e-5 relative |
-| 6 | adjoint vs FD at 400 points across one gene, at two steps | outliers shrink with `h` |
-| 7 | phase faceting must refine away | see below |
-| 8 | insensitive-gene census | **exactly** `{R_hub, R_rim}` |
-| 9 | `axle_drop` gradient through the secant | 1e-5 relative |
-| 10 | gradient cost as a fraction of the forward solve | reported |
+Three descents at `coarse`, 20 steps each, differing only in which **objectives** are zeroed
+— every geometric barrier stays on in all three, because a "lowest reachable stress" reached
+through a folded or unmeshable design bounds nothing. 20 steps rather than 40 because every
+probe plateaus well inside it, measured.
 
-**Gate 1 is the one that matters**, and it is first for the master plan's stated reason: it
-compares the adjoint against brute-force differentiation of the same solve and involves no
-finite difference at all, so it isolates adjoint correctness from step-size noise. `tiny`
-is order 1 with 336 reduced DOF — 0.9 MB per dense Newton iteration, so the whole nonlinear
-solve unrolls and differentiates. Order 1 makes it a poor *wheel* model, which is
-irrelevant to the question being asked and is stated in the report so nobody quotes it.
-
-**Gates 4, 5 and 9 are ladders, and were not at first.** Each was written at a single step
-of 1e-4 of the gene range and each failed at `coarse` by one to eight parts in 1e5 — all
-three because of the *reference's* truncation error, not the gradient's. A single-step
-check has no plateau, which is the master plan's own criticism of single-point agreement
-applied to its own items. Gate 4 also measures the plateau against the **adjoint** rather
-than against the ladder's previous rung: that is the plan's literal wording, it is the
-stronger statement (a systematically biased difference also stops moving), and it is what
-lets a gene like `cx1` — whose derivative is a thousand times smaller than `t2`'s, so the
-roundoff floor set by the 66 N response bites it a thousand times sooner — be scored on
-whether its FD is *right* rather than on whether it is *stationary*.
-
-**Gate 6 replaces "must be visibly smooth" with a number.** A plot is not a gate. Comparing
-the adjoint against a difference at all 400 points costs the same solves, is strictly
-stronger, and *localises* a leak. The outliers arrive in short **runs**, and that is the
-signature rather than a defect: a central difference of step `h` straddles a C¹ kink for
-every sweep point within `h` of it, so a sweep sampled finer than `h` must produce a run
-`2h` wide. The criterion is therefore the one that separates a kink from a wrong gradient
-— shrink `h` and count again.
-
-**Gate 7's first criterion was wrong and the data said so.** It asked for the worst second
-difference of `force(phase)` against its own median. Measured, that ratio is 6 at 120
-samples and 29 at 400 — it *grows* with sampling, because it is dominated by how much the
-wheel's real curvature varies over a period. A statistic that worsens the harder you look
-at a fixed physical curve is not measuring the discretisation. Replaced with the thing
-itself: the detrended slope of `force(phase)` over a window sampled far finer than the
-contact quadrature spacing, measured at two mesh refinements. An artefact must shrink with
-the mesh; a property of the wheel must not.
+The verdict is **reported and deliberately not gated**. Gating on feasibility would report a
+fact about the wheel as a fact about the code, and would get the wrong thing fixed.
 
 ---
 
 ## Files
 
-- **`wheel_wheel.py`** — the traced half of `build_wheel` factored into `_sector_coords`;
-  the static recipe (`owners`, `orientation`, `phase_deg`) carried on `WheelMesh`; new
-  `mesh_coords` and `coord_fn`. `build_wheel`'s eager guards stay unconditional — they are
-  the reason the mesh can be trusted, and a "skip when tracing" branch is how guards stop
-  running. `coord_fn`'s jit is load-bearing, not tuning: without it `jax.vjp` re-traces
-  `sector_blocks` on every call and 97% of a Stage-3 gradient is re-derived jaxpr.
-- **`wheel_fem.py`** — **unchanged**. The adjoint reassembles `K_r` from the public
-  `assemble_stiffness` + `contact.stiffness`; keeping this file untouched is worth more
-  than the milliseconds, since M4's, M5's and M6's committed reports all run through it.
-- **`wheel_adjoint.py`** — new: the potential as one jnp function, the QoI registry,
-  `solve_and_grad`, `axle_drop_value_and_grad`, `value_and_grad`, `insensitive_genes`.
-- **`study_gradient.py`** — the M7 gate.
-- **`tests/test_gradient.py`** — the identities, the unrolled-Newton comparison, the two
-  structural facts, and a small rerun of the gate's headline assertions.
-- **`Makefile`** — `study_gradient.py` added to `studies`.
+- **`wheel_stage3.py`** — new. Projected Adam, `--optimizer lbfgsb` as the deterministic
+  alternative (which *refuses* a stochastic stencil rather than fitting curvature to noise),
+  the five protocol decisions, incremental atomic `stage3_run.json`, and
+  `stage3_best.json` through `wheel_genome.save_record`.
+- **`study_stage3.py`** — new. S1–S10 and the probe.
+- **`tests/test_stage3.py`** — new, 19 tests. Tolerances read off `study_stage3.GATE_*`.
+  Two of them are regressions on the deadlock above.
+- **`Makefile`** — `study_stage3.py` added to `studies` and to `help`; new `stage3:` target.
 
 ---
 
 ## Verification
 
 ```bash
-.venv-opt/bin/python study_gradient.py --quick     # fast loop during development
-.venv-opt/bin/python study_gradient.py             # the gate; exits nonzero on failure
-make test
-make studies                                       # all seven gates
+.venv-opt/bin/python study_stage3.py --quick     # fast loop during development
+.venv-opt/bin/python study_stage3.py             # the gate; exits nonzero on failure
+make test                                        # 249 tests
+make studies                                     # all nine gates
 ```
 
-**The regression that matters most**: M4's, M5's and M6's committed reports must not move.
-M7 adds a derivative; it does not touch the mesh, the element, the contact law or the
-solver. A `git diff` on `study_wheel_fea.json`, `study_beam_agreement.json`,
-`study_gnl.json` and `study_contact.json` after `make studies` is the check. The one change
-that could leak is the `wheel_wheel.py` refactor, which is why gate 3 compares
-`mesh_coords` against `build_wheel`'s own output on every config.
+`study_stage3.py` writes its JSON **before** formatting its report: at `coarse` the run is
+hours and `_print` is string formatting, and losing the former to a bug in the latter is a
+trade nobody would make on purpose.
+
+---
+
+## THE NEXT STEP — M8b-i.5, and why it comes before any design change
+
+**Read this first: the verdict above is weaker than it looks, and the weakness is
+specific.** S9 ran three descents, all from `best_solution.json`, all at `coarse`. That
+supports *"no feasible design was found along three descents from one start at one
+fidelity"*. It does **not** support *"the design space contains no feasible point"*, and the
+difference decides whether the genome needs new genes or not.
+
+Two things make the single start suspect rather than merely narrow:
+
+- `best_solution.json` is a converged GA optimum for the **beam surrogate**, and M8a
+  established that surrogate is a bad guide to the FEA — it scored `deflection` at 0.1% of
+  the loss where the FEA says 33.7%, and ranked `mass` first at 79.2% where the FEA puts it
+  fourth at 10.8%. The GA optimised toward a corner chosen by a model we now know is wrong.
+- Adam is a local method and every probe plateaued. A plateau is evidence about a basin, not
+  about a space.
+
+`stage2_elites.json` holds **16 distinct converged genomes** at Stage-2 losses 50.41–52.53,
+already on disk, and nothing has ever evaluated the FEA objective at 15 of them.
+
+### The work, in order
+
+**1. Mesh convergence of the stress QoI.** This gates everything, because if utilisation is
+still climbing the infeasibility is larger than reported and no weight or gene discussion is
+meaningful yet.
+
+Measured so far at the shipped genome: utilisation **1.2406** at `smoke`, **1.7128** at
+`coarse` — 31.01 -> 42.82 MPa. Add `medium` (and `fine` if it is affordable) and report the
+sequence. This is the same question M4 asked of `fea_over_beam` and M8a asked of the
+`max/pnorm` ratio: does the number settle, and if not, which way is it going.
+
+New study, or a section appended to `study_stage3.py` — a section is preferable, because the
+verdict it qualifies lives there. Budget: a `medium` 8-phase evaluation is roughly 4x
+`coarse`'s 144 s, so a handful of designs at 1–4 phases is ~30–60 min.
+
+**2. Multi-start feasibility screen.** Two stages, cheap then expensive:
+
+```bash
+# (a) score all 16 elites, no descent — ~16 x 144 s = 38 min at coarse
+#     report utilisation and deflection error per elite; look for spread
+# (b) re-run the stress-only and deflection-only probes from the 2-3 elites
+#     that sit closest to the feasible corner — ~1 h
+```
+
+`wheel_stage3.start_points("all")` and `study_stage3.load_elites()` already read the file;
+`run_feasibility` already takes `genes`, so (b) is a loop over starts rather than new
+machinery. What changes is the **verdict**, which must become "over N starts" or stay silent.
+
+**Total ~2 h, against 48 h for a production run, and either half can change the decision.**
+
+### The decision that follows, which is a human's
+
+Only once the two checks are in. If the infeasibility survives them:
+
+1. **Add rim-band genes.** M4's `compliance_split.rim = 0.324` — a third of the compliance
+   sits in a band no gene touches, and `deflection_only` reached its target only by driving
+   utilisation to 1.82. This is the "the optimizer needs more freedom" answer, and it is
+   substantial: new genes, `GENE_SPACE`, mesh parameterisation, and a Stage-2 re-run, i.e.
+   everything downstream of the genome moves.
+2. **Revisit the targets.** 2.0 mm at 25 MPa may be over-specified for PLA at this geometry.
+   Cheapest path to a feasible problem, but it is a decision about what the wheel is *for*.
+3. **Accept a Pareto point.** Run Stage 3 with explicit trade weights, ship the best
+   compromise, and document that neither constraint is met.
+4. **Change material or process.** A higher-strength filament raises the allowable directly.
+
+**Do not resolve this by re-weighting.** The weights arbitrate trades inside a feasible set;
+they cannot manufacture one, and tuning them until the plot looks convergent would bury the
+only result this milestone produced.
+
+---
+
+## M8b-ii and beyond — unchanged, but now downstream of the above
+
+- **Process-parallel phase batch, and it is a precondition rather than an optimization.**
+  48.13 h serial for 300 steps × 4 starts. `OMP_NUM_THREADS=1` before the numpy import, and
+  phase slots pinned to workers so each traces only its own share of the lattice — the S7
+  first-visit/repeat split (163 s vs 73 s) is exactly the cost that pinning preserves.
+- **Multi-fidelity checkpoints**, warm-starting each `medium` phase from the converged
+  `coarse` state; measured, not assumed.
+- **Jit `t1_vector`** in `wheel_objective.py` — 1.06 s of eager dispatch per call, paid on
+  every trial step.
+- **M9** remains `λ_min(K_t)` via LOBPCG, replacing the zero-gradient Euler `buckling`
+  proxy, which is still exactly 0.0 and still asserted to be.
+
+---
+
+## State of the working tree, for whoever picks this up
+
+> **Ignore version control entirely. Do not commit, branch, stage, revert or otherwise
+> touch git — it is not part of this project's workflow and nothing here depends on it.**
+
+`make test` (249) and `study_stage3.py` at `coarse` are both green as the tree stands. New
+files: `wheel_objective.py`, `study_objective.py`, `wheel_stage3.py`, `study_stage3.py`,
+`tests/test_objective.py`, `tests/test_stage3.py`, `stage2_elites.json`, and the
+`study_objective.*` / `study_stage3.*` artifacts. Also changed: `Makefile`, `PLAN.md`, and
+M8a's five module edits (`wheel_adjoint`, `wheel_fea`, `wheel_fem`, `wheel_mesh`,
+`wheel_wheel`).
+
+The five re-run `study_*.json` reports differ from their previous contents **only in
+wall-clock timings and ratios of timings**, verified leaf by leaf — no physics number moved.

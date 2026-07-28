@@ -226,10 +226,104 @@ def _qoi_mass(prob):
     return Q
 
 
+# THE MASTER PLAN SAYS p=10 AND THE MEASUREMENT SAYS 30.  A volume-weighted p-norm over
+# the WHOLE wheel is diluted by the hub, the rim and the thick spoke roots, which are most
+# of the volume and carry almost none of the stress.  Measured at `smoke` over nine designs
+# (the shipped genome plus eight 20%-of-range perturbations), `max / pnorm` is:
+#
+#       p=10   mean 2.48   cv 13.8%   range 2.20 - 3.40
+#       p=20   mean 1.62   cv  6.7%   range 1.51 - 1.89
+#       p=30   mean 1.38   cv  4.4%   range 1.33 - 1.54
+#
+# At p=10 a constraint written as "p-norm <= 25 MPa" admits a true max near 60 MPa, so it
+# is a mean-stress proxy wearing a peak-stress name.  What matters for a smooth stand-in is
+# not that the ratio be near 1 but that it be STABLE, since `wheel_objective` rescales by it
+# — and that is exactly the test M4 applied to `fea_over_beam`, which failed it at cv 62%
+# and a 32x range, closing the Stage-2.5 off-ramp.  Here it passes at p=30.
+# p=40+ buys little (0.79 -> 0.85 of max) and sharpens the argmax the p-norm exists to blur.
+STRESS_PNORM_P = 30.0
+_VM2_FLOOR = 1e-24           # MPa^2 — see below
+
+
+@functools.lru_cache(maxsize=None)
+def _vm_kernel(order, nonlinear, cauchy):
+    """`(Xe, ue, lam, mu) -> (von_mises[n_elem, ngp], gauss_volume[n_elem, ngp])`.
+
+    The stress comes from `fem._stress_kernel`, the SAME function `gauss_stresses`
+    reports — see its docstring for why that is not a convenience.
+
+    THE FLOOR UNDER THE SQUARE ROOT IS NOT COSMETIC.  Von Mises is `sqrt(J2)` and `sqrt`
+    has infinite slope at zero, so an element at exactly zero stress would put an inf in
+    the adjoint's right-hand side.  A loaded wheel has no such element, but a *finite
+    difference* of the p-norm evaluates the objective at perturbed designs, and the mesh
+    has lightly loaded regions where cancellation can land arbitrarily close to zero.
+    The floor is 1e-24 MPa^2, i.e. 1e-12 MPa against a 25 MPa allowable — 13 orders below
+    anything that matters, and it moves the p-norm by less than one ulp.
+    """
+    sig = fem._stress_kernel(order, nonlinear, cauchy)
+    vol = fem._volume_kernel(order)
+
+    def f(Xe, ue, lam, mu):
+        s = sig(Xe, ue, lam, mu)
+        sxx, syy, sxy = s[..., 0, 0], s[..., 1, 1], s[..., 0, 1]
+        vm2 = sxx**2 - sxx * syy + syy**2 + 3.0 * sxy**2
+        return jnp.sqrt(jnp.maximum(vm2, _VM2_FLOOR)), vol(Xe)
+    return f
+
+
+def _qoi_pnorm_stress(prob, p=STRESS_PNORM_P):
+    """Volume-weighted p-norm of von Mises stress over the Gauss points [MPa].
+
+        sigma_pn = ( sum_g V_g vm_g^p / sum_g V_g )^(1/p),      V_g = w_g detJ_g width
+
+    WHY A P-NORM AND NOT THE MAX.  `max` over Gauss points is what the design actually
+    cares about, and it is the one function of the stress field that a gradient method
+    cannot use: its derivative is a delta on whichever point happens to be highest, so it
+    jumps discontinuously the moment the argmax moves — which, on a rolling wheel with a
+    contact patch sweeping across the rim, is every few steps.  The p-norm is a smooth
+    lower bound that approaches the max from below as p grows.  The true max is reported
+    alongside (`max_stress`) so nobody quotes the p-norm as a peak stress.
+
+    WHY VOLUME-WEIGHTED.  An unweighted p-norm scores the MESH rather than the wheel:
+    refining the rim adds Gauss points in a lightly stressed region and drags the average
+    down, so the optimizer could reduce the objective by a change of `cfg`.  With volume
+    weights the sum is a quadrature of an integral and is mesh-convergent.
+
+    THE P-NORM IS NOT THE CONSTRAINT.  It is 1/1.38 of the true max at p=30 and that
+    factor drifts with the design, so `wheel_objective` rescales it by the measured ratio
+    (held constant within a step, so the gradient stays exact) rather than comparing it to
+    the allowable directly.  See `STRESS_PNORM_P` for the measurement that sets p.
+
+    Float64 headroom at p=30: the worst design sampled reached 82 MPa, giving `vm^30` of
+    1e57 and a summed numerator of ~1e61 against a 1.8e308 overflow.  It would take a
+    ~1e10 MPa stress to overflow, which is not a stress, it is a broken mesh.
+    """
+    kern = _vm_kernel(prob.order, prob.nonlinear, True)
+    conn = jnp.asarray(prob.conn)
+    lam, mu, width = prob.lam, prob.mu, prob.width
+
+    def Q(coords, u_full, y_ground):
+        vm, vol = kern(coords[conn], u_full.reshape(-1, 2)[conn], lam, mu)
+        wgt = vol * width
+        return (jnp.sum(wgt * vm**p) / jnp.sum(wgt)) ** (1.0 / p)
+    return Q
+
+
+def max_stress(prob, coords, u_full):
+    """True max von Mises [MPa] — the number to quote, and the one to report the p-norm
+    against.  Not differentiable and not a QoI; `_qoi_pnorm_stress` is its smooth proxy."""
+    kern = _vm_kernel(prob.order, prob.nonlinear, True)
+    vm, _ = kern(jnp.asarray(coords)[np.asarray(prob.conn)],
+                 jnp.asarray(u_full).reshape(-1, 2)[np.asarray(prob.conn)],
+                 prob.lam, prob.mu)
+    return float(jnp.max(vm))
+
+
 QOI = {
     "contact_force": _qoi_contact_force,
     "strain_energy": _qoi_strain_energy,
     "mass": _qoi_mass,
+    "pnorm_stress": _qoi_pnorm_stress,
 }
 
 
@@ -282,8 +376,35 @@ def adjoint_grad(prob, mesh, u_full, genes, qoi="contact_force"):
     Separated from the solve so that `study_gradient.py` can drive it against a state
     produced some other way — in particular the unrolled-Newton reference, which must
     differentiate the same converged field rather than one of its own.
+
+    The one-quantity case of `adjoint_grads`, kept because it is what M7's gate and tests
+    call and its result is a flat dict rather than a dict of dicts.
     """
-    Q = QOI[qoi](prob) if isinstance(qoi, str) else qoi(prob)
+    name = qoi if isinstance(qoi, str) else "qoi"
+    return adjoint_grads(prob, mesh, u_full, genes, [(name, qoi)])[name]
+
+
+def adjoint_grads(prob, mesh, u_full, genes, qois=("contact_force",)):
+    """Several quantities' gradients at one converged state — one factorisation, N solves.
+
+    `qois` is a sequence of names in `QOI`, or of `(name, factory)` pairs where `factory`
+    is `prob -> Q(coords, u_full, y_ground)`.  Returns `{name: {value, grad, ...}}`, each
+    entry exactly what `adjoint_grad` returns for that quantity alone.
+
+    WHAT IS SHARED IS WHAT IS EXPENSIVE.  Every quantity evaluated at the same converged
+    state has the same reduced tangent `K_r` on the left of its adjoint solve — only the
+    right-hand side `-T^T dQ/du` changes.  So `K_r` is assembled once, factorised once
+    (`splu` via `factorized`), and back-substituted per quantity.  The `jax.vjp` through
+    `mesh_coords` is likewise built once and applied per quantity, and that is the bigger
+    saving: M7 measured the vjp trace at 0.774 s against 0.05 s for the whole rest of the
+    adjoint.  M8's objective wants `pnorm_stress` and `contact_force` at the same state
+    (the load-control coupling below needs both), so this is the difference between one
+    gradient's cost and two.
+
+    Reassembling `K_r` rather than reusing Newton's is unchanged from `adjoint_grad`'s
+    reasoning: `solve_nonlinear` does not hand its last factorisation back, and keeping
+    `wheel_fem.py`'s solver untouched is worth more than the milliseconds.
+    """
     con = prob.contact
     args = _static_args(prob)
     _, _, mixed = _kernels(prob.order, prob.nonlinear, con.n_quad, con.smoothing_mm)
@@ -293,38 +414,42 @@ def adjoint_grad(prob, mesh, u_full, genes, qoi="contact_force"):
     y = float(con.y_ground)
     T = prob.T
 
-    value = float(Q(c_j, u_j, y))
-    dQ_dc, dQ_du, dQ_dy = jax.grad(Q, argnums=(0, 1, 2))(c_j, u_j, y)
-
-    # -- the adjoint solve.  K_r is the SAME operator Newton converged on, reassembled
-    # at the converged state; `solve_nonlinear` does not hand its last factorisation
-    # back, and rebuilding costs a fraction of one Newton iteration.
     K = fem.assemble_stiffness(prob.coords, prob.conn, u_full, order=prob.order,
                                lam=prob.lam, mu=prob.mu, width=prob.width,
                                nonlinear=prob.nonlinear)
     K = K + con.stiffness(prob.coords, u_full)
     Kr = (T.T @ K @ T).tocsc()
-    rhs = -(T.T @ np.asarray(dQ_du))
-    adj_r = spla.spsolve(Kr, rhs)
-    if not np.all(np.isfinite(adj_r)):
-        raise RuntimeError(
-            "the adjoint solve produced a non-finite multiplier — the tangent at the "
-            "converged state is singular, which means the forward solve stopped at a "
-            "state Newton could not have converged to")
-    adj_f = jnp.asarray(T @ adj_r)
+    back_solve = spla.factorized(Kr)
 
-    d_dc, d_dy = mixed(c_j, u_j, y, adj_f, *args)
-    dQ_dc = dQ_dc + d_dc
-    d_dindentation = float(dQ_dy) + float(d_dy)
-
-    # -- chain through the mesh.  `mesh_coords` freezes the topology; see its docstring
-    # for which discrete decisions that hides and why hiding them is right.
+    # Built once and applied per quantity — see the docstring.  A vjp closure is reusable.
     _, vjp = jax.vjp(lambda v: WW.mesh_coords(v, mesh), jnp.asarray(genes))
-    grad = np.asarray(vjp(dQ_dc)[0])
 
-    return {"value": value, "grad": grad, "d_dindentation": d_dindentation,
-            "adjoint_norm": float(np.linalg.norm(adj_r)),
-            "dQ_du_norm": float(np.linalg.norm(np.asarray(dQ_du)))}
+    out = {}
+    for entry in qois:
+        name, spec = entry if isinstance(entry, tuple) else (entry, entry)
+        Q = QOI[spec](prob) if isinstance(spec, str) else spec(prob)
+
+        value = float(Q(c_j, u_j, y))
+        dQ_dc, dQ_du, dQ_dy = jax.grad(Q, argnums=(0, 1, 2))(c_j, u_j, y)
+
+        adj_r = back_solve(-(T.T @ np.asarray(dQ_du)))
+        if not np.all(np.isfinite(adj_r)):
+            raise RuntimeError(
+                f"the adjoint solve for {name!r} produced a non-finite multiplier — the "
+                "tangent at the converged state is singular, which means the forward "
+                "solve stopped at a state Newton could not have converged to")
+        adj_f = jnp.asarray(T @ adj_r)
+
+        d_dc, d_dy = mixed(c_j, u_j, y, adj_f, *args)
+        # -- chain through the mesh.  `mesh_coords` freezes the topology; see its
+        # docstring for which discrete decisions that hides and why hiding them is right.
+        grad = np.asarray(vjp(dQ_dc + d_dc)[0])
+
+        out[name] = {"value": value, "grad": grad,
+                     "d_dindentation": float(dQ_dy) + float(d_dy),
+                     "adjoint_norm": float(np.linalg.norm(adj_r)),
+                     "dQ_du_norm": float(np.linalg.norm(np.asarray(dQ_du)))}
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -369,6 +494,84 @@ def axle_drop_value_and_grad(genes, cfg="coarse", *, force=TOTAL_FORCE_NEWTONS,
             "contact_force_n": out["value"], "d_force_d_indentation": dF_ddelta,
             "force_grad": out["grad"], "res": res, "mesh": mesh,
             "timings": out["timings"], "qoi": "axle_drop"}
+
+
+def service_qoi_value_and_grad(genes, cfg="coarse", qois=("pnorm_stress",), *,
+                               force=TOTAL_FORCE_NEWTONS, phase_deg=0.0, mesh=None,
+                               newton=None, delta0=None, tol_rel=1e-8, max_iter=20,
+                               **problem_kw):
+    """Every quantity's value and TOTAL gradient at the service-force equilibrium.
+
+    THE TERM THIS FUNCTION EXISTS FOR.  Stage 3 loads the wheel to a FORCE, not to an
+    indentation, so every quantity is evaluated at `delta*(p)` solving `F(delta*, p) = F`.
+    A quantity's dependence on the design therefore has two paths — the explicit one at
+    frozen indentation, and the one through where the equilibrium moved:
+
+        dQ/dp|_total = dQ/dp|_delta  +  (dQ/d delta) * (d delta*/dp)
+        d delta*/dp  = -(dF/dp) / (dF/d delta)
+
+    Keeping only the first term leaves a gradient with the RIGHT DIRECTION AND THE WRONG
+    LENGTH, which no line search reports as an error — it reports it as a hard problem.
+    That is M7's named hardest-to-see failure, so the study gates the coupling's size
+    (it is not small: see `study_objective.py`) rather than trusting the derivation.
+
+    Everything needed is one converged state: `contact_force` supplies both `dF/dp` and
+    `dF/d delta`, each requested quantity supplies its own two partials, and `adjoint_grads`
+    shares the factorisation and the mesh vjp across all of them.  So the whole batch costs
+    one forward solve plus one assembly plus one factorisation, not one of each per term.
+
+    `axle_drop` is always included in the result: it is `delta*` itself, whose total
+    gradient is the quotient above, and it is free once `contact_force` has been done.
+    """
+    genes = np.asarray(genes, dtype=float)
+    names = [q if isinstance(q, str) else q[0] for q in qois]
+    t = {}
+
+    t0 = time.time()
+    if mesh is None:
+        mesh = WW.build_wheel(genes, cfg, phase_deg=phase_deg)
+    # The secant's knobs stay out of `problem_kw`, which goes on to `wheel_contact_problem`
+    # and would raise on them — see `axle_drop_value_and_grad`.
+    sec = fem.solve_wheel_contact(mesh, force=force, newton=newton, delta0=delta0,
+                                  tol_rel=tol_rel, max_iter=max_iter, **problem_kw)
+    delta = float(sec["axle_drop_mm"])
+    # Re-solved AT `delta` from the secant's own state so the field the adjoint
+    # differentiates is the field at the indentation the gradient is taken about.  Warm,
+    # so it is one or two Newton iterations.
+    res = fem.solve_wheel_contact_at(mesh, delta, newton=newton,
+                                     u_reduced0=sec["u_reduced"], **problem_kw)
+    t["forward_s"] = time.time() - t0
+
+    t0 = time.time()
+    prob = fem.wheel_contact_problem(mesh, indentation_mm=delta, **problem_kw)
+    g = adjoint_grads(prob, mesh, res["u"], genes,
+                      ["contact_force"] + list(qois))
+    t["gradient_s"] = time.time() - t0
+    t["gradient_over_forward"] = t["gradient_s"] / max(t["forward_s"], 1e-12)
+
+    dF_ddelta = g["contact_force"]["d_dindentation"]
+    if not np.isfinite(dF_ddelta) or dF_ddelta <= 0.0:
+        raise RuntimeError(
+            f"d(force)/d(indentation) came out {dF_ddelta!r}; a wheel that gets softer "
+            f"the harder it is pressed is not a load case, it is a solver failure")
+    ddelta_dp = -g["contact_force"]["grad"] / dF_ddelta
+
+    out = {"axle_drop": {"value": delta, "grad": ddelta_dp,
+                         "frozen_grad": np.zeros_like(ddelta_dp),
+                         "coupling_grad": ddelta_dp}}
+    for name in names:
+        frozen = g[name]["grad"]
+        coupling = g[name]["d_dindentation"] * ddelta_dp
+        out[name] = {"value": g[name]["value"], "grad": frozen + coupling,
+                     "frozen_grad": frozen, "coupling_grad": coupling,
+                     "d_dindentation": g[name]["d_dindentation"]}
+
+    out["_meta"] = {"axle_drop_mm": delta, "contact_force_n": g["contact_force"]["value"],
+                    "d_force_d_indentation": dF_ddelta, "force_grad":
+                    g["contact_force"]["grad"], "res": res, "secant": sec, "mesh": mesh,
+                    "prob": prob, "timings": t, "max_stress_mpa":
+                    max_stress(prob, prob.coords, res["u"])}
+    return out
 
 
 # ---------------------------------------------------------------------------
