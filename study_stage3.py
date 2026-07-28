@@ -40,6 +40,28 @@ THE GATES, WRITTEN DOWN BEFORE THE RUN
   S9  THE FEASIBILITY VERDICT                                        reported, not gated
   S10 cost per step by tier, and the projected production cost       reported
 
+M8b-i.5 ADDS TWO SECTIONS, AND THEY ARE OPT-IN
+----------------------------------------------
+    .venv-opt/bin/python study_stage3.py --sections mesh_convergence,multistart \
+        --out study_stage3_m8bi5.json                   # or just: make m8bi5
+
+S9's verdict came back "each constraint is reachable alone, neither with the other", and
+`PLAN.md` records that it is weaker than it looks in two specific ways.  Both are cheap to
+close and either can change the answer, so they are closed before anyone acts on it:
+
+  S11 the stress QoI up the mesh ladder                              reported, not gated
+  S12 the same feasibility question from the Stage-2 elites          reported, not gated
+
+S11 exists because utilisation measured 1.2406 at `smoke` and 1.7128 at `coarse` — the
+verdict's own input moved 38% for a change of mesh alone.  S12 exists because all three of
+S9's descents started at `best_solution.json`, a GA optimum for the BEAM surrogate that
+M8a showed is a bad guide to the FEA, and `stage2_elites.json` has held fifteen other
+converged genomes that nothing has ever scored.
+
+They are NOT in the default `--sections` and `make studies` does not run them.  At
+`coarse` they are ~2 h against the gate's ~2 h 45 m, they answer a question about the
+wheel rather than about the code, and a gate nobody can afford to run is not a gate.
+
 EVERY FINITE DIFFERENCE IS A LADDER, per the project's rule.  M7 lost days to three
 gates written at a single step, all three of which failed at `coarse` by one to eight
 parts in 1e5 because of the REFERENCE's truncation error rather than the gradient's.
@@ -91,12 +113,61 @@ GATE_WARM_SAVING = 0.0          # S8  reported, not gated: warm must not be SLOW
 FEASIBLE_UTIL = 1.0             # S9  stress utilisation at or under the allowable
 FEASIBLE_DEFL_REL = 0.05        # S9  within 5% of the 2.0 mm deflection target
 
+# S11.  When does a ladder count as CONVERGED?  Reported, not gated — but the report's
+# words and its plot title are driven off this, so it has to be a real criterion.
+#
+# `study_wheel_fea.run_refinement` uses `finest_error_vs_richardson < 0.005` and calls it
+# `criterion_met`.  This is the same standard in GCI form, which is the safety-factored
+# version of the same quantity and the more honest one to quote when the observed order is
+# far from the formal one.  10x looser than M4's, deliberately: at 5% a quantity is usable
+# as a CONSTRAINT even if it is not publication-converged, and the question S11 asks is
+# whether the constraint has a value, not whether the value is precise.
+#
+# NOT `ratio > 1`.  Successive differences shrinking is necessary and nowhere near
+# sufficient — a sequence with ratio 1.33 has an observed order of 0.41 and an
+# extrapolation 50% beyond its finest rung, which is what "no value" looks like.
+GATE_LADDER_GCI = 0.05
+
 # The weight sets the feasibility probe descends.  Every barrier stays on in all three —
 # a "lowest reachable stress" that is reached through a folded, self-intersecting or
 # unmeshable design is not a bound on anything.
 PROBE_ZERO = {"stress_only": ("deflection", "mass", "phase_ripple"),
               "deflection_only": ("stress", "mass", "phase_ripple"),
               "joint": ()}
+
+# The sections, and which milestone each answers to.  M8b-i's seven are the default and
+# are what `make studies` runs; M8b-i.5's two are opt-in — see `--sections` and `make
+# m8bi5`.  Order matters: a default invocation writes the report keys in this order.
+SECTION_HELP = {
+    "direction":        "S1  the descent direction vs an FD ladder of the pipeline",
+    "trajectory":       "S2/S3/S4/S6  one deterministic run, four structural facts",
+    "reject":           "S5  a failed solve is a step reject",
+    "schemes":          "S7  rqmc vs uniform vs iid",
+    "warm":             "S8  warm start vs cold",
+    "cost":             "S10 seconds per step by tier",
+    "feasibility":      "S9  THE FEASIBILITY VERDICT, from the shipped genome",
+    "mesh_convergence": "S11 is the stress QoI converged?  [M8b-i.5]",
+    "multistart":       "S12 the same question from the Stage-2 elites  [M8b-i.5]",
+}
+DEFAULT_SECTIONS = ("direction", "trajectory", "reject", "schemes", "warm", "cost",
+                    "feasibility")
+
+
+def parse_sections(spec):
+    """`--sections` -> the list to run, or a `ValueError` naming what was not understood.
+
+    A pure function so it can be tested without paying a jax import, and so a typo costs
+    a startup rather than three hours of solving followed by a `KeyError`.
+    """
+    names = [s.strip() for s in str(spec).split(",") if s.strip()]
+    if not names:
+        raise ValueError("--sections is empty; expected at least one of "
+                         f"{sorted(SECTION_HELP)}")
+    unknown = [s for s in names if s not in SECTION_HELP]
+    if unknown:
+        raise ValueError(f"unknown section(s) {unknown}; expected any of "
+                         f"{sorted(SECTION_HELP)}")
+    return names
 
 
 def load_genes(path="best_solution.json"):
@@ -476,7 +547,8 @@ def run_warm(genes, cfg=DEFAULT_CONFIG, n_phase=4, n_rep=3):
 # S9 — THE FEASIBILITY VERDICT.  REPORTED, NOT GATED.
 # ---------------------------------------------------------------------------
 
-def run_feasibility(genes, cfg=DEFAULT_CONFIG, steps=40, n_phase=4, lr=S3.DEFAULT_LR):
+def run_feasibility(genes, cfg=DEFAULT_CONFIG, steps=40, n_phase=4, lr=S3.DEFAULT_LR,
+                    kinds=("stress_only", "deflection_only", "joint")):
     """Three descents that answer `PLAN.md:41` — is there a feasible point at all?
 
     The shipped design misses deflection by -26.3% and exceeds its allowable by 24%
@@ -489,11 +561,22 @@ def run_feasibility(genes, cfg=DEFAULT_CONFIG, steps=40, n_phase=4, lr=S3.DEFAUL
 
     THE ANSWER IS NOT A GATE.  A gate that fails when the wheel turns out to be
     infeasible would be reporting a fact about the design as a fact about the code.
+
+    `kinds` selects which of the three to run, defaulting to all of them so S9 is exactly
+    what it always was.  M8b-i.5's multi-start re-probes pass the two BOUNDS alone and
+    drop `joint`, which by construction lands between them and adds nothing to a verdict
+    about reachability.  The verdict dict then carries only the keys its `kinds` support
+    rather than filling the rest with NaN — an absent key is a question that was not
+    asked, and `nan` reads as a question that was asked and came back undefined.
     """
     low, high, _ = _bounds()
     z0 = wg.normalize(genes, low, high)
+    unknown = [k for k in kinds if k not in PROBE_ZERO]
+    if unknown:
+        raise ValueError(f"unknown probe kind(s) {unknown}; "
+                         f"expected any of {sorted(PROBE_ZERO)}")
     runs = {}
-    for kind in ("stress_only", "deflection_only", "joint"):
+    for kind in kinds:
         t0 = time.time()
         rec = S3.descend(z0, cfg, steps=steps, lr=lr, weights=probe_weights(kind),
                          n_phase=n_phase, scheme="uniform", verbose=False)
@@ -524,21 +607,32 @@ def run_feasibility(genes, cfg=DEFAULT_CONFIG, steps=40, n_phase=4, lr=S3.DEFAUL
             "stopped_stuck": any(e["kind"] == "run_stopped_stuck" for e in rec["events"]),
             "moved": bool(not np.allclose(rows[-1]["z"], rows[0]["z"]))}
 
+    # Whatever ran, this holds: the lowest utilisation and the smallest deflection error
+    # SEEN ANYWHERE, which is the only pair of numbers that bounds anything when the
+    # caller has chosen a subset of the probes.  It generalises the old per-probe
+    # definition without moving it — checked against the recorded `coarse` run, where the
+    # minimum over all three probes IS stress_only's util_min and deflection_only's
+    # abs_defl_err_min, to every bit (0.9320225375154423 and 0.0021959376342238).
     verdict = {
-        "min_reachable_util": runs["stress_only"]["util_min"],
-        "min_reachable_abs_defl_err": runs["deflection_only"]["abs_defl_err_min"],
-        "stress_reachable": bool(runs["stress_only"]["util_min"] <= FEASIBLE_UTIL),
-        "deflection_reachable": bool(
-            runs["deflection_only"]["abs_defl_err_min"] <= FEASIBLE_DEFL_REL),
+        "min_reachable_util": float(np.nanmin(
+            [np.nanmin(runs[k]["util_history"]) for k in runs])),
+        "min_reachable_abs_defl_err": float(np.nanmin(
+            [np.nanmin(np.abs(runs[k]["defl_err_history"])) for k in runs])),
         "simultaneously_reached": bool(
             any(runs[k]["n_steps_both_satisfied"] > 0 for k in runs)),
-        "util_when_deflection_met": runs["deflection_only"]["util_end"],
-        "defl_err_when_stress_met": runs["stress_only"]["defl_err_end"],
-        "joint_util_end": runs["joint"]["util_end"],
-        "joint_defl_err_end": runs["joint"]["defl_err_end"],
     }
+    verdict["stress_reachable"] = bool(verdict["min_reachable_util"] <= FEASIBLE_UTIL)
+    verdict["deflection_reachable"] = bool(
+        verdict["min_reachable_abs_defl_err"] <= FEASIBLE_DEFL_REL)
+    if "stress_only" in runs:
+        verdict["defl_err_when_stress_met"] = runs["stress_only"]["defl_err_end"]
+    if "deflection_only" in runs:
+        verdict["util_when_deflection_met"] = runs["deflection_only"]["util_end"]
+    if "joint" in runs:
+        verdict["joint_util_end"] = runs["joint"]["util_end"]
+        verdict["joint_defl_err_end"] = runs["joint"]["defl_err_end"]
     return {"config": cfg if isinstance(cfg, str) else cfg.name, "steps": steps,
-            "n_phase": n_phase, "feasible_util": FEASIBLE_UTIL,
+            "n_phase": n_phase, "kinds": list(kinds), "feasible_util": FEASIBLE_UTIL,
             "feasible_defl_rel": FEASIBLE_DEFL_REL, "runs": runs, "verdict": verdict,
             # PASS means every probe actually DESCENDED — not that it found a feasible
             # point, and not merely that the function returned.
@@ -590,17 +684,304 @@ def run_cost(genes, cfg=DEFAULT_CONFIG, n_phase=8, prod_steps=300, prod_starts=4
 
 
 # ---------------------------------------------------------------------------
+# M8b-i.5 — SCORING ONE DESIGN, WITHOUT DESCENDING FROM IT
+# ---------------------------------------------------------------------------
+
+def score(genes, cfg=DEFAULT_CONFIG, phases=None, n_phase=4, tiers=("t3",)):
+    """`(loss, report, seconds)` at one design, with `c` measured HERE.
+
+    `tiers=("t3",)` on purpose.  Both M8b-i.5 sections want the deflection and the stress,
+    and neither wants the geometric barriers — which cost `t1_vector`'s 1.06 s of eager
+    `jacrev` per call (S10) to produce numbers this study never reads.
+
+    `stress_scale` is left at `None`, i.e. MEASURED at this design and this mesh.  That is
+    right here and would be wrong inside a finite difference, and the distinction is the
+    whole of `wheel_objective.py:487`: `c` is an input so that a gradient is taken of the
+    function that was evaluated.  There is no gradient here, and `c`'s own drift with the
+    mesh is part of what the ladder is asking about, so measuring it is the point.
+
+    A fresh `Evaluator` per call, and the orientation re-derived per design: the flank pin
+    is a function of the genes, so carrying one elite's pin onto another's mesh would build
+    a wheel nobody asked for.
+    """
+    low, high, _ = _bounds()
+    if phases is None:
+        phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
+    ev = S3.Evaluator(cfg, orientation=WW.flank_orientation(genes, WW.get_config(cfg)))
+    t0 = time.time()
+    val, _, brk = ev(wg.normalize(np.asarray(genes, dtype=float), low, high),
+                     low, high, phases=phases, tiers=tiers)
+    return float(val), brk["report"], time.time() - t0
+
+
+def corner_distance(util, defl_err):
+    """How far outside the feasible box, in multiples of each constraint's OWN limit.
+
+    A ranking heuristic and not a metric — it exists to pick which elites are worth an
+    hour of descent, nothing more.  Both terms are dimensionless excesses over their own
+    allowance, which is what makes them addable: `util` is already normalised by
+    `ALLOWABLE_STRESS_MPA` and `defl_err` by `TARGET_DEFLECTION_MM`, so a raw sum of
+    "MPa over" and "mm short" is the mistake this avoids.  Zero anywhere inside the box.
+    """
+    return (max(0.0, abs(float(util)) / FEASIBLE_UTIL - 1.0)
+            + max(0.0, abs(float(defl_err)) / FEASIBLE_DEFL_REL - 1.0))
+
+
+# ---------------------------------------------------------------------------
+# S11 — IS THE STRESS QoI CONVERGED?
+# ---------------------------------------------------------------------------
+
+LADDER_CONFIGS = ("smoke", "coarse", "medium")
+
+
+def _series(rows, key):
+    """Richardson extrapolation and a GCI on one column of the ladder.
+
+    Same convention as `study_wheel_fea.run_refinement`, whose `_observed_ratio` is
+    imported rather than re-derived — study-to-study, the way `study_gnl` already borrows
+    `latin_hypercube` from `study_mesh_quality`.
+    """
+    from study_wheel_fea import _observed_ratio
+
+    v = np.array([r[key] for r in rows], dtype=float)
+    out = {"values": [float(x) for x in v],
+           "configs": [r["config"] for r in rows],
+           "rel_change_last_pair": float(abs(v[-1] / v[-2] - 1.0)) if len(v) >= 2
+           else float("nan"),
+           "total_rel_change": float(abs(v[-1] / v[0] - 1.0)) if len(v) >= 2
+           else float("nan"),
+           "direction": ("rising" if len(v) >= 2 and v[-1] > v[-2]
+                         else "falling" if len(v) >= 2 and v[-1] < v[-2] else "flat")}
+    if len(v) < 3:
+        out.update({"ratio": float("nan"), "richardson": float("nan"),
+                    "finest_error_vs_richardson": float("nan"), "gci": float("nan"),
+                    "settling": None, "converged": None})
+        return out
+    ratio = float(_observed_ratio(v))
+    r32 = v[-1] - v[-2]
+    rich = float(v[-1] + r32 / (ratio - 1.0)) if np.isfinite(ratio) and ratio > 1 \
+        else float(v[-1])
+    out.update({
+        "ratio": ratio,
+        "richardson": rich,
+        "finest_error_vs_richardson": float(abs(v[-1] / rich - 1.0)) if rich else
+        float("nan"),
+        "gci": float(1.25 * abs(r32 / v[-1]) / (abs(ratio) - 1.0))
+        if np.isfinite(ratio) and abs(ratio) > 1.0 and v[-1] else float("nan"),
+        # Two different claims, and conflating them is how a plot title comes to say the
+        # opposite of its own data.  `settling` is the weak one: each refinement moved the
+        # number less than the one before.  `converged` is the one worth quoting: the
+        # remaining discretisation error is inside `GATE_LADDER_GCI`.  Measured here, every
+        # stress series is `settling` and none is `converged`, while the axle drop on the
+        # very same meshes is both.
+        "settling": bool(np.isfinite(ratio) and ratio > 1.0)})
+    out["converged"] = bool(np.isfinite(out["gci"]) and out["gci"] < GATE_LADDER_GCI)
+    return out
+
+
+def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4):
+    """*** THE FIRST HALF OF M8b-i.5 ***  Is the number the verdict rests on converged?
+
+    S9 reported the shipped genome at utilisation 1.7128 and called the problem infeasible.
+    The same genome measures 1.2406 at `smoke` — a 38% rise for a change of mesh alone —
+    so the verdict's own input is moving, and which way it is still moving decides whether
+    the infeasibility is a lower bound or an artifact.
+
+    THREE SERIES, NOT ONE, AND THAT IS THE POINT.  `stress_utilisation` is
+    `c * pnorm / allowable` with `c = max/pnorm` measured on the mesh, so it inherits
+    whatever the max does.  `_qoi_pnorm_stress`'s docstring argues the volume-weighted
+    p-norm is a quadrature of an integral and therefore mesh-convergent, while the true max
+    is a pointwise peak at an unfilleted junction corner — the same corner `study_wheel_fea`
+    blames for its sub-second-order axle-drop rate — and a peak at a stress concentration
+    need not converge at all.  If `pnorm` settles while `max` climbs, then `c` is carrying
+    the mesh into `util` and "the wheel is infeasible" and "the constraint is measured on a
+    quantity that has no mesh-independent value" are different conclusions with different
+    fixes.  So all three are extrapolated and reported side by side.
+
+    The stencil is FIXED and uniform across every row, so the only thing varying down a
+    ladder is the mesh.  A row that fails to mesh or solve is recorded and the ladder
+    continues: at `fine` this is 261k dof through contact, a service-force secant and an
+    adjoint, which nothing in this repo has run before.
+    """
+    phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
+    out = []
+    for label, genes in designs:
+        rows = []
+        for cfg in configs:
+            t0 = time.time()
+            try:
+                loss, rep, wall = score(genes, cfg, phases=phases)
+                rows.append({
+                    "config": cfg,
+                    "n_elements": int(WW.build_wheel(genes, cfg).n_elements),
+                    "loss": loss,
+                    "max_stress_mpa": float(rep["max_stress_mpa"]),
+                    "pnorm_stress_agg_mpa": float(rep["pnorm_stress_agg_mpa"]),
+                    "stress_scale_measured": float(rep["stress_scale_measured"]),
+                    "stress_utilisation": float(rep["stress_utilisation"]),
+                    "axle_drop_mean_mm": float(rep["axle_drop_mean_mm"]),
+                    "defl_err": float((rep["axle_drop_mean_mm"]
+                                       - WO.TARGET_DEFLECTION_MM)
+                                      / WO.TARGET_DEFLECTION_MM),
+                    "seconds": round(wall, 1)})
+                print(f"      {label:<16s}{cfg:<8s}"
+                      f"max {rows[-1]['max_stress_mpa']:7.2f} MPa   "
+                      f"pnorm {rows[-1]['pnorm_stress_agg_mpa']:7.2f}   "
+                      f"util {rows[-1]['stress_utilisation']:6.4f}   "
+                      f"({rows[-1]['seconds']:.0f} s)", flush=True)
+            except Exception as exc:                              # pragma: no cover
+                rows.append({"config": cfg, "failed": type(exc).__name__,
+                             "error": str(exc)[:200],
+                             "seconds": round(time.time() - t0, 1)})
+                print(f"      {label:<16s}{cfg:<8s}FAILED  "
+                      f"{type(exc).__name__}: {str(exc)[:100]}", flush=True)
+        ok = [r for r in rows if "failed" not in r]
+        out.append({
+            "label": label, "rows": rows, "n_ok": len(ok),
+            "series": {name: _series(ok, key) for name, key in
+                       (("max", "max_stress_mpa"),
+                        ("pnorm", "pnorm_stress_agg_mpa"),
+                        ("c", "stress_scale_measured"),
+                        ("util", "stress_utilisation"),
+                        ("drop", "axle_drop_mean_mm"))} if len(ok) >= 2 else {}})
+    return {"configs": list(configs), "n_phase": n_phase, "scheme": "uniform",
+            "allowable_stress_mpa": WO.ALLOWABLE_STRESS_MPA, "designs": out,
+            # NOT a convergence gate.  Whether the stress QoI converges is a fact about
+            # the mesh and the geometry, and gating on it would report that fact as a
+            # broken build — the same mistake S9 exists to avoid one level up.  What is
+            # gated is that the ladder RAN: at least two rungs on every design, so a
+            # sequence exists to read a direction off.
+            "pass": bool(out) and all(d["n_ok"] >= 2 for d in out)}
+
+
+# ---------------------------------------------------------------------------
+# S12 — THE SAME QUESTION FROM SOMEWHERE ELSE
+# ---------------------------------------------------------------------------
+
+def run_multistart(cfg=DEFAULT_CONFIG, elites=None, n_phase=4, steps=20,
+                   n_probe=2, kinds=("stress_only", "deflection_only"),
+                   lr=S3.DEFAULT_LR):
+    """*** THE SECOND HALF OF M8b-i.5 ***  Was the verdict about the space, or the basin?
+
+    S9's three descents all started at `best_solution.json` and all plateaued.  That
+    supports "no feasible design along three descents from one start", and the gap to "the
+    design space contains no feasible point" is exactly what decides whether the genome
+    needs new genes.  Two things make the single start suspect rather than merely narrow:
+    `best_solution.json` is a GA optimum for the BEAM surrogate, which M8a measured to be a
+    bad guide to the FEA — it scored `deflection` at 0.1% of the loss where the FEA says
+    33.7% — so the GA optimised toward a corner chosen by a model now known to be wrong;
+    and Adam is local, so a plateau is evidence about a basin, not about a space.
+
+    `stage2_elites.json` has held sixteen distinct converged genomes this whole time and
+    fifteen of them have never been scored against the FEA objective at all.  So:
+
+      (a) score all sixteen, no descent.  Cheap, and the thing to look for is SPREAD — if
+          every elite lands on top of the shipped genome, Stage 2 converged to one basin
+          and the multi-start argument for M8b-ii is worth less than it looks.
+      (b) re-run the two BOUNDS from the `n_probe` elites nearest the feasible corner.
+          `joint` is dropped: it lands between the two by construction, and an hour of
+          `coarse` descent buys nothing a bound does not already say.
+
+    A genome that will not mesh is data.  Each elite is scored inside its own `try`, the
+    failure is recorded by name, and the screen continues — `study_objective.py`'s G10
+    table already does exactly this, and the alternative is one bad genome costing the
+    other fifteen.
+    """
+    if elites is None:
+        elites = S3.load_elites(limit=16)
+    scored, failed = [], []
+    for i, genes in enumerate(elites):
+        try:
+            loss, rep, wall = score(genes, cfg, n_phase=n_phase)
+            err = (rep["axle_drop_mean_mm"] - WO.TARGET_DEFLECTION_MM) \
+                / WO.TARGET_DEFLECTION_MM
+            row = {"elite": i, "loss": loss,
+                   "stress_utilisation": float(rep["stress_utilisation"]),
+                   "max_stress_mpa": float(rep["max_stress_mpa"]),
+                   "axle_drop_mean_mm": float(rep["axle_drop_mean_mm"]),
+                   "defl_err": float(err),
+                   "corner_distance": corner_distance(rep["stress_utilisation"], err),
+                   "feasible": bool(rep["stress_utilisation"] <= FEASIBLE_UTIL
+                                    and abs(err) <= FEASIBLE_DEFL_REL),
+                   "seconds": round(wall, 1)}
+            scored.append(row)
+            print(f"      elite {i:<2d}  util {row['stress_utilisation']:6.4f}   "
+                  f"defl err {100 * err:+7.2f}%   d {row['corner_distance']:6.3f}   "
+                  f"({row['seconds']:.0f} s)", flush=True)
+        except Exception as exc:                                  # pragma: no cover
+            failed.append({"elite": i, "failed": type(exc).__name__,
+                           "error": str(exc)[:200]})
+            print(f"      elite {i:<2d}  FAILED  {type(exc).__name__}: "
+                  f"{str(exc)[:100]}", flush=True)
+
+    ranked = sorted(scored, key=lambda r: r["corner_distance"])
+    probes = []
+    for row in ranked[:n_probe]:
+        i = row["elite"]
+        print(f"      probing elite {i} (d {row['corner_distance']:.3f}) "
+              f"with {list(kinds)} ...", flush=True)
+        f = run_feasibility(elites[i], cfg, steps=steps, n_phase=n_phase, lr=lr,
+                            kinds=kinds)
+        f["elite"] = i
+        f["corner_distance_at_start"] = row["corner_distance"]
+        probes.append(f)
+
+    # -- the verdict, restated over every design ANY of this actually visited.
+    seen_util = [r["stress_utilisation"] for r in scored]
+    seen_err = [abs(r["defl_err"]) for r in scored]
+    both = [r for r in scored if r["feasible"]]
+    for f in probes:
+        for run in f["runs"].values():
+            seen_util += list(run["util_history"])
+            seen_err += [abs(e) for e in run["defl_err_history"]]
+        if f["verdict"]["simultaneously_reached"]:
+            both.append({"elite": f["elite"], "from": "probe"})
+
+    spread = {}
+    if scored:
+        u = np.array([r["stress_utilisation"] for r in scored])
+        e = np.array([r["defl_err"] for r in scored])
+        spread = {"util_min": float(u.min()), "util_max": float(u.max()),
+                  "util_range": float(u.max() - u.min()),
+                  "defl_err_min": float(e.min()), "defl_err_max": float(e.max()),
+                  "defl_err_range": float(e.max() - e.min()),
+                  "n_feasible_as_scored": int(sum(r["feasible"] for r in scored))}
+
+    verdict = {
+        "n_elites_scored": len(scored), "n_elites_failed": len(failed),
+        "n_starts_probed": len(probes), "kinds": list(kinds),
+        # (utilisation, deflection) PAIRS, not distinct designs: each probe re-scores its
+        # own starting elite as step 0, so a few designs are measured more than once and
+        # calling this a design count would overstate the coverage by exactly that
+        # overlap.  What the verdict is quantified over is `n_starts_probed` and
+        # `n_elites_scored`; this is the number of measurements behind the two minima.
+        "n_points_measured": len(seen_util),
+        "min_util_seen": float(np.nanmin(seen_util)) if seen_util else float("nan"),
+        "min_abs_defl_err_seen": float(np.nanmin(seen_err)) if seen_err else float("nan"),
+        "simultaneously_reached": bool(both),
+        "spread": spread}
+    return {"config": cfg if isinstance(cfg, str) else cfg.name, "n_phase": n_phase,
+            "steps": steps, "feasible_util": FEASIBLE_UTIL,
+            "feasible_defl_rel": FEASIBLE_DEFL_REL,
+            "elites": scored, "failed": failed, "ranked": [r["elite"] for r in ranked],
+            "probes": probes, "verdict": verdict,
+            # As everywhere in this study: feasibility is REPORTED.  What is gated is that
+            # the screen did its work — some elite got scored, and every re-probe moved and
+            # accepted a step.  The second half is S9's rule (`run_feasibility`'s `pass`),
+            # which exists because a deadlocked probe once reported its own starting point
+            # as the lowest reachable utilisation.
+            "pass": bool(scored) and all(f["pass"] for f in probes)}
+
+
+# ---------------------------------------------------------------------------
 # REPORT
 # ---------------------------------------------------------------------------
 
-def _print(rep):
-    def head(s):
-        print(f"\n{s}\n" + "-" * len(s))
+def head(s):
+    print(f"\n{s}\n" + "-" * len(s))
 
-    print("=" * 78)
-    print("  M8b-i GATE — THE STAGE-3 OPTIMIZER")
-    print("=" * 78)
 
+def _print_direction(rep):
     d = rep["direction"]
     head(f"S1  descent direction vs an FD ladder of the whole pipeline  "
          f"[< {GATE_DIRECTION_REL:.0e}, >= {GATE_DIRECTION_RUNGS}]")
@@ -612,6 +993,8 @@ def _print(rep):
     print(f"    best {d['best_rel']:.3e} on {d['rungs']} rung(s)"
           f"   -> {'PASS' if d['pass'] else 'FAIL'}")
 
+
+def _print_trajectory(rep):
     t = rep["trajectory"]
     head(f"S2/S3/S4/S6  a deterministic {t['steps']}-step run at {t['n_phase']} phases")
     de, pr, sc, orr = t["descent"], t["projection"], t["stress_scale"], t["orientation"]
@@ -633,6 +1016,8 @@ def _print(rep):
           f"   -> {'PASS' if orr['pass'] else 'FAIL'}")
     print(f"    ({t['wall_s']} s, {len(t['events'])} events)")
 
+
+def _print_reject(rep):
     r = rep["reject"]
     head("S5  a failed solve is a step reject, not a crash and not a zero")
     rc, rs = r["recovered"], r["restored"]
@@ -644,6 +1029,8 @@ def _print(rep):
           f"lr {S3.DEFAULT_LR} -> {rs['lr_after']}, iterate unchanged "
           f"{rs['iterate_unchanged']}   -> {'PASS' if rs['pass'] else 'FAIL'}")
 
+
+def _print_schemes(rep):
     p = rep["schemes"]
     head("S7  phase scheme: what the optimizer feels, and what it costs")
     print(f"    {'scheme':<10s}{'loss end':>12s}{'jitter mean':>13s}"
@@ -663,12 +1050,16 @@ def _print(rep):
     print(f"    the concrete reason phase_stencil quantizes the rqmc offset onto a")
     print(f"    lattice instead of shifting it continuously.")
 
+
+def _print_warm(rep):
     w = rep["warm"]
     head("S8  warm start — the previous step's indentations as the secant's guess")
     print(f"    cold {w['cold_s_median']:.3f} s   warm {w['warm_s_median']:.3f} s   "
           f"saving {100 * w['saving_frac']:.1f}%"
           f"   -> {'PASS' if w['pass'] else 'FAIL'}")
 
+
+def _print_cost(rep):
     c = rep["cost"]
     head("S10  what a step costs, by tier")
     print(f"    T1 only        {c['t1_s']:8.4f} s   ({100 * c['t1_frac_of_full']:.2f}% "
@@ -691,43 +1082,183 @@ def _print(rep):
     print(f"    T1.  Jitting `t1_vector` is the real fix and belongs in")
     print(f"    wheel_objective.py, which M8b-i does not touch.")
 
-    f = rep["feasibility"]
+def _print_probes(f, indent="    "):
+    """The probe table and its verdict — shared by S9 and by every multi-start re-probe."""
     v = f["verdict"]
-    head("S9  THE FEASIBILITY VERDICT — reported, NOT gated")
-    print(f"    {'probe':<18s}{'loss':>22s}{'utilisation':>22s}"
+    print(f"{indent}{'probe':<18s}{'loss':>22s}{'utilisation':>22s}"
           f"{'deflection error':>22s}")
-    for k in ("stress_only", "deflection_only", "joint"):
-        d3 = f["runs"][k]
-        print(f"    {k:<18s}{d3['loss_start']:10.2f} ->{d3['loss_end']:10.2f}"
+    for k, d3 in f["runs"].items():
+        print(f"{indent}{k:<18s}{d3['loss_start']:10.2f} ->{d3['loss_end']:10.2f}"
               f"{d3['util_start']:10.3f} ->{d3['util_end']:10.3f}"
               f"{100 * d3['defl_err_start']:9.1f}% ->{100 * d3['defl_err_end']:9.1f}%")
         flag = "" if d3["n_steps_accepted"] > 0 else "   <- NEVER MOVED, bounds nothing"
-        print(f"      {d3['n_steps_accepted']:d}/{d3['n_steps_recorded'] - 1} steps "
+        print(f"{indent}  {d3['n_steps_accepted']:d}/{d3['n_steps_recorded'] - 1} steps "
               f"accepted, events {d3['event_kinds'] or '{}'}"
               f"{', STOPPED STUCK' if d3['stopped_stuck'] else ''}{flag}")
-    print(f"\n    lowest reachable stress utilisation   {v['min_reachable_util']:.4f}"
+    print(f"\n{indent}lowest reachable stress utilisation   "
+          f"{v['min_reachable_util']:.4f}"
           f"   (feasible at <= {f['feasible_util']:.2f}: "
           f"{'YES' if v['stress_reachable'] else 'NO'})")
-    print(f"    lowest reachable |deflection error|   "
+    print(f"{indent}lowest reachable |deflection error|   "
           f"{100 * v['min_reachable_abs_defl_err']:.2f}%"
           f"   (feasible at <= {100 * f['feasible_defl_rel']:.0f}%: "
           f"{'YES' if v['deflection_reachable'] else 'NO'})")
-    print(f"    stress met at deflection error        "
-          f"{100 * v['defl_err_when_stress_met']:.1f}%")
-    print(f"    deflection met at utilisation         "
-          f"{v['util_when_deflection_met']:.3f}")
-    print(f"    BOTH satisfied at any visited design  "
+    if "defl_err_when_stress_met" in v:
+        print(f"{indent}stress met at deflection error        "
+              f"{100 * v['defl_err_when_stress_met']:.1f}%")
+    if "util_when_deflection_met" in v:
+        print(f"{indent}deflection met at utilisation         "
+              f"{v['util_when_deflection_met']:.3f}")
+    print(f"{indent}BOTH satisfied at any visited design  "
           f"{'YES' if v['simultaneously_reached'] else 'NO'}")
+
+
+def _print_feasibility(rep):
+    f = rep["feasibility"]
+    head("S9  THE FEASIBILITY VERDICT — reported, NOT gated")
+    _print_probes(f)
     print(f"    -> {'PASS (probe ran)' if f['pass'] else 'FAIL (probe did not run)'}")
 
+
+def _print_mesh_convergence(rep):
+    m = rep["mesh_convergence"]
+    head(f"S11  IS THE STRESS QoI CONVERGED?  the ladder at {m['n_phase']} fixed phases "
+         f"— reported, NOT gated")
+    for d in m["designs"]:
+        print(f"\n    {d['label']}")
+        print(f"    {'config':<9s}{'elements':>10s}{'max MPa':>10s}{'pnorm MPa':>11s}"
+              f"{'c=max/pn':>10s}{'util':>9s}{'drop mm':>10s}{'s':>8s}")
+        for r in d["rows"]:
+            if "failed" in r:
+                print(f"    {r['config']:<9s}{'FAILED':>10s}   {r['failed']}: "
+                      f"{r['error'][:40]}")
+                continue
+            print(f"    {r['config']:<9s}{r['n_elements']:10d}"
+                  f"{r['max_stress_mpa']:10.2f}{r['pnorm_stress_agg_mpa']:11.2f}"
+                  f"{r['stress_scale_measured']:10.4f}{r['stress_utilisation']:9.4f}"
+                  f"{r['axle_drop_mean_mm']:10.4f}{r['seconds']:8.0f}")
+        if not d["series"]:
+            continue
+        print(f"    {'series':<9s}{'total move':>12s}{'last pair':>12s}"
+              f"{'ratio':>9s}{'order':>7s}{'richardson':>12s}{'GCI':>9s}   verdict")
+        for name in ("max", "pnorm", "c", "util", "drop"):
+            s = d["series"][name]
+            if s["converged"] is None:
+                verdict = "n/a (<3 rungs)"
+            elif s["converged"]:
+                verdict = f"CONVERGED (GCI < {100 * GATE_LADDER_GCI:.0f}%)"
+            else:
+                verdict = ("NOT CONVERGED"
+                           + ("" if s["settling"] else ", not even settling"))
+            order = np.log2(s["ratio"]) if s["ratio"] > 0 else float("nan")
+            print(f"    {name:<9s}{100 * s['total_rel_change']:11.1f}%"
+                  f"{100 * s['rel_change_last_pair']:11.1f}%"
+                  f"{s['ratio']:9.2f}{order:7.2f}{s['richardson']:12.3f}"
+                  f"{100 * s['gci']:8.2f}%   {s['direction']}, {verdict}")
+    print(f"\n    -> {'PASS (ladder ran)' if m['pass'] else 'FAIL (ladder did not run)'}")
+    print(f"\n    HOW TO READ THIS.  `util` is `c * pnorm / {m['allowable_stress_mpa']:.0f}`"
+          f", so it inherits whatever `pnorm`")
+    print(f"    and `c` do.  `drop` is the CONTROL: it comes out of the same solves on the")
+    print(f"    same meshes, so any explanation that blames the mesher, the contact solve,")
+    print(f"    the phase stencil or the adjoint has to explain why the axle drop is")
+    print(f"    unaffected by it.")
+    print(f"\n    The hypothesis this section was built to test was that `max` diverges")
+    print(f"    while `pnorm` converges — `_qoi_pnorm_stress` argues the volume-weighted")
+    print(f"    p-norm is a quadrature of an integral — leaving `c = max/pnorm` to carry")
+    print(f"    the mesh into `util`.  Read the `c` row against the `pnorm` row before")
+    print(f"    accepting it: at p=30 the p-norm is ~1/1.38 of the max, which is a max in")
+    print(f"    disguise, and an unfilleted spoke/ring junction is a 349.5-degree re-entrant")
+    print(f"    corner whose r^-0.5 field no mesh resolves — see study_wheel_fea's")
+    print(f"    `stress_report`, which measured this at M4 and prescribed a PERCENTILE.")
+    print(f"    A p-norm that does not converge is not fixed by a gene or by a weight; it")
+    print(f"    is fixed by lowering `p` until it does, and by replacing the rescale-to-max")
+    print(f"    with an analytic Kt (`wheel_fea.stress_concentration_kt`).")
+
+
+def _print_multistart(rep):
+    m = rep["multistart"]
+    v, sp = m["verdict"], m["verdict"]["spread"]
+    head(f"S12  THE SAME QUESTION FROM {v['n_elites_scored']} OTHER STARTS "
+         f"— reported, NOT gated")
+    print(f"    (a) every Stage-2 elite scored against the FEA objective, no descent")
+    print(f"    {'elite':<8s}{'loss':>12s}{'utilisation':>14s}{'defl err':>12s}"
+          f"{'max MPa':>10s}{'corner d':>11s}{'feasible':>10s}")
+    for r in m["elites"]:
+        print(f"    {r['elite']:<8d}{r['loss']:12.2f}{r['stress_utilisation']:14.4f}"
+              f"{100 * r['defl_err']:11.2f}%{r['max_stress_mpa']:10.2f}"
+              f"{r['corner_distance']:11.3f}{'YES' if r['feasible'] else 'no':>10s}")
+    for r in m["failed"]:
+        print(f"    {r['elite']:<8d}FAILED  {r['failed']}: {r['error'][:50]}")
+    if sp:
+        print(f"\n    SPREAD, which is the question: utilisation "
+              f"{sp['util_min']:.4f}-{sp['util_max']:.4f} "
+              f"(range {sp['util_range']:.4f}),")
+        print(f"    deflection error {100 * sp['defl_err_min']:.2f}% to "
+              f"{100 * sp['defl_err_max']:.2f}% (range "
+              f"{100 * sp['defl_err_range']:.2f} points).")
+        print(f"    {sp['n_feasible_as_scored']} of {v['n_elites_scored']} elites are "
+              f"feasible as scored, before any descent.")
+        # Stated against the measurement, not over it.  A narrow spread would mean Stage 2
+        # converged to one basin, and a multi-start over these elites would then be a
+        # weaker argument than its count suggests — so the reading has to depend on the
+        # number rather than assert one of the two outcomes in advance.
+        wide = (sp["defl_err_range"] > 4 * FEASIBLE_DEFL_REL
+                or sp["util_range"] > 0.1 * FEASIBLE_UTIL)
+        if wide:
+            print(f"    That is a WIDE spread: these elites are not one basin, so the "
+                  f"probes below")
+            print(f"    start somewhere S9's three descents never reached.")
+        else:
+            print(f"    That is a NARROW spread: Stage 2 converged to ONE basin, and a "
+                  f"multi-start")
+            print(f"    over these elites is a weaker argument than its count suggests.")
+
+    for f in m["probes"]:
+        print(f"\n    (b) elite {f['elite']} re-probed "
+              f"(corner distance {f['corner_distance_at_start']:.3f} at the start)")
+        _print_probes(f, indent="        ")
+
+    print(f"\n    (c) THE VERDICT, RESTATED OVER {v['n_starts_probed']} PROBED START(S) "
+          f"AND {v['n_elites_scored']} SCORED")
+    print(f"    (util, deflection) pairs measured {v['n_points_measured']}")
+    print(f"    lowest utilisation seen anywhere {v['min_util_seen']:.4f}"
+          f"   (feasible at <= {m['feasible_util']:.2f})")
+    print(f"    smallest |deflection error| seen {100 * v['min_abs_defl_err_seen']:.2f}%"
+          f"   (feasible at <= {100 * m['feasible_defl_rel']:.0f}%)")
+    print(f"    BOTH satisfied at any design     "
+          f"{'YES' if v['simultaneously_reached'] else 'NO'}")
+    print(f"    -> {'PASS (screen ran)' if m['pass'] else 'FAIL (screen did not run)'}")
+
+
+PRINTERS = {"direction": _print_direction, "trajectory": _print_trajectory,
+            "reject": _print_reject, "schemes": _print_schemes, "warm": _print_warm,
+            "cost": _print_cost, "feasibility": _print_feasibility,
+            "mesh_convergence": _print_mesh_convergence,
+            "multistart": _print_multistart}
+
+
+def _print_tail(rep):
     print(f"\n{'=' * 78}")
     print(f"  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}")
     print("=" * 78)
     print("\n  NOT DONE: the process-parallel phase batch, the multi-fidelity")
     print("  checkpoints and the 300-step multi-start production run. Those are M8b-ii,")
-    print("  and S9 above is the measurement that says whether funding them is sensible.")
+    if "multistart" in rep or "feasibility" in rep:
+        print("  and the feasibility sections above are the measurement that says whether")
+        print("  funding them is sensible.")
     print("  `lambda_min(K_t)` remains M9; `buckling` is still the zero-gradient Euler")
     print("  proxy, and a diverged tangent is the only buckling signal this run has.")
+
+
+def _print(rep):
+    """Whatever sections `rep` holds, in the order they were run."""
+    print("=" * 78)
+    print(f"  {rep.get('settings', {}).get('title', 'M8b-i GATE — THE STAGE-3 OPTIMIZER')}")
+    print("=" * 78)
+    for name in rep:
+        if name in PRINTERS:
+            PRINTERS[name](rep)
+    _print_tail(rep)
 
 
 def _plot(rep, path):
@@ -803,6 +1334,115 @@ def _plot(rep, path):
     return out
 
 
+def _plot_m8bi5(rep, path):
+    """The two things that qualify S9's verdict, on one sheet.
+
+    The right panel is drawn on the SAME axes as `_plot`'s third — same feasible
+    rectangle, same star for the shipped genome — because the whole point is to read the
+    two figures against each other and see whether sixteen other starts land anywhere S9's
+    three did not.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+
+    panels = [k for k in ("mesh_convergence", "multistart") if k in rep]
+    fig, axes = plt.subplots(1, len(panels), figsize=(6.6 * len(panels), 4.4),
+                             squeeze=False)
+    ax = dict(zip(panels, axes[0]))
+
+    if "mesh_convergence" in ax:
+        a, m = ax["mesh_convergence"], rep["mesh_convergence"]
+        for j, d in enumerate(m["designs"]):
+            ok = [r for r in d["rows"] if "failed" not in r]
+            if not ok:
+                continue
+            n = [r["n_elements"] for r in ok]
+            col = f"C{j}"
+            a.plot(n, [r["max_stress_mpa"] for r in ok], "o-", color=col, lw=1.2, ms=5,
+                   label=f"{d['label']}: true max")
+            a.plot(n, [r["stress_utilisation"] * m["allowable_stress_mpa"] for r in ok],
+                   "s--", color=col, lw=1.0, ms=4, alpha=0.8,
+                   label=f"{d['label']}: c x pnorm (what util uses)")
+            a.plot(n, [r["pnorm_stress_agg_mpa"] for r in ok], "^:", color=col, lw=1.0,
+                   ms=4, alpha=0.6, label=f"{d['label']}: pnorm")
+            for key, style in (("max", "-"), ("pnorm", ":")):
+                s = d["series"].get(key, {})
+                if np.isfinite(s.get("richardson", np.nan)):
+                    a.axhline(s["richardson"], color=col, ls=style, lw=0.7, alpha=0.35)
+        a.axhline(m["allowable_stress_mpa"], color="k", ls="--", lw=1.0,
+                  label=f"allowable {m['allowable_stress_mpa']:.0f} MPa")
+        a.set_xscale("log")
+        a.set_xlabel("elements in the wheel mesh")
+        a.set_ylabel("stress  [MPa]")
+        # The title states what was measured, so it cannot outlive the measurement.  Driven
+        # off `converged` (GCI inside GATE_LADDER_GCI) and NOT off `settling`, which is only
+        # "the differences are shrinking" and is true of every divergent-looking series
+        # here — reading the title off it once produced a plot captioned "the stress QoI
+        # settles under refinement" above a utilisation with a 63% GCI.
+        s0 = m["designs"][0]["series"] if m["designs"] and m["designs"][0]["series"] else {}
+        cmax = s0.get("max", {}).get("converged")
+        cpn = s0.get("pnorm", {}).get("converged")
+        cdrop = s0.get("drop", {}).get("converged")
+        if cmax and cpn:
+            a.set_title("the stress QoI converges under refinement")
+        elif cpn:
+            a.set_title("the p-norm converges; the true max does not")
+        elif cdrop:
+            # The interesting case, and the measured one: the control converges on the very
+            # same meshes, so the stress QoI's failure is the QoI's and not the mesh's.
+            a.set_title("the stress QoI does not converge — while the axle drop, "
+                        "same meshes, does")
+        else:
+            a.set_title("the stress QoI does not converge under refinement")
+        a.grid(alpha=0.3, which="both")
+        a.legend(fontsize=6.5, loc="best")
+
+    if "multistart" in ax:
+        a, m = ax["multistart"], rep["multistart"]
+        e = 100 * m["feasible_defl_rel"]
+        a.add_patch(Rectangle((-e, 0.0), 2 * e, m["feasible_util"], facecolor="C2",
+                              alpha=0.20, edgecolor="C2", lw=1.0, ls="--", zorder=0,
+                              label="feasible"))
+        for f in m["probes"]:
+            for k, col in (("stress_only", "C0"), ("deflection_only", "C1"),
+                           ("joint", "C3")):
+                if k not in f["runs"]:
+                    continue
+                r = f["runs"][k]
+                a.plot(100 * np.array(r["defl_err_history"]), r["util_history"], "-",
+                       lw=1, color=col, alpha=0.85,
+                       label=f"elite {f['elite']}: {k}")
+        if m["elites"]:
+            a.plot([100 * r["defl_err"] for r in m["elites"]],
+                   [r["stress_utilisation"] for r in m["elites"]], "o", ms=5,
+                   color="C4", alpha=0.9, label=f"{len(m['elites'])} elites, as scored")
+        # The shipped genome, from whichever section measured it at this config.
+        for d in rep.get("mesh_convergence", {}).get("designs", []):
+            row = [r for r in d["rows"]
+                   if r.get("config") == m["config"] and "failed" not in r]
+            if d["label"].startswith("best") and row:
+                a.plot(100 * row[0]["defl_err"], row[0]["stress_utilisation"], "k*",
+                       ms=11, label="shipped genome", zorder=5)
+        a.axhline(m["feasible_util"], color="k", ls=":", lw=0.9)
+        a.set_xlabel("deflection error  [%]")
+        a.set_ylabel("stress utilisation")
+        v = m["verdict"]
+        a.set_title("a feasible design was found"
+                    if v["simultaneously_reached"] else
+                    f"no feasible design in {v['n_points_measured']} measurements "
+                    f"from {v['n_elites_scored']} starts")
+        a.grid(alpha=0.3)
+        a.legend(fontsize=6.5, loc="best")
+
+    fig.tight_layout()
+    out = os.path.join(HERE, path)
+    fig.savefig(out, dpi=130)
+    plt.close(fig)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description="M8b-i Stage-3 optimizer gate")
     ap.add_argument("--genome", default="best_solution.json")
@@ -812,7 +1452,25 @@ def main():
     ap.add_argument("--no-plot", action="store_true")
     ap.add_argument("--quick", action="store_true",
                     help="reduced meshes and step counts; for the test suite")
+    ap.add_argument("--sections", default=",".join(DEFAULT_SECTIONS),
+                    help="comma-separated, run in the order given.  The default is the "
+                         "M8b-i gate, S1-S10.  M8b-i.5's `mesh_convergence` and "
+                         "`multistart` are OPT-IN: at `coarse` they are ~2 h on top of "
+                         "the gate's ~2 h 45 m, and making `make studies` a five-hour "
+                         "job to re-measure something that does not change per commit "
+                         "is how a gate stops being run at all.  See `make m8bi5`.")
+    ap.add_argument("--ladder-configs", default=",".join(LADDER_CONFIGS),
+                    help="the S11 mesh ladder.  `fine` is 261k dof through contact, a "
+                         "service-force secant and an adjoint, which nothing in this "
+                         "repo has run before — hence opt-in.")
+    ap.add_argument("--n-probe", type=int, default=2,
+                    help="S12: how many elites to re-descend from, nearest corner first")
     args = ap.parse_args()
+
+    try:
+        sections = parse_sections(args.sections)
+    except ValueError as exc:
+        raise SystemExit(str(exc))
 
     genes = load_genes(args.genome)
     cfg = "smoke" if args.quick else args.config
@@ -829,6 +1487,13 @@ def main():
     feas_steps = 4 if args.quick else 20
     cost_phase = 2 if args.quick else 8
     ladder = (1e-3, 1e-4, 1e-5) if args.quick else (1e-3, 1e-4, 1e-5, 1e-6)
+    # M8b-i.5.  `--quick` cuts the ladder to two rungs, which is a wiring check and not a
+    # convergence measurement — with two points there is no successive-difference ratio
+    # and `_series` says so rather than extrapolating from nothing.
+    ladder_cfgs = ("smoke", "coarse") if args.quick else \
+        tuple(c.strip() for c in args.ladder_configs.split(",") if c.strip())
+    n_elite = 2 if args.quick else 16
+    n_probe = 1 if args.quick else args.n_probe
 
     t0 = time.time()
     rep = {}
@@ -848,26 +1513,54 @@ def main():
         print(f"[{time.time() - t0:7.1f} s] {name} done in {time.time() - s:.1f} s"
               f"  -> {'PASS' if rep[name].get('pass') else 'FAIL'}", flush=True)
 
-    section("direction", lambda: run_direction(genes, cfg, n_phase=n_phase, steps=ladder))
-    section("trajectory",
-            lambda: run_trajectory(genes, cfg, steps=traj_steps, n_phase=n_phase))
-    section("reject", lambda: run_reject(genes, cfg, n_phase=n_phase))
-    section("schemes",
-            lambda: run_phase_schemes(genes, cfg, steps=scheme_steps, n_phase=n_phase))
-    section("warm", lambda: run_warm(genes, cfg, n_phase=n_phase))
-    section("cost", lambda: run_cost(genes, cfg, n_phase=cost_phase))
-    section("feasibility",
-            lambda: run_feasibility(genes, cfg, steps=feas_steps, n_phase=n_phase))
-    rep["pass"] = bool(rep["direction"]["pass"] and rep["trajectory"]["pass"]
-                       and rep["reject"]["pass"] and rep["schemes"]["pass"]
-                       and rep["warm"]["pass"] and rep["cost"]["pass"]
-                       and rep["feasibility"]["pass"])
+    # The registry, not a call.  `--sections` decides which of these run and in what
+    # order; the default list is S1-S10 in the order they have always run, so a default
+    # invocation writes the same report keys, in the same order, that it always has.
+    runners = {
+        "direction":
+            lambda: run_direction(genes, cfg, n_phase=n_phase, steps=ladder),
+        "trajectory":
+            lambda: run_trajectory(genes, cfg, steps=traj_steps, n_phase=n_phase),
+        "reject":
+            lambda: run_reject(genes, cfg, n_phase=n_phase),
+        "schemes":
+            lambda: run_phase_schemes(genes, cfg, steps=scheme_steps, n_phase=n_phase),
+        "warm":
+            lambda: run_warm(genes, cfg, n_phase=n_phase),
+        "cost":
+            lambda: run_cost(genes, cfg, n_phase=cost_phase),
+        "feasibility":
+            lambda: run_feasibility(genes, cfg, steps=feas_steps, n_phase=n_phase),
+        # Two designs: the shipped genome, whose 1.2406 -> 1.7128 is the measurement S11
+        # exists to explain, and elite 1.  NOT elite 0 — that is `best_solution.json`
+        # bit-for-bit (checked: max|diff| = 0.0 across all fourteen genes), so a ladder
+        # over the first two elites would refine the same wheel twice and report the
+        # agreement as corroboration.  Elite 1 misses the target from the OTHER side,
+        # which is what makes a second ladder worth its minutes.
+        "mesh_convergence":
+            lambda: run_mesh_convergence(
+                [("best_solution", genes)]
+                + [(f"elite{k + 1}", g) for k, g in
+                   enumerate(S3.load_elites(args.elites, limit=2)[1:])],
+                configs=ladder_cfgs, n_phase=n_phase),
+        "multistart":
+            lambda: run_multistart(
+                cfg, elites=S3.load_elites(args.elites, limit=n_elite),
+                n_phase=n_phase, steps=feas_steps, n_probe=n_probe),
+    }
+    for name in sections:
+        section(name, runners[name])
+
+    rep["pass"] = all(rep[name]["pass"] for name in sections)
     rep["settings"] = {"config": cfg, "genome": args.genome, "quick": args.quick,
                        "service_force_n": W.TOTAL_FORCE_NEWTONS,
                        "target_deflection_mm": WO.TARGET_DEFLECTION_MM,
                        "allowable_stress_mpa": WO.ALLOWABLE_STRESS_MPA,
                        "lr": S3.DEFAULT_LR, "grad_clip": S3.GRAD_CLIP,
+                       "sections": sections,
                        "elapsed_s": round(time.time() - t0, 1)}
+    if sections != list(DEFAULT_SECTIONS):
+        rep["settings"]["title"] = "M8b-i.5 — QUALIFYING THE FEASIBILITY VERDICT"
 
     # Written BEFORE the report is formatted.  At `coarse` this study is an hour of
     # solving and `_print` is string formatting; losing the former to a bug in the latter
@@ -878,8 +1571,12 @@ def main():
     print(f"\nwrote {os.path.join(HERE, args.out)}  "
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
+        # Which figure, decided by what actually ran: `_plot`'s triptych needs S1, S2 and
+        # S9 and cannot be drawn from an M8b-i.5 report.
+        plot = _plot if all(k in rep for k in ("direction", "trajectory", "feasibility")) \
+            else _plot_m8bi5
         try:
-            print(f"wrote {_plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
         except Exception as exc:                              # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1

@@ -5,7 +5,7 @@
 PY_OPT := .venv-opt/bin/python
 PY_CAD := .venv-cad/bin/python
 
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 export studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -23,6 +23,9 @@ help:
 	@echo "              multi-start set Stage 3 begins from"
 	@echo "make stage3   Stage-3 descent from best_solution.json, writing"
 	@echo "              stage3_run.json as it goes and stage3_best.json at the end"
+	@echo "make m8bi5    the two sections that QUALIFY M8b-i's infeasibility verdict:"
+	@echo "              the stress QoI up the mesh ladder, and the same feasibility"
+	@echo "              question asked from all 16 Stage-2 elites (~2 h at coarse)"
 
 env: env-opt env-cad
 
@@ -56,6 +59,13 @@ elites:
 # roughly (steps x phases x 0.7 s) at `coarse` — see study_stage3.py's S10.
 stage3:
 	$(PY_OPT) wheel_stage3.py
+
+# M8b-i.5.  Deliberately NOT in `studies`: these two sections are ~2 h at `coarse` on top
+# of the gate's ~2 h 45 m, and they measure the WHEEL rather than the code — the answer
+# does not change per commit, and a gate nobody can afford to run stops being run.
+m8bi5:
+	$(PY_OPT) study_stage3.py --sections mesh_convergence,multistart \
+	    --out study_stage3_m8bi5.json
 
 export:
 	$(PY_CAD) wheel_step_export.py
