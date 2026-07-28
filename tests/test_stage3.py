@@ -353,3 +353,207 @@ def test_every_mesh_a_step_builds_is_built_with_the_pinned_orientation(genes, z0
     assert tuple(rec["settings"]["orientation"]) == pin, (
         "the run record must state the orientation it was pinned to, or S6 has nothing "
         "to check against")
+
+
+# ---------------------------------------------------------------------------
+# M8b-i.5 — THE TWO SECTIONS THAT QUALIFY S9's VERDICT
+# ---------------------------------------------------------------------------
+
+def test_the_default_sections_are_the_m8bi_gate_in_its_original_order():
+    """`--sections` must not silently change what `make studies` measures.
+
+    The default list is the seven sections S1-S10 have always been, in the order they
+    have always run, because the report's keys are written in that order and the repo's
+    regression discipline compares two reports leaf by leaf.  M8b-i.5's two are opt-in.
+    """
+    assert so3.DEFAULT_SECTIONS == ("direction", "trajectory", "reject", "schemes",
+                                    "warm", "cost", "feasibility")
+    assert set(so3.SECTION_HELP) == set(so3.DEFAULT_SECTIONS) | {"mesh_convergence",
+                                                                 "multistart"}
+    assert all(s in so3.PRINTERS for s in so3.SECTION_HELP), (
+        "every section needs a printer, or a selected section runs for hours and then "
+        "prints nothing")
+    assert so3.parse_sections(",".join(so3.DEFAULT_SECTIONS)) == list(
+        so3.DEFAULT_SECTIONS)
+
+
+def test_an_unknown_section_is_refused_at_startup_rather_than_three_hours_in():
+    """A typo must cost a startup, not a `coarse` run that ends in a `KeyError`."""
+    with pytest.raises(ValueError, match="unknown section"):
+        so3.parse_sections("direction,feasibilty")          # codespell:ignore
+    with pytest.raises(ValueError, match="empty"):
+        so3.parse_sections(" , ")
+    # Order and selection are the caller's, and are preserved verbatim.
+    assert so3.parse_sections("multistart,direction") == ["multistart", "direction"]
+
+
+def test_corner_distance_is_zero_inside_the_box_and_grows_outside():
+    """The ranking that decides which elites are worth an hour of descent.
+
+    Both terms are excesses over their OWN limit, which is what makes them addable —
+    `util` is already normalised by the allowable and `defl_err` by the target, so the
+    mistake this exists to avoid is summing "MPa over" with "mm short".
+    """
+    assert so3.corner_distance(so3.FEASIBLE_UTIL, so3.FEASIBLE_DEFL_REL) == 0.0
+    assert so3.corner_distance(0.5, 0.0) == 0.0
+    # ... and the sign of the deflection error cannot matter: too stiff is as infeasible
+    # as too soft, which is `wheel_objective`'s two-sided deflection term.
+    assert so3.corner_distance(1.0, 0.10) == so3.corner_distance(1.0, -0.10) > 0.0
+    # Each violation moves it on its own.
+    assert so3.corner_distance(2.0, 0.0) > so3.corner_distance(1.5, 0.0) > 0.0
+    assert so3.corner_distance(1.0, 0.20) > so3.corner_distance(1.0, 0.10) > 0.0
+    # Doubling the allowable and doubling the target-relative tolerance cost the same,
+    # which is the whole claim the sum rests on.
+    assert so3.corner_distance(2 * so3.FEASIBLE_UTIL, 0.0) == pytest.approx(
+        so3.corner_distance(0.0, 2 * so3.FEASIBLE_DEFL_REL))
+
+
+def test_a_two_rung_ladder_reports_no_ratio_rather_than_extrapolating_from_nothing():
+    """Richardson needs three points.  With two, `_series` must say so.
+
+    A NaN here is the honest answer and a number would be a fabrication — `--quick` runs
+    a two-rung ladder as a wiring check, and it must not print a convergence claim.
+    """
+    rows = [{"config": "smoke", "x": 1.0}, {"config": "coarse", "x": 2.0}]
+    s = so3._series(rows, "x")
+    assert s["settling"] is None
+    assert np.isnan(s["ratio"]) and np.isnan(s["richardson"])
+    assert s["direction"] == "rising"
+    assert s["rel_change_last_pair"] == pytest.approx(1.0)
+
+    three = rows + [{"config": "medium", "x": 2.5}]
+    s3 = so3._series(three, "x")
+    # 1 -> 2 -> 2.5: each refinement moved it less than the one before, so the sequence
+    # is settling and the extrapolate sits beyond the finest value.
+    assert s3["settling"] is True
+    assert s3["ratio"] == pytest.approx(2.0)
+    assert s3["richardson"] == pytest.approx(3.0)
+    assert s3["converged"] is None or s3["converged"] is False
+
+
+def test_settling_is_not_convergence_and_the_report_must_not_conflate_them():
+    """The distinction that a plot title once got wrong.
+
+    `settling` is `ratio > 1` — the successive differences are shrinking, which is
+    necessary and nowhere near sufficient.  A sequence can settle while its remaining
+    discretisation error is enormous, and reading a verdict off `settling` produced a
+    figure captioned "the stress QoI settles under refinement" above a utilisation whose
+    GCI was 63%.  `converged` is the claim worth quoting.
+    """
+    # The measured shipped-genome utilisation: settling, and nowhere near converged.
+    util = so3._series([{"config": c, "x": v} for c, v in
+                        (("smoke", 1.2617), ("coarse", 1.7128), ("medium", 2.0525))], "x")
+    assert util["settling"] is True, "differences ARE shrinking; that is the trap"
+    assert util["converged"] is False
+    assert util["gci"] > 0.5, f"expected a huge GCI, got {util['gci']}"
+
+    # The axle drop off the very same solves: both.
+    drop = so3._series([{"config": c, "x": v} for c, v in
+                        (("smoke", 1.4523), ("coarse", 1.4914), ("medium", 1.4986))], "x")
+    assert drop["settling"] is True
+    assert drop["converged"] is True
+    assert drop["gci"] < so3.GATE_LADDER_GCI
+
+    # And the threshold is the one constant, not a number typed twice.
+    borderline = so3._series([{"config": c, "x": v} for c, v in
+                              (("smoke", 1.0), ("coarse", 2.0), ("medium", 2.5))], "x")
+    assert borderline["converged"] == (borderline["gci"] < so3.GATE_LADDER_GCI)
+
+
+def test_an_unknown_probe_kind_is_refused_rather_than_guessed():
+    """A typo in `kinds` must not silently run fewer probes than the caller asked for."""
+    with pytest.raises(ValueError, match="unknown probe kind"):
+        so3.run_feasibility(np.zeros(14), CFG, steps=1, kinds=("stress",))
+
+
+def test_a_subset_of_probes_omits_the_keys_it_did_not_measure(genes):
+    """`kinds=` is what lets the multi-start re-probes skip `joint`.
+
+    The verdict must then carry only what its probes support.  An absent key is a
+    question that was not asked; a NaN reads as a question that was asked and came back
+    undefined, and the two get acted on differently.
+    """
+    f = so3.run_feasibility(genes, CFG, steps=1, n_phase=N_PHASE,
+                            kinds=("stress_only",))
+    assert list(f["runs"]) == ["stress_only"]
+    assert f["kinds"] == ["stress_only"]
+    v = f["verdict"]
+    assert "defl_err_when_stress_met" in v
+    assert "util_when_deflection_met" not in v, (
+        "no deflection-only probe ran, so there is no utilisation at which deflection "
+        "was met — the key must be absent, not NaN")
+    assert "joint_util_end" not in v
+    # The two bounds still exist: they are minima over whatever DID run.
+    assert np.isfinite(v["min_reachable_util"])
+    assert np.isfinite(v["min_reachable_abs_defl_err"])
+
+
+def test_the_ladder_measures_the_stress_scale_at_every_rung(genes, monkeypatch):
+    """S11's one subtlety, and it is the opposite of S1's.
+
+    `stress_scale` is an input so a gradient can be taken of the function that was
+    evaluated (`wheel_objective.py:487`), and S1 pins it across both legs for exactly
+    that reason.  The ladder takes no gradient, and `c = max/pnorm` drifting with the
+    mesh is part of what it is asking about — so every rung must MEASURE its own, and
+    inheriting one rung's `c` onto the next would flatten the very drift being reported.
+
+    The orientation pin is re-derived per rung for the same reason it is re-derived per
+    design: it is a function of the genes and the config, not a run-wide constant.
+    """
+    seen = []
+    real = S3.Evaluator
+
+    class Spy(real):
+        def __call__(self, *a, **kw):
+            seen.append({"cfg": self.cfg, "orientation": self.orientation,
+                         "stress_scale": self.stress_scale, "tiers": kw.get("tiers")})
+            return super().__call__(*a, **kw)
+
+    monkeypatch.setattr(S3, "Evaluator", Spy)
+    rep = so3.run_mesh_convergence([("shipped", genes)], configs=(CFG,), n_phase=N_PHASE)
+
+    assert len(seen) == 1, f"one rung, one evaluation; got {len(seen)}"
+    assert seen[0]["stress_scale"] is None, (
+        "the rung was handed a stress_scale instead of measuring its own, so `c`'s drift "
+        "with the mesh — the thing S11 reports — would come out flat")
+    assert seen[0]["tiers"] == ("t3",), (
+        "the ladder pays t1's eager jacrev for barrier numbers it never reads")
+    assert seen[0]["orientation"] == tuple(
+        float(x) for x in np.asarray(
+            WW.flank_orientation(genes, WW.get_config(CFG))).ravel())
+    row = rep["designs"][0]["rows"][0]
+    # The identity the report's three series rest on, at the one rung that ran.
+    assert row["stress_utilisation"] == pytest.approx(
+        row["stress_scale_measured"] * row["pnorm_stress_agg_mpa"]
+        / WO.ALLOWABLE_STRESS_MPA, rel=1e-12)
+
+
+def test_an_elite_that_will_not_solve_is_recorded_and_the_screen_carries_on(monkeypatch):
+    """One bad genome must not cost the other fifteen.
+
+    `study_objective.py`'s G10 table already treats a failure this way and for the same
+    reason: a genome that will not mesh is DATA about the elite set, and the alternative
+    is a three-hour screen that dies on elite 1 and reports nothing about elites 2-15.
+    """
+    calls = []
+
+    def fake_score(genes, cfg=so3.DEFAULT_CONFIG, phases=None, n_phase=4,
+                   tiers=("t3",)):
+        calls.append(len(calls))
+        if len(calls) == 2:
+            raise RuntimeError("d(force)/d(indentation) came out -1.0")
+        return 1.0, {"stress_utilisation": 1.4, "max_stress_mpa": 35.0,
+                     "axle_drop_mean_mm": 1.5}, 0.1
+
+    monkeypatch.setattr(so3, "score", fake_score)
+    m = so3.run_multistart(CFG, elites=[np.zeros(14)] * 3, n_probe=0)
+
+    assert [r["elite"] for r in m["elites"]] == [0, 2], (
+        "the screen stopped at the failure instead of carrying on past it")
+    assert [r["elite"] for r in m["failed"]] == [1]
+    assert m["failed"][0]["failed"] == "RuntimeError"
+    assert m["verdict"]["n_elites_scored"] == 2
+    assert m["verdict"]["n_elites_failed"] == 1
+    assert m["pass"] is True, (
+        "a failed genome is a measurement, not a broken screen; the gate is whether the "
+        "screen RAN")
