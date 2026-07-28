@@ -1,0 +1,205 @@
+{
+  "A1_A2": {
+    "slenderness_L_over_t": 50.0,
+    "thickness_mm": 0.716,
+    "n_span": 800,
+    "cases": [
+      {
+        "bc": "cantilever",
+        "closed_form_mm": 161.88688858695656,
+        "fe_mm": 161.94314678152946,
+        "rel_error": 0.0003475154477545761
+      },
+      {
+        "bc": "fixed_guided",
+        "closed_form_mm": 40.47172214673914,
+        "fe_mm": 40.50649973778461,
+        "rel_error": 0.0008593059351260646
+      }
+    ],
+    "stiffness_ratio": 3.9979545956785874,
+    "ratio_error": -0.0005113510803531618,
+    "pass": true
+  },
+  "A3": {
+    "force_n": 0.16680825,
+    "n_span": 561,
+    "cases": [
+      {
+        "bc": "fixed_guided",
+        "castigliano_mm": 0.01990096714468461,
+        "fe_mm": 0.020062344861888893,
+        "rel_error": 0.008109038924140277
+      },
+      {
+        "bc": "cantilever",
+        "castigliano_mm": 0.10495022888830421,
+        "fe_mm": 0.10504211969096496,
+        "rel_error": 0.0008755655288616992
+      }
+    ],
+    "pass": true
+  },
+  "A4a": {
+    "plane": {
+      "rows": [
+        {
+          "L_over_t": 8.0,
+          "thickness_mm": 4.475,
+          "n_span": 128,
+          "closed_form_mm": 0.663088695652174,
+          "fe_mm": 0.6724628441023741,
+          "excess": 0.01413709585409273,
+          "excess_over_t_L_sq": 0.9047741346619347
+        },
+        {
+          "L_over_t": 16.0,
+          "thickness_mm": 2.2375,
+          "n_span": 256,
+          "closed_form_mm": 5.304709565217392,
+          "fe_mm": 5.323015716048919,
+          "excess": 0.0034509242412739116,
+          "excess_over_t_L_sq": 0.8834366057661214
+        },
+        {
+          "L_over_t": 32.0,
+          "thickness_mm": 1.11875,
+          "n_span": 512,
+          "closed_form_mm": 42.437676521739135,
+          "fe_mm": 42.47384654131793,
+          "excess": 0.0008523091399754712,
+          "excess_over_t_L_sq": 0.8727645593348825
+        },
+        {
+          "L_over_t": 64.0,
+          "thickness_mm": 0.559375,
+          "n_span": 1024,
+          "closed_form_mm": 339.5014121739131,
+          "fe_mm": 339.5731900891229,
+          "excess": 0.0002114215512394324,
+          "excess_over_t_L_sq": 0.8659826738767151
+        }
+      ],
+      "local_exponents": [
+        2.0344310740843277,
+        2.017534093803737,
+        2.0112543582518274
+      ],
+      "fitted_exponent": 2.0207192672223417,
+      "mean_coefficient": 0.8817394934099134,
+      "coefficient_error_vs_timoshenko": 0.0885672758147078,
+      "all_positive": true
+    },
+    "clamped": {
+      "rows": [
+        {
+          "L_over_t": 8.0,
+          "thickness_mm": 4.475,
+          "n_span": 128,
+          "closed_form_mm": 0.663088695652174,
+          "fe_mm": 0.6693070768963073,
+          "excess": 0.009377902662052406,
+          "excess_over_t_L_sq": 0.600185770371354
+        },
+        {
+          "L_over_t": 16.0,
+          "thickness_mm": 2.2375,
+          "n_span": 256,
+          "closed_form_mm": 5.304709565217392,
+          "fe_mm": 5.313231244123496,
+          "excess": 0.0016064364695815847,
+          "excess_over_t_L_sq": 0.4112477362128857
+        },
+        {
+          "L_over_t": 32.0,
+          "thickness_mm": 1.11875,
+          "n_span": 512,
+          "closed_form_mm": 42.437676521739135,
+          "fe_mm": 42.43896609260661,
+          "excess": 3.0387405088427855e-05,
+          "excess_over_t_L_sq": 0.031116702810550123
+        },
+        {
+          "L_over_t": 64.0,
+          "thickness_mm": 0.559375,
+          "n_span": 1024,
+          "closed_form_mm": 339.5014121739131,
+          "fe_mm": 339.4407732437633,
+          "excess": -0.0001786117169925161,
+          "excess_over_t_L_sq": -0.731593592801346
+        }
+      ],
+      "local_exponents": [
+        2.545401377612022,
+        5.724246634676246,
+        -2.555281337592892
+      ],
+      "fitted_exponent": 2.286734665876238,
+      "mean_coefficient": 0.07773915414836097,
+      "coefficient_error_vs_timoshenko": -0.9040257356193074,
+      "all_positive": false
+    },
+    "pass": true
+  },
+  "A4b": {
+    "bc": "fixed_guided",
+    "root_bc": "plane",
+    "rows": [
+      {
+        "lambda": 1.0,
+        "thickness_mm": 2.0,
+        "n_span": 561,
+        "force_n": 0.16680825,
+        "castigliano_mm": 0.01990096714468461,
+        "fe_mm": 0.020062344861888893,
+        "rel_error": 0.008109038924140277
+      },
+      {
+        "lambda": 0.5,
+        "thickness_mm": 1.0,
+        "n_span": 1121,
+        "force_n": 0.02085103125,
+        "castigliano_mm": 0.01987059424347228,
+        "fe_mm": 0.019906089087605824,
+        "rel_error": 0.001786300082354364
+      },
+      {
+        "lambda": 0.25,
+        "thickness_mm": 0.5,
+        "n_span": 2242,
+        "force_n": 0.00260637890625,
+        "castigliano_mm": 0.019863000752671736,
+        "fe_mm": 0.01986965811496235,
+        "rel_error": 0.00033516397514699037
+      },
+      {
+        "lambda": 0.125,
+        "thickness_mm": 0.25,
+        "n_span": 4484,
+        "force_n": 0.00032579736328125,
+        "castigliano_mm": 0.019861102363607813,
+        "fe_mm": 0.01986167572190439,
+        "rel_error": 2.8868402472292942e-05
+      }
+    ],
+    "local_exponents": [
+      2.182556477065549,
+      2.41403546514602,
+      3.537303911721492
+    ],
+    "fitted_exponent": 2.68157230269452,
+    "all_positive": true,
+    "monotone": true,
+    "pass": true
+  },
+  "pass": true,
+  "settings": {
+    "beam_n_curve": 38400,
+    "mesh_h_over_t": 16,
+    "mesh_n_thick": 4,
+    "probe_force_fraction": 0.01,
+    "poisson": 0.35,
+    "plane": "stress",
+    "elapsed_s": 5.3
+  }
+}

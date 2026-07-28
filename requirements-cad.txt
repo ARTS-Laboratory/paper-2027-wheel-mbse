@@ -1,0 +1,17 @@
+# env-cad — the STEP exporter environment (Python 3.12).
+#
+#   python3 -m venv .venv-cad
+#   .venv-cad/bin/python -m pip install -r requirements-cad.txt
+#
+# Kept separate from env-opt on purpose.  CadQuery pins a specific OCP/OCC build, and
+# wheel_fea.py is imported INTO this env across the interpreter boundary
+# (wheel_step_export.py:60-69) — which is why wheel_fea.py must stay importable with
+# numpy alone.  tests/test_import_hygiene.py enforces that.
+#
+# DO NOT pin numpy here.  cadquery 2.8 resolves it to 2.4.6 (via nlopt), and forcing the
+# 2.5.1 that env-opt uses makes pip backtrack through older cadquery releases until it
+# reaches one whose numba dependency has no cp312 wheel — numba caps at Python <3.12 —
+# and the whole install fails with a confusing "Failed to build numba".  The two envs
+# holding different numpy versions is fine; nothing is shared between them but source.
+
+cadquery==2.8.0

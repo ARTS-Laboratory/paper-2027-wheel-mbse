@@ -88,9 +88,16 @@ CHAIN-OF-THOUGHT ENGINEERING NOTES
 """
 
 import warnings
+import hashlib
 import json
+import math
 import os
 import numpy as np
+
+# The shared geometry kernel.  numpy-only at import (it takes its array module as an
+# argument rather than importing jax), which is what keeps this file importable from
+# the CadQuery environment — see wheel_step_export.py:60-69.
+import wheel_geometry as _geom
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 np.random.seed(42)
@@ -100,8 +107,34 @@ np.random.seed(42)
 # ---------------------------------------------------------------------------
 NUMBER_OF_SPOKES    = 12
 HUB_RADIUS_MM       = 25.4 / 2          # 12.7 mm
-RIM_RADIUS_MM       = 97.8 / 2          # 48.9 mm
-HUB_RIM_SPAN_MM     = RIM_RADIUS_MM - HUB_RADIUS_MM   # 36.2 mm
+
+# Where the spokes merge into the rim band.  THIS IS THE RIM-THICKNESS DECISION, because
+# the outer diameter is fixed at Ø100 by requirement: the band is
+# RIM_OUTER_RADIUS_MM - RIM_RADIUS_MM, so thickening it means moving THIS radius inward,
+# which also shortens the spoke.
+#
+# Was 97.8/2 = 48.9, giving a 1.1 mm band.  M4's full-wheel FEA measured what that costs:
+#
+#     band    axle drop   rim share of compliance
+#     1.1 mm    2.85 mm         44.7%      <- as shipped, +43% over the 2.0 mm target
+#     1.3 mm    2.29 mm         39.8%
+#     1.5 mm    1.94 mm         35.5%      <- here
+#     1.8 mm    1.59 mm         30.8%
+#
+# A 1.1 mm band held nearly as much compliance as all twelve spokes combined, and the
+# beam model the GA optimises against cannot see it at all — so the GA was solving the
+# wrong problem, not solving it badly.  1.5 mm is chosen because it brackets the 2.0 mm
+# target with the rim share down to a third, and because at that thickness the beam
+# model happens to become close to unbiased at the design point (measured FEA/beam 1.00
+# there versus 1.43 at 1.1 mm), which is what makes a re-run of the existing GA
+# meaningful rather than merely different.
+#
+# Everything derives from this: the span below, the mesh's ring radius
+# (`wheel_wheel.rim_inner_radius`), and the exporter's rim face.  Changing it
+# REINTERPRETS every gene on disk — `tests/test_golden.py` fails loudly if the artifact
+# was optimised in a different frame.
+RIM_RADIUS_MM       = 48.5
+HUB_RIM_SPAN_MM     = RIM_RADIUS_MM - HUB_RADIUS_MM   # 35.8 mm
 SPOKE_WIDTH_MM      = 22.4              # fixed face width (z-height)
 
 # Material — PLA, FFF anisotropy-corrected
@@ -146,7 +179,15 @@ KE_BY_BC = {"cantilever": 2.0, "fixed_guided": 0.5}
 KE_BUCKLING              = KE_BY_BC[BOUNDARY_CONDITION]
 
 # Piecewise taper breakpoints in normalized arc-length
-TAPER_BREAKPOINTS = np.array([0.0, 1/3, 2/3, 1.0])
+# Re-exported from the geometry kernel rather than redefined.  Two copies of the zone
+# breakpoints would be two things to keep in step, and a silent half-zone shift between
+# the thickness the optimizer prices and the thickness the mesh builds is exactly the
+# kind of disagreement this refactor exists to make impossible.
+TAPER_BREAKPOINTS = _geom.TAPER_BREAKPOINTS
+
+# Mesh-derived design constraints, from the geometry kernel so there is one copy.
+MIN_FOLD_MARGIN_MM = _geom.MIN_FOLD_MARGIN_MM
+MAX_ARRIVAL_DEG = _geom.MAX_ARRIVAL_DEG
 
 # Number of discretization points along Bezier
 N_CURVE_PTS = 600
@@ -177,19 +218,40 @@ MIN_WALL_MM = 2.0
 # Lateral clearance between a spoke root and its hub sector (mm)
 HUB_CLEARANCE_MM = 0.8
 
+# Lateral half-range for the interior Bezier control points.
+#
+# DO NOT WIDEN THIS.  It looks like a binding constraint — cy1 and cy3 both sit at
+# exactly +32.0 in the v2.1 winner — and the obvious reading is that the centerline
+# wanted more room than the box allowed.  Measured, that reading is wrong.  Sweeping the
+# bound over {32, 45, 60} at 4 seeds each, 300×300 as usual:
+#
+#     bound 32:  mean loss 50.30  (sd 0.44)   best 49.78
+#     bound 45:  mean loss 52.91  (sd 1.65)   best 51.08
+#     bound 60:  mean loss 55.16  (sd 1.64)   best 53.73
+#
+# Monotonically worse, far outside the seed noise.  And the tell: at bounds 45 and 60 no
+# cy gene is pinned at all — the optimizer settles INTERIOR at |cy| ≈ 30–41 and is still
+# worse.  So the extra room is reachable and simply not wanted.  The pinning at 32 is a
+# boundary artifact of a shallow, y-symmetric, multi-modal landscape, and enlarging the
+# box just costs search efficiency at a fixed budget (mean loss over the population
+# doubled, 463 → 1076).
+#
+# Overridable via --cy-bound so this stays a measurable claim rather than a belief.
+CY_BOUND_MM = 32.0
+
 GENE_SPACE = [
     # CP1 — near hub (x must stay in [5%, 30%] of span)
     {"low": S * 0.05,  "high": S * 0.30},   # cx1
-    {"low": -32.0,     "high":  32.0},       # cy1
+    {"low": -CY_BOUND_MM, "high": CY_BOUND_MM},   # cy1
     # CP2 — first third to midspan
     {"low": S * 0.22,  "high": S * 0.55},   # cx2
-    {"low": -32.0,     "high":  32.0},       # cy2
+    {"low": -CY_BOUND_MM, "high": CY_BOUND_MM},   # cy2
     # CP3 — midspan to second third
     {"low": S * 0.45,  "high": S * 0.78},   # cx3
-    {"low": -32.0,     "high":  32.0},       # cy3
+    {"low": -CY_BOUND_MM, "high": CY_BOUND_MM},   # cy3
     # CP4 — near rim (x must stay in [70%, 95%] of span)
     {"low": S * 0.70,  "high": S * 0.95},   # cx4
-    {"low": -32.0,     "high":  32.0},       # cy4
+    {"low": -CY_BOUND_MM, "high": CY_BOUND_MM},   # cy4
     # Piecewise thickness nodes (mm) — 4 nodes, 3 taper zones
     # Lower bound = MIN_WALL_MM so the GA can thin down to the printable floor.
     {"low": MIN_WALL_MM,  "high": 10.0},     # t0 (root, hub side)
@@ -220,30 +282,15 @@ def generate_bezier_centerline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
     P1..P4       [interior, evolvable]
     P5 = (span, 0) [rim, locked]
     Returns (curve_points [N,2], control_polygon [6,2])
+
+    Thin wrapper over `wheel_geometry.bezier_centerline`.  The body moved there so the
+    JAX mesh generator and this module compute the same curve from the same code rather
+    than from two implementations that agree until someone edits one of them.
+    Bit-identical to the previous inline version — see tests/test_geometry_kernel.py.
+    Also faster: the Bernstein basis is now cached instead of rebuilt per evaluation.
     """
-    pts = np.array([
-        [0.0,   0.0 ],
-        [cx1,   cy1 ],
-        [cx2,   cy2 ],
-        [cx3,   cy3 ],
-        [cx4,   cy4 ],
-        [span_mm, 0.0],
-    ])
-    # Degree-5 Bernstein basis
-    t = np.linspace(0.0, 1.0, num_points)[:, None]   # (N,1)
-    n = 5
-    B = np.array([
-        _binomial(n, k) * (1 - t)**(n - k) * t**k
-        for k in range(n + 1)
-    ]).squeeze(axis=-1).T   # (N, 6)
-    curve = B @ pts          # (N, 2)
-    return curve, pts
-
-
-def _binomial(n, k):
-    """Binomial coefficient as float array-friendly scalar."""
-    from math import comb
-    return float(comb(n, k))
+    return _geom.bezier_centerline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
+                                   span_mm=span_mm, num_points=num_points)
 
 # ---------------------------------------------------------------------------
 # PIECEWISE-LINEAR THICKNESS PROFILE
@@ -253,15 +300,13 @@ def thickness_at_arc_length(arc_fractions, t0, t1, t2, t3):
     """
     Returns thickness at each normalized arc-fraction in [0,1].
     Three zones: [0, 1/3], [1/3, 2/3], [2/3, 1].
+
+    Delegates to the branch-free form in `wheel_geometry`, which is the same
+    piecewise-linear function written as a sum of clipped ramps so it survives JAX
+    tracing (the old boolean-mask assignment does not).  Agreement with the masked
+    original is one ULP — 2.2e-16 relative — and is pinned by a test.
     """
-    nodes = np.array([t0, t1, t2, t3])
-    bp    = TAPER_BREAKPOINTS
-    thickness = np.zeros_like(arc_fractions)
-    for i in range(3):
-        mask = (arc_fractions >= bp[i]) & (arc_fractions <= bp[i + 1])
-        alpha = (arc_fractions[mask] - bp[i]) / (bp[i + 1] - bp[i] + 1e-12)
-        thickness[mask] = nodes[i] * (1 - alpha) + nodes[i + 1] * alpha
-    return thickness
+    return _geom.thickness_at_arc_length(arc_fractions, t0, t1, t2, t3)
 
 # ---------------------------------------------------------------------------
 # STRESS-CONCENTRATION FACTOR (Peterson, 1974 — stepped beam in bending)
@@ -309,7 +354,8 @@ def generalized_spoke_mechanics(curve_points, t0, t1, t2, t3,
                                  spoke_width, force_per_spoke,
                                  R_hub_fillet=0.5, R_rim_fillet=0.5,
                                  youngs_modulus=YOUNGS_MODULUS_PLA_MPA,
-                                 boundary_condition=None):
+                                 boundary_condition=None,
+                                 thickness_clip=(0.5, 20.0)):
     """
     Force-method (Castigliano) beam analysis of one curved spoke.
 
@@ -356,7 +402,12 @@ def generalized_spoke_mechanics(curve_points, t0, t1, t2, t3,
 
     # --- Piecewise thickness at segment midpoints ---
     thicknesses = thickness_at_arc_length(arc_fracs_mid, t0, t1, t2, t3)
-    thicknesses = np.clip(thicknesses, 0.5, 20.0)
+    # Guard against a GA proposing a degenerate section.  The default bounds are the
+    # ones every committed artifact was produced under and must not change; the
+    # parameter exists so the A4 slenderness sweep can scale the taper down by 8x
+    # (t0 = 2.375 -> 0.297) without silently hitting the floor, which would flatten the
+    # very convergence trend the sweep is measuring.
+    thicknesses = np.clip(thicknesses, thickness_clip[0], thickness_clip[1])
 
     # --- Section properties per segment ---
     I  = spoke_width * thicknesses**3 / 12.0    # second moment of area
@@ -547,6 +598,59 @@ def curve_smoothness_metrics(curve_points, n_sample=60, deadband_deg=1.0):
 # PYGAD FITNESS FUNCTION
 # ---------------------------------------------------------------------------
 
+# Barrier weights for the two mesh-derived constraints.  Both are hard model-validity
+# limits rather than preferences, so they are scaled to dominate the objective (~50
+# units total) the moment they are violated, without being cliffs the GA cannot descend.
+FOLD_PENALTY_SCALE    = 3000.0
+ARRIVAL_PENALTY_SCALE = 3000.0
+
+
+def fold_penalty(curve_points, ctrl_pts, t0, t1, t2, t3):
+    """Barrier on the offset band turning inside out.
+
+    `study_mesh_quality.py` measured that roughly 40% of the genomes the other
+    constraints admit have a NEGATIVE-area region: where the centerline's radius of
+    curvature drops below half the local thickness, the outward offset passes the centre
+    of curvature and the flank folds through itself.  That is not a meshing artifact —
+    the part described by such a genome does not exist, and the Castigliano model
+    happily returns a deflection for it anyway.
+
+    `smoothness` was only ever an indirect proxy for this (`:596-598` said so).  This is
+    the direct statement, and it costs one closed-form curvature evaluation.  The
+    threshold of 0.1 mm rather than 0 is measured: at 0 the sweep still admitted 9
+    designs with inverted elements, at 0.1 none, and it still keeps 95% of the space.
+    """
+    margin = _geom.self_intersection_margin(curve_points, ctrl_pts, t0, t1, t2, t3,
+                                            num_points=N_CURVE_PTS)
+    return soft_barrier(_geom.MIN_FOLD_MARGIN_MM - margin, scale=FOLD_PENALTY_SCALE)
+
+
+def arrival_penalty(ctrl_pts):
+    """Barrier on the spoke meeting its ring too close to RADIALLY.
+
+    The centerline endpoints are locked on the hub and rim circles, so the end
+    cross-section — which is normal to the centerline — crosses its ring at
+    (90 - arrival) degrees.  A near-tangent arrival therefore gives a healthy weld; a
+    near-radial one lays the cross-section along the arc, and past about 80 degrees both
+    flanks lie OUTSIDE the ring circle and the spoke touches it at a single point.
+
+    That is a hinge, not a weld — and `BOUNDARY_CONDITION = "fixed_guided"` assumes a
+    moment connection at both ends, so the model would be solving a structure the part
+    does not have.  `study_wheel_mesh.py` measured the boundary at 70.6 degrees;
+    `wheel_wheel.MAX_ARRIVAL_DEG = 65` is that with margin.
+    """
+    d = _geom.forward_difference_matrix(_geom.BEZIER_DEGREE, 1) @ ctrl_pts
+    worst = 0.0
+    # Bezier endpoint tangents are the first and last control-polygon edges exactly, and
+    # the endpoints sit on the +x axis of their ring, so the radial direction is x-hat
+    # and the arrival angle from the tangent is asin(|dx| / |d|).
+    for edge in (d[0], d[-1]):
+        n = math.hypot(float(edge[0]), float(edge[1]))
+        if n > 0.0:
+            worst = max(worst, math.degrees(math.asin(min(1.0, abs(edge[0]) / n))))
+    return soft_barrier((worst - MAX_ARRIVAL_DEG) / 10.0, scale=ARRIVAL_PENALTY_SCALE)
+
+
 def evaluate_design(solution):
     """
     Score one genome.  Returns (metrics, loss_terms) as plain dicts.
@@ -567,7 +671,7 @@ def evaluate_design(solution):
         violation = xs[i] + 2.0 - xs[i + 1]   # must be cx[i]+gap < cx[i+1]
         x_order_penalty += soft_barrier(violation, scale=80.0)
 
-    curve_points, _ = generate_bezier_centerline(
+    curve_points, ctrl_pts = generate_bezier_centerline(
         cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4)
 
     # Check monotone x (soft penalty for fold-back)
@@ -611,6 +715,12 @@ def evaluate_design(solution):
         "x_order":     x_order_penalty,
         "hub_overlap": spoke_overlap_penalty(t0, R_hub),
         "smoothness":  400.0 * n_infl + 120.0 * turn_var,
+        # ---- the two constraints the meshing milestones measured -------------
+        # Both are closed-form (one curvature evaluation, one endpoint tangent), so
+        # they cost nothing next to the Castigliano solve, and both fix cases where the
+        # MODEL ITSELF is invalid rather than merely where the design is poor.
+        "fold":        fold_penalty(curve_points, ctrl_pts, t0, t1, t2, t3),
+        "arrival":     arrival_penalty(ctrl_pts),
     }
 
     metrics = {
@@ -635,19 +745,25 @@ def pygad_fitness(ga_instance, solution, sol_idx):
 # GENERATION CALLBACK (logging + adaptive mutation)
 # ---------------------------------------------------------------------------
 
+# Logging / cooling cadence, overridden by __main__ so a --smoke run (8 generations)
+# still prints progress instead of falling silent between the 100-generation marks.
+LOG_EVERY    = [100]
+SIGMA_HALVES = [250]
+
+
 def on_generation(ga_instance):
     scores = ga_instance.last_generation_fitness
     best_fitness_history.append(-np.max(scores))
     mean_fitness_history.append(-np.mean(scores))
 
-    # Halve mutation sigma every 250 generations (adaptive cooling)
+    # Halve mutation sigma periodically (adaptive cooling)
     gen = ga_instance.generations_completed
-    if gen > 0 and gen % 250 == 0:
+    if gen > 0 and gen % SIGMA_HALVES[0] == 0:
         mutation_sigma_global[0] *= 0.5
         print(f"  [Gen {gen:4d}] Mutation σ reduced to "
               f"{mutation_sigma_global[0]:.4f}")
 
-    if gen % 100 == 0:
+    if gen % LOG_EVERY[0] == 0:
         best = -np.max(scores)
         print(f"  [Gen {gen:4d}] Best loss = {best:8.3f}  |  "
               f"Mean loss = {-np.mean(scores):8.3f}")
@@ -659,6 +775,25 @@ def on_generation(ga_instance):
 _GENE_LOW   = np.array([g["low"]  for g in GENE_SPACE])
 _GENE_HIGH  = np.array([g["high"] for g in GENE_SPACE])
 _GENE_RANGE = _GENE_HIGH - _GENE_LOW
+
+
+def set_cy_bound(bound_mm):
+    """Widen (or narrow) the lateral half-range of the four interior Bezier control
+    points, keeping every derived array in step.
+
+    These three module arrays are snapshots of GENE_SPACE taken at import.  Mutating
+    GENE_SPACE alone would leave `adaptive_gaussian_mutation` clipping offspring to the
+    OLD limits (:690) and `bound_saturation_report` measuring against them (:700), so
+    the GA would silently keep the bound it was told to drop.
+    """
+    global CY_BOUND_MM, _GENE_LOW, _GENE_HIGH, _GENE_RANGE
+    CY_BOUND_MM = float(bound_mm)
+    for idx in (1, 3, 5, 7):                      # cy1, cy2, cy3, cy4
+        GENE_SPACE[idx]["low"]  = -CY_BOUND_MM
+        GENE_SPACE[idx]["high"] =  CY_BOUND_MM
+    _GENE_LOW   = np.array([g["low"]  for g in GENE_SPACE])
+    _GENE_HIGH  = np.array([g["high"] for g in GENE_SPACE])
+    _GENE_RANGE = _GENE_HIGH - _GENE_LOW
 
 def adaptive_gaussian_mutation(offspring, ga_instance):
     """
@@ -679,8 +814,12 @@ def adaptive_gaussian_mutation(offspring, ga_instance):
 # DIAGNOSTICS  (weight tuning and bound saturation)
 # ---------------------------------------------------------------------------
 
-GENE_NAMES = ["cx1", "cy1", "cx2", "cy2", "cx3", "cy3", "cx4", "cy4",
-              "t0", "t1", "t2", "t3", "R_hub", "R_rim"]
+# Single source of truth, in wheel_genome.  This ordering is the contract between the
+# flat 14-vector `evaluate_design` unpacks positionally (:560) and the dict key set the
+# STEP exporter reads, so it must exist exactly once.  Imported lazily inside this
+# module's own namespace to keep the import graph flat — wheel_genome is numpy+stdlib,
+# so this costs the CadQuery environment nothing.
+from wheel_genome import GENE_NAMES  # noqa: E402
 
 
 def bound_saturation_report(solution, tol_frac=0.01):
@@ -704,6 +843,75 @@ def bound_saturation_report(solution, tol_frac=0.01):
         elif hi - val <= tol_frac * span:
             hits.append((name, float(val), "high", float(hi)))
     return hits
+
+
+def dump_population(ga, path="stage2_elites.json", n_keep=16):
+    """Write the final GA population's best distinct genomes for Stage 3 to start from.
+
+    WHY THIS HAS TO EXIST.  The master plan says Stage 3 "multi-starts all 16 elites",
+    and there are no 16 elites anywhere: `best_solution.json` holds ONE genome, pygad is
+    constructed without `save_solutions=True`, and `keep_elitism` is 5 at this population
+    size.  Without this, M8b's multi-start would have to perturb the single shipped
+    genome — and every start would then sit in one basin, which tests far less than
+    "monotone decrease from >= 3 of 4 multi-starts" is meant to test.
+
+    Deduplicated by `genome_hash` because elitism carries identical rows forward between
+    generations, so the raw population contains repeats and a naive top-16 can be four
+    distinct designs wearing sixteen hats.
+
+    Deliberately confined to `__main__`'s call site and gated behind a flag: M0's golden
+    test pins `evaluate_design` and the shipped record, and a milestone that needed a
+    starting set is not a reason to change what a GA run writes by default.
+    """
+    pop = np.asarray(ga.population, dtype=float)
+    fit = np.asarray(ga.last_generation_fitness, dtype=float)
+    order = np.argsort(-fit)                       # pygad maximises: best fitness first
+
+    seen, kept = set(), []
+    for i in order:
+        h = _genome_hash_vector(pop[i])
+        if h in seen:
+            continue
+        seen.add(h)
+        kept.append((pop[i], float(fit[i]), h))
+        if len(kept) >= n_keep:
+            break
+
+    record = {
+        "source": "wheel_fea.py --dump-population",
+        "seed": int(ga.random_seed) if getattr(ga, "random_seed", None) is not None
+        else None,
+        "generations": int(ga.generations_completed),
+        "population_size": int(pop.shape[0]),
+        "n_distinct_in_final_population": int(len({_genome_hash_vector(p)
+                                                   for p in pop})),
+        "elites": [
+            {"rank": r, "genome_hash": h, "fitness": f, "loss": -f,
+             "genes": {name: float(v) for name, v in zip(GENE_NAMES_ORDER, g)}}
+            for r, (g, f, h) in enumerate(kept)],
+    }
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
+    with open(out, "w") as fh:
+        json.dump(record, fh, indent=2)
+    print(f"\n  [STAGE-2 ELITES]  wrote {len(kept)} distinct genomes to {out}")
+    print(f"  final population held {record['n_distinct_in_final_population']} distinct "
+          f"designs out of {pop.shape[0]}")
+    return out
+
+
+GENE_NAMES_ORDER = ("cx1", "cy1", "cx2", "cy2", "cx3", "cy3", "cx4", "cy4",
+                    "t0", "t1", "t2", "t3", "R_hub", "R_rim")
+
+
+def _genome_hash_vector(vec):
+    """`wheel_genome.genome_hash` on a raw vector, without importing that module.
+
+    `wheel_fea` is the numpy-only half of the import graph and `tests/test_import_hygiene`
+    enforces it; the hash is seven characters of sha256 over the same canonical text the
+    other two copies use.
+    """
+    payload = ",".join(f"{float(v):.9g}" for v in vec)
+    return hashlib.sha256(payload.encode()).hexdigest()[:7]
 
 
 def print_loss_breakdown(loss_terms):
@@ -737,26 +945,15 @@ def thicken_3taper_curve(curve_points, t0, t1, t2, t3, return_edges=False):
     (each [N,2], both running hub→rim) so callers (e.g. the STEP exporter) can build
     smooth splines rather than one flattened polygon.  Otherwise returns the closed
     polygon [top; bot reversed] for matplotlib fill.
+
+    Delegates to `wheel_geometry.offset_band` with one point across the thickness.
+    The same function with n_across > 1 lays out the spoke's structured mesh block, so
+    the meshed part and the exported part are the same surface by construction rather
+    than by two implementations happening to agree.
     """
-    # Arc-length fractions
-    dx = np.diff(curve_points[:, 0])
-    dy = np.diff(curve_points[:, 1])
-    segs = np.sqrt(dx**2 + dy**2)
-    cum  = np.concatenate([[0.0], np.cumsum(segs)])
-    arc_fracs = cum / (cum[-1] + 1e-12)
-    thicknesses = thickness_at_arc_length(arc_fracs, t0, t1, t2, t3)
-
-    # Normals along centerline
-    grads = np.gradient(curve_points, axis=0)
-    norms = np.stack([-grads[:, 1], grads[:, 0]], axis=1)
-    norms /= np.linalg.norm(norms, axis=1, keepdims=True) + 1e-12
-
-    half_t = thicknesses[:, None] / 2.0
-    top    = curve_points + norms * half_t
-    bot    = curve_points - norms * half_t
     if return_edges:
-        return top, bot
-    return np.vstack([top, bot[::-1]])
+        return _geom.outline_edges(curve_points, t0, t1, t2, t3)
+    return _geom.outline_polygon(curve_points, t0, t1, t2, t3)
 
 
 def place_sector(polygon, hub_radius, angle_deg=0.0):
@@ -945,11 +1142,69 @@ def print_cad_data(opt_curve, control_pts, t0, t1, t2, t3, R_hub, R_rim):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Evolve the compliant wheel genome, then hand off to the STEP "
+                    "exporter.")
+    parser.add_argument("--smoke", action="store_true",
+                        help="tiny population/generation count — exercises every code "
+                             "path in seconds. Produces a throwaway genome, not a "
+                             "usable design.")
+    parser.add_argument("--generations", type=int, default=None)
+    parser.add_argument("--pop", type=int, default=None,
+                        help="population size (sol_per_pop)")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="RNG seed. Passed to both numpy and pygad so a run is "
+                             "reproducible end to end.")
+    parser.add_argument("--no-export", action="store_true",
+                        help="skip the CAD hand-off")
+    parser.add_argument("--out", default="best_solution.json",
+                        help="genome output path, relative to this file")
+    parser.add_argument("--dump-population", action="store_true",
+                        help="also write the final GA population's best genomes to "
+                             "--elites-out. Stage 3 multi-starts from these; the GA "
+                             "keeps only 5 elites internally and pygad is constructed "
+                             "without save_solutions, so nothing else records them.")
+    parser.add_argument("--elites-out", default="stage2_elites.json",
+                        help="where --dump-population writes, relative to this file")
+    parser.add_argument("--n-elites", type=int, default=16,
+                        help="how many distinct genomes to keep (default 16)")
+    parser.add_argument("--cy-bound", type=float, default=CY_BOUND_MM,
+                        help=f"lateral half-range for the interior Bezier control "
+                             f"points (default {CY_BOUND_MM}). The v2.1 winner has cy1 "
+                             f"and cy3 pinned at this bound, so the recorded optimum is "
+                             f"a boundary optimum — widening it is a real experiment.")
+    args = parser.parse_args()
+
+    if args.cy_bound != CY_BOUND_MM:
+        set_cy_bound(args.cy_bound)
+
+    # A --smoke run is for wiring, not for design: it must not clobber the real genome
+    # that the STEP on disk was built from.
+    if args.smoke and args.out == "best_solution.json":
+        args.out = "best_solution_smoke.json"
+
+    n_generations = args.generations if args.generations else (8 if args.smoke else 300)
+    n_pop         = args.pop         if args.pop         else (24 if args.smoke else 300)
+    LOG_EVERY[0]    = max(1, n_generations // 6)
+    SIGMA_HALVES[0] = max(1, n_generations // 2)
+
+    # The module-level np.random.seed(42) at import time is not enough on its own —
+    # pygad draws from its OWN Generator, so without random_seed the initial population
+    # differed run to run and nothing downstream was reproducible.  That matters now:
+    # Stage 2 and Stage 3 record which genome they consumed, and provenance is
+    # meaningless if the producing run cannot be repeated.
+    np.random.seed(args.seed)
+
+    import matplotlib
+    matplotlib.use("Agg")          # headless: no DISPLAY on a build box or over ssh
     import matplotlib.pyplot as plt
     import pygad
 
     print("=" * 68)
-    print("  COMPLIANT PLA UAV WHEEL — Co-Optimisation v2.1")
+    print("  COMPLIANT PLA UAV WHEEL — Co-Optimisation v2.1"
+          + ("   [SMOKE RUN]" if args.smoke else ""))
     print(f"  {NUMBER_OF_SPOKES} spokes | Face width {SPOKE_WIDTH_MM} mm | "
           f"Hub Ø {HUB_RADIUS_MM*2:.1f} mm | Rim Ø {RIM_RADIUS_MM*2:.1f} mm")
     print(f"  Load {FORCE_LBS} lb ({TOTAL_FORCE_NEWTONS:.1f} N total) | "
@@ -957,13 +1212,14 @@ if __name__ == "__main__":
     print(f"  Allowable stress {ALLOWABLE_STRESS_MPA:.1f} MPa "
           f"(PLA 50 MPa × {FFF_KNOCKDOWN} FFF × 1/{SAFETY_FACTOR} SF)")
     print(f"  Beam model: {BOUNDARY_CONDITION}  (Ke = {KE_BUCKLING})")
+    print(f"  GA: pop {n_pop} × {n_generations} gen | seed {args.seed}")
     print("=" * 68 + "\n")
 
     ga = pygad.GA(
-        num_generations         = 300,
-        num_parents_mating      = 20,
+        num_generations         = n_generations,
+        num_parents_mating      = max(2, min(20, n_pop // 15)),
         fitness_func            = pygad_fitness,
-        sol_per_pop             = 300,
+        sol_per_pop             = n_pop,
         num_genes               = 14,
         gene_space              = GENE_SPACE,
         parent_selection_type   = "tournament",
@@ -971,12 +1227,16 @@ if __name__ == "__main__":
         crossover_type          = "uniform",
         mutation_type           = adaptive_gaussian_mutation,
         mutation_probability    = 0.35,
-        keep_elitism            = 5,
+        keep_elitism            = min(5, max(1, n_pop // 10)),
         on_generation           = on_generation,
         suppress_warnings       = True,
+        random_seed             = args.seed,
     )
 
     ga.run()
+
+    if args.dump_population:
+        dump_population(ga, args.elites_out, args.n_elites)
 
     best_sol, best_fit, _ = ga.best_solution()
     (cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4,
@@ -1078,14 +1338,24 @@ if __name__ == "__main__":
             "target_deflection_mm": float(TARGET_DEFLECTION_MM),
             "version": "2.1",
         },
+        # Search provenance, distinct from physics: what run produced this genome and
+        # inside what box.  `cy_bound_mm` is here because a genome with cy pinned at the
+        # bound is a BOUNDARY optimum — its meaning depends on a number that used to
+        # live only in the source.  `seed` is here so the run can be repeated at all.
+        "search": {
+            "seed": int(args.seed),
+            "generations": int(n_generations),
+            "population": int(n_pop),
+            "cy_bound_mm": float(CY_BOUND_MM),
+            "smoke": bool(args.smoke),
+        },
         "loss_terms": {k: float(v) for k, v in best_loss_terms.items()},
         "bound_saturation": [
             {"gene": n, "value": v, "at": w, "bound": b}
             for n, v, w, b in bound_saturation_report(best_sol)
         ],
     }
-    genome_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               "best_solution.json")
+    genome_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.out)
     with open(genome_path, "w") as fh:
         json.dump(genome_record, fh, indent=2)
     print(f"\nSaved winning genome → {genome_path}")
@@ -1258,7 +1528,22 @@ if __name__ == "__main__":
         fontsize=14, fontweight="bold", color="#eee"
     )
     fig.tight_layout(rect=[0, 0, 1, 0.95])
-    out_path = "C:/Users/crfloyd/github/wheel/poster_summary.jpg"
+    # Beside this file, not at an absolute path.  This was hard-coded to
+    # C:/Users/crfloyd/github/wheel/, which is a hard failure anywhere but the machine
+    # it was written on — and it fires at the very END of a multi-minute GA run, after
+    # best_solution.json is already safely on disk but before the CAD hand-off, so it
+    # took out the STEP export too.
+    # The figure name FOLLOWS --out.  It used to be a fixed "poster_summary.jpg", which
+    # meant any experimental run — a bound sweep, a seed comparison, anything writing
+    # its genome elsewhere — silently overwrote the committed poster with a throwaway
+    # design while leaving best_solution.json alone.  That is the same class of
+    # artifacts-disagreeing-with-each-other bug the CAD hand-off exists to prevent.
+    # `genome_path` is already resolved against this file's directory, so the figure
+    # lands beside whatever genome it actually describes — including out-of-tree ones.
+    if args.out == "best_solution.json":
+        out_path = os.path.join(os.path.dirname(genome_path), "poster_summary.jpg")
+    else:
+        out_path = os.path.splitext(genome_path)[0] + "_summary.jpg"
     fig.savefig(out_path, dpi=200, facecolor=fig.get_facecolor())
     print(f"\nSaved summary figure → {out_path}")
 
@@ -1278,8 +1563,19 @@ if __name__ == "__main__":
     import subprocess
 
     here = os.path.dirname(os.path.abspath(__file__))
-    cad_python = os.path.join(here, ".venv-cad", "Scripts", "python.exe")
-    manual_cmd = r".venv-cad\Scripts\python wheel_step_export.py"
+
+    # venv puts the interpreter in Scripts/python.exe on Windows and bin/python on
+    # POSIX.  The old code knew only the Windows layout, so on Linux the hand-off
+    # reported "env not found" even when .venv-cad was sitting right there.  Probe both
+    # and report whichever is right for this platform.
+    cad_candidates = [
+        os.path.join(here, ".venv-cad", "bin", "python"),
+        os.path.join(here, ".venv-cad", "Scripts", "python.exe"),
+    ]
+    cad_python = next((p for p in cad_candidates if os.path.isfile(p)), None)
+    manual_cmd = (".venv-cad\\Scripts\\python wheel_step_export.py"
+                  if os.name == "nt" else
+                  ".venv-cad/bin/python wheel_step_export.py")
 
     print("\n" + "=" * 68)
     print("  CAD HAND-OFF → wheel_step_export.py")
@@ -1287,9 +1583,21 @@ if __name__ == "__main__":
     # The child writes straight to this stdout; flush ours first or, when the run is
     # piped to a file, our block-buffered output lands *after* the child's.
     sys.stdout.flush()
-    if not os.path.isfile(cad_python):
-        print(f"  CadQuery env not found at {cad_python}")
-        print(f"  STEP not regenerated.  Run it yourself with:\n    {manual_cmd}")
+    if args.no_export or args.smoke:
+        # The exporter reads best_solution.json unconditionally (load_genome,
+        # wheel_step_export.py:125).  A smoke run wrote its genome elsewhere, so
+        # exporting here would rebuild the STEP from the *previous* real genome and
+        # stamp it with a fresh timestamp — destroying exactly the staleness signal
+        # warn_if_stale() exists to give.
+        why = "--no-export" if args.no_export else "--smoke (genome is throwaway)"
+        print(f"  Skipped: {why}")
+        print(f"  Rebuild the STEP with:\n    {manual_cmd}")
+    elif cad_python is None:
+        print(f"  CadQuery env not found — looked for:")
+        for p in cad_candidates:
+            print(f"    {p}")
+        print(f"  STEP not regenerated.  Build it with `make env-cad`, then run:"
+              f"\n    {manual_cmd}")
     else:
         try:
             # Inherit stdout so the exporter's own report (junction overlaps,

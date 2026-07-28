@@ -1,0 +1,24 @@
+[project]
+name = "compliant-wheel"
+version = "2.1.0"
+description = "Co-optimized compliant PLA UAV wheel: GA over an analytical beam model, STEP export, and (in progress) a nonlinear FEA refinement pipeline."
+requires-python = ">=3.12"
+
+# Dependencies live in requirements-opt.txt / requirements-cad.txt rather than here.
+# The project is two scripts run by two different interpreters, not an installable
+# package, and expressing that as a single dependency set would imply CadQuery and pygad
+# can share an env — they cannot.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Tests import wheel_fea from the repo root.
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.pyright]
+# Point the type checker at env-opt; without this it resolves against system python3,
+# which has no numpy, and reports every import as missing.
+venvPath = "."
+venv = ".venv-opt"
+# wheel_step_export.py imports cadquery/OCP, which only exist in env-cad.
+ignore = ["wheel_step_export.py"]

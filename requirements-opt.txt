@@ -1,0 +1,24 @@
+# env-opt — the optimizer / FEA environment (Python 3.12).
+#
+#   python3 -m venv .venv-opt
+#   .venv-opt/bin/python -m pip install -r requirements-opt.txt
+#
+# This env must NEVER be the one that runs wheel_step_export.py: that script needs
+# CadQuery, which pins an incompatible OCC stack.  See requirements-cad.txt.
+#
+# jax lives ONLY in this env.  wheel_fea.py and wheel_geometry.py must stay importable
+# without it — wheel_geometry takes its array module as an argument rather than
+# importing one — because the CAD env has no jax and imports them both across the
+# interpreter boundary.  tests/test_import_hygiene.py fails if a top-level `import jax`
+# ever creeps in.
+#
+# float64 is mandatory for the FEA (jax defaults to float32): every JAX entry point must
+# run jax.config.update("jax_enable_x64", True) before tracing anything.
+
+numpy==2.5.1
+scipy==1.18.0
+pygad==3.7.0
+matplotlib==3.11.1
+pytest==9.1.1
+jax==0.11.0
+jaxlib==0.11.0

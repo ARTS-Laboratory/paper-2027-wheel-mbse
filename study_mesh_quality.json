@@ -1,0 +1,92 @@
+{
+ "summary": {
+  "config": "coarse",
+  "fold_margin_threshold_sweep": [
+   {
+    "threshold_mm": 0.0,
+    "missed_bad_meshes": 12,
+    "false_alarms": 46,
+    "designs_kept": 1157,
+    "frac_above_floor_among_kept": 0.989628349178911
+   },
+   {
+    "threshold_mm": 0.05,
+    "missed_bad_meshes": 1,
+    "false_alarms": 62,
+    "designs_kept": 1130,
+    "frac_above_floor_among_kept": 0.9991150442477876
+   },
+   {
+    "threshold_mm": 0.1,
+    "missed_bad_meshes": 0,
+    "false_alarms": 89,
+    "designs_kept": 1102,
+    "frac_above_floor_among_kept": 1.0
+   },
+   {
+    "threshold_mm": 0.2,
+    "missed_bad_meshes": 0,
+    "false_alarms": 142,
+    "designs_kept": 1049,
+    "frac_above_floor_among_kept": 1.0
+   },
+   {
+    "threshold_mm": 0.3,
+    "missed_bad_meshes": 0,
+    "false_alarms": 204,
+    "designs_kept": 987,
+    "frac_above_floor_among_kept": 1.0
+   },
+   {
+    "threshold_mm": 0.5,
+    "missed_bad_meshes": 0,
+    "false_alarms": 306,
+    "designs_kept": 885,
+    "frac_above_floor_among_kept": 1.0
+   },
+   {
+    "threshold_mm": 1.0,
+    "missed_bad_meshes": 0,
+    "false_alarms": 527,
+    "designs_kept": 664,
+    "frac_above_floor_among_kept": 1.0
+   }
+  ],
+  "n_span": 64,
+  "n_thick": 6,
+  "order": 2,
+  "n_samples": 46176,
+  "n_feasible_geom": 2001,
+  "n_meshable": 1157,
+  "geom_feasible_fraction": 0.04333419958419958,
+  "min_sj_accept": 0.2,
+  "accept_fraction_required": 0.98,
+  "frac_above_floor_geom_feasible": 0.5952023988005997,
+  "frac_above_floor_meshable": 0.989628349178911,
+  "passes_gate_geom_only": false,
+  "passes_gate_with_fold_constraint": true,
+  "fold_margin_predicts_inversion": {
+   "true_positive": 798,
+   "false_positive": 46,
+   "false_negative": 12,
+   "true_negative": 1145
+  },
+  "n_inverted_any": 0,
+  "sj_percentiles_meshable": {
+   "0": 0.02688437824446751,
+   "1": 0.23085870384700158,
+   "5": 0.5975214632085253,
+   "25": 0.9085503469413194,
+   "50": 0.9623863360205827
+  },
+  "worst_sj_meshable": 0.02688437824446751,
+  "max_aspect_over_meshable": 64.42324711026536
+ },
+ "shipped_genome_hash": "36aed36",
+ "provenance": {
+  "samples": 2000,
+  "config": "coarse",
+  "seed": 0,
+  "n_rows": 46176
+ }
+}

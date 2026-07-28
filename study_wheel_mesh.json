@@ -1,0 +1,243 @@
+{
+ "area": {
+  "rows": [
+   {
+    "config": "smoke",
+    "n_elements": 960,
+    "n_nodes": 4644,
+    "seconds": 0.07,
+    "by_region_mm2": {
+     "spoke": 1630.2940643925392,
+     "hub": 320.14827162389804,
+     "rim": 463.83715073025326
+    },
+    "meshed_mm2": 2414.279486746691,
+    "rigid_core_mm2": 186.2650284313388,
+    "total_modelled_mm2": 2600.5445151780295,
+    "rim_outer_mm": 50.0,
+    "reference_breakdown_mm2": {
+     "hub_disk_mm2": 506.7074790974977,
+     "rim_band_mm2": 464.1703145678919,
+     "spoke_each_mm2": 136.42380087950895,
+     "spokes_mm2": 1637.0856105541075,
+     "total_mm2": 2607.963404219497
+    },
+    "reference_modelled_mm2": 2607.963404219497,
+    "reference_shipped_step_mm2": 2659.203404219497,
+    "error_vs_modelled": -0.002844705960775462,
+    "error_vs_shipped_step": -0.022058819926444984
+   },
+   {
+    "config": "coarse",
+    "n_elements": 4704,
+    "n_nodes": 21012,
+    "seconds": 0.06,
+    "by_region_mm2": {
+     "spoke": 1636.3382450347162,
+     "hub": 320.39536515284505,
+     "rim": 464.1169978186028
+    },
+    "meshed_mm2": 2420.8506080061643,
+    "rigid_core_mm2": 186.2650284313388,
+    "total_modelled_mm2": 2607.115636437503,
+    "rim_outer_mm": 50.0,
+    "reference_breakdown_mm2": {
+     "hub_disk_mm2": 506.7074790974977,
+     "rim_band_mm2": 464.1703145678919,
+     "spoke_each_mm2": 136.42380087950895,
+     "spokes_mm2": 1637.0856105541075,
+     "total_mm2": 2607.963404219497
+    },
+    "reference_modelled_mm2": 2607.963404219497,
+    "reference_shipped_step_mm2": 2659.203404219497,
+    "error_vs_modelled": -0.00032506889499395175,
+    "error_vs_shipped_step": -0.019587733566880816
+   },
+   {
+    "config": "medium",
+    "n_elements": 12288,
+    "n_nodes": 53124,
+    "seconds": 0.08,
+    "by_region_mm2": {
+     "spoke": 1636.8894550129153,
+     "hub": 320.4240572089957,
+     "rim": 464.1494872187739
+    },
+    "meshed_mm2": 2421.462999440685,
+    "rigid_core_mm2": 186.2650284313388,
+    "total_modelled_mm2": 2607.7280278720236,
+    "rim_outer_mm": 50.0,
+    "reference_breakdown_mm2": {
+     "hub_disk_mm2": 506.7074790974977,
+     "rim_band_mm2": 464.1703145678919,
+     "spoke_each_mm2": 136.42380087950895,
+     "spokes_mm2": 1637.0856105541075,
+     "total_mm2": 2607.963404219497
+    },
+    "reference_modelled_mm2": 2607.963404219497,
+    "reference_shipped_step_mm2": 2659.203404219497,
+    "error_vs_modelled": -9.02529334163571e-05,
+    "error_vs_shipped_step": -0.019357442257254442
+   },
+   {
+    "config": "fine",
+    "n_elements": 31200,
+    "n_nodes": 132276,
+    "seconds": 0.14,
+    "by_region_mm2": {
+     "spoke": 1637.0360397078302,
+     "hub": 320.43644453873014,
+     "rim": 464.1635137328482
+    },
+    "meshed_mm2": 2421.635997979409,
+    "rigid_core_mm2": 186.2650284313388,
+    "total_modelled_mm2": 2607.9010264107474,
+    "rim_outer_mm": 50.0,
+    "reference_breakdown_mm2": {
+     "hub_disk_mm2": 506.7074790974977,
+     "rim_band_mm2": 464.1703145678919,
+     "spoke_each_mm2": 136.42380087950895,
+     "spokes_mm2": 1637.0856105541075,
+     "total_mm2": 2607.963404219497
+    },
+    "reference_modelled_mm2": 2607.963404219497,
+    "reference_shipped_step_mm2": 2659.203404219497,
+    "error_vs_modelled": -2.3918207076367715e-05,
+    "error_vs_shipped_step": -0.01929238573000669
+   }
+  ],
+  "converging": true,
+  "finest_error": 2.3918207076367715e-05,
+  "pass": true
+ },
+ "design_space": {
+  "n_requested": 200,
+  "n_sampled": 200,
+  "n_built": 192,
+  "raw_draws": 8395,
+  "config": "coarse",
+  "worst_seam_error_mm": 3.4638958368304884e-14,
+  "seam_pass": true,
+  "fraction_above_sj_floor_all": 0.9,
+  "fraction_above_sj_floor_with_arrival_constraint": 1.0,
+  "fraction_of_space_kept": 0.82,
+  "min_sj_percentiles": {
+   "p0": 0.22216021316549317,
+   "p1": 0.24634463931687267,
+   "p5": 0.3146090489222275,
+   "p50": 0.7089123817168611
+  },
+  "total_inverted": 0,
+  "threshold_sweep": [
+   {
+    "max_arrival_deg": 40.0,
+    "kept": 114,
+    "false_alarm": 66,
+    "missed": 0,
+    "validity": 1.0
+   },
+   {
+    "max_arrival_deg": 55.0,
+    "kept": 147,
+    "false_alarm": 33,
+    "missed": 0,
+    "validity": 1.0
+   },
+   {
+    "max_arrival_deg": 60.0,
+    "kept": 153,
+    "false_alarm": 27,
+    "missed": 0,
+    "validity": 1.0
+   },
+   {
+    "max_arrival_deg": 65.0,
+    "kept": 164,
+    "false_alarm": 16,
+    "missed": 0,
+    "validity": 1.0
+   },
+   {
+    "max_arrival_deg": 70.0,
+    "kept": 172,
+    "false_alarm": 8,
+    "missed": 0,
+    "validity": 1.0
+   },
+   {
+    "max_arrival_deg": 72.0,
+    "kept": 175,
+    "false_alarm": 7,
+    "missed": 2,
+    "validity": 0.9885714285714285
+   },
+   {
+    "max_arrival_deg": 80.0,
+    "kept": 188,
+    "false_alarm": 0,
+    "missed": 8,
+    "validity": 0.9574468085106383
+   },
+   {
+    "max_arrival_deg": 90.0,
+    "kept": 200,
+    "false_alarm": 0,
+    "missed": 20,
+    "validity": 0.9
+   }
+  ],
+  "arrival_vs_sj_correlation": -0.8111555084463564,
+  "per_block_worst_min_sj": {
+   "spoke": 0.30176101006605244,
+   "hub_junction": 0.22216021316549317,
+   "rim_junction": 0.25471165816111346,
+   "hub_collar_weld": 0.9997265492956056,
+   "hub_collar_free": 0.9997662990637574,
+   "rim_band_weld": 0.9997024700569311,
+   "rim_band_free": 0.9996935196252673
+  },
+  "build_failures": [
+   {
+    "error": "36 of 4704 elements have non-positive area after orientation (worst -2.3747e-03 mm2) \u2014 the mesh is folded, not",
+    "arrival_hub_deg": 80.65766610040913,
+    "arrival_rim_deg": 33.7042382884826,
+    "worst_arrival_deg": 80.65766610040913
+   },
+   {
+    "error": "Coons corner mismatch bottom[0]/left[0]: 5.147e-08 mm apart",
+    "arrival_hub_deg": 27.26950926288052,
+    "arrival_rim_deg": 88.95189108039483,
+    "worst_arrival_deg": 88.95189108039483
+   },
+   {
+    "error": "Coons corner mismatch bottom[0]/left[0]: 4.424e-09 mm apart",
+    "arrival_hub_deg": 8.643410659141377,
+    "arrival_rim_deg": 88.63910452149447,
+    "worst_arrival_deg": 88.63910452149447
+   },
+   {
+    "error": "flank eta=-1 never crosses r=12.700 mm (range 12.726..47.200) \u2014 this spoke does not reach the ring, so there i",
+    "arrival_hub_deg": 87.86717532184097,
+    "arrival_rim_deg": 27.70867185947653,
+    "worst_arrival_deg": 87.86717532184097
+   },
+   {
+    "error": "108 of 4704 elements have non-positive area after orientation (worst -7.1356e-03 mm2) \u2014 the mesh is folded, no",
+    "arrival_hub_deg": 83.10945789191736,
+    "arrival_rim_deg": 11.156139964444572,
+    "worst_arrival_deg": 83.10945789191736
+   }
+  ],
+  "n_build_failures": 8,
+  "worst_arrival_among_failures_deg": 88.95189108039483,
+  "min_arrival_among_failures_deg": 80.65766610040913,
+  "pass": true
+ },
+ "pass": true,
+ "settings": {
+  "samples": 200,
+  "config": "coarse",
+  "seed": 0,
+  "elapsed_s": 5.9
+ }
+}

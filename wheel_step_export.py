@@ -55,6 +55,9 @@ from OCP.BRepCheck import BRepCheck_Analyzer
 from OCP.BRepAlgoAPI import BRepAlgoAPI_Check
 from OCP.BRepBuilderAPI import BRepBuilderAPI_Sewing
 from OCP.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
+from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+from OCP.gp import gp_Pnt
+from OCP.TopAbs import TopAbs_State
 
 # wheel_fea imports cleanly with only numpy (pygad/matplotlib are lazy in __main__).
 from wheel_fea import (
@@ -105,9 +108,26 @@ HUB_EMBED_RADIUS_MM = HUB_RADIUS_MM - 0.5            # 12.20 mm, just inside the
 RIM_EMBED_RADIUS_MM = RIM_OUTER_RADIUS_MM + 0.25     # 50.25 mm, clipped back to Ø100
 MIN_JUNCTION_OVERLAP_MM3 = 50.0   # below this the weld is hairline — fail loudly
 N_OUTLINE_PTS       = 48       # interpolation pts per spoke edge (splined → smooth faces)
-# Junction vertices lie EXACTLY on the ring circles (r = hub/rim radius); a tight
-# tolerance isolates them from the spoke's own outline vertices.
+# Vertical-edge screen: a junction edge wanders less than this in XY over its full
+# height.  This is a straightness tolerance, NOT a radial one — see `_junction_edges`
+# for why the radius stopped being a selector.
 FILLET_TOL_MM       = 0.02
+# A corner is worth filleting when its MATERIAL wedge exceeds 180 degrees, i.e. it is
+# re-entrant.  Measured on the shipped genome, the five families of full-height vertical
+# edge separate with a wide margin and nothing lands near the threshold:
+#
+#     r = 12.8748  x12   354.0 deg   the spoke<->spoke notch at the hub   <- fillet
+#     r = 13.9352  x12   152.0 deg   bot[0], the spline/extension kink    <- convex
+#     r = 47.5064  x12   180.0 deg   bot[-1], straight through            <- no corner
+#     r = 48.5000  x24   194.0 .. 356.0 deg   the rim junctions           <- fillet
+#     r = 50.0000  x 1   178.0 deg   the OD trim seam                     <- convex
+#
+# 185 rather than a rounder number because the nearest thing on either side is 180.0
+# (7 deg of margin at 2 deg probe resolution) and 194.0 (9 deg).  Raising it to exclude
+# "shallow" corners would drop the twelve 194 deg rim edges, which build fine today.
+MIN_FILLET_WEDGE_DEG   = 185.0
+FILLET_WEDGE_PROBE_MM  = 0.05    # probe circle radius; must clear the edge's own tolerance
+FILLET_WEDGE_SAMPLES   = 180     # 2 deg resolution, ~2.6 s over the whole solid
 # Hard floor on curvature radius anywhere in the profile.  The defect above measured
 # 0.041 mm.  0.25 mm is well under any fillet we ask for and well over anything a
 # 0.4 mm nozzle could print, so a violation always means a construction fault.
@@ -441,13 +461,49 @@ def extrude_profile(face):
     return cq.Workplane(obj=face).toPending().extrude(SPOKE_WIDTH_MM)
 
 
-def _select_junction_edges(part, target_r):
-    """Vertical edges lying on the ring cylinder r=target_r, selected by GEOMETRY
-    (full-height Z span + ~constant XY) rather than by curve type: the spoke↔ring
-    junctions bound a spline face, so OCC types them BSPLINE and a plain `.edges("|Z")`
-    (linear only) would miss them.  The tight XY/radius tolerance excludes the end-cap
-    corners and the ring boundary circles (dz≈0)."""
-    out = []
+def _material_wedge_deg(classifier, x, y, z,
+                        radius=FILLET_WEDGE_PROBE_MM, samples=FILLET_WEDGE_SAMPLES):
+    """Interior material angle at a vertical edge, by classifying a horizontal ring.
+
+    A solid classifier rather than face normals and a dihedral sign: the sign convention
+    needs the two adjacent faces in a known order, and at the 354 degree notch the sum of
+    the outward normals nearly cancels (they sit 174 degrees apart), so the bisector that
+    would carry the sign is exactly where the arithmetic is worst.  Sampling has neither
+    problem, it returns the ANGLE and not just the sign, and it was measured stable across
+    a 10x sweep of `radius` (0.30 / 0.10 / 0.03 mm all give 353.4 at the hub notch).
+    """
+    hit = 0
+    for i in range(samples):
+        t = 2.0 * math.pi * i / samples
+        classifier.Perform(gp_Pnt(x + radius * math.cos(t),
+                                  y + radius * math.sin(t), z), 1e-9)
+        if classifier.State() != TopAbs_State.TopAbs_OUT:
+            hit += 1
+    return 360.0 * hit / samples
+
+
+def _junction_edges(part):
+    """Every full-height vertical edge that is a RE-ENTRANT corner, with its wedge angle.
+
+    Returns `[(edge, radius_mm, wedge_deg), ...]`.
+
+    THE RADIUS IS NO LONGER A SELECTOR, and that is the whole point.  This used to keep
+    edges within `FILLET_TOL_MM` of a ring radius, on the stated premise that "junction
+    vertices lie EXACTLY on the ring circles".  That premise is false: `_embed` drives the
+    spoke roots deep enough and far enough tangentially that adjacent spokes lap over each
+    other before either reaches the hub circle.  Measured on the shipped genome, the
+    unfilleted solid has NO cylindrical face at r=12.70 at all and the hub circle is 360
+    degrees of material at mid-sector — there is no spoke/hub junction to find.  What
+    exists is a twelve-fold spoke/spoke notch 0.175 mm outside it, nine times the old
+    tolerance away, and the export silently reported "no junction edges — skipped".
+
+    Selecting on re-entrancy instead fillets the corners the part actually has, wherever
+    `_embed` happened to leave them.  The full-height and straightness screens are kept:
+    they are cheap, they are correct, and they cut 61 candidates out of the whole solid
+    before the classifier is touched.
+    """
+    classifier = BRepClass3d_SolidClassifier(part.val().wrapped)
+    rows = []
     for e in part.edges().vals():
         bb = e.BoundingBox()
         if bb.zlen < 0.9 * SPOKE_WIDTH_MM:                 # not full-height → not a junction
@@ -455,13 +511,31 @@ def _select_junction_edges(part, target_r):
         if math.hypot(bb.xlen, bb.ylen) > FILLET_TOL_MM:   # wanders in XY → not vertical
             continue
         c = e.Center()
-        if abs(math.hypot(c.x, c.y) - target_r) <= FILLET_TOL_MM:
-            out.append(e)
-    return out
+        wedge = _material_wedge_deg(classifier, c.x, c.y, c.z)
+        if wedge >= MIN_FILLET_WEDGE_DEG:
+            rows.append((e, math.hypot(c.x, c.y), wedge))
+    return rows
 
 
-def fillet_junctions(part, target_r, radius, label):
-    """Fillet the spoke↔ring junctions on the extruded solid, all edges at one radius.
+def _group_by_ring(rows):
+    """Split re-entrant edges into `(hub_rows, rim_rows)` at the midpoint of the rings.
+
+    A coarse split on purpose.  The junctions sit near their rings but not on them, and
+    the only thing this has to decide is which requested radius — `R_hub` or `R_rim` —
+    each corner is priced against.  Anything finer would re-introduce the radial
+    assumption that broke.
+    """
+    cut = 0.5 * (HUB_RADIUS_MM + RIM_RADIUS_MM)
+    return ([r for r in rows if r[1] < cut], [r for r in rows if r[1] >= cut])
+
+
+def fillet_junctions(part, rows, radius, label):
+    """Fillet a group of re-entrant junction corners, all at one radius.
+
+    `rows` comes from `_junction_edges` + `_group_by_ring` — `(edge, radius_mm, wedge_deg)`
+    triples.  Taking the selection as an argument rather than doing it here is what lets
+    the classifier run ONCE over the solid instead of once per ring, and it keeps the
+    measured wedge angle available for the report.
 
     These belong in 2D on the profile — an extruded arc is an exact
     CYLINDRICAL_SURFACE, which is what Parasolid most wants to see.  OCC will not do
@@ -479,12 +553,19 @@ def fillet_junctions(part, target_r, radius, label):
     whole batch accepts is also the honest answer to "what does this junction actually
     allow", which is what `kt_report` prices.
 
-    Returns (part, applied_radius, n_edges).
+    Returns (part, applied_radius, n_filleted, n_found).  `n_filleted` and `n_found`
+    are reported separately because they used to be the same field: a zero could mean
+    either "nothing was found" or "everything was found and nothing could be built", and
+    those want opposite fixes.
+
+    Returns (part, applied_radius, n_filleted, n_found).
     """
-    edges = _select_junction_edges(part, target_r)
+    edges = [r[0] for r in rows]
     if not edges:
-        print(f"  [{label}] no junction edges near r={target_r:.2f} mm — skipped")
-        return part, 0.0, 0
+        print(f"  [{label}] no re-entrant junction corners found — skipped")
+        return part, 0.0, 0, 0
+    worst = max(r[2] for r in rows)
+    print(f"  [{label}] {len(edges)} re-entrant corners, worst wedge {worst:.1f} deg")
 
     ladder = []
     r = radius
@@ -500,15 +581,16 @@ def fillet_junctions(part, target_r, radius, label):
                 note = "" if abs(r - radius) < 1e-9 else f"  (requested {radius:.3f})"
                 print(f"  [{label}] filleted all {len(edges)} junction edges "
                       f"@ R={r:.3f} mm{note}")
-                return out, r, len(edges)
+                return out, r, len(edges), len(edges)
         except Exception:
             pass
 
-        # The two junctions on a spoke are not mirror images: at the hub one corner
-        # opens at 21.6° and the other at 2.18°, a wedge nothing can fillet.  Falling
-        # back to the subset that accepts r keeps the useful half rather than losing
-        # both — but only if that subset is a whole multiple of the spoke count, so a
-        # 12-fold symmetric wheel can never come out with one spoke unlike the rest.
+        # The two corners at a junction are not mirror images — measured on the shipped
+        # genome the rim's twenty-four run from 194° to 356° of material — and a
+        # near-cusp accepts nothing.  Falling back to the subset that accepts r keeps the
+        # useful half rather than losing both, but only if that subset is a whole multiple
+        # of the spoke count, so a 12-fold symmetric wheel can never come out with one
+        # spoke unlike the rest.
         ok = []
         for e in edges:
             try:
@@ -525,12 +607,12 @@ def fillet_junctions(part, target_r, radius, label):
         if out.val().isValid():
             print(f"  [{label}] filleted {len(ok)} of {len(edges)} junction edges "
                   f"@ R={r:.3f} mm  (requested {radius:.3f}; "
-                  f"{len(edges) - len(ok)} too near tangent to accept any radius)")
-            return out, r, len(ok)
+                  f"{len(edges) - len(ok)} accepted no radius at all)")
+            return out, r, len(ok), len(edges)
 
     print(f"  [{label}] no radius down to {MIN_CURVATURE_RADIUS_MM} mm was accepted by "
           f"all {len(edges)} edges — junctions left square")
-    return part, 0.0, len(edges)
+    return part, 0.0, 0, len(edges)
 
 
 # ---------------------------------------------------------------------------
@@ -699,7 +781,7 @@ def step_health(shape, label=""):
     return health
 
 
-def kt_report(genes, metrics, hub_applied, rim_applied):
+def kt_report(genes, metrics, hub, rim):
     """Compare the fillet radii the optimizer PRICED IN against the ones OCC could
     actually build.
 
@@ -709,37 +791,53 @@ def kt_report(genes, metrics, hub_applied, rim_applied):
     built part is sharper, and therefore more stressed, than the model believes.
     Nothing downstream noticed because main() discarded these return values.
 
+    `hub` and `rim` are `(applied_radius, n_filleted, n_found, worst_wedge_deg)`.
+
+    A SQUARE JUNCTION IS A NUMBER, NOT A NaN.  This used to report `kt_built = nan` when
+    nothing was built and then filter non-positive `r_built` out of the mismatch gate
+    below — so the worst case in the whole report was the one case that could not raise
+    the alarm, and the manifest grew bare `NaN` tokens that are not valid JSON.  A square
+    corner is priced through the branch `stress_concentration_kt` already has for it
+    (`fillet_radius_mm < 0.1 → 3.5`), which is a real, large, comparable number.
+
     Returns a list of per-junction dicts for the manifest."""
     rows = []
     print("\n  ---- fillet feasibility (requested vs. built) ----")
-    print(f"  {'junction':<9s} {'R_req':>7s} {'R_built':>8s} {'Kt_model':>9s} {'Kt_built':>9s} {'error':>8s}")
-    print("  " + "-" * 56)
-    for label, r_req, applied, t in (
-            ("hub", genes["R_hub"], hub_applied, genes["t0"]),
-            ("rim", genes["R_rim"], rim_applied, genes["t3"])):
-        # The SHARPEST fillet governs the stress concentration, so min() is the
-        # honest statistic even when most edges got the full requested radius.
-        r_built = min(applied) if applied else 0.0
+    print(f"  {'junction':<9s} {'R_req':>7s} {'R_built':>8s} {'edges':>9s} "
+          f"{'wedge':>7s} {'Kt_model':>9s} {'Kt_built':>9s} {'error':>8s}")
+    print("  " + "-" * 76)
+    for label, r_req, group, t in (
+            ("hub", genes["R_hub"], hub, genes["t0"]),
+            ("rim", genes["R_rim"], rim, genes["t3"])):
+        r_built, n_filleted, n_found, wedge = group
         kt_model = float(stress_concentration_kt(r_req, t))
-        kt_built = float(stress_concentration_kt(r_built, t)) if r_built > 0 else float("nan")
-        err = (kt_built / kt_model - 1.0) * 100.0 if r_built > 0 else float("nan")
-        print(f"  {label:<9s} {r_req:7.3f} {r_built:8.3f} {kt_model:9.3f} "
+        kt_built = float(stress_concentration_kt(r_built, t))
+        err = (kt_built / kt_model - 1.0) * 100.0
+        print(f"  {label:<9s} {r_req:7.3f} {r_built:8.3f} "
+              f"{n_filleted:4d}/{n_found:<4d} {wedge:7.1f} {kt_model:9.3f} "
               f"{kt_built:9.3f} {err:+7.1f}%")
         rows.append({"junction": label, "r_requested_mm": r_req, "r_built_mm": r_built,
+                     "n_edges_filleted": n_filleted, "n_edges_found": n_found,
+                     "worst_wedge_deg": wedge,
                      "kt_modeled": kt_model, "kt_built": kt_built,
                      "kt_error_pct": err})
-    print("  " + "-" * 56)
+    print("  " + "-" * 76)
 
     for row in rows:
         if row["r_built_mm"] <= 0:
-            print(f"  [SQUARE JUNCTION] the {row['junction']} junction took no fillet at "
-                  f"all.  A sharp\n                    re-entrant corner is a worse "
-                  f"stress riser than the {row['r_requested_mm']:.2f} mm the\n"
-                  f"                    optimizer priced, not a better one — treat the "
-                  f"Kt column above as\n                    a floor, not an estimate.")
+            found = row["n_edges_found"]
+            why = ("no re-entrant corner was found there at all — see `_junction_edges`"
+                   if not found else
+                   f"all {found} corners refused every radius down to "
+                   f"{MIN_CURVATURE_RADIUS_MM} mm")
+            print(f"  [SQUARE JUNCTION] the {row['junction']} junction took no fillet: "
+                  f"{why}.\n                    Priced above at Kt = "
+                  f"{row['kt_built']:.2f}, the degenerate-fillet value, which is a FLOOR:"
+                  f"\n                    a square re-entrant corner is a worse riser "
+                  f"than the {row['r_requested_mm']:.2f} mm the\n"
+                  f"                    optimizer assumed, not a better one.")
 
-    worst = max((r for r in rows if r["r_built_mm"] > 0),
-                key=lambda r: r["kt_error_pct"], default=None)
+    worst = max(rows, key=lambda r: r["kt_error_pct"], default=None)
     if worst and worst["kt_error_pct"] > 10.0:
         modeled = metrics.get("max_stress_mpa", float("nan"))
         scaled = modeled * worst["kt_built"] / worst["kt_modeled"]
@@ -834,10 +932,25 @@ def main():
     wheel = extrude_profile(profile)
 
     print("\n  Filleting junctions…")
-    wheel, hub_r, hub_n = fillet_junctions(wheel, HUB_RADIUS_MM, genes["R_hub"], "hub")
-    wheel, rim_r, rim_n = fillet_junctions(wheel, RIM_RADIUS_MM, genes["R_rim"], "rim")
+    # Classify once over the whole solid, then split — the classifier is the expensive
+    # part and it does not depend on which ring a corner belongs to.
+    hub_rows, rim_rows = _group_by_ring(_junction_edges(wheel))
+    hub_wedge = max((r[2] for r in hub_rows), default=0.0)
+    rim_wedge = max((r[2] for r in rim_rows), default=0.0)
+    wheel, hub_r, hub_n, hub_found = fillet_junctions(wheel, hub_rows, genes["R_hub"], "hub")
+    # Re-select against the NEW solid: filleting the hub replaces the faces the rim edges
+    # are bound to, and OCC will not accept stale edge handles.  Safe to re-run because a
+    # fillet introduces only TANGENT edges, which are smooth and fall below
+    # MIN_FILLET_WEDGE_DEG — verified by filleting the rim and re-selecting: the 24
+    # re-entrant corners become exactly the 12 that refused a radius, and the hub set is
+    # untouched.  Does not fire today (the hub accepts nothing); kept because the day it
+    # does, a stale handle would be a confusing crash rather than a wrong answer.
+    if hub_n:
+        _, rim_rows = _group_by_ring(_junction_edges(wheel))
+    wheel, rim_r, rim_n, rim_found = fillet_junctions(wheel, rim_rows, genes["R_rim"], "rim")
     kt_rows = kt_report(genes, metrics,
-                        [hub_r] if hub_r else [], [rim_r] if rim_r else [])
+                        (hub_r, hub_n, hub_found, hub_wedge),
+                        (rim_r, rim_n, rim_found, rim_wedge))
 
     # Measure BEFORE despecializing — see report()'s docstring.
     vol_true = wheel.val().Volume()
@@ -864,6 +977,8 @@ def main():
                   "mass_g_pla": round(vol * DENSITY_PLA, 2)},
         "junction_overlap_mm3": {"hub": round(hub_ovl, 2), "rim": round(rim_ovl, 2),
                                  "floor": MIN_JUNCTION_OVERLAP_MM3},
+        # `detail` carries found-vs-filleted per junction; these two remain as the count
+        # actually built, which is what the old readers expect.
         "fillets": {"hub_edges": hub_n, "rim_edges": rim_n, "detail": kt_rows},
         "profile_health": prof_health,
         "step_health": health,
