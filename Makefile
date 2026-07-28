@@ -5,7 +5,7 @@
 PY_OPT := .venv-opt/bin/python
 PY_CAD := .venv-cad/bin/python
 
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 export studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -26,6 +26,9 @@ help:
 	@echo "make m8bi5    the two sections that QUALIFY M8b-i's infeasibility verdict:"
 	@echo "              the stress QoI up the mesh ladder, and the same feasibility"
 	@echo "              question asked from all 16 Stage-2 elites (~2 h at coarse)"
+	@echo "make m8bi6    the stress p-norm up the same ladder at p = 2,4,8,16,30, to find"
+	@echo "              which exponent (if any) gives the constraint a mesh-independent"
+	@echo "              value.  ~14 min: the sweep costs no extra solve"
 
 env: env-opt env-cad
 
@@ -66,6 +69,15 @@ stage3:
 m8bi5:
 	$(PY_OPT) study_stage3.py --sections mesh_convergence,multistart \
 	    --out study_stage3_m8bi5.json
+
+# M8b-i.6 step 1.  The mesh ladder again, at five Gauss-point p-norm exponents instead of
+# one.  ~14 min, not 5x14: every exponent is read off the displacement field the adjoint
+# has already converged, so the sweep adds no mesh, no Newton and no adjoint.  `multistart`
+# is deliberately NOT here — S12 re-measures the wheel, and the wheel has not moved; what
+# is open is whether the QUANTITY it was measured in has a value.
+m8bi6:
+	$(PY_OPT) study_stage3.py --sections mesh_convergence \
+	    --ladder-p 2,4,8,16,30 --out study_stage3_pnorm.json
 
 export:
 	$(PY_CAD) wheel_step_export.py

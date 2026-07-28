@@ -34,6 +34,9 @@ import wheel_objective as WO  # noqa: E402
 import wheel_wheel as WW  # noqa: E402
 
 CFG = "smoke"
+# Two, not one: the stress term aggregates ACROSS phases before it is compared to the
+# allowable, so a single-phase stencil cannot tell a per-phase bug from an aggregation one.
+N_PHASE = 2
 
 
 @pytest.fixture(scope="module")
@@ -100,6 +103,69 @@ def test_the_pnorm_rises_monotonically_toward_the_max_with_p(genes, mesh, solved
     args = (jnp.asarray(mesh.coords), jnp.asarray(res["u"]), prob.contact.y_ground)
     vals = [float(WA._qoi_pnorm_stress(prob, p=p)(*args)) for p in (4.0, 10.0, 30.0)]
     assert vals[0] < vals[1] < vals[2]
+
+
+def test_the_gauss_exponent_reaches_the_qoi_and_the_default_is_the_module_constant(genes):
+    """M8b-i.6 step 1's plumbing, asserted at the objective rather than at the QoI.
+
+    `adjoint_grads` looks a QoI up BY NAME, and the name carries no exponent — which is
+    why `STRESS_PNORM_P` was unreachable from `t3_terms` and why M8b-i.5 could measure the
+    constraint's non-convergence without being able to test the obvious cause.  The fix is
+    the `(name, factory)` form, and this is what says it works: a different `stress_gauss_p`
+    must produce a different constraint, and the default must still be p=30 so every
+    number M8a and M8b-i quote is the number this still computes.
+    """
+    phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
+    kw = dict(phases=phases, meshes=WO.phase_meshes(genes, CFG, phases))
+
+    base = WO.t3_terms(genes, CFG, **kw)["report"]
+    low = WO.t3_terms(genes, CFG, stress_gauss_p=4.0, **kw)["report"]
+    pinned = WO.t3_terms(genes, CFG, stress_gauss_p=WA.STRESS_PNORM_P, **kw)["report"]
+
+    assert base["stress_gauss_p"] == WA.STRESS_PNORM_P, (
+        "the default exponent moved; every stress magnitude on record was measured at "
+        f"p={WA.STRESS_PNORM_P}")
+    assert pinned["pnorm_stress_agg_mpa"] == pytest.approx(
+        base["pnorm_stress_agg_mpa"], rel=1e-12), (
+        "passing the default explicitly changed the answer, so the argument is not "
+        "reaching the same code path the default does")
+    assert low["pnorm_stress_agg_mpa"] < base["pnorm_stress_agg_mpa"], (
+        "p=4 gave the same p-norm as p=30 — the exponent is being discarded, which is "
+        "exactly what the bare-string QoI lookup used to do")
+    # The true max is a property of the FIELD, not of the exponent used to summarise it.
+    assert low["max_stress_mpa"] == pytest.approx(base["max_stress_mpa"], rel=1e-12)
+    # So a lower p means a bigger rescale, and `c` is where the two meet.
+    assert low["stress_scale_measured"] > base["stress_scale_measured"]
+
+
+def test_the_probe_takes_no_gradient_and_leaves_the_constraint_alone(genes):
+    """`stress_p_probe` is a measurement channel, not a second constraint.
+
+    The sweep exists to ask which exponent has a value.  If asking changed the answer —
+    moved the objective, the gradient, or the reported utilisation — the sweep would be
+    measuring the sweep.  So the probed report must equal the unprobed one everywhere
+    except in `pnorm_by_p`.
+    """
+    phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
+    kw = dict(phases=phases, meshes=WO.phase_meshes(genes, CFG, phases))
+
+    plain = WO.t3_terms(genes, CFG, **kw)
+    probed = WO.t3_terms(genes, CFG, stress_p_probe=(2.0, 8.0), **kw)
+
+    assert plain["values"] == probed["values"], "the probe moved the objective"
+    for k in plain["grads"]:
+        assert np.array_equal(plain["grads"][k], probed["grads"][k]), (
+            f"the probe moved the {k!r} gradient")
+    assert set(probed["report"]) == set(plain["report"])
+    for k in plain["report"]:
+        if k not in ("rows", "pnorm_by_p"):
+            assert plain["report"][k] == probed["report"][k], f"the probe moved {k!r}"
+    assert plain["report"]["pnorm_by_p"] == {}
+    assert sorted(probed["report"]["pnorm_by_p"]) == ["2.0", "8.0"]
+    # Each probed exponent carries its per-phase values, so a phase-aggregation bug
+    # cannot hide inside the aggregate.
+    for k in ("2.0", "8.0"):
+        assert len(probed["report"]["pnorm_by_p"][k]["pnorm_stress_mpa"]) == N_PHASE
 
 
 # ---------------------------------------------------------------------------

@@ -26,6 +26,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import jax_config  # noqa: E402,F401
 
 import study_stage3 as so3  # noqa: E402
+import wheel_adjoint as WA  # noqa: E402
 import wheel_fea as W  # noqa: E402
 import wheel_genome as wg  # noqa: E402
 import wheel_objective as WO  # noqa: E402
@@ -526,6 +527,190 @@ def test_the_ladder_measures_the_stress_scale_at_every_rung(genes, monkeypatch):
     assert row["stress_utilisation"] == pytest.approx(
         row["stress_scale_measured"] * row["pnorm_stress_agg_mpa"]
         / WO.ALLOWABLE_STRESS_MPA, rel=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# M8b-i.6 STEP 1 — THE p SWEEP
+# ---------------------------------------------------------------------------
+
+def test_a_bad_exponent_is_refused_at_startup_rather_than_after_the_meshes():
+    """`parse_ladder_p` is `parse_sections`' contract, and the stakes are the same.
+
+    The sweep's whole claim is that it costs no extra solve.  An exponent that only fails
+    inside `_qoi_pnorm_stress` would be discovered after the ladder had already paid for
+    its meshes and its contact solves, which is exactly the three-hours-then-KeyError that
+    `parse_sections` exists to prevent one argument over.
+    """
+    assert so3.parse_ladder_p("2,4,8,16,30") == [2.0, 4.0, 8.0, 16.0, 30.0]
+    assert so3.parse_ladder_p(" 2 , 4 ") == [2.0, 4.0]
+    assert so3.parse_ladder_p("") == [], "empty means no sweep, not an error"
+    assert so3.parse_ladder_p("2.5") == [2.5], "the interesting p need not be an integer"
+
+    for bad in ("2,four,8", "p30", "2,,x"):
+        with pytest.raises(ValueError, match="not a number"):
+            so3.parse_ladder_p(bad)
+    # A p-norm with p <= 0 is not a norm, and `x**(1/p)` at p=0 is a ZeroDivisionError
+    # thrown from inside a jit trace, where it is unreadable.
+    for bad in ("0", "-4", "2,-1", "inf"):
+        with pytest.raises(ValueError):
+            so3.parse_ladder_p(bad)
+
+
+def test_the_probe_reproduces_the_constraint_at_the_exponent_it_was_built_with(genes):
+    """THE TEST THE WHOLE SWEEP RESTS ON.
+
+    The probe reads its exponents off the displacement field the adjoint already
+    converged, instead of re-solving per `p`.  That is only sound if the cheap path and
+    the real path compute the same thing — so probing at the exponent the constraint was
+    built with must return the constraint's own numbers, not merely close ones.  Both go
+    through `_stress_aggregate` precisely so this can be asserted at 1e-12 rather than
+    hoped for.
+
+    If this fails, no other row of a `--ladder-p` report means anything.
+    """
+    phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
+    _, rep, _ = so3.score(genes, CFG, phases=phases, probe_p=(4.0, WA.STRESS_PNORM_P))
+
+    at30 = rep["pnorm_by_p"][repr(float(WA.STRESS_PNORM_P))]
+    assert at30["pnorm_agg_mpa"] == pytest.approx(rep["pnorm_stress_agg_mpa"], rel=1e-12)
+    assert at30["stress_scale_measured"] == pytest.approx(
+        rep["stress_scale_measured"], rel=1e-12)
+    assert at30["stress_utilisation"] == pytest.approx(
+        rep["stress_utilisation"], rel=1e-12)
+
+    # And the sweep is a sweep: a different exponent is a different number, in the
+    # direction the p-norm's own docstring claims (it approaches the max from below).
+    at4 = rep["pnorm_by_p"]["4.0"]
+    assert at4["pnorm_agg_mpa"] < at30["pnorm_agg_mpa"], (
+        "the p-norm must be non-decreasing in p; if it is not, the probe is not "
+        "evaluating the exponent it was handed")
+    assert rep["stress_gauss_p"] == pytest.approx(WA.STRESS_PNORM_P)
+
+
+def test_the_sweep_costs_no_extra_solve(genes, monkeypatch):
+    """Five exponents, one evaluation — the measurement that makes `--ladder-p` cheap.
+
+    Re-solving per `p` would turn a fourteen-minute ladder into an hour for values a
+    convergence study reads and a gradient nothing reads.  This is the assertion that
+    stops that regression, and it is deliberately the same `len(seen) == 1` the rung test
+    above makes: the invariant is "one rung, one evaluation", however long the list is.
+    """
+    seen = []
+    real = S3.Evaluator
+
+    class Spy(real):
+        def __call__(self, *a, **kw):
+            seen.append(self.problem_kw.get("stress_p_probe"))
+            return super().__call__(*a, **kw)
+
+    monkeypatch.setattr(S3, "Evaluator", Spy)
+    probe = (2.0, 4.0, 8.0, 16.0, 30.0)
+    rep = so3.run_mesh_convergence([("shipped", genes)], configs=(CFG,), n_phase=N_PHASE,
+                                   probe_p=probe)
+
+    assert len(seen) == 1, (
+        f"one rung, five exponents, {len(seen)} evaluations — the probe is re-solving")
+    assert seen[0] == probe, "the exponents never reached t3_terms"
+    row = rep["designs"][0]["rows"][0]
+    assert sorted(row["pnorm_by_p"][k]["p"] for k in row["pnorm_by_p"]) == list(probe)
+    assert rep["probe_p"] == list(probe)
+
+
+def test_the_default_ladder_reports_no_sweep_at_all(genes, monkeypatch):
+    """M8b-i.5's report, unchanged, when nobody asks for a sweep.
+
+    `make m8bi5` and every test above it must keep writing the report they always wrote —
+    a new argument that quietly adds keys or work to the default path is how a milestone's
+    artifact stops being comparable to the one before it.
+    """
+    phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
+    _, rep, _ = so3.score(genes, CFG, phases=phases)
+    assert rep["pnorm_by_p"] == {}, "the default path did work nobody asked for"
+
+    called = []
+    real = WA._qoi_pnorm_stress
+    monkeypatch.setattr(WA, "_qoi_pnorm_stress",
+                        lambda prob, **kw: called.append(kw.get("p")) or real(prob, **kw))
+    m = so3.run_mesh_convergence([("shipped", genes)], configs=(CFG,), n_phase=N_PHASE)
+    assert m["designs"][0]["series_by_p"] == {}
+    assert m["probe_p"] == []
+    # One factory per phase for the constraint itself, and not one more.
+    assert called == [WA.STRESS_PNORM_P] * N_PHASE, (
+        f"the default path built {len(called)} p-norm factories for {N_PHASE} phases")
+
+
+def test_the_per_p_series_are_the_same_extrapolation_the_verdict_was_read_from(genes):
+    """`_series_by_p` reuses `_series`, so a swept GCI is comparable to the quoted one.
+
+    M8b-i.5's verdict is a GCI against `GATE_LADDER_GCI`.  A sweep that computed its own
+    extrapolation could name a `p` "converged" on a standard the verdict was never held
+    to, which is a worse failure than not measuring at all — it would look like progress.
+    """
+    rows = [{"config": c, "pnorm_by_p": {"8.0": {"pnorm_agg_mpa": v,
+                                                 "stress_scale_measured": 1.4,
+                                                 "stress_utilisation": 2.0 * v}}}
+            for c, v in (("smoke", 1.0), ("coarse", 2.0), ("medium", 2.5))]
+    by = so3._series_by_p(rows, [8.0])["8.0"]
+
+    direct = so3._series([{"config": r["config"], "x": v} for r, v in
+                          zip(rows, (1.0, 2.0, 2.5))], "x")
+    assert by["pnorm"] == direct, "the sweep grew its own extrapolation"
+    assert by["p"] == 8.0
+    assert by["util"]["values"] == [2.0, 4.0, 5.0]
+    # A column that does not move gives no successive-difference ratio, so `_series`
+    # declines to call it converged rather than calling it trivially converged.  That
+    # matters here: `c` is nearly flat at low `p`, and a sweep that read flatness as
+    # convergence would report the constraint as fixed at exactly the exponents where the
+    # measurement is least informative.
+    assert not np.isfinite(by["c"]["ratio"]) and np.isnan(by["c"]["gci"])
+    assert by["c"]["converged"] is False
+
+    # An exponent measured at fewer than two rungs is omitted rather than reported as a
+    # series of one — the rule `_series` already applies one level down.
+    assert so3._series_by_p(rows[:1], [8.0]) == {}
+    assert so3._series_by_p(rows, [99.0]) == {}, "an unmeasured p must not appear"
+
+
+def test_an_unmeasurable_sweep_says_so_instead_of_reporting_a_verdict():
+    """"Nothing converged" and "nothing was measurable" must not share a title.
+
+    A two-rung ladder has no GCI at any exponent, so the sweep panel is empty — and an
+    empty panel under the words "no exponent gives the stress p-norm a mesh-independent
+    value" asserts a finding the axes hold no evidence for.  M8b-i.5 shipped exactly this
+    fault in the other direction (a figure captioned "the stress QoI settles under
+    refinement" above a 63% GCI), so the third state is spelled out rather than left to
+    fall through to the negative one.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    def panel(values):
+        rows = [{"config": c, "pnorm_by_p": {"8.0": {"pnorm_agg_mpa": v,
+                                                     "stress_scale_measured": 1.4,
+                                                     "stress_utilisation": v}}}
+                for c, v in values]
+        d = {"label": "x", "rows": rows,
+             "series": {"drop": so3._series([{"config": c, "x": 1.0 + 0.001 * i}
+                                             for i, (c, _) in enumerate(values)], "x")},
+             "series_by_p": so3._series_by_p(rows, [8.0])}
+        fig, ax = plt.subplots()
+        so3._plot_by_p(ax, {"designs": [d], "configs": [c for c, _ in values]})
+        title = ax.get_title()
+        plt.close(fig)
+        return title
+
+    two = panel([("smoke", 1.0), ("coarse", 2.0)])
+    assert "too short" in two and "3 rungs" in two, (
+        f"a two-rung sweep reported a verdict it cannot support: {two!r}")
+
+    # Three rungs that do NOT converge: now the negative verdict is earned.
+    diverging = panel([("smoke", 1.0), ("coarse", 2.0), ("medium", 2.5)])
+    assert "no exponent" in diverging, diverging
+
+    # Three rungs that DO converge: the title names the exponent.
+    converging = panel([("smoke", 1.0), ("coarse", 1.1), ("medium", 1.1001)])
+    assert "converges up to p = 8" in converging, converging
 
 
 def test_an_elite_that_will_not_solve_is_recorded_and_the_screen_carries_on(monkeypatch):

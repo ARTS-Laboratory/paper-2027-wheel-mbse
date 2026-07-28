@@ -92,6 +92,7 @@ import time
 import jax_config  # noqa: F401  — must precede every other jax import
 import numpy as np
 
+import wheel_adjoint as WA
 import wheel_fea as W
 import wheel_fem as fem
 import wheel_genome as wg
@@ -168,6 +169,33 @@ def parse_sections(spec):
         raise ValueError(f"unknown section(s) {unknown}; expected any of "
                          f"{sorted(SECTION_HELP)}")
     return names
+
+
+def parse_ladder_p(spec):
+    """`--ladder-p` -> the exponents to probe, or a `ValueError` naming the bad one.
+
+    Pure and validated at startup for `parse_sections`' reason, which bites harder here:
+    the sweep's whole claim is that it costs no extra solve, so a bad exponent that only
+    surfaces at the `_qoi_pnorm_stress` call would be discovered after the ladder had
+    already paid for its meshes.  Empty means no sweep, which is the default and leaves
+    the report exactly as M8b-i.5 wrote it.
+
+    `p > 0` because the p-norm's `x^(1/p)` is not a norm otherwise, and `p` is a float
+    rather than an int because nothing downstream rounds it and the interesting region
+    between the master plan's 10 and M4's percentile may not be an integer.
+    """
+    out = []
+    for tok in [s.strip() for s in str(spec).split(",") if s.strip()]:
+        try:
+            v = float(tok)
+        except ValueError:
+            raise ValueError(f"--ladder-p got {tok!r}, which is not a number; expected "
+                             "a comma-separated list of exponents, e.g. 2,4,8,16,30")
+        if not (np.isfinite(v) and v > 0.0):
+            raise ValueError(f"--ladder-p got {tok!r}; every exponent must be finite and "
+                             "positive — a p-norm with p <= 0 is not a norm")
+        out.append(v)
+    return out
 
 
 def load_genes(path="best_solution.json"):
@@ -687,7 +715,7 @@ def run_cost(genes, cfg=DEFAULT_CONFIG, n_phase=8, prod_steps=300, prod_starts=4
 # M8b-i.5 — SCORING ONE DESIGN, WITHOUT DESCENDING FROM IT
 # ---------------------------------------------------------------------------
 
-def score(genes, cfg=DEFAULT_CONFIG, phases=None, n_phase=4, tiers=("t3",)):
+def score(genes, cfg=DEFAULT_CONFIG, phases=None, n_phase=4, tiers=("t3",), probe_p=()):
     """`(loss, report, seconds)` at one design, with `c` measured HERE.
 
     `tiers=("t3",)` on purpose.  Both M8b-i.5 sections want the deflection and the stress,
@@ -703,11 +731,19 @@ def score(genes, cfg=DEFAULT_CONFIG, phases=None, n_phase=4, tiers=("t3",)):
     A fresh `Evaluator` per call, and the orientation re-derived per design: the flank pin
     is a function of the genes, so carrying one elite's pin onto another's mesh would build
     a wheel nobody asked for.
+
+    `probe_p` COSTS NO SOLVE, and that is the whole design of `--ladder-p`.  It rides
+    `Evaluator`'s `problem_kw` into `wheel_objective.t3_terms`, which reads each exponent
+    off the displacement field the adjoint already converged — the same channel `warm`
+    uses.  So one rung stays one evaluation however long the list is, which is what
+    `test_the_ladder_measures_the_stress_scale_at_every_rung` asserts and what turns a
+    five-exponent sweep from an hour back into fourteen minutes.
     """
     low, high, _ = _bounds()
     if phases is None:
         phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
-    ev = S3.Evaluator(cfg, orientation=WW.flank_orientation(genes, WW.get_config(cfg)))
+    ev = S3.Evaluator(cfg, orientation=WW.flank_orientation(genes, WW.get_config(cfg)),
+                      stress_p_probe=tuple(probe_p))
     t0 = time.time()
     val, _, brk = ev(wg.normalize(np.asarray(genes, dtype=float), low, high),
                      low, high, phases=phases, tiers=tiers)
@@ -779,7 +815,31 @@ def _series(rows, key):
     return out
 
 
-def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4):
+def _series_by_p(ok, probe_p):
+    """Per-exponent convergence, off the rows the ladder already measured.
+
+    `_series` is reused verbatim and deliberately: it is a pure function of a list of
+    dicts carrying `config` plus one named column, so a synthetic column is all a per-`p`
+    series needs, and the GCI the sweep quotes is then the same GCI the p=30 verdict was
+    quoted from.  Rewriting the extrapolation for the sweep would let the two disagree,
+    which is exactly the failure `_stress_aggregate` exists to prevent one level down.
+    """
+    out = {}
+    for v in probe_p:
+        k = repr(float(v))
+        have = [r for r in ok if k in r.get("pnorm_by_p", {})]
+        if len(have) < 2:
+            continue
+        out[k] = {"p": float(v)}
+        for name, field in (("pnorm", "pnorm_agg_mpa"), ("c", "stress_scale_measured"),
+                            ("util", "stress_utilisation")):
+            out[k][name] = _series(
+                [{"config": r["config"], "x": r["pnorm_by_p"][k][field]} for r in have],
+                "x")
+    return out
+
+
+def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=()):
     """*** THE FIRST HALF OF M8b-i.5 ***  Is the number the verdict rests on converged?
 
     S9 reported the shipped genome at utilisation 1.7128 and called the problem infeasible.
@@ -802,15 +862,26 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4):
     ladder is the mesh.  A row that fails to mesh or solve is recorded and the ladder
     continues: at `fine` this is 261k dof through contact, a service-force secant and an
     adjoint, which nothing in this repo has run before.
+
+    `probe_p` — M8b-i.6 STEP 1 — RUNS THE WHOLE LADDER AGAIN AT NO COST.  The three series
+    above answered "does the constraint converge" with a flat no, and decomposed it far
+    enough to name the p-norm rather than the rescale as the reason.  What they could not
+    say is whether the p-norm is unfixable or merely mis-exponented, and that is one
+    argument: at p=30 the norm is 1/1.38 of the true max and inherits the corner's r^-0.5
+    field, while M4's p99 of the same field converges to 8.61 MPa, so SOME smooth aggregate
+    of it has a value.  Each `p` in `probe_p` gets its own `pnorm`/`c`/`util` series off
+    the rows already measured — see `_series_by_p` — and the axle drop stays in the report
+    as the control that makes them readable.  Values only, no gradient, no extra solve.
     """
     phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
+    probe_p = [float(v) for v in probe_p]
     out = []
     for label, genes in designs:
         rows = []
         for cfg in configs:
             t0 = time.time()
             try:
-                loss, rep, wall = score(genes, cfg, phases=phases)
+                loss, rep, wall = score(genes, cfg, phases=phases, probe_p=probe_p)
                 rows.append({
                     "config": cfg,
                     "n_elements": int(WW.build_wheel(genes, cfg).n_elements),
@@ -823,6 +894,8 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4):
                     "defl_err": float((rep["axle_drop_mean_mm"]
                                        - WO.TARGET_DEFLECTION_MM)
                                       / WO.TARGET_DEFLECTION_MM),
+                    "stress_gauss_p": float(rep["stress_gauss_p"]),
+                    "pnorm_by_p": rep["pnorm_by_p"],
                     "seconds": round(wall, 1)})
                 print(f"      {label:<16s}{cfg:<8s}"
                       f"max {rows[-1]['max_stress_mpa']:7.2f} MPa   "
@@ -843,8 +916,10 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4):
                         ("pnorm", "pnorm_stress_agg_mpa"),
                         ("c", "stress_scale_measured"),
                         ("util", "stress_utilisation"),
-                        ("drop", "axle_drop_mean_mm"))} if len(ok) >= 2 else {}})
+                        ("drop", "axle_drop_mean_mm"))} if len(ok) >= 2 else {},
+            "series_by_p": _series_by_p(ok, probe_p) if len(ok) >= 2 else {}})
     return {"configs": list(configs), "n_phase": n_phase, "scheme": "uniform",
+            "probe_p": probe_p, "gate_ladder_gci": GATE_LADDER_GCI,
             "allowable_stress_mpa": WO.ALLOWABLE_STRESS_MPA, "designs": out,
             # NOT a convergence gate.  Whether the stress QoI converges is a fact about
             # the mesh and the geometry, and gating on it would report that fact as a
@@ -1120,6 +1195,53 @@ def _print_feasibility(rep):
     print(f"    -> {'PASS (probe ran)' if f['pass'] else 'FAIL (probe did not run)'}")
 
 
+def _series_verdict(s):
+    """The one place a `_series` becomes English, so the words cannot drift per caller.
+
+    Driven off `converged` and never off `settling` — the M8b-i.5 figure captioned "the
+    stress QoI settles under refinement" above a 63%-GCI utilisation is what that costs.
+    """
+    if s["converged"] is None:
+        return "n/a (<3 rungs)"
+    if s["converged"]:
+        return f"CONVERGED (GCI < {100 * GATE_LADDER_GCI:.0f}%)"
+    return "NOT CONVERGED" + ("" if s["settling"] else ", not even settling")
+
+
+def _series_line(s):
+    return (f"{100 * s['total_rel_change']:11.1f}%{100 * s['rel_change_last_pair']:11.1f}%"
+            f"{s['ratio']:9.2f}{_order(s):7.2f}{s['richardson']:12.3f}"
+            f"{100 * s['gci']:8.2f}%   {s['direction']}, {_series_verdict(s)}")
+
+
+def _order(s):
+    """Observed order from the refinement ratio.  Derived, never stored — a ratio is what
+    `_series` measures and `log2` is only the reading of it under 2x refinement."""
+    return np.log2(s["ratio"]) if s.get("ratio", 0) > 0 else float("nan")
+
+
+def _print_by_p(d, m):
+    """M8b-i.6 step 1's table: does ANY exponent give the constraint a value?
+
+    The axle drop is reprinted at the foot rather than left three tables up, because it is
+    the standard every row above is read against — a GCI means nothing without knowing what
+    a converged QoI scores on these same meshes.
+    """
+    print(f"\n    {'p':<9s}{'pnorm MPa up the ladder':<34s}{'order':>7s}{'GCI':>9s}"
+          f"{'util':>9s}{'util GCI':>10s}   verdict")
+    for k in sorted(d["series_by_p"], key=lambda k: d["series_by_p"][k]["p"]):
+        b = d["series_by_p"][k]
+        pn, ut = b["pnorm"], b["util"]
+        vals = " ".join(f"{v:.3f}" for v in pn["values"])
+        print(f"    {b['p']:<9.4g}{vals:<34s}{_order(pn):7.2f}{100 * pn['gci']:8.2f}%"
+              f"{ut['values'][-1]:9.4f}{100 * ut['gci']:9.2f}%   {_series_verdict(pn)}")
+    drop = d["series"].get("drop")
+    if drop:
+        print(f"    {'drop':<9s}{' '.join(f'{v:.4f}' for v in drop['values']):<34s}"
+              f"{_order(drop):7.2f}{100 * drop['gci']:8.2f}%{'':19s}   "
+              f"{_series_verdict(drop)}   <- THE CONTROL")
+
+
 def _print_mesh_convergence(rep):
     m = rep["mesh_convergence"]
     head(f"S11  IS THE STRESS QoI CONVERGED?  the ladder at {m['n_phase']} fixed phases "
@@ -1142,19 +1264,14 @@ def _print_mesh_convergence(rep):
         print(f"    {'series':<9s}{'total move':>12s}{'last pair':>12s}"
               f"{'ratio':>9s}{'order':>7s}{'richardson':>12s}{'GCI':>9s}   verdict")
         for name in ("max", "pnorm", "c", "util", "drop"):
-            s = d["series"][name]
-            if s["converged"] is None:
-                verdict = "n/a (<3 rungs)"
-            elif s["converged"]:
-                verdict = f"CONVERGED (GCI < {100 * GATE_LADDER_GCI:.0f}%)"
-            else:
-                verdict = ("NOT CONVERGED"
-                           + ("" if s["settling"] else ", not even settling"))
-            order = np.log2(s["ratio"]) if s["ratio"] > 0 else float("nan")
-            print(f"    {name:<9s}{100 * s['total_rel_change']:11.1f}%"
-                  f"{100 * s['rel_change_last_pair']:11.1f}%"
-                  f"{s['ratio']:9.2f}{order:7.2f}{s['richardson']:12.3f}"
-                  f"{100 * s['gci']:8.2f}%   {s['direction']}, {verdict}")
+            # `.get`, because a design whose ladder lost a rung has no entry here and a
+            # KeyError would throw away every solve this print exists to report.
+            s = d["series"].get(name)
+            if s is None:
+                continue
+            print(f"    {name:<9s}{_series_line(s)}")
+        if d.get("series_by_p"):
+            _print_by_p(d, m)
     print(f"\n    -> {'PASS (ladder ran)' if m['pass'] else 'FAIL (ladder did not run)'}")
     print(f"\n    HOW TO READ THIS.  `util` is `c * pnorm / {m['allowable_stress_mpa']:.0f}`"
           f", so it inherits whatever `pnorm`")
@@ -1173,6 +1290,16 @@ def _print_mesh_convergence(rep):
     print(f"    A p-norm that does not converge is not fixed by a gene or by a weight; it")
     print(f"    is fixed by lowering `p` until it does, and by replacing the rescale-to-max")
     print(f"    with an analytic Kt (`wheel_fea.stress_concentration_kt`).")
+    if m.get("probe_p"):
+        print(f"\n    THE SWEEP (M8b-i.6 step 1).  Exponents {m['probe_p']} measured off the")
+        print(f"    SAME solves — no extra mesh, no extra Newton, no extra adjoint — so the")
+        print(f"    rows differ in `p` and in nothing else.  `p = {WA.STRESS_PNORM_P:.0f}` "
+              f"is the shipped")
+        print(f"    default and must reproduce the `pnorm` row above exactly; if it does not,")
+        print(f"    the probe is wrong and no other row here means anything.  A `p` whose GCI")
+        print(f"    lands under {100 * GATE_LADDER_GCI:.0f}% is a stress constraint with a "
+              f"value, which is the")
+        print(f"    prerequisite M8b-i.6 steps 2 and 3 are waiting on.")
 
 
 def _print_multistart(rep):
@@ -1334,6 +1461,63 @@ def _plot(rep, path):
     return out
 
 
+def _plot_by_p(a, m):
+    """GCI against `p` — M8b-i.6 step 1's whole answer on one pair of axes.
+
+    GCI on a log axis because the interesting span is 0.1% to 60%, and the question is
+    which side of `GATE_LADDER_GCI` a curve falls on rather than by how much.  The axle
+    drop is drawn as a horizontal reference for the reason it is reprinted in the table:
+    it is a converged QoI off these same solves, so it fixes what the y-axis means.
+
+    The title states which `p` converged, or that none did.  It is read off `converged`,
+    never off `settling` — see `_series`.
+    """
+    best, measurable = None, False
+    for j, d in enumerate(m["designs"]):
+        by = d.get("series_by_p") or {}
+        if not by:
+            continue
+        ks = sorted(by, key=lambda k: by[k]["p"])
+        ps = [by[k]["p"] for k in ks]
+        col = f"C{j}"
+        a.plot(ps, [100 * by[k]["pnorm"]["gci"] for k in ks], "o-", color=col, lw=1.3,
+               ms=5, label=f"{d['label']}: pnorm")
+        a.plot(ps, [100 * by[k]["util"]["gci"] for k in ks], "s--", color=col, lw=1.0,
+               ms=4, alpha=0.75, label=f"{d['label']}: util")
+        drop = d["series"].get("drop") or {}
+        if np.isfinite(drop.get("gci", np.nan)):
+            a.axhline(100 * drop["gci"], color=col, ls="-.", lw=0.8, alpha=0.5,
+                      label=f"{d['label']}: axle drop (the control)")
+        measurable |= any(np.isfinite(by[k]["pnorm"]["gci"]) for k in ks)
+        if j == 0:
+            conv = [by[k]["p"] for k in ks if by[k]["pnorm"]["converged"]]
+            best = max(conv) if conv else None
+
+    a.axhline(100 * GATE_LADDER_GCI, color="k", ls=":", lw=1.1)
+    a.text(0.02, 100 * GATE_LADDER_GCI, f" converged below {100 * GATE_LADDER_GCI:.0f}%",
+           transform=a.get_yaxis_transform(), fontsize=6.5, va="bottom")
+    a.axvline(WA.STRESS_PNORM_P, color="k", ls="--", lw=0.7, alpha=0.45)
+    a.text(WA.STRESS_PNORM_P, 0.98, f"shipped p={WA.STRESS_PNORM_P:.0f} ",
+           transform=a.get_xaxis_transform(), fontsize=6.5, ha="right", va="top",
+           rotation=90)
+    a.set_xscale("log")
+    a.set_yscale("log")
+    a.set_xlabel("Gauss-point p-norm exponent  p")
+    a.set_ylabel("GCI  [%]   (lower is converged)")
+    # Three states, not two.  "No exponent converged" and "no exponent was MEASURABLE"
+    # look identical on an empty panel, and only one of them is a finding — a two-rung
+    # ladder has no GCI at any `p`, so a title claiming a negative verdict there would
+    # assert a conclusion its own axes contain no evidence for.  That is the exact fault
+    # M8b-i.5 shipped once already, in the other direction.
+    a.set_title(f"the stress p-norm converges up to p = {best:.4g}" if best else
+                "no exponent gives the stress p-norm a mesh-independent value"
+                if measurable else
+                f"ladder too short to tell — a GCI needs 3 rungs, this has "
+                f"{len(m['configs'])}")
+    a.grid(alpha=0.3, which="both")
+    a.legend(fontsize=6.5, loc="best")
+
+
 def _plot_m8bi5(rep, path):
     """The two things that qualify S9's verdict, on one sheet.
 
@@ -1348,9 +1532,16 @@ def _plot_m8bi5(rep, path):
     from matplotlib.patches import Rectangle
 
     panels = [k for k in ("mesh_convergence", "multistart") if k in rep]
+    # M8b-i.6's panel only exists when a sweep was asked for, and it goes FIRST: it is the
+    # answer, and the ladder beside it is the evidence the answer is read off.
+    if rep.get("mesh_convergence", {}).get("probe_p"):
+        panels.insert(0, "by_p")
     fig, axes = plt.subplots(1, len(panels), figsize=(6.6 * len(panels), 4.4),
                              squeeze=False)
     ax = dict(zip(panels, axes[0]))
+
+    if "by_p" in ax:
+        _plot_by_p(ax["by_p"], rep["mesh_convergence"])
 
     if "mesh_convergence" in ax:
         a, m = ax["mesh_convergence"], rep["mesh_convergence"]
@@ -1463,12 +1654,20 @@ def main():
                     help="the S11 mesh ladder.  `fine` is 261k dof through contact, a "
                          "service-force secant and an adjoint, which nothing in this "
                          "repo has run before — hence opt-in.")
+    ap.add_argument("--ladder-p", default="",
+                    help="M8b-i.6 step 1: extra Gauss-point p-norm exponents to measure "
+                         "up the S11 ladder, e.g. `2,4,8,16,30`.  Empty (the default) "
+                         "leaves the report as M8b-i.5 wrote it.  Each exponent is read "
+                         "off the displacement field the adjoint already converged, so "
+                         "the sweep costs NO extra solve — the whole list is the same ~14 "
+                         "min as one column.")
     ap.add_argument("--n-probe", type=int, default=2,
                     help="S12: how many elites to re-descend from, nearest corner first")
     args = ap.parse_args()
 
     try:
         sections = parse_sections(args.sections)
+        probe_p = parse_ladder_p(args.ladder_p)
     except ValueError as exc:
         raise SystemExit(str(exc))
 
@@ -1492,6 +1691,10 @@ def main():
     # and `_series` says so rather than extrapolating from nothing.
     ladder_cfgs = ("smoke", "coarse") if args.quick else \
         tuple(c.strip() for c in args.ladder_configs.split(",") if c.strip())
+    # M8b-i.6.  `--quick` keeps the ENDS of whatever sweep was asked for and drops the
+    # middle: two exponents exercise the whole probe path, and the two that matter for a
+    # wiring check are the extremes, where the p-norm is least and most like the max.
+    probe_p = probe_p[:1] + probe_p[-1:] if args.quick and len(probe_p) > 2 else probe_p
     n_elite = 2 if args.quick else 16
     n_probe = 1 if args.quick else args.n_probe
 
@@ -1542,7 +1745,7 @@ def main():
                 [("best_solution", genes)]
                 + [(f"elite{k + 1}", g) for k, g in
                    enumerate(S3.load_elites(args.elites, limit=2)[1:])],
-                configs=ladder_cfgs, n_phase=n_phase),
+                configs=ladder_cfgs, n_phase=n_phase, probe_p=probe_p),
         "multistart":
             lambda: run_multistart(
                 cfg, elites=S3.load_elites(args.elites, limit=n_elite),
@@ -1557,10 +1760,13 @@ def main():
                        "target_deflection_mm": WO.TARGET_DEFLECTION_MM,
                        "allowable_stress_mpa": WO.ALLOWABLE_STRESS_MPA,
                        "lr": S3.DEFAULT_LR, "grad_clip": S3.GRAD_CLIP,
-                       "sections": sections,
+                       "sections": sections, "ladder_p": probe_p,
+                       "stress_pnorm_p_default": WA.STRESS_PNORM_P,
                        "elapsed_s": round(time.time() - t0, 1)}
     if sections != list(DEFAULT_SECTIONS):
-        rep["settings"]["title"] = "M8b-i.5 — QUALIFYING THE FEASIBILITY VERDICT"
+        rep["settings"]["title"] = (
+            "M8b-i.6 — WHICH p GIVES THE STRESS CONSTRAINT A VALUE" if probe_p else
+            "M8b-i.5 — QUALIFYING THE FEASIBILITY VERDICT")
 
     # Written BEFORE the report is formatted.  At `coarse` this study is an hour of
     # solving and `_print` is string formatting; losing the former to a bug in the latter

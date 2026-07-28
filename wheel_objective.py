@@ -69,6 +69,17 @@ than approximate).  The ratio's stability across designs — cv 4.4% at p=30 —
 makes that defensible, and it is the same test M4 applied to `fea_over_beam`, which
 failed it at cv 62% and closed the Stage-2.5 off-ramp.
 
+AND THAT ARGUMENT IS ABOUT THE WRONG FACTOR.  M8b-i.5 put both factors up a three-rung
+mesh ladder: `max/pnorm` is the BEST-behaved quantity in the whole decomposition (GCI
+5.3%, converged), because it is a ratio of two things that diverge together.  The p-norm
+itself is at GCI 47% and the utilisation at 63%, while the axle drop off the very same
+solves converges at order 2.44 to GCI 0.14%.  At p=30 the p-norm is 1/1.38 of the true
+max — it IS the max in disguise — so it inherits the r^-0.5 field of the unfilleted
+349.5-degree spoke/ring corner that `study_wheel_fea.stress_report` identifies as
+geometrically a crack.  The exponent is therefore an argument (`stress_gauss_p`) and
+`t3_terms` can probe others on the same solve (`stress_p_probe`); `STRESS_PNORM_P` remains
+the default until a measurement names a better one.
+
 PHASE
 -----
 Not moot: M6 measured 7.0% std/mean and 19.7% peak-to-peak in axle drop over the 30
@@ -424,9 +435,27 @@ def phase_meshes(genes, cfg, phases, orientation=None):
 # T3 — SOLVE SPACE
 # ---------------------------------------------------------------------------
 
+def _stress_aggregate(pn, maxes, stress_phase_p, stress_scale=None):
+    """`(agg, c, util)` from the per-phase p-norms and the per-phase true maxima.
+
+    Factored out so the PROBE below and the constraint proper cannot drift apart.  The
+    probe's whole claim is that it reports the same quantity the objective would report
+    had it been built at that `p`, and the cheapest way to make that true is for both to
+    call one function.  `stress_scale=None` means "measure `c` here" — see the long
+    comment at the call site for why that is the caller's decision and not this
+    function's.
+    """
+    pn = np.asarray(pn, dtype=float)
+    c = float(np.mean(np.asarray(maxes, dtype=float)
+                      / np.maximum(pn, 1e-12))) if stress_scale is None \
+        else float(stress_scale)
+    agg = float(np.sum(pn ** stress_phase_p) ** (1.0 / stress_phase_p))
+    return agg, c, c * agg / ALLOWABLE_STRESS_MPA
+
+
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
              force=SERVICE_FORCE_N, stress_phase_p=8.0, stress_scale=None, warm=None,
-             **problem_kw):
+             stress_gauss_p=WA.STRESS_PNORM_P, stress_p_probe=(), **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
 
     One `service_qoi_value_and_grad` per phase — which is one forward solve, one
@@ -440,6 +469,24 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     a smoothed max (p-norm, p=8) over the stencil nodes for `stress` — replacing CVaR,
     which at 8 samples is "the worst 1-2" and whose gradient jumps as the argmin switches
     — and std/mean for `phase_ripple`.
+
+    TWO EXPONENTS, AND THEY ARE NOT THE SAME QUANTITY.  `stress_phase_p` aggregates the
+    eight PHASE samples; `stress_gauss_p` is the exponent of the volume-weighted p-norm
+    over the GAUSS POINTS inside one solve, i.e. `wheel_adjoint.STRESS_PNORM_P`.  It is
+    an argument rather than that module constant because M8b-i.5 measured the constraint
+    it produces at p=30 to be NOT MESH-CONVERGENT (GCI 63% on a three-rung ladder whose
+    axle drop converges to 0.14% off the same solves), and the exponent is the suspect.
+    Reaching `_qoi_pnorm_stress` needs the `(name, factory)` form of `adjoint_grads`'
+    `qois`; the bare string would take the module default and no argument could change it.
+
+    `stress_p_probe` MEASURES WITHOUT SOLVING.  The p-norm is a pure function of the
+    converged displacement field, so any number of exponents can be read off the field the
+    adjoint already ran on — `_meta` hands back both `prob` and `res`.  Each probe `p` is
+    pushed through `_stress_aggregate`, the same arithmetic the constraint uses, so
+    `pnorm_by_p[stress_gauss_p]` reproduces the report's own `stress_utilisation` exactly
+    and the probe is checkable against the thing it is probing.  NO GRADIENT is taken at a
+    probe `p`: a convergence study reads values, and one adjoint per exponent per phase
+    would turn a 14-minute ladder into an hour for numbers nothing reads.
     """
     w = dict(DEFAULT_WEIGHTS if weights is None else weights)
     if phases is None:
@@ -447,17 +494,28 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     if meshes is None:
         meshes = phase_meshes(genes, cfg, phases)
 
-    drops, dgrads, pn, pgrads, ratios, maxes, rows = [], [], [], [], [], [], []
+    probe_p = [float(v) for v in stress_p_probe]
+    # The name stays "pnorm_stress" so every downstream key is unchanged; only the factory
+    # differs from `QOI["pnorm_stress"]`, and only in `p`.
+    qoi = ("pnorm_stress", lambda prob: WA._qoi_pnorm_stress(prob, p=stress_gauss_p))
+
+    drops, dgrads, pn, pgrads, maxes, rows = [], [], [], [], [], []
+    probe_pn = {v: [] for v in probe_p}
     for i, (p, mesh) in enumerate(zip(phases, meshes)):
         o = WA.service_qoi_value_and_grad(
-            genes, cfg, ("pnorm_stress",), force=force, mesh=mesh,
+            genes, cfg, (qoi,), force=force, mesh=mesh,
             delta0=None if warm is None else warm[i], **problem_kw)
+        for v in probe_p:
+            # The same field the adjoint above differentiated, at a different exponent.
+            prob = o["_meta"]["prob"]
+            probe_pn[v].append(float(WA._qoi_pnorm_stress(prob, p=v)(
+                jnp.asarray(prob.coords), jnp.asarray(o["_meta"]["res"]["u"]),
+                float(prob.contact.y_ground))))
         drops.append(o["axle_drop"]["value"])
         dgrads.append(o["axle_drop"]["grad"])
         pn.append(o["pnorm_stress"]["value"])
         pgrads.append(o["pnorm_stress"]["grad"])
         maxes.append(o["_meta"]["max_stress_mpa"])
-        ratios.append(o["_meta"]["max_stress_mpa"] / max(o["pnorm_stress"]["value"], 1e-12))
         rows.append({"phase_deg": float(p), "axle_drop_mm": float(o["axle_drop"]["value"]),
                      "pnorm_stress_mpa": float(o["pnorm_stress"]["value"]),
                      "max_stress_mpa": float(o["_meta"]["max_stress_mpa"]),
@@ -498,13 +556,11 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     # steps, the standard adaptive constraint scaling, and the gate passes the base
     # design's value to both legs of every difference.  `None` means "measure it here",
     # which is right for a one-off evaluation and wrong inside a finite difference.
-    c = float(np.mean(ratios)) if stress_scale is None else float(stress_scale)
     q = stress_phase_p
+    agg, c, util = _stress_aggregate(pn, maxes, q, stress_scale)
     denom = np.sum(pn ** q)
-    agg = denom ** (1.0 / q)
     dagg = (pn ** (q - 1.0))[:, None] * pgrads
     dagg = dagg.sum(axis=0) * denom ** (1.0 / q - 1.0)
-    util = c * agg / ALLOWABLE_STRESS_MPA
     stress = float(soft_barrier(util - 1.0, w["stress"]))
     d_stress = (2.0 * w["stress"] * max(0.0, util - 1.0)
                 * c / ALLOWABLE_STRESS_MPA * dagg)
@@ -521,6 +577,16 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     phase_ripple = w["phase_ripple"] * ripple ** 2
     d_phase_ripple = w["phase_ripple"] * 2.0 * ripple * d_ripple
 
+    # -- the probe.  `stress_scale=None` at every exponent, because the point of the sweep
+    # is how `c = mean_phase(max/pnorm_p)` moves WITH `p` and with the mesh; inheriting the
+    # constraint's `c` would report the p=30 rescale under five different labels.
+    by_p = {}
+    for v in probe_p:
+        a_v, c_v, u_v = _stress_aggregate(probe_pn[v], maxes, q, None)
+        by_p[repr(v)] = {"p": v, "pnorm_agg_mpa": a_v, "stress_scale_measured": c_v,
+                         "stress_utilisation": u_v,
+                         "pnorm_stress_mpa": [float(x) for x in probe_pn[v]]}
+
     return {
         "values": {"deflection": float(deflection), "stress": float(stress),
                    "phase_ripple": float(phase_ripple)},
@@ -532,9 +598,11 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "phase_ripple_std_over_mean": float(ripple),
                    "pnorm_stress_agg_mpa": float(agg),
                    "max_stress_mpa": float(np.max(maxes)),
-                   "stress_scale": c, "stress_scale_measured": float(np.mean(ratios)),
+                   "stress_scale": c,
+                   "stress_scale_measured": _stress_aggregate(pn, maxes, q, None)[1],
                    "stress_scale_was_given": stress_scale is not None,
                    "stress_utilisation": float(util),
+                   "stress_gauss_p": float(stress_gauss_p), "pnorm_by_p": by_p,
                    "n_phase": n, "rows": rows},
     }
 
