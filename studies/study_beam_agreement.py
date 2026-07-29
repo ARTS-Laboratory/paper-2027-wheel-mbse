@@ -2,7 +2,7 @@
 =============================================================================
   M3 GATE — DOES THE FINITE ELEMENT REPRODUCE BEAM THEORY?
 =============================================================================
-    .venv-opt/bin/python study_beam_agreement.py
+    .venv-opt/bin/python studies/study_beam_agreement.py
 
 Four checks, in order of how much they prove:
 

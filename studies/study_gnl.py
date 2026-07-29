@@ -2,7 +2,7 @@
 =============================================================================
   M5 GATE — GEOMETRIC NONLINEARITY, AND WHETHER STAGE 3 CAN IGNORE IT
 =============================================================================
-    .venv-opt/bin/python study_gnl.py
+    .venv-opt/bin/python studies/study_gnl.py
 
 The plan's M5 asks four things: build the Newton loop, verify frame indifference at
 finite rotation, verify that linear and SVK agree at 1% of service load, and then
@@ -49,6 +49,8 @@ answer.  Both are reported for every solve; see the block comment in `wheel_fem.
 import argparse
 import json
 import os
+
+import project_paths as PP
 import time
 
 import numpy as np
@@ -72,7 +74,7 @@ PLAN_GNL_THRESHOLD = 0.02            # "if < 2%, keep the trajectory linear"
 
 
 def load_genes(path="best_solution.json"):
-    with open(os.path.join(HERE, path)) as fh:
+    with open(os.path.join(PP.ROOT, path)) as fh:
         return wg.genes_to_vector(json.load(fh)["genes"])
 
 

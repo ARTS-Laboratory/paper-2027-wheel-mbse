@@ -77,8 +77,17 @@ solves converges at order 2.44 to GCI 0.14%.  At p=30 the p-norm is 1/1.38 of th
 max — it IS the max in disguise — so it inherits the r^-0.5 field of the unfilleted
 349.5-degree spoke/ring corner that `study_wheel_fea.stress_report` identifies as
 geometrically a crack.  The exponent is therefore an argument (`stress_gauss_p`) and
-`t3_terms` can probe others on the same solve (`stress_p_probe`); `STRESS_PNORM_P` remains
-the default until a measurement names a better one.
+`t3_terms` can probe others on the same solve (`stress_p_probe`).
+
+AND THE RESCALE IS GONE.  M8b-i.6 swept ten exponents off one set of solves and settled
+it: the p-norm converges for p <= 6, `max/pnorm` only for p >= 24, and their product — the
+utilisation, the number Stage 3 was descending on — at NO exponent at either design.  A
+factor anchored to a singularity cannot be stabilised by freezing it.  So the peak is
+modelled instead of measured: `Kt(R, t) * sigma_nominal(p=4) <= ALLOWABLE`, where
+`sigma_nominal` is mesh-convergent (GCI 0.45%) and `Kt` is the same analytic
+stress-concentration factor `wheel_fea` and the STEP exporter already price, now
+differentiated rather than frozen.  `STRESS_NOMINAL_P` is the default here;
+`wheel_adjoint.STRESS_PNORM_P` stays 30.0 so historical records keep their meaning.
 
 PHASE
 -----
@@ -123,6 +132,16 @@ SECTOR_DEG = WW.SECTOR_DEG                  # 30 degrees, the phase period
 TARGET_DEFLECTION_MM = W.TARGET_DEFLECTION_MM
 ALLOWABLE_STRESS_MPA = W.ALLOWABLE_STRESS_MPA
 SERVICE_FORCE_N = W.TOTAL_FORCE_NEWTONS
+
+# Gauss-point p-norm exponent for the NOMINAL stress the constraint is built on — NOT
+# `WA.STRESS_PNORM_P` (30.0), which stays the adjoint's documented default so historical
+# records keep their meaning.  M8b-i.6 step 1 swept ten exponents off one set of solves
+# (`study_stage3_pnorm.json`): 4.0 is the largest whose observed order is still ~2 at BOTH
+# designs — 1.76 / 2.18, GCI 0.45% / 0.20%, comparable to the axle drop's 2.44 / 0.14%.
+# At p=6 the GCI still clears the 5% gate but the order has collapsed to 0.99 / 1.12, i.e.
+# inside the gate by margin rather than by mechanism.  Below p=3 it slides toward a plain
+# volume mean and loses the peak sensitivity the constraint exists for.
+STRESS_NOMINAL_P = 4.0
 
 # Mesh-validity barrier.  0.2 is `study_wheel_mesh.MIN_SJ_ACCEPT`, the value M2b's
 # design-space sweep established as the floor for a usable element; the master plan's
@@ -178,6 +197,68 @@ def soft_barrier(violation, scale=1.0):
     the barrier is quadratic rather than linear in the first place.
     """
     return scale * jnp.maximum(0.0, violation) ** 2
+
+
+KT_CLAMP = (1.0, 3.5)
+KT_EXPONENT = 0.65
+KT_DEGENERATE_R_MM = 0.1
+
+
+def stress_concentration_kt(fillet_radius_mm, thickness_mm, c_factor=1.0):
+    """`wheel_fea.stress_concentration_kt` in jnp.  Kt = 1 + C*(t/2R)^0.65, clamped.
+
+    The original (`wheel_fea.py:315-325`) is untraceable three ways — a data-dependent
+    `if fillet_radius_mm < 0.1`, `np.clip`, and a `float()` cast — and `wheel_fea` must
+    stay numpy-only, because `tests/test_import_hygiene.py` imports it in an interpreter
+    with no jax (the CadQuery env has none).  So the twin lives here, for the same reason
+    and by the same precedent as `soft_barrier` above.
+
+    Verified bit-identical to the numpy original across a grid spanning both clamp bounds
+    and the degenerate branch; see `tests/test_objective.py`.
+    """
+    r = jnp.asarray(fillet_radius_mm, dtype=float)
+    degenerate = r < KT_DEGENERATE_R_MM
+    # Double-`where`: the degenerate branch must not evaluate r=0 inside the power, or its
+    # `inf` poisons the gradient of the branch that WAS taken.  `R_hub`/`R_rim` are bounded
+    # below at 0.5 mm so the branch is unreachable in-box, but `kt_report` calls this with
+    # `r_built = 0.0` and the twin has to agree there too.
+    safe = jnp.where(degenerate, 1.0, r)
+    kt = 1.0 + c_factor * (thickness_mm / (2.0 * safe)) ** KT_EXPONENT
+    return jnp.where(degenerate, KT_CLAMP[1], jnp.clip(kt, *KT_CLAMP))
+
+
+def _kt_hub(g):
+    return stress_concentration_kt(g[12], g[8])       # R_hub with t0
+
+
+def _kt_rim(g):
+    return stress_concentration_kt(g[13], g[11])      # R_rim with t3
+
+
+_KT_HUB_VG = jax.value_and_grad(_kt_hub)
+_KT_RIM_VG = jax.value_and_grad(_kt_rim)
+
+
+def junction_kt(genes):
+    """`((Kt_hub, dKt_hub), (Kt_rim, dKt_rim))` — NO MESH, NO SOLVE.
+
+    Pure gene space: one `jax.grad` on a 14-vector, which is why the stress constraint can
+    afford an analytic concentration factor at all.  Ten of the fourteen entries of each
+    gradient are exactly zero.
+
+    The pairing — `R_hub` with `t0`, `R_rim` with `t3` — is not a choice made here.  It is
+    asserted in three independent places already: `wheel_fea.py:494-495` (the beam model),
+    `wheel_step_export.py:810-812` (the built-geometry report) and `tests/test_golden.py`.
+
+    `jax.grad` rather than a hand-written derivative gets the clamp's zero-gradient region
+    right for free, and the clamp IS reachable in-box (`t0=10.0` with `R_hub=0.5` gives
+    `Kt = 5.47 -> 3.5`), though not at either design of interest.
+    """
+    g = jnp.asarray(genes, dtype=float)
+    kt_h, d_h = _KT_HUB_VG(g)
+    kt_r, d_r = _KT_RIM_VG(g)
+    return ((float(kt_h), np.asarray(d_h, dtype=float)),
+            (float(kt_r), np.asarray(d_r, dtype=float)))
 
 
 # ---------------------------------------------------------------------------
@@ -435,27 +516,29 @@ def phase_meshes(genes, cfg, phases, orientation=None):
 # T3 — SOLVE SPACE
 # ---------------------------------------------------------------------------
 
-def _stress_aggregate(pn, maxes, stress_phase_p, stress_scale=None):
-    """`(agg, c, util)` from the per-phase p-norms and the per-phase true maxima.
+def _stress_aggregate(pn, maxes, stress_phase_p):
+    """`(agg, c)` from the per-phase p-norms and the per-phase true maxima.
 
-    Factored out so the PROBE below and the constraint proper cannot drift apart.  The
-    probe's whole claim is that it reports the same quantity the objective would report
-    had it been built at that `p`, and the cheapest way to make that true is for both to
-    call one function.  `stress_scale=None` means "measure `c` here" — see the long
-    comment at the call site for why that is the caller's decision and not this
-    function's.
+    Factored out so the PROBE below and the constraint proper cannot drift apart: both
+    build `agg` by calling this, so a probe at the constraint's own exponent reproduces the
+    constraint's aggregate exactly and is checkable against the thing it is probing.
+
+    `c = mean_phase(max / pnorm)` is now a DIAGNOSTIC ONLY and no longer enters any
+    constraint.  M8b-i.6 step 1 is why: `c` chases M4's crack-tip singularity, which
+    diverges under refinement (31.02 -> 41.54 -> 48.47 MPa, GCI 34.4%), so `c * agg`
+    converges at no exponent at either design.  It survives because the `c` and `c GCI`
+    columns of `make m8bi6` are the evidence for that finding, and the sweep must stay
+    reproducible.
     """
     pn = np.asarray(pn, dtype=float)
-    c = float(np.mean(np.asarray(maxes, dtype=float)
-                      / np.maximum(pn, 1e-12))) if stress_scale is None \
-        else float(stress_scale)
+    c = float(np.mean(np.asarray(maxes, dtype=float) / np.maximum(pn, 1e-12)))
     agg = float(np.sum(pn ** stress_phase_p) ** (1.0 / stress_phase_p))
-    return agg, c, c * agg / ALLOWABLE_STRESS_MPA
+    return agg, c
 
 
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
-             force=SERVICE_FORCE_N, stress_phase_p=8.0, stress_scale=None, warm=None,
-             stress_gauss_p=WA.STRESS_PNORM_P, stress_p_probe=(), **problem_kw):
+             force=SERVICE_FORCE_N, stress_phase_p=8.0, warm=None,
+             stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
 
     One `service_qoi_value_and_grad` per phase — which is one forward solve, one
@@ -472,12 +555,15 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 
     TWO EXPONENTS, AND THEY ARE NOT THE SAME QUANTITY.  `stress_phase_p` aggregates the
     eight PHASE samples; `stress_gauss_p` is the exponent of the volume-weighted p-norm
-    over the GAUSS POINTS inside one solve, i.e. `wheel_adjoint.STRESS_PNORM_P`.  It is
-    an argument rather than that module constant because M8b-i.5 measured the constraint
-    it produces at p=30 to be NOT MESH-CONVERGENT (GCI 63% on a three-rung ladder whose
-    axle drop converges to 0.14% off the same solves), and the exponent is the suspect.
-    Reaching `_qoi_pnorm_stress` needs the `(name, factory)` form of `adjoint_grads`'
-    `qois`; the bare string would take the module default and no argument could change it.
+    over the GAUSS POINTS inside one solve.  It defaults to `STRESS_NOMINAL_P` (4.0) and
+    NOT to `wheel_adjoint.STRESS_PNORM_P` (30.0), because M8b-i.5 measured the p=30
+    constraint to be NOT MESH-CONVERGENT (GCI 63% on a three-rung ladder whose axle drop
+    converges to 0.14% off the same solves) and M8b-i.6 identified the exponent as the
+    cause: at p=30 the p-norm is chasing a singular peak.  At p=4 it is a NOMINAL stress
+    that converges (GCI 0.45% / 0.20%), and the peak is restored analytically by `Kt`
+    below.  Reaching `_qoi_pnorm_stress` needs the `(name, factory)` form of
+    `adjoint_grads`' `qois`; the bare string would take the module default and no argument
+    could change it.
 
     `stress_p_probe` MEASURES WITHOUT SOLVING.  The p-norm is a pure function of the
     converged displacement field, so any number of exponents can be read off the field the
@@ -539,31 +625,50 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     deflection = w["deflection"] * err ** 2
     d_deflection = w["deflection"] * 2.0 * err / TARGET_DEFLECTION_MM * mean_dgrad
 
-    # -- stress: p-norm over phase of the p-norm over Gauss points, rescaled to the true
-    # max by the measured ratio.
+    # -- stress: `Kt(R, t) * sigma_nominal <= ALLOWABLE`, one barrier per junction.
     #
-    # `stress_scale` MUST BE AN EXPLICIT INPUT, and leaving it implicit is a real bug
-    # rather than an inelegance.  The rescale is exact only for a CONSTANT factor: the
-    # p-norm is positively homogeneous of degree 1, so `c * pnorm` has gradient
-    # `c * d(pnorm)`, and the gradient is right if and only if `c` did not move.  Recompute
-    # `c` inside every call and the function being differentiated stops being the function
-    # being evaluated — `c` depends on the true max, which is not differentiable and is
-    # precisely what the p-norm exists to avoid.  Measured, that inconsistency put a 10%
-    # error into the assembled gradient (gate 7) while every individual term still agreed
-    # with its own finite difference to 1e-8, which is exactly how an assembly bug hides.
+    # WHAT THIS REPLACED, AND WHY IT HAD TO GO.  The constraint used to be
+    # `c * agg / ALLOWABLE` with `c = mean_phase(max / pnorm)` — a MEASURED rescale from the
+    # p-norm up to the true max.  It had a known gradient hazard, handled by making `c` an
+    # explicit input the caller froze within a step: the rescale is exact only for a
+    # CONSTANT factor, since the p-norm is positively homogeneous of degree 1 and
+    # `d(c*pnorm) = c*d(pnorm)` holds if and only if `c` did not move.  (Recomputing it
+    # inside a finite difference once put a 10% error into the assembled gradient while
+    # every individual term still agreed with its own FD to 1e-8 — how an assembly bug
+    # hides.)
     #
-    # So the caller owns it: M8b holds `c` fixed within a step and refreshes it between
-    # steps, the standard adaptive constraint scaling, and the gate passes the base
-    # design's value to both legs of every difference.  `None` means "measure it here",
-    # which is right for a one-off evaluation and wrong inside a finite difference.
+    # The freeze was sound and the quantity was not.  M8b-i.6 step 1 swept ten exponents off
+    # one set of solves and found the two factors converge in DISJOINT ranges of `p`: the
+    # p-norm for `p <= 6`, `c` only for `p >= 24`, and their product at NO exponent at
+    # either design.  The reason is structural — `c` is anchored to the true max, which is
+    # M4's crack-tip singularity and diverges under refinement — so no amount of freezing
+    # fixes it.  A frozen divergent number is still a divergent number.
+    #
+    # So the peak is no longer measured, it is MODELLED: a converged nominal stress at
+    # `STRESS_NOMINAL_P = 4.0` times an analytic, differentiable stress-concentration
+    # factor.  `Kt` is a function of the genes, so it is not hoisted or frozen — it is
+    # DIFFERENTIATED, and the product rule below is the whole change.
+    #
+    # TWO JUNCTIONS, TWO BARRIERS, not one aggregated `Kt`.  A hard `max` over the two
+    # would zero the gradient of whichever junction is not currently worst and reintroduce
+    # exactly the argmax kink the p-norm exists to blur; a p-norm over two samples is an
+    # arbitrary exponent for no smoothing benefit.  Summing two `soft_barrier`s is smooth
+    # everywhere and lets `R_hub` and `R_rim` both carry a live gradient at once.
     q = stress_phase_p
-    agg, c, util = _stress_aggregate(pn, maxes, q, stress_scale)
+    agg, c = _stress_aggregate(pn, maxes, q)
     denom = np.sum(pn ** q)
     dagg = (pn ** (q - 1.0))[:, None] * pgrads
     dagg = dagg.sum(axis=0) * denom ** (1.0 / q - 1.0)
-    stress = float(soft_barrier(util - 1.0, w["stress"]))
-    d_stress = (2.0 * w["stress"] * max(0.0, util - 1.0)
-                * c / ALLOWABLE_STRESS_MPA * dagg)
+
+    (kt_hub, dkt_hub), (kt_rim, dkt_rim) = junction_kt(genes)
+    stress, d_stress, utils = 0.0, np.zeros_like(dagg), {}
+    for name, kt, dkt in (("hub", kt_hub, dkt_hub), ("rim", kt_rim, dkt_rim)):
+        util_j = kt * agg / ALLOWABLE_STRESS_MPA
+        d_util = (dkt * agg + kt * dagg) / ALLOWABLE_STRESS_MPA   # THE PRODUCT RULE
+        stress += float(soft_barrier(util_j - 1.0, w["stress"]))
+        d_stress = d_stress + 2.0 * w["stress"] * max(0.0, util_j - 1.0) * d_util
+        utils[name] = float(util_j)
+    util = max(utils.values())          # the headline scalar — REPORTING ONLY
 
     # -- phase_ripple: std/mean of the drop over the stencil.  A design quantity, not a
     # quadrature nuisance — M6 measured 7.0% at the shipped genome.
@@ -577,14 +682,22 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     phase_ripple = w["phase_ripple"] * ripple ** 2
     d_phase_ripple = w["phase_ripple"] * 2.0 * ripple * d_ripple
 
-    # -- the probe.  `stress_scale=None` at every exponent, because the point of the sweep
-    # is how `c = mean_phase(max/pnorm_p)` moves WITH `p` and with the mesh; inheriting the
-    # constraint's `c` would report the p=30 rescale under five different labels.
+    # -- the probe.  `c` is re-measured at every exponent, because the point of the sweep is
+    # how `c = mean_phase(max/pnorm_p)` moves WITH `p` and with the mesh — that measurement
+    # IS M8b-i.6 step 1's finding, and the three original keys are kept unchanged so
+    # `make m8bi6` reproduces its `c` / `c GCI` columns bit-identically.
+    #
+    # `stress_utilisation` here is now a DIFFERENT quantity from the constraint's: it is the
+    # old `c * agg / ALLOWABLE`, retained as the diagnostic that shows why it was abandoned.
+    # `stress_utilisation_kt` is the new one, and it is the key that reproduces the report's
+    # own `stress_utilisation` when probed at `stress_gauss_p`.
     by_p = {}
+    kt_max = max(kt_hub, kt_rim)
     for v in probe_p:
-        a_v, c_v, u_v = _stress_aggregate(probe_pn[v], maxes, q, None)
+        a_v, c_v = _stress_aggregate(probe_pn[v], maxes, q)
         by_p[repr(v)] = {"p": v, "pnorm_agg_mpa": a_v, "stress_scale_measured": c_v,
-                         "stress_utilisation": u_v,
+                         "stress_utilisation": c_v * a_v / ALLOWABLE_STRESS_MPA,
+                         "stress_utilisation_kt": kt_max * a_v / ALLOWABLE_STRESS_MPA,
                          "pnorm_stress_mpa": [float(x) for x in probe_pn[v]]}
 
     return {
@@ -598,9 +711,10 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "phase_ripple_std_over_mean": float(ripple),
                    "pnorm_stress_agg_mpa": float(agg),
                    "max_stress_mpa": float(np.max(maxes)),
-                   "stress_scale": c,
-                   "stress_scale_measured": _stress_aggregate(pn, maxes, q, None)[1],
-                   "stress_scale_was_given": stress_scale is not None,
+                   "stress_scale_measured": c,     # diagnostic only, see `_stress_aggregate`
+                   "kt_hub": float(kt_hub), "kt_rim": float(kt_rim),
+                   "stress_utilisation_hub": utils["hub"],
+                   "stress_utilisation_rim": utils["rim"],
                    "stress_utilisation": float(util),
                    "stress_gauss_p": float(stress_gauss_p), "pnorm_by_p": by_p,
                    "n_phase": n, "rows": rows},
@@ -613,7 +727,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 
 def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
               normalized=False, force=SERVICE_FORCE_N, tiers=("t1", "t2", "t3"),
-              span_mm=W.S, stress_scale=None, **problem_kw):
+              span_mm=W.S, **problem_kw):
     """`(value, grad, breakdown)` — the scalar Stage 3 descends, and its gradient.
 
     `normalized=True` takes and returns unit-box `z` instead of physical genes.  The
@@ -659,7 +773,7 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
 
     if "t3" in tiers:
         t3 = t3_terms(genes, cfg, phases=phases, meshes=meshes, weights=weights,
-                      force=force, stress_scale=stress_scale, **problem_kw)
+                      force=force, **problem_kw)
         values.update(t3["values"])
         grads.update(t3["grads"])
         report.update(t3["report"])

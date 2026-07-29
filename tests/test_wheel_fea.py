@@ -15,7 +15,8 @@ import sys
 import numpy as np
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 import wheel_fea as wf            # noqa: E402
 import wheel_fem as fem           # noqa: E402
@@ -296,6 +297,6 @@ def test_total_mass_matches_the_step_manifest_within_the_embed_difference(mesh):
     land 2.1% under the manifest's 70.04 g for the same `_embed` reason the area does.
     """
     m = swf.wheel_mass_g(mesh)
-    with open(os.path.join(REPO, "wheel_step_manifest.json")) as fh:
+    with open(os.path.join(REPO, "export", "wheel_step_manifest.json")) as fh:
         manifest = json.load(fh)["solid"]["mass_g_pla"]
     assert -0.030 < m / manifest - 1.0 < -0.012, f"{m:.2f} g vs manifest {manifest} g"

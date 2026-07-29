@@ -18,7 +18,8 @@ import sys
 import numpy as np
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 import jax_config  # noqa: E402,F401
@@ -29,6 +30,7 @@ import study_objective as so  # noqa: E402
 import wheel_adjoint as WA  # noqa: E402
 import wheel_fea as W  # noqa: E402
 import wheel_fem as fem  # noqa: E402
+import wheel_genome as wg  # noqa: E402
 import wheel_mesh as wm  # noqa: E402
 import wheel_objective as WO  # noqa: E402
 import wheel_wheel as WW  # noqa: E402
@@ -111,31 +113,40 @@ def test_the_gauss_exponent_reaches_the_qoi_and_the_default_is_the_module_consta
     `adjoint_grads` looks a QoI up BY NAME, and the name carries no exponent — which is
     why `STRESS_PNORM_P` was unreachable from `t3_terms` and why M8b-i.5 could measure the
     constraint's non-convergence without being able to test the obvious cause.  The fix is
-    the `(name, factory)` form, and this is what says it works: a different `stress_gauss_p`
-    must produce a different constraint, and the default must still be p=30 so every
-    number M8a and M8b-i quote is the number this still computes.
+    the `(name, factory)` form, and this is what says it works: a different
+    `stress_gauss_p` must produce a different constraint.
+
+    The DEFAULT is now `STRESS_NOMINAL_P` (4.0) and not `WA.STRESS_PNORM_P` (30.0), which
+    is step 2's whole point — the constraint is built on a convergent nominal stress and
+    the peak is restored by `Kt`.  The high leg is pinned to `WA.STRESS_PNORM_P` so the
+    module constant every historical record was measured at is still reachable and still
+    means what it meant.
     """
     phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
     kw = dict(phases=phases, meshes=WO.phase_meshes(genes, CFG, phases))
 
     base = WO.t3_terms(genes, CFG, **kw)["report"]
-    low = WO.t3_terms(genes, CFG, stress_gauss_p=4.0, **kw)["report"]
-    pinned = WO.t3_terms(genes, CFG, stress_gauss_p=WA.STRESS_PNORM_P, **kw)["report"]
+    high = WO.t3_terms(genes, CFG, stress_gauss_p=WA.STRESS_PNORM_P, **kw)["report"]
+    pinned = WO.t3_terms(genes, CFG, stress_gauss_p=WO.STRESS_NOMINAL_P, **kw)["report"]
 
-    assert base["stress_gauss_p"] == WA.STRESS_PNORM_P, (
-        "the default exponent moved; every stress magnitude on record was measured at "
-        f"p={WA.STRESS_PNORM_P}")
+    assert base["stress_gauss_p"] == WO.STRESS_NOMINAL_P, (
+        "the default exponent moved off STRESS_NOMINAL_P; the constraint is only "
+        "mesh-convergent at the exponent M8b-i.6's sweep chose")
+    assert WA.STRESS_PNORM_P == 30.0, (
+        "the adjoint's module constant moved; it is the documented default and every "
+        "stress magnitude M8a and M8b-i quote was measured at it")
     assert pinned["pnorm_stress_agg_mpa"] == pytest.approx(
         base["pnorm_stress_agg_mpa"], rel=1e-12), (
         "passing the default explicitly changed the answer, so the argument is not "
         "reaching the same code path the default does")
-    assert low["pnorm_stress_agg_mpa"] < base["pnorm_stress_agg_mpa"], (
+    assert base["pnorm_stress_agg_mpa"] < high["pnorm_stress_agg_mpa"], (
         "p=4 gave the same p-norm as p=30 — the exponent is being discarded, which is "
         "exactly what the bare-string QoI lookup used to do")
     # The true max is a property of the FIELD, not of the exponent used to summarise it.
-    assert low["max_stress_mpa"] == pytest.approx(base["max_stress_mpa"], rel=1e-12)
-    # So a lower p means a bigger rescale, and `c` is where the two meet.
-    assert low["stress_scale_measured"] > base["stress_scale_measured"]
+    assert base["max_stress_mpa"] == pytest.approx(high["max_stress_mpa"], rel=1e-12)
+    # So a lower p means a bigger rescale, and `c` is where the two meet.  `c` is a
+    # diagnostic now, but it is still the diagnostic that says why.
+    assert base["stress_scale_measured"] > high["stress_scale_measured"]
 
 
 def test_the_probe_takes_no_gradient_and_leaves_the_constraint_alone(genes):
@@ -303,30 +314,142 @@ def test_no_term_dominates_the_table_without_moving_the_gradient(genes):
     assert rep["min_decades"] >= 1, f"worst rel {rep['worst_best_rel']:.3e}"
 
 
-def test_the_stress_scale_must_be_frozen_across_a_finite_difference(genes):
-    """The bug gate 7 caught: an adaptive rescale that re-measures per call.
+@pytest.mark.parametrize("r", [0.0, 0.05, 0.0999, 0.1, 0.25, 0.5, 1.0, 1.5597674, 2.0,
+                               3.0, 5.0, 12.0])
+@pytest.mark.parametrize("t", [0.5, 1.0, 2.0, 3.0, 5.0, 8.0, 10.0])
+def test_the_jnp_kt_is_the_numpy_kt(r, t):
+    """The load-bearing new test of M8b-i.6 step 2: two implementations, one formula.
 
-    `c * pnorm` has gradient `c * d(pnorm)` only if `c` is constant, so a value computed
-    with a re-measured `c` and a gradient computed with a frozen one are answers to
-    different questions.  Passing `stress_scale` must therefore CHANGE the value — if it
-    silently did nothing, the parameter would be decoration and the bug could return.
+    The constraint prices `Kt` in jnp so it can be differentiated; `wheel_fea` and the STEP
+    exporter price it in numpy, because `wheel_fea` must import in the CadQuery env, which
+    has no jax (`test_import_hygiene`).  Two implementations of the same physics is exactly
+    the arrangement that drifts silently, and a drift here would mean the optimizer is
+    descending on a stress concentration the built part does not have.
+
+    The grid spans both clamp bounds and BOTH sides of the degenerate `r < 0.1` branch,
+    including `r = 0.0` — which is not hypothetical: it is what the shipped hub actually
+    built (`wheel_step_manifest.json`, 0/12 edges filleted).
+    """
+    assert float(WO.stress_concentration_kt(r, t)) == W.stress_concentration_kt(r, t)
+
+
+def test_kt_is_differentiable_and_only_the_four_genes_it_depends_on_move_it(genes):
+    """`dKt/dg` reaches `R_hub`/`t0` and `R_rim`/`t3`, and nothing else.
+
+    The pairing is asserted in `wheel_fea` and the exporter; this asserts the GRADIENT
+    respects it, which is the part that would silently misroute.  A `Kt_hub` that moved
+    with `R_rim` would still report the right value and would push the optimizer to round
+    the wrong corner.
+
+    The signs are physics: a bigger fillet relieves the concentration, a thicker section
+    sharpens it.
+    """
+    (kt_hub, d_hub), (kt_rim, d_rim) = WO.junction_kt(genes)
+
+    assert kt_hub == pytest.approx(W.stress_concentration_kt(genes[12], genes[8]))
+    assert kt_rim == pytest.approx(W.stress_concentration_kt(genes[13], genes[11]))
+
+    for name, d, (i_r, i_t) in (("hub", d_hub, (12, 8)), ("rim", d_rim, (13, 11))):
+        assert d[i_r] < 0.0, f"dKt_{name}/dR >= 0: a bigger fillet must relieve, not raise"
+        assert d[i_t] > 0.0, f"dKt_{name}/dt <= 0: a thicker section must raise, not relieve"
+        moved = set(np.nonzero(d)[0].tolist())
+        assert moved == {i_r, i_t}, (
+            f"Kt_{name} has a gradient in {sorted(moved - {i_r, i_t})}, which it does not "
+            f"depend on — the junction pairing is misrouted")
+
+
+def test_kt_saturates_with_a_finite_zero_gradient_and_never_relieves():
+    """The upper clamp is reachable in-box, so its gradient must be 0.0 and not NaN.
+
+    `t0 = 10.0` with `R_hub = 0.5` gives `Kt = 5.47`, clamped to 3.5 — inside the gene box,
+    so a descent can walk there.  `r = 0.0` is the sharper hazard, and it is not
+    hypothetical: it is what the shipped hub actually built.  That branch must not evaluate
+    `(t/0)**0.65` even on the path not taken, because the `inf` propagates into the
+    gradient of the path that WAS taken.  Hence the double-`where`.
+
+    The LOWER clamp is unreachable and is asserted to be: `Kt = 1 + C*(t/2R)^0.65 >= 1` for
+    any positive section, so `KT_CLAMP[0]` is a floor the formula already respects.  Worth
+    pinning because "clamped to [1.0, 3.5]" reads as two live bounds and only one is.
+    """
+    lo, hi = WO.KT_CLAMP
+    grad = jax.grad(WO.stress_concentration_kt, argnums=(0, 1))
+
+    for r, t in ((0.5, 10.0), (0.0, 5.0), (0.05, 0.5)):
+        assert float(WO.stress_concentration_kt(r, t)) == pytest.approx(hi)
+        d = [float(x) for x in grad(float(r), float(t))]
+        assert all(np.isfinite(d)), f"non-finite gradient {d} at r={r}, t={t}"
+        assert d == [0.0, 0.0], f"saturated at {hi} but still has gradient {d}"
+
+    for r in (0.1, 1.0, 5.0, 50.0):
+        for t in (0.1, 1.0, 10.0):
+            assert float(WO.stress_concentration_kt(r, t)) >= lo
+
+
+def test_the_report_carries_both_junctions_and_the_headline_is_their_max(genes):
+    """Two junctions, two barriers — so two utilisations must be visible.
+
+    The headline `stress_utilisation` is `max(hub, rim)` for reporting only; the CONSTRAINT
+    sums a `soft_barrier` on each, because a hard max would zero the gradient of whichever
+    junction is not currently worst and reintroduce the argmax kink the p-norm exists to
+    blur.  If the report ever showed one number, a run could round the hub while the rim
+    was the binding one and nothing would say so.
     """
     phases = WO.phase_stencil(n_phase=1, scheme="uniform")
-    meshes = WO.phase_meshes(genes, CFG, phases)
-    v_free, _, brk = WO.objective(genes, CFG, phases=phases, meshes=meshes)
-    c = brk["report"]["stress_scale"]
-    assert brk["report"]["stress_scale_was_given"] is False
+    rep = WO.t3_terms(genes, CFG, phases=phases,
+                      meshes=WO.phase_meshes(genes, CFG, phases))["report"]
 
-    v_same, _, b2 = WO.objective(genes, CFG, phases=phases, meshes=meshes,
-                                 stress_scale=c)
-    assert b2["report"]["stress_scale_was_given"] is True
-    assert abs(v_same - v_free) < 1e-9, "freezing at the measured value changed it"
+    agg, allow = rep["pnorm_stress_agg_mpa"], WO.ALLOWABLE_STRESS_MPA
+    for j in ("hub", "rim"):
+        assert rep[f"stress_utilisation_{j}"] == pytest.approx(
+            rep[f"kt_{j}"] * agg / allow, rel=1e-12), (
+            f"the {j} utilisation is not Kt_{j} * sigma_nominal / ALLOWABLE")
+    assert rep["stress_utilisation"] == max(rep["stress_utilisation_hub"],
+                                            rep["stress_utilisation_rim"])
 
-    v_diff, _, _ = WO.objective(genes, CFG, phases=phases, meshes=meshes,
-                                stress_scale=c * 1.05)
-    assert abs(v_diff - v_free) > 1e-6, (
-        "stress_scale had no effect on the value, so it is not the factor the gradient "
-        "is assuming is constant")
+
+def test_the_stress_gradient_obeys_the_product_rule(genes, monkeypatch):
+    """`d(Kt*agg) = dKt*agg + Kt*dagg`, finite-differenced with the barrier FORCED ACTIVE.
+
+    THIS IS THE CHECK THAT M8b-i.6 step 2 LIVES OR DIES ON, and it has to be made here
+    rather than left to gate 7.  The new constraint puts the shipped design at utilisation
+    ~0.39, so `soft_barrier` is flat, `stress` and `d_stress` are both exactly zero, and a
+    completely wrong product rule would pass every end-to-end gate in the tree.  So the
+    allowable is dropped until the barrier is on the quadratic branch, which changes
+    nothing about the arithmetic being tested.
+
+    Genes 12 and 13 reach the stress term ONLY through `Kt`, so they isolate `dKt*agg`;
+    genes 8 and 11 reach it through both factors, so they are the ones that fail if the
+    two contributions are added wrongly.
+    """
+    monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)
+    phases = WO.phase_stencil(n_phase=1, scheme="uniform")
+    genes = np.asarray(genes, dtype=float)
+
+    def stress_at(g):
+        return WO.t3_terms(g, CFG, phases=phases,
+                           meshes=WO.phase_meshes(g, CFG, phases))["values"]["stress"]
+
+    out = WO.t3_terms(genes, CFG, phases=phases,
+                      meshes=WO.phase_meshes(genes, CFG, phases))
+    assert out["values"]["stress"] > 0.0, (
+        "the barrier is still flat even at a 2 MPa allowable, so this test is asserting "
+        "0 == 0 and would pass with any product rule at all")
+    grad = out["grads"]["stress"]
+
+    for gid in (8, 11, 12, 13):
+        best = min(
+            abs((stress_at(_bump(genes, gid, +h)) - stress_at(_bump(genes, gid, -h)))
+                / (2.0 * h) - grad[gid]) / max(abs(grad[gid]), 1e-12)
+            for h in (1e-3, 1e-4, 1e-5))
+        assert best < 1e-4, (
+            f"d(stress)/d({wg.GENE_NAMES[gid]}) is out by {best:.2e} on its whole FD "
+            f"ladder — the product rule dKt*agg + Kt*dagg is wrong")
+
+
+def _bump(genes, gid, h):
+    g = np.array(genes, dtype=float)
+    g[gid] += h
+    return g
 
 
 def test_the_phase_stencil_is_a_fixed_lattice(genes):
@@ -350,7 +473,6 @@ def test_the_phase_stencil_is_a_fixed_lattice(genes):
 def test_the_normalized_and_physical_gradients_are_one_chain_rule_apart(genes):
     """Stage 3 works in the unit box; `cy` spans 64 mm and `R_rim` 2.5, so a single
     learning rate in physical units is meaningless."""
-    import wheel_genome as wg
     low, high, rng = wg.bounds_arrays(W.GENE_SPACE)
     _, gp, _ = WO.objective(genes, CFG, tiers=("t1", "t2"))
     z = wg.normalize(genes, low, high)

@@ -2,7 +2,7 @@
 =============================================================================
   M4 GATE — FULL-WHEEL LINEAR FEA, AND THE TWO NUMBERS THAT DECIDE THE PROJECT
 =============================================================================
-    .venv-opt/bin/python study_wheel_fea.py
+    .venv-opt/bin/python studies/study_wheel_fea.py
 
 The plan calls this the hard gate: present its numbers before starting anything
 downstream, and if the elastic rim turns out not to matter, take the Stage 2.5
@@ -63,6 +63,8 @@ beam agreement of M3, and the exact equilibrium check are what stand in for it.
 import argparse
 import json
 import os
+
+import project_paths as PP
 import time
 
 import numpy as np
@@ -80,7 +82,7 @@ DEFAULT_PATCH_HALF_DEG = 3.0
 
 
 def load_genes(path="best_solution.json"):
-    with open(os.path.join(HERE, path)) as fh:
+    with open(os.path.join(PP.ROOT, path)) as fh:
         return wg.genes_to_vector(json.load(fh)["genes"])
 
 
@@ -438,7 +440,7 @@ def run_compliance_split(genes, cfg=DEFAULT_CONFIG, scales=(1.0, 3.0, 10.0, 1000
 def _manifest_mass(mesh_mass_g):
     """The shipped STEP's mass, if a manifest is on disk, and the gap to the mesh's."""
     try:
-        with open(os.path.join(HERE, "wheel_step_manifest.json")) as fh:
+        with open(os.path.join(PP.EXPORT, "wheel_step_manifest.json")) as fh:
             m = float(json.load(fh)["solid"]["mass_g_pla"])
     except (OSError, KeyError, ValueError):
         return {}

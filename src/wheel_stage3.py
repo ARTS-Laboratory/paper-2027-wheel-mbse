@@ -3,8 +3,8 @@
   STAGE 3 — PROJECTED ADAM ON THE FEA OBJECTIVE
 =============================================================================
 
-    .venv-opt/bin/python wheel_stage3.py --steps 60
-    .venv-opt/bin/python wheel_stage3.py --optimizer lbfgsb --phase-scheme uniform
+    .venv-opt/bin/python src/wheel_stage3.py --steps 60
+    .venv-opt/bin/python src/wheel_stage3.py --optimizer lbfgsb --phase-scheme uniform
 
 M8a built the scalar and proved its gradient (`wheel_objective.py`, eleven gates, total
 gradient against a finite-difference ladder of the whole pipeline at 1.0e-6).  This is
@@ -19,17 +19,22 @@ has the same failure signature if it is got wrong: the run does not crash, it co
 somewhere slightly wrong, and the report looks exactly like a hard design problem.  That
 is the failure mode this project keeps naming and keeps having to catch with a gate.
 
-1.  `stress_scale` IS REFRESHED BETWEEN STEPS AND HELD FIXED WITHIN ONE.
-    The stress term rescales a p-norm to the true max by a measured ratio, and that
-    rescale is exact only for a CONSTANT factor — the p-norm is positively homogeneous
-    of degree 1, so `c * pnorm` has gradient `c * d(pnorm)` if and only if `c` did not
-    move (`wheel_objective.py:487`).  M8a's gate 7 is the story: every individual term
-    agreed with its own finite difference to 1e-8 and the ASSEMBLED gradient was out by
-    1e-1, because `c` was being re-measured inside every call.  So each evaluation here
-    is handed a `c` measured at the PREVIOUS point.  Value and gradient at any one point
-    are then answers to the same question, which is the whole requirement, and `c`
-    still tracks the design.  This is ordinary adaptive constraint scaling; the only
-    unusual thing is that getting it wrong is invisible.
+1.  THE STRESS CONSTRAINT IS A PURE FUNCTION OF THE GENES, AND NOTHING IS FROZEN.
+    It used to rescale a p-norm to the true max by a measured ratio `c`, and because that
+    rescale is exact only for a CONSTANT factor, each evaluation had to be handed a `c`
+    measured at the PREVIOUS point — ordinary adaptive constraint scaling, whose only
+    unusual property was that getting it wrong was invisible.  M8a's gate 7 was the
+    story: every individual term agreed with its own finite difference to 1e-8 while the
+    ASSEMBLED gradient was out by 1e-1, purely because `c` moved inside the difference.
+
+    M8b-i.6 removed the need.  `c` is anchored to the true max, which is M4's crack-tip
+    singularity and diverges under mesh refinement, so the frozen number was a converged
+    answer to nothing; the constraint is now `Kt(R, t) * sigma_nominal(p=4)`, in which
+    both factors are mesh-convergent and `Kt` is differentiated rather than held still
+    (`wheel_objective.t3_terms`).  So there is no state to carry between steps, both legs
+    of every difference re-evaluate freely, and gate 7 tests the product rule instead of
+    the plumbing.  `stress_scale_measured` survives in the report as a diagnostic only —
+    it is the evidence for the change, not an input to anything.
 
 2.  THE PHASE STENCIL IS DRAWN FROM A FIXED LATTICE.
     `wheel_wheel.coord_fn` keys its jit cache on `float(phase)`, so a continuously
@@ -99,6 +104,8 @@ import argparse
 import json
 import math
 import os
+
+import project_paths as PP   # stdlib-only; safe in the jax-free CAD env
 import time
 
 import jax_config  # noqa: F401  — must precede every other jax import
@@ -110,7 +117,7 @@ import wheel_genome as wg
 import wheel_objective as WO
 import wheel_wheel as WW
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = PP.ROOT          # run outputs and the genome live at the repo root
 DEFAULT_CONFIG = "coarse"
 
 # ---------------------------------------------------------------------------
@@ -161,8 +168,9 @@ MAX_CONSECUTIVE_ABANDONED = 5   # ... and this many in a row ends the run, with 
 # Which `report` scalars are worth carrying into every step record.  Cheap, and they are
 # what a checkpoint is read for.
 REPORT_KEYS = ("axle_drop_mean_mm", "max_stress_mpa", "stress_utilisation",
+               "stress_utilisation_hub", "stress_utilisation_rim", "kt_hub", "kt_rim",
                "phase_ripple_std_over_mean", "mesh_mass_g", "min_scaled_jacobian",
-               "stress_scale", "stress_scale_measured", "buckling_ratio")
+               "stress_scale_measured", "buckling_ratio")
 
 
 # ---------------------------------------------------------------------------
@@ -264,10 +272,13 @@ def t1_barrier_sum(z, cfg, weights=None, span_mm=W.S):
 class Evaluator:
     """One `objective` call, with the five protocol decisions applied.
 
-    Holds only what must persist BETWEEN steps: the pinned orientation and the
-    `stress_scale` measured at the last point.  Everything that varies per call — the
-    iterate, the phases, the warm vector, the tiers — is an argument, which is what lets
-    the gate drive it directly and lets `_FaultyEvaluator` stand in for it.
+    Holds only what must persist BETWEEN steps: the pinned orientation.  Everything that
+    varies per call — the iterate, the phases, the warm vector, the tiers — is an
+    argument, which is what lets the gate drive it directly and lets `_FaultyEvaluator`
+    stand in for it.
+
+    It used to also carry a `stress_scale` refreshed between steps; docstring item 1 says
+    why that is gone and why nothing replaced it.
     """
 
     def __init__(self, cfg=DEFAULT_CONFIG, *, weights=None, orientation=None,
@@ -277,7 +288,6 @@ class Evaluator:
         self.span_mm = span_mm
         self.orientation = orientation
         self.problem_kw = problem_kw
-        self.stress_scale = None        # None == "measure it here", right for step 0 only
         self.n_calls = 0
         self.mesh_s = 0.0
         self.solve_s = 0.0
@@ -285,8 +295,7 @@ class Evaluator:
     def genes(self, z, low, high):
         return wg.denormalize(np.asarray(z, dtype=float), low, high)
 
-    def __call__(self, z, low, high, *, phases, warm=None, tiers=("t1", "t2", "t3"),
-                 refresh_scale=True):
+    def __call__(self, z, low, high, *, phases, warm=None, tiers=("t1", "t2", "t3")):
         """`(value, grad_z, breakdown)` at `z`, gradient in normalised units."""
         genes = self.genes(z, low, high)
 
@@ -301,14 +310,9 @@ class Evaluator:
         val, grad, brk = WO.objective(
             z, self.cfg, normalized=True, weights=self.weights, phases=phases,
             meshes=meshes, tiers=tiers, span_mm=self.span_mm,
-            stress_scale=self.stress_scale, warm=warm, **self.problem_kw)
+            warm=warm, **self.problem_kw)
         self.solve_s += time.time() - t0
         self.n_calls += 1
-
-        # Refreshed AFTER the call, never during it — see the module docstring.  The next
-        # evaluation is scored with the ratio measured at this one.
-        if refresh_scale and "stress_scale_measured" in brk.get("report", {}):
-            self.stress_scale = float(brk["report"]["stress_scale_measured"])
         return val, grad, brk
 
 
@@ -347,7 +351,7 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
     def _draw():
         return WO.phase_stencil(n_phase=n_phase, n_sub=n_sub, scheme=scheme, rng=rng)
 
-    # -- step 0: the starting point, scored.  `stress_scale` is None here and only here.
+    # -- step 0: the starting point, scored.
     phases = _draw()
     t0 = time.time()
     val, grad, brk = ev(z, low, high, phases=phases)

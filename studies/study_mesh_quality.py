@@ -33,7 +33,7 @@ does, the optimizer can be kept out of the folded region by an analytic barrier 
 one curvature evaluation, with no mesh in the loop — which is the cheapest possible
 form of the fix.
 
-    .venv-opt/bin/python study_mesh_quality.py --samples 2000
+    .venv-opt/bin/python studies/study_mesh_quality.py --samples 2000
 
 Writes `study_mesh_quality.json` and, with matplotlib available, a diagnostic figure.
 =============================================================================
@@ -42,6 +42,8 @@ Writes `study_mesh_quality.json` and, with matplotlib available, a diagnostic fi
 import argparse
 import json
 import os
+
+import project_paths as PP
 import time
 
 import numpy as np
@@ -247,7 +249,7 @@ def main():
 
     # Always include the shipped design, so a regression there can never be averaged
     # away by a couple of thousand random samples.
-    rec = GN.load_record(os.path.join(HERE, "best_solution.json"))
+    rec = GN.load_record(os.path.join(PP.ROOT, "best_solution.json"))
     shipped = GN.genes_to_vector(rec["genes"])
 
     cfg, rows = sweep(args.samples, args.config, args.seed, extra_vectors=[shipped])

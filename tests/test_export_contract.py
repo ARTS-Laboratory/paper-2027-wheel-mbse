@@ -33,7 +33,7 @@ def _strict(token):
 
 @pytest.fixture(scope="module")
 def manifest():
-    with open(os.path.join(HERE, "wheel_step_manifest.json")) as fh:
+    with open(os.path.join(HERE, "export", "wheel_step_manifest.json")) as fh:
         return json.load(fh, parse_constant=_strict)
 
 
@@ -103,6 +103,45 @@ def test_the_selected_corners_are_re_entrant(manifest):
         assert row["worst_wedge_deg"] > 180.0, row
 
 
+def test_the_exporter_and_the_constraint_price_the_same_kt(manifest):
+    """One formula, two interpreters, and now also two implementations.
+
+    The manifest's `kt_modeled` comes from `wheel_fea.stress_concentration_kt` in the CAD
+    env; the stress constraint prices `Kt` with `wheel_objective`'s jnp twin, because the
+    numpy original cannot be traced.  Since M8b-i.6 step 2 that factor IS the constraint —
+    `Kt(R, t) * sigma_nominal <= ALLOWABLE` — so a drift between the two would mean the
+    optimizer is descending on a concentration the exporter does not think the part has.
+
+    Checkable at all only because both sides are now one closed-form expression of the
+    genes.  The genome is pinned by hash, so this cannot pass by comparing the wrong
+    design to itself.
+    """
+    import numpy as np
+    import wheel_genome as wg
+    import wheel_objective as WO
+
+    with open(os.path.join(HERE, "best_solution.json")) as fh:
+        genes = json.load(fh)["genes"]
+    assert wg.genome_hash(genes).startswith(manifest["genome_hash"]), (
+        f"the manifest was exported from genome {manifest['genome_hash']} but "
+        f"best_solution.json now hashes to {wg.genome_hash(genes)}; re-export before "
+        f"reading anything else in this file")
+
+    for row, (r_gene, t_gene) in zip(manifest["fillets"]["detail"],
+                                     (("R_hub", "t0"), ("R_rim", "t3"))):
+        assert row["r_requested_mm"] == pytest.approx(genes[r_gene], rel=1e-12), (
+            f"{row['junction']}: the exporter requested {row['r_requested_mm']} but the "
+            f"gene says {genes[r_gene]}")
+        for label, radius, expect in (("modeled", row["r_requested_mm"], row["kt_modeled"]),
+                                      ("built", row["r_built_mm"], row["kt_built"])):
+            twin = float(WO.stress_concentration_kt(radius, genes[t_gene]))
+            assert twin == pytest.approx(expect, rel=1e-12), (
+                f"{row['junction']} kt_{label}: the exporter says {expect} and the "
+                f"constraint's jnp twin says {twin} — the two implementations of "
+                f"Kt = 1 + C*(t/2R)^0.65 have drifted")
+        assert np.isfinite(row["kt_error_pct"])
+
+
 def test_the_hub_junction_is_still_the_known_open_problem(manifest):
     """Pin the discrepancy so it cannot regress quietly, in EITHER direction.
 
@@ -110,17 +149,26 @@ def test_the_hub_junction_is_still_the_known_open_problem(manifest):
     spoke-to-spoke notch that OCC refuses at every radius down to
     `MIN_CURVATURE_RADIUS_MM`.  So the hub ships square and `kt_error_pct` is about +88%.
 
+    M8b-i.6 step 2 RAISED THE STAKES rather than closing this.  The constraint now prices
+    `Kt(R_hub, t0)` analytically and lets `R_hub` carry a gradient, so Stage 3 will pay for
+    a hub fillet in utilisation and then not get one: the as-built utilisation is
+    `kt_built/kt_modeled` times what the optimizer was told, i.e. about 1.88x.  That is a
+    geometry milestone of its own — the decision taken was to price `r_requested`, because
+    clamping to what OCC can build would pin `Kt_hub` at the constant 3.5 and kill the
+    gradient this whole change exists to create.
+
     If this test fails because the hub now takes a fillet, that is GOOD NEWS and the fix
-    is to update the expectation — but it must be noticed, because the as-built peak
-    stress it implies (25.1 -> ~47.2 MPa against a 25 MPa allowable) is the single
-    largest known error in the shipped part.
+    is to update the expectation — but it must be noticed.
     """
     hub = next(r for r in manifest["fillets"]["detail"] if r["junction"] == "hub")
     assert hub["r_built_mm"] == 0.0, (
         f"the hub junction now builds a {hub['r_built_mm']:.3f} mm fillet — the open "
         f"discrepancy in CLAUDE.md is fixed and this test should say so")
     assert hub["worst_wedge_deg"] > 350.0, hub
-    assert hub["kt_error_pct"] > 50.0, hub
+    assert hub["kt_error_pct"] > 50.0, (
+        f"{hub}\nthe as-built hub utilisation is "
+        f"{hub['kt_built'] / hub['kt_modeled']:.2f}x whatever the constraint reports, "
+        f"because the constraint prices the fillet the exporter could not build")
 
 
 # ---------------------------------------------------------------------------
@@ -171,8 +219,13 @@ def test_the_wedge_classifier_agrees_with_an_independent_probe():
     re-entrant notches, and every downstream count and radius would still look sane —
     the manifest tests above cannot tell the difference.
     """
-    proc = subprocess.run([CAD_PY, "-c", _CAD_CROSS_CHECK], cwd=HERE,
-                          capture_output=True, text=True, timeout=900)
+    # cwd is the ROOT, because the snippet opens `best_solution.json` relatively; `src/` is
+    # handed over explicitly rather than inherited, so this passes under a bare `pytest`
+    # that never loaded conftest.py as well as under `make test`.
+    proc = subprocess.run(
+        [CAD_PY, "-c", _CAD_CROSS_CHECK], cwd=HERE,
+        env={**os.environ, "PYTHONPATH": os.path.join(HERE, "src")},
+        capture_output=True, text=True, timeout=900)
     assert proc.returncode == 0, proc.stderr[-3000:]
     line = next(ln for ln in proc.stdout.splitlines() if ln.startswith("RESULT:"))
     rows = json.loads(line[len("RESULT:"):])

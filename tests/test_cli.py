@@ -25,7 +25,8 @@ TINY = ["--smoke", "--generations", "2", "--pop", "8"]
 def _run(tmp_path, name, *extra):
     out = tmp_path / name
     proc = subprocess.run(
-        [sys.executable, "wheel_fea.py", *TINY, "--out", str(out), *extra],
+        [sys.executable, os.path.join(HERE, "src", "wheel_fea.py"),
+         *TINY, "--out", str(out), *extra],
         cwd=HERE, capture_output=True, text=True, timeout=300,
     )
     assert proc.returncode == 0, f"run failed:\n{proc.stdout[-3000:]}\n{proc.stderr[-3000:]}"
@@ -58,8 +59,12 @@ def test_smoke_does_not_touch_real_artifacts(tmp_path):
     running it after a smoke run would rebuild the STEP from the PREVIOUS real genome
     with a fresh mtime — destroying the staleness signal warn_if_stale() exists to give.
     """
-    targets = ["best_solution.json", "wheel.step", "wheel_step_manifest.json",
-               "poster_summary.jpg", "wheel_nofillet.step"]
+    # Paths, not bare names: the STEP artifacts moved to export/ while the genome and
+    # its poster stay at the root, beside each other.
+    targets = ["best_solution.json", "poster_summary.jpg",
+               os.path.join("export", "wheel.step"),
+               os.path.join("export", "wheel_step_manifest.json"),
+               os.path.join("export", "wheel_nofillet.step")]
     before = {t: os.path.getmtime(os.path.join(HERE, t)) for t in targets
               if os.path.exists(os.path.join(HERE, t))}
     assert before, "no real artifacts on disk to protect — check the repo state"
@@ -98,7 +103,7 @@ def test_out_of_tree_run_writes_nothing_into_the_repo(tmp_path):
 def test_smoke_redirects_default_output():
     """Without --out, --smoke must retarget itself away from best_solution.json."""
     proc = subprocess.run(
-        [sys.executable, "wheel_fea.py", *TINY],
+        [sys.executable, os.path.join(HERE, "src", "wheel_fea.py"), *TINY],
         cwd=HERE, capture_output=True, text=True, timeout=300,
     )
     assert proc.returncode == 0, proc.stderr[-2000:]

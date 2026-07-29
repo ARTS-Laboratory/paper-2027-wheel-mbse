@@ -11,7 +11,7 @@ Fusion 360 / Inventor / SolidWorks.
   spoke↔rim junctions (radii = evolved R_hub / R_rim genes).
 
 RUN THIS IN THE CadQuery ENV (Python 3.12), e.g.:
-    .venv-cad\\Scripts\\python wheel_step_export.py
+    .venv-cad\\Scripts\\python src\\wheel_step_export.py
 
 It reads `best_solution.json`, produced by running `wheel_fea.py` on the optimizer
 (Python 3.14).  The two interpreters share only that JSON file.
@@ -32,6 +32,8 @@ reading — they do not currently agree (see `kt_report`).
 import os
 import sys
 import json
+
+import project_paths as PP   # stdlib-only; safe in the jax-free CAD env
 import math
 import time
 import hashlib
@@ -72,6 +74,8 @@ from wheel_fea import (
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = PP.ROOT
+EXPORT = PP.EXPORT
 
 # --- User-decided solid parameters -----------------------------------------
 RIM_OUTER_RADIUS_MM = 50.0     # Ø100 outer rim; spokes merge at RIM_RADIUS_MM (Ø97.8)
@@ -143,7 +147,7 @@ def genome_hash(genes):
 
 
 def load_genome(path=None):
-    path = path or os.path.join(HERE, "best_solution.json")
+    path = path or PP.BEST_SOLUTION
     with open(path) as fh:
         rec = json.load(fh)
     rec["_source_path"] = path
@@ -157,7 +161,7 @@ def warn_if_stale(rec):
     than `best_solution.json` and nothing said so, so the STEP silently described a
     previous genome while poster_summary.jpg showed the current one.  Running the
     exporter clears this; the warning exists for when it is run standalone."""
-    step_path = os.path.join(HERE, "wheel.step")
+    step_path = os.path.join(EXPORT, "wheel.step")
     if not os.path.exists(step_path):
         return
     step_mtime = os.path.getmtime(step_path)
@@ -922,7 +926,7 @@ def main():
     profile, (hub_ovl, rim_ovl) = build_profile(genes)
 
     # Guaranteed-valid fallback, written before any fillet can complicate it.
-    nofillet_path = os.path.join(HERE, "wheel_nofillet.step")
+    nofillet_path = os.path.join(EXPORT, "wheel_nofillet.step")
     _export_with_settings(despecialize(extrude_profile(profile)), nofillet_path)
     print(f"  Saved fallback   → {nofillet_path}")
 
@@ -960,7 +964,7 @@ def main():
     wheel_out = despecialize(wheel)
     health = step_health(wheel_out, "wheel.step")
 
-    step_path = os.path.join(HERE, "wheel.step")
+    step_path = os.path.join(EXPORT, "wheel.step")
     _export_with_settings(wheel_out, step_path)
     print(f"\n  Saved STEP       → {step_path}")
 
@@ -983,7 +987,7 @@ def main():
         "profile_health": prof_health,
         "step_health": health,
     }
-    manifest_path = os.path.join(HERE, "wheel_step_manifest.json")
+    manifest_path = os.path.join(EXPORT, "wheel_step_manifest.json")
     with open(manifest_path, "w") as fh:
         json.dump(manifest, fh, indent=2)
     print(f"  Saved manifest   → {manifest_path}")

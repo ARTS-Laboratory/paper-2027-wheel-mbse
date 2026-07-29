@@ -36,7 +36,7 @@ def _import_in_subprocess(module, forbidden):
         f"leaked = [m for m in {forbidden!r} if m in sys.modules]\n"
         "print('LEAKED:' + ','.join(leaked))\n"
     )
-    return subprocess.run([sys.executable, "-c", code], cwd=HERE,
+    return subprocess.run([sys.executable, "-c", code], cwd=os.path.join(HERE, "src"),
                           capture_output=True, text=True)
 
 

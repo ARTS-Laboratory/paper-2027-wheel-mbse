@@ -1,0 +1,2921 @@
+{
+ "mesh_convergence": {
+  "configs": [
+   "smoke",
+   "coarse",
+   "medium"
+  ],
+  "n_phase": 4,
+  "scheme": "uniform",
+  "probe_p": [
+   1.0,
+   2.0,
+   3.0,
+   4.0,
+   6.0,
+   8.0,
+   12.0,
+   16.0,
+   24.0,
+   30.0
+  ],
+  "gate_ladder_gci": 0.05,
+  "allowable_stress_mpa": 25.0,
+  "designs": [
+   {
+    "label": "best_solution",
+    "rows": [
+     {
+      "config": "smoke",
+      "n_elements": 960,
+      "loss": 187.47460874414045,
+      "max_stress_mpa": 31.020117997930765,
+      "pnorm_stress_agg_mpa": 5.2965471581742625,
+      "stress_scale_measured": 5.499442063416176,
+      "kt_hub": 1.8608661732283212,
+      "kt_rim": 1.4896335682000246,
+      "stress_utilisation": 0.3942466176622032,
+      "stress_utilisation_hub": 0.3942466176622032,
+      "stress_utilisation_rim": 0.31559657769483307,
+      "axle_drop_mean_mm": 1.452314530053403,
+      "defl_err": -0.2738427349732985,
+      "stress_gauss_p": 4.0,
+      "pnorm_by_p": {
+       "1.0": {
+        "p": 1.0,
+        "pnorm_agg_mpa": 1.3559612697628902,
+        "stress_scale_measured": 20.980591065601104,
+        "stress_utilisation": 1.137954756067537,
+        "stress_utilisation_kt": 0.1009304983643794,
+        "pnorm_stress_mpa": [
+         1.172170618847305,
+         1.123688380741011,
+         1.1063397439113578,
+         1.1508852119831225
+        ]
+       },
+       "2.0": {
+        "p": 2.0,
+        "pnorm_agg_mpa": 2.413603341919043,
+        "stress_scale_measured": 11.78635177768934,
+        "stress_utilisation": 1.1379031215865778,
+        "stress_utilisation_kt": 0.17965571258271906,
+        "pnorm_stress_mpa": [
+         2.1251669476552464,
+         2.017657211183155,
+         1.9488908585403097,
+         1.9969127152468809
+        ]
+       },
+       "3.0": {
+        "p": 3.0,
+        "pnorm_agg_mpa": 3.7838188105276327,
+        "stress_scale_measured": 7.574930100105159,
+        "stress_utilisation": 1.1464865200483947,
+        "stress_utilisation_kt": 0.28164721720543573,
+        "pnorm_stress_mpa": [
+         3.440203679062316,
+         3.166534546577633,
+         2.9485550926852895,
+         3.0010012880561563
+        ]
+       },
+       "4.0": {
+        "p": 4.0,
+        "pnorm_agg_mpa": 5.2965471581742625,
+        "stress_scale_measured": 5.499442063416176,
+        "stress_utilisation": 1.165122169301238,
+        "stress_utilisation_kt": 0.3942466176622032,
+        "pnorm_stress_mpa": [
+         4.942503140244012,
+         4.389755962800703,
+         3.945939968065077,
+         4.008007992583034
+        ]
+       },
+       "6.0": {
+        "p": 6.0,
+        "pnorm_agg_mpa": 8.320407905692115,
+        "stress_scale_measured": 3.626534231075923,
+        "stress_utilisation": 1.2069697634602874,
+        "stress_utilisation_kt": 0.6193266247665582,
+        "pnorm_stress_mpa": [
+         7.973683650769758,
+         6.700024799720011,
+         5.755786668402025,
+         5.845719428982215
+        ]
+       },
+       "8.0": {
+        "p": 8.0,
+        "pnorm_agg_mpa": 11.002997092162301,
+        "stress_scale_measured": 2.8035531686704296,
+        "stress_utilisation": 1.2338994945041257,
+        "stress_utilisation_kt": 0.8190042037173763,
+        "pnorm_stress_mpa": [
+         10.649056537412042,
+         8.669063562383881,
+         7.319996367135195,
+         7.431442992974266
+        ]
+       },
+       "12.0": {
+        "p": 12.0,
+        "pnorm_agg_mpa": 15.101142923190954,
+        "stress_scale_measured": 2.075634130194064,
+        "stress_utilisation": 1.253777906252548,
+        "stress_utilisation_kt": 1.1240482417140918,
+        "pnorm_stress_mpa": [
+         14.707369762712984,
+         11.621993907505447,
+         9.83456131515295,
+         9.935049819326355
+        ]
+       },
+       "16.0": {
+        "p": 16.0,
+        "pnorm_agg_mpa": 17.931817411933178,
+        "stress_scale_measured": 1.7544905675264886,
+        "stress_utilisation": 1.2584481803137606,
+        "stress_utilisation_kt": 1.3347484978549229,
+        "pnorm_stress_mpa": [
+         17.49735338440728,
+         13.641966663975772,
+         11.673527492811752,
+         11.737614011275621
+        ]
+       },
+       "24.0": {
+        "p": 24.0,
+        "pnorm_agg_mpa": 21.493348779480527,
+        "stress_scale_measured": 1.4664497261366416,
+        "stress_utilisation": 1.2607566172571416,
+        "stress_utilisation_kt": 1.5998498277253415,
+        "pnorm_stress_mpa": [
+         20.999815367836106,
+         16.181419113246218,
+         14.029953719013383,
+         14.05445579978172
+        ]
+       },
+       "30.0": {
+        "p": 30.0,
+        "pnorm_agg_mpa": 23.173376264778984,
+        "stress_scale_measured": 1.361114132208459,
+        "stress_utilisation": 1.2616643969989898,
+        "stress_utilisation_kt": 1.724902080424771,
+        "pnorm_stress_mpa": [
+         22.650762001749648,
+         17.38574572937975,
+         15.1310811776791,
+         15.150745177186923
+        ]
+       }
+      },
+      "seconds": 81.0
+     },
+     {
+      "config": "coarse",
+      "n_elements": 4704,
+      "loss": 161.67546589134028,
+      "max_stress_mpa": 41.539251686364295,
+      "pnorm_stress_agg_mpa": 5.459115394774972,
+      "stress_scale_measured": 7.4225447698700115,
+      "kt_hub": 1.8608661732283212,
+      "kt_rim": 1.4896335682000246,
+      "stress_utilisation": 0.4063473269554687,
+      "stress_utilisation_hub": 0.4063473269554687,
+      "stress_utilisation_rim": 0.3252832617893731,
+      "axle_drop_mean_mm": 1.4913933293534734,
+      "defl_err": -0.2543033353232633,
+      "stress_gauss_p": 4.0,
+      "pnorm_by_p": {
+       "1.0": {
+        "p": 1.0,
+        "pnorm_agg_mpa": 1.3696059891678878,
+        "stress_scale_measured": 28.769098780074344,
+        "stress_utilisation": 1.5760931996860958,
+        "stress_utilisation_kt": 0.10194613823573746,
+        "pnorm_stress_mpa": [
+         1.1841701637919866,
+         1.137131548890316,
+         1.1159046078714654,
+         1.1615967633590822
+        ]
+       },
+       "2.0": {
+        "p": 2.0,
+        "pnorm_agg_mpa": 2.4455450804480514,
+        "stress_scale_measured": 16.118262823305255,
+        "stress_utilisation": 1.5767175341161155,
+        "stress_utilisation_kt": 0.1820332846124285,
+        "pnorm_stress_mpa": [
+         2.1558125739912417,
+         2.044034830825243,
+         1.971296401448711,
+         2.022612061636902
+        ]
+       },
+       "3.0": {
+        "p": 3.0,
+        "pnorm_agg_mpa": 3.8589614913303647,
+        "stress_scale_measured": 10.307787139418043,
+        "stress_utilisation": 1.5910941452737841,
+        "stress_utilisation_kt": 0.28724043612029565,
+        "pnorm_stress_mpa": [
+         3.5200073296720795,
+         3.215637456384687,
+         2.9960535664150933,
+         3.0597942096045334
+        ]
+       },
+       "4.0": {
+        "p": 4.0,
+        "pnorm_agg_mpa": 5.459115394774972,
+        "stress_scale_measured": 7.4225447698700115,
+        "stress_utilisation": 1.6208211368641534,
+        "stress_utilisation_kt": 0.4063473269554687,
+        "pnorm_stress_mpa": [
+         5.117996810690817,
+         4.479634636787968,
+         4.043056520406385,
+         4.129142251832584
+        ]
+       },
+       "6.0": {
+        "p": 6.0,
+        "pnorm_agg_mpa": 8.827525630917009,
+        "stress_scale_measured": 4.760860714913951,
+        "stress_utilisation": 1.681064799445151,
+        "stress_utilisation_kt": 0.6570737535951783,
+        "pnorm_stress_mpa": [
+         8.4969392910217,
+         6.960734685379549,
+         6.11834547608101,
+         6.215627731915056
+        ]
+       },
+       "8.0": {
+        "p": 8.0,
+        "pnorm_agg_mpa": 12.078336979795921,
+        "stress_scale_measured": 3.536549571163967,
+        "stress_utilisation": 1.7086254986508462,
+        "stress_utilisation_kt": 0.8990467485821982,
+        "pnorm_stress_mpa": [
+         11.718829259301797,
+         9.27688598279023,
+         8.266706966712922,
+         8.207924008223573
+        ]
+       },
+       "12.0": {
+        "p": 12.0,
+        "pnorm_agg_mpa": 17.62637583076089,
+        "stress_scale_measured": 2.434231145858276,
+        "stress_utilisation": 1.7162669214336683,
+        "stress_utilisation_kt": 1.3120130616028873,
+        "pnorm_stress_mpa": [
+         17.13967498218875,
+         13.339906725745605,
+         12.284489025335057,
+         11.688868911208818
+        ]
+       },
+       "16.0": {
+        "p": 16.0,
+        "pnorm_agg_mpa": 21.795498289792338,
+        "stress_scale_measured": 1.96703446825948,
+        "stress_utilisation": 1.714899855556483,
+        "stress_utilisation_kt": 1.6223402198452115,
+        "pnorm_stress_mpa": [
+         21.18429078905394,
+         16.50308549099238,
+         15.328026880508094,
+         14.366790279447606
+        ]
+       },
+       "24.0": {
+        "p": 24.0,
+        "pnorm_agg_mpa": 27.218870132440983,
+        "stress_scale_measured": 1.573606683611122,
+        "stress_utilisation": 1.713271838430091,
+        "stress_utilisation_kt": 2.026026988118164,
+        "pnorm_stress_mpa": [
+         26.441526952780734,
+         20.65486931034232,
+         19.223523163445037,
+         17.90333841700911
+        ]
+       },
+       "30.0": {
+        "p": 30.0,
+        "pnorm_agg_mpa": 29.788776571135173,
+        "stress_scale_measured": 1.437469470080527,
+        "stress_utilisation": 1.7128182748822758,
+        "stress_utilisation_kt": 2.2173170665232713,
+        "pnorm_stress_mpa": [
+         28.933872243193292,
+         22.620393792678914,
+         21.054852367269966,
+         19.588721939365758
+        ]
+       }
+      },
+      "seconds": 141.1
+     },
+     {
+      "config": "medium",
+      "n_elements": 12288,
+      "loss": 157.12489502273888,
+      "max_stress_mpa": 48.465340714258225,
+      "pnorm_stress_agg_mpa": 5.507016853950581,
+      "stress_scale_measured": 9.059158750900535,
+      "kt_hub": 1.8608661732283212,
+      "kt_rim": 1.4896335682000246,
+      "stress_utilisation": 0.4099128551565954,
+      "stress_utilisation_hub": 0.4099128551565954,
+      "stress_utilisation_rim": 0.3281374866515231,
+      "axle_drop_mean_mm": 1.4986021220264467,
+      "defl_err": -0.25069893898677664,
+      "stress_gauss_p": 4.0,
+      "pnorm_by_p": {
+       "1.0": {
+        "p": 1.0,
+        "pnorm_agg_mpa": 1.3728961440105816,
+        "stress_scale_measured": 35.27408344289959,
+        "stress_utilisation": 1.937106125690574,
+        "stress_utilisation_kt": 0.10219103974979556,
+        "pnorm_stress_mpa": [
+         1.1871147843996537,
+         1.1400410159198704,
+         1.118173984839973,
+         1.1644297786357418
+        ]
+       },
+       "2.0": {
+        "p": 2.0,
+        "pnorm_agg_mpa": 2.4515753620930525,
+        "stress_scale_measured": 19.764641873040595,
+        "stress_utilisation": 1.93818036226156,
+        "stress_utilisation_kt": 0.18248214649755737,
+        "pnorm_stress_mpa": [
+         2.16168927872719,
+         2.048400349963554,
+         1.9755418328604213,
+         2.0279610402798567
+        ]
+       },
+       "3.0": {
+        "p": 3.0,
+        "pnorm_agg_mpa": 3.8752262027376996,
+        "stress_scale_measured": 12.627374774759243,
+        "stress_utilisation": 1.9573573439574432,
+        "stress_utilisation_kt": 0.2884510941713048,
+        "pnorm_stress_mpa": [
+         3.536882831557073,
+         3.2253420092843608,
+         3.0072134913327386,
+         3.0739306372391297
+        ]
+       },
+       "4.0": {
+        "p": 4.0,
+        "pnorm_agg_mpa": 5.507016853950581,
+        "stress_scale_measured": 9.059158750900535,
+        "stress_utilisation": 1.9955575969529251,
+        "stress_utilisation_kt": 0.4099128551565954,
+        "pnorm_stress_mpa": [
+         5.166554899710943,
+         4.507940276917424,
+         4.078912231868702,
+         4.167890205894198
+        ]
+       },
+       "6.0": {
+        "p": 6.0,
+        "pnorm_agg_mpa": 9.083335619585739,
+        "stress_scale_measured": 5.677885735271023,
+        "stress_utilisation": 2.062965669725002,
+        "stress_utilisation_kt": 0.6761148797826806,
+        "pnorm_stress_mpa": [
+         8.733813347598607,
+         7.1542281968072565,
+         6.391185694236063,
+         6.406689642593737
+        ]
+       },
+       "8.0": {
+        "p": 8.0,
+        "pnorm_agg_mpa": 12.797460607465618,
+        "stress_scale_measured": 4.055187344265403,
+        "stress_utilisation": 2.0758440117651844,
+        "stress_utilisation_kt": 0.9525744619061892,
+        "pnorm_stress_mpa": [
+         12.348086404525263,
+         9.95845613687112,
+         9.146547294354034,
+         8.71322218058141
+        ]
+       },
+       "12.0": {
+        "p": 12.0,
+        "pnorm_agg_mpa": 19.549907839494498,
+        "stress_scale_measured": 2.640320289120816,
+        "stress_utilisation": 2.064720732762377,
+        "stress_utilisation_kt": 1.4551904875298591,
+        "pnorm_stress_mpa": [
+         18.76079763028399,
+         15.46141269660684,
+         14.494407801183662,
+         12.922782080133494
+        ]
+       },
+       "16.0": {
+        "p": 16.0,
+        "pnorm_agg_mpa": 24.702455583194286,
+        "stress_scale_measured": 2.0837852731846693,
+        "stress_utilisation": 2.0589845262303466,
+        "stress_utilisation_kt": 1.838718559617653,
+        "pnorm_stress_mpa": [
+         23.61295117371358,
+         19.77055472562057,
+         18.54790124922624,
+         16.15972067676017
+        ]
+       },
+       "24.0": {
+        "p": 24.0,
+        "pnorm_agg_mpa": 31.415817385455462,
+        "stress_scale_measured": 1.6346561602686764,
+        "stress_utilisation": 2.0541623767604222,
+        "stress_utilisation_kt": 2.3384252750764905,
+        "pnorm_stress_mpa": [
+         29.923874615533528,
+         25.384452727601655,
+         23.809186789100583,
+         20.422493508829877
+        ]
+       },
+       "30.0": {
+        "p": 30.0,
+        "pnorm_agg_mpa": 34.61927129167558,
+        "stress_scale_measured": 1.4821749596883946,
+        "stress_utilisation": 2.052472681247234,
+        "stress_utilisation_kt": 2.5768732355397366,
+        "pnorm_stress_mpa": [
+         32.93354228540435,
+         28.059313850752424,
+         26.317496049759498,
+         22.467430069894217
+        ]
+       }
+      },
+      "seconds": 255.1
+     }
+    ],
+    "n_ok": 3,
+    "series": {
+     "max": {
+      "values": [
+       31.020117997930765,
+       41.539251686364295,
+       48.465340714258225
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.16673600863559823,
+      "total_rel_change": 0.5623841507466596,
+      "direction": "rising",
+      "ratio": 1.5187696326265916,
+      "richardson": 61.816332353507285,
+      "finest_error_vs_richardson": 0.21597838517657642,
+      "gci": 0.3443437991585519,
+      "settling": true,
+      "converged": false
+     },
+     "pnorm": {
+      "values": [
+       5.2965471581742625,
+       5.459115394774972,
+       5.507016853950581
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.008774582640523665,
+      "total_rel_change": 0.03973715129704769,
+      "direction": "rising",
+      "ratio": 3.3938055207197335,
+      "richardson": 5.5270274432657915,
+      "finest_error_vs_richardson": 0.003620497549653434,
+      "gci": 0.004542066477619431,
+      "settling": true,
+      "converged": true
+     },
+     "c": {
+      "values": [
+       5.499442063416176,
+       7.4225447698700115,
+       9.059158750900535
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.22049230173376033,
+      "total_rel_change": 0.6472868786389421,
+      "direction": "rising",
+      "ratio": 1.1750496627451026,
+      "richardson": 18.408585395690295,
+      "finest_error_vs_richardson": 0.5078840358357243,
+      "gci": 1.2900517175312178,
+      "settling": true,
+      "converged": false
+     },
+     "util": {
+      "values": [
+       0.3942466176622032,
+       0.4063473269554687,
+       0.4099128551565954
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.008774582640523887,
+      "total_rel_change": 0.03973715129704747,
+      "direction": "rising",
+      "ratio": 3.3938055207196713,
+      "richardson": 0.4114023363071171,
+      "finest_error_vs_richardson": 0.003620497549653545,
+      "gci": 0.004542066477619607,
+      "settling": true,
+      "converged": true
+     },
+     "drop": {
+      "values": [
+       1.452314530053403,
+       1.4913933293534734,
+       1.4986021220264467
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.004833595893913856,
+      "total_rel_change": 0.03187160288986557,
+      "direction": "rising",
+      "ratio": 5.420990875015931,
+      "richardson": 1.5002327050511057,
+      "finest_error_vs_richardson": 0.0010868867337506805,
+      "gci": 0.001360086677354774,
+      "settling": true,
+      "converged": true
+     }
+    },
+    "series_by_p": {
+     "1.0": {
+      "p": 1.0,
+      "pnorm": {
+       "values": [
+        1.3559612697628902,
+        1.3696059891678878,
+        1.3728961440105816
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0024022637668901226,
+       "total_rel_change": 0.01248920203351589,
+       "direction": "rising",
+       "ratio": 4.147135942643367,
+       "richardson": 1.3739415881549264,
+       "finest_error_vs_richardson": 0.000760908726657572,
+       "gci": 0.0009518601870448696,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        20.980591065601104,
+        28.769098780074344,
+        35.27408344289959
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.22611012991935064,
+       "total_rel_change": 0.6812721497028507,
+       "direction": "rising",
+       "ratio": 1.1973137706201042,
+       "richardson": 68.24180101467283,
+       "finest_error_vs_richardson": 0.4831015166889393,
+       "gci": 1.1682698157536886,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.137954756067537,
+        1.5760931996860958,
+        1.937106125690574
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.22905556985867315,
+       "total_rel_change": 0.7022698972538131,
+       "direction": "rising",
+       "ratio": 1.213636443624526,
+       "richardson": 3.626953231734765,
+       "finest_error_vs_richardson": 0.4659136741159302,
+       "gci": 1.0904456160357272,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.1009304983643794,
+        0.10194613823573746,
+        0.10219103974979556
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0024022637668901226,
+       "total_rel_change": 0.012489202033515667,
+       "direction": "rising",
+       "ratio": 4.147135942643239,
+       "richardson": 0.102268857015564,
+       "finest_error_vs_richardson": 0.000760908726657572,
+       "gci": 0.0009518601870449253,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "2.0": {
+      "p": 2.0,
+      "pnorm": {
+       "values": [
+        2.413603341919043,
+        2.4455450804480514,
+        2.4515753620930525
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.002465823138249501,
+       "total_rel_change": 0.015732502319050434,
+       "direction": "rising",
+       "ratio": 5.296889997747805,
+       "richardson": 2.4529787681956434,
+       "finest_error_vs_richardson": 0.0005721232163877765,
+       "gci": 0.0007155634109248497,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        11.78635177768934,
+        16.118262823305255,
+        19.764641873040595
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.226226553674449,
+       "total_rel_change": 0.6769092120984839,
+       "direction": "rising",
+       "ratio": 1.1880034923770009,
+       "richardson": 39.159914820541516,
+       "finest_error_vs_richardson": 0.495283839006898,
+       "gci": 1.2266395384297664,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.1379031215865778,
+        1.5767175341161155,
+        1.93818036226156
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.22925021148323532,
+       "total_rel_change": 0.7032911901666603,
+       "direction": "rising",
+       "ratio": 1.2139959585359315,
+       "richardson": 3.627290897892318,
+       "finest_error_vs_richardson": 0.4656672384925721,
+       "gci": 1.0893661965880101,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.17965571258271906,
+        0.1820332846124285,
+        0.18248214649755737
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.002465823138249501,
+       "total_rel_change": 0.015732502319050434,
+       "direction": "rising",
+       "ratio": 5.296889997747863,
+       "richardson": 0.1825866085353019,
+       "finest_error_vs_richardson": 0.0005721232163876655,
+       "gci": 0.0007155634109248336,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "3.0": {
+      "p": 3.0,
+      "pnorm": {
+       "values": [
+        3.7838188105276327,
+        3.8589614913303647,
+        3.8752262027376996
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0042147897676292345,
+       "total_rel_change": 0.024157444314126808,
+       "direction": "rising",
+       "ratio": 4.6199824221194,
+       "richardson": 3.879719238755762,
+       "finest_error_vs_richardson": 0.0011580827739234856,
+       "gci": 0.0014492818557559758,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        7.574930100105159,
+        10.307787139418043,
+        12.627374774759243
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.22503255101872033,
+       "total_rel_change": 0.6669955508347125,
+       "direction": "rising",
+       "ratio": 1.1781650314371044,
+       "richardson": 25.646695213967085,
+       "finest_error_vs_richardson": 0.5076412508742091,
+       "gci": 1.2887992032627453,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.1464865200483947,
+        1.5910941452737841,
+        1.9573573439574432
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.23019580567976705,
+       "total_rel_change": 0.7072659030258992,
+       "direction": "rising",
+       "ratio": 1.2139019885789735,
+       "richardson": 3.6696518444287807,
+       "finest_error_vs_richardson": 0.4666095240263518,
+       "gci": 1.0934989117836358,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.28164721720543573,
+        0.28724043612029565,
+        0.2884510941713048
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0042147897676292345,
+       "total_rel_change": 0.024157444314126808,
+       "direction": "rising",
+       "ratio": 4.619982422119575,
+       "richardson": 0.2887855317209491,
+       "finest_error_vs_richardson": 0.0011580827739232635,
+       "gci": 0.00144928185575586,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "4.0": {
+      "p": 4.0,
+      "pnorm": {
+       "values": [
+        5.2965471581742625,
+        5.459115394774972,
+        5.507016853950581
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.008774582640523665,
+       "total_rel_change": 0.03973715129704769,
+       "direction": "rising",
+       "ratio": 3.3938055207197335,
+       "richardson": 5.5270274432657915,
+       "finest_error_vs_richardson": 0.003620497549653434,
+       "gci": 0.004542066477619431,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        5.499442063416176,
+        7.4225447698700115,
+        9.059158750900535
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.22049230173376033,
+       "total_rel_change": 0.6472868786389421,
+       "direction": "rising",
+       "ratio": 1.1750496627451026,
+       "richardson": 18.408585395690295,
+       "finest_error_vs_richardson": 0.5078840358357243,
+       "gci": 1.2900517175312178,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.165122169301238,
+        1.6208211368641534,
+        1.9955575969529251
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.23120161229744607,
+       "total_rel_change": 0.7127453665650587,
+       "direction": "rising",
+       "ratio": 1.2160518553624713,
+       "richardson": 3.7300322186129633,
+       "finest_error_vs_richardson": 0.4650025844294219,
+       "gci": 1.086459884889102,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.3942466176622032,
+        0.4063473269554687,
+        0.4099128551565954
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.008774582640523887,
+       "total_rel_change": 0.03973715129704747,
+       "direction": "rising",
+       "ratio": 3.3938055207196713,
+       "richardson": 0.4114023363071171,
+       "finest_error_vs_richardson": 0.003620497549653545,
+       "gci": 0.004542066477619607,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "6.0": {
+      "p": 6.0,
+      "pnorm": {
+       "values": [
+        8.320407905692115,
+        8.827525630917009,
+        9.083335619585739
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.028978674134096716,
+       "total_rel_change": 0.09169354706416422,
+       "direction": "rising",
+       "ratio": 1.9824000144169651,
+       "richardson": 9.343728519539582,
+       "finest_error_vs_richardson": 0.027868200516454333,
+       "gci": 0.03583387629545143,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        3.626534231075923,
+        4.760860714913951,
+        5.677885735271023
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.19261748563329806,
+       "total_rel_change": 0.5656506663075127,
+       "direction": "rising",
+       "ratio": 1.236963505528283,
+       "richardson": 9.547785525589658,
+       "finest_error_vs_richardson": 0.4053190951919331,
+       "gci": 0.8519676096770538,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.2069697634602874,
+        1.681064799445151,
+        2.062965669725002
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2271779591160914,
+       "total_rel_change": 0.709210729364621,
+       "direction": "rising",
+       "ratio": 1.241408629515441,
+       "richardson": 3.6449342639977416,
+       "finest_error_vs_richardson": 0.43401841561269927,
+       "gci": 0.958552423756293,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.6193266247665582,
+        0.6570737535951783,
+        0.6761148797826806
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.028978674134096494,
+       "total_rel_change": 0.09169354706416422,
+       "direction": "rising",
+       "ratio": 1.982400014416978,
+       "richardson": 0.6954971333535975,
+       "finest_error_vs_richardson": 0.02786820051645389,
+       "gci": 0.03583387629545078,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "8.0": {
+      "p": 8.0,
+      "pnorm": {
+       "values": [
+        11.002997092162301,
+        12.078336979795921,
+        12.797460607465618
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.05953829810118849,
+       "total_rel_change": 0.16308861124589003,
+       "direction": "rising",
+       "ratio": 1.4953477347396198,
+       "richardson": 14.249215762957963,
+       "finest_error_vs_richardson": 0.10188316182749546,
+       "gci": 0.14180109632896995,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        2.8035531686704296,
+        3.536549571163967,
+        4.055187344265403
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.14665078565001965,
+       "total_rel_change": 0.4464456710084632,
+       "direction": "rising",
+       "ratio": 1.413310870340671,
+       "richardson": 5.310024345464885,
+       "finest_error_vs_richardson": 0.2363147359712573,
+       "gci": 0.3867999474099502,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.2338994945041257,
+        1.7086254986508462,
+        2.0758440117651844
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.21492042194401217,
+       "total_rel_change": 0.6823444867358632,
+       "direction": "rising",
+       "ratio": 1.2927616315436377,
+       "richardson": 3.3301699669052534,
+       "finest_error_vs_richardson": 0.3766552361006731,
+       "gci": 0.7553108205812744,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.8190042037173763,
+        0.8990467485821982,
+        0.9525744619061892
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.05953829810118827,
+       "total_rel_change": 0.16308861124589003,
+       "direction": "rising",
+       "ratio": 1.4953477347396256,
+       "richardson": 1.0606353443328087,
+       "finest_error_vs_richardson": 0.10188316182749413,
+       "gci": 0.14180109632896798,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "12.0": {
+      "p": 12.0,
+      "pnorm": {
+       "values": [
+        15.101142923190954,
+        17.62637583076089,
+        19.549907839494498
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.10912804919186692,
+       "total_rel_change": 0.29459789493625266,
+       "direction": "rising",
+       "ratio": 1.312810442511152,
+       "richardson": 25.69910155979376,
+       "finest_error_vs_richardson": 0.23927660295796782,
+       "gci": 0.3931728074362537,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        2.075634130194064,
+        2.434231145858276,
+        2.640320289120816
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0846629308860789,
+       "total_rel_change": 0.2720547666432698,
+       "direction": "rising",
+       "ratio": 1.7400092503048068,
+       "richardson": 2.9188156500607674,
+       "finest_error_vs_richardson": 0.0954138233890014,
+       "gci": 0.13184733784356795,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.253777906252548,
+        1.7162669214336683,
+        2.064720732762377
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2030300805644094,
+       "total_rel_change": 0.6467994231400029,
+       "direction": "rising",
+       "ratio": 1.3272606013909785,
+       "richardson": 3.1294801625490702,
+       "finest_error_vs_richardson": 0.3402352385961155,
+       "gci": 0.6446146765101244,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.1240482417140918,
+        1.3120130616028873,
+        1.4551904875298591
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.10912804919186692,
+       "total_rel_change": 0.29459789493625244,
+       "direction": "rising",
+       "ratio": 1.312810442511152,
+       "richardson": 1.9129035509991754,
+       "finest_error_vs_richardson": 0.2392766029579677,
+       "gci": 0.3931728074362536,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "16.0": {
+      "p": 16.0,
+      "pnorm": {
+       "values": [
+        17.931817411933178,
+        21.795498289792338,
+        24.702455583194286
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.13337420667108058,
+       "total_rel_change": 0.3775767963572625,
+       "direction": "rising",
+       "ratio": 1.3291151151854657,
+       "richardson": 33.535101545880615,
+       "finest_error_vs_richardson": 0.2633850966755552,
+       "gci": 0.44695181886570223,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        1.7544905675264886,
+        1.96703446825948,
+        2.0837852731846693
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.05935371586472282,
+       "total_rel_change": 0.18768679168359736,
+       "direction": "rising",
+       "ratio": 1.82049195180439,
+       "richardson": 2.2260789357470334,
+       "finest_error_vs_richardson": 0.06392121154257846,
+       "gci": 0.08535768079938438,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.2584481803137606,
+        1.714899855556483,
+        2.0589845262303466
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2006441773022416,
+       "total_rel_change": 0.6361297655633253,
+       "direction": "rising",
+       "ratio": 1.3265678890861268,
+       "richardson": 3.1126235463947483,
+       "finest_error_vs_richardson": 0.33850512420135026,
+       "gci": 0.6396593847243701,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.3347484978549229,
+        1.6223402198452115,
+        1.838718559617653
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.13337420667108058,
+       "total_rel_change": 0.37757679635726227,
+       "direction": "rising",
+       "ratio": 1.3291151151854668,
+       "richardson": 2.4961734433002376,
+       "finest_error_vs_richardson": 0.26338509667555443,
+       "gci": 0.44695181886570035,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "24.0": {
+      "p": 24.0,
+      "pnorm": {
+       "values": [
+        21.493348779480527,
+        27.218870132440983,
+        31.415817385455462
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.15419255952187072,
+       "total_rel_change": 0.4616529842686874,
+       "direction": "rising",
+       "ratio": 1.3642109389981185,
+       "richardson": 42.939214416196926,
+       "finest_error_vs_richardson": 0.2683653436005753,
+       "gci": 0.45850299267067746,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        1.4664497261366416,
+        1.573606683611122,
+        1.6346561602686764
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.038795893086484456,
+       "total_rel_change": 0.1147031712946438,
+       "direction": "rising",
+       "ratio": 1.7552477652766327,
+       "richardson": 1.715489867383577,
+       "finest_error_vs_richardson": 0.04711989773404268,
+       "gci": 0.06181246940458602,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.2607566172571416,
+        1.713271838430091,
+        2.0541623767604222
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.19897049066229733,
+       "total_rel_change": 0.6293092168965859,
+       "direction": "rising",
+       "ratio": 1.3274502231401062,
+       "richardson": 3.095207745614773,
+       "finest_error_vs_richardson": 0.336341032465198,
+       "gci": 0.6334974906512517,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.5998498277253415,
+        2.026026988118164,
+        2.3384252750764905
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.15419255952187072,
+       "total_rel_change": 0.46165298426868717,
+       "direction": "rising",
+       "ratio": 1.36421093899812,
+       "richardson": 3.1961652644839447,
+       "finest_error_vs_richardson": 0.2683653436005743,
+       "gci": 0.4585029926706751,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "30.0": {
+      "p": 30.0,
+      "pnorm": {
+       "values": [
+        23.173376264778984,
+        29.788776571135173,
+        34.61927129167558
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.1621582111304658,
+       "total_rel_change": 0.493924359407788,
+       "direction": "rising",
+       "ratio": 1.3695078225064485,
+       "richardson": 47.692051964555944,
+       "finest_error_vs_richardson": 0.2741081613052814,
+       "gci": 0.472019636214288,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        1.361114132208459,
+        1.437469470080527,
+        1.4821749596883946
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.031100131542524556,
+       "total_rel_change": 0.08894245134572953,
+       "direction": "rising",
+       "ratio": 1.707963351745297,
+       "richardson": 1.5453215752549463,
+       "finest_error_vs_richardson": 0.04086309061991433,
+       "gci": 0.05325502832323114,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.2616643969989898,
+        1.7128182748822758,
+        2.052472681247234
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.1983014843698483,
+       "total_rel_change": 0.6267976540586153,
+       "direction": "rising",
+       "ratio": 1.3282732961177064,
+       "richardson": 3.087142300682776,
+       "finest_error_vs_richardson": 0.33515449521284024,
+       "gci": 0.6301360481487628,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.724902080424771,
+        2.2173170665232713,
+        2.5768732355397366
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.16215821113046558,
+       "total_rel_change": 0.4939243594077878,
+       "direction": "rising",
+       "ratio": 1.3695078225064496,
+       "richardson": 3.5499410493075745,
+       "finest_error_vs_richardson": 0.2741081613052807,
+       "gci": 0.47201963621428633,
+       "settling": true,
+       "converged": false
+      }
+     }
+    }
+   },
+   {
+    "label": "elite1",
+    "rows": [
+     {
+      "config": "smoke",
+      "n_elements": 960,
+      "loss": 127.35665358756296,
+      "max_stress_mpa": 35.67991500526135,
+      "pnorm_stress_agg_mpa": 6.551502850630749,
+      "stress_scale_measured": 5.080391554098283,
+      "kt_hub": 1.870955414612733,
+      "kt_rim": 1.4896335682000246,
+      "stress_utilisation": 0.4903027892895342,
+      "stress_utilisation_hub": 0.4903027892895342,
+      "stress_utilisation_rim": 0.39037354273830865,
+      "axle_drop_mean_mm": 2.4514096207881493,
+      "defl_err": 0.22570481039407464,
+      "stress_gauss_p": 4.0,
+      "pnorm_by_p": {
+       "1.0": {
+        "p": 1.0,
+        "pnorm_agg_mpa": 1.7758573160042481,
+        "stress_scale_measured": 18.53696473949696,
+        "stress_utilisation": 1.3167601779659381,
+        "stress_utilisation_kt": 0.13290199443831133,
+        "pnorm_stress_mpa": [
+         1.5020037844764649,
+         1.5450356816136601,
+         1.4679755634806377,
+         1.4446785423794184
+        ]
+       },
+       "2.0": {
+        "p": 2.0,
+        "pnorm_agg_mpa": 3.1076405514194225,
+        "stress_scale_measured": 10.5832832532327,
+        "stress_utilisation": 1.3155616081961603,
+        "stress_utilisation_kt": 0.2325702766539307,
+        "pnorm_stress_mpa": [
+         2.6819837448348105,
+         2.687646481585757,
+         2.5223480881915132,
+         2.526561129553952
+        ]
+       },
+       "3.0": {
+        "p": 3.0,
+        "pnorm_agg_mpa": 4.765372381055307,
+        "stress_scale_measured": 6.9272467917945,
+        "stress_utilisation": 1.3204364215348596,
+        "stress_utilisation_kt": 0.3566319703592559,
+        "pnorm_stress_mpa": [
+         4.217632664969356,
+         4.122479924482178,
+         3.759757276208078,
+         3.788764336075377
+        ]
+       },
+       "4.0": {
+        "p": 4.0,
+        "pnorm_agg_mpa": 6.551502850630749,
+        "stress_scale_measured": 5.080391554098283,
+        "stress_utilisation": 1.3313679899598114,
+        "stress_utilisation_kt": 0.4903027892895342,
+        "pnorm_stress_mpa": [
+         5.927352093142905,
+         5.656591567906854,
+         5.020045316447326,
+         5.043948830096846
+        ]
+       },
+       "6.0": {
+        "p": 6.0,
+        "pnorm_agg_mpa": 10.01829634220678,
+        "stress_scale_measured": 3.390918266095975,
+        "stress_utilisation": 1.3588489624780584,
+        "stress_utilisation_kt": 0.7497514314658684,
+        "pnorm_stress_mpa": [
+         9.331411308687642,
+         8.522771006877418,
+         7.331988905202065,
+         7.269002473025201
+        ]
+       },
+       "8.0": {
+        "p": 8.0,
+        "pnorm_agg_mpa": 12.992390798119832,
+        "stress_scale_measured": 2.656073037841015,
+        "stress_utilisation": 1.3803495558391916,
+        "stress_utilisation_kt": 0.9723273565002779,
+        "pnorm_stress_mpa": [
+         12.279993838280376,
+         10.867686815132947,
+         9.255424045022366,
+         9.084262509007281
+        ]
+       },
+       "12.0": {
+        "p": 12.0,
+        "pnorm_agg_mpa": 17.378539020571544,
+        "stress_scale_measured": 2.0165370078248364,
+        "stress_utilisation": 1.4017786830764203,
+        "stress_utilisation_kt": 1.3005788671438796,
+        "pnorm_stress_mpa": [
+         16.622977399769077,
+         14.204751240652438,
+         12.08525429208364,
+         11.804553700377834
+        ]
+       },
+       "16.0": {
+        "p": 16.0,
+        "pnorm_agg_mpa": 20.34597887367688,
+        "stress_scale_measured": 1.7330581257766209,
+        "stress_utilisation": 1.4104305605562073,
+        "stress_utilisation_kt": 1.5226567735720815,
+        "pnorm_stress_mpa": [
+         19.556828993535884,
+         16.3967617156224,
+         13.994885975621694,
+         13.739623372277538
+        ]
+       },
+       "24.0": {
+        "p": 24.0,
+        "pnorm_agg_mpa": 24.13528029693376,
+        "stress_scale_measured": 1.4698906563637613,
+        "stress_utilisation": 1.4190489198873328,
+        "stress_utilisation_kt": 1.8062413341897692,
+        "pnorm_stress_mpa": [
+         23.318836942440498,
+         19.068431683504077,
+         16.37091215809421,
+         16.335569272159727
+        ]
+       },
+       "30.0": {
+        "p": 30.0,
+        "pnorm_agg_mpa": 26.00499321587851,
+        "stress_scale_measured": 1.3688173999004891,
+        "stress_utilisation": 1.4238434879275474,
+        "stress_utilisation_kt": 1.9461673145686114,
+        "pnorm_stress_mpa": [
+         25.189317523280295,
+         20.300972610654874,
+         17.494758025485883,
+         17.65582111481587
+        ]
+       }
+      },
+      "seconds": 10.9
+     },
+     {
+      "config": "coarse",
+      "n_elements": 4704,
+      "loss": 167.6018531880951,
+      "max_stress_mpa": 56.814274296057015,
+      "pnorm_stress_agg_mpa": 6.726148672463898,
+      "stress_scale_measured": 7.24019098890821,
+      "kt_hub": 1.870955414612733,
+      "kt_rim": 1.4896335682000246,
+      "stress_utilisation": 0.503372971129463,
+      "stress_utilisation_hub": 0.503372971129463,
+      "stress_utilisation_rim": 0.4007798738882502,
+      "axle_drop_mean_mm": 2.517844537579525,
+      "defl_err": 0.25892226878976254,
+      "stress_gauss_p": 4.0,
+      "pnorm_by_p": {
+       "1.0": {
+        "p": 1.0,
+        "pnorm_agg_mpa": 1.7958074661518324,
+        "stress_scale_measured": 26.859017671791207,
+        "stress_utilisation": 1.9293449787402661,
+        "stress_utilisation_kt": 0.13439502809594972,
+        "pnorm_stress_mpa": [
+         1.516326861198587,
+         1.5616004884690184,
+         1.4887080347406745,
+         1.460711852536058
+        ]
+       },
+       "2.0": {
+        "p": 2.0,
+        "pnorm_agg_mpa": 3.149845876699249,
+        "stress_scale_measured": 15.282767180457693,
+        "stress_utilisation": 1.9255344475167708,
+        "stress_utilisation_kt": 0.23572884792824206,
+        "pnorm_stress_mpa": [
+         2.7145135332337915,
+         2.7257210423715725,
+         2.5596463141834978,
+         2.5613109813969634
+        ]
+       },
+       "3.0": {
+        "p": 3.0,
+        "pnorm_agg_mpa": 4.856014991571917,
+        "stress_scale_measured": 9.946115049503357,
+        "stress_utilisation": 1.9319393515314944,
+        "stress_utilisation_kt": 0.3634155016768833,
+        "pnorm_stress_mpa": [
+         4.295707490799602,
+         4.206553266004669,
+         3.823254445555571,
+         3.8626479542947414
+        ]
+       },
+       "4.0": {
+        "p": 4.0,
+        "pnorm_agg_mpa": 6.726148672463898,
+        "stress_scale_measured": 7.24019098890821,
+        "stress_utilisation": 1.9479440403372013,
+        "stress_utilisation_kt": 0.503372971129463,
+        "pnorm_stress_mpa": [
+         6.098424765063836,
+         5.79870290795602,
+         5.1213043745738815,
+         5.1876799222850325
+        ]
+       },
+       "6.0": {
+        "p": 6.0,
+        "pnorm_agg_mpa": 10.546580496175638,
+        "stress_scale_measured": 4.720349593754159,
+        "stress_utilisation": 1.9913418784247283,
+        "stress_utilisation_kt": 0.7892872753987541,
+        "pnorm_stress_mpa": [
+         9.921925499918537,
+         8.78993887430272,
+         7.576091320665668,
+         7.723320223544544
+        ]
+       },
+       "8.0": {
+        "p": 8.0,
+        "pnorm_agg_mpa": 14.248632447720574,
+        "stress_scale_measured": 3.5687205105626143,
+        "stress_utilisation": 2.0339754745459357,
+        "stress_utilisation_kt": 1.0663422411555794,
+        "pnorm_stress_mpa": [
+         13.695804077007793,
+         11.283836064756947,
+         9.782865554522628,
+         10.16865325949346
+        ]
+       },
+       "12.0": {
+        "p": 12.0,
+        "pnorm_agg_mpa": 21.096352757566773,
+        "stress_scale_measured": 2.5003190654235317,
+        "stress_utilisation": 2.10990452042578,
+        "stress_utilisation_kt": 1.5788134168139925,
+        "pnorm_stress_mpa": [
+         20.65949231404118,
+         14.988872545965508,
+         13.557201808985255,
+         14.845046118626076
+        ]
+       },
+       "16.0": {
+        "p": 16.0,
+        "pnorm_agg_mpa": 26.737369077024194,
+        "stress_scale_measured": 2.024080359217563,
+        "stress_utilisation": 2.164743344238228,
+        "stress_utilisation_kt": 2.000977017886299,
+        "pnorm_stress_mpa": [
+         26.33200011240724,
+         17.563559439407914,
+         16.533697846657553,
+         18.770257162369045
+        ]
+       },
+       "24.0": {
+        "p": 24.0,
+        "pnorm_agg_mpa": 34.39158859225646,
+        "stress_scale_measured": 1.614171645090507,
+        "stress_utilisation": 2.220557085409541,
+        "stress_utilisation_kt": 2.573805155752629,
+        "pnorm_stress_mpa": [
+         33.969328210089195,
+         20.918818729648866,
+         20.541034013627485,
+         24.152905412192773
+        ]
+       },
+       "30.0": {
+        "p": 30.0,
+        "pnorm_agg_mpa": 38.0904036313451,
+        "stress_scale_measured": 1.470408579027144,
+        "stress_utilisation": 2.2403382511254604,
+        "stress_utilisation_kt": 2.8506178767539847,
+        "pnorm_stress_mpa": [
+         37.64734303877205,
+         22.5922263887839,
+         22.46310590162258,
+         26.763662435607028
+        ]
+       }
+      },
+      "seconds": 86.6
+     },
+     {
+      "config": "medium",
+      "n_elements": 12288,
+      "loss": 173.9810215543389,
+      "max_stress_mpa": 71.40016399735967,
+      "pnorm_stress_agg_mpa": 6.764752885696563,
+      "stress_scale_measured": 9.069283640043773,
+      "kt_hub": 1.870955414612733,
+      "kt_rim": 1.4896335682000246,
+      "stress_utilisation": 0.5062620416004439,
+      "stress_utilisation_hub": 0.5062620416004439,
+      "stress_utilisation_rim": 0.40308011916446335,
+      "axle_drop_mean_mm": 2.5276074625011877,
+      "defl_err": 0.26380373125059386,
+      "stress_gauss_p": 4.0,
+      "pnorm_by_p": {
+       "1.0": {
+        "p": 1.0,
+        "pnorm_agg_mpa": 1.7996973488377355,
+        "stress_scale_measured": 33.752333692107875,
+        "stress_utilisation": 2.429759418510925,
+        "stress_utilisation_kt": 0.13468613997888565,
+        "pnorm_stress_mpa": [
+         1.5194150958672201,
+         1.5649775962985226,
+         1.4921022145519478,
+         1.4639457511196903
+        ]
+       },
+       "2.0": {
+        "p": 2.0,
+        "pnorm_agg_mpa": 3.1558728522274393,
+        "stress_scale_measured": 19.211093182060708,
+        "stress_utilisation": 2.4251106973950813,
+        "stress_utilisation_kt": 0.23617989602817027,
+        "pnorm_stress_mpa": [
+         2.7199545717807774,
+         2.7304356819174442,
+         2.5645505074815342,
+         2.5666076447640966
+        ]
+       },
+       "3.0": {
+        "p": 3.0,
+        "pnorm_agg_mpa": 4.870201262083966,
+        "stress_scale_measured": 12.492360995321516,
+        "stress_utilisation": 2.433612491432934,
+        "stress_utilisation_kt": 0.3644771768619905,
+        "pnorm_stress_mpa": [
+         4.30957550449736,
+         4.217076620374695,
+         3.8337703450377534,
+         3.8749644926600997
+        ]
+       },
+       "4.0": {
+        "p": 4.0,
+        "pnorm_agg_mpa": 6.764752885696563,
+        "stress_scale_measured": 9.069283640043773,
+        "stress_utilisation": 2.4540585070074696,
+        "stress_utilisation_kt": 0.5062620416004439,
+        "pnorm_stress_mpa": [
+         6.138324502542313,
+         5.823942560918517,
+         5.148415548482991,
+         5.221732741744447
+        ]
+       },
+       "6.0": {
+        "p": 6.0,
+        "pnorm_agg_mpa": 10.789771557638355,
+        "stress_scale_measured": 5.814270091051441,
+        "stress_utilisation": 2.509385842274168,
+        "stress_utilisation_kt": 0.8074872607279177,
+        "pnorm_stress_mpa": [
+         10.186507912661293,
+         8.889894689093246,
+         7.738690891920812,
+         7.945902881159532
+        ]
+       },
+       "8.0": {
+        "p": 8.0,
+        "pnorm_agg_mpa": 15.170854058426286,
+        "stress_scale_measured": 4.240644043889738,
+        "stress_utilisation": 2.5733676761434356,
+        "stress_utilisation_kt": 1.1353596617964887,
+        "pnorm_stress_mpa": [
+         14.671925491991667,
+         11.556918377778764,
+         10.369870315442634,
+         10.950006413212485
+        ]
+       },
+       "12.0": {
+        "p": 12.0,
+        "pnorm_agg_mpa": 24.253788404946196,
+        "stress_scale_measured": 2.776264926892367,
+        "stress_utilisation": 2.693397683716836,
+        "stress_utilisation_kt": 1.8151102696442243,
+        "pnorm_stress_mpa": [
+         23.839579969633476,
+         15.991375129594449,
+         15.613131083551695,
+         17.184952172933983
+        ]
+       },
+       "16.0": {
+        "p": 16.0,
+        "pnorm_agg_mpa": 31.691007607696807,
+        "stress_scale_measured": 2.17342053696616,
+        "stress_utilisation": 2.7551154708687626,
+        "stress_utilisation_kt": 2.3716984911261463,
+        "pnorm_stress_mpa": [
+         31.25505735402349,
+         19.56378065607493,
+         19.838853011489714,
+         22.30491956640949
+        ]
+       },
+       "24.0": {
+        "p": 24.0,
+        "pnorm_agg_mpa": 41.65337160618376,
+        "stress_scale_measured": 1.6831881181191513,
+        "stress_utilisation": 2.804418406685205,
+        "stress_utilisation_kt": 3.117264045738631,
+        "pnorm_stress_mpa": [
+         41.14927940807283,
+         24.52617652840249,
+         25.390874442855765,
+         29.260531231659055
+        ]
+       },
+       "30.0": {
+        "p": 30.0,
+        "pnorm_agg_mpa": 46.48617800902471,
+        "stress_scale_measured": 1.517678772618603,
+        "stress_utilisation": 2.822043423378661,
+        "stress_utilisation_kt": 3.4789426580254457,
+        "pnorm_stress_mpa": [
+         45.94376625680609,
+         26.93984472231599,
+         28.040493750869498,
+         32.66044076369627
+        ]
+       }
+      },
+      "seconds": 245.3
+     }
+    ],
+    "n_ok": 3,
+    "series": {
+     "max": {
+      "values": [
+       35.67991500526135,
+       56.814274296057015,
+       71.40016399735967
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.2567293146313221,
+      "total_rel_change": 1.0011304395436769,
+      "direction": "rising",
+      "ratio": 1.4489592149396393,
+      "richardson": 103.88839280732779,
+      "finest_error_vs_richardson": 0.31272241231242304,
+      "gci": 0.5687702063816251,
+      "settling": true,
+      "converged": false
+     },
+     "pnorm": {
+      "values": [
+       6.551502850630749,
+       6.726148672463898,
+       6.764752885696563
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.005739423124961007,
+      "total_rel_change": 0.03254978894579641,
+      "direction": "rising",
+      "ratio": 4.524009355677622,
+      "richardson": 6.77570751417122,
+      "finest_error_vs_richardson": 0.001616750494578767,
+      "gci": 0.002024210761973991,
+      "settling": true,
+      "converged": true
+     },
+     "c": {
+      "values": [
+       5.080391554098283,
+       7.24019098890821,
+       9.069283640043773
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.25263044219934083,
+      "total_rel_change": 0.785154459743896,
+      "direction": "rising",
+      "ratio": 1.1808037353761434,
+      "richardson": 19.185737524861622,
+      "finest_error_vs_richardson": 0.5272903307318031,
+      "gci": 1.394329238991722,
+      "settling": true,
+      "converged": false
+     },
+     "util": {
+      "values": [
+       0.4903027892895342,
+       0.503372971129463,
+       0.5062620416004439
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.005739423124961229,
+      "total_rel_change": 0.03254978894579641,
+      "direction": "rising",
+      "ratio": 4.524009355677431,
+      "richardson": 0.5070818664588331,
+      "finest_error_vs_richardson": 0.001616750494578878,
+      "gci": 0.0020242107619741823,
+      "settling": true,
+      "converged": true
+     },
+     "drop": {
+      "values": [
+       2.4514096207881493,
+       2.517844537579525,
+       2.5276074625011877
+      ],
+      "configs": [
+       "smoke",
+       "coarse",
+       "medium"
+      ],
+      "rel_change_last_pair": 0.0038774931398457557,
+      "total_rel_change": 0.03108327595146676,
+      "direction": "rising",
+      "ratio": 6.804816929808146,
+      "richardson": 2.5292893286202602,
+      "finest_error_vs_richardson": 0.000664956001688366,
+      "gci": 0.000831748077986856,
+      "settling": true,
+      "converged": true
+     }
+    },
+    "series_by_p": {
+     "1.0": {
+      "p": 1.0,
+      "pnorm": {
+       "values": [
+        1.7758573160042481,
+        1.7958074661518324,
+        1.7996973488377355
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.002166091164682804,
+       "total_rel_change": 0.013424520437896659,
+       "direction": "rising",
+       "ratio": 5.128727974209507,
+       "richardson": 1.8006394992313195,
+       "finest_error_vs_richardson": 0.0005232309932033941,
+       "gci": 0.0006543811339949229,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        18.53696473949696,
+        26.859017671791207,
+        33.752333692107875
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2566481062170938,
+       "total_rel_change": 0.820812315631767,
+       "direction": "rising",
+       "ratio": 1.2072640957946312,
+       "richardson": 67.01094509746652,
+       "finest_error_vs_richardson": 0.4963161071222685,
+       "gci": 1.2317152537046392,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.3167601779659381,
+        1.9293449787402661,
+        2.429759418510925
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2593701205770862,
+       "total_rel_change": 0.84525584777654,
+       "direction": "rising",
+       "ratio": 1.2241549245762717,
+       "richardson": 4.662208429910565,
+       "finest_error_vs_richardson": 0.4788393837300974,
+       "gci": 1.1484928273103443,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.13290199443831133,
+        0.13439502809594972,
+        0.13468613997888565
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.002166091164682804,
+       "total_rel_change": 0.013424520437896437,
+       "direction": "rising",
+       "ratio": 5.128727974209812,
+       "richardson": 0.13475664883409585,
+       "finest_error_vs_richardson": 0.000523230993203283,
+       "gci": 0.0006543811339948358,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "2.0": {
+      "p": 2.0,
+      "pnorm": {
+       "values": [
+        3.1076405514194225,
+        3.149845876699249,
+        3.1558728522274393
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0019134191843397375,
+       "total_rel_change": 0.015520553297577067,
+       "direction": "rising",
+       "ratio": 7.002737124519399,
+       "richardson": 3.156876890119349,
+       "finest_error_vs_richardson": 0.00031804784502431627,
+       "gci": 0.00039768628954782106,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        10.5832832532327,
+        15.282767180457693,
+        19.211093182060708
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2570428480142146,
+       "total_rel_change": 0.8152299926577713,
+       "direction": "rising",
+       "ratio": 1.1963070084578762,
+       "richardson": 39.22222794725663,
+       "finest_error_vs_richardson": 0.5101988288912482,
+       "gci": 1.3020559641995206,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.3155616081961603,
+        1.9255344475167708,
+        2.4251106973950813
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.25944809791514234,
+       "total_rel_change": 0.8434033665061764,
+       "direction": "rising",
+       "ratio": 1.2209804598781286,
+       "richardson": 4.6858366011868835,
+       "finest_error_vs_richardson": 0.4824593975853061,
+       "gci": 1.1652694381230453,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.2325702766539307,
+        0.23572884792824206,
+        0.23617989602817027
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0019134191843397375,
+       "total_rel_change": 0.015520553297577067,
+       "direction": "rising",
+       "ratio": 7.002737124519643,
+       "richardson": 0.23625503643338405,
+       "finest_error_vs_richardson": 0.00031804784502431627,
+       "gci": 0.000397686289547793,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "3.0": {
+      "p": 3.0,
+      "pnorm": {
+       "values": [
+        4.765372381055307,
+        4.856014991571917,
+        4.870201262083966
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0029213811194304107,
+       "total_rel_change": 0.021998046038417707,
+       "direction": "rising",
+       "ratio": 6.389460178390452,
+       "richardson": 4.872833486841638,
+       "finest_error_vs_richardson": 0.0005401836046275976,
+       "gci": 0.0006755944508302659,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        6.9272467917945,
+        9.946115049503357,
+        12.492360995321516
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2560040712524536,
+       "total_rel_change": 0.8033659505417121,
+       "direction": "rising",
+       "ratio": 1.1856153419377697,
+       "richardson": 26.210224611745126,
+       "finest_error_vs_richardson": 0.5233783311523574,
+       "gci": 1.3726252008688604,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.3204364215348596,
+        1.9319393515314944,
+        2.433612491432934
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2596733378321381,
+       "total_rel_change": 0.8430364777458439,
+       "direction": "rising",
+       "ratio": 1.2189269892280314,
+       "richardson": 4.7251213714957,
+       "finest_error_vs_richardson": 0.4849629670649934,
+       "gci": 1.1770099431039163,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.3566319703592559,
+        0.3634155016768833,
+        0.3644771768619905
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.0029213811194304107,
+       "total_rel_change": 0.021998046038417707,
+       "direction": "rising",
+       "ratio": 6.389460178390138,
+       "richardson": 0.3646741678685043,
+       "finest_error_vs_richardson": 0.0005401836046277086,
+       "gci": 0.0006755944508303346,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "4.0": {
+      "p": 4.0,
+      "pnorm": {
+       "values": [
+        6.551502850630749,
+        6.726148672463898,
+        6.764752885696563
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.005739423124961007,
+       "total_rel_change": 0.03254978894579641,
+       "direction": "rising",
+       "ratio": 4.524009355677622,
+       "richardson": 6.77570751417122,
+       "finest_error_vs_richardson": 0.001616750494578767,
+       "gci": 0.002024210761973991,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        5.080391554098283,
+        7.24019098890821,
+        9.069283640043773
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.25263044219934083,
+       "total_rel_change": 0.785154459743896,
+       "direction": "rising",
+       "ratio": 1.1808037353761434,
+       "richardson": 19.185737524861622,
+       "finest_error_vs_richardson": 0.5272903307318031,
+       "gci": 1.394329238991722,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.3313679899598114,
+        1.9479440403372013,
+        2.4540585070074696
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.25981981832632983,
+       "total_rel_change": 0.8432608606442067,
+       "direction": "rising",
+       "ratio": 1.2182541519388868,
+       "richardson": 4.772981020848055,
+       "finest_error_vs_richardson": 0.485843648594388,
+       "gci": 1.1811670887322938,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.4903027892895342,
+        0.503372971129463,
+        0.5062620416004439
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.005739423124961229,
+       "total_rel_change": 0.03254978894579641,
+       "direction": "rising",
+       "ratio": 4.524009355677431,
+       "richardson": 0.5070818664588331,
+       "finest_error_vs_richardson": 0.001616750494578878,
+       "gci": 0.0020242107619741823,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "6.0": {
+      "p": 6.0,
+      "pnorm": {
+       "values": [
+        10.01829634220678,
+        10.546580496175638,
+        10.789771557638355
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.023058759334449785,
+       "total_rel_change": 0.0770066275821144,
+       "direction": "rising",
+       "ratio": 2.1723008682613445,
+       "richardson": 10.997219208703731,
+       "finest_error_vs_richardson": 0.018863646084383956,
+       "gci": 0.02403290583554093,
+       "settling": true,
+       "converged": true
+      },
+      "c": {
+       "values": [
+        3.390918266095975,
+        4.720349593754159,
+        5.814270091051441
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2317456526407975,
+       "total_rel_change": 0.7146594623601807,
+       "direction": "rising",
+       "ratio": 1.2152906275572795,
+       "richardson": 10.895403950472407,
+       "finest_error_vs_richardson": 0.4663557113181339,
+       "gci": 1.0923842932669183,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.3588489624780584,
+        1.9913418784247283,
+        2.509385842274168
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.26014817920629674,
+       "total_rel_change": 0.8466996050082995,
+       "direction": "rising",
+       "ratio": 1.2209251725409402,
+       "richardson": 4.854270120924848,
+       "finest_error_vs_richardson": 0.4830559940500234,
+       "gci": 1.1680568603419685,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.7497514314658684,
+        0.7892872753987541,
+        0.8074872607279177
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.023058759334450007,
+       "total_rel_change": 0.0770066275821144,
+       "direction": "rising",
+       "ratio": 2.1723008682613414,
+       "richardson": 0.823012272968296,
+       "finest_error_vs_richardson": 0.018863646084384067,
+       "gci": 0.024032905835541022,
+       "settling": true,
+       "converged": true
+      }
+     },
+     "8.0": {
+      "p": 8.0,
+      "pnorm": {
+       "values": [
+        12.992390798119832,
+        14.248632447720574,
+        15.170854058426286
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.06472351743856275,
+       "total_rel_change": 0.16767223940198184,
+       "direction": "rising",
+       "ratio": 1.3621906437861804,
+       "richardson": 17.717086619999982,
+       "finest_error_vs_richardson": 0.143716211146102,
+       "gci": 0.20979640893713006,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        2.656073037841015,
+        3.5687205105626143,
+        4.240644043889738
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.18828135499498488,
+       "total_rel_change": 0.5965841238073555,
+       "direction": "rising",
+       "ratio": 1.3582609143074624,
+       "richardson": 6.116158526472878,
+       "finest_error_vs_richardson": 0.30664909590967215,
+       "gci": 0.5528389270509315,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.3803495558391916,
+        2.0339754745459357,
+        2.5733676761434356
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2651911039969219,
+       "total_rel_change": 0.8642869592397859,
+       "direction": "rising",
+       "ratio": 1.2117822926822488,
+       "richardson": 5.120285998567994,
+       "finest_error_vs_richardson": 0.49741719957378605,
+       "gci": 1.2371523636303132,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        0.9723273565002779,
+        1.0663422411555794,
+        1.1353596617964887
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.06472351743856275,
+       "total_rel_change": 0.16767223940198184,
+       "direction": "rising",
+       "ratio": 1.3621906437861748,
+       "richardson": 1.3259151657140744,
+       "finest_error_vs_richardson": 0.14371621114610422,
+       "gci": 0.20979640893713383,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "12.0": {
+      "p": 12.0,
+      "pnorm": {
+       "values": [
+        17.378539020571544,
+        21.096352757566773,
+        24.253788404946196
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.14966737064286728,
+       "total_rel_change": 0.395617225143966,
+       "direction": "rising",
+       "ratio": 1.1774788632924011,
+       "richardson": 42.044276741450034,
+       "finest_error_vs_richardson": 0.4231369811854748,
+       "gci": 0.9168922417124195,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        2.0165370078248364,
+        2.5003190654235317,
+        2.776264926892367
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.1103642592198899,
+       "total_rel_change": 0.3767488105199821,
+       "direction": "rising",
+       "ratio": 1.7531774349633877,
+       "richardson": 3.142640562511681,
+       "finest_error_vs_richardson": 0.1165820997761503,
+       "gci": 0.16495887697460263,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.4017786830764203,
+        2.10990452042578,
+        2.693397683716836
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2765495583531461,
+       "total_rel_change": 0.9214143546581532,
+       "direction": "rising",
+       "ratio": 1.2135974881956497,
+       "richardson": 5.425139373284794,
+       "finest_error_vs_richardson": 0.5035339189662058,
+       "gci": 1.2677953696194464,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.3005788671438796,
+        1.5788134168139925,
+        1.8151102696442243
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.1496673706428675,
+       "total_rel_change": 0.39561722514396624,
+       "direction": "rising",
+       "ratio": 1.1774788632923998,
+       "richardson": 3.146518688915697,
+       "finest_error_vs_richardson": 0.4231369811854768,
+       "gci": 0.9168922417124269,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "16.0": {
+      "p": 16.0,
+      "pnorm": {
+       "values": [
+        20.34597887367688,
+        26.737369077024194,
+        31.691007607696807
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.185270230455447,
+       "total_rel_change": 0.5576054513994331,
+       "direction": "rising",
+       "ratio": 1.2902415393800404,
+       "richardson": 48.75830452616564,
+       "finest_error_vs_richardson": 0.3500387694840751,
+       "gci": 0.6731916325344169,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        1.7330581257766209,
+        2.024080359217563,
+        2.17342053696616
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.07378174343153399,
+       "total_rel_change": 0.2540955808924201,
+       "direction": "rising",
+       "ratio": 1.9487202829693677,
+       "richardson": 2.330832769453888,
+       "finest_error_vs_richardson": 0.06753476034430805,
+       "gci": 0.09053254409950558,
+       "settling": true,
+       "converged": false
+      },
+      "util": {
+       "values": [
+        1.4104305605562073,
+        2.164743344238228,
+        2.7551154708687626
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2727215344959457,
+       "total_rel_change": 0.953386113373972,
+       "direction": "rising",
+       "ratio": 1.2776903746915589,
+       "richardson": 4.881124077707524,
+       "finest_error_vs_richardson": 0.43555717351017753,
+       "gci": 0.9645732771085878,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.5226567735720815,
+        2.000977017886299,
+        2.3716984911261463
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.18527023045544677,
+       "total_rel_change": 0.5576054513994331,
+       "direction": "rising",
+       "ratio": 1.290241539380041,
+       "richardson": 3.6489845544226416,
+       "finest_error_vs_richardson": 0.35003876948407453,
+       "gci": 0.673191632534415,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "24.0": {
+      "p": 24.0,
+      "pnorm": {
+       "values": [
+        24.13528029693376,
+        34.39158859225646,
+        41.65337160618376
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.21114997332697638,
+       "total_rel_change": 0.725829204953363,
+       "direction": "rising",
+       "ratio": 1.412367771889112,
+       "richardson": 59.26333899199595,
+       "finest_error_vs_richardson": 0.29714774235367625,
+       "gci": 0.528467645797905,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        1.4698906563637613,
+        1.614171645090507,
+        1.6831881181191513
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.04275658864319509,
+       "total_rel_change": 0.14511110798067706,
+       "direction": "rising",
+       "ratio": 2.0905297300090107,
+       "richardson": 1.7464752263285477,
+       "finest_error_vs_richardson": 0.036237048917343695,
+       "gci": 0.04699943185800555,
+       "settling": true,
+       "converged": true
+      },
+      "util": {
+       "values": [
+        1.4190489198873328,
+        2.220557085409541,
+        2.804418406685205
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2629346145217346,
+       "total_rel_change": 0.9762661930695564,
+       "direction": "rising",
+       "ratio": 1.3727714721211761,
+       "richardson": 4.370689875779464,
+       "finest_error_vs_richardson": 0.3583579511723951,
+       "gci": 0.6981266888352692,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.8062413341897692,
+        2.573805155752629,
+        3.117264045738631
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.21114997332697638,
+       "total_rel_change": 0.725829204953363,
+       "direction": "rising",
+       "ratio": 1.4123677718891126,
+       "richardson": 4.435162599004187,
+       "finest_error_vs_richardson": 0.2971477423536759,
+       "gci": 0.5284676457979041,
+       "settling": true,
+       "converged": false
+      }
+     },
+     "30.0": {
+      "p": 30.0,
+      "pnorm": {
+       "values": [
+        26.00499321587851,
+        38.0904036313451,
+        46.48617800902471
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.22041704936858753,
+       "total_rel_change": 0.787586623196675,
+       "direction": "rising",
+       "ratio": 1.439463457664604,
+       "richardson": 65.59077983939402,
+       "finest_error_vs_richardson": 0.2912696247422115,
+       "gci": 0.513717266309256,
+       "settling": true,
+       "converged": false
+      },
+      "c": {
+       "values": [
+        1.3688173999004891,
+        1.470408579027144,
+        1.517678772618603
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.03214765900150973,
+       "total_rel_change": 0.10875181213282059,
+       "direction": "rising",
+       "ratio": 2.1491593625504164,
+       "richardson": 1.5588133577178782,
+       "finest_error_vs_richardson": 0.026388396593865937,
+       "gci": 0.033879522005422165,
+       "settling": true,
+       "converged": true
+      },
+      "util": {
+       "values": [
+        1.4238434879275474,
+        2.2403382511254604,
+        2.822043423378661
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.2596506005113175,
+       "total_rel_change": 0.9819899078137029,
+       "direction": "rising",
+       "ratio": 1.4036230072276457,
+       "richardson": 4.26325257606979,
+       "finest_error_vs_richardson": 0.3380538982796445,
+       "gci": 0.6383712688258606,
+       "settling": true,
+       "converged": false
+      },
+      "util_kt": {
+       "values": [
+        1.9461673145686114,
+        2.8506178767539847,
+        3.4789426580254457
+       ],
+       "configs": [
+        "smoke",
+        "coarse",
+        "medium"
+       ],
+       "rel_change_last_pair": 0.22041704936858753,
+       "total_rel_change": 0.7875866231966753,
+       "direction": "rising",
+       "ratio": 1.4394634576646042,
+       "richardson": 4.908696987567436,
+       "finest_error_vs_richardson": 0.2912696247422113,
+       "gci": 0.5137172663092557,
+       "settling": true,
+       "converged": false
+      }
+     }
+    }
+   }
+  ],
+  "pass": true
+ },
+ "pass": true,
+ "settings": {
+  "config": "coarse",
+  "genome": "best_solution.json",
+  "quick": false,
+  "service_force_n": 66.7233,
+  "target_deflection_mm": 2.0,
+  "allowable_stress_mpa": 25.0,
+  "lr": 0.01,
+  "grad_clip": 1.0,
+  "sections": [
+   "mesh_convergence"
+  ],
+  "ladder_p": [
+   1.0,
+   2.0,
+   3.0,
+   4.0,
+   6.0,
+   8.0,
+   12.0,
+   16.0,
+   24.0,
+   30.0
+  ],
+  "stress_pnorm_p_default": 30.0,
+  "elapsed_s": 820.1,
+  "title": "M8b-i.6 \u2014 WHICH p GIVES THE STRESS CONSTRAINT A VALUE"
+ }
+}

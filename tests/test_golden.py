@@ -126,7 +126,7 @@ def test_genome_hash_matches_manifest(record):
     """The manifest records which genome the STEP on disk was built from.  This is the
     traceability invariant the whole pipeline's provenance rests on, and it breaks if
     anyone adds a key inside `genes`."""
-    with open(os.path.join(HERE, "wheel_step_manifest.json")) as fh:
+    with open(os.path.join(HERE, "export", "wheel_step_manifest.json")) as fh:
         manifest = json.load(fh)
     assert _genome_hash(record["genes"]) == manifest["genome_hash"]
 

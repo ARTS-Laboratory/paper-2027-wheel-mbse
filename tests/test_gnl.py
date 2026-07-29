@@ -18,7 +18,8 @@ import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 import wheel_fem as fem          # noqa: E402
 import wheel_genome as wg        # noqa: E402

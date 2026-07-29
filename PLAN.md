@@ -1,300 +1,250 @@
-# M8b-i.5 — the stress constraint is measured on a singularity, and the verdict it produced is not a number
+# PLAN.md — the next changes
 
-> **STATUS: BOTH CHECKS COMPLETE. `make m8bi5` ran to completion at `coarse` in 8273 s
-> (2 h 18 m), both sections PASS.** `study_stage3_m8bi5.json` and `.jpg` are the record.
-> `study_stage3.py` gained a `--sections` selector and two sections; `tests/test_stage3.py`
-> gained 9 tests (19 -> 28, suite 249 -> 258, all green); `Makefile` gained `m8bi5`.
-> **No physics module was touched** — `wheel_objective`, `wheel_stage3`, `wheel_adjoint`,
-> `wheel_fem`, `wheel_wheel` are byte-identical. `make studies` is unchanged and still
-> ~2 h 45 m; the two new sections are opt-in for exactly that reason.
->
-> ## The headline: M8b-i answered the wrong question, and M4 had already said so
->
-> S9 reported "each constraint is reachable alone, neither with the other", with the stress
-> half quantified at **utilisation 1.7128**. **That number does not exist.** The quantity it
-> is computed from does not converge under mesh refinement, and the ladder carries its own
-> control proving the fault is in the QoI rather than in the mesh or the solve:
->
-> | shipped genome, same meshes and same solves | smoke | coarse | medium | ratio | order | GCI | |
-> |---|---|---|---|---|---|---|---|
-> | **axle drop [mm]** — the deflection constraint | 1.4523 | 1.4914 | 1.4986 | 5.42 | 2.44 | **0.14%** | **CONVERGED** |
-> | p-norm stress, p=30 [MPa] | 23.173 | 29.789 | 34.619 | 1.37 | 0.45 | 47.20% | not converged |
-> | true max [MPa] | 31.020 | 41.539 | 48.465 | 1.52 | 0.60 | 34.43% | not converged |
-> | c = mean_phase(max/pnorm) | 1.3611 | 1.4375 | 1.4822 | 1.71 | 0.77 | 5.33% | not converged (3.39% and converged at elite 1) |
-> | **stress utilisation** | 1.2617 | **1.7128** | 2.0525 | 1.33 | 0.41 | **63.01%** | **not converged** |
->
-> Two quantities out of one displacement field, on one mesh ladder, in one run. **The
-> deflection converges at second order to 0.14%. The stress utilisation is at 63% and
-> rising.** Nothing about the meshing, the contact solve, the phase stencil or the adjoint
-> can explain a 450x gap in convergence between two QoIs sharing all of them.
->
-> `CONVERGED` means GCI < `study_stage3.GATE_LADDER_GCI` = 5%, the GCI form of
-> `study_wheel_fea.run_refinement`'s `finest_error_vs_richardson < 0.005` and deliberately
-> 10x looser: the question is whether the constraint has a value at all, not whether the
-> value is precise. **It is emphatically not `ratio > 1`.** Every stress series here has
-> `ratio > 1` — the differences do shrink — and reading the verdict off that produced a
-> figure captioned *"the stress QoI settles under refinement"* above a utilisation with a
-> 63% GCI. `_series` now reports `settling` and `converged` as separate leaves and
-> `tests/test_stage3.py` pins the distinction with these very numbers.
->
-> The `coarse` rung reproduces S9's input exactly — 1.7128 against the recorded
-> 1.7128182748822758 — so this is the same quantity the verdict rests on, not a neighbour.
-> Elite 1 behaves identically and worse: utilisation 1.4238 -> 2.2403 -> 2.8220, order 0.49,
-> GCI 63.84%, while its axle drop converges to GCI 0.08%.
->
-> ### Why, in M4's own words
->
-> `study_wheel_fea.stress_report`, `study_wheel_fea.py:101`, written at M4 and never acted on:
->
-> > **THE POINTWISE MAX IS NOT A NUMBER** — it diverges under refinement (rim region 30.3,
-> > 38.9, 44.9, 52.4 MPa across the config ladder) because this mesh has no fillets, and an
-> > unfilleted spoke/ring junction is a 349.5 degree re-entrant corner: geometrically **a
-> > crack**. Its stress field goes as r^-0.5 and no mesh resolves it.
-> >
-> > The p99 of the same field **converges cleanly (8.84, 8.78, 8.61, 8.61)**, which is what a
-> > point singularity of measure zero looks like. **Quote the percentile; quote the max only
-> > to say it is a singularity.**
->
-> Stage 3's stress term does the opposite of that prescription, twice, and the two compound:
->
-> 1. **`STRESS_PNORM_P = 30.0`** (`wheel_adjoint.py:244`). `_qoi_pnorm_stress`'s docstring
->    argues the volume-weighted p-norm is "a quadrature of an integral and is
->    mesh-convergent". That argument holds for a bounded field. At p=30 the norm is 1/1.38
->    of the max — it *is* the max in disguise — and it inherits r^-0.5. **Measured here at
->    order 0.45, against the axle drop's 2.44 on the same meshes.** This is the finding that
->    was not already on record, and it is the one that matters: the smooth surrogate does
->    not rescue the constraint.
-> 2. **The rescale to the true max.** `t3_terms` multiplies that p-norm by
->    `c = mean_phase(max/pnorm)` and compares the product to the allowable
->    (`wheel_objective.py:501-510`), so the constraint is a comparison against the singular
->    quantity M4 named, by construction.
->
-> **But note which of the two is doing the damage, because it is not the one the plan
-> predicted.** `c` is the *best*-behaved factor in the whole table — GCI 5.33% at the
-> shipped genome and 3.39% at elite 1, converged by the criterion above — because it is a
-> ratio of two quantities that diverge together. The p-norm, the factor
-> `_qoi_pnorm_stress`'s docstring calls mesh-convergent, is at 47%. **Removing the rescale
-> alone would fix almost nothing; lowering `p` is the load-bearing change.**
->
-> There is **no percentile QoI anywhere in `wheel_objective` or `wheel_adjoint`.** M4's
-> prescription was never carried into the optimizer, and M8a's gates could not catch it
-> because every one of them checks the stress term against *itself* — its own finite
-> difference, its own p-norm, its own rescale — and all of those agree beautifully on any
-> single mesh. **Nothing in the repo differentiated the stress QoI with respect to `cfg`
-> until now.**
->
-> ## What survives, what does not
->
-> **Does not survive — every stress magnitude M8a and M8b-i quote.** "42.82 MPa against
-> 25.0", "utilisation 1.7128", "min reachable utilisation 0.932", "M8a's headline understated
-> it by 38%" and the whole of the previous PLAN.md's headline table. All are `coarse`
-> readings of a crack tip. The `smoke`-to-`coarse` rise that the last milestone read as
-> *"peak stress rises with refinement, as a resolved stress concentration does, so the verdict
-> is a lower bound"* was the right observation and the wrong inference: an unresolvable
-> singularity looks exactly like a resolving concentration from two points, which is why the
-> third rung and the axle-drop control were worth 2 h 18 m.
->
-> **Survives — the deflection half, entirely.** The axle drop converges (GCI 0.14%), and the
-> 16-elite screen found designs that **meet the deflection target with no descent at all**:
-> elite 9 at **+2.29%** and elite 10 at **+1.65%**, both inside the +-5% box. Fifteen of
-> those sixteen had never been scored against the FEA objective.
->
-> **Survives — that the two constraints trade against each other**, now over 16 independent
-> Stage-2 optima and 4 fresh probes rather than 3 descents from 1 start. But the trade is
-> quantified in the same broken stress units, so its *magnitude* is as unreliable as S9's.
->
-> ## S12 — the screen, and the verdict restated over 16 starts
->
-> Sixteen distinct starts, two of them re-descended. S9's own start is not a seventeenth:
-> elite 0 IS `best_solution.json`.
->
-> **(a) all 16 elites at `coarse`, no descent.** Spread: utilisation **1.0093-2.3500**,
-> deflection error **-77.27% to +28.38%**. Emphatically not one basin, which is what makes
-> the multi-start argument for M8b-ii real. Elite 0 is `best_solution.json` bit-for-bit
-> (max|diff| = 0.0 over all fourteen genes) — hence the ladder's second design is elite 1.
->
-> | elite | utilisation | deflection error | corner d | |
-> |---|---|---|---|---|
-> | 11 | **1.0093** | -77.27% | 14.464 | at the allowable, far too stiff |
-> | 0 (= shipped) | 1.7128 | -25.43% | 4.799 | |
-> | **9** | 1.7740 | **+2.29%** | 0.774 | **inside the deflection box** |
-> | **10** | 1.8605 | **+1.65%** | 0.860 | **inside the deflection box** |
-> | 7 | 1.9660 | +7.93% | 1.552 | |
-> | 12, 13, 8, 6 | 2.04-2.11 | +13.8 to +18.2% | 2.8-3.7 | |
-> | 3, 5, 15, 4, 1, 2, 14 | 2.18-2.35 | +19.1 to +28.4% | 4.0-6.0 | |
->
-> **(b) the two nearest elites re-probed**, `stress_only` and `deflection_only`, 20 steps each,
-> all four accepted 20/20 steps with zero events:
->
-> | start | probe | utilisation | deflection error |
-> |---|---|---|---|
-> | elite 9 | stress_only | 1.774 -> 1.487 | +2.3% -> **-58.3%** |
-> | elite 9 | deflection_only | 1.774 -> **1.770** | +2.3% -> +0.6% (min 0.04%) |
-> | elite 10 | stress_only | 1.860 -> **1.005** (min 0.893) | +1.7% -> **-77.7%** |
-> | elite 10 | deflection_only | 1.860 -> **1.878** | +1.7% -> +0.3% |
->
-> **(c)** 100 (utilisation, deflection) pairs measured, from 16 scored starts and 2 probed.
-> Lowest utilisation anywhere **0.8933** (feasible). Smallest |deflection error| anywhere
-> **0.04%** (feasible). **Both at the same design: NO** — at every start, in the same shape
-> S9 found: meeting deflection costs utilisation ~1.77-1.88, meeting stress costs -58% to
-> -78% of deflection.
->
-> ## What the plan got right, and wrong
->
-> **Right.** Splitting the work so the cheap check ran before the 48-hour production run —
-> 2 h 18 m bought the discovery that the constraint being optimised has no value. Making the
-> two sections opt-in rather than part of `make studies`. The per-row `try`/`except`, which
-> cost nothing here but is why one bad genome cannot take the other fifteen.
->
-> **Ranking elites by an explicit corner distance rather than by Stage-2 loss, which turned
-> out to matter more than expected.** Elites 9 and 10 — the two probed, the two nearest
-> feasibility, the two that meet the deflection target as scored — are **10th and 11th of 16
-> by Stage-2 loss**. The five *best* Stage-2 genomes (elites 0-4, losses 50.41-50.86) rank
-> 11th, 13th, 14th, 10th and 12th by corner distance. Spearman rho between Stage-2 loss and
-> FEA corner distance is **-0.285** (p = 0.28, n = 16): not significant, and *negatively*
-> signed. The surrogate ranking carries no usable signal about FEA feasibility. Had the
-> screen probed "the best elites" it would have probed the four worst-placed designs in the
-> set — which is M8a's "the beam surrogate is a bad guide to the FEA" showing up as an
-> operational trap rather than a scoring discrepancy.
->
-> **Wrong, and it was nearly a silent error.** The plan predicted the failure mode as
-> *"`max` diverges while `pnorm` settles, so `c` carries the mesh into `util`"*, and specified
-> reporting all three to tell them apart. Measured, that is backwards: `c` is the
-> **best**-behaved of the three (GCI 5.33%, and 3.39% at elite 1) and the p-norm is nearly as
-> bad as the max. Had the section reported `util` alone — the obvious design — the conclusion
-> would have been "the stress QoI does not converge" with no way to see that the p=30
-> exponent rather than the rescale is the cause, and step 1 below would have been the wrong
-> step. **Reporting the decomposition rather than the verdict is what made the next step
-> right.**
->
-> **Wrong, and it reached the artifact.** The first `study_stage3_m8bi5.jpg` was captioned
-> *"the stress QoI settles under refinement"*, because the title was driven off `settling`
-> (`ratio > 1`) rather than a convergence criterion. The figure asserted the opposite of the
-> data underneath it. Fixed by splitting `settling` from `converged` and driving every
-> verdict — title, printed label, PLAN.md — off the latter. The JSON and figure were then
-> regenerated from the stored ladder ROWS, with every previously-written leaf asserted
-> bit-identical; no solve was repeated, because `_series` is a pure function of the rows.
->
-> ---
-
-## THE NEXT STEP — M8b-i.6, give the stress term a value
-
-**This is now a prerequisite for everything downstream, and it is cheap.** Do not add genes,
-do not touch the targets, do not re-weight, and do not run Stage 3 at scale until the
-constraint has a mesh-independent value. Every one of those decisions is a decision about a
-stress number, and there is not one yet.
-
-### 1. Find the `p` at which the ladder settles — hours, not days
-
-The measurement already exists. `run_mesh_convergence` is parameterised by everything except
-`p`, which is currently frozen at `wheel_adjoint.STRESS_PNORM_P = 30.0` and reaches
-`_qoi_pnorm_stress(prob, p=...)` through `adjoint_grads` -> `QOI["pnorm_stress"]`.
-
-```bash
-# thread `p` from wheel_objective.t3_terms down to _qoi_pnorm_stress, then:
-.venv-opt/bin/python study_stage3.py --sections mesh_convergence \
-    --ladder-p 2,4,8,16,30 --out study_stage3_pnorm.json
-```
-
-Report the observed order and GCI of the p-norm series **per p**, against the axle drop's
-2.44 / 0.14% as the standard of what a converged QoI looks like on these meshes. The
-prediction, which the measurement should be allowed to refute: p in the 4-8 range is a smooth
-percentile and converges; p=30 is a max in disguise and does not. M4's p99 converging to
-8.61 MPa is the evidence that *some* smooth aggregate of this field has a value.
-
-**Do not skip the axle-drop column when adding `--ladder-p`.** It is the control that makes
-every stress row interpretable, and it costs nothing — it comes out of the same solve.
-
-### 2. Replace the rescale-to-max with an analytic Kt
-
-Once a converged nominal stress exists, the constraint should be
-
-```
-Kt(fillet_radius, thickness) * sigma_nominal_converged  <=  ALLOWABLE_STRESS_MPA
-```
-
-`wheel_fea.stress_concentration_kt(fillet_radius_mm, thickness_mm, c_factor=1.0)`
-(`wheel_fea.py:315`) already exists for precisely this, is analytic, is differentiable in the
-thickness genes `t0..t3`, and is clamped to [1.0, 3.5]. M4 names it in the same breath as the
-singularity: *"That the corner is nearly a crack is exactly WHY the real part is filleted
-there and why `wheel_fea.stress_concentration_kt` exists."*
-
-This deletes `stress_scale` from the objective entirely — and with it the M8a gate-7 hazard,
-the S4 discipline, the `refresh_scale` plumbing in `wheel_stage3.Evaluator` and the pinning
-in every finite difference. **The single most delicate mechanism in the Stage-3 driver exists
-only to make a rescale-to-a-singularity differentiable.** Removing it is a simplification, not
-a cost.
-
-`wheel_step_export.kt_report` documents the fillet-feasibility fix as open; that is the
-alternative route (mesh the fillet and measure the peak for real) and it is the expensive
-one. The analytic Kt is the cheap one and is what the beam surrogate already assumes.
-
-### 3. Only then, re-run S9 and S12
-
-The feasibility question is genuinely open again, and the answer may well be different: the
-elite screen already shows deflection met at three designs, and the stress side has never
-been evaluated on a quantity with a value. `run_feasibility` and `run_multistart` take the
-new objective unchanged.
-
-### The decision that follows, which is a human's — unchanged in list, deferred in time
-
-Rim-band genes / revisit the targets / accept a Pareto point / change material. Every one of
-them needs a stress number. None of them should be argued before step 1.
+> **Ignore version control entirely. Do not commit, branch, stage, revert or otherwise
+> touch git — it is not part of this project's workflow and nothing here depends on it.**
 
 ---
 
-## M8b-ii and beyond — unchanged, and still downstream
+## Where the tree stands — the minimum a fresh session needs
 
-- **Process-parallel phase batch, a precondition rather than an optimization.** 48.13 h
-  serial for 300 steps x 4 starts at 144.4 s per 8-phase evaluation. `OMP_NUM_THREADS=1`
-  before the numpy import; phase slots pinned to workers so each traces only its share of the
-  lattice.
-- **Multi-fidelity checkpoints, and `medium` is cheaper than budgeted.** Measured here on a
-  4-phase `tiers=("t3",)` evaluation: `medium` 243 s against `coarse` 87 s, **2.8x**, not the
-  4x the last plan assumed. Take that pair from the elite-1 ladder, not the shipped genome's
-  (142 s -> 255 s, 1.8x): the shipped genome ran first and its `coarse` rung carries the
-  `coord_fn` jit trace for that mesh size, so its ratio flatters `medium`. Both rows are in
-  `study_stage3_m8bi5.json`.
-- **Jit `t1_vector`** in `wheel_objective.py` — 1.06 s of eager dispatch per call.
-- **M9** remains `lambda_min(K_t)` via LOBPCG, replacing the zero-gradient Euler `buckling`
-  proxy, which is still exactly 0.0 and still asserted to be.
+**M8b-i.6 step 2 landed.** The stress constraint is no longer a p-norm rescaled to the true
+max by a measured ratio. It is now
+
+```
+Kt(R, t) * sigma_nominal(p=4)  <=  ALLOWABLE_STRESS_MPA        # = 25.0
+```
+
+with **one `soft_barrier` per junction, summed** — hub priced on `(R_hub, t0)`, rim on
+`(R_rim, t3)`. `Kt = 1 + C*(t/2R)^0.65` clamped to [1.0, 3.5], differentiated by `jax.grad`,
+not frozen. `stress_scale` is gone from `t3_terms` and `objective`; `stress_scale_measured`
+survives in the report as a read-only diagnostic because it is the *evidence* for the change.
+
+Why it had to change: `c = max/pnorm` is anchored to M4's crack-tip singularity, which
+diverges under refinement, so `c * pnorm` converged at **no exponent at either design**. The
+sweep that proved it is `study_stage3_pnorm.json` (`make m8bi6`).
+
+**Key constants.** `wheel_objective.STRESS_NOMINAL_P = 4.0` is the `t3_terms` default.
+`wheel_adjoint.STRESS_PNORM_P` stays **30.0** — it is the documented default every historical
+record was measured at, and a test pins it there.
+
+**Measured after the change** (`medium` rung):
+
+| design | Kt_hub | Kt_rim | sigma_nom(p=4) | **util** | util GCI | field max |
+|---|---|---|---|---|---|---|
+| best_solution | 1.861 | 1.490 | 5.507 MPa | **0.4099** | **0.45%** | 48.47 MPa |
+| elite 1 | 1.871 | 1.490 | 6.765 MPa | **0.5063** | **0.20%** | 71.40 MPa |
+
+Someone will put `util = 0.41` next to `max = 48.5 MPa` and panic. The answer is M4's,
+unchanged: **the max is not a number.** It diverges 31.02 → 41.54 → 48.47 under refinement.
+
+**Gates, all green:** `make test` **357 passed** (was 269; the Kt-twin equivalence test is
+parameterised 84 ways). Gate 7 `min_decades` **2**, `worst_best_rel` **2.009e-07** — both
+better than the 1 / 1.820e-05 baseline. `make m8bi6`'s `pnorm_by_p` block reproduces the
+step-1 sweep **bit-identically**, 0.000e+00 on every value and every GCI including the `c`
+columns; `max_stress_mpa` and `axle_drop_mean_mm` are identical too, confirming no physics
+moved.
+
+---
+
+## THE VERDICT REVERSED: the problem is FEASIBLE, and always was
+
+S9 called this design space infeasible. That verdict was read off `c * pnorm`, which has no
+mesh-independent value. Re-scored on a constraint that does:
+
+| elite | util | defl err | corner distance |
+|---|---|---|---|
+| **10** | **0.4548** | **+1.65%** | **0.000  ← FEASIBLE** |
+| **9** | **0.4468** | **+2.29%** | **0.000  ← FEASIBLE** |
+| 7 | 0.4667 | +7.93% | 0.586 |
+| 12 | 0.4710 | +13.78% | 1.757 |
+| 0 (`best_solution`) | 0.4063 | −25.43% | 4.086 |
+
+All 16 scored, none failed. **Every elite is stress-feasible** (util 0.23–0.53 against 1.0);
+the binding constraint is now deflection alone. Two elites are inside the feasible box on
+both. `corner_distance` is zero only when `util <= 1.0` **and** `|defl_err| <= 5%`.
+
+Spread across the 16: utilisation 0.2272–0.5272, deflection error −77.27% to +28.38%. **That
+is a wide spread — these elites are not one basin**, which is what made S9's three descents
+from a single start a statement about a basin rather than about the space.
+
+### And the bound descents agree — `make m8bi5` complete, 9086.3 s, OVERALL: PASS
+
+Both probed starts satisfy **both** constraints at a visited design, 20/20 steps accepted,
+no reject events:
+
+| start | probe | utilisation | deflection error |
+|---|---|---|---|
+| elite 9 | `stress_only` | 0.447 → 0.456 | 2.3% → −1.4% |
+| elite 9 | `deflection_only` | 0.447 → 0.443 | 2.3% → **0.04%** |
+| elite 10 | `stress_only` | 0.455 → 0.458 | 1.7% → 0.2% |
+| elite 10 | `deflection_only` | 0.455 → 0.448 | 1.7% → 0.3% |
+
+Restated over 2 probed starts and 16 scored designs, 100 (util, deflection) pairs measured:
+
+```
+lowest utilisation seen anywhere   0.2272   (feasible at <= 1.00)
+smallest |deflection error| seen   0.04%    (feasible at <= 5%)
+BOTH satisfied at any design       YES
+```
+
+**S9 said "each constraint is reachable alone, neither with the other." That is now false.**
+Driving deflection to 0.04% error *lowered* utilisation (0.447 → 0.443). The two constraints
+were never in tension; the tension was an artifact of measuring stress against a singularity.
+The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pnorm` at p=30.
+
+**So the genome does not need new genes to reach feasibility.** The question changes from
+"can this wheel be built" to "how good a wheel can be built".
+
+---
+
+## The next changes, in order
+
+### 1. M8b-ii — make the optimizer runnable at scale
+
+The largest remaining block, and it is pure engineering with no open questions. Feasible
+points exist; the optimizer cannot currently search for better ones in reasonable time.
+
+- **Process-parallel phase batch.** 48.13 h serial for 300 steps × 4 starts at 144.4 s per
+  8-phase evaluation. `OMP_NUM_THREADS=1` **before** the numpy import; pin phase slots to
+  workers so each traces only its share of the lattice (`wheel_wheel.coord_fn` keys its jit
+  cache on `float(phase)`, and `_COORD_FN_CACHE_MAX` is 128 to hold it).
+- **Multi-fidelity checkpoints.** `medium` is 2.8× `coarse`, not the 4× budgeted (243 s vs
+  87 s). Take that pair from the **elite-1** ladder, not the shipped genome's — the shipped
+  genome runs first and its `coarse` rung carries the `coord_fn` jit trace.
+- **Jit `t1_vector`** (`wheel_objective.py`) — 1.06 s of eager dispatch per call, measured by
+  S10.
+- **Then the production multi-start run.** Start from elites 9 and 10, not
+  `best_solution.json` — that is a GA optimum for the BEAM surrogate, which M8a measured as a
+  bad guide to the FEA, and it sits at −25.43% deflection error. The 16-elite spread is wide
+  (util range 0.30, deflection range 105.66 points), so a multi-start genuinely samples
+  different basins rather than re-running one.
+
+  **The objective it should descend is now mass**, not feasibility. Both constraints are
+  satisfiable together and the barriers are flat at every feasible design, so `mass` is the
+  only term with anything left to give — it was 19.6% of the loss at the shipped genome
+  against deflection's 61.3%, and that ratio inverts once deflection is met.
+
+### 2. M9 — `lambda_min(K_t)` via LOBPCG, replacing the Euler `buckling` proxy
+
+**This milestone promoted M9.** `buckling` has a gradient of exactly 0.0 and is asserted zero
+by the inert-term census (`INERT_EXPECTED = ("buckling",)`). With stress no longer binding, it
+is **the only constraint left in the objective that a gradient method cannot act on**. A
+diverged tangent is the only real buckling signal the run has today.
+
+### 3. The hub fillet — a geometry milestone this change made expensive
+
+The constraint prices `Kt(R_hub, t0) = 1.861` and lets `R_hub` carry a live gradient. The part
+builds `Kt = 3.5`: **0 of 12 hub edges filleted**, because `_embed` laps adjacent spokes over
+the hub circle into a 354° notch OCC refuses at every radius down to `MIN_CURVATURE_RADIUS_MM`.
+As-built utilisation is therefore **~1.88× whatever Stage 3 reports** (`kt_built/kt_modeled`).
+
+At util 0.41 that still lands under 1.0, so it does not threaten feasibility — but it is a real
+gap between the modelled and printed part, and it is now load-bearing rather than cosmetic.
+
+**The decision already taken, deliberately:** price `r_requested`, gate on `kt_error_pct`.
+Clamping `R_hub` to what OCC can build would pin `Kt_hub` at the constant 3.5 and kill the
+gradient this whole change exists to create. `tests/test_export_contract.py` pins the
+discrepancy in both directions and states the multiplier in its failure text.
+
+The fix is in `_embed` / `fillet_junctions`, not in the constraint.
+
+### 4. Minor, known, pre-existing
+
+**`study_stage3.py --quick` exits 1 on S8.** Cold 6.16 s vs warm 6.32 s, −2.6%. A `smoke`-tier
+artifact: the 960-element solve is a small share of an evaluation dominated by meshing and
+dispatch, and cold always runs first within each rep. At `coarse` — the gate that counts — S8
+passes at +2.4%. No test asserts it, so `make test` is unaffected. Fix by giving `run_warm`
+more reps at `smoke` or by scoping S8 to `coarse`. **Do not "fix" it by relaxing
+`GATE_WARM_SAVING`.**
+
+---
+
+## The decision that is a human's
+
+Unchanged in list — rim-band genes / revisit the targets / accept a Pareto point / change
+material — but **the premise moved.** Every one of those was blocked on "we need a stress
+number first". The number exists now, and it says the current 14-gene space already contains
+designs meeting both targets.
+
+Adding rim-band genes to *reach* feasibility is no longer justified. Adding them to reduce
+mass, or to buy margin, is a different argument and needs to be made on its own terms.
+
+---
+
+## Where gate 7 no longer helps, and what replaced it
+
+`QUICK_GENES` now includes 12 and 13 (`R_hub`, `R_rim`) so `dKt/dg` is finite-differenced.
+**It does not currently test that.** With utilisation at 0.375/0.300 the `soft_barrier` is
+flat, so `stress` and `d_stress` are exactly zero and neither gene reaches the loss through
+`Kt` — `R_hub`'s +645.8 adjoint comes from the geometric `fillet` barrier, and `R_rim`'s row
+is `0 == 0`.
+
+The product rule is tested by **`test_the_stress_gradient_obeys_the_product_rule`**
+(`tests/test_objective.py`), which monkeypatches `ALLOWABLE_STRESS_MPA` down to 2.0 to force
+the barrier onto its quadratic branch, then FDs genes 8, 11, 12, 13. **That test, not gate 7,
+is what says `dKt*agg + Kt*dagg` is right.** Genes 12/13 stay in `QUICK_GENES` because they
+cost nothing and become live checks the moment a design is stress-binding.
 
 ---
 
 ## How to run any of this
 
 ```bash
-.venv-opt/bin/python study_stage3.py --quick            # wiring check, ~13 min, see NOTE
-.venv-opt/bin/python study_stage3.py                    # the M8b-i gate, S1-S10, ~2 h 45 m
-make m8bi5                                              # S11 + S12, ~2 h 18 m
-make test                                               # 257 tests
-make studies                                            # all nine gates; does NOT run m8bi5
+.venv-opt/bin/python studies/study_objective.py --quick   # gate 7 fast path, ~9 min
+.venv-opt/bin/python studies/study_objective.py           # the full M8a gate, > 50 min
+.venv-opt/bin/python studies/study_stage3.py --quick      # wiring check, ~13 min, see S8 note
+.venv-opt/bin/python studies/study_stage3.py              # the M8b-i gate, S1-S10, ~2 h 45 m
+make m8bi5                                                # S11 + S12, ~2 h 31 m
+make m8bi6                                                # the p sweep, ~14 min
+make test                                                 # 357 tests, ~10 min
+make studies                                              # all gates; NOT m8bi5/m8bi6
 ```
 
-`--sections` selects and orders sections; the default is the seven S1-S10 sections in their
-original order, so a default run writes the same report keys it always has (verified). The
-M8b-i.5 pair is opt-in. `--ladder-configs smoke,coarse,medium,fine` adds a fourth rung; `fine`
-is 261k dof through contact plus a service-force secant plus an adjoint, which nothing in this
-repo has yet run, so each row is wrapped in its own `try`.
+Run a study driver directly and it needs `src/` on the path:
+`PYTHONPATH=src .venv-opt/bin/python studies/study_stage3.py`. The Makefile exports it, so
+anything driven by `make` is already covered — including the CAD hand-off, which
+`src/wheel_fea.py` spawns into `.venv-cad` itself.
 
-**NOTE, a known and pre-existing failure: `study_stage3.py --quick` exits 1 on S8.** Measured
-cold 6.16 s against warm 6.32 s, -2.6%. It is a `smoke`-tier artifact and not a regression:
-`run_warm` is untouched by M8b-i.5, at `smoke` the 960-element solve is a small share of an
-evaluation dominated by meshing and dispatch, and cold always runs first within each rep. At
-`coarse` — the gate that counts — S8 passes at +2.4%. No test asserts it, so `make test` is
-unaffected. Fix it by giving `run_warm` more reps at `smoke` or by scoping S8 to `coarse`;
-do not "fix" it by relaxing `GATE_WARM_SAVING`.
+`--sections` selects and orders sections. `--ladder-p` takes any comma-separated exponents,
+dedupes them, and **costs no extra solve** — every exponent is read off the displacement field
+the adjoint already converged. `--ladder-configs smoke,coarse,medium,fine` adds a fourth rung;
+`fine` is 261k dof and has never been run, so each row is wrapped in its own `try`.
 
-## State of the working tree, for whoever picks this up
+**`make m8bi6` overwrites `studies/study_stage3_pnorm.json`.** Back it up before re-running if you
+need to diff against it — its `pnorm_by_p` block is the step-1 evidence and must stay
+reproducible.
 
-> **Ignore version control entirely. Do not commit, branch, stage, revert or otherwise
-> touch git — it is not part of this project's workflow and nothing here depends on it.**
+---
 
-`make test` (257) is green. `make m8bi5` and `study_stage3.py` at `coarse` are both green as
-the tree stands.
+## Repo layout
 
-Changed by M8b-i.5: `study_stage3.py`, `tests/test_stage3.py`, `Makefile`, `PLAN.md`, and the
-new artifacts `study_stage3_m8bi5.json` / `.jpg`. Nothing else. `study_stage3.json` and its
-`.jpg` are M8b-i's and still describe that run — the stress magnitudes in them are the ones
-this milestone invalidates, and they are left in place as the record of what was measured
-rather than edited after the fact.
+```
+best_solution.json  stage2_elites.json     the provenance chain, read by BOTH envs
+poster_summary.jpg                         written beside the genome it describes
+src/        the modules — imported flat (`import wheel_fea as W`)
+            project_paths.py  ROOT/SRC/STUDIES/EXPORT, stdlib only so the CAD env
+                              can import it through wheel_fea
+studies/    the 10 study drivers AND their .json/.jpg output, together
+export/     what the CadQuery env produces: wheel.step, wheel_nofillet.step,
+            wheel_step_manifest.json
+tests/      conftest.py at the ROOT puts src/ on sys.path and into PYTHONPATH
+```
+
+**Imports were not rewritten.** `src/` reaches the interpreter three ways —
+`pyproject.toml`'s `pythonpath` for pytest, `export PYTHONPATH` in the Makefile, and the
+root `conftest.py` (which also seeds `os.environ` so the three subprocess-spawning tests
+behave the same under bare `pytest` as under `make test`). A package with `__init__.py`
+was rejected: `tests/test_import_hygiene.py` imports `wheel_fea` in a **jax-free**
+interpreter, and an `__init__` importing jax-dependent siblings would break the CAD env.
+
+A study driver's own `HERE` is `studies/`, so `os.path.join(HERE, args.out)` still puts
+output beside the driver and was left alone. Only the INPUTS moved to `PP.ROOT` / `PP.EXPORT`.
+
+---
+
+## Artifacts
+
+`study_stage3.json` / `.jpg` are M8b-i's record and `study_stage3_m8bi5.*` are M8b-i.5's; both
+describe those runs and are deliberately left unedited rather than corrected after the fact.
+`study_stage3_pnorm.*` were regenerated by step 2 — the `pnorm_by_p` leaves are bit-identical
+to step 1's, and the top-level rows now carry the new constraint plus a `util_kt` column.

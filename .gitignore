@@ -6,7 +6,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
-# Throwaway artifacts from `wheel_fea.py --smoke` and from experimental runs, whose
+# Throwaway artifacts from `src/wheel_fea.py --smoke` and from experimental runs, whose
 # figures are named after their --out genome.  The real best_solution.json, wheel.step,
 # wheel_step_manifest.json and poster_summary.jpg ARE committed on purpose — they are
 # the provenance chain the pipeline's staleness checks compare against.

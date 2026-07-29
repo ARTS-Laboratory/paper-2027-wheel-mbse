@@ -20,7 +20,8 @@ import sys
 import numpy as np
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 import jax_config  # noqa: E402,F401
@@ -279,28 +280,40 @@ def test_a_failed_solve_is_a_step_reject_and_the_run_recovers(genes):
         "a rejected trial must halve the step, so the scales are 1, 1/2, 1/4, ...")
 
 
-def test_stress_scale_is_the_previous_steps_measurement_exactly(z0):
-    """S4 at `smoke`.  This is M8a's gate-7 lesson made into a run-time invariant.
+def test_the_evaluator_carries_no_state_that_could_stale_a_gradient(z0):
+    """S4 is gone, and this is what replaced it: nothing is frozen, so check nothing is.
 
-    `c` re-measured inside a call makes value and gradient answers to different
-    questions — measured, 10% into the assembled gradient while every individual term
-    still matched its own finite difference to 1e-8.  Held fixed forever it stops
-    tracking the design.  The policy is "fixed within a step, refreshed between", and
-    this is the identity that pins it.
+    S4 used to assert that the `stress_scale` an evaluation was handed equalled the
+    previous step's measurement — M8a's gate-7 lesson made into a run-time invariant,
+    because `c` re-measured inside a call made value and gradient answers to different
+    questions.  M8b-i.6 deleted the frozen factor instead: `c` is anchored to a
+    mesh-divergent true max, so the pinned number was a converged answer to nothing.
+
+    The `Evaluator` may still carry the ORIENTATION pin, which is a discrete topological
+    decision and must persist (docstring item 3).  What it must not carry is any
+    continuous scalar that enters the loss, because that is the shape of state that goes
+    stale between a value and its gradient without anything crashing.
     """
+    counters = {"n_calls", "mesh_s", "solve_s"}
+    ev = S3.Evaluator(CFG)
+    phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
+    low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+
+    before = {k: v for k, v in vars(ev).items() if k not in counters}
+    ev(z0, low, high, phases=phases, tiers=("t1",))
+    after = {k: v for k, v in vars(ev).items() if k not in counters}
+
+    assert before == after, (
+        f"evaluating MUTATED the Evaluator: "
+        f"{ {k: (before.get(k), after.get(k)) for k in after if before.get(k) != after[k]} }. "
+        f"State written by one call and read by the next is the shape of bug M8a's gate 7 "
+        f"caught — see wheel_stage3's docstring item 1")
+
     rec = S3.descend(z0, CFG, steps=2, n_phase=N_PHASE, scheme="uniform", verbose=False)
     live = [r for r in rec["steps"] if not r["abandoned"]]
-    checked = 0
-    for k in range(1, len(live)):
-        used = live[k]["report"]["stress_scale"]
-        prev = live[k - 1]["report"]["stress_scale_measured"]
-        rel = abs(used - prev) / abs(prev)
-        assert rel <= so3.GATE_SCALE_REL, (
-            f"step {live[k]['step']} was scored with c={used} but the previous step "
-            f"measured {prev}; re-read the stress_scale paragraph in "
-            f"wheel_objective.t3_terms")
-        checked += 1
-    assert checked >= 1, "the run produced no consecutive evaluated steps to check"
+    assert live and "stress_scale_measured" in live[0]["report"], (
+        "`c` stopped being reported; it is no longer an input but it IS the evidence for "
+        "why, and `make m8bi6` reads it")
 
 
 def test_the_projection_never_freezes_a_gene_whose_gradient_points_inward(genes):
@@ -489,14 +502,12 @@ def test_a_subset_of_probes_omits_the_keys_it_did_not_measure(genes):
     assert np.isfinite(v["min_reachable_abs_defl_err"])
 
 
-def test_the_ladder_measures_the_stress_scale_at_every_rung(genes, monkeypatch):
-    """S11's one subtlety, and it is the opposite of S1's.
+def test_the_ladder_costs_one_evaluation_per_rung_and_repins_per_design(genes, monkeypatch):
+    """S11's cost claim, and the pin that has to be re-derived rather than carried.
 
-    `stress_scale` is an input so a gradient can be taken of the function that was
-    evaluated (`wheel_objective.py:487`), and S1 pins it across both legs for exactly
-    that reason.  The ladder takes no gradient, and `c = max/pnorm` drifting with the
-    mesh is part of what it is asking about — so every rung must MEASURE its own, and
-    inheriting one rung's `c` onto the next would flatten the very drift being reported.
+    One rung is one evaluation however many exponents are probed — the probe reads them
+    off a displacement field the adjoint already converged, which is the whole reason a
+    five-exponent sweep is fourteen minutes and not an hour.
 
     The orientation pin is re-derived per rung for the same reason it is re-derived per
     design: it is a function of the genes and the config, not a run-wide constant.
@@ -507,25 +518,24 @@ def test_the_ladder_measures_the_stress_scale_at_every_rung(genes, monkeypatch):
     class Spy(real):
         def __call__(self, *a, **kw):
             seen.append({"cfg": self.cfg, "orientation": self.orientation,
-                         "stress_scale": self.stress_scale, "tiers": kw.get("tiers")})
+                         "tiers": kw.get("tiers")})
             return super().__call__(*a, **kw)
 
     monkeypatch.setattr(S3, "Evaluator", Spy)
     rep = so3.run_mesh_convergence([("shipped", genes)], configs=(CFG,), n_phase=N_PHASE)
 
     assert len(seen) == 1, f"one rung, one evaluation; got {len(seen)}"
-    assert seen[0]["stress_scale"] is None, (
-        "the rung was handed a stress_scale instead of measuring its own, so `c`'s drift "
-        "with the mesh — the thing S11 reports — would come out flat")
     assert seen[0]["tiers"] == ("t3",), (
         "the ladder pays t1's eager jacrev for barrier numbers it never reads")
     assert seen[0]["orientation"] == tuple(
         float(x) for x in np.asarray(
             WW.flank_orientation(genes, WW.get_config(CFG))).ravel())
     row = rep["designs"][0]["rows"][0]
-    # The identity the report's three series rest on, at the one rung that ran.
+    # The identity the report's series rest on, at the one rung that ran.  `Kt`, not `c`:
+    # `c` is still reported beside it, and the gap between these two numbers is M8b-i.6's
+    # finding rather than a discrepancy.
     assert row["stress_utilisation"] == pytest.approx(
-        row["stress_scale_measured"] * row["pnorm_stress_agg_mpa"]
+        max(row["kt_hub"], row["kt_rim"]) * row["pnorm_stress_agg_mpa"]
         / WO.ALLOWABLE_STRESS_MPA, rel=1e-12)
 
 
@@ -555,6 +565,16 @@ def test_a_bad_exponent_is_refused_at_startup_rather_than_after_the_meshes():
         with pytest.raises(ValueError):
             so3.parse_ladder_p(bad)
 
+    # A REPEATED EXPONENT IS THE SAME BUG WEARING A VALID NUMBER.  `t3_terms` keys its
+    # accumulator by `p` but appends inside a loop over the raw list, so a duplicate
+    # collects two samples per phase against one true max and `_stress_aggregate` dies on
+    # the broadcast — after the first solve.  Dropped here rather than raised, because the
+    # user's intent is unambiguous and a sweep is not worth failing over.  First occurrence
+    # wins, so the reported order still follows the command line.
+    assert so3.parse_ladder_p("8,8") == [8.0]
+    assert so3.parse_ladder_p("30,2,30,4,2") == [30.0, 2.0, 4.0]
+    assert so3.parse_ladder_p("8, 8.0 ,8") == [8.0], "same number, three spellings"
+
 
 def test_the_probe_reproduces_the_constraint_at_the_exponent_it_was_built_with(genes):
     """THE TEST THE WHOLE SWEEP RESTS ON.
@@ -569,22 +589,28 @@ def test_the_probe_reproduces_the_constraint_at_the_exponent_it_was_built_with(g
     If this fails, no other row of a `--ladder-p` report means anything.
     """
     phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
-    _, rep, _ = so3.score(genes, CFG, phases=phases, probe_p=(4.0, WA.STRESS_PNORM_P))
+    _, rep, _ = so3.score(genes, CFG, phases=phases,
+                          probe_p=(WO.STRESS_NOMINAL_P, WA.STRESS_PNORM_P))
 
-    at30 = rep["pnorm_by_p"][repr(float(WA.STRESS_PNORM_P))]
-    assert at30["pnorm_agg_mpa"] == pytest.approx(rep["pnorm_stress_agg_mpa"], rel=1e-12)
-    assert at30["stress_scale_measured"] == pytest.approx(
+    # The reproduction is read off the CONSTRAINT'S OWN exponent, which is now
+    # STRESS_NOMINAL_P.  And off `stress_utilisation_kt`, not `stress_utilisation`: the
+    # probe still reports the old `c * agg` under the latter name, because `c`'s drift with
+    # `p` and with the mesh is exactly what step 1 measured and what the sweep exists to
+    # show.  The two keys disagreeing is the finding, not a bug.
+    at4 = rep["pnorm_by_p"][repr(float(WO.STRESS_NOMINAL_P))]
+    assert at4["pnorm_agg_mpa"] == pytest.approx(rep["pnorm_stress_agg_mpa"], rel=1e-12)
+    assert at4["stress_scale_measured"] == pytest.approx(
         rep["stress_scale_measured"], rel=1e-12)
-    assert at30["stress_utilisation"] == pytest.approx(
+    assert at4["stress_utilisation_kt"] == pytest.approx(
         rep["stress_utilisation"], rel=1e-12)
 
     # And the sweep is a sweep: a different exponent is a different number, in the
     # direction the p-norm's own docstring claims (it approaches the max from below).
-    at4 = rep["pnorm_by_p"]["4.0"]
+    at30 = rep["pnorm_by_p"][repr(float(WA.STRESS_PNORM_P))]
     assert at4["pnorm_agg_mpa"] < at30["pnorm_agg_mpa"], (
         "the p-norm must be non-decreasing in p; if it is not, the probe is not "
         "evaluating the exponent it was handed")
-    assert rep["stress_gauss_p"] == pytest.approx(WA.STRESS_PNORM_P)
+    assert rep["stress_gauss_p"] == pytest.approx(WO.STRESS_NOMINAL_P)
 
 
 def test_the_sweep_costs_no_extra_solve(genes, monkeypatch):
@@ -635,7 +661,7 @@ def test_the_default_ladder_reports_no_sweep_at_all(genes, monkeypatch):
     assert m["designs"][0]["series_by_p"] == {}
     assert m["probe_p"] == []
     # One factory per phase for the constraint itself, and not one more.
-    assert called == [WA.STRESS_PNORM_P] * N_PHASE, (
+    assert called == [WO.STRESS_NOMINAL_P] * N_PHASE, (
         f"the default path built {len(called)} p-norm factories for {N_PHASE} phases")
 
 
@@ -713,6 +739,120 @@ def test_an_unmeasurable_sweep_says_so_instead_of_reporting_a_verdict():
     assert "converges up to p = 8" in converging, converging
 
 
+def test_the_sweep_verdict_is_read_off_every_design_not_just_the_first():
+    """A design that lost a rung must not caption the other one's finding.
+
+    The verdict was scoped to `designs[0]`, so a shipped genome whose `medium` rung failed
+    would title the panel "no exponent gives the stress p-norm a mesh-independent value"
+    over axes in which elite 1's curve visibly dips under the gate — a title asserting the
+    opposite of what is plotted beneath it.  That is the fault M8b-i.5 already shipped once
+    and had to regenerate the figure for, and per-row `try` on the ladder makes a design
+    with no usable series the EXPECTED case rather than a hypothetical one.
+
+    The design is named in the title because a `p` that converges at one genome and not the
+    other is not a constraint, and a bare exponent hides which of the two it came from.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    def design(label, values):
+        rows = [{"config": c, "pnorm_by_p": {"8.0": {"pnorm_agg_mpa": v,
+                                                     "stress_scale_measured": 1.4,
+                                                     "stress_utilisation": v}}}
+                for c, v in values]
+        return {"label": label, "rows": rows,
+                "series": {"drop": so3._series(
+                    [{"config": c, "x": 1.0 + 0.001 * i}
+                     for i, (c, _) in enumerate(values)], "x")},
+                "series_by_p": so3._series_by_p(rows, [8.0])}
+
+    rungs = [("smoke", 1.0), ("coarse", 1.1), ("medium", 1.1001)]
+    # `best_solution` lost its `medium` rung -> two rungs -> no GCI at any p.
+    lost = design("best_solution", rungs[:2])
+    assert lost["series_by_p"]["8.0"]["pnorm"]["converged"] is None, (
+        "fixture is wrong: a two-rung ladder must have no verdict")
+    good = design("elite1", rungs)
+
+    fig, ax = plt.subplots()
+    so3._plot_by_p(ax, {"designs": [lost, good], "configs": ["smoke", "coarse", "medium"]})
+    title = ax.get_title()
+    plt.close(fig)
+
+    assert "converges up to p = 8" in title, (
+        f"the second design's convergence was thrown away by the first's missing rung: "
+        f"{title!r}")
+    assert "elite1" in title, f"the title must say WHICH design converged: {title!r}"
+
+
+def test_a_converged_pnorm_over_a_divergent_constraint_says_both():
+    """The p-norm's verdict is not the constraint's, and M8b-i.6 measured them disagreeing.
+
+    `util = c * pnorm / allowable` is a product.  Lowering `p` converges the p-norm (GCI
+    0.45% at p=4 against the axle drop's 0.14%) and makes `c = max/pnorm` WORSE, because
+    the true max is a singularity the p-norm walks away from — so the constraint's GCI sits
+    at 109% exactly where the nominal is best.  A title reporting only "converges up to
+    p = 6" over that panel would be the third caption in this milestone to claim more than
+    its axes support, and the one most likely to be believed, since it reads as the good
+    news everyone was waiting for.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    # pnorm settles hard; c is measured as max/pnorm and the max RUNS AWAY up the ladder,
+    # so util inherits the divergence.  This is the shape of the real measurement.
+    vals = [("smoke", 1.000, 30.0), ("coarse", 1.010, 45.0), ("medium", 1.012, 60.0)]
+    rows = [{"config": c, "pnorm_by_p": {"4.0": {"pnorm_agg_mpa": pn,
+                                                 "stress_scale_measured": mx / pn,
+                                                 "stress_utilisation": mx / 25.0}}}
+            for c, pn, mx in vals]
+    d = {"label": "best_solution", "rows": rows,
+         "series": {"drop": so3._series([{"config": c, "x": 1.0 + 0.001 * i}
+                                         for i, (c, _, _) in enumerate(vals)], "x")},
+         "series_by_p": so3._series_by_p(rows, [4.0])}
+    b = d["series_by_p"]["4.0"]
+    assert b["pnorm"]["converged"] is True, "fixture: the nominal must converge"
+    assert b["util"]["converged"] is False, "fixture: the constraint must not"
+
+    fig, ax = plt.subplots()
+    so3._plot_by_p(ax, {"designs": [d], "configs": ["smoke", "coarse", "medium"]})
+    title = ax.get_title()
+    plt.close(fig)
+
+    assert "p-norm converges up to p = 4" in title, title
+    assert "CONSTRAINT converges at no p" in title, (
+        f"the title reported the converged factor and stayed silent on the divergent "
+        f"product it is multiplied into: {title!r}")
+
+
+def test_the_per_p_table_prints_the_decomposition_and_not_just_the_verdict(capsys):
+    """`util = c * pnorm / allowable`, so a table showing only `util` hides half the cause.
+
+    M8b-i.5's decomposition is what made this milestone's next step right: `c` measured at
+    GCI 5.33% — the BEST-behaved factor — against the p-norm's 47%, which is why step 2
+    lowers `p` rather than deleting the rescale.  `_series_by_p` computed the `c` leaf from
+    the start and `_print_by_p` never printed it, so the same table that decided the last
+    call could not have been read off this one.
+    """
+    rows = [{"config": c, "pnorm_by_p": {"8.0": {"pnorm_agg_mpa": v,
+                                                 "stress_scale_measured": 1.4 + 0.01 * i,
+                                                 "stress_utilisation": v}}}
+            for i, (c, v) in enumerate([("smoke", 1.0), ("coarse", 1.1), ("medium", 1.15)])]
+    d = {"label": "x", "rows": rows,
+         "series": {"drop": so3._series([{"config": c, "x": 1.0} for c, _ in
+                                         [("smoke", 0), ("coarse", 0), ("medium", 0)]], "x")},
+         "series_by_p": so3._series_by_p(rows, [8.0])}
+    so3._print_by_p(d, {})
+    out = capsys.readouterr().out
+
+    assert "c GCI" in out and "util GCI" in out, (
+        f"both factors of the product must be reported, not just the product: {out!r}")
+    # The `c` VALUE, not merely a column header — 1.42 is the `medium` rung's measurement.
+    assert "1.420" in out, f"the c column is headed but not filled: {out!r}"
+    assert "THE CONTROL" in out, "the axle drop makes every GCI above it interpretable"
+
+
 def test_an_elite_that_will_not_solve_is_recorded_and_the_screen_carries_on(monkeypatch):
     """One bad genome must not cost the other fifteen.
 
@@ -727,7 +867,13 @@ def test_an_elite_that_will_not_solve_is_recorded_and_the_screen_carries_on(monk
         calls.append(len(calls))
         if len(calls) == 2:
             raise RuntimeError("d(force)/d(indentation) came out -1.0")
+        # The full set of report keys the screen reads, because a stub that is missing one
+        # turns "this elite would not solve" into "every elite would not solve" — which is
+        # the exact failure this test exists to forbid, arriving through the test's own
+        # scaffolding instead of through the code.
         return 1.0, {"stress_utilisation": 1.4, "max_stress_mpa": 35.0,
+                     "stress_utilisation_hub": 1.4, "stress_utilisation_rim": 1.1,
+                     "kt_hub": 1.86, "kt_rim": 1.49,
                      "axle_drop_mean_mm": 1.5}, 0.1
 
     monkeypatch.setattr(so3, "score", fake_score)

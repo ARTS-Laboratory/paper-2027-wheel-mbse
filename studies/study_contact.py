@@ -2,7 +2,7 @@
 =============================================================================
   M6 GATE — REAL CONTACT, AND WHAT THE ASSUMED PATCH WAS ACTUALLY WORTH
 =============================================================================
-    .venv-opt/bin/python study_contact.py
+    .venv-opt/bin/python studies/study_contact.py
 
 Every full-wheel number before this rested on `CONTACT_PATCH_HALF_DEG = 3.0` — a
 constant someone chose, with the ground load spread over it as an elliptical vertical
@@ -75,6 +75,8 @@ defaults to 0.0.
 import argparse
 import json
 import os
+
+import project_paths as PP
 import time
 
 import numpy as np
@@ -101,7 +103,7 @@ GATE_FD_PLATEAU_REL = 1.0e-3      # best consecutive agreement in the FD ladder
 
 
 def load_genes(path="best_solution.json"):
-    with open(os.path.join(HERE, path)) as fh:
+    with open(os.path.join(PP.ROOT, path)) as fh:
         return wg.genes_to_vector(json.load(fh)["genes"])
 
 

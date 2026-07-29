@@ -2,7 +2,7 @@
 =============================================================================
   M7 GATE — THE ADJOINT, AND WHETHER THE OBJECTIVE IS SMOOTH IN ALL 14 GENES
 =============================================================================
-    .venv-opt/bin/python study_gradient.py
+    .venv-opt/bin/python studies/study_gradient.py
 
 Stage 3 is a projected optimizer that calls one function.  A gradient that is right to
 plotting accuracy and no better cannot be told apart from a hard problem by any line
@@ -96,6 +96,8 @@ measuring something the plan expected to be uninteresting.
 import argparse
 import json
 import os
+
+import project_paths as PP
 import time
 
 import numpy as np
@@ -140,7 +142,7 @@ QUICK_GENES = (6, 8, 12)
 
 
 def load_genes(path="best_solution.json"):
-    with open(os.path.join(HERE, path)) as fh:
+    with open(os.path.join(PP.ROOT, path)) as fh:
         return wg.genes_to_vector(json.load(fh)["genes"])
 
 

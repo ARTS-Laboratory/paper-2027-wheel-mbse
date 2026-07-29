@@ -92,6 +92,8 @@ import hashlib
 import json
 import math
 import os
+
+import project_paths as PP   # stdlib-only; safe in the jax-free CAD env
 import numpy as np
 
 # The shared geometry kernel.  numpy-only at import (it takes its array module as an
@@ -1355,7 +1357,7 @@ if __name__ == "__main__":
             for n, v, w, b in bound_saturation_report(best_sol)
         ],
     }
-    genome_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.out)
+    genome_path = os.path.join(PP.ROOT, args.out)
     with open(genome_path, "w") as fh:
         json.dump(genome_record, fh, indent=2)
     print(f"\nSaved winning genome → {genome_path}")
@@ -1562,7 +1564,7 @@ if __name__ == "__main__":
     import sys
     import subprocess
 
-    here = os.path.dirname(os.path.abspath(__file__))
+    here = PP.ROOT
 
     # venv puts the interpreter in Scripts/python.exe on Windows and bin/python on
     # POSIX.  The old code knew only the Windows layout, so on Linux the hand-off
@@ -1573,9 +1575,9 @@ if __name__ == "__main__":
         os.path.join(here, ".venv-cad", "Scripts", "python.exe"),
     ]
     cad_python = next((p for p in cad_candidates if os.path.isfile(p)), None)
-    manual_cmd = (".venv-cad\\Scripts\\python wheel_step_export.py"
+    manual_cmd = (".venv-cad\\Scripts\\python src\\wheel_step_export.py"
                   if os.name == "nt" else
-                  ".venv-cad/bin/python wheel_step_export.py")
+                  ".venv-cad/bin/python src/wheel_step_export.py")
 
     print("\n" + "=" * 68)
     print("  CAD HAND-OFF → wheel_step_export.py")
@@ -1603,7 +1605,7 @@ if __name__ == "__main__":
             # Inherit stdout so the exporter's own report (junction overlaps,
             # fillet radii, Kt mismatch) shows up in this run's log.
             proc = subprocess.run(
-                [cad_python, "wheel_step_export.py"],
+                [cad_python, os.path.join(PP.SRC, "wheel_step_export.py")],
                 cwd=here, timeout=900, check=False,
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )

@@ -3,7 +3,7 @@
   M8a GATE — THE OBJECTIVE: IS EVERY TERM DIFFERENTIABLE, AND IS ANY INERT?
 ==============================================================================
 
-    .venv-opt/bin/python study_objective.py
+    .venv-opt/bin/python studies/study_objective.py
 
 M7 proved the adjoint against a fully unrolled Newton.  This gate asks the question
 one level up: the scalar Stage 3 will descend is now assembled from twelve terms,
@@ -90,13 +90,18 @@ was measuring `c` inside every call, so the reference differenced a slightly dif
 function at each step while the gradient assumed one fixed function.  Neither the value
 nor the gradient was wrong on its own; they were answers to different questions.
 
-`stress_scale` is now an explicit input.  `None` means "measure it here", which is right
-for a one-off evaluation and wrong inside a finite difference; the gate passes the base
-design's value to both legs, and M8b holds it fixed within a step and refreshes it
-between steps — the standard adaptive constraint scaling.  This is worth stating plainly
-because it generalises: ANY adaptive normalisation inside an objective is a term in the
-gradient unless it is hoisted out, and hoisting it out is the only cheap option when the
-thing being normalised by is a max.
+The fix at the time was to make `c` an explicit input and pass the base design's value to
+both legs of every difference — hoisting the adaptive normalisation out of the function
+being differentiated.  It generalises: ANY adaptive normalisation inside an objective is a
+term in the gradient unless it is hoisted out.
+
+M8b-i.6 REMOVED THE NORMALISATION INSTEAD, and the gate is stronger for it.  `c` is
+anchored to the true max, which is a mesh singularity, so the hoisted factor was a
+converged answer to nothing; the constraint is now `Kt(R, t) * sigma_nominal(p=4)`, in
+which `Kt` is an analytic function of `R_hub`/`t0` and `R_rim`/`t3` and is DIFFERENTIATED.
+Nothing is pinned across a difference any more, so G7 tests the product rule
+`d(Kt*agg) = dKt*agg + Kt*dagg` — genes 12 and 13 join `QUICK_GENES` for exactly that
+reason, and gene 8 now reaches the loss along two paths at once.
 
 G8's CRITERION CONFLATED "CANNOT BE REDUCED" WITH "IS CURRENTLY SMALL"
 ----------------------------------------------------------------------
@@ -212,6 +217,8 @@ bound of 3.0, so a barely-feasible margin is exactly the right answer.
 import argparse
 import json
 import os
+
+import project_paths as PP
 import time
 
 import numpy as np
@@ -247,12 +254,14 @@ GATE_DOMINATED_GRAD = 0.005     # G8  reported, not gated: under 0.5% of the gra
 # Known-inert, asserted rather than tolerated.  See the docstring.
 INERT_EXPECTED = ("buckling",)
 
-QUICK_GENES = (6, 8, 10)        # cx4, t0, t2 — one shape gene, two thickness genes,
-                                # chosen because they span three decades of derivative
+QUICK_GENES = (6, 8, 10, 12, 13)   # cx4, t0, t2 — one shape gene, two thickness genes,
+                                   # chosen because they span three decades of derivative
+                                   # — plus R_hub and R_rim, whose ONLY route into the
+                                   # loss is `Kt`, so they FD-check `dKt/dg` on its own.
 
 
 def load_genes(path="best_solution.json"):
-    with open(os.path.join(HERE, path)) as fh:
+    with open(os.path.join(PP.ROOT, path)) as fh:
         return np.array(list(json.load(fh)["genes"].values()), dtype=float)
 
 
@@ -579,16 +588,15 @@ def run_total(genes, cfg=DEFAULT_CONFIG, n_phase=4, gene_ids=QUICK_GENES,
     WO.objective(genes, cfg, tiers=("t1", "t2"), meshes=meshes)
     cost_cheap = time.time() - t0
 
-    # BOTH LEGS OF EVERY DIFFERENCE USE THE BASE DESIGN'S STRESS SCALE.  The rescale from
-    # p-norm to true max is exact only for a constant factor; let it re-measure at each
-    # perturbed design and the reference is differencing a DIFFERENT FUNCTION at each
-    # step, which is what a 1e-1 disagreement looked like before this was threaded
-    # through.  M8b holds it fixed within a step for the same reason.
-    scale = brk["report"]["stress_scale"]
-
+    # BOTH LEGS RE-EVALUATE FREELY, and that is the point rather than an oversight.  This
+    # gate used to pin the base design's `stress_scale` into both legs, because a rescale
+    # re-measured per design made the reference difference a DIFFERENT FUNCTION at each
+    # step — the 1e-1 disagreement the docstring opens with.  There is no rescale left to
+    # pin: the constraint is `Kt(R, t) * sigma_nominal`, a pure function of the genes, so
+    # nothing hoisted means nothing hidden, and the difference now tests the product rule.
     def total(g):
         ms = WO.phase_meshes(g, cfg, phases, orientation=ori)
-        return WO.objective(g, cfg, phases=phases, meshes=ms, stress_scale=scale)[0]
+        return WO.objective(g, cfg, phases=phases, meshes=ms)[0]
 
     rows = []
     for gid in gene_ids:
@@ -641,7 +649,7 @@ def run_total(genes, cfg=DEFAULT_CONFIG, n_phase=4, gene_ids=QUICK_GENES,
            "dominated": dominated,
            "n_designs_scored": len(scored),
            "inert_expected": list(INERT_EXPECTED), "census_ok": census_ok,
-           "stress_scale": scale, "elites": elite_rows,
+           "elites": elite_rows,
            "cost": {"full_s": cost_full, "cheap_tiers_s": cost_cheap,
                     "cheap_fraction": cost_cheap / max(cost_full, 1e-12)},
            "worst_best_rel": float(max(r["best_rel"] for r in rows)),
@@ -834,12 +842,20 @@ def _print(rep):
     print(f"\n    axle drop        {r['axle_drop_mean_mm']:.4f} mm against a 2.0 target "
           f"({100*(r['axle_drop_mean_mm']-2.0)/2.0:+.1f}%)")
     print(f"    stress util      {r['stress_utilisation']:.4f}  "
-          f"(max {r['max_stress_mpa']:.2f} MPa against a 25.0 allowable)")
+          f"(hub {r['stress_utilisation_hub']:.4f} at Kt {r['kt_hub']:.3f}, "
+          f"rim {r['stress_utilisation_rim']:.4f} at Kt {r['kt_rim']:.3f})")
+    print(f"      nominal        {r['pnorm_stress_agg_mpa']:.2f} MPa at p="
+          f"{r['stress_gauss_p']:.0f} against a 25.0 allowable; the raw field max is "
+          f"{r['max_stress_mpa']:.2f} MPa")
+    print(f"      ... and the max is NOT what the constraint compares against, because it")
+    print(f"      diverges under refinement.  M8b-i.6: the peak is Kt, not a measurement.")
     print(f"    phase ripple     {100*r['phase_ripple_std_over_mean']:.2f}% std/mean")
-    print("\n    Stage 3 is therefore being asked for more compliance with NO stress")
-    print("    headroom, on a wheel whose rim band carries a third of the compliance")
-    print("    and which no gene touches (M4, compliance_split.rim = 0.324).  Whether")
-    print("    that is a weighting problem or a feasibility one is M8b's first result.")
+    print("\n    This wheel used to read as having NO stress headroom (util 1.24 at")
+    print("    `smoke`, 1.71 at `coarse`), and that reading was an artifact of comparing")
+    print("    against an unfilleted corner's singular peak.  Against a modelled")
+    print("    concentration it is stress-feasible, and the binding question moves to")
+    print("    the rim band, which carries a third of the compliance and which no gene")
+    print("    touches (M4, compliance_split.rim = 0.324).")
     print("\n  NOT DONE: `lambda_min(K_t)` (no eigen-solver in this repo — M9), the")
     print("  optimizer itself, the process-parallel phase batch, and the multi-start.")
     print("  Those are M8b.")
@@ -901,7 +917,7 @@ def _plot(rep, path):
 
 
 def load_elites(path="stage2_elites.json", limit=4):
-    p = os.path.join(HERE, path)
+    p = os.path.join(PP.ROOT, path)
     if not os.path.exists(p):
         return []
     with open(p) as fh:

@@ -11,8 +11,10 @@ requires-python = ">=3.12"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Tests import wheel_fea from the repo root.
-pythonpath = ["."]
+# The modules live in src/ and the study drivers in studies/; both are imported
+# flat.  conftest.py mirrors this into PYTHONPATH for the tests that spawn a
+# subprocess, so `pytest` and `make test` resolve identically.
+pythonpath = ["src", "studies", "."]
 addopts = "-q"
 
 [tool.pyright]
@@ -21,4 +23,4 @@ addopts = "-q"
 venvPath = "."
 venv = ".venv-opt"
 # wheel_step_export.py imports cadquery/OCP, which only exist in env-cad.
-ignore = ["wheel_step_export.py"]
+ignore = ["src/wheel_step_export.py"]

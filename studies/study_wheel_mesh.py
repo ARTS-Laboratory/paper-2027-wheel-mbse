@@ -2,7 +2,7 @@
 =============================================================================
   M2b GATE — IS THE FULL-WHEEL MESH A PARTITION OF THE ACTUAL PART?
 =============================================================================
-    .venv-opt/bin/python study_wheel_mesh.py --samples 200
+    .venv-opt/bin/python studies/study_wheel_mesh.py --samples 200
 
 Three checks, and the second is the one that would otherwise sink M4 silently.
 
@@ -36,6 +36,8 @@ aggregate much.
 import argparse
 import json
 import os
+
+import project_paths as PP
 import time
 
 import numpy as np
@@ -55,7 +57,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def shipped_genome():
-    with open(os.path.join(HERE, "best_solution.json")) as fh:
+    with open(os.path.join(PP.ROOT, "best_solution.json")) as fh:
         return wg.genes_to_vector(json.load(fh)["genes"])
 
 

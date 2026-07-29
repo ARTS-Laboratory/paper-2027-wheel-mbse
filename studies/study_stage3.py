@@ -3,8 +3,8 @@
   M8b-i GATE — THE STAGE-3 OPTIMIZER, AND WHETHER ITS PROBLEM HAS A SOLUTION
 =============================================================================
 
-    .venv-opt/bin/python study_stage3.py            # the gate; exits nonzero on failure
-    .venv-opt/bin/python study_stage3.py --quick    # reduced meshes and step counts
+    .venv-opt/bin/python studies/study_stage3.py            # the gate; exits nonzero on failure
+    .venv-opt/bin/python studies/study_stage3.py --quick    # reduced meshes and step counts
 
 M8a proved the objective and its gradient.  This gates the thing that descends it, and
 then asks the question M8a left open with numbers attached.
@@ -32,7 +32,6 @@ THE GATES, WRITTEN DOWN BEFORE THE RUN
   S1  directional derivative vs an FD ladder of the whole pipeline   1e-4, >= 1 rung
   S2  Adam reduces the loss over a deterministic run                 strictly
   S3  the projection is exact, and does not freeze a pinned gene     exact; no violation
-  S4  `stress_scale` used == the PREVIOUS step's measurement         1e-12
   S5  a failed solve is a step reject and the run recovers           recovers, logged
   S6  the pinned flank orientation is the one the meshes are built   exact
   S7  rqmc vs uniform vs iid: step-to-step variance and wall cost    rqmc < iid
@@ -42,7 +41,7 @@ THE GATES, WRITTEN DOWN BEFORE THE RUN
 
 M8b-i.5 ADDS TWO SECTIONS, AND THEY ARE OPT-IN
 ----------------------------------------------
-    .venv-opt/bin/python study_stage3.py --sections mesh_convergence,multistart \
+    .venv-opt/bin/python studies/study_stage3.py --sections mesh_convergence,multistart \
         --out study_stage3_m8bi5.json                   # or just: make m8bi5
 
 S9's verdict came back "each constraint is reachable alone, neither with the other", and
@@ -66,15 +65,22 @@ EVERY FINITE DIFFERENCE IS A LADDER, per the project's rule.  M7 lost days to th
 gates written at a single step, all three of which failed at `coarse` by one to eight
 parts in 1e5 because of the REFERENCE's truncation error rather than the gradient's.
 
-THE ONE THING S1 HAS TO GET RIGHT THAT IS NOT OBVIOUS
-------------------------------------------------------
-`stress_scale` is held FIXED across the base point and both legs of every difference.
-M8a's gate 7 is the reason: the stress term rescales a p-norm to the true max by a
-measured ratio, that rescale is exact only for a constant factor, and re-measuring it
-inside each call makes the function being differentiated a different function from the
-one being evaluated.  Measured, it put 10% into the assembled gradient while every
-individual term still matched its own finite difference to 1e-8.  A ladder run without
-pinning `c` would fail here and the failure would look like a broken optimizer.
+S4 WAS HERE, AND WHY IT IS NOT ANY MORE
+----------------------------------------
+S4 asserted that the `stress_scale` an evaluation used was the PREVIOUS step's
+measurement, to 1e-12.  That contract existed because the stress term rescaled a p-norm to
+the true max by a measured ratio, the rescale is exact only for a CONSTANT factor, and
+re-measuring inside each call made the function being differentiated a different function
+from the one being evaluated — measured, 10% into the assembled gradient while every
+individual term still matched its own finite difference to 1e-8.  S1 therefore had to pin
+`c` across the base point and both legs, or it would have failed and the failure would have
+looked like a broken optimizer.
+
+M8b-i.6 deleted the frozen factor rather than the freeze: `c` is anchored to a mesh-divergent
+true max, so it was a converged answer to nothing, and the constraint is now
+`Kt(R, t) * sigma_nominal(p=4)` with `Kt` differentiated.  Nothing is held across a
+difference any more, and S1 is stronger for it — both legs re-evaluate freely, so it now
+tests the product rule rather than the pinning.
 
 The FD legs are allowed to leave the unit box by a few parts in a thousand.  That is
 deliberate: the objective is a smooth function of the genes everywhere, the box is the
@@ -87,6 +93,8 @@ import argparse
 import collections
 import json
 import os
+
+import project_paths as PP
 import time
 
 import jax_config  # noqa: F401  — must precede every other jax import
@@ -107,7 +115,6 @@ DEFAULT_CONFIG = "coarse"
 GATE_DIRECTION_REL = 1e-4       # S1  directional derivative vs its FD plateau
 GATE_DIRECTION_RUNGS = 1        # S1  ... on at least one rung of the ladder
 GATE_BOX_TOL = 0.0              # S3  the projection is exact, not approximate
-GATE_SCALE_REL = 1e-12          # S4  `c` used is the previous step's measurement
 GATE_WARM_SAVING = 0.0          # S8  reported, not gated: warm must not be SLOWER
 
 # Reported, not gated.  A design is feasible when it is inside both of these.
@@ -183,6 +190,13 @@ def parse_ladder_p(spec):
     `p > 0` because the p-norm's `x^(1/p)` is not a norm otherwise, and `p` is a float
     rather than an int because nothing downstream rounds it and the interesting region
     between the master plan's 10 and M4's percentile may not be an integer.
+
+    DUPLICATES ARE DROPPED HERE, not tolerated downstream.  `t3_terms` keys its
+    accumulator by exponent (`probe_pn = {v: [] for v in probe_p}`) but appends inside a
+    loop over the raw list, so a repeated `p` collects two samples per phase against one
+    true max and `_stress_aggregate` dies on the broadcast — after the first solve has
+    been paid for, which is precisely the class of failure this function exists to move to
+    startup.  First occurrence wins, so the reported order still follows the command line.
     """
     out = []
     for tok in [s.strip() for s in str(spec).split(",") if s.strip()]:
@@ -194,17 +208,18 @@ def parse_ladder_p(spec):
         if not (np.isfinite(v) and v > 0.0):
             raise ValueError(f"--ladder-p got {tok!r}; every exponent must be finite and "
                              "positive — a p-norm with p <= 0 is not a norm")
-        out.append(v)
+        if v not in out:
+            out.append(v)
     return out
 
 
 def load_genes(path="best_solution.json"):
-    with open(os.path.join(HERE, path)) as fh:
+    with open(os.path.join(PP.ROOT, path)) as fh:
         return np.array(list(json.load(fh)["genes"].values()), dtype=float)
 
 
 def load_elites(path="stage2_elites.json", limit=4):
-    p = os.path.join(HERE, path)
+    p = os.path.join(PP.ROOT, path)
     if not os.path.exists(p):
         return []
     with open(p) as fh:
@@ -245,11 +260,10 @@ def run_direction(genes, cfg=DEFAULT_CONFIG, n_phase=4,
     ori = WW.flank_orientation(genes, WW.get_config(cfg))
 
     ev = S3.Evaluator(cfg, orientation=ori)
-    # Prime, then pin.  The first call measures `c`; every call after it is scored with
-    # that same `c`, base point and both legs alike.  See the module docstring.
-    ev(z0, low, high, phases=phases)
-    c = ev.stress_scale
-    val0, g0, brk0 = ev(z0, low, high, phases=phases, refresh_scale=False)
+    # No priming call and nothing pinned: the objective is now a pure function of the
+    # genes, so the base point and both legs are evaluations of one function.  See the
+    # module docstring on what S4 used to guard here.
+    val0, g0, brk0 = ev(z0, low, high, phases=phases)
 
     # Both legs start their secant from the BASE point's indentations, which is
     # `study_objective.run_stress_plateau`'s reasoning applied one level up: a cold solve
@@ -265,10 +279,8 @@ def run_direction(genes, cfg=DEFAULT_CONFIG, n_phase=4,
 
     rows = []
     for t in steps:
-        vp, _, _ = ev(z0 + t * d, low, high, phases=phases, warm=warm,
-                      refresh_scale=False)
-        vm, _, _ = ev(z0 - t * d, low, high, phases=phases, warm=warm,
-                      refresh_scale=False)
+        vp, _, _ = ev(z0 + t * d, low, high, phases=phases, warm=warm)
+        vm, _, _ = ev(z0 - t * d, low, high, phases=phases, warm=warm)
         fd = (vp - vm) / (2.0 * t)
         rel = abs(fd - predicted) / max(abs(predicted), 1e-300)
         rows.append({"t": float(t), "fd": float(fd), "rel": float(rel)})
@@ -276,7 +288,7 @@ def run_direction(genes, cfg=DEFAULT_CONFIG, n_phase=4,
     rungs = int(sum(r["rel"] < GATE_DIRECTION_REL for r in rows))
     out = {"config": cfg if isinstance(cfg, str) else cfg.name, "n_phase": n_phase,
            "steps": list(steps), "rows": rows, "loss": float(val0),
-           "grad_norm": gnorm, "predicted": predicted, "stress_scale": float(c),
+           "grad_norm": gnorm, "predicted": predicted,
            "best_rel": float(min(r["rel"] for r in rows)), "rungs": rungs,
            "terms": {k: v["value"] for k, v in brk0["terms"].items()}}
     out["pass"] = bool(rungs >= GATE_DIRECTION_RUNGS)
@@ -302,7 +314,6 @@ def run_trajectory(genes, cfg=DEFAULT_CONFIG, steps=25, n_phase=4, lr=S3.DEFAULT
                      verbose=False)
     wall = time.time() - t0
     rows = rec["steps"]
-    live = [r for r in rows if not r["abandoned"]]
 
     # -- S2: it descends.
     l0, lN = rows[0]["loss"], rows[-1]["loss"]
@@ -354,20 +365,8 @@ def run_trajectory(genes, cfg=DEFAULT_CONFIG, steps=25, n_phase=4, lr=S3.DEFAULT
                                       wg.bound_saturation(genes, low, high, 0.0)],
                   "pass": bool(not box_viol and not freeze_viol)}
 
-    # -- S4: `c` used at step k is the measurement from step k-1, exactly.
-    scale_rows, worst = [], 0.0
-    for k in range(1, len(live)):
-        used = live[k]["report"].get("stress_scale")
-        prev_meas = live[k - 1]["report"].get("stress_scale_measured")
-        if used is None or prev_meas is None:
-            continue
-        rel = abs(used - prev_meas) / max(abs(prev_meas), 1e-300)
-        worst = max(worst, rel)
-        scale_rows.append({"step": live[k]["step"], "used": used,
-                           "previous_measured": prev_meas, "rel": rel})
-    scale = {"worst_rel": float(worst), "n_checked": len(scale_rows),
-             "rows": scale_rows[:8], "gate": GATE_SCALE_REL,
-             "pass": bool(scale_rows and worst <= GATE_SCALE_REL)}
+    # S4 was here — see the module docstring.  Nothing is frozen across a step any more,
+    # so there is no freeze contract left to assert.
 
     # -- S6: the pin is honoured.  Not "no flip happened" — a flip is a legitimate event
     # — but "the run scored the topology the pin asked for, for every phase".
@@ -398,7 +397,7 @@ def run_trajectory(genes, cfg=DEFAULT_CONFIG, steps=25, n_phase=4, lr=S3.DEFAULT
 
     return {"config": cfg if isinstance(cfg, str) else cfg.name, "steps": steps,
             "n_phase": n_phase, "scheme": scheme, "lr": lr, "wall_s": round(wall, 1),
-            "descent": descent, "projection": projection, "stress_scale": scale,
+            "descent": descent, "projection": projection,
             "orientation": orientation,
             "loss_history": [float(r["loss"]) for r in rows],
             "util_history": [float(r["report"].get("stress_utilisation", float("nan")))
@@ -406,7 +405,7 @@ def run_trajectory(genes, cfg=DEFAULT_CONFIG, steps=25, n_phase=4, lr=S3.DEFAULT
             "drop_history": [float(r["report"].get("axle_drop_mean_mm", float("nan")))
                              for r in rows],
             "final": rec["final"], "best": rec["best"], "events": rec["events"],
-            "pass": bool(descent["pass"] and projection["pass"] and scale["pass"]
+            "pass": bool(descent["pass"] and projection["pass"]
                          and orientation["pass"])}
 
 
@@ -556,10 +555,10 @@ def run_warm(genes, cfg=DEFAULT_CONFIG, n_phase=4, n_rep=3):
         # arm; the same designs are used for both.
         z = np.clip(z0 + 1e-3 * (k + 1), 0.0, 1.0)
         t0 = time.time()
-        ev(z, low, high, phases=phases, warm=None, refresh_scale=False)
+        ev(z, low, high, phases=phases, warm=None)
         cold_t.append(time.time() - t0)
         t0 = time.time()
-        ev(z, low, high, phases=phases, warm=warm, refresh_scale=False)
+        ev(z, low, high, phases=phases, warm=warm)
         warm_t.append(time.time() - t0)
 
     cold_m, warm_m = float(np.median(cold_t)), float(np.median(warm_t))
@@ -696,9 +695,8 @@ def run_cost(genes, cfg=DEFAULT_CONFIG, n_phase=8, prod_steps=300, prod_starts=4
         return float(np.median(ts))
 
     t_t1 = timed(lambda: S3.t1_barrier_sum(z0, cfg))
-    t_t12 = timed(lambda: ev(z0, low, high, phases=phases[:1], tiers=("t1", "t2"),
-                             refresh_scale=False))
-    t_full = timed(lambda: ev(z0, low, high, phases=phases, refresh_scale=False), n=2)
+    t_t12 = timed(lambda: ev(z0, low, high, phases=phases[:1], tiers=("t1", "t2")))
+    t_full = timed(lambda: ev(z0, low, high, phases=phases), n=2)
 
     serial_h = prod_steps * prod_starts * t_full / 3600.0
     return {"config": cfg if isinstance(cfg, str) else cfg.name, "n_phase": n_phase,
@@ -716,17 +714,16 @@ def run_cost(genes, cfg=DEFAULT_CONFIG, n_phase=8, prod_steps=300, prod_starts=4
 # ---------------------------------------------------------------------------
 
 def score(genes, cfg=DEFAULT_CONFIG, phases=None, n_phase=4, tiers=("t3",), probe_p=()):
-    """`(loss, report, seconds)` at one design, with `c` measured HERE.
+    """`(loss, report, seconds)` at one design.
 
     `tiers=("t3",)` on purpose.  Both M8b-i.5 sections want the deflection and the stress,
     and neither wants the geometric barriers — which cost `t1_vector`'s 1.06 s of eager
     `jacrev` per call (S10) to produce numbers this study never reads.
 
-    `stress_scale` is left at `None`, i.e. MEASURED at this design and this mesh.  That is
-    right here and would be wrong inside a finite difference, and the distinction is the
-    whole of `wheel_objective.py:487`: `c` is an input so that a gradient is taken of the
-    function that was evaluated.  There is no gradient here, and `c`'s own drift with the
-    mesh is part of what the ladder is asking about, so measuring it is the point.
+    `c = mean_phase(max/pnorm)` is reported as `stress_scale_measured`, measured at this
+    design and this mesh.  It no longer enters the constraint — its drift with the mesh is
+    what the ladder is asking about, and the answer (it diverges, because the true max is a
+    singularity) is why the constraint stopped using it.
 
     A fresh `Evaluator` per call, and the orientation re-derived per design: the flank pin
     is a function of the genes, so carrying one elite's pin onto another's mesh would build
@@ -735,9 +732,9 @@ def score(genes, cfg=DEFAULT_CONFIG, phases=None, n_phase=4, tiers=("t3",), prob
     `probe_p` COSTS NO SOLVE, and that is the whole design of `--ladder-p`.  It rides
     `Evaluator`'s `problem_kw` into `wheel_objective.t3_terms`, which reads each exponent
     off the displacement field the adjoint already converged — the same channel `warm`
-    uses.  So one rung stays one evaluation however long the list is, which is what
-    `test_the_ladder_measures_the_stress_scale_at_every_rung` asserts and what turns a
-    five-exponent sweep from an hour back into fourteen minutes.
+    uses.  So one rung stays one evaluation however long the list is — which is what
+    `test_the_ladder_costs_one_evaluation_per_rung_and_repins_per_design` asserts, and
+    what turns a five-exponent sweep from an hour back into fourteen minutes.
     """
     low, high, _ = _bounds()
     if phases is None:
@@ -823,6 +820,11 @@ def _series_by_p(ok, probe_p):
     series needs, and the GCI the sweep quotes is then the same GCI the p=30 verdict was
     quoted from.  Rewriting the extrapolation for the sweep would let the two disagree,
     which is exactly the failure `_stress_aggregate` exists to prevent one level down.
+
+    A LEAF ABSENT FROM THE ROWS IS SKIPPED, NOT A KeyError.  `util_kt` arrived with
+    M8b-i.6 step 2 and the sweeps recorded before it do not carry it; a re-analysis of an
+    older `study_stage3_pnorm.json` must still produce every series it does have, because
+    the whole value of that file is that its `c` columns are the evidence for the change.
     """
     out = {}
     for v in probe_p:
@@ -832,10 +834,12 @@ def _series_by_p(ok, probe_p):
             continue
         out[k] = {"p": float(v)}
         for name, field in (("pnorm", "pnorm_agg_mpa"), ("c", "stress_scale_measured"),
-                            ("util", "stress_utilisation")):
-            out[k][name] = _series(
-                [{"config": r["config"], "x": r["pnorm_by_p"][k][field]} for r in have],
-                "x")
+                            ("util", "stress_utilisation"),
+                            ("util_kt", "stress_utilisation_kt")):
+            cols = [{"config": r["config"], "x": r["pnorm_by_p"][k][field]}
+                    for r in have if field in r["pnorm_by_p"][k]]
+            if len(cols) == len(have):
+                out[k][name] = _series(cols, "x")
     return out
 
 
@@ -847,9 +851,9 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
     so the verdict's own input is moving, and which way it is still moving decides whether
     the infeasibility is a lower bound or an artifact.
 
-    THREE SERIES, NOT ONE, AND THAT IS THE POINT.  `stress_utilisation` is
-    `c * pnorm / allowable` with `c = max/pnorm` measured on the mesh, so it inherits
-    whatever the max does.  `_qoi_pnorm_stress`'s docstring argues the volume-weighted
+    THREE SERIES, NOT ONE, AND THAT IS THE POINT.  When this was written the constraint was
+    `c * pnorm / allowable` with `c = max/pnorm` measured on the mesh, so it inherited
+    whatever the max did.  `_qoi_pnorm_stress`'s docstring argues the volume-weighted
     p-norm is a quadrature of an integral and therefore mesh-convergent, while the true max
     is a pointwise peak at an unfilleted junction corner — the same corner `study_wheel_fea`
     blames for its sub-second-order axle-drop rate — and a peak at a stress concentration
@@ -857,6 +861,12 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
     the mesh into `util` and "the wheel is infeasible" and "the constraint is measured on a
     quantity that has no mesh-independent value" are different conclusions with different
     fixes.  So all three are extrapolated and reported side by side.
+
+    THAT IS WHAT HAPPENED, and the constraint moved as a result: `util` is now
+    `max(Kt_hub, Kt_rim) * pnorm(p=4) / allowable`, with the peak modelled analytically
+    instead of measured off the singularity.  The `max` and `c` series stay in the report
+    anyway — they are the evidence, and the `util` series only means something next to
+    them.
 
     The stencil is FIXED and uniform across every row, so the only thing varying down a
     ladder is the mesh.  A row that fails to mesh or solve is recorded and the ladder
@@ -889,7 +899,10 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
                     "max_stress_mpa": float(rep["max_stress_mpa"]),
                     "pnorm_stress_agg_mpa": float(rep["pnorm_stress_agg_mpa"]),
                     "stress_scale_measured": float(rep["stress_scale_measured"]),
+                    "kt_hub": float(rep["kt_hub"]), "kt_rim": float(rep["kt_rim"]),
                     "stress_utilisation": float(rep["stress_utilisation"]),
+                    "stress_utilisation_hub": float(rep["stress_utilisation_hub"]),
+                    "stress_utilisation_rim": float(rep["stress_utilisation_rim"]),
                     "axle_drop_mean_mm": float(rep["axle_drop_mean_mm"]),
                     "defl_err": float((rep["axle_drop_mean_mm"]
                                        - WO.TARGET_DEFLECTION_MM)
@@ -972,6 +985,9 @@ def run_multistart(cfg=DEFAULT_CONFIG, elites=None, n_phase=4, steps=20,
                 / WO.TARGET_DEFLECTION_MM
             row = {"elite": i, "loss": loss,
                    "stress_utilisation": float(rep["stress_utilisation"]),
+                   "stress_utilisation_hub": float(rep["stress_utilisation_hub"]),
+                   "stress_utilisation_rim": float(rep["stress_utilisation_rim"]),
+                   "kt_hub": float(rep["kt_hub"]), "kt_rim": float(rep["kt_rim"]),
                    "max_stress_mpa": float(rep["max_stress_mpa"]),
                    "axle_drop_mean_mm": float(rep["axle_drop_mean_mm"]),
                    "defl_err": float(err),
@@ -1061,7 +1077,7 @@ def _print_direction(rep):
     head(f"S1  descent direction vs an FD ladder of the whole pipeline  "
          f"[< {GATE_DIRECTION_REL:.0e}, >= {GATE_DIRECTION_RUNGS}]")
     print(f"    loss {d['loss']:.4f}   |grad| {d['grad_norm']:.6g}   "
-          f"predicted g.d = {d['predicted']:.6g}   c = {d['stress_scale']:.5f}")
+          f"predicted g.d = {d['predicted']:.6g}")
     print(f"    {'t':>10s}{'central diff':>18s}{'rel err':>14s}")
     for r in d["rows"]:
         print(f"    {r['t']:10.1e}{r['fd']:18.6g}{r['rel']:14.3e}")
@@ -1071,8 +1087,8 @@ def _print_direction(rep):
 
 def _print_trajectory(rep):
     t = rep["trajectory"]
-    head(f"S2/S3/S4/S6  a deterministic {t['steps']}-step run at {t['n_phase']} phases")
-    de, pr, sc, orr = t["descent"], t["projection"], t["stress_scale"], t["orientation"]
+    head(f"S2/S3/S6  a deterministic {t['steps']}-step run at {t['n_phase']} phases")
+    de, pr, orr = t["descent"], t["projection"], t["orientation"]
     print(f"    S2  loss {de['loss_start']:.4f} -> {de['loss_end']:.4f} "
           f"(best {de['loss_best']:.4f}, factor {de['factor']:.2f}x)"
           f"   -> {'PASS' if de['pass'] else 'FAIL'}")
@@ -1080,8 +1096,6 @@ def _print_trajectory(rep):
           f"{len(pr['freeze_violations'])}, pinned genes freed {pr['n_unpinned_moves']}"
           f"   -> {'PASS' if pr['pass'] else 'FAIL'}")
     print(f"        pinned at start: {', '.join(pr['pinned_at_start']) or '(none)'}")
-    print(f"    S4  worst |c_used - c_prev_measured| / c = {sc['worst_rel']:.3e} "
-          f"over {sc['n_checked']} steps   -> {'PASS' if sc['pass'] else 'FAIL'}")
     print(f"    S6  pin {orr['pinned']}, run recorded {orr['recorded_by_run']}, "
           f"mesh built {orr['mesh_built_with_pin']}")
     print(f"        free choice at the final design "
@@ -1226,19 +1240,41 @@ def _print_by_p(d, m):
     The axle drop is reprinted at the foot rather than left three tables up, because it is
     the standard every row above is read against — a GCI means nothing without knowing what
     a converged QoI scores on these same meshes.
+
+    TWO UTILISATION COLUMNS, AND THE GAP BETWEEN THEM IS STEP 2.  `util_c` is the old
+    constraint, `c * pnorm / allowable`, kept because it is the evidence: it converges at
+    no exponent, at either design.  `util_Kt` is what the constraint became — an analytic
+    concentration factor on a nominal stress — and it converges wherever the p-norm does,
+    which is what choosing `p = STRESS_NOMINAL_P` buys.
+
+    `c` IS PRINTED, not just stored.  `util = c * pnorm / allowable` is a product, and
+    M8b-i.5's one durable methodological lesson is that reporting the decomposition rather
+    than the verdict is what made the next step right: the whole reason this milestone
+    targets `p` instead of the rescale is that `c` was visible in that table and turned out
+    to be the BEST-behaved factor (GCI 5.33%) while the p-norm sat at 47%.  Printing `util`
+    against `pnorm` alone would re-hide exactly the factor that decided the last call.
+    `_series_by_p` has computed this leaf all along; it simply never reached the page.
     """
     print(f"\n    {'p':<9s}{'pnorm MPa up the ladder':<34s}{'order':>7s}{'GCI':>9s}"
-          f"{'util':>9s}{'util GCI':>10s}   verdict")
+          f"{'c':>8s}{'c GCI':>9s}{'util_c':>9s}{'util GCI':>10s}"
+          f"{'util_Kt':>10s}{'util GCI':>10s}   verdict")
     for k in sorted(d["series_by_p"], key=lambda k: d["series_by_p"][k]["p"]):
         b = d["series_by_p"][k]
-        pn, ut = b["pnorm"], b["util"]
+        pn, c, ut, uk = b["pnorm"], b["c"], b["util"], b.get("util_kt")
         vals = " ".join(f"{v:.3f}" for v in pn["values"])
+        # `util_Kt` inherits the p-norm's convergence exactly — `Kt` is a constant of the
+        # mesh — so its GCI column IS the p-norm's, and that is the payoff rather than a
+        # redundancy: it is the same number the constraint now uses.
+        kt_col = (f"{uk['values'][-1]:10.4f}{100 * uk['gci']:9.2f}%" if uk
+                  else f"{'':20s}")
         print(f"    {b['p']:<9.4g}{vals:<34s}{_order(pn):7.2f}{100 * pn['gci']:8.2f}%"
-              f"{ut['values'][-1]:9.4f}{100 * ut['gci']:9.2f}%   {_series_verdict(pn)}")
+              f"{c['values'][-1]:8.3f}{100 * c['gci']:8.2f}%"
+              f"{ut['values'][-1]:9.4f}{100 * ut['gci']:9.2f}%"
+              f"{kt_col}   {_series_verdict(pn)}")
     drop = d["series"].get("drop")
     if drop:
         print(f"    {'drop':<9s}{' '.join(f'{v:.4f}' for v in drop['values']):<34s}"
-              f"{_order(drop):7.2f}{100 * drop['gci']:8.2f}%{'':19s}   "
+              f"{_order(drop):7.2f}{100 * drop['gci']:8.2f}%{'':36s}   "
               f"{_series_verdict(drop)}   <- THE CONTROL")
 
 
@@ -1249,7 +1285,7 @@ def _print_mesh_convergence(rep):
     for d in m["designs"]:
         print(f"\n    {d['label']}")
         print(f"    {'config':<9s}{'elements':>10s}{'max MPa':>10s}{'pnorm MPa':>11s}"
-              f"{'c=max/pn':>10s}{'util':>9s}{'drop mm':>10s}{'s':>8s}")
+              f"{'c=max/pn':>10s}{'Kt':>7s}{'util':>9s}{'drop mm':>10s}{'s':>8s}")
         for r in d["rows"]:
             if "failed" in r:
                 print(f"    {r['config']:<9s}{'FAILED':>10s}   {r['failed']}: "
@@ -1257,7 +1293,9 @@ def _print_mesh_convergence(rep):
                 continue
             print(f"    {r['config']:<9s}{r['n_elements']:10d}"
                   f"{r['max_stress_mpa']:10.2f}{r['pnorm_stress_agg_mpa']:11.2f}"
-                  f"{r['stress_scale_measured']:10.4f}{r['stress_utilisation']:9.4f}"
+                  f"{r['stress_scale_measured']:10.4f}"
+                  f"{max(r['kt_hub'], r['kt_rim']):7.3f}"
+                  f"{r['stress_utilisation']:9.4f}"
                   f"{r['axle_drop_mean_mm']:10.4f}{r['seconds']:8.0f}")
         if not d["series"]:
             continue
@@ -1472,7 +1510,7 @@ def _plot_by_p(a, m):
     The title states which `p` converged, or that none did.  It is read off `converged`,
     never off `settling` — see `_series`.
     """
-    best, measurable = None, False
+    best, best_util, measurable = None, None, False
     for j, d in enumerate(m["designs"]):
         by = d.get("series_by_p") or {}
         if not by:
@@ -1489,9 +1527,25 @@ def _plot_by_p(a, m):
             a.axhline(100 * drop["gci"], color=col, ls="-.", lw=0.8, alpha=0.5,
                       label=f"{d['label']}: axle drop (the control)")
         measurable |= any(np.isfinite(by[k]["pnorm"]["gci"]) for k in ks)
-        if j == 0:
-            conv = [by[k]["p"] for k in ks if by[k]["pnorm"]["converged"]]
-            best = max(conv) if conv else None
+        # EVERY design, not just the first.  Scoping this to `j == 0` made the title a
+        # property of whichever design happened to be listed first: a shipped genome that
+        # lost a rung would caption the figure "no exponent gives the stress p-norm a
+        # mesh-independent value" over a panel in which elite 1's curve visibly dips under
+        # the gate.  Same fault as the caption M8b-i.5 had to regenerate — a title
+        # asserting something the axes underneath it contradict.  The design is named
+        # because a `p` that converges at one genome and not the other is not a constraint.
+        conv = [by[k]["p"] for k in ks if by[k]["pnorm"]["converged"]]
+        if conv and (best is None or max(conv) > best[0]):
+            best = (max(conv), d["label"])
+        # AND THE CONSTRAINT SEPARATELY.  `util = c * pnorm / allowable` is a PRODUCT, and
+        # the p-norm is only one of its two factors.  A title reporting the p-norm's verdict
+        # alone captions this panel with the good half and invites the reading that lowering
+        # `p` fixed the constraint.  Measured here it does the opposite: the p-norm converges
+        # for p <= 6 while `util` converges at NO exponent and is WORST where the p-norm is
+        # best, because `c = max/pnorm` diverges faster as `p` falls away from the max.
+        convu = [by[k]["p"] for k in ks if by[k]["util"]["converged"]]
+        if convu and (best_util is None or max(convu) > best_util[0]):
+            best_util = (max(convu), d["label"])
 
     a.axhline(100 * GATE_LADDER_GCI, color="k", ls=":", lw=1.1)
     a.text(0.02, 100 * GATE_LADDER_GCI, f" converged below {100 * GATE_LADDER_GCI:.0f}%",
@@ -1509,11 +1563,25 @@ def _plot_by_p(a, m):
     # ladder has no GCI at any `p`, so a title claiming a negative verdict there would
     # assert a conclusion its own axes contain no evidence for.  That is the exact fault
     # M8b-i.5 shipped once already, in the other direction.
-    a.set_title(f"the stress p-norm converges up to p = {best:.4g}" if best else
-                "no exponent gives the stress p-norm a mesh-independent value"
-                if measurable else
-                f"ladder too short to tell — a GCI needs 3 rungs, this has "
-                f"{len(m['configs'])}")
+    #
+    # AND THE p-NORM'S VERDICT IS NOT THE CONSTRAINT'S.  Both are stated, because the
+    # measured answer is that they DISAGREE — and a title carrying only the first half
+    # ("converges up to p = 6") over a panel whose dashed curves never leave 60-130% would
+    # be the third caption in this milestone to claim more than its own axes support.
+    if best is None:
+        title = ("no exponent gives the stress p-norm a mesh-independent value"
+                 if measurable else
+                 f"ladder too short to tell — a GCI needs 3 rungs, this has "
+                 f"{len(m['configs'])}")
+    elif best_util is None:
+        # Wrapped, not shortened.  Both halves are the finding, and a title that runs off
+        # its own axes into the neighbouring panel is a caption nobody reads to the end.
+        title = (f"the stress p-norm converges up to p = {best[0]:.4g}  ({best[1]})\n"
+                 f"but the CONSTRAINT converges at no p — the rescale, not the exponent")
+    else:
+        title = (f"the stress p-norm converges up to p = {best[0]:.4g}  ({best[1]})\n"
+                 f"the constraint up to p = {best_util[0]:.4g}  ({best_util[1]})")
+    a.set_title(title, fontsize=9)
     a.grid(alpha=0.3, which="both")
     a.legend(fontsize=6.5, loc="best")
 
