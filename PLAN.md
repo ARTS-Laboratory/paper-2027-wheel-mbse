@@ -65,6 +65,22 @@ alone — its own eager surface is small (`mesh_coords` already routes through t
 jitted, cached `coord_fn`) and there's no measured complaint to fix; revisit only if a
 future S10 run shows it's material.
 
+**M8b-ii item 3 also landed: a periodic fidelity check exists on `descend()`.** There
+was no spec for "multi-fidelity checkpoints" beyond the budget number (`medium` 2.8×
+`coarse`) — chose the narrowest reading: `fidelity_check_every`/`fidelity_check_cfg`
+forward-evaluate the just-accepted iterate at a second config every N steps, t3 tier
+only, discard the gradient, and attach the raw result to that step's row under
+`"fidelity_check"`. Pure observation — the discarded gradient never reaches
+`m`/`v`/`delta`/`z`, proven by a test that runs the same seed with the feature on and
+off and asserts `z`/`grad`/`loss` are bit-identical at every step. No disagreement
+threshold is invented (matches the M8b-i.6 lesson about `stress_scale`'s old rescale:
+don't calibrate a threshold with no measurement behind it); a second-fidelity solve
+failure is a `fidelity_check_failed` event, not an abort. CLI:
+`--fidelity-check-every`/`--fidelity-check-config`, off by default. `descend_lbfgsb` is
+untouched (not the default path, and its `fun` is called on every line-search
+evaluation, not just accepted steps — "every N steps" would mean something else there).
+`make test` **391 passed** (384 before).
+
 ---
 
 ## THE VERDICT REVERSED: the problem is FEASIBLE, and always was
@@ -123,8 +139,8 @@ The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pn
 ### 1. M8b-ii — make the optimizer runnable at scale
 
 Feasible points exist; the optimizer could not search for better ones in reasonable time.
-The phase batch is parallel and `t1_vector` is jitted, both measured; the other two
-bullets are open.
+The phase batch is parallel, `t1_vector` is jitted, and the fidelity check exists, all
+measured; only the production run itself is open.
 
 - **~~Process-parallel phase batch.~~ DONE — `--workers`, gated by S13 (`make m8bii1`).**
 
@@ -187,9 +203,28 @@ bullets are open.
 - **~~Jit `t1_vector`.~~ DONE — `_t1_cached_value_and_jacobian`, `wheel_objective.py`.**
   1.06 s → 0.0054 s at `coarse` (S10), ~195×. Details above, in "M8b-ii item 2 also
   landed."
-- **Multi-fidelity checkpoints.** `medium` is 2.8× `coarse`, not the 4× budgeted (243 s vs
-  87 s). Take that pair from the **elite-1** ladder, not the shipped genome's — the shipped
-  genome runs first and its `coarse` rung carries the `coord_fn` jit trace.
+- **~~Multi-fidelity checkpoints.~~ DONE — `fidelity_check_every`/`fidelity_check_cfg`
+  on `wheel_stage3.descend()`, `--fidelity-check-every`/`--fidelity-check-config` on the
+  CLI.** There was no spec for this beyond the budget number above (`medium` is 2.8×
+  `coarse`, 243 s vs 87 s, not the 4× once assumed — still true, taken from the elite-1
+  ladder rather than the shipped genome's for the reason already stated: the shipped
+  genome runs first and its `coarse` rung carries the `coord_fn` jit trace). Chose the
+  narrowest reading: a PURE OBSERVATION, off by default. Every N accepted steps (and at
+  step 0), the just-accepted iterate is forward-evaluated a second time at a second
+  config, t3 tier only, and the gradient that call returns is discarded — it can never
+  reach `m`/`v`/`delta`/`z`, so it can only report on the trajectory, not redirect it.
+  Result goes on that step's row under `"fidelity_check"` (raw `report` dict, not a
+  diff/ratio — no disagreement threshold is invented here, on purpose: this repo already
+  removed one derived, unrevisited quantity, `stress_scale`'s old rescale role, once its
+  assumptions stopped holding, and a guessed threshold would repeat that with no
+  measurement behind it yet). A second-fidelity solve failure is recorded as a
+  `fidelity_check_failed` event and does not abort the run. A scheduled step that lands
+  on an abandoned step is skipped, not rescheduled. `descend_lbfgsb` is untouched —
+  `--optimizer lbfgsb` isn't the default and its `fun(z)` is called on every line-search
+  evaluation rather than only accepted steps, so "every N steps" would mean something
+  different there. `make test` **391 passed** (384 before). Recommended CLI value for
+  the production run below: `--fidelity-check-every 25` or `50` against
+  `--fidelity-check-config medium`, adding roughly 49 or 24 minutes to an 11.77 h run.
 - **Then the production multi-start run.** Start from elites 9 and 10, not
   `best_solution.json` — that is a GA optimum for the BEAM surrogate, which M8a measured as a
   bad guide to the FEA, and it sits at −25.43% deflection error. The 16-elite spread is wide

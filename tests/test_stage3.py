@@ -316,6 +316,125 @@ def test_the_evaluator_carries_no_state_that_could_stale_a_gradient(z0):
         "why, and `make m8bi6` reads it")
 
 
+# ---------------------------------------------------------------------------
+# THE FIDELITY CHECK — a periodic second-fidelity forward eval, opt-in
+# ---------------------------------------------------------------------------
+#
+# `"coarse"` stands in for a real second fidelity here (not `"medium"`, which would put
+# minutes into `make test`).  That is legitimate for these tests: they exercise the
+# WIRING — that the feature never leaks into the trajectory, fires on the right steps,
+# and survives its own failure — not the actual monitoring signal's usefulness, which
+# only matters at the real `coarse`/`medium` pairing.
+
+FC_CFG = "coarse"
+
+
+def test_fidelity_check_off_by_default_leaves_the_trajectory_untouched(z0):
+    """The feature must be inert unless asked for."""
+    rec = S3.descend(z0, CFG, steps=2, n_phase=N_PHASE, scheme="uniform", verbose=False)
+    assert rec["settings"]["fidelity_check_every"] == 0
+    assert rec["settings"]["fidelity_check_config"] is None
+    for row in rec["steps"]:
+        assert "fidelity_check" not in row
+
+
+def test_fidelity_check_on_never_changes_z_grad_or_loss(z0):
+    """The single most important property: a pure observer cannot become a driver.
+
+    Same seed draws the same `phases` sequence regardless of the feature (it reuses a
+    step's own `phases`, never draws a fresh stencil), so `z`/`grad`/`loss` at every step
+    must be BIT-IDENTICAL whether or not the fidelity check runs alongside it — not just
+    close.
+    """
+    rec_off = S3.descend(z0, CFG, steps=4, n_phase=N_PHASE, scheme="uniform", seed=0,
+                         verbose=False)
+    rec_on = S3.descend(z0, CFG, steps=4, n_phase=N_PHASE, scheme="uniform", seed=0,
+                        verbose=False, fidelity_check_every=1,
+                        fidelity_check_cfg=FC_CFG)
+    assert len(rec_off["steps"]) == len(rec_on["steps"])
+    for r_off, r_on in zip(rec_off["steps"], rec_on["steps"]):
+        assert r_off["z"] == r_on["z"]
+        assert r_off["grad"] == r_on["grad"]
+        assert r_off["loss"] == r_on["loss"]
+
+
+def test_fidelity_check_rows_appear_only_on_the_scheduled_accepted_steps(z0):
+    """Every N steps, including step 0; never on the steps in between."""
+    rec = S3.descend(z0, CFG, steps=4, n_phase=N_PHASE, scheme="uniform",
+                     fidelity_check_every=2, fidelity_check_cfg=FC_CFG, verbose=False)
+    for row in rec["steps"]:
+        if row["step"] % 2 == 0 and not row["abandoned"]:
+            fc = row["fidelity_check"]
+            assert fc is not None and fc["config"] == FC_CFG and not fc["failed"]
+            assert "axle_drop_mean_mm" in fc["report"]
+        else:
+            assert "fidelity_check" not in row
+
+
+def test_fidelity_check_evaluator_shares_the_pinned_orientation(genes, z0, monkeypatch):
+    """Modeled on `test_every_mesh_a_step_builds_is_built_with_the_pinned_orientation`:
+    the second evaluator must never re-derive orientation, only reuse the pin."""
+    pin = tuple(float(x) for x in
+                np.asarray(WW.flank_orientation(genes, WW.get_config(CFG))).ravel())
+    seen = []
+    real = WO.phase_meshes
+
+    def spy(g, cfg, phases, orientation=None):
+        seen.append(orientation)
+        return real(g, cfg, phases, orientation=orientation)
+
+    monkeypatch.setattr(WO, "phase_meshes", spy)
+    S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", verbose=False,
+              fidelity_check_every=1, fidelity_check_cfg=FC_CFG)
+
+    assert seen, "no meshes were built through phase_meshes"
+    for o in seen:
+        assert o is not None
+        assert tuple(float(x) for x in np.asarray(o).ravel()) == pin
+
+
+def test_fidelity_check_absent_from_an_abandoned_row_even_on_a_scheduled_step(z0):
+    """An abandoned step accepted nothing new, so there is nothing to check."""
+    ev = so3._FaultyEvaluator(CFG, n_fail=10_000,
+                              orientation=WW.flank_orientation(
+                                  so3.load_genes(), WW.get_config(CFG)))
+    rec = S3.descend(z0, CFG, steps=3, n_phase=N_PHASE, scheme="uniform",
+                     max_rejects=0, evaluator=ev, fidelity_check_every=1,
+                     fidelity_check_cfg=FC_CFG, verbose=False)
+    abandoned = [r for r in rec["steps"] if r["abandoned"]]
+    assert abandoned, "the faulty evaluator did not abandon any step"
+    for row in abandoned:
+        assert "fidelity_check" not in row
+
+
+def test_fidelity_check_survives_its_own_solve_failure(z0):
+    """A monitoring probe's failure must not abort the run it is watching.
+
+    The primary evaluator solves normally; the SECOND (fidelity-check) evaluator always
+    raises after its first call (`_FaultyEvaluator` only ever skips call 0, `n_calls==0`).
+    The run must still complete every step, every checked row past the first must record
+    `failed: True`, and one `fidelity_check_failed` event must appear per such row.
+    """
+    ori = WW.flank_orientation(so3.load_genes(), WW.get_config(FC_CFG))
+    ev_fc = so3._FaultyEvaluator(FC_CFG, n_fail=10_000, orientation=ori)
+    rec = S3.descend(z0, CFG, steps=3, n_phase=N_PHASE, scheme="uniform",
+                     fidelity_check_every=1, fidelity_check_cfg=FC_CFG,
+                     fidelity_evaluator=ev_fc, verbose=False)
+    assert len(rec["steps"]) == 4, "the run did not complete despite the probe failing"
+    checked = [r for r in rec["steps"] if "fidelity_check" in r]
+    failed = [r for r in checked if r["fidelity_check"]["failed"]]
+    assert len(failed) == len(checked) - 1, (
+        "every fidelity check after the very first call should have failed")
+    fc_events = [e for e in rec["events"] if e["kind"] == "fidelity_check_failed"]
+    assert len(fc_events) == len(failed)
+
+
+def test_fidelity_check_without_a_config_is_refused_rather_than_guessed(z0):
+    with pytest.raises(ValueError):
+        S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform",
+                  fidelity_check_every=1, verbose=False)
+
+
 def test_the_projection_never_freezes_a_gene_whose_gradient_points_inward(genes):
     """S3 at `smoke`, and the reason the run projects instead of reparameterising.
 

@@ -78,6 +78,12 @@ is the failure mode this project keeps naming and keeps having to catch with a g
     repo owns until M9 replaces the Euler proxy with `lambda_min(K_t)`.  Swallowing it
     as a large loss would let the optimizer walk into a buckled design and score it.
 
+6.  A SECOND FIDELITY CAN WATCH THE TRAJECTORY WITHOUT WALKING IT.
+    `medium` is 2.8x `coarse`, not the 4x once budgeted, which is what makes checking it
+    occasionally affordable. `fidelity_check_every` forward-evaluates the just-accepted
+    iterate at a second config every N steps, t3 tier only, and discards the gradient —
+    it can only report on the trajectory, never redirect it. See `_fidelity_check`.
+
 WHY PROJECTION AND NOT A SIGMOID
 --------------------------------
 `z <- clip(z - step, 0, 1)`, not `z = sigmoid(y)`.  Six of the fourteen genes sit
@@ -262,6 +268,34 @@ def t1_barrier_sum(z, cfg, weights=None, span_mm=W.S):
     return barrier_sum_of(brk), brk
 
 
+def _fidelity_check(ev_fc, z, low, high, phases, cfg_label):
+    """One extra t3-only evaluation of the CURRENT ACCEPTED iterate at a second mesh
+    fidelity.  Value only — the gradient is discarded here, by name, and must never
+    reach the caller's `m`/`v`/`delta`/accepted `z`.
+
+    `tiers=("t3",)` matches `studies/study_stage3.score`'s own choice: deflection and
+    stress are the question a second fidelity is asked, not T1's barriers or T2's mass.
+
+    A probe's own failure must not abort the run it is watching: a solve divergence at
+    the second fidelity is recorded as a `"failed"` result, not raised.
+
+    `report` is stored RAW, not as a diff or ratio against the coarse step's own report:
+    this repo removed a derived, unrevisited quantity once already (`stress_scale`'s old
+    rescale role) after its assumptions stopped holding, and a disagreement threshold
+    invented here would have no measurement behind it yet.  `value_t3_only` is NOT
+    comparable to the step's own `"loss"` (a t1+t2+t3 weighted total) — the comparison
+    that matters is the two `report` dicts' shared physical keys.
+    """
+    try:
+        val, _grad_discarded, brk = ev_fc(z, low, high, phases=phases, tiers=("t3",))
+    except RuntimeError as err:
+        return {"config": cfg_label, "failed": True,
+                "error": type(err).__name__, "message": str(err)[:400]}
+    rep = brk.get("report", {})
+    return {"config": cfg_label, "failed": False, "value_t3_only": float(val),
+            "report": {k: float(rep[k]) for k in REPORT_KEYS if k in rep}}
+
+
 class Evaluator:
     """One `objective` call, with the five protocol decisions applied.
 
@@ -333,6 +367,7 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
             grad_clip=GRAD_CLIP, max_rejects=MAX_REJECTS, t1_reject=T1_REJECT,
             log_every=10, out=None, orientation=None, span_mm=W.S, verbose=True,
             evaluator=None, warm_start=True, t1_precheck=True, workers=0,
+            fidelity_check_every=0, fidelity_check_cfg=None, fidelity_evaluator=None,
             **problem_kw):
     """Projected Adam in the unit box.  Returns the run record.
 
@@ -344,7 +379,18 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
     gate and every committed artifact was measured on, and S13 is what says the two agree
     exactly.  An explicit integer is also the only cap on memory: `default_workers`
     counts cores and knows nothing about RAM, and a `medium` rung is 104k dof per worker.
+
+    `fidelity_check_every` is a PURE OBSERVATION, off by default (`0`).  Every N accepted
+    steps (and at step 0), the just-accepted iterate is forward-evaluated a second time
+    at `fidelity_check_cfg`, t3 tier only, and the result is attached to that step's row.
+    The gradient that call returns is discarded — it never reaches `m`/`v`/`delta`/`z` —
+    so this cannot change the trajectory, only report on it.  A scheduled step that is
+    abandoned instead of accepted is simply skipped, not rescheduled.
     """
+    if fidelity_check_every and not fidelity_check_cfg:
+        raise ValueError(
+            "fidelity_check_every requires fidelity_check_cfg (e.g. 'medium') — there "
+            "is no default second fidelity to guess.")
     low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
     z = project(z0)
     rng = np.random.default_rng(seed)
@@ -370,6 +416,19 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
             cfg, weights=weights, orientation=orientation, span_mm=span_mm, pool=pool,
             **problem_kw)
 
+        # A wholly separate object, never the primary's pool: the pool amortizes
+        # per-phase dispatch across MANY steps, and this fires once every N — not worth
+        # spinning up workers for.  Reuses the PINNED orientation rather than
+        # re-deriving it at the second fidelity: `flank_orientation`'s only
+        # cfg-dependence is mesh-resolution sampling density used to locate the same
+        # discrete topological crossing, so reusing is cheaper and avoids a spurious
+        # cross-fidelity mismatch unrelated to what this feature measures.
+        ev_fc = None
+        if fidelity_check_every:
+            ev_fc = fidelity_evaluator if fidelity_evaluator is not None else Evaluator(
+                fidelity_check_cfg, weights=weights, orientation=orientation,
+                span_mm=span_mm, **problem_kw)
+
         events, step_rows = [], []
         t_start = time.time()
 
@@ -383,7 +442,14 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
         wall = time.time() - t0
         warm = warm_from(brk) if warm_start else None
         best = {"loss": val, "z": z.copy(), "step": 0, "breakdown": brk}
-        step_rows.append(_row(0, val, grad, lr, brk, phases, wall, 0, z=z))
+        fc0 = (_fidelity_check(ev_fc, z, low, high, phases, fidelity_check_cfg)
+               if fidelity_check_every else None)
+        if fc0 is not None and fc0["failed"]:
+            events.append({"step": 0, "kind": "fidelity_check_failed",
+                           "config": fidelity_check_cfg,
+                           "error": fc0["error"], "message": fc0["message"]})
+        step_rows.append(_row(0, val, grad, lr, brk, phases, wall, 0, z=z,
+                              fidelity_check=fc0))
         if verbose:
             _log_step(0, val, grad, lr, brk, wall)
             WO.print_loss_breakdown(brk, "STAGE 3 — START")
@@ -453,7 +519,9 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
                     print(f"[step {i:4d}] ABANDONED after {max_rejects + 1} trials; "
                           f"lr -> {lr:.4g}")
                 _persist(out, cfg, z, low, high, ev, step_rows, events, best, t_start,
-                         locals_scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
+                         locals_scheme=scheme, seed=seed, n_phase=n_phase, steps=steps,
+                         fidelity_check_every=fidelity_check_every,
+                         fidelity_check_cfg=fidelity_check_cfg, ev_fc=ev_fc)
                 if n_consecutive >= MAX_CONSECUTIVE_ABANDONED:
                     # Standing still is a result; standing still for the remaining budget is
                     # only a waste.  Stop, and make the reason a record rather than a shape
@@ -481,15 +549,31 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
             if val < best["loss"]:
                 best = {"loss": val, "z": z.copy(), "step": i, "breakdown": brk}
 
+            # Pure observation: reuses THIS step's own `phases` (already drawn above),
+            # never feeds a gradient back, never touches m/v/delta/z.  A scheduled step
+            # that was abandoned instead is simply skipped, not rescheduled.
+            fc = None
+            if fidelity_check_every and i % fidelity_check_every == 0:
+                fc = _fidelity_check(ev_fc, z, low, high, phases, fidelity_check_cfg)
+                if fc["failed"]:
+                    events.append({"step": i, "kind": "fidelity_check_failed",
+                                   "config": fidelity_check_cfg,
+                                   "error": fc["error"], "message": fc["message"]})
+
             step_rows.append(_row(i, val, grad, lr_t, brk, phases, wall, n_reject,
-                                  z=z, scale=scale, grad_norm_raw=g_norm))
+                                  z=z, scale=scale, grad_norm_raw=g_norm,
+                                  fidelity_check=fc))
             if verbose and (i % log_every == 0 or i == steps):
                 _log_step(i, val, grad, lr_t, brk, wall)
             _persist(out, cfg, z, low, high, ev, step_rows, events, best, t_start,
-                     locals_scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
+                     locals_scheme=scheme, seed=seed, n_phase=n_phase, steps=steps,
+                     fidelity_check_every=fidelity_check_every,
+                     fidelity_check_cfg=fidelity_check_cfg, ev_fc=ev_fc)
 
         record = _record(cfg, z, low, high, ev, step_rows, events, best, t_start,
-                         scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
+                         scheme=scheme, seed=seed, n_phase=n_phase, steps=steps,
+                         fidelity_check_every=fidelity_check_every,
+                         fidelity_check_cfg=fidelity_check_cfg, ev_fc=ev_fc)
         if out:
             _write(out, record)
         return record
@@ -499,7 +583,7 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
 
 
 def _row(i, val, grad, lr, brk, phases, wall, n_reject, z=None, scale=1.0,
-         grad_norm_raw=None, abandoned=False):
+         grad_norm_raw=None, abandoned=False, fidelity_check=None):
     r = {"step": i, "loss": float(val), "grad_norm": float(np.linalg.norm(grad)),
          "lr": float(lr), "wall_s": round(float(wall), 3), "trial_scale": float(scale),
          "n_reject_cumulative": int(n_reject), "abandoned": bool(abandoned),
@@ -516,6 +600,8 @@ def _row(i, val, grad, lr, brk, phases, wall, n_reject, z=None, scale=1.0,
                    for k, d in brk["terms"].items()}}
     if grad_norm_raw is not None:
         r["grad_norm_before_clip"] = float(grad_norm_raw)
+    if fidelity_check is not None:
+        r["fidelity_check"] = fidelity_check
     rep = brk.get("report", {})
     r["report"] = {k: float(rep[k]) for k in REPORT_KEYS if k in rep}
     return r
@@ -529,7 +615,8 @@ def _log_step(i, val, grad, lr, brk, wall):
 
 
 def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, seed,
-            n_phase, steps):
+            n_phase, steps, fidelity_check_every=0, fidelity_check_cfg=None,
+            ev_fc=None):
     genes = wg.denormalize(z, low, high)
     best_genes = wg.denormalize(best["z"], low, high)
     return {
@@ -548,7 +635,17 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
                      # cores left serial, and a record that omits them is a wall-clock
                      # number nobody on another machine can compare against.
                      "workers": getattr(getattr(ev, "pool", None), "n_workers", 0),
-                     "cpu_count": os.cpu_count()},
+                     "cpu_count": os.cpu_count(),
+                     # Same reasoning as workers/cpu_count: what a run's fidelity checks
+                     # cost is unreadable without the policy that produced it.
+                     "fidelity_check_every": fidelity_check_every,
+                     "fidelity_check_config": (
+                         fidelity_check_cfg if fidelity_check_cfg is None
+                         or isinstance(fidelity_check_cfg, str)
+                         else fidelity_check_cfg.name),
+                     "fidelity_check_n_calls": getattr(ev_fc, "n_calls", 0),
+                     "fidelity_check_mesh_s": round(getattr(ev_fc, "mesh_s", 0.0), 1),
+                     "fidelity_check_solve_s": round(getattr(ev_fc, "solve_s", 0.0), 1)},
         "steps": step_rows,
         "events": events,
         "final": {"z": [float(x) for x in z],
@@ -568,7 +665,8 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
 
 
 def _persist(out, cfg, z, low, high, ev, step_rows, events, best, t_start, *,
-             locals_scheme, seed, n_phase, steps):
+             locals_scheme, seed, n_phase, steps, fidelity_check_every=0,
+             fidelity_check_cfg=None, ev_fc=None):
     """Write the trajectory after every step.
 
     The GA has no checkpointing at all — `wheel_fea.py` persists only after `ga.run()`
@@ -577,7 +675,9 @@ def _persist(out, cfg, z, low, high, ev, step_rows, events, best, t_start, *,
     if not out:
         return
     _write(out, _record(cfg, z, low, high, ev, step_rows, events, best, t_start,
-                        scheme=locals_scheme, seed=seed, n_phase=n_phase, steps=steps))
+                        scheme=locals_scheme, seed=seed, n_phase=n_phase, steps=steps,
+                        fidelity_check_every=fidelity_check_every,
+                        fidelity_check_cfg=fidelity_check_cfg, ev_fc=ev_fc))
 
 
 def _write(out, record):
@@ -732,6 +832,18 @@ def main():
                          "-1 sizes the pool to min(n_phase, cpu_count), and N is taken "
                          "literally. N is also the only memory cap — the auto-size counts "
                          "cores and knows nothing about RAM")
+    ap.add_argument("--fidelity-check-every", type=int, default=0,
+                    help="every N accepted steps, forward-evaluate the just-accepted "
+                         "iterate at --fidelity-check-config too (t3 tier only, value "
+                         "only, no gradient feedback) and record the agreement into "
+                         "that step's row; 0 (default) disables it. A scheduled step "
+                         "that is abandoned instead of accepted is skipped, not "
+                         "rescheduled")
+    ap.add_argument("--fidelity-check-config", default=None,
+                    help="the second mesh fidelity for --fidelity-check-every, e.g. "
+                         "'medium' against a primary --config coarse (2.8x coarse, not "
+                         "the 4x once budgeted — see PLAN.md); required if "
+                         "--fidelity-check-every is nonzero")
     ap.add_argument("--start", default="best", help="best | rank:N | all")
     ap.add_argument("--genome", default="best_solution.json")
     ap.add_argument("--elites", default="stage2_elites.json")
@@ -762,7 +874,9 @@ def main():
                           scheme=args.phase_scheme, seed=args.seed,
                           grad_clip=args.grad_clip, max_rejects=args.max_rejects,
                           t1_reject=args.t1_reject, t1_precheck=not args.no_t1_precheck,
-                          log_every=args.log_every, out=out, workers=args.workers)
+                          log_every=args.log_every, out=out, workers=args.workers,
+                          fidelity_check_every=args.fidelity_check_every,
+                          fidelity_check_cfg=args.fidelity_check_config)
         rec["label"] = label
         runs.append(rec)
         print(f"\nwrote {out}  ({rec['settings']['elapsed_s']} s, "
