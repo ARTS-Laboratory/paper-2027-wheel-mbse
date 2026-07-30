@@ -1,9 +1,9 @@
 {
   "genome_hash": "36aed36",
   "source": "best_solution.json",
-  "source_mtime": "2026-07-25T12:23:57",
-  "exported_at": "2026-07-25T13:39:14",
-  "export_seconds": 15.0,
+  "source_mtime": "2026-07-28T15:58:05",
+  "exported_at": "2026-07-29T16:42:05",
+  "export_seconds": 14.6,
   "solid": {
     "valid": true,
     "volume_mm3": 59547.4,
