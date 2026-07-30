@@ -248,6 +248,8 @@ by the inert-term census (`INERT_EXPECTED = ("buckling",)`). With stress no long
 is **the only constraint left in the objective that a gradient method cannot act on**. A
 diverged tangent is the only real buckling signal the run has today.
 
+**M9 phase 1: all three new tests pass, including contact penalty smoothing.**
+
 ### 3. The hub fillet — a geometry milestone this change made expensive
 
 The constraint prices `Kt(R_hub, t0) = 1.861` and lets `R_hub` carry a live gradient. The part
@@ -265,14 +267,20 @@ discrepancy in both directions and states the multiplier in its failure text.
 
 The fix is in `_embed` / `fillet_junctions`, not in the constraint.
 
-### 4. Minor, known, pre-existing
+### 4. Minor, known, pre-existing — DONE
 
-**`study_stage3.py --quick` exits 1 on S8.** Cold 6.16 s vs warm 6.32 s, −2.6%. A `smoke`-tier
-artifact: the 960-element solve is a small share of an evaluation dominated by meshing and
-dispatch, and cold always runs first within each rep. At `coarse` — the gate that counts — S8
-passes at +2.4%. No test asserts it, so `make test` is unaffected. Fix by giving `run_warm`
-more reps at `smoke` or by scoping S8 to `coarse`. **Do not "fix" it by relaxing
-`GATE_WARM_SAVING`.**
+**~~`study_stage3.py --quick` exits 1 on S8.~~ FIXED — scoped to `coarse`, not more reps
+at `smoke`.** The old failure (cold 6.16 s vs warm 6.32 s, −2.6%) was a `smoke`-tier
+noise-floor artifact — the 960-element solve is too small a share of an evaluation
+dominated by meshing/dispatch to resolve the warm-start saving at all, so more reps
+would have chased a signal too small to measure rather than fixed anything. `run_warm`'s
+section-registry entry now always calls it at `DEFAULT_CONFIG` ("coarse"), regardless of
+`--quick` — "the gate that counts," per the diagnosis already on file. Re-measured under
+`--quick --sections warm`: cold 43.3 s, warm 39.1 s, **saving 9.8%, PASS** (up from the
+`smoke`-tier +2.4% quoted before, both comfortably above `GATE_WARM_SAVING = 0.0`, left
+untouched). The section's report and printed output now carry which config it ran at,
+so this doesn't silently look like a `smoke` number in a `--quick` run. No test asserted
+the old behavior, so `make test` is unaffected; **391 passed** afterward.
 
 ---
 

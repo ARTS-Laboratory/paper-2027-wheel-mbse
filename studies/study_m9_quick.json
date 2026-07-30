@@ -1,0 +1,135 @@
+{
+ "settings": {
+  "quick": true,
+  "configs": [
+   "smoke"
+  ],
+  "reference_phases": 2,
+  "production_phases": 4,
+  "genome": "best_solution.json",
+  "elapsed_s": 38.6
+ },
+ "mesh": {
+  "rows": [
+   {
+    "config": "smoke",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "lambda_min": 0.02275954061222553,
+    "gradient_norm": 0.019041933830426527,
+    "gradient_max": 0.014527437208994284,
+    "axle_drop_mm": 1.605098557958046,
+    "iterations": 16,
+    "residual_rel": 3.0292636688650864e-08,
+    "lobpcg_converged": true,
+    "reduced_dof": 8904,
+    "elapsed_s": 28.616283416748047,
+    "independent_lambda_min": 0.022759540612124467,
+    "independent_rel_error": 4.440448009290776e-12,
+    "design": "best_solution"
+   }
+  ],
+  "series": {
+   "best_solution:phase=0": {
+    "values": [
+     0.02275954061222553
+    ],
+    "last_pair_rel": null,
+    "pass": true
+   }
+  },
+  "pass": true
+ },
+ "phase": {
+  "n_phase": 2,
+  "period_deg": 30.0,
+  "rows": [
+   {
+    "config": "smoke",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "lambda_min": 0.022759540612069327,
+    "gradient_norm": null,
+    "gradient_max": null,
+    "axle_drop_mm": 1.605098557958046,
+    "iterations": 16,
+    "residual_rel": 3.0292636688650864e-08,
+    "lobpcg_converged": true,
+    "reduced_dof": 8904,
+    "elapsed_s": 2.6210834980010986,
+    "design": "best_solution"
+   },
+   {
+    "config": "smoke",
+    "phase_deg": 15.0,
+    "force_n": 66.7233,
+    "lambda_min": 0.02133588104957037,
+    "gradient_norm": null,
+    "gradient_max": null,
+    "axle_drop_mm": 1.3433129336665386,
+    "iterations": 20,
+    "residual_rel": 1.5254569118099933e-08,
+    "lobpcg_converged": true,
+    "reduced_dof": 8904,
+    "elapsed_s": 2.105563163757324,
+    "design": "best_solution"
+   }
+  ],
+  "comparisons": [
+   {
+    "design": "best_solution",
+    "reference_min": 0.02133588104957037,
+    "reference_max": 0.022759540612069327,
+    "reference_mean": 0.02204771083081985,
+    "reference_std": 0.0007118297812494789,
+    "production_min": 0.02133588104957037,
+    "production_max": 0.022759540612069327,
+    "min_rel_error": 0.0,
+    "max_rel_error": 0.0,
+    "pass": true
+   }
+  ],
+  "pass": true
+ },
+ "load": {
+  "rows": [
+   {
+    "config": "smoke",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "lambda_min": 0.022759540612069327,
+    "gradient_norm": null,
+    "gradient_max": null,
+    "axle_drop_mm": 1.605098557958046,
+    "iterations": 16,
+    "residual_rel": 3.0292636688650864e-08,
+    "lobpcg_converged": true,
+    "reduced_dof": 8904,
+    "elapsed_s": 2.618309259414673,
+    "design": "best_solution"
+   }
+  ],
+  "pass": true
+ },
+ "design_space": {
+  "rows": [
+   {
+    "config": "smoke",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "lambda_min": 0.022759540612069327,
+    "gradient_norm": null,
+    "gradient_max": null,
+    "axle_drop_mm": 1.605098557958046,
+    "iterations": 16,
+    "residual_rel": 3.0292636688650864e-08,
+    "lobpcg_converged": true,
+    "reduced_dof": 8904,
+    "elapsed_s": 2.571275472640991,
+    "design": "best_solution"
+   }
+  ],
+  "pass": true
+ },
+ "pass": true
+}

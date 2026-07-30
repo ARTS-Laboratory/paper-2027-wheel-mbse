@@ -33,6 +33,8 @@ import jax_config              # noqa: E402,F401
 import jax                     # noqa: E402
 import jax.numpy as jnp        # noqa: E402
 
+import scipy.sparse.linalg as spla  # noqa: E402
+
 import study_gradient as sg    # noqa: E402
 import wheel_adjoint as WA     # noqa: E402
 import wheel_fem as fem        # noqa: E402
@@ -209,6 +211,90 @@ def test_the_fillet_genes_do_not_move_a_single_node(genes, mesh):
         assert col[wg.GENE_NAMES.index(n)] == 0.0
     live = [i for i, n in enumerate(wg.GENE_NAMES) if n not in sg.INSENSITIVE_EXPECTED]
     assert min(col[i] for i in live) > 0.0, "a third gene has gone dead"
+
+
+# ---------------------------------------------------------------------------
+# M9 PHASE 1 — THE NEW BUCKLING EIGENVALUE (MECHANISM ONLY, NOT YET A CONSTRAINT)
+# ---------------------------------------------------------------------------
+#
+# `wheel_adjoint._qoi_buckling_eig` is `v^T K_r v == lambda_min(K_r)` for a FIXED
+# eigenvector `v`, differentiated through the same adjoint every other quantity in this
+# module uses.  Nothing here is wired into `wheel_objective`'s loss yet — no margin, no
+# threshold, no phase aggregation — see PLAN.md's M9 plan for why that has to wait for a
+# measurement pass.  These tests only ask: does LOBPCG find the true smallest eigenvalue,
+# and does the adjoint's gradient of it agree with a finite difference.
+
+def _bump(genes, gid, h):
+    g = np.array(genes, dtype=float)
+    g[gid] += h
+    return g
+
+
+def test_buckling_eigenvalue_is_the_true_smallest(solved, mesh, genes):
+    """LOBPCG's `lambda_min` cross-checked against an independent eigensolver.
+
+    LOBPCG, preconditioned by the adjoint's own factorisation, is new to this repo.
+    `eigsh(..., sigma=0, which="LM")` is shift-invert Lanczos via ARPACK — a completely
+    different algorithm — so agreement is evidence the two converge to the SAME
+    eigenvalue, not both landing on a wrong one the same way.
+    """
+    prob, res = solved
+    out = WA.adjoint_grads(prob, mesh, res["u"], genes, [WA.BUCKLING_EIG_NAME])[
+        WA.BUCKLING_EIG_NAME]
+
+    con = prob.contact
+    K = fem.assemble_stiffness(prob.coords, prob.conn, res["u"], order=prob.order,
+                               lam=prob.lam, mu=prob.mu, width=prob.width,
+                               nonlinear=prob.nonlinear)
+    K = K + con.stiffness(prob.coords, res["u"])
+    Kr = (prob.T.T @ K @ prob.T).tocsc()
+    true_min = float(spla.eigsh(Kr, k=1, sigma=0.0, which="LM",
+                                return_eigenvectors=False)[0])
+
+    assert abs(out["value"] - true_min) / abs(true_min) < 1e-6, (
+        out["value"], true_min)
+
+
+def test_buckling_eigenvalue_gradient_matches_finite_difference(genes, mesh):
+    """`d(lambda_min(K_r))/dgenes` via Hadamard's formula, finite-differenced.
+
+    Fixed indentation, not the service-force secant, isolates the new mechanism from
+    load-control coupling — the same level `test_mass_has_no_adjoint_term_at_all` checks
+    at. Steps are scaled by the gene's own range, matching `study_gradient.run_plateau`'s
+    convention (`cy` spans 64 mm, `R_rim` spans 2.5 mm; a shared absolute step asks each
+    gene a different-sized question).
+    """
+    out = WA.solve_and_grad(genes, CFG, WA.BUCKLING_EIG_NAME,
+                            indentation_mm=INDENT_MM, mesh=mesh)
+    grad = out["grad"]
+    assert np.abs(grad).max() > 0.0, "the buckling eigenvalue gradient came out all zero"
+
+    rng = sg._ranges()
+
+    def buckling_at(g):
+        return WA.solve_and_grad(g, CFG, WA.BUCKLING_EIG_NAME,
+                                 indentation_mm=INDENT_MM)["value"]
+
+    for gid in (0, 4, 8, 10):
+        name = wg.GENE_NAMES[gid]
+        best = min(
+            abs((buckling_at(_bump(genes, gid, rng[gid] * h))
+                 - buckling_at(_bump(genes, gid, -rng[gid] * h)))
+                / (2.0 * rng[gid] * h) - grad[gid]) / max(abs(grad[gid]), 1e-12)
+            for h in (1e-3, 1e-4, 1e-5))
+        assert best < 1e-4, (
+            f"d(lambda_min)/d({name}) is out by {best:.2e} on its whole FD ladder")
+
+
+def test_buckling_eigenvalue_is_blind_to_the_fillet_genes(genes, mesh):
+    """`R_hub`/`R_rim` don't enter `mesh_coords`; this term inherits the same zero M7
+    found for every other quantity in this module (`test_the_fillet_genes_do_not_move_a_
+    single_node`) — a structural fact about the mesh, not something specific to this term.
+    """
+    out = WA.solve_and_grad(genes, CFG, WA.BUCKLING_EIG_NAME,
+                            indentation_mm=INDENT_MM, mesh=mesh)
+    for name in sg.INSENSITIVE_EXPECTED:
+        assert out["grad"][wg.GENE_NAMES.index(name)] == 0.0
 
 
 # ---------------------------------------------------------------------------

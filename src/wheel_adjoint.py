@@ -319,6 +319,95 @@ def max_stress(prob, coords, u_full):
     return float(jnp.max(vm))
 
 
+# M9 — PHASE 1: THE LOWEST EIGENVALUE OF THE TANGENT, NOT YET WIRED INTO THE LOSS
+# -----------------------------------------------------------------------------
+# `lambda_min(K_r)` at the converged state, replacing the Euler equivalent-column proxy
+# (`wheel_fea.generalized_spoke_mechanics`) that has never had a gradient.  This is the
+# mechanism only — correctness (a gradient FD test) — not the constraint: no margin, no
+# threshold, no phase aggregation and no change to `objective`'s loss are introduced here.
+# Those need a measurement first (mesh convergence, whether the margin is even the right
+# shape), which is PLAN.md's stated reason `stress_scale` had to go, and this repo does not
+# repeat that mistake by picking a threshold before measuring.
+BUCKLING_EIG_NAME = "buckling_eig"
+LOBPCG_MAXITER = 200      # unmeasured starting point — Phase 2 measures iteration counts
+LOBPCG_TOL = 1.0e-8       # explicit Phase 2 residual target; measured below
+LOBPCG_RESIDUAL_REL = 1.0e-7
+
+
+def lowest_tangent_eigenpair(Kr, back_solve, *, seed=0, maxiter=LOBPCG_MAXITER,
+                             tol=LOBPCG_TOL):
+    """Return the smallest reduced-tangent eigenpair and solver diagnostics.
+
+    The exact factorisation already used by the adjoint is the LOBPCG preconditioner.
+    Keeping this host-side helper separate makes the numerical evidence reusable by M9's
+    study without putting solver diagnostics into the objective's report contract.
+    """
+    n = int(Kr.shape[0])
+    if Kr.shape[0] != Kr.shape[1] or n < 2:
+        raise ValueError(f"expected a square reduced tangent of size >= 2, got {Kr.shape}")
+    rng = np.random.default_rng(seed)
+    X0 = rng.standard_normal((n, min(2, n - 1)))
+    M = spla.LinearOperator(Kr.shape, matvec=back_solve)
+    result = spla.lobpcg(
+        Kr, X0, M=M, largest=False, maxiter=maxiter, tol=tol,
+        retResidualNormsHistory=True)
+    if len(result) == 3:
+        vals, vecs, history = result
+    else:  # scipy falls back to a dense solve for tiny matrices and omits history
+        vals, vecs = result
+        history = np.empty((0,), dtype=float)
+    i = int(np.argmin(vals))
+    value = float(vals[i])
+    vector = np.asarray(vecs[:, i], dtype=float)
+    vector /= np.linalg.norm(vector)
+    residual = np.asarray(Kr @ vector).reshape(-1) - value * vector
+    residual_rel = float(np.linalg.norm(residual) / max(abs(value), 1.0e-30))
+    history = np.asarray(history, dtype=float)
+    last_history = float(np.max(history[-1])) if history.size else residual_rel
+    return value, vector, {
+        "iterations": max(0, int(history.shape[0] - 1)) if history.ndim else 0,
+        "residual_norm": float(np.linalg.norm(residual)),
+        "residual_rel": residual_rel,
+        "history_last_rel": last_history / max(abs(value), 1.0e-30),
+        "converged": bool(np.isfinite(value) and np.isfinite(residual_rel)
+                          and residual_rel <= LOBPCG_RESIDUAL_REL),
+        "maxiter": int(maxiter),
+        "tol": None if tol is None else float(tol),
+    }
+
+
+def _qoi_buckling_eig(prob, v):
+    """`v^T K_r v == lambda_min(K_r)`, `v` a FIXED unit-norm eigenvector.
+
+    For a simple eigenvalue of a symmetric matrix, Hadamard's formula gives
+    `d(lambda_min)/d(theta) = v^T (dK_r/dtheta) v` with `v` held fixed — the envelope
+    theorem on the Rayleigh quotient, true for `theta = u_full` too.  So `v` needs no
+    sensitivity of its own: this is one more `Q(coords, u_full, y_ground)` through the
+    SAME adjoint every other quantity in this module uses.  It is built as a
+    Hessian-vector product (`hess_u Pi @ w`) via one more `jax.jvp` of the already-jitted
+    `grad_u`, so `K_r` is never materialised inside JAX — mirroring how the element
+    kernels themselves are `jax.hessian` of a scalar energy.
+
+    `v` itself comes from a host-side LOBPCG solve on the assembled `K_r` (see
+    `adjoint_grads`) — not run inside a JAX trace, matching this module's stated
+    convention that an implicit quantity gets a hand-derived adjoint rather than autodiff
+    through the solver that produced it.
+
+    NOT added to `QOI`: every other entry there is `prob -> Q`, and this one needs `v` as
+    well, which only `adjoint_grads` has (it comes from `K_r`, assembled there).
+    """
+    con = prob.contact
+    _, grad_u, _ = _kernels(prob.order, prob.nonlinear, con.n_quad, con.smoothing_mm)
+    args = _static_args(prob)
+    w = jnp.asarray(prob.T @ v)
+
+    def Q(coords, u_full, y_ground):
+        gu = lambda u: grad_u(coords, u, y_ground, *args)
+        _, hvp = jax.jvp(gu, (u_full,), (w,))
+        return jnp.vdot(w, hvp)
+    return Q
+
+
 QOI = {
     "contact_force": _qoi_contact_force,
     "strain_energy": _qoi_strain_energy,
@@ -333,7 +422,7 @@ QOI = {
 
 def solve_and_grad(genes, cfg="coarse", qoi="contact_force", *, indentation_mm,
                    phase_deg=0.0, mesh=None, u_reduced0=None, steps=1, newton=None,
-                   **problem_kw):
+                   diagnostics=None, **problem_kw):
     """Solve at a prescribed indentation and return d(qoi)/d(genes), [14].
 
     Returns a dict with `value`, `grad`, `d_dindentation`, the forward solve `res`, the
@@ -361,7 +450,7 @@ def solve_and_grad(genes, cfg="coarse", qoi="contact_force", *, indentation_mm,
     # committed reports all run through it.
     prob = fem.wheel_contact_problem(mesh, indentation_mm=indentation_mm,
                                      **problem_kw)
-    out = adjoint_grad(prob, mesh, res["u"], genes, qoi)
+    out = adjoint_grad(prob, mesh, res["u"], genes, qoi, diagnostics=diagnostics)
     t["gradient_s"] = time.time() - t0
     t["gradient_over_forward"] = t["gradient_s"] / max(t["forward_s"], 1e-12)
 
@@ -370,7 +459,7 @@ def solve_and_grad(genes, cfg="coarse", qoi="contact_force", *, indentation_mm,
     return out
 
 
-def adjoint_grad(prob, mesh, u_full, genes, qoi="contact_force"):
+def adjoint_grad(prob, mesh, u_full, genes, qoi="contact_force", *, diagnostics=None):
     """The four lines of the docstring's derivation, at an already-converged state.
 
     Separated from the solve so that `study_gradient.py` can drive it against a state
@@ -381,10 +470,12 @@ def adjoint_grad(prob, mesh, u_full, genes, qoi="contact_force"):
     call and its result is a flat dict rather than a dict of dicts.
     """
     name = qoi if isinstance(qoi, str) else "qoi"
-    return adjoint_grads(prob, mesh, u_full, genes, [(name, qoi)])[name]
+    return adjoint_grads(prob, mesh, u_full, genes, [(name, qoi)],
+                         diagnostics=diagnostics)[name]
 
 
-def adjoint_grads(prob, mesh, u_full, genes, qois=("contact_force",)):
+def adjoint_grads(prob, mesh, u_full, genes, qois=("contact_force",), *,
+                  diagnostics=None):
     """Several quantities' gradients at one converged state — one factorisation, N solves.
 
     `qois` is a sequence of names in `QOI`, or of `(name, factory)` pairs where `factory`
@@ -424,10 +515,26 @@ def adjoint_grads(prob, mesh, u_full, genes, qois=("contact_force",)):
     # Built once and applied per quantity — see the docstring.  A vjp closure is reusable.
     _, vjp = jax.vjp(lambda v: WW.mesh_coords(v, mesh), jnp.asarray(genes))
 
+    # M9 Phase 1 — `lambda_min(K_r)`'s eigenvector has to exist BEFORE the generic loop
+    # below, since it is what defines the quantity (there is no `prob -> Q` for it without
+    # one).  LOBPCG, preconditioned by the SAME factorisation just computed above: an
+    # exact-inverse preconditioner for a smallest-eigenvalue problem is about as favourable
+    # as LOBPCG gets, and it costs no new sparse factorisation.
+    buckling_eigvecs = {}
+    if any((e if isinstance(e, str) else e[0]) == BUCKLING_EIG_NAME for e in qois):
+        value, v, eig_diag = lowest_tangent_eigenpair(Kr, back_solve)
+        buckling_eigvecs[BUCKLING_EIG_NAME] = v
+        if diagnostics is not None:
+            diagnostics[BUCKLING_EIG_NAME] = {
+                **eig_diag, "value": value, "reduced_dof": int(Kr.shape[0])}
+
     out = {}
     for entry in qois:
         name, spec = entry if isinstance(entry, tuple) else (entry, entry)
-        Q = QOI[spec](prob) if isinstance(spec, str) else spec(prob)
+        if name in buckling_eigvecs:
+            Q = _qoi_buckling_eig(prob, buckling_eigvecs[name])
+        else:
+            Q = QOI[spec](prob) if isinstance(spec, str) else spec(prob)
 
         value = float(Q(c_j, u_j, y))
         dQ_dc, dQ_du, dQ_dy = jax.grad(Q, argnums=(0, 1, 2))(c_j, u_j, y)
@@ -499,7 +606,7 @@ def axle_drop_value_and_grad(genes, cfg="coarse", *, force=TOTAL_FORCE_NEWTONS,
 def service_qoi_value_and_grad(genes, cfg="coarse", qois=("pnorm_stress",), *,
                                force=TOTAL_FORCE_NEWTONS, phase_deg=0.0, mesh=None,
                                newton=None, delta0=None, tol_rel=1e-8, max_iter=20,
-                               **problem_kw):
+                               diagnostics=None, **problem_kw):
     """Every quantity's value and TOTAL gradient at the service-force equilibrium.
 
     THE TERM THIS FUNCTION EXISTS FOR.  Stage 3 loads the wheel to a FORCE, not to an
@@ -545,7 +652,7 @@ def service_qoi_value_and_grad(genes, cfg="coarse", qois=("pnorm_stress",), *,
     t0 = time.time()
     prob = fem.wheel_contact_problem(mesh, indentation_mm=delta, **problem_kw)
     g = adjoint_grads(prob, mesh, res["u"], genes,
-                      ["contact_force"] + list(qois))
+                      ["contact_force"] + list(qois), diagnostics=diagnostics)
     t["gradient_s"] = time.time() - t0
     t["gradient_over_forward"] = t["gradient_s"] / max(t["forward_s"], 1e-12)
 
