@@ -115,6 +115,7 @@ import scipy.optimize
 import wheel_fea as W
 import wheel_genome as wg
 import wheel_objective as WO
+import wheel_pool as WP
 import wheel_wheel as WW
 
 HERE = PP.ROOT          # run outputs and the genome live at the repo root
@@ -279,14 +280,21 @@ class Evaluator:
 
     It used to also carry a `stress_scale` refreshed between steps; docstring item 1 says
     why that is gone and why nothing replaced it.
+
+    `pool`, when given, is a live `wheel_pool.PhasePool` and is the one exception to
+    "holds only what must persist between steps" — a pool rebuilt per call would pay the
+    jax import and every jit trace per call and lose to serial outright.  It is owned by
+    `descend`, not by the evaluator, so that the `finally` that closes it sits next to the
+    loop that could be interrupted.
     """
 
     def __init__(self, cfg=DEFAULT_CONFIG, *, weights=None, orientation=None,
-                 span_mm=W.S, **problem_kw):
+                 span_mm=W.S, pool=None, **problem_kw):
         self.cfg = cfg
         self.weights = weights
         self.span_mm = span_mm
         self.orientation = orientation
+        self.pool = pool
         self.problem_kw = problem_kw
         self.n_calls = 0
         self.mesh_s = 0.0
@@ -302,7 +310,14 @@ class Evaluator:
         t0 = time.time()
         meshes = None
         if "t2" in tiers or "t3" in tiers:
-            meshes = WO.phase_meshes(genes, self.cfg, phases,
+            # Pooled, the workers build their own meshes — but T2 reads `meshes[0]`, so
+            # the parent still builds THAT one.  Letting T2 fall through to `build_wheel`
+            # at the default phase would evaluate `mass` and `min_sj` on a different mesh
+            # from the serial path under an rqmc stencil, whose first phase is the offset
+            # and not 0.0.  One build is a small price for a tier that then matches
+            # exactly.
+            wanted = phases[:1] if self.pool is not None else phases
+            meshes = WO.phase_meshes(genes, self.cfg, wanted,
                                      orientation=self.orientation)
         self.mesh_s += time.time() - t0
 
@@ -310,7 +325,8 @@ class Evaluator:
         val, grad, brk = WO.objective(
             z, self.cfg, normalized=True, weights=self.weights, phases=phases,
             meshes=meshes, tiers=tiers, span_mm=self.span_mm,
-            warm=warm, **self.problem_kw)
+            warm=warm, pool=self.pool, orientation=self.orientation,
+            **self.problem_kw)
         self.solve_s += time.time() - t0
         self.n_calls += 1
         return val, grad, brk
@@ -324,10 +340,18 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
             n_phase=DEFAULT_N_PHASE, n_sub=DEFAULT_N_SUB, scheme="rqmc", seed=0,
             grad_clip=GRAD_CLIP, max_rejects=MAX_REJECTS, t1_reject=T1_REJECT,
             log_every=10, out=None, orientation=None, span_mm=W.S, verbose=True,
-            evaluator=None, warm_start=True, t1_precheck=True, **problem_kw):
+            evaluator=None, warm_start=True, t1_precheck=True, workers=0,
+            **problem_kw):
     """Projected Adam in the unit box.  Returns the run record.
 
     One `objective` evaluation per accepted step, plus one microsecond T1 call per trial.
+
+    `workers` runs the phase loop across processes: `0` is serial and the default, `-1`
+    sizes the pool to the machine via `wheel_pool.default_workers`, and any positive
+    integer is taken literally.  Serial is the default deliberately — it is the path every
+    gate and every committed artifact was measured on, and S13 is what says the two agree
+    exactly.  An explicit integer is also the only cap on memory: `default_workers`
+    counts cores and knows nothing about RAM, and a `medium` rung is 104k dof per worker.
     """
     low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
     z = project(z0)
@@ -340,134 +364,146 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
                                            span_mm=span_mm)
     orientation = tuple(float(o) for o in orientation)
 
-    # `evaluator` is an injection point for the gate: S5 has to prove the step-reject
-    # path recovers, and waiting for a real divergence to turn up is not a test.
-    ev = evaluator if evaluator is not None else Evaluator(
-        cfg, weights=weights, orientation=orientation, span_mm=span_mm, **problem_kw)
+    n_workers = WP.default_workers(n_phase) if workers < 0 else int(workers)
+    # THE POOL IS OWNED HERE, next to the loop that can be interrupted.  A
+    # KeyboardInterrupt during a 300-step run would otherwise leave `n_workers`
+    # interpreters resident, each holding a mesh, and nothing left running to reap them.
+    # An injected `evaluator` brings its own arrangement — S5's `_FaultyEvaluator` never
+    # solves anything — so it is never given a pool.
+    pool = WP.PhasePool(n_workers) if (n_workers > 1 and evaluator is None) else None
+    try:
+        # `evaluator` is an injection point for the gate: S5 has to prove the step-reject
+        # path recovers, and waiting for a real divergence to turn up is not a test.
+        ev = evaluator if evaluator is not None else Evaluator(
+            cfg, weights=weights, orientation=orientation, span_mm=span_mm, pool=pool,
+            **problem_kw)
 
-    events, step_rows = [], []
-    t_start = time.time()
+        events, step_rows = [], []
+        t_start = time.time()
 
-    def _draw():
-        return WO.phase_stencil(n_phase=n_phase, n_sub=n_sub, scheme=scheme, rng=rng)
+        def _draw():
+            return WO.phase_stencil(n_phase=n_phase, n_sub=n_sub, scheme=scheme, rng=rng)
 
-    # -- step 0: the starting point, scored.
-    phases = _draw()
-    t0 = time.time()
-    val, grad, brk = ev(z, low, high, phases=phases)
-    wall = time.time() - t0
-    warm = warm_from(brk) if warm_start else None
-    best = {"loss": val, "z": z.copy(), "step": 0, "breakdown": brk}
-    step_rows.append(_row(0, val, grad, lr, brk, phases, wall, 0, z=z))
-    if verbose:
-        _log_step(0, val, grad, lr, brk, wall)
-        WO.print_loss_breakdown(brk, "STAGE 3 — START")
+        # -- step 0: the starting point, scored.
+        phases = _draw()
+        t0 = time.time()
+        val, grad, brk = ev(z, low, high, phases=phases)
+        wall = time.time() - t0
+        warm = warm_from(brk) if warm_start else None
+        best = {"loss": val, "z": z.copy(), "step": 0, "breakdown": brk}
+        step_rows.append(_row(0, val, grad, lr, brk, phases, wall, 0, z=z))
+        if verbose:
+            _log_step(0, val, grad, lr, brk, wall)
+            WO.print_loss_breakdown(brk, "STAGE 3 — START")
 
-    m = np.zeros_like(z)
-    v = np.zeros_like(z)
-    n_reject = 0
-    lr0, n_consecutive = lr, 0
+        m = np.zeros_like(z)
+        v = np.zeros_like(z)
+        n_reject = 0
+        lr0, n_consecutive = lr, 0
 
-    for i in range(1, steps + 1):
-        lr_t = cosine_lr(lr, i - 1, steps)
-        g_clipped, g_norm = clip_global_norm(grad, grad_clip)
-        delta, m_try, v_try = adam_update(g_clipped, m, v, i, lr_t)
+        for i in range(1, steps + 1):
+            lr_t = cosine_lr(lr, i - 1, steps)
+            g_clipped, g_norm = clip_global_norm(grad, grad_clip)
+            delta, m_try, v_try = adam_update(g_clipped, m, v, i, lr_t)
 
-        # Free: the accepted step already evaluated T1 as part of the objective.
-        b_here = barrier_sum_of(brk)
-        scale, accepted = 1.0, False
-        z_trial, val_new, grad_new, brk_new, wall = z, val, grad, brk, 0.0
+            # Free: the accepted step already evaluated T1 as part of the objective.
+            b_here = barrier_sum_of(brk)
+            scale, accepted = 1.0, False
+            z_trial, val_new, grad_new, brk_new, wall = z, val, grad, brk, 0.0
 
-        for attempt in range(max_rejects + 1):
-            z_trial = project(z - scale * delta)
+            for attempt in range(max_rejects + 1):
+                z_trial = project(z - scale * delta)
 
-            # -- the refusal, before any mesh is built.  GROSS infeasibility only: the
-            # barriers are already terms in the objective, so a screen that also forbids
-            # increasing them overrides the weights and vetoes the constrained trade the
-            # run exists to make.  See `T1_REJECT` for the deadlock that taught this.
-            if t1_precheck:
-                b_trial, _ = t1_barrier_sum(z_trial, cfg, weights=weights,
-                                            span_mm=span_mm)
-                if b_trial > max(t1_reject, b_here):
-                    events.append({"step": i, "kind": "t1_reject", "attempt": attempt,
-                                   "scale": scale, "barrier": b_trial,
-                                   "barrier_here": b_here})
+                # -- the refusal, before any mesh is built.  GROSS infeasibility only: the
+                # barriers are already terms in the objective, so a screen that also forbids
+                # increasing them overrides the weights and vetoes the constrained trade the
+                # run exists to make.  See `T1_REJECT` for the deadlock that taught this.
+                if t1_precheck:
+                    b_trial, _ = t1_barrier_sum(z_trial, cfg, weights=weights,
+                                                span_mm=span_mm)
+                    if b_trial > max(t1_reject, b_here):
+                        events.append({"step": i, "kind": "t1_reject", "attempt": attempt,
+                                       "scale": scale, "barrier": b_trial,
+                                       "barrier_here": b_here})
+                        scale *= 0.5
+                        continue
+
+                phases = _draw()
+                t0 = time.time()
+                try:
+                    val_new, grad_new, brk_new = ev(z_trial, low, high, phases=phases,
+                                                    warm=warm)
+                except RuntimeError as err:
+                    # NewtonDivergedError, the secant's stall, or dF/ddelta <= 0.  All three
+                    # mean "this design did not solve", which is information, not noise.
+                    events.append({
+                        "step": i, "kind": "solve_reject", "attempt": attempt,
+                        "scale": scale, "error": type(err).__name__, "message": str(err)[:400],
+                        "n_newton_records": len(getattr(err, "history", []) or [])})
                     scale *= 0.5
+                    warm = None          # the previous indentations are suspect now
                     continue
+                wall = time.time() - t0
+                accepted = True
+                break
 
-            phases = _draw()
-            t0 = time.time()
-            try:
-                val_new, grad_new, brk_new = ev(z_trial, low, high, phases=phases,
-                                                warm=warm)
-            except RuntimeError as err:
-                # NewtonDivergedError, the secant's stall, or dF/ddelta <= 0.  All three
-                # mean "this design did not solve", which is information, not noise.
-                events.append({
-                    "step": i, "kind": "solve_reject", "attempt": attempt,
-                    "scale": scale, "error": type(err).__name__, "message": str(err)[:400],
-                    "n_newton_records": len(getattr(err, "history", []) or [])})
-                scale *= 0.5
-                warm = None          # the previous indentations are suspect now
+            if not accepted:
+                # Every trial refused.  Keep the iterate, decay the rate, do not update the
+                # moments with a step that was never taken.
+                n_reject += 1
+                n_consecutive += 1
+                lr = max(lr * 0.5, lr0 * LR_FLOOR_FRAC)
+                events.append({"step": i, "kind": "step_abandoned", "lr_after": lr,
+                               "consecutive": n_consecutive})
+                step_rows.append(_row(i, val, grad, lr_t, brk, phases, 0.0, n_reject,
+                                      z=z, abandoned=True))
+                if verbose:
+                    print(f"[step {i:4d}] ABANDONED after {max_rejects + 1} trials; "
+                          f"lr -> {lr:.4g}")
+                _persist(out, cfg, z, low, high, ev, step_rows, events, best, t_start,
+                         locals_scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
+                if n_consecutive >= MAX_CONSECUTIVE_ABANDONED:
+                    # Standing still is a result; standing still for the remaining budget is
+                    # only a waste.  Stop, and make the reason a record rather than a shape
+                    # in the loss history someone has to squint at.
+                    events.append({"step": i, "kind": "run_stopped_stuck",
+                                   "consecutive_abandoned": n_consecutive,
+                                   "steps_remaining": steps - i})
+                    if verbose:
+                        print(f"[step {i:4d}] STOPPING: {n_consecutive} consecutive "
+                              f"abandoned steps, {steps - i} of {steps} not attempted")
+                    break
                 continue
-            wall = time.time() - t0
-            accepted = True
-            break
 
-        if not accepted:
-            # Every trial refused.  Keep the iterate, decay the rate, do not update the
-            # moments with a step that was never taken.
-            n_reject += 1
-            n_consecutive += 1
-            lr = max(lr * 0.5, lr0 * LR_FLOOR_FRAC)
-            events.append({"step": i, "kind": "step_abandoned", "lr_after": lr,
-                           "consecutive": n_consecutive})
-            step_rows.append(_row(i, val, grad, lr_t, brk, phases, 0.0, n_reject,
-                                  z=z, abandoned=True))
-            if verbose:
-                print(f"[step {i:4d}] ABANDONED after {max_rejects + 1} trials; "
-                      f"lr -> {lr:.4g}")
+            z, val, grad, brk = z_trial, val_new, grad_new, brk_new
+            m, v = m_try, v_try
+            n_consecutive = 0
+            warm = warm_from(brk) if warm_start else None
+
+            live = WW.flank_orientation(wg.denormalize(z, low, high), wcfg, span_mm=span_mm)
+            if tuple(float(o) for o in live) != orientation:
+                events.append({"step": i, "kind": "orientation_flip",
+                               "pinned": list(orientation),
+                               "live": [float(o) for o in live]})
+
+            if val < best["loss"]:
+                best = {"loss": val, "z": z.copy(), "step": i, "breakdown": brk}
+
+            step_rows.append(_row(i, val, grad, lr_t, brk, phases, wall, n_reject,
+                                  z=z, scale=scale, grad_norm_raw=g_norm))
+            if verbose and (i % log_every == 0 or i == steps):
+                _log_step(i, val, grad, lr_t, brk, wall)
             _persist(out, cfg, z, low, high, ev, step_rows, events, best, t_start,
                      locals_scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
-            if n_consecutive >= MAX_CONSECUTIVE_ABANDONED:
-                # Standing still is a result; standing still for the remaining budget is
-                # only a waste.  Stop, and make the reason a record rather than a shape
-                # in the loss history someone has to squint at.
-                events.append({"step": i, "kind": "run_stopped_stuck",
-                               "consecutive_abandoned": n_consecutive,
-                               "steps_remaining": steps - i})
-                if verbose:
-                    print(f"[step {i:4d}] STOPPING: {n_consecutive} consecutive "
-                          f"abandoned steps, {steps - i} of {steps} not attempted")
-                break
-            continue
 
-        z, val, grad, brk = z_trial, val_new, grad_new, brk_new
-        m, v = m_try, v_try
-        n_consecutive = 0
-        warm = warm_from(brk) if warm_start else None
-
-        live = WW.flank_orientation(wg.denormalize(z, low, high), wcfg, span_mm=span_mm)
-        if tuple(float(o) for o in live) != orientation:
-            events.append({"step": i, "kind": "orientation_flip",
-                           "pinned": list(orientation),
-                           "live": [float(o) for o in live]})
-
-        if val < best["loss"]:
-            best = {"loss": val, "z": z.copy(), "step": i, "breakdown": brk}
-
-        step_rows.append(_row(i, val, grad, lr_t, brk, phases, wall, n_reject,
-                              z=z, scale=scale, grad_norm_raw=g_norm))
-        if verbose and (i % log_every == 0 or i == steps):
-            _log_step(i, val, grad, lr_t, brk, wall)
-        _persist(out, cfg, z, low, high, ev, step_rows, events, best, t_start,
-                 locals_scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
-
-    record = _record(cfg, z, low, high, ev, step_rows, events, best, t_start,
-                     scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
-    if out:
-        _write(out, record)
-    return record
+        record = _record(cfg, z, low, high, ev, step_rows, events, best, t_start,
+                         scheme=scheme, seed=seed, n_phase=n_phase, steps=steps)
+        if out:
+            _write(out, record)
+        return record
+    finally:
+        if pool is not None:
+            pool.close()
 
 
 def _row(i, val, grad, lr, brk, phases, wall, n_reject, z=None, scale=1.0,
@@ -514,7 +550,13 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
                      "elapsed_s": round(time.time() - t_start, 1),
                      "orientation": [float(o) for o in (ev.orientation or ())],
                      "n_objective_calls": ev.n_calls,
-                     "mesh_s": round(ev.mesh_s, 1), "solve_s": round(ev.solve_s, 1)},
+                     "mesh_s": round(ev.mesh_s, 1), "solve_s": round(ev.solve_s, 1),
+                     # Both, because neither alone makes the timings readable elsewhere:
+                     # "1760 s a descent" means one thing on 8 workers and another on 64
+                     # cores left serial, and a record that omits them is a wall-clock
+                     # number nobody on another machine can compare against.
+                     "workers": getattr(getattr(ev, "pool", None), "n_workers", 0),
+                     "cpu_count": os.cpu_count()},
         "steps": step_rows,
         "events": events,
         "final": {"z": [float(x) for x in z],
@@ -693,6 +735,11 @@ def main():
                     help="skip the gene-space barrier screen on each trial step; it is "
                          "measured at ~20%% of an evaluation, not the microseconds the "
                          "tiering argument assumes (see t1_barrier_sum)")
+    ap.add_argument("--workers", type=int, default=0,
+                    help="run the phase loop across processes: 0 (default) is serial, "
+                         "-1 sizes the pool to min(n_phase, cpu_count), and N is taken "
+                         "literally. N is also the only memory cap — the auto-size counts "
+                         "cores and knows nothing about RAM")
     ap.add_argument("--start", default="best", help="best | rank:N | all")
     ap.add_argument("--genome", default="best_solution.json")
     ap.add_argument("--elites", default="stage2_elites.json")
@@ -723,7 +770,7 @@ def main():
                           scheme=args.phase_scheme, seed=args.seed,
                           grad_clip=args.grad_clip, max_rejects=args.max_rejects,
                           t1_reject=args.t1_reject, t1_precheck=not args.no_t1_precheck,
-                          log_every=args.log_every, out=out)
+                          log_every=args.log_every, out=out, workers=args.workers)
         rec["label"] = label
         runs.append(rec)
         print(f"\nwrote {out}  ({rec['settings']['elapsed_s']} s, "
