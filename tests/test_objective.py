@@ -259,6 +259,21 @@ def test_the_smoothness_term_no_longer_counts_anything(genes):
     assert np.linalg.norm(J[k, :8]) > 0.0
 
 
+def test_the_t1_cache_hits_on_repeat_calls_and_splits_on_cfg(genes):
+    """A cache that silently recompiles every call would erase the whole point of jitting it.
+
+    Same genes, same cfg must hit the one cached closure; a different cfg is a different
+    static recipe and must trace its own — proving `_t1_cached_value_and_jacobian`'s key
+    actually discriminates rather than either never missing or always missing.
+    """
+    WO._T1_CACHE.clear()
+    WO.objective(genes, "smoke", tiers=("t1",))
+    WO.objective(genes, "smoke", tiers=("t1",))
+    assert len(WO._T1_CACHE) == 1, "same genes/cfg should hit the cache, not recompile"
+    WO.objective(genes, "coarse", tiers=("t1",))
+    assert len(WO._T1_CACHE) == 2, "a different cfg must trace its own closure"
+
+
 def test_buckling_is_inert_and_currently_inactive(genes):
     """The one term with no gradient, and the assertion that it costs nothing today.
 

@@ -50,6 +50,21 @@ and the production run projects 46.46 h → 11.77 h.** Pooled values are bit-ide
 serial; gradients agree to 2.1e-16. Details, and the `XLA_FLAGS` finding that made the
 comparison meaningful, are in "the next changes" below.
 
+**M8b-ii item 2 also landed: `t1_vector` is jitted and cached.** T1 and T2 run in the
+PARENT on every path (serial or pooled), so once the phases were parallel they became
+the whole of Amdahl's serial fraction — this is why the item mattered more than its raw
+number suggested. `wheel_objective._t1_cached_value_and_jacobian` replaces the old
+`t1_vector(...)` call plus a separate `jax.jacrev(t1_vector)(...)` call with one
+`jax.jit`-compiled closure (`jax.vjp` + `jax.vmap` over an identity basis, sharing the
+one forward pass) cached on `(cfg.name, span_mm, flanks, weights-projected-to-the-six-
+T1-keys)`, exactly the `coord_fn` idiom — genes are the sole traced argument, never in
+the key. `t1_vector` itself is untouched; the cache is a new call path in `objective()`
+only. **Measured (S10, `coarse`): 1.06 s → 0.0054 s, ~195×, 0.73% → 0.003% of a full
+evaluation.** `make test` **384 passed** (383 before). `t2_vector` was deliberately left
+alone — its own eager surface is small (`mesh_coords` already routes through the
+jitted, cached `coord_fn`) and there's no measured complaint to fix; revisit only if a
+future S10 run shows it's material.
+
 ---
 
 ## THE VERDICT REVERSED: the problem is FEASIBLE, and always was
@@ -108,7 +123,8 @@ The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pn
 ### 1. M8b-ii — make the optimizer runnable at scale
 
 Feasible points exist; the optimizer could not search for better ones in reasonable time.
-The phase batch is now parallel and that is measured; the other three bullets are open.
+The phase batch is parallel and `t1_vector` is jitted, both measured; the other two
+bullets are open.
 
 - **~~Process-parallel phase batch.~~ DONE — `--workers`, gated by S13 (`make m8bii1`).**
 
@@ -168,20 +184,12 @@ The phase batch is now parallel and that is measured; the other three bullets ar
   happened not to at this design. The claim S13 supports is per-evaluation — values exact,
   gradients to 1e-14 — not per-trajectory.
 
+- **~~Jit `t1_vector`.~~ DONE — `_t1_cached_value_and_jacobian`, `wheel_objective.py`.**
+  1.06 s → 0.0054 s at `coarse` (S10), ~195×. Details above, in "M8b-ii item 2 also
+  landed."
 - **Multi-fidelity checkpoints.** `medium` is 2.8× `coarse`, not the 4× budgeted (243 s vs
   87 s). Take that pair from the **elite-1** ladder, not the shipped genome's — the shipped
   genome runs first and its `coarse` rung carries the `coord_fn` jit trace.
-- **Jit `t1_vector`** (`wheel_objective.py`) — 1.06 s of eager dispatch per call, measured by
-  S10. **Worth more now than that number suggests, and S13 says why.** T1 and T2 run in the
-  PARENT on both paths, so they are the whole of Amdahl's serial fraction once the phases
-  are parallel: efficiency falls 0.91 → 0.73 → **0.49** from 2 to 8 workers, and at 8 the
-  parallel part is ~26 s against ~9 s of serial remainder. 0.73% of a serial evaluation is
-  a much larger share of a pooled one.
-
-  `flanks` is a tuple of at most four `±1.0` floats — a DISCRETE structure with 16 possible
-  values — so it belongs in a `_T1_CACHE` key beside `cfg.name`/`weights`/`span_mm`, in the
-  `coord_fn` idiom, and the cache will hit on essentially every step. One jitted function
-  returning `(value, jacobian)` beats two calls.
 - **Then the production multi-start run.** Start from elites 9 and 10, not
   `best_solution.json` — that is a GA optimum for the BEAM surrogate, which M8a measured as a
   bad guide to the FEA, and it sits at −25.43% deflection error. The 16-elite spread is wide

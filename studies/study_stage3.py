@@ -758,8 +758,9 @@ def score(genes, cfg=DEFAULT_CONFIG, phases=None, n_phase=4, tiers=("t3",), prob
     """`(loss, report, seconds)` at one design.
 
     `tiers=("t3",)` on purpose.  Both M8b-i.5 sections want the deflection and the stress,
-    and neither wants the geometric barriers — which cost `t1_vector`'s 1.06 s of eager
-    `jacrev` per call (S10) to produce numbers this study never reads.
+    and neither wants the geometric barriers, which produce numbers this study never
+    reads — T1 is now jitted and cached (0.0054 s at `coarse`, S10) so skipping it here
+    is about relevance, not cost, unlike when this docstring was written.
 
     `c = mean_phase(max/pnorm)` is reported as `stress_scale_measured`, measured at this
     design and this mesh.  It no longer enters the constraint — its drift with the mesh is
@@ -1383,17 +1384,12 @@ def _print_cost(rep):
           f"({c['per_phase_s']:.3f} s/phase)")
     print(f"    projected serial cost of {c['projected_steps']} steps x "
           f"{c['projected_starts']} starts: {c['projected_serial_hours']:.2f} h")
-    print(f"\n    NOTE, and it cuts both ways.  T1's ABSOLUTE cost is "
-          f"{c['t1_s']:.2f} s, not the")
-    print(f"    '~ms' wheel_objective's tiering table claims — `t1_vector` carries no")
-    print(f"    @jax.jit, so `jacrev` runs it eagerly and pays python dispatch per op.")
-    print(f"    But as a FRACTION of a `{c['config']}` evaluation it is "
-          f"{100 * c['t1_frac_of_full']:.2f}%, so the")
-    print(f"    tiering ECONOMICS hold here and the cheap-refusal argument survives; it")
-    print(f"    is at `smoke` that the same 1 s lands against a 7 s solve and becomes")
-    print(f"    21%.  The fraction is a statement about the mesh, the second is about")
-    print(f"    T1.  Jitting `t1_vector` is the real fix and belongs in")
-    print(f"    wheel_objective.py, which M8b-i does not touch.")
+    print(f"\n    T1's ABSOLUTE cost is {c['t1_s']:.4f} s, matching the '~ms' "
+          f"wheel_objective's")
+    print(f"    tiering table claims — `_t1_cached_value_and_jacobian` jits and caches")
+    print(f"    value+jacobian in one dispatch, keyed like `coord_fn`.  Was 1.06 s at")
+    print(f"    `coarse` (0.73% of a full evaluation) before that landed; now "
+          f"{100 * c['t1_frac_of_full']:.3f}%.")
 
 def _print_probes(f, indent="    "):
     """The probe table and its verdict — shared by S9 and by every multi-start re-probe."""
@@ -1667,8 +1663,10 @@ def _print_tail(rep):
     print("  wheel_stage3.py, and S13 (`make m8bii1`) is the gate: every VALUE bit-for-bit")
     print("  against serial, gradients to 1e-14 because two plain serial interpreters")
     print("  already disagree in the adjoint's last bit with no pool involved.")
-    print("  NOT DONE: the multi-fidelity checkpoints, the `t1_vector` jit and the")
-    print("  300-step multi-start production run.")
+    print("  DONE, also: `t1_vector` is jitted and cached (S10: 1.06 s -> 0.0054 s at")
+    print("  `coarse`, ~195x, 0.73% -> 0.003% of a full evaluation).")
+    print("  NOT DONE: the multi-fidelity checkpoints and the 300-step multi-start")
+    print("  production run.")
     if "multistart" in rep or "feasibility" in rep:
         print("  The feasibility sections above are the measurement that says whether")
         print("  funding that run is sensible.")

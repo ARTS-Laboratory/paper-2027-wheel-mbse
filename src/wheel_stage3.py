@@ -243,27 +243,19 @@ def t1_barrier_sum(z, cfg, weights=None, span_mm=W.S):
     `tiers=("t1",)` is the only genuinely mesh-free AND solve-free path — `("t1","t2")`
     still pays a `build_wheel`.
 
-    AND IT IS NOT MICROSECONDS, WHICH IS WORTH KNOWING BEFORE RELYING ON IT — though the
-    conclusion is narrower than it first looked, and both halves are worth stating.
+    WAS NOT MICROSECONDS, AND NOW IS.  `t1_vector` used to carry no `@jax.jit`, so
+    `jax.jacrev` ran it eagerly and paid python dispatch on every op of a several-hundred-
+    point Bezier evaluation: ~9 s on the first call, a steady ~1.1 s at `coarse` (1.58 s at
+    `smoke`) on every call after — three orders above `wheel_objective.py:33`'s "~ms" for
+    the whole tier. `wheel_objective._t1_cached_value_and_jacobian` fixed that: value and
+    Jacobian in one `jax.jit`-compiled closure per `(cfg, weights, span_mm, flanks)`, cached
+    the same way `wheel_wheel.coord_fn` caches. Measured at `coarse` (S10): 0.0054 s,
+    ~195x down from 1.06 s, 0.003% of a full evaluation instead of 0.73%.
 
-    Measured: ~9 s on the first call and a steady ~1.1 s at `coarse` (1.58 s at `smoke`)
-    on every call after it, so the cost is real work rather than a trace that amortises.
-    `t1_vector` carries no `@jax.jit`, so `jax.jacrev` runs it eagerly and pays python
-    dispatch on every op of a several-hundred-point Bezier evaluation.  Against
-    `wheel_objective.py:33`'s "~ms" for the whole tier that is three orders out.
-
-    But the TIERING ARGUMENT is about a ratio, and the ratio holds where it is used: T1
-    is 0.73% of a full `coarse` evaluation, so refusing a trial for 1 s instead of
-    spending 144 s on it is still the trade M8a described.  It is at `smoke` that the
-    same second lands against a 7 s solve and becomes 21% — a statement about how cheap
-    the mesh is, not about T1.  Quoting either number alone misleads.
-
-    The driver's response is a design decision rather than a complaint.  The current
+    The driver's response predates the fix and stays useful regardless: the current
     point's barrier is read off the breakdown the step already computed
     (`barrier_sum_of`), which was half the cost and is now free; what remains is one call
-    per TRIAL, and `--no-t1-precheck` turns even that off.  S10 reports both numbers so
-    the trade is visible rather than assumed.  Jitting `t1_vector` would fix it properly
-    and belongs in `wheel_objective.py`, which M8b-i does not touch.
+    per TRIAL, and `--no-t1-precheck` turns even that off. S10 still reports both numbers.
     """
     _, _, brk = WO.objective(z, cfg, normalized=True, weights=weights,
                              span_mm=span_mm, tiers=("t1",))

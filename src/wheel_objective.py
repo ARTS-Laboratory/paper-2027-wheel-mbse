@@ -431,6 +431,64 @@ def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
 
 T1_NAMES = ("x_order", "hub_overlap", "smoothness", "fold", "arrival", "fillet")
 
+# ---------------------------------------------------------------------------
+# T1's jit cache — same idiom as `wheel_wheel.coord_fn`, see there for the reasoning
+# this mirrors: the key is the STATIC recipe, never `genes` (the traced argument).
+# ---------------------------------------------------------------------------
+
+_T1_CACHE = {}
+_T1_CACHE_MAX = 128
+# 4 cfg names x 16 flank patterns x <=2 practically-distinct T1-weight projections
+# (DEFAULT_WEIGHTS and every studies/study_stage3.py probe_weights() variant are
+# identical on the six T1 keys below, since PROBE_ZERO only ever zeroes deflection/
+# mass/phase_ripple/stress) x 1 span_mm value used anywhere in this repo = 128 with
+# headroom, same sizing style as _COORD_FN_CACHE_MAX (wheel_wheel.py).
+
+_T1_WEIGHT_KEYS = ("x_order", "hub_overlap", "smoothness", "fold", "arrival", "fillet")
+
+
+def _t1_weights_key(weights):
+    """Project `weights` down to the six keys `t1_vector` actually reads.
+
+    Hashing the whole dict would also be correct but looser: every weights dict this
+    repo ever constructs (DEFAULT_WEIGHTS and all three `probe_weights` variants) is
+    identical on these six keys, so the full dict would multiply cache entries across
+    S1's probe kinds without distinguishing anything `t1_vector` can see.
+    """
+    w = DEFAULT_WEIGHTS if weights is None else weights
+    return tuple(float(w[k]) for k in _T1_WEIGHT_KEYS)
+
+
+def _t1_cached_value_and_jacobian(genes, cfg, weights, span_mm, flanks):
+    """`(value, jacobian)` for `t1_vector`, jitted and cached on the STATIC recipe.
+
+    Replaces a separate `t1_vector(...)` call plus a separate `jax.jacrev(t1_vector)`
+    call — each of which retraces the whole eager body — with one compiled closure
+    that shares the single forward pass between the value and the jacobian via
+    `jax.vjp` + `jax.vmap` over an identity basis.  `flanks` has exactly 16 possible
+    values and forces its own trace per value because `_fillet_margins` branches on
+    its CONTENTS in Python (`if not etas: continue`), not just its shape.
+    """
+    cfgo = WW.get_config(cfg)
+    key = (cfgo.name, float(span_mm), flanks, _t1_weights_key(weights))
+    fn = _T1_CACHE.get(key)
+    if fn is None:
+        w = dict(DEFAULT_WEIGHTS if weights is None else weights)
+
+        def _f(v):
+            return t1_vector(v, cfgo, w, span_mm, flanks)
+
+        @jax.jit
+        def fn(v):                                        # noqa: F811
+            value, vjp_fn = jax.vjp(_f, v)
+            jac = jax.vmap(lambda e: vjp_fn(e)[0])(jnp.eye(value.shape[0]))
+            return value, jac
+
+        if len(_T1_CACHE) >= _T1_CACHE_MAX:
+            _T1_CACHE.pop(next(iter(_T1_CACHE)))
+        _T1_CACHE[key] = fn
+    return fn(genes)
+
 
 # ---------------------------------------------------------------------------
 # T2 — MESH SPACE.  Needs node coordinates; needs no solve.
@@ -791,8 +849,8 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     if "t1" in tiers:
         # Frozen once per evaluation, like the mesh topology — see `fillet_flanks`.
         flanks = fillet_flanks(genes, WW.get_config(cfg), span_mm)
-        v1 = np.asarray(t1_vector(gj, cfg, weights, span_mm, flanks))
-        j1 = np.asarray(jax.jacrev(t1_vector)(gj, cfg, weights, span_mm, flanks))
+        v1j, j1j = _t1_cached_value_and_jacobian(gj, cfg, weights, span_mm, flanks)
+        v1, j1 = np.asarray(v1j), np.asarray(j1j)
         report["fillet_flanks"] = [list(e) for e in flanks]
         for k, name in enumerate(T1_NAMES):
             values[name], grads[name] = float(v1[k]), j1[k]
