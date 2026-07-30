@@ -536,9 +536,24 @@ def _stress_aggregate(pn, maxes, stress_phase_p):
     return agg, c
 
 
+def _probe_values(prob, u, probe_p):
+    """The p-norm of one converged field at each probe exponent, `{p: value}`.
+
+    ONE IMPLEMENTATION, TWO CALLERS.  The serial path calls this with the field the
+    adjoint just differentiated; `wheel_pool_worker` calls it in the child, because `prob`
+    and `res` are the two things that cannot cross a process boundary.  Written out once
+    so the pooled and serial probes cannot drift into two arithmetics that happen to agree
+    on the day they were written.
+    """
+    return {float(v): float(WA._qoi_pnorm_stress(prob, p=float(v))(
+        jnp.asarray(prob.coords), jnp.asarray(u), float(prob.contact.y_ground)))
+        for v in probe_p}
+
+
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
              force=SERVICE_FORCE_N, stress_phase_p=8.0, warm=None,
-             stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), **problem_kw):
+             stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None,
+             orientation=None, **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
 
     One `service_qoi_value_and_grad` per phase — which is one forward solve, one
@@ -565,6 +580,19 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     `adjoint_grads`' `qois`; the bare string would take the module default and no argument
     could change it.
 
+    `pool` RUNS THE PHASE LOOP IN PARALLEL AND CHANGES NOTHING ELSE.  Given a
+    `wheel_pool.PhasePool`, each phase's mesh build, solve and adjoint happen in a worker
+    process and only the leaves read below come back; `meshes` is then unused, because a
+    built mesh cannot be pickled (`WheelMesh._coord_fn` holds a jitted function) and
+    shipping one would cost more than rebuilding it.  `orientation` is needed only on that
+    path, for the same reason `phase_meshes` takes it — the flank decision is pinned by
+    the caller and the worker cannot re-derive it without risking a flip mid-step.
+
+    The replies come back IN SLOT ORDER, so `drops`, `pn` and the rest are assembled in
+    exactly the order the serial loop assembles them and every reduction below sums the
+    same floats in the same sequence.  That is what lets S13 gate pooled == serial
+    exactly rather than to a tolerance; see `wheel_pool`'s module docstring.
+
     `stress_p_probe` MEASURES WITHOUT SOLVING.  The p-norm is a pure function of the
     converged displacement field, so any number of exponents can be read off the field the
     adjoint already ran on — `_meta` hands back both `prob` and `res`.  Each probe `p` is
@@ -577,8 +605,8 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     w = dict(DEFAULT_WEIGHTS if weights is None else weights)
     if phases is None:
         phases = phase_stencil(scheme="uniform")
-    if meshes is None:
-        meshes = phase_meshes(genes, cfg, phases)
+    if meshes is None and pool is None:
+        meshes = phase_meshes(genes, cfg, phases, orientation=orientation)
 
     probe_p = [float(v) for v in stress_p_probe]
     # The name stays "pnorm_stress" so every downstream key is unchanged; only the factory
@@ -587,16 +615,25 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 
     drops, dgrads, pn, pgrads, maxes, rows = [], [], [], [], [], []
     probe_pn = {v: [] for v in probe_p}
-    for i, (p, mesh) in enumerate(zip(phases, meshes)):
-        o = WA.service_qoi_value_and_grad(
-            genes, cfg, (qoi,), force=force, mesh=mesh,
-            delta0=None if warm is None else warm[i], **problem_kw)
-        for v in probe_p:
+    pooled = None if pool is None else pool.map_phases([
+        {"genes": np.asarray(genes, dtype=float), "cfg": cfg, "phase": float(p),
+         "orientation": orientation, "force": force,
+         "delta0": None if warm is None else warm[i],
+         "stress_gauss_p": stress_gauss_p, "probe_p": tuple(probe_p),
+         "problem_kw": problem_kw}
+        for i, p in enumerate(phases)])
+
+    for i, p in enumerate(phases):
+        if pooled is None:
+            o = WA.service_qoi_value_and_grad(
+                genes, cfg, (qoi,), force=force, mesh=meshes[i],
+                delta0=None if warm is None else warm[i], **problem_kw)
             # The same field the adjoint above differentiated, at a different exponent.
-            prob = o["_meta"]["prob"]
-            probe_pn[v].append(float(WA._qoi_pnorm_stress(prob, p=v)(
-                jnp.asarray(prob.coords), jnp.asarray(o["_meta"]["res"]["u"]),
-                float(prob.contact.y_ground))))
+            probes = _probe_values(o["_meta"]["prob"], o["_meta"]["res"]["u"], probe_p)
+        else:
+            o, probes = pooled[i], pooled[i]["_probe"]
+        for v in probe_p:
+            probe_pn[v].append(probes[v])
         drops.append(o["axle_drop"]["value"])
         dgrads.append(o["axle_drop"]["grad"])
         pn.append(o["pnorm_stress"]["value"])
@@ -727,7 +764,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 
 def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
               normalized=False, force=SERVICE_FORCE_N, tiers=("t1", "t2", "t3"),
-              span_mm=W.S, **problem_kw):
+              span_mm=W.S, pool=None, orientation=None, **problem_kw):
     """`(value, grad, breakdown)` — the scalar Stage 3 descends, and its gradient.
 
     `normalized=True` takes and returns unit-box `z` instead of physical genes.  The
@@ -736,6 +773,13 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     and the bounds are `wheel_fea.GENE_SPACE` read through `wheel_genome.bounds_arrays`.
 
     `tiers` exists so a line search can re-evaluate the microsecond tiers alone.
+
+    `pool` and `orientation` are NAMED rather than left to ride `**problem_kw`, and that
+    is not tidiness: `problem_kw` is splatted into `service_qoi_value_and_grad`, which
+    would raise on either of them.  T2 still needs a real mesh, so a pooled caller is
+    expected to hand `meshes=[mesh0]` — one mesh, built at the first phase — rather than
+    let T2 fall back to `build_wheel` at the default phase and quietly stop matching the
+    serial path.  `wheel_stage3.Evaluator` does exactly that.
     """
     low, high, rng = wg.bounds_arrays(W.GENE_SPACE)
     genes = wg.denormalize(np.asarray(genes, dtype=float), low, high) if normalized \
@@ -773,7 +817,7 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
 
     if "t3" in tiers:
         t3 = t3_terms(genes, cfg, phases=phases, meshes=meshes, weights=weights,
-                      force=force, **problem_kw)
+                      force=force, pool=pool, orientation=orientation, **problem_kw)
         values.update(t3["values"])
         grads.update(t3["grads"])
         report.update(t3["report"])

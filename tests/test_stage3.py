@@ -378,12 +378,19 @@ def test_the_default_sections_are_the_m8bi_gate_in_its_original_order():
 
     The default list is the seven sections S1-S10 have always been, in the order they
     have always run, because the report's keys are written in that order and the repo's
-    regression discipline compares two reports leaf by leaf.  M8b-i.5's two are opt-in.
+    regression discipline compares two reports leaf by leaf.  M8b-i.5's two are opt-in,
+    and so is M8b-ii's `phase_pool` — S13's wall-clock half describes the machine it ran
+    on, which is not something `make studies` should be re-measuring per commit.
+
+    THE SECOND ASSERTION IS THE POINT OF THE TEST.  Adding a section is fine; adding one
+    to the DEFAULTS by accident is what would silently change what every gate run
+    measures, so the full registry is spelled out and a new name has to be added here on
+    purpose.
     """
     assert so3.DEFAULT_SECTIONS == ("direction", "trajectory", "reject", "schemes",
                                     "warm", "cost", "feasibility")
-    assert set(so3.SECTION_HELP) == set(so3.DEFAULT_SECTIONS) | {"mesh_convergence",
-                                                                 "multistart"}
+    assert set(so3.SECTION_HELP) == set(so3.DEFAULT_SECTIONS) | {
+        "mesh_convergence", "multistart", "phase_pool"}
     assert all(s in so3.PRINTERS for s in so3.SECTION_HELP), (
         "every section needs a printer, or a selected section runs for hours and then "
         "prints nothing")
@@ -888,3 +895,88 @@ def test_an_elite_that_will_not_solve_is_recorded_and_the_screen_carries_on(monk
     assert m["pass"] is True, (
         "a failed genome is a measurement, not a broken screen; the gate is whether the "
         "screen RAN")
+
+
+# ---------------------------------------------------------------------------
+# S13 — the two pure functions the phase-pool section is built on
+# ---------------------------------------------------------------------------
+
+def test_the_worker_ladder_is_derived_from_the_host_not_written_down(monkeypatch):
+    """A hardcoded ladder measures oversubscription on a machine smaller than it.
+
+    Every rung past the core count is workers queueing for a core, and the "speedup" such
+    a rung reports says something about the host rather than about the code.  So the
+    ladder stops at `min(n_phase, cpu_count)` — and `1` stays on it, because a one-worker
+    pool does no concurrency at all and isolates what the pipe costs from what the
+    parallelism buys.
+    """
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: 16)
+    assert so3._worker_ladder(8) == [1, 2, 4, 8]
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: 4)
+    assert so3._worker_ladder(8) == [1, 2, 4], "the ladder ran past this machine's cores"
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: 6)
+    assert so3._worker_ladder(8) == [1, 2, 4, 6], "the cap itself must be measured"
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: 1)
+    assert so3._worker_ladder(8) == [1], "a one-core box still has to be able to run S13"
+
+
+def test_a_value_is_gated_exactly_and_one_ulp_is_a_failure():
+    """For VALUES, one ulp must fail, because one ulp is what a reordered sum looks like.
+
+    Floating-point addition is not associative, so a pool that reduced its phases in
+    completion order would land within `pytest.approx` of serial on a quiet machine and
+    somewhere else entirely under load.  Values come back from the pool bit-for-bit, so
+    the strict rule costs nothing and catches exactly that.
+    """
+    a = {"loss": 1.0, "report": {"rows": [{"x": 3.0}]}}
+    assert so3._split_diffs(a, a) == ([], [])
+
+    nudged = {"loss": 1.0 + 2 ** -52, "report": {"rows": [{"x": 3.0}]}}
+    values, grads = so3._split_diffs(a, nudged)
+    assert [p for p, _, _ in values] == [".loss"], "one ulp slipped through as agreement"
+    assert grads == []
+
+
+def test_a_gradient_is_gated_relatively_because_exact_is_not_available():
+    """Two plain SERIAL interpreters already disagree in the adjoint's last bit.
+
+    So the gradient gets a relative tolerance — 1e-14, some 2000x looser than the 5.2e-18
+    measured and twelve orders tighter than any physical tolerance here.  Anything
+    gradient-DERIVED rides the same rule: `grad_norm` and `grad_share` are reductions of
+    it and `coupling_frac` is a ratio of two gradient norms, so gating those exactly would
+    fail for the same unfixable reason.
+    """
+    base = {"grad": np.array([1.0, 1000.0]),
+            "terms": {"stress": {"value": 2.0, "grad_norm": 1000.0}},
+            "report": {"rows": [{"coupling_frac": 0.5}]}}
+    near = {"grad": np.array([1.0, 1000.0 + 1e-12]),
+            "terms": {"stress": {"value": 2.0, "grad_norm": 1000.0 + 1e-12}},
+            "report": {"rows": [{"coupling_frac": 0.5 + 1e-16}]}}
+    values, grads = so3._split_diffs(base, near)
+    assert values == [], "a gradient-derived leaf was gated as a value"
+    assert grads == [], "1e-15 relative is well inside the gate and must pass"
+
+    far = {"grad": np.array([1.0, 1000.0 + 1e-8]),
+           "terms": {"stress": {"value": 2.0, "grad_norm": 1000.0}},
+           "report": {"rows": [{"coupling_frac": 0.5}]}}
+    assert [p for p, _, _ in so3._split_diffs(base, far)[1]] == [".grad"], (
+        "1e-11 relative is a real numerical regression and must fail")
+
+    moved = {"grad": np.array([1.0, 1000.0]),
+             "terms": {"stress": {"value": 2.5, "grad_norm": 1000.0}},
+             "report": {"rows": [{"coupling_frac": 0.5}]}}
+    assert [p for p, _, _ in so3._split_diffs(base, moved)[0]] == [".terms.stress.value"]
+
+
+def test_a_structural_mismatch_can_never_be_excused_by_the_tolerance():
+    """A missing key or a changed length must FAIL a gate, not slip under a tolerance.
+
+    It arrives as `inf` for exactly that reason, and as a failed gate rather than a
+    `KeyError` three hours into a run.
+    """
+    a = {"report": {"rows": [{"x": 1.0}]}}
+    assert so3._split_diffs(a, {"report": {}})[0]
+    assert so3._split_diffs(a, {"report": {"rows": []}})[0]
+    # ... including when the missing leaf is a gradient, where a tolerance exists to abuse.
+    g = {"grad": np.array([1.0, 2.0])}
+    assert so3._split_diffs(g, {"grad": np.array([1.0])})[1]

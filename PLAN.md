@@ -37,12 +37,18 @@ record was measured at, and a test pins it there.
 Someone will put `util = 0.41` next to `max = 48.5 MPa` and panic. The answer is M4's,
 unchanged: **the max is not a number.** It diverges 31.02 → 41.54 → 48.47 under refinement.
 
-**Gates, all green:** `make test` **357 passed** (was 269; the Kt-twin equivalence test is
-parameterised 84 ways). Gate 7 `min_decades` **2**, `worst_best_rel` **2.009e-07** — both
-better than the 1 / 1.820e-05 baseline. `make m8bi6`'s `pnorm_by_p` block reproduces the
-step-1 sweep **bit-identically**, 0.000e+00 on every value and every GCI including the `c`
-columns; `max_stress_mpa` and `axle_drop_mean_mm` are identical too, confirming no physics
-moved.
+**Gates, all green:** `make test` **383 passed** (357 before the phase pool; 269 before
+M8b-i.6, whose Kt-twin equivalence test is parameterised 84 ways). Gate 7 `min_decades`
+**2**, `worst_best_rel` **2.009e-07** — both better than the 1 / 1.820e-05 baseline.
+`make m8bi6`'s `pnorm_by_p` block reproduces the step-1 sweep **bit-identically**,
+0.000e+00 on every value and every GCI including the `c` columns; `max_stress_mpa` and
+`axle_drop_mean_mm` are identical too, confirming no physics moved.
+
+**M8b-ii item 1 also landed: the phase loop is process-parallel.** `--workers` on
+`wheel_stage3.py`, gated by S13 (`make m8bii1`, PASS). **3.95× at 8 workers on 16 cores,
+and the production run projects 46.46 h → 11.77 h.** Pooled values are bit-identical to
+serial; gradients agree to 2.1e-16. Details, and the `XLA_FLAGS` finding that made the
+comparison meaningful, are in "the next changes" below.
 
 ---
 
@@ -101,18 +107,81 @@ The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pn
 
 ### 1. M8b-ii — make the optimizer runnable at scale
 
-The largest remaining block, and it is pure engineering with no open questions. Feasible
-points exist; the optimizer cannot currently search for better ones in reasonable time.
+Feasible points exist; the optimizer could not search for better ones in reasonable time.
+The phase batch is now parallel and that is measured; the other three bullets are open.
 
-- **Process-parallel phase batch.** 48.13 h serial for 300 steps × 4 starts at 144.4 s per
-  8-phase evaluation. `OMP_NUM_THREADS=1` **before** the numpy import; pin phase slots to
-  workers so each traces only its share of the lattice (`wheel_wheel.coord_fn` keys its jit
-  cache on `float(phase)`, and `_COORD_FN_CACHE_MAX` is 128 to hold it).
+- **~~Process-parallel phase batch.~~ DONE — `--workers`, gated by S13 (`make m8bii1`).**
+
+  `src/wheel_pool.py` (`PhasePool`) + `src/wheel_pool_worker.py`. Measured at `coarse`,
+  8 phases, on a **16-core** box — the hours below do not travel to another machine, the
+  efficiency column does:
+
+  | workers | s / eval | speedup | efficiency | values vs serial | grad rel |
+  |---|---|---|---|---|---|
+  | serial | 139.4 | — | — | — | — |
+  | 1 | 136.7 | 1.02× | 1.02 | **exact** | 0.0 |
+  | 2 | 76.4 | 1.82× | 0.91 | **exact** | 0.0 |
+  | 4 | 47.6 | 2.93× | 0.73 | **exact** | 2.1e-16 |
+  | 8 | 35.3 | 3.95× | 0.49 | **exact** | 2.1e-16 |
+
+  **The production projection is 46.46 h → 11.77 h** (300 steps × 4 starts).
+
+  `0` is serial and stays the DEFAULT, so every gate and every committed artifact still
+  runs the path they were measured on. `-1` sizes the pool to `min(n_phase, cpu_count)`;
+  `N` is taken literally and is the only cap on memory, since the auto-size counts cores
+  and knows nothing about RAM.
+
+  Slot `i` is pinned to worker `i % n`, which is why this is not `multiprocessing.Pool`:
+  `coord_fn` keys its jit cache on `float(phase)` and a miss is 0.774 s, so a phase that
+  wanders between workers pays that forever. Replies come back in **slot order**, so every
+  reduction sums the same floats in the same sequence as serial.
+
+  **`XLA_FLAGS` is pinned along with the four thread counts, and it is a correctness
+  setting.** Measured: two *plain serial* runs of one `coarse` adjoint, in two separate
+  interpreters with **no pool anywhere**, agree on every forward value to the bit and
+  disagree on the GRADIENT by 3.33e-16 — XLA's CPU thread pool does not associate its
+  reductions the same way twice, and nothing in OMP/MKL/OPENBLAS/NUMEXPR reaches it.
+  Pinned, that comparison is exactly zero, and it costs nothing: 19.84 s against 20.43 s
+  for one `coarse` phase. Set in the `Makefile`, in `conftest.py`, and in
+  `wheel_pool.PINNED_ENV` for a worker started by hand.
+
+  **S13 gates values EXACTLY and gradients at 1e-14, and the split is a measurement.**
+  Exact bit-identity of the gradient is not available to *anyone* here, pooled or not —
+  what remains after the XLA pin is process-history dependent (a process that has already
+  run other phases answers the next one differently in its last bit) and lives below this
+  repo, in XLA's own codegen. Observed 2.1e-16 against a 1e-14 gate. Every value, every
+  report leaf and the stress and ripple gradients are 0.0.
+
+  **The thread pin moved no physics**: `make m8bi6` re-run and diffed against the previous
+  `study_stage3_pnorm.json` — **2038 non-timing leaves, 0 differ**, gate verdict unchanged.
+  The artifact in the tree is the earlier one, restored, because the two differed only in
+  wall clock and the earlier run's timings were measured on a quiet machine.
+
+  **End to end**, 2 steps from elite 9 at `coarse`, `--phase-scheme uniform`, serial vs
+  `--workers -1`: **639.4 s → 201.6 s (3.17×)**, every step's loss equal to the last bit
+  and the same final `genome_hash` (`99fea84`), no events either side, no orphaned
+  workers. 3.17× rather than S13's 3.95× because the T1 precheck and step 0's tracing are
+  a larger share of a 3-call run than of a steady-state one.
+
+  **Do not read that exactness as a guarantee.** A trajectory can diverge in its last bits
+  whenever a gradient difference survives the Adam update into the accepted iterate; it
+  happened not to at this design. The claim S13 supports is per-evaluation — values exact,
+  gradients to 1e-14 — not per-trajectory.
+
 - **Multi-fidelity checkpoints.** `medium` is 2.8× `coarse`, not the 4× budgeted (243 s vs
   87 s). Take that pair from the **elite-1** ladder, not the shipped genome's — the shipped
   genome runs first and its `coarse` rung carries the `coord_fn` jit trace.
 - **Jit `t1_vector`** (`wheel_objective.py`) — 1.06 s of eager dispatch per call, measured by
-  S10.
+  S10. **Worth more now than that number suggests, and S13 says why.** T1 and T2 run in the
+  PARENT on both paths, so they are the whole of Amdahl's serial fraction once the phases
+  are parallel: efficiency falls 0.91 → 0.73 → **0.49** from 2 to 8 workers, and at 8 the
+  parallel part is ~26 s against ~9 s of serial remainder. 0.73% of a serial evaluation is
+  a much larger share of a pooled one.
+
+  `flanks` is a tuple of at most four `±1.0` floats — a DISCRETE structure with 16 possible
+  values — so it belongs in a `_T1_CACHE` key beside `cfg.name`/`weights`/`span_mm`, in the
+  `coord_fn` idiom, and the cache will hit on essentially every step. One jitted function
+  returning `(value, jacobian)` beats two calls.
 - **Then the production multi-start run.** Start from elites 9 and 10, not
   `best_solution.json` — that is a GA optimum for the BEAM surrogate, which M8a measured as a
   bad guide to the FEA, and it sits at −25.43% deflection error. The 16-elite spread is wide
@@ -123,6 +192,11 @@ points exist; the optimizer cannot currently search for better ones in reasonabl
   satisfiable together and the barriers are flat at every feasible design, so `mass` is the
   only term with anything left to give — it was 19.6% of the loss at the shipped genome
   against deflection's 61.3%, and that ratio inverts once deflection is met.
+
+  **Run it with `--workers`.** At 11.77 h for 300 × 4 this is now affordable. But 8 workers
+  is not obviously the right setting: 4 gets 2.93× at 0.73 efficiency on a quarter of a
+  16-core box, so **two starts × 4 workers beats one start × 8** and finishes the same
+  budget sooner. Decide that against the machine it actually runs on.
 
 ### 2. M9 — `lambda_min(K_t)` via LOBPCG, replacing the Euler `buckling` proxy
 
@@ -196,9 +270,20 @@ cost nothing and become live checks the moment a design is stress-binding.
 .venv-opt/bin/python studies/study_stage3.py              # the M8b-i gate, S1-S10, ~2 h 45 m
 make m8bi5                                                # S11 + S12, ~2 h 31 m
 make m8bi6                                                # the p sweep, ~14 min
-make test                                                 # 357 tests, ~10 min
-make studies                                              # all gates; NOT m8bi5/m8bi6
+make m8bii1                                               # S13, the phase pool, ~30 min
+make test                                                 # 383 tests, ~12 min
+make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
+
+**`--workers` runs the phase loop across processes.** `0` (the default) is serial, `-1`
+sizes the pool to `min(n_phase, cpu_count)`, `N` is literal and is the only memory cap:
+
+```bash
+.venv-opt/bin/python src/wheel_stage3.py --start rank:9 --steps 300 --workers -1
+```
+
+The run record carries `workers` and `cpu_count` in its `settings`, because a wall-clock
+number without them cannot be read on another machine.
 
 Run a study driver directly and it needs `src/` on the path:
 `PYTHONPATH=src .venv-opt/bin/python studies/study_stage3.py`. The Makefile exports it, so
@@ -224,6 +309,11 @@ poster_summary.jpg                         written beside the genome it describe
 src/        the modules — imported flat (`import wheel_fea as W`)
             project_paths.py  ROOT/SRC/STUDIES/EXPORT, stdlib only so the CAD env
                               can import it through wheel_fea
+            wheel_pool.py     the parent half of the phase pool.  stdlib+numpy, NO jax
+                              (a test asserts it), so sizing a pool or reading
+                              PINNED_ENV costs nothing
+            wheel_pool_worker.py  the child.  pins threads BEFORE its first import,
+                              which is the whole reason it is a separate process
 studies/    the 10 study drivers AND their .json/.jpg output, together
 export/     what the CadQuery env produces: wheel.step, wheel_nofillet.step,
             wheel_step_manifest.json
@@ -248,3 +338,8 @@ output beside the driver and was left alone. Only the INPUTS moved to `PP.ROOT` 
 describe those runs and are deliberately left unedited rather than corrected after the fact.
 `study_stage3_pnorm.*` were regenerated by step 2 — the `pnorm_by_p` leaves are bit-identical
 to step 1's, and the top-level rows now carry the new constraint plus a `util_kt` column.
+
+`study_stage3_pool.*` are S13's, and **half of that file describes this machine rather than
+this commit** — the seconds and the projected hours are 16-core numbers. What travels is
+`identical_values`, `worst_grad_rel`, and the efficiency column. Re-run `make m8bii1` on a
+different host and expect different hours and a different ladder; expect the same verdict.

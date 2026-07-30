@@ -105,6 +105,7 @@ import wheel_fea as W
 import wheel_fem as fem
 import wheel_genome as wg
 import wheel_objective as WO
+import wheel_pool as WP
 import wheel_stage3 as S3
 import wheel_wheel as WW
 
@@ -136,6 +137,45 @@ FEASIBLE_DEFL_REL = 0.05        # S9  within 5% of the 2.0 mm deflection target
 # extrapolation 50% beyond its finest rung, which is what "no value" looks like.
 GATE_LADDER_GCI = 0.05
 
+# S13.  How much of the ideal speedup must the phase pool actually deliver?
+#
+# A FRACTION, NOT A MULTIPLE, and that is the device-agnostic half of this milestone.
+# "at least 2.5x" passes without effort on a 16-core box and fails on a 4-core laptop that
+# is behaving perfectly; `speedup / n_workers` means the same thing on both.  0.35 is set
+# low on purpose — it is not a performance target, it is the tripwire for the pool costing
+# more than it buys.  The phases are unequal (contact iterations differ by design), the
+# parent still runs T1 and T2 serially, and Amdahl takes the rest; anything at or above
+# this is the pool working.
+GATE_POOL_EFFICIENCY = 0.35
+
+# S13.  How close must a pooled GRADIENT be to the serial one?  Values are gated at exact
+# equality and need no tolerance; this is for the gradient alone, and the split is a
+# measurement rather than a preference.
+#
+# WHAT WAS MEASURED, AND WHY EXACT IS NOT AVAILABLE HERE.  Every forward value, every
+# report leaf and the stress and phase_ripple gradients come back from the pool bit-for-bit
+# identical — 0.0, not "close".  `grads.deflection` does not: it differs by 5.2e-18
+# RELATIVE, which is below one ulp of double precision (eps = 2.2e-16).
+#
+# The cause is not the pool.  Two PLAIN SERIAL runs of one `coarse` adjoint, in two
+# separate interpreters with no pool anywhere, already disagreed by 3.33e-16 before any of
+# this existed.  Pinning `XLA_FLAGS` (see `wheel_pool.PINNED_ENV`) removed the largest
+# source and made a single-worker pool exactly equal to serial; what remains is
+# process-history dependent — a process that has already run other phases answers the next
+# one differently in its last bit — and lives below the thread pool, in XLA's own codegen.
+# It is not reachable from this repo, and it is not this milestone's to fix.
+#
+# 1e-14 is ~2000x looser than what is observed and still some twelve orders tighter than
+# any physical tolerance in this study.  It is a tripwire for a real numerical regression,
+# not a fudge factor: `identical_values` is what carries the claim.
+GATE_POOL_GRAD_REL = 1e-14
+
+# Leaves whose value is computed FROM a gradient, and which therefore inherit its last-bit
+# noise.  `grad_norm` and `grad_share` are per-term reductions of it; `coupling_frac` is a
+# ratio of two gradient norms.  Classified by path rather than listed per-term so a new
+# gradient-derived report key is covered the day it is added.
+_GRAD_DERIVED = ("grad", "coupling_frac")
+
 # The weight sets the feasibility probe descends.  Every barrier stays on in all three —
 # a "lowest reachable stress" that is reached through a folded, self-intersecting or
 # unmeshable design is not a bound on anything.
@@ -156,6 +196,7 @@ SECTION_HELP = {
     "feasibility":      "S9  THE FEASIBILITY VERDICT, from the shipped genome",
     "mesh_convergence": "S11 is the stress QoI converged?  [M8b-i.5]",
     "multistart":       "S12 the same question from the Stage-2 elites  [M8b-i.5]",
+    "phase_pool":       "S13 pooled == serial, and what it buys  [M8b-ii]",
 }
 DEFAULT_SECTIONS = ("direction", "trajectory", "reject", "schemes", "warm", "cost",
                     "feasibility")
@@ -1065,6 +1106,189 @@ def run_multistart(cfg=DEFAULT_CONFIG, elites=None, n_phase=4, steps=20,
 
 
 # ---------------------------------------------------------------------------
+# S13 — DOES THE PROCESS-PARALLEL PHASE BATCH BUY ANYTHING, AND IS IT THE SAME ANSWER?
+# ---------------------------------------------------------------------------
+
+def _worker_ladder(n_phase):
+    """Powers of two up to what this machine can actually run, plus that cap.
+
+    DERIVED FROM THE HOST, NOT WRITTEN DOWN.  A hardcoded `(1, 2, 4, 8)` measures
+    oversubscription on a 4-core box — every rung past the cores is workers queueing for a
+    core and the "speedup" it reports is an artifact of the machine, not of the code.  `1`
+    is on the ladder deliberately: a one-worker pool does no concurrency at all, so its
+    time against serial isolates what the pipe and the pickling cost from what the
+    parallelism buys.
+    """
+    top = WP.default_workers(n_phase)
+    ladder, n = [], 1
+    while n < top:
+        ladder.append(n)
+        n *= 2
+    ladder.append(top)
+    return ladder
+
+
+def _leaf_diffs(a, b, path=""):
+    """Every differing leaf of two nested results, as `(path, |diff|, scale)`.
+
+    `scale` is the serial side's own magnitude, so a caller can ask for exactness or for a
+    RELATIVE tolerance off the same walk.  A structural mismatch — a missing key, a
+    different length, a non-numeric leaf that moved — comes back with `inf`, so it can
+    never be excused by any tolerance.
+    """
+    if isinstance(a, dict):
+        if set(a) != set(b):
+            return [(path + " (keys)", float("inf"), 0.0)]
+        return [d for k in a for d in _leaf_diffs(a[k], b[k], f"{path}.{k}")]
+    if isinstance(a, np.ndarray):
+        if np.array_equal(a, b):
+            return []
+        return [(path, float(np.max(np.abs(a - b))), float(np.max(np.abs(a))))]
+    if isinstance(a, (list, tuple)):
+        if len(a) != len(b):
+            return [(path + " (length)", float("inf"), 0.0)]
+        return [d for i, (x, y) in enumerate(zip(a, b))
+                for d in _leaf_diffs(x, y, f"{path}[{i}]")]
+    if isinstance(a, bool) or not isinstance(a, (int, float)):
+        return [] if a == b else [(path, float("inf"), 0.0)]
+    return [] if a == b else [(path, abs(a - b), abs(a))]
+
+
+def _split_diffs(a, b, rel=GATE_POOL_GRAD_REL):
+    """`(value_diffs, grad_diffs)` — exact for values, relative for gradients.
+
+    TWO STANDARDS BECAUSE THERE ARE TWO SITUATIONS, not because one of them was hard.
+
+    Values are gated EXACTLY, and they pass exactly: every forward value and every report
+    leaf comes back from a pool bit-for-bit.  `pytest.approx` there would accept a pool
+    that reduced its phases in completion order — the one failure this section exists to
+    catch, since floating-point addition is not associative and an as-completed combine
+    looks reproducible on a quiet machine and is not reproducible under load.
+
+    Gradients cannot be gated exactly by anyone, pooled or not: see `GATE_POOL_GRAD_REL`
+    for the two-serial-interpreters measurement that says so.  Anything gradient-derived
+    therefore gets a relative tolerance, and everything else keeps the strict rule.
+    """
+    values, grads = [], []
+    for path, adiff, scale in _leaf_diffs(a, b):
+        if any(tag in path for tag in _GRAD_DERIVED):
+            if adiff > rel * scale:
+                grads.append((path, adiff, scale))
+        else:
+            values.append((path, adiff, scale))
+    return values, grads
+
+
+def _worst_rel(a, b):
+    """The largest RELATIVE gradient difference, for reporting rather than gating."""
+    worst = 0.0
+    for path, adiff, scale in _leaf_diffs(a, b):
+        if any(tag in path for tag in _GRAD_DERIVED) and scale > 0:
+            worst = max(worst, adiff / scale)
+    return worst
+
+
+def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_rep=2,
+                   probe_p=(), prod_steps=300, prod_starts=4):
+    """The same evaluation serial and pooled: identical answer, and how much faster.
+
+    TWO CLAIMS, AND ONLY ONE OF THEM TRAVELS.  `identical` is a statement about the code
+    and means the same thing on every machine.  The speedup does not — so it is gated as a
+    FRACTION OF IDEAL (`speedup / n_workers`) rather than as an absolute multiple.  An
+    absolute threshold passes trivially on a big box and fails unfairly on a small one,
+    while the efficiency ratio fails in exactly the case worth catching: the pool not
+    buying what its workers cost.  `cpu_count` is recorded beside every timing, because a
+    wall-clock number without it cannot be compared to one measured elsewhere.
+
+    BOTH SIDES ARE PRIMED BEFORE THE CLOCK STARTS, and without that the measurement is
+    nonsense.  The first evaluation in any process pays the jax import, the `wheel_fem`
+    kernel traces and one `coord_fn` trace per phase — measured at 0.774 s each — so an
+    unprimed serial arm compared against a warm pooled one reports a speedup an order of
+    magnitude too large.  What the priming costs is reported as `spawn_s` and
+    `first_call_s` rather than hidden: a pool is built once per run and amortises over
+    hundreds of steps, and that is a claim the numbers should let a reader check.
+
+    Full tiers, not `("t3",)`.  T1 and T2 run in the PARENT on both paths — the pool only
+    touches the phase loop — so including them is what makes the projected hours
+    comparable to S10's 48.13 h instead of flattering the result by timing only the part
+    that was parallelised.
+    """
+    low, high, _ = _bounds()
+    z0 = wg.normalize(genes, low, high)
+    phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
+    ori = tuple(float(o) for o in WW.flank_orientation(genes, WW.get_config(cfg)))
+    counts = list(_worker_ladder(n_phase) if worker_counts is None else worker_counts)
+
+    def evaluate(pool):
+        ev = S3.Evaluator(cfg, orientation=ori, pool=pool, stress_p_probe=tuple(probe_p))
+        t0 = time.time()
+        out = ev(z0, low, high, phases=phases)
+        first = time.time() - t0
+        ts = []
+        for _ in range(n_rep):
+            t0 = time.time()
+            out = ev(z0, low, high, phases=phases)
+            ts.append(time.time() - t0)
+        return out, float(np.median(ts)), first
+
+    (s_val, s_grad, s_brk), serial_s, serial_first = evaluate(None)
+    serial = {"loss": s_val, "grad": s_grad, "terms": s_brk["terms"],
+              "report": s_brk["report"]}
+
+    rows = []
+    for n in counts:
+        t0 = time.time()
+        pool = WP.PhasePool(n)
+        spawn_s = time.time() - t0
+        try:
+            (val, grad, brk), med, first = evaluate(pool)
+        finally:
+            pool.close()
+        got = {"loss": val, "grad": grad, "terms": brk["terms"], "report": brk["report"]}
+        vdiffs, gdiffs = _split_diffs(serial, got)
+        rows.append({
+            "workers": int(n), "seconds": med, "spawn_s": spawn_s,
+            "first_call_s": first,
+            "speedup": float(serial_s / med) if med else float("nan"),
+            "efficiency": float(serial_s / med / n) if med else float("nan"),
+            # The steady-state evidence: once the pool exists and every worker has traced
+            # its own slots' phases, does a call cost what the next one will?  This is
+            # what slot pinning is for — see `wheel_pool`'s docstring on `coord_fn`.
+            "first_over_steady": float(first / med) if med else float("nan"),
+            "identical_values": not vdiffs,
+            "grads_within": not gdiffs,
+            "worst_grad_rel": _worst_rel(serial, got),
+            "value_diffs": [[p, f"{d:.3e}"] for p, d, _ in vdiffs[:8]],
+            "grad_diffs": [[p, f"{d:.3e}", f"{s:.3e}"] for p, d, s in gdiffs[:8]],
+            "projected_hours": float(prod_steps * prod_starts * med / 3600.0),
+        })
+
+    best = max(rows, key=lambda r: r["workers"])
+    all_identical = all(r["identical_values"] for r in rows)
+    all_grads_ok = all(r["grads_within"] for r in rows)
+    # On a machine that can only run one worker there is no concurrency to measure and the
+    # efficiency gate would fail for a reason that has nothing to do with this code.
+    # `identical` still applies, and it is the claim that matters.
+    measurable = best["workers"] > 1
+    return {"config": cfg if isinstance(cfg, str) else cfg.name, "n_phase": n_phase,
+            "cpu_count": os.cpu_count(), "worker_counts": counts, "n_rep": n_rep,
+            "serial_s": serial_s, "serial_first_call_s": serial_first,
+            "serial_projected_hours": float(prod_steps * prod_starts * serial_s / 3600.0),
+            "projected_steps": prod_steps, "projected_starts": prod_starts,
+            "rows": rows, "all_identical_values": all_identical,
+            "all_grads_within": all_grads_ok,
+            "worst_grad_rel": max(r["worst_grad_rel"] for r in rows),
+            "best_workers": best["workers"], "best_speedup": best["speedup"],
+            "best_efficiency": best["efficiency"],
+            "gate_efficiency": GATE_POOL_EFFICIENCY,
+            "gate_grad_rel": GATE_POOL_GRAD_REL,
+            "efficiency_measurable": measurable,
+            "pass": bool(all_identical and all_grads_ok
+                         and (not measurable
+                              or best["efficiency"] >= GATE_POOL_EFFICIENCY))}
+
+
+# ---------------------------------------------------------------------------
 # REPORT
 # ---------------------------------------------------------------------------
 
@@ -1395,22 +1619,59 @@ def _print_multistart(rep):
     print(f"    -> {'PASS (screen ran)' if m['pass'] else 'FAIL (screen did not run)'}")
 
 
+def _print_phase_pool(rep):
+    m = rep["phase_pool"]
+    head(f"S13  THE PROCESS-PARALLEL PHASE BATCH  ({m['config']}, {m['n_phase']} phases, "
+         f"{m['cpu_count']} cores)")
+    print(f"    serial {m['serial_s']:.1f} s  "
+          f"(first call {m['serial_first_call_s']:.1f} s, traces included)")
+    print("    workers   seconds   speedup   efficiency   1st/steady   values   grad rel")
+    for r in m["rows"]:
+        print(f"    {r['workers']:7d}  {r['seconds']:8.1f}  {r['speedup']:8.2f}x  "
+              f"{r['efficiency']:10.2f}   {r['first_over_steady']:10.2f}   "
+              f"{'EXACT' if r['identical_values'] else 'DIFFER':>6s}   "
+              f"{r['worst_grad_rel']:8.1e}"
+              f"{'' if r['grads_within'] else '  OVER GATE ' + str(r['grad_diffs'][:2])}")
+        if not r["identical_values"]:
+            print(f"            value diffs: {r['value_diffs'][:3]}")
+    print(f"\n    projected production run ({m['projected_steps']} steps x "
+          f"{m['projected_starts']} starts):")
+    print(f"      serial              {m['serial_projected_hours']:8.2f} h")
+    best = max(m["rows"], key=lambda r: r["workers"])
+    print(f"      {best['workers']} workers          {best['projected_hours']:8.2f} h"
+          f"   <- on {m['cpu_count']} cores; the hours do not travel, the ratio does")
+    if not m["efficiency_measurable"]:
+        print("\n    efficiency NOT GATED: this machine can run only one worker, so there "
+              "is no concurrency to measure. `identical` still applies.")
+    print("\n    Values are gated EXACTLY and gradients relatively, because that is what")
+    print("    is available: two plain SERIAL runs in separate interpreters already")
+    print("    disagree in the adjoint's last bit (3.33e-16), with no pool involved.")
+    print(f"\n    -> {'PASS' if m['pass'] else 'FAIL'}"
+          f"  (values {'exact' if m['all_identical_values'] else 'DIFFER'}, "
+          f"worst grad rel {m['worst_grad_rel']:.1e} vs gate {m['gate_grad_rel']:.0e}, "
+          f"efficiency {m['best_efficiency']:.2f} vs gate {m['gate_efficiency']:.2f})")
+
+
 PRINTERS = {"direction": _print_direction, "trajectory": _print_trajectory,
             "reject": _print_reject, "schemes": _print_schemes, "warm": _print_warm,
             "cost": _print_cost, "feasibility": _print_feasibility,
             "mesh_convergence": _print_mesh_convergence,
-            "multistart": _print_multistart}
+            "multistart": _print_multistart, "phase_pool": _print_phase_pool}
 
 
 def _print_tail(rep):
     print(f"\n{'=' * 78}")
     print(f"  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}")
     print("=" * 78)
-    print("\n  NOT DONE: the process-parallel phase batch, the multi-fidelity")
-    print("  checkpoints and the 300-step multi-start production run. Those are M8b-ii,")
+    print("\n  DONE, of M8b-ii: the process-parallel phase batch. `--workers` on")
+    print("  wheel_stage3.py, and S13 (`make m8bii1`) is the gate: every VALUE bit-for-bit")
+    print("  against serial, gradients to 1e-14 because two plain serial interpreters")
+    print("  already disagree in the adjoint's last bit with no pool involved.")
+    print("  NOT DONE: the multi-fidelity checkpoints, the `t1_vector` jit and the")
+    print("  300-step multi-start production run.")
     if "multistart" in rep or "feasibility" in rep:
-        print("  and the feasibility sections above are the measurement that says whether")
-        print("  funding them is sensible.")
+        print("  The feasibility sections above are the measurement that says whether")
+        print("  funding that run is sensible.")
     print("  `lambda_min(K_t)` remains M9; `buckling` is still the zero-gradient Euler")
     print("  proxy, and a diverged tangent is the only buckling signal this run has.")
 
@@ -1586,6 +1847,59 @@ def _plot_by_p(a, m):
     a.legend(fontsize=6.5, loc="best")
 
 
+def _plot_pool(rep, path):
+    """S13 on one sheet: what it costs, and how much of the ideal that is.
+
+    THE IDEAL LINE IS DRAWN, and it is the point of the left panel.  A wall-clock curve
+    alone looks impressive on any machine with enough cores; against `serial / n` it shows
+    where Amdahl and the unequal phases actually bite, and it is the same picture on four
+    cores as on sixty-four.  The core count is in the title because these seconds are the
+    one thing in this figure that does not travel.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    m = rep["phase_pool"]
+    ws = [r["workers"] for r in m["rows"]]
+    fig, ax = plt.subplots(1, 2, figsize=(9.5, 4.2))
+
+    ax[0].plot(ws, [r["seconds"] for r in m["rows"]], "o-", lw=1.4, ms=5, label="measured")
+    ax[0].plot(ws, [m["serial_s"] / w for w in ws], "--", lw=1, color="0.5",
+               label="ideal (serial / workers)")
+    ax[0].axhline(m["serial_s"], color="C3", lw=1, ls=":", label="serial")
+    ax[0].set_xscale("log", base=2)
+    ax[0].set_yscale("log")
+    ax[0].set_xlabel("phase workers")
+    ax[0].set_ylabel("seconds per evaluation")
+    ax[0].set_title(f"one {m['config']} evaluation, {m['n_phase']} phases "
+                    f"({m['cpu_count']} cores)", fontsize=9)
+    ax[0].grid(alpha=0.3, which="both")
+    ax[0].legend(fontsize=7)
+
+    ax[1].plot(ws, [r["efficiency"] for r in m["rows"]], "o-", lw=1.4, ms=5)
+    ax[1].axhline(m["gate_efficiency"], color="C3", lw=1, ls="--",
+                  label=f"gate {m['gate_efficiency']:.2f}")
+    ax[1].axhline(1.0, color="0.5", lw=1, ls=":", label="ideal")
+    ax[1].set_xscale("log", base=2)
+    ax[1].set_ylim(0.0, 1.15)
+    ax[1].set_xlabel("phase workers")
+    ax[1].set_ylabel("speedup / workers")
+    same = (f"values exact vs serial, gradients to {m['worst_grad_rel']:.0e}"
+            if m["all_identical_values"] and m["all_grads_within"] else
+            "POOLED AND SERIAL DISAGREE — see the report")
+    ax[1].set_title(f"efficiency; {same}", fontsize=9)
+    ax[1].grid(alpha=0.3)
+    ax[1].legend(fontsize=7)
+
+    fig.suptitle("M8b-ii S13 — the process-parallel phase batch", fontsize=11)
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    out = path if os.path.isabs(path) else os.path.join(HERE, path)
+    fig.savefig(out, dpi=130)
+    plt.close(fig)
+    return out
+
+
 def _plot_m8bi5(rep, path):
     """The two things that qualify S9's verdict, on one sheet.
 
@@ -1731,6 +2045,12 @@ def main():
                          "min as one column.")
     ap.add_argument("--n-probe", type=int, default=2,
                     help="S12: how many elites to re-descend from, nearest corner first")
+    ap.add_argument("--pool-workers", default="",
+                    help="S13: comma-separated worker counts to measure, e.g. `1,2,4,8`. "
+                         "Empty (the default) derives the ladder from this machine — "
+                         "powers of two up to min(n_phase, cpu_count) — so the section "
+                         "measures concurrency rather than oversubscription wherever it "
+                         "runs.")
     args = ap.parse_args()
 
     try:
@@ -1765,6 +2085,12 @@ def main():
     probe_p = probe_p[:1] + probe_p[-1:] if args.quick and len(probe_p) > 2 else probe_p
     n_elite = 2 if args.quick else 16
     n_probe = 1 if args.quick else args.n_probe
+    # M8b-ii S13.  `None` means "ask the machine" — see `_worker_ladder`.  `--quick` pins
+    # the ladder to a single 2-worker rung: two workers are spawnable on a one-core CI
+    # runner, so the wiring check asserts the same thing everywhere, which a
+    # host-derived ladder by construction cannot.
+    pool_workers = ([2] if args.quick else
+                    [int(w) for w in args.pool_workers.split(",") if w.strip()] or None)
 
     t0 = time.time()
     rep = {}
@@ -1818,6 +2144,12 @@ def main():
             lambda: run_multistart(
                 cfg, elites=S3.load_elites(args.elites, limit=n_elite),
                 n_phase=n_phase, steps=feas_steps, n_probe=n_probe),
+        # `cost_phase`, so S13's evaluation is the SAME evaluation S10 projected 48.13 h
+        # from.  A speedup quoted against a different phase count is not a speedup on the
+        # thing anyone is waiting for.
+        "phase_pool":
+            lambda: run_phase_pool(genes, cfg, n_phase=cost_phase,
+                                   worker_counts=pool_workers),
     }
     for name in sections:
         section(name, runners[name])
@@ -1833,6 +2165,7 @@ def main():
                        "elapsed_s": round(time.time() - t0, 1)}
     if sections != list(DEFAULT_SECTIONS):
         rep["settings"]["title"] = (
+            "M8b-ii — THE PROCESS-PARALLEL PHASE BATCH" if sections == ["phase_pool"] else
             "M8b-i.6 — WHICH p GIVES THE STRESS CONSTRAINT A VALUE" if probe_p else
             "M8b-i.5 — QUALIFYING THE FEASIBILITY VERDICT")
 
@@ -1847,8 +2180,13 @@ def main():
     if not args.no_plot:
         # Which figure, decided by what actually ran: `_plot`'s triptych needs S1, S2 and
         # S9 and cannot be drawn from an M8b-i.5 report.
-        plot = _plot if all(k in rep for k in ("direction", "trajectory", "feasibility")) \
-            else _plot_m8bi5
+        if all(k in rep for k in ("direction", "trajectory", "feasibility")):
+            plot = _plot
+        elif "phase_pool" in rep and not any(
+                k in rep for k in ("mesh_convergence", "multistart")):
+            plot = _plot_pool
+        else:
+            plot = _plot_m8bi5
         try:
             print(f"wrote {plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
         except Exception as exc:                              # pragma: no cover

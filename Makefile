@@ -11,7 +11,29 @@ PY_CAD := .venv-cad/bin/python
 # wheel_fea.py spawns .venv-cad itself.
 export PYTHONPATH := $(CURDIR)/src
 
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 export studies clean-pyc
+# The parallelism in this tree lives at the PHASE level (wheel_pool.py), not inside BLAS
+# and not inside XLA.  N phase workers each spinning up a core-count-sized thread pool
+# oversubscribes any machine by roughly N x.
+#
+# XLA_FLAGS IS NOT A PERFORMANCE KNOB, IT IS WHAT MAKES THE ADJOINT REPRODUCIBLE.
+# Measured: two plain serial runs of one `coarse` adjoint in two separate interpreters,
+# no pool involved, agree on every forward value to the bit and disagree on the GRADIENT
+# by 3.33e-16 — XLA's CPU intra-op thread pool is sized from the machine and its parallel
+# reductions do not associate the same way twice.  Pinned, the same comparison is exactly
+# zero, and it costs nothing: 19.84 s against 20.43 s for one `coarse` phase.
+# study_stage3.py's S13 gates pooled == serial EXACTLY, which is only a meaningful claim
+# because of this line.  See `wheel_pool.PINNED_ENV`.
+#
+# `?=` rather than `:=`: someone who sets these deliberately is driving, and S13 will tell
+# them what it cost.  `conftest.py` sets the same five so bare `pytest` matches `make test`.
+OMP_NUM_THREADS ?= 1
+MKL_NUM_THREADS ?= 1
+OPENBLAS_NUM_THREADS ?= 1
+NUMEXPR_NUM_THREADS ?= 1
+XLA_FLAGS ?= --xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1
+export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS XLA_FLAGS
+
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -29,12 +51,16 @@ help:
 	@echo "              multi-start set Stage 3 begins from"
 	@echo "make stage3   Stage-3 descent from best_solution.json, writing"
 	@echo "              stage3_run.json as it goes and stage3_best.json at the end"
+	@echo "              (add --workers -1 to run the phase loop across processes)"
 	@echo "make m8bi5    the two sections that QUALIFY M8b-i's infeasibility verdict:"
 	@echo "              the stress QoI up the mesh ladder, and the same feasibility"
 	@echo "              question asked from all 16 Stage-2 elites (~2 h at coarse)"
 	@echo "make m8bi6    the stress p-norm up the same ladder at p = 1,2,3,4,6,8,12,16,24,30,"
 	@echo "              to find which exponent (if any) gives the constraint a"
 	@echo "              mesh-independent value.  ~14 min: the sweep costs no extra solve"
+	@echo "make m8bii1   S13: one 8-phase evaluation serial and pooled, up a worker"
+	@echo "              ladder sized to this machine.  Gates that the two answers are"
+	@echo "              bit-identical, and reports what the parallelism buys"
 
 env: env-opt env-cad
 
@@ -91,6 +117,18 @@ m8bi5:
 m8bi6:
 	$(PY_OPT) studies/study_stage3.py --sections mesh_convergence \
 	    --ladder-p 1,2,3,4,6,8,12,16,24,30 --out study_stage3_pnorm.json
+
+# M8b-ii item 1.  S13: the same `coarse` 8-phase evaluation serial and pooled, up a worker
+# ladder derived from THIS machine.  ~15 min on 16 cores; longer on fewer, because the
+# ladder is shorter but each rung is slower.
+#
+# Out of `studies` for the m8bi5 reason and one more: the wall-clock half of this report
+# describes the machine it ran on, so a committed number is evidence about a host rather
+# than about a commit.  The half that does travel — pooled == serial, EXACTLY — is in
+# `make test` (tests/test_pool.py) where it belongs, and runs every time.
+m8bii1:
+	$(PY_OPT) studies/study_stage3.py --sections phase_pool \
+	    --out study_stage3_pool.json
 
 export:
 	$(PY_CAD) src/wheel_step_export.py

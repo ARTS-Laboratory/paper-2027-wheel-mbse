@@ -1,0 +1,109 @@
+{
+ "phase_pool": {
+  "config": "coarse",
+  "n_phase": 8,
+  "cpu_count": 16,
+  "worker_counts": [
+   1,
+   2,
+   4,
+   8
+  ],
+  "n_rep": 2,
+  "serial_s": 139.38626980781555,
+  "serial_first_call_s": 316.2798616886139,
+  "serial_projected_hours": 46.462089935938515,
+  "projected_steps": 300,
+  "projected_starts": 4,
+  "rows": [
+   {
+    "workers": 1,
+    "seconds": 136.7333791255951,
+    "spawn_s": 0.0005581378936767578,
+    "first_call_s": 285.8879919052124,
+    "speedup": 1.0194019243814905,
+    "efficiency": 1.0194019243814905,
+    "first_over_steady": 2.0908427315513998,
+    "identical_values": true,
+    "grads_within": true,
+    "worst_grad_rel": 0.0,
+    "value_diffs": [],
+    "grad_diffs": [],
+    "projected_hours": 45.57779304186503
+   },
+   {
+    "workers": 2,
+    "seconds": 76.38001716136932,
+    "spawn_s": 0.0006985664367675781,
+    "first_call_s": 161.4497697353363,
+    "speedup": 1.82490492916926,
+    "efficiency": 0.91245246458463,
+    "first_over_steady": 2.1137697494128433,
+    "identical_values": true,
+    "grads_within": true,
+    "worst_grad_rel": 0.0,
+    "value_diffs": [],
+    "grad_diffs": [],
+    "projected_hours": 25.46000572045644
+   },
+   {
+    "workers": 4,
+    "seconds": 47.64710295200348,
+    "spawn_s": 0.0011823177337646484,
+    "first_call_s": 102.9263243675232,
+    "speedup": 2.925388138460884,
+    "efficiency": 0.731347034615221,
+    "first_over_steady": 2.160180115697786,
+    "identical_values": true,
+    "grads_within": true,
+    "worst_grad_rel": 2.1458381834312658e-16,
+    "value_diffs": [],
+    "grad_diffs": [],
+    "projected_hours": 15.882367650667826
+   },
+   {
+    "workers": 8,
+    "seconds": 35.29586708545685,
+    "spawn_s": 0.0016922950744628906,
+    "first_call_s": 86.8102674484253,
+    "speedup": 3.94908189874864,
+    "efficiency": 0.49363523734358,
+    "first_over_steady": 2.459502333183768,
+    "identical_values": true,
+    "grads_within": true,
+    "worst_grad_rel": 2.1458381834312658e-16,
+    "value_diffs": [],
+    "grad_diffs": [],
+    "projected_hours": 11.765289028485617
+   }
+  ],
+  "all_identical_values": true,
+  "all_grads_within": true,
+  "worst_grad_rel": 2.1458381834312658e-16,
+  "best_workers": 8,
+  "best_speedup": 3.94908189874864,
+  "best_efficiency": 0.49363523734358,
+  "gate_efficiency": 0.35,
+  "gate_grad_rel": 1e-14,
+  "efficiency_measurable": true,
+  "pass": true
+ },
+ "pass": true,
+ "settings": {
+  "config": "coarse",
+  "genome": "best_solution.json",
+  "quick": false,
+  "service_force_n": 66.7233,
+  "target_deflection_mm": 2.0,
+  "allowable_stress_mpa": 25.0,
+  "lr": 0.01,
+  "grad_clip": 1.0,
+  "sections": [
+   "phase_pool"
+  ],
+  "ladder_p": [],
+  "stress_pnorm_p_default": 30.0,
+  "elapsed_s": 1828.3,
+  "title": "M8b-ii \u2014 THE PROCESS-PARALLEL PHASE BATCH"
+ }
+}
