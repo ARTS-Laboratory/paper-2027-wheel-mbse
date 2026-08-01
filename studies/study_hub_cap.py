@@ -333,9 +333,16 @@ def run_t0_sweep(rows, cad_rows):
     """Threshold against `t0` and against the slot, over the whole thickness box."""
     out = []
     for (name, genes), cad in zip(rows, cad_rows):
-        void, cap_slot, _r = analytic_cap(genes)
+        # BOTH LIMITS SEPARATELY, not just the `min` — the whole point of the sweep is to
+        # watch them cross, and a column that silently reports whichever one won cannot
+        # show that.  `analytic_cap` returns the min, which is the shipped cap.
+        void, cap, _r = analytic_cap(genes)
+        by_slot = WO.HUB_CAP_SHARE * W.HUB_RADIUS_MM * np.radians(void)
+        by_thickness = WO.HUB_CAP_THICKNESS_SHARE * float(genes[8])
         rec = {"design": name, "t0_mm": float(genes[8]), "void_deg": void,
-               "slot_cap_mm": cap_slot}
+               "cap_mm": cap, "slot_cap_mm": float(by_slot),
+               "thickness_cap_mm": by_thickness,
+               "binds": "slot" if by_slot < by_thickness else "thickness"}
         if "thresholds_mm" not in cad:
             rec["error"] = cad.get("error", "no thresholds")
             out.append(rec)
@@ -347,8 +354,8 @@ def run_t0_sweep(rows, cad_rows):
         rec["square_mean_mm"] = float(np.mean(th[half:])) if half else 0.0
         rec["at_bracket"] = bool(rec["square_mean_mm"] >= cad["bisect_hi_mm"] - 1e-9)
         rec["share_of_t0"] = rec["square_mean_mm"] / genes[8]
-        rec["share_of_slot"] = (rec["square_mean_mm"] / (2.0 * cap_slot)
-                                if cap_slot > 0 else float("inf"))
+        rec["cap_over_occ"] = (rec["cap_mm"] / rec["square_mean_mm"]
+                               if rec["square_mean_mm"] > 0 else float("inf"))
         # A ROW THAT IS NOT MEASURING THE SAME FEATURE.  Past t0 ~ 3 the void collapses and
         # then goes negative — adjacent roots have merged — so there is no spoke-to-hub
         # corner left and `_junction_edges` reports whatever re-entrant edges the merged
@@ -531,17 +538,19 @@ def main():
         print(f"  t0_sweep  (calibration, not gated)   "
               f"share of t0 {s['share_of_t0_min']:.4f}–{s['share_of_t0_max']:.4f}"
               if s["share_of_t0_min"] is not None else "  t0_sweep  no usable rows")
-        print(f"    {'design':<10} {'t0':>6} {'void':>7} {'slot cap':>9} "
-              f"{'OCC sq':>8} {'/t0':>7} {'binds':>8}")
+        print(f"    {'design':<10} {'t0':>6} {'void':>7} {'slot':>8} {'thick':>8} "
+              f"{'cap':>8} {'OCC sq':>8} {'/t0':>7} {'binds':>10}")
         for r in s["rows"]:
             if "square_mean_mm" not in r:
                 print(f"    {r['design']:<10} ERROR {r.get('error')}")
                 continue
-            binds = "slot" if 2.0 * r["slot_cap_mm"] < 2.0 * r["square_mean_mm"] else "t0"
+            note = ("  [AT BRACKET]" if r.get("at_bracket")
+                    else "" if r.get("same_feature")
+                    else "  [void closed — NOT the same junction, excluded from the fit]")
             print(f"    {r['design']:<10} {r['t0_mm']:6.2f} {r['void_deg']:7.3f} "
-                  f"{r['slot_cap_mm']:9.4f} {r['square_mean_mm']:8.4f} "
-                  f"{r['share_of_t0']:7.4f} {binds:>8}"
-                  + ("  [AT BRACKET]" if r.get("at_bracket") else ""))
+                  f"{r['slot_cap_mm']:8.4f} {r['thickness_cap_mm']:8.4f} "
+                  f"{r['cap_mm']:8.4f} {r['square_mean_mm']:8.4f} "
+                  f"{r['share_of_t0']:7.4f} {r['binds']:>10}" + note)
     if "sweep" in want:
         s = rep["sweep"]
         print(f"  sweep     {s['n_binding']} of {s['n_designs']} designs over their cap; "

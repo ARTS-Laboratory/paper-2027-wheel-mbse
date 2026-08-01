@@ -1,0 +1,915 @@
+{
+ "stress_plateau": {
+  "config": "smoke",
+  "indentation_mm": 1.605098557958046,
+  "steps": [
+   0.01,
+   0.001,
+   0.0001,
+   1e-05,
+   1e-06
+  ],
+  "rows": [
+   {
+    "gene": "cx4",
+    "gene_id": 6,
+    "adjoint": 6.144689450580266,
+    "rel": [
+     0.009876424548699506,
+     0.0007733711865684633,
+     6.9962848387204605e-06,
+     9.960340460741804e-09,
+     8.594035763644041e-09
+    ],
+    "best_rel": 8.594035763644041e-09,
+    "decades": 3,
+    "live": true
+   },
+   {
+    "gene": "t0",
+    "gene_id": 8,
+    "adjoint": 2.498610190540432,
+    "rel": [
+     5.605767897000774e-06,
+     7.628915588643601e-06,
+     9.792991462830657e-09,
+     2.3284462432390658e-11,
+     4.082382274369644e-09
+    ],
+    "best_rel": 2.3284462432390658e-11,
+    "decades": 5,
+    "live": true
+   },
+   {
+    "gene": "t2",
+    "gene_id": 10,
+    "adjoint": 11.220907883952444,
+    "rel": [
+     0.004987646793461482,
+     0.0002153586766544506,
+     2.035274408429975e-06,
+     2.683444040936534e-09,
+     3.306121352327531e-09
+    ],
+    "best_rel": 2.683444040936534e-09,
+    "decades": 3,
+    "live": true
+   },
+   {
+    "gene": "R_hub",
+    "gene_id": 12,
+    "adjoint": 0.0,
+    "rel": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "best_rel": 0.0,
+    "decades": 5,
+    "live": false
+   },
+   {
+    "gene": "R_rim",
+    "gene_id": 13,
+    "adjoint": 0.0,
+    "rel": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "best_rel": 0.0,
+    "decades": 5,
+    "live": false
+   }
+  ],
+  "worst_best_rel": 8.594035763644041e-09,
+  "min_decades": 3,
+  "pass": true
+ },
+ "kernel_ratio": {
+  "bit_identity": [
+   {
+    "nonlinear": false,
+    "sigma_identical": true,
+    "vm_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "nonlinear": true,
+    "sigma_identical": true,
+    "vm_identical": true,
+    "max_abs_diff": 0.0
+   }
+  ],
+  "rows": [
+   {
+    "design": 0,
+    "max_mpa": 31.020117998091006,
+    "p10": 12.874781540113135,
+    "ratio_p10": 2.4093704348647473,
+    "p20": 19.49981025201606,
+    "ratio_p20": 1.5907907614067103,
+    "p30": 22.650762001866592,
+    "ratio_p30": 1.3694955602612713,
+    "p40": 24.469159027309328,
+    "ratio_p40": 1.2677230943437958
+   },
+   {
+    "design": 1,
+    "max_mpa": 19.212362830067768,
+    "p10": 7.412220524361551,
+    "ratio_p10": 2.5919847860601286,
+    "p20": 11.404363576303316,
+    "ratio_p20": 1.6846501518057868,
+    "p30": 13.473597261838629,
+    "ratio_p30": 1.4259267556173056,
+    "p40": 14.705839245276207,
+    "ratio_p40": 1.306444502053097
+   },
+   {
+    "design": 2,
+    "max_mpa": 24.80905412795758,
+    "p10": 7.266584665904888,
+    "ratio_p10": 3.414128544371426,
+    "p20": 13.125964994322382,
+    "ratio_p20": 1.8900746831710051,
+    "p30": 16.149724476882515,
+    "ratio_p30": 1.5361905500908355,
+    "p40": 17.92364560082823,
+    "ratio_p40": 1.3841522355703788
+   },
+   {
+    "design": 3,
+    "max_mpa": 27.993271683306382,
+    "p10": 11.198777061999206,
+    "ratio_p10": 2.4996721988774926,
+    "p20": 17.321655818069452,
+    "ratio_p20": 1.6160852044008753,
+    "p30": 20.253461561521068,
+    "ratio_p30": 1.3821475207225782,
+    "p40": 21.942114665781126,
+    "ratio_p40": 1.2757782059612548
+   }
+  ],
+  "ratio_stats": {
+   "p10": {
+    "mean": 2.7287889910434484,
+    "cv": 0.14692014873060336,
+    "min": 2.4093704348647473,
+    "max": 3.414128544371426
+   },
+   "p20": {
+    "mean": 1.6954002001960946,
+    "cv": 0.06931942610818978,
+    "min": 1.5907907614067103,
+    "max": 1.8900746831710051
+   },
+   "p30": {
+    "mean": 1.4284400966729978,
+    "cv": 0.04595155745587772,
+    "min": 1.3694955602612713,
+    "max": 1.5361905500908355
+   },
+   "p40": {
+    "mean": 1.3085245094821316,
+    "cv": 0.03514777534618586,
+    "min": 1.2677230943437958,
+    "max": 1.3841522355703788
+   }
+  },
+  "p_used": 30.0,
+  "cv_at_p_used": 0.04595155745587772,
+  "pass": true
+ },
+ "coupling": {
+  "config": "smoke",
+  "steps": [
+   0.001,
+   0.0001,
+   1e-05
+  ],
+  "rows": [
+   {
+    "qoi": "axle_drop",
+    "gene": "cx4",
+    "gene_id": 6,
+    "adjoint_total": -0.5369027584072461,
+    "adjoint_frozen_only": 0.0,
+    "best_rel_total": 4.80732610844719e-07,
+    "best_rel_frozen_only": 1.0,
+    "sign_flips": false
+   },
+   {
+    "qoi": "axle_drop",
+    "gene": "t0",
+    "gene_id": 8,
+    "adjoint_total": -0.2444111261284318,
+    "adjoint_frozen_only": 0.0,
+    "best_rel_total": 9.054704308806029e-08,
+    "best_rel_frozen_only": 1.0,
+    "sign_flips": false
+   },
+   {
+    "qoi": "axle_drop",
+    "gene": "t2",
+    "gene_id": 10,
+    "adjoint_total": -1.0644639735891537,
+    "adjoint_frozen_only": 0.0,
+    "best_rel_total": 3.635742465166879e-08,
+    "best_rel_frozen_only": 1.0,
+    "sign_flips": false
+   },
+   {
+    "qoi": "axle_drop",
+    "gene": "R_hub",
+    "gene_id": 12,
+    "adjoint_total": -0.0,
+    "adjoint_frozen_only": 0.0,
+    "best_rel_total": 0.0,
+    "best_rel_frozen_only": 0.0,
+    "sign_flips": false
+   },
+   {
+    "qoi": "axle_drop",
+    "gene": "R_rim",
+    "gene_id": 13,
+    "adjoint_total": -0.0,
+    "adjoint_frozen_only": 0.0,
+    "best_rel_total": 0.0,
+    "best_rel_frozen_only": 0.0,
+    "sign_flips": false
+   },
+   {
+    "qoi": "pnorm_stress",
+    "gene": "cx4",
+    "gene_id": 6,
+    "adjoint_total": -0.8211484034896888,
+    "adjoint_frozen_only": 6.144689450580651,
+    "best_rel_total": 4.040921364502918e-06,
+    "best_rel_frozen_only": 8.482663423118,
+    "sign_flips": true
+   },
+   {
+    "qoi": "pnorm_stress",
+    "gene": "t0",
+    "gene_id": 8,
+    "adjoint_total": -0.6724077408854487,
+    "adjoint_frozen_only": 2.4986101905404237,
+    "best_rel_total": 5.789382329153334e-07,
+    "best_rel_frozen_only": 4.715917419082617,
+    "sign_flips": true
+   },
+   {
+    "qoi": "pnorm_stress",
+    "gene": "t2",
+    "gene_id": 10,
+    "adjoint_total": -2.589569572930216,
+    "adjoint_frozen_only": 11.220907883952568,
+    "best_rel_total": 1.9031283781437309e-07,
+    "best_rel_frozen_only": 5.33308037123404,
+    "sign_flips": true
+   },
+   {
+    "qoi": "pnorm_stress",
+    "gene": "R_hub",
+    "gene_id": 12,
+    "adjoint_total": 0.0,
+    "adjoint_frozen_only": 0.0,
+    "best_rel_total": 0.0,
+    "best_rel_frozen_only": 0.0,
+    "sign_flips": false
+   },
+   {
+    "qoi": "pnorm_stress",
+    "gene": "R_rim",
+    "gene_id": 13,
+    "adjoint_total": 0.0,
+    "adjoint_frozen_only": 0.0,
+    "best_rel_total": 0.0,
+    "best_rel_frozen_only": 0.0,
+    "sign_flips": false
+   }
+  ],
+  "magnitudes": {
+   "axle_drop": {
+    "frozen_norm": 0.0,
+    "coupling_norm": 1.437228249714717,
+    "total_norm": 1.437228249714717,
+    "coupling_over_total": 1.0
+   },
+   "pnorm_stress": {
+    "frozen_norm": 15.56240667801291,
+    "coupling_norm": 18.64676385068637,
+    "total_norm": 3.164741751960564,
+    "coupling_over_total": 5.892033319664918
+   }
+  },
+  "worst_rel_total": 4.040921364502918e-06,
+  "worst_rel_frozen_only": 8.482663423118,
+  "any_sign_flip": true,
+  "pass": true
+ },
+ "closed_form": {
+  "config": "smoke",
+  "steps": [
+   0.0001,
+   1e-05,
+   1e-06
+  ],
+  "rows": [
+   {
+    "tier": "t1",
+    "term": "x_order",
+    "value": 0.0,
+    "grad_norm": 0.0,
+    "n_live_genes": 0,
+    "worst_best_rel": 0.0
+   },
+   {
+    "tier": "t1",
+    "term": "hub_overlap",
+    "value": 52.132461685362976,
+    "grad_norm": 722.0281274670882,
+    "n_live_genes": 2,
+    "worst_best_rel": 2.0772706449642283e-13
+   },
+   {
+    "tier": "t1",
+    "term": "smoothness",
+    "value": 1.5198586274836297,
+    "grad_norm": 0.4104660580438219,
+    "n_live_genes": 8,
+    "worst_best_rel": 1.1923442941279167e-10
+   },
+   {
+    "tier": "t1",
+    "term": "fold",
+    "value": 0.0,
+    "grad_norm": 0.0,
+    "n_live_genes": 0,
+    "worst_best_rel": 0.0
+   },
+   {
+    "tier": "t1",
+    "term": "arrival",
+    "value": 0.0,
+    "grad_norm": 0.0,
+    "n_live_genes": 0,
+    "worst_best_rel": 0.0
+   },
+   {
+    "tier": "t1",
+    "term": "fillet",
+    "value": 0.0,
+    "grad_norm": 0.0,
+    "n_live_genes": 0,
+    "worst_best_rel": 0.0
+   },
+   {
+    "tier": "t1",
+    "term": "fillet_cap",
+    "value": 103.02879302836955,
+    "grad_norm": 502.608509937993,
+    "n_live_genes": 11,
+    "worst_best_rel": 3.097852054426176e-09
+   },
+   {
+    "tier": "t2",
+    "term": "mass",
+    "value": 55.28725250544345,
+    "grad_norm": 9.27595575502111,
+    "n_live_genes": 12,
+    "worst_best_rel": 9.772274683818345e-09
+   },
+   {
+    "tier": "t2",
+    "term": "min_sj",
+    "value": 0.0,
+    "grad_norm": 0.0,
+    "n_live_genes": 0,
+    "worst_best_rel": 0.0
+   }
+  ],
+  "scaled_jacobian": {
+   "n_elements": 960,
+   "max_abs_diff": 3.3306690738754696e-16,
+   "min_sj": 0.898005550951259,
+   "pass": true
+  },
+  "worst_rel": 9.772274683818345e-09,
+  "pass": true
+ },
+ "total": {
+  "config": "smoke",
+  "n_phase": 2,
+  "steps": [
+   0.001,
+   0.0001,
+   1e-05
+  ],
+  "rows": [
+   {
+    "gene": "cx4",
+    "gene_id": 6,
+    "adjoint": 312.9628198627729,
+    "rel": [
+     0.0007514115788110886,
+     1.15881137018871e-06,
+     2.008208595588263e-07
+    ],
+    "best_rel": 2.008208595588263e-07,
+    "decades": 2
+   },
+   {
+    "gene": "t0",
+    "gene_id": 8,
+    "adjoint": 693.4611880592508,
+    "rel": [
+     4.341665509355839e-06,
+     1.966905420037316e-08,
+     1.2034368657864858e-07
+    ],
+    "best_rel": 1.966905420037316e-08,
+    "decades": 3
+   },
+   {
+    "gene": "t2",
+    "gene_id": 10,
+    "adjoint": 675.5490450655992,
+    "rel": [
+     0.0001625046426484536,
+     4.612052703172514e-07,
+     1.0086653993083446e-07
+    ],
+    "best_rel": 1.0086653993083446e-07,
+    "decades": 2
+   },
+   {
+    "gene": "R_hub",
+    "gene_id": 12,
+    "adjoint": 1099.7372527780274,
+    "rel": [
+     5.148142889799174e-14,
+     2.0654597377146083e-13,
+     1.6271439575389356e-13
+    ],
+    "best_rel": 5.148142889799174e-14,
+    "decades": 3
+   },
+   {
+    "gene": "R_rim",
+    "gene_id": 13,
+    "adjoint": 0.0,
+    "rel": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "best_rel": 0.0,
+    "decades": 3
+   }
+  ],
+  "total": 384.75561443216435,
+  "breakdown": {
+   "total": 384.75561443216435,
+   "terms": {
+    "x_order": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    },
+    "hub_overlap": {
+     "value": 52.132461685362976,
+     "share": 0.13549499924075667,
+     "grad_norm": 722.0281274670882,
+     "grad_share": 0.3385844944382113
+    },
+    "smoothness": {
+     "value": 1.5198586274836303,
+     "share": 0.003950192201163043,
+     "grad_norm": 0.4104660580438227,
+     "grad_share": 0.0001924820342309284
+    },
+    "fold": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    },
+    "arrival": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    },
+    "fillet": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    },
+    "fillet_cap": {
+     "value": 103.02879302836945,
+     "share": 0.26777723095846934,
+     "grad_norm": 502.60850993799284,
+     "grad_share": 0.23569088483392223
+    },
+    "buckling": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    },
+    "mass": {
+     "value": 55.28725250544345,
+     "share": 0.14369446586773862,
+     "grad_norm": 9.27595575502111,
+     "grad_share": 0.004349823324421942
+    },
+    "min_sj": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    },
+    "deflection": {
+     "value": 172.78724858550484,
+     "share": 0.4490831117318723,
+     "grad_norm": 898.1671738774277,
+     "grad_share": 0.4211823153692135
+    },
+    "stress": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    },
+    "phase_ripple": {
+     "value": 0.0,
+     "share": 0.0,
+     "grad_norm": 0.0,
+     "grad_share": 0.0
+    }
+   },
+   "report": {
+    "fillet_flanks": [
+     [
+      1.0
+     ],
+     [
+      1.0
+     ]
+    ],
+    "buckling_ratio": 0.09198127091279185,
+    "mesh_mass_g": 67.2661572149562,
+    "min_scaled_jacobian": 0.8980055509512593,
+    "axle_drop_mean_mm": 1.4742057458122924,
+    "axle_drop_min_mm": 1.3433129336665386,
+    "axle_drop_max_mm": 1.605098557958046,
+    "phase_ripple_std_over_mean": 0.0887887003001954,
+    "pnorm_stress_agg_mpa": 5.037792182104504,
+    "max_stress_mpa": 31.020117998090605,
+    "stress_scale_measured": 5.737404961958281,
+    "kt_hub": 2.07653128529017,
+    "kt_rim": 1.4896335682000246,
+    "hub_fillet_cap_mm": 1.1058317444195291,
+    "r_hub_effective_mm": 1.1058317444195291,
+    "stress_utilisation_hub": 0.41844532299720943,
+    "stress_utilisation_rim": 0.30017857376314083,
+    "stress_utilisation": 0.41844532299720943,
+    "stress_gauss_p": 4.0,
+    "pnorm_by_p": {},
+    "n_phase": 2,
+    "rows": [
+     {
+      "phase_deg": 0.0,
+      "axle_drop_mm": 1.605098557958046,
+      "pnorm_stress_mpa": 4.942503140270306,
+      "max_stress_mpa": 31.020117998090605,
+      "contact_force_n": 66.72329999893576,
+      "coupling_frac": 2.3088504095742124
+     },
+     {
+      "phase_deg": 15.0,
+      "axle_drop_mm": 1.3433129336665386,
+      "pnorm_stress_mpa": 3.945939968073165,
+      "max_stress_mpa": 20.513418812933924,
+      "contact_force_n": 66.72330000005556,
+      "coupling_frac": 1.910744944671383
+     }
+    ]
+   }
+  },
+  "inert": [],
+  "inert_here": [],
+  "inert_local_only": [],
+  "dominated": [],
+  "n_designs_scored": 5,
+  "inert_expected": [
+   "buckling"
+  ],
+  "census_ok": true,
+  "elites": [
+   {
+    "elite": 0,
+    "total": 384.75561443216435,
+    "inert": [],
+    "dominated": [
+     "mass"
+    ],
+    "terms": {
+     "x_order": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "hub_overlap": {
+      "share": 0.13549499924075667,
+      "grad_share": 0.3385844944382113
+     },
+     "smoothness": {
+      "share": 0.003950192201163043,
+      "grad_share": 0.0001924820342309284
+     },
+     "fold": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "arrival": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet_cap": {
+      "share": 0.26777723095846934,
+      "grad_share": 0.23569088483392223
+     },
+     "buckling": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "mass": {
+      "share": 0.14369446586773862,
+      "grad_share": 0.004349823324421942
+     },
+     "min_sj": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "deflection": {
+      "share": 0.4490831117318723,
+      "grad_share": 0.4211823153692135
+     },
+     "stress": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "phase_ripple": {
+      "share": 0.0,
+      "grad_share": 0.0
+     }
+    }
+   },
+   {
+    "elite": 1,
+    "total": 258.0537561800903,
+    "inert": [],
+    "dominated": [],
+    "terms": {
+     "x_order": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "hub_overlap": {
+      "share": 0.11820244032917138,
+      "grad_share": 0.3174382363707006
+     },
+     "smoothness": {
+      "share": 0.010864006961073577,
+      "grad_share": 0.0005243900983512463
+     },
+     "fold": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "arrival": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet_cap": {
+      "share": 0.16575680182658273,
+      "grad_share": 0.18645160914724326
+     },
+     "buckling": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "mass": {
+      "share": 0.21690593257422058,
+      "grad_share": 0.0055290087437038105
+     },
+     "min_sj": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "deflection": {
+      "share": 0.48827081830895164,
+      "grad_share": 0.490056755640001
+     },
+     "stress": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "phase_ripple": {
+      "share": 0.0,
+      "grad_share": 0.0
+     }
+    }
+   },
+   {
+    "elite": 2,
+    "total": 389.59895193600244,
+    "inert": [],
+    "dominated": [
+     "mass"
+    ],
+    "terms": {
+     "x_order": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "hub_overlap": {
+      "share": 0.2765310059077815,
+      "grad_share": 0.43766055407678345
+     },
+     "smoothness": {
+      "share": 0.00655913787656973,
+      "grad_share": 0.00031469952915613974
+     },
+     "fold": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "arrival": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet_cap": {
+      "share": 0.2339885603996834,
+      "grad_share": 0.19913755242591216
+     },
+     "buckling": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "mass": {
+      "share": 0.14483083578039024,
+      "grad_share": 0.004080570649991717
+     },
+     "min_sj": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "deflection": {
+      "share": 0.338090460035575,
+      "grad_share": 0.35880662331815666
+     },
+     "stress": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "phase_ripple": {
+      "share": 0.0,
+      "grad_share": 0.0
+     }
+    }
+   },
+   {
+    "elite": 3,
+    "total": 300.5380491706958,
+    "inert": [],
+    "dominated": [
+     "mass"
+    ],
+    "terms": {
+     "x_order": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "hub_overlap": {
+      "share": 0.243628073372503,
+      "grad_share": 0.4255203048225379
+     },
+     "smoothness": {
+      "share": 0.008001919262800292,
+      "grad_share": 0.0003352261718618658
+     },
+     "fold": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "arrival": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "fillet_cap": {
+      "share": 0.24825800832934025,
+      "grad_share": 0.21247735594126546
+     },
+     "buckling": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "mass": {
+      "share": 0.18800519171364874,
+      "grad_share": 0.0048077374437244785
+     },
+     "min_sj": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "deflection": {
+      "share": 0.31210680732170765,
+      "grad_share": 0.3568593756206103
+     },
+     "stress": {
+      "share": 0.0,
+      "grad_share": 0.0
+     },
+     "phase_ripple": {
+      "share": 0.0,
+      "grad_share": 0.0
+     }
+    }
+   }
+  ],
+  "cost": {
+   "full_s": 73.61843991279602,
+   "cheap_tiers_s": 0.7592451572418213,
+   "cheap_fraction": 0.01031324703622051
+  },
+  "worst_best_rel": 2.008208595588263e-07,
+  "min_decades": 2,
+  "pass": true
+ },
+ "aliasing": {
+  "config": "smoke",
+  "n_phase": 2,
+  "n_ref": 4,
+  "reference_drop_mm": 1.4523145300527969,
+  "schemes": {
+   "uniform": {
+    "n_draws": 1,
+    "errors_mm": [
+     0.021891215759495486
+    ],
+    "bias_mm": 0.021891215759495486,
+    "abs_bias_mm": 0.021891215759495486,
+    "spread_mm": 0.0,
+    "bias_rel": 0.015073329713708545
+   },
+   "rqmc": {
+    "n_draws": 2,
+    "errors_mm": [
+     -0.021891215759495486,
+     -0.021891215759495486
+    ],
+    "bias_mm": -0.021891215759495486,
+    "abs_bias_mm": 0.021891215759495486,
+    "spread_mm": 0.0,
+    "bias_rel": 0.015073329713708545
+   }
+  },
+  "rqmc_bias_over_uniform": 1.0,
+  "rqmc_is_less_biased": true,
+  "pass": true
+ },
+ "pass": true,
+ "settings": {
+  "config": "smoke",
+  "genome": "best_solution.json",
+  "quick": true,
+  "p_norm": 30.0,
+  "service_force_n": 66.7233,
+  "elapsed_s": 555.0
+ }
+}

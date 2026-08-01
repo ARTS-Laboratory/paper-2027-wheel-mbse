@@ -382,12 +382,44 @@ limit. And the limit does not track the slot: the void spans a **54% range** whi
 threshold moves **3.4%**. elite14 and elite13 have *identical* `t0` and thresholds 0.7%
 apart across the widest void gap in the set. It tracks **`t0/2`**, to 0.7%.
 
-So `hub_fillet_cap_mm` is now `min(0.5 × slot_arc, 0.52 × t0)`. The thickness term is the
-one measured binding on every design on disk. The slot term is kept, and kept at an
-unvalidated 0.5, because it is the only one that knows a *closed* slot admits no fillet at
-any radius — as adjacent roots converge the void goes to zero and then negative, and the
-thickness term cannot see that at all. Both facts are in the constants' docstrings, labelled
-as measurement and as assumption respectively.
+So `hub_fillet_cap_mm` is now `min(0.5 × slot_arc, 0.52 × t0)`. The slot term is kept, and
+kept at an unvalidated 0.5, because it is the only one that knows a *closed* slot admits no
+fillet at any radius — as adjacent roots converge the void goes to zero and then negative,
+and the thickness term cannot see that at all. Both facts are in the constants' docstrings,
+labelled as measurement and as assumption respectively.
+
+**`make hubcap` PASSES, and the split confirms the `min`:**
+
+| design | binding limit | cap | OCC | cap/OCC |
+|---|---|---|---|---|
+| best_solution | slot | 1.1057 | 1.3030 | 0.849 |
+| elite14 | slot | 0.9898 | 1.3384 | 0.740 |
+| **elite13** | **thickness** | 1.3279 | 1.3274 | **1.000** |
+| **t0 = 2.0** | **thickness** | 1.0400 | 1.0395 | **1.000** |
+
+Where the thickness term binds it predicts what OCC accepts to **0.05%**. Where the slot
+term binds — the deliberately unvalidated 0.5 — it is conservative by 15–26%, which is the
+harmless direction. That asymmetry is the model's shape, stated honestly rather than tuned
+away.
+
+**The thickness law is calibrated on `t0 ∈ [2.0, 2.6]` and is not known outside it.** Five
+points there (0.5197 / 0.5254 from the sweep, 0.5247 / 0.5263 / 0.5224 from the designs) sit
+in a 1.3% band. The sweep's rows above `t0 ≈ 3` report 0.63–0.94, and they are not evidence
+against it: the void has collapsed and gone negative by then (−0.92° at `t0` = 6, −9.51° at
+10), adjacent roots have merged, and there is no spoke-to-hub corner left for the number to
+be about. Those rows are marked `same_feature: false` and excluded from the fit. In that
+regime the slot term is negative and takes the `min` anyway — the cap is right there for a
+different reason: no fillet exists at any radius, which is what a negative cap says.
+`MIN_WALL_MM` is 2.0 and every design on disk sits at 2.468–2.627, so the calibrated band
+covers everything the GA has produced.
+
+**The gate is ONE-SIDED, and that is the model's actual claim.** It began as a two-sided
+"within one ladder rung of OCC", written when `0.5 × slot` was believed to *be* the limit. A
+`min` of one measured limit and one unvalidated one does not claim to be tight, it claims to
+be **safe** — and the way to pass a tightness gate that a safe model fails is to loosen the
+model until it passes, which is backwards. So: `cap/OCC ∈ [0.5, 1.01]`. Never promise more
+than the part gives; and do not collapse to something vacuously small, since a cap of zero
+would sail through a pure one-sided test while destroying every hub fillet in the wheel.
 
 **Both halves of the fix, because either alone leaves half the defect.**
 `fillet_cap = soft_barrier(R_hub − cap, 500)` pushes the gene under the slot; and `_kt_hub`
@@ -426,6 +458,28 @@ observed rather than assumed. That crossover is the entire justification for the
 **15 of the 16 elites are above their cap**, including elites 9 and 10, which are the two
 starts §0(b)'s production run begins from. That is what makes this a prerequisite rather
 than a tidy-up.
+
+**Verified.** `make test` **406 passed** (396 before). `make hubcap` PASS. Gate 7
+(`study_objective.py --quick`) **OVERALL: PASS** — and it is the independent check on the new
+term's gradient, because G4 finite-differences every entry of `T1_NAMES` generically:
+`fillet_cap` agrees to **3.098e-09** over 11 live genes, which is the assurance that
+differentiating through `ring_station` and the `min` is right. G8's inert census is still
+`[] ⊆ ("buckling",)`. `make export` was not re-run and must not need to be: nothing on the
+CAD side changed, and the manifest is byte-identical.
+
+**A 4-step `coarse` descent from the shipped genome does what it should, and exercises BOTH
+branches of the `min` on the way:**
+
+| step | R_hub | cap | R_eff | Kt_hub | `fillet_cap` | t0 | binding |
+|---|---|---|---|---|---|---|---|
+| 0 | 1.5598 | 1.1057 | 1.1057 | 2.0766 | 103.07 | 2.4774 | slot |
+| 2 | 1.4949 | 1.1705 | 1.1705 | 1.9967 | 52.60 | 2.3290 | slot |
+| 4 | 1.4722 | 1.1875 | 1.1875 | 1.9748 | 40.53 | 2.2836 | **thickness** |
+
+`R_hub` walks down, the cap walks *up* as `t0` thins, the barrier decays 103 → 41, and the
+binding limit crosses from slot to thickness with no discontinuity — `0.52 × 2.2836 = 1.1875`
+is the step-4 cap exactly. The gap is closing rather than closed (0.454 → 0.285 mm in four
+steps on a decaying `lr`), which is what four steps should look like.
 
 **Two things this does NOT do, stated so nobody expects them.** It does not move
 `kt_error_pct` off +73.4%: the manifest's `r_built = 0.361 mm` is set by the SHALLOW
@@ -496,6 +550,7 @@ it costs nothing and becomes a live check the moment a design is stress-binding.
 make m8bi5                                                # S11 + S12, ~2 h 31 m
 make m8bi6                                                # the p sweep, ~14 min
 make m8bii1                                               # S13, the phase pool, ~30 min
+make hubcap                                               # the hub-fillet cap vs OCC, ~10 min
 make test                                                 # 396 tests, ~22 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
@@ -569,3 +624,10 @@ to step 1's, and the top-level rows now carry the new constraint plus a `util_kt
 this commit** — the seconds and the projected hours are 16-core numbers. What travels is
 `identical_values`, `worst_grad_rel`, and the efficiency column. Re-run `make m8bii1` on a
 different host and expect different hours and a different ladder; expect the same verdict.
+
+`study_hub_cap.*` are §5's, and unlike the above they describe **OCC's behaviour on this
+shape** rather than this machine or this commit. They are the calibration behind
+`HUB_CAP_THICKNESS_SHARE` and the falsification of the slot-only model, so the
+`occ_limit` and `t0_sweep` blocks are the evidence and should stay reproducible. The wall
+clock (583 s for three designs plus the eight-point sweep) is dominated by OCC fillet probes
+— roughly 220 of them per design — and does travel between machines only loosely.
