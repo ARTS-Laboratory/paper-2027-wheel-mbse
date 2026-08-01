@@ -158,8 +158,77 @@ HUB_FREE_ARC_MM = 0.5
 MIN_FILLET_MARGIN_MM = 0.1
 FILLET_SAFETY = 1.1
 
+# THE BUILDABLE HUB FILLET — TWO LIMITS, AND THE CAP IS THE SMALLER.
+#
+# `make hubcap` measures both by bisecting what OCC actually accepts on each of the
+# twenty-four hub corners, and it is the reason this is a `min` rather than the single
+# slot term it started as.
+#
+#   THE SLOT.  `wheel_wheel.hub_void_deg` measures the empty arc adjacent spoke roots
+#   leave on the hub circle.  Two fillets grow into that one slot from either side, so
+#   each may claim about half.
+#
+#   THE ROOT THICKNESS.  A fillet in the re-entrant corner where a spoke of thickness `t0`
+#   meets the hub circle cannot grow past roughly half that thickness before it has eaten
+#   the whole flank.
+#
+# WHICH ONE BINDS IS A MEASUREMENT, AND IT IS NOT THE ONE THIS STARTED WITH.  The slot
+# term alone was written first, on the strength of the hub fillet milestone's single
+# recorded export (void 2.196 mm, OCC built 1.127).  Bisecting the real per-corner
+# threshold showed that 1.127 was a LADDER RUNG accepted for a whole twelve-edge family,
+# not the limit: the true threshold at that design is 1.300.  And across three designs
+# whose voids span 8.93 to 13.77 deg — a 54% range — the threshold moved only 1.300 /
+# 1.344 / 1.334, a 3.4% range.  Two of those designs have IDENTICAL `t0` and thresholds
+# 0.7% apart despite the widest void difference in the set.  The slot was not what bound.
+#
+# So the slot term alone is falsified as THE cap.  It is kept, and kept at 0.5, because it
+# must bind eventually and nothing else knows that: as adjacent roots close on each other
+# the void goes to zero and then negative, and at that point no fillet exists at any radius
+# no matter how thick the spoke is.  The thickness term cannot see that at all.  Its own
+# share has never been observed binding, so 0.5 stays a modelling assumption rather than a
+# fit, and it is labelled as one.
+#
+# HUB_CAP_THICKNESS_SHARE is fitted, conservatively, to FIVE measured ratios spanning
+# `t0` = 2.0 to 2.5536 — the three designs above (0.5247 / 0.5263 / 0.5224) plus
+# `make hubcap`'s `t0_sweep`, which holds one centerline and walks `t0` across its box
+# (0.5214 at t0 = 2.0, 0.5254 at 2.5).  All five sit in a 0.9% band and 0.52 is under the
+# smallest of them.  Conservative is the direction that matters: a cap that under-promises
+# leaves fillet on the table, one that over-promises puts Stage 3 back to buying fillet the
+# part cannot build, which is the defect this milestone exists to remove.
+#
+# THE LAW IS CALIBRATED ON [2.0, 2.6] AND IS NOT KNOWN OUTSIDE IT.  The sweep's rows above
+# t0 ~ 3 report shares of 0.63 to 0.94, and they are not evidence against this: by then the
+# void has collapsed and gone NEGATIVE (-0.92 deg at t0 = 6, -9.51 deg at t0 = 10), the
+# adjacent roots have merged, and there is no spoke-to-hub corner left for the number to be
+# about.  The driver marks those rows `same_feature: false` and excludes them from the fit
+# rather than averaging a different shape into this constant.  In that regime the SLOT term
+# is negative and takes the `min` anyway, so the cap is correct there for a different
+# reason: no fillet exists at any radius, which is exactly what a negative cap says.
+#
+# `MIN_WALL_MM` is 2.0 and every design on disk sits at 2.468-2.627, so the calibrated band
+# covers the reachable design space's lower half and everything the GA has ever produced.
+HUB_CAP_SHARE = 0.5
+HUB_CAP_THICKNESS_SHARE = 0.52
+
+# `wheel_step_export._fillet_ladder` walks the requested radius DOWN by 15% a rung, so two
+# requested radii closer together than one rung cannot produce different built parts.  That
+# sets the blend width of `smooth_min` below: narrower models a distinction the exporter
+# cannot make, wider biases the effective radius below a cap the exporter builds AT.
+#
+# Duplicated rather than imported because `wheel_step_export` needs cadquery and this
+# module is imported in the jax env (and `tests/test_import_hygiene.py` pins the split).
+# `tests/test_export_contract.py` ties the two together through the manifest instead, by
+# asserting every built radius is an exact power of this decay times the requested one.
+FILLET_LADDER_DECAY = 0.85
+CAP_BLEND_FRAC = 1.0 - FILLET_LADDER_DECAY
+# `wheel_step_export.MIN_CURVATURE_RADIUS_MM`, the ladder's floor.  Only used to keep the
+# blend width positive when the cap is zero or negative, i.e. when adjacent spokes have
+# closed the slot entirely and there is no fillet to be had at any radius.
+MIN_BUILDABLE_R_MM = 0.25
+
 TERMS = ("deflection", "mass", "stress", "buckling", "x_order", "hub_overlap",
-         "smoothness", "fold", "arrival", "fillet", "min_sj", "phase_ripple")
+         "smoothness", "fold", "arrival", "fillet", "fillet_cap", "min_sj",
+         "phase_ripple")
 
 # Ported unchanged from `wheel_fea.evaluate_design` except where noted.  `smoothness` and
 # `fillet` are new scales and are what gate 10's calibration is for; `min_sj` and
@@ -175,6 +244,15 @@ DEFAULT_WEIGHTS = {
     "fold":        W.FOLD_PENALTY_SCALE,
     "arrival":     W.ARRIVAL_PENALTY_SCALE,
     "fillet":      3000.0,      # same class as fold/arrival: model validity, not taste
+    # `hub_overlap`'s weight, REUSED rather than calibrated, because this is the same
+    # question in the same units: does the spoke root plus its fillets fit in one sector,
+    # priced as a squared millimetre clearance.  `hub_overlap` asks it of a chord between
+    # centerlines, this asks it of the arc the flanks actually leave.  At the shipped
+    # genome that puts this term at 103.2 against `hub_overlap`'s 52.1 and `mass`'s 55.3 —
+    # the same order as the barrier it corrects, and far below `wheel_stage3.T1_REJECT`.
+    # `fillet`'s 3000.0 would give 618.6, six times the whole current T1+T2 loss, which
+    # would make the cap the objective and pre-empt gate 10's calibration.
+    "fillet_cap":  500.0,
     "min_sj":      3000.0,
     "phase_ripple": 0.0,        # off by default; gate 10 reports what turning it on costs
 }
@@ -199,6 +277,31 @@ def soft_barrier(violation, scale=1.0):
     return scale * jnp.maximum(0.0, violation) ** 2
 
 
+def smooth_min(a, b, k):
+    """`min(a, b)` with a quadratic blend of width `k`, and EXACT outside the blend.
+
+    The polynomial smooth-min, and the exactness is the reason for it rather than a bonus:
+    for `|a - b| >= k` this returns `min(a, b)` to the last bit, so a design more than one
+    ladder rung away from its cap is priced on exactly the cap with a derivative of exactly
+    0.0 in the other argument.  That is a claim a test can assert
+    (`test_R_eff_is_exactly_the_cap_more_than_one_rung_above_it`), and it is what the two
+    obvious alternatives cannot offer:
+
+      * `0.5*(a + b - sqrt((a-b)^2 + eps^2))` is C^inf but never exact — measured at the
+        shipped genome it puts the effective radius 1.3% BELOW the cap, inventing a fillet
+        reduction nothing measured.
+      * log-sum-exp is C^inf, scale-coupled to the magnitudes of `a` and `b`, and needs
+        overflow guarding for what is here a two-argument min of two millimetre numbers.
+
+    C^1 at the knee, which is `soft_barrier`'s property above and for the same reason: an
+    FD plateau needs the first derivative continuous.  The `min`'s kink is exactly
+    cancelled — d/d|a-b| of `-(k-|a-b|)^2/(4k)` is `+1/2` at `|a-b| = 0` against `min`'s
+    `-1/2`.
+    """
+    h = jnp.maximum(k - jnp.abs(a - b), 0.0) / k
+    return jnp.minimum(a, b) - h * h * k * 0.25
+
+
 KT_CLAMP = (1.0, 3.5)
 KT_EXPONENT = 0.65
 KT_DEGENERATE_R_MM = 0.1
@@ -219,32 +322,69 @@ def stress_concentration_kt(fillet_radius_mm, thickness_mm, c_factor=1.0):
     r = jnp.asarray(fillet_radius_mm, dtype=float)
     degenerate = r < KT_DEGENERATE_R_MM
     # Double-`where`: the degenerate branch must not evaluate r=0 inside the power, or its
-    # `inf` poisons the gradient of the branch that WAS taken.  `R_hub`/`R_rim` are bounded
-    # below at 0.5 mm so the branch is unreachable in-box, but `kt_report` calls this with
+    # `inf` poisons the gradient of the branch that WAS taken.  `kt_report` calls this with
     # `r_built = 0.0` and the twin has to agree there too.
+    #
+    # THE BRANCH IS NOW REACHABLE IN-BOX, and it was not when this was written.  The old
+    # note said `R_hub`/`R_rim` are bounded below at 0.5 mm so nothing in the box could
+    # take it.  `_kt_hub` no longer passes a gene: it passes the BUILDABLE radius,
+    # `smooth_min(R_hub, hub_fillet_cap_mm(...))`, and that cap goes to zero and then
+    # negative on any genome whose adjacent spoke roots close the slot between them
+    # (measured: a void of -9.06 deg, a cap of -1.004 mm, from a uniform draw in the box).
+    # Verified there: `Kt` returns the 3.5 clamp with a gradient of exactly `[0.0, 0.0]`
+    # and no NaN, so the double-`where` is load-bearing rather than defensive.
     safe = jnp.where(degenerate, 1.0, r)
     kt = 1.0 + c_factor * (thickness_mm / (2.0 * safe)) ** KT_EXPONENT
     return jnp.where(degenerate, KT_CLAMP[1], jnp.clip(kt, *KT_CLAMP))
 
 
-def _kt_hub(g):
-    return stress_concentration_kt(g[12], g[8])       # R_hub with t0
+def _kt_hub(g, cfgo, span_mm, flanks):
+    # R_hub with t0 — but priced on the radius the SLOT allows, not the one the gene asks
+    # for.  See `hub_fillet_cap_mm`; this one substitution is the whole of PLAN.md §0(a).
+    cap = hub_fillet_cap_mm(g, cfgo, span_mm, W.HUB_RADIUS_MM, flanks, xp=jnp)
+    return stress_concentration_kt(hub_fillet_r_effective(g, cap), g[8])
 
 
 def _kt_rim(g):
     return stress_concentration_kt(g[13], g[11])      # R_rim with t3
 
 
-_KT_HUB_VG = jax.value_and_grad(_kt_hub)
 _KT_RIM_VG = jax.value_and_grad(_kt_rim)
 
+# `junction_kt`'s jit cache — same idiom as `_t1_cached_value_and_jacobian` below and
+# `wheel_wheel.coord_fn`: the key is the STATIC recipe, never `genes` (the traced
+# argument).  4 cfg names x 1 span_mm used anywhere in this repo x 16 flank patterns = 64,
+# so 128 carries the same headroom as `_T1_CACHE_MAX`.  No `weights` in the key, unlike
+# T1's — nothing weight-dependent is inside `Kt`.
+_KT_CACHE = {}
+_KT_CACHE_MAX = 128
 
-def junction_kt(genes):
-    """`((Kt_hub, dKt_hub), (Kt_rim, dKt_rim))` — NO MESH, NO SOLVE.
 
-    Pure gene space: one `jax.grad` on a 14-vector, which is why the stress constraint can
-    afford an analytic concentration factor at all.  Ten of the fourteen entries of each
-    gradient are exactly zero.
+def _kt_cached_value_and_grad(genes, cfgo, span_mm, flanks):
+    """`((Kt_hub, dKt_hub), (Kt_rim, dKt_rim))`, jitted and cached on the static recipe.
+
+    Worth caching for the reason M8b-ii item 2 gave for `t1_vector`: measured eager, the
+    hub's cap sampling costs 0.280 s against 0.0007 s jitted, and it runs in the PARENT on
+    every path, so once the phase batch is parallel it is pure Amdahl serial fraction.
+    """
+    key = (cfgo.name, float(span_mm), flanks)
+    fn = _KT_CACHE.get(key)
+    if fn is None:
+        def _hub(v):
+            return _kt_hub(v, cfgo, span_mm, flanks)
+
+        @jax.jit
+        def fn(v):                                        # noqa: F811
+            return jax.value_and_grad(_hub)(v), _KT_RIM_VG(v)
+
+        if len(_KT_CACHE) >= _KT_CACHE_MAX:
+            _KT_CACHE.pop(next(iter(_KT_CACHE)))
+        _KT_CACHE[key] = fn
+    return fn(genes)
+
+
+def junction_kt(genes, cfg="coarse", span_mm=W.S, flanks=None):
+    """`((Kt_hub, dKt_hub), (Kt_rim, dKt_rim))` — STILL NO MESH, NO SOLVE.
 
     The pairing — `R_hub` with `t0`, `R_rim` with `t3` — is not a choice made here.  It is
     asserted in three independent places already: `wheel_fea.py:494-495` (the beam model),
@@ -253,10 +393,31 @@ def junction_kt(genes):
     `jax.grad` rather than a hand-written derivative gets the clamp's zero-gradient region
     right for free, and the clamp IS reachable in-box (`t0=10.0` with `R_hub=0.5` gives
     `Kt = 5.47 -> 3.5`), though not at either design of interest.
+
+    IT IS NO LONGER PURE 14-VECTOR GENE SPACE, and that is the change.  The hub is priced
+    on `smooth_min(R_hub, hub_fillet_cap_mm(...))`, and the cap is a function of where the
+    spoke flanks cross the hub circle — so `Kt_hub` now depends on the eight centerline
+    genes and `t0` as well, through `wheel_wheel.ring_station`.  Still no mesh and no
+    solve; it is a sampled curve, which is why this is affordable at all.  The consequence
+    worth knowing: at any design more than one ladder rung above its cap, `dKt_hub/dR_hub`
+    is EXACTLY zero, because buying more `R_hub` there buys exactly nothing.
+
+    THE CAP IS DIFFERENTIATED, NOT FROZEN, and the distinction is the one this module
+    already paid for once.  `t3_terms`' product rule needs `dkt` to be the TOTAL derivative;
+    hoisting the cap out as a constant and applying the chain rule by hand would make it
+    silently wrong on the nine genes the cap moves with, while every individual term still
+    agreed with its own finite difference.  That is exactly how `stress_scale`'s frozen
+    rescale hid a 10% assembly error — see the long note in `t3_terms`.
+
+    `flanks=None` derives the frozen crossing decision here.  Callers that already hold one
+    (`objective`) pass it, so T1's `fillet_cap` barrier and this pricing can never be built
+    on two different discrete decisions.
     """
+    cfgo = WW.get_config(cfg)
     g = jnp.asarray(genes, dtype=float)
-    kt_h, d_h = _KT_HUB_VG(g)
-    kt_r, d_r = _KT_RIM_VG(g)
+    if flanks is None:
+        flanks = fillet_flanks(g, cfgo, span_mm=span_mm)
+    (kt_h, d_h), (kt_r, d_r) = _kt_cached_value_and_grad(g, cfgo, span_mm, flanks)
     return ((float(kt_h), np.asarray(d_h, dtype=float)),
             (float(kt_r), np.asarray(d_r, dtype=float)))
 
@@ -303,14 +464,26 @@ def fillet_flanks(genes, cfg, span_mm=W.S, hub_radius=W.HUB_RADIUS_MM):
 def _fillet_margins(genes, cfg, span_mm, hub_radius, flanks, xp=jnp):
     """Signed clearance [mm] for the fillet at each junction — hub, then rim.
 
-    THE ONLY GRADIENT `R_hub` AND `R_rim` HAVE.  M7 proved both are dead at the mesh
-    (`dcoords/dgene` identically zero, no solver involved) because no fillet is meshed.
-    They are not dead in gene space, and this is where they live.
+    ONE OF THE GRADIENTS `R_hub` AND `R_rim` HAVE, IN GENE SPACE.  M7 proved both are dead
+    at the mesh (`dcoords/dgene` identically zero, no solver involved) because no fillet is
+    meshed.  They are not dead in gene space, and this is one of the places they live.
+
+    THIS TERM IS NOT WHERE `R_hub`'S LOSS GRADIENT ACTUALLY COMES FROM, and the claim that
+    it is has been on file (here and in PLAN.md) since M8b-i.6 without being measured.  At
+    the shipped genome the margins are `[+4.647, +0.125]`, both feasible, so the barrier
+    built on them is FLAT and `d(fillet)/dR_hub` is exactly 0.0.  The +645.8 adjoint
+    belongs to `hub_overlap`, every unit of it.  See `t1_vector`.
 
     `tangent_fillet_arc` refuses a radius at four places (`wheel_fea.py:948`, `:955`,
     `:959`, `:964`) and `fillet_junctions` then walks the radius ladder DOWN, so the
     optimizer silently receives a smaller fillet than it asked for and is never told —
-    precisely the discrepancy `kt_report` carries as known-open.  The binding condition of
+    the discrepancy `kt_report` prices.  Measured since the hub fillet milestone: the
+    void between adjacent spokes at the hub circle is 2.196 mm of arc, so ANY hub fillet
+    is capped near 1.1 mm while `R_hub`'s box bound is 4.0 mm.  THAT CAP IS NOW MODELLED —
+    `hub_fillet_cap_mm` below, barriered by `fillet_cap` and priced into `Kt` by `_kt_hub`
+    — but it is a SEPARATE mechanism from this one and neither subsumes the other.  This
+    term asks whether a circle of radius R fits in one re-entrant CORNER; the cap asks
+    whether it fits in the SLOT between adjacent spokes.  The binding condition of
     the four is the discriminant: the centre must sit at distance R from the flank line
     AND at |c| = ring +/- R from the origin, and those loci meet only if the flank line
     passes within `Rc` of the origin.  Written as a signed distance rather than the raw
@@ -363,6 +536,58 @@ def _fillet_margins(genes, cfg, span_mm, hub_radius, flanks, xp=jnp):
             per.append(xp.max(Rc - xp.sqrt(xp.maximum(QQ - b * b, 1e-30))))
         out.append(per[0] if len(per) == 1 else xp.maximum(*per))
     return xp.stack(out)
+
+
+def hub_fillet_cap_mm(genes, cfg, span_mm=W.S, hub_radius=W.HUB_RADIUS_MM, flanks=None,
+                      xp=jnp):
+    """The largest hub fillet the PART CAN BUILD [mm] — the smaller of two limits.
+
+        min(HUB_CAP_SHARE * slot_arc,  HUB_CAP_THICKNESS_SHARE * t0)
+
+    See those two constants for which limit is measured, which is assumed, and why this is
+    a `min` — the short version is that the thickness term is the one `make hubcap` observes
+    binding on every design on disk, and the slot term is the only one that knows a closed
+    slot admits no fillet at all.
+
+    WHAT THIS IS FOR.  `R_hub`'s box bound is 4.0 mm and 15 of the 16 Stage-2 elites — both
+    production multi-start points among them — sit above their own cap, so without this the
+    optimizer pays for hub fillet in utilisation and the exporter quietly builds something
+    smaller.  That is the discrepancy the hub fillet milestone existed to remove, one level
+    up, and it is removed in two places: `fillet_cap` in `t1_vector` pushes `R_hub` under
+    the cap, and `_kt_hub` prices `Kt` on the capped radius so the stress constraint stops
+    crediting a fillet that will not exist.
+
+    CAN GO NEGATIVE, and that is meaningful rather than a failure: a negative slot is
+    adjacent spoke roots overlapping.  Callers must not assume positivity —
+    `stress_concentration_kt`'s degenerate branch is what absorbs it.  A hard `jnp.minimum`
+    rather than a `smooth_min` here on purpose: the two limits are separate physical
+    mechanisms and the design that sits exactly on their crossover is a measure-zero set,
+    whereas `R_hub` against the cap is a knee the optimizer WILL sit on and is smoothed
+    where that matters, in `hub_fillet_r_effective`.
+
+    `flanks=None` derives the crossing decision eagerly here (0.32 ms).  Pass the frozen
+    tuple from a single `fillet_flanks` call whenever one is already in hand, so that the
+    barrier and the `Kt` pricing cannot be built on two different discrete decisions.
+    """
+    cfgo = WW.get_config(cfg)
+    if flanks is None:
+        flanks = fillet_flanks(genes, cfgo, span_mm=span_mm, hub_radius=hub_radius)
+    void = WW.hub_void_deg(genes, cfgo, span_mm=span_mm, hub_radius=hub_radius,
+                           crossing_etas=flanks[0], xp=xp)
+    by_slot = HUB_CAP_SHARE * hub_radius * xp.radians(void)
+    by_thickness = HUB_CAP_THICKNESS_SHARE * genes[8]
+    return xp.minimum(by_slot, by_thickness)
+
+
+def hub_fillet_r_effective(genes, cap):
+    """`R_hub` capped at what the slot allows — the radius `Kt_hub` is priced on.
+
+    Split out of `_kt_hub` because the report and the tests both need to name this number,
+    and because the blend width is a claim about the exporter (see `CAP_BLEND_FRAC`) rather
+    than about `Kt`.
+    """
+    k = CAP_BLEND_FRAC * jnp.maximum(cap, MIN_BUILDABLE_R_MM)
+    return smooth_min(genes[12], cap, k)
 
 
 def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
@@ -426,10 +651,30 @@ def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
     fillet = jnp.sum(soft_barrier(FILLET_SAFETY * MIN_FILLET_MARGIN_MM - marg,
                                   w["fillet"]))
 
-    return jnp.stack([x_order, hub_overlap, smoothness, fold, arrival, fillet])
+    # -- fillet_cap: `R_hub` may not exceed the slot between adjacent spoke roots.  A
+    # SEPARATE term from `fillet` above, not a refinement of it, and the separation is the
+    # point: `fillet` asks whether a circle of radius R fits in one re-entrant CORNER,
+    # this asks whether it fits in the SLOT two spokes leave between them.  Different
+    # mechanism, different gradient (`fillet`'s is carried by `R_hub`, this one's is
+    # dominated by the eight centerline genes), and gate 8's inert census, `dominated_terms`
+    # and `study_objective`'s per-term FD all read at TERM granularity — so folding this
+    # into `fillet` would make "is the cap binding?" unanswerable from the loss table,
+    # which is the one question it exists to answer.
+    #
+    # NO SAFETY FACTOR, deliberately, and unlike `fillet` above.  The single OCC
+    # measurement says the cap is already conservative by 1.9% (see `HUB_CAP_SHARE`), and a
+    # factor stacked on top would be a threshold with no measurement behind it — the thing
+    # this repo removed once already when `stress_scale`'s rescale stopped holding.  If
+    # `make hubcap` ever shows the cap running OPTIMISTIC, that measurement buys the factor.
+    fillet_cap = soft_barrier(g[12] - hub_fillet_cap_mm(genes, cfgo, span_mm,
+                                                        W.HUB_RADIUS_MM, flanks),
+                              w["fillet_cap"])
+
+    return jnp.stack([x_order, hub_overlap, smoothness, fold, arrival, fillet, fillet_cap])
 
 
-T1_NAMES = ("x_order", "hub_overlap", "smoothness", "fold", "arrival", "fillet")
+T1_NAMES = ("x_order", "hub_overlap", "smoothness", "fold", "arrival", "fillet",
+            "fillet_cap")
 
 # ---------------------------------------------------------------------------
 # T1's jit cache — same idiom as `wheel_wheel.coord_fn`, see there for the reasoning
@@ -440,19 +685,20 @@ _T1_CACHE = {}
 _T1_CACHE_MAX = 128
 # 4 cfg names x 16 flank patterns x <=2 practically-distinct T1-weight projections
 # (DEFAULT_WEIGHTS and every studies/study_stage3.py probe_weights() variant are
-# identical on the six T1 keys below, since PROBE_ZERO only ever zeroes deflection/
+# identical on the seven T1 keys below, since PROBE_ZERO only ever zeroes deflection/
 # mass/phase_ripple/stress) x 1 span_mm value used anywhere in this repo = 128 with
 # headroom, same sizing style as _COORD_FN_CACHE_MAX (wheel_wheel.py).
 
-_T1_WEIGHT_KEYS = ("x_order", "hub_overlap", "smoothness", "fold", "arrival", "fillet")
+_T1_WEIGHT_KEYS = ("x_order", "hub_overlap", "smoothness", "fold", "arrival", "fillet",
+                   "fillet_cap")
 
 
 def _t1_weights_key(weights):
-    """Project `weights` down to the six keys `t1_vector` actually reads.
+    """Project `weights` down to the seven keys `t1_vector` actually reads.
 
     Hashing the whole dict would also be correct but looser: every weights dict this
     repo ever constructs (DEFAULT_WEIGHTS and all three `probe_weights` variants) is
-    identical on these six keys, so the full dict would multiply cache entries across
+    identical on these seven keys, so the full dict would multiply cache entries across
     S1's probe kinds without distinguishing anything `t1_vector` can see.
     """
     w = DEFAULT_WEIGHTS if weights is None else weights
@@ -611,7 +857,7 @@ def _probe_values(prob, u, probe_p):
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
              force=SERVICE_FORCE_N, stress_phase_p=8.0, warm=None,
              stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None,
-             orientation=None, **problem_kw):
+             orientation=None, span_mm=W.S, flanks=None, **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
 
     One `service_qoi_value_and_grad` per phase — which is one forward solve, one
@@ -755,7 +1001,12 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     dagg = (pn ** (q - 1.0))[:, None] * pgrads
     dagg = dagg.sum(axis=0) * denom ** (1.0 / q - 1.0)
 
-    (kt_hub, dkt_hub), (kt_rim, dkt_rim) = junction_kt(genes)
+    (kt_hub, dkt_hub), (kt_rim, dkt_rim) = junction_kt(genes, cfg, span_mm=span_mm,
+                                                       flanks=flanks)
+    # Reporting only — `junction_kt` differentiates through both of these internally; these
+    # two calls just name the numbers so the run record can show WHY `kt_hub` is what it is.
+    kt_cap = hub_fillet_cap_mm(genes, cfg, span_mm=span_mm, flanks=flanks)
+    kt_reff = hub_fillet_r_effective(jnp.asarray(genes, dtype=float), kt_cap)
     stress, d_stress, utils = 0.0, np.zeros_like(dagg), {}
     for name, kt, dkt in (("hub", kt_hub, dkt_hub), ("rim", kt_rim, dkt_rim)):
         util_j = kt * agg / ALLOWABLE_STRESS_MPA
@@ -808,6 +1059,11 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "max_stress_mpa": float(np.max(maxes)),
                    "stress_scale_measured": c,     # diagnostic only, see `_stress_aggregate`
                    "kt_hub": float(kt_hub), "kt_rim": float(kt_rim),
+                   # What the hub's Kt was actually priced on, and the slot that set it.
+                   # `r_hub_effective_mm < genes[12]` is the whole point of PLAN.md §0(a):
+                   # the difference is fillet the optimizer asked for and cannot have.
+                   "hub_fillet_cap_mm": float(kt_cap),
+                   "r_hub_effective_mm": float(kt_reff),
                    "stress_utilisation_hub": utils["hub"],
                    "stress_utilisation_rim": utils["rim"],
                    "stress_utilisation": float(util),
@@ -846,9 +1102,15 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
 
     values, grads, report = {}, {}, {}
 
+    # Frozen ONCE PER EVALUATION, like the mesh topology — see `fillet_flanks`.  Hoisted
+    # above the tiers rather than computed inside "t1" because T3 needs it too now: the
+    # hub's `Kt` is priced on the fillet cap, which is built on this same discrete decision.
+    # Two `fillet_flanks` calls could not disagree in practice, but "the barrier defends a
+    # cap the constraint did not price" is not a failure worth leaving reachable.  Costs
+    # 0.32 ms on a `tiers=("t3",)` call.
+    flanks = fillet_flanks(genes, WW.get_config(cfg), span_mm)
+
     if "t1" in tiers:
-        # Frozen once per evaluation, like the mesh topology — see `fillet_flanks`.
-        flanks = fillet_flanks(genes, WW.get_config(cfg), span_mm)
         v1j, j1j = _t1_cached_value_and_jacobian(gj, cfg, weights, span_mm, flanks)
         v1, j1 = np.asarray(v1j), np.asarray(j1j)
         report["fillet_flanks"] = [list(e) for e in flanks]
@@ -875,7 +1137,8 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
 
     if "t3" in tiers:
         t3 = t3_terms(genes, cfg, phases=phases, meshes=meshes, weights=weights,
-                      force=force, pool=pool, orientation=orientation, **problem_kw)
+                      force=force, pool=pool, orientation=orientation,
+                      span_mm=span_mm, flanks=flanks, **problem_kw)
         values.update(t3["values"])
         grads.update(t3["grads"])
         report.update(t3["report"])

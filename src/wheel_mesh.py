@@ -224,7 +224,9 @@ def spoke_block_coords_from_vector(vec, cfg, span_mm, xp=np, s_range=(0.0, 1.0))
 
     Only the first 12 genes reach the mesh — R_hub and R_rim are the junction fillet
     radii, and the full-wheel mesh does not build fillets (see `wheel_wheel.py` for the
-    measurement that says the shipped part's fillets are worth 0.29 mm2 of 2521).
+    measurement, which since the hub fillet milestone says the shipped part's fillets are
+    worth 24.28 mm2 of 2644 rather than the 0.29 they were when only 12 of the 48 corners
+    were being built).
     """
     cfg = get_config(cfg)
     return spoke_block_coords(*[vec[i] for i in range(12)],

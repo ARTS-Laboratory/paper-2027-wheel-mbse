@@ -206,16 +206,22 @@ def test_area_converges_under_refinement(genes):
 
 
 def test_the_embed_difference_from_the_shipped_step_is_the_known_amount(genes):
-    """Pin the deliberate ~2% modelling difference so it cannot silently change.
+    """Pin the deliberate ~1.4% modelling difference so it cannot silently change.
 
     If someone models `_embed` after all, or changes COLLAR_DEPTH_MM, or alters a ring
     radius, this moves — and it should be a decision, not a surprise.  Cross-checked
-    against the STEP manifest's own mass below, which is a different measurement of the
-    same difference through a different kernel.
+    against the STEP manifest's own mass below, which is a different measurement through
+    a different kernel — and NOT the same number: the mass comparison also carries the
+    fillet material, which `reference_shipped_step_mm2` deliberately excludes.
+
+    It was ~2% (bounds -2.5% to -1.4%) until the hub fillet milestone re-measured
+    `EMBED_ALLOWANCE_PER_SPOKE_MM2` at 3.03, down from 4.27: `_embed`'s inward step now
+    plunges radially instead of running 4.5 mm sideways, so it leaves less gusset in the
+    annulus.  See HUB_PLAN.md.
     """
     rep = ww.area_report(ww.build_wheel(genes, "medium"))
-    assert -0.025 < rep["error_vs_shipped_step"] < -0.014, (
-        f"{rep['error_vs_shipped_step']:+.4%} — expected about -2%")
+    assert -0.018 < rep["error_vs_shipped_step"] < -0.010, (
+        f"{rep['error_vs_shipped_step']:+.4%} — expected about -1.4%")
 
 
 def test_region_areas_are_individually_right(genes):

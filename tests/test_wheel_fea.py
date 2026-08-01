@@ -291,10 +291,14 @@ def test_compliance_split_is_robust_to_the_patch_assumption(mesh):
 # ---------------------------------------------------------------------------
 
 def test_total_mass_matches_the_step_manifest_within_the_embed_difference(mesh):
-    """Resolves CLAUDE.md's "two mass figures are not comparable" wart.
+    """Resolves the old "two mass figures are not comparable" wart.
 
-    `metrics.total_mass_g` is spokes only (47.58 g); this is the whole solid.  It should
-    land 2.1% under the manifest's 70.04 g for the same `_embed` reason the area does.
+    `metrics.total_mass_g` is spokes only; this is the whole solid.  It lands ~2.3% under
+    the manifest's 74.12 g, and that number is TWO differences rather than one: the
+    `_embed` gusset the area check also sees (~1.4%), plus the fillet material, which the
+    mesh does not model at all and which `reference_shipped_step_mm2` deliberately
+    excludes.  The fillets were worth 0.01% until the hub fillet milestone built all
+    forty-eight corners instead of twelve; they are worth 0.92% now.  See HUB_PLAN.md.
     """
     m = swf.wheel_mass_g(mesh)
     with open(os.path.join(REPO, "export", "wheel_step_manifest.json")) as fh:

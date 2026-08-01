@@ -558,8 +558,8 @@ def _print(rep):
         print(f"      Why, and it is not a meshing defect: with no fillets the spoke")
         print(f"      meets its ring at a 349.5 deg re-entrant corner — geometrically a")
         print(f"      crack — whose r^-0.5 field caps the convergence rate of EVERY")
-        print(f"      global quantity.  Reaching 0.5% needs meshed fillets, which needs")
-        print(f"      the fillet-feasibility fix that kt_report documents as open.")
+        print(f"      global quantity.  Reaching 0.5% needs MESHED fillets — the STEP now")
+        print(f"      builds all 48 of its corners (HUB_PLAN.md) but this mesh has none.")
         pc = r.get("patch_control")
         if pc:
             print(f"      CONTROL for the obvious alternative — an under-resolved contact")
@@ -654,9 +654,10 @@ def _print(rep):
     print(f"      one element from the corner and still samples its r^-0.5 field.")
     if c.get("manifest_mass_g"):
         print(f"  total printed mass {c['mass_g']:.2f} g   (STEP manifest "
-              f"{c['manifest_mass_g']:.2f} g, {c['mass_vs_manifest']:+.2%} — the same "
-              f"`_embed`")
-        print(f"  difference the area check sees, measured through a different kernel)")
+              f"{c['manifest_mass_g']:.2f} g, {c['mass_vs_manifest']:+.2%} — the `_embed`")
+        print(f"  difference the area check sees, ~-1.4%, PLUS the fillet material, which")
+        print(f"  this mesh does not model at all and which is ~0.9% since all 48 corners")
+        print(f"  started building.  Two differences, not one.  See HUB_PLAN.md)")
     else:
         print(f"  total printed mass {c['mass_g']:.2f} g   "
               f"(no STEP manifest on disk to compare against)")

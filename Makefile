@@ -33,7 +33,7 @@ NUMEXPR_NUM_THREADS ?= 1
 XLA_FLAGS ?= --xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1
 export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS XLA_FLAGS
 
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 export studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 hubcap export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -61,6 +61,9 @@ help:
 	@echo "make m8bii1   S13: one 8-phase evaluation serial and pooled, up a worker"
 	@echo "              ladder sized to this machine.  Gates that the two answers are"
 	@echo "              bit-identical, and reports what the parallelism buys"
+	@echo "make hubcap   the analytic hub-fillet cap against what OCC accepts: the"
+	@echo "              inter-spoke void by ring classification, and the fillet"
+	@echo "              acceptance threshold by bisection.  Needs BOTH envs, ~8 min"
 
 env: env-opt env-cad
 
@@ -133,6 +136,16 @@ m8bii1:
 # M9 Phase 2.  Measurement-only: tangent eigenvalue refinement, phase and load ladders.
 m9:
 	$(PY_OPT) studies/study_m9.py --out study_m9.json
+
+# PLAN.md §0(a).  The analytic hub-fillet cap against what OCC actually accepts: the void
+# measured on the profile by ring classification, and the fillet acceptance threshold found
+# by BISECTION rather than read off the ladder (the ladder's rungs straddle the cap, so
+# "the largest rung below it" is measurably the wrong criterion — see the driver).
+#
+# Out of `studies` for the m8bi5 reason plus one more: it needs BOTH interpreters, and what
+# it measures is OCC's behaviour on this shape rather than anything a commit changed.
+hubcap:
+	$(PY_OPT) studies/study_hub_cap.py --out study_hub_cap.json
 
 export:
 	$(PY_CAD) src/wheel_step_export.py

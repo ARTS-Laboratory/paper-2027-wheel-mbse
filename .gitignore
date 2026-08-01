@@ -12,3 +12,4 @@ PLAN.md
 # the provenance chain the pipeline's staleness checks compare against.
 best_solution_smoke.json
 *_summary.jpg
+.aider*

@@ -81,6 +81,14 @@ untouched (not the default path, and its `fun` is called on every line-search
 evaluation, not just accepted steps — "every N steps" would mean something else there).
 `make test` **391 passed** (384 before).
 
+**The hub fillet landed too — §3 below, full record in `HUB_PLAN.md`.** `_embed`'s inward
+step now plunges radially instead of running 4.5 mm sideways, so the hub circle exists again
+and **all 24 of its corners are filleted, from 0 of 12**; `fillet_junctions` no longer
+abandons the family that refused the first rung, which also takes the rim from 12 of 24 to
+24 of 24; and a junction is now priced by its **worst** corner, which is why the rim's
+`kt_error_pct` moved off a +0.0% that had twelve square corners hiding behind it. `make test`
+**396 passed** (395 before, one of which was the contract test pinning the old broken hub).
+
 ---
 
 ## THE VERDICT REVERSED: the problem is FEASIBLE, and always was
@@ -135,6 +143,35 @@ The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pn
 ---
 
 ## The next changes, in order
+
+### 0. WHAT TO DO NEXT — three things, in this order
+
+**~~(a) `R_hub`'s bound against the buildable ceiling.~~ DONE — the constraint learned the
+cap. §5 below is the record.** Of the three ways out, the chosen one was to teach the
+constraint rather than drop the bound to 1.1: the void is a function of the arrival angle and
+`t0`, not a constant, and across the 16 Stage-2 elites the cap spans **0.9898 to 1.5265 mm**,
+so a fixed bound would have been right for exactly one genome. The 4.0 box bound is
+untouched; the cap does the work.
+
+**(b) The production multi-start run. The long pole, and the last open M8b-ii item.** Details
+in §1 below — elites 9 and 10, mass as the objective, `--workers`. Everything it was waiting
+on has landed and is measured: the phase pool, the jitted `t1_vector`, the fidelity check.
+Do it **after (a)**, for the reason (a) gives.
+
+**(c) `make m9` in full.** Only `--quick` has ever been run, and M9 phase 3 — promoting
+`lambda_min(K_t)` from a mechanism to a constraint, with a margin, a threshold and a phase
+aggregation rule — is deliberately blocked on that measurement (`tests/test_gradient.py`
+says so in as many words). It competes with (b) for the machine, so it is third rather than
+unimportant.
+
+**The STEP consumer is Autodesk Inventor now, not Onshape.** Onshape was temporary. The
+`wheel.step` interop history in `wheel_step_export.py` is Parasolid's, and Inventor is a
+different kernel, so that record is history rather than a live constraint and re-testing the
+Onshape import is NOT on this list. What still travels: `despecialize` exists because a
+`SURFACE_OF_LINEAR_EXTRUSION` is not universally supported and the hub bore and OD are kept
+analytic on purpose, and `wheel_nofillet.step` is still written before any fillet is
+attempted. Whether Inventor is happy with the 48 fillet faces and the 0.162 mm shortest edge
+the hub fillet added is unmeasured — worth one import, not a milestone.
 
 ### 1. M8b-ii — make the optimizer runnable at scale
 
@@ -250,22 +287,51 @@ diverged tangent is the only real buckling signal the run has today.
 
 **M9 phase 1: all three new tests pass, including contact penalty smoothing.**
 
-### 3. The hub fillet — a geometry milestone this change made expensive
+### 3. ~~The hub fillet~~ — DONE as geometry, and it turned up a bound the genome cannot honour
 
-The constraint prices `Kt(R_hub, t0) = 1.861` and lets `R_hub` carry a live gradient. The part
-builds `Kt = 3.5`: **0 of 12 hub edges filleted**, because `_embed` laps adjacent spokes over
-the hub circle into a 354° notch OCC refuses at every radius down to `MIN_CURVATURE_RADIUS_MM`.
-As-built utilisation is therefore **~1.88× whatever Stage 3 reports** (`kt_built/kt_modeled`).
+**The hub junction exists and all 24 of its corners are filleted** (it was 0 of 12). Full
+record in **`HUB_PLAN.md`**; the short version:
 
-At util 0.41 that still lands under 1.0, so it does not threaten feasibility — but it is a real
-gap between the modelled and printed part, and it is now load-bearing rather than cosmetic.
+`_embed`'s inward step took the *least rotation from the junction tangent* that reached the
+hub — a 4.516 mm run that swung the root cap **22.3° out of a 30° sector**, so adjacent spokes
+lapped over the hub circle before either reached it and the circle stopped existing. Measured:
+at r = 12.71 and r = 12.80 the ring is 360° material; the first void is a 0.16° sliver at
+r = 12.8748, which is the 354° notch OCC was refusing. There was no spoke↔hub junction to
+fillet. It now **plunges radially** — 1.788 mm, 0.57° — and the 24 corners are back on
+r = 12.700, worst wedge 332°.
 
-**The decision already taken, deliberately:** price `r_requested`, gate on `kt_error_pct`.
-Clamping `R_hub` to what OCC can build would pin `Kt_hub` at the constant 3.5 and kill the
-gradient this whole change exists to create. `tests/test_export_contract.py` pins the
-discrepancy in both directions and states the multiplier in its failure text.
+`fillet_junctions` also stopped abandoning the leftovers: it re-selects the corners that
+refused a rung and walks the ladder again for them, so both flanks get a radius. That was
+never a hub-only bug — it is why the **rim** shipped 12 of 24.
 
-The fix is in `_embed` / `fillet_junctions`, not in the constraint.
+| junction | found | filleted | families | R worst | Kt model | Kt built | error |
+|---|---|---|---|---|---|---|---|
+| hub, before | 12 (off-circle) | **0** | — | 0.000 | 1.861 | 3.500 | +88.1% |
+| hub, after | **24** | **24** | 12 @ 1.127, 12 @ 0.361 | 0.361 | 1.861 | 3.228 | **+73.4%** |
+| rim, before | 24 | 12 | 12 @ 3.000 | 3.000 *(as priced then)* | 1.490 | 1.490 | +0.0% |
+| rim, after | 24 | **24** | 12 @ 3.000, 12 @ 0.308 | 0.308 | 1.490 | 3.149 | **+111.4%** |
+
+**The pricing decision changed with it: a junction is priced by its WORST corner.** The old
+rule priced the radius that *was* applied, which is how the rim reported +0.0% while twelve of
+its corners shipped square. The rim therefore looks worse than it ever has while its geometry
+strictly improved; `fillet_families` keeps every per-family radius, so nothing is lost.
+
+**The new finding, and it is a human's decision.** The void between adjacent spokes at the hub
+circle is **9.907°, 2.196 mm of arc**, narrowing outward. Two fillets growing into that slot
+can each take about half of it — OCC accepted **1.127 mm**, against 1.098 = half the gap. So
+**`R_hub` cannot be built above about 1.1 mm on this genome and its bound is 4.0 mm.** The
+constraint can price a fillet the part can never build, which is the same class of discrepancy
+this milestone existed to remove, one level up. Either the bound comes down, or the constraint
+learns the cap, or the spoke count/width changes.
+
+Knock-ons, both bookkeeping: `EMBED_ALLOWANCE_PER_SPOKE_MM2` re-measured 4.27 → **3.03** (the
+radial plunge leaves less gusset in the annulus), narrowing the deliberate mesh-vs-STEP AREA
+gap −1.93% → **−1.384%**; and the fillets stopped being negligible — 0.29 mm² of cross-section
+when 12 of 48 corners were built, **24.28 mm² (0.92%)** now that all 48 are — so the MASS gap
+is a different number from the area gap, **−2.277%**, and the difference between them is the
+fillet material. Export cost went 14.6 s → 230.5 s; `wheel.step` carries 111 faces against 75
+and a 0.162 mm shortest edge. OCC calls it valid, self-intersection clean, no degenerate
+edges; no other kernel has looked at it since (Inventor is the consumer now — see §0).
 
 ### 4. Minor, known, pre-existing — DONE
 
@@ -281,6 +347,103 @@ section-registry entry now always calls it at `DEFAULT_CONFIG` ("coarse"), regar
 untouched). The section's report and printed output now carry which config it ran at,
 so this doesn't silently look like a `smoke` number in a `--quick` run. No test asserted
 the old behavior, so `make test` is unaffected; **391 passed** afterward.
+
+### 5. §0(a) — the constraint learned the buildable hub fillet cap. DONE
+
+`R_hub`'s box bound is still 4.0 mm. What changed is that the loss now knows what the part
+can build, in two places, and the number is computed from the genome rather than remembered
+from one export.
+
+**The geometry.** `wheel_wheel.hub_void_deg` measures the empty arc adjacent spoke roots
+leave on the hub circle — `SECTOR_DEG` minus the arc one root occupies, from `ring_station`
+and an `arctan2`, the same arithmetic as `weld_footprints_deg`. It lives in `wheel_wheel`
+because that module is jax-free and therefore importable in `.venv-cad`, which is what would
+make "let the exporter consume the cap too" a small change later.
+
+**That part is validated.** `make hubcap`'s `void` section classifies 14400 points on a ring
+just outside the hub circle in OCC and measures the empty runs. Analytic against measured,
+on three designs: **9.977 / 9.825, 8.931 / 8.800, 13.774 / 13.575** — 0.13 to 0.20° apart,
+exactly the residual `hub_void_deg`'s docstring predicts from `_embed` plunging radially
+from the centerline endpoint rather than the flank endpoint. Twelve runs every time.
+
+**THE CAP MODEL IS A `min` OF TWO LIMITS, AND THE GATE IS WHY.** It was written as
+`0.5 × slot` alone, on the strength of the hub fillet milestone's one recorded export
+(void 2.196 mm, OCC built 1.127). Bisecting what OCC will *actually* accept on each of the
+24 hub corners falsified that:
+
+| design | void | slot arc | `0.5×arc` | **OCC, bisected** | t0 |
+|---|---|---|---|---|---|
+| best_solution | 9.977° | 2.2115 | 1.1057 | **1.3000** | 2.4774 |
+| elite14 | 8.931° | 1.9795 | 0.9898 | **1.3445** | 2.5536 |
+| elite13 | 13.774° | 3.0531 | 1.5265 | **1.3340** | 2.5536 |
+
+The 1.127 on file was a **ladder rung accepted for a whole twelve-edge family**, not the
+limit. And the limit does not track the slot: the void spans a **54% range** while the
+threshold moves **3.4%**. elite14 and elite13 have *identical* `t0` and thresholds 0.7%
+apart across the widest void gap in the set. It tracks **`t0/2`**, to 0.7%.
+
+So `hub_fillet_cap_mm` is now `min(0.5 × slot_arc, 0.52 × t0)`. The thickness term is the
+one measured binding on every design on disk. The slot term is kept, and kept at an
+unvalidated 0.5, because it is the only one that knows a *closed* slot admits no fillet at
+any radius — as adjacent roots converge the void goes to zero and then negative, and the
+thickness term cannot see that at all. Both facts are in the constants' docstrings, labelled
+as measurement and as assumption respectively.
+
+**Both halves of the fix, because either alone leaves half the defect.**
+`fillet_cap = soft_barrier(R_hub − cap, 500)` pushes the gene under the slot; and `_kt_hub`
+prices `Kt` on `smooth_min(R_hub, cap)` so the stress constraint stops crediting a fillet
+that will not exist. `Kt_hub` moved **1.8609 → 2.0766, +11.6%** — the part is sharper than
+the gene was asking for, and now the loss says so.
+
+**`junction_kt` is no longer pure 14-vector gene space, and that is the change.** The cap
+depends on the eight centerline genes and `t0` through `ring_station`, so `Kt_hub` does too.
+It is **differentiated, not frozen** — freezing it and applying the chain rule by hand is
+exactly the `stress_scale` failure mode this module already paid for once. Still no mesh and
+no solve: it is a sampled curve, jitted and cached on `(cfg.name, span_mm, flanks)` the same
+way `t1_vector` is. The consequence worth knowing: **`dKt_hub/dR_hub` is now EXACTLY 0.0**
+at the shipped genome, because it sits 2.7 ladder rungs above its cap and buying more `R_hub`
+there buys nothing. Below the cap the original physics is back (−1.99).
+
+**`make hubcap` does not read the ladder, and that is a measurement too.** The obvious
+criterion — "the largest ladder rung below the cap is what gets built" — is **false**: the
+rungs from 1.5598 are 1.5598 / 1.3258 / 1.1269 / 0.9579, the largest under the 1.1057 cap is
+0.9579, and OCC takes 1.3000. The rungs straddle the cap and which side they land on is an
+accident of where `R_hub` starts. So the driver bisects the threshold where it actually is.
+
+Four sections: `void` and `occ_limit` gate; `t0_sweep` is the **calibration** and is
+deliberately not gated (gating a section on the constant it exists to measure is circular);
+`sweep` is the picture. The three gated designs are chosen for different reasons — the
+shipped genome, elite14 (tightest slot, 0.9898), and elite13, the one design already under
+its cap and therefore a negative control rather than a fourth confirmation.
+
+**`t0_sweep` exists because the disk cannot calibrate this.** All 17 designs sit at
+`t0` between 2.468 and 2.627 — **6% of a box that runs 2.0 to 10.0** — so measuring more of
+them says nothing about whether the thickness law holds at any other thickness. Sweeping
+`t0` on one fixed shape does, and it does better than that: a thicker root leaves a
+*narrower* void, so the two limits move in opposite directions and their crossover is
+observed rather than assumed. That crossover is the entire justification for the `min`.
+
+**15 of the 16 elites are above their cap**, including elites 9 and 10, which are the two
+starts §0(b)'s production run begins from. That is what makes this a prerequisite rather
+than a tidy-up.
+
+**Two things this does NOT do, stated so nobody expects them.** It does not move
+`kt_error_pct` off +73.4%: the manifest's `r_built = 0.361 mm` is set by the SHALLOW
+near-cusp corner, an arrival-angle limit the cap does not model. And it does not touch
+`stress_concentration_kt`, the exporter, or the GA's numpy `spoke_overlap_penalty` — the
+cap is applied by the caller, so the Kt twin stays bit-identical to `wheel_fea`'s and
+`test_golden.py` does not move.
+
+**Open, and flagged as the natural next item: `hub_overlap` is now subsumed.** Its chord
+proxy wants `t0 + 2·R_hub + 1.3 ≤ 6.574` and reports a **+0.323 mm violation** on a wheel
+that has been printed, while the true void at the same design is **+2.20 mm of clearance** —
+it assumes the root sits square across the sector, and the shipped root arrives 10.5° from
+tangent. `void < 0` already is "adjacent spokes overlap", so the new barrier covers the
+collision case too. It was left in place deliberately: it is 47.9% of the T1+T2 value and
+98.7% of its gradient norm, it is named in `wheel_stage3`'s deadlock post-mortem, and five
+study drivers plus `tests/test_mesh.py` read it as a feasibility filter. Retiring a
+48%-of-the-loss term inside a bound fix is how the `stress_scale` problem happened. The
+`sweep` section of `make hubcap` prints the head-to-head that would justify it.
 
 ---
 
@@ -301,14 +464,25 @@ mass, or to buy margin, is a different argument and needs to be made on its own 
 `QUICK_GENES` now includes 12 and 13 (`R_hub`, `R_rim`) so `dKt/dg` is finite-differenced.
 **It does not currently test that.** With utilisation at 0.375/0.300 the `soft_barrier` is
 flat, so `stress` and `d_stress` are exactly zero and neither gene reaches the loss through
-`Kt` — `R_hub`'s +645.8 adjoint comes from the geometric `fillet` barrier, and `R_rim`'s row
-is `0 == 0`.
+`Kt`, and `R_rim`'s row is `0 == 0`.
+
+**CORRECTION, measured: `R_hub`'s +645.8 adjoint is `hub_overlap`'s, not the `fillet`
+barrier's.** This paragraph said `fillet` from M8b-i.6 step 2 until §0(a) checked it. At the
+shipped genome the fillet margins are `[+4.647, +0.125]`, both feasible, so that barrier is
+flat and `d(fillet)/dR_hub` is exactly 0.0. Every unit of the 645.8 comes from
+`hub_overlap`, whose chord proxy is violated by +0.323 mm there. §0(a) added a second live
+term, `fillet_cap` at +454.0.
 
 The product rule is tested by **`test_the_stress_gradient_obeys_the_product_rule`**
 (`tests/test_objective.py`), which monkeypatches `ALLOWABLE_STRESS_MPA` down to 2.0 to force
-the barrier onto its quadratic branch, then FDs genes 8, 11, 12, 13. **That test, not gate 7,
-is what says `dKt*agg + Kt*dagg` is right.** Genes 12/13 stay in `QUICK_GENES` because they
-cost nothing and become live checks the moment a design is stress-binding.
+the barrier onto its quadratic branch, then FDs genes 8, 11 and 13. **That test, not gate 7,
+is what says `dKt*agg + Kt*dagg` is right.** Gene 12 was dropped from that list by §0(a):
+`R_hub` is now priced through the buildable cap and the shipped genome sits above its cap,
+so `dKt_hub/dR_hub` is exactly zero and its row there asserted `0 == 0`. What it used to
+check moved to two solve-free tests that can afford to be far tighter —
+`test_R_eff_is_exactly_the_cap_more_than_one_rung_above_it` and
+`test_the_cap_gradient_matches_a_finite_difference`. Gene 13 stays in `QUICK_GENES` because
+it costs nothing and becomes a live check the moment a design is stress-binding.
 
 ---
 
@@ -322,7 +496,8 @@ cost nothing and become live checks the moment a design is stress-binding.
 make m8bi5                                                # S11 + S12, ~2 h 31 m
 make m8bi6                                                # the p sweep, ~14 min
 make m8bii1                                               # S13, the phase pool, ~30 min
-make test                                                 # 383 tests, ~12 min
+make test                                                 # 396 tests, ~22 min
+make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
 

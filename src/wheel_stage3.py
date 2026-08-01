@@ -140,7 +140,7 @@ DEFAULT_N_PHASE, DEFAULT_N_SUB = 8, 8
 
 # The T1 terms that are FEASIBILITY BARRIERS rather than objectives.  `smoothness` is a
 # preference and `buckling` has no gradient, so neither belongs in a reject rule.
-T1_BARRIER_NAMES = ("x_order", "hub_overlap", "fold", "arrival", "fillet")
+T1_BARRIER_NAMES = ("x_order", "hub_overlap", "fold", "arrival", "fillet", "fillet_cap")
 
 # The GROSS-infeasibility threshold, and the number is the whole lesson.
 #
@@ -176,6 +176,7 @@ MAX_CONSECUTIVE_ABANDONED = 5   # ... and this many in a row ends the run, with 
 # what a checkpoint is read for.
 REPORT_KEYS = ("axle_drop_mean_mm", "max_stress_mpa", "stress_utilisation",
                "stress_utilisation_hub", "stress_utilisation_rim", "kt_hub", "kt_rim",
+               "hub_fillet_cap_mm", "r_hub_effective_mm",
                "phase_ripple_std_over_mean", "mesh_mass_g", "min_scaled_jacobian",
                "stress_scale_measured", "buckling_ratio")
 

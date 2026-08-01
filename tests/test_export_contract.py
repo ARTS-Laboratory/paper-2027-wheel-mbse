@@ -20,11 +20,17 @@ import pytest
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CAD_PY = os.path.join(HERE, ".venv-cad", "bin", "python")
 
-# One corner per spoke at the hub; two per spoke at the rim.  Pinned as exact counts
-# because a selector that silently drifts onto the wrong family of edges — the flank
-# kinks at r=13.94 and r=47.51 are also twelve-fold — would still produce a plausible
-# looking manifest.
-EXPECTED_EDGES = {"hub": 12, "rim": 24}
+# Two corners per spoke at each ring, one per flank.  Pinned as exact counts because a
+# selector that silently drifts onto the wrong family of edges — the flank kinks at
+# r=13.94 and r=47.51 are also twelve-fold — would still produce a plausible looking
+# manifest.
+#
+# The hub was 12 until the hub fillet milestone, and that 12 was the bug: `_embed` ran the
+# root caps 22.3 deg sideways, adjacent spokes lapped over the hub circle before either
+# reached it, and the twelve corners being counted were spoke-to-spoke knife edges standing
+# 0.175 mm OUTSIDE the circle rather than the twenty-four spoke-to-hub corners on it.  See
+# HUB_PLAN.md.
+EXPECTED_EDGES = {"hub": 24, "rim": 24}
 
 
 def _strict(token):
@@ -92,7 +98,63 @@ def test_found_and_filleted_counts_are_distinguishable(manifest):
             f"{row['junction']}: found {n_found} re-entrant corners, expected "
             f"{EXPECTED_EDGES[row['junction']]} — the edge selector has moved")
         assert 0 <= n_filleted <= n_found
-        assert (n_filleted > 0) == (row["r_built_mm"] > 0.0), row
+        # A junction is priced by its WORST corner, so a positive built radius means every
+        # corner got one.  This used to read `n_filleted > 0`, which was the same statement
+        # only while a junction could not be partly built — it can be, and the rim was.
+        assert (row["r_built_mm"] > 0.0) == (n_filleted == n_found), row
+
+
+def test_the_junction_is_priced_at_its_worst_corner(manifest):
+    """`fillet_families` is the per-family record; `r_built_mm` is the worst of them.
+
+    The rule this pins is why the rim's `kt_error_pct` is not +0.0% any more.  It used to
+    report the radius that WAS applied, so twelve square corners out of twenty-four read as
+    a part matching its model exactly.  A stress riser is not an average.
+    """
+    for row in manifest["fillets"]["detail"]:
+        families = row["fillet_families"]
+        assert sum(f["n_edges"] for f in families) == row["n_edges_filleted"], row
+        assert all(f["radius_mm"] > 0.0 for f in families), row
+        # Descending: the ladder walks down, and each pass takes the largest radius its
+        # remaining corners accept.
+        radii = [f["radius_mm"] for f in families]
+        assert radii == sorted(radii, reverse=True), row
+        assert all(r <= row["r_requested_mm"] + 1e-12 for r in radii), (
+            f"{row['junction']}: a family was built LARGER than requested, which prices "
+            f"a fillet nobody asked for as margin: {radii} vs {row['r_requested_mm']}")
+        if row["n_edges_filleted"] == row["n_edges_found"] and families:
+            assert row["r_built_mm"] == min(radii), row
+
+
+def test_the_built_fillet_radii_are_exact_ladder_rungs(manifest):
+    """`wheel_objective.FILLET_LADDER_DECAY` is a copy, and this is what keeps it honest.
+
+    The optimizer side needs the ladder's step size — it sets the blend width of the
+    `smooth_min` that caps `R_hub`, on the argument that two radii closer than one rung
+    cannot produce different built parts.  It cannot IMPORT the number: `wheel_step_export`
+    needs cadquery and `tests/test_import_hygiene.py` pins that split.  So the two are tied
+    together through the artifact instead — every radius the exporter actually built is
+    `r_requested * 0.85**n` for a whole `n`, exactly.
+
+    Measured on the shipped manifest: the hub's two families are rungs 2 and 9, agreeing to
+    the last bit.  If `_fillet_ladder` ever changes its decay or starts rounding its rungs
+    (it did once — `round(r, 3)` reported a part built BLUNTER than requested), this fails
+    here rather than silently mis-sizing the cap's blend.
+    """
+    import math
+
+    import wheel_objective as WO
+
+    decay = WO.FILLET_LADDER_DECAY
+    for row in manifest["fillets"]["detail"]:
+        req = row["r_requested_mm"]
+        for fam in row["fillet_families"]:
+            n = math.log(fam["radius_mm"] / req) / math.log(decay)
+            assert abs(n - round(n)) < 1e-9, (
+                f"{row['junction']}: built radius {fam['radius_mm']!r} is not "
+                f"{req!r} * {decay}**n — it is n = {n:.6f}.  Either the exporter's ladder "
+                f"changed or it started rounding, and wheel_objective.FILLET_LADDER_DECAY "
+                f"is now wrong about what the exporter can build")
 
 
 def test_the_selected_corners_are_re_entrant(manifest):
@@ -142,33 +204,54 @@ def test_the_exporter_and_the_constraint_price_the_same_kt(manifest):
         assert np.isfinite(row["kt_error_pct"])
 
 
-def test_the_hub_junction_is_still_the_known_open_problem(manifest):
-    """Pin the discrepancy so it cannot regress quietly, in EITHER direction.
+def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
+    """The hub fillet milestone, pinned so it cannot regress quietly.
 
-    Measured: `_embed` laps adjacent spokes over the hub circle, leaving a 354 degree
-    spoke-to-spoke notch that OCC refuses at every radius down to
-    `MIN_CURVATURE_RADIUS_MM`.  So the hub ships square and `kt_error_pct` is about +88%.
+    WHAT THIS USED TO SAY.  `r_built_mm == 0.0`, `worst_wedge_deg > 350`,
+    `kt_error_pct > 50` — the hub shipped square at Kt 3.5 against a modelled 1.861, so
+    as-built hub utilisation was 1.88x whatever Stage 3 reported.  M8b-i.6 step 2 had
+    raised the stakes by giving `R_hub` a live gradient: the optimizer paid for a fillet
+    in utilisation and did not get one.
 
-    M8b-i.6 step 2 RAISED THE STAKES rather than closing this.  The constraint now prices
-    `Kt(R_hub, t0)` analytically and lets `R_hub` carry a gradient, so Stage 3 will pay for
-    a hub fillet in utilisation and then not get one: the as-built utilisation is
-    `kt_built/kt_modeled` times what the optimizer was told, i.e. about 1.88x.  That is a
-    geometry milestone of its own — the decision taken was to price `r_requested`, because
-    clamping to what OCC can build would pin `Kt_hub` at the constant 3.5 and kill the
-    gradient this whole change exists to create.
+    WHAT CLOSED IT.  `_embed`'s inward step took the least rotation from the junction
+    tangent, a 4.516 mm run that swung the root cap 22.3 deg out of a 30 deg sector, so
+    adjacent spokes lapped over the hub circle before either reached it and the circle
+    stopped existing.  It now plunges radially — 1.788 mm, 0.57 deg — and the twenty-four
+    spoke-to-hub corners are back on r = 12.7.  `fillet_junctions` then fillets the
+    leftover family instead of returning after the first one.
 
-    If this test fails because the hub now takes a fillet, that is GOOD NEWS and the fix
-    is to update the expectation — but it must be noticed.
+    WHAT IS STILL OPEN, and why the error is not zero: the shallow corner of a near-tangent
+    arrival takes only 0.361 mm.  That is an ARRIVAL-ANGLE limit and it is what sets
+    `r_built_mm`, so it is what this junction is priced at — see the worst-corner rule.
+
+    THE OTHER HALF OF THIS NOTE USED TO BE WRONG.  It said the inter-spoke gap "caps ANY hub
+    fillet near 1.1 mm", on the strength of half the 2.196 mm void agreeing with the
+    1.127 mm OCC built.  `make hubcap` bisected what OCC will actually accept on a single hub
+    corner and got 1.300 mm: the 1.127 was a LADDER RUNG taken by a whole twelve-edge family,
+    not a limit, and the agreement was a coincidence.  The real limit tracks `t0/2`, not the
+    slot — three designs whose voids span a 54% range give thresholds 3.4% apart.  PLAN.md §5
+    is the record; `wheel_objective.hub_fillet_cap_mm` is the constraint that now knows it.
+
+    Capping `R_hub` does NOT move the number this test gates.  `kt_error_pct` is set by the
+    shallow corner above, which the cap does not model.
     """
     hub = next(r for r in manifest["fillets"]["detail"] if r["junction"] == "hub")
-    assert hub["r_built_mm"] == 0.0, (
-        f"the hub junction now builds a {hub['r_built_mm']:.3f} mm fillet — the open "
-        f"discrepancy in CLAUDE.md is fixed and this test should say so")
-    assert hub["worst_wedge_deg"] > 350.0, hub
-    assert hub["kt_error_pct"] > 50.0, (
-        f"{hub}\nthe as-built hub utilisation is "
-        f"{hub['kt_built'] / hub['kt_modeled']:.2f}x whatever the constraint reports, "
-        f"because the constraint prices the fillet the exporter could not build")
+    assert hub["r_built_mm"] > 0.0, (
+        f"the hub junction is square again — every corner must take some radius.  "
+        f"{hub}")
+    assert hub["n_edges_filleted"] == hub["n_edges_found"] == EXPECTED_EDGES["hub"], hub
+    # 332 deg measured, against the 354 deg spoke-to-spoke knife edge that preceded it.
+    # Anything back above 350 means the spokes are lapping again.
+    assert hub["worst_wedge_deg"] < 350.0, (
+        f"{hub}\na wedge this close to a cusp is the spoke-to-spoke notch, not a "
+        f"spoke-to-hub corner — `_embed` is running sideways again")
+    assert len(hub["fillet_families"]) == 2, (
+        f"{hub}\nexpected two families, one per flank: the square-on corner takes a much "
+        f"larger radius than the shallow one")
+    assert hub["kt_error_pct"] < 88.0, (
+        f"{hub}\nas-built hub utilisation is "
+        f"{hub['kt_built'] / hub['kt_modeled']:.2f}x what the constraint reports; it was "
+        f"1.88x when the hub shipped square, and it must not go back")
 
 
 # ---------------------------------------------------------------------------
@@ -241,8 +324,10 @@ def test_the_wedge_classifier_agrees_with_an_independent_probe():
     hub = sorted(r["r"] for r in rows if r["r"] < 30.0)
     rim = sorted(r["r"] for r in rows if r["r"] >= 30.0)
     assert len(hub) == EXPECTED_EDGES["hub"] and len(rim) == EXPECTED_EDGES["rim"]
-    # The hub corner is NOT on the hub circle — that is the whole finding.
-    assert all(abs(r - 12.8748) < 0.01 for r in hub), hub
-    assert all(r > 12.7 for r in hub), (
-        "a hub corner landed inside the hub circle; _embed's overshoot has changed")
+    # The hub corners are ON the hub circle, and that is the whole hub fillet fix.  They
+    # used to sit at r = 12.8748, twelve of them rather than twenty-four, because they were
+    # spoke-to-spoke notches standing outside a hub circle `_embed` had buried.
+    assert all(abs(r - 12.7) < 0.01 for r in hub), (
+        f"{hub}\na hub corner is not on the hub circle — `_embed` is running sideways "
+        f"again and the spokes are lapping over it")
     assert all(abs(r - 48.5) < 0.01 for r in rim), rim

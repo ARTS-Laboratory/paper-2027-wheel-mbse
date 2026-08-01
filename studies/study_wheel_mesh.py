@@ -8,9 +8,11 @@ Three checks, and the second is the one that would otherwise sink M4 silently.
 
   AREA      the assembled mesh, plus the un-meshed rigid hub core, must reproduce the
             area of the region it claims to model, to < 0.5%.  Validated against OCC
-            for the same region definition (2469.06 by an independent kernel), and
-            reported alongside the shipped STEP's 2521.44 so the 2.1% `_embed`
-            difference stays visible rather than quietly absorbed.
+            for the same region definition (2469.06 by an independent kernel, at the
+            RIM_RADIUS_MM = 48.9 of the day — the reference is derived now), and
+            reported alongside the shipped STEP's unfilleted cross-section so the
+            `_embed` difference — ~1.4% since the hub fillet milestone re-measured it,
+            ~2% before — stays visible rather than quietly absorbed.
 
   SEAMS     for every sampled genome, the largest distance between what an owning and a
             non-owning block INDEPENDENTLY computed for the same shared node must be at

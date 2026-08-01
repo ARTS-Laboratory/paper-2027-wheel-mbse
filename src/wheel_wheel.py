@@ -41,27 +41,39 @@ WHAT IS AND IS NOT MODELLED
 The material region is `hub_disk | rim_band | 12 spoke bands clipped to the annulus`.
 Two deliberate differences from the shipped STEP, both measured rather than assumed:
 
-  FILLETS ARE NOT MODELLED, and they do not matter for area.  The unfilleted planar
-  profile is 2521.4384 mm2 and the filleted solid's cross-section is 2521.73 — the
-  twelve fillets are worth 0.29 mm2 in total, 0.01%.  They still matter for STRESS,
-  which is why `wheel_fea.stress_concentration_kt` is retained as a post-multiplier
-  here rather than deleted (the plan deletes it only once a meshed fillet exists).
+  FILLETS ARE NOT MODELLED, and since the hub fillet milestone they are worth about 1%
+  of area rather than nothing.  The unfilleted planar profile is 2644.3509 mm2 and the
+  filleted solid's cross-section is 2668.63 (59777.4 mm3 / 22.4 mm) — 24.28 mm2, 0.92%.
+  It used to be 0.29 mm2, 0.01%, because only twelve of the forty-eight corners were
+  ever built; all forty-eight are now.  They still matter for STRESS, which is why
+  `wheel_fea.stress_concentration_kt` is retained as a post-multiplier here rather than
+  deleted (the plan deletes it only once a meshed fillet exists).
+
+  `reference_shipped_step_mm2` below is the UNFILLETED cross-section — `_embed`'s
+  allowance and nothing else — so a mesh-vs-STEP AREA comparison lands ~1.4% low while a
+  mesh-vs-STEP MASS comparison lands ~2.3% low.  The difference between those two numbers
+  is the fillet material, and it is not a discrepancy in either kernel.
 
   `wheel_step_export._embed` IS NOT REPRODUCED, and it does matter: it adds
-  4.27 mm2 per spoke inside the annulus, so this mesh models 2.06% less material than
-  the shipped part (2469.84 vs 2521.44), all of it at the junctions where it acts as a
-  gusset.  That is a real modelling difference and it is deliberate.  `_embed` picks
-  its direction and length by an argmax search over 21 blends x 20001 lengths
-  (`wheel_step_export.py:185`) because it must avoid producing a self-intersecting
-  CAD spline.  Reproducing that would put a discontinuous, non-differentiable search
-  in the middle of the gradient path — exactly the "gene with no finite-difference
-  plateau" failure the plan gates on at M7.  A smooth alternative does not exist
-  either: the bottom flank's backward tangent MISSES the hub circle entirely (its
-  closest approach exceeds 12.7), which is the same fact
-  `wheel_step_export._embed`'s comment records from the other side.
+  3.03 mm2 per spoke inside the annulus (`EMBED_ALLOWANCE_PER_SPOKE_MM2`), so this mesh
+  models ~1.4% less material than the shipped part, all of it at the junctions where it
+  acts as a gusset.  That is a real modelling difference and it is deliberate.  `_embed`
+  picks its length by an argmax search over 20001 candidates, and at the RIM over 21
+  blend directions as well, because it must avoid producing a self-intersecting CAD
+  spline.  Reproducing that would put a discontinuous, non-differentiable search in the
+  middle of the gradient path — exactly the "gene with no finite-difference plateau"
+  failure the plan gates on at M7.  A smooth alternative does not exist either: the
+  bottom flank's backward tangent MISSES the hub circle entirely (its closest approach
+  exceeds 12.7), which is the same fact `wheel_step_export._embed`'s comment records
+  from the other side.
+
+  The allowance USED TO BE 4.27 and the gap ~2%.  `_embed`'s inward step took the least
+  rotation from the junction tangent, which ran 4.516 mm mostly sideways; it now plunges
+  radially, 1.788 mm, because the sideways run buried the hub circle under the
+  neighbouring spokes and left no junction to fillet.  See HUB_PLAN.md.
 
   So the junction is cut at the ring circle instead, which is smooth, exact, and
-  differentiable.  The 2.06% is reported by `study_wheel_mesh.py` and its stiffness
+  differentiable.  The gap is reported by `study_wheel_mesh.py` and its stiffness
   consequence is an M4 sensitivity run, not a guess made here.
 
 SEAMS, AND THE FAILURE MODE THEY HIDE
@@ -380,6 +392,61 @@ def weld_footprints_deg(genes, cfg, span_mm=HUB_RIM_SPAN_MM, hub_radius=HUB_RADI
         d = xp.abs(xp.arctan2(P_t[1], P_t[0]) - xp.arctan2(P_c[1], P_c[0]))
         out.append(xp.degrees(xp.minimum(d, 2.0 * np.pi - d)))
     return tuple(out)
+
+
+def hub_void_deg(genes, cfg, span_mm=HUB_RIM_SPAN_MM, hub_radius=HUB_RADIUS_MM,
+                 crossing_etas=(1.0,), xp=np):
+    """The empty arc between ADJACENT spoke roots on the hub circle, in degrees.
+
+    `SECTOR_DEG` minus the arc one spoke's material occupies where it meets the hub, so
+    it is simultaneously the slot a fillet has to grow into and — when it goes NEGATIVE —
+    the statement that adjacent spokes overlap.  Same arithmetic as `weld_footprints_deg`
+    above (two points, an `arctan2` difference, the wrap), on a different pair of points.
+
+    WHY THIS EXISTS.  The hub fillet milestone measured this void on the built solid, by
+    classifying material on sample rings, and found 9.907 deg = 2.196 mm of arc — which
+    caps ANY hub fillet near half of that while `R_hub`'s box bound is 4.0 mm.  A number
+    measured once on one genome cannot constrain an optimizer that moves the genome, and
+    the void is a function of the arrival angle and `t0`, not a constant: across the 16
+    Stage-2 elites it ranges 0.99 to 1.53 mm of half-arc.  So it is computed here instead,
+    from the same `sample` closure the mesh uses.  This function is the geometry; the
+    fillet MODEL built on it (how much of the slot one fillet may claim) is
+    `wheel_objective.hub_fillet_cap_mm`, deliberately not here — this module states no
+    opinion it cannot measure.
+
+    THE NON-CROSSING FLANK, and why the fallback is `s = 0` rather than an error.  On a
+    shallow spiral arrival one flank never crosses the hub circle at all (see
+    `wheel_objective.fillet_flanks` — at the shipped genome the `eta=-1` flank does not,
+    and that is the common case, not the exotic one).  The exporter continues such a flank
+    end RADIALLY INWARD, unconditionally at the hub (`wheel_step_export._embed`, blend
+    pinned to 1.0), and a radial plunge does not travel in theta — so the angle at which
+    that flank enters the hub disk is the angle of its own `s = 0` endpoint.  Measured
+    against the built solid: -0.3883 deg here against -0.4358 on the part, i.e. 0.0386 deg
+    = 0.0086 mm of arc, 0.4% of the void and 25x below one step of the exporter's radius
+    ladder.  The whole void reproduces to 0.070 deg (9.977 here, 9.907 measured).
+
+    `crossing_etas` IS REQUIRED AND HAS NO `None`-DERIVES-IT PATH, unlike
+    `weld_footprints_deg`'s `orientation`.  `ring_station`'s no-crossing guard is
+    `if xp is np and not changes.any()`, so under tracing a flank that does not cross
+    gives a degenerate bracket, a division by zero and a SILENT NaN in twelve of fourteen
+    gradient components rather than an error.  The decision of which flanks cross is
+    discrete, so it is frozen eagerly by the caller and handed over — exactly the
+    discipline `fillet_flanks` exists to enforce, and it must not be optional here.
+    """
+    cfg = get_config(cfg)
+    sample, s_dense = global_sampler(genes, cfg, span_mm=span_mm,
+                                     hub_radius=hub_radius, xp=xp)
+    theta = []
+    for eta in (-1.0, 1.0):
+        if eta in crossing_etas:
+            s = ring_station(sample, s_dense, hub_radius, eta, 0, xp=xp)
+        else:
+            s = xp.asarray(0.0)
+        P = sample(s, xp.asarray(eta))
+        theta.append(xp.arctan2(P[1], P[0]))
+    d = xp.abs(theta[0] - theta[1])
+    occupied = xp.degrees(xp.minimum(d, 2.0 * np.pi - d))
+    return SECTOR_DEG - occupied
 
 
 def spoke_free_arc_fraction(genes, cfg, span_mm=HUB_RIM_SPAN_MM,
@@ -1263,11 +1330,18 @@ def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
     }
 
 
-# `wheel_step_export._embed` adds straight tangent segments that push each spoke further
-# into its rings.  Measured at 4.27 mm2 per spoke against this region's definition — a
-# deliberate modelling difference, not an error in either kernel, and the reason a
-# mesh-vs-STEP comparison lands ~2% low.
-EMBED_ALLOWANCE_PER_SPOKE_MM2 = 4.27
+# `wheel_step_export._embed` adds straight segments that push each spoke further into its
+# rings.  A deliberate modelling difference, not an error in either kernel, and the reason
+# a mesh-vs-STEP comparison lands low.
+#
+# RE-MEASURED after the hub fillet milestone (see HUB_PLAN.md).  `_embed`'s inward step used
+# to take the least rotation from the junction tangent, which ran 4.516 mm mostly sideways
+# and buried the hub circle under the neighbouring spokes; it now plunges radially, 1.788 mm,
+# and the gusset it leaves in the annulus is correspondingly smaller.  Measured as
+# (STEP cross-section - this region's reference) / 12, both from the same genome in one
+# process: 2644.3509 - 2607.9634 = 36.3875, i.e. 3.032 per spoke, against 4.356 the same way
+# before the change.  The gap it explains narrows from ~1.93% to ~1.38%.
+EMBED_ALLOWANCE_PER_SPOKE_MM2 = 3.03
 
 
 def area_report(mesh):

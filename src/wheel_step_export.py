@@ -227,18 +227,47 @@ def _embed(p_top, p_bot, d, target_r, outward, label, margin=0.05):
     span = 4.0 * (target_r + float(np.linalg.norm(p_bot)))
     L = np.linspace(0.0, span, 20001)[:, None]
 
-    # The junction tangent alone often will not do it.  At the hub the spoke arrives
-    # close to tangent, so travelling backwards along it skims the circle — measured,
-    # the deepest it ever gets is r=11.26 for one flank while the other stays at 13.64,
-    # OUTSIDE the hub.  A root corner left proud of the ring, with the flank curving
-    # back in behind it, traps a 0.1 mm² lune: twelve tiny holes through the wheel.
+    # The junction tangent alone will not do it.  At the hub the spoke arrives close to
+    # tangent, so travelling backwards along it skims the circle — measured, the deepest
+    # it ever gets is r=11.26 for one flank while the other stays at 13.64, OUTSIDE the
+    # hub.  A root corner left proud of the ring, with the flank curving back in behind
+    # it, traps a 0.1 mm² lune: twelve tiny holes through the wheel.  So the shared
+    # direction has to rotate toward the ring's radial.  The question is how far.
     #
-    # So rotate the shared direction toward the ring's radial until the target is
-    # reachable, and take the least rotation that works — as tangential as the geometry
-    # allows, but always buried.  Still one direction and one length for both flanks,
-    # so the extensions stay parallel and cannot cross.
+    # INWARD IT GOES ALL THE WAY, AND THAT IS THE HUB FILLET FIX.  This used to take the
+    # LEAST rotation that reached — "as tangential as the geometry allows, but always
+    # buried" — which on the shipped genome is blend 0.35, a 4.516 mm run at -122.6°.
+    # A near-tangent run of that length is mostly SIDEWAYS: it swings the root cap 22.3°
+    # around the wheel, out of a 30° sector.  Adjacent spokes then lap over each other
+    # before either reaches the hub circle, and the circle stops existing.  Measured on
+    # the unfilleted solid by classifying material on rings just outside it:
+    #
+    #     r = 12.7100   material over the ENTIRE 30° sector   <- no hub circle at all
+    #     r = 12.8000   material over the entire sector
+    #     r = 12.8748   first void, 0.16° wide                <- the 354° notch, x12
+    #     r = 13.2000   void 0.80° wide
+    #
+    # There was no spoke/hub junction to fillet — only twelve spoke/spoke knife edges,
+    # which OCC refuses at every radius down to MIN_CURVATURE_RADIUS_MM, so the hub
+    # shipped square at Kt 3.5 against the 1.86 the constraint priced.  See `kt_report`.
+    #
+    # Radial is both the shortest way inside a circle and the one that does not travel
+    # in theta, so at blend 1.0 the same root plunges 1.788 mm and swings 0.57°:
+    #
+    #     void at r = 12.71     10.0° per sector, i.e. the hub circle is exposed
+    #     hub-circle crossings  2 per spoke, at 27.7° and 89.6° to the circle
+    #     hub overlap           77 mm³, down from 261, against a 50 mm³ floor
+    #
+    # Everything the trapezoid argument above rests on is untouched: still one direction
+    # and one length for both flanks, still straight, so it still cannot cross itself.
+    # Radial-inward always reaches, so the search below is a single step at the hub.
+    #
+    # OUTWARD KEEPS THE SEARCH.  The rim tip is clipped back to Ø100 and its junction
+    # already builds — 12 of 24 corners at the requested radius — so there is nothing
+    # there for a change of direction to buy, and a shipped, measured junction is not
+    # the place to find that out.
     radial = _unit((p_top + p_bot) / 2.0) * (1.0 if outward else -1.0)
-    for blend in np.linspace(0.0, 1.0, 21):
+    for blend in (np.linspace(0.0, 1.0, 21) if outward else (1.0,)):
         d = _unit((1.0 - blend) * d_tan + blend * radial)
         r_top = np.linalg.norm(p_top + L * d, axis=1)
         r_bot = np.linalg.norm(p_bot + L * d, axis=1)
@@ -533,8 +562,27 @@ def _group_by_ring(rows):
     return ([r for r in rows if r[1] < cut], [r for r in rows if r[1] >= cut])
 
 
-def fillet_junctions(part, rows, radius, label):
-    """Fillet a group of re-entrant junction corners, all at one radius.
+def _fillet_ladder(radius):
+    """Candidate radii from `radius` down to the curvature floor, 15% at a time.
+
+    NOT rounded, though it used to be.  `round(r, 3)` moved the top rung to 1.560 mm on a
+    requested 1.5597674, i.e. the part would be reported as built SLIGHTLY BLUNTER than
+    asked and `kt_report` would price a small negative error — a fillet nobody built
+    reading as margin.  It never showed because the only junction that ever reached its
+    top rung was the rim, whose gene happens to be exactly 3.0.  Formatting belongs in
+    the print statements, not in the geometry.
+    """
+    ladder = []
+    r = radius
+    while r > MIN_CURVATURE_RADIUS_MM:
+        ladder.append(r)
+        r *= 0.85
+    ladder.append(MIN_CURVATURE_RADIUS_MM)
+    return ladder
+
+
+def fillet_junctions(part, rows, radius, label, reselect=None):
+    """Fillet a group of re-entrant junction corners, in families of equal radius.
 
     `rows` comes from `_junction_edges` + `_group_by_ring` — `(edge, radius_mm, wedge_deg)`
     triples.  Taking the selection as an argument rather than doing it here is what lets
@@ -557,44 +605,80 @@ def fillet_junctions(part, rows, radius, label):
     whole batch accepts is also the honest answer to "what does this junction actually
     allow", which is what `kt_report` prices.
 
-    Returns (part, applied_radius, n_filleted, n_found).  `n_filleted` and `n_found`
-    are reported separately because they used to be the same field: a zero could mean
-    either "nothing was found" or "everything was found and nothing could be built", and
-    those want opposite fixes.
+    THE LEFTOVERS ARE NO LONGER ABANDONED, and that is the second half of the hub fillet
+    fix.  The two corners at a junction are not mirror images — a spoke arriving near
+    tangent leaves one corner square-on and one nearly a cusp, measured at 27.7° and
+    89.6° to the hub circle — so the batch fails, the subset that accepts `r` gets built,
+    and this used to RETURN there, leaving the other family square at Kt 3.5 forever.
+    That is why the rim shipped 12 of 24.  It now re-selects the corners that are still
+    re-entrant and walks the ladder again for them, so a shallow corner gets the largest
+    radius IT can take rather than none at all.  Re-selection is mandatory between
+    passes: filleting replaces the faces the surviving edges are bound to and OCC will
+    not accept a stale handle.  Without a `reselect` callable this degrades to the old
+    single-family behaviour rather than crashing.
 
-    Returns (part, applied_radius, n_filleted, n_found).
+    Every family is still one operation and still a whole multiple of the spoke count,
+    so the 12-fold symmetry argument above is unchanged.
+
+    Returns (part, families, n_found), where `families` is a list of
+    `{"radius_mm": r, "n_edges": n}` in descending radius.  `n_found` is reported
+    separately from the built count because they used to be the same field: a zero could
+    mean either "nothing was found" or "everything was found and nothing could be built",
+    and those want opposite fixes.
     """
     edges = [r[0] for r in rows]
     if not edges:
         print(f"  [{label}] no re-entrant junction corners found — skipped")
-        return part, 0.0, 0, 0
+        return part, [], 0
+    n_found = len(edges)
     worst = max(r[2] for r in rows)
-    print(f"  [{label}] {len(edges)} re-entrant corners, worst wedge {worst:.1f} deg")
+    print(f"  [{label}] {n_found} re-entrant corners, worst wedge {worst:.1f} deg")
 
-    ladder = []
-    r = radius
-    while r > MIN_CURVATURE_RADIUS_MM:
-        ladder.append(round(r, 3))
-        r *= 0.85
-    ladder.append(MIN_CURVATURE_RADIUS_MM)
+    families = []
+    while edges:
+        out, r, built = _fillet_one_family(part, edges, radius, label)
+        if out is None:
+            print(f"  [{label}] {len(edges)} of {n_found} corners accepted no radius "
+                  f"down to {MIN_CURVATURE_RADIUS_MM} mm — left square")
+            break
+        part = out
+        families.append({"radius_mm": r, "n_edges": built})
+        if built == len(edges) or reselect is None:
+            break
+        # Stale handles after a fillet, so the leftovers have to be found again.  A
+        # fillet introduces only TANGENT edges, which are smooth and fall below
+        # MIN_FILLET_WEDGE_DEG, so what comes back is the corners that refused.
+        fresh = [row[0] for row in reselect(part)]
+        if len(fresh) >= len(edges):
+            print(f"  [{label}] re-selection did not shrink the leftover set "
+                  f"({len(fresh)} of {len(edges)}) — stopping rather than looping")
+            break
+        edges = fresh
 
-    for r in ladder:
+    return part, families, n_found
+
+
+def _fillet_one_family(part, edges, radius, label):
+    """Largest ladder radius accepted by `edges`, or by a whole-spoke-count subset of them.
+
+    Returns `(part, radius, n_edges)`, or `(None, 0.0, 0)` when nothing down to
+    `MIN_CURVATURE_RADIUS_MM` is accepted by any admissible group.
+    """
+    for r in _fillet_ladder(radius):
         try:
             out = part.newObject(edges).fillet(r)
             if out.val().isValid():
                 note = "" if abs(r - radius) < 1e-9 else f"  (requested {radius:.3f})"
-                print(f"  [{label}] filleted all {len(edges)} junction edges "
+                print(f"  [{label}] filleted {len(edges)} junction edges "
                       f"@ R={r:.3f} mm{note}")
-                return out, r, len(edges), len(edges)
+                return out, r, len(edges)
         except Exception:
             pass
 
-        # The two corners at a junction are not mirror images — measured on the shipped
-        # genome the rim's twenty-four run from 194° to 356° of material — and a
-        # near-cusp accepts nothing.  Falling back to the subset that accepts r keeps the
-        # useful half rather than losing both, but only if that subset is a whole multiple
-        # of the spoke count, so a 12-fold symmetric wheel can never come out with one
-        # spoke unlike the rest.
+        # A near-cusp accepts nothing at this rung.  Falling back to the subset that does
+        # keeps the useful half rather than losing both, but only if that subset is a
+        # whole multiple of the spoke count, so a 12-fold symmetric wheel can never come
+        # out with one spoke unlike the rest.
         ok = []
         for e in edges:
             try:
@@ -611,17 +695,21 @@ def fillet_junctions(part, rows, radius, label):
         if out.val().isValid():
             print(f"  [{label}] filleted {len(ok)} of {len(edges)} junction edges "
                   f"@ R={r:.3f} mm  (requested {radius:.3f}; "
-                  f"{len(edges) - len(ok)} accepted no radius at all)")
-            return out, r, len(ok), len(edges)
+                  f"{len(edges) - len(ok)} refused this radius)")
+            return out, r, len(ok)
 
-    print(f"  [{label}] no radius down to {MIN_CURVATURE_RADIUS_MM} mm was accepted by "
-          f"all {len(edges)} edges — junctions left square")
-    return part, 0.0, 0, len(edges)
+    return None, 0.0, 0
 
 
 # ---------------------------------------------------------------------------
 # STEP INTEROPERABILITY
 # ---------------------------------------------------------------------------
+# THIS IS HISTORY, NOT A LIVE CONSTRAINT.  Onshape was a temporary tool and the consumer is
+# Autodesk Inventor now — a different kernel, so none of the fault list below predicts what
+# Inventor will do.  It is kept because it is why `despecialize` exists and why the hub bore
+# and the OD are deliberately left analytic, and because the failure it describes is the kind
+# a valid-by-OCC solid can still have.
+#
 # Onshape rejected the exported solid:
 #
 #   wheel_nofillet.step was translated with errors. Parts with faults have been imported.
@@ -795,7 +883,16 @@ def kt_report(genes, metrics, hub, rim):
     built part is sharper, and therefore more stressed, than the model believes.
     Nothing downstream noticed because main() discarded these return values.
 
-    `hub` and `rim` are `(applied_radius, n_filleted, n_found, worst_wedge_deg)`.
+    `hub` and `rim` are `(families, n_found, worst_wedge_deg)` as `fillet_junctions`
+    returns them.
+
+    A JUNCTION IS PRICED BY ITS WORST CORNER.  `r_built_mm` is the SMALLEST radius any
+    corner of that junction got, and it is 0.0 whenever even one found corner got
+    nothing — because a stress riser is not an average.  This used to price the radius
+    that WAS applied, which is how the rim came to report `kt_error_pct = +0.0%` while
+    twelve of its twenty-four corners shipped square: the number said the part matched
+    the model, and half the part did not.  The per-family radii are all kept in
+    `fillet_families`, so nothing is lost by pricing the worst.
 
     A SQUARE JUNCTION IS A NUMBER, NOT A NaN.  This used to report `kt_built = nan` when
     nothing was built and then filter non-positive `r_built` out of the mismatch gate
@@ -806,36 +903,46 @@ def kt_report(genes, metrics, hub, rim):
 
     Returns a list of per-junction dicts for the manifest."""
     rows = []
-    print("\n  ---- fillet feasibility (requested vs. built) ----")
-    print(f"  {'junction':<9s} {'R_req':>7s} {'R_built':>8s} {'edges':>9s} "
+    print("\n  ---- fillet feasibility (requested vs. built, priced at the WORST corner) ----")
+    print(f"  {'junction':<9s} {'R_req':>7s} {'R_worst':>8s} {'edges':>9s} "
           f"{'wedge':>7s} {'Kt_model':>9s} {'Kt_built':>9s} {'error':>8s}")
     print("  " + "-" * 76)
     for label, r_req, group, t in (
             ("hub", genes["R_hub"], hub, genes["t0"]),
             ("rim", genes["R_rim"], rim, genes["t3"])):
-        r_built, n_filleted, n_found, wedge = group
+        families, n_found, wedge = group
+        n_filleted = sum(f["n_edges"] for f in families)
+        # Every found corner has to have been given a radius, or the worst one is square.
+        r_built = (min(f["radius_mm"] for f in families)
+                   if families and n_filleted == n_found else 0.0)
         kt_model = float(stress_concentration_kt(r_req, t))
         kt_built = float(stress_concentration_kt(r_built, t))
         err = (kt_built / kt_model - 1.0) * 100.0
         print(f"  {label:<9s} {r_req:7.3f} {r_built:8.3f} "
               f"{n_filleted:4d}/{n_found:<4d} {wedge:7.1f} {kt_model:9.3f} "
               f"{kt_built:9.3f} {err:+7.1f}%")
+        if len(families) > 1:
+            print(f"  {'':<9s} families: " + ", ".join(
+                f"{f['n_edges']} @ {f['radius_mm']:.3f} mm" for f in families))
         rows.append({"junction": label, "r_requested_mm": r_req, "r_built_mm": r_built,
                      "n_edges_filleted": n_filleted, "n_edges_found": n_found,
-                     "worst_wedge_deg": wedge,
+                     "worst_wedge_deg": wedge, "fillet_families": families,
                      "kt_modeled": kt_model, "kt_built": kt_built,
                      "kt_error_pct": err})
     print("  " + "-" * 76)
 
     for row in rows:
         if row["r_built_mm"] <= 0:
-            found = row["n_edges_found"]
+            found, built = row["n_edges_found"], row["n_edges_filleted"]
             why = ("no re-entrant corner was found there at all — see `_junction_edges`"
                    if not found else
                    f"all {found} corners refused every radius down to "
-                   f"{MIN_CURVATURE_RADIUS_MM} mm")
-            print(f"  [SQUARE JUNCTION] the {row['junction']} junction took no fillet: "
-                  f"{why}.\n                    Priced above at Kt = "
+                   f"{MIN_CURVATURE_RADIUS_MM} mm" if not built else
+                   f"{found - built} of its {found} corners refused every radius down "
+                   f"to {MIN_CURVATURE_RADIUS_MM} mm\n                    (the other "
+                   f"{built} were built, which does not help the worst one)")
+            print(f"  [SQUARE JUNCTION] the {row['junction']} junction has a square "
+                  f"corner: {why}.\n                    Priced above at Kt = "
                   f"{row['kt_built']:.2f}, the degenerate-fillet value, which is a FLOOR:"
                   f"\n                    a square re-entrant corner is a worse riser "
                   f"than the {row['r_requested_mm']:.2f} mm the\n"
@@ -850,8 +957,10 @@ def kt_report(genes, metrics, hub, rim):
         print(f"                the optimizer assumed — Kt is {worst['kt_error_pct']:+.1f}% "
               f"higher than modeled.")
         print(f"                As-built peak stress scales {modeled:.2f} → ~{scaled:.2f} MPa.")
-        print( "                The fix belongs upstream: nothing in wheel_fea.py stops the")
-        print( "                GA proposing a fillet the junction angle cannot accept.")
+        print( "                The junction geometry itself is no longer the cause — `_embed`")
+        print( "                plunges radially and both rings have a real junction on their")
+        print( "                circle.  What is left is the shallow corner of a near-tangent")
+        print( "                arrival, which is the arrival angle, i.e. the genome.")
     return rows
 
 
@@ -941,20 +1050,26 @@ def main():
     hub_rows, rim_rows = _group_by_ring(_junction_edges(wheel))
     hub_wedge = max((r[2] for r in hub_rows), default=0.0)
     rim_wedge = max((r[2] for r in rim_rows), default=0.0)
-    wheel, hub_r, hub_n, hub_found = fillet_junctions(wheel, hub_rows, genes["R_hub"], "hub")
-    # Re-select against the NEW solid: filleting the hub replaces the faces the rim edges
+    # Re-select against the NEW solid: filleting replaces the faces the remaining edges
     # are bound to, and OCC will not accept stale edge handles.  Safe to re-run because a
     # fillet introduces only TANGENT edges, which are smooth and fall below
     # MIN_FILLET_WEDGE_DEG — verified by filleting the rim and re-selecting: the 24
     # re-entrant corners become exactly the 12 that refused a radius, and the hub set is
-    # untouched.  Does not fire today (the hub accepts nothing); kept because the day it
-    # does, a stale handle would be a confusing crash rather than a wrong answer.
+    # untouched.  `fillet_junctions` uses this between families of one ring; the call
+    # after the hub is the same fact applied to the other ring.
+    reselect_hub = lambda p: _group_by_ring(_junction_edges(p))[0]
+    reselect_rim = lambda p: _group_by_ring(_junction_edges(p))[1]
+    wheel, hub_fams, hub_found = fillet_junctions(
+        wheel, hub_rows, genes["R_hub"], "hub", reselect_hub)
+    hub_n = sum(f["n_edges"] for f in hub_fams)
     if hub_n:
-        _, rim_rows = _group_by_ring(_junction_edges(wheel))
-    wheel, rim_r, rim_n, rim_found = fillet_junctions(wheel, rim_rows, genes["R_rim"], "rim")
+        rim_rows = reselect_rim(wheel)
+    wheel, rim_fams, rim_found = fillet_junctions(
+        wheel, rim_rows, genes["R_rim"], "rim", reselect_rim)
+    rim_n = sum(f["n_edges"] for f in rim_fams)
     kt_rows = kt_report(genes, metrics,
-                        (hub_r, hub_n, hub_found, hub_wedge),
-                        (rim_r, rim_n, rim_found, rim_wedge))
+                        (hub_fams, hub_found, hub_wedge),
+                        (rim_fams, rim_found, rim_wedge))
 
     # Measure BEFORE despecializing — see report()'s docstring.
     vol_true = wheel.val().Volume()
