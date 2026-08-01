@@ -33,7 +33,7 @@ NUMEXPR_NUM_THREADS ?= 1
 XLA_FLAGS ?= --xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1
 export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS XLA_FLAGS
 
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 hubcap export studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 hubcap prod9 prod10 export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -64,6 +64,11 @@ help:
 	@echo "make hubcap   the analytic hub-fillet cap against what OCC accepts: the"
 	@echo "              inter-spoke void by ring classification, and the fillet"
 	@echo "              acceptance threshold by bisection.  Needs BOTH envs, ~8 min"
+	@echo "make prod9    PLAN.md 0(b): the production descent from elite 9.  ~4 h"
+	@echo "make prod10   the same from elite 10.  RUN THE TWO SEQUENTIALLY, and on a"
+	@echo "              memory-bound box launch each under a systemd-run cap: one"
+	@echo "              descent holds ~12.7 GB anon and two do not fit in 31 GB."
+	@echo "              Override PROD_STEPS/PROD_WORKERS/PROD_FIDELITY"
 
 env: env-opt env-cad
 
@@ -146,6 +151,88 @@ m9:
 # it measures is OCC's behaviour on this shape rather than anything a commit changed.
 hubcap:
 	$(PY_OPT) studies/study_hub_cap.py --out study_hub_cap.json
+
+# PLAN.md §0(b).  The production multi-start descent, from elites 9 and 10 rather than
+# best_solution.json — that genome is a GA optimum for the BEAM surrogate and sits at
+# -25.43% deflection error, while 9 and 10 are the two designs already inside the feasible
+# box on both constraints.  The objective it descends is MASS: both constraints are
+# satisfiable together and every barrier is flat at a feasible design, so mass is the only
+# term with anything left to give.  No flag selects that — it is what the existing weights
+# already do once deflection is met.
+#
+# ONE TARGET PER START, AND THEY RUN SEQUENTIALLY.  This comment used to argue the
+# opposite — S13 measures 4 workers at 2.93x / 0.73 efficiency against 8 at 3.95x / 0.49,
+# so two quarter-box runs look like they beat two half-box runs on the same 8 cores.  That
+# is CPU arithmetic on a box that runs out of MEMORY first, and it was tried: one descent
+# at `coarse` with 4 workers sits flat at ~12.7 GB anon (parent ~4.5 GB, four workers
+# ~2 GB each), so two of them is ~25 GB against 31 GB of RAM and a 2 GB swapfile.  What
+# that costs is not a slow run, it is the DESKTOP — `systemd-oomd` kills the whole
+# `user@1000.service` slice at 50% pressure for 20 s, dropping the user to the login
+# screen and taking every terminal with it.  Launch each capped and detached instead:
+#
+#   systemd-run --user --unit=wheel-prod9 -p MemoryMax=20G --collect \
+#       --working-directory=$$PWD /usr/bin/make prod9
+#
+# ~4.0 h of descent each (300 steps x 47.6 s), plus the fidelity checks below.
+#
+# Out of `studies` for the m8bi5 reason: this is a SEARCH, not a gate.  Nothing here has a
+# pass/fail verdict, and it is hours.
+#
+# DRIVEN BY MAKE RATHER THAN BY HAND, and that is not a convenience.  The five pinned vars
+# at the top of this file are a CORRECTNESS setting for the PARENT as much as for the
+# workers — the parent runs T1, T2, the Kt cache and the reduction over phase replies — and
+# `wheel_stage3.py` does not set them itself.  A worker pins itself before its first import
+# (`wheel_pool_worker.py`); a parent launched straight from a shell does not, which both
+# costs the adjoint its bit-reproducibility and oversubscribes the box with a 16-thread XLA
+# pool alongside 8 pinned workers.  See `wheel_pool.PINNED_ENV`.
+#
+# The distinct --out AND --best-out names are load-bearing for the same concurrency: both
+# default to a fixed name under the repo root and `main()` writes --best-out
+# unconditionally, so two simultaneous runs at the defaults would silently clobber each
+# other's genome.
+# `-u` on the interpreter, and it is what makes a DETACHED run observable at all.  Python
+# block-buffers stdout when it is not a TTY, and under `systemd-run` it is a journal socket,
+# so a 4 h descent emits NOTHING to `journalctl` until the buffer fills or the process
+# exits — measured: 162 steps in, zero `[step ...]` lines in the unit's journal.  That makes
+# `journalctl --user -u wheel-prod10 -f` useless for progress and, worse, hides a traceback
+# until exit.  Unbuffered costs nothing here (one print per ~47 s step) and moves no number.
+PROD_STEPS ?= 300
+PROD_WORKERS ?= 4
+
+# `uniform`, NOT the `rqmc` default, and this is a MEMORY constraint rather than a
+# statistical preference.  `rqmc` redraws the stencil every step from an `n_sub`-point
+# sub-lattice, so a 300-step run visits `n_phase * n_sub` = 64 distinct phase values —
+# and `wheel_wheel.coord_fn` keys its jit cache on `float(phase)` with FIFO eviction only
+# at 128 entries, so all 64 traces are RETAINED.  Measured: ~0.4 GB per trace, and the
+# pool holds all 64 no matter how the slots are split across workers, so `--workers` is
+# not a lever on it.  A run at the defaults peaked at 18.9 GB and was OOM-killed at step 3.
+# `uniform` fixes the 8 phases, so the cache saturates at 8 traces after step 0.
+PROD_SCHEME ?= uniform
+
+# OFF, and that default is a MEASUREMENT rather than a preference.  The check is a PURE
+# OBSERVATION at `medium` and it runs on a wholly separate SERIAL evaluator, never the
+# phase pool (deliberately — `wheel_stage3.descend`), so it pays all 8 phases end to end
+# with no parallelism.  Measured from the first production attempt's
+# `settings.fidelity_check_solve_s`: ONE check is 604.6 s, so every-50 over 300 steps is
+# 7 checks ~= 1.2 h, not the ~45 min this comment used to claim.  It also costs ~3.4 GB
+# PERMANENTLY — that second `Evaluator` retains its own jit cache and mesh for the life of
+# the run, taking the parent 4.5 -> 7.9 GB across the FIRST check and leaving it there.
+# On a memory-bound box that is the first thing to turn off, and it is what both recorded
+# production runs did.  Dropping it costs evidence, never trajectory: the gradient it
+# returns is discarded and can never reach m/v/delta/z.  Set PROD_FIDELITY=50 to restore.
+PROD_FIDELITY ?= 0
+
+prod9:
+	$(PY_OPT) -u src/wheel_stage3.py --start rank:9 --steps $(PROD_STEPS) \
+	    --workers $(PROD_WORKERS) --phase-scheme $(PROD_SCHEME) \
+	    --fidelity-check-every $(PROD_FIDELITY) --fidelity-check-config medium \
+	    --out stage3_prod_elite9.json --best-out stage3_prod_best_elite9.json
+
+prod10:
+	$(PY_OPT) -u src/wheel_stage3.py --start rank:10 --steps $(PROD_STEPS) \
+	    --workers $(PROD_WORKERS) --phase-scheme $(PROD_SCHEME) \
+	    --fidelity-check-every $(PROD_FIDELITY) --fidelity-check-config medium \
+	    --out stage3_prod_elite10.json --best-out stage3_prod_best_elite10.json
 
 export:
 	$(PY_CAD) src/wheel_step_export.py
