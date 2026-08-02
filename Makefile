@@ -140,7 +140,7 @@ m8bii1:
 
 # M9 Phase 2.  Measurement-only: tangent eigenvalue refinement, phase and load ladders.
 m9:
-	$(PY_OPT) studies/study_m9.py --out study_m9.json
+	$(PY_OPT) -u studies/study_m9.py --out study_m9.json
 
 # PLAN.md §0(a).  The analytic hub-fillet cap against what OCC actually accepts: the void
 # measured on the profile by ring classification, and the fillet acceptance threshold found

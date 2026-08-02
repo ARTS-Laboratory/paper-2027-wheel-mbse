@@ -116,7 +116,7 @@ def measure(genes, cfg, phase_deg, *, force=TOTAL_FORCE_NEWTONS,
 
 
 def _series(rows):
-    values = np.asarray([r["lambda_min"] for r in rows], dtype=float)
+    values = np.asarray([r["lambda_min"] for r in rows if "error" not in r], dtype=float)
     if len(values) < 2:
         return {"values": values.tolist(), "last_pair_rel": None, "pass": True}
     rel = abs(values[-1] / values[-2] - 1.0) if values[-2] else float("inf")
@@ -131,18 +131,31 @@ def run_mesh(designs, configs, phases):
         design_rows = []
         for cfg in configs:
             for phase in phases:
-                row = measure(genes, cfg, phase, gradient=(cfg == configs[0]
-                              and phase == phases[0]),
-                              independent=(name == "best_solution" and phase == phases[0]
-                                           and cfg in (configs[0], configs[-1])))
+                try:
+                    row = measure(genes, cfg, phase, gradient=(cfg == configs[0]
+                                  and phase == phases[0]),
+                                  independent=(name == "best_solution"
+                                               and phase == phases[0]
+                                               and cfg in (configs[0], configs[-1])))
+                except Exception as exc:
+                    # The `fine` rung is 261k dof and had never been run when this was
+                    # written; `run_load` and `run_design_space` already guard this way,
+                    # and study_stage3's ladder wraps each row for the same reason.  A
+                    # refused row is recorded and FAILS the section (below) rather than
+                    # discarding the rungs that did converge.  This cannot catch a cgroup
+                    # OOM kill -- that is what the per-section checkpoint in main() is for.
+                    row = {"config": cfg, "phase_deg": float(phase),
+                           "error": f"{type(exc).__name__}: {exc}"}
                 row["design"] = name
                 rows.append(row)
                 design_rows.append(row)
         for phase in phases:
-            phase_rows = [r for r in design_rows if r["phase_deg"] == float(phase)]
+            phase_rows = [r for r in design_rows if r.get("phase_deg") == float(phase)]
             series[f"{name}:phase={phase:g}"] = _series(phase_rows)
     return {"rows": rows, "series": series,
-            "pass": bool(all(v["pass"] for v in series.values()))}
+            "n_error_rows": sum(1 for r in rows if "error" in r),
+            "pass": bool(all(v["pass"] for v in series.values())
+                         and not any("error" in r for r in rows))}
 
 
 def run_phase(designs, cfg, n_phase):
@@ -221,16 +234,44 @@ def main():
     force_ladder = (TOTAL_FORCE_NEWTONS,) if args.quick else (
         0.25 * TOTAL_FORCE_NEWTONS, 0.5 * TOTAL_FORCE_NEWTONS,
         0.75 * TOTAL_FORCE_NEWTONS, TOTAL_FORCE_NEWTONS)
+    out_path = os.path.join(HERE, args.out)
     rep = {
         "settings": {"quick": args.quick, "configs": list(configs),
                      "reference_phases": n_phase, "production_phases": PRODUCTION_PHASES,
                      "genome": os.path.basename(args.genome),
                      "elapsed_s": None},
-        "mesh": run_mesh(selected, configs, mesh_phases),
-        "phase": run_phase(selected, phase_cfg, n_phase),
-        "load": run_load(selected, phase_cfg, force_ladder),
-        "design_space": run_design_space(designs if not args.quick else selected, phase_cfg),
+        "sections_complete": [],
+        "complete": False,
     }
+
+    # CHECKPOINT AFTER EVERY SECTION.  The full run is hours and its first section drives
+    # the 261k-dof `fine` rung, so it is the most likely thing in this repo to be OOM-killed
+    # by its own cgroup cap -- and a SIGKILL is not catchable, so a `try` cannot preserve
+    # anything a later section would have kept.  Writing as we go means a kill costs the
+    # section it happened in, not the ones already paid for.  `complete` says whether the
+    # file is a whole run; `pass` is absent until it is, so a partial file can never be
+    # misread as a verdict.
+    def _flush():
+        rep["settings"]["elapsed_s"] = round(time.time() - t0, 1)
+        with open(out_path, "w") as fh:
+            json.dump(rep, fh, indent=1)
+
+    _flush()
+    sections = (
+        ("mesh", lambda: run_mesh(selected, configs, mesh_phases)),
+        ("phase", lambda: run_phase(selected, phase_cfg, n_phase)),
+        ("load", lambda: run_load(selected, phase_cfg, force_ladder)),
+        ("design_space",
+         lambda: run_design_space(designs if not args.quick else selected, phase_cfg)),
+    )
+    for name, fn in sections:
+        rep[name] = fn()
+        rep["sections_complete"].append(name)
+        print(f"  [{name}] {'PASS' if rep[name]['pass'] else 'FAIL'}"
+              f"  at {round(time.time() - t0, 1)} s", flush=True)
+        _flush()
+
+    rep["complete"] = True
     rep["settings"]["elapsed_s"] = round(time.time() - t0, 1)
     rep["pass"] = bool(rep["mesh"]["pass"] and rep["phase"]["pass"]
                        and rep["load"]["pass"] and rep["design_space"]["pass"])
@@ -240,9 +281,8 @@ def main():
     print(f"  phase:  {'PASS' if rep['phase']['pass'] else 'FAIL'}")
     print(f"  load:   {'PASS' if rep['load']['pass'] else 'FAIL'}")
     print(f"  designs:{'PASS' if rep['design_space']['pass'] else 'FAIL'}")
-    with open(os.path.join(HERE, args.out), "w") as fh:
-        json.dump(rep, fh, indent=1)
-    print(f"wrote {os.path.join(HERE, args.out)}")
+    _flush()
+    print(f"wrote {out_path}")
     return 0 if rep["pass"] else 1
 
 
