@@ -144,25 +144,218 @@ The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pn
 
 ## The next changes, in order
 
-### 0. WHAT TO DO NEXT — three things, in this order
+### 0. WHAT TO DO NEXT
 
-**~~(a) `R_hub`'s bound against the buildable ceiling.~~ DONE — the constraint learned the
-cap. §5 below is the record.** Of the three ways out, the chosen one was to teach the
-constraint rather than drop the bound to 1.1: the void is a function of the arrival angle and
-`t0`, not a constant, and across the 16 Stage-2 elites the cap spans **0.9898 to 1.5265 mm**,
-so a fixed bound would have been right for exactly one genome. The 4.0 box bound is
-untouched; the cap does the work.
+**The previous three items — (a) the hub-fillet cap, (b) the production descent, (c)
+`make m9` in full — are ALL DONE. §5, §6 and §7 are their records.** A one-paragraph
+summary of each is at the end of this section; read those three sections for anything real.
+What follows is the new list, and it is ordered by *cost to decide*, not by importance.
 
-**(b) The production multi-start run. The long pole, and the last open M8b-ii item.** Details
-in §1 below — elites 9 and 10, mass as the objective, `--workers`. Everything it was waiting
-on has landed and is measured: the phase pool, the jitted `t1_vector`, the fidelity check.
-Do it **after (a)**, for the reason (a) gives.
+**The new items are NUMBERED (1)(2)(3) and the closed ones keep their LETTERS (a)(b)(c)**,
+because §5, §6 and §7 are titled after the letters and a fresh session reading "§0(b)" must
+land on the production descent, not on the wall-thickness sweep. Letters are history;
+numbers are open.
 
-**(c) `make m9` in full.** Only `--quick` has ever been run, and M9 phase 3 — promoting
-`lambda_min(K_t)` from a mechanism to a constraint, with a margin, a threshold and a phase
-aggregation rule — is deliberately blocked on that measurement (`tests/test_gradient.py`
-says so in as many words). It competes with (b) for the machine, so it is third rather than
-unimportant.
+**~~(1) SETTLE WHY `lambda_min` IS MESH-DEPENDENT.~~ DONE. BOTH HYPOTHESES RUN. The answer
+is that `study_m9`'s `K_t` is not a tangent at all — and a mesh-convergent replacement
+exists and was measured.** Full record in H1 and H2 below; the two-line version:
+
+- **`kinematics="linear"` is the default on `wheel_contact_problem`, so `prob.nonlinear` is
+  False and the displacement passed to `assemble_stiffness` is IGNORED — measured at exactly
+  0.000e+00 change.** §7's quantity is λ_min(K_linear + K_contact), which has no geometric
+  stiffening in it. Every symptom §7 recorded follows from that one fact.
+- **The generalised load factor converges: 1.378129 / 1.359846 / 1.356669 at smoke / coarse /
+  medium**, error ~dof^−1.87, Richardson limit ≈1.3560, `medium` within 0.049% of it. It
+  passes `GATE_MESH_REL` with 21× margin where λ_min fails it by twelve.
+
+**What is now open is phase 3 itself**, plus four things H2 did NOT establish — see the end
+of H2. **The load factor came out ≈1.36 on one design, which is alarmingly tight and must not
+be quoted as a safety factor until it is independently checked.**
+
+The original framing follows, because the reasoning is what made the cheap test worth running:
+
+**~~H1 — THE CONTACT PENALTY.~~ RUN, AND REFUTED. It also corroborated H2.** `best_solution`,
+`coarse`, phase 0, `eps_n` over two decades, ~2 min. Three independent discriminators, all
+negative:
+
+| eps_n | λ_min | vs default | λ_min, contact block REMOVED |
+|---|---|---|---|
+| 1e3 (0.1×) | 4.860825e-03 | 1.0069× | 4.703656e-03 |
+| 3e3 | 4.894088e-03 | 1.0138× | 4.703656e-03 |
+| **1e4 (default)** | **4.827619e-03** | 1.0000× | 4.703656e-03 |
+| 3e4 | 4.851094e-03 | 1.0049× | 4.703656e-03 |
+| 1e5 (10×) | 4.882208e-03 | 1.0113× | 4.703656e-03 |
+
+1. **`eps_n` varied 100×; λ_min varied 1.0044×** — and *non-monotonically*, so even that
+   0.4% is solve-to-solve variation rather than a trend. A penalty mode tracks its penalty
+   roughly linearly. This does not track it at all.
+2. **Ablating the contact block entirely moves λ_min by 2.6%**, and the ablated value is
+   identical to 7 digits at every `eps_n`. The contact term is a couple of percent of the
+   quantity; it is not the quantity.
+3. **The eigenvector is a GLOBAL mode.** 5.05% of its energy sits on `rim_outer`, which is
+   2.28% of the nodes — concentration factor 2.2, i.e. essentially none. The **top 10 nodes
+   hold 0.11%**. Participation ratio **0.54**: the mode is spread over roughly half of every
+   node in the mesh.
+
+**Point 3 is why this was worth the two minutes even though it came back negative.** It is
+independent corroboration of H2 from a different direction: λ ∝ h² is what the smallest
+eigenvalue of an unnormalised discrete elliptic operator does, and "a global mode spread over
+half the mesh" is what that mode looks like. The scaling exponent and the eigenvector now
+agree. **H2 is the remaining explanation and it is no longer competing with anything.**
+
+The driver is `eps_n_check.py`, written to a scratchpad rather than to `studies/` on purpose:
+it is a one-question falsification with no gate and no artifact anyone should depend on, and
+its answer is this table. Re-deriving it is ~2 min if it is ever doubted.
+
+**~~H2 — THE FORMULATION.~~ RUN, AND CONFIRMED. A mesh-convergent buckling quantity EXISTS,
+and it is cheap.** But the check that came with it found something bigger, so read that first.
+
+##### H2(a) — `study_m9`'s "K_t" IS NOT A TANGENT. It has zero geometric stiffening in it.
+
+`wheel_contact_problem` defaults to **`kinematics="linear"`**, so `prob.nonlinear` is
+**False**, and `study_m9.measure()` never overrides it. `assemble_stiffness`'s own docstring
+says the linear Hessian "is independent of `u`, so `u=None` (evaluate at zero) is exact
+rather than an approximation." **Measured, not inferred** — assemble at the converged `u`
+and at zero and diff:
+
+| config | \|u\|max | K(linear) change with u | K(svk) change with u |
+|---|---|---|---|
+| smoke | 1.6153 mm | **0.000e+00** | 2.732e-02 |
+| coarse | 1.6663 mm | **0.000e+00** | 8.769e-03 |
+
+**Exactly zero.** The `res["u"]` that `study_m9` threads into `assemble_stiffness` is inert;
+the kernel ignores it. So the quantity §7 measured is **λ_min(K_linear + K_contact)** — the
+smallest eigenvalue of a fixed linear elliptic operator plus a penalty block. It was never a
+tangent eigenvalue, and it contains **no buckling information by construction.**
+
+That single fact explains every symptom §7 recorded, with nothing left over:
+- **h², to within 3%, nine times** — that is what λ_min of a fixed linear operator does.
+- **1.022× over a 4× load ladder** — the only load path into it is the contact block, and H1
+  measured that block at 2.6% of the value.
+- **A global mode, participation ratio 0.54** — a bulk discrete mode, not a structural one.
+
+The three findings were never independent. They are one defect seen from three sides.
+
+##### H2(b) — the generalised load factor, and it converges
+
+Under **SVK kinematics** so a geometric term exists at all: `K_0 = K(u=0)`,
+`K_t = K(u_service)`, `K_g = K_t − K_0`, then `(K_0 + λ K_g)x = 0` solved as the generalised
+symmetric problem `K_g x = μ K_0 x` with `λ = −1/μ`. `λ` is a dimensionless **load factor** —
+how many times the service load until the tangent goes singular.
+
+| config | reduced dof | **load factor** | vs previous | `study_m9`'s λ_min, same mesh |
+|---|---|---|---|---|
+| smoke | 8,904 | 1.378129 | — | 2.275954e-02 |
+| coarse | 41,064 | 1.359846 | **−1.327%** | 4.827619e-03 (−78.8%) |
+| medium | 104,712 | 1.356669 | **−0.234%** | 1.921939e-03 (−60.2%) |
+
+**Converging, and fast.** Successive changes are −0.018283 then −0.003176, ratio **5.76**, so
+the error goes as **dof^−1.87**. Richardson-extrapolating puts the limit at **≈ 1.3560**, and
+`medium` is **0.049%** from it. Against `GATE_MESH_REL = 0.05` the coarse→medium step passes
+with **21× of margin**, on the same meshes where λ_min(K_t) fails it by twelve.
+
+**So M9 phase 3 has a quantity.** It is dimensionless, mesh-convergent, physically meaningful,
+constructible from existing functions with no new assembly, and costs 3.3 / 23.9 / 71.4 s at
+the three rungs. That is the whole of what item (1) set out to establish.
+
+##### What this does NOT establish — four things, before anything is built on it
+
+1. **One design, one phase.** `best_solution` at phase 0.0 only. §7 measured λ_min's phase
+   spread at 0.66–1.59%; the load factor's is **unmeasured**, and so is its spread across the
+   16 elites. Both are needed before a threshold or a phase aggregation rule.
+2. **THE LOAD FACTOR IS ≈ 1.36, AND THAT IS ALARMINGLY TIGHT.** It says this wheel buckles at
+   36% above service load. That is either a real and important design finding — the Euler
+   `buckling` proxy has been reporting ratios of 0.066–0.087 and would not have shown it — or
+   the `K_g ≈ K_t − K_0` approximation is off. **Do not report 1.36 as a safety factor until
+   it is checked against something independent.** It is the most consequential number this
+   session produced and the least corroborated.
+3. **`K_g` is linearised about the SERVICE state, not the reference state.** Textbook
+   eigenvalue buckling prestresses `K_g` at a reference load and scales it linearly; this
+   forms it at the converged service state instead. For a load factor near 1 the two nearly
+   coincide, which is convenient here and would stop being true for a stiffer design.
+4. **Contact is excluded from `K_0` and `K_g`.** Buckling is computed on the bulk only, while
+   the load actually arrives through the contact patch. H1 puts the contact block at 2.6% of
+   the old quantity; its effect on the *load factor* is unmeasured.
+
+**Both hypotheses were worth running, and the cheap one paid twice.** H2 was always the more
+likely — h^1.94 to h^2.03 across nine refinements is a bulk discrete mode, not a localised
+penalty — but that was **inference from a scaling exponent**, and inference is what
+`stress_scale` was. H1 died in two minutes and its eigenvector diagnostic turned out to be
+positive evidence *for* H2 rather than mere absence of evidence against it; then H2's own
+setup surfaced H2(a), which no amount of reasoning about eigenvalue scaling would have found.
+
+Drivers: `eps_n_check.py` and `h2_check.py`, both in a scratchpad rather than `studies/` —
+one-question falsifications with no gate and no artifact anything should depend on. Their
+answers are these tables. Promoting `h2_check.py` into a real study driver is the FIRST
+piece of phase-3 work, because items 1–4 above all need it.
+
+**(2) PUT A NUMBER ON `MIN_WALL_MM`. The only item here that changes the WHEEL rather than
+the model.** §6 measured that all four thickness genes pin to the 2.0 mm floor at both
+production answers, so a manufacturing constant — not the FEA, not the deflection target, not
+the stress constraint — sets **4 of the 14 genes**, and every gram below 58.660 is on the far
+side of it. It sits on "The decision that is a human's" with **no quantification at all**,
+which is not a decidable state.
+
+  **The experiment: short descents at `MIN_WALL_MM` ∈ {1.6, 1.8, 2.0, 2.2}**, from the elite-10
+  answer rather than from `rank:10`, and **well short of 300 steps.** Measured off elite 10's
+  record, distance from its own final loss: **step 100 is +0.190%, step 125 +0.096%, step 150
+  +0.048%, step 200 +0.011%.** So ~125 steps costs ~1.6 h and resolves to a tenth of a
+  percent — far finer than a 0.2 mm floor change will move the mass. That turns "should the
+  floor come down?" into "0.2 mm of floor buys N grams."
+
+  **`MIN_WALL_MM` is NOT a parameter, and this is a code change before it is a run.** It is
+  `src/wheel_fea.py:219`, and it is consumed at **import time** by the `GENE_BOUNDS` list
+  literal at lines 259–262 (`t0`/`t1`/`t2`/`t3` low bounds). So it cannot be varied inside one
+  interpreter without rebuilding the bounds; the sweep is either four separate processes with
+  the constant overridden per process, or a small change making the floor an argument that
+  `GENE_BOUNDS` is built from. **Prefer the latter and drive the sweep from one place** —
+  editing a module constant four times by hand is how a run gets misattributed to the wrong
+  floor. Four points, sequential and capped, is ~6.5 h; see the memory rules below.
+
+**(3) DECIDE WHETHER THE PRODUCTION GENOME BECOMES THE SHIPPED GENOME. A human's call, and
+it is the pending consequence of §6.** `best_solution.json` is still the GA optimum for the
+BEAM surrogate — the genome this very file calls "a bad guide to the FEA," sitting at
+**−25.43% deflection error** — and **both environments and every study driver read it**.
+`stage3_prod_best_elite10.json` is 58.660 g, inside the feasible box on both constraints,
+with every barrier at exactly 0.0.
+
+  Promoting it is not a file copy. It needs `make export` (~4 min) and then a look at whether
+  the hub fillets still build on the new geometry: §3's ladder and §5's cap are both
+  genome-dependent, the new `R_hub` is **0.9666 against a cap of 1.0400** (under it, which is
+  the good direction), and `kt_error_pct`'s +73.4% was set by a shallow near-cusp corner the
+  cap does not model. Nobody has looked at 58.660 g of geometry in OCC. Expect the manifest
+  to move, and re-measure rather than assume.
+
+**HOUSEKEEPING, stated because it was skipped rather than passed.** `make test` has NOT been
+run since §7's changes to `studies/study_m9.py`. Nothing outside the `Makefile` imports that
+module — verified by grep over `tests/`, `src/` and the `Makefile` — and `--quick` exercised
+every changed path before the full run, so the exposure is close to nil. It is still the
+repo's gate and it is still unrun. ~22 min.
+
+#### What just closed, in one line each
+
+- **(a) `R_hub` vs the buildable ceiling — §5.** The constraint learned the cap rather than
+  the bound coming down to 1.1: the void is a function of arrival angle and `t0`, spanning
+  **0.9898–1.5265 mm** across the 16 elites, so a fixed bound would have been right for
+  exactly one genome. The 4.0 box bound is untouched.
+- **(b) The production multi-start descent — §6.** `make prod9` / `make prod10`. **73.689 →
+  58.715 g (elite 9, −20.3%)** and **70.937 → 58.660 g (elite 10, −17.3%)**, every barrier at
+  exactly 0.0, deflection error inside ±0.3% on both. The two land **0.09% apart in mass with
+  1.8 mm of daylight between their spoke centerlines** — the optimum is a **valley, not a
+  well**, so more starts are pointless and the leftover geometric freedom is the interesting
+  part.
+- **(c) `make m9` in full — §7.** **OVERALL: FAIL, and the failure is the result.** λ_min(K_t)
+  has no mesh-independent value; phase 3 cannot be built as specified. `buckling` stays inert,
+  and that is now a deliberate hold rather than an oversight — item (1) above is how it gets
+  unblocked.
+
+**THE MEMORY RULES STILL APPLY TO ANYTHING IN (2).** A descent at `coarse` with 4 workers
+sits flat at **~12.7 GB anonymous** with the fidelity check off; **two do not fit in 31 GB**,
+so starts run **SEQUENTIALLY** and **capped** (`systemd-run --user -p MemoryMax=20G`). §1's
+"two starts × 4 workers beats one start × 8" is CPU arithmetic that ignores memory, and
+acting on it is what took the desktop down. The 17 GB quoted there was measured with the
+fidelity check ON and before the `uniform` finding; `PROD_FIDELITY` now defaults to **0**.
+`--phase-scheme uniform` is a **correctness** setting for the run, not a preference — see §1.
 
 **The STEP consumer is Autodesk Inventor now, not Onshape.** Onshape was temporary. The
 `wheel.step` interop history in `wheel_step_export.py` is Parasolid's, and Inventor is a
@@ -262,6 +455,19 @@ measured; only the production run itself is open.
   different there. `make test` **391 passed** (384 before). Recommended CLI value for
   the production run below: `--fidelity-check-every 25` or `50` against
   `--fidelity-check-config medium`, adding roughly 49 or 24 minutes to an 11.77 h run.
+
+  **MEASURED, and that estimate was ~3× too low: one check costs 604.6 s (10.1 min).**
+  `settings.fidelity_check_solve_s` from the first production attempt, one call, `medium`
+  against a `coarse` run. So every-50 over 300 steps is 7 checks ≈ **1.2 h**, not 24 min,
+  and every-25 is ≈ 2.4 h. The estimate above assumed the check rides the phase pool; it
+  does not — `descend` builds `ev_fc` as a **wholly separate serial `Evaluator`**, on
+  purpose, so the check pays 8 phases end to end with no parallelism at all.
+
+  **It also costs ~3.4 GB, permanently.** That second `Evaluator` retains its own jit cache
+  and mesh for the life of the run, so the parent goes 4.5 → 7.9 GB across the FIRST check
+  and stays there. On a memory-bound box this is the first thing to turn off:
+  `--fidelity-check-every 0`, which is what `make prod9`'s `PROD_FIDELITY` exposes. The
+  check is a pure observation, so dropping it costs evidence, never trajectory.
 - **Then the production multi-start run.** Start from elites 9 and 10, not
   `best_solution.json` — that is a GA optimum for the BEAM surrogate, which M8a measured as a
   bad guide to the FEA, and it sits at −25.43% deflection error. The 16-elite spread is wide
@@ -278,6 +484,72 @@ measured; only the production run itself is open.
   16-core box, so **two starts × 4 workers beats one start × 8** and finishes the same
   budget sooner. Decide that against the machine it actually runs on.
 
+  **DO NOT DO THAT. The paragraph above is CPU arithmetic on a machine that runs out of
+  MEMORY first, and it was tried.** Measured on the 16-core / 31 GB box: one descent at
+  `coarse` with 4 workers holds **~17 GB anonymous** (parent ~4.5 GB with checks off, 7.9 GB
+  with them on; four workers ~3.3 GB each) and worker RSS was **still climbing** at step 5
+  (2.2 → 3.4 GB), so the steady-state ceiling is unknown. Two starts is ~34-42 GB against
+  31 GB of RAM and a 2 GB swapfile.
+
+  **That 17 GB is the WORST case and has since been beaten down to a flat ~12.7 GB** — it
+  was measured with `rqmc` (64 retained jit traces, see below) and the fidelity check ON
+  (+3.4 GB in the parent, permanently). With `--phase-scheme uniform` and
+  `--fidelity-check-every 0`, which is what §6's completed run used and what the `Makefile`
+  now defaults to, the footprint is flat rather than climbing and the ceiling is known.
+  **Two starts still do not fit** — 25 GB against 31 GB and a 2 GB swapfile leaves nothing
+  for the desktop — so the sequential rule stands on the smaller number too.
+
+  What that costs is not a slow run, it is **the desktop**: `systemd-oomd` kills the entire
+  `user@1000.service` slice when memory pressure holds above 50% for 20 s, which drops the
+  user to the login screen AND kills every run and terminal in that slice. The kernel OOM
+  killer is not involved and `dmesg` shows nothing — `journalctl -u systemd-oomd` is where
+  the evidence is. So on a memory-bound host: **run the starts one at a time, capped**, e.g.
+  `systemd-run --user --unit=wheel-prod9 -p MemoryMax=20G --collect make prod9`, which
+  inverts the failure — the kernel kills the run at its own cap instead of oomd killing the
+  session. `--workers` is then bounded by RAM/worker, not by cores.
+
+  **RESOLVED: S13's 47.6 s/eval is right, and `rqmc` re-tracing was the entire gap.**
+  Under `rqmc` the per-step cost wandered 132/130/128/**52** on one run and 180/135/132 on
+  another, which read like noise. Under `uniform`, on the same box and the same 4 workers:
+  step 0 is 177.8 s (tracing), then 55.3, 46.7, and a steady 44-47 s thereafter — median
+  **48.7 s**, and the last five steps at 46.3/46.4/47.4/44.9/44.4. **300 steps is ~3.8 h.**
+
+  So roughly **80 s of every `rqmc` step was JIT compilation, not solving.** The trace cache
+  below explains the wall clock and the memory with one mechanism; there was never a second
+  problem. Still read `settings.elapsed_s / n_objective_calls` off a run before projecting,
+  but S13's ladder travels once the phase set is fixed.
+
+- **THE PRODUCTION RUN MUST USE `--phase-scheme uniform`, AND THE REASON IS MEMORY.**
+  This is the finding that killed the first two production attempts, and neither
+  `--workers` nor the fidelity check is the lever on it.
+
+  `rqmc` — the DEFAULT, and what S13 and every projection above assumed — redraws the
+  stencil every step from the `n_sub`-point sub-lattice. Verified from a run record: step 0
+  drew phases at 2.812°, 6.562°, ... and step 1 drew 2.344°, 6.094°, ..., all different. So
+  a run visits `n_phase * n_sub` = **64 distinct phase values**, and `wheel_wheel.coord_fn`
+  keys its jit cache on `float(phase)` (`_COORD_FN_CACHE_MAX = 128`, FIFO), so **all 64
+  traces are retained and none is ever evicted**.
+
+  Measured: ~0.4 GB per retained trace. Worker RSS climbed 2.2 → 3.9 GB over three steps
+  while the parent sat flat at 4.5 GB, and the run peaked at **18.9 GB and was OOM-killed at
+  step 3**. The pool holds all 64 traces however the slots are divided, so **`--workers 2`
+  does not help** — it redistributes the same cache and saves only one process baseline.
+
+  **`uniform` was then measured and it holds.** The cache saturates at 8 traces after step
+  0, and the run sits FLAT at **12.73 GB anon through step 27** with `memory.events` all
+  zero — the 20 GB cap is never approached, rather than approached slowly. That is the
+  difference between a bounded phase set and an open one, and it is why this is a
+  correctness constraint on the run configuration rather than a tuning knob.
+
+  The jit cache was designed for WARMTH — M7 measured a miss at 0.774 s, which is why slots
+  are pinned to workers at all (§ the phase pool above). Nothing sized it against a stencil
+  that keeps producing new keys. `uniform` is not a workaround here: it is the scheme
+  `make m8bii1`'s end-to-end pooled-vs-serial check already ran on.
+
+  **What it costs is the randomised quadrature**, and that is a real change to how the
+  phase average is estimated, not a free win. It is a deliberate trade of variance
+  reduction for a run that can physically complete.
+
 ### 2. M9 — `lambda_min(K_t)` via LOBPCG, replacing the Euler `buckling` proxy
 
 **This milestone promoted M9.** `buckling` has a gradient of exactly 0.0 and is asserted zero
@@ -286,6 +558,21 @@ is **the only constraint left in the objective that a gradient method cannot act
 diverged tangent is the only real buckling signal the run has today.
 
 **M9 phase 1: all three new tests pass, including contact penalty smoothing.**
+
+**M9 PHASE 2 HAS RUN IN FULL (§7), AND §0(1) THEN FOUND WHY IT FAILED — THIS SECTION'S TITLE
+IS NOW WRONG.** `lambda_min(K_t)` diverges under refinement at a clean h², 28.8× across the
+ladder against 1.02× across a 4× load ladder, with an independent `eigsh` cross-check
+(3.4e-10) ruling out the solver. The cause is that **there is no `K_t`**:
+`wheel_contact_problem` defaults to `kinematics="linear"`, so the displacement threaded into
+`assemble_stiffness` is ignored — measured at exactly 0.000e+00 — and the quantity is
+`lambda_min(K_linear + K_contact)`.
+
+So the paragraph above still describes the *problem* correctly — `buckling` is inert and a
+diverged tangent is the only real signal today — but **"via LOBPCG" was never the hard part
+and the standard eigenproblem was the wrong question.** The replacement is the generalised
+`det(K_0 + λ·K_g) = 0` under SVK kinematics, whose load factor **is** mesh-convergent
+(1.3560 in the limit, `medium` within 0.049%, 21× inside `GATE_MESH_REL`). §0(1) H2 is the
+measurement and lists the four things it does not yet establish.
 
 ### 3. ~~The hub fillet~~ — DONE as geometry, and it turned up a bound the genome cannot honour
 
@@ -499,6 +786,262 @@ study drivers plus `tests/test_mesh.py` read it as a feasibility filter. Retirin
 48%-of-the-loss term inside a bound fix is how the `stress_scale` problem happened. The
 `sweep` section of `make hubcap` prints the head-to-head that would justify it.
 
+### 6. §0(b) — the production descent. DONE, BOTH STARTS. It found a 20% lighter wheel.
+
+`make prod9`, `--start rank:9 --steps 300 --workers 4 --phase-scheme uniform
+--fidelity-check-every 0`, `coarse`, 8 phases, seed 0. Record: `stage3_prod_elite9.json`,
+genome `stage3_prod_best_elite9.json`. **7051.5 s for 150 objective calls = 47.0 s per
+evaluation**, which is S13's 47.6 s ladder entry to within 1.3% — the projection travelled.
+
+**Stopped by the operator at step 149 of 300, on convergence.** Loss improved 240.96 over
+steps 0–50, 0.274 over 50–100 and 0.031 over 100–149; the last nine steps moved it 3.8e-03.
+Zero rejects, zero abandoned steps, `events` empty.
+
+| | step 0 (elite 9 as scored) | step 149 | |
+|---|---|---|---|
+| loss | 291.036 | **49.771** | |
+| mesh mass | 73.689 g | **58.715 g** | **−20.3%** |
+| axle drop, mean | 2.0491 mm | 1.9942 mm | **+2.46% → −0.29%** |
+| stress utilisation | 0.5444 | 0.6018 | feasible at ≤ 1.0 |
+| `hub_overlap` | 107.736 | **0.0** | |
+| `fillet_cap` | 118.184 | **0.0** | |
+| `Kt_hub` | 2.0978 | 2.0627 | |
+| hub fillet cap | 1.1061 mm | 1.0400 mm | thickness-binding |
+| `R_hub` effective | 1.1061 (**at** cap) | 0.9106 (**under** cap) | |
+| buckling ratio | 0.0871 | 0.0663 | |
+| min scaled Jacobian | 0.8892 | 0.8892 | |
+
+**Every barrier in the objective is exactly 0.0 at the answer.** `x_order`, `hub_overlap`,
+`fold`, `arrival`, `fillet`, `fillet_cap`, `buckling`, `min_sj`, `stress`, `phase_ripple` —
+all of them. Three terms are left: **mass 48.259 (96.96% of the value, 44.4% of the gradient),
+deflection 0.0214 (0.04% of the value, 46.5% of the GRADIENT), smoothness 1.491 (3.0% / 9.2%)**.
+
+That split is the whole result. **Deflection is worth four hundredths of a percent of the loss
+and nearly half of its gradient**: it is not paying for anything, it is *holding mass up*. The
+descent is riding the deflection constraint down to the lightest wheel that still meets it,
+which is exactly the regime §1 said the run would enter — "19.6% of the loss at the shipped
+genome against deflection's 61.3%, and that ratio inverts once deflection is met."
+
+**THE FOUR THICKNESS GENES ALL SATURATE AT THE LOWER BOUND, and that is the finding to argue
+about.** `final.bound_saturation` is `t0, t1, t2, t3` all `low` at **2.0**, which is
+`MIN_WALL_MM`. Minimising mass under a deflection constraint makes the wheel **as thin as it
+is allowed to be everywhere**, and buys its stiffness back entirely from the eight centerline
+genes. So the reported 58.715 g is not "the lightest wheel in this genome" — it is **the
+lightest wheel at the 2.0 mm manufacturing floor**, and the floor, not the physics, is what
+set four of fourteen genes. Whether 2.0 mm is the right floor for the actual process is a
+human's question, and it is now worth about 20% of the mass. It belongs on the list below.
+
+**§5 earned its place here.** Elite 9 started **above** its buildable hub fillet cap —
+`fillet_cap` was 118.18, the second-largest term in the starting loss at 40.6% — and the
+descent drove `R_hub` from 1.1061 (pinned at the cap) to 0.9106, comfortably under a cap that
+had itself moved to 1.0400 as `t0` thinned. Without §0(a) this run would have spent 300 steps
+buying a fillet the part cannot build. `hub_overlap` went 107.74 → 0.0 the same way, which
+also answers §5's open question in one direction: that term is **satisfiable**, not binding at
+the optimum, so retiring it is still optional rather than urgent.
+
+### Elite 10 ran the full 300 steps, and the answer is a FLAT VALLEY, not a point
+
+`make prod10`, same flags, a clean 300 from `rank:10` — the first attempt had been stopped at
+step 83, well short of converged. **13656.6 s / 301 calls = 45.4 s per evaluation**, zero
+rejects, zero abandoned steps, `events` empty, `Result=success` at a **13.7 GB** unit peak
+against the 20 GB cap and **0 B** swap. Written by `main()`, so unlike elite 9's this genome
+needed no reconstruction (`genome_hash eddcfc2`).
+
+| | step 0 (elite 10 as scored) | step 300 | |
+|---|---|---|---|
+| loss | 308.847 | **49.7376** | |
+| mesh mass | 70.937 g | **58.660 g** | **−17.3%** |
+| axle drop, mean | 2.0379 mm | 1.9941 mm | **+1.90% → −0.30%** |
+| stress utilisation | 0.5444 | 0.5904 | feasible at ≤ 1.0 |
+| `hub_overlap` / `fillet_cap` | 159.194 / 87.010 | **0.0 / 0.0** | |
+| `R_hub` effective | 1.2251 (**at** cap) | 0.9666 (**under** cap 1.0400) | |
+
+Same shape of answer as elite 9: every barrier exactly 0.0, all four thickness genes pinned
+low at 2.0, and the surviving split **mass 96.94% of the value / 44.0% of the gradient,
+deflection 0.04% / 46.7%, smoothness 3.0% / 9.3%**. Converged hard — the last 50 steps moved
+the loss 7e-04 and `|grad|` sat at 94.4 from step 100 onward.
+
+**Now the comparison, and it is the point of running a multi-start at all:**
+
+| | elite 9 (step 149) | elite 10 (step 300) | gap |
+|---|---|---|---|
+| loss | 49.7706 | **49.7376** | −0.033, **0.066%** |
+| mesh mass | 58.7145 g | **58.6604 g** | −0.054 g, **0.092%** |
+| axle drop, mean | 1.99415 mm | 1.99408 mm | 0.004% |
+| stress utilisation | 0.6018 | 0.5904 | |
+| `Kt_hub` | 2.0627 | 2.0223 | |
+
+**Two starts, same mass to 0.09% — and GENUINELY DIFFERENT GEOMETRY.** This is not one basin
+reached twice. The centerline genes disagree by far more than the objective does:
+
+```
+cy4   17.131 vs 15.312   -1.819 mm   10.6%
+cx3   24.328 vs 26.011   +1.683 mm    6.9%
+R_rim  2.339 vs  2.749   +0.411 mm   17.6%
+cy2   23.586 vs 24.580   +0.994 mm    4.2%
+t0..t3   2.000 vs 2.000       0.000    0.0%   <- both on the floor
+```
+
+So the optimum is a **valley, not a well**: at the 2.0 mm wall floor, mass is essentially the
+spoke path length, deflection is the binding constraint, and there is a **family** of
+centerlines with the same length that meet it. The 14-gene space is *underdetermined* by
+(mass, deflection) — which is exactly why two starts 105 deflection points apart in Stage 2
+land 0.09% apart in mass with 1.8 mm of daylight between their spokes.
+
+**What that means for the multi-start: it was worth running, and it says more starts are
+not.** A third start would be expected to find a third point in the same valley at the same
+mass. The remaining freedom is not something the mass objective can spend — it is free
+capacity to satisfy something the loss is not currently asking for (buckling margin,
+manufacturability, fatigue at the hub). That is a better argument for M9 than anything in §2.
+
+**The honest caveat: this is not apples to apples, and it slightly favours elite 10.** Elite 9
+stopped at 149 while elite 10 ran to 300. At the SAME step the ordering is already elite 10's
+— its step-150 loss is 49.7613 against elite 9's 49.7706 at 149 — and it then improved a
+further 0.024 over steps 150–300. Extrapolating elite 9's remaining 150 steps at elite 10's
+rate puts it near 49.747, i.e. **~0.01 of loss and ~0.02 g behind**, not ahead. The
+conclusion is unchanged either way, but the 0.09% is an upper bound on the gap rather than a
+measurement of it. Closing it properly costs one more 3.8 h `make prod9`, and nothing on this
+list depends on the answer.
+
+**Both records carry `workers`, `cpu_count` and `phase_scheme` in `settings`**, so the
+47.0 s can be read on another machine. Memory held flat under a 20 GB `systemd-run` cap with
+no `memory.events` and no oomd kill, which is the `uniform` + fidelity-off configuration §1
+argues for and not a coincidence.
+
+**One artifact correction.** `stage3_prod_best_elite9.json` is reconstructed by hand rather
+than written by `main()`, because the run was stopped rather than completed — that is stated
+inside the file. An earlier reconstruction took **step 148** (loss 49.771005); the record's
+argmin over all 150 rows is **step 149** (loss 49.770621) and the record's own `best` block
+already carried it with the full metric set. The file now carries step 149. The 3.8e-04
+difference moves no gene past the fourth decimal; it is corrected because a file named `best`
+should be the argmin, not because the design changed.
+
+### 7. §0(c) — `make m9` in full. RAN. **OVERALL: FAIL, and the failure is the result.**
+
+2930.7 s (49 min), 3.1 GB peak against a 22 GB cap — `fine` is 261k dof but this is a 2D
+problem and memory was never the constraint. All four sections completed; `study_m9.json` is
+whole (`complete: true`). Every section reports FAIL, and **they do not fail for the same
+reason** — one is physics and three are a placeholder constant. Separating those is the work.
+
+> **SUPERSEDED IN ITS DIAGNOSIS, NOT IN ITS NUMBERS — read §0(1) H2(a) with this section.**
+> Everything measured below stands. What changed is *why*: `wheel_contact_problem` defaults
+> to `kinematics="linear"`, so `prob.nonlinear` is False and the displacement this driver
+> threads into `assemble_stiffness` is **ignored — measured at exactly 0.000e+00 change**.
+> The quantity below is therefore `λ_min(K_linear + K_contact)`, not a tangent eigenvalue at
+> all, and it contains no geometric stiffening by construction. The h² scaling, the 1.022×
+> load response and the global eigenvector are not three findings — they are one defect seen
+> from three sides. A generalised load factor formed under SVK kinematics **does** converge
+> (1.3560 in the limit, `medium` within 0.049%); §0(1) H2(b) is that measurement.
+
+#### THE FINDING: `lambda_min(K_t)` has no mesh-independent value. It scales as h².
+
+The `fine` rung had never been run. It is what makes this measurable:
+
+| best_solution, phase 0 | dof | λ_min |
+|---|---|---|
+| smoke | 8,904 | 2.275954e-02 |
+| coarse | 41,064 | 4.827619e-03 |
+| medium | 104,712 | 1.921939e-03 |
+| **fine** | **261,864** | **7.898831e-04** |
+
+Nine refinement steps across three designs give **λ ~ dof^−0.970 to dof^−1.014**, i.e.
+**h^1.94 to h^2.03**. That is h², to within 3%, every time, with no sign of settling.
+`last_pair_rel` is 0.589 against `GATE_MESH_REL = 0.05` — off by twelve, and flat.
+
+**It is not a solver artifact, and that is the load-bearing check.** `measure()` runs an
+independent `spla.eigsh` shift-invert reference at the first and last rungs, and it agrees
+with LOBPCG to **2.668e-12 at smoke and 3.377e-10 at fine**. The number is genuinely
+`λ_min(Kr)`. What diverges is the *quantity*, not the computation of it.
+
+**Three spreads, and they settle the question:**
+
+```
+mesh ladder, ONE design, smoke -> fine        28.8x
+design space, 16 designs at fixed mesh         1.457x
+load ladder, ONE design, 4x the force          1.022x
+```
+
+**λ_min varies 28.8× with element size, 1.46× across the entire Stage-2 design space, and
+1.02× across a 4× load range.** A buckling indicator is supposed to be dominated by load and
+approach zero as the structure approaches its critical point. This one is dominated by the
+mesh and is nearly indifferent to force — and over that 4× ladder it *rises* (4.723957e-03 →
+4.827619e-03), which is the wrong sign for compressive geometric softening. It also tracks
+stiffness rather than stability: against `1/axle_drop` over the 16 designs the correlation is
++0.91, though that is carried by one outlier (elite_11, axle drop 0.4305 against ~2.5) and
+falls to **+0.45** without it, so read it as suggestive rather than established.
+
+**This is M4 repeating, and §2 is the thing it lands on.** M8b-i.6 rewrote the stress
+constraint because `c = max/pnorm` was anchored to a crack-tip singularity that diverges
+under refinement. **M9 phase 3 proposes promoting λ_min(K_t) to a constraint with a margin, a
+threshold and a phase aggregation rule.** A threshold calibrated against this number would be
+`stress_scale` a second time: right at the mesh it was fitted on and meaningless at any other.
+**Phase 3 is BLOCKED on a reformulation, not on more measurement.**
+
+The likely cause is the formulation rather than the code. λ_min(K_t) is solved as a
+**standard** eigenproblem, so it carries the dimensions of stiffness and its spectrum shrinks
+with element size — h² is exactly what an unnormalised discrete operator's smallest eigenvalue
+does. Classical linear buckling is **generalised** — `det(K_0 + λ·K_g) = 0` — and returns a
+dimensionless *load factor* that is mesh-convergent by construction. That is the shape of the
+fix, and it is a change to what is being asked, not to how well it is answered. **This is a
+hypothesis from the scaling, not a measured result**, and it should be checked at two rungs
+before anything is built on it.
+
+#### The other three FAILs are one unmeasured constant, and Phase 2 existed to measure it
+
+`phase`, `load` and `design_space` have **zero error rows and every λ finite**. They fail
+solely on `lobpcg_converged`, which is `residual_rel <= wheel_adjoint.LOBPCG_RESIDUAL_REL`,
+and that constant is **1.0e-7** carrying this comment:
+
+```
+LOBPCG_MAXITER = 200      # unmeasured starting point — Phase 2 measures iteration counts
+LOBPCG_TOL = 1.0e-8       # explicit Phase 2 residual target; measured below
+```
+
+So the flag is not broken — **it is reporting that a self-declared placeholder was
+optimistic, which is one of the things this study was for.** Measured, achievable
+`residual_rel` degrades with problem size:
+
+| | dof | residual_rel |
+|---|---|---|
+| smoke | 8,904 | 7e-09 – 1.5e-07 |
+| coarse | 41,064 | 7.7e-08 – 9.4e-07 |
+| medium | 104,712 | 1.0e-07 – 2.7e-06 |
+| fine | 261,864 | 2.5e-06 – 6.3e-06 |
+
+1.0e-7 is met at `smoke` and essentially nowhere else; 5 of 24 mesh rows, 13 of 39 phase rows,
+2 of 16 design rows. **Do not "fix" this by loosening the constant to whatever passes** — that
+is tuning a gate until it agrees, which §5 already refused once. What the number should be
+depends on what precision the *constraint* needs, and there is no constraint yet because of
+the finding above. Record it, leave it, and set it when phase 3 has a formulation.
+
+`LOBPCG_MAXITER = 200` is NOT binding — iteration counts came in at 13–22 everywhere,
+including `fine`. That half of the placeholder is fine.
+
+#### What the study measured that IS usable
+
+- **Phase dependence of λ_min is mild**: std/mean over 13 reference phases is **0.66% /
+  1.15% / 1.59%** on the three designs, against the stress ripple's 9.8%. The 4-phase
+  production stencil catches the reference min to 0.5–1.9% and the max to 1.7–4.1%. If a
+  reformulated eigenvalue behaves similarly, `PRODUCTION_PHASES = 4` will be enough.
+- **All 16 elites are finite and well-conditioned** at `coarse`, spread 1.457×, no solver
+  refusals anywhere in 91 measurements.
+- **`fine` is affordable**: 143–210 s per solve, 3.1 GB peak. Nothing about the 261k-dof rung
+  needs special handling, which was unknown before this run.
+
+#### Driver changes this run required, and why they are not cosmetic
+
+`run_mesh` had **no `try` around its rows** while `run_load` and `run_design_space` did, and
+`run_mesh` is both the first section and the only one that drives `fine`. Worse, the report
+was written **once, at the end of `main()`** — so any failure erased every completed section,
+and a cgroup SIGKILL at the cap is not catchable by any `try`. Both are fixed: rows are
+guarded and a refused row is recorded and **fails** the section (`n_error_rows`, plus an
+explicit error check in `pass`) rather than discarding the rungs that did converge; and the
+report is **checkpointed after every section**, with `complete` and `sections_complete` so a
+partial file can never be misread as a verdict (`pass` is absent until the run is whole).
+`_series` skips error rows, so a truncated ladder cannot pass vacuously on `len < 2`.
+Validated on `--quick` before the full run. This is the same precedent §1 records for
+study_stage3's ladder, applied to the driver that needed it more.
+
 ---
 
 ## The decision that is a human's
@@ -510,6 +1053,18 @@ designs meeting both targets.
 
 Adding rim-band genes to *reach* feasibility is no longer justified. Adding them to reduce
 mass, or to buy margin, is a different argument and needs to be made on its own terms.
+
+**And §6 added one to the list, with a number attached: `MIN_WALL_MM = 2.0`.** The production
+descent drives **all four** thickness genes onto that floor and leaves them there, so the
+2.0 mm wall is what sets 4 of the 14 genes at the answer — not the FEA, not the deflection
+target, not the stress constraint. Every gram below 58.660 is on the other side of it. This
+is the first item on this list that is no longer a preference: it is a manufacturing
+parameter that is now provably binding, and it is worth asking the process what it can
+actually hold before asking the optimizer for anything else.
+
+**It is still not decidable, because nobody has measured what the floor is worth.** §0(2)
+is the sweep that would fix that — it is the only open item that changes the wheel rather
+than the model, and it should probably run before this list is revisited at all.
 
 ---
 
@@ -551,7 +1106,13 @@ make m8bi5                                                # S11 + S12, ~2 h 31 m
 make m8bi6                                                # the p sweep, ~14 min
 make m8bii1                                               # S13, the phase pool, ~30 min
 make hubcap                                               # the hub-fillet cap vs OCC, ~10 min
-make test                                                 # 396 tests, ~22 min
+make m9                                                   # M9 phase 2 in full, ~49 min.
+                                                          # 3 designs x smoke/coarse/medium/fine
+                                                          # x 13 phases.  3.1 GB peak; FAILS by
+                                                          # design now -- see §7, exit 1 is the
+                                                          # verdict, not a crash
+make prod9 / make prod10                                  # §0(b), one start each, SEQUENTIAL
+make test                                                 # 406 tests, ~22 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
@@ -565,6 +1126,32 @@ sizes the pool to `min(n_phase, cpu_count)`, `N` is literal and is the only memo
 
 The run record carries `workers` and `cpu_count` in its `settings`, because a wall-clock
 number without them cannot be read on another machine.
+
+**On a memory-bound host, launch a production run CAPPED and DETACHED.** `systemd-oomd`
+kills the whole `user@1000.service` slice at 50% memory pressure for 20 s, which drops the
+user to the login screen and takes every terminal and run in that slice with it — the
+kernel OOM killer is not involved, so `dmesg` is empty and `journalctl -u systemd-oomd` is
+where the evidence is. A cgroup cap inverts that: the kernel kills the run at its own
+limit instead.
+
+```bash
+systemd-run --user --unit=wheel-prod9 -p MemoryMax=20G --collect \
+    --working-directory=$PWD /usr/bin/make prod9
+```
+
+`systemctl --user show wheel-prod9.service -p MemoryCurrent -p ActiveState` reads its
+state, and the unit's journal records the peak and the verdict
+(`Failed with result 'oom-kill'`, `18.9G memory peak`). It also survives the terminal
+closing, which a plain child process does not.
+
+**The `prod` targets run the interpreter with `-u`, and that is not cosmetic.** Python
+block-buffers stdout when it is not a TTY, and under `systemd-run` it is a journal socket —
+so without `-u` a detached descent emits **nothing** to `journalctl` until the buffer fills
+or the process exits. Measured on the elite-10 re-run, which predates the flag: 162 steps
+in, **zero** `[step ...]` lines in the unit's journal. That makes `-f` useless for progress
+and hides a traceback until exit. On a run that predates the flag, progress has to be read
+off the clock instead — `ExecMainStartTimestamp` against ~180 s for step 0 (tracing) plus
+~47 s per step thereafter — and `MemoryCurrent` is the only live health signal.
 
 Run a study driver directly and it needs `src/` on the path:
 `PYTHONPATH=src .venv-opt/bin/python studies/study_stage3.py`. The Makefile exports it, so
@@ -631,3 +1218,30 @@ shape** rather than this machine or this commit. They are the calibration behind
 `occ_limit` and `t0_sweep` blocks are the evidence and should stay reproducible. The wall
 clock (583 s for three designs plus the eight-point sweep) is dominated by OCC fillet probes
 — roughly 220 of them per design — and does travel between machines only loosely.
+
+`stage3_prod_elite9.json` / `stage3_prod_elite10.json` are §6's, and they are the only
+artifacts here that are a **SEARCH RESULT** rather than a gate, a calibration or a machine
+description — nothing in them passes or fails. They sit at the repo root beside
+`best_solution.json` and `stage2_elites.json` because that is where the provenance chain
+lives and they are the next link in it. `stage3_prod_best_elite9.json` is the genome, and
+it is the one file in the tree written by hand rather than by the code that names it — §6
+says why and the file says so itself. `stage3_prod_best_elite10.json` (`eddcfc2`) was
+written by `main()` at the end of a completed 300-step run and needs no such note; **it is
+the better of the two answers and the one to carry forward.**
+
+`studies/study_m9.json` is §7's, and it is the one artifact here whose **FAIL is the
+deliverable**. `make m9` exits 1 by design: the `mesh` section fails on physics (h²
+divergence) and the other three on `LOBPCG_RESIDUAL_REL = 1e-7`, a constant that says in its
+own comment that Phase 2 was meant to measure it. Do not make this file pass by loosening
+either gate. It also carries `complete`, `sections_complete` and per-section checkpoints, so
+a killed run leaves a readable partial with no `pass` key rather than nothing — the `fine`
+rung is 261k dof and had never been run when the guard was written. It turned out to cost
+3.1 GB and 143–210 s per solve, so the guard was not needed this time; it is kept because
+that was not knowable in advance and is now the only record of it.
+
+The elite-9 record stops at step 149 and the elite-10 record runs to 300, so **the two are
+not directly comparable step for step** — §6 states the size of that asymmetry and which way
+it leans. Neither file is a gate: re-running either produces a different wall clock and,
+because §1's S13 note applies, a trajectory that may differ in its last bits. What should
+reproduce is the *shape* of the answer — every barrier zero, four thicknesses on the floor,
+mass ~97% of the loss against deflection ~46% of the gradient.
