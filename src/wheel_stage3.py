@@ -637,6 +637,12 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
                      # number nobody on another machine can compare against.
                      "workers": getattr(getattr(ev, "pool", None), "n_workers", 0),
                      "cpu_count": os.cpu_count(),
+                     # Read off the module rather than passed in, so the record cannot
+                     # disagree with the box that was actually descended.  Same argument
+                     # as workers/cpu_count one line up: a MASS without the wall floor
+                     # that produced it is as unreadable as a wall clock without its
+                     # machine, and these runs pin all four thickness genes to it.
+                     "min_wall_mm": float(W.MIN_WALL_MM),
                      # Same reasoning as workers/cpu_count: what a run's fidelity checks
                      # cost is unreadable without the policy that produced it.
                      "fidelity_check_every": fidelity_check_every,
@@ -845,6 +851,11 @@ def main():
                          "'medium' against a primary --config coarse (2.8x coarse, not "
                          "the 4x once budgeted — see PLAN.md); required if "
                          "--fidelity-check-every is nonzero")
+    ap.add_argument("--min-wall", type=float, default=W.MIN_WALL_MM,
+                    help=f"printable wall floor in mm (default {W.MIN_WALL_MM}), the low "
+                         f"bound on t0..t3. Applied BEFORE the bounds are read, so it "
+                         f"changes the box this descent projects into. A start genome "
+                         f"below a raised floor is projected up onto it.")
     ap.add_argument("--start", default="best", help="best | rank:N | all")
     ap.add_argument("--genome", default="best_solution.json")
     ap.add_argument("--elites", default="stage2_elites.json")
@@ -852,6 +863,15 @@ def main():
     ap.add_argument("--out", default="stage3_run.json")
     ap.add_argument("--best-out", default="stage3_best.json")
     args = ap.parse_args()
+
+    # BEFORE `bounds_arrays`, and before `start_points` normalises anything against them.
+    # Every consumer in this tree reads the bounds through `wg.bounds_arrays(W.GENE_SPACE)`
+    # inside a function rather than snapshotting them at module scope, so setting the floor
+    # here reaches `descend`, `objective(normalized=True)`'s chain rule and the record's
+    # saturation report alike.  Pool WORKERS need nothing: they receive physical genes and
+    # never touch the box (`wheel_pool_worker.run_phase`).
+    if args.min_wall != W.MIN_WALL_MM:
+        W.set_min_wall(args.min_wall)
 
     low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
     starts = start_points(args.start, args.genome, args.elites)
