@@ -248,6 +248,29 @@ def test_a_stuck_run_stops_and_says_so(z0):
         "unable to move even once the refusals stopped")
 
 
+def test_the_run_record_carries_the_wall_floor_it_actually_descended():
+    """A MASS is unreadable without the floor that produced it — the production descents
+    pin all four thickness genes to it, so the reported grams are "the lightest wheel at
+    this floor" rather than "the lightest wheel".  The field is read off the module at
+    record time, so it cannot disagree with the box the descent projected into; a default
+    baked in at import would report 2.0 for every arm of the sweep.
+    """
+    saved = [(g["low"], g["high"]) for g in W.GENE_SPACE]
+    min_wall = W.MIN_WALL_MM
+    try:
+        W.set_min_wall(1.6)
+        low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+        z = wg.normalize(so3.load_genes(), low, high)
+        rec = S3.descend(z, CFG, steps=1, n_phase=N_PHASE, scheme="uniform",
+                         verbose=False)
+        assert rec["settings"]["min_wall_mm"] == 1.6
+    finally:
+        for g, (lo, hi) in zip(W.GENE_SPACE, saved):
+            g["low"], g["high"] = lo, hi
+        W.MIN_WALL_MM = min_wall
+        W._refresh_gene_arrays()
+
+
 def test_the_run_record_carries_the_iterate_and_the_gradient(z0):
     """S3 and S4 reconstruct the projection and the scale policy offline, which is only
     possible if every step row records `z` and `grad` rather than their norms."""

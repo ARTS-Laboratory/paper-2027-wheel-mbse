@@ -779,23 +779,61 @@ _GENE_HIGH  = np.array([g["high"] for g in GENE_SPACE])
 _GENE_RANGE = _GENE_HIGH - _GENE_LOW
 
 
+def _refresh_gene_arrays():
+    """Re-snapshot the three module arrays from GENE_SPACE.
+
+    They are snapshots taken at import, and two callers read THEM rather than GENE_SPACE:
+    `adaptive_gaussian_mutation` clips offspring to `_GENE_LOW`/`_GENE_HIGH` (:690) and
+    `bound_saturation_report` measures against them (:700).  So any setter that edits
+    GENE_SPACE alone leaves the GA silently enforcing the bound it was told to drop.
+    Every bound setter below ends here, so that failure mode has one place to not happen.
+    """
+    global _GENE_LOW, _GENE_HIGH, _GENE_RANGE
+    _GENE_LOW   = np.array([g["low"]  for g in GENE_SPACE])
+    _GENE_HIGH  = np.array([g["high"] for g in GENE_SPACE])
+    _GENE_RANGE = _GENE_HIGH - _GENE_LOW
+
+
 def set_cy_bound(bound_mm):
     """Widen (or narrow) the lateral half-range of the four interior Bezier control
     points, keeping every derived array in step.
-
-    These three module arrays are snapshots of GENE_SPACE taken at import.  Mutating
-    GENE_SPACE alone would leave `adaptive_gaussian_mutation` clipping offspring to the
-    OLD limits (:690) and `bound_saturation_report` measuring against them (:700), so
-    the GA would silently keep the bound it was told to drop.
     """
-    global CY_BOUND_MM, _GENE_LOW, _GENE_HIGH, _GENE_RANGE
+    global CY_BOUND_MM
     CY_BOUND_MM = float(bound_mm)
     for idx in (1, 3, 5, 7):                      # cy1, cy2, cy3, cy4
         GENE_SPACE[idx]["low"]  = -CY_BOUND_MM
         GENE_SPACE[idx]["high"] =  CY_BOUND_MM
-    _GENE_LOW   = np.array([g["low"]  for g in GENE_SPACE])
-    _GENE_HIGH  = np.array([g["high"] for g in GENE_SPACE])
-    _GENE_RANGE = _GENE_HIGH - _GENE_LOW
+    _refresh_gene_arrays()
+
+
+def set_min_wall(mm):
+    """Move the printable wall floor — the LOW bound on all four thickness genes.
+
+    `MIN_WALL_MM` is consumed by the `GENE_SPACE` literal at IMPORT time (:259-262), so
+    without this the floor cannot be varied inside one interpreter at all: a sweep would
+    have to be one process per floor with the constant edited by hand, which is how a run
+    gets misattributed to the wrong floor.
+
+    This is a measurement instrument rather than a tuning knob.  The Stage-3 production
+    descents drove all four thickness genes onto this floor and left them there, so the
+    constant — not the FEA, not the deflection target, not the stress constraint — sets
+    4 of the 14 genes at the optimum, and every gram below the reported mass is on the
+    far side of it.  Varying it is what turns "should the floor come down?" into
+    "0.2 mm of floor buys N grams".
+    """
+    global MIN_WALL_MM
+    floor = float(mm)
+    ceilings = [GENE_SPACE[idx]["high"] for idx in (8, 9, 10, 11)]
+    if not floor > 0.0 or floor >= min(ceilings):
+        raise ValueError(
+            f"min wall {floor} mm must be positive and strictly below the tightest "
+            f"thickness ceiling ({min(ceilings)} mm, on t3) — otherwise the box that "
+            f"gene lives in is empty or inverted, and every genome in it is invalid.")
+    MIN_WALL_MM = floor
+    for idx in (8, 9, 10, 11):                    # t0, t1, t2, t3
+        GENE_SPACE[idx]["low"] = MIN_WALL_MM
+    _refresh_gene_arrays()
+
 
 def adaptive_gaussian_mutation(offspring, ga_instance):
     """
@@ -1177,10 +1215,18 @@ if __name__ == "__main__":
                              f"points (default {CY_BOUND_MM}). The v2.1 winner has cy1 "
                              f"and cy3 pinned at this bound, so the recorded optimum is "
                              f"a boundary optimum — widening it is a real experiment.")
+    parser.add_argument("--min-wall", type=float, default=MIN_WALL_MM,
+                        help=f"printable wall floor in mm (default {MIN_WALL_MM}), the "
+                             f"low bound on t0..t3. The Stage-3 production descents pin "
+                             f"all four thickness genes here, so this constant sets 4 of "
+                             f"the 14 genes at the optimum — sweeping it measures what "
+                             f"the floor costs in mass.")
     args = parser.parse_args()
 
     if args.cy_bound != CY_BOUND_MM:
         set_cy_bound(args.cy_bound)
+    if args.min_wall != MIN_WALL_MM:
+        set_min_wall(args.min_wall)
 
     # A --smoke run is for wiring, not for design: it must not clobber the real genome
     # that the STEP on disk was built from.
@@ -1349,6 +1395,10 @@ if __name__ == "__main__":
             "generations": int(n_generations),
             "population": int(n_pop),
             "cy_bound_mm": float(CY_BOUND_MM),
+            # Same argument as cy_bound_mm, and it bites harder: a genome with t0..t3
+            # pinned at the floor is a boundary optimum whose mass means nothing without
+            # the floor that set it.
+            "min_wall_mm": float(MIN_WALL_MM),
             "smoke": bool(args.smoke),
         },
         "loss_terms": {k: float(v) for k, v in best_loss_terms.items()},

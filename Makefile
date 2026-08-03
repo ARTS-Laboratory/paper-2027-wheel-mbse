@@ -33,7 +33,11 @@ NUMEXPR_NUM_THREADS ?= 1
 XLA_FLAGS ?= --xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1
 export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS XLA_FLAGS
 
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 hubcap prod9 prod10 export studies clean-pyc
+# `minwall-%` is deliberately NOT here: GNU make excludes phony targets from implicit and
+# pattern rule search, so listing the four arms would silently disable the rule that builds
+# them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
+# the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -69,6 +73,11 @@ help:
 	@echo "              memory-bound box launch each under a systemd-run cap: one"
 	@echo "              descent holds ~12.7 GB anon and two do not fit in 31 GB."
 	@echo "              Override PROD_STEPS/PROD_WORKERS/PROD_FIDELITY"
+	@echo "make minwall-1.6 | -1.8 | -2.0 | -2.2"
+	@echo "              PLAN.md 0(2): what the printable wall floor costs in grams."
+	@echo "              125 steps from the elite-10 answer at each floor; 2.0 is the"
+	@echo "              CONTROL arm and must be run for the others to be readable."
+	@echo "              Override MINWALL_STEPS/MINWALL_WORKERS/MINWALL_GENOME"
 
 env: env-opt env-cad
 
@@ -152,6 +161,22 @@ m9:
 hubcap:
 	$(PY_OPT) studies/study_hub_cap.py --out study_hub_cap.json
 
+# M9 Phase 3.  The GENERALISED buckling load factor -- det(K_0 + lambda*K_g) = 0 under SVK
+# kinematics -- which converges under refinement where `make m9`'s lambda_min(K_t) does not
+# (that quantity has no K_t in it at all: wheel_contact_problem defaults to
+# kinematics="linear", so the displacement threaded into assemble_stiffness is ignored).
+#
+# THE STATE MUST BE SOLVED UNDER SVK AS WELL AS THE OPERATOR ASSEMBLED UNDER IT.  Measured:
+# an SVK stiffness assembled at a LINEAR-converged displacement reads 1.800 / 1.785 at
+# smoke / coarse against the correct 1.378 / 1.360 -- a +31% error of exactly the kind this
+# milestone exists to remove.  See the driver's header.
+#
+# Out of `studies` for the m8bi5 reason: it measures the WHEEL, not the commit, and it is
+# ~40 min.  Measurement-only -- nothing here reaches the Stage-3 objective, `buckling`
+# stays inert, and no threshold is invented.
+m9buck:
+	$(PY_OPT) -u studies/study_m9_buckling.py --out study_m9_buckling.json
+
 # PLAN.md §0(b).  The production multi-start descent, from elites 9 and 10 rather than
 # best_solution.json — that genome is a GA optimum for the BEAM surrogate and sits at
 # -25.43% deflection error, while 9 and 10 are the two designs already inside the feasible
@@ -233,6 +258,38 @@ prod10:
 	    --workers $(PROD_WORKERS) --phase-scheme $(PROD_SCHEME) \
 	    --fidelity-check-every $(PROD_FIDELITY) --fidelity-check-config medium \
 	    --out stage3_prod_elite10.json --best-out stage3_prod_best_elite10.json
+
+# PLAN.md 0(2).  What the printable wall floor COSTS, in grams.
+#
+# The production descents drove all four thickness genes onto MIN_WALL_MM and left them
+# there, so a manufacturing constant -- not the FEA, not the deflection target, not the
+# stress constraint -- sets 4 of the 14 genes at the answer, and every gram below 58.660
+# is on the far side of it.  That constant sat on "the decision that is a human's" with no
+# quantification at all, which is not a decidable state.  Four floors turn it into a slope.
+#
+# THE START IS THE ELITE-10 ANSWER, NOT `rank:10`.  Starting from the converged genome is
+# what makes 125 steps enough: measured off elite 10's own record, step 100 is +0.190% from
+# its final loss, step 125 +0.096%, step 150 +0.048%.  A tenth of a percent is far finer
+# than 0.2 mm of floor will move the mass, so the sweep resolves the thing it is asking
+# about at a third of the cost of a full descent.
+#
+# 2.0 IS THE CONTROL ARM AND IT IS NOT PADDING.  It restarts from its own converged answer
+# at its own floor, so it should barely move; whatever it DOES move is the cost of the
+# fresh Adam state (m/v reset) plus 125 steps.  Without it the sweep cannot separate
+# "0.2 mm of floor" from "125 more steps", and the other three arms are unreadable.
+#
+# `uniform` for the reason PROD_SCHEME gives, plus one that outlives the memory argument:
+# the start point and the control arm were both measured under it, and changing the
+# quadrature at the same time as the floor would measure neither.
+MINWALL_STEPS ?= 125
+MINWALL_WORKERS ?= 4
+MINWALL_GENOME ?= stage3_prod_best_elite10.json
+
+minwall-%:
+	$(PY_OPT) -u src/wheel_stage3.py --start best --genome $(MINWALL_GENOME) \
+	    --min-wall $* --steps $(MINWALL_STEPS) --workers $(MINWALL_WORKERS) \
+	    --phase-scheme uniform --fidelity-check-every 0 \
+	    --out stage3_minwall_$*.json --best-out stage3_minwall_best_$*.json
 
 export:
 	$(PY_CAD) src/wheel_step_export.py
