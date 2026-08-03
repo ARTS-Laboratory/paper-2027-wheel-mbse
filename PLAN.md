@@ -146,6 +146,25 @@ The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pn
 
 ### 0. WHAT TO DO NEXT
 
+**READ §8, §9 AND §10 FIRST — THEY CLOSED ITEMS (1) AND (2) AND CHANGED WHAT (3) IS.**
+One line each:
+
+- **§8 — `MIN_WALL_MM` is priced. `mass ≈ 29.5 g per mm of floor`, and the floor NEVER
+  stops binding.** Four 125-step arms at 1.6 / 1.8 / 2.0 / 2.2 mm, all four thickness
+  genes pinned low at *every* floor: **47.03 / 52.46 / 58.55 / 65.73 g**. 0.2 mm is worth
+  ~10.5% of the wheel, linearly, with no diminishing returns and nothing else taking over
+  as the binding constraint. Item (2) is CLOSED.
+- **§9 — M9 phase 3: the load factor is mesh-convergent and is NOT a safety factor.**
+  `λ(f) > 1` at all 11 load levels out to **4× service**, zero solver refusals, so there
+  is no fixed point and the "1.36" recedes as fast as the load advances. Phase 3 stays
+  blocked, now for a MEASURED reason. Item (1)'s successor is CLOSED as a question.
+- **§10 — item (3) is DEFERRED ON PURPOSE, and the golden test has been decoupled from
+  it.** §8 makes elite 10 optimal *at the 2.0 floor only*, so which genome should ship
+  now depends on a floor decision that has not been made. `best_solution.json` is
+  untouched; `tests/test_golden.py` now reads `best_solution_ga_beam.json` so a future
+  promotion is a one-file change that cannot re-baseline the regression net.
+
+
 **The previous three items — (a) the hub-fillet cap, (b) the production descent, (c)
 `make m9` in full — are ALL DONE. §5, §6 and §7 are their records.** A one-paragraph
 summary of each is at the end of this section; read those three sections for anything real.
@@ -349,7 +368,15 @@ repo's gate and it is still unrun. ~22 min.
   and that is now a deliberate hold rather than an oversight — item (1) above is how it gets
   unblocked.
 
-**THE MEMORY RULES STILL APPLY TO ANYTHING IN (2).** A descent at `coarse` with 4 workers
+**THE MEMORY RULES BELOW DESCRIBE THE OLD 16-CORE / 31 GB BOX — see §8 for this one.**
+The current machine is **24 cores / 61 GB**, one descent measured at a **13.56 GB peak**,
+and three arms ran concurrently under 15 GB caps with no oomd event. What did NOT travel
+is the speedup: three concurrent descents run at **~95 s/step each against ~38-47 s alone**,
+because the binding resource is **memory bandwidth** (twelve concurrent `spsolve` LUs),
+not cores or capacity. Keep the `systemd-run` caps regardless — they make a failure local
+instead of taking the desktop's whole `user@1000.service` slice with it.
+
+**THE ORIGINAL RULE, AS MEASURED ON THE OLD BOX:** A descent at `coarse` with 4 workers
 sits flat at **~12.7 GB anonymous** with the fidelity check off; **two do not fit in 31 GB**,
 so starts run **SEQUENTIALLY** and **capped** (`systemd-run --user -p MemoryMax=20G`). §1's
 "two starts × 4 workers beats one start × 8" is CPU arithmetic that ignores memory, and
@@ -1112,7 +1139,16 @@ make m9                                                   # M9 phase 2 in full, 
                                                           # design now -- see §7, exit 1 is the
                                                           # verdict, not a crash
 make prod9 / make prod10                                  # §0(b), one start each, SEQUENTIAL
-make test                                                 # 406 tests, ~22 min
+make m9buck                                               # §9, M9 phase 3: the generalised
+                                                          # load factor + the load ramp that
+                                                          # shows it is NOT a safety factor.
+                                                          # ~81 min at coarse, ~3 GB
+make minwall-1.6 / -1.8 / -2.0 / -2.2                     # §8, what the wall floor costs.
+                                                          # 125 steps each; 2.0 is the CONTROL
+                                                          # and the others are unreadable
+                                                          # without it.  ~3 h each at 3-way
+                                                          # concurrency, ~13.6 GB per arm
+make test                                                 # 425 tests, ~22 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
@@ -1245,3 +1281,218 @@ it leans. Neither file is a gate: re-running either produces a different wall cl
 because §1's S13 note applies, a trajectory that may differ in its last bits. What should
 reproduce is the *shape* of the answer — every barrier zero, four thicknesses on the floor,
 mass ~97% of the loss against deflection ~46% of the gradient.
+
+---
+
+### 8. §0(2) — what `MIN_WALL_MM` COSTS. DONE. It is 29.5 g per mm, and the floor never stops binding.
+
+`make minwall-1.6 / -1.8 / -2.0 / -2.2`, 125 steps each from
+`stage3_prod_best_elite10.json` (not `rank:10`), `coarse`, 8 phases, `uniform`,
+4 workers, seed 0. **All four arms ran the full 125 steps with ZERO events and zero
+rejects.** Records: `stage3_minwall_<floor>.json`, genomes `stage3_minwall_best_<floor>.json`.
+
+| floor | loss | mesh mass | axle drop | defl err | util | wall clock | best step |
+|---|---|---|---|---|---|---|---|
+| 1.6 | 39.0107 | **47.026 g** | 1.99696 | −0.15% | 0.6655 | 11032 s | 125 |
+| 1.8 | 43.9892 | **52.458 g** | 1.99551 | −0.22% | 0.6416 | 10960 s | 125 |
+| **2.0** | 49.7254 | **58.551 g** | 1.99355 | −0.32% | 0.5910 | 9346 s | 61 |
+| 2.2 | 56.1389 | **65.734 g** | 1.99236 | −0.38% | 0.5731 | 6943 s | 125 |
+
+```
+1.8 -> 1.6 mm of floor : -5.432 g  (-10.36%)
+2.0 -> 1.8 mm of floor : -6.093 g  (-10.41%)
+2.2 -> 2.0 mm of floor : -7.183 g  (-10.93%)
+```
+
+**MASS IS PROPORTIONAL TO THE FLOOR.** Fitting `mass ∝ floor^k` gives **k ≈ 1.05** —
+i.e. **29.5 g/mm**, which reproduces all four measured points to ~1%. The usable form is
+**0.1 mm of wall ≈ 2.9 g ≈ 5% of the wheel.** That is the number §0(2) existed to produce,
+and it is a slope rather than a single value on purpose: a process engineer can price any
+floor in the band without another run.
+
+**THE FLOOR NEVER STOPS BINDING, AND THAT KILLS THE INTERESTING ALTERNATIVE.** The
+hypothesis worth testing was that below some thickness the wall would stop being the
+active constraint and the genes would lift off the bound — the wheel finding its physical
+thickness. **They do not.** `t0, t1, t2, t3` are all pinned `low` at **every** floor
+including 1.6. Deflection is met by the eight centerline genes, not by wall thickness, so
+the descent thins the wall to whatever it is permitted and buys stiffness back from the
+path. There is no corner in this band, only a line.
+
+**NOTHING ELSE TAKES OVER.** Deflection stays inside ±0.4% of the 2.0 mm target at every
+floor, and stress utilisation only reaches **0.6655 at 1.6 mm** against an allowable of
+1.0 — a third of the range still unused. So the floor could very likely come down further
+before any physics binds, and every gram of that is currently being paid for by a
+manufacturing constant. **This is now the highest-value open question in the project**,
+and it is a question for the PROCESS, not for the optimizer.
+
+#### The control arm is what makes the other three readable, and it earned its place twice
+
+`minwall-2.0` restarts from its own converged answer at its own floor, so it measures the
+protocol rather than the floor. **It found a real defect in the experiment design before
+the other arms had produced anything.**
+
+§0(2) justified 125 steps from a measurement off elite 10's record — "step 125 is +0.096%
+from its final loss". **That measurement does not transfer to a restart.** It was taken
+INSIDE a running descent, where Adam's `m`/`v` were warm and the cosine `lr` had already
+decayed. Restarting cold at the optimum with `lr = 0.01` and zeroed moments kicks the
+iterate straight back out: the control's loss went 49.7376 → 49.95 → **51.09** over three
+steps, a 2.7% excursion, before settling.
+
+It recovered — final **49.7256**, best **49.7254 at step 61**, mass **58.551 g** against
+elite 10's 58.660 g, i.e. **−0.19%**. So the transient costs nothing and the protocol is
+sound. But that is a MEASURED conclusion, and without the control arm the 1.6 result would
+have been reported against a start value from a different run under a different schedule.
+
+**The control drift is the sweep's noise floor: ±0.19% in mass.** Every difference in the
+table above is 50-100x that, which is what makes them signal.
+
+#### What this run measured about the MACHINE, and it contradicts §1
+
+This box is **24 cores / 61 GB / 7 GB swap**, not the 16-core / 31 GB box every number in
+§1 was measured on. The memory rules relax — one descent measured a **13.56 GB peak**
+(§1's 12.7 GB estimate travelled), so three fit where one used to.
+
+**But the parallel speedup does NOT track cores or RAM, because the binding resource is
+MEMORY BANDWIDTH.** Measured: one arm alone runs at **~38-47 s/step**; three arms
+concurrently run at **~95 s/step each**. That is a 2x per-arm slowdown for 3x the
+concurrency — an aggregate speedup of **~1.5x, not the ~4x** core count and capacity
+predict. The inner loop is `spla.spsolve` (`wheel_fem.py:1183`), a sparse direct LU called
+once per Newton iteration, and twelve of those saturate the memory controller.
+
+Two consequences. **The GPU is irrelevant** — `requirements-opt.txt` pins CPU
+`jax==0.11.0`/`jaxlib==0.11.0`, and even with a CUDA build the expensive half is SciPy's
+LU on the CPU, while the `XLA_FLAGS` pin that makes the adjoint bit-reproducible is a
+CPU-thread-pool setting. **And S13's efficiency ladder does not travel across concurrent
+RUNS** — it measured workers inside ONE evaluation, which is a different contention
+regime. If a single descent's wall clock matters, the lever is the solver (reusing
+factorisations, or a preconditioned iterative solve), not the hardware.
+
+The four arms were run three-at-a-time with the fourth held back, each under
+`systemd-run --user -p MemoryMax=15G --collect`. Four concurrently is ~54 GB of 61, and
+slice-level memory pressure is exactly what took the desktop down twice before; the caps
+make a failure local and re-runnable instead.
+
+---
+
+### 9. M9 PHASE 3 — THE LOAD FACTOR CONVERGES AND IS NOT A SAFETY FACTOR. `make m9buck`.
+
+`studies/study_m9_buckling.py`, 4851 s at `coarse`, **OVERALL: PASS** — and unlike §7 the
+PASS is not the interesting part. Artifact: `studies/study_m9_buckling.json`.
+
+**The formulation is now reproducible from the repo, which it was not.** §0(1) H2's
+numbers lived only in a scratchpad `h2_check.py` that is no longer on disk, so this driver
+had to re-derive them. It does, exactly:
+
+| config | reduced dof | load factor | PLAN.md H2(b) |
+|---|---|---|---|
+| smoke | 8,904 | **1.378129** | 1.378129 |
+| coarse | 41,064 | **1.359846** | 1.359846 |
+| medium | 104,712 | **1.356669** | 1.356669 |
+
+`last_pair_rel` **2.34e-03** against `GATE_MESH_REL = 0.05` — inside by **21x**, on the
+same meshes where `λ_min(K_t)` misses by twelve.
+
+**THE STATE MUST BE SOLVED UNDER SVK, NOT ONLY ASSEMBLED UNDER IT — AND PLAN.md DID NOT
+SAY SO.** H2's prose describes `K_0 = K(u=0)`, `K_t = K(u_service)` without stating which
+kinematics produced `u_service`, and the obvious reading — reuse the existing
+linear-kinematics contact solve — is **wrong by +31%**:
+
+| state solved under | smoke | coarse |
+|---|---|---|
+| `kinematics="linear"` | 1.800046 | 1.785253 |
+| **`kinematics="svk"`** | **1.378129** | **1.359846** |
+
+That is the same class of error `study_m9` made (a linear state threaded into a nonlinear
+operator), one level up, and it was found by prototyping the formulation before writing a
+driver on it. It is now documented in the driver header and the `m9buck` recipe.
+
+#### THE FINDING: `lambda(f) > 1` AT EVERY LOAD LEVEL. There is no critical point.
+
+A real critical factor is a **fixed point**: at `f = λ_cr` the remaining factor is 1.0.
+Measured on `best_solution` at `coarse`, eleven load levels, **zero solver refusals**:
+
+| f (× service) | 0.5 | 1.0 | 1.36 | 2.0 | 3.0 | 4.0 |
+|---|---|---|---|---|---|---|
+| **λ(f)** | 1.9891 | 1.3598 | 1.2162 | 1.1070 | 1.0481 | **1.0263** |
+| f·λ(f) | 0.9946 | 1.3598 | 1.6540 | 2.2140 | 3.1443 | **4.1051** |
+
+**λ approaches 1 from ABOVE as roughly `1 + 0.43/f²` and never crosses it.** The implied
+critical load recedes exactly as fast as the load advances — a treadmill, not a limit
+point. `crosses_unity: false` is now a field in the artifact.
+
+**Why that is decisive rather than suggestive.** `λ = 1` is precisely the condition
+`det(K_0 + 1·K_g) = det(K_t) = 0`. So `λ(f) − 1` measures how close the CONVERGED TANGENT
+is to singular, and it never reaches zero. The quantity is real and it is telling the
+truth; what it is not is a load factor.
+
+**So: 1.36 must not be reported as a safety factor** — PLAN.md's warning was right, and
+this is the measurement that settles it. **What can be said instead is stronger and more
+useful: the wheel is stable to at least 4× service load**, on eleven converged nonlinear
+SVK contact solves with a non-singular tangent throughout. The Euler `buckling` proxy
+(ratios 0.066-0.087) would never have shown that.
+
+#### What else the study established
+
+- **Phase spread 1.25-2.35%** over 13 reference phases on three designs, against
+  `λ_min`'s 0.66-1.59%. `PRODUCTION_PHASES = 4` would be adequate *if* the quantity were
+  ever promoted. Open item 1, half one: CLOSED.
+- **Design space: 16/16 converged, 1.0912-2.4032, a 2.20x spread, none below 1.0.** So
+  1.36 is *this design*; elites 1 and 2 sit near 1.10. Open item 1, half two: CLOSED.
+- **Contact in the operator is +1.46%** at `coarse` (+3.38% at `smoke`, so it shrinks
+  under refinement). Open item 4: CLOSED, and it is small.
+
+#### Phase 3 stays blocked, and the reason is now measured rather than suspected
+
+The quantity is mesh-convergent, phase-stable, design-discriminating and cheap. It fails
+exactly one requirement — **load-independence** — and that is the one a constraint needs.
+A threshold calibrated at service load would be `stress_scale` a third time.
+`LOBPCG_RESIDUAL_REL` stays at 1e-7 and `buckling` stays inert; §7's rule ("record it,
+leave it, set it when phase 3 has a formulation") is still not satisfied.
+
+**THIS IS THE THIRD TIME THIS REPO HAS HIT THE SAME PATTERN**, and it is the most
+transferable thing on this page: `stress_scale`'s `c = max/pnorm`, `λ_min(K_t)`, and now
+the load factor. Each was well-posed, each converged or looked convergent, and each
+measured the wrong thing. **In all three cases mesh convergence was treated as evidence of
+meaning, and in all three the disproof came from varying something OTHER than the mesh** —
+the exponent, the kinematics, the load. A quantity that has only ever been refined has not
+been tested.
+
+---
+
+### 10. §0(3) — DEFERRED, DELIBERATELY. And the golden test no longer blocks it.
+
+**Not done, and that is a decision rather than a slip.** §8 measured that
+`stage3_prod_best_elite10.json` (58.660 g) is optimal **at the 2.0 mm floor only**, and
+that mass is proportional to that floor at 29.5 g/mm. Whichever floor the process can
+actually hold determines which genome should ship — 1.8 mm already has an answer on disk
+at **52.458 g** and 1.6 mm at **47.026 g**. Promoting 58.660 g now would ship a genome
+that one process conversation could supersede. `best_solution.json` is **untouched**.
+
+**What WAS done is the part that made promotion risky, and it is now permanent.**
+`tests/test_golden.py` — the repo's stated "safety net for every later milestone" — read
+`geometry`, `loss_terms` and `metrics` out of `best_solution.json` and recomputed them
+through `wheel_fea.evaluate_design`. That coupling meant any promotion forced a choice
+between two bad outcomes:
+
+1. **Break the golden test.** The Stage-3 record's `loss_terms` are the FEA objective's 13
+   terms (`fillet_cap`, `min_sj`, `phase_ripple`, ...); `evaluate_design` produces the
+   beam surrogate's 9. `test_loss_terms_reproduce` fails outright on the mismatch.
+2. **Re-baseline it.** Regenerate the blocks with `evaluate_design` so it passes — at
+   which point the test checks that function against numbers the function just produced,
+   and **detects nothing**.
+
+So the GA/beam reference is preserved as **`best_solution_ga_beam.json`**, carrying a
+`note` block saying what it is, and `test_golden.py` reads that file. Its job is
+regression detection on `evaluate_design`, which has nothing to do with which genome
+ships. **11 tests pass against the pinned file, and `best_solution.json` is now free to
+move whenever the floor decision lands** — a one-file change with no test churn.
+
+The two files are byte-identical in every block today. That is the starting condition, not
+an invariant.
+
+**What promotion will still need when it happens**, unchanged from §0(3): `make export`
+(~4 min, expect nearer 230 s now all 48 corners fillet), and then a real look at the
+manifest rather than an assumption — `r_built`, `kt_error_pct`, face count, shortest edge,
+and the AREA and MASS gaps (−1.384% / −2.277% today). Nobody has yet looked at any
+Stage-3 geometry in OCC. `R_hub` on the elite-10 genome is **0.9820** in the file against
+a cap of 1.0400, i.e. under it, which is the good direction.

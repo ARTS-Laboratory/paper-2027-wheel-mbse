@@ -12,13 +12,16 @@
   "genome": "best_solution.json",
   "service_force_n": 66.7233,
   "gate_mesh_rel": 0.05,
-  "elapsed_s": 478.9
+  "elapsed_s": 4851.1
  },
  "sections_complete": [
   "mesh",
-  "variants"
+  "variants",
+  "corroborate",
+  "phase",
+  "design_space"
  ],
- "complete": false,
+ "complete": true,
  "mesh": {
   "rows": [
    {
@@ -160,5 +163,1216 @@
   ],
   "baseline": "svk, contact excluded",
   "pass": true
- }
+ },
+ "corroborate": {
+  "rows": [
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 33.36165,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.5027361707243159,
+    "load_factor": 1.9891148841732484,
+    "mu_modes": [
+     -0.5027361707243159
+    ],
+    "axle_drop_mm": 0.851656484917234,
+    "u_max_mm": 0.8565586244690713,
+    "reduced_dof": 41064,
+    "elapsed_s": 61.82,
+    "load_multiple": 0.5,
+    "implied_critical_total": 0.9945574420866242
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 53.37864,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.6629714644589016,
+    "load_factor": 1.5083605458285771,
+    "mu_modes": [
+     -0.6629714644589016
+    ],
+    "axle_drop_mm": 1.3693194318286077,
+    "u_max_mm": 1.3782030599224957,
+    "reduced_dof": 41064,
+    "elapsed_s": 64.23,
+    "load_multiple": 0.8,
+    "implied_critical_total": 1.2066884366628619
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7353776018724767,
+    "load_factor": 1.359845605106439,
+    "mu_modes": [
+     -0.7353776018724767
+    ],
+    "axle_drop_mm": 1.7165709295844938,
+    "u_max_mm": 1.7285681199877043,
+    "reduced_dof": 41064,
+    "elapsed_s": 60.83,
+    "load_multiple": 1.0,
+    "implied_critical_total": 1.359845605106439
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 80.06795999999999,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7889346576133672,
+    "load_factor": 1.2675320957823473,
+    "mu_modes": [
+     -0.7889346576133672
+    ],
+    "axle_drop_mm": 2.0647648595260324,
+    "u_max_mm": 2.079500889508161,
+    "reduced_dof": 41064,
+    "elapsed_s": 77.79,
+    "load_multiple": 1.2,
+    "implied_critical_total": 1.5210385149388166
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 90.743688,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8222414214634478,
+    "load_factor": 1.216187817709515,
+    "mu_modes": [
+     -0.8222414214634478
+    ],
+    "axle_drop_mm": 2.345577147682601,
+    "u_max_mm": 2.362879121671975,
+    "reduced_dof": 41064,
+    "elapsed_s": 80.78,
+    "load_multiple": 1.36,
+    "implied_critical_total": 1.6540154320849403
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 100.08494999999999,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8462222652421981,
+    "load_factor": 1.1817226289995915,
+    "mu_modes": [
+     -0.8462222652421981
+    ],
+    "axle_drop_mm": 2.5808626565769828,
+    "u_max_mm": 2.6035082104321035,
+    "reduced_dof": 41064,
+    "elapsed_s": 92.45,
+    "load_multiple": 1.5,
+    "implied_critical_total": 1.772583943499387
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 133.4466,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9033411325617212,
+    "load_factor": 1.1070015124454378,
+    "mu_modes": [
+     -0.9033411325617212
+    ],
+    "axle_drop_mm": 3.3655002210375815,
+    "u_max_mm": 3.4117634878517387,
+    "reduced_dof": 41064,
+    "elapsed_s": 103.69,
+    "load_multiple": 2.0,
+    "implied_critical_total": 2.2140030248908755
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 166.80825,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9350586950692794,
+    "load_factor": 1.0694515812463612,
+    "mu_modes": [
+     -0.9350586950692794
+    ],
+    "axle_drop_mm": 4.109866524048796,
+    "u_max_mm": 4.184585241513872,
+    "reduced_dof": 41064,
+    "elapsed_s": 107.27,
+    "load_multiple": 2.5,
+    "implied_critical_total": 2.673628953115903
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 200.16989999999998,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9541096174345485,
+    "load_factor": 1.0480975998217517,
+    "mu_modes": [
+     -0.9541096174345485
+    ],
+    "axle_drop_mm": 4.836673572710357,
+    "u_max_mm": 4.944923847929577,
+    "reduced_dof": 41064,
+    "elapsed_s": 107.02,
+    "load_multiple": 3.0,
+    "implied_critical_total": 3.144292799465255
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 233.53154999999998,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9662153713842156,
+    "load_factor": 1.03496593990984,
+    "mu_modes": [
+     -0.9662153713842156
+    ],
+    "axle_drop_mm": 5.551036598548187,
+    "u_max_mm": 5.6962647613292985,
+    "reduced_dof": 41064,
+    "elapsed_s": 119.12,
+    "load_multiple": 3.5,
+    "implied_critical_total": 3.62238078968444
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 266.8932,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9743910390374501,
+    "load_factor": 1.026282016086527,
+    "mu_modes": [
+     -0.9743910390374501
+    ],
+    "axle_drop_mm": 6.263277017521041,
+    "u_max_mm": 6.448762706561617,
+    "reduced_dof": 41064,
+    "elapsed_s": 127.18,
+    "load_multiple": 4.0,
+    "implied_critical_total": 4.105128064346108
+   }
+  ],
+  "n_solved": 11,
+  "n_refused": 0,
+  "implied_critical_total": [
+   0.9945574420866242,
+   1.2066884366628619,
+   1.359845605106439,
+   1.5210385149388166,
+   1.6540154320849403,
+   1.772583943499387,
+   2.2140030248908755,
+   2.673628953115903,
+   3.144292799465255,
+   3.62238078968444,
+   4.105128064346108
+  ],
+  "lambda_min_over_ramp": 1.026282016086527,
+  "crosses_unity": false,
+  "max_load_multiple_solved": 4.0,
+  "product_spread_pct": 45.028919306434474,
+  "pass": true
+ },
+ "phase": {
+  "n_phase": 13,
+  "period_deg": 30.0,
+  "rows": [
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7353776018737092,
+    "load_factor": 1.3598456051041599,
+    "mu_modes": [
+     -0.7353776018737092
+    ],
+    "axle_drop_mm": 1.7165709295844938,
+    "u_max_mm": 1.7285681199877043,
+    "reduced_dof": 41064,
+    "elapsed_s": 60.01,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 2.3076923076923075,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7583817537216804,
+    "load_factor": 1.3185971248551314,
+    "mu_modes": [
+     -0.7583817537216804
+    ],
+    "axle_drop_mm": 1.7418197622656908,
+    "u_max_mm": 1.74315886216082,
+    "reduced_dof": 41064,
+    "elapsed_s": 59.69,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 4.615384615384615,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7587558966458118,
+    "load_factor": 1.3179469239325086,
+    "mu_modes": [
+     -0.7587558966458118
+    ],
+    "axle_drop_mm": 1.6553332082625394,
+    "u_max_mm": 1.659328199579472,
+    "reduced_dof": 41064,
+    "elapsed_s": 56.89,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 6.9230769230769225,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7520485548431771,
+    "load_factor": 1.3297013784017278,
+    "mu_modes": [
+     -0.7520485548431771
+    ],
+    "axle_drop_mm": 1.5692502684556162,
+    "u_max_mm": 1.5742274986986964,
+    "reduced_dof": 41064,
+    "elapsed_s": 54.49,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 9.23076923076923,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7424443881604785,
+    "load_factor": 1.3469022272195437,
+    "mu_modes": [
+     -0.7424443881604785
+    ],
+    "axle_drop_mm": 1.5028494722977288,
+    "u_max_mm": 1.506501804374879,
+    "reduced_dof": 41064,
+    "elapsed_s": 47.22,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 11.538461538461537,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.731599621266927,
+    "load_factor": 1.3668678481110723,
+    "mu_modes": [
+     -0.731599621266927
+    ],
+    "axle_drop_mm": 1.4603469159133247,
+    "u_max_mm": 1.4612396044137463,
+    "reduced_dof": 41064,
+    "elapsed_s": 49.59,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 13.846153846153845,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7209408533093897,
+    "load_factor": 1.3870763397713195,
+    "mu_modes": [
+     -0.7209408533093897
+    ],
+    "axle_drop_mm": 1.4370763602716095,
+    "u_max_mm": 1.4370829705710524,
+    "reduced_dof": 41064,
+    "elapsed_s": 45.61,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 16.153846153846153,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7130742883312693,
+    "load_factor": 1.4023784286770344,
+    "mu_modes": [
+     -0.7130742883312693
+    ],
+    "axle_drop_mm": 1.4320467731022641,
+    "u_max_mm": 1.4322275243012714,
+    "reduced_dof": 41064,
+    "elapsed_s": 46.63,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 18.46153846153846,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7092140649186328,
+    "load_factor": 1.4100115176293475,
+    "mu_modes": [
+     -0.7092140649186328
+    ],
+    "axle_drop_mm": 1.4463032091329768,
+    "u_max_mm": 1.449732050990631,
+    "reduced_dof": 41064,
+    "elapsed_s": 47.91,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 20.769230769230766,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7098593602640138,
+    "load_factor": 1.4087297512398456,
+    "mu_modes": [
+     -0.7098593602640138
+    ],
+    "axle_drop_mm": 1.4746552158951571,
+    "u_max_mm": 1.4839397578755353,
+    "reduced_dof": 41064,
+    "elapsed_s": 45.0,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 23.076923076923073,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7139260602554921,
+    "load_factor": 1.400705277017246,
+    "mu_modes": [
+     -0.7139260602554921
+    ],
+    "axle_drop_mm": 1.5168867945256244,
+    "u_max_mm": 1.533172530367461,
+    "reduced_dof": 41064,
+    "elapsed_s": 44.31,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 25.384615384615383,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7193582634945472,
+    "load_factor": 1.3901279108717433,
+    "mu_modes": [
+     -0.7193582634945472
+    ],
+    "axle_drop_mm": 1.5708544105101852,
+    "u_max_mm": 1.5947219135440842,
+    "reduced_dof": 41064,
+    "elapsed_s": 58.02,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 27.69230769230769,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7258557333782913,
+    "load_factor": 1.3776842339534625,
+    "mu_modes": [
+     -0.7258557333782913
+    ],
+    "axle_drop_mm": 1.6363905860771908,
+    "u_max_mm": 1.6644822726600255,
+    "reduced_dof": 41064,
+    "elapsed_s": 52.41,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.908424304982922,
+    "load_factor": 1.1008071828492079,
+    "mu_modes": [
+     -0.908424304982922
+    ],
+    "axle_drop_mm": 2.8509965550076846,
+    "u_max_mm": 2.8936570516452416,
+    "reduced_dof": 41064,
+    "elapsed_s": 65.13,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 2.3076923076923075,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9104509183128778,
+    "load_factor": 1.0983568470149518,
+    "mu_modes": [
+     -0.9104509183128778
+    ],
+    "axle_drop_mm": 2.980615968308118,
+    "u_max_mm": 2.9851738332111126,
+    "reduced_dof": 41064,
+    "elapsed_s": 70.68,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 4.615384615384615,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9079629250475584,
+    "load_factor": 1.1013665562915147,
+    "mu_modes": [
+     -0.9079629250475584
+    ],
+    "axle_drop_mm": 3.010256938073815,
+    "u_max_mm": 3.0121770040096054,
+    "reduced_dof": 41064,
+    "elapsed_s": 71.52,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 6.9230769230769225,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8989904532770323,
+    "load_factor": 1.1123588647184897,
+    "mu_modes": [
+     -0.8989904532770323
+    ],
+    "axle_drop_mm": 2.88607579958421,
+    "u_max_mm": 2.887885206724429,
+    "reduced_dof": 41064,
+    "elapsed_s": 67.18,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 9.23076923076923,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8909557054293836,
+    "load_factor": 1.1223902534167667,
+    "mu_modes": [
+     -0.8909557054293836
+    ],
+    "axle_drop_mm": 2.743574264135013,
+    "u_max_mm": 2.7466159045921934,
+    "reduced_dof": 41064,
+    "elapsed_s": 70.96,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 11.538461538461537,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8842804625456141,
+    "load_factor": 1.1308629358622935,
+    "mu_modes": [
+     -0.8842804625456141
+    ],
+    "axle_drop_mm": 2.619611758780392,
+    "u_max_mm": 2.6232731990693754,
+    "reduced_dof": 41064,
+    "elapsed_s": 59.24,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 13.846153846153845,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8794536726685132,
+    "load_factor": 1.1370695592932314,
+    "mu_modes": [
+     -0.8794536726685132
+    ],
+    "axle_drop_mm": 2.527728357842303,
+    "u_max_mm": 2.5309798406263404,
+    "reduced_dof": 41064,
+    "elapsed_s": 63.91,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 16.153846153846153,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8779465247712224,
+    "load_factor": 1.1390215369444998,
+    "mu_modes": [
+     -0.8779465247712224
+    ],
+    "axle_drop_mm": 2.4705452854737784,
+    "u_max_mm": 2.470759145343543,
+    "reduced_dof": 41064,
+    "elapsed_s": 66.61,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 18.46153846153846,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8807600950381372,
+    "load_factor": 1.1353829557374526,
+    "mu_modes": [
+     -0.8807600950381372
+    ],
+    "axle_drop_mm": 2.4517193835544813,
+    "u_max_mm": 2.4513793984725707,
+    "reduced_dof": 41064,
+    "elapsed_s": 66.23,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 20.769230769230766,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8864525300978949,
+    "load_factor": 1.128091991445459,
+    "mu_modes": [
+     -0.8864525300978949
+    ],
+    "axle_drop_mm": 2.47053866808798,
+    "u_max_mm": 2.4719782018041925,
+    "reduced_dof": 41064,
+    "elapsed_s": 64.47,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 23.076923076923073,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8926112841153954,
+    "load_factor": 1.1203084901520488,
+    "mu_modes": [
+     -0.8926112841153954
+    ],
+    "axle_drop_mm": 2.522506495510014,
+    "u_max_mm": 2.5581567498294593,
+    "reduced_dof": 41064,
+    "elapsed_s": 65.48,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 25.384615384615383,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8987617165048305,
+    "load_factor": 1.1126419624201087,
+    "mu_modes": [
+     -0.8987617165048305
+    ],
+    "axle_drop_mm": 2.6045652245394586,
+    "u_max_mm": 2.683143930661022,
+    "reduced_dof": 41064,
+    "elapsed_s": 58.69,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 27.69230769230769,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9036874346294268,
+    "load_factor": 1.106577298388649,
+    "mu_modes": [
+     -0.9036874346294268
+    ],
+    "axle_drop_mm": 2.7121081016215327,
+    "u_max_mm": 2.7890685990962063,
+    "reduced_dof": 41064,
+    "elapsed_s": 67.53,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9100540092439948,
+    "load_factor": 1.0988358820931141,
+    "mu_modes": [
+     -0.9100540092439948
+    ],
+    "axle_drop_mm": 2.861958024311982,
+    "u_max_mm": 2.905100763406284,
+    "reduced_dof": 41064,
+    "elapsed_s": 64.94,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 2.3076923076923075,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9122503048233935,
+    "load_factor": 1.0961903709021992,
+    "mu_modes": [
+     -0.9122503048233935
+    ],
+    "axle_drop_mm": 2.992679133550861,
+    "u_max_mm": 2.9972801604818233,
+    "reduced_dof": 41064,
+    "elapsed_s": 67.94,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 4.615384615384615,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9097248538081987,
+    "load_factor": 1.0992334614294648,
+    "mu_modes": [
+     -0.9097248538081987
+    ],
+    "axle_drop_mm": 3.026366430757199,
+    "u_max_mm": 3.028260060798997,
+    "reduced_dof": 41064,
+    "elapsed_s": 73.99,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 6.9230769230769225,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9000146328696916,
+    "load_factor": 1.1110930461336008,
+    "mu_modes": [
+     -0.9000146328696916
+    ],
+    "axle_drop_mm": 2.9054650622317326,
+    "u_max_mm": 2.90711537769326,
+    "reduced_dof": 41064,
+    "elapsed_s": 63.55,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 9.23076923076923,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8911962638328068,
+    "load_factor": 1.1220872893915155,
+    "mu_modes": [
+     -0.8911962638328068
+    ],
+    "axle_drop_mm": 2.763606800630548,
+    "u_max_mm": 2.7661094101260773,
+    "reduced_dof": 41064,
+    "elapsed_s": 67.07,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 11.538461538461537,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.884254177570827,
+    "load_factor": 1.1308965514272642,
+    "mu_modes": [
+     -0.884254177570827
+    ],
+    "axle_drop_mm": 2.639520089700798,
+    "u_max_mm": 2.643470833601431,
+    "reduced_dof": 41064,
+    "elapsed_s": 67.57,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 13.846153846153845,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8796697953066195,
+    "load_factor": 1.1367901971119037,
+    "mu_modes": [
+     -0.8796697953066195
+    ],
+    "axle_drop_mm": 2.5467875021459245,
+    "u_max_mm": 2.550740519310948,
+    "reduced_dof": 41064,
+    "elapsed_s": 66.24,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 16.153846153846153,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8789408806289825,
+    "load_factor": 1.1377329488695371,
+    "mu_modes": [
+     -0.8789408806289825
+    ],
+    "axle_drop_mm": 2.4877700802495055,
+    "u_max_mm": 2.4875911955786862,
+    "reduced_dof": 41064,
+    "elapsed_s": 64.89,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 18.46153846153846,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8823810576064588,
+    "load_factor": 1.1332972204917835,
+    "mu_modes": [
+     -0.8823810576064588
+    ],
+    "axle_drop_mm": 2.4677627941289497,
+    "u_max_mm": 2.4669647506621337,
+    "reduced_dof": 41064,
+    "elapsed_s": 66.55,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 20.769230769230766,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.888239819625375,
+    "load_factor": 1.1258220785708088,
+    "mu_modes": [
+     -0.888239819625375
+    ],
+    "axle_drop_mm": 2.4850720646904505,
+    "u_max_mm": 2.4868162469295156,
+    "reduced_dof": 41064,
+    "elapsed_s": 61.76,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 23.076923076923073,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8945564786144942,
+    "load_factor": 1.11787240258862,
+    "mu_modes": [
+     -0.8945564786144942
+    ],
+    "axle_drop_mm": 2.53657995216103,
+    "u_max_mm": 2.5732140539136017,
+    "reduced_dof": 41064,
+    "elapsed_s": 59.1,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 25.384615384615383,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9004841775237482,
+    "load_factor": 1.110513682483474,
+    "mu_modes": [
+     -0.9004841775237482
+    ],
+    "axle_drop_mm": 2.617168503894781,
+    "u_max_mm": 2.6947953798587947,
+    "reduced_dof": 41064,
+    "elapsed_s": 62.49,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 27.69230769230769,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9053680396230445,
+    "load_factor": 1.1045231952481513,
+    "mu_modes": [
+     -0.9053680396230445
+    ],
+    "axle_drop_mm": 2.723656872755189,
+    "u_max_mm": 2.80085887479904,
+    "reduced_dof": 41064,
+    "elapsed_s": 61.53,
+    "design": "elite_2"
+   }
+  ],
+  "comparisons": [
+   {
+    "design": "best_solution",
+    "reference_min": 1.3179469239325086,
+    "reference_max": 1.4100115176293475,
+    "reference_mean": 1.3705057359064727,
+    "reference_std": 0.03218544213430676,
+    "spread_pct": 2.348435419937797,
+    "production_min": 1.3598456051041599,
+    "production_captures_min_pct": 3.0571693407717766,
+    "pass": true
+   },
+   {
+    "design": "elite_1",
+    "reference_min": 1.0983568470149518,
+    "reference_max": 1.1390215369444998,
+    "reference_mean": 1.1188643411180517,
+    "reference_std": 0.013975368341254514,
+    "spread_pct": 1.2490672754204766,
+    "production_min": 1.1008071828492079,
+    "production_captures_min_pct": 0.21900204914989668,
+    "pass": true
+   },
+   {
+    "design": "elite_2",
+    "reference_min": 1.0961903709021992,
+    "reference_max": 1.1377329488695371,
+    "reference_mean": 1.1172991020570335,
+    "reference_std": 0.014397620215529122,
+    "spread_pct": 1.2886093069458302,
+    "production_min": 1.0988358820931141,
+    "production_captures_min_pct": 0.23677734870137732,
+    "pass": true
+   }
+  ],
+  "pass": true
+ },
+ "design_space": {
+  "rows": [
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.7353776018736813,
+    "load_factor": 1.3598456051042114,
+    "mu_modes": [
+     -0.7353776018736813
+    ],
+    "axle_drop_mm": 1.7165709295844938,
+    "u_max_mm": 1.7285681199877043,
+    "reduced_dof": 41064,
+    "elapsed_s": 61.63,
+    "design": "best_solution"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9084243049788837,
+    "load_factor": 1.1008071828541013,
+    "mu_modes": [
+     -0.9084243049788837
+    ],
+    "axle_drop_mm": 2.8509965550076846,
+    "u_max_mm": 2.8936570516452416,
+    "reduced_dof": 41064,
+    "elapsed_s": 72.69,
+    "design": "elite_1"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9100540092436701,
+    "load_factor": 1.0988358820935062,
+    "mu_modes": [
+     -0.9100540092436701
+    ],
+    "axle_drop_mm": 2.861958024311982,
+    "u_max_mm": 2.905100763406284,
+    "reduced_dof": 41064,
+    "elapsed_s": 63.02,
+    "design": "elite_2"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9035542325130237,
+    "load_factor": 1.1067404301994526,
+    "mu_modes": [
+     -0.9035542325130237
+    ],
+    "axle_drop_mm": 2.7842453983768514,
+    "u_max_mm": 2.825926732786834,
+    "reduced_dof": 41064,
+    "elapsed_s": 67.46,
+    "design": "elite_3"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9065383337603138,
+    "load_factor": 1.1030973128869332,
+    "mu_modes": [
+     -0.9065383337603138
+    ],
+    "axle_drop_mm": 2.7952882345581243,
+    "u_max_mm": 2.83809117065469,
+    "reduced_dof": 41064,
+    "elapsed_s": 67.77,
+    "design": "elite_4"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9038461699935527,
+    "load_factor": 1.1063829589576435,
+    "mu_modes": [
+     -0.9038461699935527
+    ],
+    "axle_drop_mm": 2.7821528723615114,
+    "u_max_mm": 2.8256740507044174,
+    "reduced_dof": 41064,
+    "elapsed_s": 69.1,
+    "design": "elite_5"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.894962320001375,
+    "load_factor": 1.117365477463301,
+    "mu_modes": [
+     -0.894962320001375
+    ],
+    "axle_drop_mm": 2.6899280868510718,
+    "u_max_mm": 2.7284508262265548,
+    "reduced_dof": 41064,
+    "elapsed_s": 65.53,
+    "design": "elite_6"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.871337769044053,
+    "load_factor": 1.1476605692154291,
+    "mu_modes": [
+     -0.871337769044053
+    ],
+    "axle_drop_mm": 2.4699065305888346,
+    "u_max_mm": 2.5034349952706028,
+    "reduced_dof": 41064,
+    "elapsed_s": 55.3,
+    "design": "elite_7"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8928952660231728,
+    "load_factor": 1.1199521803423331,
+    "mu_modes": [
+     -0.8928952660231728
+    ],
+    "axle_drop_mm": 2.6358760681042965,
+    "u_max_mm": 2.6748021221839764,
+    "reduced_dof": 41064,
+    "elapsed_s": 62.8,
+    "design": "elite_8"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.843062448232003,
+    "load_factor": 1.1861517519812592,
+    "mu_modes": [
+     -0.843062448232003
+    ],
+    "axle_drop_mm": 2.3541454785173506,
+    "u_max_mm": 2.3885762602692027,
+    "reduced_dof": 41064,
+    "elapsed_s": 63.6,
+    "design": "elite_9"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8544600935538071,
+    "load_factor": 1.1703296707993396,
+    "mu_modes": [
+     -0.8544600935538071
+    ],
+    "axle_drop_mm": 2.340665370798574,
+    "u_max_mm": 2.372122375141581,
+    "reduced_dof": 41064,
+    "elapsed_s": 59.04,
+    "design": "elite_10"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.41610600914794443,
+    "load_factor": 2.403233738555443,
+    "mu_modes": [
+     -0.41610600914794443
+    ],
+    "axle_drop_mm": 0.4468581891665339,
+    "u_max_mm": 0.456968358084772,
+    "reduced_dof": 41064,
+    "elapsed_s": 35.73,
+    "design": "elite_11"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8853241702392337,
+    "load_factor": 1.1295297627870913,
+    "mu_modes": [
+     -0.8853241702392337
+    ],
+    "axle_drop_mm": 2.5989967479458502,
+    "u_max_mm": 2.635824614491289,
+    "reduced_dof": 41064,
+    "elapsed_s": 62.03,
+    "design": "elite_12"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.8897920302498304,
+    "load_factor": 1.1238581219020651,
+    "mu_modes": [
+     -0.8897920302498304
+    ],
+    "axle_drop_mm": 2.643368931063498,
+    "u_max_mm": 2.684017938680712,
+    "reduced_dof": 41064,
+    "elapsed_s": 63.24,
+    "design": "elite_13"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.9164145954789741,
+    "load_factor": 1.0912091589695154,
+    "mu_modes": [
+     -0.9164145954789741
+    ],
+    "axle_drop_mm": 2.9001304209186,
+    "u_max_mm": 2.9476563219602836,
+    "reduced_dof": 41064,
+    "elapsed_s": 65.36,
+    "design": "elite_14"
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "force_n": 66.7233,
+    "kinematics": "svk",
+    "contact_in_operator": false,
+    "mu": -0.902446262388009,
+    "load_factor": 1.1080992206160278,
+    "mu_modes": [
+     -0.902446262388009
+    ],
+    "axle_drop_mm": 2.7116083094981094,
+    "u_max_mm": 2.7547272126844886,
+    "reduced_dof": 41064,
+    "elapsed_s": 60.86,
+    "design": "elite_15"
+   }
+  ],
+  "n_designs": 16,
+  "n_converged": 16,
+  "min": 1.0912091589695154,
+  "max": 2.403233738555443,
+  "spread_ratio": 2.202358474359709,
+  "n_below_one": 0,
+  "pass": true
+ },
+ "pass": true
 }
