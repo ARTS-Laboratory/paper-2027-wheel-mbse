@@ -811,6 +811,35 @@ def start_points(spec, genome="best_solution.json", elites="stage2_elites.json")
     raise ValueError(f"unknown --start {spec!r}; expected 'best', 'all' or 'rank:N'")
 
 
+def search_block(args, label, at_step):
+    """Search provenance for the `--best-out` record: which run produced this genome,
+    and inside WHAT BOX.
+
+    `min_wall_mm` and `cy_bound_mm` mirror the GA writer (wheel_fea.py:1393) for the same
+    reason, and it bites harder here, because this is the file a promotion reads.  A
+    descent drives all four thickness genes onto the wall floor and leaves them there, so
+    every genome written through this path is a boundary optimum whose mass is a statement
+    about the floor as much as about the design.  Without the floor recorded, two
+    artifacts descended at different floors are indistinguishable except by reading the
+    pinned t-values back out — and that inference silently stops working the moment a
+    genome comes back NOT pinned, which is exactly the outcome worth detecting.
+
+    Both are read off the `wheel_fea` module rather than off `args` because `--min-wall`
+    and `--cy-bound` are applied through `W.set_min_wall`/`W.set_cy_bound`, which are the
+    things that actually moved the box.  Reading the module means the record describes the
+    box that was descended in even if a future caller moves a bound some other way.
+
+    Split out of `main()` so it is testable without a solve: a run small enough to reach
+    this line still costs minutes, which is too slow to gate provenance on.
+    """
+    return {"optimizer": args.optimizer, "config": args.config,
+            "steps": args.steps, "phase_scheme": args.phase_scheme,
+            "n_phase": args.n_phase, "seed": args.seed, "start": args.start,
+            "min_wall_mm": float(W.MIN_WALL_MM),
+            "cy_bound_mm": float(W.CY_BOUND_MM),
+            "label": label, "at_step": at_step}
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -911,10 +940,7 @@ def main():
     h = wg.save_record(
         os.path.join(HERE, args.best_out), best["best"]["genes"],
         source="wheel_stage3.py",
-        search={"optimizer": args.optimizer, "config": args.config,
-                "steps": args.steps, "phase_scheme": args.phase_scheme,
-                "n_phase": args.n_phase, "seed": args.seed, "start": args.start,
-                "label": best["label"], "at_step": best["best"]["step"]},
+        search=search_block(args, best["label"], best["best"]["step"]),
         loss_terms=best["best"]["terms"],
         metrics=best["best"]["report"],
         loss=best["best"]["loss"],

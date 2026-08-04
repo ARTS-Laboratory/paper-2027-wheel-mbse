@@ -331,3 +331,46 @@ def test_the_wedge_classifier_agrees_with_an_independent_probe():
         f"{hub}\na hub corner is not on the hub circle — `_embed` is running sideways "
         f"again and the spokes are lapping over it")
     assert all(abs(r - 48.5) < 0.01 for r in rim), rim
+
+
+_MASS_KEY_PROBE = r"""
+import json
+import wheel_step_export as X
+print("RESULT:" + json.dumps([
+    X.optimizer_spoke_mass({"total_mass_g": 41.5, "mesh_mass_g": 58.7}),
+    X.optimizer_spoke_mass({"mesh_mass_g": 58.7}),
+    X.optimizer_spoke_mass({}),
+]))
+"""
+
+
+@pytest.mark.skipif(not os.path.exists(CAD_PY), reason="no .venv-cad on this machine")
+def test_the_solid_report_finds_a_mass_from_either_optimizer():
+    """The mass cross-check must survive promoting a Stage-3 genome.
+
+    `report()` compares the OCC solid's mass against the optimizer's own spoke mass, and
+    that is one of the few places the FEA and CadQuery pipelines are checked against each
+    other at all.  It read `metrics['total_mass_g']` through a `.get(..., nan)` — a key
+    only the GA/beam writer produces.  A Stage-3 descent writes `mesh_mass_g` instead, so
+    promoting one exported cleanly and printed `nan g`: the check did not fail, it went
+    silent, on exactly the genome that ships.
+
+    The GA key wins when both are present so the historical artifact keeps reporting the
+    number it always did, and the source key is returned rather than normalised away
+    because the two are the same ROLE measured two different ways (analytic beam area vs
+    integration over the FEA mesh) and are not interchangeable to a reader.
+    """
+    proc = subprocess.run(
+        [CAD_PY, "-c", _MASS_KEY_PROBE], cwd=HERE,
+        env={**os.environ, "PYTHONPATH": os.path.join(HERE, "src")},
+        capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 0, proc.stderr[-3000:]
+    line = [ln for ln in proc.stdout.splitlines() if ln.startswith("RESULT:")][0]
+    both, stage3_only, empty = json.loads(line[len("RESULT:"):])
+
+    assert both == [41.5, "total_mass_g"]
+    assert stage3_only == [58.7, "mesh_mass_g"]
+    # No key at all still must not crash the export — but it must SAY so, not print nan
+    # next to a label claiming the optimizer reported it.
+    assert empty[0] != empty[0], "expected nan"
+    assert "no mass key" in empty[1]

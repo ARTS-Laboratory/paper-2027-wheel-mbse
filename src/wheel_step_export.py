@@ -964,6 +964,27 @@ def kt_report(genes, metrics, hub, rim):
     return rows
 
 
+def optimizer_spoke_mass(metrics):
+    """The optimizer's own spoke mass, and WHICH optimizer said so.
+
+    Returns `(grams, source_key)`.  The two producers name this differently: the GA/beam
+    path writes `total_mass_g` (wheel_fea.py:1393) and a Stage-3 descent writes
+    `mesh_mass_g`.  They are the same ROLE — spoke material as the optimizer costed it —
+    but not the same MEASUREMENT: one is the beam surrogate's analytic area, the other is
+    integrated over the FEA mesh.  So the key is reported alongside the number rather
+    than being silently normalised away; a reader comparing this against the OCC solid
+    needs to know which model produced it.
+
+    This existed as `metrics.get('total_mass_g', nan)`, which meant a promoted Stage-3
+    genome exported fine and printed `nan g` — losing the one cross-check that compares
+    the optimizer's mass against the CAD solid's, on exactly the genome that ships.
+    """
+    for key in ("total_mass_g", "mesh_mass_g"):
+        if key in metrics:
+            return float(metrics[key]), key
+    return float("nan"), "no mass key in record"
+
+
 def report(part, genes, metrics, ghash, vol=None):
     """`vol` must be measured BEFORE despecialize().  BRepGProp.VolumeProperties_s
     uses low-order quadrature that is materially inaccurate on B-spline faces: the
@@ -982,9 +1003,10 @@ def report(part, genes, metrics, ghash, vol=None):
           f"(expect ≈ {2*RIM_OUTER_RADIUS_MM:.0f} × {2*RIM_OUTER_RADIUS_MM:.0f} × "
           f"{SPOKE_WIDTH_MM:.1f})")
     print(f"  volume           : {vol:.1f} mm³")
+    opt_mass, opt_src = optimizer_spoke_mass(metrics)
     print(f"  solid mass @PLA  : {vol * DENSITY_PLA:.2f} g "
-          f"(optimizer wheel-spoke mass was {metrics.get('total_mass_g', float('nan')):.2f} g, "
-          f"hub+rim add the rest)")
+          f"(optimizer wheel-spoke mass was {opt_mass:.2f} g "
+          f"[{opt_src}], hub+rim add the rest)")
     return vol, solid.isValid()
 
 

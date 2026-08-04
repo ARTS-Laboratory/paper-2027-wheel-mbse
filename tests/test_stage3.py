@@ -271,6 +271,47 @@ def test_the_run_record_carries_the_wall_floor_it_actually_descended():
         W._refresh_gene_arrays()
 
 
+class _Args:
+    """Just the attributes `search_block` reads.  A real argparse.Namespace would work
+    too, but naming them here means adding a field to the block without deciding where
+    its value comes from fails loudly instead of picking up an argparse default."""
+    optimizer, config, steps = "adam", "coarse", 125
+    phase_scheme, n_phase, seed, start = "uniform", 8, 0, "best"
+
+
+def test_the_best_out_record_carries_the_box_it_was_descended_in():
+    """The `--best-out` file is the one a promotion reads, and until this it recorded
+    the optimizer settings but not the BOUNDS.
+
+    Every arm of the wall-floor sweep writes one of these with all four thickness genes
+    sitting exactly on the floor, so the genome is a boundary optimum and its mass means
+    nothing without the floor attached.  Four such files from four different floors were
+    byte-distinguishable only by the pinned t-values themselves — which is inference, not
+    provenance, and it stops working precisely when a genome comes back NOT pinned.
+
+    Read off the module, not off `args`, so that a floor moved through `set_min_wall` by
+    any route is what gets recorded.
+    """
+    saved = [(g["low"], g["high"]) for g in W.GENE_SPACE]
+    min_wall = W.MIN_WALL_MM
+    try:
+        assert S3.search_block(_Args, "best_solution", 125)["min_wall_mm"] == 2.0
+        W.set_min_wall(1.4)
+        blk = S3.search_block(_Args, "best_solution", 125)
+        assert blk["min_wall_mm"] == 1.4, (
+            "the promoted-genome record still claims the default floor — every sweep "
+            "arm would be indistinguishable from every other")
+        assert blk["cy_bound_mm"] == W.CY_BOUND_MM
+        # The settings that were already there must survive the refactor.
+        assert blk["config"] == "coarse" and blk["n_phase"] == 8
+        assert blk["label"] == "best_solution" and blk["at_step"] == 125
+    finally:
+        for g, (lo, hi) in zip(W.GENE_SPACE, saved):
+            g["low"], g["high"] = lo, hi
+        W.MIN_WALL_MM = min_wall
+        W._refresh_gene_arrays()
+
+
 def test_the_run_record_carries_the_iterate_and_the_gradient(z0):
     """S3 and S4 reconstruct the projection and the scale policy offline, which is only
     possible if every step row records `z` and `grad` rather than their norms."""

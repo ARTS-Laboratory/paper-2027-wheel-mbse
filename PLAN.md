@@ -37,8 +37,9 @@ record was measured at, and a test pins it there.
 Someone will put `util = 0.41` next to `max = 48.5 MPa` and panic. The answer is M4's,
 unchanged: **the max is not a number.** It diverges 31.02 → 41.54 → 48.47 under refinement.
 
-**Gates, all green:** `make test` **383 passed** (357 before the phase pool; 269 before
-M8b-i.6, whose Kt-twin equivalence test is parameterised 84 ways). Gate 7 `min_decades`
+**Gates, all green:** `make test` **427 passed** (425 before §8's second pass; 406 before
+the wall-floor work; 383 at M8b-ii; 357 before the phase pool; 269 before M8b-i.6, whose
+Kt-twin equivalence test is parameterised 84 ways). Gate 7 `min_decades`
 **2**, `worst_best_rel` **2.009e-07** — both better than the 1 / 1.820e-05 baseline.
 `make m8bi6`'s `pnorm_by_p` block reproduces the step-1 sweep **bit-identically**,
 0.000e+00 on every value and every GCI including the `c` columns; `max_stress_mpa` and
@@ -149,11 +150,14 @@ The old bound "min reachable utilisation 0.932" is **invalid** — it is `c * pn
 **READ §8, §9 AND §10 FIRST — THEY CLOSED ITEMS (1) AND (2) AND CHANGED WHAT (3) IS.**
 One line each:
 
-- **§8 — `MIN_WALL_MM` is priced. `mass ≈ 29.5 g per mm of floor`, and the floor NEVER
-  stops binding.** Four 125-step arms at 1.6 / 1.8 / 2.0 / 2.2 mm, all four thickness
-  genes pinned low at *every* floor: **47.03 / 52.46 / 58.55 / 65.73 g**. 0.2 mm is worth
-  ~10.5% of the wheel, linearly, with no diminishing returns and nothing else taking over
-  as the binding constraint. Item (2) is CLOSED.
+- **§8 — `MIN_WALL_MM` is priced, and the floor DOES stop binding — at the ends, near
+  1.5 mm.** EIGHT 125-step arms, 2.2 mm down to 0.8 mm. `t3` lifts off the floor at
+  1.4 mm and `t0` at 1.0 mm, both settling on floor-independent values (**`t0 ≈ 1.45`,
+  `t3 ≈ 1.6`**); `t1`/`t2` stay pinned at every floor. **The first pass's headline
+  (`29.5 g/mm`, "never stops binding") is RETRACTED** — it was fitted entirely inside the
+  band where all four genes were on the bound, and the marginal cost actually falls 4x
+  across the full band (~31 → ~20 → ~8 g/mm). 2.0 → 1.2 mm is worth 19.4 g; below 1.2 mm
+  is worth 3.3 g. Item (2) is CLOSED.
 - **§9 — M9 phase 3: the load factor is mesh-convergent and is NOT a safety factor.**
   `λ(f) > 1` at all 11 load levels out to **4× service**, zero solver refusals, so there
   is no fixed point and the "1.36" recedes as fast as the load advances. Phase 3 stays
@@ -1089,9 +1093,12 @@ is the first item on this list that is no longer a preference: it is a manufactu
 parameter that is now provably binding, and it is worth asking the process what it can
 actually hold before asking the optimizer for anything else.
 
-**It is still not decidable, because nobody has measured what the floor is worth.** §0(2)
-is the sweep that would fix that — it is the only open item that changes the wheel rather
-than the model, and it should probably run before this list is revisited at all.
+**§8 HAS NOW MEASURED WHAT THE FLOOR IS WORTH, and it narrows this item rather than
+closing it.** The floor is only sovereign over `t1`/`t2`; below ~1.5 mm the optimizer picks
+`t0` and `t3` for itself and holds them there. So the question to put to the process is no
+longer "what wall can you hold?" in the abstract — it is **"can you hold 1.2 mm?"**, worth
+19.4 g against today's 2.0 mm, with everything below that worth only 3.3 g more. That is a
+single yes/no with a number attached, which is what makes it decidable now.
 
 ---
 
@@ -1142,13 +1149,22 @@ make prod9 / make prod10                                  # §0(b), one start ea
 make m9buck                                               # §9, M9 phase 3: the generalised
                                                           # load factor + the load ramp that
                                                           # shows it is NOT a safety factor.
-                                                          # ~81 min at coarse, ~3 GB
-make minwall-1.6 / -1.8 / -2.0 / -2.2                     # §8, what the wall floor costs.
-                                                          # 125 steps each; 2.0 is the CONTROL
-                                                          # and the others are unreadable
-                                                          # without it.  ~3 h each at 3-way
-                                                          # concurrency, ~13.6 GB per arm
-make test                                                 # 425 tests, ~22 min
+                                                          # ~34 min at coarse ALONE (~81 min
+                                                          # beside 3 descents), ~3 GB
+make minwall-<floor>                                      # §8, what the wall floor costs.
+                                                          # Ran at 2.2/2.0/1.8/1.6/1.4/1.2/
+                                                          # 1.0/0.8.  125 steps each; 2.0 is
+                                                          # the CONTROL and the others are
+                                                          # unreadable without it.  ~2-4 h
+                                                          # each; four abreast is fine on 24
+                                                          # cores / 61 GB and costs ~111-120
+                                                          # s/step vs ~40 alone.
+                                                          # NOTE: floors are a pattern rule,
+                                                          # so NEVER add them to .PHONY --
+                                                          # make skips pattern search for
+                                                          # phony targets and every arm
+                                                          # silently no-ops with exit 0.
+make test                                                 # 427 tests, ~22 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
@@ -1284,46 +1300,120 @@ mass ~97% of the loss against deflection ~46% of the gradient.
 
 ---
 
-### 8. §0(2) — what `MIN_WALL_MM` COSTS. DONE. It is 29.5 g per mm, and the floor never stops binding.
+### 8. §0(2) — what `MIN_WALL_MM` COSTS. DONE, IN TWO PASSES. The floor DOES stop binding — at the ENDS, near 1.5 mm — and the first pass's headline was wrong.
 
-`make minwall-1.6 / -1.8 / -2.0 / -2.2`, 125 steps each from
-`stage3_prod_best_elite10.json` (not `rank:10`), `coarse`, 8 phases, `uniform`,
-4 workers, seed 0. **All four arms ran the full 125 steps with ZERO events and zero
-rejects.** Records: `stage3_minwall_<floor>.json`, genomes `stage3_minwall_best_<floor>.json`.
+`make minwall-<floor>` for **2.2 / 2.0 / 1.8 / 1.6** (pass 1) and **1.4 / 1.2 / 1.0 / 0.8**
+(pass 2), 125 steps each from `stage3_prod_best_elite10.json` (not `rank:10`), `coarse`,
+8 phases, `uniform`, 4 workers, seed 0. **All EIGHT arms ran the full 125 steps with ZERO
+events and zero rejects.** Records: `stage3_minwall_<floor>.json`, genomes
+`stage3_minwall_best_<floor>.json`.
 
-| floor | loss | mesh mass | axle drop | defl err | util | wall clock | best step |
-|---|---|---|---|---|---|---|---|
-| 1.6 | 39.0107 | **47.026 g** | 1.99696 | −0.15% | 0.6655 | 11032 s | 125 |
-| 1.8 | 43.9892 | **52.458 g** | 1.99551 | −0.22% | 0.6416 | 10960 s | 125 |
-| **2.0** | 49.7254 | **58.551 g** | 1.99355 | −0.32% | 0.5910 | 9346 s | 61 |
-| 2.2 | 56.1389 | **65.734 g** | 1.99236 | −0.38% | 0.5731 | 6943 s | 125 |
+| floor | loss | mesh mass | axle drop | util | `t0` | `t1` | `t2` | `t3` | on floor |
+|---|---|---|---|---|---|---|---|---|---|
+| 2.2 | 56.1389 | 65.734 g | 1.9924 | 0.5731 | 2.2000 | 2.2000 | 2.2000 | 2.2000 | **4/4** |
+| **2.0** | 49.7254 | 58.551 g | 1.9936 | 0.5910 | 2.0000 | 2.0000 | 2.0000 | 2.0000 | **4/4** |
+| 1.8 | 43.9892 | 52.458 g | 1.9955 | 0.6416 | 1.8000 | 1.8000 | 1.8000 | 1.8000 | **4/4** |
+| 1.6 | 39.0107 | 47.026 g | 1.9970 | 0.6655 | 1.6000 | 1.6000 | 1.6000 | 1.6000 | **4/4** |
+| 1.4 | 35.3760 | 42.821 g | 1.9990 | 0.7345 | 1.4000 | 1.4000 | 1.4000 | **1.5102** | 3/4 |
+| 1.2 | 32.5051 | 39.194 g | 1.9992 | 0.7830 | 1.2000 | 1.2000 | 1.2000 | **1.4614** | 3/4 |
+| 1.0 | 31.5398 | 37.899 g | 2.0004 | 0.7752 | **1.3826** | 1.0000 | 1.0000 | **1.5894** | 2/4 |
+| 0.8 | 30.0993 | 35.911 g | 1.9991 | 0.8094 | **1.4638** | 0.8000 | 0.8000 | **1.6074** | 2/4 |
+
+#### THE FINDING: the two ENDS pick a thickness and hold it. The mid-span never does.
+
+**`t3` lifts off the floor at 1.4 mm and `t0` at 1.0 mm, and neither tracks the floor
+afterwards.** Across a floor moving 1.4 → 0.8 mm, `t3` sits at **1.5102 / 1.4614 / 1.5894
+/ 1.6074** and `t0` at **1.3826 / 1.4638**. Those are floor-INDEPENDENT values: the
+optimizer is choosing them, which is the whole thing the sweep existed to detect.
+
+**`t1` and `t2` are pinned `low` at every one of the eight floors, down to 0.8 mm.** They
+never decide. The split is physical: `t0` and `t3` price the hub and rim junctions through
+`Kt(R, t)`, so thinning them costs stress at a concentration and something pushes back.
+Mid-span carries no local riser — it is pure mass — so it thins until the floor stops it.
+
+The practical form: **the wheel wants ~1.45 mm at the hub, ~1.6 mm at the rim, and as
+thin as the process can print in between.**
+
+#### THE RETRACTION: `29.5 g/mm` was an artifact of only sampling floors where everything was pinned
+
+The first pass measured four floors, found `mass ∝ floor^1.05`, and reported **29.5 g/mm
+with no diminishing returns**. That fit was excellent — ~1% on all four points — and it
+was excellent *because all sixteen thickness genes in it were sitting on their bound.* A
+sweep in which every gene is pinned is measuring the floor, not the design, and it will
+look linear no matter what the design would have done given room.
+
+Extending the band breaks it:
 
 ```
-1.8 -> 1.6 mm of floor : -5.432 g  (-10.36%)
-2.0 -> 1.8 mm of floor : -6.093 g  (-10.41%)
-2.2 -> 2.0 mm of floor : -7.183 g  (-10.93%)
+2.2 -> 2.0 : -7.183 g  =  35.9 g/mm
+2.0 -> 1.8 : -6.093 g  =  30.5 g/mm
+1.8 -> 1.6 : -5.432 g  =  27.2 g/mm     <- last all-pinned interval
+1.6 -> 1.4 : -4.205 g  =  21.0 g/mm     <- t3 lifts off
+1.4 -> 1.2 : -3.627 g  =  18.1 g/mm
+1.2 -> 1.0 : -1.296 g  =   6.5 g/mm     <- t0 lifts off
+1.0 -> 0.8 : -1.988 g  =   9.9 g/mm
 ```
 
-**MASS IS PROPORTIONAL TO THE FLOOR.** Fitting `mass ∝ floor^k` gives **k ≈ 1.05** —
-i.e. **29.5 g/mm**, which reproduces all four measured points to ~1%. The usable form is
-**0.1 mm of wall ≈ 2.9 g ≈ 5% of the wheel.** That is the number §0(2) existed to produce,
-and it is a slope rather than a single value on purpose: a process engineer can price any
-floor in the band without another run.
+**The marginal cost falls by 4x across the band and the slope was never constant** — even
+inside pass 1 it ran 35.9 → 27.2, which a `floor^1.05` fit absorbed into an exponent. Use
+the interval table, not a single number. The bands worth quoting:
 
-**THE FLOOR NEVER STOPS BINDING, AND THAT KILLS THE INTERESTING ALTERNATIVE.** The
-hypothesis worth testing was that below some thickness the wall would stop being the
-active constraint and the genes would lift off the bound — the wheel finding its physical
-thickness. **They do not.** `t0, t1, t2, t3` are all pinned `low` at **every** floor
-including 1.6. Deflection is met by the eight centerline genes, not by wall thickness, so
-the descent thins the wall to whatever it is permitted and buys stiffness back from the
-path. There is no corner in this band, only a line.
+| band | marginal | total |
+|---|---|---|
+| 2.2 → 1.6 mm | ~31 g/mm | −18.7 g |
+| 1.6 → 1.2 mm | ~20 g/mm | −7.8 g |
+| 1.2 → 0.8 mm | ~8 g/mm | −3.3 g |
 
-**NOTHING ELSE TAKES OVER.** Deflection stays inside ±0.4% of the 2.0 mm target at every
-floor, and stress utilisation only reaches **0.6655 at 1.6 mm** against an allowable of
-1.0 — a third of the range still unused. So the floor could very likely come down further
-before any physics binds, and every gram of that is currently being paid for by a
-manufacturing constant. **This is now the highest-value open question in the project**,
-and it is a question for the PROCESS, not for the optimizer.
+**Going 2.0 → 1.2 mm is worth 19.4 g, a third of the wheel. Going 1.2 → 0.8 mm is worth
+3.3 g.** So the process conversation is worth having down to about 1.2 mm and is
+approximately pointless below it.
+
+**THIS IS THE FOURTH TIME THIS REPO HAS SHIPPED A CONVERGENT-LOOKING NUMBER THAT MEASURED
+THE WRONG THING**, after `stress_scale`, `λ_min(K_t)` and the load factor (§9). The
+pattern holds exactly: the quantity fit beautifully over the range sampled, and the
+disproof came from **varying something other than what had been varied so far** — here,
+extending the floor past the point where the answer stops touching the bound. The lesson
+generalises to sweeps: *a fit taken entirely inside a region where a constraint is active
+describes the constraint, not the system.*
+
+#### NOTHING PHYSICAL BINDS ANYWHERE IN THE BAND — including at 0.8 mm
+
+The `stress` loss term is **exactly 0.00000 at all eight floors**, as are `buckling`,
+`min_sj`, `fillet_cap`, `fold`, `arrival`, `hub_overlap` and `x_order`. Only `mass`,
+`smoothness` and `deflection` are ever nonzero. Utilisation reaches only **0.8094 at
+0.8 mm** against an allowable of 1.0, and hub utilisation is the max at every floor
+(`u_hub` 0.573 → 0.809, `u_rim` 0.428 → 0.572).
+
+So the flattening is **not** stress switching on. It is the deflection target being bought
+back with geometry: bending stiffness goes as `t³`, so past ~1.2 mm the centerline has to
+distort to hold 2.0 mm of drop, and `smoothness` climbs **0.18 → 0.58** paying for it.
+Axle drop stays within ±0.05% of target at every floor — the spec is met everywhere, it
+just costs more geometry to meet.
+
+**Two cautions that are NOT in the loss.** `min_scaled_jacobian` degrades monotonically
+**0.8929 → 0.6366** as the floor drops; the `min_sj` barrier never fires, but the mesh is
+measurably worse at 0.8 mm and any conclusion there rests on a poorer discretisation than
+the ones above it. And `R_hub` moves non-monotonically (0.982 → 0.579 → 0.682) while
+`kt_hub` stays pinned near 2.0-2.08 at every floor — the optimizer is trading fillet
+radius against `t0` to hold the concentration factor constant, which is why `t0` lifting
+off at 1.0 mm coincides with `R_hub` reversing direction. **1.2 → 1.0 is a branch change,
+not a smooth continuation**, and it is why that one interval's marginal cost (6.5 g/mm) is
+lower than its neighbour's on both sides.
+
+#### What this does and does not settle
+
+**Settled:** the optimizer picks the end thicknesses, the floor sets the mid-span, and the
+floor is worth having a process conversation about down to ~1.2 mm.
+
+**Not settled:** whether 0.8-1.0 mm is manufacturable at all, and whether the `coarse` mesh
+is trustworthy at `min_sj = 0.64`. **A promotion candidate below 1.2 mm should be re-scored
+at `medium` before anyone believes its mass.** No arm below 1.6 mm has been mesh-converged.
+
+**Provenance gap in these artifacts.** The eight `stage3_minwall_best_*.json` were written
+before `search_block()` existed, so their `search` blocks carry the optimizer settings but
+**not** `min_wall_mm`. The floors are recoverable from `stage3_minwall_<floor>.json`
+(`settings.min_wall_mm`) and from the pinned `t1`/`t2` values. Future `--best-out` records
+carry the floor; these eight do not.
 
 #### The control arm is what makes the other three readable, and it earned its place twice
 
@@ -1353,10 +1443,17 @@ This box is **24 cores / 61 GB / 7 GB swap**, not the 16-core / 31 GB box every 
 (§1's 12.7 GB estimate travelled), so three fit where one used to.
 
 **But the parallel speedup does NOT track cores or RAM, because the binding resource is
-MEMORY BANDWIDTH.** Measured: one arm alone runs at **~38-47 s/step**; three arms
-concurrently run at **~95 s/step each**. That is a 2x per-arm slowdown for 3x the
-concurrency — an aggregate speedup of **~1.5x, not the ~4x** core count and capacity
-predict. The inner loop is `spla.spsolve` (`wheel_fem.py:1183`), a sparse direct LU called
+MEMORY BANDWIDTH.** Measured across both passes: one arm alone runs at **~38-47 s/step**;
+three arms concurrently at **~95 s/step each**; **four arms concurrently at ~111-120
+s/step each** (pass 2, 16 pool workers on 24 cores). Going 3 → 4 arms bought **~17% more
+aggregate throughput for 33% more concurrency**, and against a single arm the aggregate
+speedup is **~1.5x, not the ~4x** core count and capacity predict.
+
+The same effect distorts any wall-clock read off a shared box, in both directions: §9's
+buckling study took **4851 s** beside three descents and **2045 s** alone, and a
+single-step `smoke` descent — normally a minute or two — took **6m41s wall / 11m13s CPU**
+while four arms were running. **Never quote a wall clock from this repo without saying
+what else was on the machine.** The inner loop is `spla.spsolve` (`wheel_fem.py:1183`), a sparse direct LU called
 once per Newton iteration, and twelve of those saturate the memory controller.
 
 Two consequences. **The GPU is irrelevant** — `requirements-opt.txt` pins CPU
@@ -1367,17 +1464,29 @@ RUNS** — it measured workers inside ONE evaluation, which is a different conte
 regime. If a single descent's wall clock matters, the lever is the solver (reusing
 factorisations, or a preconditioned iterative solve), not the hardware.
 
-The four arms were run three-at-a-time with the fourth held back, each under
-`systemd-run --user -p MemoryMax=15G --collect`. Four concurrently is ~54 GB of 61, and
-slice-level memory pressure is exactly what took the desktop down twice before; the caps
-make a failure local and re-runnable instead.
+**Pass 1** ran three-at-a-time with the fourth held back, each under
+`systemd-run --user -p MemoryMax=15G --collect`, on the reasoning that four concurrently
+is ~54 GB of 61 and slice-level memory pressure is what took the desktop down twice before.
+
+**Pass 2 ran all four concurrently with no caps, and it was fine** — the box stayed at
+~4 GB used with 40 GB free throughout, and all four arms completed with zero events. The
+15 GB-per-arm figure that motivated the caps came from a `medium`-rung measurement; a
+`coarse` arm with 4 workers is nowhere near it. Caps are still the right default for
+`medium` or for anything left unattended, but they are not needed to run this sweep.
 
 ---
 
 ### 9. M9 PHASE 3 — THE LOAD FACTOR CONVERGES AND IS NOT A SAFETY FACTOR. `make m9buck`.
 
-`studies/study_m9_buckling.py`, 4851 s at `coarse`, **OVERALL: PASS** — and unlike §7 the
-PASS is not the interesting part. Artifact: `studies/study_m9_buckling.json`.
+`studies/study_m9_buckling.py`, **2045 s** at `coarse`, **OVERALL: PASS** — and unlike §7
+the PASS is not the interesting part. Artifact: `studies/study_m9_buckling.json`.
+
+Budget 2045 s only on an otherwise-idle box. An earlier identical run took **4851 s**
+because three `minwall-*` descents were sharing the machine — 2.4x, from contention alone,
+with no setting changed. The inner loop is a sparse direct LU, so it is memory-bandwidth
+bound and co-scheduled runs steal from each other far more than core count suggests (same
+effect as §8's note on the sweep). Do not read a wall-clock off a shared run and project
+from it.
 
 **The formulation is now reproducible from the repo, which it was not.** §0(1) H2's
 numbers lived only in a scratchpad `h2_check.py` that is no longer on disk, so this driver
@@ -1463,10 +1572,17 @@ been tested.
 
 **Not done, and that is a decision rather than a slip.** §8 measured that
 `stage3_prod_best_elite10.json` (58.660 g) is optimal **at the 2.0 mm floor only**, and
-that mass is proportional to that floor at 29.5 g/mm. Whichever floor the process can
-actually hold determines which genome should ship — 1.8 mm already has an answer on disk
-at **52.458 g** and 1.6 mm at **47.026 g**. Promoting 58.660 g now would ship a genome
-that one process conversation could supersede. `best_solution.json` is **untouched**.
+there are now **eight** candidates on disk spanning 65.734 g down to 35.911 g. Whichever
+floor the process can actually hold determines which one should ship; promoting 58.660 g
+now would ship a genome that one process conversation could supersede.
+`best_solution.json` is **untouched**.
+
+**The shortlist, given §8.** 1.2 mm (**39.194 g**) is the value-for-money point — it
+captures 19.4 g of the available 22.6 g, and everything below it is worth 3.3 g total.
+1.6 mm (**47.026 g**) is the conservative pick and the thinnest floor at which all four
+genes are still pinned, i.e. the last one whose behaviour is fully understood. **Nothing
+below 1.6 mm should be promoted without a `medium`-rung re-score first** — `min_sj` falls
+to 0.71 at 1.2 mm and 0.64 at 0.8 mm, and no sub-1.6 arm has been mesh-converged.
 
 **What WAS done is the part that made promotion risky, and it is now permanent.**
 `tests/test_golden.py` — the repo's stated "safety net for every later milestone" — read
@@ -1495,4 +1611,24 @@ an invariant.
 manifest rather than an assumption — `r_built`, `kt_error_pct`, face count, shortest edge,
 and the AREA and MASS gaps (−1.384% / −2.277% today). Nobody has yet looked at any
 Stage-3 geometry in OCC. `R_hub` on the elite-10 genome is **0.9820** in the file against
-a cap of 1.0400, i.e. under it, which is the good direction.
+a cap of 1.0400, i.e. under it, which is the good direction — but the sub-1.6 mm arms run
+`R_hub` down to **0.579**, and nothing has checked that OCC can actually build a fillet
+that small next to a 1.2 mm wall. **Export the candidate before trusting its mass.**
+
+**Two latent breaks on this path were found and fixed while the sweep ran**, both of which
+would have failed SILENTLY rather than loudly, which is why they were worth catching first:
+
+- **`--best-out` records did not carry the box they were descended in.** The GA writer
+  records `min_wall_mm`/`cy_bound_mm` (`wheel_fea.py:1393`) and the Stage-3 writer did
+  not — so the eight sweep genomes, every one of them a boundary optimum, were
+  distinguishable only by reading their own pinned `t` values back out. Now
+  `wheel_stage3.search_block()`, split out of `main()` so it is testable without a solve
+  (the cheapest run that reaches that line still costs minutes).
+- **The exporter's mass cross-check went `nan` on a Stage-3 genome.** `report()` read
+  `metrics['total_mass_g']` through a `.get(..., nan)`; the GA writes that key and a
+  descent writes `mesh_mass_g`. The export succeeded and printed `nan g` — losing one of
+  the only checks that compares the FEA and CadQuery pipelines against each other, on
+  exactly the genome that ships. Now `wheel_step_export.optimizer_spoke_mass()`, which
+  returns the value **and which key it came from**: the two are the same role measured two
+  different ways (analytic beam area vs integration over the FEA mesh) and normalising
+  them into one number would hide that from the reader.
