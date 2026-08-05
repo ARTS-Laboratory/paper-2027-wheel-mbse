@@ -16,6 +16,11 @@ RUN THIS IN THE CadQuery ENV (Python 3.12), e.g.:
 It reads `best_solution.json`, produced by running `wheel_fea.py` on the optimizer
 (Python 3.14).  The two interpreters share only that JSON file.
 
+`--genome <record.json>` builds any other genome instead — a Stage-3 descent's
+`--best-out` file, say — and then the artifacts are named after THAT file's stem
+rather than `wheel.*`, so a candidate can be built and its manifest read without
+touching the shipped STEP.  See `output_paths()`.
+
 Normally you do NOT run this by hand — `wheel_fea.py` invokes it automatically at the
 end of a GA run.  It used to be a separate manual step, which is exactly how
 `wheel.step` came to sit 11 minutes older than the genome it claimed to describe
@@ -23,15 +28,17 @@ while `poster_summary.jpg` showed the current one.  Run standalone, it now warns
 `[STALE]` when the STEP on disk predates `best_solution.json`.
 
 Alongside the STEP it writes `wheel_step_manifest.json`: the genome hash the solid
-was built from, junction-overlap volumes, and the fillet radii OCC actually managed
-versus the ones the optimizer priced into its stress model.  That last pair is worth
-reading — they do not currently agree (see `kt_report`).
+was built from, the junction welds (volume AND bite — see `check_junction_overlap`,
+and `wheel_geometry.junction_bite` for why the raw volume was not enough), and the
+fillet radii OCC actually managed versus the ones the optimizer priced into its stress
+model.  That last pair is worth reading — they do not currently agree (see `kt_report`).
 =============================================================================
 """
 
 import os
 import sys
 import json
+import argparse
 
 import project_paths as PP   # stdlib-only; safe in the jax-free CAD env
 import math
@@ -72,6 +79,9 @@ from wheel_fea import (
     NUMBER_OF_SPOKES,
     DENSITY_PLA,
 )
+# numpy-only, so it imports in the CAD env too — which is the point: `junction_bite` and
+# its floor have to be the same object the `make test` side checks the manifest against.
+from wheel_geometry import MIN_JUNCTION_BITE, junction_bite
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = PP.ROOT
@@ -98,19 +108,22 @@ RIM_OUTER_RADIUS_MM = 50.0     # Ø100 outer rim; spokes merge at RIM_RADIUS_MM 
 #   build a face across it, drops the face, and the spoke imports OPEN.  That, not the
 #   swept surfaces, is what Onshape was rejecting.
 #
-# The embedding is now done with straight tangent segments appended to the wire
-# (`_extend_end`).  A straight line adds no curvature, so it cannot cusp, and because
-# it continues the flank's own end tangent the join is G1 — not even a kink.
+# The embedding is now done with straight tangent segments appended to the wire, by
+# `_embed`.  A straight line adds no curvature, so it cannot cusp, and because it
+# continues the flank's own end tangent the join is G1 — not even a kink.
 #
 # Keep these SHALLOW.  The spoke meets both rings close to tangent, so a straight
 # extension mostly travels sideways: aiming 3 mm inside the hub never gets there at
 # all (closest approach 11.26 mm) and the run-on needed to try crosses the flanks.
-# Nothing is gained by going deeper — the raw profile already penetrates the hub by
-# 127 mm³ and the rim by 308 mm³, both far above MIN_JUNCTION_OVERLAP_MM3.  The
-# extension only has to bury the blunt end caps just inside each ring.
+# Nothing is gained by going deeper — on the shipped genome the profile already
+# penetrates the hub by 78.5 mm³ and the rim by 392.4 mm³, and `check_junction_overlap`
+# clears its floor by 2.3x at the hub.  The extension only has to bury the blunt end
+# caps just inside each ring.  Deepening it is also MEASURED not to rescue a weak
+# junction: on the 1.2 mm genome, 4x the hub embed depth buys 13.6 mm³ of the 31.9 the
+# old fixed-volume floor wanted, and reaching it needs ~4 mm of embed into a 12.7 mm
+# hub.  See PLAN.md §11.
 HUB_EMBED_RADIUS_MM = HUB_RADIUS_MM - 0.5            # 12.20 mm, just inside the hub disk
 RIM_EMBED_RADIUS_MM = RIM_OUTER_RADIUS_MM + 0.25     # 50.25 mm, clipped back to Ø100
-MIN_JUNCTION_OVERLAP_MM3 = 50.0   # below this the weld is hairline — fail loudly
 N_OUTLINE_PTS       = 48       # interpolation pts per spoke edge (splined → smooth faces)
 # Vertical-edge screen: a junction edge wanders less than this in XY over its full
 # height.  This is a straightness tolerance, NOT a radial one — see `_junction_edges`
@@ -156,21 +169,47 @@ def load_genome(path=None):
     return rec
 
 
-def warn_if_stale(rec):
+def output_paths(rec, prefix=None):
+    """Where this genome's three artifacts go — and why a candidate does NOT get
+    `wheel.step`.
+
+    The shipped genome keeps the historical names (`wheel.step`,
+    `wheel_nofillet.step`, `wheel_step_manifest.json`); every OTHER genome is written
+    under its own file stem.  That default is the point of the `--genome` flag rather
+    than an afterthought: PLAN.md §10 wants a promotion CANDIDATE exported and its
+    manifest read BEFORE `best_solution.json` moves, and letting a candidate overwrite
+    `wheel.step` would recreate, deliberately this time, the exact failure this file
+    was audited for — a STEP silently describing a genome that is not the shipped one.
+    `--out-prefix` overrides it for anyone who means to.
+    """
+    if prefix is None:
+        stem = os.path.splitext(os.path.basename(rec["_source_path"]))[0]
+        default_stem = os.path.splitext(os.path.basename(PP.BEST_SOLUTION))[0]
+        prefix = "wheel" if stem == default_stem else stem
+    return {
+        "step":     os.path.join(EXPORT, f"{prefix}.step"),
+        "nofillet": os.path.join(EXPORT, f"{prefix}_nofillet.step"),
+        "manifest": os.path.join(EXPORT, f"{prefix}_step_manifest.json"),
+    }
+
+
+def warn_if_stale(rec, step_path):
     """The bug this whole file was audited for: `wheel.step` sat 11 minutes older
     than `best_solution.json` and nothing said so, so the STEP silently described a
     previous genome while poster_summary.jpg showed the current one.  Running the
     exporter clears this; the warning exists for when it is run standalone."""
-    step_path = os.path.join(EXPORT, "wheel.step")
     if not os.path.exists(step_path):
         return
     step_mtime = os.path.getmtime(step_path)
     if step_mtime < rec["_source_mtime"]:
         fmt = lambda t: datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
         age = rec["_source_mtime"] - step_mtime
-        print(f"  [STALE] the wheel.step on disk predates the genome by {age/60:.1f} min")
-        print(f"          wheel.step         {fmt(step_mtime)}")
-        print(f"          best_solution.json {fmt(rec['_source_mtime'])}")
+        step_name = os.path.basename(step_path)
+        src_name = os.path.basename(rec["_source_path"])
+        w = max(len(step_name), len(src_name))
+        print(f"  [STALE] the {step_name} on disk predates the genome by {age/60:.1f} min")
+        print(f"          {step_name:<{w}}  {fmt(step_mtime)}")
+        print(f"          {src_name:<{w}}  {fmt(rec['_source_mtime'])}")
         print( "          → it is about to be regenerated from the newer genome.")
 
 
@@ -256,7 +295,8 @@ def _embed(p_top, p_bot, d, target_r, outward, label, margin=0.05):
     #
     #     void at r = 12.71     10.0° per sector, i.e. the hub circle is exposed
     #     hub-circle crossings  2 per spoke, at 27.7° and 89.6° to the circle
-    #     hub overlap           77 mm³, down from 261, against a 50 mm³ floor
+    #     hub overlap           77 mm³, down from 261  (bite 0.56, floor 0.25 — the
+    #                           floor was a fixed 50 mm³ when this was measured)
     #
     # Everything the trapezoid argument above rests on is untouched: still one direction
     # and one length for both flanks, still straight, so it still cannot cross itself.
@@ -406,25 +446,52 @@ def _self_intersections(pts):
     return out
 
 
-def check_junction_overlap(spoke_face, hub_face, rim_face):
+def check_junction_overlap(spoke_face, hub_face, rim_face, genes):
     """Measure how much spoke material actually lies inside the hub disk and inside
     the rim band.  A near-tangent junction can leave these vanishingly small while
     the boolean still reports a valid single solid — a hairline weld that looks fine
     in CAD and snaps in PLA.  Measured in 2D and scaled by the face width, which is
     the same number the old 3D intersection produced and far cheaper.
 
-    Returns (hub_vol, rim_vol) and warns below the floor."""
+    GATED ON THE BITE, NOT THE VOLUME.  This used to compare the raw mm³ against a fixed
+    MIN_JUNCTION_OVERLAP_MM3 = 50.0, which is a proxy for t and nothing else: overlap is
+    quadratic in the root thickness, so the constant "failed" every thin design and
+    passed every thick one whatever the junction actually looked like.  Three genomes
+    spanning 1.20–2.48 mm of root differ 4.3x in hub mm³ and agree to 3% in bite.  See
+    `wheel_geometry.junction_bite`, which carries the measurement and the warning that
+    MIN_JUNCTION_BITE is a geometric floor rather than a calibrated one.
+
+    Priced per ring on the thickness AT that ring — t0 at the hub, t3 at the rim, the
+    same pairing `stress_concentration_kt` uses, and exact because
+    `wheel_geometry.thickness_at_arc_length` returns t0 at s=0 and t3 at s=1.
+
+    Returns {"hub": {...}, "rim": {...}} and WARNS below the floor without raising: this
+    runs inside the GA's export hand-off (wheel_fea.py:1658), which only checks the
+    return code, so raising here would throw away a finished optimization run over a
+    heuristic.  The number is written to the manifest instead, where a test can see it.
+    """
     area = lambda s: sum(f.Area() for f in s.Faces())
-    hub_vol = area(hub_face.intersect(spoke_face)) * SPOKE_WIDTH_MM
-    rim_vol = area(rim_face.intersect(spoke_face)) * SPOKE_WIDTH_MM
-    print(f"  junction overlap : hub {hub_vol:7.2f} mm³ | rim {rim_vol:7.2f} mm³ "
-          f"(floor {MIN_JUNCTION_OVERLAP_MM3:.0f})")
-    for label, vol in (("hub", hub_vol), ("rim", rim_vol)):
-        if vol < MIN_JUNCTION_OVERLAP_MM3:
-            print(f"  [WEAK JUNCTION] {label} overlap {vol:.2f} mm³ is below the floor — "
-                  f"this spoke\n                  grazes the ring rather than meeting it. "
-                  f"Deepen {label.upper()}_EMBED_RADIUS_MM,\n                  or constrain "
-                  f"the optimizer's junction angle.")
+    out = {}
+    for label, ring, t_key in (("hub", hub_face, "t0"), ("rim", rim_face, "t3")):
+        t = float(genes[t_key])
+        vol = area(ring.intersect(spoke_face)) * SPOKE_WIDTH_MM
+        bite = junction_bite(vol, t, SPOKE_WIDTH_MM)
+        out[label] = {"mm3": vol, "t_mm": t, "bite": bite,
+                      "pass": bool(bite >= MIN_JUNCTION_BITE)}
+    print(f"  junction overlap : hub {out['hub']['mm3']:7.2f} mm³ | "
+          f"rim {out['rim']['mm3']:7.2f} mm³")
+    print(f"  junction bite    : hub {out['hub']['bite']:7.3f} t | "
+          f"rim {out['rim']['bite']:7.3f} t  (floor {MIN_JUNCTION_BITE:.2f} t)")
+    for label, j in out.items():
+        if not j["pass"]:
+            print(f"  [WEAK JUNCTION] {label} bite {j['bite']:.3f} root thicknesses "
+                  f"({j['mm3']:.2f} mm³ at\n                  t={j['t_mm']:.2f} mm) is "
+                  f"below the {MIN_JUNCTION_BITE:.2f} floor — this spoke grazes the ring\n"
+                  f"                  rather than meeting it.  Deepening "
+                  f"{label.upper()}_EMBED_RADIUS_MM is measured NOT to\n"
+                  f"                  fix this (PLAN.md §11); constrain the optimizer's "
+                  f"arrival angle.")
+    return out
     return hub_vol, rim_vol
 
 
@@ -451,7 +518,8 @@ def _unify_planar(shape):
 
 def build_profile(genes):
     """The whole wheel as ONE planar face: hub disk + 12 spokes + rim band, clipped to
-    the outer diameter.  Returns (face, (hub_overlap_mm3, rim_overlap_mm3)).
+    the outer diameter.  Returns (face, junctions), where `junctions` is
+    `check_junction_overlap`'s per-ring dict.
 
     Assembled with a single n-ary fuse rather than 14 sequential ones: fusing one at a
     time leaves the pieces unmerged, because each step re-splits what the previous one
@@ -467,7 +535,7 @@ def build_profile(genes):
     wire = spoke_profile(genes)
     profile_health(wire, "spoke profile")
     spoke0 = cq.Face.makeFromWires(wire)
-    overlaps = check_junction_overlap(spoke0, hub, rim)
+    overlaps = check_junction_overlap(spoke0, hub, rim, genes)
 
     spokes = [spoke0.rotate(cq.Vector(0, 0, 0), cq.Vector(0, 0, 1),
                             k * 360.0 / NUMBER_OF_SPOKES)
@@ -1037,16 +1105,29 @@ def _export_with_settings(shape, path, schema=None, surfacecurve=None):
         Interface_Static.SetIVal_s("write.surfacecurve.mode", old_sc)
 
 
-def main():
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        description="Build wheel.step from a genome record")
+    ap.add_argument("--genome", default=None,
+                    help="genome record to build (default: best_solution.json, the "
+                         "shipped genome). Any other file writes its artifacts under "
+                         "its own stem so the shipped STEP is never overwritten by a "
+                         "candidate — see output_paths()")
+    ap.add_argument("--out-prefix", default=None,
+                    help="basename stem for the three artifacts, overriding the "
+                         "default derived from --genome")
+    args = ap.parse_args(argv)
+
     t_start = time.time()
-    rec = load_genome()
+    rec = load_genome(args.genome)
     genes = rec["genes"]
     metrics = rec.get("metrics", {})
+    paths = output_paths(rec, args.out_prefix)
     print("=" * 68)
     print("  WHEEL STEP EXPORT")
     print("=" * 68)
     print(f"  genome {rec['_hash']}  ← {os.path.basename(rec['_source_path'])}")
-    warn_if_stale(rec)
+    warn_if_stale(rec, paths["step"])
     print(f"  Spokes {NUMBER_OF_SPOKES} | Hub Ø{2*HUB_RADIUS_MM:.1f} (solid) | "
           f"Rim merge Ø{2*RIM_RADIUS_MM:.1f} → outer Ø{2*RIM_OUTER_RADIUS_MM:.1f} | "
           f"Face {SPOKE_WIDTH_MM:.1f} mm")
@@ -1054,10 +1135,10 @@ def main():
           f"t0={genes['t0']:.2f} t3={genes['t3']:.2f}")
 
     print("\n  Building 2D profile (hub + 12 spokes + rim)…")
-    profile, (hub_ovl, rim_ovl) = build_profile(genes)
+    profile, junctions = build_profile(genes)
 
     # Guaranteed-valid fallback, written before any fillet can complicate it.
-    nofillet_path = os.path.join(EXPORT, "wheel_nofillet.step")
+    nofillet_path = paths["nofillet"]
     _export_with_settings(despecialize(extrude_profile(profile)), nofillet_path)
     print(f"  Saved fallback   → {nofillet_path}")
 
@@ -1099,9 +1180,9 @@ def main():
 
     print("\n  Converting swept surfaces for Parasolid/Onshape…")
     wheel_out = despecialize(wheel)
-    health = step_health(wheel_out, "wheel.step")
+    health = step_health(wheel_out, os.path.basename(paths["step"]))
 
-    step_path = os.path.join(EXPORT, "wheel.step")
+    step_path = paths["step"]
     _export_with_settings(wheel_out, step_path)
     print(f"\n  Saved STEP       → {step_path}")
 
@@ -1116,15 +1197,25 @@ def main():
         "export_seconds": round(time.time() - t_start, 1),
         "solid": {"valid": bool(valid), "volume_mm3": round(vol, 1),
                   "mass_g_pla": round(vol * DENSITY_PLA, 2)},
-        "junction_overlap_mm3": {"hub": round(hub_ovl, 2), "rim": round(rim_ovl, 2),
-                                 "floor": MIN_JUNCTION_OVERLAP_MM3},
+        # Key kept as `_mm3` for the readers that predate the bite: `hub` and `rim` are
+        # still the same volumes in the same units.  `floor` used to be a mm³ number and
+        # is now `bite_floor`, in root thicknesses — the two are not comparable, which is
+        # why the name changed rather than the value.
+        "junction_overlap_mm3": {
+            "hub": round(junctions["hub"]["mm3"], 2),
+            "rim": round(junctions["rim"]["mm3"], 2),
+            "bite": {k: round(junctions[k]["bite"], 4) for k in ("hub", "rim")},
+            "t_mm": {k: round(junctions[k]["t_mm"], 4) for k in ("hub", "rim")},
+            "pass": {k: junctions[k]["pass"] for k in ("hub", "rim")},
+            "bite_floor": MIN_JUNCTION_BITE,
+        },
         # `detail` carries found-vs-filleted per junction; these two remain as the count
         # actually built, which is what the old readers expect.
         "fillets": {"hub_edges": hub_n, "rim_edges": rim_n, "detail": kt_rows},
         "profile_health": prof_health,
         "step_health": health,
     }
-    manifest_path = os.path.join(EXPORT, "wheel_step_manifest.json")
+    manifest_path = paths["manifest"]
     with open(manifest_path, "w") as fh:
         json.dump(manifest, fh, indent=2)
     print(f"  Saved manifest   → {manifest_path}")

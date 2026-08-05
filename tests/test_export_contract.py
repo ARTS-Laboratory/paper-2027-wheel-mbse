@@ -255,6 +255,90 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
 
 
 # ---------------------------------------------------------------------------
+# THE WEAK-JUNCTION CHECK
+#
+# It had no coverage at all until now, which is how it came to spend the whole
+# MIN_WALL_MM sweep reporting a proxy for t0 as if it were a verdict on the weld.  See
+# `wheel_geometry.junction_bite`.
+# ---------------------------------------------------------------------------
+
+def test_the_junction_check_reports_a_bite_not_just_a_volume(manifest):
+    """The manifest has to carry the normalised number, or nothing can check it.
+
+    A raw mm³ is not falsifiable across designs: it is quadratic in the root thickness,
+    so the same junction reads 18.12 mm³ at t0=1.20 and 78.53 mm³ at t0=2.48.  The bite
+    divides that out, and `t_mm` is recorded next to it so the division is auditable
+    from the artifact alone.
+    """
+    block = manifest["junction_overlap_mm3"]
+    assert set(block) >= {"hub", "rim", "bite", "t_mm", "pass", "bite_floor"}, (
+        f"junction block is missing the normalised fields — re-export.  Got {block}")
+    for ring in ("hub", "rim"):
+        for value in (block[ring], block["bite"][ring], block["t_mm"][ring]):
+            assert isinstance(value, (int, float)) and value > 0.0, block
+        assert isinstance(block["pass"][ring], bool), block
+
+
+def test_the_bite_is_the_volume_divided_by_the_right_thickness(manifest):
+    """THE cross-interpreter check: recompute the bite here, from the genes.
+
+    The exporter prices the hub on t0 and the rim on t3 — the same pairing the stress
+    constraint uses, because `thickness_at_arc_length` is exactly t0 at s=0 and t3 at
+    s=1.  Swapping them is a one-character mistake that the raw volumes cannot reveal,
+    and on the shipped genome (t0=2.48, t3=2.00) it moves the hub bite by 54%.  This
+    test runs in the jax env against a manifest written by the CAD env, so it is also
+    what keeps `MIN_JUNCTION_BITE` from being defined twice.
+    """
+    import wheel_genome as wg
+    from wheel_fea import SPOKE_WIDTH_MM
+    from wheel_geometry import junction_bite
+
+    with open(os.path.join(HERE, "best_solution.json")) as fh:
+        genes = json.load(fh)["genes"]
+    assert wg.genome_hash(genes).startswith(manifest["genome_hash"]), (
+        f"the manifest was exported from genome {manifest['genome_hash']} but "
+        f"best_solution.json now hashes to {wg.genome_hash(genes)}; re-export")
+
+    block = manifest["junction_overlap_mm3"]
+    for ring, t_key in (("hub", "t0"), ("rim", "t3")):
+        # abs=1e-4 because the manifest rounds to 4 dp.  Loose enough for the rounding,
+        # tight enough for the failure this exists for: the shipped t0 and t3 are 0.48 mm
+        # apart, and a swap is 4800x this tolerance.
+        assert block["t_mm"][ring] == pytest.approx(genes[t_key], abs=1e-4), (
+            f"{ring} was priced at t={block['t_mm'][ring]} but the gene {t_key} says "
+            f"{genes[t_key]} — the exporter has the two rings' thicknesses crossed")
+        expect = junction_bite(block[ring], genes[t_key], SPOKE_WIDTH_MM)
+        assert block["bite"][ring] == pytest.approx(expect, abs=1e-4), (
+            f"{ring}: manifest bite {block['bite'][ring]} but "
+            f"{block[ring]} mm³ / (t² · W) = {expect}")
+
+
+def test_the_shipped_junctions_clear_their_own_floor(manifest):
+    """And `pass` is the floor comparison, not an independently written opinion.
+
+    The margin assertion is deliberately loose.  0.25 is a geometric floor — half of
+    what every genome measured so far achieves — not a limit fitted to a failure, since
+    this repo has never produced a junction that failed one.  So this pins that the
+    shipped part is not near it, and leaves the exact value free to move when a real
+    negative example turns up.
+    """
+    from wheel_geometry import MIN_JUNCTION_BITE
+
+    block = manifest["junction_overlap_mm3"]
+    assert block["bite_floor"] == MIN_JUNCTION_BITE, (
+        f"the manifest was written against a floor of {block['bite_floor']} and the "
+        f"code now says {MIN_JUNCTION_BITE} — re-export")
+    for ring in ("hub", "rim"):
+        assert block["pass"][ring] is (block["bite"][ring] >= MIN_JUNCTION_BITE), (
+            f"{ring}: pass={block['pass'][ring]} disagrees with "
+            f"{block['bite'][ring]} >= {MIN_JUNCTION_BITE}")
+        assert block["bite"][ring] >= MIN_JUNCTION_BITE, (
+            f"the SHIPPED wheel's {ring} weld is below the floor at "
+            f"{block['bite'][ring]} root thicknesses — this is not a threshold to "
+            f"loosen without reading wheel_geometry.junction_bite first")
+
+
+# ---------------------------------------------------------------------------
 # NEEDS THE CAD ENV
 # ---------------------------------------------------------------------------
 

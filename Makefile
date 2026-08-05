@@ -291,8 +291,14 @@ minwall-%:
 	    --phase-scheme uniform --fidelity-check-every 0 \
 	    --out stage3_minwall_$*.json --best-out stage3_minwall_best_$*.json
 
+# EXPORT_GENOME builds a genome that is NOT the shipped one — a promotion candidate,
+# say — and the exporter then names its artifacts after that file's stem rather than
+# `wheel.*`, so `make export EXPORT_GENOME=stage3_minwall_best_1.2.json` cannot
+# overwrite the shipped STEP.  Empty (the default) is the shipped genome, unchanged.
+EXPORT_GENOME ?=
+
 export:
-	$(PY_CAD) src/wheel_step_export.py
+	$(PY_CAD) src/wheel_step_export.py $(if $(EXPORT_GENOME),--genome $(EXPORT_GENOME))
 
 # The milestone gates.  These are not tests — they produce measured reports whose
 # numbers are quoted in CLAUDE.md — but they do exit nonzero when a gate fails, so

@@ -1,9 +1,9 @@
 {
   "genome_hash": "36aed36",
   "source": "best_solution.json",
-  "source_mtime": "2026-07-30T13:20:15",
-  "exported_at": "2026-07-31T15:29:59",
-  "export_seconds": 230.5,
+  "source_mtime": "2026-08-03T00:00:47",
+  "exported_at": "2026-08-05T18:27:42",
+  "export_seconds": 214.5,
   "solid": {
     "valid": true,
     "volume_mm3": 59777.4,
@@ -12,7 +12,19 @@
   "junction_overlap_mm3": {
     "hub": 78.53,
     "rim": 392.37,
-    "floor": 50.0
+    "bite": {
+      "hub": 0.5712,
+      "rim": 4.3791
+    },
+    "t_mm": {
+      "hub": 2.4774,
+      "rim": 2.0
+    },
+    "pass": {
+      "hub": true,
+      "rim": true
+    },
+    "bite_floor": 0.25
   },
   "fillets": {
     "hub_edges": 24,

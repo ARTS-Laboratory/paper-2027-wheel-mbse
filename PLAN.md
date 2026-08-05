@@ -167,6 +167,27 @@ One line each:
   now depends on a floor decision that has not been made. `best_solution.json` is
   untouched; `tests/test_golden.py` now reads `best_solution_ga_beam.json` so a future
   promotion is a one-file change that cannot re-baseline the regression net.
+- **§11 — THE FLOOR DECISION LANDED (2026-08-05): the process can hold 1.2 mm.** So the
+  candidate is `stage3_minwall_best_1.2.json`, **39.194 g**, and §10's two prerequisites
+  are done: the `medium` re-score confirms the mass to five figures with every barrier
+  still at 0.0, and the export is OCC-valid with **`kt_error_pct` = +0.0% at BOTH
+  junctions** — the first genome whose built fillets match the ones its stress model
+  priced. **It is still NOT promoted**: the exporter's `[WEAK JUNCTION]` check fired on
+  the hub (18.12 mm³ against a 50 mm³ floor) and the smallest edge fell to 0.0087 mm.
+  Deepening the embed is measured and does NOT fix it. Read §11 before touching
+  `best_solution.json`.
+- **§12 — THAT CHECK WAS MEASURING `t0`, AND IT IS FIXED (2026-08-05).** Junction overlap
+  is quadratic in the root thickness, so the fixed 50 mm³ floor ranked genomes by how
+  thick they were and called it a verdict on the weld — which is why **elite 10 failed it
+  too, at 48.72 mm³**. Normalised, the three genomes measure **0.562 / 0.544 / 0.571**
+  root thicknesses of penetration across a 2× range in `t0`: the same junction, three
+  times over. `MIN_JUNCTION_OVERLAP_MM3` is gone, replaced by
+  `wheel_geometry.junction_bite` and `MIN_JUNCTION_BITE = 0.25` — **a geometric floor, not
+  a calibrated one**, since no junction in this repo has ever actually failed. Still a
+  warning, never a raise. Three tests where there were none. Both genomes re-exported and
+  the manifest diff proves it is reporting-only: **not one geometric number moved.**
+  **`make test` 430 passed.** Promotion now waits on exactly one thing — the Inventor
+  import of `export/stage3_minwall_best_1.2.step`.
 
 
 **The previous three items — (a) the hub-fillet cap, (b) the production descent, (c)
@@ -1632,3 +1653,271 @@ would have failed SILENTLY rather than loudly, which is why they were worth catc
   returns the value **and which key it came from**: the two are the same role measured two
   different ways (analytic beam area vs integration over the FEA mesh) and normalising
   them into one number would hide that from the reader.
+
+---
+
+### 11. THE FLOOR DECISION LANDED: **the process can hold 1.2 mm** (2026-08-05). The 1.2 mm arm is re-scored, exported, and it is NOT promoted yet — one check fired.
+
+§10's shortlist asked a single yes/no with 19.4 g attached. The answer is **yes**, so the
+promotion candidate is `stage3_minwall_best_1.2.json` (genome `350f4c7`, **39.194 g**),
+and §10's two prerequisites have now both been run against it.
+
+**`best_solution.json` is still untouched.** Two things came back from the export that a
+human should see before it moves — see "What fired" below.
+
+#### The `medium` re-score: the mass is real and both constraints still hold
+
+§8 and §10 both said nothing below 1.6 mm may be believed until it is re-scored on a
+finer mesh, because no sub-1.6 arm had ever been mesh-converged. One forward evaluation
+of the converged genome at `medium`, 8 phases, `uniform`, 4 workers, **271.8 s**:
+`stage3_minwall_1.2_medium.json`, genome echoed to `stage3_minwall_best_1.2_medium.json`.
+
+| quantity | `coarse` | `medium` | change |
+|---|---|---|---|
+| **mesh mass** | 39.19436 g | **39.19433 g** | **−0.00008%** |
+| axle drop (target 2.0) | 1.99923 mm | **2.01931 mm** | deflection error **0.0% → +1.00%** |
+| **utilisation** | 0.7830 | **0.7986** | +1.98%, against an allowable of 1.0 |
+| `min_scaled_jacobian` | 0.71086 | **0.71114** | **+0.04%** |
+| `phase_ripple` | 0.09570 | 0.09421 | −1.56% |
+| loss | 32.5051 | 32.7376 | +0.72% |
+| `max_stress_mpa` | 140.89 | 182.42 | **+29.5%** — the singularity, as always |
+
+**Every barrier term is still exactly 0.00000 at `medium`** — `stress`, `min_sj`,
+`fillet_cap`, `fold`, `arrival`, `hub_overlap`, `x_order`, `buckling`, `phase_ripple`.
+Only `mass`, `smoothness` and `deflection` are nonzero, exactly as at `coarse`.
+
+Three things worth reading off that table:
+
+- **The mass survives refinement to five figures**, which is what the re-score existed to
+  establish. 39.194 g is a real number.
+- **`min_sj` does NOT degrade under refinement** — 0.7109 → 0.7111. §8's caution ("the
+  mesh is measurably worse at 0.8 mm and any conclusion rests on a poorer
+  discretisation") was about mesh quality falling as the *floor* falls; it does not
+  compound as the mesh refines. The thin wall is what sets it, not the resolution.
+- **`max_stress_mpa` moving +29.5% while `utilisation` moves +1.98% is the M4 result
+  restated**, and it is the reason the constraint was rewritten in M8b-i.6. Anyone
+  alarmed by 182 MPa against a 25 MPa allowable is reading the divergent field max.
+
+**What this is NOT: a re-optimisation at `medium`.** It is `--steps 0` — the `coarse`
+answer scored once on a finer mesh. It says the design is what `coarse` said it was; it
+does not say a `medium` descent would stop here.
+
+#### The export: for the FIRST time the Kt the optimizer priced is the Kt the part has
+
+`export/stage3_minwall_best_1.2.step` (+ `_nofillet.step`, `_step_manifest.json`),
+**67.3 s**, OCC valid, one solid, not self-intersecting, bounding box exact.
+
+| junction | R requested | R built | edges | Kt model | Kt built | **error** |
+|---|---|---|---|---|---|---|
+| hub | 0.5790 | **0.5790** | **24/24**, ONE family | 2.0235 | 2.0235 | **+0.0%** |
+| rim | 2.7495 | **2.7495** | **24/24**, ONE family | 1.4226 | 1.4226 | **+0.0%** |
+
+Against the shipped genome's **+73.4%** and **+111.4%**. §3's whole finding — that a
+junction priced by its worst corner reports what twelve square corners were hiding — has
+no bite here because **there is no second family**: every corner takes the requested
+radius at the first ladder rung. That is also why the export costs 67 s against 230 s.
+
+**The mechanism is that small fillets build.** §5's cap model predicted this and the
+descent obeyed it: `R_hub` = 0.579 sits under `hub_fillet_cap_mm` = 0.624, and 2.749 is
+under the rim's slot. The genome stopped asking for fillets the part cannot build, so the
+stress model and the solid finally agree. **`kt_error_pct` is now +0.0% rather than +73.4%
+— the discrepancy this milestone existed to remove is gone on this genome.**
+
+Solid mass **47.63 g** (whole wheel; the optimizer's 39.194 g is spoke material only, and
+hub + rim add the rest) against the shipped genome's 74.12 g, **−35.7%**.
+
+#### WHAT FIRED, and it is why this is not promoted in the same breath
+
+1. **`[WEAK JUNCTION]` — hub overlap 18.12 mm³ against a 50.0 mm³ floor.** The shipped
+   genome is 78.53 mm³ and the rim here is 68.13 mm³, so it is the **hub** end alone. The
+   exporter's own words: "this spoke grazes the ring rather than meeting it. Deepen
+   `HUB_EMBED_RADIUS_MM`, or constrain the optimizer's junction angle." Cause is not
+   mysterious — the root is `t0` = 1.2 mm against 2.477 mm on the shipped genome, and the
+   embed is only 0.5 mm deep (`HUB_EMBED_RADIUS_MM = HUB_RADIUS_MM − 0.5`), so there is
+   simply less material buried inside the hub disk. **The union still produced a valid
+   single solid with all 24 hub corners on the circle**, so this is a warning about weld
+   robustness, not a build failure.
+
+   **MEASURED, AND IT KILLS THE SUGGESTED FIX: deepening `HUB_EMBED_RADIUS_MM` does not
+   get there.** Profile-only sweep, no fillets, three genomes, embed depth 0.5 → 2.0 mm
+   (`embed_depth_probe.py`, a scratchpad one-question probe like `eps_n_check.py`):
+
+   | embed depth | 1.2 mm genome | elite 10 (`t0` 2.00) | `best_solution` (`t0` 2.48) |
+   |---|---|---|---|
+   | **0.50 (shipped)** | **18.12** | **48.72  ← also under** | 78.53 |
+   | 1.00 | 22.64 | 52.54 | 80.68 |
+   | 1.50 | 27.20 | 56.30 | 82.86 |
+   | 2.00 | 31.73 | 60.09 | 85.01 |
+
+   Four times the embed depth buys the 1.2 mm genome **13.6 mm³**, and it needs 31.9.
+   Extrapolating the 9.1 mm³/mm slope puts the crossing near **4 mm of embed** — a third
+   of the 12.7 mm hub radius, with twelve roots converging inside it. That is not a
+   constant to nudge; it is a different construction. (Self-intersections stayed **0** and
+   min curvature never moved at any depth on any genome, so *"keep these SHALLOW"* was not
+   what bit here — the sweep is safe, it just does not reach.)
+
+   **What the sweep actually shows is that the 50 mm³ floor tracks root thickness, and it
+   was set when roots were ~2.5 mm.** The overlap is superlinear in `t0` — 1.2 → 2.0 →
+   2.48 mm of root gives 18.1 → 48.7 → 78.5 mm³ at the shipped depth — because a
+   near-tangent arrival makes the buried region a wedge. **Elite 10, the candidate this
+   repo was going to promote before today, is at 48.72 against the same 50 floor**, i.e.
+   the check was already about to fire at the 2.0 mm floor and nobody had run the export
+   to see it. So the question is not "how do we rescue this genome's weld" but **"what is
+   `MIN_JUNCTION_OVERLAP_MM3` actually asserting, and is a fixed volume the right form of
+   it for a thin-walled part?"** That is a modelling decision, and it is the one blocking
+   promotion. **ANSWERED IN §12: no, it is not — the fixed volume was a `t0` proxy, and
+   normalising it out shows all three genomes at the same 0.56 root thicknesses of
+   engagement. The constant is gone and the candidate passes.**
+2. **The smallest features got ~19x smaller.** `min_edge` **0.0087 mm** (shipped 0.162)
+   and `min_face` **0.195 mm²** (shipped 3.63). OCC is happy — `BRepCheck` valid, 0
+   degenerate edges, tolerance 1e-07 — and `min curvature R` is **0.579 mm**, still well
+   over the 0.25 mm floor and over a 0.4 mm nozzle. But an 8.7 µm edge is exactly the kind
+   of feature another kernel drops silently, and **Inventor has never imported anything
+   from this repo** (§0). This is the one import that is now worth doing.
+
+Neither is a reason the 1.2 mm floor was the wrong call. Both are reasons the *export* of
+that genome is not yet a shippable part.
+
+#### The exporter can build a candidate without touching the shipped STEP
+
+`wheel_step_export.py` read `best_solution.json` unconditionally, so "export the candidate
+before trusting its mass" (§10) was impossible to do in the right ORDER — the only way to
+export a genome was to promote it first. It now takes **`--genome <record.json>`**, and
+`output_paths()` names the three artifacts after that file's stem unless it IS the shipped
+genome, which keeps `wheel.step` / `wheel_nofillet.step` / `wheel_step_manifest.json`
+exactly as they were. **A candidate cannot overwrite the shipped STEP**, which would have
+recreated on purpose the failure this file was audited for. `--out-prefix` overrides.
+`make export EXPORT_GENOME=stage3_minwall_best_1.2.json` drives it. No arguments is
+byte-identical behaviour to before, which is what the GA hand-off (`wheel_fea.py:1658`)
+still calls.
+
+`warn_if_stale` takes the step path it is actually about and prints the real source name,
+rather than saying `best_solution.json` whatever it just read.
+
+**`make test` 427 passed** (1279.97 s), unchanged from §8 — the flag is additive and the
+no-argument path is the one every test and the hand-off already exercised.
+
+#### What promotion still needs
+
+`best_solution.json` is unchanged; `tests/test_golden.py` is already decoupled (§10), so
+the promotion itself remains a one-file change. Before it:
+
+1. ~~A decision on `MIN_JUNCTION_OVERLAP_MM3`.~~ **RESOLVED — see §12. The constant was
+   measuring `t0`.** It is gone; the check now gates on `wheel_geometry.junction_bite`,
+   the 1.2 mm candidate passes at 0.562 root thicknesses against a 0.25 floor, and
+   nothing about the candidate's geometry changed.
+2. **One Inventor import** of `export/stage3_minwall_best_1.2.step`, against a 0.0087 mm
+   edge and a 0.195 mm² face. **This is now the only thing standing between the candidate
+   and promotion.**
+3. Note that promoting also moves the WHEEL the studies describe: every study driver reads
+   `best_solution.json`, so §9's load factor (1.36 on the *shipped* genome) and every other
+   per-design number on this page is about a genome that would no longer be the shipped one.
+   Nothing is invalidated — they are labelled by design — but they stop describing "the
+   wheel" and start describing "the old wheel".
+
+---
+
+### 12. THE WEAK-JUNCTION CHECK WAS MEASURING `t0`. `MIN_JUNCTION_OVERLAP_MM3` IS GONE (2026-08-05).
+
+§11 left one thing blocking promotion: the exporter's `[WEAK JUNCTION]` check fired on the
+1.2 mm candidate at **18.12 mm³** against `MIN_JUNCTION_OVERLAP_MM3 = 50.0`. §11 had already
+ruled out the exporter's own suggested fix (4× the hub embed depth buys 13.6 mm³ of the 31.9
+needed) and noted that **elite 10 fails the same check at 48.72 mm³**. That second fact was
+the tell, and it is now the whole answer.
+
+#### The measurement
+
+`check_junction_overlap` intersects ONE spoke's 2D outline with the hub disk and multiplies
+by the 22.4 mm face width. That volume is **quadratic in the root thickness**: once through
+the band width, and again because a near-tangent band of that width crosses the circle over a
+proportionally longer arc. Divide it out — `overlap_mm3 / (t² · W)`, the weld's penetration
+measured in ROOT THICKNESSES:
+
+| genome | `t0` | hub mm³ | **bite** |
+|---|---|---|---|
+| `stage3_minwall_best_1.2.json` | 1.20 | 18.12 | **0.562** |
+| `stage3_prod_best_elite10.json` | 2.00 | 48.72 | **0.544** |
+| `best_solution.json` (shipped) | 2.48 | 78.53 | **0.571** |
+
+**The raw volumes span 4.3×. The bites agree to 3%.** These are the same junction three
+times over, and the old constant "failed" two of them purely for being thin. It was never a
+verdict on the weld; it was `t0` with a threshold on it. That is why the thinnest design
+failed it, why elite 10 failed it, and why no amount of embed depth was ever going to help.
+
+#### What replaced it
+
+`wheel_geometry.junction_bite(overlap_mm3, t_mm, width_mm)` and `MIN_JUNCTION_BITE = 0.25`.
+They live in `wheel_geometry` for the same reason `MAX_ARRIVAL_DEG` does — it is the one
+module both interpreters can import, so the exporter (CAD env) and the test that audits its
+manifest (jax env) share one definition rather than two that can drift.
+
+The geometric argument: a spoke arriving radially and burying depth `d` contributes
+`overlap = t·d·W`, so the ratio is exactly `d/t`, and a grazing spoke drives it to 0 — which
+is the failure the check exists for.
+
+**0.25 IS A GEOMETRIC FLOOR, NOT A CALIBRATED ONE, AND THE CODE SAYS SO.** Three samples
+that agree to 3% cannot calibrate a threshold, and this repo has never produced a junction
+that actually failed, so there is no negative example to fit against. 0.25 is half of what
+every measured design achieves. Replace it the moment a real failure turns up.
+
+`check_junction_overlap` **still only warns, and must keep only warning.** It runs inside the
+GA's export hand-off (`wheel_fea.py:1658`), which checks nothing but the return code — so
+raising there would throw away a finished optimization run over a heuristic. The number goes
+to the manifest instead, where a test can see it. The warning text also stopped advising
+"deepen `HUB_EMBED_RADIUS_MM`", which §11 measured and ruled out.
+
+#### It still catches what it exists for
+
+Negative control: recede the hub ring toward the spoke root so the spoke genuinely only
+grazes it, and the metric falls monotonically and fires.
+
+| hub ring r | hub mm³ | bite | |
+|---|---|---|---|
+| 12.70 (real) | 18.12 | 0.562 | |
+| 12.55 | 13.20 | 0.409 | |
+| 12.40 | 9.27 | 0.287 | |
+| 12.30 | 7.25 | **0.225** | **[WEAK JUNCTION]** |
+| 12.25 | 6.43 | **0.199** | **[WEAK JUNCTION]** |
+
+Read honestly: this shows the new metric detects grazing, not that it beats the old one on
+this axis — the old floor would have fired here too. The evidence that the *form* was wrong
+is the invariance table above, not this sweep.
+
+#### The manifest, and the tests it now has
+
+`junction_overlap_mm3` keeps `hub` and `rim` in mm³ under the same names, and gains `bite`,
+`t_mm`, `pass` and `bite_floor`. `floor` is gone rather than repurposed: it was a mm³ number
+and the new one is in root thicknesses, so a reader who missed the change gets a `KeyError`
+instead of a plausible wrong comparison.
+
+Three tests in `tests/test_export_contract.py`, where there were **none** — nothing under
+`tests/` referenced this check before today, which is how it spent the entire `MIN_WALL_MM`
+sweep reporting a `t0` proxy without anything noticing:
+
+- the block carries the normalised fields at all;
+- **the bite reconstructs from the genes** — recomputed in the jax env, from a manifest
+  written by the CAD env, which is what pins the hub to `t0` and the rim to `t3`. On the
+  shipped genome a swap moves the hub bite 54%, and the raw volumes cannot reveal it;
+- the shipped part clears its own floor, and `pass` IS the floor comparison rather than an
+  independently written opinion.
+
+#### The re-exports prove the change is reporting-only
+
+`make export` on the unchanged shipped genome: `junction_overlap_mm3` is **the only
+non-volatile key in the manifest that moved**. `genome_hash` 36aed36, `solid.volume_mm3`
+59777.4, `mass_g_pla` 74.12, every `fillets.detail` row (hub +73.4%, rim +111.4%),
+`profile_health` and `step_health` are all identical. Shipped bite: hub **0.571**, rim
+**4.379**, both pass.
+
+`make export EXPORT_GENOME=stage3_minwall_best_1.2.json`: hub bite **0.562**, rim **1.424**,
+both pass, **no warning**. Solid 38415.2 mm³ / 47.63 g, `kt_error_pct` +0.0% at both
+junctions, min edge 0.0087 mm — every number identical to §11. Nothing about the candidate's
+geometry changed; only what the exporter says about it.
+
+**`make test` 427 + 3 = 430 passed.**
+
+#### What is left
+
+Promotion now waits on **one thing**: the Inventor import of
+`export/stage3_minwall_best_1.2.step`, against that 0.0087 mm edge and 0.195 mm² face. See
+§11's "What promotion still needs". `best_solution.json` is untouched.
