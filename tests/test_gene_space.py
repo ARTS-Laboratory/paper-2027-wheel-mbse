@@ -96,9 +96,13 @@ def test_a_floor_that_empties_or_inverts_the_box_is_refused(bad):
     """`t3`'s ceiling is the tightest at 6.0, so a floor there or above leaves that gene
     with nowhere to live.  Refused at the setter rather than discovered as a NaN 90
     minutes into a descent."""
+    # Read the floor BEFORE the refused call rather than hardcoding it: what this asserts
+    # is "unchanged", and a literal turns that into "still 2.0", which is a different
+    # claim that stopped being true when PLAN.md §13 moved the default to 1.2.
+    before = W.MIN_WALL_MM
     with pytest.raises(ValueError, match="min wall"):
         W.set_min_wall(bad)
-    assert W.MIN_WALL_MM == 2.0, "a refused floor must not half-apply"
+    assert W.MIN_WALL_MM == before, "a refused floor must not half-apply"
 
 
 # ---------------------------------------------------------------------------
@@ -123,15 +127,25 @@ def test_the_normalized_gradient_follows_the_moved_floor(floor):
     `test_objective.py` already checks: that one would agree with itself even if the box
     the gradient was scaled by were the stale one.
 
-    T1 only, so this costs no mesh and no solve.  `hub_overlap` is violated at the shipped
-    genome (+0.323 mm), which is what keeps `d/dt0` live — a flat barrier here would make
-    the assertion `0 == 0` and prove nothing.
+    T1 only, so this costs no mesh and no solve.  It needs a genome where `hub_overlap` is
+    VIOLATED, because within T1 that barrier is the only live `d/dt0` there is — `mass` is
+    integrated over the mesh and so lives in a later tier, and `fillet_cap` is slack
+    whenever `R_hub` is under its cap.  A flat barrier makes the assertion `0 == 0` and
+    proves nothing, which is what the guard below exists to catch.
+
+    IT READS `best_solution_ga_beam.json`, NOT `best_solution.json`, FOR THAT REASON.  This
+    used to take whatever genome shipped, on the strength of the shipped one violating
+    `hub_overlap` by +0.323 mm — an incidental property of one design, not a fact about the
+    box.  §13's promotion made the shipped genome feasible on `hub_overlap` and this test
+    went vacuous; the guard caught it, which is the guard working.  The GA/beam reference
+    is pinned under its own name and never moves (see `tests/test_golden.py`), so pointing
+    at it decouples a test ABOUT THE BOX from the question of which design ships.
     """
     import wheel_objective as WO
 
     W.set_min_wall(floor)
     low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
-    genes = so3_genes()
+    genes = np.array(so3.load_genes("best_solution_ga_beam.json"), dtype=float)
     genes[list(THICKNESS)] = np.clip(genes[list(THICKNESS)],
                                      low[list(THICKNESS)], high[list(THICKNESS)])
     z = wg.normalize(genes, low, high)

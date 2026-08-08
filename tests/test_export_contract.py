@@ -220,9 +220,13 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
     spoke-to-hub corners are back on r = 12.7.  `fillet_junctions` then fillets the
     leftover family instead of returning after the first one.
 
-    WHAT IS STILL OPEN, and why the error is not zero: the shallow corner of a near-tangent
-    arrival takes only 0.361 mm.  That is an ARRIVAL-ANGLE limit and it is what sets
-    `r_built_mm`, so it is what this junction is priced at — see the worst-corner rule.
+    WHAT USED TO BE OPEN, and is not any more.  On the old shipped genome the shallow corner
+    of a near-tangent arrival took only 0.361 mm against a requested 1.560, so the hub split
+    into two families and `kt_error_pct` sat at +73.4%.  The genome promoted in PLAN.md §13
+    asks for `R_hub` = 0.579, under §5's cap of 0.624 for that genome, and OCC builds it on
+    all 24 corners in ONE family: `kt_error_pct` +0.0%, the first shipped part whose fillets
+    are the ones its stress model priced.  The worst-corner rule still applies and is still
+    asserted — there is simply only one corner radius to be worst now.
 
     THE OTHER HALF OF THIS NOTE USED TO BE WRONG.  It said the inter-spoke gap "caps ANY hub
     fillet near 1.1 mm", on the strength of half the 2.196 mm void agreeing with the
@@ -232,8 +236,12 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
     slot — three designs whose voids span a 54% range give thresholds 3.4% apart.  PLAN.md §5
     is the record; `wheel_objective.hub_fillet_cap_mm` is the constraint that now knows it.
 
-    Capping `R_hub` does NOT move the number this test gates.  `kt_error_pct` is set by the
-    shallow corner above, which the cap does not model.
+    Capping `R_hub` does not move `kt_error_pct` DIRECTLY — the cap does not model the
+    shallow corner that used to set it.  But a genome that lands under the cap never asks
+    OCC for a radius the shallow corner has to refuse, and that is how §13's genome reaches
+    +0.0%.  The `< 88.0` bound below is therefore still the real gate: it is what catches a
+    regression back toward a square hub, and it must not be tightened onto the current
+    genome's 0.0, which is a property of THIS design and not of the exporter.
     """
     hub = next(r for r in manifest["fillets"]["detail"] if r["junction"] == "hub")
     assert hub["r_built_mm"] > 0.0, (
@@ -245,9 +253,23 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
     assert hub["worst_wedge_deg"] < 350.0, (
         f"{hub}\na wedge this close to a cusp is the spoke-to-spoke notch, not a "
         f"spoke-to-hub corner — `_embed` is running sideways again")
-    assert len(hub["fillet_families"]) == 2, (
-        f"{hub}\nexpected two families, one per flank: the square-on corner takes a much "
-        f"larger radius than the shallow one")
+    # THIS USED TO ASSERT `== 2`, and that was pinning a PATHOLOGY as an invariant.  Two
+    # families means OCC refused the requested radius on one flank and had to fall back;
+    # the promoted genome (§13) keeps `R_hub` under the cap and gets ONE family covering
+    # all 24 edges at the full requested radius, which is the outcome the whole hub-fillet
+    # milestone was aiming at — and the old assertion called it a failure.
+    #
+    # What this actually needs to guarantee is that no family is silently abandoned.  The
+    # edge count above already covers that; this makes the families account for it too, so
+    # a fallback split is still fine and a DROPPED family is not.
+    assert hub["fillet_families"], f"{hub}\nno fillet families recorded at all"
+    assert sum(f["n_edges"] for f in hub["fillet_families"]) == hub["n_edges_filleted"], (
+        f"{hub}\nthe families do not account for every filleted edge — `fillet_junctions` "
+        f"abandoned one, which is the bug that left the hub square")
+    assert hub["r_built_mm"] == pytest.approx(
+        min(f["radius_mm"] for f in hub["fillet_families"])), (
+        f"{hub}\n`r_built_mm` must be the WORST corner's radius — the junction is priced "
+        f"at its weakest fillet, not its best")
     assert hub["kt_error_pct"] < 88.0, (
         f"{hub}\nas-built hub utilisation is "
         f"{hub['kt_built'] / hub['kt_modeled']:.2f}x what the constraint reports; it was "

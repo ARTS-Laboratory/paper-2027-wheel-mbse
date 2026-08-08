@@ -100,15 +100,26 @@ def wheel_mass_g(mesh):
 def stress_report(mesh, res):
     """Von Mises by region: the pointwise max AND the 99th percentile.
 
-    THE POINTWISE MAX IS NOT A NUMBER — it diverges under refinement (rim region 30.3,
-    38.9, 44.9, 52.4 MPa across the config ladder) because this mesh has no fillets, and
-    an unfilleted spoke/ring junction is a 349.5 degree re-entrant corner: geometrically
-    a crack.  Its stress field goes as r^-0.5 and no mesh resolves it.
+    THE POINTWISE MAX IS NOT A NUMBER — it diverges under refinement because this mesh
+    has no fillets, and an unfilleted spoke/ring junction is a strongly re-entrant
+    corner.  Its stress field goes as r^-0.5 and no mesh resolves it.  The p99 of the
+    same field converges cleanly, which is what a point singularity of measure zero looks
+    like.  Quote the percentile; quote the max only to say it is a singularity —
+    including the plain spoke block's max, which diverges too for the reason noted below.
 
-    The p99 of the same field converges cleanly (8.84, 8.78, 8.61, 8.61), which is what a
-    point singularity of measure zero looks like.  Quote the percentile; quote the max
-    only to say it is a singularity — including the plain spoke block's max, which
-    diverges too for the reason noted below.
+    THE NUMBERS BELOW WERE MEASURED ON THE GA/BEAM GENOME AND STILL ARE ITS NUMBERS.  The
+    wedge in particular is a per-design quantity and the old text stated 349.5 deg flatly,
+    as if it were a property of the junction rather than of one wheel.  Across the config
+    ladder (smoke, coarse, medium, fine), re-measured in §14:
+
+        genome     wedge      rim-region max              plain-spoke p99
+        36aed36    349.5 deg  30.3  38.9  44.9  52.4      8.84  8.78  8.61  8.61
+        350f4c7    315.4 deg  23.9  27.3  31.0  37.9     18.33 17.27 17.25 17.23
+
+    Both diverge, both p99s settle, and the promoted wheel's p99 is roughly double the
+    other's on half the wall — which is the whole point of it being a 36% lighter part.
+    See `tests/test_wheel_fea.py::test_the_junction_is_re_entrant_enough_to_be_singular`
+    for the bound that holds for EVERY genome in the box rather than for one design.
 
     That the corner is nearly a crack is exactly WHY the real part is filleted there and
     why `wheel_fea.stress_concentration_kt` exists.  A meshed fillet needs the
@@ -116,8 +127,19 @@ def stress_report(mesh, res):
     the plan's Stage 3 work — so real peak stress is not an M4 deliverable.
     """
     lam, mu = fem.lame(W.YOUNGS_MODULUS_PLA_MPA, fem.POISSON_RATIO_PLA)
+    # THE KINEMATICS COME FROM THE RESULT, NOT FROM A DEFAULT.  `gauss_stresses` takes
+    # `nonlinear=False` by default, which is right for the linear solves this function was
+    # written for and SILENTLY WRONG for an SVK one: it applies the engineering-strain
+    # formula to a large displacement field and returns a number that is not a stress.
+    # Measured on the shipped genome at service load (§14): the correct Cauchy push-forward
+    # gives a plain-spoke p99 of 19.75 MPa and the linear formula on the same field gives
+    # 46.56 — a +169% artefact against a real +14.3% effect, an order of magnitude apart,
+    # and nothing about the wrong number looks wrong.  `res["meta"]["kinematics"]` is set
+    # by `wheel_problem` down both paths, so there is no reason to guess.
+    nonlinear = res.get("meta", {}).get("kinematics") == "svk"
     st = fem.gauss_stresses(np.asarray(mesh.coords), mesh.conn, res["u"],
-                            order=mesh.cfg.order, lam=lam, mu=mu)
+                            order=mesh.cfg.order, lam=lam, mu=mu,
+                            nonlinear=nonlinear, cauchy=True)
     vm = st["von_mises"]
     out = {}
     for r in ("spoke", "hub", "rim"):
@@ -556,7 +578,8 @@ def _print(rep):
           f"{'MET' if r['criterion_met'] else 'NOT MET'}]")
     if not r["criterion_met"]:
         print(f"      Why, and it is not a meshing defect: with no fillets the spoke")
-        print(f"      meets its ring at a 349.5 deg re-entrant corner — geometrically a")
+        print(f"      meets its ring at a strongly re-entrant corner (315.4 deg on the")
+        print(f"      shipped genome, 349.5 on the GA/beam one) — geometrically a")
         print(f"      crack — whose r^-0.5 field caps the convergence rate of EVERY")
         print(f"      global quantity.  Reaching 0.5% needs MESHED fillets — the STEP now")
         print(f"      builds all 48 of its corners (HUB_PLAN.md) but this mesh has none.")

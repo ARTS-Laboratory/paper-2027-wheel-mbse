@@ -188,8 +188,35 @@ def test_the_beam_to_wheel_ratio_is_not_a_constant(genes):
     Reduced fidelity (smoke mesh, few samples) on purpose — the finding is a factor of
     ~30 and does not need a converged mesh to be visible.  If this ever passes, the whole
     Stage 2 justification needs re-reading, which is why it fails loudly.
+
+    IT PINS THE FLOOR AT 2.0 BECAUSE THE STATISTIC IS A PROPERTY OF THE GENE BOX, NOT OF
+    `genes`.  `run_beam_blindness` draws a Latin hypercube from the box and computes the
+    max/min over the DRAWN rows, explicitly excluding the genome it is passed — so the
+    ratio does not depend on which design ships, and it does depend on where the box's
+    thickness floor sits.  Measured (§14):
+
+        genome        floor 2.0    floor 1.2
+        36aed36           4.943        2.686
+        350f4c7           4.943        2.686
+
+    Identical down the genome column, to every digit.  §13's move of the DEFAULT floor to
+    1.2 therefore broke this test without touching the wheel: a lower floor admits
+    floppier random spokes, which compresses the spread.  Gate 1's conclusion — the
+    correction factor is not defensible — is unaffected and is still the first assertion.
+    What the `> 3.0` margin was calibrated in was a 2.0 mm box, so that is the box it is
+    measured in.  Re-deriving Gate 1's margin at a 1.2 mm floor is a real piece of work
+    and a judgement about Gate 1; it is not a test edit, and it has not been done here.
     """
-    rep = swf.run_beam_blindness(genes, "smoke", n=6, seed=7)
+    before = wf.MIN_WALL_MM
+    try:
+        wf.set_min_wall(2.0)
+        rep = swf.run_beam_blindness(genes, "smoke", n=6, seed=7)
+    finally:
+        # Restore unconditionally.  `tests/test_stage3.py` takes its bounds in a
+        # MODULE-scoped fixture that never recomputes, so a floor leaked from here would
+        # not merely persist — it would be baked in and fail somewhere else entirely.
+        wf.set_min_wall(before)
+
     assert not rep["correction_factor_is_defensible"], rep["fea_over_beam_cv"]
     assert rep["fea_over_beam_ratio"] > 3.0, rep["fea_over_beam_ratio"]
 
@@ -234,43 +261,95 @@ def test_a_thicker_rim_monotonically_stiffens_the_wheel(genes):
 # ---------------------------------------------------------------------------
 
 def test_peak_stress_diverges_but_the_field_converges(genes):
-    """The unfilleted junction is a 349.5 degree re-entrant corner: a crack.
+    """The unfilleted junction is a re-entrant corner, so the pointwise maximum must NOT
+    be quoted as a stress — it grows without bound under refinement — while the p99 of
+    the same field settles.  Asserting both directions keeps anyone from reading the max
+    as a real number, and keeps the p99 from being quietly replaced by the max.
 
-    So the pointwise maximum must NOT be quoted as a stress — it grows without bound
-    under refinement — while the p99 of the same field settles.  Asserting both
-    directions keeps anyone from reading the max as a real number, and keeps the p99
-    from being quietly replaced by the max.
+    THIS USED TO ASSERT `d2 < 0.3 * d1` ON THE p99's SUCCESSIVE DIFFERENCES, and that is
+    a divergence detector that only means anything while `d1` is still a real
+    discretization error.  Once the quantity has actually converged, `d1` and `d2` are
+    both tail, their ratio is arbitrary, and the test fires on a wheel that is behaving
+    perfectly.  The old comment below already named this failure mode one tier down —
+    "the smoke and coarse values happen to sit close together, which makes the FIRST
+    difference small and the second one look like divergence" — and §14 measured it
+    happening one tier UP on the promoted genome, which converges sooner:
+
+        genome        smoke    coarse    medium      fine     d2/d1    d2/p99
+        350f4c7      18.327    17.274    17.246    17.230     0.573    0.094%
+        36aed36       8.842     8.782     8.612     8.605     0.042    0.082%
+
+    `d2/d1` = 0.573 fails the old gate; `d2/p99` = 0.094% says the p99 has settled to
+    under a tenth of a percent.  The second number is the one that means "converged".
+    And the old genome is not a counter-example — it FAILS the same ratio test at 2.816
+    if the window starts at `smoke`.  The window had to be hand-picked per design, which
+    is the tell that the statistic was wrong rather than the meshes.
+
+    So this now pins the CONTRAST the docstring is actually about — one quantity running
+    away while the other stands still — as a ratio of RELATIVE drifts, which is
+    dimensionless and does not care which tier a given design converges on.
     """
     maxima, plain = [], []
-    # Starts at `coarse`, not `smoke`: the p99 needs to be in its asymptotic range for a
-    # successive-difference test to mean anything, and on the smoke mesh it is not — the
-    # smoke and coarse values happen to sit close together, which makes the FIRST
-    # difference small and the second one look like divergence.
     for cfg in ("coarse", "medium", "fine"):
         m = ww.build_wheel(genes, cfg)
         st = swf.stress_report(m, fem.solve_wheel(m))
         maxima.append(st["rim"]["max_singular_mpa"])
         plain.append(st["spoke_block_p99_mpa"])
+
     assert maxima[1] > maxima[0] and maxima[2] > maxima[1], (
         f"the corner singularity has stopped growing: {maxima} — either fillets were "
         f"added (good, update this test) or the stress recovery changed")
+    # Monotone is not enough on its own: three noisy samples can be monotone by luck.
+    # Measured 38.9% (350f4c7) and 34.7% (36aed36) over coarse..fine.
+    max_drift = maxima[2] / maxima[0] - 1.0
+    assert max_drift > 0.20, (
+        f"the singular max grew only {max_drift:.1%} over coarse..fine {maxima} — that "
+        f"is not a divergence, and the whole 'do not quote the max' argument rests on it")
+
     # The converging quantity has to be measured AWAY from the singular corner.  A
     # percentile over a region that contains the corner is not converged either, because
     # the number of near-corner Gauss points grows with refinement — which is why this
     # uses the plain spoke block and not the rim region's p99.
-    d1, d2 = abs(plain[1] - plain[0]), abs(plain[2] - plain[1])
-    assert d2 < 0.3 * d1, (
-        f"plain-spoke p99 not settling: {plain} (successive changes {d1:.3f}, {d2:.3f})")
+    p99_drift = abs(plain[2] - plain[0]) / plain[2]
+    assert p99_drift * 10.0 < max_drift, (
+        f"plain-spoke p99 drifted {p99_drift:.2%} over coarse..fine {plain} against the "
+        f"max's {max_drift:.1%} — less than the 10x separation that makes one of these a "
+        f"converged number and the other a mesh artifact")
+    d2 = abs(plain[2] - plain[1])
     assert d2 / plain[2] < 0.01, f"plain-spoke p99 still moving {d2 / plain[2]:.2%}"
 
 
-def test_the_arrival_angle_makes_the_junction_a_near_crack(genes):
-    """Tie the singularity to the geometry that causes it, in one number."""
+def test_the_junction_is_re_entrant_enough_to_be_singular(genes):
+    """Tie the singularity to the geometry that causes it, in one number.
+
+    THIS USED TO BE `test_the_arrival_angle_makes_the_junction_a_near_crack` AND TO
+    ASSERT `material_wedge > 340.0`, which pinned a PATHOLOGY as an invariant — the same
+    mistake as the `fillet_families == 2` assertion §13 replaced.  A design whose spokes
+    arrive less tangentially has a LESS crack-like junction, which is an improvement, and
+    it broke the test.  Measured: 349.5 deg on the GA/beam genome, 315.4 on the promoted
+    one.
+
+    What actually has to hold — and what `test_peak_stress_diverges_but_the_field_
+    converges` above depends on — is only that the junction is re-entrant, so a stress
+    singularity exists at all and the pointwise max is not a number.  That bound is not a
+    property of one design: `MAX_ARRIVAL_DEG` caps the arrival angle for EVERY genome the
+    optimizer can reach, so the wedge is at least `360 - MAX_ARRIVAL_DEG` = 295 deg
+    across the whole box.  Asserting the derived bound rather than a measured value is
+    what stops this from having to be re-fitted the next time a genome ships.
+    """
     arrival = max(float(a) for a in ww.arrival_angles(genes, ww.get_config("coarse")))
     material_wedge = 360.0 - arrival
-    assert material_wedge > 340.0, (
-        f"material wedge {material_wedge:.1f} deg — no longer near-crack, so the "
-        f"convergence-rate explanation in study_wheel_fea.py needs revisiting")
+
+    assert arrival <= ww.MAX_ARRIVAL_DEG, (
+        f"arrival {arrival:.1f} deg exceeds MAX_ARRIVAL_DEG {ww.MAX_ARRIVAL_DEG} — the "
+        f"barrier that is supposed to enforce this let a genome through")
+    assert material_wedge >= 360.0 - ww.MAX_ARRIVAL_DEG, (
+        f"material wedge {material_wedge:.1f} deg is below the {360 - ww.MAX_ARRIVAL_DEG} "
+        f"deg the arrival cap guarantees — the two are inconsistent, so one of them moved")
+    assert material_wedge > 180.0, (
+        f"material wedge {material_wedge:.1f} deg is no longer re-entrant, so the "
+        f"junction is not singular and the convergence-rate explanation in "
+        f"study_wheel_fea.py needs revisiting")
 
 
 def test_compliance_split_is_robust_to_the_patch_assumption(mesh):
@@ -293,14 +372,71 @@ def test_compliance_split_is_robust_to_the_patch_assumption(mesh):
 def test_total_mass_matches_the_step_manifest_within_the_embed_difference(mesh):
     """Resolves the old "two mass figures are not comparable" wart.
 
-    `metrics.total_mass_g` is spokes only; this is the whole solid.  It lands ~2.3% under
-    the manifest's 74.12 g, and that number is TWO differences rather than one: the
-    `_embed` gusset the area check also sees (~1.4%), plus the fillet material, which the
-    mesh does not model at all and which `reference_shipped_step_mm2` deliberately
-    excludes.  The fillets were worth 0.01% until the hub fillet milestone built all
-    forty-eight corners instead of twelve; they are worth 0.92% now.  See HUB_PLAN.md.
+    `metrics.total_mass_g` is spokes only; `wheel_mass_g` is the whole solid.  It lands
+    under the manifest's `mass_g_pla` by TWO differences: the `_embed` gusset, and the
+    fillet material, which the mesh does not model at all.
+
+    THIS USED TO ASSERT A PERCENTAGE BAND — `-0.030 < m/manifest - 1 < -0.012` — AND THE
+    MANIFEST PUBLISHED NEITHER OF THE TWO TERMS THAT BAND WAS STANDING IN FOR.  The
+    docstring decomposed the gap into "~1.4% gusset plus 0.92% fillets" and nothing
+    computed either number; both were fitted to one wheel.  On the promoted genome the
+    band failed at -6.9% and there was no way to tell which term had moved, because there
+    was nothing to look at.
+
+    §14 made the fillet term measurable instead of guessed.  `wheel_step_export` builds
+    `wheel_nofillet.step` anyway as its fallback, so publishing that solid's volume turns
+    the fillet material into a subtraction OCC does exactly:
+    `fillets.volume_mm3 = solid.volume_mm3 - solid.volume_nofillet_mm3`, measured before
+    despecialization on both sides.  It is 2372.53 mm^3 — **6.18% of the solid**, not the
+    0.92% the old docstring claimed.  That one correction is most of the -6.9%.
+
+    So the budget is now checked as a budget.  Subtract the fillets, which are a published
+    number, and what is left over must be the gusset alone: 0.70% of the solid, positive,
+    and small.  A gap that is neither is a real modelling difference and should be read
+    rather than absorbed into a wider band.
+
+    WHAT THIS DELIBERATELY DOES NOT USE IS `EMBED_ALLOWANCE_PER_SPOKE_MM2`.  That constant
+    is 3.03 and §14 measured the promoted genome's actual gusset at **0.98 mm^2 per
+    spoke** — it is stale, in the same way `MIN_JUNCTION_OVERLAP_MM3` was stale in §12,
+    and for the same reason: a fixed mm^2 standing in for something that scales with root
+    thickness.  Left as an open item, because guessing a new constant would only re-stale
+    it on the next genome.  Nothing here depends on it.
     """
-    m = swf.wheel_mass_g(mesh)
     with open(os.path.join(REPO, "export", "wheel_step_manifest.json")) as fh:
-        manifest = json.load(fh)["solid"]["mass_g_pla"]
-    assert -0.030 < m / manifest - 1.0 < -0.012, f"{m:.2f} g vs manifest {manifest} g"
+        man = json.load(fh)
+    solid, fil = man["solid"], man["fillets"]
+
+    # (1) The new field is what it claims to be.  Guards a sign or unit slip in the
+    #     exporter, which the budget below would otherwise silently absorb.
+    assert fil["volume_mm3"] == pytest.approx(
+        solid["volume_mm3"] - solid["volume_nofillet_mm3"], abs=0.2), (
+        f"fillets.volume_mm3 {fil['volume_mm3']} is not the difference of the two "
+        f"published volumes {solid['volume_mm3']} - {solid['volume_nofillet_mm3']}")
+    assert fil["volume_mm3"] > 0, (
+        f"fillet volume {fil['volume_mm3']} mm^3 is not positive — every junction corner "
+        f"is re-entrant, so filleting must ADD material; a negative here means the two "
+        f"volumes were measured on different solids")
+
+    # (2) Fillets are a first-order term, not a rounding error.  If this ever drops back
+    #     to the 0.01% it was before all forty-eight corners built, the budget below stops
+    #     needing the field and this test should be simplified rather than left passing.
+    fillet_share = fil["volume_mm3"] / solid["volume_mm3"]
+    assert 0.01 < fillet_share < 0.15, f"fillets are {fillet_share:.2%} of the solid"
+
+    # (3) THE BUDGET.  Mesh plus fillets accounts for the solid to within the gusset.
+    m = swf.wheel_mass_g(mesh)
+    fillet_g = fil["volume_mm3"] * wf.DENSITY_PLA
+    gap_g = solid["mass_g_pla"] - (m + fillet_g)
+    gap_frac = gap_g / solid["mass_g_pla"]
+    assert 0.0 < gap_frac < 0.015, (
+        f"mesh {m:.3f} g + fillets {fillet_g:.3f} g leaves {gap_g:+.3f} g "
+        f"({gap_frac:+.2%}) against the solid's {solid['mass_g_pla']} g — the gusset is "
+        f"the only term left and it is neither positive nor under 1.5%")
+
+    # And it has to be the right SHAPE for a gusset: one per spoke, order 1 mm^2 of
+    # section over the full face width.  Measured 1.01 mm^2 at `coarse`, settling to
+    # 0.98 at `fine`.
+    per_spoke_mm2 = (gap_g / wf.DENSITY_PLA) / (ww.NUMBER_OF_SPOKES * wf.SPOKE_WIDTH_MM)
+    assert 0.5 < per_spoke_mm2 < 2.0, (
+        f"implied gusset {per_spoke_mm2:.3f} mm^2 per spoke — the leftover is not the "
+        f"shape of an embed allowance, so something else is unaccounted for")

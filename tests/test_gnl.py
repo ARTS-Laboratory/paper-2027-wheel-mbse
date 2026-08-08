@@ -164,6 +164,27 @@ def test_the_correction_enters_at_first_order_in_the_load(genes):
     An implementation that simply ran the linear kernel twice would pass the plan's
     small-load criterion perfectly.  Exponent 0 would mean a constant offset — a
     modelling difference rather than a geometric effect.
+
+    THE SECOND ASSERTION CURRENTLY FAILS ON THE SHIPPED GENOME AND THAT IS THE RESULT,
+    NOT A BUG.  §14 swept the mesh to find out whether 0.205% on `smoke` was resolution:
+
+        genome      smoke     coarse    medium
+        350f4c7    0.2050%   0.2081%   0.2089%      <-- gate is 0.1%
+        36aed36    0.0373%   0.0382%   0.0384%
+
+    Converged by `coarse` on both, and mesh-independent to three digits.  The promoted
+    1.2 mm wheel is **5.5x more geometrically nonlinear** than the GA/beam one it
+    replaced, which is what a thinner, floppier part does.
+
+    The FIRST assertion — the one this test is named for — passes: 1.037 against 1.011,
+    so the correction still enters at first order and the SVK path is behaving.  What
+    moved is the coefficient, not the exponent.
+
+    `GATE_SMALL_LOAD_REL` HAS DELIBERATELY NOT BEEN MOVED.  `study_gnl.py` records it as
+    "written down BEFORE the study was run, per the plan's rule", and re-fitting a
+    pre-registered gate to the design that breached it is exactly the move that rule
+    exists to prevent.  Whether 1e-3 is still the right gate for a 1.2 mm wall is a
+    judgement about M5's claim and belongs to a human; see PLAN.md §14 item 4.
     """
     rep = gnl.run_load_ladder(genes, CFG, fractions=(0.01, 0.1, 0.5, 1.0, 2.0))
     assert 0.7 < rep["fitted_exponent"] < 1.4, rep["fitted_exponent"]
@@ -215,3 +236,55 @@ def test_a_diverged_solve_raises_rather_than_returning_a_field(mesh):
     prob, _ = fem.wheel_problem(mesh, kinematics="svk")
     with pytest.raises(fem.NewtonDivergedError):
         fem.solve_nonlinear(prob, max_iter=1, tol=1e-14, tol_energy=1e-30)
+
+
+def test_stress_recovery_follows_the_solves_kinematics(genes, mesh):
+    """The footgun §14 walked into, pinned so it cannot come back.
+
+    `wheel_fem.gauss_stresses` takes `nonlinear=False` by DEFAULT.  That is correct for a
+    linear solve and silently wrong for an SVK one — it applies the engineering-strain
+    formula to a large displacement field, and the result is not a stress.  It does not
+    warn, it does not NaN, and the number it returns is plausible enough to quote.
+
+    Measured on the shipped genome at service load: the correct Cauchy push-forward gives
+    a plain-spoke p99 of 19.75 MPa against the linear kernel's 17.27, a real +14.3%.  The
+    linear formula on the same SVK field says 46.56 MPa, +169.5%.  An order of magnitude
+    apart, and the wrong one is the one you get by accident.
+
+    So `study_wheel_fea.stress_report` now reads `res["meta"]["kinematics"]` rather than
+    taking the default.  What this asserts is that it actually does — that an SVK result
+    and a linear result do not come back with the same stress, and that the SVK one
+    matches an explicit `nonlinear=True` recovery.
+    """
+    import numpy as np
+    import study_wheel_fea as swf
+    import wheel_fea as W
+
+    lin = fem.solve_wheel(mesh, kinematics="linear", force=W.TOTAL_FORCE_NEWTONS)
+    svk = fem.solve_wheel(mesh, kinematics="svk", force=W.TOTAL_FORCE_NEWTONS)
+    assert lin["meta"]["kinematics"] == "linear"
+    assert svk["meta"]["kinematics"] == "svk", (
+        "the solve stopped recording its own kinematics, which is what stress_report "
+        "dispatches on — it will now silently mis-recover every SVK field")
+
+    lam, mu = fem.lame(W.YOUNGS_MODULUS_PLA_MPA, fem.POISSON_RATIO_PLA)
+
+    def p99(res, nonlinear):
+        st = fem.gauss_stresses(np.asarray(mesh.coords), mesh.conn, res["u"],
+                                order=mesh.cfg.order, lam=lam, mu=mu,
+                                nonlinear=nonlinear, cauchy=True)
+        return float(np.percentile(st["von_mises"][mesh.element_block == "spoke"], 99.0))
+
+    # stress_report must agree with the EXPLICIT correct recovery on both...
+    assert swf.stress_report(mesh, lin)["spoke_block_p99_mpa"] == pytest.approx(
+        p99(lin, False), rel=1e-12)
+    assert swf.stress_report(mesh, svk)["spoke_block_p99_mpa"] == pytest.approx(
+        p99(svk, True), rel=1e-12), (
+        "stress_report used the linear strain formula on an SVK field — see this test's "
+        "docstring for how large that error is")
+
+    # ...and the wrong recovery must be visibly different, or this test proves nothing.
+    wrong = p99(svk, False)
+    assert wrong / p99(svk, True) > 1.5, (
+        f"the mis-recovery is only {wrong / p99(svk, True):.3f}x here, so this test can "
+        f"no longer tell the two apart and is not guarding anything")

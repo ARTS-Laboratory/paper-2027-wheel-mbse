@@ -1138,8 +1138,21 @@ def main(argv=None):
     profile, junctions = build_profile(genes)
 
     # Guaranteed-valid fallback, written before any fillet can complicate it.
+    #
+    # Its VOLUME is worth keeping too.  Filleted-minus-unfilleted is exactly the material
+    # the fillets add, computed by OCC rather than estimated — and it is the one term in
+    # the mesh-vs-solid mass budget that nothing else could supply, because the mesh does
+    # not model fillets at all.  Before this, `test_total_mass_matches_the_step_manifest_
+    # within_the_embed_difference` asserted a hand-fitted percentage band standing in for
+    # two quantities the manifest published neither of.  See PLAN.md §14.
+    #
+    # Measured before `despecialize`, for the same reason `vol_true` is below: the
+    # conversion to NURBS is not exactly volume-preserving, and the two numbers are
+    # subtracted from each other.
     nofillet_path = paths["nofillet"]
-    _export_with_settings(despecialize(extrude_profile(profile)), nofillet_path)
+    nofillet = extrude_profile(profile)
+    vol_nofillet = nofillet.val().Volume()
+    _export_with_settings(despecialize(nofillet), nofillet_path)
     print(f"  Saved fallback   → {nofillet_path}")
 
     prof_health = profile_health(profile, "wheel profile")
@@ -1196,7 +1209,11 @@ def main(argv=None):
         "exported_at": datetime.datetime.now().isoformat(timespec="seconds"),
         "export_seconds": round(time.time() - t_start, 1),
         "solid": {"valid": bool(valid), "volume_mm3": round(vol, 1),
-                  "mass_g_pla": round(vol * DENSITY_PLA, 2)},
+                  "mass_g_pla": round(vol * DENSITY_PLA, 2),
+                  # The same solid before any fillet was applied.  Additive: nothing reads
+                  # it yet except the mass budget, and `volume_mm3`/`mass_g_pla` are
+                  # unchanged and still mean the finished part.
+                  "volume_nofillet_mm3": round(vol_nofillet, 1)},
         # Key kept as `_mm3` for the readers that predate the bite: `hub` and `rim` are
         # still the same volumes in the same units.  `floor` used to be a mm³ number and
         # is now `bite_floor`, in root thicknesses — the two are not comparable, which is
@@ -1209,9 +1226,14 @@ def main(argv=None):
             "pass": {k: junctions[k]["pass"] for k in ("hub", "rim")},
             "bite_floor": MIN_JUNCTION_BITE,
         },
-        # `detail` carries found-vs-filleted per junction; these two remain as the count
-        # actually built, which is what the old readers expect.
-        "fillets": {"hub_edges": hub_n, "rim_edges": rim_n, "detail": kt_rows},
+        # `detail` carries found-vs-filleted per junction; the two edge counts remain as
+        # the count actually built, which is what the old readers expect.  `volume_mm3` is
+        # new and additive: the material the fillets ADD, which is positive because every
+        # junction corner is re-entrant (see `test_the_junction_is_re_entrant_enough_to_
+        # be_singular`) and a fillet on a concave corner fills material in.
+        "fillets": {"hub_edges": hub_n, "rim_edges": rim_n,
+                    "volume_mm3": round(vol - vol_nofillet, 2),
+                    "detail": kt_rows},
         "profile_health": prof_health,
         "step_health": health,
     }

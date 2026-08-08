@@ -206,7 +206,7 @@ def test_area_converges_under_refinement(genes):
 
 
 def test_the_embed_difference_from_the_shipped_step_is_the_known_amount(genes):
-    """Pin the deliberate ~1.4% modelling difference so it cannot silently change.
+    """Pin the deliberate `_embed` modelling difference so it cannot silently change.
 
     If someone models `_embed` after all, or changes COLLAR_DEPTH_MM, or alters a ring
     radius, this moves — and it should be a decision, not a surprise.  Cross-checked
@@ -214,14 +214,29 @@ def test_the_embed_difference_from_the_shipped_step_is_the_known_amount(genes):
     a different kernel — and NOT the same number: the mass comparison also carries the
     fillet material, which `reference_shipped_step_mm2` deliberately excludes.
 
-    It was ~2% (bounds -2.5% to -1.4%) until the hub fillet milestone re-measured
-    `EMBED_ALLOWANCE_PER_SPOKE_MM2` at 3.03, down from 4.27: `_embed`'s inward step now
-    plunges radially instead of running 4.5 mm sideways, so it leaves less gusset in the
-    annulus.  See HUB_PLAN.md.
+    IT PINS THE ABSOLUTE mm², NOT THE PERCENTAGE, AND THAT IS THE FIX FOR A REAL BUG IN
+    THIS TEST.  `EMBED_ALLOWANCE_PER_SPOKE_MM2` is a fixed 3.03 mm² of gusset per spoke —
+    an AREA, with no dependence on the design.  Expressing it as a fraction of the wheel
+    divides it by a denominator that every genome moves.  §13's promotion cut the modelled
+    area 2607.7 -> 1597.2 mm² (thinner spokes, same rings), and the identical absolute gap
+    read -1.384% on the old genome and -2.234% on the new one.  The old bounds
+    (-1.8%, -1.0%) failed the new genome while nothing about `_embed` had changed.  The
+    absolute gap moved 36.595 -> 36.501 mm², which is the invariant this test wanted.
+
+    It was 4.27 mm²/spoke until the hub fillet milestone re-measured it at 3.03: `_embed`'s
+    inward step now plunges radially instead of running 4.5 mm sideways, so it leaves less
+    gusset in the annulus.  See HUB_PLAN.md.
     """
     rep = ww.area_report(ww.build_wheel(genes, "medium"))
-    assert -0.018 < rep["error_vs_shipped_step"] < -0.010, (
-        f"{rep['error_vs_shipped_step']:+.4%} — expected about -1.4%")
+    gap = rep["reference_shipped_step_mm2"] - rep["total_modelled_mm2"]
+    expected = ww.NUMBER_OF_SPOKES * ww.EMBED_ALLOWANCE_PER_SPOKE_MM2
+    # 0.5 mm² of slack on 36.36 covers the meshing residual, which is what
+    # `error_vs_modelled` measures separately and is under 0.25 mm² on both genomes.
+    assert gap == pytest.approx(expected, abs=0.5), (
+        f"{gap:.3f} mm² of gusset unmodelled, expected "
+        f"{ww.NUMBER_OF_SPOKES} x {ww.EMBED_ALLOWANCE_PER_SPOKE_MM2} = {expected:.2f} "
+        f"({rep['error_vs_shipped_step']:+.4%} of the wheel — a fraction that moves with "
+        f"the genome and is NOT what this test pins)")
 
 
 def test_region_areas_are_individually_right(genes):

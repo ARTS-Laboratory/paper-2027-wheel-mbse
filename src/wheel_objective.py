@@ -75,8 +75,11 @@ mesh ladder: `max/pnorm` is the BEST-behaved quantity in the whole decomposition
 itself is at GCI 47% and the utilisation at 63%, while the axle drop off the very same
 solves converges at order 2.44 to GCI 0.14%.  At p=30 the p-norm is 1/1.38 of the true
 max — it IS the max in disguise — so it inherits the r^-0.5 field of the unfilleted
-349.5-degree spoke/ring corner that `study_wheel_fea.stress_report` identifies as
-geometrically a crack.  The exponent is therefore an argument (`stress_gauss_p`) and
+spoke/ring corner that `study_wheel_fea.stress_report` identifies as geometrically a
+crack.  (That corner was 349.5 deg when this was written, which was a per-design number;
+it is 315.4 on the shipped genome and at least 295 for anything in the box.  Still
+re-entrant, still singular, so the argument is unchanged — see
+`tests/test_wheel_fea.py::test_the_junction_is_re_entrant_enough_to_be_singular`.)  The exponent is therefore an argument (`stress_gauss_p`) and
 `t3_terms` can probe others on the same solve (`stress_p_probe`).
 
 AND THE RESCALE IS GONE.  M8b-i.6 swept ten exponents off one set of solves and settled
@@ -205,8 +208,18 @@ FILLET_SAFETY = 1.1
 # is negative and takes the `min` anyway, so the cap is correct there for a different
 # reason: no fillet exists at any radius, which is exactly what a negative cap says.
 #
-# `MIN_WALL_MM` is 2.0 and every design on disk sits at 2.468-2.627, so the calibrated band
-# covers the reachable design space's lower half and everything the GA has ever produced.
+# THE FLOOR MOVED UNDER THIS COMMENT ON 2026-08-06.  It used to read "`MIN_WALL_MM` is 2.0
+# and every design on disk sits at 2.468-2.627, so the calibrated band covers the reachable
+# design space's lower half and everything the GA has ever produced."  Both halves are now
+# false: the default floor is 1.2 (PLAN.md §13) and the shipped genome sits at t0 = 1.2,
+# BELOW the [2.0, 2.6] the share was fitted on.
+#
+# What saves it is which branch binds, and that is worth checking rather than assuming.  At
+# t0 = 1.2 the cap is 0.624 mm = `HUB_CAP_THICKNESS_SHARE` * 1.2 exactly — the THICKNESS
+# term takes the `min`, so `HUB_CAP_SHARE` is not being extrapolated on the part that
+# ships; it is simply not the active limit there.  A future design that is thin AND has a
+# tight slot would extrapolate it for real, and nothing here would say so.  Re-run
+# `make hubcap` at the new floor before trusting the slot branch below 2.0 mm.
 HUB_CAP_SHARE = 0.5
 HUB_CAP_THICKNESS_SHARE = 0.52
 

@@ -155,18 +155,73 @@ def test_mesh_area_matches_the_mass_integral(vec, reference_area, name, tol_pct)
     assert err < tol_pct, f"{name}: {area:.5f} vs {reference_area:.5f} mm2 ({err:.4f}%)"
 
 
-def test_area_converges_second_order(vec, reference_area):
+def _area_sequence(vec, ns_list, n_thick=8):
+    out = []
+    for ns in ns_list:
+        cfg = M.MeshConfig("r", ns, n_thick, order=2, n_curve=max(600, 4 * ns))
+        X = M.flatten(M.spoke_block_coords_from_vector(vec, cfg, SPAN))
+        out.append(float(M.element_areas(X, M.spoke_block_connectivity(cfg)).sum()))
+    return np.array(out)
+
+
+def test_area_converges_second_order(vec):
     """Error must fall ~4x per refinement.  A polygonal approximation of a curved
     region is O(h^2); a different observed rate would mean the resampling or the
-    normals are wrong, not merely coarse."""
-    errs = []
-    for ns in (64, 128, 256, 512):
-        cfg = M.MeshConfig("r", ns, 8, order=2, n_curve=max(600, 4 * ns))
-        X = M.flatten(M.spoke_block_coords_from_vector(vec, cfg, SPAN))
-        area = M.element_areas(X, M.spoke_block_connectivity(cfg)).sum()
-        errs.append(abs(area - reference_area))
-    rates = [np.log2(errs[i] / errs[i + 1]) for i in range(len(errs) - 1)]
-    assert all(1.7 < r < 2.3 for r in rates), f"observed orders {rates}"
+    normals are wrong, not merely coarse.
+
+    MEASURED SELF-REFERENCED, against the sequence's own successive differences rather
+    than against `reference_area`.  That is not a weakening — it is the only way to
+    measure this quantity at all, and the version that used `reference_area` was
+    measuring something else.
+
+    `reference_area` is `wheel_fea`'s beam-style line integral: independent code, which
+    is exactly what makes it valuable as a CROSS-CHECK (the test above), and also an
+    approximation carrying its own quadrature error.  Once the mesh error falls to that
+    error's level, `|area - ref|` stops being the mesh error and the observed order is
+    meaningless.  Extending the sweep two more levels shows it plainly (§14):
+
+        genome     vs beam ref                        self-referenced
+        350f4c7    1.986 2.061 2.355  5.103 -3.300    1.962 1.979 2.000 1.998
+        36aed36    1.993 2.033 2.187  3.158  0.029    1.979 1.986 2.001 2.001
+
+    An order of 5.1 and then MINUS 3.3 is not a convergence rate; it is the signature of
+    a difference of two discretizations passing through zero.  The self-referenced column
+    is flat at 2.000 on both genomes, which is the answer this test was always after.
+
+    Nothing about the promoted genome broke this.  The beam reference sits 3.9e-5 mm^2
+    from the mesh's own Richardson limit, and the mesh error at ns=512 is 1.0e-4 — only
+    2.6x above it.  On the GA/beam genome the same margin is 5.4x, enough to squeak in at
+    2.187.  The promoted wheel has a smaller cross-section (52.9 vs 145.7 mm^2), so its
+    absolute mesh error reaches the reference's floor one refinement sooner.  The old
+    genome was already one level from failing this.
+    """
+    a = _area_sequence(vec, (64, 128, 256, 512, 1024))
+    d = np.diff(a)
+    assert np.all(np.abs(d[1:]) < np.abs(d[:-1])), (
+        f"the area sequence is not settling monotonically: {a}")
+    orders = [float(np.log2(d[i] / d[i + 1])) for i in range(len(d) - 1)]
+    assert all(1.7 < r < 2.3 for r in orders), f"observed orders {orders}"
+
+
+def test_the_mass_integral_agrees_with_the_meshs_own_limit(vec, reference_area):
+    """The cross-code claim that `test_area_converges_second_order` used to carry as a
+    passenger, stated on its own and to a real tolerance.
+
+    Richardson-extrapolate the mesh sequence to h -> 0 and compare THAT to the beam-style
+    line integral.  This is the "independent code" check the file header advertises, and
+    separating it from the convergence-rate claim is what lets both be tight: the order
+    is 2.000 and the two integrals agree to well under a part in 10^5.
+    """
+    a = _area_sequence(vec, (64, 128, 256, 512, 1024))
+    d = np.diff(a)
+    order = float(np.log2(d[-2] / d[-1]))
+    limit = a[-1] + d[-1] / (2.0 ** order - 1.0)
+    rel = abs(reference_area - limit) / limit
+    assert rel < 1e-5, (
+        f"beam integral {reference_area:.9f} vs mesh limit {limit:.9f} mm2 "
+        f"({rel:.2e} relative) — two independent computations of the same area have "
+        f"drifted apart, which is a geometry bug in one of them, not a mesh resolution "
+        f"problem")
 
 
 # ---------------------------------------------------------------------------

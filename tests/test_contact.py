@@ -313,7 +313,7 @@ def test_the_patch_migrates_with_phase(genes):
     assert max(centres) - min(centres) > 0.5, centres
 
 
-def test_the_sampled_patch_extent_is_biased_not_merely_noisy(mesh):
+def test_the_sampled_patch_extent_is_biased_not_merely_noisy(genes):
     """Pins WHY `patch_extent` exists rather than just reporting live Gauss points.
 
     The distinction is BIAS, not scatter — which took a measurement to establish, since
@@ -327,7 +327,24 @@ def test_the_sampled_patch_extent_is_biased_not_merely_noisy(mesh):
     overstates by roughly 3x here.  The peak pressure is biased the other way, since a
     sampled maximum can only miss the true peak.  Both are reported as diagnostics and
     neither may be quoted.
+
+    THIS ONE TEST BUILDS ITS OWN `coarse` MESH INSTEAD OF TAKING THE MODULE'S `smoke`
+    FIXTURE, and the reason is the first assertion.  "The converged answer does not care
+    about the quadrature" is only true once the patch is resolved, and on `smoke` the
+    promoted genome's patch is not: `patch_half_deg` is 0.53 deg against a rim element
+    several times that, so the whole contact set lives inside one element and moving from
+    6 to 20 Gauss points changes which elements are loaded at all.  Measured (§14):
+
+        genome     smoke      coarse     medium
+        350f4c7   -0.3233%   -0.0170%   +0.0195%
+        36aed36   -0.0275%   +0.0001%   +0.0030%
+
+    The failure was `smoke`-only and clears by 5x at `coarse`.  The other assertions here
+    are about the SIGN of a bias and hold at every tier, so they come along for free.
+    Everything else in this file stays on `smoke` — see the module docstring; this is the
+    one claim in it that is about a converged number rather than about a direction.
     """
+    mesh = WW.build_wheel(genes, "coarse")
     a = fem.solve_wheel_contact(mesh, n_quad=6)
     b = fem.solve_wheel_contact(mesh, n_quad=20)
     assert abs(b["axle_drop_mm"] / a["axle_drop_mm"] - 1.0) < 1e-3

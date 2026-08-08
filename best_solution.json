@@ -1,92 +1,69 @@
 {
   "genes": {
-    "cx1": 2.1376143443155753,
-    "cy1": 27.952936734957692,
-    "cx2": 17.036327854201176,
-    "cy2": 31.718741219774294,
-    "cx3": 20.33476413480411,
-    "cy3": 24.32475682473731,
-    "cx4": 32.53984531294355,
-    "cy4": 29.291918496404325,
-    "t0": 2.477369725892206,
-    "t1": 2.0,
-    "t2": 2.0,
-    "t3": 2.0,
-    "R_hub": 1.5597674073242398,
-    "R_rim": 3.0
+    "cx1": 3.528382448689431,
+    "cy1": 9.919864563001838,
+    "cx2": 16.413752736298058,
+    "cy2": 14.182304530680419,
+    "cx3": 25.313767291704593,
+    "cy3": 7.584036253869549,
+    "cx4": 30.20424523278122,
+    "cy4": 5.679428169787137,
+    "t0": 1.2,
+    "t1": 1.2,
+    "t2": 1.2,
+    "t3": 1.4613847170077423,
+    "R_hub": 0.5789506041875985,
+    "R_rim": 2.749467679981976
   },
-  "geometry": {
-    "hub_radius_mm": 12.7,
-    "rim_radius_mm": 48.5,
-    "spoke_width_mm": 22.4,
-    "number_of_spokes": 12
-  },
-  "metrics": {
-    "deflection_mm": 1.9900552155589595,
-    "max_stress_mpa": 25.082721765374423,
-    "total_mass_g": 48.55583924286318,
-    "buckling_ratio": 0.09198127091279185,
-    "Kt_hub": 1.8608661732283212,
-    "Kt_rim": 1.4896335682000246
-  },
-  "model": {
-    "boundary_condition": "fixed_guided",
-    "ke_buckling": 0.5,
-    "n_curve_pts": 600,
-    "youngs_modulus_mpa": 2300.0,
-    "allowable_stress_mpa": 25.0,
-    "force_per_spoke_n": 16.680825,
-    "target_deflection_mm": 2.0,
-    "version": "2.1"
-  },
+  "source": "wheel_stage3.py",
   "search": {
-    "seed": 42,
-    "generations": 300,
-    "population": 300,
-    "cy_bound_mm": 32.0,
-    "smoke": false
+    "optimizer": "adam",
+    "config": "coarse",
+    "steps": 125,
+    "phase_scheme": "uniform",
+    "n_phase": 8,
+    "seed": 0,
+    "start": "best",
+    "label": "best_solution",
+    "at_step": 125
   },
   "loss_terms": {
-    "deflection": 0.061811710986726026,
-    "mass": 39.90890896673686,
-    "stress": 0.04379449898662955,
-    "buckling": 0.0,
     "x_order": 0.0,
     "hub_overlap": 0.0,
-    "smoothness": 10.392789233196897,
+    "smoothness": 0.29015351752061114,
     "fold": 0.0,
-    "arrival": 0.0
+    "arrival": 0.0,
+    "fillet": 0.0,
+    "fillet_cap": 0.0,
+    "buckling": 0.0,
+    "mass": 32.21454553504201,
+    "min_sj": 0.0,
+    "deflection": 0.0003684772289892247,
+    "stress": 0.0,
+    "phase_ripple": 0.0
   },
-  "bound_saturation": [
-    {
-      "gene": "cy2",
-      "value": 31.718741219774294,
-      "at": "high",
-      "bound": 32.0
-    },
-    {
-      "gene": "t1",
-      "value": 2.0,
-      "at": "low",
-      "bound": 2.0
-    },
-    {
-      "gene": "t2",
-      "value": 2.0,
-      "at": "low",
-      "bound": 2.0
-    },
-    {
-      "gene": "t3",
-      "value": 2.0,
-      "at": "low",
-      "bound": 2.0
-    },
-    {
-      "gene": "R_rim",
-      "value": 3.0,
-      "at": "high",
-      "bound": 3.0
-    }
-  ]
+  "metrics": {
+    "buckling_ratio": 0.15728412438834385,
+    "mesh_mass_g": 39.19436373430111,
+    "min_scaled_jacobian": 0.7108612509190233,
+    "axle_drop_mean_mm": 1.9992321695718567,
+    "axle_drop_min_mm": 1.762327740512179,
+    "axle_drop_max_mm": 2.2763138223036115,
+    "phase_ripple_std_over_mean": 0.09570313267624157,
+    "pnorm_stress_agg_mpa": 9.639630309235775,
+    "max_stress_mpa": 140.89111511666485,
+    "stress_scale_measured": 16.720848151285942,
+    "kt_hub": 2.0307846442712103,
+    "kt_rim": 1.422586739769776,
+    "hub_fillet_cap_mm": 0.624,
+    "r_hub_effective_mm": 0.572654767737329,
+    "stress_utilisation_hub": 0.783040528337894,
+    "stress_utilisation_rim": 0.5485284101680655,
+    "stress_utilisation": 0.783040528337894,
+    "stress_gauss_p": 4.0,
+    "n_phase": 8.0
+  },
+  "loss": 32.50506752979161,
+  "stage2_loss": 49.73764162162413,
+  "note": "PROMOTED 2026-08-06 from stage3_minwall_best_1.2.json, verbatim apart from this note. This is the Stage-3 descent optimum at MIN_WALL_MM=1.2, 39.194 g on the mesh, every barrier at exactly 0.0, confirmed by a `medium`-rung re-score and by an OCC export whose kt_error_pct is +0.0% at BOTH junctions. It REPLACES the v2.1 GA/beam-surrogate genome, which is preserved unchanged as best_solution_ga_beam.json and is what tests/test_golden.py reads -- so this promotion did not re-baseline the regression net. Every study driver in studies/ defaults to THIS file, so any per-design number in PLAN.md written before this date (M9's 1.36 load factor among them) describes the GA/beam genome, not this one. See PLAN.md sections 11, 12 and 13."
 }

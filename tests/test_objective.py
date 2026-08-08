@@ -47,6 +47,26 @@ def genes():
 
 
 @pytest.fixture(scope="module")
+def genes_over_cap():
+    """A genome whose `R_hub` sits ABOVE its hub-fillet cap, which several tests below
+    need and which the shipped genome no longer is.
+
+    The hub fillet cap only does anything to a design that asks for more radius than the
+    inter-spoke slot can hold.  That used to be true of `best_solution.json` — 0.45 mm
+    over, ~2.7 rungs — so those tests simply took the shipped genome and the coupling was
+    invisible.  PLAN.md §13 promoted a genome with `R_hub` = 0.579 against a cap of 0.624,
+    i.e. UNDER it, and every one of those tests went vacuous or false at once.
+
+    `best_solution_ga_beam.json` is the same genome they were written against, pinned
+    under a name that never moves (see `tests/test_golden.py`).  Using it here keeps these
+    tests about THE CAP rather than about which design happens to ship.  The measured
+    9.907 deg void in `test_the_hub_cap_reproduces_the_measured_void` was taken on THIS
+    genome's built solid, so the pairing is not merely convenient, it is required.
+    """
+    return so.load_genes("best_solution_ga_beam.json")
+
+
+@pytest.fixture(scope="module")
 def mesh(genes):
     return WW.build_wheel(genes, CFG)
 
@@ -206,16 +226,22 @@ def test_the_fillet_margins_are_feasible_at_the_shipped_genome(genes):
     assert np.all(m > 0.0), f"margins {m} — a printed wheel scored infeasible"
 
 
-def test_R_hub_is_dead_at_the_mesh_and_alive_only_in_gene_space(genes):
+def test_R_hub_is_dead_at_the_mesh_and_alive_only_in_gene_space(genes, genes_over_cap):
     """M7 proved `R_hub`/`R_rim` are dead at the mesh: `dcoords/dgene` is exactly zero.
 
     So any gradient they have comes from gene-space geometry.  THIS TEST USED TO BE CALLED
     "the fillet term is the only gradient R_hub has", and that title was measured false:
-    at the shipped genome the fillet margins are `[+4.647, +0.125]`, both feasible, so the
+    at the GA/beam genome the fillet margins are `[+4.647, +0.125]`, both feasible, so the
     `fillet` barrier is FLAT and contributes exactly 0.0.  `R_hub`'s live loss gradient is
     `hub_overlap`'s (+645.8) and now also `fillet_cap`'s (+454.0).  `_fillet_margins` still
-    gives it a gradient in the MARGIN, which is what the last assertion here checks and is
+    gives it a gradient in the MARGIN, which is what the middle assertion here checks and is
     a different claim from "in the loss".
+
+    THE LAST BLOCK TAKES `genes_over_cap`, THE REST TAKES THE SHIPPED GENOME.  Mesh
+    insensitivity and the margin gradient hold for any design; `d(fillet_cap)/dR_hub` is a
+    barrier gradient and is exactly 0.0 on a design under its cap, which §13's genome is.
+    Running the whole test on the reference genome would have been the lazy fix and would
+    have stopped checking M7's claim on the part that actually ships.
     """
     mesh = WW.build_wheel(genes, CFG)
     _, cols = WA.insensitive_genes(genes, mesh)
@@ -230,12 +256,25 @@ def test_R_hub_is_dead_at_the_mesh_and_alive_only_in_gene_space(genes):
     assert abs(J[0, 12]) > 1.0, (
         "R_hub lost its gradient in the hub margin; d(hub margin)/dR_hub should be ~2")
 
-    # And the term that actually prices it in the loss.
-    _, jt1 = WO._t1_cached_value_and_jacobian(jnp.asarray(genes), cfgo, None, W.S, flanks)
+    # And the term that actually prices it in the loss — on a design that is OVER its cap,
+    # because a barrier's whole job is to be flat when the constraint is satisfied.
+    cfg_oc = WW.get_config(CFG)
+    flanks_oc = WO.fillet_flanks(genes_over_cap, cfg_oc)
+    _, jt1 = WO._t1_cached_value_and_jacobian(
+        jnp.asarray(genes_over_cap), cfg_oc, None, W.S, flanks_oc)
     row = np.asarray(jt1)[WO.T1_NAMES.index("fillet_cap")]
     assert row[12] > 0.0, (
         f"d(fillet_cap)/dR_hub = {row[12]}, so nothing pushes R_hub back under the slot "
         f"it has to fit in")
+
+    # The shipped genome is under its cap, so the same gradient must be exactly zero
+    # there.  Asserted rather than assumed: a barrier that leaks a gradient into a
+    # satisfied constraint is a silent bias on every descent that starts feasible.
+    _, jt1_shipped = WO._t1_cached_value_and_jacobian(
+        jnp.asarray(genes), cfgo, None, W.S, flanks)
+    assert np.asarray(jt1_shipped)[WO.T1_NAMES.index("fillet_cap")][12] == 0.0, (
+        "the shipped genome is under its hub cap, so `fillet_cap` must contribute no "
+        "R_hub gradient at all — see PLAN.md §13")
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +303,7 @@ def _both_hub_flanks_cross():
     pytest.skip("no two-crossing genome found in 400 draws")
 
 
-def test_the_hub_cap_reproduces_the_measured_void(genes):
+def test_the_hub_cap_reproduces_the_measured_void(genes_over_cap):
     """The analytic slot against the one measured on the BUILT SOLID.
 
     The hub fillet milestone classified material on sample rings and found the void
@@ -275,24 +314,33 @@ def test_the_hub_cap_reproduces_the_measured_void(genes):
 
     0.25 deg is one sample of the OCC classifier `make hubcap` gates this against, i.e.
     the resolution of the instrument, not a tolerance picked to pass.
+
+    IT MUST USE THE GENOME THE 9.907 WAS MEASURED ON, which is `genes_over_cap`.  The void
+    is a property of a design, not a constant — §13's thinner spokes open it to 22.8 deg —
+    so pointing this at whatever ships turns a CAD-versus-analytic agreement check into a
+    comparison between two different wheels.  Re-measuring on the new solid would need a
+    `make hubcap` run in the CAD env; until someone does that, the honest pairing is this
+    one.
     """
     cfgo = WW.get_config(CFG)
-    flanks = WO.fillet_flanks(genes, cfgo)
-    void = float(WW.hub_void_deg(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks[0]))
+    flanks = WO.fillet_flanks(genes_over_cap, cfgo)
+    void = float(WW.hub_void_deg(genes_over_cap, cfgo, W.S, W.HUB_RADIUS_MM, flanks[0]))
     assert abs(void - 9.907) <= 0.25, (
         f"void {void:.4f} deg against 9.907 measured on the solid")
 
     # TWO LIMITS, and the cap is the smaller.  See `HUB_CAP_SHARE` for why it is a `min`
     # and which of the two `make hubcap` has actually observed binding.
     by_slot = WO.HUB_CAP_SHARE * W.HUB_RADIUS_MM * np.radians(void)
-    by_thickness = WO.HUB_CAP_THICKNESS_SHARE * genes[8]
-    cap = float(WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
+    by_thickness = WO.HUB_CAP_THICKNESS_SHARE * genes_over_cap[8]
+    cap = float(WO.hub_fillet_cap_mm(genes_over_cap, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
     assert cap == pytest.approx(min(by_slot, by_thickness))
-    # At the shipped genome the SLOT is the smaller of the two — 1.106 against 1.288 — so
-    # this design also exercises that branch of the min.
+    # At the GA/beam genome the SLOT is the smaller of the two — 1.106 against 1.288 — so
+    # this design also exercises that branch of the min.  §13's shipped genome takes the
+    # OTHER branch (0.624 = 0.52 x t0 = 1.2), which is why the two designs between them
+    # cover both, and why this assertion belongs to this genome specifically.
     assert by_slot < by_thickness, (
-        f"slot {by_slot:.4f} vs thickness {by_thickness:.4f}: the shipped genome no longer "
-        f"exercises the slot branch, so the min is untested here")
+        f"slot {by_slot:.4f} vs thickness {by_thickness:.4f}: the reference genome no "
+        f"longer exercises the slot branch, so the min is untested here")
     # `make hubcap` bisected the real per-corner threshold at this design to 1.300 mm.  The
     # cap must stay UNDER it: over-promising is the defect this exists to remove, and
     # under-promising only leaves fillet on the table.
@@ -302,15 +350,20 @@ def test_the_hub_cap_reproduces_the_measured_void(genes):
 def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     """The other half of the `min`, and it is the half `make hubcap` observes binding.
 
-    The slot binds at the shipped genome, so without this the thickness term could be
+    The slot binds on the GA/beam genome, so without this the thickness term could be
     deleted and every other test would still pass.  Thinning `t0` drives the thickness
     limit down (and, incidentally, WIDENS the slot, since a thinner root leaves more gap) —
     so the two limits move in opposite directions and the crossover is reachable inside
     the gene box rather than hypothetical.
+
+    §13's shipped genome is on the OTHER side of that crossover: at `t0` = 1.2 its cap is
+    0.624 = 0.52 x 1.2 exactly, i.e. the thickness branch, which is the branch this test
+    is about.  The 2.0 below is now a value chosen to sit near the crossover rather than
+    the floor it used to be — `MIN_WALL_MM` is 1.2.
     """
     cfgo = WW.get_config(CFG)
     g = np.asarray(genes, dtype=float).copy()
-    g[8] = 2.0                                   # MIN_WALL_MM, the low bound on t0
+    g[8] = 2.0                                   # near the slot/thickness crossover
     flanks = WO.fillet_flanks(g, cfgo)
     void = float(WW.hub_void_deg(g, cfgo, W.S, W.HUB_RADIUS_MM, flanks[0]))
     by_slot = WO.HUB_CAP_SHARE * W.HUB_RADIUS_MM * np.radians(void)
@@ -380,32 +433,78 @@ def test_a_negative_cap_is_a_number_not_a_nan():
         assert d[12] == 0.0 and d[8] == 0.0, f"cap={cap} gave a live gradient {d}"
 
 
-def test_R_eff_is_exactly_the_cap_more_than_one_rung_above_it(genes):
+def test_R_eff_is_exactly_the_cap_more_than_one_rung_above_it(genes_over_cap):
     """WHY THE POLYNOMIAL smooth-min AND NOT THE SQRT ONE.
 
     Outside the blend the result is `min(a, b)` TO THE BIT, so a design a rung above its
     cap is priced on exactly the cap with exactly zero derivative in `R_hub` — an assertion
     rather than an approximation.  The sqrt form would put `R_eff` 1.3% below the cap here
     and invent a fillet reduction nothing measured.
+
+    "MORE THAN ONE RUNG ABOVE IT" IS THE PRECONDITION, and it is now carried by the fixture
+    rather than by whatever ships.  §13's genome sits 0.045 mm UNDER its cap, inside the
+    blend, where `R_eff` is deliberately NOT the hard min — see
+    `test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively` below, which
+    is the other half of this and did not exist until a design landed there.
     """
     cfgo = WW.get_config(CFG)
-    flanks = WO.fillet_flanks(genes, cfgo)
-    cap = WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks)
-    gj = jnp.asarray(genes)
+    flanks = WO.fillet_flanks(genes_over_cap, cfgo)
+    cap = WO.hub_fillet_cap_mm(genes_over_cap, cfgo, W.S, W.HUB_RADIUS_MM, flanks)
+    gj = jnp.asarray(genes_over_cap)
 
-    # The shipped genome sits ~2.7 rungs above its cap.
+    # This genome sits ~2.7 rungs above its cap.
     assert float(WO.hub_fillet_r_effective(gj, cap)) == float(cap)
-    (_, d_hub), _ = WO.junction_kt(genes, cfgo, flanks=flanks)
+    (_, d_hub), _ = WO.junction_kt(genes_over_cap, cfgo, flanks=flanks)
     assert d_hub[12] == 0.0, (
         f"d(Kt_hub)/dR_hub = {d_hub[12]}, but R_hub is above the slot — buying more of it "
         f"must buy exactly nothing")
 
     # Well below the cap, nothing is capped and the original physics is back.
-    g2 = np.asarray(genes).copy()
+    g2 = np.asarray(genes_over_cap).copy()
     g2[12] = 0.5 * float(cap)
     assert float(WO.hub_fillet_r_effective(jnp.asarray(g2), cap)) == g2[12]
     (_, d2), _ = WO.junction_kt(g2, cfgo, flanks=flanks)
     assert d2[12] < 0.0, "below the cap a bigger fillet must still lower Kt"
+
+
+def test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively(genes):
+    """§13's genome landed in the smooth-min's blend, where nothing had landed before.
+
+    `R_hub` = 0.5790 against a cap of 0.6240 — under it, but by less than the blend width,
+    so `hub_fillet_r_effective` returns neither `R_hub` nor the cap.  It returns 0.5727,
+    about 1.1% BELOW the radius OCC actually builds.
+
+    That is a real and previously unexercised disagreement between the constraint and the
+    part, and it is worth stating plainly because PLAN.md §11 and §13 both headline
+    `kt_error_pct` = +0.0%: that number is the EXPORTER comparing its own modelled Kt
+    against its own built Kt, and it is correct.  The objective prices the same junction on
+    the blended radius instead, at Kt 2.0308 against the exporter's 2.0235.
+
+    The direction is what makes this tolerable rather than a bug: the blend can only pull
+    `R_eff` DOWN, so the optimizer sees a sharper corner than the part has and the
+    constraint is conservative.  This test pins the direction and the magnitude so that a
+    future change to the blend cannot silently make it optimistic.
+    """
+    cfgo = WW.get_config(CFG)
+    flanks = WO.fillet_flanks(genes, cfgo)
+    cap = float(WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
+    r_hub = float(genes[12])
+    r_eff = float(WO.hub_fillet_r_effective(jnp.asarray(genes), jnp.asarray(cap)))
+
+    assert r_hub < cap, f"R_hub {r_hub:.4f} is not under its cap {cap:.4f} any more"
+    assert r_eff < r_hub, (
+        f"R_eff {r_eff:.6f} is not below R_hub {r_hub:.6f} — the blend has stopped "
+        f"blending, or this genome left it")
+    assert r_hub - r_eff < 0.05 * r_hub, (
+        f"the blend is pulling R_eff {(1 - r_eff / r_hub):.2%} below the requested "
+        f"radius; it was 1.1% at §13's genome and a much larger reduction is a fillet "
+        f"penalty nothing has measured")
+
+    kt_priced, _ = WO.junction_kt(genes, cfgo, flanks=flanks)[0]
+    assert float(kt_priced) > float(W.stress_concentration_kt(r_hub, genes[8])), (
+        "the constraint must price the hub at least as sharp as the part is built — a "
+        "blend that made Kt optimistic would understate utilisation on every design "
+        "that lands near its cap")
 
 
 def test_the_cap_gradient_matches_a_finite_difference(genes):
@@ -445,18 +544,32 @@ def test_the_t1_term_lists_stay_in_lockstep(genes):
     assert len(v) == len(WO.T1_NAMES)
 
 
-def test_the_fillet_cap_barrier_is_live_at_the_shipped_genome(genes):
-    """It has to BITE somewhere, and the shipped genome is 0.45 mm over its slot.
+def test_the_fillet_cap_barrier_is_live_on_a_design_over_its_cap(genes_over_cap, genes):
+    """It has to BITE somewhere, and the GA/beam genome is 0.45 mm over its slot.
 
     15 of the 16 Stage-2 elites are above their cap, including both production multi-start
-    points, so a barrier that read zero here would be measuring nothing.
+    points, so a barrier that read zero on all of them would be measuring nothing.
+
+    THIS USED TO BE CALLED "...AT THE SHIPPED GENOME" and took whichever genome shipped.
+    §13 promoted one that is UNDER its cap, at which point the barrier correctly read 0.0
+    and the test failed for being satisfied — the constraint working, described as a
+    regression.  Both halves are asserted now: live where it must bite, and exactly zero
+    where it must not.
     """
     cfgo = WW.get_config(CFG)
-    flanks = WO.fillet_flanks(genes, cfgo)
-    v, J = WO._t1_cached_value_and_jacobian(jnp.asarray(genes), cfgo, None, W.S, flanks)
+    flanks = WO.fillet_flanks(genes_over_cap, cfgo)
+    v, J = WO._t1_cached_value_and_jacobian(
+        jnp.asarray(genes_over_cap), cfgo, None, W.S, flanks)
     k = WO.T1_NAMES.index("fillet_cap")
     assert float(np.asarray(v)[k]) > 0.0, "the cap barrier is flat on a design over its cap"
     assert np.asarray(J)[k][12] > 0.0
+
+    flanks_s = WO.fillet_flanks(genes, cfgo)
+    v_s, _ = WO._t1_cached_value_and_jacobian(
+        jnp.asarray(genes), cfgo, None, W.S, flanks_s)
+    assert float(np.asarray(v_s)[k]) == 0.0, (
+        "the shipped genome is under its cap, so this barrier must read exactly 0.0 — a "
+        "non-zero value would be a penalty charged to a feasible design")
 
 
 def test_R_rim_is_still_effectively_inert_and_that_is_recorded(genes):
@@ -581,20 +694,28 @@ def test_the_jnp_kt_is_the_numpy_kt(r, t):
     assert float(WO.stress_concentration_kt(r, t)) == W.stress_concentration_kt(r, t)
 
 
-def test_kt_hub_is_priced_on_the_buildable_radius_and_kt_rim_on_the_requested_one(genes):
+def test_kt_hub_is_priced_on_the_buildable_radius_and_kt_rim_on_the_requested_one(
+        genes_over_cap):
     """PLAN.md §0(a): the hub's `Kt` reflects the fillet the PART GETS, not the gene.
 
     WHAT THIS USED TO SAY.  "only the four genes it depends on move it" — `Kt_hub` was
     `kt(R_hub, t0)` and its gradient was nonzero on exactly `{12, 8}`.  That is no longer
     true and must not be: `R_hub` is capped at half the slot between adjacent spoke roots,
     the slot is a function of the eight centerline genes and `t0`, so `Kt_hub` moves with
-    all ten.  The shipped genome sits 0.45 mm above its cap, so `dKt_hub/dR_hub` there is
+    all ten.  This genome sits 0.45 mm above its cap, so `dKt_hub/dR_hub` there is
     exactly 0.0 — the optimizer can no longer buy hub fillet it will not receive.
+
+    IT TAKES `genes_over_cap`, NOT THE SHIPPED GENOME.  Every hub assertion below is the
+    OVER-cap branch: `r_eff` is the hard `min`, `dKt_hub/dR_hub` is exactly zero, and Kt is
+    strictly raised above what the gene asked for.  None of that is true inside the blend,
+    which is where §13's genome sits — that regime has its own test,
+    `test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively`.
 
     The RIM is deliberately not capped (its junction has a whole ring band to grow into,
     not a slot), so its half of this test is unchanged and is the control: if the rim's
     row ever starts looking like the hub's, the cap has leaked across the pairing.
     """
+    genes = genes_over_cap
     cfgo = WW.get_config(CFG)
     flanks = WO.fillet_flanks(genes, cfgo)
     cap = WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks)

@@ -295,7 +295,10 @@ def test_the_best_out_record_carries_the_box_it_was_descended_in():
     saved = [(g["low"], g["high"]) for g in W.GENE_SPACE]
     min_wall = W.MIN_WALL_MM
     try:
-        assert S3.search_block(_Args, "best_solution", 125)["min_wall_mm"] == 2.0
+        # The module's value, not a literal — the default moved to 1.2 with §13 and the
+        # claim here is "the block reports whatever the module says", not any one number.
+        assert (S3.search_block(_Args, "best_solution", 125)["min_wall_mm"]
+                == W.MIN_WALL_MM)
         W.set_min_wall(1.4)
         blk = S3.search_block(_Args, "best_solution", 125)
         assert blk["min_wall_mm"] == 1.4, (

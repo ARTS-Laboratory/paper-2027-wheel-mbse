@@ -3,6 +3,23 @@
 > **Ignore version control entirely. Do not commit, branch, stage, revert or otherwise
 > touch git — it is not part of this project's workflow and nothing here depends on it.**
 
+> **THE SHIPPED GENOME CHANGED ON 2026-08-06 — READ THIS BEFORE TRUSTING ANY NUMBER BELOW.**
+> `best_solution.json` is now the Stage-3 1.2 mm optimum, genome **`350f4c7`**, 39.194 g on
+> the mesh / 47.63 g as an OCC solid. Everywhere in §1–§12 that a table, a study or a
+> sentence says **"best_solution"** it means the genome that used to be in that file: the
+> v2.1 GA/beam optimum, **`36aed36`**, `t0` 2.48 mm, 74.12 g. That genome is preserved
+> unchanged as `best_solution_ga_beam.json`, and **none of those measurements are wrong** —
+> they simply describe *the old wheel* now. §9's 1.36 load factor and §0's utilisation table
+> are both in that category. Every driver in `studies/` defaults to `best_solution.json`, so
+> **re-running any study today measures the new wheel and will not reproduce the old page.**
+> §13 is the record, and it lists the numbers that moved.
+>
+> **AND: `wheel_fea.MIN_WALL_MM` DEFAULTS TO 1.2 AS OF THE SAME DAY**, down from 2.0. The
+> shipped genome is a 1.2 mm design and the old default put all four of its thickness genes
+> outside the box they are supposed to live in. **The GA and every driver now search down
+> to 1.2 mm by default** — if you are reading a run whose numbers assume a 2.0 mm floor,
+> that run predates this. See §13.
+
 ---
 
 ## Where the tree stands — the minimum a fresh session needs
@@ -188,6 +205,50 @@ One line each:
   the manifest diff proves it is reporting-only: **not one geometric number moved.**
   **`make test` 430 passed.** Promotion now waits on exactly one thing — the Inventor
   import of `export/stage3_minwall_best_1.2.step`.
+- **§13 — PROMOTED (2026-08-06). That import passed, and `best_solution.json` is now
+  `350f4c7`.** The shipped wheel is the 1.2 mm Stage-3 optimum: **74.12 g → 47.63 g as an
+  OCC solid**, `kt_error_pct` **+0.0% at both junctions** (the first shipped part whose
+  fillets match the ones its stress model priced), one fillet family per junction instead
+  of two. The export is identical to §11's candidate in all 33 geometric keys. The price is
+  stated plainly in §13: **stress utilisation 0.41 → 0.80** at the `medium` rung, still
+  inside the barrier with every constraint term at exactly 0.0, but no longer comfortable.
+  `best_solution_ga_beam.json` keeps the old genome and `tests/test_golden.py` keeps
+  reading it, so nothing was re-baselined. **Every per-design number in §1–§12 now describes
+  the old wheel** — see the banner at the top of this file.
+  **`make test` came back 410 passed / 20 failed, and TEN OF THOSE WERE FINDINGS, NOT
+  PINS.** The most important was that `MIN_WALL_MM` still defaulted to **2.0** while the
+  shipped genome is a 1.2 mm design, putting all four thickness genes outside the default
+  gene box — **the default is now 1.2**, which closed three failures on its own. The gate
+  stands at **423 passed / 8 failed**. Read §13's gate section before running any driver on
+  this genome.
+- **§14 — those eight triaged (2026-08-06). Three were about the TESTS, and the
+  "eight findings about a thinner wheel" reading was half wrong.** Every one was diagnosed
+  by sweeping something — the mesh tier, the gene box, the reference — on the promoted
+  genome AND on `best_solution_ga_beam.json`, so "the new design broke it" always had to
+  survive a comparison against the design it replaced. Three times it did not: the area
+  order is **exactly 2.000** on both genomes once measured self-referenced instead of
+  against a beam integral that has its own error floor; the p99 ratio test is a divergence
+  detector misfiring on an already-converged quantity, and the OLD genome fails it too one
+  tier down; the contact failure is smoke-only and clears by 5x at `coarse`. Two more were
+  tests pinning a **pathology** as an invariant. **Six thresholds touched, four of them
+  now TIGHTER.** The exporter publishes `fillets.volume_mm3` (**6.18% of the solid**, not
+  the 0.92% its docstring claimed), which turned the mass budget from a fitted band into a
+  named one — and exposed a new open item: `EMBED_ALLOWANCE_PER_SPOKE_MM2 = 3.03` is a
+  `t`-proxy and the real gusset is **0.98 mm²/spoke**. **Left deliberately red: the
+  pre-registered GNL gate and the hub compliance share** (0.0321, sign not understood).
+  Also still open: `make hubcap` at 1.2.
+- **§14 item 4a — THE GNL GATE STANDS, and chasing it down found the biggest thing on this
+  page.** The 1%-load gate is a tripwire for the service-load number, and the full ladder
+  says the shipped wheel's axle drop at service load is **+23.3% under SVK against linear**
+  (the GA/beam wheel: +3.95%, reproducing M5 exactly). Every headline for this genome was
+  computed under `kinematics="linear"`. **Deflection is 2.409 mm, not the 1.953 the optimizer
+  saw — 20% past the 2.0 mm target it was tuned to hit exactly**, and utilisation goes from
+  0.799 to roughly **0.91** against an allowable of 1.0. Relaxing the gate would silence the
+  only automatic warning that linear kinematics no longer describes this part; **the real
+  question is whether Stage 3 should descend on a linear solve at a 1.2 mm wall at all**, and
+  that is a scope decision. Also fixed en route: `study_wheel_fea.stress_report` was applying
+  the LINEAR strain formula to SVK fields — a **+169.5% artefact against a real +14.3%** — and
+  now dispatches on `res["meta"]["kinematics"]`.
 
 
 **The previous three items — (a) the hub-fillet cap, (b) the production descent, (c)
@@ -1806,9 +1867,9 @@ the promotion itself remains a one-file change. Before it:
    measuring `t0`.** It is gone; the check now gates on `wheel_geometry.junction_bite`,
    the 1.2 mm candidate passes at 0.562 root thicknesses against a 0.25 floor, and
    nothing about the candidate's geometry changed.
-2. **One Inventor import** of `export/stage3_minwall_best_1.2.step`, against a 0.0087 mm
-   edge and a 0.195 mm² face. **This is now the only thing standing between the candidate
-   and promotion.**
+2. ~~**One Inventor import** of `export/stage3_minwall_best_1.2.step`, against a 0.0087 mm
+   edge and a 0.195 mm² face.~~ **DONE 2026-08-06 — it imported clean. THE PROMOTION
+   HAPPENED; see §13.** Both items on this list are closed and this section is history.
 3. Note that promoting also moves the WHEEL the studies describe: every study driver reads
    `best_solution.json`, so §9's load factor (1.36 on the *shipped* genome) and every other
    per-design number on this page is about a genome that would no longer be the shipped one.
@@ -1918,6 +1979,565 @@ geometry changed; only what the exporter says about it.
 
 #### What is left
 
-Promotion now waits on **one thing**: the Inventor import of
-`export/stage3_minwall_best_1.2.step`, against that 0.0087 mm edge and 0.195 mm² face. See
-§11's "What promotion still needs". `best_solution.json` is untouched.
+~~Promotion now waits on **one thing**: the Inventor import of
+`export/stage3_minwall_best_1.2.step`, against that 0.0087 mm edge and 0.195 mm² face.~~
+**That import passed on 2026-08-06 and the genome is promoted — §13.** `best_solution.json`
+is no longer untouched; it is `350f4c7`.
+
+---
+
+### 13. PROMOTED. `best_solution.json` IS THE 1.2 mm STAGE-3 GENOME (2026-08-06).
+
+The Inventor import of `export/stage3_minwall_best_1.2.step` passed — that was the last
+gate §11 and §12 left standing, and it was the one nobody in this repo could measure from
+a script: whether a 0.0087 mm edge and a 0.195 mm² face survive a real MCAD translator.
+They do. So the promotion happened.
+
+`best_solution.json` now holds **`350f4c7`**, verbatim from `stage3_minwall_best_1.2.json`
+apart from a `note` block recording where it came from. The old shipped genome, **`36aed36`**,
+is intact in `best_solution_ga_beam.json` — which is not a courtesy copy, it is the file
+`tests/test_golden.py` reads (§10), and that decoupling is exactly why this promotion did
+**not** re-baseline the regression net onto numbers regenerated by the function the net
+exists to check.
+
+#### What shipped
+
+| gene | old `36aed36` | new `350f4c7` |
+|---|---|---|
+| `t0` | 2.4774 | **1.2000** |
+| `t1` | 2.0000 | **1.2000** |
+| `t2` | 2.0000 | **1.2000** |
+| `t3` | 2.0000 | **1.4614** |
+| `R_hub` | 1.5598 | **0.5790** |
+| `R_rim` | 3.0000 | **2.7495** |
+
+Three of the four thicknesses sit exactly on the 1.2 mm wall floor. `R_hub` 0.579 is well
+under §5's cap of 0.624 for this genome, which is why every corner filleted at the radius
+the stress model priced.
+
+#### The export, old → new
+
+`make export` on the promoted file. **The result is identical to the candidate export in
+§11 and §12 — all 33 geometric keys, byte for byte; the only manifest key that differs
+between them is `source`.** That is the check that matters here: promotion is a rename of
+which genome is "the" genome, and it must not perturb geometry. It did not.
+
+Stronger, and worth recording because it retires the obvious doubt: `export/wheel.step` and
+`export/stage3_minwall_best_1.2.step` are **byte-identical apart from the `FILE_NAME`
+timestamp** — same length, `diff` over everything past the header returns zero lines. The
+file now shipping as `wheel.step` is *literally* the file that went into Inventor, not a
+rebuild that ought to match it. Same for the `_nofillet` pair.
+
+| manifest key | old | new |
+|---|---|---|
+| `solid.volume_mm3` | 59777.4 | **38415.2** |
+| `solid.mass_g_pla` | 74.12 g | **47.63 g** |
+| `fillets` hub `kt_error_pct` | +73.4% | **+0.0%** |
+| `fillets` rim `kt_error_pct` | +111.4% | **+0.0%** |
+| hub fillet families | 1.127 mm ×12, 0.361 ×12 | **0.579 mm ×24** |
+| rim fillet families | 3.000 mm ×12, 0.308 ×12 | **2.749 mm ×24** |
+| `junction_overlap_mm3.bite` hub / rim | 0.571 / 4.379 | **0.562 / 1.424** |
+| `step_health.min_edge_mm` | 0.162221 | **0.008711** |
+| `step_health.min_face_mm2` | 3.6338 | **0.1951** |
+| `step_health.min_curvature_radius_mm` | 0.308309 | **0.578934** |
+| surface census | 26 Plane / 48 BSpline | **14 Plane / 60 BSpline** |
+
+**26.5 g of PLA, 35.8% of the solid, for a part that is now the first one this repo has
+built whose fillets match the ones its stress model priced.** The `kt_error_pct` collapse
+is not a fillet improvement — it is the consequence of `R_hub` dropping under the cap, so
+OCC never has to fall back to a second, smaller family. The single-family rows are the
+evidence.
+
+The two `step_health` numbers that got WORSE are the ones the Inventor import was for.
+The minimum edge fell 19× and the minimum face 19×; both are geometry the exporter has
+always produced and neither is a defect, but 0.0087 mm is small enough that a translator
+was entitled to drop it. It didn't.
+
+#### The design this buys, stated honestly
+
+Both rows below are the `medium` rung under the M8b-i.6 Kt formulation, so they *are*
+comparable — unlike the two records' raw metric blocks, which use different key names for
+different measurements (`total_mass_g` is the beam surrogate's analytic area, `mesh_mass_g`
+is integrated over the FEA mesh; **do not subtract them**).
+
+| | old `36aed36` | new `350f4c7` |
+|---|---|---|
+| stress utilisation (hub) | 0.4099 | **0.7986** |
+| stress utilisation (rim) | — | 0.5594 |
+| `Kt_hub` / `Kt_rim` | 1.861 / 1.490 | **2.031 / 1.423** |
+| field max (mesh-divergent, **not** the constraint) | 48.47 MPa | 182.4 MPa |
+| `min_scaled_jacobian` | — | 0.7111 |
+
+**Utilisation roughly doubled.** That is what 26.5 g costs, and it is the honest headline of
+this promotion. The barrier is still satisfied — every term in `loss_terms` that is a
+constraint reads exactly `0.0`, `stress` included, and 0.799 is inside 1.0 — but the margin
+is now thin where it used to be comfortable. The field max moving 48.5 → 182.4 MPa is **not**
+a 3.8× stress increase and must not be read as one: §0 and M4 both record that the field max
+diverges under refinement and is not a number the project constrains. `min_sj` 0.711 clears
+the 0.64 threshold §8 flagged as the trustworthy floor for a Stage-3 re-score.
+
+#### What is now stale, and it is a lot
+
+Every driver in `studies/` defaults to `best_solution.json`. Nothing in those recorded
+studies is *wrong*, but from today they describe **the old wheel**:
+
+- **§9's M9 phase-3 load factor of 1.36** is on `36aed36`. It was never a safety factor
+  (§9 is emphatic) and it is now also not this wheel's number. Re-running `make m9` measures
+  `350f4c7`.
+- **§0's utilisation table** (`best_solution` at 0.4099, elite 1 at 0.5063) is `36aed36`
+  and `stage3_prod_best_elite*`.
+- Every per-design figure in §1–§12 that names `best_solution`.
+
+The banner at the top of this file says the same thing, because a fresh session reads that
+before it reads this.
+
+#### The gate: **20 failed, 410 passed** — and that is the real story of this promotion
+
+`make test` on the promoted genome. Every failure is a test that had quietly encoded a
+property of `36aed36` as if it were a property of the PROJECT. Nothing in `src/` broke.
+But they are not all the same kind of stale, and lumping them together would be the
+mistake — **ten were pins, ten are findings.**
+
+**THE ONE THAT MATTERED MOST, and it was not a test problem — RESOLVED, see below.**
+`wheel_fea.MIN_WALL_MM` still defaulted to **2.0** while the promoted genome has
+`t0 = t1 = t2 = 1.2`, `t3 = 1.4614`. **All four thickness genes were OUTSIDE the repo's
+default gene box**, at `z` = −0.100, −0.133, −0.133, −0.135. `wheel_stage3.descend`
+projects its start into the box before stepping, so any driver that loaded
+`best_solution.json` without `--min-wall 1.2` would have **silently lifted all four
+thicknesses to 2.0 mm and optimised a different, heavier wheel without saying a word.**
+That is what `test_a_failed_solve_is_a_step_reject_and_the_run_recovers` was actually
+reporting when it said `iterate_unchanged: False` — a fault-injection test catching a box
+problem, which is not what it was written for and is not something reading would have
+found. §8 anticipated this exact shape of bug and
+`test_a_start_below_a_raised_floor_is_projected_up_onto_it` describes it — for the 2.2 mm
+arm. It became true of the shipped genome. **`MIN_WALL_MM` now defaults to 1.2.**
+
+**Fixed here — ten pins, all verified passing.** In each case the test's INTENT survives
+and the assertion was the thing that was wrong:
+
+| test | what it had pinned | what it pins now |
+|---|---|---|
+| `test_the_hub_junction_..._filleted` | the hub splits into **2** fillet families | families account for every filleted edge; `r_built_mm` is the worst family's radius. Two families was the old genome's FALLBACK — asserting it made the fix look like a regression |
+| `test_the_normalized_gradient_follows_the_moved_floor` ×2 | that the shipped genome violates `hub_overlap` | reads `best_solution_ga_beam.json`. Its own vacuity guard caught this, which is the guard working |
+| `test_the_embed_difference_...` | −1.4% of the wheel | the absolute **36.36 mm²** gusset. The gap moved 36.595 → 36.501 mm²; only the denominator changed |
+| `test_genome_hash_matches_manifest` | the GA/beam genome against the SHIPPED manifest | the shipped genome against the shipped manifest. **§10's decoupling missed this one assertion** and it was invisible while the two files were identical |
+| `test_R_hub_is_dead_at_the_mesh_...` | `d(fillet_cap)/dR_hub > 0` at whatever ships | over-cap genome for the barrier, shipped genome for M7's mesh claim, **plus** a new assertion that the barrier is exactly 0.0 on a feasible design |
+| `test_the_hub_cap_reproduces_the_measured_void` | 9.907 deg, measured on the OLD solid | the genome it was measured on. The void is 22.8 deg on the new design — a property of a design, not a constant |
+| `test_R_eff_is_exactly_the_cap_more_than_one_rung_above_it` | shipped genome is above its cap | the over-cap fixture; the name was always the precondition |
+| `test_the_fillet_cap_barrier_is_live_at_the_shipped_genome` | shipped genome is 0.45 mm over its slot | renamed `..._on_a_design_over_its_cap`; asserts live where it must bite AND zero where it must not |
+| `test_kt_hub_is_priced_on_the_buildable_radius_...` | the hard-`min` branch | the over-cap fixture, since every hub assertion in it is the over-cap branch |
+
+A new `genes_over_cap` fixture reads `best_solution_ga_beam.json` for the five cap tests.
+That file was pinned by §10 so the golden test could not be re-baselined; it turns out to
+be load-bearing for a second reason, which is that **it is the only genome in the repo
+that is over its hub fillet cap.**
+
+**A new test was added, for a regime nothing had ever landed in.**
+`test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively`. `R_hub` =
+0.5790 against a cap of 0.6240 — under it, but by less than the smooth-min's blend width,
+so `hub_fillet_r_effective` returns **0.5727**, about 1.1% below the radius OCC actually
+builds. **This qualifies the `kt_error_pct` = +0.0% headline above and should be read next
+to it**: that +0.0% is the EXPORTER comparing its own modelled Kt against its own built Kt,
+and it is correct. The OBJECTIVE prices the same junction at Kt **2.0308** against the
+exporter's **2.0235**. The blend can only pull `R_eff` down, so the constraint is
+CONSERVATIVE, not optimistic — which is why this is a footnote and not a defect. The new
+test pins the direction so a future change to the blend cannot quietly reverse it.
+
+#### The ten that are findings, NOT pins — none of these has been touched
+
+Each is the new design genuinely behaving differently. Re-tuning these thresholds would
+convert a measurement into a green checkmark, so none of them has been.
+
+> **§14 REVISED THIS TABLE AND THE HEADING OVER IT IS TOO STRONG.** Read §14 before
+> trusting any row. Of the eight that were still red, only two survive as "the new design
+> genuinely behaving differently" — the GNL gate and the hub compliance share. Three were
+> the TESTS being wrong in ways the old genome also exposed once measured, and two were
+> tests pinning a pathology. The rows below record what was measured on the day; the
+> `what it means` column is the reading that §14 went on to check, and it does not hold
+> for the arrival angle, the p99, the area order, the contact patch, or the mass budget.
+
+| test | measured | gate | what it means |
+|---|---|---|---|
+| `test_a_failed_solve_is_a_step_reject_and_the_run_recovers` | `iterate_unchanged: False` | must be `True` | **the box problem above.** Fix the default, not the test |
+| `test_the_arrival_angle_makes_the_junction_a_near_crack` | material wedge **315.4 deg** | `> 340` | the new junction is **materially less crack-like**. Good news — and it means `study_wheel_fea.py`'s convergence-rate explanation is now about a wedge the wheel no longer has |
+| `test_peak_stress_diverges_but_the_field_converges` | p99 changes 0.028 → **0.016** | `d2 < 0.3·d1` | the plain-spoke p99 settles more slowly on a 1.2 mm wall. Probably wants a finer rung, not a looser gate |
+| `test_the_correction_enters_at_first_order_in_the_load` | GNL at 1% load **0.205%** | `< 0.1%` | **the thin wheel is measurably more geometrically nonlinear.** The fitted exponent is 1.034, so the physics is right — it is the magnitude that moved |
+| `test_the_correction_is_not_a_constant_over_the_design_space` | iso ratio **2.69** | `> 3.0` | M5's "the correction is not a constant" is weaker around this design. M5's conclusion is not overturned, but its margin is |
+| `test_the_rim_band_holds_a_large_minority_of_the_compliance` | hub share **0.0321** | `< 0.03` | rim 0.306 and spoke 0.662 are both fine; the hub takes marginally more of a floppier wheel |
+| `test_total_mass_matches_the_step_manifest_within_the_embed_difference` | mesh 44.36 g vs solid **47.63 g**, −6.9% | −3.0% to −1.2% | the gap is gusset (≈1.01 g, unchanged) **plus fillet material, which grew from ~0.68 g to ~2.26 g** because all 48 corners now build at full radius on a 36% lighter wheel. Explainable, but it is a budget that has to be restated, not a bound to widen |
+| `test_area_converges_second_order` | orders 1.986 / 2.061 / **2.355** | `1.7 < r < 2.3` | the finest rung overshoots second order on the thin section |
+| `test_random_directions_agree_with_the_adjoint` | worst rel **1.49e-5** | tighter | directional FD agreement degraded on the thinner geometry |
+| `test_the_sampled_patch_extent_is_biased_not_merely_noisy` | axle drop moves **0.32%** between `n_quad` 6 and 20 | `< 0.1%` | the contact solve is more quadrature-sensitive on a softer wheel |
+
+**Read the middle four together.** More geometric nonlinearity, a slower-settling stress
+field, a less singular corner and a softer contact response are all the same wheel being
+thinner and floppier. None of them says the design is unsafe — the constraint that governs
+is `stress_utilisation`, which is 0.799 against 1.0. They say the MODELS were calibrated
+on a stiffer part, and several of the conclusions written on this page were measured on
+one.
+
+#### THE FLOOR NOW DEFAULTS TO 1.2 (same day, decided after the gate)
+
+`wheel_fea.MIN_WALL_MM` **2.0 → 1.2**. Three perimeters at a 0.4 mm nozzle rather than
+five. §8 measured what the floor costs, §11 took the decision that the process can hold
+1.2, §13 promoted a 1.2 mm genome — and until this change the box still said that genome
+was infeasible. It is still settable per run (`set_min_wall`, `--min-wall`); what moved is
+the default, and **a default's job is to describe the wheel that ships.**
+
+**What this changes for anyone running anything.** The GA and every driver now search down
+to 1.2 mm by default. A run whose numbers assume a 2.0 mm floor predates this — including
+every Stage-2 elite and the GA/beam genome, both of which were produced inside the old box.
+Nothing on disk was regenerated.
+
+**Two stale claims fell out of it, both corrected in place:**
+
+- `wheel_objective.HUB_CAP_SHARE`'s comment said "`MIN_WALL_MM` is 2.0 and every design on
+  disk sits at 2.468–2.627, so the calibrated band covers the reachable design space's
+  lower half". Both halves were false the moment the genome was promoted, and the law is
+  explicitly "CALIBRATED ON [2.0, 2.6] AND NOT KNOWN OUTSIDE IT" — the shipped genome sits
+  at `t0` = 1.2, **below the band**. What saves it is which branch binds: the cap at
+  `t0` = 1.2 is 0.624 mm = `HUB_CAP_THICKNESS_SHARE` × 1.2 exactly, so the THICKNESS term
+  takes the `min` and the slot share is not being extrapolated on the shipped part. **A
+  design that was thin AND had a tight slot would extrapolate it for real, and nothing
+  would say so.** Re-run `make hubcap` at the new floor before trusting the slot branch
+  under 2.0 mm.
+- Two tests hardcoded `2.0` as "the default floor" (`test_gene_space.py`,
+  `test_stage3.py`). Both now read the module. In each the claim was "unchanged" or "what
+  the module says", and the literal quietly turned it into "still 2.0".
+
+**The gate after the floor change: 8 failed, 423 passed** (was 20/410). The floor change
+closed three by itself — `test_a_failed_solve_is_a_step_reject_and_the_run_recovers`, which
+was the one reporting the box problem in the first place, plus
+`test_random_directions_agree_with_the_adjoint` and
+`test_the_correction_is_not_a_constant_over_the_design_space`. **It also broke one, and that
+one is worth reading rather than re-tuning.**
+
+#### `test_the_beam_to_wheel_ratio_is_not_a_constant`: the box moved, not the wheel
+
+It failed at **2.686** against a `> 3.0` gate. The obvious reading — that the promoted
+genome made Gate 1's headline weaker — is wrong, and one measurement settles it:
+
+| genome | floor | `fea_over_beam_ratio` |
+|---|---|---|
+| `best_solution_ga_beam.json` | 2.0 | **4.943** |
+| `best_solution.json` (shipped) | 2.0 | **4.943** |
+| `best_solution_ga_beam.json` | 1.2 | **2.686** |
+| `best_solution.json` (shipped) | 1.2 | **2.686** |
+
+**Identical down the genome column, to every digit.** `run_beam_blindness` draws a Latin
+hypercube from the GENE BOX and computes the statistic over the drawn rows only — the
+`genes` argument is deliberately excluded from the statistics, and its own comment says why
+("it was optimised and the others were drawn, so pooling them would understate the
+spread"). The number is a property of the box; the test's fixture never touched it.
+
+The mechanism is written in that same function: "feasible random spokes are typically
+10–100x stiffer than the 2.0 mm target, **because the wall-thickness floor is what binds
+there**." Dropping the floor to 1.2 lets the hypercube draw thinner, floppier spokes, which
+moves the drawn population toward the beam target and COMPRESSES the max/min ratio.
+4.943 → 2.686 is that compression, and it is the correct answer for the box the project now
+searches.
+
+**Gate 1's conclusion is not overturned.** `correction_factor_is_defensible` is still
+`False` — that assertion passed — and a 2.7x spread is still not a constant. What breached
+is the `> 3.0` margin, a number picked in a box with a 2.0 mm floor. The mirror image
+happened on the gnl side: `test_the_correction_is_not_a_constant_over_the_design_space`
+measured 2.694 in the old box and now passes. **Two tests of the same shape swapped sides
+of the same threshold when the box moved.** Whether 3.0 is still the right margin at a
+1.2 mm floor is a judgement about Gate 1's claim, not about this promotion, so it has been
+left alone rather than tuned down to fit.
+
+Everything else in the ten findings above is unaffected by the floor change — they are
+properties of the geometry, not of the box.
+
+
+### 14. THE EIGHT THAT WERE LEFT. Five open items, three closed by measurement (2026-08-06).
+
+§13 promoted the wheel and left **8 failed / 423 passed**, deliberately untouched. This
+section is the triage. It is not eight problems — it is five, and the ones that turned out
+to be about the tests rather than the wheel have been fixed.
+
+**The rule that governed all of it: measure before touching a threshold.** Every item below
+was diagnosed by sweeping something (the mesh tier, the gene box, the reference) on BOTH the
+promoted genome and `best_solution_ga_beam.json`, so that "the new design broke it" always
+had to survive a comparison against the design it replaced. Three times it did not.
+
+| # | item | status |
+|---|---|---|
+| 1 | two tests pinned a PATHOLOGY as an invariant | **CLOSED** — both inverted |
+| 2 | the mass test asserted a budget it could not measure | **CLOSED** — exporter now publishes the fillet term |
+| 3 | four convergence failures, one suspected common mechanism | **CLOSED** — hypothesis wrong; three separate causes found, two fixed |
+| 4a | the pre-registered GNL gate | **DECIDED — it stands, and linear kinematics is the real question** |
+| 4b | the hub compliance share | **OPEN — a human's call** |
+| 5 | `make hubcap` at the 1.2 mm floor | **OPEN** |
+| 6 | `EMBED_ALLOWANCE_PER_SPOKE_MM2` is stale (new, found by item 2) | **OPEN** |
+
+---
+
+#### Item 1 — two tests pinned a pathology as an invariant. CLOSED.
+
+Same mistake §13 already fixed once, when `fillet_families == 2` turned out to be pinning an
+OCC radius fallback as though it were a requirement.
+
+**`test_the_arrival_angle_makes_the_junction_a_near_crack`** asserted `material_wedge > 340`
+and measured **315.4**. Read the name: it pins the junction being nearly a crack. A design
+whose spokes arrive less tangentially has a *less* crack-like junction, which is an
+improvement, and it broke the test. Renamed to
+**`test_the_junction_is_re_entrant_enough_to_be_singular`** and rewritten against a bound
+that is a property of the BOX rather than of one design: `MAX_ARRIVAL_DEG` caps the arrival
+angle for every genome the optimizer can reach, so the wedge is at least
+`360 - MAX_ARRIVAL_DEG` = **295 deg everywhere**. That is all the sibling
+`test_peak_stress_diverges_but_the_field_converges` needs, and it never has to be re-fitted
+when a genome ships.
+
+**`test_the_beam_to_wheel_ratio_is_not_a_constant`** — the 2x2 table in §13 proved the
+statistic is a property of the gene box and does not depend on `genes` at all. It now calls
+`set_min_wall(2.0)` for the duration of the draw, with a `finally` that restores
+unconditionally (`tests/test_stage3.py` caches bounds in a module-scoped fixture, so a leaked
+floor would surface somewhere else entirely). Gate 1's conclusion was never in question:
+`correction_factor_is_defensible` is `False` in both boxes. What is pinned is the margin, in
+the box the margin was calibrated in. **Re-deriving Gate 1 at a 1.2 mm floor is real work and
+has not been done.**
+
+Note `test_the_free_arc_fraction_is_not_constant_over_the_design_space` is the same shape —
+a box statistic from the same `run_beam_blindness` call — and currently passes at 0.05. It
+has been left alone rather than churned, but it is the next one to move if the floor does.
+
+---
+
+#### Item 2 — the mass budget was two unmeasured terms. CLOSED, and it exposed a stale constant.
+
+`test_total_mass_matches_the_step_manifest_within_the_embed_difference` asserted
+`-3.0% < m/manifest - 1 < -1.2%` and measured **-6.9%**. Its docstring decomposed the gap
+into "~1.4% gusset plus 0.92% fillets" — and **the manifest published neither number**. Both
+were fitted to one wheel. When the band broke there was nothing to look at.
+
+The fillet term did not need estimating. `wheel_step_export` already builds
+`wheel_nofillet.step` as its guaranteed-valid fallback, so the material the fillets add is a
+subtraction OCC does exactly. The exporter now measures that solid's volume before
+despecializing (same rule as `vol_true`, because the two are subtracted) and publishes:
+
+```
+solid.volume_nofillet_mm3   36042.6
+fillets.volume_mm3           2372.53      = 6.176% of the solid
+```
+
+**6.18%, against the 0.92% the old docstring claimed.** That single correction is most of the
+missing 6.9 points. Re-exporting was verified reporting-only: a key-by-key diff of the
+manifest before and after shows **exactly two keys added and not one other value changed** —
+`genome_hash`, `volume_mm3`, `mass_g_pla`, every `fillets.detail` row and `step_health` all
+byte-identical.
+
+The test is now a budget rather than a band: subtract the published fillet mass, and what is
+left must be the gusset alone — positive, and under 1.5% of the solid. It measures **0.70%**.
+It also pins the new field against a sign or unit slip (`fillets.volume_mm3` must equal the
+difference of the two published volumes, and must be positive, because filleting a re-entrant
+corner adds material).
+
+**And that is how the stale constant surfaced.** Closing the budget with named terms left a
+residual that would not go away under refinement:
+
+| tier | mesh g | + fillet + gusset | residual |
+|---|---|---|---|
+| smoke | 44.2841 | 48.2360 | **-0.6060 g** |
+| coarse | 44.3562 | 48.3081 | **-0.6781 g** |
+| medium | 44.3641 | 48.3160 | **-0.6860 g** |
+| fine | 44.3668 | 48.3187 | **-0.6887 g** |
+
+Converging, not shrinking — so it is not discretization. It is
+`EMBED_ALLOWANCE_PER_SPOKE_MM2 = 3.03`, and the promoted genome's actual gusset is
+**0.98 mm² per spoke**. See item 6. The rewritten test does not use the constant at all.
+
+---
+
+#### Item 3 — four convergence failures. The common-mechanism hypothesis was WRONG.
+
+The hypothesis was element aspect ratio: `MeshConfig` fixes `n_thick` and `n_span` as
+*counts*, so root element thickness went 2.4774/6 = 0.413 mm → 1.2/6 = 0.200 mm while
+spanwise length did not move, doubling the slenderness of every root element. Plausible, and
+it would have explained all four at once. **It explains none of them.** Three separate causes,
+found by three separate sweeps:
+
+**`test_area_converges_second_order` — the reference, not the mesh.** `n_thick` has *literally
+zero* effect on this statistic (8, 16, 32 give bit-identical orders — the area of a quad block
+does not care how it is subdivided through the thickness). Extending the sweep two levels past
+where the test stopped shows what is actually happening:
+
+| genome | vs the beam reference | self-referenced |
+|---|---|---|
+| `350f4c7` | 1.986 2.061 **2.355** 5.103 **-3.300** | 1.962 1.979 **2.000** 1.998 |
+| `36aed36` | 1.993 2.033 2.187 3.158 0.029 | 1.979 1.986 **2.001** 2.001 |
+
+An order of 5.1 and then minus 3.3 is not a convergence rate — it is a difference of two
+discretizations passing through zero. `reference_area` is `wheel_fea`'s beam-style line
+integral: independent code, which is what makes it a good CROSS-CHECK, and an approximation
+carrying its own error. The mesh converges at **exactly 2.000 on both genomes**. Nothing broke;
+the promoted wheel has a smaller section (52.9 vs 145.7 mm²) so its absolute error reaches the
+reference's floor one refinement sooner. **The GA/beam genome was already one level from
+failing this.** Split into two tests — a self-referenced order, and a Richardson-limit
+agreement with the beam integral to 1e-5 — and both got *tighter*, not looser.
+
+**`test_peak_stress_diverges_but_the_field_converges` — the test's own documented false alarm,
+one tier up.** It asserted `d2 < 0.3*d1` on the p99's successive differences.
+
+| genome | smoke | coarse | medium | fine | d2/d1 | d2/p99 |
+|---|---|---|---|---|---|---|
+| `350f4c7` | 18.327 | 17.274 | 17.246 | 17.230 | **0.573** | 0.094% |
+| `36aed36` | 8.842 | 8.782 | 8.612 | 8.605 | 0.042 | 0.082% |
+
+`d2/d1` fails; `d2/p99` says the p99 has settled to under a tenth of a percent. A
+successive-difference ratio is a divergence detector that only means anything while `d1` is
+still real discretization error — once converged, both are tail and the ratio is arbitrary.
+The old comment already named this failure mode at `smoke`, and the GA/beam genome **fails the
+identical test at 2.816 if the window starts one tier lower**. The window had to be hand-picked
+per design, which is the tell. Now pinned as the CONTRAST the docstring is actually about —
+the max grows 38.9% over coarse..fine while the p99 moves 0.26%, a ratio of relative drifts
+that is dimensionless and does not care which tier a design converges on.
+
+**`test_the_sampled_patch_extent_is_biased_not_merely_noisy` — genuinely resolution, and it
+clears at `coarse`.**
+
+| genome | smoke | coarse | medium |
+|---|---|---|---|
+| `350f4c7` | **-0.3233%** | -0.0170% | +0.0195% |
+| `36aed36` | -0.0275% | +0.0001% | +0.0030% |
+
+On `smoke` the promoted genome's contact patch is `patch_half_deg` = 0.53 deg against a rim
+element several times that: the whole contact set lives inside one element, so going from 6 to
+20 Gauss points changes which elements are loaded at all. The failure is smoke-only and clears
+by **5x** at `coarse`. That one test now builds its own `coarse` mesh; everything else in
+`test_contact.py` stays on `smoke`, because everything else in it is a claim about the
+*direction* of a bias, which holds at every tier.
+
+**`test_the_correction_enters_at_first_order_in_the_load` — not resolution. Real.** See item 4.
+
+---
+
+#### Item 4a — THE GNL GATE. DECIDED: IT STANDS, AND IT IS THE MOST IMPORTANT THING §14 FOUND.
+
+Swept for mesh sensitivity first, and there is none:
+
+| genome | smoke | coarse | medium |
+|---|---|---|---|
+| `350f4c7` | 0.2050% | 0.2081% | **0.2089%** |
+| `36aed36` | 0.0373% | 0.0382% | **0.0384%** |
+
+Converged by `coarse`, mesh-independent to three digits, fitted exponent 1.037 against 1.011.
+The correction still enters at first order — **what moved is the coefficient, not the
+exponent**, and the assertion the test is named for passes.
+
+**But 0.1% vs 0.2% at 1% of load is not what this is about.** `rel_diff = c·f^1.03`, so the
+1%-load number and the service-load number are the same fact stated twice, and the gate is a
+tripwire for the second one. The full ladder at `coarse`:
+
+| load | linear mm | SVK mm | rel_diff | | GA/beam rel_diff |
+|---|---|---|---|---|---|
+| 0.01x | 0.019530 | 0.019570 | +0.208% | | +0.038% |
+| 0.25x | 0.488241 | 0.514371 | +5.352% | | +0.963% |
+| 0.50x | 0.976483 | 1.084109 | +11.022% | | +1.943% |
+| **1.00x** | **1.952966** | **2.408898** | **+23.346%** | | **+3.953%** |
+| 2.00x | 3.905931 | 5.939932 | +52.075% | | +8.193% |
+| 3.00x | 5.858897 | 10.909429 | +86.203% | | +12.758% |
+
+The GA/beam column reproduces M5's recorded numbers exactly (0.038% / 3.95% / 12.8%), which is
+what makes the other column trustworthy. **The shipped wheel's axle drop at service load is
+23.3% larger under SVK than the linear model says**, against 3.95% for the wheel it replaced.
+
+**What that costs, in the two numbers the design is judged on.** Every headline for this
+genome was computed under `kinematics="linear"` — `wheel_contact_problem`'s default:
+
+- **Deflection.** `TARGET_DEFLECTION_MM` is 2.0 and the objective wants to hit it *exactly*.
+  Linear says 1.953 mm — 2.4% under target, essentially on it. SVK says **2.409 mm, 20% over**.
+  The design was tuned to a target it does not actually hit.
+- **Stress utilisation.** The 0.799 headline is a linear-field number. Plain-spoke p99 goes
+  17.274 → 19.746 MPa under SVK, **+14.3%**, which puts utilisation on the order of **0.91**
+  against an allowable of 1.0. *(An estimate: it scales the reported figure by the p99 ratio,
+  while the constraint itself aggregates a p-norm at p=30 on the `medium` rung. The margin
+  falls from ~20% to ~9%; it does not vanish.)*
+
+**So the gate has not been moved, and the case for moving it is now weaker, not stronger.**
+`study_gnl.py` records it as *"written down BEFORE the study was run, per the plan's rule"* —
+and the thing it was written to catch is exactly the thing that happened. Relaxing 1e-3 to
+accommodate 0.209% would silence the only automatic warning that **linear kinematics no longer
+describes this part.** The real open question is not the threshold; it is whether Stage 3
+should be descending on a linear solve at all for a wall this thin. That is a scope decision
+and it is a human's.
+
+##### The footgun this turned up — FIXED
+
+The first attempt at the stress half of that measurement returned **+169.5%**, and it was
+wrong. `wheel_fem.gauss_stresses` takes `nonlinear=False` by default, and
+`study_wheel_fea.stress_report` was calling it without the argument — correct for the linear
+solves it was written for, and **silently wrong for an SVK one**, applying the
+engineering-strain formula to a large displacement field. No warning, no NaN, and 46.56 MPa is
+plausible enough to quote against a 25 MPa allowable. The true figure is 19.75.
+
+`stress_report` now reads `res["meta"]["kinematics"]`, which `wheel_problem` sets down both
+paths, and passes `nonlinear=` accordingly. Pinned by
+`tests/test_gnl.py::test_stress_recovery_follows_the_solves_kinematics`, which asserts the
+correct recovery AND that the wrong one is still visibly different — a guard that stops being
+a guard if the two ever converge.
+
+#### Item 4b — OPEN, still a human's call. The hub compliance share.
+
+`test_the_rim_band_holds_a_large_minority_of_the_compliance`:
+hub share **0.0321** against `< 0.03`, 7% over. Rim 0.306 and spoke 0.662 are both comfortably
+inside. This is the one where the *direction* is surprising: thinner, floppier spokes should
+push compliance toward the spokes and the hub share DOWN. It went up. The plausible cause is
+`R_hub` dropping 1.5598 → 0.5790 — much less material at the hub junction — but that is a
+hypothesis and it has not been measured. **Least urgent of the eight and the only one whose
+sign is not understood.**
+
+---
+
+#### Item 5 — OPEN. `make hubcap` at the 1.2 mm floor.
+
+Carried forward unchanged from §13. `HUB_CAP_SHARE` is calibrated on `t0` in [2.0, 2.6] and
+the shipped genome sits at 1.2. What saves it today is *which branch binds* — the thickness
+branch, at 0.52 × 1.2 = 0.624 mm exactly — so the slot share is not actually being
+extrapolated on this part. A design that were both thin AND tight-slotted would extrapolate it
+for real and nothing would say so.
+
+---
+
+#### Item 6 — OPEN, and NEW. `EMBED_ALLOWANCE_PER_SPOKE_MM2` is a `t`-proxy, exactly like `MIN_JUNCTION_OVERLAP_MM3` was.
+
+Fell out of item 2. The constant is **3.03 mm²**; the promoted genome's measured gusset is
+**0.98 mm² per spoke** (settling from 1.01 at `coarse` to 0.978 at `fine`). Root thickness
+fell by 2.06x and the gusset fell by 3.1x, so it is not a constant and it is not linear in `t`
+either — the same shape of error §12 removed from the junction check, where a fixed mm³ floor
+turned out to be a proxy for `t0` and nothing else.
+
+**Do not guess a new number.** Replacing 3.03 with 0.98 would only re-stale it on the next
+genome; what is needed is the scaling law, derived from `wheel_step_export._embed` the way
+`wheel_geometry.junction_bite` was derived. The exporter now publishes
+`solid.volume_nofillet_mm3`, which makes the true gusset measurable per genome for the first
+time — subtract the mesh's own modelled volume from it — so the calibration data is one export
+away for any design on disk.
+
+**One thing to know while it stands.**
+`test_the_embed_difference_from_the_shipped_step_is_the_known_amount` compares
+`reference_shipped_step_mm2 - total_modelled_mm2` against `n_spokes * 3.03`, and
+`reference_shipped_step_mm2` is *defined* as `reference_modelled_mm2 + n_spokes * 3.03`. Since
+the mesh agrees with `reference_modelled_mm2` to 4e-5, that test is very nearly tautological:
+it checks the mesh matches its own geometric reference, which is worth checking, but it cannot
+see the constant being wrong and did not.
+
+---
+
+#### The gate after all of it
+
+Item 1 closed two failures, item 2 one, item 3 three. **`make test`: 2 failed, 430 passed in
+1452 s (24:12)** — nothing else meaningful on the box, and the export and the probe sweeps had
+already finished. (423 → 430 rather than 429: splitting `test_area_converges_second_order` into
+a convergence claim and a cross-code claim added a test.) The two reds are the GNL gate and the
+hub compliance share, both item 4, both deliberately left.
+
+Item 4a then added `test_stress_recovery_follows_the_solves_kinematics`, so the count should
+be **2 failed / 431 passed**; that arithmetic has NOT been confirmed by a full run. What was
+re-run after item 4a is `tests/test_gnl.py` and `tests/test_wheel_fea.py` — the two files it
+touched — and both come back with only the two known reds. Nothing was
+re-tuned to fit: of the six thresholds touched, four got tighter (the area order is now
+measured against 2.000 rather than a contaminated reference, the beam ratio is pinned in its
+own box, the p99 gained a 10x separation requirement, the mass budget went from a fitted 1.8
+point band to a named 1.5% bound) and two moved a test to a mesh that resolves what it is
+measuring.

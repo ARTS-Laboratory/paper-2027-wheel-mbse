@@ -215,8 +215,25 @@ N_CURVE_PTS = 600
 
 S = HUB_RIM_SPAN_MM
 
-# Minimum printable wall (≈5 perimeters @ 0.4 mm nozzle)
-MIN_WALL_MM = 2.0
+# Minimum printable wall (3 perimeters @ 0.4 mm nozzle)
+#
+# 2.0 UNTIL 2026-08-06, WHEN THE SHIPPED GENOME BECAME A 1.2 mm DESIGN.  PLAN.md §8 swept
+# this floor and measured what it costs; §11 took the decision that the process can hold
+# 1.2; §13 promoted `stage3_minwall_best_1.2.json` into `best_solution.json`.  Leaving the
+# default at 2.0 after that put all four of the shipped genome's thickness genes OUTSIDE
+# the box they are supposed to live in — `t0=t1=t2=1.2`, `t3=1.4614`, normalizing to
+# z = -0.100, -0.133, -0.133, -0.135.
+#
+# That was not a cosmetic inconsistency.  `wheel_stage3.descend` projects its start into
+# the box before it steps, so every driver that loaded the shipped genome without
+# `--min-wall 1.2` would silently lift all four thicknesses to 2.0 and optimise a
+# DIFFERENT, heavier wheel without a word of complaint.  `study_stage3.run_reject` caught
+# it as `iterate_unchanged: False`, which is a fault-injection test noticing a box problem
+# — it would not have been found by reading.
+#
+# The floor is still settable per run (`set_min_wall`, `--min-wall`); this is the default,
+# and the default's job is to describe the wheel that ships.
+MIN_WALL_MM = 1.2
 # Lateral clearance between a spoke root and its hub sector (mm)
 HUB_CLEARANCE_MM = 0.8
 

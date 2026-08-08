@@ -135,13 +135,26 @@ def _genome_hash(genes):
     return hashlib.sha256(canon.encode()).hexdigest()[:7]
 
 
-def test_genome_hash_matches_manifest(record):
+def test_genome_hash_matches_manifest():
     """The manifest records which genome the STEP on disk was built from.  This is the
     traceability invariant the whole pipeline's provenance rests on, and it breaks if
-    anyone adds a key inside `genes`."""
+    anyone adds a key inside `genes`.
+
+    IT DELIBERATELY DOES NOT TAKE THE `record` FIXTURE.  This is the one assertion §10's
+    decoupling missed: everything else in this file compares the pinned GA/beam genome
+    against itself, but a manifest hash is a statement about **whichever genome the
+    exporter last ran on** — and that is `best_solution.json`.  While the two files were
+    identical the bug was invisible; PLAN.md §13's promotion made them different genomes
+    and this failed with `36aed36 == 350f4c7`, which was the test being wrong, not the
+    pipeline.  Reading the shipped genome here is what makes it a traceability check
+    again instead of a second copy of the golden fixture.
+    """
+    with open(os.path.join(HERE, "best_solution.json")) as fh:
+        shipped = json.load(fh)
     with open(os.path.join(HERE, "export", "wheel_step_manifest.json")) as fh:
         manifest = json.load(fh)
-    assert _genome_hash(record["genes"]) == manifest["genome_hash"]
+    assert _genome_hash(shipped["genes"]) == manifest["genome_hash"], (
+        "the STEP on disk was not built from the genome that ships — run `make export`")
 
 
 def test_evaluate_design_is_pure(record, scored):
