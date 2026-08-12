@@ -301,6 +301,45 @@ def test_wheel_pool_imports_without_jax():
 # THE CLAIM
 # ---------------------------------------------------------------------------
 
+def _pooled_equals_serial(**problem_kw):
+    """The comparison itself, so the two kinematics cannot drift into two standards.
+
+    Extracted rather than copied for the same reason `_split_diffs` is imported from
+    `study_stage3` rather than reimplemented: the moment there are two bodies, there are
+    two claims, and the weaker one is the one a future reader will find first.
+    """
+    import study_stage3 as so3
+    import wheel_objective as WO
+    import wheel_wheel as WW
+
+    with open(os.path.join(HERE, "best_solution.json")) as fh:
+        genes = np.array(list(json.load(fh)["genes"].values()), dtype=float)
+
+    cfg = "smoke"
+    phases = WO.phase_stencil(n_phase=2, scheme="uniform")
+    orientation = tuple(float(o) for o in
+                        WW.flank_orientation(genes, WW.get_config(cfg)))
+    probe = (4.0, 30.0)
+
+    meshes = WO.phase_meshes(genes, cfg, phases, orientation=orientation)
+    serial = WO.t3_terms(genes, cfg, phases=phases, meshes=meshes,
+                         stress_p_probe=probe, **problem_kw)
+    with WP.PhasePool(2) as pool:
+        pooled = WO.t3_terms(genes, cfg, phases=phases, pool=pool,
+                             orientation=orientation, stress_p_probe=probe,
+                             **problem_kw)
+
+    vdiffs, gdiffs = so3._split_diffs(serial, pooled)
+    assert not vdiffs, (
+        f"a VALUE moved between the pooled and serial paths: {vdiffs[:8]}. These are "
+        f"gated exactly because they pass exactly — this is a real difference, not "
+        f"floating-point noise")
+    assert not gdiffs, (
+        f"a gradient moved by more than {so3.GATE_POOL_GRAD_REL:.0e} relative: "
+        f"{gdiffs[:8]}")
+    return serial
+
+
 def test_a_pooled_evaluation_matches_the_serial_one():
     """Values BIT-IDENTICAL, gradients to 1e-14.  What M8b-ii item 1 is allowed to claim.
 
@@ -321,30 +360,31 @@ def test_a_pooled_evaluation_matches_the_serial_one():
     The comparison itself is `study_stage3`'s, imported rather than reimplemented, so this
     test and S13 cannot come to describe two different standards.
     """
-    import study_stage3 as so3
-    import wheel_objective as WO
-    import wheel_wheel as WW
+    _pooled_equals_serial()
 
-    with open(os.path.join(HERE, "best_solution.json")) as fh:
-        genes = np.array(list(json.load(fh)["genes"].values()), dtype=float)
 
-    cfg = "smoke"
-    phases = WO.phase_stencil(n_phase=2, scheme="uniform")
-    orientation = tuple(float(o) for o in
-                        WW.flank_orientation(genes, WW.get_config(cfg)))
-    probe = (4.0, 30.0)
+def test_a_pooled_SVK_evaluation_matches_the_serial_one():
+    """The same claim under SVK, because the claim was never about the strain measure.
 
-    meshes = WO.phase_meshes(genes, cfg, phases, orientation=orientation)
-    serial = WO.t3_terms(genes, cfg, phases=phases, meshes=meshes, stress_p_probe=probe)
-    with WP.PhasePool(2) as pool:
-        pooled = WO.t3_terms(genes, cfg, phases=phases, pool=pool,
-                             orientation=orientation, stress_p_probe=probe)
+    SVK_PLAN.md step 2.  What the pool has to get right is unchanged — same task dict,
+    same slot order, same reduction — and `kinematics` rides `**problem_kw` into the task
+    (`wheel_objective.py:940`) and back out at `wheel_pool_worker.py:66`, so this test is
+    really asking whether that ONE key survives the round trip through pickle and lands on
+    the worker's solver rather than defaulting there.
 
-    vdiffs, gdiffs = so3._split_diffs(serial, pooled)
-    assert not vdiffs, (
-        f"a VALUE moved between the pooled and serial paths: {vdiffs[:8]}. These are "
-        f"gated exactly because they pass exactly — this is a real difference, not "
-        f"floating-point noise")
-    assert not gdiffs, (
-        f"a gradient moved by more than {so3.GATE_POOL_GRAD_REL:.0e} relative: "
-        f"{gdiffs[:8]}")
+    It would be cheap to assume it does.  The failure it would hide is the worst kind
+    available here: workers silently solving LINEAR while the parent believes it is
+    descending on SVK, which produces a run that looks healthy, converges, and optimises
+    the wrong wheel — the exact shape of the mistake SVK_PLAN.md exists to undo.  Hence
+    the second assertion, which is not about the pool at all: it checks the two paths
+    agree on a DIFFERENT number than the linear path gets, so a `kinematics` that were
+    dropped on BOTH sides would still fail here instead of passing quietly.
+    """
+    svk = _pooled_equals_serial(kinematics="svk")
+    lin = _pooled_equals_serial()
+    d_svk = svk["report"]["axle_drop_mean_mm"]
+    d_lin = lin["report"]["axle_drop_mean_mm"]
+    assert d_svk != d_lin, (
+        f"SVK and linear returned the SAME mean axle drop ({d_svk} mm), so `kinematics` "
+        f"is reaching neither solver and the equivalence above would hold no matter what "
+        f"the pool did with the key")

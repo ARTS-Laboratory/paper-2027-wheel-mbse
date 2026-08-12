@@ -1,25 +1,25 @@
 {
-  "genome_hash": "e4219f3",
-  "source": "best_solution.json",
-  "source_mtime": "2026-08-11T20:09:15",
-  "exported_at": "2026-08-11T20:10:15",
-  "export_seconds": 59.4,
+  "genome_hash": "4a4b137",
+  "source": "stage3_buildcap2_feasible_medium.json",
+  "source_mtime": "2026-08-11T15:12:50",
+  "exported_at": "2026-08-11T15:13:59",
+  "export_seconds": 59.7,
   "solid": {
     "valid": true,
-    "volume_mm3": 36568.5,
-    "mass_g_pla": 45.34,
-    "volume_nofillet_mm3": 34629.7
+    "volume_mm3": 36526.4,
+    "mass_g_pla": 45.29,
+    "volume_nofillet_mm3": 34596.7
   },
   "junction_overlap_mm3": {
-    "hub": 20.32,
-    "rim": 53.46,
+    "hub": 20.21,
+    "rim": 52.57,
     "bite": {
-      "hub": 0.629,
-      "rim": 1.6061
+      "hub": 0.6266,
+      "rim": 1.6196
     },
     "t_mm": {
-      "hub": 1.2008,
-      "rim": 1.219
+      "hub": 1.2,
+      "rim": 1.2038
     },
     "pass": {
       "hub": true,
@@ -30,23 +30,23 @@
   "fillets": {
     "hub_edges": 24,
     "rim_edges": 24,
-    "volume_mm3": 1938.78,
+    "volume_mm3": 1929.7,
     "detail": [
       {
         "junction": "hub",
-        "r_requested_mm": 0.4571117419598449,
-        "r_built_mm": 0.4571117419598449,
+        "r_requested_mm": 0.45973631498818884,
+        "r_built_mm": 0.45973631498818884,
         "n_edges_filleted": 24,
         "n_edges_found": 24,
         "worst_wedge_deg": 314.0,
         "fillet_families": [
           {
-            "radius_mm": 0.4571117419598449,
+            "radius_mm": 0.45973631498818884,
             "n_edges": 24
           }
         ],
-        "kt_modeled": 2.1939383646441035,
-        "kt_built": 2.1939383646441035,
+        "kt_modeled": 2.188960936328343,
+        "kt_built": 2.188960936328343,
         "kt_error_pct": 0.0
       },
       {
@@ -62,18 +62,18 @@
             "n_edges": 24
           }
         ],
-        "kt_modeled": 1.3755959243139548,
-        "kt_built": 1.3755959243139548,
+        "kt_modeled": 1.3725399282877577,
+        "kt_built": 1.3725399282877577,
         "kt_error_pct": 0.0
       }
     ]
   },
   "profile_health": {
-    "min_curvature_radius_mm": 12.262636,
+    "min_curvature_radius_mm": 12.441631,
     "self_intersections": 0,
     "worst_at": [
-      6.71,
-      11.863,
+      11.742,
+      6.918,
       0.0
     ]
   },
@@ -88,16 +88,16 @@
       "edges": 327,
       "vertices": 218
     },
-    "min_edge_mm": 0.018502,
-    "min_face_mm2": 0.4144,
-    "max_edge_tolerance_mm": 1.0000003145518701e-07,
+    "min_edge_mm": 0.015616,
+    "min_face_mm2": 0.3498,
+    "max_edge_tolerance_mm": 1.0000003503400186e-07,
     "degenerate_edges": 0,
     "brepcheck_valid": true,
     "self_intersecting": false,
-    "min_curvature_radius_mm": 0.457102,
+    "min_curvature_radius_mm": 0.459726,
     "min_curvature_at": [
-      -10.622,
-      -7.761,
+      11.772,
+      -5.016,
       22.4
     ],
     "swept_surfaces_remaining": {}

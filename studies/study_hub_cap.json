@@ -14,25 +14,36 @@
   "ring_samples": 14400,
   "bisect_rel": 0.01,
   "config": "coarse",
-  "elapsed_s": 583.1
+  "elapsed_s": 429.7,
+  "t0_stations": [
+   2.0,
+   2.5,
+   3.0,
+   4.0,
+   5.0,
+   6.0,
+   8.0,
+   10.0
+  ],
+  "extra": {}
  },
  "void": {
   "rows": [
    {
     "design": "best_solution",
-    "void_analytic_deg": 9.977054966210957,
-    "cap_mm": 1.1057411134614878,
-    "r_hub_mm": 1.5597674073242398,
+    "void_analytic_deg": 22.835042129967423,
+    "cap_mm": 0.5723646680212351,
+    "r_hub_mm": 0.5789506041875985,
     "n_runs": 12,
-    "void_occ_mean_deg": 9.825000000000001,
+    "void_occ_mean_deg": 22.7,
     "void_occ_spread_deg": 0.0,
-    "delta_deg": 0.15205496621095627,
+    "delta_deg": 0.13504212996742382,
     "pass": true
    },
    {
     "design": "elite14",
     "void_analytic_deg": 8.930623155331865,
-    "cap_mm": 0.9897667423027026,
+    "cap_mm": 0.5938600453816215,
     "r_hub_mm": 1.6422561387225783,
     "n_runs": 12,
     "void_occ_mean_deg": 8.799999999999999,
@@ -43,7 +54,7 @@
    {
     "design": "elite13",
     "void_analytic_deg": 13.773865274630047,
-    "cap_mm": 1.3278912670631582,
+    "cap_mm": 0.9159213321176318,
     "r_hub_mm": 1.211792411757649,
     "n_runs": 12,
     "void_occ_mean_deg": 13.574999999999998,
@@ -60,47 +71,152 @@
   "rows": [
    {
     "design": "best_solution",
-    "cap_mm": 1.1057411134614878,
-    "r_hub_mm": 1.5597674073242398,
+    "cap_mm": 0.5723646680212351,
+    "r_hub_mm": 0.5789506041875985,
     "n_corners": 24,
     "thresholds_mm": [
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     0.6967165397850279,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515,
-     1.3029747009218515
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     0.5846875,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44,
+     1.44
     ],
-    "shallow_mean_mm": 0.6967165397850278,
-    "square_mean_mm": 1.3029747009218513,
-    "rel_error": 0.17837230167098506,
-    "conservatism": 0.848628229450026,
+    "shallow_mean_mm": 0.5846875000000001,
+    "square_mean_mm": 1.4399999999999997,
+    "worst_corner_mm": 0.5846875,
+    "rel_error": 0.02152968669671229,
+    "conservatism": 0.9789240714419841,
     "over_promises": false,
     "vacuously_small": false,
     "pass": true,
-    "shallow_is_not_modelled": true
+    "corners": [
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 0.5846875
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     },
+     {
+      "wedge_deg": 328.0,
+      "threshold_mm": 1.44
+     }
+    ],
+    "split_agrees_with_wedge": true,
+    "square_on_mm": 0.5846875000000001,
+    "near_cusp_mm": 1.4399999999999997,
+    "binds_at_wedge_deg": 270.0,
+    "families_are_clean": true,
+    "arrival_hub_deg": 19.6770784838266,
+    "arrival_rim_deg": 44.60054111043386
    },
    {
     "design": "elite14",
-    "cap_mm": 0.9897667423027026,
+    "cap_mm": 0.5938600453816215,
     "r_hub_mm": 1.6422561387225783,
     "n_corners": 24,
     "thresholds_mm": [
@@ -131,16 +247,121 @@
     ],
     "shallow_mean_mm": 0.6127891689881392,
     "square_mean_mm": 1.338367506964417,
-    "rel_error": 0.3522049688704343,
-    "conservatism": 0.739532854131834,
+    "worst_corner_mm": 0.6127891689881391,
+    "rel_error": 0.031874721584196575,
+    "conservatism": 0.9691098920077618,
     "over_promises": false,
     "vacuously_small": false,
     "pass": true,
-    "shallow_is_not_modelled": true
+    "corners": [
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.338367506964417
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     },
+     {
+      "wedge_deg": 332.0,
+      "threshold_mm": 0.6127891689881391
+     }
+    ],
+    "split_agrees_with_wedge": true,
+    "square_on_mm": 1.338367506964417,
+    "near_cusp_mm": 0.6127891689881392,
+    "binds_at_wedge_deg": 332.0,
+    "families_are_clean": true,
+    "arrival_hub_deg": 3.386994144780376,
+    "arrival_rim_deg": 14.182539808425485
    },
    {
     "design": "elite13",
-    "cap_mm": 1.3278912670631582,
+    "cap_mm": 0.9159213321176318,
     "r_hub_mm": 1.211792411757649,
     "n_corners": 24,
     "thresholds_mm": [
@@ -171,12 +392,117 @@
     ],
     "shallow_mean_mm": 1.1075016721537827,
     "square_mean_mm": 1.3273738957829584,
-    "rel_error": 0.00038961870827269873,
-    "conservatism": 1.0003897705701787,
+    "worst_corner_mm": 1.107501672153783,
+    "rel_error": 0.20916680649113473,
+    "conservatism": 0.8270157555034833,
     "over_promises": false,
     "vacuously_small": false,
     "pass": true,
-    "shallow_is_not_modelled": true
+    "corners": [
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.3273738957829582
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     },
+     {
+      "wedge_deg": 330.0,
+      "threshold_mm": 1.107501672153783
+     }
+    ],
+    "split_agrees_with_wedge": true,
+    "square_on_mm": 1.3273738957829584,
+    "near_cusp_mm": 1.1075016721537827,
+    "binds_at_wedge_deg": 330.0,
+    "families_are_clean": true,
+    "arrival_hub_deg": 13.786878699657288,
+    "arrival_rim_deg": 12.033943030325451
    }
   ],
   "gate_cap_overpromise": 1.01,
@@ -189,105 +515,1001 @@
    {
     "design": "t0_2",
     "t0_mm": 2.0,
-    "void_deg": 12.026999985755289,
-    "slot_cap_mm": 1.04,
+    "void_deg": 19.447544276969776,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": 0.9539411133687251,
+    "slot_cap_mm": 1.293204217220515,
+    "thickness_cap_mm": 0.953941113368725,
+    "binds": "thickness",
     "n_corners": 24,
-    "shallow_mean_mm": 0.804296875,
-    "square_mean_mm": 1.0394531249999999,
+    "shallow_mean_mm": 1.005859375,
+    "square_mean_mm": 2.3999999999999995,
+    "square_on_mm": 1.005859375,
+    "near_cusp_mm": 2.3999999999999995,
+    "square_on_spread": 0.0,
+    "corners": [
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 270.0,
+      "threshold_mm": 1.005859375
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     },
+     {
+      "wedge_deg": 322.0,
+      "threshold_mm": 2.4
+     }
+    ],
     "at_bracket": false,
-    "share_of_t0": 0.5197265624999999,
-    "share_of_slot": 0.499737079326923,
+    "share_of_t0": 0.5029296875,
+    "cap_over_occ": 0.9483841748442471,
+    "topology_is_intact": true,
     "same_feature": true
    },
    {
     "design": "t0_2.5",
     "t0_mm": 2.5,
-    "void_deg": 9.885634075130625,
-    "slot_cap_mm": 1.095609081690674,
+    "void_deg": 17.58765258274444,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": 1.1695269164626023,
+    "slot_cap_mm": 1.1695269164626023,
+    "thickness_cap_mm": 1.1924263917109061,
+    "binds": "slot",
     "n_corners": 24,
-    "shallow_mean_mm": 0.69580078125,
-    "square_mean_mm": 1.3134765625,
+    "shallow_mean_mm": 1.2705078125,
+    "square_mean_mm": 2.3125,
+    "square_on_mm": 1.2705078125,
+    "near_cusp_mm": 2.3125,
+    "square_on_spread": 0.0,
+    "corners": [
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.2705078125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     },
+     {
+      "wedge_deg": 318.0,
+      "threshold_mm": 2.3125
+     }
+    ],
     "at_bracket": false,
-    "share_of_t0": 0.525390625,
-    "share_of_slot": 0.5994275624628479,
+    "share_of_t0": 0.508203125,
+    "cap_over_occ": 0.9205192639951613,
+    "topology_is_intact": true,
     "same_feature": true
    },
    {
     "design": "t0_3",
     "t0_mm": 3.0,
-    "void_deg": 7.970135414696109,
-    "slot_cap_mm": 0.8833174155831923,
-    "n_corners": 48,
-    "shallow_mean_mm": 0.6016845703124999,
-    "square_mean_mm": 2.526953125,
+    "void_deg": 15.86686124419217,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": 1.0550993782459843,
+    "slot_cap_mm": 1.0550993782459843,
+    "thickness_cap_mm": 1.4309116700530875,
+    "binds": "slot",
+    "n_corners": 24,
+    "shallow_mean_mm": 1.55859375,
+    "square_mean_mm": 2.1343749999999995,
+    "square_on_mm": 1.55859375,
+    "near_cusp_mm": 2.1343749999999995,
+    "square_on_spread": 0.0,
+    "corners": [
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 1.55859375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     },
+     {
+      "wedge_deg": 314.0,
+      "threshold_mm": 2.134375
+     }
+    ],
     "at_bracket": false,
-    "share_of_t0": 0.8423177083333333,
-    "share_of_slot": 1.4303766009932175,
+    "share_of_t0": 0.51953125,
+    "cap_over_occ": 0.676955992057574,
+    "topology_is_intact": true,
     "same_feature": true
    },
    {
     "design": "t0_4",
     "t0_mm": 4.0,
-    "void_deg": 4.612255048560005,
-    "slot_cap_mm": 0.5111688820233039,
-    "n_corners": 48,
-    "shallow_mean_mm": 0.36663818359375,
-    "square_mean_mm": 2.8449218749999994,
+    "void_deg": 12.735482913738391,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": 0.846871974056382,
+    "slot_cap_mm": 0.8468719740563826,
+    "thickness_cap_mm": 1.90788222673745,
+    "binds": "slot",
+    "n_corners": 24,
+    "shallow_mean_mm": 1.74296875,
+    "square_mean_mm": 2.1517578125,
+    "square_on_mm": 2.1517578125,
+    "near_cusp_mm": 1.74296875,
+    "square_on_spread": 0.0,
+    "corners": [
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.1517578124999996
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     },
+     {
+      "wedge_deg": 310.0,
+      "threshold_mm": 1.74296875
+     }
+    ],
     "at_bracket": false,
-    "share_of_t0": 0.7112304687499998,
-    "share_of_slot": 2.7827612116559757,
+    "share_of_t0": 0.537939453125,
+    "cap_over_occ": 0.4858790348687445,
+    "topology_is_intact": true,
     "same_feature": true
    },
    {
     "design": "t0_5",
     "t0_mm": 5.0,
-    "void_deg": 1.6941842913621024,
-    "slot_cap_mm": 0.18776374702595613,
-    "n_corners": 48,
-    "shallow_mean_mm": 0.0,
-    "square_mean_mm": 3.16009521484375,
+    "void_deg": 9.908326574063857,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": 0.6588744331258056,
+    "slot_cap_mm": 0.6588744331258061,
+    "thickness_cap_mm": 2.3848527834218123,
+    "binds": "slot",
+    "n_corners": 24,
+    "shallow_mean_mm": 1.3505859375,
+    "square_mean_mm": 2.6083984375,
+    "square_on_mm": 2.6083984375,
+    "near_cusp_mm": 1.3505859375,
+    "square_on_spread": 0.0,
+    "corners": [
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 268.0,
+      "threshold_mm": 2.6083984375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     },
+     {
+      "wedge_deg": 304.0,
+      "threshold_mm": 1.3505859375
+     }
+    ],
     "at_bracket": false,
-    "share_of_t0": 0.63201904296875,
-    "share_of_slot": 8.415083488951954,
+    "share_of_t0": 0.5216796875,
+    "cap_over_occ": 0.48784339806278015,
+    "topology_is_intact": true,
     "same_feature": true
    },
    {
     "design": "t0_6",
     "t0_mm": 6.0,
-    "void_deg": -0.916316095778587,
-    "slot_cap_mm": -0.10155385366326135,
-    "n_corners": 12,
-    "shallow_mean_mm": 7.2,
-    "square_mean_mm": 7.2,
-    "at_bracket": true,
-    "share_of_t0": 1.2,
-    "share_of_slot": Infinity,
-    "same_feature": false
+    "void_deg": 7.30425286598539,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": 0.48571122787586957,
+    "slot_cap_mm": 0.48571122787587,
+    "thickness_cap_mm": 2.861823340106175,
+    "binds": "slot",
+    "n_corners": 24,
+    "shallow_mean_mm": 0.9558593749999997,
+    "square_mean_mm": 1.7431640624999998,
+    "square_on_mm": 1.7431640624999998,
+    "near_cusp_mm": 0.9558593749999997,
+    "square_on_spread": 0.0,
+    "corners": [
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 1.7431640624999998
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     },
+     {
+      "wedge_deg": 300.0,
+      "threshold_mm": 0.955859375
+     }
+    ],
+    "at_bracket": false,
+    "share_of_t0": 0.29052734374999994,
+    "cap_over_occ": 0.5081408840875464,
+    "topology_is_intact": true,
+    "same_feature": true
    },
    {
     "design": "t0_8",
     "t0_mm": 8.0,
-    "void_deg": -5.501575534359517,
-    "slot_cap_mm": -0.6097308552230498,
-    "n_corners": 12,
-    "shallow_mean_mm": 7.554687499999999,
-    "square_mean_mm": 7.554687499999999,
+    "void_deg": 2.5767026991324684,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": 0.17134311405001698,
+    "slot_cap_mm": 0.1713431140500172,
+    "thickness_cap_mm": 3.8157644534749,
+    "binds": "slot",
+    "n_corners": 48,
+    "shallow_mean_mm": 0.0,
+    "square_mean_mm": 4.026751708984374,
+    "square_on_mm": 4.026751708984374,
+    "near_cusp_mm": 0.0,
+    "square_on_spread": 26.79590589673083,
+    "corners": [
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 264.0,
+      "threshold_mm": 0.27967529296874993
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 274.0,
+      "threshold_mm": 7.773828124999999
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 292.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     },
+     {
+      "wedge_deg": 350.0,
+      "threshold_mm": 0.0
+     }
+    ],
     "at_bracket": false,
-    "share_of_t0": 0.9443359374999999,
-    "share_of_slot": Infinity,
+    "share_of_t0": 0.5033439636230468,
+    "cap_over_occ": Infinity,
+    "topology_is_intact": false,
     "same_feature": false
    },
    {
     "design": "t0_10",
     "t0_mm": 10.0,
-    "void_deg": -9.50647494749333,
-    "slot_cap_mm": -1.0535874793849227,
+    "void_deg": -1.6981522315103454,
+    "arrival_hub_deg": 19.6770784838266,
+    "cap_mm": -0.11292210450818935,
+    "slot_cap_mm": -0.11292210450818864,
+    "thickness_cap_mm": 4.769705566843625,
+    "binds": "slot",
     "n_corners": 12,
-    "shallow_mean_mm": 7.1806640625,
-    "square_mean_mm": 7.1806640625,
+    "shallow_mean_mm": 6.0791015625,
+    "square_mean_mm": 6.0791015625,
+    "square_on_mm": 6.0791015625,
+    "near_cusp_mm": NaN,
+    "square_on_spread": 0.0,
+    "corners": [
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     },
+     {
+      "wedge_deg": 266.0,
+      "threshold_mm": 6.0791015625
+     }
+    ],
     "at_bracket": false,
-    "share_of_t0": 0.71806640625,
-    "share_of_slot": Infinity,
+    "share_of_t0": 0.60791015625,
+    "cap_over_occ": -0.018575459440383274,
+    "topology_is_intact": false,
     "same_feature": false
    }
   ],
@@ -301,192 +1523,194 @@
    8.0,
    10.0
   ],
-  "n_same_feature": 5,
+  "n_same_feature": 6,
   "t0_valid_range": [
    2.0,
-   5.0
+   6.0
   ],
-  "share_of_t0_min": 0.5197265624999999,
-  "share_of_t0_max": 0.8423177083333333,
+  "share_of_t0_min": 0.29052734374999994,
+  "share_of_t0_max": 0.537939453125,
+  "model_share_of_t0": 0.4769705566843625,
+  "arrival_hub_deg": 19.6770784838266,
   "pass": true
  },
  "sweep": {
   "rows": [
    {
     "design": "best_solution",
-    "void_deg": 9.977054966210957,
-    "cap_mm": 1.1057411134614878,
-    "r_hub_mm": 1.5597674073242398,
+    "void_deg": 22.835042129967423,
+    "cap_mm": 0.5723646680212351,
+    "r_hub_mm": 0.5789506041875985,
     "binds": true,
-    "over_by_mm": 0.45402629386275195,
-    "arrival_hub_deg": 4.42266729905662,
-    "t0_mm": 2.477369725892206
+    "over_by_mm": 0.006585936166363382,
+    "arrival_hub_deg": 19.6770784838266,
+    "t0_mm": 1.2
    },
    {
     "design": "elite0",
     "void_deg": 9.977054966210957,
-    "cap_mm": 1.1057411134614878,
+    "cap_mm": 0.6634446680768926,
     "r_hub_mm": 1.5597674073242398,
     "binds": true,
-    "over_by_mm": 0.45402629386275195,
+    "over_by_mm": 0.8963227392473472,
     "arrival_hub_deg": 4.42266729905662,
     "t0_mm": 2.477369725892206
    },
    {
     "design": "elite1",
     "void_deg": 11.132982651161363,
-    "cap_mm": 1.2338507379715993,
+    "cap_mm": 0.7403104427829594,
     "r_hub_mm": 1.5263925409452916,
     "binds": true,
-    "over_by_mm": 0.29254180297369237,
+    "over_by_mm": 0.7860820981623322,
     "arrival_hub_deg": 6.338931061696786,
     "t0_mm": 2.4682109053591916
    },
    {
     "design": "elite2",
     "void_deg": 10.513787717763037,
-    "cap_mm": 1.165226349569979,
+    "cap_mm": 0.6991358097419874,
     "r_hub_mm": 1.5922783597372419,
     "binds": true,
-    "over_by_mm": 0.4270520101672628,
+    "over_by_mm": 0.8931425499952544,
     "arrival_hub_deg": 5.999448652543085,
     "t0_mm": 2.553637052044535
    },
    {
     "design": "elite3",
     "void_deg": 10.513270500094727,
-    "cap_mm": 1.1651690271594681,
+    "cap_mm": 0.6991014162956809,
     "r_hub_mm": 1.551520099515057,
     "binds": true,
-    "over_by_mm": 0.38635107235558896,
+    "over_by_mm": 0.8524186832193762,
     "arrival_hub_deg": 5.999448652832908,
     "t0_mm": 2.553637052044535
    },
    {
     "design": "elite4",
     "void_deg": 11.164819089881394,
-    "cap_mm": 1.2373791197754638,
+    "cap_mm": 0.7424274718652781,
     "r_hub_mm": 1.551520099515057,
     "binds": true,
-    "over_by_mm": 0.3141409797395933,
+    "over_by_mm": 0.809092627649779,
     "arrival_hub_deg": 6.340286859143608,
     "t0_mm": 2.4682109053591916
    },
    {
     "design": "elite5",
     "void_deg": 11.308264578207147,
-    "cap_mm": 1.2532769548099012,
+    "cap_mm": 0.7519661728859407,
     "r_hub_mm": 1.5922783597372419,
     "binds": true,
-    "over_by_mm": 0.33900140492734065,
+    "over_by_mm": 0.8403121868513012,
     "arrival_hub_deg": 7.538001893192331,
     "t0_mm": 2.553637052044535
    },
    {
     "design": "elite6",
     "void_deg": 13.191265276055265,
-    "cap_mm": 1.3659306172777161,
+    "cap_mm": 0.8771801540861314,
     "r_hub_mm": 1.5922783597372419,
     "binds": true,
-    "over_by_mm": 0.2263477424595257,
+    "over_by_mm": 0.7150982056511105,
     "arrival_hub_deg": 12.89289480293357,
     "t0_mm": 2.6267896486109925
    },
    {
     "design": "elite7",
     "void_deg": 10.639017616527486,
-    "cap_mm": 1.179105379821634,
+    "cap_mm": 0.7074632278929804,
     "r_hub_mm": 1.4701917336424795,
     "binds": true,
-    "over_by_mm": 0.29108635382084547,
+    "over_by_mm": 0.762728505749499,
     "arrival_hub_deg": 6.321361623688673,
     "t0_mm": 2.477369725892206
    },
    {
     "design": "elite8",
     "void_deg": 10.871746743646192,
-    "cap_mm": 1.204898378359447,
+    "cap_mm": 0.7229390270156681,
     "r_hub_mm": 1.551520099515057,
     "binds": true,
-    "over_by_mm": 0.3466217211556102,
+    "over_by_mm": 0.828581072499389,
     "arrival_hub_deg": 7.3313302420175885,
     "t0_mm": 2.6267896486109925
    },
    {
     "design": "elite9",
     "void_deg": 9.980302721892503,
-    "cap_mm": 1.1061010570516285,
+    "cap_mm": 0.6636606342309771,
     "r_hub_mm": 1.5922783597372419,
     "binds": true,
-    "over_by_mm": 0.4861773026856133,
+    "over_by_mm": 0.9286177255062648,
     "arrival_hub_deg": 5.575172571395474,
     "t0_mm": 2.553637052044535
    },
    {
     "design": "elite10",
     "void_deg": 11.054027670281833,
-    "cap_mm": 1.2251002831763984,
+    "cap_mm": 0.735060169905839,
     "r_hub_mm": 1.6422561387225783,
     "binds": true,
-    "over_by_mm": 0.41715585554617984,
+    "over_by_mm": 0.9071959688167393,
     "arrival_hub_deg": 7.227560968238534,
     "t0_mm": 2.5537509659629887
    },
    {
     "design": "elite11",
     "void_deg": 12.604846938707094,
-    "cap_mm": 1.288232257463947,
+    "cap_mm": 0.838185067811297,
     "r_hub_mm": 1.551520099515057,
     "binds": true,
-    "over_by_mm": 0.26328784205111,
+    "over_by_mm": 0.7133350317037601,
     "arrival_hub_deg": 9.194216703049216,
     "t0_mm": 2.477369725892206
    },
    {
     "design": "elite12",
     "void_deg": 11.44298918820007,
-    "cap_mm": 1.2682082687866971,
+    "cap_mm": 0.7609249612720183,
     "r_hub_mm": 1.551520099515057,
     "binds": true,
-    "over_by_mm": 0.28331183072835997,
+    "over_by_mm": 0.7905951382430388,
     "arrival_hub_deg": 7.511592061508184,
     "t0_mm": 2.477369725892206
    },
    {
     "design": "elite13",
     "void_deg": 13.773865274630047,
-    "cap_mm": 1.3278912670631582,
+    "cap_mm": 0.9159213321176318,
     "r_hub_mm": 1.211792411757649,
-    "binds": false,
-    "over_by_mm": -0.11609885530550912,
+    "binds": true,
+    "over_by_mm": 0.29587107964001724,
     "arrival_hub_deg": 13.786878699657288,
     "t0_mm": 2.553637052044535
    },
    {
     "design": "elite14",
     "void_deg": 8.930623155331865,
-    "cap_mm": 0.9897667423027026,
+    "cap_mm": 0.5938600453816215,
     "r_hub_mm": 1.6422561387225783,
     "binds": true,
-    "over_by_mm": 0.6524893964198757,
+    "over_by_mm": 1.0483960933409566,
     "arrival_hub_deg": 3.386994144780376,
     "t0_mm": 2.553637052044535
    },
    {
     "design": "elite15",
     "void_deg": 12.322631089568109,
-    "cap_mm": 1.327950502300754,
+    "cap_mm": 0.8194185479322188,
     "r_hub_mm": 1.5597674073242398,
     "binds": true,
-    "over_by_mm": 0.23181690502348573,
+    "over_by_mm": 0.740348859392021,
     "arrival_hub_deg": 9.189997738128906,
     "t0_mm": 2.5537509659629887
    }
   ],
-  "n_binding": 16,
+  "n_binding": 17,
   "n_designs": 17,
-  "cap_min_mm": 0.9897667423027026,
-  "cap_max_mm": 1.3659306172777161,
+  "cap_min_mm": 0.5723646680212351,
+  "cap_max_mm": 0.9159213321176318,
   "pass": true
  },
  "pass": true

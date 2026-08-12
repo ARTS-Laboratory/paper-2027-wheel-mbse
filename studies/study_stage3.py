@@ -179,8 +179,17 @@ _GRAD_DERIVED = ("grad", "coupling_frac")
 # The weight sets the feasibility probe descends.  Every barrier stays on in all three —
 # a "lowest reachable stress" that is reached through a folded, self-intersecting or
 # unmeshable design is not a bound on anything.
+#
+# `stress_margin` splits differently from every other name here, and the split is the
+# point of it.  `stress` is the BARRIER and it is flat below `util` = 1, so before the
+# margin term existed the `stress_only` probe was descending on a term that read zero
+# with a zero gradient at every feasible design — "lowest reachable stress" was being
+# asked of an objective that could not see stress.  The margin term is what makes that
+# probe a question rather than a formality, so it stays ON there.  `deflection_only`
+# zeroes it for the same reason it zeroes `stress`: whatever else that probe is, it is
+# not deflection-only if a stress term is still pulling.
 PROBE_ZERO = {"stress_only": ("deflection", "mass", "phase_ripple"),
-              "deflection_only": ("stress", "mass", "phase_ripple"),
+              "deflection_only": ("stress", "stress_margin", "mass", "phase_ripple"),
               "joint": ()}
 
 # The sections, and which milestone each answers to.  M8b-i's seven are the default and

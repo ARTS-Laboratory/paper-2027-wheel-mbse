@@ -19,6 +19,17 @@
 > outside the box they are supposed to live in. **The GA and every driver now search down
 > to 1.2 mm by default** — if you are reading a run whose numbers assume a 2.0 mm floor,
 > that run predates this. See §13.
+>
+> **AND, 2026-08-10: EVERY STAGE-3 NUMBER IN §1–§14 IS A LINEAR-KINEMATICS NUMBER.**
+> `wheel_contact_problem` defaults to `kinematics="linear"` and nothing in the Stage-3 path
+> ever overrode it. The shipped wheel deflects **2.409 mm, not the 1.953 the optimizer saw**,
+> and carries **0.875 of allowable, not 0.799** — measured, at `medium`, and it is **still
+> feasible** with every barrier at 0.0. None of those numbers is wrong; they are answers to a
+> different question. **THE SHIPPED GENOME DID NOT CHANGE** — `best_solution.json` is still
+> `350f4c7`, because the wheel the SVK descent found clears every FEA gate and then **does
+> not build** (`kt_error_pct` +11.9% at the hub, as-built utilisation 1.046). §15 is the
+> record and `SVK_PLAN.md` is the evidence. Linear remains the default everywhere on purpose;
+> `--kinematics svk` is opt-in on `wheel_stage3.py` and `study_gradient.py`.
 
 ---
 
@@ -249,6 +260,25 @@ One line each:
   that is a scope decision. Also fixed en route: `study_wheel_fea.stress_report` was applying
   the LINEAR strain formula to SVK fields — a **+169.5% artefact against a real +14.3%** — and
   now dispatches on `res["meta"]["kinematics"]`.
+- **§15 — STAGE 3 CAN NOW DESCEND UNDER SVK, AND THE WHEEL THAT DESCENT FINDS CANNOT BE BUILT.
+  NOTHING PROMOTED (2026-08-10).** Working notes in `SVK_PLAN.md`. **Before this milestone
+  every Stage-3 number in this repo was a linear-kinematics number** — read §15 before
+  quoting a deflection or a utilisation out of §1–§14. The adjoint was proved correct under
+  SVK first (**all ten M7 gates, thresholds unmodified**, including G1's unrolled-Newton
+  check at 5.9e-11 against 1e-8); SVK costs **1.36×** time and 1.05× memory, and the penalty
+  is in the gradient, not in Newton iterations. Re-scoring six designs at `medium` says the
+  shipped wheel **IS still feasible** (util **0.875**, not §14's estimated ~0.91, every
+  barrier 0.0) but that **the design ranking INVERTS** — which reverses §8's `minwall` sweep
+  over the whole 1.2–2.0 mm range. Two 300-step SVK descents both cleared every
+  pre-registered clause, and a `medium` re-convergence (`bc77614`) is **1.78 g lighter and
+  12× closer to the deflection target** than the incumbent under the honest kinematics. **It
+  is not promoted: it does not build.** `kt_error_pct` **+11.9%** at the hub, as-built
+  utilisation **1.046** against a modelled 0.935, where the incumbent is +0.0% — a regression
+  this arc introduced, caught by the control. The cause is **four measured defects in the
+  objective**: `stress` has identically zero gradient below util 1.0, so `R_hub` and `R_rim`
+  are **dead genes** (nonzero gradient on 2 of 602 steps), so nothing objected when the
+  descent swung the hub arrival shallow — and the 1.2 mm floor, not the stress margin, is
+  what stopped the run. **`best_solution.json` is UNCHANGED and still holds `350f4c7`.**
 
 
 **The previous three items — (a) the hub-fillet cap, (b) the production descent, (c)
@@ -2541,3 +2571,929 @@ measured against 2.000 rather than a contaminated reference, the beam ratio is p
 own box, the p99 gained a 10x separation requirement, the mass budget went from a fitted 1.8
 point band to a named 1.5% bound) and two moved a test to a mesh that resolves what it is
 measuring.
+
+---
+
+### 15. STAGE 3 WAS DESCENDING ON THE WRONG PHYSICS. It can now descend on the right physics, and the wheel that descent finds cannot be built. **NOTHING PROMOTED** (2026-08-10).
+
+**BEFORE THIS MILESTONE, EVERY STAGE-3 NUMBER IN THIS REPO WAS A LINEAR-KINEMATICS NUMBER.**
+`wheel_contact_problem` defaults to `kinematics="linear"` (`src/wheel_fem.py:1693`) and
+nothing in the Stage-3 path had ever overridden it. That is the one sentence to carry out of
+this section. Those numbers are not *wrong* — they are answers to a different question, and
+§14 item 4a is where the question got asked.
+
+**`best_solution.json` IS UNCHANGED and still holds `350f4c7`.** Nothing was promoted,
+nothing was re-baselined, and the banner at the top of this file still describes the shipped
+wheel. `export/wheel.step` was regenerated from that same unchanged genome (manifest
+`genome_hash` `350f4c7`) purely to obtain a control for the export check below.
+
+The working notes are **`SVK_PLAN.md`**, seven steps, each with its own pre-registered gate
+and its own Record block. This is the summary; that file is the evidence.
+
+#### What landed in the code, and it is small
+
+The plumbing already existed — `kinematics` rides `**problem_kw` from `Evaluator` all the way
+to `wheel_contact_problem`, the adjoint kernels already dispatch on `prob.nonlinear`
+(`src/wheel_adjoint.py:161, 190, 400`), and `wheel_pool_worker.py:66` already splats it. What
+was missing was a CLI flag.
+
+- **`src/wheel_stage3.py`** — `--kinematics {linear,svk}`, default `linear`, forwarded to
+  **both** optimizers, recorded in `search_block` and in the run record's settings, and
+  **printed in the console banner** (`:954`). The record reads `ev.problem_kw` — the very
+  dict the `Evaluator` splats into the solver — so the record cannot disagree with what was
+  solved. `search_block` has **no `getattr(args, "kinematics", "linear")` fallback** on
+  purpose: a default there would report "linear" for an SVK run whose caller forgot the
+  field, which is the exact misattribution the key exists to prevent.
+- **`studies/study_gradient.py`** — `--kinematics`, threaded as a plain keyword argument
+  through all 15 call sites that build a problem or a solve, **never as module state**, and
+  recorded in `rep["settings"]`.
+- **`studies/study_svk_rescore.py`** + `make svk` — scores any set of genomes under **both**
+  kinematics with no optimizer involved. Deliberately **out of `make studies`**, for the
+  reason `m8bi5`/`m9buck`/`hubcap` are: it measures the wheel, not the commit.
+- **`make svk-shipped` / `svk-elite10` / `svk-medium`** — the descents, modelled on
+  `prod9`/`prod10`, with distinct `--out` AND `--best-out` so two runs cannot clobber each
+  other's genome.
+- **Tests** — the S13 pooled-equals-serial contract under SVK (sharing one helper with the
+  linear test so the two kinematics cannot drift into two standards, plus a sentinel
+  asserting the two kinematics return *different* answers, without which the equivalence
+  would hold no matter what the pool did with the key), and
+  `test_the_run_record_carries_the_kinematics_it_actually_descended`.
+
+**`--kinematics linear` is inert**, proved where it is checkable: `linear` is exactly what
+`wheel_contact_problem` already defaults to. Built at `smoke` on the shipped genome, 15
+problem fields compared — the control (default vs default) differs on `contact` and `dofmap`
+by object identity alone, the test (default vs explicit `linear`) matches the control
+exactly, and a **sentinel** (default vs explicit `svk`) also moves `meta` and `nonlinear`,
+which is what gives the comparison the power to see a real change.
+
+#### THE PREREQUISITE: the adjoint is correct under SVK. All ten gates, thresholds unmodified
+
+M7's gate had only ever been run under linear kinematics. Two full `coarse` runs, this tree,
+this genome:
+
+| gate | SVK | linear | threshold |
+|---|---|---|---|
+| **G1 unrolled** | **5.893e-11** | **4.555e-11** | **1e-8** |
+| G2 force identity | 2.970e-11 | 2.462e-11 | 1e-12 (residual exactly 0.0 in both) |
+| G3 mesh coords mm | 3.553e-14 | 3.553e-14 | 1e-9 |
+| G4 plateau rel / decades | 5.616e-06 / 2 | 2.910e-06 / 3 | 1e-4 / ≥1 |
+| G5 directional | 3.379e-06 | 8.056e-06 | 1e-5 |
+| G6 sweep median | 6.626e-06 | 6.298e-06 | 1e-3 |
+| G9 secant | 1.079e-06 | 3.576e-07 | 1e-5 |
+
+**G1 is the one that decided the arc.** It unrolls the Newton loop and differentiates it with
+`jax.grad`, so it contains no finite difference anywhere and its tolerance is set by linear
+algebra rather than by step size. The SVK adjoint reproduces brute-force differentiation of
+its own SVK solve to 5.9e-11 against a 1e-8 gate. **SVK is not uniformly the
+worse-conditioned side** — it is 2.4× better on G5 — and no gate was given any slack.
+
+Two things this step found on the way, both of them the "always measure the control" rule
+catching a live error:
+
+- **`--quick` IS NOT A GATE.** The quick SVK run came back `OVERALL: FAIL` on G5/G6/G7/G9.
+  The same run under **linear** also comes back `OVERALL: FAIL`, on the committed default:
+  it is a reduced-fidelity smoke mode whose step ladder drops the rungs where the FD plateau
+  lives. G5 reads 1.588e-05 linear against 1.579e-05 SVK — SVK marginally the *better* of
+  two failures. At full fidelity both G7 and G9 are clean and SVK is again the better side
+  on G9.
+- **`studies/study_gradient.json` IS STALE, and is NOT refreshed by this arc.** 3755 of 4239
+  non-timing leaves differ from a fresh run at the same settings, including the physics
+  (linear axle drop **1.8746 mm** fresh against **1.6546 mm** committed). The dates say why:
+  the artifact is 2026-08-03, `best_solution.json` was replaced 2026-08-06. **The committed
+  report describes a wheel that is no longer in the file it names.** This arc used it as a
+  control for about an hour and reported a +39.6% SVK difference on the strength of it; the
+  real figure, against a control measured in the same session, is **+23.26%** — which
+  independently reproduces §14's +23.346%.
+
+**And one repair to `study_gradient.py` itself.** `_phase_sweep` carries a converged
+displacement field across a 0.5 deg phase jump, and under SVK that can land where `K(u)` is
+genuinely indefinite (`NewtonDivergedError`, "the tangent is not positive definite") at a
+phase where a **cold solve converges without complaint**. Under linear kinematics it cannot —
+§0's H2(a) measured `K`'s dependence on `u` at exactly 0.000e+00. Repaired by falling back to
+a cold solve and **returning the phases where that fired** (`cold_retry_phases_deg`) rather
+than swallowing them: it changes which starting guess is used, never which equilibrium is
+reported. It fires 8 times at `smoke` and **0 times at `coarse`** — a smoke-mesh phenomenon.
+Stage 3 is not exposed to it: its cross-step warm start is *scalar indentations* seeding a
+secant, not displacement fields carried across phases.
+
+#### WHAT SVK COSTS: 1.36× time, 1.05× memory — and the penalty is in the GRADIENT
+
+`coarse`, 8 phases, `uniform`, fidelity off, from `best_solution.json`, s/eval read off
+`elapsed_s / n_objective_calls` in the run record rather than hand-timed.
+
+| | s/eval serial (all/steady) | s/eval, 4 workers | Newton iters/solve | peak anon RSS, 4 workers |
+|---|---|---|---|---|
+| linear | 193.7 / 129.2 | 72.5 / **45.9** | 26.00 | 12.56 GiB |
+| svk | 234.2 / 165.7 | 91.1 / **62.3** | 26.75 | 13.16 GiB |
+
+"steady" drops call 0, which is JIT warm-up and is paid once per run. **SVK adds almost no
+Newton iterations** — contact already spends 26 of them under linear kinematics, because
+`wheel_fem.solve` routes on `prob.nonlinear or prob.contact is not None`
+(`src/wheel_fem.py:1274`), so the Newton loop was always there. Backtracks actually *fell*,
+8 → 4. The forward solve is only **1.13×** while the full evaluation is **1.36×**, so most of
+the penalty is the SVK tangent assembly and the nonlinear vJP kernels. **There is no
+iteration count to trade away**, which is worth knowing before anyone tries to buy the cost
+back with a solver tolerance.
+
+Two unplanned corroborations that the rig measures what the Makefile's own numbers were
+measured on: 12.56 GiB for a 4-worker linear descent reproduces `make prod10`'s help text
+("~12.7 GB anon"), and 3.9 h projected for a 300-step linear descent reproduces `prod9`'s
+"~4 h". **The 62.3 s/step projection then held twice**, on two 300-step runs, at 58.2 and
+59.1 s/step — 6.6% conservative.
+
+Pooled-equals-serial holds under SVK: values **bit-identical**, gradients within 1e-14.
+
+#### THE RE-SCORE: §14's "~0.91" was pessimistic, and the design ranking INVERTS
+
+`make svk`, `medium`, 8 uniform phases, 47.8 min, six distinct designs under both kinematics.
+The driver is gated on a **pre-registered control** (`GATE_CONTROL_REL = 0.02`) that
+reproduces §14's ladder to five significant figures — 23.346% and 3.953%, errors 1.6e-5 and
+2.6e-5 — so the table is comparable to §14 rather than merely internally consistent. A
+*second*, unplanned control landed with the first row: `350f4c7 linear` came back
+`loss 32.73762364435313` — every digit of the committed `stage3_minwall_best_1.2_medium.json`,
+written five days earlier by a code path this driver shares nothing with.
+
+| genome | kin | drop mm | err % | util | mass g | loss |
+|---|---|---|---|---|---|---|
+| `350f4c7` shipped | lin | 2.0193 | +0.97% | 0.799 | 39.19 | 32.7376 |
+| `350f4c7` shipped | **svk** | **2.3947** | **+19.74%** | **0.875** | 39.19 | **129.8963** |
+| elite10 | lin | 2.0041 | +0.21% | 0.594 | 58.66 | 49.7265 |
+| elite10 | svk | 2.1418 | +7.09% | 0.624 | 58.66 | 62.2812 |
+| minwall 1.4 | svk | 2.2847 | +14.24% | 0.799 | 42.82 | 86.0519 |
+| minwall 1.6 | svk | 2.2146 | +10.73% | 0.712 | 47.03 | 67.7961 |
+| minwall 2.0 | svk | 2.1416 | +7.08% | 0.624 | 58.55 | 62.2346 |
+
+*(`minwall 1.2` **is** `350f4c7` bit-for-bit, `max|Δgenes| = 0.0`; the two rows agree on every
+float but `elapsed_s`, which is a free determinism check on the rest of the table. `36aed36`
+is infeasible under **both** kinematics — pre-registered as expected, it predates the
+fillet-cap work — and is a control on the correction, not a candidate.)*
+
+**Three findings, and the third is the one with the blast radius.**
+
+1. **SVK moves exactly ONE term.** `mass`, `smoothness`, `phase_ripple` and all nine barriers
+   are **bit-identical** under both kinematics; `deflection` carries the entire difference —
+   0.2330 → **97.3916** on the shipped genome, 418×, and 75% of its total loss. Nothing else
+   in the objective is a function of the strain measure, which is why the `stress` *barrier*
+   stays at 0.0 even as utilisation climbs 0.799 → 0.875.
+2. **The correction is a function of the DESIGN, not a constant.** It falls monotonically with
+   stiffness — +18.6% → +13.4% → +10.2% → +6.9% across the four `minwall` arms, reproducing
+   on a fifth design that reached similar stiffness by a different route (elite10, +6.87%).
+   §14 measured it on two genomes and quoted +23.346%; **it is not one number, it is a curve.**
+3. **The ranking INVERTS on every comparison in the table.** The linear loss column is
+   monotone *increasing* in wall thickness; the SVK column is monotone *decreasing*.
+   `350f4c7` was promoted over elite10 because it won by 17 points under linear; under SVK it
+   loses by 68. **The `minwall` sweep of §8 that chose the 1.2 mm floor ran entirely under
+   linear kinematics, and this table reverses its ordering over the whole 1.2–2.0 mm range.**
+
+**And the gate's own question, answered: the shipped genome IS FEASIBLE under SVK.** Every
+barrier exactly 0.0, utilisation **0.8754** against an allowable of 1.0. §14's "on the order
+of 0.91" was an estimate built by scaling a reported p99 by a ratio; the number the
+constraint actually computes is 0.875. **§14 was pessimistic by ~4 points of margin.**
+
+Read the `p30 util` column in `studies/study_svk_rescore.json` as a diagnostic and nothing
+else — it sits at 10.747 for the shipped genome, and if the constraint used p=30 the promoted
+wheel would be infeasible by 10×. It is not mesh-convergent (GCI 63%, M8b-i.5), which is
+exactly why `STRESS_NOMINAL_P = 4.0` is the constraint. The driver asserts its p=4 probe
+reproduces `stress_utilisation` to 1e-12, so the two columns are the same construction
+differing only in the exponent — the line that stops the diagnostic and the verdict drifting
+apart, which is precisely how "~0.91" came to stand in for a number nobody had computed.
+
+#### THE DECISION, taken on those numbers and written down before anything launched
+
+**Descend under SVK.** Three things had to be true and all three were measured, not assumed:
+the SVK adjoint is correct (G1, unmodified); it is affordable (1.36×, 5.3 h per start, 16G);
+and **there is something to descend to** — three Adam steps under SVK took the shipped genome
+117.766 → 33.436 and pulled the drop 2.369 → 1.982 mm for +0.66 g, while the same three steps
+under linear could not improve on the start at all. **The shipped genome is a local optimum of
+the LINEAR objective and is demonstrably not one under SVK.**
+
+Re-targeting `TARGET_DEFLECTION_MM` under linear was rejected not on the anticipated ground
+(the correction is load-dependent, `c·f^1.03`) but on finding 2: **the correction is a
+function of the design**, so a re-targeted constant is calibrated to the design that existed
+when you calibrated it, and the optimizer's whole job is to move the design. It is not merely
+approximate, it is unstable under the thing it is meant to enable. Accepting 2.409 mm was
+*available* — that is the feasibility answer above, and it was not available before this arc —
+and was rejected on value: a 19.74% spec miss while the same table holds feasible designs at
++7% and a 3-step probe moves the shipped genome most of the way for 0.66 g.
+
+**The descents held the 1.2 mm floor**, deliberately, even though the ladder says the SVK
+optimum over the *measured* designs is at the thick end. A floor is a **constraint, not a
+target** — if SVK wants thicker walls it can walk there from inside the same box — and holding
+the box identical across both starts is what makes them comparable. The outcome is
+informative either way. It came back binding; see the successors.
+
+#### THE DESCENTS: two starts, both pass, and the answer is a SHELF not a point
+
+Two 300-step `coarse` descents, sequential, each under `systemd-run --user --scope -p
+MemoryMax=16G -p MemorySwapMax=0 --collect`, from starts 19 g apart.
+
+| run | start | steps | loss | mass g | defl err (svk) | util | worst barrier | wall |
+|---|---|---|---|---|---|---|---|---|
+| 1 `ae7092c` | `350f4c7` | 300/300 | **30.8207** | **37.451** | **−0.043%** | 0.8989 | **0.0** | 4.90 h |
+| 2 `c4f207c` | elite10 | 300/300 | 30.8245 | 37.449 | −0.044% | 0.9085 | **0.0** | 4.94 h |
+
+**Both clear all three pre-registered clauses, unmodified** — every one of the nine barriers
+exactly 0.0, deflection 7× inside ±0.3%, and mass below the shipped 39.194 g. Run 1 took the
+loss 117.766 → 30.8207 with **0 rejected steps and 0 events**; the descent never fought the
+line search. Term by term, step 0 → 300: `deflection` 85.2617 → **0.00047**, `mass` 32.2145 →
+30.7820, `smoothness` 0.2902 → 0.0382, every barrier 0.0 throughout.
+
+> **The gate pre-registered its own likely breach and it did not fire.** Written before the
+> re-score, the mass clause was expected to fail — if SVK's answer to a 19.74% deflection miss
+> is more material, "mass below 39.194 g" asks the descent to beat the shipped wheel on the
+> one axis it was over-optimized on. Instead **SVK did not cost this design grams; it saved
+> 1.74 g** while moving deflection from 2.369 mm to 2.000 mm. The clause "SVK costs this
+> design N grams" does not fire, and it is recorded here because it was written down first.
+
+**The two runs agree to 0.012% on loss and 0.008% on mass, and that is NOT a shared point
+optimum.** The genomes differ: `cx1` by 7.28%, `cy1` by 6.93%, `cy4` by 4.27%, while
+`t0..t3` sit on the 1.2 mm floor in both and `R_rim` is identical to six decimals. **The
+objective is flat along a manifold** — the spline control points move up to 7.3% for a
+fourth-decimal change in loss. Report it as "both starts reach the same basin and the same
+headline numbers", never as "the optimizer found THE answer".
+
+Run 1 was **reproduced through an independent driver** while run 2 was in flight
+(`study_svk_rescore.py --extra`, additive so the driver at its defaults still reproduces the
+Step 3 artifact unchanged): drop 1.9991, util 0.8989, loss 30.8207, every digit. So the
+Stage-3 run record is not reporting an internal state the saved genome does not encode.
+
+**Run 2 hit one `solve_reject` at step 128, handled, and it is worth a line.**
+`solve_wheel_contact` (`src/wheel_fem.py:1841`) is a secant on indentation with
+`tol_rel=1e-8`; it stalled at 66.723265 N against a 66.7233 N target — a residual of
+**5.2e-7 relative, 52× above the tolerance it is asked to hit**. The load is physically
+reached to within a part in two million. What fails is the *outer* secant's ability to resolve
+a force difference smaller than the noise floor of the inner Newton solve that produces it,
+and SVK raises that floor. The function raises rather than returning the state, which is
+correct and documented. `wheel_pool_worker.py:88-98` reports it to the parent as the
+`solve_reject` that `descend` already knows how to handle — it prints a traceback and is not
+a crash. **Run 1 is unaffected: 301 calls, `n_reject_cumulative` 0.** The tolerance was **not**
+loosened; see the successors.
+
+#### THE FIDELITY TRAP: the ±0.3% deflection gate is satisfiable at exactly ONE rung
+
+The `coarse` candidate `ae7092c` was re-scored at `medium` before promotion, with the control
+on — and it reads **+1.65%**, 5.5× the gate. Not promoted. That check was pre-registered in
+the descent's own record before the descent finished: *"a deflection converged to −0.043% at
+coarse is NOT thereby inside ±0.3% at medium ... that is a finding about the rung the descent
+was run on, not licence to promote anyway."* The rule holds even though the check was one
+this arc added rather than one the plan pre-registered — especially then.
+
+**The control is what makes it readable, and it says the gate was never a `medium` gate.** The
+INCUMBENT fails ±0.3% at `medium` too — **+0.97%**, under the very kinematics it was descended
+on. **No design in this repo has ever met ±0.3% at `medium`.** So the response was to
+re-converge at `medium`, not to move the number: `make svk-medium`, 100 steps warm-started
+from `ae7092c`, 6.29 h, 224 s/step against a projected 273.
+
+`bc77614` **passes every clause at `medium`**: all nine barriers 0.0, deflection **−0.041%**
+(1.99919 mm), mass **37.414 g** (−1.781 g against the shipped 39.194). It is also lighter and
+lower-loss than the coarse candidate it replaces.
+
+**And the fidelity check, pointed back at `coarse`, gives the mirror image — which is the real
+result here.** The medium answer reads **−1.71%** at coarse. The coarse answer reads +1.65% at
+medium. **The two rungs disagree by ~1.7% on this wheel and no design can satisfy ±0.3% at
+both.** Which rung the gate is stated against is a **choice, not a property of the design**;
+this arc chose `medium` because it is the finer and because §14's control ladder is stated
+there. The honest sentence is that the wheel is now specialised to a rung as well as to a
+kinematics, and a third rung would move it again.
+
+**A cheap process lesson.** Both descents ran with `--fidelity-check-every 0`. `descend` has
+had the machinery for exactly this since §1 item 3 (`src/wheel_stage3.py:384`,
+`_fidelity_check` at `:272`) — a pure observation that cannot redirect the descent, but with
+`--fidelity-check-every 25 --fidelity-check-config medium` the coarse/medium gap would have
+been on the record at step 0 instead of after 9.8 h of descending. Turning it off saved
+perhaps 4% of wall clock and cost the arc a run.
+
+#### WHY NOTHING IS PROMOTED: `bc77614` clears every FEA gate and is not buildable at the stress concentration it was priced at
+
+`make export EXPORT_GENOME=stage3_svk_best_medium.json`, with the same export run on the
+incumbent as the control this file's rules require:
+
+| genome | worst wedge | hub fillets built | `kt_error_pct` |
+|---|---|---|---|
+| `350f4c7` shipped | 328.0 deg | 24/24 @ 0.579 mm | **0.0%** |
+| `bc77614` svk-medium | 308.0 deg | 12 @ 0.579, 12 @ 0.418 mm | **+11.9%** |
+
+**The incumbent builds exactly as modelled. The candidate does not** — and the control is the
+only reason that sentence can be said with confidence. This is a regression this arc
+introduced, not one it inherited. §13's +0.0% at both junctions was the first shipped part
+whose built fillets matched the ones its stress model priced, and it is worth exactly this
+much.
+
+What it costs, in the only units that matter:
+
+```
+Kt at the hub    modelled 2.0235      as built 2.2643      +11.9%
+peak stress      modelled 294.02 MPa  as built ~329.01 MPa
+UTILISATION      modelled   0.9347    AS BUILT   1.0461    <- INFEASIBLE AS BUILT
+```
+
+Everything else in the export is clean, which is what makes the failure legible rather than
+ambiguous: OCC valid, 1 solid, bbox 100.00 × 100.00 × 22.40 mm, BRepCheck valid, no
+self-intersection, 0 degenerate, min curvature R 0.4184 mm against the 0.25 floor, junction
+bite floor satisfied. **Only the fillet feasibility is red.**
+
+**Lowering `R_hub` by hand until modelled == built was rejected.** It is fitting the geometry
+to the check after seeing the check fail; it would have to be done by hand *precisely
+because* the optimizer cannot do it; and it leaves the same blind spot in place for the next
+design. The defect is that the objective cannot see buildability, and the fix belongs in the
+objective.
+
+#### THE FOUR DEFECTS IN THE OBJECTIVE, in the order they collected their debt
+
+This is the part of §15 that outlives the numbers. All four were **measured** in this arc, and
+all four were deliberately left alone, because acting on any of them mid-arc would have been
+re-fitting a gate to the run that breached it.
+
+1. **`stress` HAS ZERO GRADIENT BELOW `util = 1.0`.** It is `soft_barrier(util - 1.0, 4000)`
+   (`src/wheel_objective.py:1027`) and `soft_barrier` is `scale * max(0, v)**2` (`:290`), so
+   it is identically zero *and identically flat* for every `util <= 1.0`. Below the knee the
+   optimizer cannot see stress at all; it sees mass, and it thins the wall. **The barrier is a
+   wall to stop at, never a cost to trade against.** Measured: the `stress` term was > 0 on
+   **0 of 602 descent steps**.
+2. **THEREFORE `R_hub` AND `R_rim` ARE DEAD GENES.** The only paths from a fillet radius into
+   the loss are `stress` and the fillet barriers, and both are identically flat unless
+   breached. Over all 602 steps of both descents, **`R_rim` had a nonzero gradient on 0 steps
+   and `R_hub` on 2** — and those two steps are *exactly* the two where the `fillet_cap`
+   barrier was live. They stayed frozen to six decimals through another 100 steps at
+   `medium`, which rules out the one benign explanation: it is not a coarse-mesh artefact.
+   **Run 1's `R_hub` 0.5790 and `R_rim` 2.7495 are not optimisation results.** They are
+   constants inherited from `best_solution.json` and carried untouched, and the same blind
+   path was in place for every Stage-3 run behind §6, §8 and §14. The search is nominally
+   14-dimensional; with all four thicknesses on the floor the live subspace is the **8 spline
+   coordinates** — precisely where the two runs still disagree by 7.3%.
+3. **THEREFORE THE DESCENT SWUNG THE HUB ARRIVAL SHALLOW WITH NOTHING OBJECTING** (wedge
+   328 → 308 deg), and it could not have compensated by asking for a smaller radius either,
+   because `R_hub` is exactly the gene it cannot move. The exporter's own diagnostic reaches
+   the same place unprompted: *"what is left is the shallow corner of a near-tangent arrival,
+   which is the arrival angle, i.e. the genome."*
+4. **THE 1.2 mm WALL FLOOR IS DOING THE STOPPING, AND ITS JUSTIFICATION NO LONGER HOLDS.**
+   Utilisation climbed monotonically through the descent and **plateaued at 0.899 for the last
+   180 steps** — not because anything valued the remaining margin, but because at step 300 all
+   four wall genes sit **on the 1.2 mm floor** (`final.bound_saturation`: t0..t3 all "low").
+   The run ran out of wall to thin before it ran out of stress margin; set the floor lower and
+   the same blind gradient would keep going. And the floor itself was chosen by §8's `minwall`
+   sweep **under linear kinematics**, whose ranking finding 3 above inverts.
+
+*(An in-flight extrapolation in the working notes projected utilisation reaching ~0.99 by step
+300 from the 50→100 slope. It did not; it stopped 0.10 short of the knee. The mechanism above
+is unchanged — what was wrong was the projection, and the run was saved by a different
+constraint than the one that was worrying.)*
+
+**Utilisation is the one number that got worse, and it should be read as the cost of this
+arc:** 0.799 (shipped, linear, medium) → 0.875 (shipped, **svk**, medium) → 0.935 (`bc77614`,
+svk, medium). Roughly **half of that is not a design change at all** — it is the correction
+from measuring the same wheel honestly. The rest was spent by an optimizer that cannot see
+stress below 1.0. Both halves are real.
+
+One more caveat on the descent's own trace: `max_stress_mpa` grew **+37%** (160.6 → 220.2 MPa)
+while the utilisation the constraint sees grew **+4.7%**. The two decouple because the
+constraint is `Kt * pnorm(p=4) / 25.0` and a p=4 aggregate is deliberately insensitive to a
+singular corner peak — that is what `Kt` exists to bridge, and p=30 is not mesh-convergent. The
+p=4 number is the right one to gate on. But **the aggregate is tracking the field and the
+corner moved more**, and that is the same corner the export then refused to fillet.
+
+#### What is now stale, and what to read as a linear-kinematics number
+
+- **Every Stage-3 deflection and utilisation number in §1–§14 is a linear-kinematics number.**
+  §13's headline 0.80 utilisation and §14's 0.799 are `medium`-rung linear figures; the same
+  wheel reads **0.875** under SVK. §13's implicit "2.0 mm deflection" is 1.953 linear and
+  **2.409 SVK**. Nothing in those sections needs correcting — they need reading with the
+  kinematics named.
+- **`studies/study_gradient.json` is stale** for a second and unrelated reason (above): it
+  describes the pre-`350f4c7` genome. Not refreshed here.
+- **Every study driver in `studies/` still defaults to `kinematics="linear"`**, which remains
+  the repo-wide default and was held so on purpose: every committed artifact must still
+  reproduce bit-for-bit with no flag passed. A new default is a re-baselining and this repo
+  does not re-baseline silently. `study_gradient.py` and `study_svk_rescore.py` are the two
+  that can now be told otherwise.
+- **`36aed36` is barely affected and that is not luck** — +3.95% against +23.3%. The
+  correction tracks compliance, and the old wheel is 74 g of it. Any comparison between the
+  two genomes under linear kinematics is comparing one number that is nearly right against one
+  that is 20% off.
+
+#### The gate
+
+`make test` had not been run in full since the arc's baseline (**431 passed / 2 failed**,
+1374.52 s, reproducing §14's predicted arithmetic exactly, both reds the deliberate ones —
+the GNL gate at `small_load_rel_diff` 0.0020499 and the hub compliance share at
+0.032076694850181206, each matching its recorded value to the digit).
+
+**Re-run at the close of this arc, and it was measured rather than inferred: `make test` —
+433 passed / 2 failed in 1468.57 s (24:28).** The arithmetic predicted 433/2 (Step 0's 431/2
+plus exactly the two tests this arc added — `test_a_pooled_SVK_evaluation_matches_the_serial
+_one` and `test_the_run_record_carries_the_kinematics_it_actually_descended`) and the run
+confirms it. **The two reds are the same two, and the hub compliance share reproduces
+0.032076694850181206 — every digit of §14's recorded value, and of Step 0's.** No new red,
+nothing accommodated, and the +2 is fully accounted for. §14 had to close on an unconfirmed
+sum; this one did not.
+
+#### The successors, in priority order
+
+All five were found by this arc and all five are named rather than acted on.
+
+1. **MAKE THE OBJECTIVE SEE BUILDABILITY.** This is the one that has to be fixed before **any**
+   SVK descent can ship, and it subsumes 2 and 3 as far as promotion is concerned. Nothing in
+   the loss prices the hub arrival angle or the fillet the exporter can actually cut. The
+   exporter already computes `kt_built` — the missing piece is a term that charges the
+   difference, which would also give `R_hub` its first real gradient.
+2. **GIVE THE OBJECTIVE A STRESS-MARGIN TERM.** Defect 1. It does not merely stop the optimizer
+   spending margin it is not charged for — it **unfreezes two design variables that no run in
+   this repo's history has been able to move**.
+3. **RE-DERIVE THE MINIMUM-WALL FLOOR UNDER SVK.** Defect 4. The floor is load-bearing in every
+   answer this arc produced and §8's justification for it is reversed by the re-score table.
+4. **PUT A MESH-CONVERGENCE STUDY ON `axle_drop_mean_mm`.** Give the deflection QoI the GCI
+   treatment M8b-i.5 gave the stress QoI, then state the ±0.3% gate against an extrapolated
+   value instead of against whichever rung the descent happened to run on. Today the gate is
+   satisfiable at exactly one rung and the choice of rung is undeclared.
+5. **SET THE LOAD-CONTROL TOLERANCE FROM THE INNER SOLVE'S NOISE FLOOR.** `tol_rel=1e-8` in
+   `solve_wheel_contact` is not universally achievable under SVK. Measure the floor, then set
+   the outer tolerance from the measurement — **do not pick a looser round number**, and do
+   not touch it on the evidence of the run that breached it.
+
+#### Artifacts
+
+Search results and measurements, none of them gates except where noted. At the repo root:
+`stage3_svk_best_shipped.json` (`ae7092c`, run 1) and `stage3_svk_shipped.json` (its run
+record), `stage3_svk_best_elite10.json` (`c4f207c`) / `stage3_svk_elite10.json`,
+`stage3_svk_best_medium.json` (`bc77614`, the `medium` re-convergence) /
+`stage3_svk_medium.json`. In `studies/`: `study_svk_rescore.json` (the Step 3 table, and it
+**is** gated — `GATE_CONTROL_REL`), `study_svk_step6.json` (the same driver's `medium` check
+on the coarse candidate, the one that stopped the promotion), `study_gradient_svk.json` and
+`study_gradient_lin_check.json` (the ten adjoint gates under each kinematics, `"pass": true`
+in both), plus their `--quick` counterparts, which are **not** gates and fail under both
+kinematics. In `export/`: `stage3_svk_best_medium.step`, its `_nofillet` companion and its
+manifest — **the artifact that refused**, kept because the +11.9% `kt_error_pct` is the arc's
+terminal finding and re-deriving it costs an export.
+
+**`export/wheel.step` was regenerated from the unchanged incumbent `350f4c7`** to obtain the
+control for that comparison; its manifest `genome_hash` says so.
+
+#### What this arc established, stated without the hedging
+
+SVK is the honest kinematics for this part. The shipped wheel deflects **2.39 mm, not 1.95**,
+and carries **0.875 of allowable, not 0.799** — and it is still feasible, which was not known
+before. A design exists that is **12× closer to the deflection target and 1.78 g lighter**
+under that kinematics. And the objective has **four named, measured defects** that together
+explain why that design cannot ship. The deliverable of this milestone is a measurement, not
+a promotion, and the plan pre-registered that outcome: *"a run that does not clear these is a
+result, not a failure — record it and go back."*
+
+---
+
+### 16. THE OBJECTIVE CAN NOW SEE BUILDABILITY. **PROMOTED** — `best_solution.json` is `e4219f3` (2026-08-11).
+
+§15 ended with a wheel that was 12× closer to the deflection target, 1.78 g lighter, and
+**impossible to build**: `kt_error_pct` +11.9% at the hub, as-built utilisation 1.046, OCC
+filleting 12 of 24 corners at the radius the optimizer had asked for. The deliverable was a
+measurement and the instruction was to go back and fix the objective. This is that arc.
+
+**The wheel that ships now builds 24/24 at both junctions at the full requested radius,
+`kt_error_pct` +0.0% / +0.0%.** It weighs 37.568 g against 39.194, deflects 1.99996 mm against
+a 2.0 mm target (**−0.002%**, where the incumbent was **+20.5%** once re-priced), and carries
+0.996 of allowable priced / 0.987 as built. Every barrier is exactly 0.0.
+
+#### The defect was not that the cap was missing. It was that the cap was WRONG, in both branches
+
+`hub_fillet_cap_mm` existed since §5 and returned `min(by_slot, by_thickness)`. The `min`
+structure was right. **Both of its arguments were the wrong shape.**
+
+- `by_thickness` was `0.52 * t0` — a function of a gene that says nothing about the corner.
+  §15's two candidate genomes have **identical `t0` = 1.2 and identical `R_hub` = 0.578951**,
+  and OCC fillets all 24 hub corners on one and only 12 on the other. The old cap returned
+  **0.6240 for both, to sixteen digits.** What they do not share is the **hub arrival angle**:
+  19.68° against 48.89°. That was the missing variable, and it was already differentiable —
+  `control_points` locks P0 at the origin, so arrival is `asin(|cx1| / hypot(cx1, cy1))`, a
+  function of two genes and nothing else.
+- `by_slot` was `0.5 * R_hub_ring * radians(void)`. It had **never been the binding branch
+  before**, so its constant had never been tested. When the arrival fix made it bind, it was
+  found to over-promise by up to **1.62×**. Re-fitted under the smallest of eight measured
+  ratios, 0.3096.
+
+The replacement, fitted on OCC ground truth and calibrated over [5°, 60°]:
+
+```
+by_thickness = t0 * (0.505 - 0.48 * (1 - cos(arrival_hub)))
+by_slot      = 0.30 * R_hub_ring * radians(hub_void_deg)
+cap          = min(by_slot, by_thickness)
+```
+
+`(1 - cos)` rather than a quadratic because it is bounded, monotone on [0°, 90°], and flat at
+0° where a tangential arrival should be insensitive. The fit sits **under all 14 sweep
+stations** (1.45–3.29% under thin, 4.00–11.61% under thick) and 3.3% / 3.1% under two
+out-of-sample designs. **The conservatism is deliberate and it is the design margin** — a point
+that matters again below. Cap ÷ OCC-worst across five designs went 1.067 / 1.615 / 1.199 /
+1.463 / 1.479 → 0.979 / 0.969 / 0.827 / 0.967 / 0.969.
+
+#### Two hub corner families, named by wedge, and the one that binds today
+
+OCC's hub corners fall in two bands with a measured 24° gap: **SQUARE-ON** at 266–270°, limited
+by root thickness and arrival, and **NEAR-CUSP** at 294–332°, limited by the slot. Which binds
+is a property of the design, not of the wheel: square-on at `t0` = 1.2, near-cusp on the
+`t0` = 2.55 elites. `study_hub_cap.CUSP_WEDGE_DEG = 285.0` splits them.
+
+**The promoted wheel's worst hub wedge is 314.0° — NEAR-CUSP.** The arc was built around the
+arrival branch and the arrival branch is what got the descent here, but **the slot branch is
+what binds on the design that ships.** Its own arrival law is unfitted and parked (0.31 at
+3.4° rising to 0.70 at 50°, ~2.2× on the table); that is now the live successor.
+
+#### What the descent did, and the two headline results
+
+Re-descending under SVK at `medium` with the corrected cap produced the arc's first real
+finding immediately: **the incumbent `350f4c7`, re-priced on a fillet radius that can actually
+be built, is INFEASIBLE at utilisation 1.051.** Its shipped metrics read 0.783 because they
+were computed at `coarse`, under **linear** kinematics, against the superseded 0.624 mm cap.
+Every number in that file came from a model this arc showed to be wrong in a specific way.
+**Shipping it was the risky option; that is why the promotion happened.**
+
+The first descent then failed its own pre-registered gate 3-of-4, with `R_hub` pinned at a box
+floor of **0.5** that was a bare literal in `GENE_SPACE` with no comment behind it — twice the
+exporter's `MIN_CURVATURE_RADIUS_MM`. The cap cleared at arrival ≤ 39.893° and the run
+converged at 40.542°: **0.650° short, with no legal move left in that gene.**
+
+The floor moved to **0.4 mm — one extrusion width** at the 0.4 mm nozzle `MIN_WALL_MM` is three
+perimeters of. Deliberately **not** 0.25: `MIN_CURVATURE_RADIUS_MM` is a *fault detector*
+("well under any fillet we ask for, so a violation always means a construction fault") and
+`MIN_BUILDABLE_R_MM` exists only to keep a blend width positive. Adopting either as a design
+floor would have destroyed the detector by putting legal designs on it. `R_rim` unchanged.
+
+The re-descent, warm-started from the same control so it differed in **exactly one thing**,
+put `fillet_cap` at **exactly 0.000000 by step 3** and `R_hub` roamed a 0.135 mm interior band.
+
+Second headline, and a correction to one issued mid-arc: the first descent reported `t0` coming
+**off the `MIN_WALL_MM` floor for the first time in the project** (1.2714). With `R_hub` free it
+is **pinned low again**. The observation was real; the stated cause was too general. A thicker
+wall buys buildable fillet **only when the radius cannot move.**
+
+#### THE THREE DEFECTS THIS ARC ADDED TO §15's FOUR
+
+§15 named four defects in the objective. **This arc fixed none of them** — it fixed the
+*buildability model*, which is a different thing — and found three more. All three are about
+the penalty formulation rather than the physics, and all three cost real time before they were
+understood.
+
+5. **A QUADRATIC SOFT BARRIER CANNOT CONVERGE TO EXACTLY ZERO UNDER OPPOSITION.**
+   `soft_barrier` is `scale * max(0, v)**2`, so **its gradient vanishes at its own knee.** A
+   larger `R_hub` lowers `kt_hub` and relieves `stress`; a smaller one relieves `fillet_cap`.
+   The two push against each other and settle where their quadratic gradients cancel — which is
+   necessarily **just inside both**, because neither can generate force at `v = 0`. The
+   re-descent's selected best sits at `fillet_cap` 0.000546 and `stress` 0.000751, converged to
+   six figures over its last seven steps, with `stress_utilisation` 1.00031. **This is a
+   property of the formulation, not of the design**, and it is the same shape of finding as the
+   Step 3 gate clause that had to be retired as unsatisfiable. It is the mirror image of
+   §15's defect 1: below the knee the barrier is invisible, and *at* the knee it is powerless.
+6. **`wheel_stage3.py` SELECTS `--best-out` BY LOSS AND IGNORES FEASIBILITY ENTIRELY.**
+   55 of 101 iterates in the re-descent had every one-sided barrier at exactly 0.0. The one the
+   code picked was not among them. Selecting the lowest-loss **feasible** iterate is the
+   standard rule for a penalised constrained descent and arguably the only correct one; the
+   difference here costs **0.030% of a loss that is 99.8% mass.** Recorded, not patched — a
+   change to the selection rule is a change to every future run and belongs in its own arc.
+   **Until it is fixed, never promote `--best-out` without re-checking feasibility by hand.**
+7. **FEASIBILITY MUST BE CHECKED WITH SLACK AT EVERY FIDELITY, NOT AT ONE.** Step 82 — the
+   lowest-loss strictly feasible iterate, and the first thing promoted — clears the cap at
+   `medium` by **53 nm** and violates it at `coarse` by **93 nm**. Its feasibility depends on
+   which mesh you ask. Worse, sitting on the knee of `max(0, v)**2`, whose second derivative is
+   discontinuous there, makes a central difference straddle the kink: it fails
+   `study_objective.run_closed_form` at **2.705e-06** against a 1e-6 tolerance. **G4 was not
+   reporting a code bug. It was reporting where the design sat.** Step 71 was promoted instead:
+   **2951 nm** of slack, 0.000e+00 on that gate, a better deflection (−0.002% vs +0.051%) and
+   **more** stress margin (0.99639 vs 0.99998), for +0.13% of loss and +0.048 g.
+
+   The reasoning that produced step 82 was that the cap is already fitted 1.45–11.61% under OCC
+   truth, so padding the numerical slack would be inventing a second margin. **That is correct
+   about buildability and irrelevant to numerical robustness** — OCC built step 82 24/24 at
+   +0.0%. Two distinct failure modes; the argument for one was applied to the other.
+
+#### The gene box changed, and that reinterprets history in exactly one gene
+
+`GENE_SPACE[12]['low']` went **0.5 → 0.4**. Raw genomes on disk are stored **by name** and are
+unaffected. **The normalized `z` traces inside historical Stage-3 run JSONs are not:** gene 12
+now decodes to a different physical radius. Any pre-2026-08-11 `steps[i]["z"][12]` read with
+today's `GENE_SPACE` is wrong by `0.1 * (1 - z)` mm. Decode with the box that was in force.
+
+It also has a live consequence: **`test_the_beam_to_wheel_ratio_is_not_a_constant` is a
+casualty of the box change, not of the promotion.** `run_beam_blindness` draws a Latin
+hypercube from the box, so its statistic is genome-independent — measured at **4.943223** with
+the 0.5 floor (matching §14's documented 4.943) and **2.412764** with 0.4, *identically for both
+genomes*. Gate 1's actual conclusion, `correction_factor_is_defensible == False`, holds in both
+boxes; only the `> 3.0` margin, calibrated in the old box, moved. **Not re-tuned** — the test's
+own docstring is explicit that re-deriving it is a judgement about Gate 1, not a test edit.
+
+#### The gate
+
+`make test` closes at **6 failed / 430 passed**, against §15's 2 / 433. 436 collected both
+times. Nothing was deleted, skipped, xfailed, or re-thresholded. The one test edit in the arc
+was a bug fix in a test the arc itself had added four steps earlier: the new cap test
+constructed its arrival angle but **inherited `t0` from `best_solution.json`** — the exact fuse
+its own docstring warns against, and `by_thickness` is linear in `t0`. Completing the
+construction (`g[8] = 1.2`) made its guard the assertion it was meant to be.
+
+Of the six red, one is the gene-box casualty above and **five are characterisation tests
+genuinely invalidated by shipping a materially different wheel.** They pin findings about the
+design space and are written to fail loudly when the premise moves:
+
+| test | `350f4c7` | `e4219f3` | gate |
+|---|---|---|---|
+| `self_intersection_margin_detects_a_fold` | −7.064 | **+0.282** | < 0 |
+| `correction_is_not_a_constant_over_the_design_space` | 3.383 | **1.542** | > 3.0 |
+| `correction_enters_at_first_order_in_the_load` | 0.00205 | **0.00258** | < 0.001 |
+| `rim_band_holds_a_large_minority_of_the_compliance` | 0.0321 | **0.0508** | < 0.03 |
+| `a_thicker_rim_monotonically_stiffens_the_wheel` | 2.2496 | **1.637** | straddle 2.0 |
+
+The last two were already red and both moved further out. Three causes worth knowing:
+
+- The **fold detector is not broken.** It builds its positive case by inflating the *shipped*
+  spine to a 40 mm band against an assumed ~11 mm curvature radius. The new spine is straighter
+  — healthy margin 11.94 → 19.28, min curvature 12.26 mm — so 40 mm no longer folds it, by
+  0.28 mm. It needs a thicker band or a fold constructed independently of the shipped genome.
+- The **hub compliance share is the one real physical cost.** A 0.457 mm hub fillet is more
+  compliant than a 0.579 mm one, so the hub's share of strain energy rose 0.0321 → 0.0508.
+  **This is the price of a buildable radius and no iterate choice recovers it.**
+- The **rim straddle says the new design is markedly more mesh-sensitive.** The two genomes
+  agree at `medium` (1.99996 vs 1.99923 mm) and differ by **27%** at `smoke` (1.637 vs 2.2496
+  at rim_outer 49.7), because every thickness gene sits on the 1.2 mm floor and a coarse mesh
+  resolves a thin wall badly. **Do not trust a `smoke`-rung number on this genome.**
+
+#### The successors, in priority order
+
+1. **The slot branch's own arrival law.** It is what binds on the wheel that ships (wedge
+   314.0°, NEAR-CUSP) and it is unfitted: 0.31 at 3.4° to 0.70 at 50°, ~2.2× unclaimed. The
+   experiment is the mirror of `study_hub_cap.run_t0_sweep` — hold arrival fixed, walk the void.
+2. **§15's successor 2, the stress-margin term**, now with a second argument behind it.
+   `R_hub` still goes inert the moment it is feasible: no gradient from `fillet_cap` when
+   satisfied, none from `stress` below its knee. Defects 1, 2 and 5 are one defect seen from
+   three sides, and a term that prices margin instead of walling it fixes all three.
+3. **The `--best-out` selection rule** (defect 6). Cheap, mechanical, and it removes a
+   promotion hazard that this arc walked into twice.
+4. **Re-derive the five characterisation gates** against a design whose walls are all on the
+   floor. Real work and a judgement about what each gate should now say — not a threshold edit.
+
+#### Artifacts
+
+`stage3_buildcap2_medium.json` (the re-descent trace, 101 steps), `stage3_buildcap2_slack_medium.json`
+(step 71, promoted) and `stage3_buildcap2_feasible_medium.json` (step 82, kept because defect 7
+is only legible with both). `stage3_promote2_best.json` is the canonical `--steps 0` re-score
+that became `best_solution.json`. The predecessor `350f4c7` is preserved byte-identical as
+`stage3_minwall_best_1.2.json` and `stage3_minwall_best_1.2_medium.json`;
+`best_solution_ga_beam.json` is untouched, so `tests/test_golden.py` is **not** re-baselined.
+`export/wheel.step` and its manifest are rebuilt from `e4219f3`. Full step-by-step record in
+`BUILD_PLAN.md`, steps 3 through 6c.
+
+#### What this arc established, stated without the hedging
+
+The objective has priced a buildable hub fillet since §5, and from 2026-08-06 to 2026-08-10 it
+priced it with **a constant fitted an octave away from the floor every shipped design sits on**,
+returning the same number for two designs OCC disagrees about. That is fixed, and the wheel that
+ships is the first in this repo that the optimizer priced and the kernel built **at the same
+radius**. The cost is honest and it is in the table above: a thinner, stiffer, more
+mesh-sensitive wheel with 5.1% of its compliance in the hub, and five findings about the design
+space that were measured on a design that no longer ships. The three new defects are all in the
+penalty formulation, all found by gates rather than by reasoning — **two hypotheses about the
+G4 failure were plausible, confidently held, and wrong before a measurement settled it** — and
+the ordering lesson is procedural and cheap: **promote, export, then test**, and run the suite
+after a gene-box change before anything else moves.
+
+### 17. DEFECT 6 IS FIXED, AND THE SUCCESSOR RANKED #1 IN §16 IS WORTH NOTHING. Measured, not argued (2026-08-12).
+
+Two things, one small and one that corrects §16's own conclusion.
+
+#### `--best-out` no longer selects an infeasible genome
+
+Defect 6 was that `wheel_stage3.py` reported the lowest-loss iterate of a run, and the loss
+is a weighted sum in which the barriers are terms like any other. So the reported iterate is
+whichever bought the most objective for the least constraint — and a barrier is not a thing
+that can be bought. That is a category error, not a tuning failure, and no amount of descent
+fixes it.
+
+`wheel_objective.BARRIER_TERMS` / `OBJECTIVE_TERMS` now split the weight table by what a term
+answers: *may this ship* or *how good is it*. The split is asserted complete against `TERMS`
+at import, so a term added without a classification fails loudly rather than defaulting to
+"can never make a design unshippable". `wheel_stage3.selection_key` ranks in three tiers —
+feasible with slack, feasible on the knife edge, in violation — and the same key is used
+within a run and across multi-start runs. Tier 2 is still ranked, so a run with nothing
+feasible reports its least-violating iterate rather than nothing at all, and the banner says
+which tier it is returning.
+
+The band, `MIN_CAP_SLACK_MM = 1e-3`, is defect 7 made operational: **feasibility is
+fidelity-dependent**, so a barrier reading exactly 0.0 certifies only that *this mesh* saw no
+violation. Step 82 cleared the cap at `medium` by 53 nm and violated it at `coarse` by 93 nm.
+
+Replayed against the real 101-step trace (`stage3_buildcap2_medium.json`), which is now a
+regression test rather than a paragraph:
+
+| iterate | loss | cap slack | old rule | new rule |
+|---|---|---|---|---|
+| step 93 | **30.8914** (the minimum) | **−1.045 µm** | **reported** | tier 2 |
+| step 82 | 30.9008 | +0.052 µm | promoted off it | tier 1 |
+| step 75 | 30.9406 | +10.936 µm | — | **tier 0, selected** |
+| step 71 | 30.9421 | +3.096 µm | — | tier 0 (shipped) |
+
+53 of 101 iterates are tier 0. The old rule reported a violating one out of that.
+
+#### The new rule picks step 75, and step 75 should not ship — which is the finding
+
+| | step 71 (shipped) | step 75 (rule's pick) |
+|---|---|---|
+| loss | 30.9421 | **30.9406** |
+| mass | 37.5678 g | **37.5556 g** |
+| deflection error | **−0.002%** | +0.110% |
+| stress utilisation | **0.9964** | 0.9988 |
+| R_hub | **0.4571 mm** | 0.4510 mm |
+
+Step 75 is lower-loss and worse at every margin: it buys 12 mg with deflection error, stress
+headroom, and 6 µm of hub fillet. `best_solution.json` stays at `e4219f3`; nothing was
+re-promoted, re-exported, or re-scored.
+
+This is the sharpest available argument for the stress-margin term. Fixing the selection rule
+removed the barrier-versus-objective confusion and left the *objective's own* indifference to
+margin fully exposed: among tier-0 iterates the rank is still loss, and loss prefers 12 mg to
+every margin the design has. **Defects 1, 2 and 5 and this are one defect seen from four
+sides.**
+
+#### §16 ranked the slot arrival law #1. It cannot pay, and here is the measurement
+
+§16's argument was that the slot branch "is what binds on the wheel that ships (wedge 314.0°,
+NEAR-CUSP)". That conflated two different things, and they disagree on this wheel:
+
+- the **wedge family of the worst OCC corner** — near-cusp, 314.0°, true; and
+- the **analytic branch that sets the cap** — thickness, 0.4601 mm against the slot branch's
+  1.6221 mm, **253% away from binding**.
+
+The corner OCC finds hardest and the branch the optimizer feels are not the same object. Even
+granting the whole re-fit — the measured near-cusp share at the shipped arrival is 0.60
+against the modelled 0.30 — the slot branch would move to 3.2476 mm, **7× above the binding
+branch**. It changes the cap by exactly zero, on this wheel and on any wheel near it.
+
+Meanwhile the branch that *does* bind is already tight. Against the square-on family at
+`t0` = 1.2, the floor the shipped wheel sits on:
+
+| arrival | OCC / t0 | model / t0 | model is |
+|---|---|---|---|
+| 5.14° | 0.5105 | 0.5031 | 1.5% conservative |
+| 20.10° | 0.4872 | 0.4758 | 2.4% conservative |
+| 30.06° | 0.4524 | 0.4404 | 2.7% conservative |
+| 40.03° | 0.4059 | 0.3925 | 3.4% conservative |
+| 50.00° | 0.3439 | 0.3336 | 3.1% conservative |
+| 59.96° | 0.2722 | 0.2653 | 2.6% conservative |
+
+Conservative everywhere, never over-promising, and never by more than 3.4%. At the shipped
+arrival of 41.748° it is 3.2% conservative. **There is no fillet radius left on the table on
+the branch that binds** — which is what §16 set out to achieve and is worth stating as an
+achieved result rather than leaving implied.
+
+One more reason the §16 successor was not ready to run, and it is a datum already in the tree
+being read for a second purpose. BUILD_PLAN.md step 4 records `350f4c7_t0_1.2`'s near-cusp
+threshold as `≥1.44` at all seven arrival stations, censored at the bisection bracket, and
+dismisses it correctly — "never binding in the measured range, which is all this arc needs
+from it." That is true for computing a **cap**, where a censored non-binding branch costs
+nothing. It is fatal for **fitting the branch itself**, which is what the successor proposes:
+the share then reads 0.323 → 0.264 across arrival, and that decline is a constant numerator
+over a growing arc, an artifact of the ceiling rather than a law. So the slot law rests on
+`elite13_t0_2.55` alone, n = 1, and fitting on one uncensored design is the same mistake §16
+exists to correct. The sweep would have to be re-run with a raised bracket first.
+
+#### The successors, re-ranked by what they are now measured to be worth
+
+1. **The stress-margin term** (§15's successor 2). Promoted to #1 on the evidence above:
+   `R_hub` goes inert the moment it is feasible, and the step-75-versus-71 comparison shows
+   the objective will spend every margin the design has for 12 mg. This is the one with a
+   payoff.
+2. **Re-derive the five characterisation gates** against a design whose walls are all on the
+   floor. Unchanged in rank, still real work and still a judgement about what each gate should
+   say, not a threshold edit.
+3. **The slot branch's arrival law.** Demoted from #1 to #3 and re-scoped: it is a
+   correctness fix to a branch that is 253% from binding, not a source of fillet radius. If it
+   is done, it needs the arrival sweep re-run with a raised bisection ceiling first, because
+   the existing data is censored on one of its two designs.
+
+### 18. THE OBJECTIVE CAN NOW SEE STRESS MARGIN. Two dead genes are alive and the wall came off the floor. **NOTHING PROMOTED** (2026-08-12).
+
+§15's defect 1, named on 2026-08-10 and left alone twice since because acting on it mid-arc
+would have been re-fitting a gate to the run that breached it. §17 gave it a second argument
+that was not available in §15 — with selection fixed, the objective's *own* indifference to
+margin was the only thing left explaining step 75 — so it is now the ranked successor and this
+is it.
+
+#### The defect, re-measured before it was touched
+
+`stress` is `soft_barrier(util - 1)`, identically zero **and identically flat** for every
+`util <= 1`. Below the knee the optimizer cannot see stress at all: it sees mass, and it thins
+the wall. The consequence is not bad weights, it is **dead genes** — the only routes from a
+fillet radius into the loss are `stress` and the fillet barriers, all flat unless breached.
+
+Measured at the shipped genome on 2026-08-12, before any change: **`dL/dR_hub` and `dL/dR_rim`
+are both exactly `+0.000000e+00`.** Not small. Zero. A nominally 14-dimensional search was
+running in 8, which is what §15 measured a different way (over 602 steps `R_rim` moved on 0 and
+`R_hub` on 2, both times only because `fillet_cap` was live).
+
+#### The term, and the weight as a stated policy
+
+`stress_margin = w * util^2`, summed over the same two junctions as the barrier and for the
+same reason — a `max` would zero the gradient of whichever junction is not currently worst. It
+is in `OBJECTIVE_TERMS`, never `BARRIER_TERMS`: `stress` is untouched, the wall still decides
+shippability, and this only stops the approach to it being free.
+
+The weight is an exchange rate, so it is derived rather than picked. The mass term is 30.88 at
+37.57 g, so 1% of mass is 0.309 of loss; 1% of hub utilisation at `util` = 0.855 costs
+`w * (1.01^2 - 1) * 0.855^2` = 0.0147 `w`. Indifference is `w` = 21.0. Shipped at **20.0** —
+rounded *down*, toward buying less margin, which is the conservative direction for a term whose
+purpose is to move the optimum. Quadratic rather than linear is the second half of the policy:
+the exchange rate steepens as margin disappears, so the last 10% of utilisation costs far more
+than the first. At the shipped genome the term lands at 20.23, 13.6% of the loss against mass's
+20.7%.
+
+The hand-written product rule was FD-checked, and this was not a formality: `dkt_hub`'s `R_hub`
+path was previously multiplied by `max(0, util - 1)` = 0 at every feasible design, so an error
+in it could not have been observed.
+
+| gene | analytic | central FD | rel err |
+|---|---|---|---|
+| 12 `R_hub` | −1.234936e+01 | −1.234936e+01 | 1.79e-07 |
+| 13 `R_rim` | −7.237940e-01 | −7.237940e-01 | 1.10e-09 |
+| 8 `t0` | +3.336761e+02 | +3.336762e+02 | 3.67e-07 |
+
+#### What a 40-step SVK probe did with it
+
+`stage3_margin_probe.json`, `coarse`, 40 steps, uniform 8-phase, SVK, from the shipped genome.
+1 h 57 m, 7.4 GB peak, clean exit, converged (last three losses 51.7487 / 51.7478 / 51.7474).
+
+| | step 0 | step 40 |
+|---|---|---|
+| loss | 57.0300 | 51.7474 |
+| `R_hub` | 0.45711 | **0.62435** (cap 0.62700) |
+| `R_rim` | 2.74947 | **3.00000 — box maximum** |
+| `t0` | 1.20084 | **1.36183 — off the 1.2 floor** |
+| utilisation | 0.95921 | 0.80982 |
+| axle drop | 1.96822 mm (−1.6%) | 1.99780 mm (−0.11%) |
+| mass | 37.568 g | 39.410 g (**+4.9%**) |
+
+Four things, one of them unplanned.
+
+**`R_hub` converged to 0.4% under its own cap.** It rose until the geometry stopped it and
+settled just below, `fillet_cap` exactly 0.0 for the last dozen steps. The design now asks for
+the largest fillet it can actually build — which is what §16's cap was for and what no descent
+before this could do.
+
+**The cap itself rose, 0.46006 to 0.62700.** Nothing pushes the cap; it is a function of `t0`
+and the hub arrival. The optimizer reshaped the hub to make room for a fillet that was, for the
+first time, worth having. §16's cap model and this term composed into a behaviour neither was
+designed to produce.
+
+**Two of the four wall genes came off the floor** — `t0` to 1.362 and `t3` to 1.326. §15's
+defect 4 said the descent "ran out of wall to thin before it ran out of stress margin, and set
+the floor lower and the same blind gradient would keep going." That is now false for `t0` and
+`t3`: with margin priced, the design chooses to be thicker. `t1` and `t2` are still pinned.
+
+**`R_rim` hit its box ceiling of 3.0 and stayed there for 26 steps.** That ceiling was set while
+`R_rim` was a dead gene, so no descent has ever tested it. It is now the binding constraint on
+the rim fillet, and it is an untested number rather than a physical limit.
+
+#### Defect 5 did not bite, and an intermediate reading of this run said it would
+
+Mid-descent `fillet_cap` oscillated — 0.0, 0.44, 0.0, 0.24 — and at step 11 `R_hub` sat 0.022 mm
+**above** its cap. Read at step 11 that is a soft-barrier equilibrium, defect 5 becoming
+operational the moment the barrier acquired live opposition, and it was recorded here as such
+before the run finished. **The full run says otherwise.** Those excursions are transients from
+the cap moving faster than `R_hub` could track it; once the cap stabilised, `R_hub` settled
+under it and stayed. 26 of 41 iterates are feasible and the converged point is one of them.
+Defect 5 remains real and remains unfixed — it just is not what limits this term.
+
+#### One measure-zero bug, found because the term made it reachable
+
+`smooth_min`'s derivative at exactly `a == b` was **1.0 against a true two-sided 0.5**. Two
+primitives are non-differentiable at the tie and autodiff picks a subgradient for each: `jnp.abs`
+returns 0 at 0, which drops the blend term entirely, and `jnp.minimum` hands the full 1.0 to its
+first argument. The value was never wrong, which is why the existing value-only exactness test
+could not see it. Fixed by writing the min symmetrically as `(a + b - |a - b|)/2`, fenced inside
+the blend by a `where` because that form is not bit-exact and exactness outside the blend is the
+property the function exists for. Never observed to bite — recorded and fixed because this term
+drives `R_hub` at its cap deliberately, which turns the tie from an accident into an attractor.
+
+#### The gate
+
+`6 failed, 438 passed` — **the same six reds as §17, no new ones**, and +4 from this section's
+own tests. That is worth stating plainly because it was not the expected outcome: changing a
+term in the objective changes the loss at every design, and a suite with loss numbers pinned in
+it would have gone red in bulk. It did not, which says the gates are pinned to physics and
+provenance rather than to the objective's arithmetic. The six are §16's, unchanged and
+unrelated: five characterisation gates invalidated by the shipped wheel's geometry and one
+gene-box casualty.
+
+#### NOTHING IS PROMOTED, and the reason is not caution
+
+`stage3_margin_probe_best.json` (`3ca40c1`) is a 40-step **coarse** probe under a **changed
+objective**. Its loss is not comparable to any number in §16 or §17 — the same discontinuity
+§14 recorded for linear-versus-SVK, for the same reason. And it costs **+4.9% mass**, which is
+a real design change that deserves a medium-fidelity descent and an export check rather than an
+assertion. `best_solution.json` is untouched at `e4219f3`.
+
+#### The successors, re-ranked again
+
+1. **A production descent under the new objective** — `medium`, SVK, from the shipped genome,
+   with an export check. This is what turns §18 from a demonstration into a candidate, and the
+   +4.9% mass is the thing it has to justify.
+2. **`R_rim`'s box ceiling.** Newly binding, never tested, and cheap: the question is whether
+   3.0 mm is a real limit or a number typed in when the gene was dead.
+3. **Re-derive the five characterisation gates.** Unchanged, and now with more to re-derive.
+4. **Defect 5**, the quadratic barrier that cannot hold a boundary against live opposition. Not
+   what limited this run, but the opposition is new and it will be back.
+5. **The slot branch's arrival law.** Still 253% from binding; still correctness, not payoff.

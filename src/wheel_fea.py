@@ -278,7 +278,33 @@ GENE_SPACE = [
     {"low": MIN_WALL_MM,  "high":  8.0},     # t2 (junction 2)
     {"low": MIN_WALL_MM,  "high":  6.0},     # t3 (tip, rim side)
     # Transition fillets (mm) — now first-class evolvable genes
-    {"low": 0.5,  "high": 4.0},              # R_hub
+    #
+    # R_hub's FLOOR MOVED 0.5 -> 0.4 ON 2026-08-11.  BUILD_PLAN.md steps 5 and 6.
+    #
+    # 0.5 was a bare literal with nothing behind it — unlike the thickness nodes directly
+    # above, whose floor is `MIN_WALL_MM` and says why — and it became the binding
+    # constraint on whether the wheel can be BUILT.  Once `hub_fillet_cap_mm` could see the
+    # hub arrival angle, the step-5 descent converged against a buildable cap of 0.4955 mm
+    # with `R_hub` pinned at 0.5 and no legal move left in the gene: it needed 0.650 deg
+    # more arrival or 0.005 mm less radius, and the box forbade the second.
+    #
+    # 0.4 IS ONE EXTRUSION WIDTH, the same 0.4 mm nozzle `MIN_WALL_MM` above is three
+    # perimeters of.  A fillet radius under one extrusion width is not a fillet the printer
+    # reproduces — the CAD carries it and the part does not — so this is the smallest radius
+    # it is honest to let the optimizer spend utilisation on.
+    #
+    # DELIBERATELY NOT 0.25, which is what `wheel_step_export.MIN_CURVATURE_RADIUS_MM` and
+    # `wheel_objective.MIN_BUILDABLE_R_MM` both are.  Neither is a design floor.  The first
+    # is a FAULT DETECTOR — its own comment says 0.25 is "well under any fillet we ask for
+    # ... so a violation always means a construction fault" — and a design space that
+    # reaches it destroys exactly that: the check could no longer tell a broken profile from
+    # an intended one.  The second exists only to keep a blend width positive when the cap
+    # goes negative.  Both must stay below the box, not at it.
+    #
+    # R_rim IS UNCHANGED at 0.5, on purpose.  Its floor has never bound — every design on
+    # disk sits at 2.4-2.75 — and nothing has measured pressure on it.  Moving a constant
+    # because its neighbour moved is how a box stops meaning anything.
+    {"low": 0.4,  "high": 4.0},              # R_hub
     {"low": 0.5,  "high": 3.0},              # R_rim
 ]
 

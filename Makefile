@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -73,6 +73,16 @@ help:
 	@echo "              memory-bound box launch each under a systemd-run cap: one"
 	@echo "              descent holds ~12.7 GB anon and two do not fit in 31 GB."
 	@echo "              Override PROD_STEPS/PROD_WORKERS/PROD_FIDELITY"
+	@echo "make svk      SVK_PLAN.md step 3: re-scores the shipped genome and its"
+	@echo "              rivals under BOTH kinematics with no optimizer, and reports"
+	@echo "              the utilisation the CONSTRAINT computes rather than §14's"
+	@echo "              p99-scaled estimate. Reproduces §14's load ladder first as"
+	@echo "              a control. Override SVK_CONFIG/SVK_WORKERS"
+	@echo "make svk-shipped | svk-elite10"
+	@echo "              SVK_PLAN.md step 5: the 300-step descent under SVK, from"
+	@echo "              each converged genome. ~5.3 h each. RUN THEM SEQUENTIALLY"
+	@echo "              and capped, exactly as prod9/prod10 — see the comment there."
+	@echo "              Override SVK_DESCENT_STEPS/SVK_DESCENT_WORKERS/SVK_MIN_WALL"
 	@echo "make minwall-1.6 | -1.8 | -2.0 | -2.2"
 	@echo "              PLAN.md 0(2): what the printable wall floor costs in grams."
 	@echo "              125 steps from the elite-10 answer at each floor; 2.0 is the"
@@ -299,6 +309,141 @@ EXPORT_GENOME ?=
 
 export:
 	$(PY_CAD) src/wheel_step_export.py $(if $(EXPORT_GENOME),--genome $(EXPORT_GENOME))
+
+# SVK_PLAN.md step 3.  Re-scores the shipped genome and its rivals under BOTH kinematics
+# with no optimizer, and answers the one question §14 left as an estimate: is the shipped
+# wheel still feasible under SVK, at the utilisation the CONSTRAINT computes rather than
+# the p99-scaled figure §14 quoted.
+#
+# DELIBERATELY NOT IN `studies`, for the reason `m8bi5`, `m9buck` and `hubcap` are not:
+# it measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the code changes,
+# it is the better part of an hour at `medium`, and a gate nobody can afford to run stops
+# being run.  SVK_WORKERS is the memory cap and nothing else sizes it — see PLAN.md §1.
+SVK_CONFIG ?= medium
+SVK_WORKERS ?= 4
+# Step 6 re-scores the descent winner at `medium` before promoting it, because Step 5
+# descended at `coarse` and the two rungs differ by ~1.1% on this wheel.  SVK_EXTRA is
+# additive (`label=path,...`) and SVK_ONLY narrows the built-in set, so the winner can be
+# scored WITHOUT editing GENOMES — the bare `make svk` must keep reproducing Step 3.
+SVK_EXTRA ?=
+SVK_ONLY ?=
+SVK_OUT ?= study_svk_rescore.json
+
+svk:
+	$(PY_OPT) -u studies/study_svk_rescore.py --config $(SVK_CONFIG) \
+	    --workers $(SVK_WORKERS) --out $(SVK_OUT) \
+	    $(if $(SVK_ONLY),--only $(SVK_ONLY),) $(if $(SVK_EXTRA),--extra $(SVK_EXTRA),)
+
+# SVK_PLAN.md step 5.  The descent itself, under St Venant-Kirchhoff.
+#
+# TWO STARTS, RUN SEQUENTIALLY, for the reason the `prod9`/`prod10` block above argues at
+# length and which SVK does not soften: the box runs out of MEMORY before it runs out of
+# cores.  Step 2 measured a 4-worker SVK descent at 13.16 GiB peak anon against linear's
+# 12.56 — only 1.05x, but two at once is still ~26 GB against 31, which is how the desktop
+# got taken down twice.  Launch each capped and detached:
+#
+#   systemd-run --user --unit=wheel-svk-shipped -p MemoryMax=16G --collect \
+#       --working-directory=$$PWD /usr/bin/make svk-shipped
+#
+# 16G, not Step 2's measured 13.16: the cap is a KILL SWITCH, not a budget, and it wants
+# enough headroom that a normal run never touches it.
+#
+# ~5.3 h each (300 steps x 62.3 s), against ~3.9 h for the same descent under linear.
+# That 1.36x is Step 2's measurement and it is NOT extra Newton iterations — those go
+# 26.00 -> 26.75, and backtracks actually FALL.  It is the SVK tangent assembly and the
+# nonlinear vJP, so no solver tolerance buys it back.
+#
+# BOTH STARTS ARE `--start best --genome <file>`, NOT `rank:N`.  The elite ranks are
+# Stage-2 answers scored under a beam surrogate; what this arc needs to know is where the
+# two best CONVERGED genomes go when the strain measure under them changes, and starting
+# from an unconverged point would confound "SVK moved it" with "300 more steps moved it".
+#
+# --min-wall 1.2 because that is the floor the shipped genome was promoted at (PLAN.md
+# §14) and the sweep that chose it (`minwall-`) ran under linear.  Re-deriving the floor
+# and changing the kinematics in the same run would measure neither.
+#
+# `uniform` and `--fidelity-check-every 0` for the reasons PROD_SCHEME and PROD_FIDELITY
+# give above; both apply here unchanged, and the fidelity check's second serial Evaluator
+# would cost 1.36x more under SVK than the 604.6 s already measured.
+#
+# Distinct --out AND --best-out per start, load-bearing for the same reason prod9/prod10's
+# are: both default to a fixed name under the repo root.
+SVK_DESCENT_STEPS ?= 300
+SVK_DESCENT_WORKERS ?= 4
+SVK_MIN_WALL ?= 1.2
+
+svk-shipped:
+	$(PY_OPT) -u src/wheel_stage3.py --start best --genome best_solution.json \
+	    --kinematics svk --min-wall $(SVK_MIN_WALL) \
+	    --steps $(SVK_DESCENT_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --phase-scheme uniform --fidelity-check-every 0 \
+	    --out stage3_svk_shipped.json --best-out stage3_svk_best_shipped.json
+
+svk-elite10:
+	$(PY_OPT) -u src/wheel_stage3.py --start best \
+	    --genome stage3_prod_best_elite10.json \
+	    --kinematics svk --min-wall $(SVK_MIN_WALL) \
+	    --steps $(SVK_DESCENT_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --phase-scheme uniform --fidelity-check-every 0 \
+	    --out stage3_svk_elite10.json --best-out stage3_svk_best_elite10.json
+
+# SVK_PLAN.md step 6.  RE-CONVERGE THE WINNER AT `medium`.
+#
+# Both step-5 descents ran at `coarse` and converged their deflection to -0.04%.  At
+# `medium` the same genome reads +1.65%, against a +/-0.3% gate — so the coarse answer does
+# not promote, and the fix is to meet the existing gate at the finer rung rather than to
+# move the gate.  See the STEP 6 block in SVK_PLAN.md.
+#
+# 100 steps, not 300: this warm-starts 1.65% from target, not 19.7%.  One value+grad at
+# medium/4-workers measured 273 s against coarse's 58.6 s (4.7x), so this is ~7.6 h.
+#
+# FIDELITY CHECK ON, pointing back at `coarse`: step 5 ran it off and that is exactly why
+# the rung gap was found after 9.8 h of descending instead of at step 0.  It is a pure
+# observation and cannot redirect the descent — it only puts both rungs on the record.
+SVK_MEDIUM_STEPS ?= 100
+
+svk-medium:
+	$(PY_OPT) -u src/wheel_stage3.py --start best \
+	    --genome stage3_svk_best_shipped.json \
+	    --config medium --kinematics svk --min-wall $(SVK_MIN_WALL) \
+	    --steps $(SVK_MEDIUM_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --phase-scheme uniform \
+	    --fidelity-check-every 25 --fidelity-check-config coarse \
+	    --out stage3_svk_medium.json --best-out stage3_svk_best_medium.json
+
+# BUILD_PLAN.md step 5.  RE-DESCEND WITH A CAP THAT CAN SEE THE HUB ARRIVAL ANGLE.
+#
+# Same rung, same kinematics, same floor and same scheme as `svk-medium` above — the ONLY
+# thing that differs is `wheel_objective.hub_fillet_cap_mm`, which now takes the arrival.
+# That is the point: `svk-medium`'s winner is the control, this is the treatment, and any
+# other difference between them would make the pair unreadable.
+#
+# WARM-STARTS FROM `svk-medium`'S OWN WINNER, `bc77614`, and starting from the UNBUILDABLE
+# design is deliberate rather than convenient.  It is 0.04% from the deflection target and
+# 12/24 on the exporter's hub corners, so the question this run asks is the sharp form of
+# the arc's question: given a cap that can finally see why, does the descent walk back off
+# the geometry it walked onto?  Starting from the shipped genome, which violates the new
+# cap by 1.2%, would ask a much easier one.
+#
+# DISTINCT --out AND --best-out, load-bearing for the reason prod9/prod10's are, and doubly
+# so here: clobbering `stage3_svk_best_medium.json` would destroy the control.
+#
+# ~226 s/step measured on the `svk-medium` run this mirrors (22627.5 s / 100), so ~6.3 h.
+BUILDCAP_STEPS ?= 100
+# Variables, not literals, ONLY so step 5 can be re-run against a moved gene box without
+# editing the recipe — the warm start stays the control either way.  BUILD_PLAN.md step 5b.
+BUILDCAP_GENOME ?= stage3_svk_best_medium.json
+BUILDCAP_OUT ?= stage3_buildcap_medium.json
+BUILDCAP_BEST ?= stage3_buildcap_best_medium.json
+
+buildcap:
+	$(PY_OPT) -u src/wheel_stage3.py --start best \
+	    --genome $(BUILDCAP_GENOME) \
+	    --config medium --kinematics svk --min-wall $(SVK_MIN_WALL) \
+	    --steps $(BUILDCAP_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --phase-scheme uniform \
+	    --fidelity-check-every 25 --fidelity-check-config coarse \
+	    --out $(BUILDCAP_OUT) --best-out $(BUILDCAP_BEST)
 
 # The milestone gates.  These are not tests — they produce measured reports whose
 # numbers are quoted in CLAUDE.md — but they do exit nonzero when a gate fails, so

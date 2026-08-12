@@ -223,10 +223,18 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
     WHAT USED TO BE OPEN, and is not any more.  On the old shipped genome the shallow corner
     of a near-tangent arrival took only 0.361 mm against a requested 1.560, so the hub split
     into two families and `kt_error_pct` sat at +73.4%.  The genome promoted in PLAN.md §13
-    asks for `R_hub` = 0.579, under §5's cap of 0.624 for that genome, and OCC builds it on
-    all 24 corners in ONE family: `kt_error_pct` +0.0%, the first shipped part whose fillets
-    are the ones its stress model priced.  The worst-corner rule still applies and is still
-    asserted — there is simply only one corner radius to be worst now.
+    asks for `R_hub` = 0.579 and OCC builds it on all 24 corners in ONE family:
+    `kt_error_pct` +0.0%, the first shipped part whose fillets are the ones its stress model
+    priced.  The worst-corner rule still applies and is still asserted — there is simply
+    only one corner radius to be worst now.
+
+    THAT +0.0% CLEARS BY 1.0%, and it is not a designed margin.  BUILD_PLAN.md step 1
+    bisected this design's worst hub corner at 0.5847 mm against the 0.578951 it asks for.
+    The note here used to add "under §5's cap of 0.624 for that genome" as if the cap were
+    what delivered the result; it was not, and step 3 re-fitted that cap to 0.5724 —
+    BELOW this `R_hub` — precisely because 0.624 was calibrated against the corner family
+    the exporter does not stop at.  What this manifest records is still true; what it was
+    credited to was wrong.
 
     THE OTHER HALF OF THIS NOTE USED TO BE WRONG.  It said the inter-spoke gap "caps ANY hub
     fillet near 1.1 mm", on the strength of half the 2.196 mm void agreeing with the
