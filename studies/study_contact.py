@@ -101,6 +101,40 @@ GATE_PERIODICITY_REL = 1.0e-9     # 12-fold periodicity of the axle drop
 GATE_CONTINUATION_REL = 1.0e-9    # 1 indentation step vs 4 must give the same state
 GATE_FD_PLATEAU_REL = 1.0e-3      # best consecutive agreement in the FD ladder
 
+# The sections, and which milestone each answers to.  All seven are the default, so
+# `make studies` and the committed `study_contact.json` are unchanged by the existence of
+# `--sections`; it exists because CONTACT_PLAN Step 2 needs `patch` alone at `medium` on
+# four genome x kinematics cells, and the other six sections would cost hours per cell to
+# answer a question none of them is asked.  Order matters: a default invocation writes the
+# report keys in this order.
+SECTION_HELP = {
+    "penalty":      "G1  eps_n is a plateau, not a choice",
+    "verification": "G2  equilibrium, no tension, no side load, periodicity",
+    "patch":        "G3  THE HEADLINE — the emergent patch, and does the drop converge",
+    "phase":        "G4  ripple and patch migration over one period",
+    "design_space": "G5  is the patch a design variable, and does the drop care",
+    "kinematics":   "G6  contact plus geometric nonlinearity (runs BOTH; see below)",
+    "gradient":     "G7  the M7 bridge — is there an FD plateau",
+}
+DEFAULT_SECTIONS = tuple(SECTION_HELP)
+
+
+def parse_sections(spec):
+    """`--sections` -> the list to run, or a `ValueError` naming what was not understood.
+
+    Pure, so a typo costs a startup rather than an hour of solving followed by a
+    `KeyError`.  Same construction as `study_stage3.parse_sections`.
+    """
+    names = [s.strip() for s in str(spec).split(",") if s.strip()]
+    if not names:
+        raise ValueError("--sections is empty; expected at least one of "
+                         f"{sorted(SECTION_HELP)}")
+    unknown = [s for s in names if s not in SECTION_HELP]
+    if unknown:
+        raise ValueError(f"unknown section(s) {unknown}; expected any of "
+                         f"{sorted(SECTION_HELP)}")
+    return names
+
 
 def load_genes(path="best_solution.json"):
     with open(os.path.join(PP.ROOT, path)) as fh:
@@ -112,7 +146,7 @@ def load_genes(path="best_solution.json"):
 # ---------------------------------------------------------------------------
 
 def run_penalty_plateau(genes, cfg=DEFAULT_CONFIG,
-                        eps_values=(1e2, 1e3, 1e4, 1e5)):
+                        eps_values=(1e2, 1e3, 1e4, 1e5), *, kinematics="linear"):
     """Sweep eps_n and require a range over which the answer does not care.
 
     Too soft and the penetration pollutes the answer; too stiff and the conditioning
@@ -141,7 +175,8 @@ def run_penalty_plateau(genes, cfg=DEFAULT_CONFIG,
     for eps in eps_values:
         t0 = time.time()
         try:
-            r = fem.solve_wheel_contact(mesh, eps_n=float(eps))
+            r = fem.solve_wheel_contact(mesh, eps_n=float(eps),
+                                        kinematics=kinematics)
         except Exception as exc:                              # pragma: no cover
             rows.append({"eps_n": float(eps), "failed": str(exc)[:200]})
             continue
@@ -194,7 +229,7 @@ def run_penalty_plateau(genes, cfg=DEFAULT_CONFIG,
 # G2 — THE INVARIANTS
 # ---------------------------------------------------------------------------
 
-def run_verification(genes, cfg=DEFAULT_CONFIG):
+def run_verification(genes, cfg=DEFAULT_CONFIG, *, kinematics="linear"):
     """Equilibrium, no tension, no side load, periodicity, continuation independence.
 
     The no-tension check is the one that earns its place.  A penalty law with a sign slip
@@ -203,17 +238,20 @@ def run_verification(genes, cfg=DEFAULT_CONFIG):
     appears on both sides.  Only the pointwise pressure sees it.
     """
     mesh = WW.build_wheel(genes, cfg)
-    r = fem.solve_wheel_contact(mesh)
+    r = fem.solve_wheel_contact(mesh, kinematics=kinematics)
     xy = np.asarray(mesh.coords)
-    prob = fem.wheel_contact_problem(mesh, indentation_mm=r["axle_drop_mm"])
+    prob = fem.wheel_contact_problem(mesh, indentation_mm=r["axle_drop_mm"],
+                                     kinematics=kinematics)
     p = prob.contact.pressure(xy, r["u"])
 
     # 12-fold periodicity.  Under contact this tests more than the sector indexing: the
     # load itself is now an output, so the whole contact search has to be periodic too.
     per = []
     for phase in (0.0, 7.0):
-        a = fem.solve_wheel_contact(WW.build_wheel(genes, cfg, phase_deg=phase))
-        b = fem.solve_wheel_contact(WW.build_wheel(genes, cfg, phase_deg=phase + 30.0))
+        a = fem.solve_wheel_contact(WW.build_wheel(genes, cfg, phase_deg=phase),
+                                    kinematics=kinematics)
+        b = fem.solve_wheel_contact(WW.build_wheel(genes, cfg, phase_deg=phase + 30.0),
+                                    kinematics=kinematics)
         per.append({"phase_deg": phase,
                     "delta_mm": a["axle_drop_mm"],
                     "delta_plus_30_mm": b["axle_drop_mm"],
@@ -221,7 +259,8 @@ def run_verification(genes, cfg=DEFAULT_CONFIG):
     worst_per = max(x["rel_diff"] for x in per)
 
     # Continuation independence, on the indentation ramp rather than on a load factor.
-    cont = [fem.solve_wheel_contact_at(mesh, r["axle_drop_mm"], steps=s)
+    cont = [fem.solve_wheel_contact_at(mesh, r["axle_drop_mm"], steps=s,
+                                       kinematics=kinematics)
             ["contact_force_n"] for s in (1, 2, 4)]
     cont_spread = float(max(cont) / min(cont) - 1.0)
 
@@ -256,20 +295,144 @@ def run_verification(genes, cfg=DEFAULT_CONFIG):
 # G3 — *** THE HEADLINE *** THE EMERGENT PATCH VS THE ASSUMED ONE
 # ---------------------------------------------------------------------------
 
-def run_emergent_patch(genes, configs=("smoke", "coarse", "medium")):
+def _patch_resolution(mesh, res, kinematics):
+    """How well the mesh resolves the patch the solve just found, and does a node sink in.
+
+    CONTACT_PLAN Step 2.  `wheel_objective`'s module docstring already records that no
+    config resolves the patch — `coarse` gets 1.75 nodes across the 0.484 deg patch it was
+    measured on — and PLAN.md section 19 measured the promoted genome HALVING that patch.
+    So "how many samples is the objective's own deflection standing on" stops being
+    context and becomes the question, and it is not derivable from the columns that were
+    already here: `n_quad_points_in_contact` counts Gauss points, which move with `n_quad`,
+    and nothing counted NODES or looked at the gap at all.
+
+    The problem is rebuilt rather than re-solved (`wheel_contact_problem` does no work
+    beyond assembling the ground), so this costs nothing on top of the solve.
+    """
+    prob = fem.wheel_contact_problem(mesh, indentation_mm=res["axle_drop_mm"],
+                                     kinematics=kinematics)
+    xy = np.asarray(mesh.coords)
+    disp = np.asarray(res["u"]).reshape(-1, 2)
+    seg = np.asarray(mesh.edge_sets["rim_outer"])
+    rim = np.unique(seg)
+
+    def off(idx):
+        """Angle from the bottom of the wheel, in [-180, 180).
+
+        The same convention `RigidGroundContact.patch_extent` uses, and on the UNDEFORMED
+        coordinates for the same reason it does: an arc of a boundary that has itself
+        moved is not an arc.
+        """
+        t = np.degrees(np.arctan2(xy[idx, 1], xy[idx, 0]))
+        return (t + 90.0 + 180.0) % 360.0 - 180.0
+
+    # Signed gap at the NODES.  Negative means a node has sunk through the ground.  Whether
+    # any node is inside the patch at all is a function of where the patch landed relative
+    # to the weld/free size step below, NOT of how fine the mesh is — which is why
+    # `tests/test_contact.py::test_the_centre_node_rise_is_not_the_axle_drop` now records
+    # the count and asserts the penetration DEPTH against the rim band instead.
+    gap = (xy[rim, 1] + disp[rim, 1]) - prob.contact.y_ground
+
+    half, centre = res["patch_half_deg"], res["patch_centre_deg"]
+    n_nodes = (int(np.sum(np.abs(off(rim) - centre) <= half))
+               if np.isfinite(half) else 0)
+
+    # THE LOCAL ELEMENT SIZE, WHICH IS NOT `deg_per_segment`.  The rim OD is divided into
+    # `n_weld` segments over the weld and `n_rim_free` over the free arc, and those two are
+    # NOT the same size: at `coarse` on the shipped genome, 10 x 0.1682 deg + 10 x 2.8318
+    # deg make the 30 deg sector up exactly.  So `360 / len(rim_outer)` is an average over a
+    # BIMODAL distribution and describes the resolution at the patch only by accident.
+    #
+    # The RATIO is constant up the mesh ladder and a function of the DESIGN — measured 16.8
+    # on `e126cc3` and 30.3 on `e4219f3`, tracking the weld footprint — so refining buys a
+    # smaller element and the same step.  What the patch sits on is this.
+    d_seg = (off(seg[:, 2]) - off(seg[:, 0]) + 180.0) % 360.0 - 180.0
+    span = np.abs(d_seg)
+    hertz = fem.hertz_patch_half_angle_deg()
+
+    # THE SEGMENT THE PATCH CENTRE IS *INSIDE*, not the one whose centre is nearest it.
+    # Those are different segments here and picking the wrong one inverts the answer: at
+    # `medium` the weld family is 0.1052 deg and the free family 1.7698, so the nearest
+    # CENTRE to a patch at +2.082 deg is a weld segment 0.45 deg away while the patch is
+    # actually sitting inside the free segment that spans 1.6824-3.4523.  Containment is
+    # the question being asked, so containment is what is tested.
+    lo = np.minimum(off(seg[:, 0]), off(seg[:, 2]))
+    hi = np.maximum(off(seg[:, 0]), off(seg[:, 2]))
+    inside = (lo <= centre) & (centre <= hi) & (span < 180.0)   # the wrap segment is not it
+    here = int(np.argmax(inside)) if np.isfinite(centre) and inside.any() else -1
+    local = float(span[here]) if here >= 0 else float("nan")
+    return {
+        "n_rim_nodes_in_patch": n_nodes,
+        "worst_rim_node_gap_mm": float(gap.min()),
+        "a_rim_node_penetrates": bool(gap.min() <= 0.0),
+        "patch_over_hertz": float(half / hertz) if np.isfinite(half) else float("nan"),
+        # The segment the patch centre lands INSIDE, and the spread it is drawn from.
+        "local_seg_span_deg": local,
+        "rim_seg_span_min_deg": float(span[span < 180.0].min()),
+        "rim_seg_span_max_deg": float(span[span < 180.0].max()),
+        "rim_seg_span_ratio": float(span[span < 180.0].max()
+                                    / span[span < 180.0].min()),
+        "patch_over_local_seg": (float(2.0 * half / local)
+                                 if np.isfinite(half) and np.isfinite(local)
+                                 else float("nan")),
+    }
+
+
+def _drop_convergence(rows, configs):
+    """Is `contact_drop_mm` — the quantity the loss steers by — mesh-convergent?
+
+    Read off the `n_quad=6` rows only, because 6 is the default `wheel_contact_problem`
+    builds and therefore the path Stage 3 actually runs; the `n_quad=20` rows exist to
+    show which columns are sampling statistics and are not a second mesh ladder.
+
+    Reported, never judged here: this returns the numbers and CONTACT_PLAN Step 2's
+    pre-registered gate reads them.  A study that decided its own threshold on a quantity
+    nobody had measured is what `stress_scale` was.
+    """
+    seq = [next((r for r in rows if r["config"] == c and r["n_quad"] == 6), None)
+           for c in configs]
+    seq = [r for r in seq if r is not None]
+    out = {"configs": [r["config"] for r in seq],
+           "contact_drop_mm": [r["contact_drop_mm"] for r in seq],
+           "n_elements": [r["n_elements"] for r in seq]}
+    d = [r["contact_drop_mm"] for r in seq]
+    out["successive_rel"] = [float(b / a - 1.0) for a, b in zip(d[:-1], d[1:])]
+    # Richardson on the last three rungs, where it means something.  The observed order
+    # comes from the ratio of successive changes rather than being assumed, which is the
+    # same construction PLAN.md section 0's H2(b) used for the load factor.
+    if len(d) >= 3 and abs(d[2] - d[1]) > 0.0:
+        r = (d[1] - d[0]) / (d[2] - d[1])
+        out["change_ratio"] = float(r)
+        if abs(r - 1.0) > 1e-12:
+            out["richardson_limit_mm"] = float(d[2] + (d[2] - d[1]) / (r - 1.0))
+            out["finest_vs_limit_rel"] = float(
+                abs(d[2] / out["richardson_limit_mm"] - 1.0))
+    return out
+
+
+def run_emergent_patch(genes, configs=("smoke", "coarse", "medium"), *,
+                       kinematics="linear"):
     """What the patch actually is, and what assuming 3.0 deg cost.
 
     Both models are run on the same mesh at the same service load, so the difference is
     the load model and nothing else.  The `n_quad` column exists to show which quantities
     are sampling statistics: the axle drop is insensitive to it, the sampled patch and the
     peak pressure are not.
+
+    CONTACT_PLAN Step 2 ADDED A CONVERGENCE BLOCK, AND IT ANSWERS A DIFFERENT QUESTION
+    FROM THE ONE THIS SECTION WAS WRITTEN FOR.  The original question was whether the
+    ASSUMED patch stands in for contact; Step 1 measured that the assumed patch cannot
+    reach the Stage-3 objective at all (`wheel_contact_problem` has no `patch_half_deg`
+    parameter to pass it to), so `rel_diff` is a statement about the legacy M4/M5 model.
+    What the objective actually stands on is `contact_drop_mm`, and whether THAT survives
+    a mesh change is what `convergence` below reports.
     """
     rows = []
     for cfg in configs:
         mesh = WW.build_wheel(genes, cfg)
-        assumed = fem.solve_wheel(mesh)
+        assumed = fem.solve_wheel(mesh, kinematics=kinematics)
         for nq in (6, 20):
-            c = fem.solve_wheel_contact(mesh, n_quad=nq)
+            c = fem.solve_wheel_contact(mesh, n_quad=nq, kinematics=kinematics)
             rows.append({
                 "config": cfg,
                 "n_elements": int(mesh.n_elements),
@@ -284,8 +447,10 @@ def run_emergent_patch(genes, configs=("smoke", "coarse", "medium")):
                 "patch_half_deg_sampled": c["patch_half_deg_sampled"],
                 "peak_pressure_mpa_sampled": c["peak_pressure_mpa_sampled"],
                 "n_quad_points_in_contact": c["n_quad_points_in_contact"],
+                "max_penetration_mm": c["max_penetration_mm"],
                 "contact_split": c["compliance_split"],
                 "assumed_split": assumed["compliance_split"],
+                **_patch_resolution(mesh, c, kinematics),
             })
     fine = [r for r in rows if r["config"] == configs[-1]]
 
@@ -294,6 +459,7 @@ def run_emergent_patch(genes, configs=("smoke", "coarse", "medium")):
         return float(max(vals) / min(vals) - 1.0) if min(vals) > 0 else float("nan")
     return {
         "rows": rows,
+        "convergence": _drop_convergence(rows, configs),
         "hertz_half_deg": float(fem.hertz_patch_half_angle_deg()),
         "assumed_half_deg": float(fem.CONTACT_PATCH_HALF_DEG),
         "measured_half_deg": float(np.mean([r["patch_half_deg"] for r in fine])),
@@ -321,7 +487,7 @@ def run_emergent_patch(genes, configs=("smoke", "coarse", "medium")):
 # G4 — PHASE, AND THE PREDICTION THAT DID NOT HOLD
 # ---------------------------------------------------------------------------
 
-def run_phase(genes, cfg=DEFAULT_CONFIG, n=13):
+def run_phase(genes, cfg=DEFAULT_CONFIG, n=13, *, kinematics="linear"):
     """Axle drop and patch position over one 30-degree period, under real contact.
 
     Compared against M4's fixed-patch ripple on the same 13-point basis.  The plan
@@ -332,8 +498,8 @@ def run_phase(genes, cfg=DEFAULT_CONFIG, n=13):
     rows = []
     for phase in np.linspace(0.0, 30.0, n):
         mesh = WW.build_wheel(genes, cfg, phase_deg=float(phase))
-        c = fem.solve_wheel_contact(mesh)
-        a = fem.solve_wheel(mesh)
+        c = fem.solve_wheel_contact(mesh, kinematics=kinematics)
+        a = fem.solve_wheel(mesh, kinematics=kinematics)
         rows.append({"phase_deg": float(phase),
                      "contact_drop_mm": c["axle_drop_mm"],
                      "assumed_drop_mm": a["axle_drop_mm"],
@@ -357,7 +523,8 @@ def run_phase(genes, cfg=DEFAULT_CONFIG, n=13):
 # G5 — IS THE PATCH A DESIGN VARIABLE?
 # ---------------------------------------------------------------------------
 
-def run_design_space(genes, cfg=DEFAULT_CONFIG, n=8, seed=11, max_draws=4000):
+def run_design_space(genes, cfg=DEFAULT_CONFIG, n=8, seed=11, max_draws=4000, *,
+                     kinematics="linear"):
     """The prior said the patch would vary 3-10x like everything else.  Does it?
 
     And, more to the point for Stage 2: does the DROP care?  Those are different
@@ -377,8 +544,8 @@ def run_design_space(genes, cfg=DEFAULT_CONFIG, n=8, seed=11, max_draws=4000):
                 continue
             try:
                 mesh = WW.build_wheel(v, cfg)
-                c = fem.solve_wheel_contact(mesh)
-                a = fem.solve_wheel(mesh)
+                c = fem.solve_wheel_contact(mesh, kinematics=kinematics)
+                a = fem.solve_wheel(mesh, kinematics=kinematics)
                 rows.append({
                     "patch_half_deg": c["patch_half_deg"],
                     "contact_drop_mm": c["axle_drop_mm"],
@@ -395,11 +562,11 @@ def run_design_space(genes, cfg=DEFAULT_CONFIG, n=8, seed=11, max_draws=4000):
         batch += 1
 
     mesh = WW.build_wheel(genes, cfg)
-    ship = fem.solve_wheel_contact(mesh)
+    ship = fem.solve_wheel_contact(mesh, kinematics=kinematics)
     shipped = {
         "patch_half_deg": ship["patch_half_deg"],
         "contact_drop_mm": ship["axle_drop_mm"],
-        "assumed_drop_mm": fem.solve_wheel(mesh)["axle_drop_mm"],
+        "assumed_drop_mm": fem.solve_wheel(mesh, kinematics=kinematics)["axle_drop_mm"],
     }
     ok = [r for r in rows if "failed" not in r]
     out = {"rows": rows, "shipped": shipped, "n_drawn": drawn,
@@ -456,7 +623,7 @@ def run_kinematics(genes, cfg=DEFAULT_CONFIG):
 
 def run_gradient_plateau(genes, cfg=DEFAULT_CONFIG, gene_ids=(1, 8, 12, 13),
                          steps=(1e-2, 1e-3, 1e-4, 1e-5, 1e-6),
-                         smoothings=(0.0, 1e-3)):
+                         smoothings=(0.0, 1e-3), *, kinematics="linear"):
     """Central differences of the contact force in a gene, over a ladder of step sizes.
 
     The differentiated quantity is the contact force at a FIXED indentation, not the axle
@@ -477,11 +644,13 @@ def run_gradient_plateau(genes, cfg=DEFAULT_CONFIG, gene_ids=(1, 8, 12, 13),
     identical zeros would otherwise look like.
     """
     genes = np.asarray(genes, dtype=float)
-    delta = fem.solve_wheel(WW.build_wheel(genes, cfg))["axle_drop_mm"]
+    delta = fem.solve_wheel(WW.build_wheel(genes, cfg),
+                            kinematics=kinematics)["axle_drop_mm"]
 
     def force(v, smooth):
         return fem.solve_wheel_contact_at(WW.build_wheel(np.asarray(v), cfg), delta,
-                                          smoothing_mm=smooth)["contact_force_n"]
+                                          smoothing_mm=smooth,
+                                          kinematics=kinematics)["contact_force_n"]
 
     out = {"indentation_mm": float(delta), "genes": {}}
     for smooth in smoothings:
@@ -549,9 +718,90 @@ def run_gradient_plateau(genes, cfg=DEFAULT_CONFIG, gene_ids=(1, 8, 12, 13),
 # REPORT
 # ---------------------------------------------------------------------------
 
+def _head(s):
+    print(f"\n{s}\n" + "-" * len(s))
+
+
+def _print_patch(e):
+    """G3, factored out of `_print` so `--sections patch` still prints a table.
+
+    The second half is CONTACT_PLAN Step 2's and answers a different question from the
+    first: `rel_diff` is about the LEGACY assumed-patch model, which Step 1 measured
+    cannot reach the Stage-3 objective at all, while `convergence` is about the number the
+    objective actually steers by.
+    """
+    _head("G3  *** THE HEADLINE *** THE EMERGENT PATCH VS THE ASSUMED 3.0 DEG")
+    print(f"    {'cfg':>7s} {'nq':>3s} {'deg/seg':>8s} {'live':>5s} {'contact':>9s} "
+          f"{'assumed':>9s} {'diff':>8s} {'half*':>7s} {'ctr*':>7s} {'half_s':>7s} "
+          f"{'peak_s':>7s}")
+    for r in e["rows"]:
+        print(f"    {r['config']:>7s} {r['n_quad']:3d} {r['deg_per_segment']:8.3f} "
+              f"{r['n_quad_points_in_contact']:5d} {r['contact_drop_mm']:9.5f} "
+              f"{r['assumed_drop_mm']:9.5f} {100*r['rel_diff']:+7.3f}% "
+              f"{r['patch_half_deg']:7.4f} {r['patch_centre_deg']:+7.4f} "
+              f"{r['patch_half_deg_sampled']:7.3f} "
+              f"{r['peak_pressure_mpa_sampled']:7.3f}")
+    print(f"    * = from the gap's zero crossing (a property of the solution)")
+    print(f"    _s = sampled at the quadrature points (a SAMPLING STATISTIC, not a "
+          f"number)")
+    print()
+    print(f"    Hertz solid-cylinder bound   {e['hertz_half_deg']:.3f} deg")
+    print(f"    measured                     {e['measured_half_deg']:.3f} deg")
+    print(f"    ASSUMED                      {e['assumed_half_deg']:.3f} deg   "
+          f"-> {e['assumed_over_measured']:.1f}x too wide")
+    print(f"    and yet the axle drop moves {100*e['drop_rel_diff_at_finest']:+.2f}%")
+    qs = e["quadrature_sensitivity"]
+    print(f"    quadrature sensitivity (6 -> 20 pts/segment) at the finest mesh:")
+    print(f"        axle drop           {qs['axle_drop']:.2e}   <- insensitive")
+    print(f"        patch half (zero x) {qs['patch_half_deg']:.2e}")
+    print(f"        patch half (sampled){qs['patch_half_deg_sampled']:.2e}")
+    print(f"        peak pressure       {qs['peak_pressure_sampled']:.2e}")
+    print(f"    but the reliable statement about the sampled measures is their BIAS:")
+    print(f"        the sampled patch overstates the real one by "
+          f"{e['sampled_patch_overstates_by']:.1f}x, because a Gauss point counts as in")
+    print(f"        contact at any penetration, so its edge always lands outside the "
+          f"true one")
+
+    if "convergence" not in e:
+        return
+    print()
+    print(f"    IS THE QUANTITY THE OBJECTIVE STEERS BY MESH-CONVERGENT?  "
+          f"(n_quad=6, the default)")
+    print(f"    {'cfg':>7s} {'n_elem':>8s} {'drop mm':>10s} {'vs prev':>9s} "
+          f"{'nodes':>6s} {'quad':>5s} {'half/hertz':>11s} {'worst gap mm':>13s}")
+    six = {r["config"]: r for r in e["rows"] if r["n_quad"] == 6}
+    c = e["convergence"]
+    for i, name in enumerate(c["configs"]):
+        r = six[name]
+        prev = (f"{100*c['successive_rel'][i-1]:+8.3f}%" if i else f"{'—':>9s}")
+        print(f"    {name:>7s} {r['n_elements']:8d} {r['contact_drop_mm']:10.6f} "
+              f"{prev} {r['n_rim_nodes_in_patch']:6d} "
+              f"{r['n_quad_points_in_contact']:5d} {r['patch_over_hertz']:11.3f} "
+              f"{r['worst_rim_node_gap_mm']:13.3e}"
+              + ("   <- PENETRATES" if r["a_rim_node_penetrates"] else ""))
+    if "richardson_limit_mm" in c:
+        print(f"    change ratio {c['change_ratio']:.3f}  ->  Richardson limit "
+              f"{c['richardson_limit_mm']:.6f} mm, finest is "
+              f"{100*c['finest_vs_limit_rel']:.3f}% off it")
+
+    if "local_seg_span_deg" not in six[c["configs"][0]]:
+        return
+    print()
+    print(f"    AND THE RIM OD IS NOT UNIFORMLY DIVIDED, so `deg/seg` above is an "
+          f"average of two sizes:")
+    print(f"    {'cfg':>7s} {'deg/seg (avg)':>14s} {'seg min':>9s} {'seg max':>9s} "
+          f"{'ratio':>7s} {'AT THE PATCH':>13s} {'patch/seg':>10s}")
+    for name in c["configs"]:
+        r = six[name]
+        print(f"    {name:>7s} {r['deg_per_segment']:14.4f} "
+              f"{r['rim_seg_span_min_deg']:9.4f} {r['rim_seg_span_max_deg']:9.4f} "
+              f"{r['rim_seg_span_ratio']:7.1f} {r['local_seg_span_deg']:13.4f} "
+              f"{r['patch_over_local_seg']:10.2f}")
+    print(f"    `patch/seg` < 1 means the WHOLE contact patch lives inside ONE element.")
+
+
 def _print(rep):
-    def head(s):
-        print(f"\n{s}\n" + "-" * len(s))
+    head = _head
 
     print("=" * 78)
     print("  M6 GATE — REAL CONTACT")
@@ -601,38 +851,7 @@ def _print(rep):
           f"(= the local penetration, {v['max_penetration_mm']:.3e})")
     print(f"    -> {'PASS' if v['pass'] else 'FAIL'}")
 
-    e = rep["patch"]
-    head("G3  *** THE HEADLINE *** THE EMERGENT PATCH VS THE ASSUMED 3.0 DEG")
-    print(f"    {'cfg':>7s} {'nq':>3s} {'deg/seg':>8s} {'live':>5s} {'contact':>9s} "
-          f"{'assumed':>9s} {'diff':>8s} {'half*':>7s} {'ctr*':>7s} {'half_s':>7s} "
-          f"{'peak_s':>7s}")
-    for r in e["rows"]:
-        print(f"    {r['config']:>7s} {r['n_quad']:3d} {r['deg_per_segment']:8.3f} "
-              f"{r['n_quad_points_in_contact']:5d} {r['contact_drop_mm']:9.5f} "
-              f"{r['assumed_drop_mm']:9.5f} {100*r['rel_diff']:+7.3f}% "
-              f"{r['patch_half_deg']:7.4f} {r['patch_centre_deg']:+7.4f} "
-              f"{r['patch_half_deg_sampled']:7.3f} "
-              f"{r['peak_pressure_mpa_sampled']:7.3f}")
-    print(f"    * = from the gap's zero crossing (a property of the solution)")
-    print(f"    _s = sampled at the quadrature points (a SAMPLING STATISTIC, not a "
-          f"number)")
-    print()
-    print(f"    Hertz solid-cylinder bound   {e['hertz_half_deg']:.3f} deg")
-    print(f"    measured                     {e['measured_half_deg']:.3f} deg")
-    print(f"    ASSUMED                      {e['assumed_half_deg']:.3f} deg   "
-          f"-> {e['assumed_over_measured']:.1f}x too wide")
-    print(f"    and yet the axle drop moves {100*e['drop_rel_diff_at_finest']:+.2f}%")
-    qs = e["quadrature_sensitivity"]
-    print(f"    quadrature sensitivity (6 -> 20 pts/segment) at the finest mesh:")
-    print(f"        axle drop           {qs['axle_drop']:.2e}   <- insensitive")
-    print(f"        patch half (zero x) {qs['patch_half_deg']:.2e}")
-    print(f"        patch half (sampled){qs['patch_half_deg_sampled']:.2e}")
-    print(f"        peak pressure       {qs['peak_pressure_sampled']:.2e}")
-    print(f"    but the reliable statement about the sampled measures is their BIAS:")
-    print(f"        the sampled patch overstates the real one by "
-          f"{e['sampled_patch_overstates_by']:.1f}x, because a Gauss point counts as in")
-    print(f"        contact at any penetration, so its edge always lands outside the "
-          f"true one")
+    _print_patch(rep["patch"])
 
     p = rep["phase"]
     head("G4  PHASE — THE RIPPLE, AND THE PATCH MIGRATING")
@@ -709,6 +928,7 @@ def _print(rep):
     print(f"    -> {'PASS' if f['pass'] else 'FAIL'}")
 
     head("VERDICT")
+    e = rep["patch"]
     print(f"    the real patch is {e['measured_half_deg']:.2f} deg, not "
           f"{e['assumed_half_deg']:.1f} — the assumption was "
           f"{e['assumed_over_measured']:.1f}x too wide")
@@ -731,9 +951,31 @@ def main():
     ap.add_argument("--no-plot", action="store_true")
     ap.add_argument("--quick", action="store_true",
                     help="reduced meshes and sample counts; for the test suite")
+    # DEFAULT `linear`, AND THAT IS LOAD-BEARING: `study_contact.json` is a committed
+    # artifact and must still reproduce with no flag.  Threaded as a keyword argument into
+    # each section rather than held as module state — a module-level default is how a run
+    # gets misattributed to the wrong kinematics, the same fuse PLAN.md flags for
+    # `MIN_WALL_MM`.  `run_kinematics` (G6) deliberately does NOT take it: it runs both and
+    # reports the difference, which is the whole of what that section is.
+    ap.add_argument("--kinematics", choices=("linear", "svk"), default="linear",
+                    help="strain measure for every section except G6, which runs both")
+    ap.add_argument("--sections", default=",".join(DEFAULT_SECTIONS),
+                    help="comma-separated: " + "; ".join(
+                        f"{k} ({v.split()[0]})" for k, v in SECTION_HELP.items()))
     args = ap.parse_args()
 
+    sections = parse_sections(args.sections)
+    full = sections == list(DEFAULT_SECTIONS)
+    # A partial run is not the gate and must not be filed as it.  Refused at startup
+    # rather than after the solving, and by name rather than by silently renaming the
+    # output, because a `study_contact.json` holding three of seven sections would read as
+    # the gate to everything downstream.
+    if (not full or args.kinematics != "linear") and args.out == "study_contact.json":
+        ap.error("a partial or non-linear run may not be written to the committed "
+                 "study_contact.json; pass an explicit --out")
+
     genes = load_genes(args.genome)
+    kin = args.kinematics
     cfg = "smoke" if args.quick else args.config
     t0 = time.time()
 
@@ -742,38 +984,61 @@ def main():
     # plateau by construction (penetration 0.9% of the band, nine times the gate), so a
     # three-point sweep starting there can never show two agreeing decades — that would
     # make quick mode a stricter gate than the real one rather than a cheaper one.
-    rep["penalty"] = run_penalty_plateau(
-        genes, cfg, eps_values=(1e3, 1e4, 1e5) if args.quick
-        else (1e2, 1e3, 1e4, 1e5))
-    rep["verification"] = run_verification(genes, cfg)
-    rep["patch"] = run_emergent_patch(
-        genes, configs=("smoke", "coarse") if args.quick
-        else ("smoke", "coarse", "medium"))
-    rep["phase"] = run_phase(genes, cfg, n=5 if args.quick else 13)
-    rep["design_space"] = run_design_space(genes, cfg, n=3 if args.quick else 8)
-    rep["kinematics"] = run_kinematics(genes, cfg)
-    rep["gradient"] = run_gradient_plateau(
-        genes, cfg,
-        # Both fillet radii on purpose in the full run: the claim is that the FEA sees
-        # NEITHER, and a report showing only one of them would not establish it.
-        gene_ids=(1, 8, 13) if args.quick else (1, 8, 12, 13),
-        steps=(1e-2, 1e-3, 1e-4) if args.quick
-        else (1e-2, 1e-3, 1e-4, 1e-5, 1e-6),
-        smoothings=(0.0,) if args.quick else (0.0, 1e-3))
+    if "penalty" in sections:
+        rep["penalty"] = run_penalty_plateau(
+            genes, cfg, eps_values=(1e3, 1e4, 1e5) if args.quick
+            else (1e2, 1e3, 1e4, 1e5), kinematics=kin)
+    if "verification" in sections:
+        rep["verification"] = run_verification(genes, cfg, kinematics=kin)
+    if "patch" in sections:
+        rep["patch"] = run_emergent_patch(
+            genes, configs=("smoke", "coarse") if args.quick
+            else ("smoke", "coarse", "medium"), kinematics=kin)
+    if "phase" in sections:
+        rep["phase"] = run_phase(genes, cfg, n=5 if args.quick else 13, kinematics=kin)
+    if "design_space" in sections:
+        rep["design_space"] = run_design_space(genes, cfg, n=3 if args.quick else 8,
+                                               kinematics=kin)
+    if "kinematics" in sections:
+        # No `kinematics=` here, and that is the point of G6 — see `--kinematics`.
+        rep["kinematics"] = run_kinematics(genes, cfg)
+    if "gradient" in sections:
+        rep["gradient"] = run_gradient_plateau(
+            genes, cfg,
+            # Both fillet radii on purpose in the full run: the claim is that the FEA sees
+            # NEITHER, and a report showing only one of them would not establish it.
+            gene_ids=(1, 8, 13) if args.quick else (1, 8, 12, 13),
+            steps=(1e-2, 1e-3, 1e-4) if args.quick
+            else (1e-2, 1e-3, 1e-4, 1e-5, 1e-6),
+            smoothings=(0.0,) if args.quick else (0.0, 1e-3), kinematics=kin)
 
-    rep["pass"] = bool(rep["penalty"]["pass"] and rep["verification"]["pass"]
-                       and rep["gradient"]["pass"])
+    # Only three sections carry a verdict; a run of the other four has nothing to pass,
+    # and `all([])` is True, so an empty verdict is reported as such rather than green.
+    verdicts = [rep[n]["pass"] for n in sections if "pass" in rep.get(n, {})]
+    rep["pass"] = bool(verdicts) and all(verdicts)
     rep["settings"] = {"config": cfg, "genome": args.genome, "quick": args.quick,
+                       "kinematics": kin, "sections": sections,
                        "eps_n_default": float(fem.DEFAULT_CONTACT_EPS_N),
                        "rim_band_mm": float(RIM_BAND_MM),
                        "elapsed_s": round(time.time() - t0, 1)}
 
-    _print(rep)
+    if full:
+        _print(rep)
+    else:
+        print("=" * 78)
+        print(f"  M6 CONTACT — sections {','.join(sections)}, kinematics {kin}, "
+              f"genome {args.genome}")
+        print("=" * 78)
+        if "patch" in rep:
+            _print_patch(rep["patch"])
+        print(f"\n  NOT THE GATE: {len(sections)} of {len(DEFAULT_SECTIONS)} sections "
+              f"ran.  verdict over those that carry one: "
+              f"{'PASS' if rep['pass'] else 'no verdict' if not verdicts else 'FAIL'}")
     with open(os.path.join(HERE, args.out), "w") as fh:
         json.dump(rep, fh, indent=1)
     print(f"\nwrote {os.path.join(HERE, args.out)}  "
           f"({rep['settings']['elapsed_s']} s)")
-    if not args.no_plot:
+    if not args.no_plot and full:
         try:
             print(f"wrote {_plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover

@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap contact studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -83,6 +83,11 @@ help:
 	@echo "              each converged genome. ~5.3 h each. RUN THEM SEQUENTIALLY"
 	@echo "              and capped, exactly as prod9/prod10 — see the comment there."
 	@echo "              Override SVK_DESCENT_STEPS/SVK_DESCENT_WORKERS/SVK_MIN_WALL"
+	@echo "make contact  CONTACT_PLAN.md step 2: ONE cell of the patch-resolution"
+	@echo "              matrix — is the axle drop the objective steers by still"
+	@echo "              mesh-convergent on the genome that ships? Override"
+	@echo "              CONTACT_GENOME/CONTACT_KIN/CONTACT_SECTIONS/CONTACT_OUT."
+	@echo "              NOT the M6 gate: that is study_contact.py in full, in studies"
 	@echo "make minwall-1.6 | -1.8 | -2.0 | -2.2"
 	@echo "              PLAN.md 0(2): what the printable wall floor costs in grams."
 	@echo "              125 steps from the elite-10 answer at each floor; 2.0 is the"
@@ -333,6 +338,32 @@ svk:
 	$(PY_OPT) -u studies/study_svk_rescore.py --config $(SVK_CONFIG) \
 	    --workers $(SVK_WORKERS) --out $(SVK_OUT) \
 	    $(if $(SVK_ONLY),--only $(SVK_ONLY),) $(if $(SVK_EXTRA),--extra $(SVK_EXTRA),)
+
+# CONTACT_PLAN.md step 2 — one cell of the patch-resolution matrix.
+#
+# `study_contact.py` is ALSO in `studies` and that full invocation is the M6 gate; this
+# target is the opposite kind of run, which is why it is separate and why it refuses to
+# write `study_contact.json`.  It runs ONE section (`patch`) on ONE genome under ONE
+# strain measure, because the question is about the wheel and the mesh rather than about
+# the commit, and the other six sections cost hours at `medium` to answer nothing that is
+# being asked.  Same reason `svk`, `m8bi5`, `m9buck` and `hubcap` are not in `studies`.
+#
+# Exists at all so the five pinned env vars above reach the run: they are exported by
+# `make` and nothing else sets them.  Run each cell sequentially and capped —
+#
+#   systemd-run --user --unit=contact-s2 -p MemoryMax=20G --collect \
+#       make contact CONTACT_GENOME=best_solution.json CONTACT_KIN=svk \
+#            CONTACT_OUT=study_contact_e126cc3_svk.json
+#
+CONTACT_GENOME ?= best_solution.json
+CONTACT_KIN ?= linear
+CONTACT_SECTIONS ?= patch
+CONTACT_OUT ?= study_contact_step2.json
+
+contact:
+	$(PY_OPT) -u studies/study_contact.py --genome $(CONTACT_GENOME) \
+	    --kinematics $(CONTACT_KIN) --sections $(CONTACT_SECTIONS) \
+	    --no-plot --out $(CONTACT_OUT)
 
 # SVK_PLAN.md step 5.  The descent itself, under St Venant-Kirchhoff.
 #

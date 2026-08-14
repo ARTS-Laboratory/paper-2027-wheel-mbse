@@ -3497,3 +3497,613 @@ assertion. `best_solution.json` is untouched at `e4219f3`.
 4. **Defect 5**, the quadratic barrier that cannot hold a boundary against live opposition. Not
    what limited this run, but the opposition is new and it will be back.
 5. **The slot branch's arrival law.** Still 253% from binding; still correctness, not payoff.
+
+---
+
+### 19. THE PRODUCTION DESCENT UNDER THE NEW OBJECTIVE. **PROMOTED — `e4219f3` → `e126cc3`** — and defect 5 bit, exactly where §18 said it would not (2026-08-13).
+
+§18's ranked successor #1, run as specified: `medium`, SVK, 100 steps, uniform 8-phase, seed 0,
+4 workers, `--fidelity-check-every 25 --fidelity-check-config coarse`, from the shipped genome,
+`--min-wall 1.2`. Every knob identical to `stage3_svk_medium` and `stage3_buildcap2_medium`, so
+the only difference between this run and those is the objective. 6 h 20 m (22 834 s), 101
+objective calls, exit 0. `stage3_margin_medium.json`.
+
+Its job was to justify or refute §18's +4.9% mass. **It refuted the number and confirmed the
+trade**: at `medium` the mass goes up more, and the case for paying it gets stronger, not weaker.
+
+#### Shipped against the candidate, same objective, same mesh, same kinematics
+
+Step 0 **is** the shipped genome `e4219f3` evaluated under the new objective, so this table is
+apples to apples in a way no comparison in §14–§18 could be.
+
+| | step 0 = `e4219f3` | step 55 = `e126cc3` | |
+|---|---|---|---|
+| loss | 58.4115 | **51.3892** | −12.0% |
+| `stress_margin` term | 27.4694 | 17.7156 | −35.5% |
+| `mass` term | 30.8776 | 33.2954 | +7.8% |
+| hub utilisation | **0.99639** | **0.77952** | −21.8% |
+| rim utilisation | 0.61700 | 0.52738 | |
+| spoke mesh mass | 37.568 g | 40.509 g | **+7.8%** |
+| solid mass @PLA (OCC) | 45.34 g | 50.25 g | **+10.8%** |
+| axle drop | 1.99996 mm (−0.002%) | 2.00806 mm (**+0.40%**) | |
+| `R_hub` | 0.45711 (cap 0.46021) | 0.72795 (cap 0.73523) | +59% |
+| `R_rim` | 2.74947 | **3.00000 — box maximum** | |
+| `t0` / `t3` | 1.20084 / 1.21900 | **1.55944 / 1.46300** | off the floor |
+| `t1` / `t2` | 1.2 / 1.2 | 1.20473 / 1.25241 | still pinned |
+| `Kt` hub | 2.22145 | 2.06875 | |
+| min scaled Jacobian | 0.65980 | 0.82664 | mesh quality up |
+
+The mechanism is the one §18 predicted and is worth naming once more: the optimizer does not
+merely enlarge the fillet, it **reshapes the hub so the cap will allow a larger one**. The cap
+rose 0.46021 → 0.76697 monotonically over the run. Nothing pushes on the cap directly; it is a
+function of `t0` and the hub arrival, and `t0` grew 30% because thicker wall now buys buildable
+fillet, which buys `Kt`, which buys utilisation.
+
+#### Defect 5 bit. §18 said it would not, and §18 was reading a run too short and too coarse to show it
+
+**74 of 101 iterates are tier 2 — in violation. Every single step from 56 to 100 is one of
+them**, each sitting 1.4 to 11.0 µm *over* its hub fillet cap, and the converged point at step
+100 is 4.1 µm over. The run's own trajectory kept improving loss (51.389 → 51.077, −0.6%) while
+being unshippable the entire way.
+
+That is precisely defect 5: `soft_barrier(v) = scale * max(0, v)**2` has zero gradient at its
+own knee, so against a term that pushes steadily outward it cannot hold the boundary — it
+settles at whatever overshoot makes the quadratic's slope match the opposing pull. The
+opposition did not exist until §18 created it. §18's "defect 5 did not bite" was a true
+statement about a 40-step `coarse` probe and a false forecast about everything after it:
+
+| | §18 probe (coarse, 40) | §19 (medium, 100) |
+|---|---|---|
+| converged `R_hub` vs cap | 0.4% **under** | 4.1 µm **over** |
+| `fillet_cap` at convergence | 0.0 | 8.45e-03 |
+| feasible iterates | 26 / 41 | 27 / 101 |
+| last feasible iterate | step 40 (the last) | **step 55 of 100** |
+
+**The defect-6 fix is the only reason this run produced a shippable genome at all.** The old
+`--best-out` rule reported the lowest-loss iterate; that is step 100, which is over its cap.
+`selection_key` returned step 55 — the last tier-0 iterate — and the banner said so. Second run
+in a row where the rule caught a real over-cap promotion, and the first where the whole
+converged tail was bad rather than a single iterate.
+
+45 steps of a 6 h 20 m run were spent descending into the unbuildable. That is the cost of
+defect 5 stated as wall-clock.
+
+#### Fidelity: the candidate clears at both meshes, and the cap barely moves between them
+
+The §16 trap — feasible at one mesh, breached at another, 93 nm on the wrong side — was checked
+directly rather than assumed. `--steps 0` re-evaluations of `e126cc3`:
+
+| | cap | `R_hub` | slack | `fillet_cap` | util | drop |
+|---|---|---|---|---|---|---|
+| `medium` | 0.735233 | 0.727953 | **+7.279 µm** | 0.000e+00 | 0.7795 | 2.00806 |
+| `coarse` | 0.735015 | 0.727953 | **+7.062 µm** | 0.000e+00 | 0.7707 | 1.99079 |
+
+**The cap differs by 0.22 µm across a mesh change — 33× less than the slack.** The five
+scheduled fidelity checks agree the same way along the whole trajectory (`failed: false` at all
+five; at step 100, coarse cap 0.76674 against medium 0.76697, utilisation 0.7612 against
+0.7696). The new optimum is mesh-stable, which is the first positive evidence anywhere in this
+tree on defect 7. The `medium` loss reproduced to 51.3892 from the genome file alone.
+
+#### The export builds it exactly as modelled
+
+`make export EXPORT_GENOME=stage3_margin_best_medium.json`, then again as `wheel.step` after
+promotion:
+
+| | requested | built | edges | worst wedge | `Kt` error |
+|---|---|---|---|---|---|
+| hub | 0.7280 | **0.7280** | 24/24 | 326.0° | **+0.0%** |
+| rim | 3.0000 | **3.0000** | 24/24 | 326.0° | **+0.0%** |
+
+OCC valid, single solid, 100.00 × 100.00 × 22.40 mm, BRepCheck valid, no self-intersections,
+degenerate edges 0, min curvature radius 0.7279 mm against a 0.25 floor, junction bite
+0.5126 / 1.9116 mm against a 0.25 floor — both pass. The worst hub wedge went 314.0° → 326.0°,
+deeper into NEAR-CUSP territory, **and it still built at the full radius**, which is the cap
+model from §16 doing its job at a corner harsher than the one it was fitted against.
+
+#### PROMOTED, and the price is a rate I chose
+
+`best_solution.json` is now `e126cc3`; `export/wheel.step` and its manifest rebuilt from it. The
+predecessor is preserved. The call, stated so it can be argued with:
+
+**For.** It beats the shipped genome by 12.0% on the objective the project now uses, at the same
+mesh, kinematics and stencil, with step 0 of the same run as the control. It is tier 0 at both
+fidelities. It builds with zero `Kt` error. And the condition it fixes is not cosmetic: **the
+shipped wheel sits at 0.4% of its allowable stress.** For a printed PLA part, where layer
+adhesion, print orientation and batch scatter are all ±10–20% effects, 99.6% utilisation is not
+a design with thin margin, it is a design with none. 22 points of headroom for 4.9 g is a trade
+I would make on any printed part.
+
+**Against, and recorded rather than argued away.** The full-solid mass goes 45.34 → 50.25 g,
+**+10.8%** — a bigger number than the +7.8% the optimizer's own mesh mass shows, because the
+mesh mass covers only the spoke region. The axle drop moves from −0.002% to **+0.40%** off the
+2.0 mm target: 8 µm, physically irrelevant on this part, but the direction is real and the
+objective bought margin partly by detuning the deflection target. And the +10.8% is the price of
+an exchange rate **I set** in §18 — 1% mass against 1% utilisation, `w` = 20.0. The optimizer did
+not discover that mass is worth trading; it was told, and it obeyed to the point where the rate
+balanced.
+
+#### DEFECT 8: `util**2` does not taper, so the term keeps buying margin past where it is worth anything
+
+The quadratic was chosen in §18 so "the exchange rate steepens as margin disappears". It does —
+but far too weakly to encode the policy actually intended. Marginal price is `2*w*util`, so
+going from `util` 0.9964 to 0.7795 drops the price of another point of margin by only **28%**
+(39.9 → 31.2 per unit). The real preference is nothing like that: margin below roughly 0.8 is
+close to worthless on this part, and margin above 0.95 is close to priceless. A quadratic cannot
+express a knee. This did not produce a bad design here — 0.78 is a defensible place to stop —
+but the design stopped there because mass finally caught up, **not because the term stopped
+wanting margin**, and that is the wrong reason. Named, not fixed.
+
+#### The gate: `11 failed, 433 passed` — up from 6, and the six new ones split three ways
+
+The promotion moved the geometry every characterisation gate in this tree was written against,
+so the diff is the interesting object, not the total. **One went green** —
+`test_self_intersection_margin_detects_a_fold`, red since §16. **Five are §16's, unchanged.**
+**Six are new**, and they are not one thing. Each was re-measured on both genomes before being
+characterised, because §17's lesson was that the plausible cause is often not the cause.
+
+**Group A — the contact patch halved, and three gates are downstream of that one fact.** `t3`
+went 1.219 → 1.463 and `R_rim` to 3.0, so the rim wall is 20% thicker and conforms less:
+
+| measured on the `smoke` mesh | `e4219f3` | `e126cc3` |
+|---|---|---|
+| real patch half-angle | 0.4963° | **0.2965°** (Hertz: 0.3082°) |
+| patch / Hertz | 1.610 | **0.962** |
+| worst rim-node gap | +1.115 µm | **−0.247 µm** (penetrates) |
+| assumed-patch drop | 1.39796 mm | 1.62013 mm |
+| real-contact drop | 1.35494 mm | 1.53472 mm |
+| **assumed vs real** | **3.08%** | **5.27%** |
+
+> **THE PARAGRAPH BELOW IS WRONG AND §20 RETRACTS IT. THE NUMBERS IN THE TABLE ABOVE ARE NOT
+> — they all reproduce to the digit.** The objective does **not** compute deflection against an
+> assumed 3.0° patch: its whole path runs `fem.solve_wheel_contact`, and `patch_half_deg`
+> cannot even be passed to it (`TypeError`). So 2.008 mm **is** the real-contact number, the
+> 5.27% is the *legacy* model's error, and what this red gate indicts is M4, M5,
+> `studies/study_gnl.py` and `studies/study_wheel_fea.py` — not the wheel that ships. The
+> objective's own quantity is mesh-convergent at **0.897%** coarse→medium, and `e126cc3`
+> converges **2.2–2.5× better** than the `e4219f3` it replaced. Read §20 before quoting any
+> sentence in this subsection.
+
+The third row is the one that matters and it is **a red gate on the design that now ships**, not
+on retired geometry. The objective computes deflection against an *assumed* 3.0° patch. On the
+predecessor that assumption cost 3.08% of axle drop; on the promoted wheel it costs 5.27%, over
+`test_but_the_assumed_patch_got_the_axle_drop_nearly_right`'s pre-registered 5% bound. **The
+promoted wheel's true deflection is therefore near 1.90 mm against a 2.0 mm target, not the
+2.008 mm the objective reports** — and the error grows as the optimizer moves, because nothing
+in the loss knows the patch model is drifting out from under it.
+
+This does not reverse the promotion. Utilisation is computed under the same assumption for both
+designs, the binding junction is the hub (0.7795) rather than the rim (0.5274), and hub stress
+is spoke-bending dominated and far less sensitive to patch width than rim stress is. The
+margin result survives. The deflection number does not, and is corrected here rather than in a
+footnote.
+
+**Group B — one gate is defect 8, measured.** `test_the_margin_weight_is_the_exchange_rate_it_
+claims_to_be`, written yesterday in §18, asserts the weight still buys 1% of utilisation for 1%
+of mass at the shipped genome, within [0.5, 2.0]. At `e126cc3` the ratio is **0.379**: 1% of
+utilisation costs 0.1261 against 1% of mass at 0.3330. The stated calibration no longer
+describes the design that ships. That is not a broken test — it is the test doing its job,
+reporting that a policy written at `e4219f3` did not survive being optimised against, which is
+exactly defect 8 in one number.
+
+**Group C — two latent test defects that the promotion exposed rather than caused.** Both were
+verified as pre-existing, and both passed on `e4219f3` by luck rather than by margin:
+
+- `test_the_bite_is_the_volume_divided_by_the_right_thickness` recomputes the manifest's bite
+  from the manifest's own numbers to `abs=1e-4`, but the manifest stores volume at 2 dp and
+  bite at 4 dp. The composite rounding band is **±1.4e-4 — wider than the tolerance**. On the
+  hub the error was 7.66e-5 at `e4219f3` (pass) and is 1.25e-4 at `e126cc3` (fail), with a
+  rounding band of ±1.55e-4 at the *old* genome, i.e. already unsatisfiable in the worst case.
+  The failure this test exists for — `t0` and `t3` crossed between the two rings — passes on
+  both genomes.
+- `test_only_the_rim_od_near_the_bottom_is_loaded` allows loaded nodes "one element" beyond the
+  patch edge and computes that element as `SECTOR_DEG / (n_weld + n_rim_free)` = **1.5°**. The
+  rim-OD elements are quadratic: the one straddling the patch edge runs
+  271.6824° / 273.0983° / 274.5142°, spanning **2.8318°, two node pitches**. Its far node sits
+  4.5142° from the bottom against a 4.5° bound and carries **1.11% of the total load** — real
+  spill, not numerical dust. The bound understates a real element by 1.9×. At `e4219f3` the
+  patch edge fell elsewhere on the node grid and the worst node was 3.864°.
+
+**Neither Group C test is fixed here.** Both diagnoses are solid and both fixes are small, but
+loosening a tolerance in the same session as the promotion that reddened it is the pattern §5
+and §16 exist to warn about. They stay red, with the cause recorded, and the fixes are ranked
+below.
+
+#### The successors, re-ranked again — a red gate on the shipped design goes first
+
+1. ~~**The contact patch model.** Group A. This is the only red gate in the tree that indicts
+   the wheel currently in `best_solution.json`, it biases the quantity the objective is
+   steering by 5.27%, and it gets worse the harder the optimizer works. Everything below is
+   cheaper and less important.~~ **RETIRED BY §20 (2026-08-13) — all three clauses refuted.**
+   It indicts no wheel (the assumed patch cannot reach the objective), it biases nothing (the
+   objective's own quantity converges to 0.897%), and it gets *better*, not worse, the harder
+   the optimizer works (2.2–2.5× better than the predecessor). **Defect 5 is now #1.**
+2. **Defect 5.** Cost 45 steps of a 6 h 20 m run and stands between this project and any
+   *converged* buildable design.
+3. **`R_rim`'s box ceiling of 3.0.** Pinned throughout and at convergence, still never tested,
+   still cheap, and now binding on the promoted wheel.
+4. **Defect 8**, and with it the §18 rate gate that is now red. A margin price with an actual
+   knee, re-derived at the genome that ships.
+5. **The two Group C test defects.** Diagnosed, unfixed, deliberately not bundled with the run
+   that exposed them.
+6. **Re-derive the five characterisation gates**, and **the slot arrival law** — unchanged.
+
+### 20. THE CONTACT PATCH MODEL: §19's SUCCESSOR #1 IS RETIRED, NOT DEFERRED. The objective never touched the assumed patch (2026-08-13).
+
+Working notes in `CONTACT_PLAN.md`. §19 ranked the contact patch model first, on the sentence
+*"The objective computes deflection against an assumed 3.0° patch."* **It does not, and it
+cannot** — so the harm that ranking claimed does not exist. Nothing promoted; nothing about
+`e126cc3` changes; four red gates fixed and the gate closes at **11 → 7 failed, 433 → 438 passed**.
+
+#### The premise, falsified by refusal rather than by comparison
+
+Stage 3's deflection is `axle_drop` from `wheel_adjoint.service_qoi_value_and_grad`, and every
+solve on that path is `fem.solve_wheel_contact` / `wheel_contact_problem` — **real penalty
+contact**. `CONTACT_PATCH_HALF_DEG = 3.0` is consumed by `wheel_problem` / `solve_wheel` (the
+M4 pressure model) and by nothing else in `src/`. Measured at `e126cc3`, `coarse`:
+
+| | linear | svk |
+|---|---|---|
+| objective `axle_drop_mean_mm` | 1.5892237160122678 | 1.9132197613988573 |
+| `solve_wheel_contact` | 1.5892237160122678 | 1.9132197613988573 |
+| **bit-identical** | **True** | **True** |
+| `solve_wheel` (assumed 3.0°) | 1.7025307168359758 | 2.0519394047655464 |
+| objective vs assumed | 6.66% | 6.76% |
+
+**The sentinel is the result.** Threading `patch_half_deg` into the objective raises
+`TypeError: wheel_contact_problem() got an unexpected keyword argument 'patch_half_deg'`. The
+constant is not merely uninfluential — it is **structurally unreachable** from the loss, which
+is a stronger statement than the bit-identity the check was written to accept.
+
+#### What is withdrawn from §19, and what is not
+
+**Withdrawn.** *"The promoted wheel's true deflection is therefore near 1.90 mm against a
+2.0 mm target, not the 2.008 mm the objective reports."* The comparison is the other way round:
+**2.008 mm IS the real-contact number.** And *"it gets worse the harder the optimizer works"* —
+measured against the control, `e126cc3` converges **2.2–2.5× better** than the `e4219f3` it
+replaced, and its rim-OD element-size step is 16.8× against 30.3×.
+
+**Not withdrawn: §19's measurements, all of which reproduce to the digit** — patch 0.2965°,
+patch/Hertz 0.962, node gap −0.247 µm on `e126cc3`; 1.610 and +1.115 µm on `e4219f3`. What
+moves is which model they indict: **M4, M5, `studies/study_gnl.py` and
+`studies/study_wheel_fea.py`**, every one of which still solves `fem.solve_wheel`. The
+divergence is real and refinement-stable (5.27% → 6.66% → 6.25% up the ladder) and nearly
+doubled across one promotion. It says the assumed patch has stopped standing in for contact on
+this geometry. It says nothing about the wheel that ships.
+
+**Also not withdrawn: the promotion.** Every argument §19 made *for* `e126cc3` — 12.0% on the
+objective against step 0 of its own run, tier 0 at both fidelities, 24/24 at both junctions at
++0.0% `Kt` error, utilisation 0.9964 → 0.7795 — is untouched here.
+
+#### The objective's own quantity IS mesh-convergent, and that was the question worth asking
+
+`make contact`, four cells (both genomes × both kinematics), `patch` section, smoke/coarse/
+medium, forward solves only. Pre-registered gate on `e126cc3` under **svk**:
+
+```
+coarse -> medium relative change   0.897%   [< GATE_MESH_REL = 0.05]   PASS, 5.6x
+n_quad_points_in_contact @ medium  3        [>= 2]                     PASS
+worst rim-node gap @ coarse/med    +2.148e-04 / +1.567e-04 mm  [> 0]   PASS
+```
+
+| genome | kin | coarse→medium | Richardson limit | finest off it |
+|---|---|---|---|---|
+| **`e126cc3`** | **svk** | **+0.897%** | 1.936326 mm | **0.307%** |
+| `e4219f3` | svk | +1.669% | 1.901637 mm | 0.670% |
+| `e126cc3` | lin | +0.905% | 1.608769 mm | **0.321%** |
+| `e4219f3` | lin | +1.609% | 1.456732 mm | 0.814% |
+
+#### THE FINDING: a 16.8–30.3× element-size step on the rim OD, and the patch sits on it
+
+The rim OD is not uniformly divided. Per 30° sector it gets `n_weld` segments over the weld
+and `n_rim_free` over the free arc, and they are **not the same size** — at `coarse` on the
+shipped genome, `10 × 0.1682° + 10 × 2.8318° = 30.000°` exactly. The ratio is **constant up
+the mesh ladder and a function of the design**: 16.8 on `e126cc3`, 30.3 on `e4219f3`, tracking
+the weld footprint. **Refining buys a smaller element and the same step.**
+
+At `medium` the weld/free boundary sits at +1.6824° and the patch centre at +1.885° to
++2.082°. The patch is **smaller than the element containing it in all twelve cells**
+(`patch/seg` 0.39–0.46 at `medium`), so which nodes it sees is decided by whether its edge
+reaches back across the step:
+
+| kin | patch interval | reaches back past 1.6824°? | nodes | quad |
+|---|---|---|---|---|
+| linear | [1.5429, 2.3623] | **yes, by 0.1395°** | **3** | 11 |
+| svk | [1.7210, 2.4430] | no, misses by 0.0386° | **0** | 3 |
+
+Same mesh, same genome, same load — a 3.7× difference in how well the patch is sampled,
+decided by 0.04° of where an edge fell. That is `wheel_objective.py:107-114`'s aliasing given
+a mechanism instead of a symptom, and it explains all three Group A reds with nothing left
+over. It also retires `deg_per_segment` as a resolution measure: `360 / len(rim_outer)` is the
+mean of a bimodal distribution, 0.938° at `medium` against a local truth of 0.105° or 1.770°.
+
+#### Four reds fixed, four different kinds of wrong
+
+| red | what it actually indicts | change |
+|---|---|---|
+| `test_the_centre_node_rise_is_not_the_axle_drop` | a **premise**; its own message blamed refinement, which is the wrong direction | premise recorded, bound moved to penetration depth against the rim band (3.6e-4, 3× inside `GATE_PENETRATION_FRAC`) |
+| `test_the_real_patch_is_far_smaller_than_the_assumed_one` | a **`smoke`-tier artefact** — 0.962 in one cell of twelve, 1.082–1.720 in the rest | lower-bound clause scoped to `coarse`, on §4's and `test_the_sampled_patch_extent`'s precedent |
+| `test_but_the_assumed_patch_got_the_axle_drop_nearly_right` | the **legacy assumed-patch model**; real and refinement-stable | renamed `test_the_assumed_patch_no_longer_stands_in_for_contact`, banded two-sided at 2–8% |
+| `test_only_the_rim_od_near_the_bottom_is_loaded` | a **constant standing in for a mesh fact** | bound read off the mesh's widest rim-OD element |
+
+**§19's diagnosis of that last one was wrong in its cause** and right in its ratio. It blamed
+quadratic elements spanning two node pitches and proposed a factor of 2. The element *order*
+has nothing to do with it: `SECTOR_DEG / (n_weld + n_rim_free)` = 1.5° is the mean of two sizes
+16.8× apart, and the element straddling the patch edge is the free-arc one at **2.8318°, which
+is 1.888×** the bound — §19's 1.9×, reached by a different route. A factor of 2 would have been
+a second constant standing in for a number the mesh already knows.
+
+**`make test` closes at 7 failed / 438 passed** — exactly 11 − 4 reds with no new red, and one
+test added (the containment pin below). The seven left are the two §19 deliberately parked (the
+manifest-bite tolerance, the §18 rate gate) and the five inherited.
+
+#### Method notes, because two of them caught live errors
+
+- **`studies/study_contact.py` gained `--kinematics` and `--sections`**, plus a `make contact`
+  target and the resolution columns above. Default `linear`, and the inertness check is a
+  clean in-session control rather than a stale artifact: the pre-edit driver and the edited one
+  both run `--quick` with no flags, **243 non-timing leaves compared, 0 differ**, the only new
+  leaves being this arc's own columns.
+- **Two errors made and corrected mid-arc, recorded because the reasoning was wrong twice.**
+  A `NameError` in the full-report printer surfaced only *after* 129 s of solving — the same
+  shape as SVK_PLAN Step 2's `_record` bug — and a new column picked the rim segment with the
+  nearest *centre* rather than the one *containing* the patch, which inverted the mechanism at
+  `medium` until the node counts refused to add up.
+
+#### The successors, re-ranked
+
+1. ~~**Defect 5** — the `max(0,v)**2` barrier's dead knee. Now #1, and the only item here with a
+   measured price: **45 of 100 steps** of a 6 h 20 m run spent descending into the unbuildable.~~
+   **DEMOTED BY §21 (2026-08-13): the tail is NOT unbuildable.** Step 100 exports 24/24 at
+   +0.0% `Kt` error; the overshoot is 4–7× inside the cap's deliberate conservatism, and the
+   discarded design differs by under 1% on every metric. `R_rim`'s ceiling is now #1.
+2. **`R_rim`'s box ceiling of 3.0** — pinned throughout §19's descent and at convergence.
+3. **Defect 8** and §18's rate gate, still red at 0.379 against [0.5, 2.0].
+4. **The rim OD element-size step** — new. Ranked here and NOT first, on §17's rule: its cost
+   is unmeasured, and the adjacent measurement (M7's facet ratio, 3.8% at `coarse` and
+   refining away) says small. The first piece of work is the cheap measurement — **G7
+   phase-smoothness at `medium` on `e126cc3` under SVK** — not a mesh change. This arc
+   measured the *value*; a facet artefact would show in the *gradient* first.
+5. **The Group C manifest-bite tolerance**, diagnosed in §19, out of scope here.
+6. **Re-derive the five inherited characterisation gates.**
+
+### 21. DEFECT 5 IS REAL, ITS LAW IS NOW EXACT, AND IT DOES NOT JUSTIFY ITS FIX. The "unbuildable" converged iterate BUILDS (2026-08-13).
+
+Working notes in `DEFECT5_PLAN.md`. §20 ranked defect 5 first — the `max(0,v)**2` barrier that
+cannot hold a boundary — on the strength of §19's *"45 steps of a 6 h 20 m run descending into
+the unbuildable."* **The tail is not unbuildable.** Two steps of measurement, no optimizer, no
+descent: nothing promoted, no barrier changed, `best_solution.json` untouched.
+
+#### The equilibrium law, and the half of it that is exact
+
+```
+    d(soft_barrier)/dv = 2 * w * max(0, v)        ->  zero at the knee
+    fixed point         v* = P / (2 * w)          against an outward pull P
+```
+
+Measured at step 100 of `stage3_margin_medium.json`, `medium`, SVK, terms isolated by zeroing
+every other weight:
+
+| | measured | predicted |
+|---|---|---|
+| `dL_fillet_cap/dR_hub` | **+4.112098** | `2·w·v` = **+4.1121** |
+| `dL_stress_margin/dR_hub` | −5.162679 | — |
+| sum | **−1.050581** | 0 if stationary |
+
+**The barrier's derivative is exact to six significant figures.** What is refuted is the
+registration, not the law: **step 100 is not a stationary point** — 1.05 of net outward
+gradient remained when the budget ended. The fixed point is `P/(2w)` = **5.163 µm**, and the
+trajectory tail (steps ≥ 80: 3.843–5.525 µm, mean 4.500) brackets it. §19's "converged 4.1 µm
+over" is a snapshot of a trajectory heading for 5.2 µm.
+
+**Sweeping all fourteen terms found exactly two with a nonzero `dL/dR_hub`** — `stress` is
+identically 0.0 because utilisation is under 1.0 and §15's defect 1 makes that barrier flat
+there. A two-body problem with no hidden third force.
+
+**Defect 5 and defect 8 are one problem.** The outward pull *is* §18's `stress_margin` term,
+and defect 8 is exactly that `util**2` never stops wanting margin. `P` therefore does not
+decay as the design improves, so a barrier with restoring force `2·w·v` must sit permanently
+outside its own boundary. §20 ranked these #1 and #3 as separate items.
+
+#### THE MEASUREMENT THAT STOPPED THE ARC: the converged iterate exports clean
+
+Before choosing a barrier shape, the check §17 and §20 both taught: does the target bind?
+One export, four minutes, against a 6 h 20 m descent.
+
+```
+genome 2674f42 = step 100, INFEASIBLE by 4.112 um on the modelled hub fillet cap
+junction    R_req  R_worst   edges   wedge  Kt_model  Kt_built   error
+hub         0.771    0.771   24/24   326.0     2.033     2.033   +0.0%
+rim         3.000    3.000   24/24   326.0     1.405     1.405   +0.0%
+OCC valid | single solid | BRepCheck valid | no self-intersections | 0 degenerate
+min curvature R 0.7711 mm (floor 0.25) | 50.44 g
+```
+
+**Why it builds, and it is not luck.** BUILD_PLAN Step 3 fitted the cap **2.4–3.9%
+pessimistic on purpose**. The fixed point sits at **0.673%** of the cap and step 100 at
+**0.536%** — four to seven times inside that conservatism. BUILD_PLAN Step 6 recorded the same
+thing from the other side: *"the Step 5 barrier was firing on a design that builds — a 0.90%
+overshoot of a cap deliberately fitted 2.4–3.9% pessimistic."* **This arc measured a smaller
+overshoot than that one.**
+
+**And the discarded design is the same wheel.** Step 55 (shipped) against step 100: loss
+−0.61%, axle drop +0.40% → **−0.26%** off target, hub utilisation −1.28%, mass **+0.38%**.
+Every metric under 1%.
+
+So defect 5's entire realised cost in §19 was **0.61% of loss on a design that builds at +0.0%
+`Kt` error** — not a lost design and not an unbuildable one.
+
+#### The decision, with each option's reason for not being taken
+
+- **Shifted knee / augmented Lagrangian / a larger weight** all drive `v*` to 0. **`v* = 0` is
+  the wrong target**: the barrier's zero sits at a cap already 4–7× more conservative than the
+  violation, so reaching it buys nothing the part cares about and gives up real fillet radius.
+- **Fixing defect 8 to shrink `P`** would change which design is optimal and re-open §19's
+  exchange rate — a far larger decision than a barrier shape, and it must not ride in on one.
+- **Promoting step 100** — considered, declined. 0.61% of loss for +0.38% mass is not worth a
+  re-promotion, a fresh `wheel.step`, and the regression-net churn §16 and §19 both paid.
+
+**Defect 5 restated, so nobody re-ranks it on §19's framing.** It is **not a buildability
+defect. It is a classification defect**: the tier system marks iterates infeasible against a
+modelled cap conservative by several times the violation, so it discards designs that build.
+Anyone fixing it should move the *boundary*, not the *barrier* — and should note that a
+tolerance band is another calibrated constant, which is what BUILD_PLAN Step 3 spent a whole
+arc removing.
+
+#### The successors, re-ranked — and this time #1 provably binds
+
+Three arcs running, the #1 successor has now failed the "does it bind" test three times
+(§17 the slot arrival law, §20 the contact patch model, §21 defect 5). The item promoted here
+is the one that cannot fail it:
+
+1. ~~**`R_rim`'s box ceiling of 3.0.**~~ **BLOCKED BY §22 (2026-08-13).** The bound does bind
+   — pinned at 3.0 for 80 of 101 steps — but raising it harvests −0.84 of loss the part never
+   pays for: mass is bit-identical across `R_rim`, the FEA cannot see it, it buys margin at the
+   junction that needs it least, and the rim has no cap model. **Defect 8 is now #1.**
+2. **Defect 8** and §18's rate gate, still red at 0.379 against [0.5, 2.0] — and now known to
+   be the thing feeding defect 5.
+3. **The rim OD element-size step** (§20), still needing its cheap G7 measurement first.
+4. **The Group C manifest-bite tolerance**, diagnosed in §19.
+5. **Re-derive the five inherited characterisation gates.**
+6. **Defect 5's boundary placement**, demoted here — worth 0.61% of loss on the evidence.
+
+### 22. `R_rim`'s CEILING IS A TRAP, NOT A PRIZE. The bound binds; raising it would harvest loss the part does not pay for (2026-08-13).
+
+§21 promoted `R_rim`'s untested box ceiling of 3.0 to #1 on the strongest evidence available:
+it is **pinned exactly at 3.0 for 80 of 101 steps** of §19's run, from step 21 onward, in both
+the shipped and the converged iterate. The optimizer is sitting on the bound. Unlike the three
+successors before it, this one provably *binds*.
+
+**Binding is not the same as being worth raising**, and one probe — forward evaluations at the
+shipped genome, `coarse`, SVK, everything but `R_rim` held — says so.
+
+| `R_rim` | loss | Δloss | `stress_margin` | util rim | util hub | `Kt` rim | drop mm |
+|---|---|---|---|---|---|---|---|
+| **3.00** | 51.0043 | — | 17.3184 | 0.52141 | 0.77074 | 1.39959 | 1.99079 |
+| 3.50 | 50.7123 | −0.2920 | 17.0264 | 0.50722 | 0.77074 | 1.36149 | 1.99079 |
+| 4.00 | 50.4876 | **−0.5166** | 16.8018 | 0.49602 | 0.77074 | 1.33144 | 1.99079 |
+| 5.00 | 50.1624 | **−0.8419** | 16.4765 | 0.47935 | 0.77074 | 1.28669 | 1.99079 |
+
+**The payoff looks real.** −0.52 at `R_rim` = 4.0 is **1.7× the entire tail defect 5 discards**
+(−0.31) and 7.4% of §19's whole 100-step descent (−7.02). And it is a *lower* bound: nothing
+was re-optimised around the new radius.
+
+#### Every one of the objective's checks on that radius is blind, and there are four
+
+1. **The mass term cannot see it.** `mesh_mass_g` is **bit-identical at 3.0, 4.0 and 5.0 —
+   40.509301 g**, because the mesh models no fillets (the M2b finding
+   `test_the_fillet_genes_have_no_fea_gradient_at_all` pins). §14 measured the built fillets at
+   **6.18% of the solid volume**. So the optimizer collects the whole −0.84 **for free** while
+   the real part gains material.
+2. **The FEA cannot see it.** `axle_drop_mean_mm` is 1.99079 at every radius and `util_hub` is
+   0.77074 at every radius, to the digit. The entire effect travels through the analytic
+   `Kt_rim` and nothing else.
+3. **It buys margin where there is already most.** The rim sits at **0.521** against the hub's
+   **0.771**. This is **defect 8 in one number**: `util**2` summed over both junctions has no
+   knee, so it keeps paying for margin at the comfortable junction at the same rate as at the
+   tight one.
+4. **The rim has no buildability cap at all.** BUILD_PLAN parked exactly this — *"`R_rim` is
+   equally dead and the rim has no cap model at all."* Nothing would stop the optimizer
+   requesting a radius OCC will not cut, which is the §3 failure at the hub, one junction over.
+
+**So the −0.84 is not a design improvement, it is an accounting artefact.** Raising the ceiling
+today would let the optimizer trade a mass it cannot measure for a margin it does not need, at
+a junction with no buildability model, priced by a term with no knee.
+
+#### The successors, re-ranked — and #1 is now the thing that makes the others readable
+
+Four arcs, four #1 successors that did not survive their own check (§17, §20, §21, §22). The
+difference here is that the check found a **trap** rather than a null, and it named the cause.
+
+1. **Defect 8 — `util**2` has no knee.** It is what makes the rim payoff illusory (§22), what
+   keeps defect 5 fed (§21), and it is already measured red by §18's own rate gate at 0.379
+   against [0.5, 2.0]. It is the only item that three separate arcs have now landed on from
+   three directions.
+2. **Price the fillets' mass in the objective.** Currently `R_hub` and `R_rim` are free in
+   mass, against 6.18% of the solid measured. Cheap: the exporter already publishes
+   `fillets.volume_mm3`.
+3. **A rim cap model**, which §22 makes a prerequisite for (4) rather than an optional parallel.
+4. **`R_rim`'s ceiling** — blocked behind 1–3, not refuted. Once margin has a knee, fillets
+   have mass and the rim has a cap, the same probe is worth re-running.
+5. The rim OD element-size step (§20), the Group C manifest-bite tolerance, the five inherited
+   characterisation gates, and defect 5's boundary placement (§21).
+
+### 23. DEFECT 8 IS FIXED. The margin term has a knee, and it agrees with §22 from the other side (2026-08-13).
+
+Working notes in `DEFECT8_PLAN.md`. §22's ranked successor #1, and the first item in five arcs
+whose target survived its own check. **The objective changed; no design did.** `make test` goes
+**7 failed / 438 passed → 6 failed / 440 passed**, §18's own rate gate green, no new red.
+
+#### The shape, measured before it was chosen
+
+`stress_margin` was `w * util**2`, marginal price `2*w*util` — proportional to `util`, so a
+stated exchange rate can be right at exactly one design. Measured across the range:
+
+| `util` | **`util**2` (was)** | `util**6` | knee@0.80, n=2 | knee@0.80, n=4 |
+|---|---|---|---|---|
+| 0.50 | **0.585** | 0.068 | 0.000 | 0.000 |
+| 0.78 | **0.912** | 0.632 | 0.000 | 0.000 |
+| 0.95 | **1.111** | 1.694 | 2.727 | 20.285 |
+| 0.99 | **1.158** | 2.081 | 3.455 | 41.226 |
+
+(marginal price, normalised at the 0.855 where `w` was calibrated.) **The old term's price
+varied 2.0× across the whole meaningful range** — it paid nearly as much for margin at a
+junction loafing at half its allowable as at one about to yield. §19 quoted the drift as 28%
+between two designs; across the range it is worse.
+
+**The term is now `soft_barrier(util_j − MARGIN_KNEE_UTIL)` per junction, `MARGIN_KNEE_UTIL =
+0.80`** — literally the `stress` wall's own function with the knee moved from 1.0 in to 0.80.
+One line says the policy: *the wall is at 1.0, the price starts at 0.80.* The quartic was
+rejected for duplicating the wall: "priceless above 0.95" is already the barrier's job, per
+§18's own comment. `DEFAULT_WEIGHTS["stress_margin"]` 20.0 → **325.0**, derived (328.49 exact
+at §18's reference util 0.855) and rounded **down** for §18's stated reason, so this is a shape
+change at constant rate.
+
+#### §18's red rate gate: the design AND the fidelity, and only the control separates them
+
+| genome | `n_phase` | cfg | `util` hub | ratio | gate |
+|---|---|---|---|---|---|
+| `e126cc3` | **2** | smoke | 0.56008 | **0.379** | **FAIL ← the live red** |
+| `e126cc3` | 8 | coarse | 0.70898 | 0.607 | PASS |
+| `e126cc3` | 8 | medium | 0.77952 | 0.734 | PASS |
+| `e4219f3` | 2 | smoke | 0.65569 | 0.560 | PASS |
+| `e4219f3` | 8 | coarse | 0.85506 | 0.952 | PASS |
+
+On the shipped genome alone the verdict flips on `n_phase` and nothing else, which reads as a
+pure test artefact. **It is not** — `e4219f3` passes at `n_phase = 2` too, so the gate
+discriminates designs at all four settings. The promotion moved the design to where it fires;
+`n_phase = 2` carries it over the line rather than inventing the drift. **The most useful row
+is a PASS**: `e4219f3` → `e126cc3` at `coarse`/8 takes the stated rate **0.952 → 0.607**, a 36%
+decay at a fidelity where the gate never fires. `util**2` degrades the policy quadratically
+*exactly as the design improves*. That is better evidence for defect 8 than the red is, and
+§19's "one is defect 8 measured" pointed at the wrong number.
+
+#### Two consequences the tests forced
+
+**The fillet genes go flat below 0.80, and that is not §15 defect 2 returning.** Defect 2 was
+flat below util **1.0** — dead at every shippable design, a 14-gene search running in 8. This
+is flat below **0.80**, where the project has decided fillet is worth nothing. The regression
+test now asserts both halves.
+
+**`R_rim` is a dead gene under the knee at every design in this repo, and §22 says that is
+right.** On `e4219f3` the hub is at 0.85506 and the rim at **0.47963**, so `dL/dR_rim` is
+exactly 0.0 — my first version of the above-knee test conflated the two junctions and caught
+it. §22 measured the same thing from the opposite direction: raising `R_rim`'s ceiling looked
+worth −0.84 of loss under `util**2` while every check the objective has on that radius is
+blind. **The old term made `R_rim` look valuable; the knee prices it at nothing.** Two arcs,
+opposite directions, one answer — which is the strongest evidence this change is right.
+
+#### What is not done, and the successors
+
+**The objective moved, so `e126cc3` is no longer its optimum.** It sits at util 0.780 against a
+knee at 0.800, so the margin term is inert and `mass` has nothing opposing it until utilisation
+climbs back. A descent would find a slightly lighter wheel sitting *at* the knee. **That run
+has not been made; nothing is promoted and `best_solution.json` is untouched.**
+
+1. **The production descent under the knee'd objective** — `medium`, SVK, 100 steps, §19's
+   knobs, §19's own run as control. The first item in six arcs that is a *run* rather than a
+   measurement, because the measurement is done.
+2. **Price the fillets' mass.** `R_hub`/`R_rim` are free in mass against 6.18% of the solid
+   measured (§14); the exporter already publishes `fillets.volume_mm3`.
+3. **A rim cap model**, still parked, still a prerequisite for `R_rim`'s ceiling (§22).
+4. The rim OD element-size step (§20), the Group C manifest-bite tolerance, the five inherited
+   characterisation gates, and defect 5's boundary placement (§21).

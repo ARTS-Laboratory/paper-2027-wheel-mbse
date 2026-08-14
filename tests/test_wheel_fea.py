@@ -75,6 +75,21 @@ def test_only_the_rim_od_near_the_bottom_is_loaded(mesh):
     points just inside it.  Requiring the loaded nodes to lie strictly within the patch
     would be demanding lumped loads, which is the error the M3 traction patch test
     exists to catch.
+
+    "ONE ELEMENT" USED TO BE `SECTOR_DEG / (n_weld + n_rim_free)`, AND THAT IS A MEAN, NOT
+    AN ELEMENT.  The rim OD's two families are not the same size — measured at `coarse`,
+    10 weld segments of 0.1682 deg plus 10 free-arc segments of 2.8318 deg make the sector
+    up to 30.000 deg exactly, a span ratio of 16.8 that holds at every config.  So the old
+    expression returned 1.5 deg, the average of two sizes an order of magnitude apart,
+    while the element that actually straddles the patch edge is the free-arc one at
+    2.8318 deg.  The bound understated a real element by 1.888x and the test passed only
+    while the patch edge happened to fall on a favourable part of the node grid; it went
+    red on the 2026-08-13 promotion when it stopped doing so.
+
+    PLAN.md section 19 diagnosed the 1.9x as quadratic elements spanning two node pitches.
+    That is not the cause — the element ORDER has nothing to do with it, and a factor of 2
+    would be the wrong fix for the same reason the mean was: it is another constant
+    standing in for a number the mesh already knows.  The bound is now read off the mesh.
     """
     half = 3.0
     _, f = fem.wheel_problem(mesh, patch_half_deg=half)
@@ -82,7 +97,12 @@ def test_only_the_rim_od_near_the_bottom_is_loaded(mesh):
     loaded = np.linalg.norm(f.reshape(-1, 2), axis=1) > 0
     assert loaded.sum() > 0
     th = np.degrees(np.arctan2(xy[loaded, 1], xy[loaded, 0])) % 360.0
-    element_deg = ww.SECTOR_DEG / (mesh.cfg.n_weld + mesh.cfg.n_rim_free)
+
+    # The widest rim-OD element there actually is, measured, wrap-safe.
+    seg = np.asarray(mesh.edge_sets["rim_outer"])
+    ends = np.degrees(np.arctan2(xy[seg[:, (0, 2)], 1], xy[seg[:, (0, 2)], 0]))
+    element_deg = float(np.abs((np.diff(ends, axis=1) + 180.0) % 360.0 - 180.0).max())
+
     assert np.abs(((th - 270.0 + 180.0) % 360.0) - 180.0).max() <= half + element_deg
     assert np.abs(np.linalg.norm(xy[loaded], axis=1)
                   - ww.RIM_OUTER_RADIUS_MM).max() < 1e-9

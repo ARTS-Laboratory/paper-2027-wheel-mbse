@@ -31,6 +31,7 @@ file is the successor's. PLAN.md gets a §16 only at the last step.
 | 7 | write the record into PLAN.md as §16 | **DONE** (2026-08-11). PLAN.md:3043. Records the promotion, the corrected cap in both branches, the two hub corner families and which one binds on the shipped wheel (NEAR-CUSP, 314.0°), **three new objective defects** added to §15's four — the quadratic barrier's dead knee, `--best-out` ignoring feasibility, and feasibility being fidelity-dependent — the gene-box change and its `z`-trace reinterpretation, the 6/430 gate with each red's old and new value, and four ranked successors |
 | 8 | fix defect 6 (`--best-out` selection) and re-rank the successors | **DONE** (2026-08-12). PLAN.md:3255 as §17. `BARRIER_TERMS`/`OBJECTIVE_TERMS` in `wheel_objective`, `selection_key` in `wheel_stage3`, 4 new tests, trace replay as a regression. Measured that §16's #1 successor (the slot arrival law) **cannot move the cap** — the slot branch is 253% from binding and the binding thickness branch is already 1.5–3.4% conservative. Successors re-ranked; the stress-margin term is now #1 |
 | 9 | give the objective a stress-margin term (§15 defect 1) | **DONE, NOTHING PROMOTED** (2026-08-12). PLAN.md:3368 as §18. `dL/dR_hub` and `dL/dR_rim` were measured at exactly 0.0 before the change; a 40-step SVK probe then took `R_hub` to 0.4% under its cap, `R_rim` to its box maximum, and `t0`/`t3` off the 1.2 mm floor, at +4.9% mass. Gradient FD-checked to 1.8e-7. Fixed a measure-zero `smooth_min` tie-derivative bug found on the way. Probe is `3ca40c1`, coarse, NOT a promotion candidate. Gate 6 failed / 438 passed — same six reds, no new ones |
+| 10 | production `medium` SVK descent under the new objective, with an export check | **DONE — PROMOTED, `e4219f3` → `e126cc3`** (2026-08-13). PLAN.md:3503 as §19. 100 steps, 6 h 20 m, exit 0. Loss 58.4115 → 51.3892 against step 0 = the shipped genome under the same objective, hub utilisation **0.9964 → 0.7795**, at **+10.8% solid mass** (45.34 → 50.25 g). Tier 0 at BOTH fidelities with 7.28/7.06 µm of cap slack and a cap that moves only 0.22 µm between meshes. OCC builds it 24/24 at both junctions, `Kt` error +0.0%, at a worst wedge of 326° — harsher than the corner the §16 cap was fitted against. **Defect 5 bit**: 74 of 101 iterates violate, steps 56–100 are ALL over the cap, and the defect-6 rule is the only reason a shippable iterate came out. New **defect 8**: `util**2` has no knee, so the margin term never stops wanting margin. Gate **11 failed / 433 passed**, up from 6: one went green, five are §16's, and six are new — three from the real contact patch halving (`t3` +20%), one that is defect 8 measured, and two verified as **latent test defects that passed on `e4219f3` by luck**. The consequential one is `test_but_the_assumed_patch_got_the_axle_drop_nearly_right` at **5.27% against a 5% bound** — the only red gate in the tree that indicts the wheel now shipping, and it is successor #1 |
 
 ---
 
@@ -1316,3 +1317,82 @@ law, demoted from #1 and re-scoped as correctness rather than payoff.
   +11.9% is. `R_rim` is equally dead and the rim has no cap model at all. If Step 2's
   predictor is geometric rather than hub-specific it should apply there too — **check, do not
   assume**, and if it does not, say so rather than generalising quietly.
+
+---
+
+## Step 10 — The production descent, and the first promotion since §16 (2026-08-13)
+
+§18's ranked successor #1, run exactly as specified. `medium`, SVK, 100 steps, uniform 8-phase,
+seed 0, 4 workers, coarse fidelity checks every 25, from the shipped genome, `--min-wall 1.2` —
+every knob identical to `stage3_svk_medium` and `stage3_buildcap2_medium` so that the objective
+is the only difference. 6 h 20 m, exit 0.
+
+### Promoted
+
+`best_solution.json`: `e4219f3` → **`e126cc3`**, `export/wheel.step` and its manifest rebuilt.
+Loss 58.4115 → 51.3892 with step 0 of the same run as the control, hub utilisation **0.9964 →
+0.7795**, solid mass 45.34 → 50.25 g (**+10.8%**), axle drop −0.002% → +0.40% off target.
+
+The case is that a printed PLA wheel at **0.4% of its allowable stress** has no margin at all
+against layer adhesion, print orientation and batch scatter — all ±10–20% effects — and 22
+points of headroom for 4.9 g is worth it. The counter-case is recorded in §19 rather than
+argued away: the mass is real, the deflection detune is real, and the exchange rate that priced
+the trade is one I set in §18 rather than one the physics handed over.
+
+### Defect 5 bit, and §18 forecast that it would not
+
+74 of 101 iterates violate. **Steps 56 through 100 are every one of them**, 1.4–11.0 µm over the
+hub fillet cap, converging 4.1 µm over. §18's "defect 5 did not bite" was true of a 40-step
+`coarse` probe and false about everything past it: with the margin term pushing outward
+permanently, a `max(0,v)**2` barrier settles at the overshoot where its slope matches the pull,
+which is what it did. 45 steps of a 6-hour run descended into the unbuildable.
+
+**Step 8's selection rule is the only reason this run produced a promotable genome.** Lowest
+loss is step 100, over its cap; `selection_key` returned step 55 and the banner said tier 0.
+
+### Checked rather than assumed
+
+Feasibility at *both* fidelities (the §16 trap): 7.279 µm slack at `medium`, 7.062 µm at
+`coarse`, `fillet_cap` exactly 0.0 at each, cap differing by 0.22 µm between meshes — 33× less
+than the slack. All five scheduled fidelity checks `failed: false`. OCC builds 24/24 at both
+junctions at the full requested radius, `Kt` error +0.0%, at a worst wedge of **326°** against
+the shipped wheel's 314°.
+
+### New defect 8
+
+`util**2` has no knee. Marginal price falls only 28% from `util` 0.9964 to 0.7795, so the term
+never stops wanting margin — the design stopped at 0.78 because mass caught up, not because the
+term was satisfied. Named in §19, not fixed.
+
+### The gate, and what the promotion actually broke
+
+`11 failed / 433 passed`, up from 6. One went green; five are §16's; **six are new**, measured
+on both genomes before being characterised:
+
+- **Three are one fact.** `t3` +20% and `R_rim` at 3.0 make the rim conform less, so the real
+  contact patch **halves** — 0.4963° → 0.2965° half-angle, a rim node now penetrates by
+  0.247 µm, and assumed-versus-real contact moves the axle drop **3.08% → 5.27%**, past its
+  pre-registered 5% bound. That last one is a red gate on the wheel that ships: the promoted
+  design's true deflection is near **1.90 mm against a 2.0 mm target**, not the 2.008 mm the
+  objective reports, and the error grows the harder the optimizer works.
+- **One is defect 8 measured.** §18's own rate gate reads 0.379 against a [0.5, 2.0] band.
+- **Two are latent test defects the promotion exposed rather than caused**, both verified as
+  lucky passes on `e4219f3`: a bite tolerance of 1e-4 against a manifest whose stored precision
+  gives a ±1.4e-4 rounding band, and a patch-spill bound that counts a quadratic rim element as
+  1.5° when it spans 2.8318°. **Left red on purpose** — loosening a tolerance in the same
+  session as the promotion that reddened it is the pattern §5 and §16 warn about.
+
+### Successors
+
+**SUPERSEDED 2026-08-13 by `CONTACT_PLAN.md` / PLAN.md §20 — successor #1 below is RETIRED.**
+The contact patch model indicts no wheel: the assumed 3.0 deg patch cannot reach the Stage-3
+objective at all (`wheel_contact_problem` has no such parameter), the objective's own quantity
+is mesh-convergent to 0.897% coarse->medium, and `e126cc3` converges 2.2-2.5x BETTER than the
+`e4219f3` it replaced. Four of the eleven reds are fixed and the gate is 7 failed / 438 passed.
+**The live ranking is PLAN.md §20's**, headed by defect 5.
+
+1. ~~**The contact patch model**~~ — retired, see above. 2. **Defect 5**, now #1 by
+measurement. 3. `R_rim`'s untested box ceiling, now pinned at convergence. 4. Defect 8 and the
+§18 rate gate. 5. The Group C manifest-bite tolerance (the other Group C defect is fixed).
+6. The five characterisation gates and the slot arrival law. 7. NEW: the rim OD's 16.8-30.3x
+element-size step, ranked low on purpose because its cost is unmeasured.

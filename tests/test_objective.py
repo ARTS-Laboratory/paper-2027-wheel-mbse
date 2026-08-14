@@ -49,6 +49,33 @@ def genes():
 
 
 @pytest.fixture(scope="module")
+def genes_over_knee():
+    """A design whose hub utilisation is ABOVE `MARGIN_KNEE_UTIL`, and its breakdown.
+
+    Returns `(grad, breakdown)` from one `coarse`, 8-phase evaluation, module-scoped so the
+    solve is paid once.
+
+    IT IS THE PREDECESSOR GENOME, NOT A CONSTRUCTED ONE, and that is the cheap choice
+    rather than the lazy one: `stage3_buildcap2_slack_medium.json` is `e4219f3`, the wheel
+    that shipped before 2026-08-13, and it reads util 0.85506 at `coarse`/8 against the
+    current genome's 0.70898 — §19 promoted a design that bought 22 points of hub margin,
+    which is exactly what puts the old one above the knee and the new one below it.
+    Constructing a thin genome instead would need thickness genes under the 1.2 mm
+    `MIN_WALL_MM` floor, i.e. a design the gene box forbids, which is a worse fixture than
+    a wheel this project actually shipped.
+
+    `coarse` and 8 phases rather than the module's `smoke`/2 because no genome here reaches
+    0.80 at those settings — see `test_but_above_the_knee_the_fillet_radii_are_live`.
+    """
+    import json
+    path = os.path.join(REPO, "stage3_buildcap2_slack_medium.json")
+    g = wg.genes_to_vector(json.load(open(path))["genes"])
+    _, grad, brk = WO.objective(
+        g, "coarse", phases=WO.phase_stencil(n_phase=8, scheme="uniform"))
+    return grad, brk
+
+
+@pytest.fixture(scope="module")
 def genes_over_cap():
     """A genome whose `R_hub` sits ABOVE its hub-fillet cap, which several tests below
     need and which the shipped genome no longer is.
@@ -746,12 +773,79 @@ def test_the_fillet_radii_are_not_dead_genes(genes):
     would pass on a term that priced fillets backwards. More fillet means a lower stress
     concentration, so more fillet must mean less loss: both derivatives are negative, and
     the optimizer's first move on these genes must be to open them up.
+
+    THE KNEE PUT THE GENES BACK TO SLEEP BELOW 0.80, AND THAT IS DELIBERATE (defect 8).
+    This test used to ask the question at the shipped genome. `stress_margin` is now
+    `soft_barrier(util - MARGIN_KNEE_UTIL)`, so below the knee it is identically flat and
+    the fillet genes are once again exactly dead there — which reads like §15 defect 2
+    returning and is not. The difference is WHERE:
+
+        defect 2   the genes were flat everywhere below util = 1.0, so they were dead at
+                   every design anyone would ship, and the search really did run in 8
+                   dimensions.
+        the knee   they are flat below util = 0.80, which is the region where the project
+                   has decided more fillet is worth nothing (see MARGIN_KNEE_UTIL). They
+                   are live exactly where margin is worth buying.
+
+    So the test asks it in both places now. Below the knee, flat is CORRECT and is asserted
+    as such — an accidental return to a live-everywhere term would fail here. Above the
+    knee, the original claim is unchanged and is what stops defect 2 coming back.
     """
     _, g, brk = WO.objective(genes, CFG, phases=WO.phase_stencil(n_phase=N_PHASE, scheme="uniform"))
+    assert brk["report"]["stress_utilisation_hub"] < WO.MARGIN_KNEE_UTIL, (
+        "the shipped genome has climbed above the margin knee, so this half of the test is "
+        "no longer measuring the below-knee region it was written for")
+    assert brk["terms"]["stress_margin"]["value"] == 0.0, (
+        "the margin term is live below its own knee — the knee is what makes the policy "
+        "'margin below 0.80 is worth nothing' true in the code")
+    assert g[12] == 0.0 and g[13] == 0.0, (
+        f"dL/dR_hub {g[12]:+.3e}, dL/dR_rim {g[13]:+.3e} — nonzero below the knee, where "
+        f"the only thing that prices the fillets should be flat")
+
+
+def test_but_above_the_knee_the_fillet_radii_are_live(genes_over_knee):
+    """The half of defect 2's regression that still has to hold, asked where it applies.
+
+    ONE COARSE EVALUATION, and it is the reason this is a separate test with its own
+    fixture: no genome in this repo reaches util 0.80 on the `smoke`/2-phase settings the
+    rest of the module runs at, because two uniform phases sample a 30 degree period at 0
+    and 15 degrees and read the utilisation ~20% low (DEFECT8_PLAN.md step 1b). Asking an
+    above-knee question at a fidelity that cannot produce an above-knee design would pin
+    nothing, which is the fuse `test_the_fillet_cap_barrier_is_live_on_a_design_over_its_
+    cap` already carries one screen down.
+
+    THE KNEE IS PER-JUNCTION, AND THE FIRST VERSION OF THIS TEST DID NOT NOTICE.
+    It asserted both fillet radii carry gradient on a design "above the knee", which
+    conflated two junctions with very different utilisations. Measured on this fixture:
+
+        hub  util 0.85506   ABOVE the 0.80 knee   ->  dL/dR_hub < 0, live
+        rim  util 0.47963   far BELOW it          ->  dL/dR_rim = 0.0 exactly
+
+    So `R_rim` IS a dead gene under the knee, at every design in this repo — the rim has
+    never come close to 0.80 on any genome measured. That is the intended reading rather
+    than a regression, and PLAN.md §22 is the independent measurement of it: raising
+    `R_rim`'s box ceiling was worth -0.84 of loss under the OLD `util**2` term, and every
+    one of the objective's checks on that radius is blind (the mesh models no fillets, so
+    mass cannot see it; the FEA cannot see it; the rim has no buildability cap). The knee
+    prices that at zero, which is what §22 says it is worth.
+    """
+    g, brk = genes_over_knee
+    u_hub = brk["report"]["stress_utilisation_hub"]
+    u_rim = brk["report"]["stress_utilisation_rim"]
+    assert u_hub > WO.MARGIN_KNEE_UTIL, u_hub
     assert brk["terms"]["stress_margin"]["value"] > 0.0, (
-        "the margin term is zero at the shipped genome, so it prices nothing")
-    assert g[12] < 0.0, f"dL/dR_hub is {g[12]:+.3e} — the hub fillet is still dead"
-    assert g[13] < 0.0, f"dL/dR_rim is {g[13]:+.3e} — the rim fillet is still dead"
+        "the margin term is flat above its own knee, so it prices nothing where margin is "
+        "supposed to be worth buying")
+    assert g[12] < 0.0, f"dL/dR_hub is {g[12]:+.3e} — the hub fillet is dead above the knee"
+
+    # The rim, asked against its OWN utilisation rather than the hub's.
+    assert u_rim < WO.MARGIN_KNEE_UTIL, (
+        f"the rim has reached util {u_rim:.5f}, above the knee — the branch below is no "
+        f"longer the one this fixture exercises and the rim gene should now be live")
+    assert g[13] == 0.0, (
+        f"dL/dR_rim is {g[13]:+.3e} — nonzero while the rim sits at util {u_rim:.5f}, far "
+        f"under the knee, which is precisely the free margin PLAN.md §22 measured as worth "
+        f"nothing the part pays for")
 
 
 def test_the_margin_term_prices_and_never_gates(genes):
@@ -782,14 +876,40 @@ def test_the_margin_weight_is_the_exchange_rate_it_claims_to_be(genes):
     comment would go on claiming a calibration the code no longer has. Checked as an order
     of magnitude, not to the digit, because the rate is exact only at the design it was
     derived at and both terms move.
+
+    RE-DERIVED FOR THE KNEE, AND ASKED AT THE REFERENCE RATHER THAN AT THE DESIGN.
+    Two things about the old version were wrong once defect 8 was measured:
+
+    1. It computed the cost as `w * (1.01**2 - 1) * util**2`, which is the OLD shape. The
+       term is now `soft_barrier(util - MARGIN_KNEE_UTIL)`, so the cost of 1% of
+       utilisation is the difference of two clipped squares.
+    2. It read `util` off the shipped genome at `smoke`/2 phases — 0.560, against 0.780 at
+       the production `medium`/8. That is what turned a policy check into a fidelity check:
+       measured on both genomes, `e4219f3` PASSED at every setting while `e126cc3` failed at
+       n_phase=2 and passed at n_phase=8, so the gate was discriminating designs AND
+       fidelities at once (DEFECT8_PLAN.md step 1b).
+
+    The rate is a property of the WEIGHT and the KNEE, not of whichever genome happens to
+    be in the tree, so it is now evaluated at the reference utilisation the weight was
+    calibrated at. That is §18's own 0.855, kept deliberately so this change is a change of
+    SHAPE at a fixed rate. The mass term still comes from the shipped genome, because it is
+    the thing being traded against and it is a real quantity.
     """
     _, _, brk = WO.objective(genes, CFG, phases=WO.phase_stencil(n_phase=N_PHASE, scheme="uniform"))
-    util = brk["report"]["stress_utilisation_hub"]
+    u_ref = 0.855
+    k = WO.MARGIN_KNEE_UTIL
     one_pct_of_mass = 0.01 * brk["terms"]["mass"]["value"]
-    one_pct_of_util = WO.DEFAULT_WEIGHTS["stress_margin"] * (1.01 ** 2 - 1.0) * util ** 2
+    one_pct_of_util = WO.DEFAULT_WEIGHTS["stress_margin"] * (
+        max(0.0, 1.01 * u_ref - k) ** 2 - max(0.0, u_ref - k) ** 2)
     assert 0.5 < one_pct_of_util / one_pct_of_mass < 2.0, (
-        f"1% of utilisation costs {one_pct_of_util:.4f} against 1% of mass at "
-        f"{one_pct_of_mass:.4f} — the weight no longer sets the rate its comment claims")
+        f"at the reference utilisation {u_ref}, 1% of utilisation costs "
+        f"{one_pct_of_util:.4f} against 1% of mass at {one_pct_of_mass:.4f} — the weight "
+        f"no longer sets the rate its comment claims")
+    # And the knee is the half of the policy the weight cannot express: below it, a
+    # percent of utilisation must cost NOTHING, or "worthless below 0.80" is not true.
+    below = WO.DEFAULT_WEIGHTS["stress_margin"] * (
+        max(0.0, 1.01 * 0.70 - k) ** 2 - max(0.0, 0.70 - k) ** 2)
+    assert below == 0.0, f"1% of utilisation at 0.70 costs {below:.4e}, not nothing"
 
 
 def test_the_fillet_cap_barrier_is_live_on_a_design_over_its_cap(genes_over_cap,

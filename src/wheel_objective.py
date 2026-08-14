@@ -315,6 +315,33 @@ CAP_BLEND_FRAC = 1.0 - FILLET_LADDER_DECAY
 # closed the slot entirely and there is no fillet to be had at any radius.
 MIN_BUILDABLE_R_MM = 0.25
 
+# WHERE MARGIN STARTS BEING WORTH ANYTHING.  A POLICY NUMBER, STATED LIKE THE WEIGHT.
+#
+# §19 named defect 8: `stress_margin` was `w * util**2`, whose marginal price `2*w*util` is
+# PROPORTIONAL to util, so a stated exchange rate can be right at exactly one design.
+# Measured across the range (DEFECT8_PLAN.md step 1a), that price varies by only **2.0x**
+# between util 0.50 and 0.99 — the term pays nearly as much for margin at a junction loafing
+# at half its allowable as at one about to yield.  §19 wrote the policy it should have had:
+# "margin below roughly 0.8 is close to worthless on this part, and margin above 0.95 is
+# close to priceless."
+#
+# So the term is now `soft_barrier(util - MARGIN_KNEE_UTIL)` — LITERALLY THE SAME FUNCTION AS
+# THE `stress` WALL, with the knee moved from 1.0 in to 0.80.  That is the whole change, and
+# it says the policy in one line: the wall is at 1.0, the price starts at 0.80.
+#
+# THE SECOND HALF OF "priceless above 0.95" IS DELIBERATELY NOT ENCODED HERE, because it is
+# already the wall's job — §18's own comment: "`stress` stays exactly as it is: the wall is
+# still there, this only stops the approach to it being free."  A quartic was measured (41x
+# at util 0.99 against this shape's 3.5x) and rejected for duplicating the barrier.
+#
+# 0.80 is a JUDGEMENT about a printed PLA part, not a measurement, and it is the number to
+# argue with: layer adhesion, print orientation and batch scatter are +/-10-20% effects, so a
+# junction below 0.8 of allowable has more margin than those can eat and buying more is
+# spending mass on nothing.  The shipped genome sits at 0.77952, i.e. essentially AT this
+# knee — see DEFECT8_PLAN.md step 1c, which is why this restates why that wheel is right
+# rather than condemning it.
+MARGIN_KNEE_UTIL = 0.80
+
 TERMS = ("deflection", "mass", "stress", "stress_margin", "buckling", "x_order",
          "hub_overlap", "smoothness", "fold", "arrival", "fillet", "fillet_cap",
          "min_sj", "phase_ripple")
@@ -329,7 +356,12 @@ DEFAULT_WEIGHTS = {
     # x util^2 per junction, LIVE EVERYWHERE — see the derivation at the term itself.
     # This is the one weight in the table that sets an exchange rate rather than a scale:
     # 1% of utilisation against 1% of mass at the shipped genome.
-    "stress_margin": 20.0,
+    # 328.49 makes 1% of utilisation cost 1% of mass at MARGIN_KNEE_UTIL's reference point
+    # (util 0.855, §18's own), rounded DOWN for §18's reason: the rounding buys LESS margin,
+    # which is the conservative direction for a term whose purpose is to move the optimum.
+    # It is ~16x the old 20.0 ONLY because the argument shrank from `util` to `util - 0.80`;
+    # the RATE at the reference is unchanged, which is what makes this a shape change.
+    "stress_margin": 325.0,
     "buckling":    2000.0,      # soft_barrier scale on ratio - 1   [NO GRADIENT]
     "x_order":     80.0,        # per control-point pair
     "hub_overlap": 500.0,
@@ -1203,8 +1235,11 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
         d_util = (dkt * agg + kt * dagg) / ALLOWABLE_STRESS_MPA   # THE PRODUCT RULE
         stress += float(soft_barrier(util_j - 1.0, w["stress"]))
         d_stress = d_stress + 2.0 * w["stress"] * max(0.0, util_j - 1.0) * d_util
-        stress_margin += float(w["stress_margin"] * util_j ** 2)
-        d_stress_margin = d_stress_margin + 2.0 * w["stress_margin"] * util_j * d_util
+        # THE SAME FUNCTION AS THE WALL ABOVE, WITH THE KNEE MOVED IN — see DEFECT 8.
+        stress_margin += float(soft_barrier(util_j - MARGIN_KNEE_UTIL,
+                                            w["stress_margin"]))
+        d_stress_margin = d_stress_margin + (
+            2.0 * w["stress_margin"] * max(0.0, util_j - MARGIN_KNEE_UTIL) * d_util)
         utils[name] = float(util_j)
     util = max(utils.values())          # the headline scalar — REPORTING ONLY
 

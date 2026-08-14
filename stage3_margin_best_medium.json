@@ -19,7 +19,7 @@
   "search": {
     "optimizer": "adam",
     "config": "medium",
-    "steps": 0,
+    "steps": 100,
     "phase_scheme": "uniform",
     "n_phase": 8,
     "seed": 0,
@@ -32,11 +32,11 @@
       "key": [
         0.0,
         0.0,
-        51.3892345106781
+        51.389234584011916
       ]
     },
     "label": "best_solution",
-    "at_step": 0
+    "at_step": 55
   },
   "loss_terms": {
     "x_order": 0.0,
@@ -49,32 +49,32 @@
     "buckling": 0.0,
     "mass": 33.29540685502762,
     "min_sj": 0.0,
-    "deflection": 0.04062293284911845,
+    "deflection": 0.040622955993225976,
     "stress": 0.0,
-    "stress_margin": 17.715604185878874,
+    "stress_margin": 17.715604236068586,
     "phase_ripple": 0.0
   },
   "metrics": {
     "buckling_ratio": 0.13674886280227366,
     "mesh_mass_g": 40.50941167361694,
     "min_scaled_jacobian": 0.8266449873176563,
-    "axle_drop_mean_mm": 2.0080620526268804,
-    "axle_drop_min_mm": 1.7430818898664489,
-    "axle_drop_max_mm": 2.3509473094814366,
-    "phase_ripple_std_over_mean": 0.10733289482641988,
-    "pnorm_stress_agg_mpa": 9.420196812404189,
-    "max_stress_mpa": 128.83183968298357,
-    "stress_scale_measured": 14.369187179064316,
+    "axle_drop_mean_mm": 2.008062054923477,
+    "axle_drop_min_mm": 1.7430818900030525,
+    "axle_drop_max_mm": 2.3509473091914153,
+    "phase_ripple_std_over_mean": 0.10733289519218188,
+    "pnorm_stress_agg_mpa": 9.420196825748274,
+    "max_stress_mpa": 128.831840064916,
+    "stress_scale_measured": 14.369187185559241,
     "kt_hub": 2.068753458948101,
     "kt_rim": 1.3995868220108076,
     "hub_fillet_cap_mm": 0.7352329433459781,
     "r_hub_effective_mm": 0.7039018612709061,
-    "stress_utilisation_hub": 0.7795225895853217,
-    "stress_utilisation_rim": 0.5273753327755648,
-    "stress_utilisation": 0.7795225895853217,
+    "stress_utilisation_hub": 0.7795225906895464,
+    "stress_utilisation_rim": 0.527375333522613,
+    "stress_utilisation": 0.7795225906895464,
     "stress_gauss_p": 4.0,
     "n_phase": 8.0
   },
-  "loss": 51.3892345106781,
-  "stage2_loss": 51.3892345106781
+  "loss": 51.389234584011916,
+  "stage2_loss": 58.411535246529084
 }

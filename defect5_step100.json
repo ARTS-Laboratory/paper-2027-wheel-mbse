@@ -1,0 +1,37 @@
+{
+ "genes": {
+  "cx1": 3.9098468699005204,
+  "cy1": 10.198961720490836,
+  "cx2": 16.126450235486274,
+  "cy2": 12.68550395120323,
+  "cx3": 22.853394885188624,
+  "cy3": 10.257224611818117,
+  "cx4": 31.137420034084524,
+  "cy4": 8.256458712100574,
+  "t0": 1.6212985548895615,
+  "t1": 1.2,
+  "t2": 1.234185935078131,
+  "t3": 1.4945008586128374,
+  "R_hub": 0.7710779257437675,
+  "R_rim": 3.0
+ },
+ "source": "stage3_margin_medium.json step 100 \u2014 DEFECT5_PLAN Step 2a",
+ "note": "the CONVERGED point of \u00a719's run, which is INFEASIBLE by 4.112 um on the hub fillet cap (0.536% of it). Exported to measure whether defect 5's overshoot is inside the cap's deliberate 2.4-3.9% conservatism. NOT a promotion candidate.",
+ "loss": 51.077062069524054,
+ "metrics": {
+  "axle_drop_mean_mm": 1.9948680144225588,
+  "max_stress_mpa": 126.31896760225378,
+  "stress_utilisation": 0.769567971228316,
+  "stress_utilisation_hub": 0.769567971228316,
+  "stress_utilisation_rim": 0.5247167806374389,
+  "kt_hub": 2.0608535349236243,
+  "kt_rim": 1.4051577932543529,
+  "hub_fillet_cap_mm": 0.7669658276478934,
+  "r_hub_effective_mm": 0.7402239130391944,
+  "phase_ripple_std_over_mean": 0.10872429535997213,
+  "mesh_mass_g": 40.66156092570505,
+  "min_scaled_jacobian": 0.8260384824892979,
+  "stress_scale_measured": 14.144031465066531,
+  "buckling_ratio": 0.1369386575733259
+ }
+}

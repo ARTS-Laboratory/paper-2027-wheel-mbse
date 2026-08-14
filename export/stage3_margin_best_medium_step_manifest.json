@@ -1,8 +1,8 @@
 {
   "genome_hash": "e126cc3",
-  "source": "best_solution.json",
-  "source_mtime": "2026-08-13T02:30:29",
-  "exported_at": "2026-08-13T02:31:29",
+  "source": "stage3_margin_best_medium.json",
+  "source_mtime": "2026-08-13T02:16:32",
+  "exported_at": "2026-08-13T02:19:47",
   "export_seconds": 56.0,
   "solid": {
     "valid": true,

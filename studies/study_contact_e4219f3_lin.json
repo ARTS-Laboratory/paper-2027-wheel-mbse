@@ -1,0 +1,265 @@
+{
+ "patch": {
+  "rows": [
+   {
+    "config": "smoke",
+    "n_elements": 960,
+    "n_rim_segments": 96,
+    "deg_per_segment": 3.75,
+    "n_quad": 6,
+    "contact_drop_mm": 1.3549432664471304,
+    "assumed_drop_mm": 1.3979604291861782,
+    "rel_diff": -0.03077137366762972,
+    "patch_half_deg": 0.4963205257628389,
+    "patch_centre_deg": 1.609892986060486,
+    "patch_half_deg_sampled": 1.3138239713002235,
+    "peak_pressure_mpa_sampled": 5.4825651348267,
+    "n_quad_points_in_contact": 1,
+    "max_penetration_mm": 0.00054825651348267,
+    "contact_split": {
+     "spoke": 0.7121174651842063,
+     "hub": 0.047046453868333456,
+     "rim": 0.24083608094746023
+    },
+    "assumed_split": {
+     "spoke": 0.6878730456397895,
+     "hub": 0.046010176110313064,
+     "rim": 0.2661167782498976
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.0011145394070624093,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.6102568395539547,
+    "local_seg_span_deg": 7.260096308835273,
+    "rim_seg_span_min_deg": 0.23990369116469878,
+    "rim_seg_span_max_deg": 7.260096308835273,
+    "rim_seg_span_ratio": 30.262545247171992,
+    "patch_over_local_seg": 0.1367256038074412
+   },
+   {
+    "config": "smoke",
+    "n_elements": 960,
+    "n_rim_segments": 96,
+    "deg_per_segment": 3.75,
+    "n_quad": 20,
+    "contact_drop_mm": 1.3501130457665553,
+    "assumed_drop_mm": 1.3979604291861782,
+    "rel_diff": -0.034226564944672466,
+    "patch_half_deg": 0.3345435289352299,
+    "patch_centre_deg": 1.393863253502268,
+    "patch_half_deg_sampled": 1.6826130295955295,
+    "peak_pressure_mpa_sampled": 6.373182474774808,
+    "n_quad_points_in_contact": 3,
+    "max_penetration_mm": 0.0006373182474774808,
+    "contact_split": {
+     "spoke": 0.7174705996391144,
+     "hub": 0.04726510207315885,
+     "rim": 0.2352642982877268
+    },
+    "assumed_split": {
+     "spoke": 0.6878730456397895,
+     "hub": 0.046010176110313064,
+     "rim": 0.2661167782498976
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.00047663635660910586,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.0853893353866295,
+    "local_seg_span_deg": 7.260096308835273,
+    "rim_seg_span_min_deg": 0.23990369116469878,
+    "rim_seg_span_max_deg": 7.260096308835273,
+    "rim_seg_span_ratio": 30.262545247171992,
+    "patch_over_local_seg": 0.09215952921398649
+   },
+   {
+    "config": "coarse",
+    "n_elements": 4704,
+    "n_rim_segments": 240,
+    "deg_per_segment": 1.5,
+    "n_quad": 6,
+    "contact_drop_mm": 1.421989649112507,
+    "assumed_drop_mm": 1.477749143702914,
+    "rel_diff": -0.03773271994642202,
+    "patch_half_deg": 0.33346819438534436,
+    "patch_centre_deg": 1.3900007064699942,
+    "patch_half_deg_sampled": 1.5981879664408893,
+    "peak_pressure_mpa_sampled": 6.488073721584442,
+    "n_quad_points_in_contact": 2,
+    "max_penetration_mm": 0.0006488073721584442,
+    "contact_split": {
+     "spoke": 0.707202285164568,
+     "hub": 0.052260096996185224,
+     "rim": 0.24053761783924682
+    },
+    "assumed_split": {
+     "spoke": 0.6706202335613718,
+     "hub": 0.050522407371279644,
+     "rim": 0.2788573590673486
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.00044456650498148065,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.0819005318335215,
+    "local_seg_span_deg": 2.904037190644317,
+    "rim_seg_span_min_deg": 0.09596280935562618,
+    "rim_seg_span_max_deg": 2.9040371906444307,
+    "rim_seg_span_ratio": 30.262111021389877,
+    "patch_over_local_seg": 0.22965834973439717
+   },
+   {
+    "config": "coarse",
+    "n_elements": 4704,
+    "n_rim_segments": 240,
+    "deg_per_segment": 1.5,
+    "n_quad": 20,
+    "contact_drop_mm": 1.4224724798884993,
+    "assumed_drop_mm": 1.477749143702914,
+    "rel_diff": -0.037405986022704396,
+    "patch_half_deg": 0.34536090582522916,
+    "patch_centre_deg": 1.4211873604505152,
+    "patch_half_deg_sampled": 1.819717478484563,
+    "peak_pressure_mpa_sampled": 6.995654427797149,
+    "n_quad_points_in_contact": 5,
+    "max_penetration_mm": 0.0006995654427797149,
+    "contact_split": {
+     "spoke": 0.7066707105535829,
+     "hub": 0.05223786815210065,
+     "rim": 0.24109142129431668
+    },
+    "assumed_split": {
+     "spoke": 0.6706202335613718,
+     "hub": 0.050522407371279644,
+     "rim": 0.2788573590673486
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.0005654653061810677,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.1204851136568952,
+    "local_seg_span_deg": 2.904037190644317,
+    "rim_seg_span_min_deg": 0.09596280935562618,
+    "rim_seg_span_max_deg": 2.9040371906444307,
+    "rim_seg_span_ratio": 30.262111021389877,
+    "patch_over_local_seg": 0.2378488174585699
+   },
+   {
+    "config": "medium",
+    "n_elements": 12288,
+    "n_rim_segments": 384,
+    "deg_per_segment": 0.9375,
+    "n_quad": 6,
+    "contact_drop_mm": 1.444873645182595,
+    "assumed_drop_mm": 1.5018333926823881,
+    "rel_diff": -0.037926808511068444,
+    "patch_half_deg": 0.3510153757800142,
+    "patch_centre_deg": 1.3973964393934093,
+    "patch_half_deg_sampled": 1.8030406385182118,
+    "peak_pressure_mpa_sampled": 6.050425233610213,
+    "n_quad_points_in_contact": 2,
+    "max_penetration_mm": 0.0006050425233610213,
+    "contact_split": {
+     "spoke": 0.6998804025880346,
+     "hub": 0.05537163101233793,
+     "rim": 0.2447479663996275
+    },
+    "assumed_split": {
+     "spoke": 0.6629887997996173,
+     "hub": 0.053488111341607456,
+     "rim": 0.28352308885877536
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.0003895097504056366,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.1388304136114968,
+    "local_seg_span_deg": 1.815022939104665,
+    "rim_seg_span_min_deg": 0.059977060895334944,
+    "rim_seg_span_max_deg": 1.815022939104665,
+    "rim_seg_span_ratio": 30.26195201982361,
+    "patch_over_local_seg": 0.3867889140323119
+   },
+   {
+    "config": "medium",
+    "n_elements": 12288,
+    "n_rim_segments": 384,
+    "deg_per_segment": 0.9375,
+    "n_quad": 20,
+    "contact_drop_mm": 1.445214142461125,
+    "assumed_drop_mm": 1.5018333926823881,
+    "rel_diff": -0.03770008743788611,
+    "patch_half_deg": 0.3553945241837765,
+    "patch_centre_deg": 1.4161216295576486,
+    "patch_half_deg_sampled": 1.811531126741471,
+    "peak_pressure_mpa_sampled": 7.194918955235607,
+    "n_quad_points_in_contact": 6,
+    "max_penetration_mm": 0.0007194918955235607,
+    "contact_split": {
+     "spoke": 0.6995492200731214,
+     "hub": 0.055355850783532216,
+     "rim": 0.24509492914334632
+    },
+    "assumed_split": {
+     "spoke": 0.6629887997996173,
+     "hub": 0.053488111341607456,
+     "rim": 0.28352308885877536
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.0004386445260777805,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.1530380743922835,
+    "local_seg_span_deg": 1.815022939104665,
+    "rim_seg_span_min_deg": 0.059977060895334944,
+    "rim_seg_span_max_deg": 1.815022939104665,
+    "rim_seg_span_ratio": 30.26195201982361,
+    "patch_over_local_seg": 0.39161436092823104
+   }
+  ],
+  "convergence": {
+   "configs": [
+    "smoke",
+    "coarse",
+    "medium"
+   ],
+   "contact_drop_mm": [
+    1.3549432664471304,
+    1.421989649112507,
+    1.444873645182595
+   ],
+   "n_elements": [
+    960,
+    4704,
+    12288
+   ],
+   "successive_rel": [
+    0.04948279704816172,
+    0.01609294138278039
+   ],
+   "change_ratio": 2.9298371866535184,
+   "richardson_limit_mm": 1.4567316382963926,
+   "finest_vs_limit_rel": 0.00814013563106597
+  },
+  "hertz_half_deg": 0.3082244481571778,
+  "assumed_half_deg": 3.0,
+  "measured_half_deg": 0.35320494998189533,
+  "assumed_over_measured": 8.493652198684574,
+  "drop_rel_diff_at_finest": -0.03781344797447728,
+  "quadrature_sensitivity": {
+   "axle_drop": 0.0002356588617040689,
+   "patch_half_deg": 0.012475659774251024,
+   "patch_half_deg_sampled": 0.004708983281839441,
+   "peak_pressure_sampled": 0.18915922062266177
+  },
+  "sampled_patch_overstates_by": 5.116941369845414
+ },
+ "pass": false,
+ "settings": {
+  "config": "coarse",
+  "genome": "stage3_buildcap2_slack_medium.json",
+  "quick": false,
+  "kinematics": "linear",
+  "sections": [
+   "patch"
+  ],
+  "eps_n_default": 10000.0,
+  "rim_band_mm": 1.5,
+  "elapsed_s": 146.2
+ }
+}

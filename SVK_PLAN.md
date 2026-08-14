@@ -26,6 +26,12 @@ below assumes it. This file is the milestone; PLAN.md gets a §15 only at Step 7
 | 6 | export, check, promote | **DONE — NOTHING PROMOTED, AND THAT IS THE RESULT** (2026-08-10). `bc77614` clears every FEA gate at `medium` (defl −0.041%, 37.414 g, all barriers 0.0) then fails the export: `kt_error_pct` +11.9% at the hub, as-built utilisation **1.046**. Control `350f4c7` is 0.0% — a regression this arc introduced. `best_solution.json` UNCHANGED |
 | 7 | write the record into PLAN.md | **DONE — §15 WRITTEN, BANNER AMENDED, §0 BULLET ADDED** (2026-08-10) |
 
+**CLOSED 2026-08-10, all eight steps done, nothing promoted — and that was the result.** Two of
+the five successors this arc parked have since been built (buildability → PLAN §16, stress
+margin → PLAN §18), and they are what let the first promotion since go through on 2026-08-13
+(PLAN §19). See the annotated **Parked** section at the end of this file for where each one
+landed. Anything after 2026-08-10 lives in `PLAN.md` §16–§19 and `BUILD_PLAN.md`.
+
 ---
 
 ## The problem, in one page
@@ -1587,6 +1593,15 @@ deliberately left alone because acting on any of them mid-arc would be re-fittin
   wall genes at 1.2 mm, and Step 3 showed the `minwall` sweep that chose 1.2 was run under
   linear kinematics with a ranking SVK inverts. The floor is load-bearing in the shipped
   result and its justification no longer holds. This is the single most valuable follow-on.
+
+  > **STATUS 2026-08-13 — OVERTAKEN, NOT DONE.** The sweep was never re-run under SVK, so the
+  > justification for 1.2 is still the linear-kinematics one. But the *premise* expired: once
+  > PLAN §18 priced stress margin, the design chose to be thicker on its own, and **no wall
+  > gene is on the floor in the wheel that now ships** (`e126cc3`: `t0` +359.4 µm, `t3`
+  > +263.0 µm, `t2` +52.4 µm, `t1` +4.7 µm). The floor is no longer what stops the descent, so
+  > this is no longer "the single most valuable follow-on" — it is a correctness item about a
+  > constant that is currently slack. See PLAN §19.
+
 - **Give the objective a stress-margin term.** `stress` is `soft_barrier(util - 1.0, 4000)`
   and is identically zero, with identically zero gradient, for every `util <= 1.0`
   (`src/wheel_objective.py:1027`, `:290`). The optimizer cannot see stress below the knee,
@@ -1596,6 +1611,19 @@ deliberately left alone because acting on any of them mid-arc would be re-fittin
   the fillet barriers, both identically flat here, so they had zero gradient in 602 of the
   604 steps of Step 5 and `R_rim` has never moved in this repo's history. Fixing the
   margin term is also what makes the fillet radii optimisable at all.
+
+  > **STATUS 2026-08-13 — DONE, PLAN §18 (`BUILD_PLAN.md` step 9).** `stress_margin = w * util**2`
+  > per junction, `w` = 20.0 derived as a 1%-mass-for-1%-utilisation exchange rate, in
+  > `OBJECTIVE_TERMS` so it prices without ever gating. The prediction above was exactly right
+  > and was confirmed by direct measurement before the change: `dL/dR_hub` and `dL/dR_rim` were
+  > both **exactly `+0.000000e+00`** at the shipped genome. Both are live now, FD-checked to
+  > 1.8e-7, and `R_rim` moved for the first time in this repo's history — straight to its box
+  > ceiling of 3.0, which is where it still sits. Two things this bullet did not anticipate:
+  > the term found a measure-zero `smooth_min` tie-derivative bug, and `util**2` turns out to
+  > have no knee (**defect 8**, PLAN §19) — the price of margin falls only 28% from `util`
+  > 0.996 to 0.780, so the term never stops wanting margin and the design stops only when mass
+  > catches up.
+
 - **Make the objective see BUILDABILITY.** The arc's terminal finding: `bc77614` clears
   every FEA gate and then cannot be built at the stress concentration it was priced at
   (`kt_error_pct` +11.9%, as-built utilisation 1.046 against a modelled 0.935), because
@@ -1604,12 +1632,68 @@ deliberately left alone because acting on any of them mid-arc would be re-fittin
   the difference, which would also give `R_hub` its first real gradient. This is the one
   that has to be fixed before ANY SVK descent can ship, and it subsumes the wall-floor and
   stress-margin items below as far as promotion is concerned.
+
+  > **STATUS 2026-08-13 — DONE, PLAN §16 (the whole of `BUILD_PLAN.md` steps 1–7).** This bullet
+  > became its own seven-step arc. The differentiable cap is
+  > `min(by_slot, by_thickness)` with `by_thickness = t0 * (0.505 - 0.48*(1 - cos arrival))`,
+  > fitted conservatively under all fourteen OCC sweep stations, and it gave `cx1`/`cy1` a live
+  > gradient into buildability. It worked: the wheel promoted in §19 builds **24/24 edges at
+  > both junctions at the full requested radius, `kt_error_pct` +0.0%**, at a worst hub wedge
+  > of 326° — harsher than the 314° corner the model was fitted against. The +11.9% that
+  > closed this arc is gone.
+  >
+  > Two defects were found *inside* the fix and are not closed: `--best-out` selected by loss
+  > and ignored feasibility (**defect 6**, fixed in §17 — it has since caught two real over-cap
+  > promotions), and the quadratic barrier cannot hold a boundary against live opposition
+  > (**defect 5**, open, and now the thing that limits every descent — §19 lost 45 of 100 steps
+  > to it).
+
 - **Put a mesh-convergence study on `axle_drop_mean_mm`.** `coarse` and `medium` disagree
   by ~1.7% on this wheel, and the ±0.3% deflection gate is satisfiable at exactly one rung
   — the coarse answer reads +1.65% at medium, the medium answer −1.71% at coarse. Give the
   deflection QoI the GCI treatment M8b-i.5 gave the stress QoI, then state the gate against
   the extrapolated value instead of against whichever rung the descent happened to run on.
+
+  > **STATUS 2026-08-13 — STILL OPEN, and the gap has halved on its own.** No GCI study has been
+  > done. But §19's five scheduled coarse-against-medium checks measured the disagreement along
+  > a whole trajectory, and it shrinks as the design gets thicker: **−1.59% at `e4219f3`**
+  > (1.96822 coarse against 1.99996 medium) and **−0.86% at `e126cc3`** (1.99079 against
+  > 2.00806). Still not a ±0.3% gate at both rungs, so the item stands.
+  >
+  > **A caution for whoever picks it up:** mesh refinement is now the *smaller* of the two
+  > deflection errors. PLAN §19 measured the assumed-3.0°-contact-patch model at **5.27%**
+  > against real contact on the promoted wheel, up from 3.08% on its predecessor — six times
+  > the mesh disagreement, and growing as the optimizer works. Extrapolating the deflection QoI
+  > to zero mesh size converges on the wrong answer more precisely unless the patch model is
+  > fixed first. That is why the contact model, not this study, is §19's successor #1.
+
 - **Set the load-control tolerance from the inner solve's noise floor.** `tol_rel=1e-8` in
   `solve_wheel_contact` (`src/wheel_fem.py:1842`) is not universally achievable under SVK:
   run 2 stalled at 5.2e-7 relative, 52x above it. Measure the floor, then set the outer
   tolerance from the measurement — do not pick a looser round number.
+
+  > **STATUS 2026-08-13 — STILL OPEN, untouched.** Nothing since has measured the inner solve's
+  > noise floor. No SVK descent since has stalled on it either: §19's 100-step `medium` run
+  > exited 0 with no convergence events, so the item is real but has not been costing anything
+  > observable.
+
+---
+
+### Where the five successors stand (2026-08-13)
+
+| successor | status |
+|---|---|
+| Make the objective see BUILDABILITY | **DONE** — PLAN §16, `BUILD_PLAN.md` steps 1–7 |
+| Give the objective a stress-margin term | **DONE** — PLAN §18, `BUILD_PLAN.md` step 9 |
+| Re-derive the min-wall floor under SVK | **OVERTAKEN** — the floor is slack on the shipped wheel |
+| Mesh-convergence on `axle_drop_mean_mm` | **OPEN** — gap halved to −0.86%; a larger model error now dominates |
+| Load-control tolerance from the noise floor | **OPEN** — untouched, and not observably costing anything |
+
+This arc ended with nothing promoted. The two successors it named as prerequisites were both
+built, and on 2026-08-13 the first promotion since — `e4219f3` → `e126cc3`, PLAN §19 — went
+through on the strength of them: buildable at 24/24 edges with +0.0% `Kt` error, and hub
+utilisation down from **0.9964 to 0.7795**. The genome this arc could not ship, `bc77614`, was
+blocked by exactly the two things those successors fixed.
+
+**Read `PLAN.md` §16–§19 and `BUILD_PLAN.md` for anything after 2026-08-10. This file is
+closed.**
