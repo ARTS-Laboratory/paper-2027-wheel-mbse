@@ -1667,6 +1667,31 @@ deliberately left alone because acting on any of them mid-arc would be re-fittin
   > to zero mesh size converges on the wrong answer more precisely unless the patch model is
   > fixed first. That is why the contact model, not this study, is §19's successor #1.
 
+  > **CLOSED 2026-08-14 — DONE, and the answer is that the gate cannot be adjudicated. See
+  > PLAN.md §29.** `make gci` / `studies/study_deflection_gci.py` ran the ladder on the gate's
+  > own QoI (`axle_drop_mean_mm`, 8-phase, SVK): the observed order is **p = 0.502** and the
+  > **GCI on the finest rung is 2.804%, nine times the ±0.3% band** — so the band was never
+  > deciding anything about the design. Extrapolated deflection **2.05789 mm (+2.894%)**; every
+  > rung flatters the wheel. Robust across all four defensible definitions of `h`
+  > (p ∈ [0.479, 0.536], GCI ∈ [2.42%, 3.54%]).
+  >
+  > **The caution above was right about the ranking and wrong about the conclusion.** Mesh
+  > refinement being the smaller error does not make it a small error: at 2.8% it already
+  > swamps the gate. And the "gap has halved on its own" note is falsified — §26's scheduled
+  > checks put it at **−1.077 pp** on the shipped genome, up 25% from `e126cc3`'s −0.863 pp.
+  >
+  > The absolute band is retired in favour of a same-rung comparison against the incumbent
+  > (PLAN §29's call). Earning it back needs the junction FILLETED IN THE FEA MODEL — the
+  > singularity, not the mesh, is what holds p at 0.5, and the patch control in
+  > `study_wheel_fea` already rules out the other candidate.
+  >
+  > **And the corner is confirmed by its exponent.** The junction's material wedge is 322°
+  > (hub) / 320° (rim) from the manifest; Williams' eigenvalue for that wedge is **λ = 0.5030**
+  > against a **measured p = 0.5023**. λ changes by <0.01 across every wedge this design family
+  > can produce, so **the optimizer cannot descend out of the singularity** and no rung escapes
+  > it. The FEA model is sharp exactly where the exported solid is round (24/24 filleted,
+  > `kt_error_pct` +0.0%).
+
 - **Set the load-control tolerance from the inner solve's noise floor.** `tol_rel=1e-8` in
   `solve_wheel_contact` (`src/wheel_fem.py:1842`) is not universally achievable under SVK:
   run 2 stalled at 5.2e-7 relative, 52x above it. Measure the floor, then set the outer

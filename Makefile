@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap contact studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee contact gci studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -83,11 +83,20 @@ help:
 	@echo "              each converged genome. ~5.3 h each. RUN THEM SEQUENTIALLY"
 	@echo "              and capped, exactly as prod9/prod10 — see the comment there."
 	@echo "              Override SVK_DESCENT_STEPS/SVK_DESCENT_WORKERS/SVK_MIN_WALL"
+	@echo "make knee     DEFECT8_PLAN.md step 4: the production descent under the"
+	@echo "              knee'd stress_margin. Every knob is §19's, so §19's own run"
+	@echo "              (stage3_margin_medium.json) is an exact control and the"
+	@echo "              objective is the only difference. ~6.3 h, capped as prod9"
 	@echo "make contact  CONTACT_PLAN.md step 2: ONE cell of the patch-resolution"
 	@echo "              matrix — is the axle drop the objective steers by still"
 	@echo "              mesh-convergent on the genome that ships? Override"
 	@echo "              CONTACT_GENOME/CONTACT_KIN/CONTACT_SECTIONS/CONTACT_OUT."
 	@echo "              NOT the M6 gate: that is study_contact.py in full, in studies"
+	@echo "make gci      SVK_PLAN's closing item: the ±0.3% deflection gate is"
+	@echo "              satisfiable at exactly one rung. Runs the gate's OWN QoI"
+	@echo "              (axle_drop_mean_mm, 8-phase, both kinematics) up the whole"
+	@echo "              mesh ladder and extrapolates it. 1 h 35 m, 20.6 GB peak."
+	@echo "              --reanalyse redoes the arithmetic on a saved report free"
 	@echo "make minwall-1.6 | -1.8 | -2.0 | -2.2"
 	@echo "              PLAN.md 0(2): what the printable wall floor costs in grams."
 	@echo "              125 steps from the elite-10 answer at each floor; 2.0 is the"
@@ -476,6 +485,55 @@ buildcap:
 	    --fidelity-check-every 25 --fidelity-check-config coarse \
 	    --out $(BUILDCAP_OUT) --best-out $(BUILDCAP_BEST)
 
+# DEFECT8_PLAN.md step 4 / PLAN.md §23 successor 1.  THE PRODUCTION DESCENT UNDER THE
+# KNEE'D `stress_margin`.
+#
+# EVERY KNOB IS §19'S, DELIBERATELY: `medium`, SVK, 100 steps, uniform 8-phase, seed 0,
+# 4 workers, `--fidelity-check-every 25 --fidelity-check-config coarse`, from the shipped
+# genome, `--min-wall 1.2`.  §19's own run (`stage3_margin_medium.json`, 101 objective
+# calls, 6 h 20 m) is therefore an exact control and the ONLY difference between the two
+# is the objective — `w * util**2` there, `soft_barrier(util_j - 0.80)` here.  That is the
+# same discipline `buildcap` above applies to `svk-medium`, and for the same reason: a run
+# that changes two things measures neither.
+#
+# FROM THE SHIPPED GENOME, not from a probe iterate.  `e126cc3` sits at util 0.780 against
+# a knee at 0.800, so under the new objective its margin term is inert and `mass` has
+# nothing opposing it until utilisation climbs back to the knee.  Step 0 of this run IS
+# the shipped genome re-scored under the new objective, which is what makes the step-0 vs
+# selected-iterate table apples to apples the way §19's was.
+#
+# DISTINCT --out AND --best-out, load-bearing for the reason prod9/prod10's and buildcap's
+# are: `stage3_margin_medium.json` is the control and clobbering it would destroy it.
+#
+# ~226 s/step on the three `medium`/SVK/100-step runs this mirrors, so ~6.3 h.  Launch it
+# capped and detached, exactly as prod9/prod10 and svk-shipped —
+#
+#   systemd-run --user --unit=wheel-knee -p MemoryMax=32G --collect \
+#       --working-directory=$$PWD /usr/bin/make knee
+#
+# 32G, NOT the 16G every block above uses, and this is measured rather than inherited.  The
+# 2026-08-13 run was launched at 16G and sat at the ceiling: `memory.current` 15.3 GiB,
+# `memory.events` max = 2936 forced direct reclaims, `oom_kill` 0.  It survived and held the
+# control's pace (224-239 s/step against §19's 236/191/227), so nothing in this file's timings
+# moves — but a `medium` SVK descent WANTS more than 16 GiB and spends five hours one
+# allocation from the kill switch.  The cap was raised to 32G on the live unit with
+# `systemctl --user set-property`.  The 16G above it was sized against a 31 GB box; this one
+# now reports 61 GiB total with 49 free, so the "two descents do not fit" arithmetic that
+# every other block here inherits is worth re-deriving before it is trusted again.
+KNEE_STEPS ?= 100
+KNEE_GENOME ?= best_solution.json
+KNEE_OUT ?= stage3_knee_medium.json
+KNEE_BEST ?= stage3_knee_best_medium.json
+
+knee:
+	$(PY_OPT) -u src/wheel_stage3.py --start best \
+	    --genome $(KNEE_GENOME) \
+	    --config medium --kinematics svk --min-wall $(SVK_MIN_WALL) \
+	    --steps $(KNEE_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --phase-scheme uniform \
+	    --fidelity-check-every 25 --fidelity-check-config coarse \
+	    --out $(KNEE_OUT) --best-out $(KNEE_BEST)
+
 # The milestone gates.  These are not tests — they produce measured reports whose
 # numbers are quoted in CLAUDE.md — but they do exit nonzero when a gate fails, so
 # they are safe to run in CI.
@@ -492,3 +550,36 @@ studies:
 
 clean-pyc:
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +
+
+# SVK_PLAN.md's closing item / PLAN.md §26 successor #2 — the deflection gate's standing.
+#
+# The ±0.3% gate is satisfiable at exactly ONE rung (SVK_PLAN step 6: the coarse-converged
+# answer read +1.65% at medium, the medium-converged answer -1.71% at coarse), so the
+# number a design is judged against moves when the rung moves.  This runs the ladder the
+# gate's OWN QoI — `axle_drop_mean_mm`, 8-phase, both kinematics — and extrapolates it, so
+# the gate can be stated against a mesh-independent value instead of a rung.
+#
+# NOT in `make studies`, for the same reason `svk` is not: it measures THE WHEEL, NOT THE
+# COMMIT.
+#
+# COST, MEASURED, because it was first estimated at "~11 min, ~2.5 GB" from bare
+# `solve_wheel` timings and both numbers were wrong by an order of magnitude: the
+# objective does far more per phase than one solve (`medium`/svk took 626 s against a
+# predicted 144), and with --workers 0 all eight phase meshes are resident at once.
+#
+#   RUN 2026-08-14, --workers 0, smoke+coarse+medium+fine, both kinematics:
+#     wall 5692 s (1 h 35 m)      peak RSS 20.6 GB      box 61 GB, 35 free, no swap
+#     per rung (linear/svk s):  smoke 204/22   coarse 310/173   medium 633/626
+#                               fine 1758/1967
+#
+# So it fits on this box uncapped but it is NOT a cheap target, and `fine` is ~3x medium.
+# Use --reanalyse to redo the arithmetic on a saved report for free; an analysis bug
+# should not cost 95 minutes, and one already did.
+GCI_GENOME ?= best_solution.json
+GCI_LADDER ?= smoke,coarse,medium,fine
+GCI_WORKERS ?= 0
+GCI_OUT ?= studies/study_deflection_gci.json
+
+gci:
+	$(PY_OPT) -u studies/study_deflection_gci.py --genome $(GCI_GENOME) \
+	    --ladder $(GCI_LADDER) --workers $(GCI_WORKERS) --out $(GCI_OUT)

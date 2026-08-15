@@ -3,6 +3,26 @@
 > **Ignore version control entirely. Do not commit, branch, stage, revert or otherwise
 > touch git — it is not part of this project's workflow and nothing here depends on it.**
 
+> **THE SHIPPED GENOME IS `09e8188`, PROMOTED 2026-08-14 (§26). READ THE CHAIN BEFORE
+> TRUSTING ANY PER-DESIGN NUMBER IN THIS FILE.**
+>
+> ```
+>   36aed36  GA/beam optimum      →  best_solution_ga_beam.json, pinned, never moves
+>   350f4c7  §13, 2026-08-06      →  stage3_minwall_best_1.2.json   (the §14 control genome)
+>   e4219f3  §16, 2026-08-11      →  stage3_buildcap2_feasible_medium.json
+>   e126cc3  §19, 2026-08-13      →  stage3_margin_best_medium.json
+>   09e8188  §26, 2026-08-14      →  best_solution.json  ← SHIPPED.  48.64 g OCC / 39.47 g mesh
+> ```
+>
+> **AND THE BANNER BELOW WENT STALE FOR TWO PROMOTIONS, WHICH IS ITSELF THE WARNING.** It
+> declared `350f4c7` shipped and said in terms that the shipped genome had not changed; that
+> stopped being true at **§16 on 2026-08-11** and stayed wrong through §19. `SVK_PLAN.md` step
+> 7 requires this banner to be amended whenever the shipped genome moves and it was not, twice.
+> The paragraphs below are kept **as written**, scoped to their own dates, because their
+> content is still correct history — only their claim about *what ships today* was wrong. This
+> is the same defect §25 found in the study drivers, in the one place specifically designed to
+> prevent it.
+>
 > **THE SHIPPED GENOME CHANGED ON 2026-08-06 — READ THIS BEFORE TRUSTING ANY NUMBER BELOW.**
 > `best_solution.json` is now the Stage-3 1.2 mm optimum, genome **`350f4c7`**, 39.194 g on
 > the mesh / 47.63 g as an OCC solid. Everywhere in §1–§12 that a table, a study or a
@@ -25,10 +45,13 @@
 > ever overrode it. The shipped wheel deflects **2.409 mm, not the 1.953 the optimizer saw**,
 > and carries **0.875 of allowable, not 0.799** — measured, at `medium`, and it is **still
 > feasible** with every barrier at 0.0. None of those numbers is wrong; they are answers to a
-> different question. **THE SHIPPED GENOME DID NOT CHANGE** — `best_solution.json` is still
-> `350f4c7`, because the wheel the SVK descent found clears every FEA gate and then **does
-> not build** (`kt_error_pct` +11.9% at the hub, as-built utilisation 1.046). §15 is the
-> record and `SVK_PLAN.md` is the evidence. Linear remains the default everywhere on purpose;
+> different question. **THE SHIPPED GENOME DID NOT CHANGE *ON THAT DATE*** —
+> `best_solution.json` was still `350f4c7` **as of 2026-08-10**, because the wheel the SVK
+> descent found clears every FEA gate and then **does not build** (`kt_error_pct` +11.9% at the
+> hub, as-built utilisation 1.046). §15 is the record and `SVK_PLAN.md` is the evidence.
+> *(It changed three times after this paragraph was written — §16, §19, §26 — and the sentence
+> was not amended at any of them; see the chain at the top. The 2026-08-10 claim stands for
+> 2026-08-10 and for nothing after it.)* Linear remains the default everywhere on purpose;
 > `--kinematics svk` is opt-in on `wheel_stage3.py` and `study_gradient.py`.
 
 ---
@@ -4099,11 +4122,577 @@ knee at 0.800, so the margin term is inert and `mass` has nothing opposing it un
 climbs back. A descent would find a slightly lighter wheel sitting *at* the knee. **That run
 has not been made; nothing is promoted and `best_solution.json` is untouched.**
 
-1. **The production descent under the knee'd objective** — `medium`, SVK, 100 steps, §19's
-   knobs, §19's own run as control. The first item in six arcs that is a *run* rather than a
-   measurement, because the measurement is done.
-2. **Price the fillets' mass.** `R_hub`/`R_rim` are free in mass against 6.18% of the solid
-   measured (§14); the exporter already publishes `fillets.volume_mm3`.
+1. ~~**The production descent under the knee'd objective**~~ **DONE — §26.** Candidate
+   `09e8188`, 48.64 g against 50.25 g, promotion pending the Inventor import.
+2. ~~**Price the fillets' mass.**~~ **DONE — §24.** `R_hub`/`R_rim` are free in mass against
+   **8.77%** of the solid at the shipped genome, not §14's 6.18%.
 3. **A rim cap model**, still parked, still a prerequisite for `R_rim`'s ceiling (§22).
 4. The rim OD element-size step (§20), the Group C manifest-bite tolerance, the five inherited
    characterisation gates, and defect 5's boundary placement (§21).
+
+---
+
+### 24. THE FILLETS ARE PRICED: 4.406 g, 8.77% of the shipped part, and `R_rim`'s ceiling costs 4× what it harvests. Buildability is NOT what holds it at 3.0 (2026-08-13).
+
+§23's ranked successor #2, and it needed no new machinery: the exporter has published
+`fillets.volume_mm3` since §14, so this is **seventeen OCC exports off the shipped genome
+`e126cc3`, one gene moved at a time**, and the manifests read. No FEA, no descent, nothing
+promoted. Probe manifests are in `export/filletprice_*` and `export/rimcap_*`; their STEP
+geometry was deleted after reading, being 40 MB of throwaway.
+
+#### What a millimetre of fillet radius weighs
+
+`R_hub` held at 0.728, `R_rim` swept. Mass is the OCC solid at `DENSITY_PLA`, i.e. what gets
+printed — **the shipped wheel's fillets are 3553.19 mm³ = 4.406 g, 8.77% of its 50.25 g**.
+§14's 6.18% is a *different genome's* number and this arc had been quoting it as if it were
+the shipped one; `R_rim` has since gone to its ceiling, which is most of the difference.
+
+| `R_rim` | fillet mm³ | fillet g | solid g | Δ solid vs 3.0 | OCC |
+|---|---|---|---|---|---|
+| 2.00 | 1819.45 | 2.256 | 48.10 | **−2.15** | 24/24, `Kt` +0.0% |
+| 2.50 | 2634.84 | 3.267 | 49.11 | −1.14 | 24/24, +0.0% |
+| 2.749 | 3078.25 | 3.817 | 49.66 | −0.59 | 24/24, +0.0% |
+| **3.00 = shipped** | **3553.19** | **4.406** | **50.25** | — | 24/24, +0.0% |
+| 3.50 | 4606.33 | 5.712 | 51.55 | +1.30 | 24/24, +0.0% |
+| 4.00 | 5750.80 | 7.131 | 52.97 | +2.72 | **FAILS — see below** |
+
+`R_rim` held at 3.0, `R_hub` swept: 0.4 → 50.10 g, 0.6 → 50.18 g, **0.728 → 50.25 g**,
+1.2 → 50.52 g (and `kt_error_pct` **+16.0%** at 1.2, which is §16's analytic cap of 0.735
+firing exactly where it should — the built fillet stops being the one the stress model priced).
+
+**So: `R_rim` costs ~2.6 g/mm at the ceiling, `R_hub` ~0.53 g/mm — a factor of five.** Both
+junctions carry 24 edges, and the rim's radius is four times the hub's, so this is the shape
+of `∂V/∂R` rather than anything about the design.
+
+#### The arithmetic §22 could not do, and it reverses the sign
+
+§22 measured what raising the ceiling *harvests* and could only say the mass term is blind to
+it. Now the blindness has a number. Pricing a built gram at the objective's own rate for a
+gram — `MASS_WEIGHT / MASS_REFERENCE_G` = 30.0/36.5 = **0.821918 of loss per gram**, which
+reproduces the shipped `mass` term of 33.2954 at 40.50941 g:
+
+| `R_rim` | §22 harvest (`util**2`) | mass it actually adds | that mass, in loss | **net** |
+|---|---|---|---|---|
+| 3.50 | −0.2920 | +1.30 g | +1.068 | **+0.776 WORSE** |
+| 4.00 | −0.5166 | +2.72 g | +2.236 | **+1.719 WORSE** |
+
+**The prize was 4.3× smaller than the bill at 4.0, and 3.7× smaller at 3.5.** §22 blocked the
+ceiling raise on four blindnesses and called it a trap; that verdict was right, and this is the
+number it was missing.
+
+**The assumption, stated rather than buried:** 0.821918/g is what the objective charges for a
+gram of *mesh* mass, applied here to a gram of *fillet*. That a fillet gram is as unwanted as a
+spoke gram is what "if `mass` could see the fillets" means — it is the premise of the fix, not
+a measurement. Nothing here re-optimises around the new radius, exactly as §22's probe did not.
+
+**And under the knee the harvest column is now exactly zero.** §23 made `stress_margin`
+`soft_barrier(util_j − 0.80)`, and the rim sits at util **0.527**. `soft_barrier` is
+identically flat below its knee, so `dL/dR_rim` is **0.0 analytically, not approximately** —
+`tests/test_objective.py::test_but_above_the_knee_the_fillet_radii_are_live` pins it and
+passes. Under the objective that ships today, raising `R_rim`'s ceiling harvests **nothing**
+and costs 2.6 g/mm of real part. Three arcs, three directions, one answer.
+
+#### `R_rim` = 4.0 does not build — and the boundary is 0.016 mm wide, which is NOT a cap
+
+The 4.0 export is `valid: true` and its solid mass is real, but the rim fillet **fragmented**:
+
+```
+  n_edges_found 24  ->  n_edges_filleted 25
+  fillet_families   [ {4.0 mm: 12 edges}, {3.4 mm: 13 edges} ]
+  r_built_mm 0.0 (the no-single-family sentinel)
+  kt_modeled 1.3314   kt_built 3.5 (= the Kt clamp, not a measurement)   kt_error_pct +162.9%
+```
+
+OCC split an edge and fell back to 3.4 mm on over half the rim, so the stress model would have
+priced a 4.0 mm fillet the part does not have — the §3/§13 failure mode, at the junction with
+**no cap model at all**. Reproduced identically on two independent exports.
+
+**So I bisected it, on the whole-part predicate** (24/24 edges, one family, `r_built` =
+`r_requested`, `Kt` error 0.0), and the answer is not the smooth limit the fragmentation
+suggested:
+
+| `R_rim` | 3.50 | 3.75 | 3.8750 | 3.8844 | 3.9344 | 3.9375 | 3.9688 | **3.9844** | **4.0000** |
+|---|---|---|---|---|---|---|---|---|---|
+| | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **✅** | **❌** |
+
+All builds are 24/24 at a single family and **+0.0%** `Kt` error. **The boundary is between
+3.9844 and 4.0000 — 0.016 mm wide**, with two spot-checks below it against the bisection's
+monotonicity assumption, which `study_hub_cap.py` warns is not free on OCC.
+
+**This corrects the reading the fragmentation first invited, and the correction matters.** A
+cliff that sharp, sitting exactly on a round number, is a geometric coincidence on **one
+genome**, not a manufacturing limit — and OCC accepts the rim fillet to within 0.4% of 4.0,
+which is **33% above the ceiling of 3.0**. So buildability does **not** justify that ceiling.
+The mass does, on its own, by the table above. §22's successor #3 — a rim cap model — is
+therefore still wanted, but for the reason §16 wanted the hub's: to know the boundary as a
+function of `t3` and the rim arrival angle rather than at one design. What it is *not* is the
+thing standing between `R_rim` and 4.0.
+
+#### What this does not say
+
+It does not say the shipped wheel is 4.4 g heavier than it should be. The fillets are load
+paths, `Kt` is computed from them, and §13 promoted the first part whose built fillets match
+the ones its stress model priced. It says those grams are **unpriced**: the objective spends
+them without seeing them, so a gene that is free to it is 2.6 g/mm to the printer. Whether
+`mass` should read the OCC solid instead of the mesh is a real question and it is not asked
+here — it would put an OCC export inside the descent loop, which is the reason it reads the
+mesh in the first place.
+
+---
+
+### 25. THE SVK RE-SCORE GATE HAD BEEN DEAD SINCE §18, AND §19'S PROMOTION SILENTLY TURNED ITS CONTROL RED (2026-08-14).
+
+Found by trying to use it. `make svk` is the §16-trap check — feasibility at **both** fidelities
+before a promotion — and DEFECT8's candidate is the first thing to ask it for since §18. It
+could not answer. Two independent breaks, neither of which anything would have reported,
+because a driver that exits 2 on line one never reaches the line that would have shown the
+second.
+
+#### Break 1: the term-set guard, red since 2026-08-13
+
+```
+RuntimeError: the objective's term set moved: missing [], unclassified ['stress_margin'].
+Classify it in BARRIER_NAMES or HEADLINE_NAMES — an unclassified term would be reported as
+feasible
+```
+
+§18 added `stress_margin` to the objective; this driver predates it and classifies every term
+explicitly, **by design** — the guard exists so a new term cannot be silently treated as
+feasible. It did its job and nobody ran it. So `make svk` has been failing on line one since
+§18 landed, and §19 promoted `e126cc3` without this gate having run.
+
+**A tripwire now exists, because the driver's own guard only fires when someone runs it** —
+and this one was run once a promotion, which is the worst possible moment to discover it.
+`tests/test_objective.py::test_every_objective_term_is_classified_by_the_svk_rescore_gate`
+asserts that `wheel_objective.TERMS` and the driver's `BARRIER_NAMES + HEADLINE_NAMES` are the
+same set, in both directions. It checks that the judgement has been *made* for every term, not
+that it is correct — which one a term belongs in is a judgement, and `smoothness` is the
+cautionary tale. Falsified before being trusted: with `stress_margin` removed from
+`HEADLINE_NAMES`, i.e. the file as it stood this morning, it fails with exactly the message the
+driver would have given. **`make test` goes 6 failed / 440 passed → 6 failed / 441 passed.**
+
+**`stress_margin` is a HEADLINE, not a BARRIER**, and this file's own history says why: the
+first version of it listed `smoothness` — a curvature-rate integral, positive at every real
+genome — as a barrier and *reported the promoted design as infeasible*. Under §23's knee,
+`stress_margin` has the same shape: exactly 0.0 below util 0.80, positive above. The wall is
+`stress`, at util 1.0, and it is already a barrier. A design sitting just above the knee is
+**priced, not infeasible** — and that design is the equilibrium §23's entire policy aims at.
+
+#### Break 2: the control was wired to "whatever is shipped"
+
+The control reproduces §14's force-controlled service point and is the check that says the rest
+of the table means anything. It compared `best_solution.json` against
+`PLAN14_SHIPPED_SERVICE_REL` — a **constant §14 measured on `350f4c7`**. Those were the same
+wheel at Step 3. §19 made them different wheels and the constant did not move:
+
+| genome | file | linear | svk | rel | §14 | err | |
+|---|---|---|---|---|---|---|---|
+| `350f4c7` | `stage3_minwall_best_1.2.json` | 1.952966 | 2.408898 | **23.346%** | 23.346% | **0.00%** | PASS |
+| `e126cc3` | `best_solution.json` (shipped) | 1.702531 | 2.051939 | 20.523% | 23.346% | 12.09% | **FAIL** |
+
+**The solver is fine.** It reproduces §14 to five significant figures on the genome §14
+measured. The control was failing because the wheel under it had been promoted out from
+underneath it — a gate that goes red on a *correct* change is worse than no gate, and it would
+have gone red at the next promotion too.
+
+**Fixed by pinning the control to the file, not to the shipped pointer**:
+`run_control` now reads `stage3_minwall_best_1.2.json` explicitly. That **restores** Step 3's
+measurement rather than changing it — 350f4c7 is what `best_solution.json` held when Step 3 ran
+— and makes the row what it was always for: a check on the SOLVER, which no future promotion
+can turn red. Re-run after the fix: **both control rows 0.00%, gate PASS, exit 0.**
+
+#### And a documented invariant that stopped being true at the same moment
+
+The file states `minwall 1.2` **is** the shipped genome bit-for-bit, and used the pair as a
+free cross-check on the pool reduction and mesh cache — two rows that must agree to the last
+digit. §19 ended that: `minwall 1.2` is 350f4c7, `best_solution.json` is `e126cc3`, and the
+rows now differ at every column. **That cross-check is gone and its loss was never recorded.**
+The comment is corrected in place; what the row is *now* for is the control above.
+
+#### The lesson this arc keeps re-learning, in its sharpest form yet
+
+Four arcs have now found that a red gate is about the test rather than the design (§14 ×3,
+§20 ×2, §22, and DEFECT8 step 1). **This is the first one found to be about the PROMOTION** —
+the artifact a promotion updates is the same artifact three gates take their reference from,
+and nothing in the repo checks that a promotion leaves them consistent. §13's banner discipline
+exists for exactly this in `PLAN.md`; the study drivers have no equivalent. Worth a successor:
+a promotion check that greps the drivers for `best_solution.json` and asks, for each, whether
+that reference means "the design we ship" or "the design this constant was measured on".
+
+---
+
+### 26. THE PRODUCTION DESCENT UNDER THE KNEE. **PROMOTED — `e126cc3` → `09e8188`** — lighter on both mass measures, with deflection back inside a gate the incumbent had fallen outside (2026-08-14).
+
+Working notes in `DEFECT8_PLAN.md` step 4. §23's ranked successor #1, and the first item in six
+arcs that was a *run* rather than a measurement. 6 h 19 m, 101 objective calls, exit 0, every
+knob §19's so §19's own run is an exact control and the objective is the only difference.
+
+**Step 0 was predicted before the run and read exactly.** `e126cc3` under the knee must lose
+its entire `stress_margin` of 17.7156 — it sits at util 0.7795, below the 0.80 knee — so step 0
+had to be 51.3892 − 17.7156 = **33.6736**. It was. That is the cheap check that a six-hour run
+is measuring the change it claims, and it is the one the skipped probe would have given.
+
+| | shipped `e126cc3` | candidate `09e8188` | |
+|---|---|---|---|
+| loss, same objective | 33.6736 | **32.7446** | −0.9290 |
+| **OCC solid mass** | 50.25 g | **48.64 g** | **−3.20%** |
+| mesh mass | 40.509 g | 39.470 g | −2.57% |
+| fillet mass (§24) | 4.406 g | 3.818 g | −0.588 g |
+| axle drop | +0.403% | **−0.129%** | |
+| util hub | 0.7795 | 0.8201 | |
+| `R_rim` | 3.0000 | 3.0000 | still pinned |
+| `t1` / `t2` | 1.2047 / 1.2524 | 1.2000 / 1.2000 | onto the floor |
+
+**It is lighter by MORE on the built part than on the modelled one**, because it also gave back
+0.588 g of the fillet mass §24 measured the objective cannot see. First movement in this repo
+where the unpriced mass moved *with* the priced mass instead of against it — and it happened
+without anyone teaching `mass` to see fillets, because `R_hub` came down for stress reasons.
+
+**What it paid: four of §19's twenty-two points of utilisation headroom.** That is the knee's
+stated policy — margin below 0.80 is worthless, so the design settles just above it — and it is
+what a promotion accepts rather than a surprise. The `stress` wall at 1.0 is untouched.
+
+**Feasible at BOTH fidelities under BOTH kinematics, every barrier 0.0** (§16's trap), export
+clean at **19 checks / 0 failures** with `Kt` error **+0.0%** at both junctions — the §13
+property the current part was promoted for, preserved. `make test` **6 failed / 441 passed**:
+the same six documented reds, plus the one test §25 added.
+
+**Defect 5 still bites, and less: 46 of 101 iterates violate `fillet_cap` against §19's 74**,
+and the selected iterate moves from step 55 to **74**. §21's diagnosis is unchanged and the
+defect-6 selection rule is again the only reason a shippable iterate came out.
+
+**`max_stress_mpa` +29% and `stress_scale_measured` +35% are NOT the constraint** — they are the
+mesh-divergent field max and its diagnostic, which M8b-i.6 step 2 removed from the constraint
+for exactly that reason. The constraint is `util` = 0.8201, under the wall.
+`min_scaled_jacobian` 0.8266 → 0.7828 is a real mesh-quality loss, worth watching, not gating.
+
+#### PROMOTED (2026-08-14). The import was clean.
+
+`best_solution.json` is **`09e8188`**, copied from `stage3_knee_best_medium.json` verbatim
+apart from a `note` — a provenance field the file used to carry and lost at §19, restored here.
+`e126cc3` is preserved as `stage3_margin_best_medium.json`. `export/wheel.step` and its
+manifest rebuilt from the new file: **48.64 g**, 111 faces / 327 edges, 24/24 at both junctions,
+`Kt` error **+0.0%** at both, bite 0.5344 / 1.6416. `tests/test_golden.py` still reads
+`best_solution_ga_beam.json` — §10's decoupling is what makes a promotion a one-file change
+that cannot re-baseline the regression net, and it was checked, not assumed.
+
+**The top-of-file banner was amended, and it needed more than this promotion's line.** It still
+declared `350f4c7` shipped and stated that the shipped genome had not changed — false since
+**§16 on 2026-08-11**, i.e. through two promotions, in the one place `SVK_PLAN.md` step 7
+specifically requires to be updated when the genome moves. The full chain is now at the top and
+the stale sentences are scoped to their dates rather than deleted. **Same defect as §25, in the
+mechanism designed to prevent it** — which is why successor #1 below is what it is.
+
+**`make svk` did NOT need re-running after the promotion, and that is §25's fix working.** The
+warning I wrote before promoting — that promoting moves the reference the gate takes its
+constants from — no longer applies: §25 pinned the §14 control to `stage3_minwall_best_1.2.json`
+by file, so it is immune to promotions by construction. The `shipped` row simply follows
+`best_solution.json`, which is what that row is for. The canonical `study_svk_rescore.json`
+artifact is still Step-3 era and refreshing it is optional, not a gate.
+
+#### The successors, re-ranked
+
+1. ~~**A promotion-consistency check.**~~ **DONE — `tests/test_promotion.py`, five tests, and
+   the first thing it caught was this file's own banner.** See below.
+2. **The ±0.3% deflection gate's standing.** It is a plan-level number the incumbent violates
+   at +0.403%, applied as binding in SVK_PLAN step 5 and BUILD_PLAN steps 8 and 10 and quietly
+   not applied in §19. This candidate passes it either way so the question did not have to be
+   settled here; the next one may not be so obliging.
+3. **A rim cap model** (§22, §24) — still parked, and §24 narrowed what it is for: the boundary
+   as a function of `t3` and the rim arrival angle, not as the thing blocking `R_rim`.
+4. The rim OD element-size step (§20), the Group C manifest-bite tolerance, the five inherited
+   characterisation gates, and defect 5's boundary placement (§21).
+
+---
+
+### 27. THE PROMOTION CONTRACT IS NOW A TEST. `tests/test_promotion.py` (2026-08-14).
+
+§26's ranked successor #1, built immediately after §26's promotion because that promotion had
+just produced the second instance of the defect in one session — §25 in the study drivers, and
+PLAN.md's own banner, stale since §16 through two promotions, in the one place `SVK_PLAN.md`
+step 7 requires to be amended when the genome moves.
+
+**What it deliberately does NOT do.** There are ~100 references to `best_solution.json` across
+`src/`, `studies/` and `tests/`, and **almost all of them are correct** — they mean "the design
+we ship" and following a promotion is exactly right. The defect is the narrow case: a
+genome-SPECIFIC constant sitting next to a read of a file that MOVES. No grep separates those,
+and a scanner that flagged all 100 would be turned off within a week. So it does not scan.
+
+**What it does instead: put the tripwire on the promotion.** `SHIPPED_GENOME_HASH = "09e8188"`
+is recorded in the test file, and moving `best_solution.json` turns it red with a **six-item
+checklist in the failure message** — amend the banner, rebuild `wheel.step`, re-check the
+drivers that pair the shipped pointer with a measured constant, run `make svk` on the
+assumption it has rotted, preserve the outgoing genome, leave the golden net alone. The
+assertion is not the deliverable; the checklist arriving *at the moment someone is promoting*
+is. Nothing in this tree did that before, which is why §16 and §19 both left leftovers.
+
+Five tests: the shipped hash against what the tree documents; `wheel.step` not older than the
+genome it claims (staleness — the hash half is already covered by
+`test_golden.py::test_genome_hash_matches_manifest`, which compares two files to each other and
+therefore agrees with itself when both are stale); the §14 control genome `350f4c7` unmoved,
+since §25's fix pins the control to a file and a file can be overwritten too; the golden
+reference `36aed36` unmoved; and the shipped file carrying a `note`, a provenance field that
+existed at §13 and was lost at §19.
+
+**Each was falsified before being trusted** — hash moved, control moved, golden re-baselined,
+STEP stale, note dropped — and each failed with its own message. `best_solution.json` was
+restored byte-identically afterwards, hash and mtime verified.
+
+#### And the draft was wrong in a way worth recording
+
+The first version asserted that `test_golden.py` must not reference `best_solution.json` at
+all. It does, in exactly one place, and its docstring argues at length why that is right: a
+manifest hash is a statement about *whichever genome the exporter last ran on*, so reading the
+pinned fixture there would turn a traceability check into a second copy of the fixture. **§10
+decoupled the FIXTURE, not the file.** The test was measuring the documentation as the
+violation — the same class of error as reading a red gate as a design defect, which this tree
+has now made six times (§14 ×3, §20 ×2, §22, DEFECT8 step 1, and here). The file said so
+itself; scanning source for intent is the wrong instrument, and that is now written into the
+test that replaced it.
+
+---
+
+### 28. A RED THAT THREE PLANS DEFERRED AS "EXPORT PRECISION" WAS A TOLERANCE THE DESIGN OUTGREW — and §26's promotion turned it green by luck (2026-08-14).
+
+`test_export_contract.py::test_the_bite_is_the_volume_divided_by_the_right_thickness` has been
+red since before CONTACT_PLAN Step 0, and was left out of scope three times under the same
+label: §19 filed it Group C, CONTACT_PLAN Step 0 tabulated it as Group C, and Step 3 said in
+terms **"out of scope, said explicitly: the Group C manifest-bite tolerance — an export-precision
+defect, not a contact one."** The post-promotion suite came back **5 failed / 442 passed**
+against the 6 / 441 the promotion predicted, and the test that had flipped was this one.
+
+**A red that goes green on a change that had no business touching it is not good news.** The
+manifest rounds the overlap to 2 dp and the bite to 4 dp, and `junction_bite` is exactly
+`overlap / (t² · W)` — so the volume's half-ulp of 0.005 arrives at the assertion *divided by
+t²·W*. The tolerance was a hard-coded `1e-4`. That is not a constant budget; it is achievable
+only for **t > 2.113 mm**:
+
+| genome | t0 | t3 | worst-case residual, hub / rim | inside 1e-4? |
+|---|---|---|---|---|
+| `36aed36` GA/beam — *when the docstring was written* | 2.4774 | 2.0000 | 8.6e-5 / 1.06e-4 | hub yes, rim no |
+| `350f4c7` §14 min-wall | 1.2000 | 1.4614 | 2.05e-4 / 1.55e-4 | no |
+| `e126cc3` §19 | 1.5594 | 1.4630 | 1.42e-4 / 1.54e-4 | no |
+| `09e8188` **shipped** | 1.4738 | 1.4313 | 1.53e-4 / 1.59e-4 | no |
+
+The old docstring read *"on the shipped genome (t0=2.48, t3=2.00)"* — true of `36aed36`, and
+false through four promotions since. **Nothing was ever imprecise about the export.** A fixed
+tolerance was compared against a quantity whose rounding scales as 1/t², and the wheel got
+thinner. The label three plans inherited from each other was wrong, and re-reading it was
+cheaper than the four sweeps it survived.
+
+It went green at §26 because the volume happened to round favourably: residual **4.5e-5 hub,
+2.1e-5 rim** against a 1.53e-4 budget. **That is worse than the red** — a test that passes on
+where the rounding landed hides until it does not, and it would have flapped on the next
+export of the same genome.
+
+**The fix derives the tolerance rather than widening it**, which is what CONTACT_PLAN's own
+rule demands ("do not widen 0.05 without stating what the number now is"):
+`tol = 0.005/(t²·W) + 5e-5` — the volume's half-ulp pushed through the division, plus the
+bite's own. It is 1.5e-4 on the shipped genome and 8.6e-5 on `36aed36`, and it cannot go stale
+when the walls move again. Falsified twice: the t0/t3 swap it exists to catch (gap **3.22e-2**,
+210× the budget) and a perturbation at 2× the derived tolerance. The manifest was restored
+byte-identically, md5 verified.
+
+#### The finding underneath, which is about the design and not the test
+
+The swap this test guards has lost most of its signal, because **t0 and t3 have converged**:
+
+| genome | t0 | t3 | a t0/t3 swap moves the hub bite by |
+|---|---|---|---|
+| `36aed36` | 2.4774 | 2.0000 | **53.4%** |
+| `09e8188` | 1.4738 | 1.4313 | **6.0%** |
+
+Still 0.0322 absolute, still 210× the tolerance, so the check holds today. But the spoke is
+becoming prismatic — 0.04 mm of taper over its length — and if a descent drives t0 = t3 the
+swap becomes undetectable *here* by construction, no matter what the tolerance is. That needs
+catching at the exporter, where the two thicknesses are selected, rather than in a manifest
+check that can only see their ratio. **Filed as a successor, not fixed:** it is a real gap, but
+it is not yet open, and §17 is the standing lesson about ranking work on a bound that does not
+bind.
+
+#### Why this is not the re-fitting the standing rule forbids
+
+A prior session diagnosed this same defect ("a 1e-4 bite tolerance against a manifest storing
+2 dp") and deliberately **left it red**, on the rule that *loosening a tolerance in the same
+session as the promotion that reddened it is indistinguishable from re-fitting the gate to the
+run that breached it.* That rule is right and it is why this needs saying out loud rather than
+glossing:
+
+- **The promotion did not redden this test — it turned it green.** The rule guards against
+  relieving a gate that a promotion breached. Here §26 relieved it by accident, and the change
+  puts a principled bound back where luck was holding it.
+- **The bound is derived, not fitted.** `0.005/(t²·W) + 5e-5` comes only from the manifest's
+  rounding decimals and the definition of `junction_bite`. No measured residual enters it. The
+  residual it permits today (4.5e-5) is a third of it.
+- **It makes the test STRICTER where it used to be lax.** On `36aed36` the derived bound is
+  8.6e-5 against the old 1e-4. It is not a widening; it is a slope where there was a constant.
+
+**The alternative fix, considered and rejected for now:** make the *exporter* write the overlap
+to 4 dp instead of 2. That attacks the root cause — the artifact discards precision in a value
+that gates buildability — and would let the tolerance stay a tight constant (the budget falls
+to 5.1e-5 for any plausible t). It is the better long-term answer. It is **not** being done in
+this session because it changes a shipped artifact's contents immediately after a promotion,
+and the 2-dp volumes are quoted in §24's fillet-price tables and the DEFECT8 records. Filed as
+a successor. Until then the derived bound retains ample power: it is exceeded by any t0/t3
+ratio error above ~0.1%, against the 6.0% a full swap produces.
+
+#### SUITE RECORD — 2026-08-14, after §26's promotion, §27's contract tests and §28's fix
+
+```
+make test:   5 failed / 447 passed in 1685.73 s (28:05)   [452 collected]
+  452 = 447 + 5, and the 5 NEW tests are §27's tests/test_promotion.py — an earlier run
+  read 5 / 442 because it collected four minutes before that file was written.
+
+THE ELEVEN REDS CONTACT_PLAN STEP 0 TABULATED ARE NOW THE FIVE IT CALLED INHERITED, and
+nothing else.  Every red that plan classified into a group is green:
+  Group A  x3   test_contact.py                          fixed, CONTACT_PLAN Step 3
+  Group B  x1   test_objective.py::test_the_margin_...   fixed, PLAN §23 (defect 8)
+  Group C  x1   test_wheel_fea.py::test_only_the_rim_... fixed, CONTACT_PLAN Step 3
+  Group C  x1   test_export_contract.py::test_the_bite_. fixed, PLAN §28  <- this section
+the five that remain are SVK_PLAN Step 0's deliberate pair plus §14's three, red by
+intent and unchanged in count since 2026-08-13:
+  test_gnl.py::test_the_correction_is_not_a_constant_over_the_design_space
+  test_gnl.py::test_the_correction_enters_at_first_order_in_the_load
+  test_wheel_fea.py::test_the_rim_band_holds_a_large_minority_of_the_compliance
+  test_wheel_fea.py::test_the_beam_to_wheel_ratio_is_not_a_constant
+  test_wheel_fea.py::test_a_thicker_rim_monotonically_stiffens_the_wheel
+
+NO NEW RED from the promotion, from the five tests §27 added, or from §28's fix.
+```
+
+---
+
+### 29. THE ±0.3% DEFLECTION GATE CANNOT BE ADJUDICATED, AND THE EVIDENCE WAS ALREADY IN THE TREE. Successor #2, closed by measurement (2026-08-14).
+
+SVK_PLAN's closing item asked for the GCI treatment on the deflection QoI so the gate could be
+stated against an extrapolated value instead of a rung. `studies/study_deflection_gci.py`
+(`make gci`, 1 h 35 m) runs the ladder on the gate's OWN quantity — `axle_drop_mean_mm`,
+8-phase uniform stencil, both kinematics, `flank_orientation` pinned at the finest rung and
+verified identical at every rung, so it is a pure mesh refinement.
+
+| rung | elem | h | linear mm | err % | **svk mm** | **err %** |
+|---|---|---|---|---|---|---|
+| smoke | 72 | 0.11785 | 1.59689 | −20.156 | 1.88090 | −5.955 |
+| coarse | 384 | 0.05103 | 1.67772 | −16.114 | 1.97608 | −1.196 |
+| medium | 1280 | 0.02795 | 1.69502 | −15.249 | **1.99742** | **−0.129** |
+| fine | 4096 | 0.01562 | 1.70683 | −14.659 | 2.01274 | +0.637 |
+
+The `medium`/SVK row reproduces DEFECT8 gate 4's −0.129% for the shipped genome exactly, which
+is what makes the rest of the ladder comparable to the promotion record.
+
+**THE OBSERVED ORDER IS p = 0.502.** On quadratic (Q9) elements, against a smooth solution,
+that should be near 2. Half-order is the signature of a singularity in the solution, and it
+gives a **GCI on the finest rung of 2.804%** — against a **±0.3%** gate. *The numerical
+uncertainty on the number the gate is stated in is nine times the width of the band.*
+
+**Extrapolated: 2.05789 mm, +2.894%.** Every rung flatters the design, monotonically, and the
+rung the gate is evaluated at is the second-most flattering of the four. The wheel deflects
+*more* than the shipped record says, not less.
+
+#### The three objections, answered by measurement rather than by argument
+
+1. **"It depends how you define h"** — the ladder is not uniformly refined (span ×2.0,
+   thickness ×1.667 then ×1.600), so `h` is genuinely ambiguous. All four defensible
+   definitions are carried in the artifact. Under SVK: **p ∈ [0.479, 0.536]**, extrapolated
+   ∈ [2.0516, 2.0698] mm, **GCI ∈ [2.416%, 3.541%]**. The verdict is identical under every
+   one, which is why it is stated at all.
+2. **"Discretisation error cancels between similar designs, so the gate still ranks them"** —
+   it does not cancel enough, and §19's and §26's own scheduled fidelity checks measure by how
+   much. The coarse-minus-medium gap is **−1.59 pp at `e4219f3`, −0.863 pp at `e126cc3`,
+   −1.077 pp at `09e8188`**: a **0.73 pp spread across three consecutive shipped genomes**,
+   still more than twice the ±0.3% band. The part of the error that survives design-to-design
+   is on its own larger than the gate.
+3. **"The contact patch is under-resolved on the coarse meshes"** — already ruled out, by
+   `study_wheel_fea.run_refinement`'s own control: re-running the ladder with a deliberately
+   over-wide 12° patch (32/51/89 nodes in the patch instead of 8/13/22) leaves the rate
+   sub-second-order at 1.613. That control was built for exactly this alternative and it
+   fails, which is what leaves the **unfilleted junction corner** as the explanation.
+
+#### The part that should sting: this was recorded, and filed under "does not matter here"
+
+`studies/study_wheel_fea.json` has carried **`criterion_met: false`** on the axle drop, with a
+**GCI of 0.633%** — already 2× the ±0.3% band — since before any of this. It was not missed;
+it was correctly set aside, by a docstring that says so in terms:
+
+> "The gate's DECISION does not rest on the axle drop being converged to 0.5%; it rests on the
+>  compliance split being stable. Tracked separately so a failed convergence criterion cannot
+>  be mistaken for a failed conclusion."
+
+That is right *for that study*, whose conclusion is about the compliance split. What nobody
+did was ask whether anything ELSE in the tree rested on the number being set aside — and a
+plan-level promotion gate in three other files did. **A convergence failure quarantined inside
+one study's scope was load-bearing outside it.** The `run_refinement` machinery, the control
+that rules out the patch, and the failing criterion were all present; only the connection was
+missing, and it cost 95 minutes to make.
+
+#### THE CALL — the absolute band is retired, the relative clause is what survives
+
+**±0.3% is withdrawn as an absolute promotion gate.** A band cannot adjudicate a quantity whose
+numerical uncertainty is 8–12× its width, and the tree has been reading mesh error as design
+quality: SVK_PLAN step 6 *blocked* a candidate at +1.65% on a number carrying ±2.8%.
+
+**What replaces it, and it is what §26 already did.** DEFECT8's gate 4 required deflection
+measured *both* against the band and against the incumbent, and pre-registered that "if they
+disagree the disagreement is the finding". They agreed, so **§26's promotion is not unsettled
+by this** — but it is now clear which of the two clauses was carrying it. The surviving gate is:
+
+> Deflection is measured at a NAMED rung and reported with it (`medium`, SVK, 8-phase uniform),
+> and the binding clause is **no worse than the incumbent measured identically**. Absolute
+> distance from 2.0 mm is reported as an observation, not as a pass/fail.
+
+This is decidable, it is what the last promotion turned on in practice, and it does not pretend
+to a precision the model does not have.
+
+**What would earn the absolute band back:** fillet the junction in the FEA model. The exported
+solid has filleted junctions — §16 through §24 exist to build and price them — while the FEA
+mesh still meets the rings at a sharp re-entrant corner and recovers `Kt` by a correction
+factor instead. Removing the singularity is what would restore the convergence rate and make an
+absolute deflection gate meaningful. That is now the highest-ranked open item, and unlike the
+GCI study it is not cheap. **Named, not started**, and the hypothesis is explicitly the corner —
+the patch control rules out the other candidate, but nothing here has yet re-run the ladder on
+a filleted model, which is the test that would confirm it.
+
+#### The corner is confirmed by its EXPONENT, and no design change can remove it
+
+§29 named the unfilleted junction corner as a hypothesis and asked for a filleted-model ladder
+to confirm it. A cheaper discriminator was tried first — run the ladder on a second genome and
+see whether `p` tracks the junction geometry — and **checking whether that test would
+discriminate is what killed it**, before the 95 minutes were spent.
+
+The manifest records the junction's material wedge: **hub 322°, rim 320°** on the shipped
+genome (§16 measured 326° on `e4219f3`). For a traction-free re-entrant wedge of material angle
+ω, Williams' mode-I eigenvalue solves `sin(λω) + λ sin(ω) = 0`, with stress ~ r^(λ−1). Solved
+numerically, and verified against the two cases with known answers — a crack (ω = 360°) returns
+λ = 0.500000 exactly, and ω = 270° returns the textbook 0.5445:
+
+| wedge | λ predicted |
+|---|---|
+| shipped hub, 322° | **0.5030** |
+| shipped rim, 320° | 0.5035 |
+| `e4219f3`-era worst hub, 326° | 0.5021 |
+| a hypothetical 300° wedge | 0.5122 |
+
+**Measured: p = 0.5023, bracketed by [0.479, 0.536] across the four h definitions.** The
+geometry predicts the convergence exponent this ladder measured. That is much stronger evidence
+than the cross-genome run would have produced — and it is *why* the cross-genome run is
+worthless: λ moves by less than 0.01 across every wedge this design family has ever produced,
+so `p` could not have tracked anything. The test was retired for being uninformative, not for
+being expensive.
+
+**One caveat, stated rather than smoothed over.** A smooth linear functional of the solution
+would be expected to converge at 2λ ≈ 1.0, not λ ≈ 0.5, by the usual duality argument. Measuring
+λ itself indicates the QoI is sampling the singular field directly rather than through a smooth
+dual — plausible, since the axle drop is a boundary displacement and the junctions are the
+structure's compliance path, but **not established here**. The agreement should be read at the
+precision the data supports: p is fitted from three points and moves ±0.03 with the definition
+of h, so "p ≈ λ ≈ 0.5" is the claim, not agreement to four decimals.
+
+**THE STRATEGIC CONSEQUENCE, which is the reason this matters beyond the gate.** λ is a property
+of the WEDGE ANGLE, and the wedge angle is ~320° for every genome this tree has produced and
+cannot be moved far by the optimizer — a spoke meeting a ring tangentially is what the design
+IS. So **the optimizer cannot descend out of this**, no rung of the existing ladder escapes it,
+and no future promotion will converge better than p ≈ 0.5. The FEA model has a sharp corner that
+**the physical part does not have**: the exported solid fillets both junctions at the full
+requested radius, 24/24 edges, `kt_error_pct` +0.0%. The model is singular where the part is
+round. That is the defect, it is in the mesh rather than in the wheel, and filleting the FEA
+junction is the only thing that removes it.

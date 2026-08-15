@@ -1257,3 +1257,36 @@ def test_the_normalized_and_physical_gradients_are_one_chain_rule_apart(genes):
     z = wg.normalize(genes, low, high)
     _, gz, _ = WO.objective(z, CFG, tiers=("t1", "t2"), normalized=True)
     assert np.allclose(gz, gp * rng, rtol=1e-12, atol=0.0)
+
+
+def test_every_objective_term_is_classified_by_the_svk_rescore_gate():
+    """PLAN §25: `make svk` is the promotion gate for feasibility at both fidelities, and
+    it had been dead since §18.
+
+    `studies/study_svk_rescore.py` classifies every term explicitly as a BARRIER (must be
+    0.0 to be feasible) or a HEADLINE (reported, never gated), and raises on anything it
+    does not recognise — deliberately, because an unclassified term would be reported as
+    feasible.  §18 added `stress_margin`; the driver predates it; so the gate exited 2 on
+    line one for every run from 2026-08-13, and §19's promotion went through without it.
+
+    Nothing noticed because that driver is not part of `make test` and is run only when a
+    promotion is pending, which is the worst possible moment to discover it.  This is the
+    tripwire: the classification is an invariant between two files, so it belongs here
+    rather than in the driver, whose own guard only fires when someone runs it.
+
+    NOT a check that the classification is CORRECT — that is a judgement (`stress_margin`
+    is a price, not a wall, and `smoothness` is the cautionary tale in the driver's own
+    header).  It checks only that the judgement has been made for every term that exists.
+    """
+    import study_svk_rescore as S
+
+    classified = set(S.BARRIER_NAMES) | set(S.HEADLINE_NAMES)
+    terms = set(WO.TERMS)
+    assert not terms - classified, (
+        f"objective terms unclassified by study_svk_rescore: {sorted(terms - classified)} "
+        "— classify each in BARRIER_NAMES or HEADLINE_NAMES. An unclassified term would be "
+        "reported as feasible, and the gate raises rather than guess")
+    assert not classified - terms, (
+        f"study_svk_rescore classifies terms the objective no longer has: "
+        f"{sorted(classified - terms)}")
+    assert not set(S.BARRIER_NAMES) & set(S.HEADLINE_NAMES)

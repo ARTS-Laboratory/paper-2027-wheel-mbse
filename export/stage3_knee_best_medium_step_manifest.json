@@ -1,9 +1,9 @@
 {
   "genome_hash": "09e8188",
-  "source": "best_solution.json",
-  "source_mtime": "2026-08-14T07:25:28",
-  "exported_at": "2026-08-14T07:26:31",
-  "export_seconds": 56.4,
+  "source": "stage3_knee_best_medium.json",
+  "source_mtime": "2026-08-14T03:15:14",
+  "exported_at": "2026-08-14T03:17:21",
+  "export_seconds": 56.0,
   "solid": {
     "valid": true,
     "volume_mm3": 39224.5,

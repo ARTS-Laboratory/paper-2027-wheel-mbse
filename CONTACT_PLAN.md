@@ -450,6 +450,13 @@ holds.
 (`test_the_bite_is_the_volume_divided_by_the_right_thickness` — an export-precision defect,
 not a contact one), Group B / defect 8, and §16's five characterisation reds.
 
+> **The "export-precision defect" label was wrong — see PLAN.md §28 (2026-08-14), where the
+> test was fixed.** Nothing was imprecise. The manifest rounds the overlap to 2 dp, the bite is
+> `overlap/(t²·W)`, and the tolerance was a hard-coded `1e-4` — a budget achievable only for
+> t > 2.113 mm, which no genome has shipped since `36aed36`. It was a tolerance the design
+> outgrew, and it was deferred under this label three times (§19, Step 0, here). Recorded at
+> the source because that is how the label kept getting inherited.
+
 **Gate.** `make test` closes at **11 − (number fixed)** failed with **no new red**, and nothing
 deleted, skipped, xfailed or re-thresholded without its old and new values tabulated on both
 genomes.

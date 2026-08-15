@@ -1,0 +1,80 @@
+{
+  "genes": {
+    "cx1": 4.477962525158226,
+    "cy1": 8.721178572401975,
+    "cx2": 15.00274451694233,
+    "cy2": 11.808789310955788,
+    "cx3": 23.81875717533114,
+    "cy3": 9.419083794820828,
+    "cx4": 30.873165689265722,
+    "cy4": 6.4375467243695965,
+    "t0": 1.4738307537189006,
+    "t1": 1.2,
+    "t2": 1.2,
+    "t3": 1.4312949633290164,
+    "R_hub": 0.6636060402965218,
+    "R_rim": 3.0
+  },
+  "source": "wheel_stage3.py",
+  "search": {
+    "optimizer": "adam",
+    "config": "medium",
+    "steps": 100,
+    "phase_scheme": "uniform",
+    "n_phase": 8,
+    "seed": 0,
+    "start": "best",
+    "min_wall_mm": 1.2,
+    "cy_bound_mm": 32.0,
+    "kinematics": "svk",
+    "selection": {
+      "tier": 0,
+      "key": [
+        0.0,
+        0.0,
+        32.74463190340839
+      ]
+    },
+    "label": "best_solution",
+    "at_step": 74
+  },
+  "loss_terms": {
+    "x_order": 0.0,
+    "hub_overlap": 0.0,
+    "smoothness": 0.16782828102126746,
+    "fold": 0.0,
+    "arrival": 0.0,
+    "fillet": 0.0,
+    "fillet_cap": 0.0,
+    "buckling": 0.0,
+    "mass": 32.440977356532755,
+    "min_sj": 0.0,
+    "deflection": 0.004145690639631074,
+    "stress": 0.0,
+    "stress_margin": 0.13168057521473925,
+    "phase_ripple": 0.0
+  },
+  "metrics": {
+    "buckling_ratio": 0.13948640992941577,
+    "mesh_mass_g": 39.46985578378152,
+    "min_scaled_jacobian": 0.7827824270012664,
+    "axle_drop_mean_mm": 1.9974245184870767,
+    "axle_drop_min_mm": 1.740921372023573,
+    "axle_drop_max_mm": 2.3243884188091153,
+    "phase_ripple_std_over_mean": 0.1044285616356061,
+    "pnorm_stress_agg_mpa": 9.781070524669868,
+    "max_stress_mpa": 166.34892760504,
+    "stress_scale_measured": 19.352550328675115,
+    "kt_hub": 2.0962144629930166,
+    "kt_rim": 1.3939359631839685,
+    "hub_fillet_cap_mm": 0.6659554217567061,
+    "r_hub_effective_mm": 0.6397935889902162,
+    "stress_utilisation_hub": 0.8201288598947069,
+    "stress_utilisation_rim": 0.5453674385110407,
+    "stress_utilisation": 0.8201288598947069,
+    "stress_gauss_p": 4.0,
+    "n_phase": 8.0
+  },
+  "loss": 32.74463190340839,
+  "stage2_loss": 33.67363032479923
+}

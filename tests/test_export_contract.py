@@ -314,10 +314,32 @@ def test_the_bite_is_the_volume_divided_by_the_right_thickness(manifest):
 
     The exporter prices the hub on t0 and the rim on t3 — the same pairing the stress
     constraint uses, because `thickness_at_arc_length` is exactly t0 at s=0 and t3 at
-    s=1.  Swapping them is a one-character mistake that the raw volumes cannot reveal,
-    and on the shipped genome (t0=2.48, t3=2.00) it moves the hub bite by 54%.  This
-    test runs in the jax env against a manifest written by the CAD env, so it is also
-    what keeps `MIN_JUNCTION_BITE` from being defined twice.
+    s=1.  Swapping them is a one-character mistake that the raw volumes cannot reveal.
+    This test runs in the jax env against a manifest written by the CAD env, so it is
+    also what keeps `MIN_JUNCTION_BITE` from being defined twice.
+
+    THE TOLERANCE IS DERIVED, NOT CHOSEN, and it used to be a hard-coded 1e-4 that the
+    design drifted out from under.  The manifest rounds the overlap to 2 dp and the bite
+    to 4 dp, and bite = overlap/(t^2 W) — so the volume's half-ulp of 0.005 arrives here
+    DIVIDED BY t^2 W, which is not a constant across genomes.  1e-4 is only achievable
+    for t > 2.113 mm.  The docstring this replaces read "on the shipped genome (t0=2.48,
+    t3=2.00)": true of `36aed36`, whose worst case was 8.6e-5 and which passed.  Every
+    genome promoted since has thinned the walls, `09e8188` ships t0=1.4738 / t3=1.4313,
+    and the worst case is 1.53e-4 / 1.59e-4 — above the old bound at BOTH junctions.
+
+    So this was never the "export-precision defect" three plans deferred it as (§19
+    Group C, CONTACT_PLAN Steps 0 and 3).  Nothing was imprecise: a fixed tolerance was
+    compared against a quantity whose rounding scales as 1/t^2, and the wheel got
+    thinner.  It went green at PLAN §26's promotion by pure luck of where the volume
+    rounded (residual 4.5e-5 hub, 2.1e-5 rim, against a 1.53e-4 budget) — which is worse
+    than the red, because a test that passes on the rounding hides until it does not.
+
+    THE POWER THIS GIVES UP IS SMALL AND MEASURED.  The swap it exists to catch moves
+    the hub bite by 0.0322 on the shipped genome, still 210x the derived tolerance.  But
+    the MARGIN has collapsed and that is a real fact about the design, not the test: at
+    `36aed36` a swap moved the bite 53.4%, at `09e8188` it moves it 6.0%, because t0 and
+    t3 have converged to within 0.04 mm of each other.  If a future genome drives them
+    equal, a swap becomes undetectable HERE and needs catching at the exporter instead.
     """
     import wheel_genome as wg
     from wheel_fea import SPOKE_WIDTH_MM
@@ -331,16 +353,23 @@ def test_the_bite_is_the_volume_divided_by_the_right_thickness(manifest):
 
     block = manifest["junction_overlap_mm3"]
     for ring, t_key in (("hub", "t0"), ("rim", "t3")):
-        # abs=1e-4 because the manifest rounds to 4 dp.  Loose enough for the rounding,
-        # tight enough for the failure this exists for: the shipped t0 and t3 are 0.48 mm
-        # apart, and a swap is 4800x this tolerance.
+        # t is rounded to 4 dp and compared against the gene directly, so a half-ulp of
+        # 5e-5 is the whole budget; 1e-4 leaves 2x and does not scale with anything.
         assert block["t_mm"][ring] == pytest.approx(genes[t_key], abs=1e-4), (
             f"{ring} was priced at t={block['t_mm'][ring]} but the gene {t_key} says "
             f"{genes[t_key]} — the exporter has the two rings' thicknesses crossed")
+
+        # The bite is a QUOTIENT of two rounded numbers, so its budget is the volume's
+        # half-ulp pushed through the division plus the bite's own.  See the docstring:
+        # this is 1.5e-4 on the shipped genome and 8.6e-5 on `36aed36`, and the constant
+        # it replaces was 1e-4 for both.
+        tol = 0.005 / (genes[t_key] ** 2 * SPOKE_WIDTH_MM) + 0.00005
         expect = junction_bite(block[ring], genes[t_key], SPOKE_WIDTH_MM)
-        assert block["bite"][ring] == pytest.approx(expect, abs=1e-4), (
+        assert block["bite"][ring] == pytest.approx(expect, abs=tol), (
             f"{ring}: manifest bite {block['bite'][ring]} but "
-            f"{block[ring]} mm³ / (t² · W) = {expect}")
+            f"{block[ring]} mm³ / (t² · W) = {expect}; the rounding alone allows "
+            f"{tol:.2e} at t={genes[t_key]:.4f} and the gap is "
+            f"{abs(block['bite'][ring] - expect):.2e}")
 
 
 def test_the_shipped_junctions_clear_their_own_floor(manifest):

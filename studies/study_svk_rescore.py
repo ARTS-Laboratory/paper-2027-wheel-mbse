@@ -83,7 +83,18 @@ BARRIER_NAMES = ("x_order", "hub_overlap", "fold", "arrival", "fillet",
 # INTEGRAL (`wheel_objective.t1_vector`, "smoothness, REWRITTEN"), so it is positive at
 # every real genome — 0.29 at the shipped one.  Listing it as a barrier reports the
 # PROMOTED DESIGN as infeasible, which is what the first run of this file did.
-HEADLINE_NAMES = ("mass", "deflection", "phase_ripple", "smoothness")
+#
+# `stress_margin` IS A PRICE, NOT A WALL, and it belongs here for the reason `smoothness`
+# does.  Added by PLAN §18 after this file was written, so the guard below had been failing
+# every run since 2026-08-13; §23 then made it `soft_barrier(util_j - MARGIN_KNEE_UTIL)`,
+# which reads exactly 0.0 below the 0.80 knee and positive above it.  That shape is why it
+# is tempting to call a barrier and why doing so would be wrong: the wall is `stress`, at
+# util 1.0, and it is already in BARRIER_NAMES.  A design sitting deliberately above the
+# knee — which is the equilibrium §23's whole policy aims at, and where the `09e8188`
+# candidate sits at 0.8201 — is PRICED, not infeasible.  Listing it as a barrier would
+# report every design the current objective wants as infeasible, i.e. exactly the failure
+# the smoothness note above records.
+HEADLINE_NAMES = ("mass", "deflection", "phase_ripple", "smoothness", "stress_margin")
 
 # `36aed36` IS EXPECTED TO COME BACK INFEASIBLE and that is not a finding.  It predates
 # the fillet-cap work, and `wheel_objective.DEFAULT_WEIGHTS`' own comment names its
@@ -91,16 +102,20 @@ HEADLINE_NAMES = ("mass", "deflection", "phase_ripple", "smoothness")
 # `mass`'s 55.3".  It is here as a control on the SVK CORRECTION — a thicker, duller
 # wheel whose correction §14 measured at +3.953% — not as a promotion candidate.
 
-# `minwall 1.2` IS THE SHIPPED GENOME, BIT-FOR-BIT.  Measured: max|gene diff| against
-# `best_solution.json` is 0.0, and the shipped file's own note says it was promoted "from
-# stage3_minwall_best_1.2.json, verbatim apart from this note".  (So is
-# `stage3_minwall_best_1.2_medium.json`, whose `search` block reads `"steps": 0` — that
-# artifact is a RE-SCORE, never a descent.)  The row is kept because two rows of one table
-# that must agree to the last digit is a free check on the pool reduction and the mesh
-# cache, but it is NOT a seventh design and must never be counted as independent evidence:
-# there are SIX distinct genomes below.
+# `minwall 1.2` WAS THE SHIPPED GENOME BIT-FOR-BIT, AND STOPPED BEING IT AT §19.  It is
+# `350f4c7`; `best_solution.json` has been `e126cc3` since 2026-08-13.  So the two rows no
+# longer have to agree and the free cross-check they used to give is GONE — measured, they
+# now differ at every column.  What `minwall 1.2` still is, and why it is now load-bearing
+# rather than redundant, is the genome §14 measured: `run_control` pins to this file for
+# exactly that reason.  (`stage3_minwall_best_1.2_medium.json` is also 350f4c7, and its
+# `search` block reads `"steps": 0` — that artifact is a RE-SCORE, never a descent.)
+# SEVEN files, SIX distinct genomes, and the duplicate pair is 350f4c7's, not the shipped
+# one's.
 GENOMES = (
-    ("350f4c7 shipped", "best_solution.json"),
+    # NOT hash-labelled, deliberately: this row follows whatever `best_solution.json` holds,
+    # so a hash in the label goes stale at every promotion.  It read "350f4c7 shipped" until
+    # §19 made it `e126cc3` and nothing updated the string.
+    ("shipped (best_solution.json)", "best_solution.json"),
     ("36aed36 GA/beam", "best_solution_ga_beam.json"),
     ("elite10", "stage3_prod_best_elite10.json"),
     ("minwall 1.2", "stage3_minwall_best_1.2.json"),
@@ -140,8 +155,23 @@ def run_control(cfg=CONTROL_CONFIG):
     compared against, and it is run first so that a driver that is wired wrong is caught
     before an hour of `medium` solves has been spent.
     """
+    # PINNED TO `350f4c7` BY FILE, NOT TO "whatever is shipped", and that is the fix for a
+    # real break.  This row compares against `PLAN14_SHIPPED_SERVICE_REL`, a CONSTANT §14
+    # measured on genome `350f4c7`; it used to read `best_solution.json` because at Step 3
+    # those were the same wheel.  §19 promoted `e126cc3` on 2026-08-13 and the control has
+    # been comparing a different genome against 350f4c7's number ever since — measured:
+    #
+    #     350f4c7  (stage3_minwall_best_1.2.json)   23.346%  vs §14 23.346%   err  0.00%  PASS
+    #     e126cc3  (best_solution.json, shipped)    20.523%  vs §14 23.346%   err 12.09%  FAIL
+    #
+    # Nobody saw it because the term-set guard above had been failing every run since §18
+    # added `stress_margin`, so this driver had not completed since 2026-08-13.  Pinning the
+    # file RESTORES Step 3's measurement rather than changing it — `stage3_minwall_best_1.2`
+    # is 350f4c7, which is what `best_solution.json` held when Step 3 ran — and makes the
+    # control what it was always for: a check that the SOLVER still reproduces §14, which no
+    # future promotion can silently turn red.
     rows = []
-    for label, path in (("350f4c7 shipped", "best_solution.json"),
+    for label, path in (("350f4c7 §14 control", "stage3_minwall_best_1.2.json"),
                         ("36aed36 GA/beam", "best_solution_ga_beam.json")):
         genes = load_genes(path)
         mesh = WW.build_wheel(genes, cfg)
