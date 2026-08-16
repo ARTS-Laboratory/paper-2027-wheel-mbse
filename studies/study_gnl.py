@@ -495,6 +495,12 @@ def _print(rep):
           f"{100 * ds['iso_rel_diff_max']:.2f}%  "
           f"(a factor of {ds['iso_rel_diff_ratio']:.1f}), cv "
           f"{ds['iso_rel_diff_cv']:.2f}")
+        # The factor is max/min over the DRAWN rows — an estimator of the range, so it
+        # grows with n and swings by 40x across seeds.  It is a diagnostic and nothing
+        # may be gated on it; the CV beside it is the number that carries the claim.
+        # PLAN §31 retired a `> 3.0` gate on it.  Say so where the number is printed.
+        p(f"      (that factor is sample-size dependent — diagnostic only, PLAN §31; "
+          f"the cv is the number the conclusion rests on)")
         p(f"    one correction factor would be defensible: "
           f"{'YES' if ds['correction_factor_is_defensible'] else 'NO'}")
 

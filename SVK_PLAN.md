@@ -1669,11 +1669,16 @@ deliberately left alone because acting on any of them mid-arc would be re-fittin
 
   > **CLOSED 2026-08-14 — DONE, and the answer is that the gate cannot be adjudicated. See
   > PLAN.md §29.** `make gci` / `studies/study_deflection_gci.py` ran the ladder on the gate's
-  > own QoI (`axle_drop_mean_mm`, 8-phase, SVK): the observed order is **p = 0.502** and the
-  > **GCI on the finest rung is 2.804%, nine times the ±0.3% band** — so the band was never
-  > deciding anything about the design. Extrapolated deflection **2.05789 mm (+2.894%)**; every
-  > rung flatters the wheel. Robust across all four defensible definitions of `h`
-  > (p ∈ [0.479, 0.536], GCI ∈ [2.42%, 3.54%]).
+  > own QoI (`axle_drop_mean_mm`, 8-phase, SVK): the observed order is **p = 0.638** and the
+  > **GCI on the finest rung is 2.749%, nine times the ±0.3% band** — so the band was never
+  > deciding anything about the design. Extrapolated deflection **2.05700 mm (+2.850%)**; every
+  > rung flatters the wheel. The verdict holds under all four defensible definitions of `h`:
+  > the SMALLEST GCI any of them gives is 2.42%, already 8× the band.
+  >
+  > *(Numbers corrected 2026-08-15. The first version of this entry read p = 0.502 / GCI 2.804%
+  > / 2.05789 mm, from a study that took its cell size from `wheel_mesh`'s spoke-block ladder
+  > while solving on `wheel_wheel`'s 12-sector wheel. The gate verdict is unaffected — see
+  > PLAN §29 for why the GCI barely moved while p moved 25%.)*
   >
   > **The caution above was right about the ranking and wrong about the conclusion.** Mesh
   > refinement being the smaller error does not make it a small error: at 2.8% it already
@@ -1681,16 +1686,25 @@ deliberately left alone because acting on any of them mid-arc would be re-fittin
   > checks put it at **−1.077 pp** on the shipped genome, up 25% from `e126cc3`'s −0.863 pp.
   >
   > The absolute band is retired in favour of a same-rung comparison against the incumbent
-  > (PLAN §29's call). Earning it back needs the junction FILLETED IN THE FEA MODEL — the
-  > singularity, not the mesh, is what holds p at 0.5, and the patch control in
-  > `study_wheel_fea` already rules out the other candidate.
+  > (PLAN §29's call). Earning it back needs the junction FILLETED IN THE FEA MODEL — Q9
+  > elements give p ≈ 2 on a smooth solution and this ladder gives 0.638, the patch control in
+  > `study_wheel_fea` rules out the other candidate, and the FEA model is sharp exactly where
+  > the exported solid is round (24/24 filleted, `kt_error_pct` +0.0%).
   >
-  > **And the corner is confirmed by its exponent.** The junction's material wedge is 322°
-  > (hub) / 320° (rim) from the manifest; Williams' eigenvalue for that wedge is **λ = 0.5030**
-  > against a **measured p = 0.5023**. λ changes by <0.01 across every wedge this design family
-  > can produce, so **the optimizer cannot descend out of the singularity** and no rung escapes
-  > it. The FEA model is sharp exactly where the exported solid is round (24/24 filleted,
-  > `kt_error_pct` +0.0%).
+  > **The exponent does NOT confirm the corner, and the claim that it did is retracted
+  > (2026-08-15).** Williams' eigenvalue for the junction's 322°/320° material wedge is
+  > λ = 0.5030, and the corrected measurement is p = 0.638 — they do not agree. The reported
+  > agreement was the `h` error above, exactly: `0.5023 × ln(1.826)/ln(1.616) = 0.628`.
+  >
+  > **The corner is real, but it never needed this study to establish it — PLAN §30.** M4
+  > already had it, `test_peak_stress_diverges_but_the_field_converges` has pinned it since
+  > §14, and M8b-i.6 step 2 rebuilt the stress constraint around it. `make corner` (8.5 s) adds
+  > the RATE — peak von Mises 61.9 → 99.1 → 126.3 → 150.6 MPa, slope −0.44 on log h where a
+  > convergent peak gives zero — plus the four corners individually and their mesh-measured
+  > wedge angles (321.1° / 296.8° / 321.3° / 307.9°, Williams λ = 0.503–0.514 against 0.38–0.56
+  > from the rates: the mechanism, not the number). **Filleting the FEA junction stays the top
+  > item.** The deflection order `p` was simply the wrong instrument for the question, and the
+  > right one had been sitting in the test suite the whole time.
 
 - **Set the load-control tolerance from the inner solve's noise floor.** `tol_rel=1e-8` in
   `solve_wheel_contact` (`src/wheel_fem.py:1842`) is not universally achievable under SVK:

@@ -38,8 +38,8 @@ pinned at the FINEST rung — that is the one whose answer the extrapolation is 
 
 GCI, NOT A BARE RICHARDSON.  `run_refinement` assumes a constant refinement ratio and
 takes `(d1-d2)/(d2-d3)` as the observed one.  The rungs here are NOT constant-ratio:
-h = 1/sqrt(n_elements) gives 1.8257 from coarse to medium and 1.7889 from medium to fine,
-a 2% inconsistency.  So this uses Roache's iterative solve for the observed order `p`,
+h = 1/sqrt(n_elements) gives 1.6162 from coarse to medium and 1.5934 from medium to fine,
+a 1.4% inconsistency.  So this uses Roache's iterative solve for the observed order `p`,
 which is stated for exactly that case, and reports the apparent order both ways so the
 difference between the two treatments is on the record instead of hidden in a formula.
 =============================================================================
@@ -54,7 +54,6 @@ import time
 import numpy as np
 
 import project_paths as PP  # noqa: F401  (puts src/ on the path)
-import wheel_mesh as WM
 import wheel_objective as WO
 import wheel_pool as WP
 import wheel_wheel as WW
@@ -62,8 +61,9 @@ import wheel_wheel as WW
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # The ladder.  `smoke` is included as a DIAGNOSTIC and excluded from the extrapolation:
-# 72 elements is far outside any asymptotic range, and a three-point Richardson is only
-# meaningful on points that are in one.  Reported so that claim is checkable.
+# 960 elements on a 12-sector wheel is 16 span elements per spoke, far outside any
+# asymptotic range, and a three-point Richardson is only meaningful on points that are in
+# one.  Reported so that claim is checkable.
 LADDER = ("smoke", "coarse", "medium", "fine")
 EXTRAPOLATE_FROM = ("coarse", "medium", "fine")
 
@@ -73,17 +73,29 @@ SAFETY_FACTOR = 1.25            # Roache's, the customary value for three-grid s
 GATE_PCT = 0.3                  # the plan-level gate, ± this many percent of target
 
 # THE LADDER IS NOT UNIFORMLY REFINED, which is the first objection to any `p` reported
-# here: span goes 64 -> 128 -> 256 (x2.0 twice) but thickness goes 6 -> 10 -> 16 (x1.667
-# then x1.600), so the cells change aspect ratio as well as size and "the" refinement
+# here: span goes 48 -> 96 -> 192 (x2.0 twice) but thickness goes 4 -> 6 -> 8 (x1.500
+# then x1.333), so the cells change aspect ratio as well as size and "the" refinement
 # ratio depends on what you call h.  Roache's procedure assumes uniform refinement.  So
 # every h that could reasonably be defended is carried, and the conclusion is only stated
-# where they AGREE.  They do: under SVK p is 0.48-0.54 and the GCI is 2.4-3.5% for all of
-# them, so the verdict below does not rest on the choice.
+# where they AGREE.
+#
+# EVERY COUNT HERE COMES FROM `wheel_wheel`, THE MESH THE QoI IS ACTUALLY SOLVED ON, and
+# that is the whole reason these are functions of a measured `counts` dict rather than of
+# a config name.  `wheel_mesh` and `wheel_wheel` both export configs called smoke /
+# coarse / medium / fine and they are DIFFERENT MESHES: at `medium`, wheel_mesh is one
+# 128x10 spoke block (1280 elements) while wheel_wheel is the 12-sector wheel (12288).
+# The first version of this study drew `h` from `wheel_mesh` while `WO.objective` solved
+# on `wheel_wheel`, which put the refinement ratios at 1.826/1.789 instead of the true
+# 1.616/1.593 and inflated every reported `p` by ln(1.826)/ln(1.616) = 1.25x.  The
+# extrapolated value and the GCI survived that error untouched — with three points, p
+# and r enter Richardson only through r^p = |e21/e32|, which is fixed by the measured
+# phi alone — but `p` itself did not, and `p` is the number that identifies WHY the
+# convergence is slow.  Take the counts from the mesh you solved on.
 H_DEFS = {
-    "1/sqrt(n_elements)": lambda c: 1.0 / math.sqrt(WM.get_config(c).n_elements),
-    "1/n_span": lambda c: 1.0 / WM.get_config(c).n_span,
-    "1/n_thick": lambda c: 1.0 / WM.get_config(c).n_thick,
-    "1/sqrt(n_nodes)": lambda c: 1.0 / math.sqrt(WM.get_config(c).n_nodes),
+    "1/sqrt(n_elements)": lambda c: 1.0 / math.sqrt(c["n_elements"]),
+    "1/n_span": lambda c: 1.0 / c["n_span"],
+    "1/n_thick": lambda c: 1.0 / c["n_thick"],
+    "1/sqrt(n_nodes)": lambda c: 1.0 / math.sqrt(c["n_nodes"]),
 }
 H_PRIMARY = "1/sqrt(n_elements)"     # the isotropic equivalent; reported as THE number
 
@@ -93,11 +105,24 @@ def load_genes(path):
         return np.array(list(json.load(fh)["genes"].values()), dtype=float)
 
 
-def _h(cfg_name, which=H_PRIMARY):
-    """Representative cell size.  The mesh is a structured span x thickness grid, so
-    1/sqrt(n_elements) is the isotropic equivalent and is the primary choice; see
-    `H_DEFS` for why every alternative is carried alongside it."""
-    return H_DEFS[which](cfg_name)
+def mesh_counts(cfg_name, genes):
+    """The full-wheel mesh's size at one rung, as the dict `H_DEFS` reads.
+
+    `n_nodes` is taken from an ACTUAL assembled `WheelMesh` rather than from a formula,
+    because the sector blocks share seams and the merged count is not the sum of the
+    grids.  Topology is frozen per config, so any feasible genome gives the same numbers;
+    building costs 0.08 s even at `fine`.
+    """
+    cfg = WW.get_config(cfg_name)
+    mesh = WW.build_wheel(genes, cfg)
+    return {"n_elements": int(mesh.n_elements), "n_nodes": int(mesh.n_nodes),
+            "n_span": int(cfg.n_span), "n_thick": int(cfg.n_thick),
+            "n_weld": int(cfg.n_weld)}
+
+
+def _h(counts, which=H_PRIMARY):
+    """Representative cell size from one rung's measured `counts` dict."""
+    return H_DEFS[which](counts)
 
 
 def observed_order(phi, h, tol=1e-12, max_iter=200):
@@ -184,12 +209,12 @@ def run_ladder(genome=GENOME, ladder=LADDER, n_phase=N_PHASE, workers=0):
     rows = []
     try:
         for name in ladder:
-            cfg = WM.get_config(name)
+            counts = mesh_counts(name, genes)
             t0 = time.time()
             wanted = phases[:1] if pool is not None else phases
             meshes = WO.phase_meshes(genes, name, wanted, orientation=pinned)
-            row = {"config": name, "n_elements": int(cfg.n_elements),
-                   "n_nodes": int(cfg.n_nodes), "h": _h(name),
+            row = {"config": name, "counts": counts, "h": _h(counts),
+                   "n_elements": counts["n_elements"], "n_nodes": counts["n_nodes"],
                    "orientation_own": per_rung[name],
                    "mesh_s": round(time.time() - t0, 1)}
             for kin in ("linear", "svk"):
@@ -233,9 +258,19 @@ def analyse(out):
     should not cost a re-run.  (One did: see `observed_order`.)
     """
     rows = out["rows"]
+    # REPAIR, not just fill: a report written before the wheel_mesh/wheel_wheel mixup was
+    # found carries `n_elements` and `n_nodes` from the wrong module, so the counts are
+    # re-measured here from `wheel_wheel` and the stale mirrors are overwritten.  This is
+    # what makes `--reanalyse` able to correct that error without a 95-minute re-run.
+    genes = load_genes(out["genome"])
+    for r in rows:
+        r["counts"] = mesh_counts(r["config"], genes)
+        r["n_elements"], r["n_nodes"] = r["counts"]["n_elements"], r["counts"]["n_nodes"]
+        r["h"] = _h(r["counts"])
+
     order = [next(i for i, r in enumerate(rows) if r["config"] == c)
              for c in out["extrapolate_from"]]
-    cfgs = [rows[i]["config"] for i in order]
+    counts = [rows[i]["counts"] for i in order]
 
     out["refinement"] = {}
     out["h_sensitivity"] = {}
@@ -244,7 +279,7 @@ def analyse(out):
 
         by_h = {}
         for name in H_DEFS:
-            r = richardson(phi, [_h(c, name) for c in cfgs])
+            r = richardson(phi, [_h(c, name) for c in counts])
             if r.get("extrapolated_mm") is not None:
                 r["extrapolated_error_pct"] = float(
                     100.0 * (r["extrapolated_mm"] / WO.TARGET_DEFLECTION_MM - 1.0))
@@ -313,7 +348,7 @@ def _print(rep):
               f"from the extrapolated value; naive constant-ratio would read "
               f"{d['naive_ratio']:.4f}")
     print(f"\n  SENSITIVITY TO THE DEFINITION OF h — the ladder is not uniformly refined "
-          f"(span x2.0, thickness x1.667 then x1.600)")
+          f"(span x2.0, thickness x1.500 then x1.333)")
     for kin in ("linear", "svk"):
         for name, d in rep["h_sensitivity"][kin].items():
             if d.get("extrapolated_mm") is None:

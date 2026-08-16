@@ -1,0 +1,423 @@
+{
+ "sweep": {
+  "genome": "shipped",
+  "config": "coarse",
+  "rows": [
+   {
+    "R_hub": 0.4,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 0.6636060402965218,
+    "is_shipped_value": true,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 0.7,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 1.0,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 1.2999999999999998,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 1.6,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 1.9,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 2.1999999999999997,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 4.982715774583515,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 2.5,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 244.8789206435074,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 2.8,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 844.7751255124308,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 3.0999999999999996,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 1804.6713303813556,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 3.4,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 3124.567535250283,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 3.6999999999999997,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 4804.463740119207,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   },
+   {
+    "R_hub": 4.0,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 6844.35994498813,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.04165644522132511,
+    "spoke": 0.6422263457118904,
+    "rim": 0.31611720906678453,
+    "axle_drop_mm": 1.6207901051335216
+   }
+  ],
+  "R_hub_shipped": 0.6636060402965218,
+  "box": [
+   0.4,
+   4.0
+  ]
+ },
+ "settings": {
+  "elapsed_s": 41.2
+ },
+ "rungs": {
+  "shipped": {
+   "R_hub": 0.6636060402965218,
+   "rungs": {
+    "smoke": {
+     "hub": 0.039156569459341053,
+     "spoke": 0.6592837254098629,
+     "rim": 0.3015597051307962,
+     "axle_drop_mm": 1.5453080654263973,
+     "elapsed_s": 0.4
+    },
+    "coarse": {
+     "hub": 0.04165644522132511,
+     "spoke": 0.6422263457118904,
+     "rim": 0.31611720906678453,
+     "axle_drop_mm": 1.6207901051335216,
+     "elapsed_s": 0.4
+    },
+    "medium": {
+     "hub": 0.04334895021313559,
+     "spoke": 0.6363893682323178,
+     "rim": 0.32026168155454665,
+     "axle_drop_mm": 1.6398933431256637,
+     "elapsed_s": 1.6
+    },
+    "fine": {
+     "hub": 0.045336429375403234,
+     "spoke": 0.6341497788569903,
+     "rim": 0.3205137917676066,
+     "axle_drop_mm": 1.6500073182904413,
+     "elapsed_s": 3.7
+    },
+    "ultra": {
+     "hub": 0.04630152145731025,
+     "spoke": 0.632097527010009,
+     "rim": 0.32160095153268065,
+     "axle_drop_mm": 1.6561335563863608,
+     "elapsed_s": 9.4
+    }
+   }
+  },
+  "ga_beam": {
+   "R_hub": 1.5597674073242398,
+   "rungs": {
+    "smoke": {
+     "hub": 0.013914250136701979,
+     "spoke": 0.6676770601041004,
+     "rim": 0.3184086897591976,
+     "axle_drop_mm": 1.6170683186409378,
+     "elapsed_s": 0.1
+    },
+    "coarse": {
+     "hub": 0.013818354306063329,
+     "spoke": 0.66312181042786,
+     "rim": 0.3230598352660767,
+     "axle_drop_mm": 1.666633456057599,
+     "elapsed_s": 0.4
+    },
+    "medium": {
+     "hub": 0.013947430319994604,
+     "spoke": 0.6619589015979412,
+     "rim": 0.324093668082064,
+     "axle_drop_mm": 1.6759366609582487,
+     "elapsed_s": 1.1
+    },
+    "fine": {
+     "hub": 0.014147447911444963,
+     "spoke": 0.6609606147718831,
+     "rim": 0.3248919373166721,
+     "axle_drop_mm": 1.6815452700169224,
+     "elapsed_s": 3.4
+    },
+    "ultra": {
+     "hub": 0.014253202443361111,
+     "spoke": 0.6605489553051547,
+     "rim": 0.32519784225148407,
+     "axle_drop_mm": 1.6839156160297122,
+     "elapsed_s": 8.9
+    }
+   }
+  }
+ },
+ "attribute": {
+  "config": "coarse",
+  "shipped_hub": 0.04165644522132511,
+  "ga_beam_hub": 0.013818354306063329,
+  "rows": [
+   {
+    "gene": 7,
+    "name": "cy4",
+    "shipped_value": 6.4375467243695965,
+    "ga_beam_value": 29.291918496404325,
+    "hub": 0.013163453392335859,
+    "delta": -0.028492991828989254,
+    "closes_frac": 1.0235253529317427
+   },
+   {
+    "gene": 5,
+    "name": "cy3",
+    "shipped_value": 9.419083794820828,
+    "ga_beam_value": 24.32475682473731,
+    "hub": 0.021905430407775355,
+    "delta": -0.019751014813549756,
+    "closes_frac": 0.7094960237636692
+   },
+   {
+    "gene": 1,
+    "name": "cy1",
+    "shipped_value": 8.721178572401975,
+    "ga_beam_value": 27.952936734957692,
+    "hub": 0.025028363618668885,
+    "delta": -0.016628081602656226,
+    "closes_frac": 0.597314005952188
+   },
+   {
+    "gene": 3,
+    "name": "cy2",
+    "shipped_value": 11.808789310955788,
+    "ga_beam_value": 31.718741219774294,
+    "hub": 0.025538287404006186,
+    "delta": -0.016118157817318925,
+    "closes_frac": 0.5789965219375875
+   },
+   {
+    "gene": 8,
+    "name": "t0",
+    "shipped_value": 1.4738307537189006,
+    "ga_beam_value": 2.477369725892206,
+    "hub": 0.0561036972577231,
+    "delta": 0.01444725203639799,
+    "closes_frac": -0.5189742385846408
+   },
+   {
+    "gene": 0,
+    "name": "cx1",
+    "shipped_value": 4.477962525158226,
+    "ga_beam_value": 2.1376143443155753,
+    "hub": 0.0343195752966334,
+    "delta": -0.007336869924691708,
+    "closes_frac": 0.26355506730058803
+   },
+   {
+    "gene": 10,
+    "name": "t2",
+    "shipped_value": 1.2,
+    "ga_beam_value": 2.0,
+    "hub": 0.048902626847735005,
+    "delta": 0.0072461816264098936,
+    "closes_frac": -0.2602973619299911
+   },
+   {
+    "gene": 9,
+    "name": "t1",
+    "shipped_value": 1.2,
+    "ga_beam_value": 2.0,
+    "hub": 0.0466713041524744,
+    "delta": 0.005014858931149287,
+    "closes_frac": -0.18014378020440946
+   },
+   {
+    "gene": 4,
+    "name": "cx3",
+    "shipped_value": 23.81875717533114,
+    "ga_beam_value": 20.33476413480411,
+    "hub": 0.044246044595857126,
+    "delta": 0.0025895993745320145,
+    "closes_frac": -0.09302359786145782
+   },
+   {
+    "gene": 2,
+    "name": "cx2",
+    "shipped_value": 15.00274451694233,
+    "ga_beam_value": 17.036327854201176,
+    "hub": 0.040140730244311446,
+    "delta": -0.0015157149770136658,
+    "closes_frac": 0.054447518747871446
+   },
+   {
+    "gene": 11,
+    "name": "t3",
+    "shipped_value": 1.4312949633290164,
+    "ga_beam_value": 2.0,
+    "hub": 0.040694762411768275,
+    "delta": -0.0009616828095568367,
+    "closes_frac": 0.03454557327527117
+   },
+   {
+    "gene": 6,
+    "name": "cx4",
+    "shipped_value": 30.873165689265722,
+    "ga_beam_value": 32.53984531294355,
+    "hub": 0.04095691643704497,
+    "delta": -0.0006995287842801387,
+    "closes_frac": 0.025128475455069132
+   }
+  ]
+ }
+}

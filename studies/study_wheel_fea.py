@@ -640,6 +640,12 @@ def _print(rep):
     print(f"      axle drop / beam deflection ranges "
           f"{bb['fea_over_beam_min']:.2f} .. {bb['fea_over_beam_max']:.2f}"
           f"  ({bb['fea_over_beam_ratio']:.0f}x, CV {bb['fea_over_beam_cv']:.0%})")
+    # The `Nx` is max/min over the DRAWN rows — an estimator of the range, so it grows
+    # with n (2.4 at n=6 to 48 at n=96) and swings 19x across seeds.  Diagnostic only;
+    # PLAN §31 retired a `> 3.0` gate on it.  The caveat goes where the number is printed,
+    # because that is where it gets quoted from.
+    print(f"      (that Nx is sample-size dependent — diagnostic only, PLAN §31; the CV "
+          f"is the number the conclusion rests on)")
     print(f"      shipped genome sits at {bb['shipped']['fea_over_beam']:.3f}")
     print(f"  -> a single beam-to-wheel correction factor is defensible: "
           f"{'YES' if bb['correction_factor_is_defensible'] else 'NO'}")

@@ -25,6 +25,8 @@ import wheel_fem as fem          # noqa: E402
 import wheel_genome as wg        # noqa: E402
 import wheel_wheel as WW         # noqa: E402
 import study_gnl as gnl          # noqa: E402
+import study_reds_ratio_stability as RS   # noqa: E402  — the retired `max/min` gate's
+#                                         # replacement constants and the grid behind them
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CFG = "smoke"
@@ -134,16 +136,67 @@ def test_the_correction_is_not_a_constant_over_the_design_space(genes):
 
     A 3.95% correction that were the SAME 3.95% for every design could simply be applied
     once.  It is not: held at a matched axle drop — the control, without which this only
-    rediscovers that the correction grows with deflection — it spans about an order of
-    magnitude.
+    rediscovers that the correction grows with deflection — its coefficient of variation
+    is 0.258 at worst over 20 seeds, against the 0.10 bar the off-ramp would need.
 
-    Mirrors `test_wheel.py`'s beam-blindness rerun, which is the same argument one gate
-    earlier.
+    Mirrors `test_wheel_fea.py`'s beam-blindness rerun, which is the same argument one
+    gate earlier — and which had the SAME defect, retired in the same arc.
+
+    ===========================================================================
+    `iso_rel_diff_ratio > 3.0` WAS RETIRED IN THE REDS ARC.  DO NOT REINTRODUCE IT.
+    ===========================================================================
+    It was a `max/min` over the drawn rows — an estimator of the sample RANGE, which grows
+    without bound with the number of draws, so it is a property of the sample and not of
+    the design space.  Measured by `studies/study_reds_ratio_stability.py` (109 cells; its
+    module comment carries the full table and the derivation):
+
+        20 seeds at this test's own n=4 :  ratio 2.167 - 85.501, passing `> 3.0` in 11/20
+        n = 4, 8, 12, 16, 24, 48 at seed 7 :  2.167, 4.203, 9.026, 9.026, 51.790, 51.790
+
+    SEED 7 — the seed this test hard-coded — IS THE LOW OUTLIER of the twenty, in this
+    study and in the beam one.  That is the entire failure; the SVK path is fine.
+
+    The replacement bounds the CV, which is what `correction_factor_is_defensible` is
+    DEFINED as (`cv < 0.10`, study_gnl.py line ~343), so this is PLAN §28's move — a stale
+    constant replaced by the claim's own arithmetic — and `cv > 0.14` strictly implies the
+    first assertion below.  0.14 is derived: the CV floor over all 109 cells (0.1450,
+    which occurs in the BEAM study), floored to two decimals.  This test inherits a bound
+    set by the other study and clears it by 1.8x — its own floor over 20 seeds is 0.2577 —
+    which is what keeps the constant from being fitted to either run.
+
+    Five seeds rather than one, because a single hard-coded draw is exactly the defect.
     """
-    rep = gnl.run_design_space(genes, CFG, n=4, seed=7, max_draws=2000)
-    assert rep.get("iso_rel_diff_ratio") is not None, rep
-    assert not rep["correction_factor_is_defensible"], rep["iso_rel_diff_cv"]
-    assert rep["iso_rel_diff_ratio"] > 3.0, rep["iso_rel_diff_ratio"]
+    reps = {s: gnl.run_design_space(genes, CFG, n=4, seed=s, max_draws=2000)
+            for s in RS.RETIREMENT_SEEDS}
+    assert all(r.get("iso_rel_diff_ratio") is not None for r in reps.values()), reps
+    assert not any(r["correction_factor_is_defensible"] for r in reps.values()), {
+        s: r["iso_rel_diff_cv"] for s, r in reps.items()}
+    worst = min(reps.items(), key=lambda kv: kv[1]["iso_rel_diff_cv"])
+    assert worst[1]["iso_rel_diff_cv"] > RS.GATE_CORRECTION_CV, (
+        f"the GNL correction's CV fell to {worst[1]['iso_rel_diff_cv']:.4f} at seed "
+        f"{worst[0]}, under the {RS.GATE_CORRECTION_CV} gate — the correction is becoming "
+        f"a single number and the Stage-2.5 off-ramp is reopening at its own 0.10 bar.  "
+        f"That is news, not a gate to move: re-run "
+        f"studies/study_reds_ratio_stability.py and read PLAN.md §31 first")
+
+
+def test_the_retired_max_min_gate_is_decided_by_the_sample_size(genes):
+    """Keep the REASON `iso_rel_diff_ratio > 3.0` was retired measured, not just asserted.
+
+    The twin of `test_wheel_fea.py`'s pin of the same name.  `run_design_space` still
+    publishes `iso_rel_diff_ratio` — deliberately, it is a useful diagnostic — so this
+    asserts, executably, that no threshold can sit on it: the retired gate's VERDICT FLIPS
+    with `n` at a fixed seed.  Measured at seed 7, the seed the retired test hard-coded:
+    2.167 at n=4 and 9.026 at n=12.
+    """
+    small = gnl.run_design_space(genes, CFG, n=4, seed=7,
+                                 max_draws=2000)["iso_rel_diff_ratio"]
+    large = gnl.run_design_space(genes, CFG, n=12, seed=7,
+                                 max_draws=2000)["iso_rel_diff_ratio"]
+    assert small < 3.0 < large, (
+        f"max/min over the drawn rows read {small:.3f} at n=4 and {large:.3f} at n=12 — "
+        f"it no longer brackets the retired 3.0 gate, so the demonstration that the gate's "
+        f"verdict was decided by the sample size has stopped working")
 
 
 def test_everything_softens_and_nothing_stiffens(genes):
@@ -165,8 +218,25 @@ def test_the_correction_enters_at_first_order_in_the_load(genes):
     small-load criterion perfectly.  Exponent 0 would mean a constant offset — a
     modelling difference rather than a geometric effect.
 
-    THE SECOND ASSERTION CURRENTLY FAILS ON THE SHIPPED GENOME AND THAT IS THE RESULT,
-    NOT A BUG.  §14 swept the mesh to find out whether 0.205% on `smoke` was resolution:
+    THE PRE-REGISTERED SMALL-LOAD GATE MOVED OUT of this test, to the xfail below, in the
+    REDS arc (PLAN.md §31).  It has been red since §14 and is expected to stay red; while
+    it lived here it took the exponent assertion — the one this test is named for, and one
+    that passes — down with it on every run.  Nothing about either claim changed.
+    """
+    rep = gnl.run_load_ladder(genes, CFG, fractions=(0.01, 0.1, 0.5, 1.0, 2.0))
+    assert 0.7 < rep["fitted_exponent"] < 1.4, rep["fitted_exponent"]
+
+
+@pytest.mark.xfail(reason=(
+    "PLAN.md §14 item 4a decided this pre-registered gate STANDS; SVK_PLAN Step 0 and "
+    "§31 (REDS Step 4) re-declared it.  small_load_rel_diff = 0.2007% against a 0.1% "
+    "gate — a true statement about a 1.2 mm wall, not a defect.  GATE_SMALL_LOAD_REL is "
+    "NOT to be moved.  strict=True via pyproject.toml, so this reopens itself if the "
+    "wheel ever passes it."))
+def test_the_gnl_correction_is_small_at_one_percent_of_service_load(genes):
+    """PRE-REGISTERED, BREACHED, AND DELIBERATELY HELD.  Do not move the gate.
+
+    §14 swept the mesh to find out whether 0.205% on `smoke` was resolution:
 
         genome      smoke     coarse    medium
         350f4c7    0.2050%   0.2081%   0.2089%      <-- gate is 0.1%
@@ -176,18 +246,25 @@ def test_the_correction_enters_at_first_order_in_the_load(genes):
     1.2 mm wheel is **5.5x more geometrically nonlinear** than the GA/beam one it
     replaced, which is what a thinner, floppier part does.
 
-    The FIRST assertion — the one this test is named for — passes: 1.037 against 1.011,
-    so the correction still enters at first order and the SVK path is behaving.  What
-    moved is the coefficient, not the exponent.
+    THE EXPONENT IS FINE, which is what says this is a real result and not a broken solve.
+    `test_the_correction_enters_at_first_order_in_the_load` above passes at 1.0393 inside
+    (0.7, 1.4), re-measured by §31.  The correction still enters at first order; what moved
+    is the coefficient.  §31 re-measured this gate too, unchanged: 0.0020070 against 1e-3,
+    over by 2.01x.
 
-    `GATE_SMALL_LOAD_REL` HAS DELIBERATELY NOT BEEN MOVED.  `study_gnl.py` records it as
-    "written down BEFORE the study was run, per the plan's rule", and re-fitting a
-    pre-registered gate to the design that breached it is exactly the move that rule
-    exists to prevent.  Whether 1e-3 is still the right gate for a 1.2 mm wall is a
-    judgement about M5's claim and belongs to a human; see PLAN.md §14 item 4.
+    `GATE_SMALL_LOAD_REL` HAS DELIBERATELY NOT BEEN MOVED, and this is the third arc to
+    say so.  `study_gnl.py` records it as "written down BEFORE the study was run, per the
+    plan's rule"; §14 refused to move it twice; SVK_PLAN Step 0 re-declared it; §31 refused
+    again.  Re-fitting a pre-registered gate to the design that breached it is exactly the
+    move that rule exists to prevent, and raising it to 3e-3 or similar is forbidden.
+
+    WHAT THIS IS ACTUALLY WAITING ON, and it is bigger than the gate: §14 called it "the
+    most important thing §14 found" — whether LINEAR KINEMATICS IS STILL AN ACCEPTABLE
+    DEFAULT for a 1.2 mm wall at all.  If the answer is no, the fix belongs in the physics
+    defaults and not in this number.  §31 flagged it as a successor and deliberately did
+    not act on it.  See PLAN.md §14 item 4a and §31.
     """
     rep = gnl.run_load_ladder(genes, CFG, fractions=(0.01, 0.1, 0.5, 1.0, 2.0))
-    assert 0.7 < rep["fitted_exponent"] < 1.4, rep["fitted_exponent"]
     assert abs(rep["small_load_rel_diff"]) < gnl.GATE_SMALL_LOAD_REL, rep
 
 

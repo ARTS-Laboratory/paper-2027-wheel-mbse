@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee contact gci studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee contact gci corner reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -97,6 +97,10 @@ help:
 	@echo "              (axle_drop_mean_mm, 8-phase, both kinematics) up the whole"
 	@echo "              mesh ladder and extrapolates it. 1 h 35 m, 20.6 GB peak."
 	@echo "              --reanalyse redoes the arithmetic on a saved report free"
+	@echo "make corner   is the junction corner a real stress singularity? measures"
+	@echo "              the field AT the corner — radial decay, and whether the"
+	@echo "              peak diverges under refinement — against Williams' wedge"
+	@echo "              eigenvalue. 8.5 s for the whole ladder (PLAN §30)"
 	@echo "make minwall-1.6 | -1.8 | -2.0 | -2.2"
 	@echo "              PLAN.md 0(2): what the printable wall floor costs in grams."
 	@echo "              125 steps from the elite-10 answer at each floor; 2.0 is the"
@@ -574,7 +578,11 @@ clean-pyc:
 #
 # So it fits on this box uncapped but it is NOT a cheap target, and `fine` is ~3x medium.
 # Use --reanalyse to redo the arithmetic on a saved report for free; an analysis bug
-# should not cost 95 minutes, and one already did.
+# should not cost 95 minutes, and TWO already have — the Roache index swap, and then the
+# cell size being measured on `wheel_mesh`'s spoke block instead of the `wheel_wheel` mesh
+# the QoI is solved on (PLAN §29).  Both were fixed by reanalysis alone, no FEA:
+#   $(PY_OPT) studies/study_deflection_gci.py --reanalyse studies/study_deflection_gci.json
+# `tests/test_deflection_gci.py` now pins the arithmetic and the mesh the counts come from.
 GCI_GENOME ?= best_solution.json
 GCI_LADDER ?= smoke,coarse,medium,fine
 GCI_WORKERS ?= 0
@@ -583,3 +591,64 @@ GCI_OUT ?= studies/study_deflection_gci.json
 gci:
 	$(PY_OPT) -u studies/study_deflection_gci.py --genome $(GCI_GENOME) \
 	    --ladder $(GCI_LADDER) --workers $(GCI_WORKERS) --out $(GCI_OUT)
+
+# Does the junction corner actually carry a stress singularity?  PLAN §30.
+#
+# CHEAP, and that is the point — one LINEAR single-phase solve per rung instead of `gci`'s
+# eight phases under both kinematics.  MEASURED 2026-08-15, whole ladder to `fine`:
+# wall 8.5 s, peak RSS 1.56 GB, against `gci`'s 5692 s and 20.6 GB.  It answers the
+# question §29 spent 95 minutes failing to answer, because it measures the field AT the
+# corner instead of inferring a mechanism from the convergence order of a global
+# functional.  Nothing about the expensive study was needed to settle it.
+CORNER_GENOME ?= best_solution.json
+CORNER_LADDER ?= smoke,coarse,medium,fine
+CORNER_OUT ?= studies/study_corner_singularity.json
+
+corner:
+	$(PY_OPT) -u studies/study_corner_singularity.py --genome $(CORNER_GENOME) \
+	    --ladder $(CORNER_LADDER) --out $(CORNER_OUT)
+
+# ---------------------------------------------------------------------------
+# THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds
+# ---------------------------------------------------------------------------
+# CHEAP, both of them, and that matters: these replaced two test thresholds, so the
+# evidence has to be re-runnable by whoever doubts them rather than quoted from a plan
+# file.  `reds-ratio` is ~4 min wall across $(REDS_JOBS) processes; `reds-hub` is ~50 s.
+#
+# `reds-ratio` fans one cell per process because a cell is 2-6 s and the box has 24 cores,
+# but every cell runs under the same five thread pins as `make test` (`studies/redsrun.sh`
+# exports `wheel_pool.PINNED_ENV`) — a number quoted against a test's value has to be taken
+# in the test's environment or it is a comparison between two differently-threaded runs.
+REDS_JOBS ?= 10
+REDS_CELLS ?= /tmp/reds-cells
+REDS_RATIO_OUT ?= studies/study_reds_ratio_stability.json
+REDS_HUB_OUT ?= studies/study_reds_hub_share.json
+
+# Is `max/min over the drawn rows` a statistic a gate can sit on?  (It is not.)
+# 109 cells: 20 seeds at each test's own n, an n sweep at seed 7, and the beam study in
+# BOTH gene boxes — its statistic is a property of the box, not of the genome.
+reds-ratio:
+	@mkdir -p $(REDS_CELLS)
+	@{ for s in $$(seq 0 19); do echo "beam $$s 6 2.0"; echo "beam $$s 6 1.2"; \
+	     echo "gnl $$s 4 -"; done; \
+	   for n in 12 24 48 96; do echo "beam 7 $$n 2.0"; echo "beam 7 $$n 1.2"; done; \
+	   for n in 8 12 16 24 48; do echo "gnl 7 $$n -"; done; \
+	   for s in $$(seq 0 9); do echo "beam $$s 12 2.0"; echo "beam $$s 24 2.0"; \
+	     echo "gnl $$s 8 -"; echo "gnl $$s 16 -"; done; } \
+	| xargs -P $(REDS_JOBS) -n 4 bash -c \
+	    'w=""; [ "$$3" = "-" ] || w="--min-wall $$3"; \
+	     studies/redsrun.sh studies/study_reds_ratio_stability.py --which $$0 \
+	       --seed $$1 --n $$2 $$w 2>/dev/null \
+	       > $(REDS_CELLS)/$$0_s$$1_n$$2_w$$3.json'
+	@studies/redsrun.sh studies/study_reds_ratio_stability.py --which collect \
+	    --glob "$(REDS_CELLS)/*.json" --out $(REDS_RATIO_OUT)
+
+# PLAN §14 item 4b, finally measured: what moves the hub compliance share?
+# --sweep kills the `R_hub` hypothesis, --attribute names the gene that does move it,
+# --rungs separates design from discretisation.  `ultra` is built by the driver, not by
+# `wheel_wheel.CONFIGS` — see the comment there for why it is not a rung the tree acquires.
+reds-hub:
+	studies/redsrun.sh studies/study_reds_hub_share.py --sweep --attribute --rungs \
+	    --config coarse --configs smoke,coarse,medium,fine,ultra --out $(notdir $(REDS_HUB_OUT))
+
+reds: reds-ratio reds-hub

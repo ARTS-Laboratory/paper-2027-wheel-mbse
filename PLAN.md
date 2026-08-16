@@ -58,6 +58,16 @@
 
 ## Where the tree stands — the minimum a fresh session needs
 
+> **`make test` READS `0 failed` (§31, 2026-08-15).** It had read `5 failed` since §19, and
+> establishing "no new red" meant opening `CONTACT_PLAN.md` to look up which five. It no
+> longer does. Two of the five were a seed lottery on a max/min statistic and are **fixed**;
+> one asserted an absolute deflection at the least converged mesh in the tree and is
+> **fixed**; two are accepted findings and are now **strict `xfail`s** carrying a `reason=`
+> that names the section which decided them. `xfail_strict = true` is set in
+> `pyproject.toml`, so **an xfail that starts passing is a failure** and either one reopens
+> itself automatically. **A non-zero failure count now means something again — treat any red
+> as new.** One item is waiting on a human: the hub compliance bound, §31 item 4.
+
 **M8b-i.6 step 2 landed.** The stress constraint is no longer a p-norm rescaled to the true
 max by a measured ratio. It is now
 
@@ -4572,30 +4582,41 @@ verified identical at every rung, so it is a pure mesh refinement.
 
 | rung | elem | h | linear mm | err % | **svk mm** | **err %** |
 |---|---|---|---|---|---|---|
-| smoke | 72 | 0.11785 | 1.59689 | −20.156 | 1.88090 | −5.955 |
-| coarse | 384 | 0.05103 | 1.67772 | −16.114 | 1.97608 | −1.196 |
-| medium | 1280 | 0.02795 | 1.69502 | −15.249 | **1.99742** | **−0.129** |
-| fine | 4096 | 0.01562 | 1.70683 | −14.659 | 2.01274 | +0.637 |
+| smoke | 960 | 0.03227 | 1.59689 | −20.156 | 1.88090 | −5.955 |
+| coarse | 4704 | 0.01458 | 1.67772 | −16.114 | 1.97608 | −1.196 |
+| medium | 12288 | 0.00902 | 1.69502 | −15.249 | **1.99742** | **−0.129** |
+| fine | 31200 | 0.00566 | 1.70683 | −14.659 | 2.01274 | +0.637 |
+
+*(Element counts and `h` corrected 2026-08-15 — the first version of this table reported
+`wheel_mesh`'s spoke-block ladder, 72/384/1280/4096, for a QoI solved on `wheel_wheel`'s
+12-sector wheel. See "The h that was measured on the wrong mesh" below. The four deflections
+are the measured ones and did not move.)*
 
 The `medium`/SVK row reproduces DEFECT8 gate 4's −0.129% for the shipped genome exactly, which
 is what makes the rest of the ladder comparable to the promotion record.
 
-**THE OBSERVED ORDER IS p = 0.502.** On quadratic (Q9) elements, against a smooth solution,
-that should be near 2. Half-order is the signature of a singularity in the solution, and it
-gives a **GCI on the finest rung of 2.804%** — against a **±0.3%** gate. *The numerical
+**THE OBSERVED ORDER IS p = 0.638.** On quadratic (Q9) elements, against a smooth solution,
+that should be near 2. Sub-first-order is the signature of a singularity in the solution, and
+it gives a **GCI on the finest rung of 2.749%** — against a **±0.3%** gate. *The numerical
 uncertainty on the number the gate is stated in is nine times the width of the band.*
 
-**Extrapolated: 2.05789 mm, +2.894%.** Every rung flatters the design, monotonically, and the
+**Extrapolated: 2.05700 mm, +2.850%.** Every rung flatters the design, monotonically, and the
 rung the gate is evaluated at is the second-most flattering of the four. The wheel deflects
 *more* than the shipped record says, not less.
 
 #### The three objections, answered by measurement rather than by argument
 
 1. **"It depends how you define h"** — the ladder is not uniformly refined (span ×2.0,
-   thickness ×1.667 then ×1.600), so `h` is genuinely ambiguous. All four defensible
-   definitions are carried in the artifact. Under SVK: **p ∈ [0.479, 0.536]**, extrapolated
-   ∈ [2.0516, 2.0698] mm, **GCI ∈ [2.416%, 3.541%]**. The verdict is identical under every
-   one, which is why it is stated at all.
+   thickness ×1.500 then ×1.333), so `h` is genuinely ambiguous. All four defensible
+   definitions are carried in the artifact. Under SVK the **smallest GCI any of them
+   produces is 2.416%**, already 8× the band, and none of them puts the extrapolated value
+   inside it. The verdict is identical under every one, which is why it is stated at all.
+   What is NOT stable across them is `p` itself — **p ∈ [0.049, 0.685]** — and the spread is
+   not noise: `1/n_thick` is a degenerate choice on this ladder, because thickness refines
+   4 → 6 → 8 while span refines 48 → 96 → 192, so calling the thickness cell "the" cell size
+   fits an order to a direction that is barely being refined. The three isotropic-ish
+   definitions agree at **p ∈ [0.479, 0.685]**. Quote `p` from the primary definition
+   (`1/sqrt(n_elements)`) or not at all.
 2. **"Discretisation error cancels between similar designs, so the gate still ranks them"** —
    it does not cancel enough, and §19's and §26's own scheduled fidelity checks measure by how
    much. The coarse-minus-medium gap is **−1.59 pp at `e4219f3`, −0.863 pp at `e126cc3`,
@@ -4652,47 +4673,524 @@ GCI study it is not cheap. **Named, not started**, and the hypothesis is explici
 the patch control rules out the other candidate, but nothing here has yet re-run the ladder on
 a filleted model, which is the test that would confirm it.
 
-#### The corner is confirmed by its EXPONENT, and no design change can remove it
+> **THE CORNER NEVER NEEDED CONFIRMING — see §30 (2026-08-15).** M4 established that the peak
+> stress diverges, `test_peak_stress_diverges_but_the_field_converges` has pinned it since §14,
+> and M8b-i.6 step 2 rebuilt the whole stress constraint around it. This paragraph asking for a
+> filleted-model ladder "to confirm it", and §29 spending 95 minutes inferring it from a
+> deflection order, were both looking past evidence already in the tree. §30 adds the rate
+> (−0.44 on log h), the per-corner localisation and the wedge angles; it does not supply a
+> confirmation that was missing. The paragraph is left standing to record the detour.
 
-§29 named the unfilleted junction corner as a hypothesis and asked for a filleted-model ladder
-to confirm it. A cheaper discriminator was tried first — run the ladder on a second genome and
-see whether `p` tracks the junction geometry — and **checking whether that test would
-discriminate is what killed it**, before the 95 minutes were spent.
+#### THE h WAS MEASURED ON THE WRONG MESH — and the Williams agreement is RETRACTED (2026-08-15)
 
-The manifest records the junction's material wedge: **hub 322°, rim 320°** on the shipped
-genome (§16 measured 326° on `e4219f3`). For a traction-free re-entrant wedge of material angle
-ω, Williams' mode-I eigenvalue solves `sin(λω) + λ sin(ω) = 0`, with stress ~ r^(λ−1). Solved
-numerically, and verified against the two cases with known answers — a crack (ω = 360°) returns
-λ = 0.500000 exactly, and ω = 270° returns the textbook 0.5445:
+**`study_deflection_gci.py` drew every `h` from `wheel_mesh` while `wheel_objective` solved on
+`wheel_wheel`.** Both modules export configs called `smoke`/`coarse`/`medium`/`fine` and they
+are different meshes: at `medium`, `wheel_mesh` is one 128×10 spoke block (1280 elements) and
+`wheel_wheel` is the 12-sector wheel (12288). The study passed the config NAME to the objective
+— which resolved it correctly — and the same name to `wheel_mesh.get_config` for its cell size,
+which did not. Refinement ratios were reported as 1.826/1.789 against a true **1.616/1.593**.
 
-| wedge | λ predicted |
-|---|---|
-| shipped hub, 322° | **0.5030** |
-| shipped rim, 320° | 0.5035 |
-| `e4219f3`-era worst hub, 326° | 0.5021 |
-| a hypothetical 300° wedge | 0.5122 |
+**What this cost, and what it did not.** Fixed by `--reanalyse` on the saved report, no FEA:
 
-**Measured: p = 0.5023, bracketed by [0.479, 0.536] across the four h definitions.** The
-geometry predicts the convergence exponent this ladder measured. That is much stronger evidence
-than the cross-genome run would have produced — and it is *why* the cross-genome run is
-worthless: λ moves by less than 0.01 across every wedge this design family has ever produced,
-so `p` could not have tracked anything. The test was retired for being uninformative, not for
-being expensive.
+| | reported | corrected |
+|---|---|---|
+| r21 / r32 | 1.8257 / 1.7889 | **1.6162 / 1.5934** |
+| observed order p | 0.5023 | **0.6379** |
+| extrapolated | 2.05789 mm (+2.894%) | **2.05700 mm (+2.850%)** |
+| GCI(fine) | 2.804% | **2.749%** |
 
-**One caveat, stated rather than smoothed over.** A smooth linear functional of the solution
-would be expected to converge at 2λ ≈ 1.0, not λ ≈ 0.5, by the usual duality argument. Measuring
-λ itself indicates the QoI is sampling the singular field directly rather than through a smooth
-dual — plausible, since the axle drop is a boundary displacement and the junctions are the
-structure's compliance path, but **not established here**. The agreement should be read at the
-precision the data supports: p is fitted from three points and moves ±0.03 with the definition
-of h, so "p ≈ λ ≈ 0.5" is the claim, not agreement to four decimals.
+The diagnosis is confirmed by the one h definition that did NOT move: `1/n_span` reads
+**p = 0.4789 both before and after**, because span happens to refine ×2.0 per rung in *both*
+modules (24→64→128→256 and 16→48→96→192 both give 2.0 across the extrapolated three). Every
+definition that touches a count where the two ladders differ moved; the one where they agree
+did not.
 
-**THE STRATEGIC CONSEQUENCE, which is the reason this matters beyond the gate.** λ is a property
-of the WEDGE ANGLE, and the wedge angle is ~320° for every genome this tree has produced and
-cannot be moved far by the optimizer — a spoke meeting a ring tangentially is what the design
-IS. So **the optimizer cannot descend out of this**, no rung of the existing ladder escapes it,
-and no future promotion will converge better than p ≈ 0.5. The FEA model has a sharp corner that
-**the physical part does not have**: the exported solid fillets both junctions at the full
-requested radius, 24/24 edges, `kt_error_pct` +0.0%. The model is singular where the part is
-round. That is the defect, it is in the mesh rather than in the wheel, and filleting the FEA
-junction is the only thing that removes it.
+**The extrapolated value and the GCI barely moved — and that is the trap, not the reassurance.**
+From three points, `p` and `r` reach Richardson only through `r^p`, which the measured φ very
+nearly fix on their own; rescaling `h` slides `p` and `r` in opposite directions and leaves the
+product alone. So a convergence study can be **wrong about the one quantity it exists to
+produce while every headline it reports stays right**. Every conclusion §29 draws about the
+GATE stands unchanged — the band is still 9× too narrow, still undecidable under every h.
+
+**What does not stand is the exponent, and with it the confirmation of the corner.** The
+retracted claim: Williams' mode-I eigenvalue for a traction-free re-entrant wedge,
+`sin(λω) + λ sin(ω) = 0`, gives λ = 0.5030 at the shipped hub's 322° wedge and 0.5035 at the
+rim's 320°, and the measured p = 0.5023 was read as the geometry predicting the convergence
+exponent. **The true p is 0.638. λ is 0.503. They do not agree**, and the agreement that was
+reported existed only because `h` was 25% wrong in the log — `ln(1.826)/ln(1.616) = 1.25`, and
+`0.5023 × 1.25 = 0.628`. The eigenvalue arithmetic was right and is still right; what it was
+being compared against was not.
+
+**The corner hypothesis is now neither confirmed nor refuted.** p = 0.638 sits between λ ≈ 0.50
+and the 2λ ≈ 1.0 a smooth functional would give — closer to neither, and the honest reading is
+that a single fitted exponent from three rungs of a ladder that refines five different block
+directions at four different rates does not identify a mechanism. The one thing p = 0.638 does
+still establish is the thing the gate turned on: **this is far from the p ≈ 2 that Q9 elements
+give on a smooth solution**, so something singular or near-singular is in the field. The
+unfilleted junction remains the leading candidate — the patch control still rules out the other
+one — but it is a hypothesis again, and **the filleted-model ladder is back to being the test
+that would settle it.**
+
+The cross-genome discriminator stays retired, and for a reason the correction does not touch:
+λ moves by less than 0.01 across every wedge this design family produces (322°, 320°, 326°), so
+`p` could not track it either way.
+
+**What this cost in ranking.** The strategic claim built on the old number — "λ is a property of
+the wedge angle, the optimizer cannot descend out of it, no future promotion will converge
+better than p ≈ 0.5" — is withdrawn along with the agreement it rested on. The FEA model does
+still have a sharp corner **the physical part does not have**: the exported solid fillets both
+junctions at the full requested radius, 24/24 edges, `kt_error_pct` +0.0%. Filleting the FEA
+junction is still the highest-ranked open item. It is now ranked on the size of the convergence
+deficit rather than on a matched exponent, which is a weaker case than §29 first made for it.
+
+**The regression net that did not exist.** This study had no test file at all — an
+analysis-only module that had already shipped one silent indexing bug. `tests/test_deflection_gci.py`
+now pins: the counts come from an assembled `WheelMesh` and not from any formula or from
+`wheel_mesh`; the refinement ratios the docstring quotes; `observed_order` against synthetic
+constant AND non-constant ladders (only the second can catch the index swap); the rescaling
+property above, stated as the reason `p` needs its own pin; and the retraction itself, as an
+inequality, so `p ≈ λ` cannot quietly come back.
+
+### 30. THE CORNER SINGULARITY WAS ALREADY KNOWN — WHAT WAS MISSING IS ITS RATE, ITS LOCATION AND ITS EXPONENT (2026-08-15).
+
+**Read this correction first, because the first draft of this section got it wrong.** §30 was
+written up as "the peak stress does not converge — measured for the first time". It is not the
+first time. The tree has known it since M4, and says so in three places that were not consulted
+before the section was written:
+
+- **The banner at the top of this file**: *"the max is not a number. It diverges 31.02 → 41.54
+  → 48.47 under refinement"*, and M8b-i.6 step 2 changed the entire stress constraint *because*
+  of it — `c = max/pnorm` was anchored to a singularity, so `c * pnorm` converged at no
+  exponent at either design.
+- **`tests/test_wheel_fea.py::test_peak_stress_diverges_but_the_field_converges`**, which
+  already asserts the rim's `max_singular_mpa` grows monotonically over coarse/medium/fine and
+  by more than 20%, with a docstring explaining that quoting the max as a stress is the error
+  it exists to prevent.
+- **§14**, which renamed a test to `test_the_junction_is_re_entrant_enough_to_be_singular` and
+  bounded the wedge at `360 − MAX_ARRIVAL_DEG` = 295° for every genome in the box, and **§15's**
+  note that *"the aggregate is tracking the field and the corner moved more, and that is the
+  same corner the export then refused to fillet."*
+
+So the mechanism was established, tested and acted on. Writing it up as new was the failure
+mode this file has recorded twice already — §28's "an export-precision defect" inherited
+through three plans unchecked, and §29's quarantined `criterion_met: false` that three other
+files leaned on. **The lesson generalises in both directions: check what the tree already
+concluded before claiming a finding, not only before trusting one.** Nine words of `grep` would
+have caught it.
+
+#### What `studies/study_corner_singularity.py` (`make corner`, 8.5 s, 1.56 GB) actually adds
+
+The existing test asserts *that* the peak grows. Four things nobody had measured:
+
+**1. THE RATE, which is the part that connects to an exponent.** The old test's bar is "> 20%
+over coarse..fine". The measured rate is `d log(peak) / d log(h)` = **−0.442** on the global
+maximum (61.92 → 99.13 → 126.25 → **150.59 MPa** across smoke/coarse/medium/fine, 2.43×). A
+convergent peak gives zero. A growth threshold cannot be compared to a wedge angle; a rate can.
+
+**2. WHICH corner, out of four.** The junction has two re-entrant corners per ring, not one, and
+they behave differently:
+
+| corner | peak MPa: smoke → fine | slope | growth |
+|---|---|---|---|
+| rim `P_c` | 61.92 → **150.59** | −0.442 | 2.43× |
+| hub `P_c` | 47.31 → 120.92 | −0.476 | 2.56× |
+| hub `P_t` | 18.71 → 96.22 | −0.616 | 5.14× |
+| rim `P_t` | 13.51 → 75.40 | −0.597 | 5.58× |
+
+**The wheel's global maximum stress is the rim's `P_c` corner at every rung** — the two `P_c`
+corners are the loaded ones, while the two `P_t` corners start four times lower and diverge
+faster. `P_t` is where the straddling flank crosses the ring circle; `P_c` is the centerline
+endpoint. Only `P_t` was ever named in this file before.
+
+**3. THE WEDGE ANGLES, MEASURED ON THE MESH.** Summing the incident elements' interior angles at
+each corner node — 360° for an interior node, verified as a control — gives **hub `P_t` 321.10°,
+hub `P_c` 296.75°, rim `P_t` 321.33°, rim `P_c` 307.94°**. All four re-entrant, and the two
+`P_c` values are new: the tree only ever had the `360 − arrival` figure, which describes `P_t`.
+
+This is deliberately **not** the export manifest's 322°. The manifest measures the exported
+solid, which is *filleted* at these corners and has no wedge to measure. Reading a prediction
+off the wrong body is what §29 did with the cell size.
+
+**4. WILLIAMS' EXPONENT PER CORNER, and an honest account of how well it agrees.** Solving
+`sin(λω) + λ sin(ω) = 0` at the four measured wedges gives **λ = 0.5032 / 0.5144 / 0.5031 /
+0.5079** (solver verified against a crack at exactly 0.500000 and the textbook 0.5445 at 270°).
+Against the divergence rates: **0.384 / 0.524 / 0.403 / 0.558**. Agreement to about ±0.13 on a
+ladder whose coarsest rung is 960 elements — **agreement on the mechanism, not on the number.**
+
+The radial-decay fit (bin by log r, take the max over θ to divide out the angular shape, fit the
+inner decade) is sharper where it works: **hub `P_c` λ = 0.573 at correlation −0.997, rim `P_c`
+λ = 0.473 at −0.996**. It does *not* work everywhere — `rim:P_t` returns a slope of +0.008 at
+correlation +0.03, no detectable decay in that window at all, while its peak diverges faster
+than any other corner's. **That disagreement is unexplained.** The likely cause is a fit window
+contaminated by the neighbouring corner, but nothing here has measured that, and it is in the
+artifact rather than smoothed away.
+
+`tests/test_corner_singularity.py` pins the divergence hard (strict monotone growth, slope
+< −0.15) and λ loosely (abs=0.15). Those are two different strengths of claim, and §29 went
+wrong precisely by reading a three-decimal coincidence as confirmation.
+
+#### The qualifier, which the tree also already knew and which must travel with the headline
+
+**The optimizer does not see the raw peak.** The constraint is `Kt * sigma_nominal(p=4)`, and a
+p=4 aggregate is *deliberately* insensitive to a singular corner — that is what `Kt` exists to
+bridge, and it is why M8b-i.6 step 2 changed the constraint in the first place. Measured up the
+same ladder:
+
+| | smoke | coarse | medium | fine | slope |
+|---|---|---|---|---|---|
+| p-norm `stress_utilisation` (SVK) | 0.7694 | 0.8057 | 0.8201 | 0.8301 | **−0.044** |
+| raw peak von Mises | 61.92 | 99.13 | 126.25 | 150.59 | −0.516 |
+
++7.9% across the whole ladder, +1.2% from `medium` to `fine`, a **12× slower** divergence. Two
+things follow and they pull in opposite directions, so state both: the p-norm is doing its job
+and the constraint is not the singularity; **and** a −0.044 slope is still not zero, so the
+stress constraint is not a converged quantity either — §13's "utilisation 0.80" is a reading at
+a rung, exactly like the deflection is. "The peak diverges" does not license "the constraint is
+meaningless".
+
+#### WHAT THIS DOES TO THE RANKING — less than the first draft claimed
+
+Filleting the junction in the FEA model stays the top open item, but §30 does **not** promote it
+on new evidence; the evidence was already there and M8b-i.6 already acted on the part of it that
+could be acted on cheaply. What §30 changes is smaller and worth having anyway: the fillet work
+now has **four named corners with measured wedge angles and per-corner divergence rates to
+validate against**, which is what a filleted-model run would have to move, and a **8.5-second**
+harness to measure it with.
+
+The one methodological finding that is new, and it is about process rather than about the wheel:
+**`make corner` costs 8.5 s and `make gci` costs 95 minutes, and the cheap one answered the
+question the expensive one was run to answer.** §29 spent the 95 minutes extrapolating a global
+functional and then mis-identified the mechanism from its convergence order. A local field
+measured locally was three orders of magnitude cheaper and did not need a duality argument. Ask
+which quantity carries the mechanism before building a ladder for it.
+
+**Still not started, and still not cheap:** the filleted FEA mesh itself.
+---
+
+### 31. THE FIVE INHERITED REDS, CLEARED — `make test` reads 0 failed for the first time since §14. Two were a seed lottery, one was an absolute claim at the wrong rung, one is a real design finding now measured in full, and one stays red on purpose (2026-08-15).
+
+`make test` had read **`5 failed`** since §19. All five were documented and deliberate:
+`CONTACT_PLAN.md` registered them before that arc began and every arc since re-declared
+them. That was the right call at the time and it had become a cost. §28 found that one of
+the "known reds" had been mislabelled "an export-precision defect" and carried through
+three plan files unchecked — it was **hiding inside the known-red count**. §29 and §30 both
+turned on the claim "no new red", and establishing that claim meant opening
+`CONTACT_PLAN.md` to look up which five were expected, because `5 failed` on its own says
+nothing about *which* five.
+
+A suite that reads `5 failed` on a good day cannot cheaply tell you about a sixth. This arc
+closed all five.
+
+#### STEP 0 — the baseline, and every quoted value reproduced independently
+
+The five node ids and their values were re-measured before anything was touched, each
+through its own driver rather than through pytest, so the numbers below do not depend on
+the test files this arc then edited:
+
+| red | statistic | measured | gate |
+|---|---|---|---|
+| `..._beam_to_wheel_ratio...` | `fea_over_beam_ratio` | 2.41276 | `> 3.0` |
+| `..._correction_is_not_a_constant...` | `iso_rel_diff_ratio` | 2.16721 | `> 3.0` |
+| `..._thicker_rim...` | `drops[0]` | 1.8758 | `< 2.0 < drops[0]` |
+| `..._rim_band_holds...` | hub share | 0.04165644522132511 | `< 0.03` |
+| `..._correction_enters_at_first_order...` | `small_load_rel_diff` | 0.0020070 | `< 1e-3` |
+
+All five match the values this arc was scoped against, to every digit quoted. Nothing had
+moved.
+
+#### STEP 0 RECORD — 2026-08-15, the baseline this arc was measured against
+
+```
+make test:   5 failed / 469 passed in 1962.89 s (32:42)   [474 collected]
+  box: 24 cores / 61 GB.  THE WALL CLOCK IS NOT CLEAN — the measurement drivers for
+  steps 1-3 ran alongside it on other cores.  §28's 28:05 is the number to compare
+  against, not this one.  The COUNT and the node ids are what Step 0 gates on.
+
+GATE: PASS.  Exactly five failures, exactly the five expected node ids:
+  test_gnl.py::test_the_correction_is_not_a_constant_over_the_design_space
+  test_gnl.py::test_the_correction_enters_at_first_order_in_the_load
+  test_wheel_fea.py::test_the_rim_band_holds_a_large_minority_of_the_compliance
+  test_wheel_fea.py::test_the_beam_to_wheel_ratio_is_not_a_constant
+  test_wheel_fea.py::test_a_thicker_rim_monotonically_stiffens_the_wheel
+
+and all five values reproduced to every digit quoted — each re-measured through its own
+driver rather than through pytest, so the check does not depend on the test files this
+arc then edited.
+```
+
+**The one discrepancy, run down rather than waved through.** This arc was scoped against
+"461 passed, 5 failed, 466 collected" and the baseline read **474** collected, 8 more. It
+is fully accounted for and it is not a sixth red: §28's record is 452 collected;
+`tests/test_deflection_gci.py` adds 14 and `tests/test_corner_singularity.py` adds 8, and
+452 + 14 + 8 = 474. The corner test file was written at 12:39 on 2026-08-15, **after** the
+466 figure was taken and before this arc began, so the scoping line counted the GCI tests
+but not the corner ones. All 8 pass. Nothing moved; a count was quoted from a run that was
+already stale by lunchtime.
+
+#### ITEMS 1 AND 2 — both `ratio > 3.0` gates were a seed lottery on a statistic that cannot carry a gate
+
+`study_wheel_fea.run_beam_blindness` and `study_gnl.run_design_space` both compute
+`float(r.max() / r.min())` over the drawn rows, and both tests asserted `> 3.0` at a
+hard-coded `n` and `seed=7`.
+
+**A max/min is an estimator of the sample RANGE, which grows without bound with the number
+of draws.** It is therefore not a property of the design space at all — it is a property of
+the design space *and* the sample size *and* the seed. `studies/study_reds_ratio_stability.py`
+measured 109 cells (20 seeds at each test's own `n`, an `n` sweep at seed 7, and the beam
+study again at the default 1.2 mm wall floor as well as the 2.0 mm floor its test pins).
+Every cell returned exactly the rows it requested, so none of this is draw exhaustion:
+
+| | over 20 seeds at the test's own `n` | passes `> 3.0` |
+|---|---|---|
+| beam @ 2.0 floor | 1.570 – 30.129 | **7/20** |
+| beam @ 1.2 floor | 1.767 – 32.655 | **11/20** |
+| gnl | 2.167 – 85.501 | **11/20** |
+
+and against `n`, at seed 7:
+
+```
+beam  n =  6, 12, 24, 48, 96  ->   2.413,  9.995, 34.968, 34.968, 48.123
+gnl   n =  4,  8, 12, 16, 24  ->   2.167,  4.203,  9.026,  9.026, 51.790
+```
+
+**Precisely: non-decreasing, with plateaus — not strictly monotone**, and the distinction is
+worth keeping because this arc's scoping note asked for "grows monotonically with `n`". A
+plateau is what a range estimator does when the extreme rows are already in the smaller
+sample and the next batch adds nothing outside them; it is the same behaviour, not a
+counter-example. Every cell returned exactly the rows it requested, so no plateau here is a
+draw-exhaustion artefact. **The gate the ratio was asked to carry sits inside this range**:
+beam crosses 3.0 between `n=6` and `n=12`, gnl between `n=4` and `n=8`. The verdict is
+chosen by the sample size.
+
+**Seed 7 — the seed both tests hard-coded — is the low outlier in both.** Nothing about the
+wheel changed, and nothing about the wheel had to.
+
+**A second, independent demonstration that the statistic drifts on its own**, found while
+checking the above: §14 measured `fea_over_beam_ratio` = **4.943** at the same 2.0 mm floor
+and the same seed 7 where it now reads **2.413**. This statistic *explicitly excludes the
+shipped genome*, so no promotion can account for it — a property of the gene box moves when
+the **box** moves, and the box did: `R_hub`'s floor went 0.5 → 0.4 on 2026-08-11
+(`wheel_fea.py:282`, BUILD_PLAN steps 5 and 6), after §14's figure was taken. Not chased
+further, because it does not need to be: **a quantity that a barrier-bound edit can halve is
+not one to hang a threshold on**, which is the same conclusion the seed and `n` sweeps reach.
+
+**The conclusion the two tests exist to protect is untouched and was never in doubt.** Both
+studies compute `correction_factor_is_defensible = (r.std() / r.mean() < 0.10)`, and it is
+`False` in **109 of 109 cells**, with the CV never below 0.145 against a 0.10 bar. The
+Stage-2.5 off-ramp — "correct the beam model with one factor and skip Stages 2 and 3" — is
+closed exactly as both docstrings claim. Both tests already asserted this **first**, and it
+passed on every run; only the secondary `ratio > 3.0` line failed.
+
+**Why replacing it is §28's move and not a loosening.** `correction_factor_is_defensible`
+is *defined* as `cv < 0.10`. The CV is the claim's own arithmetic; `max/min` never was. So
+this is §28's pattern in its exact form — *replacing a stale constant with the arithmetic it
+should always have been* — and `cv > 0.14` strictly implies `cv > 0.10`, which is the
+assertion that was already in both tests and already passing. The replacement is strictly
+stronger than the surviving half of the old test, at a bound 40% inside the claim's own
+pre-registered bar.
+
+**The bound is derived, not picked**: 0.14 is the CV's floor over all 109 cells (0.1450,
+which occurs in the *beam* study), floored to two decimals. **One constant serves both
+tests, set by the worse of the two**, so neither is fitted to its own run — the GNL test
+inherits a bound it clears by 1.8× and did not choose. Both now evaluate **five seeds and
+take the ensemble's worst**, seeds 0–4 taken as the first five rather than selected for
+difficulty, because a single hard-coded draw is the precise defect being fixed.
+
+**One honest limit on the claim.** Both statistics move with the sample; the difference is
+which side of its bound the noise can carry it across. The ratio's verdict flips with both
+seed and `n` — it crosses 3.0 from the failing side as `n` grows. The CV's verdict against
+0.10 never flips, and every move with `n` is *away* from the bar. A relative-margin
+comparison between the two is not available and is not claimed: on the 7 beam seeds where
+`> 3.0` passed, it passed by 1.03×–10.04× while `cv > 0.14` passes those same seeds by
+2.11×–4.11×. The argument made here is §28's, not a margin argument.
+
+**The retirement is pinned executably rather than only argued.** Both report dicts still
+publish `..._ratio` — it is a useful diagnostic, and §29's `criterion_met: false` is the
+cautionary tale about *deleting* a number rather than scoping it — so a new test in each
+file, `test_the_retired_max_min_gate_is_decided_by_the_sample_size`, asserts that the
+retired gate's **verdict flips with `n` at a fixed seed** (`small < 3.0 < large`). The
+reason for the retirement therefore stays measured, and anyone tempted to put a threshold
+back on that number is told why not by a failing test rather than by a docstring.
+
+#### ITEM 3 — the rim sweep asserted an absolute deflection at the least converged mesh in the tree
+
+`test_a_thicker_rim_monotonically_stiffens_the_wheel` sweeps `rim_outer` at `smoke` and
+asserted two things. **The monotonicity — the one the test is named for — passes at every
+rung and always did:**
+
+| rung | drops (mm) at 49.7 / 50.0 / 50.6 / 51.2 | monotone? | brackets 2.0? | sweep cost |
+|---|---|---|---|---|
+| smoke | 1.8758 1.5453 1.1823 0.9813 | **yes** | no | 0.7 s |
+| coarse | 1.9798 1.6208 1.2320 1.0193 | **yes** | no | 1.9 s |
+| medium | 2.0034 1.6399 1.2462 1.0308 | **yes** | **yes** | 4.7 s |
+
+What failed was `drops[-1] < TARGET_DEFLECTION_MM < drops[0]`, an **absolute** claim
+evaluated at `smoke`, which §29's ladder measured at −5.955% under SVK — more than enough
+to lose a bracket whose upper edge only reaches 2.0 by `medium`.
+
+**Moving it to `medium` was measured and rejected, and the reason is not cost** — the
+medium sweep is only +4.0 s, which the plan for this arc explicitly allowed. It is that
+`medium` cannot support the claim either:
+
+| rung | drop at 49.7 | margin over 2.0 | drift from previous rung |
+|---|---|---|---|
+| medium | 2.0034 | +0.169% | |
+| fine | 2.0134 | +0.672% | **+0.50%** |
+
+**The margin at `medium` is smaller than the quantity's own remaining discretisation
+drift.** A bound a number clears by less than its own convergence error is not a gate. So
+the bracket is **recorded in the docstring with its rung attached** — the target *is*
+bracketed, at `medium` and more comfortably at `fine` — and not asserted. §29 retired the
+plan-level version of exactly this claim.
+
+**It was not simply dropped.** What replaces it is the **span**, `drops[0] / drops[-1]`,
+which is a ratio and therefore survives the mesh: 1.912 (smoke), 1.942 (coarse), 1.944
+(medium) — 1.7% total drift against 6% on the absolute drops. Gated at 1.5, which the
+measured floor clears by 27%. The effect keeps a magnitude on it without an absolute claim
+at a rung that cannot carry one.
+
+#### ITEM 4 — THE HUB COMPLIANCE SHARE. §14's unmeasured hypothesis is dead, and the answer is a design finding
+
+This was the one live question about the wheel among the five, and §14 named the
+measurement nobody had done:
+
+> "the *direction* is surprising: thinner, floppier spokes should push compliance toward
+> the spokes and the hub share DOWN. It went up. The plausible cause is `R_hub` dropping
+> 1.5598 → 0.5790 — much less material at the hub junction — but that is a hypothesis and
+> it has not been measured."
+
+**`studies/study_reds_hub_share.py` measured it, and the hypothesis is not merely
+falsified — it is structurally impossible.** Sweeping `R_hub` across its entire gene box
+(0.4 → 4.0) on the shipped genome leaves the solved wheel **bit-identical**: hub share
+`0.04165644522132511` and axle drop `1.6207901051335216` at every point, including values
+the buildability barriers forbid.
+
+The reason is three words already in this tree, at `wheel_wheel.py:44` — **"FILLETS ARE NOT
+MODELLED"**. `R_hub` and `R_rim` reach the beam model, the objective and the buildability
+barriers, but they never reach the mesh. **The fact was in the tree; the inference was
+not**, and §14 spent its one hypothesis on a gene that cannot move the quantity. This is
+§30's lesson again — the evidence was already there — and it is the third time this file
+has recorded that pattern.
+
+**What actually moves the hub share is the spoke's CURVATURE.** One-at-a-time gene swaps
+from the shipped genome toward `best_solution_ga_beam.json`, the design the 3% bound was
+calibrated on, at `coarse` (0.0417 → 0.0138):
+
+| gene | shipped | ga_beam | hub | closes the gap by |
+|---|---|---|---|---|
+| `cy4` | 6.4375 | 29.2919 | **0.0132** | **102.4%** |
+| `cy3` | 9.4191 | 24.3248 | 0.0219 | 70.9% |
+| `cy1` | 8.7212 | 27.9529 | 0.0250 | 59.7% |
+| `cy2` | 11.8088 | 31.7187 | 0.0255 | 57.9% |
+| `t0` | 1.4738 | 2.4774 | 0.0561 | **−51.9%** |
+
+`cy4` alone takes it under the bound. The shipped spoke is far flatter (cy 6.4–11.8 against
+24–32), and a flatter spoke feeds moment into the hub junction instead of storing it in its
+own bending. **§14's instinct about thickness was right in sign** — the `t0` row shows a
+*thicker* root raises the hub share, so thinning lowers it — it was simply swamped by a
+curvature change pulling twice as hard the other way. That is why the direction looked
+surprising.
+
+**And the bound is not a mesh artefact**, which was the other live possibility (§29/§30).
+Design × mesh, hub share, five rungs (the fifth built for this measurement only, at roughly
+2× `fine`, and deliberately *not* added to `wheel_wheel.CONFIGS`):
+
+| genome | smoke | coarse | medium | fine | ultra | drift |
+|---|---|---|---|---|---|---|
+| shipped (`R_hub` 0.6636) | 0.0392 | 0.0417 | 0.0433 | 0.0453 | 0.0463 | **+18.3%** |
+| ga_beam (`R_hub` 1.5598) | 0.0139 | 0.0138 | 0.0139 | 0.0141 | 0.0143 | +2.4% |
+
+The ga_beam design is converged on the same ladder and passes with ~53% to spare, so the
+ladder is not the problem. The shipped design is **30.5% over at the coarsest rung and
+54.3% over at the finest**, and refinement makes it worse. **Discretisation cannot rescue
+this bound: it is measuring the wheel, not the mesh.** Note also that the shipped genome's
+share is the one that will not settle — consistent with an unfilleted re-entrant corner at
+a junction that now has much less material around it, which is the same mechanism §30
+measured on the rim corner.
+
+**THE DECISION IS A HUMAN'S AND HAS NOT BEEN MADE.** §14 said so and this arc does not
+overrule it. The bound was **not** touched; the assertion is a strict `xfail` pending the
+call. The three options, with the numbers now attached:
+
+1. **Accept a real hub-stiffness regression.** The shipped wheel holds 3.2× the hub
+   compliance share of the design it replaced (0.0463 vs 0.0143 at the finest rung). The
+   bound stays at 3%, the test stays xfail, and this becomes a known deficit of the 1.2 mm
+   wheel.
+2. **Restate the bound with a rung attached.** §29's discipline applied here: the share is
+   not converged for the shipped genome, so a single fixed number is the wrong shape of
+   claim regardless of its value. This is the only option that is a *method* fix, but note
+   it does not make the wheel pass — even `smoke` is 30.5% over.
+3. **Treat the flat spoke as a design finding for the objective.** `cy4` alone moves the
+   share by 102% of the gap. If hub compliance is worth constraining, it is reachable
+   through the curvature genes and belongs in Stage 2/3's objective rather than in a test
+   threshold.
+
+**Option 2 is the only one this arc would recommend on method grounds alone, and it is not
+sufficient on its own** — the wheel fails the bound at every rung. Options 1 and 3 are
+judgements about whether 4.6% at the hub is acceptable for this part, which is exactly the
+call §14 reserved.
+
+#### ITEM 5 — the GNL small-load gate stays red, and that is correct
+
+`small_load_rel_diff` = **0.0020070** against `GATE_SMALL_LOAD_REL = 1e-3`, over by 2.01×.
+Re-measured this arc, unchanged. The exponent assertion — the one the test is named for —
+passes at **1.0393** inside (0.7, 1.4), so the SVK path is behaving; the coefficient moved,
+not the exponent.
+
+**`GATE_SMALL_LOAD_REL` was not moved, and this is the third arc to refuse.** `study_gnl.py`
+records it as "written down BEFORE the study was run, per the plan's rule"; §14 refused
+twice; SVK_PLAN Step 0 re-declared it. It is red because the shipped 1.2 mm wheel is ~5.5×
+more geometrically nonlinear than the GA/beam design it replaced. **That is a true statement
+about the wheel**, and re-fitting a pre-registered gate to the design that breached it is
+the exact move the rule exists to prevent.
+
+**The successor this actually points at, flagged and deliberately not acted on:** whether
+**linear kinematics is still an acceptable default for a 1.2 mm wall at all**. §14 called
+this "the most important thing §14 found". If the answer is no, the fix belongs in the
+physics defaults, not in this number. Out of scope for this arc.
+
+#### THE MECHANISM THAT MAKES `0 failed` HONEST — `xfail_strict = true`
+
+There was no such mechanism before: `xfail` appeared nowhere in `tests/`, and
+`pyproject.toml` configured neither `markers` nor `xfail_strict`. Introducing one was part
+of the work, not a detail.
+
+- **`xfail_strict = true` in `pyproject.toml`**, so the default cannot be forgotten at the
+  next site. This **changes the meaning of any future bare `xfail` in this tree** and the
+  setting says so in place.
+- **An xfail that starts passing is a FAILURE.** That is what makes this safe rather than a
+  way of hiding things: the day the wheel changes enough for one of these to pass, the suite
+  reopens the question by itself. Without it the accepted finding would go stale silently —
+  the precise failure mode §28 caught after it had travelled through three plan files.
+- **Every xfail carries a `reason=` naming the PLAN section that decided it**, so `N failed`
+  never again has to be resolved by opening another plan file.
+- **No test was deleted.** §29's lesson is that a correctly-quarantined number was
+  load-bearing somewhere else, and a deleted assertion cannot be found by grep.
+
+**Both xfailed assertions were SPLIT OUT of tests that also contained passing assertions**,
+which was a real defect in its own right: while the hub bound lived inside
+`test_the_rim_band_holds_a_large_minority_of_the_compliance`, the rim and spoke shares —
+what that test is named for — were **not being checked on any run**, and the same was true
+of the exponent assertion inside the GNL test. Splitting them recovered two passing
+assertions that had been dark since §14.
+
+#### WHAT THIS ARC DID NOT DO
+
+- **Nothing in `best_solution.json` or any exported artifact was touched.** This arc changed
+  tests and their supporting measurements only.
+- **No threshold was moved to fit a run that breached it.** The one new bound (`cv > 0.14`)
+  is derived from a 109-cell grid and is stricter than the claim's own pre-registered bar.
+- **`GATE_SMALL_LOAD_REL` stays at `1e-3`.**
+- **The monotonicity and `correction_factor_is_defensible` assertions were not weakened** —
+  they are the findings.
+- **The hub bound `< 0.03` was not moved.** It is escalated with numbers, above.
+- **Left as a loose end, deliberately:** `test_the_beam_to_wheel_ratio_is_not_a_constant`
+  still pins the wall floor at 2.0 mm, and the only stated reason for that pin was that the
+  now-retired `> 3.0` margin had been calibrated there. §14 called re-deriving Gate 1 at the
+  1.2 floor "a real piece of work and a judgement about Gate 1". **The measurement is now
+  done** — the 1.2 box's CV floor is 0.1948 over the same 20 seeds, comfortably above the
+  same 0.14 gate, so dropping the pin would change no verdict — but the judgement is still a
+  human's and the pin was left alone.
+- **Not started:** the filleted FEA mesh, still the top open item, and now with one more
+  reason behind it — `R_hub` and `R_rim` are two of fourteen genes that the FEA cannot see
+  at all.
