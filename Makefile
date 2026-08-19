@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee contact gci corner reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner junction reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -87,6 +87,11 @@ help:
 	@echo "              knee'd stress_margin. Every knob is §19's, so §19's own run"
 	@echo "              (stage3_margin_medium.json) is an exact control and the"
 	@echo "              objective is the only difference. ~6.3 h, capped as prod9"
+	@echo "make kinrank  KINEMATICS_PLAN.md step 1: scores every distinct committed"
+	@echo "              genome under BOTH kinematics and asks whether linear RANKS"
+	@echo "              designs the way SVK does — argmin identity, Spearman rho and"
+	@echo "              the gradient cosine, against bars registered before the run."
+	@echo "              ~1 h at coarse. Override KINRANK_CONFIG/KINRANK_WORKERS"
 	@echo "make contact  CONTACT_PLAN.md step 2: ONE cell of the patch-resolution"
 	@echo "              matrix — is the axle drop the objective steers by still"
 	@echo "              mesh-convergent on the genome that ships? Override"
@@ -352,6 +357,32 @@ svk:
 	    --workers $(SVK_WORKERS) --out $(SVK_OUT) \
 	    $(if $(SVK_ONLY),--only $(SVK_ONLY),) $(if $(SVK_EXTRA),--extra $(SVK_EXTRA),)
 
+# KINEMATICS_PLAN.md step 1.  DOES `linear` RANK DESIGNS THE WAY SVK DOES?
+#
+# The 22.75% correction at service load (§14, re-measured by §31 and by KINEMATICS_PLAN
+# step 0a) condemns linear as a REPORTING model.  It does not, on its own, condemn it as a
+# SEARCH model: an optimizer needs the right ordering and the right descent direction, not
+# the right absolute deflection.  This scores every distinct committed genome under BOTH
+# kinematics with no optimizer and asks that question against the three conditions
+# KINEMATICS_PLAN step 0c registered BEFORE the run — argmin identity, Spearman rho, and
+# the gradient cosine in normalized gene space.
+#
+# NOT IN `studies`, for the reason `svk`, `m8bi5`, `m9buck` and `hubcap` are not: it
+# measures THE WHEEL, NOT THE COMMIT.  KINRANK_WORKERS is the memory cap and nothing else
+# sizes it, exactly as SVK_WORKERS.
+#
+# `coarse` is the default rung and it is a choice, not a saving: §14 measured the GNL
+# correction converged by `coarse` and mesh-independent to three digits on both the shipped
+# and the GA/beam genome, so the quantity this driver ranks on does not move by going to
+# `medium` — and `medium` costs ~5x.  Re-run with KINRANK_CONFIG=medium to check that.
+KINRANK_CONFIG ?= coarse
+KINRANK_WORKERS ?= 8
+KINRANK_OUT ?= study_kinematics_rank.json
+
+kinrank:
+	$(PY_OPT) -u studies/study_kinematics_rank.py --config $(KINRANK_CONFIG) \
+	    --workers $(KINRANK_WORKERS) --out $(KINRANK_OUT)
+
 # CONTACT_PLAN.md step 2 — one cell of the patch-resolution matrix.
 #
 # `study_contact.py` is ALSO in `studies` and that full invocation is the M6 gate; this
@@ -541,6 +572,27 @@ knee:
 # The milestone gates.  These are not tests — they produce measured reports whose
 # numbers are quoted in CLAUDE.md — but they do exit nonzero when a gate fails, so
 # they are safe to run in CI.
+#
+# WHAT A DRIVER HERE MAY EXIT NONZERO FOR — PLAN.md §33, 2026-08-16.
+# A driver stops this recipe only when ITS OWN MEASUREMENT IS NOT TRUSTWORTHY: a solver
+# identity violated, a mesh degenerate, a gradient that disagrees with finite differences.
+# A driver must NOT stop the recipe for a CHARACTERISATION FINDING — a true, reproduced,
+# deliberately-held statement about the design being measured.  The two look identical
+# from `make`, which sees only an exit status, and conflating them cost this tree the
+# whole recipe for ten days:
+#
+#   `study_gnl.py` exited 1 because the shipped 1.2 mm wheel is more geometrically
+#   nonlinear than a pre-registered gate — a finding four arcs have deliberately kept
+#   red — and `make` stopped at line 5 of 9.  study_contact, study_gradient,
+#   study_objective and study_stage3 were unreachable from 2026-08-06 to 2026-08-16,
+#   which is why §15's stale study_gradient.json was never refreshed.  Every artifact
+#   this recipe writes carried the same 2026-08-03 date, INCLUDING the four drivers
+#   before study_gnl, which is what proved it had not run at all rather than aborting
+#   partway.  See the SEMANTICS block in studies/study_gnl.py.
+#
+# Before adding a hard stop to a driver, ask which of the two it is.  Report the finding
+# loudly in the verdict block either way — a gate that goes quiet is worse than one that
+# stops the build.
 studies:
 	$(PY_OPT) studies/study_mesh_quality.py --samples 2000
 	$(PY_OPT) studies/study_wheel_mesh.py --samples 200
@@ -607,6 +659,26 @@ CORNER_OUT ?= studies/study_corner_singularity.json
 corner:
 	$(PY_OPT) -u studies/study_corner_singularity.py --genome $(CORNER_GENOME) \
 	    --ladder $(CORNER_LADDER) --out $(CORNER_OUT)
+
+# ---------------------------------------------------------------------------
+# DOES THE MESH HAVE THE CORNERS THE PART HAS?  (UNCAP_PLAN.md, PLAN §34)
+# ---------------------------------------------------------------------------
+# ~4 s, GEOMETRY ONLY — no field is solved, so this is not on the `studies` recipe's
+# critical path and can be re-run by anyone who doubts a number in UNCAP_PLAN.md.
+#
+# It reproduces `wheel_step_export._embed` in numpy so it runs in the OPT env with no OCC,
+# and it self-checks two ways: the ring-crossing count must come out 24 and 24 against the
+# shipped manifest's `hub_edges`/`rim_edges`, and the mesh's four corner wedges must
+# reproduce `make corner`'s independently measured ones to under 1 deg.  It EXITS NONZERO
+# only on that reconstruction check failing — never on a characterisation finding about
+# the wheel.  See the note above `studies:` for why that distinction is load-bearing.
+JUNCTION_GENOME ?= best_solution.json
+JUNCTION_CONFIG ?= coarse
+JUNCTION_OUT ?= studies/study_junction_agreement.json
+
+junction:
+	$(PY_OPT) -u studies/study_junction_agreement.py --genome $(JUNCTION_GENOME) \
+	    --config $(JUNCTION_CONFIG) --out $(JUNCTION_OUT)
 
 # ---------------------------------------------------------------------------
 # THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds
