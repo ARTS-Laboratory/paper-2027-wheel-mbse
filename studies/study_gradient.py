@@ -744,19 +744,48 @@ def run_phase_smoothness(genes, configs=("smoke", "coarse"), n_period=200,
 # ---------------------------------------------------------------------------
 
 def run_axle_drop(genes, cfg=DEFAULT_CONFIG, gene_ids=(6, 8, 12),
-                  steps=(1e-4, 1e-5, 1e-6), kinematics=DEFAULT_KINEMATICS):
+                  steps=(1e-4, 1e-5, 1e-6), kinematics=DEFAULT_KINEMATICS,
+                  fd_tol_rel=1e-9, fd_max_iter=40):
     """The quantity Stage 3 actually optimises, against a finite difference of the whole
     load-controlled solve — the only check here that exercises the secant.
 
-    THE SECANT'S TOLERANCE IS NOT WHAT LIMITS THIS, WHICH WAS WORTH MEASURING RATHER THAN
-    ASSUMING.  The obvious suspicion is that the FD reference inherits the secant's 1e-8
-    relative stopping rule on the force.  Tightening it to 1e-11 moves the difference by
+    THE SECANT'S TOLERANCE **IS** WHAT LIMITS THE REFERENCE, AND THIS DOCSTRING USED TO
+    SAY IT WAS NOT.  The old text read: "Tightening it to 1e-11 moves the difference by
     nothing at all — ten identical digits — so the residue is ordinary truncation in the
-    outer difference, and a step ladder removes it exactly as it does in G4 and G5.
+    outer difference."  That measurement was real, and it was taken on the mesh of the
+    day.  It does not generalise.  On the 2026-08-18 uncap default the same experiment
+    gives the opposite answer, on gene `cx4` at `smoke`:
 
-    That is also the point of computing the gradient by the implicit-function quotient
-    instead: the secant's tolerance lands in the VALUE, where it is a stated 1e-8, and
-    never in the derivative.
+        fd tol_rel   1e-8            1e-9            1e-10        rel vs adjoint
+        capped       -0.0307547723   -0.0307547723   -0.0307547723   1.85e-06
+        hub only     -0.0303006155   -0.0303006155   -0.0303006155   3.29e-06
+        rim only     -0.0212447596   -0.0212447596   -0.0212447596   4.75e-06
+        BOTH         -0.0209239528   -0.0209216681   -0.0209216681   1.07e-04 -> 1.99e-06
+
+    One decade on the REFERENCE moves G9 from 10x over its gate to 5x under it, and only
+    on the one setting where both rings are uncapped.  So `fd_tol_rel` is a parameter now
+    rather than an inherited default, and it is set where the reference has stopped
+    depending on it.
+
+    THE ADJOINT WAS NEVER THE PROBLEM, and that is checkable independently: split the
+    quotient and finite-difference each half separately, and `dF/d delta` agrees to
+    2.79e-06 and `dF/dp` to 2.03e-06 on that same setting — both already as good as
+    capped.  It was the whole-solve reference that was under-converged, in the one place
+    a stopping rule can still reach the derivative.
+
+    That is still the point of computing the gradient by the implicit-function quotient:
+    the secant's tolerance lands in the VALUE, where it is a stated 1e-8.  What this
+    correction adds is that a FINITE-DIFFERENCE REFERENCE built on the same solve does
+    NOT get that protection — it differences two separately-terminated secants, and their
+    termination bias does not cancel.  A tolerance that is invisible in one mesh's
+    reference can be first-order in another's.  Do not re-derive "the secant does not
+    matter" from a single mesh again.
+
+    NOT LOOSENED: `GATE_SECANT_REL` is untouched at 1e-5.  This tightens the reference the
+    gate is measured against, in the direction that makes the check harder to pass by
+    accident.  1e-11 STALLS the secant ("indentations 1.477174 and 1.477174 give the same
+    contact force"), which is the float64 floor on the force, so 1e-9 is two decades of
+    margin from where it breaks and one decade past where it stops mattering.
     """
     genes = np.asarray(genes, dtype=float)
     rng = _ranges()
@@ -766,6 +795,7 @@ def run_axle_drop(genes, cfg=DEFAULT_CONFIG, gene_ids=(6, 8, 12),
     def drop(v):
         return fem.solve_wheel_contact(WW.build_wheel(v, cfg),
                                        force=SERVICE_FORCE_N,
+                                       tol_rel=fd_tol_rel, max_iter=fd_max_iter,
                                        kinematics=kinematics)["axle_drop_mm"]
 
     rows = []
@@ -790,6 +820,7 @@ def run_axle_drop(genes, cfg=DEFAULT_CONFIG, gene_ids=(6, 8, 12),
     worst = max((r["rel"] for r in live), default=float("inf"))
     return {
         "config": cfg, "kinematics": kinematics, "axle_drop_mm": out["value"],
+        "fd_tol_rel": float(fd_tol_rel),
         "contact_force_n": out["contact_force_n"],
         "d_force_d_indentation": out["d_force_d_indentation"],
         "grad": [float(x) for x in out["grad"]],
@@ -1006,11 +1037,16 @@ def _print(rep):
               f"{r['fd']:+.9e}  rel {r['rel']:.2e}  at h {r['best_step']:.0e}   "
               + "  ".join(f"{x:.1e}" for x in r["rel_ladder"]))
     print(f"    worst {a['worst_rel']:.2e}  [< {GATE_SECANT_REL:.0e}]")
-    print(f"    the secant's own tolerance is NOT what limits this — measured, "
-          f"tightening it from")
-    print(f"    1e-8 to 1e-11 moves the difference by nothing at all.  The residue is "
-          f"truncation in")
-    print(f"    the outer difference, and the ladder removes it.")
+    print(f"    the reference secant runs at fd_tol_rel {a.get('fd_tol_rel', 1e-9):.0e}, "
+          f"and THAT TOLERANCE IS WHAT LIMITS")
+    print(f"    THIS — the opposite of what this line said until 2026-08-19.  On the "
+          f"uncapped default,")
+    print(f"    cx4 at smoke reads 1.07e-04 at tol 1e-8 and 1.99e-06 at 1e-9: one decade "
+          f"on the")
+    print(f"    REFERENCE moves G9 from 10x over this gate to 5x under it.  (1e-11 is not "
+          f"an option;")
+    print(f"    the secant stalls at the float64 floor.)  See `run_axle_drop`'s docstring "
+          f"for the table.")
     print(f"    -> {'PASS' if a['pass'] else 'FAIL'}")
 
     c = rep["cost"]
@@ -1118,7 +1154,7 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1
