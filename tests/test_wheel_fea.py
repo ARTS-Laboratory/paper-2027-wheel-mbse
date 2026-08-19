@@ -186,10 +186,12 @@ def test_the_rim_band_holds_a_large_minority_of_the_compliance(res):
 
 
 @pytest.mark.xfail(reason=(
-    "PLAN.md §14 item 4b, re-measured and escalated by §31 (REDS Step 3).  The shipped "
-    "genome holds 4.17% of the compliance at the hub against a 3% bound; the decision on "
-    "the bound is a human's and has not been made.  strict=True via pyproject.toml, so "
-    "this reopens itself the day the wheel passes it."))
+    "PLAN.md §14 item 4b, re-measured by §31 (REDS Step 3) and DECIDED there: the bound "
+    "STAYS at 0.03 and this stays red.  The shipped genome holds 4.17% at coarse and "
+    "4.63% at the finest rung; the design the bound was calibrated on meets it converged, "
+    "with 53% to spare, so 0.03 is achievable and is not a mesh artefact.  Moving it "
+    "would be re-fitting a gate to the design that breached it.  strict=True via "
+    "pyproject.toml, so this reopens itself the day the wheel passes it."))
 def test_the_hub_junction_holds_under_three_percent_of_the_compliance(res):
     """RED SINCE §14, MEASURED IN FULL BY §31, AND WAITING ON A HUMAN.  Not a test edit.
 
@@ -238,9 +240,22 @@ def test_the_hub_junction_holds_under_three_percent_of_the_compliance(res):
     and 54.3% over at the finest, and refinement makes it worse, not better.  No reading
     of the discretisation rescues it: this is the wheel, not the mesh.
 
-    SO THE BOUND IS NOT MOVED HERE.  §31 put three options to the user with these numbers
-    — accept a real hub-stiffness regression, restate the bound with a rung attached, or
-    treat the flat spoke as a design finding for the objective — and the call is theirs.
+    THE CALL, MADE IN §31 (2026-08-15): THE BOUND STAYS AT 0.03 AND THIS STAYS RED.
+
+    The measurement rules out both readings that would justify moving it.  `< 0.03` is not
+    an unreachable bound — `best_solution_ga_beam.json` meets it CONVERGED, at 0.0139 to
+    0.0143 across the whole ladder, with 53% to spare.  And it is not a mesh artefact —
+    the shipped genome is 30.5% over at the COARSEST rung, before any refinement argument
+    starts.  What is left is a real hub-stiffness deficit in the 1.2 mm wheel, and moving
+    the bound to accommodate it is re-fitting a gate to the design that breached it: the
+    move PLAN §14's rule exists to prevent, and one this tree has already refused three
+    times for `GATE_SMALL_LOAD_REL`.
+
+    So this is a recorded, accepted deficit rather than an open question, and `xfail_strict`
+    means it reopens itself if the wheel ever passes.  THE SUCCESSOR IS A DESIGN CHANGE,
+    NOT A THRESHOLD ONE: `cy4` alone moves the share by 102% of the gap, so if hub
+    compliance is worth constraining it belongs in Stage 2/3's objective.  Not done here —
+    this arc is scoped to tests and their supporting measurements.
     """
     assert res["compliance_split"]["hub"] < 0.03, res["compliance_split"]
 
@@ -649,7 +664,17 @@ def test_total_mass_matches_the_step_manifest_within_the_embed_difference(mesh):
     # And it has to be the right SHAPE for a gusset: one per spoke, order 1 mm^2 of
     # section over the full face width.  Measured 1.01 mm^2 at `coarse`, settling to
     # 0.98 at `fine`.
-    per_spoke_mm2 = (gap_g / wf.DENSITY_PLA) / (ww.NUMBER_OF_SPOKES * wf.SPOKE_WIDTH_MM)
+    #
+    # ADD BACK THE GUSSET THE MESH NOW MODELS.  Since 2026-08-18 `uncap` continues each
+    # junction's far flank to its ring circle, so `wheel_mass_g` already contains 0.234
+    # mm² per spoke of what used to be entirely leftover.  The quantity this bound was
+    # written about is `_embed`'s WHOLE allowance, so it has to be reassembled from both
+    # halves — otherwise the bound silently becomes a different measurement that happens
+    # to use the same numbers.  The band is untouched: 0.567 mm²/spoke reassembled here
+    # against 0.333 left over, and 0.5 < 0.567 < 2.0 is the same statement as before.
+    per_spoke_mm2 = ((gap_g / wf.DENSITY_PLA)
+                     / (ww.NUMBER_OF_SPOKES * wf.SPOKE_WIDTH_MM)
+                     + ww.area_report(mesh)["gusset_modelled_per_spoke_mm2"])
     assert 0.5 < per_spoke_mm2 < 2.0, (
         f"implied gusset {per_spoke_mm2:.3f} mm^2 per spoke — the leftover is not the "
         f"shape of an embed allowance, so something else is unaccounted for")
