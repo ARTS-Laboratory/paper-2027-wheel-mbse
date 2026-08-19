@@ -23,19 +23,19 @@
   },
   "A3": {
     "force_n": 0.16680825,
-    "n_span": 561,
+    "n_span": 559,
     "cases": [
       {
         "bc": "fixed_guided",
-        "castigliano_mm": 0.01990096714468461,
-        "fe_mm": 0.020062344861888893,
-        "rel_error": 0.008109038924140277
+        "castigliano_mm": 0.005154198166349206,
+        "fe_mm": 0.0052346516347039325,
+        "rel_error": 0.015609308326558491
       },
       {
         "bc": "cantilever",
-        "castigliano_mm": 0.10495022888830421,
-        "fe_mm": 0.10504211969096496,
-        "rel_error": 0.0008755655288616992
+        "castigliano_mm": 0.03885952323921386,
+        "fe_mm": 0.03887925625688301,
+        "rel_error": 0.0005078039055621542
       }
     ],
     "pass": true
@@ -147,47 +147,47 @@
     "rows": [
       {
         "lambda": 1.0,
-        "thickness_mm": 2.0,
-        "n_span": 561,
+        "thickness_mm": 1.2,
+        "n_span": 559,
         "force_n": 0.16680825,
-        "castigliano_mm": 0.01990096714468461,
-        "fe_mm": 0.020062344861888893,
-        "rel_error": 0.008109038924140277
+        "castigliano_mm": 0.005154198166349206,
+        "fe_mm": 0.0052346516347039325,
+        "rel_error": 0.015609308326558491
       },
       {
         "lambda": 0.5,
-        "thickness_mm": 1.0,
-        "n_span": 1121,
+        "thickness_mm": 0.6,
+        "n_span": 1118,
         "force_n": 0.02085103125,
-        "castigliano_mm": 0.01987059424347228,
-        "fe_mm": 0.019906089087605824,
-        "rel_error": 0.001786300082354364
+        "castigliano_mm": 0.005093359861432601,
+        "fe_mm": 0.00511161894685224,
+        "rel_error": 0.003584880298346471
       },
       {
         "lambda": 0.25,
-        "thickness_mm": 0.5,
-        "n_span": 2242,
+        "thickness_mm": 0.3,
+        "n_span": 2236,
         "force_n": 0.00260637890625,
-        "castigliano_mm": 0.019863000752671736,
-        "fe_mm": 0.01986965811496235,
-        "rel_error": 0.00033516397514699037
+        "castigliano_mm": 0.005078150273245406,
+        "fe_mm": 0.00508195581011762,
+        "rel_error": 0.0007493943005709713
       },
       {
         "lambda": 0.125,
-        "thickness_mm": 0.25,
-        "n_span": 4484,
+        "thickness_mm": 0.15,
+        "n_span": 4471,
         "force_n": 0.00032579736328125,
-        "castigliano_mm": 0.019861102363607813,
-        "fe_mm": 0.01986167572190439,
-        "rel_error": 2.8868402472292942e-05
+        "castigliano_mm": 0.005074347875493564,
+        "fe_mm": 0.005074942868311414,
+        "rel_error": 0.00011725503107973267
       }
     ],
     "local_exponents": [
-      2.182556477065549,
-      2.41403546514602,
-      3.537303911721492
+      2.1224097583548316,
+      2.2581280365615433,
+      2.6760751794558777
     ],
-    "fitted_exponent": 2.68157230269452,
+    "fitted_exponent": 2.34279669596783,
     "all_positive": true,
     "monotone": true,
     "pass": true
@@ -200,6 +200,6 @@
     "probe_force_fraction": 0.01,
     "poisson": 0.35,
     "plane": "stress",
-    "elapsed_s": 5.3
+    "elapsed_s": 4.4
   }
 }

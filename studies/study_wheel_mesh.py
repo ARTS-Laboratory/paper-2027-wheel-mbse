@@ -321,7 +321,7 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(genes, rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(genes, rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1

@@ -71,6 +71,8 @@ import wheel_fem as fem
 import wheel_genome as wg
 import wheel_mesh as wm
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 # Reference resolutions.  Both are far finer than production and both are here for a
 # measured reason.
 #
@@ -455,13 +457,20 @@ def main():
         "elapsed_s": round(time.time() - t0, 1),
     }
     _print(report)
-    with open(args.out, "w") as fh:
+    # Resolve a relative --out against THIS FILE'S directory, the way the other eight
+    # `make studies` drivers do (PLAN.md §33).  This one resolved against the CWD, so
+    # `make studies` — which runs from the repo root — wrote study_beam_agreement.json
+    # and .jpg to the root while the artifact the tree reads sits in studies/.  It went
+    # unnoticed because the recipe died at line 5 of 9 and never reached a second run.
+    # An absolute path still wins, so `--out /tmp/scratch.json` behaves.
+    out = args.out if os.path.isabs(args.out) else os.path.join(HERE, args.out)
+    with open(out, "w") as fh:
         json.dump(report, fh, indent=2)
-    print(f"\nwrote {os.path.abspath(args.out)}  "
+    print(f"\nwrote {os.path.abspath(out)}  "
           f"({report['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(report, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(report, os.path.splitext(out)[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if report["pass"] else 1
