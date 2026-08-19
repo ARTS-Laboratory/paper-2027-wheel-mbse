@@ -229,7 +229,16 @@ def test_the_embed_difference_from_the_shipped_step_is_the_known_amount(genes):
     """
     rep = ww.area_report(ww.build_wheel(genes, "medium"))
     gap = rep["reference_shipped_step_mm2"] - rep["total_modelled_mm2"]
-    expected = ww.NUMBER_OF_SPOKES * ww.EMBED_ALLOWANCE_PER_SPOKE_MM2
+    # SINCE 2026-08-18 THE MESH MODELS PART OF THE GUSSET ITSELF.  `uncap` continues each
+    # junction's far flank to its ring circle instead of capping it, which is material
+    # `_embed` puts there and this mesh used to omit — 0.2342 mm² per spoke, a tenth of
+    # the allowance.  The unmodelled remainder is what this test is about, so subtract the
+    # modelled part; `area_report` DERIVES it as the difference between the region the
+    # mesh builds and the capped region, so it cannot be re-staled by a later blend
+    # change the way a transcribed number would.  Set `uncap=False` above and this term
+    # is exactly 0.0 and the assertion is the one it always was.
+    expected = (ww.NUMBER_OF_SPOKES * ww.EMBED_ALLOWANCE_PER_SPOKE_MM2
+                - rep["gusset_modelled_mm2"])
     # 0.5 mm² of slack on 36.36 covers the meshing residual, which is what
     # `error_vs_modelled` measures separately and is under 0.25 mm² on both genomes.
     assert gap == pytest.approx(expected, abs=0.5), (

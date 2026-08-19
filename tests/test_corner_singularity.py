@@ -88,9 +88,21 @@ def test_the_wedge_is_measured_on_the_mesh_that_has_the_corner(genes):
     mesh = ww.build_wheel(genes, cfg)
 
     # An interior node: take one well inside the rim band, away from every boundary.
-    r = np.linalg.norm(mesh.coords, axis=1)
-    inner = mesh.coords[np.argsort(np.abs(r - 49.4))[0]]
+    #
+    # IT MUST BE A Q9 VERTEX.  `measured_wedge_deg` skips midside nodes by design — a
+    # midside cannot be a corner of the geometry — and returns 0.0 rather than 360.0 for
+    # one, so a selection that can land on a midside is testing the tie-break of
+    # `argsort`, not the wedge.  It used to: a whole ring of nodes sits at exactly
+    # r = 49.500000, `abs(r - 49.4)` ties across all of them, and the 2026-08-18 uncap
+    # default flip reordered the seam merge's node ownership enough to move the winner
+    # from a vertex to a midside.  Nothing about the mesh, its quality or the wedge
+    # changed — only which of several equally-near nodes came first.  Restrict the
+    # candidates to vertices so the test asserts what its docstring says.
+    verts = np.unique(mesh.conn[:, :4])
+    r = np.linalg.norm(mesh.coords[verts], axis=1)
+    inner = mesh.coords[verts[np.argsort(np.abs(r - 49.4))[0]]]
     got = cs.measured_wedge_deg(mesh, inner, cfg.order)
+    assert got["n_incident_corner_elements"] == 4, got
     assert got["wedge_deg"] == pytest.approx(360.0, abs=1.0)
 
     for name, p in cs.corner_points(genes, cfg).items():

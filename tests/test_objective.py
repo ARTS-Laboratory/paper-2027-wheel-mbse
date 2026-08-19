@@ -50,16 +50,31 @@ def genes():
 
 @pytest.fixture(scope="module")
 def genes_over_knee():
-    """A design whose hub utilisation is ABOVE `MARGIN_KNEE_UTIL`, and its breakdown.
+    """THE NAME IS NOW ASPIRATIONAL: this design is BELOW `MARGIN_KNEE_UTIL` on the shipped
+    mesh, and the name is kept only so the xfail below reopens under its own history.
 
     Returns `(grad, breakdown)` from one `coarse`, 8-phase evaluation, module-scoped so the
     solve is paid once.
 
     IT IS THE PREDECESSOR GENOME, NOT A CONSTRUCTED ONE, and that is the cheap choice
     rather than the lazy one: `stage3_buildcap2_slack_medium.json` is `e4219f3`, the wheel
-    that shipped before 2026-08-13, and it reads util 0.85506 at `coarse`/8 against the
-    current genome's 0.70898 — §19 promoted a design that bought 22 points of hub margin,
-    which is exactly what puts the old one above the knee and the new one below it.
+    that shipped before 2026-08-13.  §19 promoted a design that bought hub margin, which
+    used to be exactly what put the old one above the knee and the new one below it.
+
+    MEASURED BOTH WAYS, `coarse` / 8 uniform phases, 2026-08-19 — the pairing this docstring
+    used to state was capped-mesh numbers, and PLAN.md §38 flipped the mesh under them:
+
+        genome                 mesh      util_hub   stress_margin   |grad|
+        this fixture           capped     0.85506      0.985420      20.864
+        this fixture           SHIPPED    0.77297      0.000000       0.000
+        best_solution.json     capped     0.73539      0.000000       0.000
+        best_solution.json     SHIPPED    0.71316      0.000000       0.000
+
+    So the flip is genome-dependent — it takes 3.02% off the shipped genome's hub
+    utilisation and 9.60% off this one — and only this fixture crossed the knee.  Note the
+    shipped genome was ALREADY below the knee on the capped mesh at these settings; its
+    recorded `stress_margin` of 0.13168 is a `medium`/SVK number (see `best_solution.json`'s
+    `search` block) and cannot be differenced against anything on this row.
     Constructing a thin genome instead would need thickness genes under the 1.2 mm
     `MIN_WALL_MM` floor, i.e. a design the gene box forbids, which is a worse fixture than
     a wheel this project actually shipped.
@@ -803,8 +818,57 @@ def test_the_fillet_radii_are_not_dead_genes(genes):
         f"the only thing that prices the fillets should be flat")
 
 
+def test_below_the_knee_the_rim_fillet_radius_is_dead(genes_over_knee):
+    """`R_rim` carries no gradient while the rim sits under the knee.  STILL LIVE.
+
+    SPLIT OUT OF `test_but_above_the_knee_the_fillet_radii_are_live` ON 2026-08-18, and
+    the reason is PLAN.md §31's, applied to a different pair.  That test's HUB half went
+    red when the uncap default landed — its fixture reads hub util 0.77297 where it used
+    to read 0.85506, so it is no longer above the knee it is named for — and while the
+    two halves shared a function the RIM half, which passes and is a claim about a
+    different junction, was not being checked on any run.
+
+    The rim's claim does not depend on the hub's premise: 0.55 and 0.48 are far under
+    0.80 on every genome measured, before and after the flip.  §22 is the independent
+    measurement of what that free margin is worth, which is nothing the part pays for.
+    """
+    g, brk = genes_over_knee
+    u_rim = brk["report"]["stress_utilisation_rim"]
+    assert u_rim < WO.MARGIN_KNEE_UTIL, (
+        f"the rim has reached util {u_rim:.5f}, above the knee — the branch below is no "
+        f"longer the one this fixture exercises and the rim gene should now be live")
+    assert g[13] == 0.0, (
+        f"dL/dR_rim is {g[13]:+.3e} — nonzero while the rim sits at util {u_rim:.5f}, far "
+        f"under the knee, which is precisely the free margin PLAN.md §22 measured as worth "
+        f"nothing the part pays for")
+
+
+@pytest.mark.xfail(reason=(
+    "PLAN.md §38: the 2026-08-18 uncap default RE-PRICED the stress term and no genome in "
+    "this tree is known to clear the 0.80 knee any more.  Uncapping deletes the two "
+    "re-entrant corners per junction the shipped part does not have, so the p=4 Gauss "
+    "p-norm the utilisation is built on falls ~10%.  Measured at coarse / 8 uniform "
+    "phases, the same settings this fixture uses: this fixture 0.85506 -> 0.77297, and "
+    "stage3_minwall_best_0.8.json — the THINNEST WALL and therefore the most stressed "
+    "design in the tree — reads 0.78664, also under.  This is NOT a threshold to move: "
+    "MARGIN_KNEE_UTIL stays at 0.80 and the new utilisations are the faithful ones.  It "
+    "is a fixture that no longer exists, and the honest reading is that `stress_margin` "
+    "is flat at every design currently on disk — including the shipped one, which was "
+    "descended with 0.1317 of it live.  strict=True via pyproject.toml, so this reopens "
+    "itself the day a design goes above the knee on the faithful mesh."))
 def test_but_above_the_knee_the_fillet_radii_are_live(genes_over_knee):
-    """The half of defect 2's regression that still has to hold, asked where it applies.
+    """RED SINCE THE UNCAP DEFAULT, AND THE PREMISE IS WHAT BROKE, NOT THE CLAIM.
+
+    Nothing measured here says `R_hub` stopped carrying gradient above the knee.  What is
+    measured is that the fixture stopped being above the knee — see the xfail reason, and
+    PLAN.md §38 for why that is a finding about the objective rather than about this test.
+    Do not repair it by lowering `MARGIN_KNEE_UTIL` or by evaluating at a rung chosen to
+    make the number come out; the fix is a design that is genuinely above the knee on the
+    faithful mesh, and finding or descending one is §38's successor #1.
+
+    THE ORIGINAL DOCSTRING FOLLOWS, unedited, because it records what the test was for.
+
+    The half of defect 2's regression that still has to hold, asked where it applies.
 
     ONE COARSE EVALUATION, and it is the reason this is a separate test with its own
     fixture: no genome in this repo reaches util 0.80 on the `smoke`/2-phase settings the
@@ -831,21 +895,11 @@ def test_but_above_the_knee_the_fillet_radii_are_live(genes_over_knee):
     """
     g, brk = genes_over_knee
     u_hub = brk["report"]["stress_utilisation_hub"]
-    u_rim = brk["report"]["stress_utilisation_rim"]
     assert u_hub > WO.MARGIN_KNEE_UTIL, u_hub
     assert brk["terms"]["stress_margin"]["value"] > 0.0, (
         "the margin term is flat above its own knee, so it prices nothing where margin is "
         "supposed to be worth buying")
     assert g[12] < 0.0, f"dL/dR_hub is {g[12]:+.3e} — the hub fillet is dead above the knee"
-
-    # The rim, asked against its OWN utilisation rather than the hub's.
-    assert u_rim < WO.MARGIN_KNEE_UTIL, (
-        f"the rim has reached util {u_rim:.5f}, above the knee — the branch below is no "
-        f"longer the one this fixture exercises and the rim gene should now be live")
-    assert g[13] == 0.0, (
-        f"dL/dR_rim is {g[13]:+.3e} — nonzero while the rim sits at util {u_rim:.5f}, far "
-        f"under the knee, which is precisely the free margin PLAN.md §22 measured as worth "
-        f"nothing the part pays for")
 
 
 def test_the_margin_term_prices_and_never_gates(genes):
