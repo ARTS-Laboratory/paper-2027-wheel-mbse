@@ -1,0 +1,288 @@
+{
+ "genome_hash": "09e8188",
+ "config": "coarse",
+ "crossings_per_spoke": {
+  "hub": 2,
+  "rim": 2
+ },
+ "crossings_per_wheel": {
+  "hub": 24,
+  "rim": 24
+ },
+ "rings": {
+  "hub": {
+   "ring_r_mm": 12.7,
+   "corners": [
+    {
+     "source": "mesh (uncap=False)",
+     "name": "P_t",
+     "theta_deg": 6.117808424607737,
+     "void_deg": 38.86057256986532,
+     "wedge_deg": 321.1394274301347,
+     "lambda_W": 0.503195174181436,
+     "spoke_side_leg_mm": 41.11821125266144
+    },
+    {
+     "source": "mesh (uncap=False)",
+     "name": "P_c",
+     "theta_deg": 0.0,
+     "void_deg": 62.82138713631571,
+     "wedge_deg": 297.1786128636843,
+     "lambda_W": 0.5141143756676385,
+     "spoke_side_leg_mm": 0.736915376859436
+    },
+    {
+     "source": "mesh (SHIPPED DEFAULT)",
+     "name": "P_c",
+     "theta_deg": -1.5187317073967834,
+     "void_deg": 91.51873170739678,
+     "wedge_deg": 268.4812682926032,
+     "lambda_W": 0.5469776007718323,
+     "spoke_side_leg_mm": 0.6600116296949956
+    },
+    {
+     "source": "mesh (uncap=True)",
+     "name": "P_c",
+     "theta_deg": -1.5187317073967834,
+     "void_deg": 91.51873170739678,
+     "wedge_deg": 268.4812682926032,
+     "lambda_W": 0.5469776007718323,
+     "spoke_side_leg_mm": 0.6600116296949956
+    },
+    {
+     "source": "part",
+     "name": "top_flank",
+     "theta_deg": 6.117483005665139,
+     "void_deg": 37.981755945851496,
+     "wedge_deg": 322.0182440541485,
+     "lambda_W": 0.5029794476775811,
+     "spoke_side_leg_mm": null
+    },
+    {
+     "source": "part",
+     "name": "bot_flank",
+     "theta_deg": -1.5267347137206628,
+     "void_deg": 91.52673471372066,
+     "wedge_deg": 268.47326528627934,
+     "lambda_W": 0.5469910072945032,
+     "spoke_side_leg_mm": null
+    },
+    {
+     "source": "extension",
+     "name": "own_tangent",
+     "theta_deg": -8.736841271691086,
+     "void_deg": 161.98061468984287,
+     "wedge_deg": 198.01938531015713,
+     "lambda_W": 0.8335428585387366,
+     "spoke_side_leg_mm": null,
+     "run_mm": 1.7814535259291788,
+     "closest_approach_mm": 12.077089254821878
+    },
+    {
+     "source": "extension",
+     "name": "shared_tangent",
+     "theta_deg": -7.83823733640949,
+     "void_deg": 158.81309327936123,
+     "wedge_deg": 201.18690672063877,
+     "lambda_W": 0.8100733225521557,
+     "spoke_side_leg_mm": null,
+     "run_mm": 1.5937817396792866,
+     "closest_approach_mm": 11.841561478369039
+    },
+    {
+     "source": "extension",
+     "name": "radial",
+     "theta_deg": -1.526733497711321,
+     "void_deg": 91.52673349771133,
+     "wedge_deg": 268.47326650228865,
+     "lambda_W": 0.5469910052572486,
+     "spoke_side_leg_mm": null,
+     "run_mm": 0.6591453532807456,
+     "closest_approach_mm": 0.3383708384877512
+    }
+   ]
+  },
+  "rim": {
+   "ring_r_mm": 48.5,
+   "corners": [
+    {
+     "source": "mesh (uncap=False)",
+     "name": "P_t",
+     "theta_deg": 1.3607815121320543,
+     "void_deg": 39.45464066055605,
+     "wedge_deg": 320.54535933944396,
+     "lambda_W": 0.5033469089224172,
+     "spoke_side_leg_mm": 41.11821125266144
+    },
+    {
+     "source": "mesh (uncap=False)",
+     "name": "P_c",
+     "theta_deg": 0.0,
+     "void_deg": 52.57216066709709,
+     "wedge_deg": 307.4278393329029,
+     "lambda_W": 0.5080978937495011,
+     "spoke_side_leg_mm": 0.7156474816644952
+    },
+    {
+     "source": "mesh (SHIPPED DEFAULT)",
+     "name": "P_c",
+     "theta_deg": -0.5138297395817583,
+     "void_deg": 89.48617026041825,
+     "wedge_deg": 270.51382973958175,
+     "lambda_W": 0.5436623718389806,
+     "spoke_side_leg_mm": 0.5663592532120632
+    },
+    {
+     "source": "mesh (uncap=True)",
+     "name": "P_c",
+     "theta_deg": -1.3684591190279563,
+     "void_deg": 141.15902587482626,
+     "wedge_deg": 218.84097412517374,
+     "lambda_W": 0.7029762378549669,
+     "spoke_side_leg_mm": 0.9113975811376216
+    },
+    {
+     "source": "part",
+     "name": "top_flank",
+     "theta_deg": 1.3607590423538924,
+     "void_deg": 38.93461320660966,
+     "wedge_deg": 321.06538679339036,
+     "lambda_W": 0.5032138229595635,
+     "spoke_side_leg_mm": null
+    },
+    {
+     "source": "part",
+     "name": "bot_flank",
+     "theta_deg": -1.3158567750193202,
+     "void_deg": 140.09818898984236,
+     "wedge_deg": 219.90181101015764,
+     "lambda_W": 0.697652101121965,
+     "spoke_side_leg_mm": null
+    },
+    {
+     "source": "extension",
+     "name": "own_tangent",
+     "theta_deg": -1.3816990866030194,
+     "void_deg": 141.58405581492096,
+     "wedge_deg": 218.41594418507904,
+     "lambda_W": 0.7051410990673608,
+     "spoke_side_leg_mm": null,
+     "run_mm": 0.9190362074546812,
+     "closest_approach_mm": 38.00074788240956
+    },
+    {
+     "source": "extension",
+     "name": "shared_tangent",
+     "theta_deg": -1.3359080859040298,
+     "void_deg": 140.07813767895766,
+     "wedge_deg": 219.92186232104234,
+     "lambda_W": 0.6975525463552272,
+     "spoke_side_leg_mm": null,
+     "run_mm": 0.8889822425612228,
+     "closest_approach_mm": 37.19563641086241
+    },
+    {
+     "source": "extension",
+     "name": "radial",
+     "theta_deg": -0.5148768677418565,
+     "void_deg": 89.48512313225815,
+     "wedge_deg": 270.51487686774186,
+     "lambda_W": 0.5436607094010011,
+     "spoke_side_leg_mm": null,
+     "run_mm": 0.5656718563549532,
+     "closest_approach_mm": 0.4358295184955182
+    }
+   ]
+  }
+ },
+ "validation": {
+  "expected_crossings_per_wheel": 24,
+  "hub_ok": true,
+  "rim_ok": true,
+  "pass": true
+ },
+ "step1_verdict": {
+  "hub": {
+   "truth_theta_deg": -1.5267347137206628,
+   "truth_wedge_deg": 268.47326528627934,
+   "truth_lambda": 0.5469910072945032,
+   "candidates": {
+    "end_cap (pre-2026-08-18)": {
+     "wedge_err_deg": 28.70534757740495,
+     "theta_err_deg": 1.5267347137206628,
+     "lambda_err": 0.032876631626864716
+    },
+    "AS BUILT (the default)": {
+     "wedge_err_deg": 0.008003006323860973,
+     "theta_err_deg": 0.008003006323879402,
+     "lambda_err": 1.3406522670900145e-05
+    },
+    "uncap=True (rim not buildable)": {
+     "wedge_err_deg": 0.008003006323860973,
+     "theta_err_deg": 0.008003006323879402,
+     "lambda_err": 1.3406522670900145e-05
+    },
+    "own_tangent": {
+     "wedge_err_deg": 70.45387997612221,
+     "theta_err_deg": 7.210106557970423,
+     "lambda_err": 0.2865518512442333
+    },
+    "shared_tangent": {
+     "wedge_err_deg": 67.28635856564057,
+     "theta_err_deg": 6.311502622688828,
+     "lambda_err": 0.26308231525765247
+    },
+    "radial": {
+     "wedge_err_deg": 1.2160093092461466e-06,
+     "theta_err_deg": 1.2160093418867035e-06,
+     "lambda_err": 2.037254587250459e-09
+    }
+   },
+   "best_on_wedge": "radial",
+   "beats_the_end_cap": true,
+   "improvement_deg": 28.70534636139564
+  },
+  "rim": {
+   "truth_theta_deg": -1.3158567750193202,
+   "truth_wedge_deg": 219.90181101015764,
+   "truth_lambda": 0.697652101121965,
+   "candidates": {
+    "end_cap (pre-2026-08-18)": {
+     "wedge_err_deg": 87.52602832274528,
+     "theta_err_deg": 1.3158567750193202,
+     "lambda_err": 0.18955420737246387
+    },
+    "AS BUILT (the default)": {
+     "wedge_err_deg": 50.61201872942411,
+     "theta_err_deg": 0.8020270354375619,
+     "lambda_err": 0.15398972928298438
+    },
+    "uncap=True (rim not buildable)": {
+     "wedge_err_deg": 1.0608368849838996,
+     "theta_err_deg": 0.05260234400863606,
+     "lambda_err": 0.005324136733001916
+    },
+    "own_tangent": {
+     "wedge_err_deg": 1.4858668250786025,
+     "theta_err_deg": 0.06584231158369924,
+     "lambda_err": 0.007488997945395814
+    },
+    "shared_tangent": {
+     "wedge_err_deg": 0.02005131088469625,
+     "theta_err_deg": 0.020051310884709572,
+     "lambda_err": 9.955476673773056e-05
+    },
+    "radial": {
+     "wedge_err_deg": 50.61306585758422,
+     "theta_err_deg": 0.8009799072774637,
+     "lambda_err": 0.15399139172096388
+    }
+   },
+   "best_on_wedge": "shared_tangent",
+   "beats_the_end_cap": true,
+   "improvement_deg": 87.50597701186058
+  },
+  "go": true,
+  "go_rim_only": true
+ }
+}
