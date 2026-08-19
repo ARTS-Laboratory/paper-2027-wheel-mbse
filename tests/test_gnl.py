@@ -228,11 +228,14 @@ def test_the_correction_enters_at_first_order_in_the_load(genes):
 
 
 @pytest.mark.xfail(reason=(
-    "PLAN.md §14 item 4a decided this pre-registered gate STANDS; SVK_PLAN Step 0 and "
-    "§31 (REDS Step 4) re-declared it.  small_load_rel_diff = 0.2007% against a 0.1% "
+    "PLAN.md §14 item 4a decided this pre-registered gate STANDS; SVK_PLAN Step 0, §31 "
+    "(REDS Step 4) and §32 re-declared it.  small_load_rel_diff = 0.2007% against a 0.1% "
     "gate — a true statement about a 1.2 mm wall, not a defect.  GATE_SMALL_LOAD_REL is "
     "NOT to be moved.  strict=True via pyproject.toml, so this reopens itself if the "
-    "wheel ever passes it."))
+    "wheel ever passes it.  §32 ANSWERED THE QUESTION THIS WAS WAITING ON AND THE GATE "
+    "STILL STAYS RED — the answer was 'no, linear is not an acceptable default for "
+    "search', the fix went into wheel_stage3's CLI default, and this gate measures the "
+    "KERNEL default, which §32 deliberately did not move.  See the docstring."))
 def test_the_gnl_correction_is_small_at_one_percent_of_service_load(genes):
     """PRE-REGISTERED, BREACHED, AND DELIBERATELY HELD.  Do not move the gate.
 
@@ -258,11 +261,22 @@ def test_the_gnl_correction_is_small_at_one_percent_of_service_load(genes):
     again.  Re-fitting a pre-registered gate to the design that breached it is exactly the
     move that rule exists to prevent, and raising it to 3e-3 or similar is forbidden.
 
-    WHAT THIS IS ACTUALLY WAITING ON, and it is bigger than the gate: §14 called it "the
-    most important thing §14 found" — whether LINEAR KINEMATICS IS STILL AN ACCEPTABLE
-    DEFAULT for a 1.2 mm wall at all.  If the answer is no, the fix belongs in the physics
-    defaults and not in this number.  §31 flagged it as a successor and deliberately did
-    not act on it.  See PLAN.md §14 item 4a and §31.
+    WHAT THIS WAS WAITING ON HAS BEEN ANSWERED — §32, 2026-08-16 — AND THE GATE STILL
+    STAYS RED.  §14 called it "the most important thing §14 found": whether LINEAR
+    KINEMATICS IS STILL AN ACCEPTABLE DEFAULT for a 1.2 mm wall at all.  The answer is
+    **no, not for search**.  `make kinrank` scored 36 committed genomes under both
+    kinematics and linear failed all three pre-registered conditions — different argmin,
+    Spearman **-0.83** over the feasible pool, and a gradient 172x too small at the genome
+    a linear descent returned.  The fix landed where §14 said it belonged, in the physics
+    defaults: `wheel_stage3.py --kinematics` now defaults to `svk`.
+
+    THAT DOES NOT TURN THIS GREEN, AND THE REASON IS THE POINT.  This test measures the
+    KERNEL default through `study_gnl`, which passes both kinematics explicitly and always
+    did — `run_load_ladder` solves each rung twice.  The number here is a property of the
+    WHEEL (a 1.2 mm wall is 5.5x more geometrically nonlinear than the design it replaced),
+    not of any default, so no default change can move it.  §32 also deliberately did NOT
+    move `wheel_fem`'s kernel defaults: that is a reporting question it did not measure,
+    and it reaches ~470 tests and 11 study drivers.  See PLAN.md §14 item 4a, §31 and §32.
     """
     rep = gnl.run_load_ladder(genes, CFG, fractions=(0.01, 0.1, 0.5, 1.0, 2.0))
     assert abs(rep["small_load_rel_diff"]) < gnl.GATE_SMALL_LOAD_REL, rep

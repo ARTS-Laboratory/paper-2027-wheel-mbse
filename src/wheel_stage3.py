@@ -970,14 +970,43 @@ def main():
                          f"bound on t0..t3. Applied BEFORE the bounds are read, so it "
                          f"changes the box this descent projects into. A start genome "
                          f"below a raised floor is projected up onto it.")
-    ap.add_argument("--kinematics", choices=("linear", "svk"), default="linear",
-                    help="the strain measure every solve in the descent uses. linear "
-                         "(default) is what every Stage-3 run in this tree so far used, "
-                         "and what `wheel_contact_problem` itself defaults to. svk is "
-                         "St Venant-Kirchhoff, which for the promoted 1.2 mm genome is a "
-                         "31%% softer wheel at the service point — 24.68 vs 36.02 N/mm, "
-                         "measured against a same-session linear control (SVK_PLAN.md "
-                         "step 1) — so a loss from one is NOT comparable with the other")
+    # DEFAULT FLIPPED linear -> svk, PLAN.md §32 / KINEMATICS_PLAN.md step 2.  This is the
+    # SEARCH path and it is the one place where the strain measure decides which design
+    # comes out, so it is the one place the default was measured and changed.
+    #
+    # WHY: `linear` does not RANK designs the way SVK does, so a linear descent does not
+    # return the design SVK would pick.  Measured over 36 committed genomes at `coarse`
+    # (`make kinrank`, studies/study_kinematics_rank.json): Spearman rho **-0.83** on the
+    # subset feasible under both, 82% of pairs discordant, and different argmins.  The
+    # cleanest cell is the §8 minwall ladder — eight arms from ONE linear descent differing
+    # only in the wall floor — where rho is **-0.8333** and linear's best arm (0.8 mm) is
+    # SVK's WORST of eight.  It is not an offset that cancels in a ranking: at matched
+    # deflection the correction spans 5.70%-48.54% across feasible designs, cv 0.51 against
+    # study_gnl's own 0.10 bar.
+    #
+    # AND IT COSTS 1.49x, NOT THE MULTIPLE STEP 2 BUDGETED FOR.  Paired over those same 36
+    # genomes on shared meshes at 8 workers: linear 34.2 s median against SVK 51.9 s.
+    #
+    # `linear` REMAINS SUPPORTED AND IS NOT DEPRECATED — study_gnl, study_kinematics_rank
+    # and the M5/M7 controls all need it as an arm, and `wheel_fem`'s own kernel defaults
+    # are DELIBERATELY UNTOUCHED (§32: that is a reporting question this arc did not
+    # measure, and it reaches ~470 tests and 11 study drivers).  What changed is only which
+    # one you get by not saying.
+    #
+    # FOUR LIVE RECIPES TOOK THE OLD DEFAULT — `stage3`, `prod9`, `prod10` and `minwall-%`
+    # — so this DOES change what they do.  It does not restate history: every run records
+    # its own `kinematics` in `search_block`, with no fallback (§15), so the pre-§15
+    # artifacts that carry no key are still readable as exactly what they were.
+    ap.add_argument("--kinematics", choices=("linear", "svk"), default="svk",
+                    help="the strain measure every solve in the descent uses. svk "
+                         "(default since PLAN.md §32) is St Venant-Kirchhoff; linear is "
+                         "engineering strain, which is what `wheel_contact_problem` itself "
+                         "still defaults to and what every Stage-3 run before §15 used. "
+                         "For the promoted 1.2 mm genome SVK is a 31%% softer wheel at the "
+                         "service point — 24.68 vs 36.02 N/mm, measured against a "
+                         "same-session linear control (SVK_PLAN.md step 1) — so a loss "
+                         "from one is NOT comparable with the other, and linear does not "
+                         "rank designs the way svk does (§32: rho -0.83)")
     ap.add_argument("--start", default="best", help="best | rank:N | all")
     ap.add_argument("--genome", default="best_solution.json")
     ap.add_argument("--elites", default="stage2_elites.json")
