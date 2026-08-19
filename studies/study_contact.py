@@ -169,6 +169,34 @@ def run_penalty_plateau(genes, cfg=DEFAULT_CONFIG,
     is asked: the default must agree with the next stiffer decade, and the penetration
     must be negligible against the band.  Both are one-sided and anchored where the
     answer is actually taken.
+
+    THE SECOND VERSION IS UNMEETABLE TOO, MEASURED 2026-08-19, AND NOTHING HERE WAS CHANGED.
+    After PLAN.md §38 flipped `wheel_wheel`'s `uncap` default this gate went red — 1.021e-03
+    against its 1e-03 limit, having read 9.610e-04 on the capped mesh.  That
+    looked like the flip breaking it.  It is not.  Swept at `coarse` on the shipped genome:
+
+        eps_n     1e2        1e3        1e4        1e5        1e6
+        drop   1.47914456 1.46747589 1.46379436 1.46230081  DID NOT CONVERGE
+        pair       1e2->1e3   1e3->1e4   1e4->1e5
+        rel        7.889e-03  2.509e-03  1.020e-03      -- every one of them FAILS
+
+    and `1e6` is a CONDITIONING FLOOR, not a tolerance choice: retried at Newton `tol`
+    1e-10, 1e-8 and 1e-7 the relative residual stalls at exactly 5.994e-07 in all three.
+    So `1e5` is the ceiling, `1e4->1e5` is the ONLY pair this gate can ever read, and it
+    fails.  There is no admissible setting in which it passes on the faithful mesh here.
+
+    THE PARAGRAPH ABOVE IS WHY, AND IT IS WRONG WHERE THE GATE ACTUALLY READS.  "A penalty
+    method's error in the axle drop simply IS the penetration" was measured between 1e3 and
+    1e4.  Across the full sweep the drop's successive differences fall by 3.17 then 2.47 per
+    decade — order eps^-0.5 decaying to eps^-0.39 — while the penetration's fall by 4.72,
+    6.26, 8.85, i.e. toward the first-order 10.  `resid/pen` therefore CLIMBS 0.716 -> 1.065
+    -> 2.707 rather than holding near 1.  A 1e-3 relative gate on a sequence converging at
+    order ~0.4 is not reachable at any `eps_n` a penalty method can carry.
+
+    `GATE_EPS_PLATEAU_REL` is NOT moved, this gate is NOT re-normalised (the same act in
+    better clothes), and `wheel_fem.DEFAULT_CONTACT_EPS_N` is NOT moved.  The first revision
+    of this gate got its own record on measurement; a second revision deserves the same, and
+    the numbers above are what it would need.  See PLAN.md §38, 2026-08-19.
     """
     mesh = WW.build_wheel(genes, cfg)
     rows = []
@@ -1040,7 +1068,7 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot and full:
         try:
-            print(f"wrote {_plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1
