@@ -9,7 +9,7 @@
     "penetration_frac_of_band": 0.010869177689234752,
     "patch_half_deg": 1.5453486890066674,
     "iterations": 1,
-    "seconds": 8.73
+    "seconds": 9.71
    },
    {
     "eps_n": 1000.0,
@@ -19,7 +19,7 @@
     "penetration_frac_of_band": 0.002303658925020121,
     "patch_half_deg": 0.7540358544640493,
     "iterations": 1,
-    "seconds": 11.06
+    "seconds": 12.18
    },
    {
     "eps_n": 10000.0,
@@ -29,7 +29,7 @@
     "penetration_frac_of_band": 0.0003677776085927083,
     "patch_half_deg": 0.3245476355673108,
     "iterations": 1,
-    "seconds": 17.18
+    "seconds": 19.15
    },
    {
     "eps_n": 100000.0,
@@ -39,10 +39,21 @@
     "penetration_frac_of_band": 4.1544920852250776e-05,
     "patch_half_deg": 0.20553954210689995,
     "iterations": 2,
-    "seconds": 24.97
+    "seconds": 27.65
    }
   ],
   "plateau_decades": 0,
+  "difference_ratios": [
+   0.31550510654106895,
+   0.4056875510465634
+  ],
+  "measured_order": 0.3918083188787017,
+  "extrapolated_limit_mm": 1.4612812888330335,
+  "default_vs_limit_rel": 0.0017197721439496938,
+  "sequence_monotone": true,
+  "sequence_contracting": true,
+  "solver_pass": true,
+  "regime_pass": false,
   "default_eps_n": 10000.0,
   "penetration_frac_at_default": 0.0003677776085927083,
   "default_vs_next_decade_rel": 0.001020327264106169,
@@ -680,6 +691,7 @@
   "pass": true
  },
  "pass": false,
+ "solver_is_correct": true,
  "settings": {
   "config": "coarse",
   "genome": "best_solution.json",
@@ -696,6 +708,6 @@
   ],
   "eps_n_default": 10000.0,
   "rim_band_mm": 1.5,
-  "elapsed_s": 1142.0
+  "elapsed_s": 1260.4
  }
 }
