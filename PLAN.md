@@ -6455,38 +6455,97 @@ hub share: a quantity too discretisation-dependent to price a design change agai
 hours and 32 GiB spent collecting 1.85% of a margin that reads 1.28% one rung finer, and
 extrapolates to zero, is the expensive way to learn this.
 
-#### The successors, ranked — REVISED 2026-08-19 AFTER MEASURING
+### 2026-08-20 — THE `ultra` RUNG ANSWERED IT, AND THE ANSWER IS "DO NOT PRICE AGAINST IT"
 
-The 2026-08-18 list is superseded. Three of its five items were ranked on premises that did
-not survive contact with a measurement, and the corrections are recorded above.
+Successor 1 asked for `ultra` or a ruling. It got `ultra` — 587208 dofs, 2.22x `fine`, 4878 s
+at 14.8 GB, faithful mesh, SVK, 8 uniform phases, the shipped genome, same call as every
+other rung. **`util_hub` = 0.79347, still below the 0.80 knee, `stress_margin` still exactly
+0.000000.** Taken alone that reads as a clean answer. It is not, and the increments are why:
 
-1. **Decide how to treat a utilisation that will not converge.** This replaces the old item 1
-   ("re-descend or conclude the term does no work"), which asked a question `soft_barrier`'s
-   algebra already answers. What is open is narrower and harder: `util_hub` on the shipped
-   genome reads 0.75490 / 0.77876 / 0.78519 / **0.78979** across smoke→fine under SVK, still
-   climbing, with the extrapolated limit straddling the 0.80 knee. Either run `ultra` and
-   see, or rule — as §31 effectively ruled for the hub share — that this quantity is too
-   discretisation-dependent to price a design change against. **The five-hour descent is
-   blocked behind this, not the other way round.**
-2. **`make studies`.** Drivers 1–7 now describe the faithful mesh (`study_gradient` PASSES,
-   26m23s, all gates). `study_objective` and `study_stage3` were running when this was
-   written. `study_contact` stops the recipe at G1, which is now known to be unreachable
-   rather than merely red — see above. So a clean `make studies` is not achievable without
-   a decision on G1, and that decision is item 3.
-3. **G1 needs its second revision, or an explicit decision not to have one.** Measured
-   unreachable at every admissible `eps_n`; `1e6` is a conditioning stall, and the drop
-   converges at order ~0.4 against a gate that assumes order 1. Nothing was changed. The
-   first revision got its own record on measurement; this one needs the same.
-4. **`FILLET_PLAN.md`** — unchanged by §38, and now carrying MORE weight, not less: the uncap
-   flip removed the OTHER junction artefact and the hub share's non-convergence barely moved
-   (+18.3% → +14.05% drift), so the unfilleted re-entrant corner is the only suspect left.
-   Its Step 3 item 1 acceptance test — the `R_hub` sweep — is still bit-identical across the
-   whole box, now confirmed to the last digit on the faithful mesh.
-5. **§32's successors 3 and 4** — §8's wall-floor economics under SVK. Premise still holds
-   (every `stage3_minwall_*.json` is linear/coarse/2026-08-03). Still pure compute, and now
-   explicitly behind item 1: it would run against an objective whose stress term is 1.28%
-   from binding at `fine` and whose limit is unknown.
-6. **The rim tri-block**, still filed, still not binding.
+| rung | dofs | `util_hub` | increment | ratio to prior | headroom |
+|---|---|---|---|---|---|
+| smoke | 22 k | 0.75490 | — | — | +5.64% |
+| coarse | 42 k | 0.77876 | 0.02386 | — | +2.65% |
+| medium | 106 k | 0.78519 | 0.00643 | 0.269 | +1.85% |
+| fine | 265 k | 0.78979 | 0.00460 | 0.716 | +1.28% |
+| **ultra** | **587 k** | **0.79347** | **0.00367** | **0.799** | **+0.82%** |
+
+**THE RATIO IS CLIMBING TOWARD 1, NOT DECAYING.** 0.269 -> 0.716 -> 0.799. A converging
+sequence has a ratio bounded below 1 and typically falling; this one rises at every rung. In
+`h` the apparent order falls from ~3.0 to ~0.5 (element counts give an `h` ratio of ~1.55 per
+rung). Whatever this sequence is doing, it is not settling down.
+
+**EVERY EXTRAPOLATION IS NOW ABOVE THE KNEE AND EVERY MEASUREMENT IS BELOW IT.** A constant
+ratio at the last observed 0.7986 puts the limit at **0.8080**; at the previous 0.7154 it is
+**0.8027**. On 2026-08-19 the two nearest extrapolations straddled 0.80 (0.791 against 0.801)
+and one more rung looked decisive. It was decisive — it removed the straddle in the direction
+that makes the quantity useless for pricing, not the direction that settles it.
+
+**THE DRIFT IS IN THE FIELD, NOT IN THE GEOMETRY — MEASURED, NOT ASSUMED.** `util_hub` is
+`kt * agg / ALLOWABLE`, and `kt` takes a config, so it could have been either. It is not:
+`kt_hub` runs 2.09654624 / 2.09632456 / 2.09621446 / 2.09615960 / 2.09613221 across the same
+five rungs — increments halving cleanly, first order, converged, and moving **-0.0197% in
+total, in the OPPOSITE direction to the drift**. All +5.11% of the rise is `agg`, the p-norm
+of the stress field.
+
+That is the field this tree already knows is singular. M8b-i.6 step 1 demoted `c` to a
+diagnostic precisely because the per-phase MAX diverges under refinement — 31.02 -> 41.54 ->
+48.47 MPa, GCI 34.4% — at the same unfilleted re-entrant corner. A p-norm is a milder
+functional of that field, so a slow, non-decaying drift is what the singularity predicts.
+**Do not overstate this: a finite-p norm of an integrable singularity CAN converge, and the
+ladder cannot separate "creeping to ~0.808" from "not converging at all".** It does not need
+to. Both readings put the answer above the knee.
+
+#### THE RULING — 2026-08-20
+
+**`util_hub` on this design is too discretisation-dependent to price a design change against,
+and the five-hour descent stays unfunded.** This is the same call §31 made for the hub share,
+made on the same kind of evidence, and it is mine rather than deferred.
+
+What it does NOT mean:
+
+- **`MARGIN_KNEE_UTIL` does not move.** §19. A gate is not re-fitted to the design that
+  approaches it, and it is certainly not re-fitted to an extrapolation.
+- **The stress term is NOT confirmed inert.** `soft_barrier` is algebraically zero below the
+  knee and it is zero at all five rungs, but the extrapolated limit is above the knee, so a
+  converged mesh may well switch it on. "The term does no work" and "the term binds" are both
+  unsupported. The honest statement is that the mesh cannot tell us which.
+- **Nothing was promoted, re-descended, or exported.**
+
+**WHAT UNBLOCKS IT IS THE FILLET, AND THAT IS NOW THE RANKING.** The drift lives in a field
+p-norm at an unfilleted re-entrant corner; `FILLET_PLAN.md` is the arc that puts a modelled
+radius there. It is the only open work that could make this quantity converge, which promotes
+it from 4 to 1 on the strength of a measurement rather than on the standing argument that it
+has been top of the arc list for five arcs.
+
+#### The successors, ranked — REVISED 2026-08-20 AFTER THE `ultra` RUNG
+
+The 2026-08-19 list is superseded at the top. Its item 1 is CLOSED by the ruling above, and
+what was its item 4 is now item 1 on measured grounds.
+
+1. **`FILLET_PLAN.md`** — promoted from 4. The `ultra` rung located the non-convergence in
+   `agg`, a p-norm of the field at the unfilleted re-entrant corner, with `kt` ruled out by
+   direct measurement. This is the arc that models a radius there, and it is now the only
+   open work that could make `util_hub` converge — which is what successor 1 needed and did
+   not get. Its Step 3 item 1 acceptance test, the `R_hub` sweep, is still bit-identical
+   across the whole feasible box on the faithful mesh, so the arc's own premise is intact.
+2. **G1 needs its second revision, or an explicit decision not to have one.** Unchanged from
+   the 2026-08-19 list, and now the only thing standing between this tree and a clean
+   `make studies`. Measured unreachable at every admissible `eps_n`; `1e6` is a conditioning
+   stall at 5.994e-07 across Newton tolerances 1e-10 / 1e-8 / 1e-7, and the drop converges at
+   order ~0.4 against a gate that assumes order 1. Nothing was changed. The first revision
+   got its own record on measurement; this one needs the same.
+3. **`make studies`.** All nine drivers have now been run individually on the faithful mesh
+   and their artifacts committed — `study_gradient`, `study_objective` (6308 s) and
+   `study_stage3` (12148 s, 32.1 GB) all PASS, and every artifact is current for the first
+   time since 2026-08-03. The RECIPE still stops at G1, so this is item 2 wearing a different
+   hat and it costs nothing extra once item 2 is decided.
+4. **§32's successors 3 and 4** — §8's wall-floor economics under SVK. Premise still holds
+   (every `stage3_minwall_*.json` is linear/coarse/2026-08-03). Still pure compute. It was
+   behind the old item 1; the ruling above does not release it, because it would still run
+   against an objective whose stress term sits 0.82% from a knee it may or may not cross.
+5. **The rim tri-block**, still filed, still not binding.
 
 **`HUBSHARE_PLAN.md` is NOT on this list and that is deliberate**: its Step 0 is blocked
-behind `FILLET_PLAN.md` by its own rule, re-verified today rather than quoted.
+behind `FILLET_PLAN.md` by its own rule — and item 1 is now that arc, so this may become
+reachable for the first time in five arcs.
