@@ -1,0 +1,35 @@
+{
+ "knee": 0.8,
+ "genome": "best_solution.json",
+ "rows": {
+  "smoke": {
+   "kt_hub": 2.096546239006466,
+   "kt_rim": 1.3939359631839685,
+   "rung": "smoke",
+   "kinematics": "svk",
+   "util_hub": 0.754904065554981,
+   "util_rim": 0.5019149619278349,
+   "margin": 0.0,
+   "headroom_pct": 5.636991805627378,
+   "drop_mm": 1.8277648334775058,
+   "loss": 51.21431221291685,
+   "crosses_knee": false,
+   "seconds": 289.1
+  },
+  "coarse": {
+   "kt_hub": 2.096324561276308,
+   "kt_rim": 1.3939359631839685,
+   "rung": "coarse",
+   "kinematics": "svk",
+   "util_hub": 0.7787643908902908,
+   "util_rim": 0.5178337893670999,
+   "margin": 0.0,
+   "headroom_pct": 2.654451138713654,
+   "drop_mm": 1.9011015378085443,
+   "loss": 38.7859468199916,
+   "crosses_knee": false,
+   "seconds": 448.4,
+   "increment": 0.023860325335309795
+  }
+ }
+}
