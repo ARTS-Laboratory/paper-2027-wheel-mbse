@@ -6518,34 +6518,94 @@ radius there. It is the only open work that could make this quantity converge, w
 it from 4 to 1 on the strength of a measurement rather than on the standing argument that it
 has been top of the arc list for five arcs.
 
-#### The successors, ranked — REVISED 2026-08-20 AFTER THE `ultra` RUNG
+### §39 — 2026-08-20. G1's THIRD REVISION: A BETTER ESTIMATOR, A WORSE NUMBER, AND §33's RULE APPLIED
 
-The 2026-08-19 list is superseded at the top. Its item 1 is CLOSED by the ruling above, and
-what was its item 4 is now item 1 on measured grounds.
+§38 left G1 measured-unreachable and deliberately unchanged, with the note that a second
+revision "deserves its own record on measurement". This is it. **No threshold moved. The gate
+reads redder than before. `make studies` is unblocked anyway**, and those three facts are the
+whole point: the bound was never the problem.
 
-1. **`FILLET_PLAN.md`** — promoted from 4. The `ultra` rung located the non-convergence in
-   `agg`, a p-norm of the field at the unfilleted re-entrant corner, with `kt` ruled out by
-   direct measurement. This is the arc that models a radius there, and it is now the only
-   open work that could make `util_hub` converge — which is what successor 1 needed and did
-   not get. Its Step 3 item 1 acceptance test, the `R_hub` sweep, is still bit-identical
-   across the whole feasible box on the faithful mesh, so the arc's own premise is intact.
-2. **G1 needs its second revision, or an explicit decision not to have one.** Unchanged from
-   the 2026-08-19 list, and now the only thing standing between this tree and a clean
-   `make studies`. Measured unreachable at every admissible `eps_n`; `1e6` is a conditioning
-   stall at 5.994e-07 across Newton tolerances 1e-10 / 1e-8 / 1e-7, and the drop converges at
-   order ~0.4 against a gate that assumes order 1. Nothing was changed. The first revision
-   got its own record on measurement; this one needs the same.
-3. **`make studies`.** All nine drivers have now been run individually on the faithful mesh
-   and their artifacts committed — `study_gradient`, `study_objective` (6308 s) and
-   `study_stage3` (12148 s, 32.1 GB) all PASS, and every artifact is current for the first
-   time since 2026-08-03. The RECIPE still stops at G1, so this is item 2 wearing a different
-   hat and it costs nothing extra once item 2 is decided.
+#### What was actually wrong — two things, neither of them the bound
+
+**1. THE ESTIMATOR WAS OPTIMISTIC BY 68.6%.** G1 asked whether the shipped `eps_n` is
+converged, and estimated the distance to the `eps_n → ∞` limit by the difference between two
+decades. That estimator is only valid if the sequence is **first order**, and §38 had already
+measured that it is not — the drop's successive differences fall by 3.17 then 2.47 per decade,
+an order of **0.50 decaying to 0.39**. What the default still carries is therefore a geometric
+**tail**, not a single step. Three estimators of the same quantity, all failing, disagreeing
+badly:
+
+| estimator | implied limit (mm) | error at the default | verdict |
+|---|---|---|---|
+| successive difference — *what the gate read* | 1.46230081 | 1.0203e-03 | FAIL |
+| first-order Richardson | 1.46213486 | 1.1350e-03 | FAIL |
+| **measured-order tail sum — reported now** | **1.46128129** | **1.7198e-03** | **FAIL** |
+
+The gate now reports the **worst** of the three. A revision written to make a red gate go green
+would have picked the first, which is the one that was already there. And because the ratios are
+*rising* (0.316 → 0.406), convergence is slowing and even 1.72e-03 is a lower bound — the same
+structural signature the `ultra` rung found in `util_hub` on the same day, in an unrelated
+quantity.
+
+**2. THE EXIT SEMANTICS CONFLATED TWO DIFFERENT CLAIMS.** G1 answers two questions with one
+verdict — *is the solve trustworthy* and *is the penalty method's convergence rate at this
+design good enough* — and only the first can invalidate a downstream number. That is exactly
+§33's rule, the one this tree paid ten days for when `study_gnl` stopped the recipe over a
+finding about the wheel. `study_gnl` already had the pattern; G1 now uses it:
+
+| verdict | what it asks | reads |
+|---|---|---|
+| `solver_pass` | every admissible decade converged, the default is bracketed, the sequence is monotone and contracting, and the penetration at the shipped setting is negligible against the band it dents (3.678e-04 against 1e-03) | **PASS** |
+| `regime_pass` | is the default within `GATE_EPS_PLATEAU_REL` of the extrapolated limit | **FAIL** at 1.7198e-03, and expected to keep failing |
+
+`pass` still computes the same conjunction on the same old estimator, so that field means in
+every `study_contact.json` ever written what it meant when it was written. It is simply no
+longer what the exit code is built from — `solver_is_correct` is.
+
+**A FAILED STIFFEST DECADE IS NOT A SOLVER FAILURE**, and the code says so explicitly.
+`eps_n = 1e6` is the documented conditioning ceiling (§38: the residual stalls at 5.994e-07 at
+Newton tol 1e-10, 1e-8 **and** 1e-7). Requiring it to solve would mean adding a decade to the
+sweep could turn the gate red for a limit the tree already understands. What the solve must do
+is *bracket* the default.
+
+#### What is NOT changed, and one thing that is now open
+
+`GATE_EPS_PLATEAU_REL`, `GATE_PENETRATION_FRAC`, the normalisation and
+`wheel_fem.DEFAULT_CONTACT_EPS_N` are all untouched. §19 stands.
+
+What §39 does open is narrower and honest: **the 2.5e-03 mm the default carries is 0.13% of the
+2.0 mm axle-drop target the objective steers by, against a 5% feasibility band.** So `1e-3`
+relative may be very much tighter than anything downstream needs. **Deriving** the bound from
+that requirement is legitimate work and would be a fourth revision with its own record;
+**widening** it because the gate is red is the move §19 forbids, and §39 deliberately does not
+make it. The distinction is the entire difference between the two, and it is the reason this
+revision left the number where it was and made the reading worse.
+
+#### The successors, ranked — REVISED 2026-08-20 AFTER §39
+
+§39 closes what was item 2 and unblocks what was item 3.
+
+1. **`FILLET_PLAN.md`** — unchanged at the top, and on measured grounds: the `ultra` rung put
+   `util_hub`'s non-convergence in `agg`, a p-norm of the field at the unfilleted re-entrant
+   corner, with `kt` ruled out by direct measurement (−0.0197% across five rungs, and in the
+   opposite direction). This is the only open arc that could make that quantity converge.
+   Its Step 3 item 1 acceptance test, the `R_hub` sweep, is still bit-identical across the
+   whole feasible box on the faithful mesh.
+2. **Run `make studies` end to end.** §39 removed the blockage: `study_contact` now exits on
+   `solver_is_correct`, which PASSES, and the other eight drivers were each run individually
+   on the faithful mesh on 2026-08-19/20 and each exited 0. The recipe has not completed since
+   **2026-08-06**. It is ~6 h of pure compute and nothing in it is a decision.
+3. **G1's fourth revision — DERIVE the bound, or record that it should not be derived.**
+   §39 deliberately did not touch `GATE_EPS_PLATEAU_REL`, and left the question stated: the
+   default carries 0.13% of the axle-drop target against a 5% feasibility band. Anyone taking
+   this must derive the number from the requirement and register the derivation BEFORE
+   reading what the gate then says. Not urgent — the gate no longer blocks anything.
 4. **§32's successors 3 and 4** — §8's wall-floor economics under SVK. Premise still holds
-   (every `stage3_minwall_*.json` is linear/coarse/2026-08-03). Still pure compute. It was
-   behind the old item 1; the ruling above does not release it, because it would still run
-   against an objective whose stress term sits 0.82% from a knee it may or may not cross.
+   (every `stage3_minwall_*.json` is linear/coarse/2026-08-03). Pure compute, and still behind
+   item 1: it would run against an objective whose stress term sits 0.82% from a knee it may
+   or may not cross.
 5. **The rim tri-block**, still filed, still not binding.
 
 **`HUBSHARE_PLAN.md` is NOT on this list and that is deliberate**: its Step 0 is blocked
-behind `FILLET_PLAN.md` by its own rule — and item 1 is now that arc, so this may become
-reachable for the first time in five arcs.
+behind `FILLET_PLAN.md` by its own rule — and item 1 is that arc, so this may become reachable
+for the first time in five arcs.
