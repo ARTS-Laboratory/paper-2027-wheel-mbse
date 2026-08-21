@@ -1103,9 +1103,18 @@ def main():
     # rather than after the solving, and by name rather than by silently renaming the
     # output, because a `study_contact.json` holding three of seven sections would read as
     # the gate to everything downstream.
-    if (not full or args.kinematics != "linear") and args.out == "study_contact.json":
-        ap.error("a partial or non-linear run may not be written to the committed "
-                 "study_contact.json; pass an explicit --out")
+    #
+    # `--quick` is on this list for the same reason and a measured one.  It pins its own
+    # reduced mesh regardless of `--config` (`cfg = "smoke" if args.quick` below) and drops
+    # a decade from the eps sweep, and at that fidelity G1 reads 4.394e-04 where BOTH
+    # halves pass — against 1.7198e-03 and a red `regime_pass` at the real config (§39,
+    # §40).  A quick run filed as `study_contact.json` is therefore not merely coarse: it
+    # is a FALSE GREEN standing in for the gate.  It slipped through until §41 because
+    # `--quick` alone leaves `full` True and `kinematics` "linear".
+    if ((not full or args.quick or args.kinematics != "linear")
+            and args.out == "study_contact.json"):
+        ap.error("a partial, reduced-fidelity (--quick) or non-linear run may not be "
+                 "written to the committed study_contact.json; pass an explicit --out")
 
     genes = load_genes(args.genome)
     kin = args.kinematics

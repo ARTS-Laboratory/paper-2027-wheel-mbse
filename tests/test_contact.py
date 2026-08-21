@@ -520,3 +520,76 @@ def test_the_reported_local_element_contains_the_patch_rather_than_merely_being_
         f"reported local span {r['local_seg_span_deg']:.4f} deg is not the span of the "
         f"segment containing the patch centre ({float(span[holds][0]):.4f} deg) — the "
         f"'nearest centre' selection bug has come back")
+
+
+# ---------------------------------------------------------------------------
+# The committed artifact is the gate, and only a full-fidelity run may be filed as it.
+#
+# PLAN.md §41.  `main()` refuses at startup, before `load_genes` and before any solving,
+# so every case here costs milliseconds.  `load_genes` is stubbed to raise a sentinel:
+# reaching it is exactly the statement "the guard let this through", which is what makes
+# the allowed direction testable without running the study.
+# ---------------------------------------------------------------------------
+
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+COMMITTED = os.path.join(HERE, "studies", "study_contact.json")
+
+
+class _PastTheGuard(Exception):
+    """Raised by the stubbed load_genes: the guard accepted these arguments."""
+
+
+@pytest.fixture
+def past_the_guard(monkeypatch):
+    def _stub(_path):
+        raise _PastTheGuard
+    monkeypatch.setattr(sc, "load_genes", _stub)
+
+
+@pytest.mark.parametrize("argv, why", [
+    (["--quick"], "reduced fidelity: pins the smoke mesh regardless of --config"),
+    (["--quick", "--config", "medium"], "--config does not undo --quick"),
+    (["--sections", "penalty"], "partial: 1 of 7 sections"),
+    (["--kinematics", "svk"], "non-linear"),
+])
+def test_a_degraded_run_may_not_be_filed_as_the_gate(monkeypatch, past_the_guard,
+                                                     argv, why):
+    """Refuse to write the committed study_contact.json from anything but the real gate.
+
+    `--quick` is the case this was missing, and it is the dangerous one.  At that fidelity
+    G1 reads 4.394e-04 with BOTH halves passing, against 1.7198e-03 and a red
+    `regime_pass` at the real config (§39) — so a quick run filed here is not a coarse
+    gate, it is a FALSE GREEN standing in for one.  It slipped the original guard because
+    `--quick` alone leaves `full` True and `kinematics` "linear", and only those two were
+    checked.  The other three cases pin the guard that already existed, so a later edit
+    cannot trade one exposure for another.
+    """
+    before = os.path.getmtime(COMMITTED)
+    monkeypatch.setattr(sys, "argv", ["study_contact.py", *argv])
+
+    with pytest.raises(SystemExit) as excinfo:
+        sc.main()
+
+    assert excinfo.value.code != 0, f"a run that is {why} was accepted as the gate"
+    assert os.path.getmtime(COMMITTED) == before, (
+        f"a run that is {why} modified the committed artifact")
+
+
+@pytest.mark.parametrize("argv", [
+    ["--quick", "--out", "study_contact_quick_probe.json"],
+    ["--sections", "penalty", "--out", "study_contact_probe.json"],
+    [],
+])
+def test_the_guard_refuses_a_name_not_a_run(monkeypatch, past_the_guard, argv):
+    """The refusal is about the NAME.  Redirected degraded runs, and the real gate, pass.
+
+    Pinned in both directions because the cheap way to quieten a noisy guard is to widen
+    it until a degraded run cannot happen at all — which would take `make contact` with
+    it, whose whole purpose is a one-section run redirected to `CONTACT_OUT` — and the
+    cheap way to quieten this test is to let the default path through again.  The empty
+    argv case is the gate itself: if that ever starts refusing, `make studies` loses its
+    sixth driver.
+    """
+    monkeypatch.setattr(sys, "argv", ["study_contact.py", *argv])
+    with pytest.raises(_PastTheGuard):
+        sc.main()
