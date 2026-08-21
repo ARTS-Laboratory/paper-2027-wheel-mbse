@@ -120,6 +120,15 @@ committed study artifacts describe a wheel promoted out of their named file thre
 > PASSES. **Arc 2's prerequisite is also now checked — see §33's successor 3:
 > `study_corner_singularity.py` takes the linear kernel default.**
 
+> **§33's LAST SENTENCE WAS OVER-OPTIMISTIC, AND §40 IS THE ONE THAT SETTLES IT.** "`make
+> studies` now runs all nine drivers green" was written on 2026-08-16 having reached **five**
+> of nine: `study_contact`'s G1 was red behind the old blocker and stopped the recipe there
+> (§38). §39 split that gate's solver verdict from its characterisation verdict, and on
+> **2026-08-20 the recipe completed end to end, exit 0 — §40**. 5:02:52, 30.8 GiB, all nine
+> PASS on `solver_is_correct`, with `study_gnl` and `study_contact` both printing a red
+> characterisation finding and exiting 0 anyway. **That is the first completion since
+> 2026-08-06**, and it has happened exactly once.
+
 > **THE SHIPPED GENOME IS `09e8188`, PROMOTED 2026-08-14 (§26). READ THE CHAIN BEFORE
 > TRUSTING ANY PER-DESIGN NUMBER IN THIS FILE.**
 >
@@ -6609,3 +6618,103 @@ revision left the number where it was and made the reading worse.
 **`HUBSHARE_PLAN.md` is NOT on this list and that is deliberate**: its Step 0 is blocked
 behind `FILLET_PLAN.md` by its own rule — and item 1 is that arc, so this may become reachable
 for the first time in five arcs.
+
+---
+
+### §40 — 2026-08-20. THE RECIPE COMPLETED. EXIT 0, 5:02:52, 30.8 GiB — AND IT REPRODUCED
+
+§39's ranked item 2, run end to end. **`make studies` exited 0 for the first time since
+2026-08-06.** There is no decision in this section: it is the compute §39 said was left once
+the blockage was gone, plus one finding nobody was looking for.
+
+#### The nine, and what they cost
+
+| # | driver | verdict | s |
+|---|---|---|---|
+| 1 | `study_mesh_quality` | M2a **PASS** — with the fold constraint in the feasible set | ~40 |
+| 2 | `study_wheel_mesh` | M2b **PASS** — area, design_space | 4.5 |
+| 3 | `study_beam_agreement` | M3 **PASS** — A1_A2, A3, A4a, A4b | 4.5 |
+| 4 | `study_wheel_fea` | M4 **PASS** | 77.8 |
+| 5 | `study_gnl` | **PASS** on `solver_is_correct` | 143.1 |
+| 6 | `study_contact` | **PASS** on `solver_is_correct` | 1161.4 |
+| 7 | `study_gradient` | M7 **PASS** | 1029.1 |
+| 8 | `study_objective` | M8a **PASS** | 4690.1 |
+| 9 | `study_stage3` | **PASS** | 11021.2 |
+
+**5:02:52 wall, 24971.9 s user + 6484.4 s system (173% CPU), peak RSS 30.8 GiB.** The ~6 h /
+~32 GB estimate held. **`study_stage3` is 61% of the wall clock and `study_objective` another
+26%** — the seven others together are 13%, and the two mesh drivers are 9 s of it. Anyone
+costing a change to this recipe should cost it against those two drivers and ignore the rest.
+
+#### §33's decoupling is now proven BY THE RECIPE, not by grep
+
+Two drivers printed a red verdict and exited 0 anyway. That is the entire reason this run was
+reachable, and §38 had established it by reading the code — this establishes it by running it.
+
+- `study_gnl`: *"at 1% of service load the two agree to 0.1983% (gate 0.1%) → FAIL — the
+  WHEEL, held red on purpose."* This is the driver that stopped the recipe at line 5 of 9 for
+  ten days.
+- `study_contact` prints both verdicts at equal volume, as §39 built it:
+  `OVERALL (the SOLVE, and what the exit code is): PASS` beside
+  `OVERALL (every verdict including characterisation findings): FAIL`. G1's `regime_pass`
+  reads **1.7198e-03**, to the digit what §39 recorded.
+
+#### THE UNPLANNED FINDING: THE RECIPE REPRODUCES TO FLOATING-POINT NOISE
+
+Nine of the eighteen artifacts were **rewritten with no content change at all** — both mesh
+drivers whole, four more `.jpg`. Of the nine files that did change, **four differ ONLY in
+timing fields**: `study_beam_agreement`, `study_wheel_fea`, `study_gnl` and `study_contact`
+have not one measured number altered from their individual 2026-08-19/20 runs. The other three
+differ in last bits only — `study_gradient`'s adjoint `-1.5198858230529777` →
+`-1.519885823052971` (~4e-15), `study_objective` the same order, `study_stage3`'s `R_hub`
+~4e-13 and `loss_end` ~3e-10, the last larger because a descent accumulates last bits over
+steps. S13 (`make m8bii1`) already documents that two plain serial interpreters disagree in the
+adjoint's last bit with no pool involved; this is that, at recipe scale.
+
+**Why it is worth a paragraph.** §38's parting observation was that the artifacts were MIXED —
+five drivers describing the uncapped mesh, `study_contact` describing it with a red gate, and
+`study_gradient`/`study_objective`/`study_stage3` still describing the capped one. §39 then
+refreshed the stragglers individually. **That mixed state is now closed**: all nine artifacts
+come from ONE invocation at ONE commit (`e12dfb6`) rather than from runs spread across
+2026-08-18/19/20 at three tree states. And because the drivers reproduced, the individual runs
+§39 leaned on were sound — the re-run could have contradicted them and did not.
+
+#### What this section does NOT do
+
+No threshold moved, no test deleted, nothing promoted. `best_solution.json` is untouched and
+still 2026-08-14. `make test`: **478 passed, 3 xfailed, 1910.5 s.** `GATE_EPS_PLATEAU_REL`
+remains where §19 and §39 left it — item 2 below is still the honest way to move it.
+
+#### The successors, ranked — REVISED 2026-08-20 AFTER §40
+
+§40 closes what §39 ranked item 2. Everything below simply moves up one, because running the
+recipe was never going to reorder anything: it is a gate, and it reported what the tree already
+believed.
+
+1. **`FILLET_PLAN.md`** — unchanged at the top for the sixth arc, and still on §39's measured
+   grounds: the `ultra` rung put `util_hub`'s non-convergence in `agg`, a p-norm of the field
+   at the unfilleted re-entrant corner, with `kt` ruled out by direct measurement (−0.0197%
+   across five rungs, in the opposite direction). It is the only open arc that could make that
+   quantity converge. Its Step 3 item 1 acceptance test, the `R_hub` sweep, is still
+   bit-identical across the whole feasible box on the faithful mesh. **Before starting it, the
+   §32 check still applies**: the study drivers do NOT inherit `svk` by default — `wheel_fem`'s
+   kernel defaults are `linear` on purpose and 11 drivers never mention `kinematics`, so a
+   fillet ladder built on those takes linear silently.
+2. **G1's fourth revision — DERIVE the bound, or record that it should not be derived.** The
+   default carries 0.13% of the 2.0 mm axle-drop target against a 5% feasibility band. Whoever
+   takes it must derive the number from the requirement and register the derivation BEFORE
+   reading what the gate then says. Not urgent — §40 confirms the gate blocks nothing.
+3. **§32's successors 3 and 4** — §8's wall-floor economics under SVK. Premise still holds
+   (every `stage3_minwall_*.json` is linear/coarse/2026-08-03). Pure compute, still behind
+   item 1: it would run against an objective whose stress term sits 0.82% from a knee it may or
+   may not cross. **§40 prices it**: this is `study_stage3` territory, the 11021 s driver.
+4. **The rim tri-block**, still filed, still not binding (§37).
+
+**`HUBSHARE_PLAN.md` remains off this list**, still blocked behind `FILLET_PLAN.md` by its own
+Step 0 rule — and item 1 is that arc, so it stays one arc from reachable.
+
+**A standing note now that the recipe runs again.** It has completed exactly once. The cheapest
+insurance against another ten-day gap is to run it after any change to `wheel_fem`, `wheel_wheel`
+or the objective — but at 5 h and 30.8 GiB that is not a per-commit gate, and §40 deliberately
+does not propose making it one. The two mesh drivers (9 s, both bit-reproducible) are the part
+that could be.
