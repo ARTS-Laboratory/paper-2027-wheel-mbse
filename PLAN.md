@@ -6718,3 +6718,124 @@ insurance against another ten-day gap is to run it after any change to `wheel_fe
 or the objective — but at 5 h and 30.8 GiB that is not a per-commit gate, and §40 deliberately
 does not propose making it one. The two mesh drivers (9 s, both bit-reproducible) are the part
 that could be.
+
+---
+
+### §41 — 2026-08-21. THE PER-COMMIT GATE IS REFUSED, AND THE AUDIT THAT REFUSED IT FOUND A FALSE GREEN
+
+§40 closed with a question it deliberately did not answer: the recipe costs 5 h and 30.8 GiB,
+so it cannot be a per-commit gate, but "the two mesh drivers — 9 s, both bit-reproducible —
+are the part that could be." **This is the decision. The answer is no, at any tier**, and the
+reason is not cost: the cheap tier was measured affordable and refused anyway.
+
+#### What a fast tier would actually cost — measured, not estimated
+
+Each driver run alone, full fidelity, `/usr/bin/time -v`:
+
+| driver | wall | peak RSS | imported by a test? |
+|---|---|---|---|
+| `study_mesh_quality` | 19.93 s | 174 MB | **NO — the only one in the recipe** |
+| `study_wheel_mesh` | 5.03 s | 150 MB | yes (`test_wheel`) |
+| `study_beam_agreement` | 5.78 s | 1024 MB | yes (`test_fem`) |
+| `study_wheel_fea` | 1:20.03 | 1901 MB | yes (`test_gnl`, `test_wheel_fea`) |
+| `study_gnl` | 2:35.92 | 1816 MB | yes (`test_gnl`) |
+
+**4 m 27 s and 1.9 GB for all five** — +14% on `make test`'s 31 m 50 s. Affordable. §40's "9 s"
+was the three cheapest and undercounted the tier anyone would actually want, because the tier
+worth having contains `study_gnl` — the driver that caused the first outage.
+
+#### Why it is refused anyway — three measured reasons
+
+**1. `make test` ALREADY COVERS EIGHT OF THE NINE.** Every recipe driver except
+`study_mesh_quality` is imported by the suite and called into, at `--quick` fidelity, *by
+explicit design*: `tests/test_fem.py:298-301` — the tests "call into it rather than
+re-deriving it, so there is exactly one definition of each check and CI cannot drift away
+from the published numbers." A fast tier re-runs those same checks at
+higher sample counts. The liveness it would buy is already bought.
+
+**2. RUNNING A DRIVER REWRITES ITS COMMITTED ARTIFACT.** Measured the hard way: the timing run
+above dirtied five tracked artifacts and they had to be restored from §40's commit to keep the
+recipe's provenance. A per-commit tier either churns `studies/*.json` on every commit — against
+the header's "a study commit carries its artifacts" — or writes to a scratch `--out`, at which
+point it has stopped being a gate and become a liveness check, which is reason 1.
+
+**3. THE AFFORDABLE TIER MISSES WHERE THE SECOND OUTAGE LIVED.** It would have caught
+`study_gnl` exiting 1 (§33's ten-day stall, and that is a real point in its favour). It would
+NOT have caught §38's five-of-nine stall, which was `study_contact` at 1161 s — outside any
+tier that could run per commit.
+
+**So §40's sentence was true about cost and wrong about value.** The mesh drivers are the
+cheapest part of the recipe and have never been the part that broke. It was ranked from a plausible
+mechanism — "cheap and reproducible, therefore gateable" — rather than from a measurement of
+what it would catch. That is exactly §37's three-for-three lesson, and §17's "the successor
+ranked #1 is worth nothing", and it is now four-for-four: **§40 wrote that sentence and §41
+retired it in one audit.**
+
+#### THE AUDIT'S REAL FIND: `--quick` COULD FILE A FALSE GREEN AS THE M6 GATE
+
+Every driver's `--out` defaults to its committed artifact name and **`--quick` does not change
+it**. `study_contact` is the only one of the nine with any guard at all, and it refused a
+partial `--sections` list and non-linear kinematics — but not `--quick`, which leaves `full`
+True and `kinematics` "linear" and therefore walked straight through.
+
+`studies/study_contact.py --quick` wrote **smoke-mesh** data into the committed
+`studies/study_contact.json`. §39 had already measured what that reads: **G1 at 4.394e-04 with
+BOTH halves passing**, against 1.7198e-03 and a red `regime_pass` at the real config. So this
+was not a coarse gate standing in for a fine one — **it was a FALSE GREEN standing in for a
+RED one**, in the single artifact that carries the M6 verdict.
+
+Nothing had run that command, so nothing is known to be corrupt: `study_contact.json` is
+§40's, from the full recipe. This is a live exposure closed before it fired, not a defect
+found after the fact. It is the same shape as §33's third defect — seven of nine drivers
+writing artifacts to the CWD — and the same shape as the exposure `test_smoke_does_not_touch_
+real_artifacts` already pins for `wheel_fea.py`. **The main CLI has had this discipline for
+arcs; the study drivers never got it.**
+
+Fixed by extending the existing guard, which was the local choice and is argued for in its own
+comment — "by name rather than by silently renaming the output". Seven regression tests pin it,
+in both directions: four degraded invocations must refuse, and three (two redirected degraded
+runs and the real gate itself) must pass. Verified against the pre-fix source: **exactly the
+two `--quick` cases fail, the other five pass on both sides**, so the test pins the new
+exposure and nothing else.
+
+#### What is NOT done, and the one place a cheap addition still buys coverage
+
+**`study_mesh_quality` is the only recipe driver no test imports.** M2a — the fold-margin
+prediction, `MIN_FOLD_MARGIN_MM`, the 66.27%-vs-99.07% contrast that IS the gate — is exercised
+nowhere outside the 5 h recipe. `tests/test_mesh.py:262` merely *cites* it in a comment. That
+is the real gap this audit found, it is 19.93 s of compute, and **it belongs in `make test`,
+not in a new `studies` target** — which is the whole decision restated in one case.
+
+It is ranked below rather than done because it needs tests that assert something about the
+fold margin, not an import line, and writing those is real work with its own record.
+
+The other eight drivers are left alone. `GATE_EPS_PLATEAU_REL` is untouched, nothing is
+promoted, `best_solution.json` is still 2026-08-14, and no threshold moved.
+
+#### The successors, ranked — REVISED 2026-08-21 AFTER §41
+
+1. **`FILLET_PLAN.md`** — unchanged at the top for the seventh arc, on §39's measured grounds.
+   The §32 check still applies before starting: the study drivers do NOT inherit `svk` by
+   default, so a fillet ladder built on them takes linear silently.
+2. **Cover `study_mesh_quality` in `make test`** — NEW, and the cheapest item on this list at
+   19.93 s. The only recipe driver with no test importing it, and M2a is a gate. Assert the
+   fold-margin prediction (zero misses at `MIN_FOLD_MARGIN_MM`, per `test_mesh.py:262`'s own
+   comment) rather than merely importing the module.
+3. **Extend the `--out` guard to the other eight drivers** — NEW, and deliberately ranked below
+   item 2 rather than done with it. `study_contact` is fixed because that is where the false
+   green was *measured*; the other eight have the same default-path exposure but no measured
+   harm, no shared helper to hang a guard on (each driver has its own `argparse`), and
+   different fidelity knobs. Doing it right is eight considered edits, not a sed.
+4. **G1's fourth revision** — derive `GATE_EPS_PLATEAU_REL` from the requirement or record that
+   it should not be derived. Unchanged; §40 confirmed the gate blocks nothing.
+5. **§32's successors 3 and 4** — §8's wall-floor economics under SVK. `study_stage3`
+   territory, the 11021 s driver (§40).
+6. **The rim tri-block**, still filed, still not binding (§37).
+
+**On cadence, since §40 left it open and this section closes it.** `make studies` stays a
+deliberate full run, not a gate: at arc boundaries and before a promotion, where its artifacts
+are supposed to describe the shipped genome. **The recurring failure it insures against is
+artifacts describing a wheel that is no longer shipped** — §33's second defect, "two committed
+study artifacts describe a wheel promoted out of their named file three times ago". That is a
+promotion-checklist question, not a per-commit one, and it belongs to `tests/test_promotion.py`
+and whoever runs the next promotion.
