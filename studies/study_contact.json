@@ -9,7 +9,7 @@
     "penetration_frac_of_band": 0.010869177689234752,
     "patch_half_deg": 1.5453486890066674,
     "iterations": 1,
-    "seconds": 9.71
+    "seconds": 8.84
    },
    {
     "eps_n": 1000.0,
@@ -19,7 +19,7 @@
     "penetration_frac_of_band": 0.002303658925020121,
     "patch_half_deg": 0.7540358544640493,
     "iterations": 1,
-    "seconds": 12.18
+    "seconds": 11.24
    },
    {
     "eps_n": 10000.0,
@@ -29,7 +29,7 @@
     "penetration_frac_of_band": 0.0003677776085927083,
     "patch_half_deg": 0.3245476355673108,
     "iterations": 1,
-    "seconds": 19.15
+    "seconds": 17.33
    },
    {
     "eps_n": 100000.0,
@@ -39,7 +39,7 @@
     "penetration_frac_of_band": 4.1544920852250776e-05,
     "patch_half_deg": 0.20553954210689995,
     "iterations": 2,
-    "seconds": 27.65
+    "seconds": 25.78
    }
   ],
   "plateau_decades": 0,
@@ -708,6 +708,6 @@
   ],
   "eps_n_default": 10000.0,
   "rim_band_mm": 1.5,
-  "elapsed_s": 1260.4
+  "elapsed_s": 1161.4
  }
 }

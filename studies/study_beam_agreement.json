@@ -200,6 +200,6 @@
     "probe_force_fraction": 0.01,
     "poisson": 0.35,
     "plane": "stress",
-    "elapsed_s": 4.4
+    "elapsed_s": 4.5
   }
 }
