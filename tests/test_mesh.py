@@ -22,6 +22,12 @@ import wheel_genome as GN
 import wheel_geometry as G
 import wheel_mesh as M
 
+# The M2a gate's driver.  Imported rather than re-derived, for the reason
+# `tests/test_fem.py:298-301` gives for `study_beam_agreement`: one definition of each
+# check, so CI cannot drift away from the published numbers.  This was the last recipe
+# driver no test imported (PLAN.md §41).
+import study_mesh_quality as smq
+
 jax = pytest.importorskip("jax")
 jax.config.update("jax_enable_x64", True)
 jnp = jax.numpy
@@ -261,6 +267,12 @@ def test_fold_margin_predicts_inversion():
     evaluation instead of a mesh in the loop.  Measured over the full design space
     (study_mesh_quality.py) the threshold in `MIN_FOLD_MARGIN_MM` gives zero misses;
     here we check a smaller sample keeps that property.
+
+    The margin comes from `smq.fold_margin` rather than from a local
+    `bezier_centerline` + `self_intersection_margin` pair.  Those were the same two
+    calls with the same span, so nothing about this test's meaning changes — but there
+    were TWO definitions of the gate's predictor and only one of them was published, so
+    the driver could have been edited without this test noticing.
     """
     cfg = M.get_config("coarse")
     conn = M.spoke_block_connectivity(cfg)
@@ -272,10 +284,7 @@ def test_fold_margin_predicts_inversion():
         _, loss = W.evaluate_design(v)
         if loss["x_order"] != 0.0 or loss["hub_overlap"] != 0.0:
             continue
-        curve, ctrl = G.bezier_centerline(*v[:8], span_mm=SPAN,
-                                          num_points=cfg.n_curve)
-        margin = float(G.self_intersection_margin(curve, ctrl, *v[8:12],
-                                                  num_points=cfg.n_curve))
+        margin = smq.fold_margin(v, cfg)
         if margin <= G.MIN_FOLD_MARGIN_MM:
             continue                                     # barrier would reject it
         checked += 1
@@ -286,6 +295,81 @@ def test_fold_margin_predicts_inversion():
             f"margin {margin:.4f} passed the barrier but minSJ is "
             f"{q['min_scaled_jacobian']:.4f}")
     assert checked > 20, f"only {checked} genomes survived the filter — weak test"
+
+
+def test_the_m2a_acceptance_criterion_is_the_published_one():
+    """Pin the gate's two constants, which nothing else in the suite reads.
+
+    `study_mesh_quality.py` states its criterion in advance and in prose — "> 98 % of
+    the FEASIBLE design space must have minimum scaled Jacobian > 0.2" — and PLAN.md
+    §19 and §31 forbid moving a threshold to make a gate green.  A pre-registered number
+    that no test reads can be edited in the same commit as the run that breached it, and
+    nothing would say so.  These are the numbers §40's recipe run measured 66.27% and
+    99.07% against.
+    """
+    assert smq.MIN_SJ_ACCEPT == 0.2
+    assert smq.ACCEPT_FRACTION == 0.98
+
+
+def test_fold_margin_on_the_shipped_genome_is_the_recorded_value(vec):
+    """A golden value for the gate's predictor, because calling into the driver is not
+    the same as detecting a change in it.
+
+    Refactoring `test_fold_margin_predicts_inversion` onto `smq.fold_margin` removed a
+    duplicate DEFINITION, which is what `tests/test_fem.py:298-301` argues for.  It does
+    not make the driver's own arithmetic observable: there the margin only decides WHICH
+    genomes get meshed, so a subtly wrong margin still selects genomes that mesh fine.
+    Measured, not assumed — mutating `fold_margin`'s span by 1% leaves all of
+    `test_mesh.py` green without this test, and fails it with.
+
+    `n_curve` is the reason the config is named: it is 600 at `smoke` and `coarse`, 1200
+    at `medium`, 2400 at `fine`, and the margin moves in the 8th significant figure
+    across them (14.365501181531 / 14.365501553787 / 14.365490528472).  The tolerance
+    below is well inside that spread, so this pins the arithmetic without pinning the
+    mesh ladder.
+    """
+    margin = smq.fold_margin(vec, M.get_config("coarse"))
+    assert margin == pytest.approx(14.365501181531, abs=1e-9), (
+        f"the shipped genome's fold margin at `coarse` (n_curve=600) reads {margin:.12f}, "
+        f"not the recorded 14.365501181531 — the gate's predictor has changed")
+
+
+def test_meshable_is_feasible_geom_plus_a_positive_fold_margin():
+    """`evaluate_one`'s two notions of feasible must stay distinct and stay defined.
+
+    The whole M2a finding is the GAP between them — geometric feasibility alone gives
+    66.27% and adding the fold constraint gives 99.07% (§40) — so a change that quietly
+    made `meshable` an alias of `feasible_geom` would delete the result while leaving
+    every number in the report looking plausible.
+
+    Deliberately runs the driver's own `evaluate_one`, meshing included: it is the
+    function the gate is computed from, and it had no test at all.
+
+    Sampled with the driver's own `latin_hypercube` rather than `rng.uniform`, which is
+    a third piece of the driver under test and is also what makes the sample strong
+    enough to see the gap.  Uniform sampling was tried first and is too weak: only ~6.6%
+    of a uniform draw is even `feasible_geom`, so 60 samples found five feasible genomes
+    and zero unmeshable ones.  Stratified, the same 60 find 5 and 2, and 200 find 17 and
+    6 (seed 3: 15 and 4).  200 costs 0.1 s.
+    """
+    cfg = M.get_config("coarse")
+    conn = M.spoke_block_connectivity(cfg)
+    low, high, _ = GN.bounds_arrays(W.GENE_SPACE)
+
+    seen_geom, seen_unmeshable = 0, 0
+    for v in smq.latin_hypercube(200, low, high, seed=11):
+        rec = smq.evaluate_one(v, cfg, conn)
+        assert rec["meshable"] == (rec["feasible_geom"] and rec["fold_margin"] > 0.0), (
+            f"meshable is no longer feasible_geom AND margin>0: {rec['meshable']} vs "
+            f"{rec['feasible_geom']} / {rec['fold_margin']:.4f}")
+        assert rec["meshable"] <= rec["feasible_geom"], "meshable must be the SUBSET"
+        seen_geom += rec["feasible_geom"]
+        seen_unmeshable += rec["feasible_geom"] and not rec["meshable"]
+
+    assert seen_geom > 0, "no geometrically feasible genome in the sample — weak test"
+    assert seen_unmeshable > 0, (
+        "every geometrically feasible genome was also meshable, so this sample cannot "
+        "see the gap M2a exists to report — re-seed or widen it")
 
 
 # ---------------------------------------------------------------------------
