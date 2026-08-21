@@ -6802,7 +6802,20 @@ exposure and nothing else.
 
 **`study_mesh_quality` is the only recipe driver no test imports.** M2a — the fold-margin
 prediction, `MIN_FOLD_MARGIN_MM`, the 66.27%-vs-99.07% contrast that IS the gate — is exercised
-nowhere outside the 5 h recipe. `tests/test_mesh.py:262` merely *cites* it in a comment. That
+nowhere outside the 5 h recipe.
+
+> **THE SECOND SENTENCE ABOVE IS WRONG, AND §42 CORRECTS IT — 2026-08-21.** "Exercised
+> nowhere outside the recipe" overstated what was checked, which was only that **no test
+> IMPORTED the driver**. `tests/test_mesh.py::test_fold_margin_predicts_inversion` had tested
+> the fold-margin property over 1500 samples all along. The real gap was **two definitions of
+> the same check** — the test re-implemented `smq.fold_margin` inline — which is the drift
+> `tests/test_fem.py:298-301` established the import idiom to prevent. Closed at `39dd96f`;
+> the two agreed bit-identically on all 99 feasible genomes when substituted, so this was
+> latent risk rather than a live defect. **Written as a caution about the sentence, not only
+> about the driver**: "no test imports X" and "X is untested" are different claims, and this
+> file stated the second having measured the first.
+
+`tests/test_mesh.py:262` merely *cites* it in a comment. That
 is the real gap this audit found, it is 19.93 s of compute, and **it belongs in `make test`,
 not in a new `studies` target** — which is the whole decision restated in one case.
 
@@ -6826,10 +6839,13 @@ promoted, `best_solution.json` is still 2026-08-14, and no threshold moved.
    **The cheap way in does not exist**, and one hour of A/B is what says so.
    The §32 check still applies before starting: the study drivers do NOT inherit `svk` by
    default, so a fillet ladder built on them takes linear silently.
-2. **Cover `study_mesh_quality` in `make test`** — NEW, and the cheapest item on this list at
-   19.93 s. The only recipe driver with no test importing it, and M2a is a gate. Assert the
-   fold-margin prediction (zero misses at `MIN_FOLD_MARGIN_MM`, per `test_mesh.py:262`'s own
-   comment) rather than merely importing the module.
+2. ~~**Cover `study_mesh_quality` in `make test`**~~ — **DONE 2026-08-21, `39dd96f`.** Three
+   tests, each verified by mutating the driver and confirming the suite goes red: `meshable`
+   aliased to `feasible_geom`, `MIN_SJ_ACCEPT` loosened 0.2→0.15, and `fold_margin`'s span
+   wrong by 1%. The third exists because the first version of the work **failed its own
+   mutation check** — importing the driver removes a duplicate definition but does not make
+   its arithmetic observable, since there the margin only decides which genomes get meshed.
+   All nine recipe drivers are now imported by the suite. +0.42 s; 488 passed, 3 xfailed.
 3. **Extend the `--out` guard to the other eight drivers** — NEW, and deliberately ranked below
    item 2 rather than done with it. `study_contact` is fixed because that is where the false
    green was *measured*; the other eight have the same default-path exposure but no measured
