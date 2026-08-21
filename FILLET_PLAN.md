@@ -509,3 +509,86 @@ outright rather than rounding them, it is the only change that makes the mesh ag
 the part, and it plausibly makes the fillet easy, because once both corners are
 flank/ring crossings with 41 mm legs the end cross-section that folded the spoke block
 does not exist. Planned in `UNCAP_PLAN.md`. See PLAN.md §34 Finding 4.
+
+---
+
+# STEP 1 RECORD, PART 5 — 2026-08-21. THE UNCAP FLIP DID NOT MOVE THE FOLD. PART 4's PREDICTION IS RETIRED.
+
+PART 4 re-ranked this arc on a prediction: removing the end cap "plausibly makes the
+fillet easy, because once both corners are flank/ring crossings with 41 mm legs the end
+cross-section that folded the spoke block does not exist." **PLAN.md §38 adopted
+`UNCAP_DEFAULT` on 2026-08-18 and nobody came back to check.** This is that check, run
+before spending the arc rather than after. **The prediction is wrong and the blocker
+stands.**
+
+## THE MEASUREMENT — A/B ON THE SAME CODE, SHIPPED GENOME
+
+At the shipped radii (`fillet=True`), the failure is **byte-identical** capped vs
+uncapped:
+
+```
+  cfg      uncap        result   _orient_elements
+  coarse   (False,1.0)  FOLDS    12 of 4704 elements non-positive, worst -3.0725e-02 mm2
+  coarse   (True, 1.0)  FOLDS    12 of 4704 elements non-positive, worst -3.0725e-02 mm2
+  medium   (False,1.0)  FOLDS    36 of 12288 elements non-positive, worst -5.6587e-02 mm2
+  medium   (True, 1.0)  FOLDS    36 of 12288 elements non-positive, worst -5.6587e-02 mm2
+```
+
+Swept per junction with the other off, **all 16 cells agree cell-for-cell** between
+capped and uncapped — same build/fold verdict at every radius on
+`0.05 .. 4.00 mm`, at both `coarse` and `medium`.
+
+## WHY, STRUCTURALLY — AND WHY THIS IS NOT THE §38 PLUMBING BUG IT LOOKS LIKE
+
+Identical-to-the-digit A/B results are the signature of a parameter that never reaches
+the path, which is exactly the defect §38 found in `mesh_coords`/`coord_fn`. **Checked,
+and it is not that.** `uncap` is consumed at `wheel_wheel.py:1067-1074` — `_uncap_blend`
+and `_uncap_corner`, inside the **junction** block, setting where its right edge lands.
+The **spoke** block never receives `uncap`, and neither does the unfilleted path
+(`_sector_coords`'s `if fillet is None` branch samples `s_grid x eta_grid` directly).
+
+**The fold is in the spoke block.** So the cap could not have been what folds it, and the
+identical numbers are correct construction rather than a silent default.
+
+PART 4's reasoning was about `P_c` disappearing. But the fold is at **`P_t`'s** fillet
+moving the shared corner to `B` on the ring circle, and growing the spoke's end
+cross-section from the moved corner to an unmoved far-flank point. **The cap is not on
+that path.** PART 4 named the right consequence of uncapping — `P_c` really is gone,
+`wheel_wheel.py:644-648` records it — and drew the wrong conclusion about this block.
+
+## WHAT IS UNCHANGED
+
+Both routes out of PART 3 stand exactly as written: **(1) a dedicated fillet block** with
+its own seam entries, still the preferred one, or **(2) a generated spoke block** —
+transfinite smoothing with a localised boundary correction. **Step 2 remains unreachable
+until one of them exists.** Nothing about the arc's cost estimate improves.
+
+## ONE DISCREPANCY, FILED OPEN RATHER THAN EXPLAINED AWAY
+
+PART 3 recorded "largest radius this construction survives" as **0.200 mm at `coarse`,
+0.100 at `medium`**, both junctions, and `wheel_wheel.py`'s docstring quotes those as
+current fact. Re-swept today, the **first fold** lands at:
+
+```
+                 hub        rim
+  coarse       4.00 mm    3.00 mm
+  medium       0.40 mm    0.40 mm
+```
+
+10-20x more permissive, though the qualitative signature PART 3 rested its argument on
+**does reproduce**: the limit tightens sharply under refinement (10x here, 2x there),
+which is what says the limit belongs to the construction and not to the geometry. The
+`medium` hub row is also non-monotonic — folds at 0.40-0.80, builds again at 1.20-2.00,
+folds at 3.00 — which is `_filleted_spoke`'s `cap = (n_sp-1)//3` node clamp saturating,
+not a second geometric regime.
+
+**This is NOT asserted to be drift, and the docstring is NOT edited on the strength of
+it.** Today's criterion is "does `build_wheel` raise"; PART 3's criterion is not recorded
+beyond the phrase above, and **no test or script survives to re-run it** — it was a
+scratch measurement written up in prose. The two may simply be measuring different
+things. Reconstructing PART 3's apparatus is the only way to tell, and guessing is the
+error PLAN.md §41 was written about.
+
+**Whoever takes route 1 or route 2 has to build that apparatus anyway** — PART 3 already
+says this construction "is what a fillet-block implementation will be checked against" —
+so the reconciliation should happen there, as its first act, not as a separate errand.

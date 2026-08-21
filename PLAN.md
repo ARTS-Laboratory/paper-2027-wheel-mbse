@@ -6815,6 +6815,15 @@ promoted, `best_solution.json` is still 2026-08-14, and no threshold moved.
 #### The successors, ranked — REVISED 2026-08-21 AFTER §41
 
 1. **`FILLET_PLAN.md`** — unchanged at the top for the seventh arc, on §39's measured grounds.
+   **PREMISE RE-CHECKED 2026-08-21 (FILLET_PLAN STEP 1 RECORD PART 5), AND ONE ROUTE INTO IT
+   IS CLOSED.** PART 4 had re-ranked the arc on a prediction that removing the end cap would
+   delete the corner that folds the spoke block, and §38 shipped that cap removal on
+   2026-08-18. Measured A/B: **the fold is byte-identical capped and uncapped** — 12 of 4704
+   elements at `coarse`, worst −3.0725e-02 mm², all 16 swept cells agreeing — because `uncap`
+   is consumed in the **junction** block (`wheel_wheel.py:1067-1074`) and the fold is in the
+   **spoke** block, which never receives it. Not the §38 plumbing bug; correct construction.
+   So the arc still costs what it cost: a dedicated fillet block, or a generated spoke block.
+   **The cheap way in does not exist**, and one hour of A/B is what says so.
    The §32 check still applies before starting: the study drivers do NOT inherit `svk` by
    default, so a fillet ladder built on them takes linear silently.
 2. **Cover `study_mesh_quality` in `make test`** — NEW, and the cheapest item on this list at
