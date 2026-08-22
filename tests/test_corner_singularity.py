@@ -112,9 +112,64 @@ def test_the_wedge_is_measured_on_the_mesh_that_has_the_corner(genes):
 
 
 def test_all_four_junction_corners_are_re_entrant(report):
+    """All four are re-entrant and singular — but the two families are not one band.
+
+    UPDATED 2026-08-22 (PLAN §45), and the reason is the finding rather than a tolerance.
+    This test used to read `0.50 <= lambda < 0.53` for all four, which was a capped-mesh
+    window: §38 flipped `UNCAP_DEFAULT` on 2026-08-18 and the two `P_c` corners stopped
+    being near-crack-like, moving from 296.75/307.94 deg of wedge to 268.08/271.02 and
+    from lambda 0.5144/0.5079 to 0.5477/0.5429. The committed report was not refreshed at
+    the flip, so the old window kept passing against a mesh the tree no longer builds.
+
+    Pinned per family, because they are different claims:
+
+      `P_t` is THE PART'S CORNER (agreeing with the exported flank crossing to 0.073 um,
+      FILLET_PLAN PART 2) and its wedge is set by the spoke geometry, not by a mesh
+      option. It is stable across every uncap setting measured and is pinned tightly.
+
+      `P_c` is a MESH ARTEFACT and its wedge is a function of `uncap`. It is pinned only
+      as "re-entrant and singular", with a band wide enough to hold both the capped and
+      the uncapped values, because a number that moves when a model option moves must not
+      be asserted as though it were a property of the wheel.
+    """
     for name, d in report["williams"].items():
         assert d["re_entrant"], f"{name} wedge {d['wedge_deg']:.2f} deg"
-        assert 0.50 <= d["lambda"] < 0.53, f"{name} lambda {d['lambda']:.4f}"
+        assert 0.50 <= d["lambda"] < 1.0, f"{name} lambda {d['lambda']:.4f}"
+        if name.endswith("P_t"):
+            assert d["lambda"] == pytest.approx(0.5031, abs=0.002), (
+                f"{name} lambda {d['lambda']:.4f} — this is the PART's corner and its "
+                f"wedge should not move with a mesh option")
+        else:
+            assert 0.50 <= d["lambda"] < 0.56, f"{name} lambda {d['lambda']:.4f}"
+
+
+def test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY(genes, report):
+    """The artifact must describe the DEFAULT mesh, not the mesh of the day it was run.
+
+    WRITTEN BECAUSE IT DID NOT. `study_corner_singularity.json` was committed 2026-08-16
+    against a capped mesh; §38 flipped `UNCAP_DEFAULT` on 2026-08-18 and this driver takes
+    that default (`build_wheel(genes, cfg)`, bare). For four days the committed record of
+    the arc's Step 0 baseline was two corners wrong by 28.7 and 36.9 deg of wedge, and
+    every peak stress in it too high by ~28% — and nothing was red, because every test
+    read the same stale file. See PLAN §45.
+
+    `make studies` would not have caught it either: this driver is not one of the nine.
+    So the check is here, and it is a re-measurement rather than a stored number — rebuild
+    the finest rung and ask whether the report still describes it. Geometry only, no
+    field solved, which is what makes it cheap enough to be a test.
+    """
+    finest = ww.get_config(report["ladder"][-1])
+    mesh = ww.build_wheel(genes, finest)
+    fine_rung = report["rungs"][-1]
+    assert mesh.n_elements == fine_rung["n_elements"]
+    assert mesh.n_nodes == fine_rung["n_nodes"]
+    for name, p in cs.corner_points(genes, finest).items():
+        got = cs.measured_wedge_deg(mesh, p, finest.order)
+        assert got["wedge_deg"] == pytest.approx(
+            report["williams"][name]["wedge_deg"], abs=0.05), (
+            f"{name}: the mesh built today has a {got['wedge_deg']:.2f} deg wedge and "
+            f"the committed report says {report['williams'][name]['wedge_deg']:.2f} — "
+            f"re-run `make corner` and read what moved before trusting either")
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +225,14 @@ def test_the_p_norm_the_optimizer_uses_diverges_far_more_slowly(report):
     drift up the ladder is an order of magnitude slower. The stress CONSTRAINT is
     therefore not the raw singularity, and a reader who takes "the peak diverges" as
     "the constraint is meaningless" has over-read it.
+
+    THE TWO SIDES COME FROM DIFFERENT MESH VINTAGES AS OF 2026-08-22, and that is stated
+    rather than quietly relied on. `study_corner_singularity.json` was refreshed against
+    the uncapped default (PLAN §45); `study_deflection_gci.json` is 2026-08-16 and its
+    driver takes the same bare default, so it still describes the CAPPED mesh and is 95
+    minutes to re-run. The comparison is an inequality between two slopes an order of
+    magnitude apart, so it survives the mismatch — but it is a mismatch, and the number
+    to fix is the GCI ladder's, not this assertion's.
     """
     gci = os.path.join(REPO, "studies", "study_deflection_gci.json")
     with open(gci) as fh:
