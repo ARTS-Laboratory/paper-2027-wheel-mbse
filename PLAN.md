@@ -81,6 +81,13 @@
 These replace the deleted plan files. Each is a live arc with its own steps; this table is the
 index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted.**
 
+> **ARC 2 IS NO LONGER "UNSTARTED" — Step 0 and Step 1 are answered (§34, §38, §44).** The
+> seam merge survives untouched, half the mesh's corners are not the part's, what blocks a
+> filleted mesh is the spoke block, and as of **§44 the instrument is reconciled, committed
+> and tested** (`make fillet`). Step 2 stays unreachable until a dedicated fillet block or a
+> generated spoke block exists — and both must be judged on `det J` at the Gauss points,
+> because `build_wheel` returning is not the same statement as a mesh that integrates.
+
 | # | file | the question | cost |
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
@@ -1460,6 +1467,10 @@ make minwall-<floor>                                      # §8, what the wall f
                                                           # make skips pattern search for
                                                           # phony targets and every arm
                                                           # silently no-ops with exit 0.
+make fillet                                               # §44, ~38 s: at what radius does the
+                                                          # filleted spoke block fold, under the
+                                                          # three criteria that disagreed by 20x.
+                                                          # geometry + Jacobians, no field solved
 make test                                                 # 427 tests, ~22 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
@@ -7031,3 +7042,91 @@ rule — now for the sixth arc.
 it read on 2026-08-20. §40 through §43 bought a completed recipe, a closed false-green
 exposure, one driver's first test coverage, and a retired premise on the top-ranked arc —
 all of it plumbing around the measurements rather than new measurements.
+
+### §44 — 2026-08-22. THE FILLET ARC'S TWO CONTESTED TABLES ARE RECONCILED: THEY WERE DIFFERENT CRITERIA, THE OLDER ONE IS RIGHT, AND THE NEWER ONE IS A GUARD THAT CANNOT SEE THE FOLD
+
+§43's ranked item 1, taken at the point §43 said to take it — *"its own PART 3 apparatus is
+what either route gets checked against, and reconciling PART 3's surviving-radius table
+belongs there as its first act."*
+
+`wheel_wheel.sector_blocks(..., fillet=)` has been the fillet arc's measuring instrument
+since §34 and had **no test and no driver**. Its central number — the largest radius it
+survives — was recorded twice, 0.20/0.10 mm (PART 3) against 4.00/3.00/0.40 (PART 5), and
+filed open because neither criterion was written down and neither apparatus survived.
+**Both rows now reproduce from one sweep, to the digit, and they were never measuring the
+same thing.**
+
+#### The criteria, and why the disagreement was 20x
+
+| | criterion | coarse hub | medium hub |
+|---|---|---|---|
+| PART 3 | mixed-sign cells in the spoke block | 0.20 | 0.10 |
+| PART 5 | does `build_wheel` raise | 4.00 | 0.40 |
+| **new** | **`det J` at the Gauss points the assembly integrates** | **0.12-0.24** | **0.07-0.11** |
+
+`_orient_elements` is a shoelace over each element's **four corners**. Every config is
+`order=2`, so one Q9 element spans 2x2 cells and its five mid nodes take no part in that
+sum: **a fold inside an element is invisible to the check that exists to catch folds.**
+PART 5's row is that guard reading late, and it overstates what is usable by 10-20x.
+PART 3's lands on the usable window's upper edge **exactly, at all four cells**. The
+docstring is edited to say so; it had been carrying both rows as contested since §43.
+
+#### The sharper answer neither row contained
+
+**There is no usable interval `0 < R < R_max` — an arbitrarily small fillet folds too.**
+The window has two edges and both are node allocation rather than geometry: above it
+`k0 = clip(round((s_A - s0)/ds), 1, cap)` steps 1 -> 2 and the element straddling the arc's
+end inverts (the geometry moves under 2% across that step); below it the same clamp's
+lower bound drags the first element's mid-side node out of the middle half of its own
+edge. Both scale with `ds`, which is the mechanism behind the one thing PART 3 and PART 5
+already agreed on — the limit tightens under refinement.
+
+#### AND THE GUARD'S BLIND SPOT IS NOT CONFINED TO THE OPT-IN PATH
+
+Sampled over the gene box at `coarse`, 1000 geometrically feasible draws, in the committed
+report: **177 of the 839 meshes `build_wheel` accepts (21.1%) have a non-positive `det J`
+at a Gauss point**, and 4 of those also clear `study_mesh_quality`'s minSJ >= 0.2 floor —
+which is corner-only for the same reason, so **both checks are blind in the same way at
+once.** What actually covers the default path is `fold_margin > 0`, and it is not an
+element check at all: it rejects the genome before the mesh exists, leaving 2 of 615.
+
+**And it is the one constraint that cannot cover this arc.** `fold_margin` reads genes
+0-11; `R_hub` and `R_rim` are 12 and 13. Pinned by moving both across their whole box and
+finding the margin unchanged to the bit. **Strengthening the guard is deliberately NOT
+done here** — it is a tree-wide change and this arc is not the place to make it — but it is
+recorded in `_orient_elements`' docstring, because until then a `build_wheel` that returns
+is not the same statement as a mesh that integrates.
+
+#### What was built
+
+`studies/study_fillet_fold.py` + `make fillet` (37.8 s, geometry and Jacobians, no field
+solved, exits nonzero only on a self-check), its committed report, and
+`tests/test_fillet_fold.py` — 20 tests on a construction that had none, including the two
+zero-radius controls, the reconciliation of both tables, the criterion ORDERING, and the
+blind spot pinned at a named radius.
+
+**Nothing was promoted, `best_solution.json` is untouched and still 2026-08-14, the default
+mesh is bit-identical, and no threshold moved.** Step 2 of `FILLET_PLAN.md` remains
+unreachable until route 1 (a dedicated fillet block) or route 2 (a generated spoke block)
+exists. What changed is that the instrument both will be judged against is re-runnable,
+named and tested — and that "is this fillet mesh valid?" now has one criterion instead of
+three that disagree by 20x.
+
+#### The successors, ranked — REVISED 2026-08-22 AFTER §44
+
+1. **`FILLET_PLAN.md` route 1 or route 2** — unchanged at the top for the ninth arc, and
+   the errand that stood in front of it is done. A dedicated fillet block with its own
+   seam entries (preferred) or a generated spoke block. **Both must be judged on `det J`
+   at the Gauss points, not on `build_wheel` returning** — §44 is why.
+2. **G1's fourth revision** — derive `GATE_EPS_PLATEAU_REL` from the requirement or record
+   that it should not be derived. §40 confirmed the gate blocks nothing.
+3. **§32's successors 3 and 4** — §8's wall-floor economics under SVK. `study_stage3`
+   territory, the 11021 s driver (§40).
+4. **The element-validity check itself** — NEW, and filed rather than ranked up: make the
+   fold guard (and the optimizer's minSJ barrier) see sub-element folds. §44 measures the
+   exposure at 21% of accepted meshes and shows `fold_margin` is what has been covering
+   it. Cheap to state, not cheap to land: minSJ is differentiated by M8's barrier.
+5. **The rim tri-block**, still filed, still not binding (§37).
+
+**`HUBSHARE_PLAN.md` remains off the list**, still blocked behind item 1 by its own Step 0
+rule — now for the seventh arc.

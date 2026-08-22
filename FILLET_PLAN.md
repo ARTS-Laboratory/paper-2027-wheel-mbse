@@ -414,12 +414,14 @@ Largest radius this construction survives, each junction swept with the other of
   rim          0.200 mm   0.100 mm     3.0000    15.0x / 30.0x too small
 ```
 
-> **SUPERSEDED IN PART, 2026-08-21 — read PART 5 before quoting this table.** Re-swept
-> by the criterion "does `build_wheel` raise", the first fold lands at 4.00/3.00 mm
-> (`coarse`) and 0.40/0.40 (`medium`), 10-20x more permissive. This table's criterion is
-> not recorded and its apparatus did not survive, so the disagreement is filed open, not
-> resolved against either side. **The conclusion drawn below is unaffected** — the
-> tightening-under-refinement signature reproduces under both criteria.
+> **CONTESTED 2026-08-21, RESOLVED IN THIS TABLE'S FAVOUR 2026-08-22 — see PART 6.**
+> Re-swept by the criterion "does `build_wheel` raise", the first fold lands at 4.00/3.00
+> mm (`coarse`) and 0.40/0.40 (`medium`), 10-20x more permissive; the disagreement was
+> filed open because this table's criterion was not recorded and its apparatus did not
+> survive. `make fillet` now reproduces BOTH rows from one sweep and names them: **this
+> one counts mixed-sign cells and lands on the usable window's upper edge exactly, at
+> every cell; the later one is `build_wheel`'s corner-only guard reading late.** Quote
+> this row. The conclusion drawn below stands, with its mechanism sharpened.
 
 Both fold at an end-cross-section ratio of ~1.3x the wall, and **the limit TIGHTENS
 under refinement.** A geometric limit — "the fillet does not fit in the notch" — would
@@ -572,6 +574,11 @@ until one of them exists.** Nothing about the arc's cost estimate improves.
 
 ## ONE DISCREPANCY, FILED OPEN RATHER THAN EXPLAINED AWAY
 
+> **CLOSED 2026-08-22 by PART 6.** Both criteria are now named and both rows reproduce
+> from one sweep (`make fillet`). PART 3's is the one to quote; this section's row is
+> `build_wheel`'s corner-only guard, which cannot see a fold inside a Q9 element and
+> overstates what is usable by 10-20x. The rest of this section stands as written.
+
 PART 3 recorded "largest radius this construction survives" as **0.200 mm at `coarse`,
 0.100 at `medium`**, both junctions, and `wheel_wheel.py`'s docstring quotes those as
 current fact. Re-swept today, the **first fold** lands at:
@@ -599,3 +606,104 @@ error PLAN.md §41 was written about.
 **Whoever takes route 1 or route 2 has to build that apparatus anyway** — PART 3 already
 says this construction "is what a fillet-block implementation will be checked against" —
 so the reconciliation should happen there, as its first act, not as a separate errand.
+
+---
+
+# STEP 1 RECORD, PART 6 — 2026-08-22. THE APPARATUS EXISTS. PART 3's TABLE IS RIGHT, PART 5's IS A WEAK GUARD READING LATE, AND THE WINDOW HAS A LOWER EDGE NEITHER SWEEP LOOKED FOR.
+
+PART 5 filed its discrepancy open and named the fix: *"whoever takes route 1 or route 2
+has to build that apparatus anyway ... so the reconciliation should happen there, as its
+first act, not as a separate errand."* This is that first act. **The apparatus is
+`studies/study_fillet_fold.py` (`make fillet`, 37.8 s, geometry and Jacobians only, no
+field solved), it is committed with its report, and it is under test —
+`tests/test_fillet_fold.py`, 20 tests, on a construction that had none.**
+
+## THE RECONCILIATION: BOTH ROWS REPRODUCE, FROM ONE SWEEP, AND THEY ARE DIFFERENT
+## CRITERIA
+
+```
+  config:junction    PART 3 criterion       PART 5 criterion     builds AND integrates
+                     largest surviving      first fold           usable window (mm)
+  coarse:hub              0.20                  4.00                 0.12 - 0.24
+  coarse:rim              0.20                  3.00                 0.11 - 0.23
+  medium:hub              0.10                  0.40                 0.07 - 0.11
+  medium:rim              0.10                  0.40                 0.07 - 0.11
+```
+
+Every recorded figure comes back on its own grid, to the digit. **They were never
+measuring the same thing:**
+
+- **PART 3 counted MIXED-SIGN CELLS in the spoke block** — its own write-up tabulates
+  exactly that column for all seven blocks, which is what identifies the criterion.
+- **PART 5 asked whether `build_wheel` raises.**
+
+**And PART 5's is the weaker instrument, structurally rather than by tolerance.**
+`_orient_elements` is a shoelace over each element's four CORNERS; every config is
+`order=2`, so one Q9 element spans 2x2 cells and its five mid nodes take no part in that
+sum. A fold inside an element is invisible to the check that exists to catch folds.
+Measured, `build_wheel` accepts 29-45 of the swept radii at each junction whose meshes
+carry up to 72 elements with a non-positive Jacobian.
+
+**So PART 3's row is the one to quote, and the docstring is now edited to say so.** Not
+because it is older but because it is within one grid step of the criterion that decides:
+`det J` at the Gauss points the FE assembly actually integrates.
+
+## THE THIRD CRITERION SAYS SOMETHING SHARPER THAN EITHER ROW
+
+**There is no usable interval `0 < R < R_max`. An arbitrarily small fillet folds too.**
+What exists is a window with two edges, and BOTH are node allocation rather than geometry:
+
+- **Upper edge — exact at all four cells.** `k0 = clip(round((s_A - s0)/ds), 1, cap)`
+  steps from 1 to 2 and the element straddling the arc's end inverts. At `coarse` the hub
+  is usable at 0.24 and folded at 0.25; the notch, the tangent length and the end
+  cross-section move by under 2% across that step. **PART 3's criterion lands on this edge
+  exactly, at every cell** — 0.20/0.10 are simply the legacy grid's nearest points below it.
+- **Lower edge — the same clamp's LOWER bound.** With the tangent point nearer than one
+  station, `k0` is held at 1 and the first Q9 element's mid-side node is dragged toward
+  its own end; a quadratic edge is singular once that fraction leaves the middle half.
+  Measured, the window opens as the fraction climbs back through ~0.4 (0.378 -> 0.403 at
+  the coarse hub, 0.412 -> 0.458 at the medium rim).
+
+Both edges move with `ds`, which is the mechanism behind the one claim PART 3 and PART 5
+already agreed on — the limit tightens under refinement, so it belongs to the construction.
+**Criterion C names which part of the construction.** PART 3's "the spoke block is ruled"
+was right about the block and incomplete about the reason: at the shipped radii the ruled
+interior does fold, but the window's edges are set by where nodes land, not by ruling.
+
+## THE FINDING THAT IS NOT ABOUT THE FILLET
+
+`build_wheel`'s fold guard does not see sub-element folds, and that is not confined to the
+opt-in path. Sampled over the gene box at `coarse` (1000 geometrically feasible draws,
+fixed seed, in the report):
+
+```
+  built by build_wheel                             839
+    with non-positive Gauss detJ                   177   (21.1%)
+      and min scaled Jacobian >= 0.2                 4   both corner-only checks blind at once
+  ALSO fold_margin > 0 ("meshable")                615
+    with non-positive Gauss detJ                     2   (0 of them minSJ-ok)
+```
+
+**What covers the default path is `fold_margin`, and it is not an element check at all** —
+it rejects the genome before the mesh exists. Which is exactly why it cannot cover this
+arc: `fold_margin` reads genes 0-11, and `R_hub`/`R_rim` are 12 and 13. Pinned by
+`test_fold_margin_cannot_see_the_fillet_genes`, which moves both across their whole box
+and finds the margin unchanged to the bit.
+
+**Strengthening the guard is NOT this arc's work and was not done.** It is recorded in
+`_orient_elements`' docstring so nobody reads a `build_wheel` that returns as a mesh that
+integrates. Whoever takes route 1 or route 2 needs a Jacobian-level check anyway — the
+apparatus now has one.
+
+## WHAT IS UNCHANGED, AND WHAT THIS COST
+
+Both routes out of PART 3 stand exactly as written: **(1) a dedicated fillet block** with
+its own seam entries, still preferred, or **(2) a generated spoke block**. Step 2 remains
+unreachable until one exists. Nothing was promoted, `best_solution.json` is untouched, the
+default mesh is bit-identical (re-verified as a control in the study and in the tests), and
+no threshold moved.
+
+What changed is that the instrument both routes will be judged against is now
+re-runnable, named, tested, and it answers a question neither route could previously ask:
+**"is this fillet mesh valid?" now has a criterion — `det J` at the Gauss points — instead
+of three criteria that disagree by 20x.**
