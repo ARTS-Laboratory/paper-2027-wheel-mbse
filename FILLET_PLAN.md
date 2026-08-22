@@ -414,6 +414,13 @@ Largest radius this construction survives, each junction swept with the other of
   rim          0.200 mm   0.100 mm     3.0000    15.0x / 30.0x too small
 ```
 
+> **SUPERSEDED IN PART, 2026-08-21 — read PART 5 before quoting this table.** Re-swept
+> by the criterion "does `build_wheel` raise", the first fold lands at 4.00/3.00 mm
+> (`coarse`) and 0.40/0.40 (`medium`), 10-20x more permissive. This table's criterion is
+> not recorded and its apparatus did not survive, so the disagreement is filed open, not
+> resolved against either side. **The conclusion drawn below is unaffected** — the
+> tightening-under-refinement signature reproduces under both criteria.
+
 Both fold at an end-cross-section ratio of ~1.3x the wall, and **the limit TIGHTENS
 under refinement.** A geometric limit — "the fillet does not fit in the notch" — would
 be mesh-independent. This one halves from `coarse` to `medium`, which is the evidence

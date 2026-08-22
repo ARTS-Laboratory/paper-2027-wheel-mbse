@@ -683,6 +683,16 @@ def _lerp_points(a, b, n, xp):
 # boundary correction) or a dedicated fillet block with its own seam entries.  See
 # FILLET_PLAN.md STEP 1 RECORD PART 3.
 #
+# THOSE TWO RADII ARE CONTESTED AND ARE NOT CURRENT FACT.  Re-swept 2026-08-21 by the
+# criterion "does `build_wheel` raise", the first fold lands at 4.00 mm (hub) / 3.00
+# (rim) at `coarse` and 0.40 / 0.40 at `medium` -- 10 to 20x more permissive than the
+# figures above.  PART 3's criterion is not recorded beyond the phrase "survives" and no
+# script of it survives to re-run, so the two may be measuring different things; the
+# numbers above are left as PART 3 wrote them rather than edited on a guess.  Only the
+# QUALITATIVE claim is confirmed under both criteria: the limit tightens sharply under
+# refinement.  Do not quote either row as settled until the apparatus is rebuilt --
+# FILLET_PLAN.md STEP 1 RECORD PART 5, "ONE DISCREPANCY, FILED OPEN".
+#
 # What this IS good for: it is the apparatus that measured all of the above, it is what
 # a fillet-block implementation will be checked against, and it is inert unless asked
 # for.  `fillet=None` short-circuits to the original construction and is BIT-identical;
