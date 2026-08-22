@@ -93,6 +93,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import wheel_fea as W
 import wheel_fem as fem
 import wheel_genome as wg
@@ -602,6 +604,16 @@ def main():
     ap.add_argument("--quick", action="store_true",
                     help="shorter sweeps and a coarser ladder; for CI")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_gnl.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     genes = load_genes(args.genome)
     t0 = time.time()

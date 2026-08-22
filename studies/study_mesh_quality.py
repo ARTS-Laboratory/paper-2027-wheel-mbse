@@ -48,6 +48,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import wheel_fea as W
 import wheel_genome as GN
 import wheel_mesh as M
@@ -239,6 +241,15 @@ def main():
                          "from --seed, so it is regenerated rather than committed.  "
                          "The summary is the artifact.")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_mesh_quality.json", [
+        (args.samples < 2000, "--samples %d, below the gate's 2000" % args.samples),
+        (args.config != "coarse", "--config %s, not the gate's coarse" % args.config),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     print("=" * 70)
     print(f"  MESH QUALITY SWEEP — {args.samples} feasible genomes, "

@@ -102,6 +102,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import jax_config  # noqa: F401
 import jax
 import jax.numpy as jnp
@@ -1097,6 +1099,17 @@ def main():
                     help="kinematics for every solve in the report; linear is the "
                          "committed default and svk is SVK_PLAN.md step 1")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_gradient.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.kinematics != "linear", "--kinematics %s" % args.kinematics),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     genes = load_genes(args.genome)
     cfg = "smoke" if args.quick else args.config

@@ -81,6 +81,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import wheel_fea as W
 import wheel_fem as fem
 import wheel_genome as wg
@@ -1111,10 +1113,16 @@ def main():
     # §40).  A quick run filed as `study_contact.json` is therefore not merely coarse: it
     # is a FALSE GREEN standing in for the gate.  It slipped through until §41 because
     # `--quick` alone leaves `full` True and `kinematics` "linear".
-    if ((not full or args.quick or args.kinematics != "linear")
-            and args.out == "study_contact.json"):
-        ap.error("a partial, reduced-fidelity (--quick) or non-linear run may not be "
-                 "written to the committed study_contact.json; pass an explicit --out")
+    _gate_guard.refuse_degraded_out(ap, args, "study_contact.json", [
+        (not full, "--sections %s, not all %d" % (args.sections, len(DEFAULT_SECTIONS))),
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.kinematics != "linear", "--kinematics %s" % args.kinematics),
+        (args.config != DEFAULT_CONFIG,
+         "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     genes = load_genes(args.genome)
     kin = args.kinematics

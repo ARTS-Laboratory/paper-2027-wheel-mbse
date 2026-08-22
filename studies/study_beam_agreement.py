@@ -66,6 +66,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import wheel_fea as wf
 import wheel_fem as fem
 import wheel_genome as wg
@@ -435,6 +437,15 @@ def main():
                     help="coarser meshes and 3 slenderness levels; for CI, not for "
                          "the recorded result")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_beam_agreement.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     global MESH_H_OVER_T
     if args.quick:

@@ -100,6 +100,8 @@ import time
 import jax_config  # noqa: F401  — must precede every other jax import
 import numpy as np
 
+import _gate_guard
+
 import wheel_adjoint as WA
 import wheel_fea as W
 import wheel_fem as fem
@@ -2073,6 +2075,20 @@ def main():
                          "measures concurrency rather than oversubscription wherever it "
                          "runs.")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.elites != "stage2_elites.json", "--elites %s" % args.elites),
+        (args.sections != ",".join(DEFAULT_SECTIONS), "--sections %s, not all %d" % (args.sections, len(DEFAULT_SECTIONS))),
+        (args.ladder_p != "", "--ladder-p %s" % args.ladder_p),
+        (args.ladder_configs != ",".join(LADDER_CONFIGS), "--ladder-configs %s" % args.ladder_configs),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     try:
         sections = parse_sections(args.sections)

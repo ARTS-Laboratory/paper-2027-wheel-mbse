@@ -223,6 +223,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import jax_config  # noqa: F401
 import jax
 import jax.numpy as jnp
@@ -969,6 +971,17 @@ def main():
     ap.add_argument("--quick", action="store_true",
                     help="reduced meshes and sample counts; for the test suite")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_objective.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.elites != "stage2_elites.json", "--elites %s" % args.elites),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     genes = load_genes(args.genome)
     cfg = "smoke" if args.quick else args.config
