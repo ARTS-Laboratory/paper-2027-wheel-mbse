@@ -6864,3 +6864,170 @@ artifacts describing a wheel that is no longer shipped** — §33's second defec
 study artifacts describe a wheel promoted out of their named file three times ago". That is a
 promotion-checklist question, not a per-commit one, and it belongs to `tests/test_promotion.py`
 and whoever runs the next promotion.
+
+---
+
+---
+
+### §42 — 2026-08-21. THE M2a DRIVER IS UNDER TEST, AND §41's REASON FOR RANKING IT WAS WRONG
+
+§41's ranked item 2, done — and the correction it forced is the more useful half.
+
+#### The claim that ranked it, and what was actually measured
+
+§41 wrote that `study_mesh_quality`'s gate is "exercised nowhere outside the 5 h recipe."
+**That was too strong.** What had been measured is narrower: **no test IMPORTED the
+driver.** `tests/test_mesh.py::test_fold_margin_predicts_inversion` had been testing the
+fold-margin property over 1500 samples all along, so M2a's central claim was covered.
+
+*"No test imports X"* and *"X is untested"* are different claims, and §41 stated the second
+having checked the first. Recorded because the generalisation was invisible while writing
+it and obvious the moment the file was opened — the same shape as §37's three-for-three
+lesson and §41's own re-ranking error.
+
+#### The real gap: TWO definitions of one check
+
+The test re-implemented `smq.fold_margin` inline — the same `bezier_centerline` +
+`self_intersection_margin` pair, at the same span — which is the drift
+`tests/test_fem.py:298-301` established the import idiom to prevent: *"so there is exactly
+one definition of each check and CI cannot drift away from the published numbers."*
+
+They had **not** drifted (`SPAN = W.HUB_RIM_SPAN_MM` in both), so this closed latent risk
+rather than fixing a live defect — and that was verified before substituting, not assumed:
+over the same 1500-sample draw the two derivations agree **bit-identically on all 99
+`feasible_geom` genomes, worst |old−new| exactly 0**.
+
+#### Three tests, each verified by mutating the driver
+
+| mutation | caught by |
+|---|---|
+| `meshable` aliased to `feasible_geom` | `test_meshable_is_feasible_geom_plus_a_positive_fold_margin` |
+| `MIN_SJ_ACCEPT` loosened 0.2 → 0.15 | `test_the_m2a_acceptance_criterion_is_the_published_one` |
+| `fold_margin`'s span wrong by 1% | `test_fold_margin_on_the_shipped_genome_is_the_recorded_value` |
+
+**The third exists because the first version of the work failed its own mutation check.**
+Importing the driver removes a duplicate definition but does **not** make its arithmetic
+observable: in the fold test the margin only decides WHICH genomes get meshed, so a 1%
+wrong span still selects genomes that mesh fine and every test stayed green. A golden value
+closes it — `14.365501181531` at `coarse`, with `n_curve` named because the margin moves in
+the 8th significant figure across the ladder (600 / 1200 / 2400 → `…181531` / `…553787` /
+`…490528`), so the 1e-9 tolerance pins the arithmetic without pinning the ladder.
+
+Pinning `MIN_SJ_ACCEPT` and `ACCEPT_FRACTION` earns its place separately: they are
+pre-registered in the driver's docstring and in prose, §19 and §31 forbid moving a
+threshold to make a gate green, and **a pre-registered number no test reads can be edited
+in the same commit as the run that breached it.** These are what §40's recipe measured
+66.27% and 99.07% against.
+
+#### One more thing that had to be measured rather than guessed
+
+The `meshable` test first used `rng.uniform` and tripped **its own "weak test" guard**:
+only ~6.6% of a uniform draw is even `feasible_geom`, so 60 samples found five feasible
+genomes and zero unmeshable ones — the sample could not see the gap M2a exists to report.
+It now draws with the driver's own `latin_hypercube`, which is a third piece of the driver
+under test: 60 stratified samples find 5 and 2, and 200 find 17 and 6 (seed 3: 15 and 4).
+200 costs 0.1 s.
+
+**All nine `make studies` drivers are now imported by the suite.** +0.42 s; 488 passed,
+3 xfailed at `39dd96f`.
+
+### §43 — 2026-08-22. THE GUARD REACHES ALL NINE, AND THE TEST FOR IT FIRST REPRODUCED THE DEFECT
+
+§41's ranked item 3, and the other half of the exposure §41 closed for `study_contact`
+alone. Every driver's `--out` defaults to the artifact `make studies` commits and no
+fidelity flag changes that default, so the cheap invocation overwrites the gate's own
+record with a weaker measurement — and the report still reads like the gate, because every
+field is present and every verdict is computed.
+
+#### One mechanism, nine judgements
+
+`studies/_gate_guard.py` holds the part that is identical everywhere: compare `--out`
+against the committed name, collect the reasons this run is not the gate, refuse by name.
+The judgement is not shared — what degrades `study_mesh_quality` (fewer samples) has
+nothing to do with what degrades `study_gradient` (a strain measure) — so each driver
+passes its own `(condition, reason)` list. This is `tests/test_fem.py:298-301`'s argument
+applied to a guard instead of a check, and it is the same reasoning §42 used on the M2a
+duplicate: one definition, so a fix reaches all nine. **`study_contact` is retrofitted onto
+the helper**, and its seven tests from `db4ab05` pass unchanged — which is what says the
+retrofit preserved it rather than merely compiling.
+
+| degraded by | drivers |
+|---|---|
+| `--quick` | all but `study_mesh_quality`, which has none |
+| `--config` off the driver's own default | all but `study_beam_agreement` |
+| `--genome` / `--elites` off the provenance chain | the six that read them |
+| `--samples` BELOW the recipe's | `study_mesh_quality`, `study_wheel_mesh` |
+| `--kinematics` non-linear | `study_gradient`, `study_contact` |
+| partial `--sections`, non-default ladder | `study_stage3`, `study_contact` |
+| `--no-plot` | all nine |
+
+**`--no-plot` goes beyond the literal extension and is deliberate.** It refreshes the
+`.json` and leaves the committed `.jpg` stale, breaking the header's "a study commit
+carries its artifacts" the same way a degraded run breaks the gate. Only `make contact`
+passes it, with an explicit `--out`. **`--seed` is deliberately NOT guarded**: a re-draw is
+still the full gate, and requiring seed 0 would pin a particular random draw rather than a
+fidelity.
+
+#### The test that matters most is the PERMISSIVE one
+
+A guard that fired on the recipe's own invocation would take `make studies` down — five
+hours, nine drivers — and would do it at the END of each driver, since `make` sees only an
+exit status. So the Makefile's exact `studies:` argv is asserted to pass for all nine.
+Mutating one condition to the wrong default (`--samples != 2000` where the target passes
+exactly 2000) fails that test, which is how it was checked rather than assumed.
+
+Verified outside the suite too: both recipe invocations exit 0 and write their artifacts —
+`study_mesh_quality.json` came back **bit-identical** for the third time — and
+`study_gnl.py --quick` exits **2** with the guard's message. `make m8bi5`, `m8bi6`,
+`m8bii1` and `contact` all pass explicit `--out` and are unaffected, pinned in both
+directions.
+
+#### THE LESSON, AND IT IS THE THIRD SELF-INFLICTED ONE THIS WEEK
+
+**The first draft of the test reproduced the exact defect it was written to catch.** It
+stopped execution only by having the guard wrapper raise — fine while every driver calls
+the guard, and catastrophic the moment one does not, which is precisely the mutation the
+tests exist to catch. Removing a driver's guard call to check the tests could fail meant
+the wrapper never fired, `main()` ran the whole study, and it **overwrote
+`studies/study_mesh_quality.json` and `.jpg`** and left two stray `_probe` files. Restored
+from `39dd96f`.
+
+The fixture now redirects every driver's module-level `HERE` to `tmp_path` — all nine write
+through `os.path.join(HERE, args.out)` — and asserts the guard was reached. Re-run with a
+guard call deleted outright: caught, and the artifact fingerprint is identical before and
+after. **A test for an artifact-clobbering defect must not be able to clobber the
+artifact**, and the general form is worth keeping: *a test that verifies a safety mechanism
+must be safe when that mechanism is absent, because absent is the case it exists to
+report.*
+
+This is three in a row where the check found the flaw in my own work rather than in the
+tree's — §42's mutation check caught a test that could not see a 1% error, §41's audit
+caught the `--quick` exposure while arguing about something else, and this. The common
+factor is that each was found by trying to make the new thing FAIL, not by running it.
+
+#### The successors, ranked — REVISED 2026-08-22 AFTER §43
+
+§41's list is now down to the items that were never cheap.
+
+1. **`FILLET_PLAN.md`** — unchanged at the top for the eighth arc. Premise re-checked
+   2026-08-21 (STEP 1 RECORD PART 5): the uncap flip did not move the fold, byte-identical
+   capped and uncapped, because `uncap` is consumed in the junction block and the fold is
+   in the spoke block. **The cheap way in does not exist.** Two routes, both real work: a
+   dedicated fillet block with its own seam entries, or a generated spoke block. Its own
+   PART 3 apparatus is what either gets checked against, and reconciling PART 3's
+   surviving-radius table (0.20/0.10 recorded, 4.00/3.00/0.40/0.40 re-swept, criterion
+   unrecorded) belongs there as its first act.
+2. **G1's fourth revision** — derive `GATE_EPS_PLATEAU_REL` from the requirement or record
+   that it should not be derived. §40 confirmed the gate blocks nothing.
+3. **§32's successors 3 and 4** — §8's wall-floor economics under SVK. `study_stage3`
+   territory, the 11021 s driver (§40).
+4. **The rim tri-block**, still filed, still not binding (§37).
+
+**`HUBSHARE_PLAN.md` remains off the list**, still blocked behind item 1 by its own Step 0
+rule — now for the sixth arc.
+
+**What this week's four sections did NOT do.** No threshold moved, nothing was promoted,
+`best_solution.json` is untouched and still 2026-08-14, and every gate reads exactly what
+it read on 2026-08-20. §40 through §43 bought a completed recipe, a closed false-green
+exposure, one driver's first test coverage, and a retired premise on the top-ranked arc —
+all of it plumbing around the measurements rather than new measurements.
