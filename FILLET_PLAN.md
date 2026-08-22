@@ -829,3 +829,86 @@ one of the cheap ones and is not on that recipe.
 `test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY`, which rebuilds the
 finest rung and compares wedge angles and element counts against the committed report. It
 is geometry only, runs in well under a second, and it would have gone red on 2026-08-19.
+
+---
+
+# STEP 1 RECORD, PART 8 — 2026-08-22. PART 2's `P_c` NO-GO WAS PRICED ON THE END CAP. UNCAPPED IT FLIPS AT THE HUB, HOLDS AT THE RIM — AND §37's REASON FOR SHELVING THE TRI-BLOCK IS MEASURABLY WRONG IN ONE CLAUSE.
+
+PART 7 refreshed Step 0's baseline and found PART 4's finding intact. This is the same
+question asked of PART 2: **its `P_c` NO-GO was measured on the capped mesh, and every term
+in it has since moved.** The leg, the void angle, and which geometry is the default all
+changed at §38. `make junction` costs 4 s and now computes the pricing rather than leaving
+it to arithmetic in a plan file.
+
+## THE RE-PRICED TABLE, FROM `studies/study_junction_agreement.json`
+
+```
+  corner                        void    leg mm    T mm   T/leg    R_max    fits at shipped R
+  hub  P_t                     38.86   41.1182   1.8812   0.05   14.504         yes
+  hub  P_c  capped             62.82    0.7369   1.0867   1.47    0.450         NO   <- PART 2
+  hub  P_c  AS BUILT           91.52    0.6600   0.6462   0.98    0.678         YES  <- flipped
+  rim  P_t                     39.45   41.1182   8.3661   0.20   14.745         yes
+  rim  P_c  capped             52.57    0.7156   6.0738   8.49    0.354         NO   <- PART 2
+  rim  P_c  AS BUILT           89.49    0.5664   3.0270   5.34    0.561         NO
+  rim  P_c  uncap=True        141.16    0.9114   1.0577   1.16    2.585         NO
+```
+
+`R_max = leg * tan(void/2)` is the largest radius the corner would accept as built, which
+is the number to compare a gene box against.
+
+**The legs got SHORTER at both rings** (0.737 -> 0.660 hub, 0.716 -> 0.566 rim) and the
+verdicts still improved, which is what says the VOID ANGLE is what moved the answer:
+uncapping opens `P_c` from 63/53 deg to 92/89, and a wider void needs a shorter tangent.
+
+- **At the hub the NO-GO flips.** `T/leg` 1.47 -> 0.98; the shipped `R_hub` of 0.6636 fits
+  under an `R_max` of 0.678. **By 2%**, on a 0.66 mm stub that ends in a 117 deg kink —
+  admissible on paper and not a fillet anyone should mesh.
+- **At the rim it does not.** 8.49 -> 5.34. The shipped `R_rim` of 3.0 needs five times the
+  leg that is there. **And the rim is the one that matters**, because `rim:P_c` carries the
+  wheel's global peak (PART 4, re-measured in PART 7).
+
+## THE CLAUSE THIS FALSIFIES
+
+§37 shelved the rim tri-block on the finding that it buys *"only rim corner fidelity — not
+convergence, not the fillet, not a quotable peak"*. **"Not the fillet" is wrong, and the
+factor is large.** On the faithful rim (`uncap=True`, the geometry the tri-block exists to
+make buildable) `rim:P_c`'s admissible radius goes **0.561 mm -> 2.585 mm, a factor of
+4.6** — because the corner opens to a 141 deg void and its leg grows to 0.911 mm.
+
+§37 was not sloppy. It asked whether the tri-block unblocks the fillet arc's *known*
+blocker, which was and is the ruled spoke block at `P_t`, and correctly answered no. **The
+question nobody asked is whether it unblocks the fillet at `P_c`** — because PART 2 had
+ruled `P_c` out permanently, on numbers that stopped being true two days later.
+
+## WHAT IT DOES NOT BUY, WHICH IS THE HONEST OTHER HALF
+
+**2.585 mm is still short of the shipped 3.0.** The faithful rim does not admit the fillet
+this wheel ships, by 14%. Three things follow and they should not be run together:
+
+1. `R_rim` is a GENE, and §22/§24 already measured its 3.0 ceiling as a trap — *"raising it
+   would harvest loss the part does not pay for"*, and §24 priced the fillets at 4.406 g,
+   8.77% of the part. A design at `R_rim <= 2.58` is inside the box, not a compromise
+   invented to fit the mesh. **But choosing a radius to make the MESH work is choosing the
+   design to fit the model, and that is backwards. It is a finding, not a plan.**
+2. **Geometric admissibility is not meshability.** Every radius in the table above is far
+   outside the construction's usable window of 0.12-0.24 mm at `coarse` (PART 6). A corner
+   that accepts a fillet on its legs still has to be meshed by something that works.
+3. The tri-block itself is unbuilt and §37 priced it honestly: partial-edge seams against
+   a module whose docstring calls whole-edge single ownership "the whole safety net", and
+   forced 1-element strips.
+
+## WHERE THIS LEAVES THE ARC
+
+The chain is now closed and every link is measured:
+
+- Step 2's success condition is a non-divergent peak; the peak is on `rim:P_c` (PART 4,
+  PART 7).
+- A fillet is the only thing that removes a singularity (§37 CHECK 1).
+- `rim:P_c` cannot take a fillet as built — 5.34x its leg (this part).
+- It can take one at 4.6x the radius on the faithful rim, which needs the tri-block (§36).
+- And `P_t`, the corner routes 1 and 2 do reach, is now the SECOND-ranked corner rather
+  than the fourth (PART 7).
+
+**So the tri-block is no longer a fidelity nicety filed behind this arc. It is on the only
+measured path to Step 2's success condition**, and the fillet arc's two routes are
+necessary but not sufficient. Ranked in PLAN §46.

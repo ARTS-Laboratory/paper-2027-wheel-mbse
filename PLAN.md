@@ -7242,3 +7242,85 @@ the mismatch; the docstring now says so rather than relying on it quietly. **`ma
 **Nothing promoted, `best_solution.json` untouched, no threshold moved.** The refreshed
 artifact changes no gate: every `make studies` verdict is computed from the nine, and this
 driver is not one of them.
+
+### §46 — 2026-08-22. THE SECOND CORNER'S "NEVER" WAS PRICED ON THE END CAP: IT FLIPS AT THE HUB, AND §37's REASON FOR SHELVING THE RIM TRI-BLOCK IS WRONG IN ONE MEASURABLE CLAUSE
+
+§45 re-asked the uncap question of Step 0's baseline. This asks it of the other judgement
+the fillet arc rests on. **FILLET_PLAN.md PART 2 ruled the second junction corner `P_c`
+un-filletable — permanently, "and filleting it would be a mistake rather than merely hard"
+— on a spoke-side leg of `t/2`. That leg was the END CAP, and §38 deleted it two days
+later.** `make junction` costs 4 s. It now computes the pricing instead of leaving it to
+arithmetic in a plan file, and `tests/test_junction_fit.py` pins it on a driver that had no
+test.
+
+#### THE RE-PRICED TABLE
+
+```
+  corner                    void    leg mm    T mm   T/leg   R_max    fits at shipped R
+  hub  P_c  capped         62.82    0.7369   1.0867   1.47   0.450          NO   <- PART 2
+  hub  P_c  AS BUILT       91.52    0.6600   0.6462   0.98   0.678          YES  <- flipped
+  rim  P_c  capped         52.57    0.7156   6.0738   8.49   0.354          NO   <- PART 2
+  rim  P_c  AS BUILT       89.49    0.5664   3.0270   5.34   0.561          NO
+  rim  P_c  uncap=True    141.16    0.9114   1.0577   1.16   2.585          NO
+```
+
+`T = R/tan(void/2)`; `R_max = leg * tan(void/2)` is what the corner would accept as built.
+**Both legs got SHORTER and both verdicts improved**, which is what identifies the void
+angle as the term that moved: uncapping opens `P_c` from 63/53 deg to 92/89.
+
+At the hub the shipped `R_hub` now fits — **by 2%, on a 0.66 mm stub that ends in a 117 deg
+kink**, which is admissible on paper and not a fillet anyone should mesh. At the rim it
+does not, by a factor of five. **The rim is the one that matters**: `rim:P_c` carries the
+wheel's global peak (§34 Finding 4, re-measured in §45).
+
+#### THE CLAUSE §37 GOT WRONG, AND WHY IT WAS NOT SLOPPY
+
+§37 shelved the rim tri-block because it buys *"only rim corner fidelity — not convergence,
+not the fillet, not a quotable peak"*. **On the faithful rim the corner's admissible radius
+goes 0.561 mm -> 2.585, a factor of 4.6.** The tri-block does buy the fillet, at the one
+corner that carries the peak.
+
+§37 asked whether it unblocks the fillet arc's KNOWN blocker — the ruled spoke block at
+`P_t` — and correctly answered no. The question nobody asked is whether it unblocks the
+fillet at `P_c`, because PART 2 had already ruled that corner out forever, on numbers that
+stopped being true two days after they were written. **The same shape as §45: a judgement
+made on a mesh, quoted after the mesh moved.** Two in one day is a pattern about how this
+tree's records age, not about either judgement.
+
+#### THE HONEST OTHER HALF
+
+**2.585 mm is still short of the shipped 3.0, by 14%.** `R_rim` is a gene and §22/§24
+measured its 3.0 ceiling as a trap, so a design at `R_rim <= 2.58` is inside the box — but
+**choosing a radius to make the mesh work is choosing the design to fit the model, and that
+is backwards.** It is recorded as a finding, not proposed as a plan. And geometric
+admissibility is not meshability: every radius in that table is far outside the
+construction's usable window of 0.12-0.24 mm at `coarse` (§44).
+
+#### THE CHAIN, NOW CLOSED AND EVERY LINK MEASURED
+
+Step 2 wants a non-divergent peak; the peak is on `rim:P_c`; only a fillet removes a
+singularity (§37 CHECK 1); `rim:P_c` refuses a fillet as built at 5.34x its leg; it accepts
+one at 4.6x the radius on the faithful rim, which needs the tri-block; and `P_t` — the
+corner routes 1 and 2 do reach — is now the second-ranked corner rather than the fourth
+(§45). **The tri-block is no longer a fidelity nicety filed behind this arc; it is on the
+only measured path to Step 2's success condition, and the fillet arc's two routes are
+necessary but not sufficient.**
+
+#### The successors, ranked — REVISED 2026-08-22 AFTER §46
+
+1. **`FILLET_PLAN.md` route 1 or route 2** — still first, still the real work, and §45/§46
+   sharpen what it is for: it addresses the second-ranked corner and it is necessary but
+   not sufficient. Judge on `det J` at the Gauss points (§44).
+2. **The rim tri-block — PROMOTED from filed.** §37's price stands (partial-edge seams,
+   forced 1-element strips) and its stated payoff was wrong by the factor above. It is now
+   the only measured route to the corner that carries the peak. **Re-read §37 before
+   starting: the price has not changed, only the payoff.**
+3. **Re-run the pre-flip study artifacts**, `study_deflection_gci.json` first (§45).
+4. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+5. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+6. **The element-validity check** (§44) — make the fold guard and the minSJ barrier see
+   sub-element folds.
+
+**Nothing promoted, `best_solution.json` untouched, no threshold moved.** `make junction`'s
+change is additive: every pre-existing field in its artifact is byte-identical, checked
+before the refresh.
