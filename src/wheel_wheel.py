@@ -683,15 +683,24 @@ def _lerp_points(a, b, n, xp):
 # boundary correction) or a dedicated fillet block with its own seam entries.  See
 # FILLET_PLAN.md STEP 1 RECORD PART 3.
 #
-# THOSE TWO RADII ARE CONTESTED AND ARE NOT CURRENT FACT.  Re-swept 2026-08-21 by the
-# criterion "does `build_wheel` raise", the first fold lands at 4.00 mm (hub) / 3.00
-# (rim) at `coarse` and 0.40 / 0.40 at `medium` -- 10 to 20x more permissive than the
-# figures above.  PART 3's criterion is not recorded beyond the phrase "survives" and no
-# script of it survives to re-run, so the two may be measuring different things; the
-# numbers above are left as PART 3 wrote them rather than edited on a guess.  Only the
-# QUALITATIVE claim is confirmed under both criteria: the limit tightens sharply under
-# refinement.  Do not quote either row as settled until the apparatus is rebuilt --
-# FILLET_PLAN.md STEP 1 RECORD PART 5, "ONE DISCREPANCY, FILED OPEN".
+# THOSE TWO RADII WERE CONTESTED AND ARE NOW SETTLED IN THEIR FAVOUR (2026-08-22,
+# `make fillet`, FILLET_PLAN.md STEP 1 RECORD PART 6).  A second sweep on 2026-08-21 put
+# the first fold at 4.00 mm (hub) / 3.00 (rim) at `coarse` and 0.40 / 0.40 at `medium`,
+# 10-20x more permissive, and the gap was filed open because neither criterion had been
+# written down.  `studies/study_fillet_fold.py` reproduces BOTH rows from one sweep and
+# names them: 0.20/0.10 counts MIXED-SIGN CELLS in this block, the later row asks only
+# whether `build_wheel` raises.  The later row is the weaker instrument -- see
+# `_orient_elements` -- and it overstates what is usable by 10-20x.  Measured against
+# `det J` at the Gauss points the assembly integrates, the radii this construction
+# actually meshes are 0.12-0.24 mm (hub) / 0.11-0.23 (rim) at `coarse` and 0.07-0.11 at
+# `medium`: THE ROW ABOVE IS THE ONE TO QUOTE, and it is the window's upper edge to the
+# grid step.
+#
+# THAT WINDOW HAS A LOWER EDGE TOO, which neither sweep had looked for: below it the
+# `k0` clamp holds the arc on one cell when the tangent point is nearer than one station,
+# and the first element's mid-side node is dragged out of the middle half of its own edge.
+# So there is no usable interval `0 < R < R_max` -- an arbitrarily small fillet folds as
+# surely as a large one, and both edges are node allocation rather than geometry.
 #
 # What this IS good for: it is the apparatus that measured all of the above, it is what
 # a fillet-block implementation will be checked against, and it is inert unless asked
@@ -1526,6 +1535,21 @@ def _orient_elements(xy, conn, elem_block):
     and node ids are untouched.  It is decided per block from the median signed area
     and then every element is checked, so a genuinely folded element in an otherwise
     well-oriented block still fails rather than being silently reversed.
+
+    WHAT THIS CHECK DOES NOT SEE, MEASURED (`make fillet`, 2026-08-22).  `_signed_area`
+    is a shoelace over each element's FOUR CORNERS.  Every config here is `order=2`, so
+    one Q9 element spans 2x2 cells and its five mid nodes take no part in that sum: an
+    element can fold INSIDE while its corner shoelace stays comfortably positive.
+    Sampled over the gene box at `coarse`, 21% of the meshes this function accepts have
+    a non-positive `det J` at a Gauss point the assembly integrates -- the very failure
+    the paragraph above says it exists to prevent -- and `wheel_mesh.scaled_jacobian`,
+    which is corner-only for the same reason, calls a few of those healthy.  What
+    actually covers the default path is neither: it is `fold_margin > 0`, which rejects
+    the genome before the mesh exists (`studies/study_mesh_quality.py`'s `meshable`).
+    That constraint reads genes 0-11 and cannot help the `fillet=` path at all, which is
+    why the blind spot is wide open there.  STRENGTHENING THIS CHECK IS NOT THIS ARC'S
+    WORK and is not done here; it is recorded so nobody reads a `build_wheel` that
+    returns as a mesh that integrates.
     """
     conn = conn.copy()
     order = 4 if conn.shape[1] == 4 else 9
