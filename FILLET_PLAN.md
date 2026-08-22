@@ -152,6 +152,13 @@ Only after Step 2 confirms the singularity is gone:
 
 # STEP 0 RECORD — 2026-08-16. The baseline reproduces BIT-IDENTICALLY, and the prerequisite is checked.
 
+> **THIS BASELINE IS SUPERSEDED — READ PART 7 (2026-08-22) BEFORE USING ANY NUMBER BELOW.**
+> It was taken on the CAPPED mesh; §38 flipped `UNCAP_DEFAULT` on 2026-08-18 and this
+> driver takes that default. The two `P_c` rows are wrong by 28.7 and 36.9 deg of wedge
+> and every peak here is ~28% high. The committed artifact has been refreshed and the
+> current baseline is in PART 7. **The `P_t` rows below are still correct** — they moved by
+> 0.03 and 0.01 deg — and the prerequisite section under this table is unaffected.
+
 **`make corner` re-run on the shipped genome: 8.8 s, and the report differs from §30's
 committed `studies/study_corner_singularity.json` in ZERO fields.** Every wedge angle, every
 Williams eigenvalue, every per-corner divergence slope. The "before" is locked and it is the
@@ -496,6 +503,13 @@ all twelve rotational copies of each corner:
   medium   svk          126.3069 MPa    0.010745   1.151901   35.789256  35.887123
 ```
 
+> **RE-MEASURED ON THE UNCAPPED DEFAULT, 2026-08-22 — PART 7.** The conclusion of this
+> part is UNCHANGED: the peak is still on `rim:P_c`, 15-24 um away, under both kinematics
+> and both stress measures. Two things in it are not: SVK moves the magnitude by 4.3-4.5%
+> (solve) rather than 0.3%, and the ranking sentence below — *"both artefact corners
+> outrank both real ones"* — is **false on the current default**, where `hub:P_t` has
+> overtaken `hub:P_c`. Exactly one artefact corner is left and it is the rim's.
+
 **The peak is 11-16 um from `rim:P_c`. It is on that corner, and SVK does not move it** —
 same location to the digit, 0.3% in magnitude, which also retires the worry that the
 corner driver's linear kernel could have put the peak in the wrong place. At `fine` the
@@ -707,3 +721,111 @@ What changed is that the instrument both routes will be judged against is now
 re-runnable, named, tested, and it answers a question neither route could previously ask:
 **"is this fillet mesh valid?" now has a criterion — `det J` at the Gauss points — instead
 of three criteria that disagree by 20x.**
+
+---
+
+# STEP 1 RECORD, PART 7 — 2026-08-22. STEP 0's BASELINE DESCRIBED A MESH THE TREE STOPPED BUILDING FOUR DAYS LATER. PART 4's FINDING SURVIVES; PART 4's RANKING DOES NOT.
+
+PART 5 re-checked its own prediction against §38's uncap flip and found it wrong. **The
+same question had never been asked of Step 0.** `studies/study_corner_singularity.py`
+calls `build_wheel(genes, cfg)` bare, so it takes `UNCAP_DEFAULT`; §38 flipped that on
+2026-08-18; the committed artifact is from 2026-08-16. **Step 0's "before" — the thing
+Step 2's success is measured against, and which this file says in terms is "locked and it
+is the committed artifact" — was a capped-mesh record.**
+
+`make corner` costs 8 s. It has now been re-run and the artifact is refreshed.
+
+## WHAT MOVED, AND BY HOW MUCH
+
+```
+  corner       wedge deg              lambda_W            peak MPa at `fine`
+               capped -> uncapped     capped -> uncapped   capped -> uncapped
+  hub:P_t      321.10 -> 321.13       0.5032 -> 0.5032      96.22 ->  85.93
+  hub:P_c      296.75 -> 268.08       0.5144 -> 0.5477     120.92 ->  66.77
+  rim:P_t      321.33 -> 321.32       0.5031 -> 0.5031      75.40 ->  60.69
+  rim:P_c      307.94 -> 271.02       0.5079 -> 0.5429     150.59 -> 108.57
+  global_max                                               150.59 -> 108.57  (-27.9%)
+```
+
+**The `P_t` pair does not move.** It is the part's corner and its wedge is set by the
+spoke geometry, not by a mesh option — 0.03 deg and 0.01 deg across a flip that moved the
+other two by 28.7 and 36.9. That asymmetry is now pinned per family in
+`tests/test_corner_singularity.py` instead of one band across all four.
+
+**The `P_c` pair is barely re-entrant now** — 268.1 and 271.0 deg, against the part's
+268.47 (hub) and 219.90 (rim, still 51 deg out, exactly as `UNCAP_PLAN` Step 2 said it
+would be). The hub gap reads 0.39 deg here against §36's 0.01: §36 measured its
+constructed corner against the part directly, while this is the `fine` mesh's wedge summed
+from incident element angles, whose agreement with the geometric value PART 2 put at
+±0.6 deg. The two are consistent; do not read 0.39 as a discrepancy with §36.
+
+Their `lambda` rose above the `< 0.53` window a test had been asserting since §30, which is
+the assertion that went red on the refresh and was updated with the measurement rather than
+widened silently.
+
+## PART 4's FINDING SURVIVES THE FLIP. RE-MEASURED, NOT ASSUMED
+
+PART 4 located the wheel's global peak by `argmax` over the whole Gauss field and measured
+it to all twelve rotational copies of each corner. Re-run on the current default:
+
+```
+  cfg      solve     recovery    global max      nearest corner
+  coarse   linear    linear       73.7282 MPa    rim:P_c at 23.8 um
+  coarse   svk       linear       77.0312 MPa    rim:P_c at 23.8 um
+  coarse   svk       svk          87.5002 MPa    rim:P_c at 23.8 um
+  medium   linear    linear       91.1521 MPa    rim:P_c at 15.3 um
+  medium   svk       linear       95.0301 MPa    rim:P_c at 15.3 um
+  medium   svk       svk         109.0447 MPa    rim:P_c at 15.3 um
+```
+
+**The peak is still on `rim:P_c`, 15-24 um away, under both kinematics and both stress
+measures** — and `global_max_vm_mpa` equals `rim:P_c`'s `peak_vm_mpa` at all four rungs of
+the refreshed report, as it did before. **So PART 4's conclusion stands unchanged: a
+fillet at `P_t` cannot deliver Step 2's headline, because the peak is not at `P_t`.**
+Routes 1 and 2 round the corners that are real and leave the corner that carries the
+maximum exactly as it is.
+
+*One PART 4 number does not survive:* it recorded that SVK "does not move it — 0.3% in
+magnitude". On the uncapped mesh the solve alone moves it **4.3-4.5%**, and the SVK stress
+RECOVERY moves it another 12-13%. The location is unmoved to the digit; the magnitude is
+an order of magnitude more kinematics-sensitive than it was. PART 4 conflated the two
+sensitivities into one column and the table above separates them.
+
+## WHAT DOES NOT SURVIVE: PART 4's RANKING SENTENCE
+
+PART 4 wrote *"both artefact corners outrank both real ones"*, from the capped ranking
+`rim:P_c` 150.59 > `hub:P_c` 120.92 > `hub:P_t` 96.22 > `rim:P_t` 75.40. On the current
+default it is
+
+```
+  rim:P_c 108.57  >  hub:P_t 85.93  >  hub:P_c 66.77  >  rim:P_t 60.69
+```
+
+**`hub:P_c` has fallen below `hub:P_t`.** §38's flip fixed the hub's artefact corner
+(wedge error 28.71 -> 0.4 deg) and its stress fell 45%. **Exactly one artefact corner is
+left, and it is the rim's** — the one `UNCAP_PLAN` Step 2 proved needs a topology change
+and §37 retired as not binding. So the arc's shape is now:
+
+- the peak sits on the *only* remaining artefact corner,
+- removing that corner needs the rim tri-block, priced and filed at §37 (partial-edge
+  seams, forced 1-element strips, and it buys "only rim corner fidelity"),
+- and the second-ranked corner is now a REAL one that the fillet WOULD address, and it is
+  the fastest-diverging of the four (5.14x over the ladder).
+
+**That last point is new and it is the only thing in four parts that argues UP for routes
+1 and 2.** It does not change the go/no-go — Step 2's success condition is still measured
+at a corner the fillet cannot reach — but it means a fillet at `P_t` is no longer
+addressing the fourth-ranked corner. It is addressing the second.
+
+## THE PROCESS POINT, WHICH IS THE SHARPEST ONE
+
+The uncap commit (`c416cb5`, 2026-08-19) **edited `tests/test_corner_singularity.py`** — it
+repaired a tie-break red in that very file — and left `studies/study_corner_singularity.json`
+next to it untouched. Nothing went red, because every test that reads the corner artifact
+reads the same stale file. `make studies` would not have caught it either: this driver is
+one of the cheap ones and is not on that recipe.
+
+`tests/test_corner_singularity.py` now carries
+`test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY`, which rebuilds the
+finest rung and compares wedge angles and element counts against the committed report. It
+is geometry only, runs in well under a second, and it would have gone red on 2026-08-19.

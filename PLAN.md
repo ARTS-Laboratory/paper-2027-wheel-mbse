@@ -7130,3 +7130,115 @@ three that disagree by 20x.
 
 **`HUBSHARE_PLAN.md` remains off the list**, still blocked behind item 1 by its own Step 0
 rule — now for the seventh arc.
+
+### §45 — 2026-08-22. THE FILLET ARC'S STEP 0 BASELINE DESCRIBED A MESH THE TREE STOPPED BUILDING FOUR DAYS LATER, AND THE COMMIT THAT BROKE IT EDITED THE TEST FILE NEXT TO IT
+
+§44 built the fillet arc's apparatus. This is the check §44's own lesson implies: **PART 5
+re-checked its prediction against §38's flip; nobody had asked the same question of Step
+0.** `studies/study_corner_singularity.py` calls `build_wheel(genes, cfg)` bare, so it
+takes `UNCAP_DEFAULT`. §38 flipped that on 2026-08-18. The committed artifact was from
+2026-08-16.
+
+`make corner` costs 8 s. It is re-run and the artifact is refreshed.
+
+#### WHAT WAS WRONG IN THE COMMITTED RECORD
+
+```
+  corner       wedge deg            lambda_W           peak MPa at `fine`
+  hub:P_t      321.10 -> 321.13     0.5032 -> 0.5032    96.22 ->  85.93
+  hub:P_c      296.75 -> 268.08     0.5144 -> 0.5477   120.92 ->  66.77
+  rim:P_t      321.33 -> 321.32     0.5031 -> 0.5031    75.40 ->  60.69
+  rim:P_c      307.94 -> 271.02     0.5079 -> 0.5429   150.59 -> 108.57
+```
+
+The global peak was **27.9% too high** and two of four wedge angles were wrong by 28.7 and
+36.9 degrees. §36 and §37 had already MEASURED the new global peaks (48.208 / 73.728 /
+91.152 — reproduced here exactly), so the numbers were known; what was never done is
+writing them into the artifact the tests and the plan file read.
+
+**The `P_t` pair did not move** — 0.03 and 0.01 deg — because it is the PART's corner and
+its wedge comes from the spoke geometry, not from a mesh option. That asymmetry is the
+useful half and it is now pinned per family rather than as one band across all four.
+
+#### THE RED IT SURFACED, AND WHY IT IS A FINDING RATHER THAN A TOLERANCE
+
+Refreshing turned exactly one assertion red: `test_all_four_junction_corners_are_re_entrant`
+required `0.50 <= lambda < 0.53` for every corner, and the two `P_c` corners now read
+0.5477 and 0.5429. **That window was a capped-mesh property.** Uncapped, those corners are
+barely re-entrant (268.1 and 271.0 deg against 296.8 and 307.9), so they are LESS singular
+— the test was asserting "all four are nearly crack-like", which stopped being true at the
+flip and kept passing only because the stale artifact still said so.
+
+Updated with the measurement in the docstring: `P_t` pinned tight at 0.5031 ± 0.002 as a
+property of the part, `P_c` pinned loosely as "re-entrant and singular" with a band that
+holds both vintages, **because a number that moves when a model option moves must not be
+asserted as though it were a property of the wheel.**
+
+#### PART 4's FINDING SURVIVES; PART 4's RANKING DOES NOT
+
+Re-measured by `argmax` over the whole Gauss field, to all twelve rotational copies of each
+corner: **the peak is still on `rim:P_c`, 15-24 um away, at `coarse` and `medium`, under
+linear and SVK solves and under both stress recoveries.** A fillet at `P_t` still cannot
+deliver Step 2's headline.
+
+But the capped ranking PART 4 drew its re-ranking from is gone. At `fine` it is now
+`rim:P_c` 108.57 > **`hub:P_t` 85.93** > `hub:P_c` 66.77 > `rim:P_t` 60.69. §38's flip
+fixed the hub artefact (§36: 28.71 deg of wedge error -> 0.01; stress down 45%), so **exactly one
+artefact corner is left and it is the rim's** — the one §37 priced and filed as not
+binding. The fillet's target is no longer the fourth-ranked corner; it is the second, and
+the fastest-diverging of the four. That does not change the go/no-go, and it is the only
+thing in four parts that argues up for routes 1 and 2.
+
+*Also corrected:* PART 4 recorded that SVK moves the peak by 0.3%. On the uncapped mesh the
+SOLVE moves it 4.3-4.5% and the SVK stress RECOVERY another 12-13%; PART 4 had the two
+conflated in one column. The location is unmoved to the digit either way.
+
+#### THE PROCESS DEFECT, WHICH IS THE PART WORTH KEEPING
+
+**The uncap commit (`c416cb5`) edited `tests/test_corner_singularity.py`** — it repaired a
+tie-break red in that file — **and left `studies/study_corner_singularity.json` beside it
+untouched.** Nothing went red, because every test that reads the corner artifact reads the
+same stale file. And `make studies` would not have caught it: this driver is one of the
+cheap ones and is not on that recipe. The header's rule "a study commit carries its
+artifacts" covers the driver changing; **nothing covered the DEFAULT the driver reads
+changing**, which is the same class of defect as §25 (a promotion turning a control red)
+one level further out.
+
+`test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY` now rebuilds the
+finest rung and compares wedge angles and element counts against the committed report.
+Geometry only, well under a second, and it would have gone red on 2026-08-19.
+
+#### THE AUDIT THIS IMPLIES, MEASURED BUT NOT DONE
+
+Every committed `studies/*.json` was dated against the flip. **The nine `make studies` gate
+artifacts are covered by §40's completed recipe run of 2026-08-20**, which is after the
+flip — that RUN, not their commit dates, is the evidence: two of the nine still carry
+2026-08-19 commit dates because §40 regenerated them byte-identically and there was nothing
+to commit (§43 records `study_mesh_quality.json` coming back bit-identical "for the third
+time"). **A commit date is not a run date, and dating artifacts by `git log` alone would
+have mis-classified those two in both directions.** The pre-flip remainder is unaudited,
+and one of them is read by a test in the same file as the artifact just refreshed: **`study_deflection_gci.json` (2026-08-16) describes the capped mesh**, and
+`test_the_p_norm_the_optimizer_uses_diverges_far_more_slowly` now compares its slope
+against a post-flip peak slope. The inequality is an order of magnitude wide so it survives
+the mismatch; the docstring now says so rather than relying on it quietly. **`make gci` is
+95 minutes and FILLET_PLAN.md forbids starting this arc with it**, so it is ranked, not run.
+
+#### The successors, ranked — REVISED 2026-08-22 AFTER §45
+
+1. **`FILLET_PLAN.md` route 1 or route 2** — unchanged at the top. Judge both on `det J` at
+   the Gauss points (§44), and note §45: the corner the fillet reaches is now the
+   second-ranked and fastest-diverging, while the peak still sits on the rim artefact.
+2. **Re-run the pre-flip study artifacts, `study_deflection_gci.json` first.** NEW. The
+   list is in this section; the nine gate artifacts are already clean. 95 minutes for the
+   GCI ladder, minutes for the rest.
+3. **G1's fourth revision** — derive `GATE_EPS_PLATEAU_REL` from the requirement or record
+   that it should not be derived. §40 confirmed the gate blocks nothing.
+4. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+5. **The element-validity check itself** (§44) — make the fold guard and the minSJ barrier
+   see sub-element folds.
+6. **The rim tri-block**, still filed (§37) — but §45 is the first section in which it is
+   the *only* thing standing between the model and a peak that sits on a real corner.
+
+**Nothing promoted, `best_solution.json` untouched, no threshold moved.** The refreshed
+artifact changes no gate: every `make studies` verdict is computed from the nine, and this
+driver is not one of them.
