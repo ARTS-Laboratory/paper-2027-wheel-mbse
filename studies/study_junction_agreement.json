@@ -20,7 +20,15 @@
      "void_deg": 38.86057256986532,
      "wedge_deg": 321.1394274301347,
      "lambda_W": 0.503195174181436,
-     "spoke_side_leg_mm": 41.11821125266144
+     "spoke_side_leg_mm": 41.11821125266144,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 1.881236920490942,
+      "spoke_side_leg_mm": 41.11821125266144,
+      "t_over_leg": 0.045751915347951234,
+      "r_max_on_this_leg_mm": 14.504442824954607,
+      "fits": true
+     }
     },
     {
      "source": "mesh (uncap=False)",
@@ -29,7 +37,15 @@
      "void_deg": 62.82138713631571,
      "wedge_deg": 297.1786128636843,
      "lambda_W": 0.5141143756676385,
-     "spoke_side_leg_mm": 0.736915376859436
+     "spoke_side_leg_mm": 0.736915376859436,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 1.086705088450833,
+      "spoke_side_leg_mm": 0.736915376859436,
+      "t_over_leg": 1.4746674076501434,
+      "r_max_on_this_leg_mm": 0.4500038699261459,
+      "fits": false
+     }
     },
     {
      "source": "mesh (SHIPPED DEFAULT)",
@@ -38,7 +54,15 @@
      "void_deg": 91.51873170739678,
      "wedge_deg": 268.4812682926032,
      "lambda_W": 0.5469776007718323,
-     "spoke_side_leg_mm": 0.6600116296949956
+     "spoke_side_leg_mm": 0.6600116296949956,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 0.6462449989860823,
+      "spoke_side_leg_mm": 0.6600116296949956,
+      "t_over_leg": 0.979141836159349,
+      "r_max_on_this_leg_mm": 0.6777425044970954,
+      "fits": true
+     }
     },
     {
      "source": "mesh (uncap=True)",
@@ -47,7 +71,15 @@
      "void_deg": 91.51873170739678,
      "wedge_deg": 268.4812682926032,
      "lambda_W": 0.5469776007718323,
-     "spoke_side_leg_mm": 0.6600116296949956
+     "spoke_side_leg_mm": 0.6600116296949956,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 0.6462449989860823,
+      "spoke_side_leg_mm": 0.6600116296949956,
+      "t_over_leg": 0.979141836159349,
+      "r_max_on_this_leg_mm": 0.6777425044970954,
+      "fits": true
+     }
     },
     {
      "source": "part",
@@ -56,7 +88,11 @@
      "void_deg": 37.981755945851496,
      "wedge_deg": 322.0182440541485,
      "lambda_W": 0.5029794476775811,
-     "spoke_side_leg_mm": null
+     "spoke_side_leg_mm": null,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 1.9282491124260128
+     }
     },
     {
      "source": "part",
@@ -65,7 +101,11 @@
      "void_deg": 91.52673471372066,
      "wedge_deg": 268.47326528627934,
      "lambda_W": 0.5469910072945032,
-     "spoke_side_leg_mm": null
+     "spoke_side_leg_mm": null,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 0.6461547066736055
+     }
     },
     {
      "source": "extension",
@@ -76,7 +116,11 @@
      "lambda_W": 0.8335428585387366,
      "spoke_side_leg_mm": null,
      "run_mm": 1.7814535259291788,
-     "closest_approach_mm": 12.077089254821878
+     "closest_approach_mm": 12.077089254821878,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 0.10521995192154426
+     }
     },
     {
      "source": "extension",
@@ -87,7 +131,11 @@
      "lambda_W": 0.8100733225521557,
      "spoke_side_leg_mm": null,
      "run_mm": 1.5937817396792866,
-     "closest_approach_mm": 11.841561478369039
+     "closest_approach_mm": 11.841561478369039,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 0.1241120169978651
+     }
     },
     {
      "source": "extension",
@@ -98,7 +146,11 @@
      "lambda_W": 0.5469910052572486,
      "spoke_side_leg_mm": null,
      "run_mm": 0.6591453532807456,
-     "closest_approach_mm": 0.3383708384877512
+     "closest_approach_mm": 0.3383708384877512,
+     "fillet_fit": {
+      "radius_mm": 0.6636060402965218,
+      "tangent_length_mm": 0.6461547203920537
+     }
     }
    ]
   },
@@ -112,7 +164,15 @@
      "void_deg": 39.45464066055605,
      "wedge_deg": 320.54535933944396,
      "lambda_W": 0.5033469089224172,
-     "spoke_side_leg_mm": 41.11821125266144
+     "spoke_side_leg_mm": 41.11821125266144,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 8.366103147514401,
+      "spoke_side_leg_mm": 41.11821125266144,
+      "t_over_leg": 0.20346466669249608,
+      "r_max_on_this_leg_mm": 14.744574813739108,
+      "fits": true
+     }
     },
     {
      "source": "mesh (uncap=False)",
@@ -121,7 +181,15 @@
      "void_deg": 52.57216066709709,
      "wedge_deg": 307.4278393329029,
      "lambda_W": 0.5080978937495011,
-     "spoke_side_leg_mm": 0.7156474816644952
+     "spoke_side_leg_mm": 0.7156474816644952,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 6.073753181408744,
+      "spoke_side_leg_mm": 0.7156474816644952,
+      "t_over_leg": 8.487074065127777,
+      "r_max_on_this_leg_mm": 0.3534787109171803,
+      "fits": false
+     }
     },
     {
      "source": "mesh (SHIPPED DEFAULT)",
@@ -130,7 +198,15 @@
      "void_deg": 89.48617026041825,
      "wedge_deg": 270.51382973958175,
      "lambda_W": 0.5436623718389806,
-     "spoke_side_leg_mm": 0.5663592532120632
+     "spoke_side_leg_mm": 0.5663592532120632,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 3.027025425667979,
+      "spoke_side_leg_mm": 0.5663592532120632,
+      "t_over_leg": 5.344709049071656,
+      "r_max_on_this_leg_mm": 0.5613027711061432,
+      "fits": false
+     }
     },
     {
      "source": "mesh (uncap=True)",
@@ -139,7 +215,15 @@
      "void_deg": 141.15902587482626,
      "wedge_deg": 218.84097412517374,
      "lambda_W": 0.7029762378549669,
-     "spoke_side_leg_mm": 0.9113975811376216
+     "spoke_side_leg_mm": 0.9113975811376216,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 1.0576726522077202,
+      "spoke_side_leg_mm": 0.9113975811376216,
+      "t_over_leg": 1.160495347033416,
+      "r_max_on_this_leg_mm": 2.5851029973268957,
+      "fits": false
+     }
     },
     {
      "source": "part",
@@ -148,7 +232,11 @@
      "void_deg": 38.93461320660966,
      "wedge_deg": 321.06538679339036,
      "lambda_W": 0.5032138229595635,
-     "spoke_side_leg_mm": null
+     "spoke_side_leg_mm": null,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 8.487126174432186
+     }
     },
     {
      "source": "part",
@@ -157,7 +245,11 @@
      "void_deg": 140.09818898984236,
      "wedge_deg": 219.90181101015764,
      "lambda_W": 0.697652101121965,
-     "spoke_side_leg_mm": null
+     "spoke_side_leg_mm": null,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 1.0890004918582195
+     }
     },
     {
      "source": "extension",
@@ -168,7 +260,11 @@
      "lambda_W": 0.7051410990673608,
      "spoke_side_leg_mm": null,
      "run_mm": 0.9190362074546812,
-     "closest_approach_mm": 38.00074788240956
+     "closest_approach_mm": 38.00074788240956,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 1.045178592327418
+     }
     },
     {
      "source": "extension",
@@ -179,7 +275,11 @@
      "lambda_W": 0.6975525463552272,
      "spoke_side_leg_mm": null,
      "run_mm": 0.8889822425612228,
-     "closest_approach_mm": 37.19563641086241
+     "closest_approach_mm": 37.19563641086241,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 1.0895946428519252
+     }
     },
     {
      "source": "extension",
@@ -190,9 +290,89 @@
      "lambda_W": 0.5436607094010011,
      "spoke_side_leg_mm": null,
      "run_mm": 0.5656718563549532,
-     "closest_approach_mm": 0.4358295184955182
+     "closest_approach_mm": 0.4358295184955182,
+     "fillet_fit": {
+      "radius_mm": 3.0,
+      "tangent_length_mm": 3.027080749817227
+     }
     }
    ]
+  }
+ },
+ "fillet_fit_summary": {
+  "hub": {
+   "radius_mm": 0.6636060402965218,
+   "by_corner": {
+    "mesh (uncap=False) P_t": {
+     "void_deg": 38.86057256986532,
+     "spoke_side_leg_mm": 41.11821125266144,
+     "tangent_length_mm": 1.881236920490942,
+     "t_over_leg": 0.045751915347951234,
+     "r_max_on_this_leg_mm": 14.504442824954607,
+     "fits_at_shipped_radius": true
+    },
+    "mesh (uncap=False) P_c": {
+     "void_deg": 62.82138713631571,
+     "spoke_side_leg_mm": 0.736915376859436,
+     "tangent_length_mm": 1.086705088450833,
+     "t_over_leg": 1.4746674076501434,
+     "r_max_on_this_leg_mm": 0.4500038699261459,
+     "fits_at_shipped_radius": false
+    },
+    "mesh (SHIPPED DEFAULT) P_c": {
+     "void_deg": 91.51873170739678,
+     "spoke_side_leg_mm": 0.6600116296949956,
+     "tangent_length_mm": 0.6462449989860823,
+     "t_over_leg": 0.979141836159349,
+     "r_max_on_this_leg_mm": 0.6777425044970954,
+     "fits_at_shipped_radius": true
+    },
+    "mesh (uncap=True) P_c": {
+     "void_deg": 91.51873170739678,
+     "spoke_side_leg_mm": 0.6600116296949956,
+     "tangent_length_mm": 0.6462449989860823,
+     "t_over_leg": 0.979141836159349,
+     "r_max_on_this_leg_mm": 0.6777425044970954,
+     "fits_at_shipped_radius": true
+    }
+   }
+  },
+  "rim": {
+   "radius_mm": 3.0,
+   "by_corner": {
+    "mesh (uncap=False) P_t": {
+     "void_deg": 39.45464066055605,
+     "spoke_side_leg_mm": 41.11821125266144,
+     "tangent_length_mm": 8.366103147514401,
+     "t_over_leg": 0.20346466669249608,
+     "r_max_on_this_leg_mm": 14.744574813739108,
+     "fits_at_shipped_radius": true
+    },
+    "mesh (uncap=False) P_c": {
+     "void_deg": 52.57216066709709,
+     "spoke_side_leg_mm": 0.7156474816644952,
+     "tangent_length_mm": 6.073753181408744,
+     "t_over_leg": 8.487074065127777,
+     "r_max_on_this_leg_mm": 0.3534787109171803,
+     "fits_at_shipped_radius": false
+    },
+    "mesh (SHIPPED DEFAULT) P_c": {
+     "void_deg": 89.48617026041825,
+     "spoke_side_leg_mm": 0.5663592532120632,
+     "tangent_length_mm": 3.027025425667979,
+     "t_over_leg": 5.344709049071656,
+     "r_max_on_this_leg_mm": 0.5613027711061432,
+     "fits_at_shipped_radius": false
+    },
+    "mesh (uncap=True) P_c": {
+     "void_deg": 141.15902587482626,
+     "spoke_side_leg_mm": 0.9113975811376216,
+     "tangent_length_mm": 1.0576726522077202,
+     "t_over_leg": 1.160495347033416,
+     "r_max_on_this_leg_mm": 2.5851029973268957,
+     "fits_at_shipped_radius": false
+    }
+   }
   }
  },
  "validation": {

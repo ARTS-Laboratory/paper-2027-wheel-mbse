@@ -645,10 +645,28 @@ def _lerp_points(a, b, n, xp):
 # and no P_c.  SINCE 2026-08-18 `UNCAP_DEFAULT` removes the cap here too, and the second
 # corner is the far flank's own ring crossing -- exact at the hub (0.01 deg of wedge),
 # still 50 deg out at the rim, where fidelity and mesh validity are provably disjoint
-# (UNCAP_PLAN Step 2).  The paragraph above is why THIS module fillets only `P_t`, and
-# that is unchanged: filleting the second corner cannot be done at the shipped radii
-# anyway, its leg being t/2 (0.737 mm at the hub, 0.716 at the rim) against tangent
-# lengths of 1.090 and 6.069 mm.  See FILLET_PLAN.md's STEP 1 RECORD PART 2.
+# (UNCAP_PLAN Step 2).  The paragraph above is why THIS module fillets only `P_t`.
+#
+# THE REASON FOR THAT CHANGED WITH THE UNCAP FLIP AND HALF OF IT NO LONGER HOLDS
+# (re-priced 2026-08-22, `make junction`, FILLET_PLAN.md PART 8).  PART 2 ruled the
+# second corner out on a spoke-side leg of t/2 -- 0.737 mm at the hub and 0.716 at the
+# rim, against tangent lengths of 1.090 and 6.069.  Those are the CAPPED numbers.
+# Uncapped, the leg is the far flank's extension (0.660 / 0.566, SHORTER) but the corner
+# opens from a 63/53 deg void to 92/89, and a wider void needs a shorter tangent:
+#
+#   corner                 void    leg     T = R/tan(void/2)   T/leg    R_max on that leg
+#   hub P_c capped        62.82   0.737         1.087          1.47        0.450
+#   hub P_c as built      91.52   0.660         0.646          0.98        0.678   FITS
+#   rim P_c as built      89.49   0.566         3.027          5.34        0.561
+#   rim P_c uncap=True   141.16   0.911         1.058          1.16        2.585
+#
+# So at the HUB the shipped `R_hub` (0.6636) now fits geometrically, by 2%.  At the RIM
+# -- the corner that carries the wheel's global peak -- it does not, and the shipped
+# `R_rim` of 3.0 needs five times the leg that is there.  This module still fillets only
+# `P_t`, now because the `P_c` fillet is worth nothing without the rim (where the peak
+# is) and because 2% of margin on a 0.66 mm stub ending in a 117 deg kink is not a
+# fillet anyone should mesh.  GEOMETRIC admissibility is also not meshability: the
+# construction below has a usable window of 0.12-0.24 mm at `coarse` (PART 6).
 #
 # THE CONSTRUCTION.  A fillet at P_t adds material in the notch between the straddling
 # flank and the FREE arc of the ring circle -- a region no block covers.  The two blocks

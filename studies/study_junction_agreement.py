@@ -127,6 +127,34 @@ def void_and_wedge(Q, f_hat, away_from):
     return void, 360.0 - void
 
 
+def fillet_fit(void_deg, leg_mm, R_mm):
+    """Can a fillet of radius `R` sit in this corner, on the leg this corner has?
+
+    A fillet tangent to both faces of a corner needs `T = R / tan(void/2)` of each, so a
+    corner with a SHORT leg refuses a large radius no matter how open it is.  That is the
+    whole of FILLET_PLAN.md PART 2's `P_c` NO-GO, and it is reported here rather than
+    re-derived in prose because every input to it moves: `void` moves with `uncap`, `leg`
+    moves with `uncap`, and `R` is a gene.
+
+    `r_max_mm = leg * tan(void/2)` inverts it — the largest radius this corner would
+    accept as built — which is the number to compare a gene box against.
+
+    Returns None where there is no leg to measure (the PART's own corners are read off an
+    outline, not off a block, and their legs are the flanks).
+    """
+    if void_deg <= 0.0 or void_deg >= 180.0:
+        return None
+    half = math.radians(void_deg / 2.0)
+    T = R_mm / math.tan(half)
+    out = {"radius_mm": float(R_mm), "tangent_length_mm": float(T)}
+    if leg_mm is not None and leg_mm > 0.0:
+        out["spoke_side_leg_mm"] = float(leg_mm)
+        out["t_over_leg"] = float(T / leg_mm)
+        out["r_max_on_this_leg_mm"] = float(leg_mm * math.tan(half))
+        out["fits"] = bool(T <= leg_mm)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # THE PART'S OUTLINE
 # ---------------------------------------------------------------------------
@@ -307,8 +335,10 @@ def build(genes, cfg="coarse"):
                                    "rim": n_rim * WW.NUMBER_OF_SPOKES},
            "rings": {}}
 
+    R_by_ring = {"hub": float(gvec[12]), "rim": float(gvec[13])}
     for ring, ring_r in (("hub", WW.HUB_RADIUS_MM), ("rim", WW.rim_inner_radius())):
         rows = []
+        R_mm = R_by_ring[ring]
         m = mesh[ring]
         for nm in ("P_t", "P_c"):
             e = m[nm]
@@ -318,7 +348,8 @@ def build(genes, cfg="coarse"):
                                                               e["point"][0])),
                          "void_deg": void, "wedge_deg": wedge,
                          "lambda_W": williams_lambda(wedge),
-                         "spoke_side_leg_mm": e["leg_mm"]})
+                         "spoke_side_leg_mm": e["leg_mm"],
+                         "fillet_fit": fillet_fit(void, e["leg_mm"], R_mm)})
         # the same block's second corner under the other two settings.  `P_t` does not
         # move with `uncap` -- it is the spoke's own end row -- so only `P_c` is re-read.
         for src, mm in (("mesh (SHIPPED DEFAULT)", mesh_d), ("mesh (uncap=True)", mesh_u)):
@@ -329,7 +360,8 @@ def build(genes, cfg="coarse"):
                                                               eu["point"][0])),
                          "void_deg": void, "wedge_deg": wedge,
                          "lambda_W": williams_lambda(wedge),
-                         "spoke_side_leg_mm": eu["leg_mm"]})
+                         "spoke_side_leg_mm": eu["leg_mm"],
+                         "fillet_fit": fillet_fit(void, eu["leg_mm"], R_mm)})
         pc = part[ring]
         for nm, q, t in pc:
             other = [x[1] for x in pc if x[0] != nm]
@@ -342,7 +374,8 @@ def build(genes, cfg="coarse"):
                          "theta_deg": math.degrees(math.atan2(q[1], q[0])),
                          "void_deg": void, "wedge_deg": wedge,
                          "lambda_W": williams_lambda(wedge),
-                         "spoke_side_leg_mm": None})
+                         "spoke_side_leg_mm": None,
+                         "fillet_fit": fillet_fit(void, None, R_mm)})
         for nm, e in ext[ring].items():
             if not e["reaches"]:
                 rows.append({"source": "extension", "name": nm, "reaches": False,
@@ -354,8 +387,29 @@ def build(genes, cfg="coarse"):
                          "theta_deg": e["theta_deg"], "void_deg": void,
                          "wedge_deg": wedge, "lambda_W": williams_lambda(wedge),
                          "spoke_side_leg_mm": None, "run_mm": e["run_mm"],
-                         "closest_approach_mm": e["closest_approach_mm"]})
+                         "closest_approach_mm": e["closest_approach_mm"],
+                         "fillet_fit": fillet_fit(void, None, R_mm)})
         rec["rings"][ring] = {"ring_r_mm": ring_r, "corners": rows}
+
+    # THE PRICING, GATHERED.  FILLET_PLAN.md PART 2 ruled `P_c` un-filletable on a leg of
+    # t/2, measured on the CAPPED mesh.  Every term in that judgement has since moved, so
+    # the verdict is recomputed per ring and per uncap setting rather than quoted.
+    rec["fillet_fit_summary"] = {}
+    for ring in ("hub", "rim"):
+        by_src = {}
+        for row in rec["rings"][ring]["corners"]:
+            ff = row.get("fillet_fit")
+            if ff is None or "t_over_leg" not in ff:
+                continue
+            by_src[f"{row['source']} {row['name']}"] = {
+                "void_deg": row["void_deg"],
+                "spoke_side_leg_mm": ff["spoke_side_leg_mm"],
+                "tangent_length_mm": ff["tangent_length_mm"],
+                "t_over_leg": ff["t_over_leg"],
+                "r_max_on_this_leg_mm": ff["r_max_on_this_leg_mm"],
+                "fits_at_shipped_radius": ff["fits"],
+            }
+        rec["fillet_fit_summary"][ring] = {"radius_mm": R_by_ring[ring], "by_corner": by_src}
 
     rec["validation"] = {
         "expected_crossings_per_wheel": 24,
@@ -439,6 +493,20 @@ def _print(rec, ver):
             print(f"      {row['source']:<24}{row['name']:<16}"
                   f"{row['theta_deg']:>11.5f}{row['wedge_deg']:>10.2f}"
                   f"{row['lambda_W']:>9.4f}{leg:>12}")
+
+    print("\n  CAN A FILLET SIT IN THESE CORNERS?  T = R / tan(void/2) against the leg it "
+          "must lie on")
+    print("  (GEOMETRIC admissibility only — whether the MESH can then be built is a "
+          "separate gate, `make fillet`)")
+    for ring, summ in rec.get("fillet_fit_summary", {}).items():
+        print(f"\n      --- {ring}   R = {summ['radius_mm']:.4f} mm")
+        print(f"          {'corner':<34}{'void':>8}{'leg mm':>10}{'T mm':>10}"
+              f"{'T/leg':>8}{'R_max':>9}   fits")
+        for name, c in summ["by_corner"].items():
+            print(f"          {name:<34}{c['void_deg']:>8.2f}"
+                  f"{c['spoke_side_leg_mm']:>10.4f}{c['tangent_length_mm']:>10.4f}"
+                  f"{c['t_over_leg']:>8.2f}{c['r_max_on_this_leg_mm']:>9.4f}"
+                  f"   {'yes' if c['fits_at_shipped_radius'] else 'NO'}")
 
     print("\n  STEP 1 GO/NO-GO — which idealisation lands closest to the part's second "
           "corner?")
