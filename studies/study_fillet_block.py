@@ -1,0 +1,966 @@
+"""
+=============================================================================
+  CAN THE FILLET BE A BLOCK?  THE REGION HAS TWO CUSPS, AND THE ONLY BLOCK
+  THAT MESHES IS THE ONE WHOSE CORNERS ARE OFF BOTH TANGENT POINTS
+=============================================================================
+    .venv-opt/bin/python studies/study_fillet_block.py       (make filletblock)
+
+FILLET_PLAN.md STEP 1 RECORD PART 9, and PLAN.md §44/§46's ranked item 1.
+
+WHY THIS EXISTS
+---------------
+PART 3 (2026-08-17) left the arc with exactly two routes and they have been ranked first
+for nine arcs:
+
+    1.  a DEDICATED FILLET BLOCK "covering the curvilinear triangle A - P_t - B, with its
+        own seam entries" -- the preferred route;
+    2.  a GENERATED SPOKE BLOCK -- transfinite smoothing with a boundary correction that
+        decays away from the junction.
+
+`make fillet` (PART 6) settled what "valid" means for either of them: `det J` at the
+Gauss points the assembly integrates.  It did not ask whether either route's REGION can
+be a block at all.  This file asks that, in geometry only, before anybody spends a week
+building one.  It is the same discipline PART 7 and PART 8 applied to Step 0 and to
+PART 2 -- re-check the premise before spending on the step.
+
+THE ANSWER, IN ONE LINE EACH
+----------------------------
+  ROUTE 2 IS DEAD, and not by a tolerance.  What fails in the shipped `fillet=`
+  construction is the ANGLE AT THE MOVED CORNER, and both of the curves that make it are
+  BOUNDARY curves of the spoke block -- the fillet arc on the flank edge, and the end
+  cross-section.  A generated interior is by definition a scheme that moves INTERIOR
+  nodes; the three nodes that carry this angle are all boundary nodes.  Measured here by
+  running an elliptic (Winslow) interior solve on the block and reporting that the corner
+  angle comes back BIT-IDENTICAL.
+
+  ROUTE 1 AS WRITTEN IS DEAD TOO, and this one is a geometry fact nobody had measured.
+  The region `A - P_t - B` is not a curvilinear triangle with three usable corners.  A
+  fillet TANGENT to both legs meets each of them at zero angle, so the region it adds is
+  a CUSP SLIVER: measured interior angles 0.0000 deg at `B` and 0.42-0.60 deg at `A`,
+  against 38.06-38.89 deg at `P_t`.  No quad block covers a 0 deg corner, and neither
+  does a tri-block -- a tri-block subdivides the region's corners, it does not create
+  new ones.
+
+  AND THE SPOKE BLOCK WAS NEVER THE BLOCKER.  PART 3's finding -- "what actually blocks a
+  filleted mesh is that the spoke block is ruled" -- is an artefact of WHERE the fillet
+  was put, not of the spoke.  Take the arc out of the spoke and end the spoke at the
+  tangent station `s_A` instead, and the spoke block is clean at the SHIPPED radii at
+  `coarse` and `medium`, where the shipped construction's usable window is 0.12-0.24 mm.
+  The fold does not disappear -- it moves, whole, into whatever block then has to carry
+  the fillet.
+
+WHAT DOES WORK, MEASURED
+------------------------
+A BOUNDARY-LAYER block, which is what a structured mesher builds along a fillet:
+
+    j0  the fillet arc `A -> B`                        the free surface
+    j1  that arc offset INTO the material              full wall at `A`, depth `d` at `B`
+    i0  the spoke's end cross-section at `s_A`         cuts across the flank AT `A`
+    i1  a radial cut `B -> B''` of depth `d`           cuts across the ring circle AT `B`
+
+Its four corners are OFF both tangent points, which is the whole trick: the cusp is
+interior to an edge instead of being a corner.  Measured `min scaled Jacobian` 0.87-1.00,
+zero mixed-sign cells, zero non-positive Gauss points, at the SHIPPED radii, at both
+junctions, at `coarse` and `medium`, and stable under refinement -- the first filleted
+block in this arc that meshes at the radii that actually ship.
+
+WHAT IT COSTS, WHICH IS THE HONEST OTHER HALF
+---------------------------------------------
+`i1` cuts ACROSS the ring circle.  That is not incidental -- it is forced, and this file
+measures why: at `B` the material on the free-surface side has zero thickness, so a block
+that stops at the ring circle there degenerates, and a block that crosses it does not.
+So THE RING CIRCLE STOPS BEING THE JUNCTION/COLLAR INTERFACE NEAR THE FILLET, and the
+collar (hub) / band (rim) block has to be notched to depth `d`.  That is a re-cut of the
+neighbours, not an eighth block bolted on, and it is priced in the report's `price`
+section rather than guessed at.
+
+TWO CANDIDATES THAT DO NOT WORK ARE MEASURED HERE TOO, because both are the obvious thing
+to try and both fail for the same reason -- they keep a block edge on the pre-fillet
+surfaces through a tangent point:
+
+    grown_junction        j0 = [fillet arc] + [ring arc], the junction block grown
+    pre_fillet_surfaces   PART 3's region, closed by the two end cross-sections
+
+Both fold, both get WORSE under refinement, and an elliptic interior solve does not
+rescue either.
+
+WHAT THIS DOES NOT DO
+---------------------
+It solves no field, touches no `best_solution.json`, and changes no mesh: every block
+here is built in this file from `wheel_wheel`'s own primitives and nothing is written
+back.  `wheel_wheel.sector_blocks` is called only with `fillet=None` and with the shipped
+`fillet=` path, both of which already exist.  It is geometry and Jacobians and it runs in
+seconds.
+
+EXIT STATUS follows `make fillet` and `make junction`: nonzero ONLY if a self-check fails
+-- the controls, the cusp measurement, or the route-2 invariance.  Never on a
+characterisation finding about a candidate block, which is what this exists to report.
+=============================================================================
+"""
+
+import argparse
+import json
+import math
+import os
+import time
+
+import numpy as np
+
+import project_paths as PP  # noqa: F401  (puts src/ on the path)
+import _gate_guard
+import wheel_genome as wg
+import wheel_wheel as WW
+import study_fillet_fold as ff
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+DEFAULT_CONFIGS = ("coarse", "medium")
+DEFAULT_JUNCTIONS = ("hub", "rim")
+
+# The radii swept.  The low end is where `make fillet`'s usable window sits (0.07-0.24
+# mm), the high end is the gene box: `R_hub` runs 0.4-4.0 and `R_rim` 0.5-3.0, and the
+# shipped genome is 0.6636 / 3.0000.  The cusp claim is a claim about EVERY radius, so
+# the grid has to span the box rather than sit on the shipped point.
+RADII = (0.05, 0.10, 0.20, 0.40, 1.00, 1.50, 2.00, 3.00, 4.00)
+
+
+def radius_grid(genes):
+    """`RADII` with the genome's OWN two radii merged in.
+
+    The shipped point has to be ON the grid rather than near it: every table in this file
+    is read at "the radius that ships", and 0.6636 is not 0.6636060402965218.
+    """
+    return tuple(sorted(set(RADII) | {float(genes[12]), float(genes[13])}))
+
+# Refinement multipliers on the candidate blocks' long edge.  A construction whose fold
+# gets WORSE as its own resolution rises is a construction whose region is wrong, which
+# is the distinction this column exists to draw.
+REFINEMENTS = (1, 2, 4)
+
+CANDIDATES = ("grown_junction", "pre_fillet_surfaces", "boundary_layer")
+
+# Winslow relaxation for the "does a generated interior rescue it" column.  2000 sweeps
+# at omega=0.4 is far past where any of these stop moving; the point is not to build a
+# production smoother but to give every candidate the benefit of one.
+WINSLOW_ITERS = 2000
+WINSLOW_OMEGA = 0.4
+
+
+def load_genes(path):
+    with open(os.path.join(PP.ROOT, path)) as fh:
+        return wg.genes_to_vector(json.load(fh)["genes"])
+
+
+# ---------------------------------------------------------------------------
+# THE GEOMETRY, TAKEN FROM THE SHIPPED CONSTRUCTION RATHER THAN RE-DERIVED
+# ---------------------------------------------------------------------------
+
+def junction_geometry(genes, cfg, junction, R):
+    """Everything the fillet at one junction is made of, at radius `R`.
+
+    `_fillet_tangency` is `wheel_wheel`'s own solve and is called here rather than
+    reimplemented: every number below is then a statement about the construction the tree
+    ships, not about a second copy of it that could drift.  Returns `None` when no fillet
+    of that radius is tangent to both legs, which is the tangency solve's own refusal and
+    is a legitimate outcome at the top of the box.
+    """
+    cfg = WW.get_config(cfg)
+    span = WW.HUB_RIM_SPAN_MM
+    orientation = WW.flank_orientation(genes, cfg, span_mm=span)
+    rim_inner = WW.rim_inner_radius(span)
+    sample, s_dense = WW.global_sampler(genes, cfg, span_mm=span)
+    s_hub, s_rim = WW.junction_stations(sample, s_dense, orientation, rim_inner)
+    is_hub = junction == "hub"
+    k = 0 if is_hub else 1
+    s_end, s_far = (s_hub, s_rim) if is_hub else (s_rim, s_hub)
+    s_ring = 0.0 if is_hub else 1.0
+    ring_r = WW.HUB_RADIUS_MM if is_hub else rim_inner
+    # How much room the cut at `B` has on the far side of the ring circle: the collar is
+    # 5 mm deep inward at the hub, the band 1.1-1.5 mm outward at the rim.
+    depth_available = (WW.COLLAR_DEPTH_MM if is_hub
+                       else WW.RIM_OUTER_RADIUS_MM - rim_inner)
+    eta = 1.0 if float(orientation[k]) > 0 else -1.0
+    far_pt = np.asarray(sample(np.asarray(float(s_end)), np.asarray(-eta)), float)
+    void_sign = 1.0 if float(np.linalg.norm(far_pt)) > ring_r else -1.0
+    P_t = np.asarray(sample(np.asarray(float(s_end)), np.asarray(eta)), float)
+    try:
+        s_A, A, B, C = WW._fillet_tangency(sample, s_end, s_far, eta, ring_r, R,
+                                           void_sign)
+    except ValueError as exc:
+        return {"tangency": False, "message": str(exc).split(":")[0]}
+    blend = WW._uncap_blend(WW.UNCAP_DEFAULT, is_hub)
+    Q = np.asarray(WW._uncap_corner(sample, s_ring, eta, ring_r, is_hub, blend, np),
+                   float)
+    far_end = np.asarray(sample(np.asarray(s_ring), np.asarray(-eta)), float)
+    return {"tangency": True, "cfg": cfg, "sample": sample, "eta": eta,
+            "void_sign": void_sign, "ring_r": ring_r, "R": R,
+            "s_end": float(s_end), "s_A": float(s_A), "s_ring": float(s_ring),
+            "s_hub": float(s_hub), "s_rim": float(s_rim),
+            "P_t": P_t, "A": A, "B": B, "C": C, "Q": Q, "far_end": far_end,
+            "depth_available_mm": float(depth_available)}
+
+
+def _unit(v):
+    n = float(np.linalg.norm(v))
+    return np.asarray(v, float) / (n or 1.0)
+
+
+def _angle_deg(u, v):
+    c = float(np.dot(_unit(u), _unit(v)))
+    return math.degrees(math.acos(max(-1.0, min(1.0, c))))
+
+
+def _flank_tangent(g, s, toward):
+    """The straddling flank's unit tangent at station `s`, oriented toward `toward`."""
+    h = 1.0e-7
+    sample, eta = g["sample"], g["eta"]
+    p1 = np.asarray(sample(np.asarray(s + h), np.asarray(eta)), float)
+    p0 = np.asarray(sample(np.asarray(s - h), np.asarray(eta)), float)
+    t = p1 - p0
+    p = np.asarray(sample(np.asarray(s), np.asarray(eta)), float)
+    return _unit(t if float(np.dot(t, np.asarray(toward, float) - p)) > 0 else -t)
+
+
+def _circle_tangent(P, toward):
+    t = np.array([-P[1], P[0]], float)
+    return _unit(t if float(np.dot(t, np.asarray(toward, float) - P)) > 0 else -t)
+
+
+def _arc_tangent(C, P, toward):
+    r = np.asarray(P, float) - np.asarray(C, float)
+    t = np.array([-r[1], r[0]], float)
+    return _unit(t if float(np.dot(t, np.asarray(toward, float) - P)) > 0 else -t)
+
+
+# ---------------------------------------------------------------------------
+# THE MEASUREMENT THAT KILLS ROUTE 1 AS WRITTEN
+# ---------------------------------------------------------------------------
+
+def region_angles(g):
+    """The three interior angles of PART 3's region `A - P_t - B`, in degrees.
+
+    PART 3 named this region "the curvilinear triangle A - P_t - B" and proposed covering
+    it with a dedicated block.  A fillet is TANGENT to both legs by definition, so at `A`
+    the arc leaves along the flank and at `B` it leaves along the ring circle: both
+    corners are CUSPS and the region is a sliver, not a triangle.
+
+    `B` is exact -- both curves are circles and the tangency is the solve's own residual,
+    so the measured angle is 0 to machine precision.  `A` is not quite: the flank is a
+    spline rather than a straight leg, so the arc is tangent to it at a point where the
+    flank's own curvature has already turned it by a few tenths of a degree.  That is the
+    0.42-0.60 deg below, and it is a curvature term, not slack in the solve.
+
+    The angle at `P_t` is the void -- the same quantity `make junction` prices as the
+    corner a fillet has to fit into.  It is reported here so the three are read together:
+    38 + 0.6 + 0 does not add up to a meshable block, and the 38 is the only one anybody
+    had looked at.
+    """
+    P_t, A, B, C = g["P_t"], g["A"], g["B"], g["C"]
+    at_B = _angle_deg(_circle_tangent(B, P_t), _arc_tangent(C, B, A))
+    at_A = _angle_deg(_flank_tangent(g, g["s_A"], P_t), _arc_tangent(C, A, B))
+    at_P = _angle_deg(_circle_tangent(P_t, B), _flank_tangent(g, g["s_end"], A))
+    at_P_chord = _angle_deg(_circle_tangent(P_t, B), _flank_chord(g) - P_t)
+    return {
+        "at_B_deg": at_B, "at_A_deg": at_A, "at_P_t_deg": at_P,
+        "at_P_t_chord_deg": at_P_chord,
+        "chord_minus_tangent_deg": at_P_chord - at_P,
+        "leg_flank_mm": float(np.linalg.norm(A - P_t)),
+        "leg_ring_chord_mm": float(np.linalg.norm(B - P_t)),
+        "arc_length_mm": float(g["R"] * _arc_sweep(C, A, B)),
+        "is_cusp_at_B": bool(at_B < 1.0e-6),
+        "is_cusp_at_A": bool(at_A < 1.0),
+    }
+
+
+def _flank_chord(g):
+    """The spoke block's SECOND flank node, one station in from `P_t`.
+
+    `make junction` measures the void at `P_t` from the mesh, and its `f_hat` is exactly
+    this chord -- the reproduction is checked in `tests/test_fillet_block.py` against the
+    committed `study_junction_agreement.json`, to the digit.  It is reported next to the
+    analytic tangent because the flank is a SPLINE: over one `coarse` station the chord
+    has already turned, and the two differ by 0.8 deg at the hub and 0.6 at the rim.
+
+    WHICH ONE IS RIGHT DEPENDS ON THE QUESTION.  For "how much room does a fillet have",
+    which is `make junction`'s question, the chord is 0.8 deg OPTIMISTIC and both `P_t`
+    verdicts clear by 5-20x anyway, so no verdict there moves.  For "what angle does a
+    block corner have", which is this file's question, the tangent is the one that
+    decides -- a block corner is a limit, not a chord.  The `P_c` rows of `make junction`
+    are unaffected either way: under `uncap` that corner's leg is a STRAIGHT continuation,
+    so its chord and its tangent are the same direction exactly.
+    """
+    cfg = g["cfg"]
+    ds = (g["s_rim"] - g["s_hub"]) / (cfg.nn(cfg.n_span) - 1)
+    step = ds if g["s_end"] == g["s_hub"] else -ds
+    return np.asarray(g["sample"](np.asarray(g["s_end"] + step),
+                                  np.asarray(g["eta"])), float)
+
+
+def _arc_sweep(C, P, Q):
+    u = np.asarray(P, float) - np.asarray(C, float)
+    v = np.asarray(Q, float) - np.asarray(C, float)
+    return abs(math.atan2(u[0] * v[1] - u[1] * v[0], float(np.dot(u, v))))
+
+
+# ---------------------------------------------------------------------------
+# THE MEASUREMENT THAT KILLS ROUTE 2
+# ---------------------------------------------------------------------------
+
+def winslow(grid, n_iter=WINSLOW_ITERS, omega=WINSLOW_OMEGA):
+    """An elliptic (Winslow) interior solve on an [ni, nj, 2] block, boundary held.
+
+    This is route 2's technique, applied as favourably as possible: it is what "a
+    generated block" means, and every candidate here is offered it.  The boundary is held
+    fixed because that is what "generated interior" means -- a scheme that moved the
+    boundary would be a different construction, not a smoother.
+    """
+    g = np.array(grid, float)
+    if g.shape[0] < 3 or g.shape[1] < 3:
+        return g
+    for _ in range(n_iter):
+        xi = 0.5 * (g[2:, 1:-1] - g[:-2, 1:-1])
+        et = 0.5 * (g[1:-1, 2:] - g[1:-1, :-2])
+        a = np.sum(et * et, axis=-1)[..., None]
+        b = np.sum(xi * et, axis=-1)[..., None]
+        c = np.sum(xi * xi, axis=-1)[..., None]
+        cross = 0.25 * (g[2:, 2:] - g[2:, :-2] - g[:-2, 2:] + g[:-2, :-2])
+        new = (a * (g[2:, 1:-1] + g[:-2, 1:-1])
+               + c * (g[1:-1, 2:] + g[1:-1, :-2])
+               - 2.0 * b * cross) / (2.0 * (a + c) + 1.0e-300)
+        g[1:-1, 1:-1] = (1.0 - omega) * g[1:-1, 1:-1] + omega * new
+    return g
+
+
+def moved_corner(genes, cfg, junction, R):
+    """The shipped `fillet=` spoke block's corner at `B`, and whether it is a BOUNDARY
+    quantity.
+
+    This is PART 3's "corner interior angle collapses from ~89 deg to 3.60 / 8.52 and the
+    cross product changes sign", re-measured on the CURRENT default rather than quoted
+    from the capped mesh it was taken on (PART 7's standing lesson).
+
+    The second half is the part that decides route 2.  The angle is carried by three
+    nodes: the corner `(0, j_f)`, its neighbour along the flank edge `(1, j_f)`, and its
+    neighbour along the end cross-section `(0, j_f-+1)`.  All three are on the block's
+    BOUNDARY.  So the reported `winslow_max_boundary_shift_mm` is exactly 0 and
+    `angle_after_winslow_deg` is bit-identical to `angle_deg` -- not approximately, and
+    not as a matter of how good the smoother is.
+    """
+    fillet = (R, 0.0) if junction == "hub" else (0.0, R)
+    g = np.asarray(WW.sector_blocks(genes, cfg, fillet=fillet)["spoke"], float)
+    g0 = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0))["spoke"], float)
+    row = 0 if junction == "hub" else -1
+    nj = g.shape[1]
+    moved = [j for j in (0, nj - 1) if np.linalg.norm(g[row, j] - g0[row, j]) > 1e-9]
+    if not moved:
+        return None
+    j_f = moved[0]
+    step_i = 1 if junction == "hub" else -1
+    step_j = 1 if j_f == 0 else -1
+    corner = g[row, j_f]
+    along_flank = g[row + step_i, j_f]
+    along_cross = g[row, j_f + step_j]
+    ang = _angle_deg(along_flank - corner, along_cross - corner)
+
+    # The node angle above is what PART 3 reported and is resolution-dependent -- it is
+    # measured between the corner and its two NEIGHBOURS.  The geometric one is not: it
+    # is the angle between the two boundary CURVES, the fillet arc and the straight end
+    # cross-section, and it is the quantity a generated interior would have to move.
+    geo = junction_geometry(genes, cfg, junction, R)
+    tangent_angle = None
+    if geo["tangency"]:
+        sample = geo["sample"]
+        far0 = np.asarray(sample(np.asarray(geo["s_end"]),
+                                 np.asarray(-geo["eta"])), float)
+        tangent_angle = _angle_deg(_arc_tangent(geo["C"], geo["B"], geo["A"]),
+                                   far0 - geo["B"])
+
+    sm = winslow(g)
+    bnd = np.zeros(g.shape[:2], bool)
+    bnd[0, :] = bnd[-1, :] = bnd[:, 0] = bnd[:, -1] = True
+    shift = float(np.abs(sm[bnd] - g[bnd]).max())
+    ang_sm = _angle_deg(sm[row + step_i, j_f] - sm[row, j_f],
+                        sm[row, j_f + step_j] - sm[row, j_f])
+    return {
+        "angle_deg": ang,
+        "tangent_angle_deg": tangent_angle,
+        "unfilleted_angle_deg": _angle_deg(g0[row + step_i, j_f] - g0[row, j_f],
+                                           g0[row, j_f + step_j] - g0[row, j_f]),
+        "end_cross_section_mm": float(np.linalg.norm(g[row, -1] - g[row, 0])),
+        "unfilleted_end_cross_section_mm": float(np.linalg.norm(g0[row, -1]
+                                                               - g0[row, 0])),
+        "winslow_max_boundary_shift_mm": shift,
+        "angle_after_winslow_deg": ang_sm,
+        "angle_is_a_boundary_quantity": bool(shift == 0.0 and ang_sm == ang),
+    }
+
+
+# ---------------------------------------------------------------------------
+# THE SPOKE, WITH THE FILLET TAKEN OUT OF IT
+# ---------------------------------------------------------------------------
+
+def trimmed_spoke(genes, cfg, R_hub, R_rim):
+    """The spoke block ended at the TANGENT stations instead of at the ring crossings.
+
+    This is not a new construction: it is `sector_blocks`' own unfilleted spoke over a
+    shorter station range, so at `R_hub = R_rim = 0` it is the default block to the bit.
+    What it changes is OWNERSHIP -- the material between `s_end` and `s_A` stops being
+    the spoke's and becomes whatever block carries the fillet.
+
+    Returns `None` if either tangency solve refuses, or if the two tangent stations cross
+    (a fillet longer than the spoke), which is a geometric limit rather than a mesh one.
+    """
+    cfgo = WW.get_config(cfg)
+    span = WW.HUB_RIM_SPAN_MM
+    orientation = WW.flank_orientation(genes, cfgo, span_mm=span)
+    rim_inner = WW.rim_inner_radius(span)
+    sample, s_dense = WW.global_sampler(genes, cfgo, span_mm=span)
+    s_hub, s_rim = WW.junction_stations(sample, s_dense, orientation, rim_inner)
+    lo, hi = float(s_hub), float(s_rim)
+    for junction, R in (("hub", R_hub), ("rim", R_rim)):
+        if R <= 0.0:
+            continue
+        g = junction_geometry(genes, cfg, junction, R)
+        if not g["tangency"]:
+            return None
+        if junction == "hub":
+            lo = g["s_A"]
+        else:
+            hi = g["s_A"]
+    if not lo < hi:
+        return None
+    n_sp, n_th = cfgo.nn(cfgo.n_span), cfgo.nn(cfgo.n_thick)
+    s_grid = np.linspace(lo, hi, n_sp)
+    eta_grid = np.linspace(-1.0, 1.0, n_th)
+    return np.asarray(sample(s_grid[:, None], eta_grid[None, :]), float)
+
+
+# ---------------------------------------------------------------------------
+# THE CANDIDATE BLOCKS
+# ---------------------------------------------------------------------------
+
+def cut_depth_mm(g, wall_mm):
+    """How far the cut at `B` reaches past the ring circle, in mm.
+
+    Half the wall, capped at half of what the ring has to give.  Half the wall because
+    that is the length scale the block's other end is built on; capped because the cut
+    lands INSIDE the collar (5 mm deep) at the hub and inside the band (1.1-1.5 mm) at
+    the rim, and a cut that reaches through either would be a hole rather than a notch.
+    """
+    return float(min(0.5 * wall_mm, 0.5 * g["depth_available_mm"]))
+
+
+def candidate_grown_junction(g, n_long, n_th):
+    """The junction block GROWN so its ring edge runs on past `P_t` and onto the fillet.
+
+        j0 = [fillet arc A -> B] + [ring arc B -> Q]        (G1 at `B`)
+        i0 = the spoke's end cross-section at `s_A`
+        j1 = the far flank from `s_A` to the ring
+        i1 = the uncap edge `Q -> far_end`
+
+    The obvious cheap route: it needs no new block and no new seam node count, because
+    every ring block already derives its split angle from the spoke's end row.  `B` is an
+    interior point of `j0` and the composite is smooth there, so nothing about the edge
+    looks wrong.  What is wrong is the REGION: `j0` doubles back at `B` and the material
+    between its two branches -- the cusp sliver -- has zero thickness there.
+    """
+    sample, eta, C = g["sample"], g["eta"], g["C"]
+    A, B, Q, far_end = g["A"], g["B"], g["Q"], g["far_end"]
+    th_B = math.atan2(B[1], B[0])
+    th_q = math.atan2(Q[1], Q[0])
+    L_arc = g["R"] * _arc_sweep(C, A, B)
+    L_ring = g["ring_r"] * abs(th_q - th_B)
+    n_a = max(2, int(round((n_long - 1) * L_arc / (L_arc + L_ring))) + 1)
+    n_r = n_long - n_a + 1
+    if n_r < 2:
+        return None
+    j0 = np.concatenate([np.asarray(WW._arc_between(C, A, B, n_a), float)[:-1],
+                         np.asarray(WW.arc_points(g["ring_r"], th_B, th_q, n_r), float)])
+    s_f = np.linspace(g["s_A"], g["s_ring"], n_long)
+    j1 = np.asarray(sample(s_f, np.zeros(n_long) - eta), float)
+    i0 = _cross_section(g, g["s_A"], n_th, A)
+    i1 = WW._lerp_points(Q, far_end, n_th, np)
+    return WW.coons_patch(j0, j1, i0, i1, xp=np)
+
+
+def candidate_pre_fillet_surfaces(g, n_long, n_th):
+    """PART 3's region, closed into a quad by the two end cross-sections.
+
+        j0 = [ring circle P_t -> B] + [fillet arc B -> A]   (G1 at `B`)
+        i0 = the end cross-section at `s_end`               (seams to the junction block)
+        i1 = the end cross-section at `s_A`                 (seams to the trimmed spoke)
+        j1 = the far flank from `s_end` to `s_A`
+
+    This is the nearest thing to "a dedicated fillet block with its own seam entries"
+    that is a quad at all: PART 3's triangle plus the slab of spoke between the two cross
+    sections, which turns the 0 deg corner at `P_t`-side into an ordinary one.  It keeps
+    both pre-fillet surfaces as block edges, and that is what it dies of -- same cusp,
+    same place.
+    """
+    sample, eta, C = g["sample"], g["eta"], g["C"]
+    P_t, A, B = g["P_t"], g["A"], g["B"]
+    th_t = math.atan2(P_t[1], P_t[0])
+    th_B = math.atan2(B[1], B[0])
+    L_ring = g["ring_r"] * abs(th_B - th_t)
+    L_arc = g["R"] * _arc_sweep(C, A, B)
+    n_r = max(2, int(round((n_long - 1) * L_ring / (L_ring + L_arc))) + 1)
+    n_a = n_long - n_r + 1
+    if n_a < 2:
+        return None
+    j0 = np.concatenate([np.asarray(WW.arc_points(g["ring_r"], th_t, th_B, n_r),
+                                    float)[:-1],
+                         np.asarray(WW._arc_between(C, B, A, n_a), float)])
+    s_f = np.linspace(g["s_end"], g["s_A"], n_long)
+    j1 = np.asarray(sample(s_f, np.zeros(n_long) - eta), float)
+    i0 = _cross_section(g, g["s_end"], n_th, P_t)
+    i1 = _cross_section(g, g["s_A"], n_th, A)
+    return WW.coons_patch(j0, j1, i0, i1, xp=np)
+
+
+def candidate_boundary_layer(g, n_long, n_th, depth=None):
+    """The block a structured mesher builds along a fillet: corners OFF both tangencies.
+
+        j0 = the fillet arc `A -> B`                       the free surface
+        j1 = that arc offset into the material             wall at `A` -> `depth` at `B`
+        i0 = the spoke's end cross-section at `s_A`        cuts across the flank AT `A`
+        i1 = the radial cut `B -> B''`                     cuts across the ring circle
+
+    The offset is taken along the arc's OWN outward normal (`arc - C`), so `j1` is a
+    concentric arc of radius `R + w` and can never cusp however small `R` is -- offsetting
+    the other way, toward the centre, is what folds a fillet's inner curve.  `w` runs from
+    the wall thickness at `A`, so `j1` meets the end cross-section exactly, down to
+    `depth` at `B`.
+
+    Both cusps are now INTERIOR to an edge rather than sitting on a corner, which is the
+    whole of why this one meshes and the two above do not.
+    """
+    sample, eta, C = g["sample"], g["eta"], g["C"]
+    A, B = g["A"], g["B"]
+    i0 = _cross_section(g, g["s_A"], n_th, A)
+    far_sA = i0[-1]
+    wall = float(np.linalg.norm(far_sA - A))
+    d = cut_depth_mm(g, wall) if depth is None else float(depth)
+    j0 = np.asarray(WW._arc_between(C, A, B, n_long), float)
+    nrm = j0 - np.asarray(C, float)[None, :]
+    nrm = nrm / np.linalg.norm(nrm, axis=1)[:, None]
+    j1 = j0 + np.linspace(wall, d, n_long)[:, None] * nrm
+    j1[0] = far_sA                     # exact corner; the two normals differ by the
+    #                                    flank's own turn between `A` and the centreline
+    i1 = WW._lerp_points(B, j1[-1], n_th, np)
+    return WW.coons_patch(j0, j1, i0, i1, xp=np)
+
+
+def _cross_section(g, s, n_th, first):
+    """The spoke's end cross-section at station `s`, running straddling flank -> far.
+
+    Its first node is replaced by the exact tangent point so the Coons corner check is
+    met to the bit rather than to the sampler's round-off; at `s = s_A` the two agree to
+    ~1e-13 mm anyway, which the controls report.
+    """
+    eta = g["eta"]
+    row = np.asarray(g["sample"](np.full(n_th, float(s)),
+                                 np.linspace(eta, -eta, n_th)), float)
+    return np.concatenate([np.asarray(first, float)[None, :], row[1:]], axis=0)
+
+
+CANDIDATE_FN = {"grown_junction": candidate_grown_junction,
+                "pre_fillet_surfaces": candidate_pre_fillet_surfaces,
+                "boundary_layer": candidate_boundary_layer}
+
+
+# ---------------------------------------------------------------------------
+# THE VERDICT ON ONE BLOCK
+# ---------------------------------------------------------------------------
+
+def block_quality(grid):
+    """Mixed-sign cells, scaled Jacobian and Gauss `det J` for one candidate block.
+
+    `cell_verdict` and `gauss_verdict` are imported from `study_fillet_fold` rather than
+    re-written: they ARE PART 6's criteria A and C, and a second copy is how two files
+    end up reporting the same word for two different measurements -- which is the exact
+    failure PART 6 existed to clean up.
+
+    The scaled Jacobian is sign-normalised by its own median for the same reason
+    `gauss_verdict` normalises `det J`: a block indexed (theta, r) is left-handed in
+    physical space and `build_wheel` flips whole blocks later, so the question here is
+    whether any corner disagrees with its own block.
+    """
+    g = np.asarray(grid, float)
+    a, b, c, d = g[:-1, :-1], g[1:, :-1], g[1:, 1:], g[:-1, 1:]
+
+    def cr(p, q, r):
+        return ((q[..., 0] - p[..., 0]) * (r[..., 1] - p[..., 1])
+                - (q[..., 1] - p[..., 1]) * (r[..., 0] - p[..., 0]))
+
+    sj = []
+    for p, q, r in ((a, b, d), (b, c, a), (c, d, b), (d, a, c)):
+        n1 = np.linalg.norm(q - p, axis=-1)
+        n2 = np.linalg.norm(r - p, axis=-1)
+        sj.append(cr(p, q, r) / np.maximum(n1 * n2, 1.0e-300))
+    S = np.stack(sj, axis=-1)
+    S = S if np.median(S) > 0 else -S
+    cells = ff.cell_verdict(g)
+    gauss = ff.gauss_verdict(g)
+    return {"shape": [int(g.shape[0]), int(g.shape[1])],
+            "mixed_sign_cells": cells["mixed_sign_cells"],
+            "min_scaled_jacobian": float(S.min()),
+            "non_positive_gauss_elements": gauss["non_positive_elements"],
+            "min_det_j": gauss["min_det_j"],
+            "valid": bool(cells["mixed_sign_cells"] == 0
+                          and gauss["non_positive_elements"] == 0)}
+
+
+# ---------------------------------------------------------------------------
+# THE SWEEPS
+# ---------------------------------------------------------------------------
+
+def sweep_region(genes, cfg, junctions, radii):
+    """The cusp measurement, per junction per radius.  Geometry only -- no mesh."""
+    out = {}
+    for junction in junctions:
+        rows = []
+        for R in radii:
+            g = junction_geometry(genes, cfg, junction, R)
+            if not g["tangency"]:
+                rows.append({"radius_mm": float(R), "tangency": False})
+                continue
+            row = {"radius_mm": float(R), "tangency": True}
+            row.update(region_angles(g))
+            rows.append(row)
+        out[junction] = rows
+    return out
+
+
+def sweep_candidates(genes, cfg, junctions, radii, refinements):
+    """Every candidate block, at every radius, at every refinement, plus Winslow."""
+    cfgo = WW.get_config(cfg)
+    n_th, n_weld = cfgo.nn(cfgo.n_thick), cfgo.nn(cfgo.n_weld)
+    out = {}
+    for junction in junctions:
+        rows = []
+        for R in radii:
+            g = junction_geometry(genes, cfg, junction, R)
+            row = {"radius_mm": float(R), "tangency": bool(g["tangency"])}
+            if g["tangency"]:
+                row["blocks"] = {}
+                for name in CANDIDATES:
+                    per = {}
+                    for m in refinements:
+                        n_long = (n_weld - 1) * m + 1
+                        try:
+                            grid = CANDIDATE_FN[name](g, n_long, n_th)
+                        except ValueError as exc:
+                            per[str(m)] = {"built": False, "message": str(exc)[:120]}
+                            continue
+                        if grid is None:
+                            per[str(m)] = {"built": False, "message": "not constructible"}
+                            continue
+                        q = block_quality(grid)
+                        q["built"] = True
+                        q["winslow"] = block_quality(winslow(grid))
+                        per[str(m)] = q
+                    row["blocks"][name] = per
+                row["cut_depth_mm"] = cut_depth_mm(
+                    g, float(np.linalg.norm(_cross_section(g, g["s_A"], n_th, g["A"])[-1]
+                                            - g["A"])))
+            rows.append(row)
+        out[junction] = rows
+    return out
+
+
+def sweep_spoke_trim(genes, cfg, radii):
+    """The trimmed spoke over the sweep, at the OTHER junction's shipped radius.
+
+    Each column moves one radius and holds the other at what the genome ships, so the row
+    answers "can the spoke carry this fillet in the wheel as designed" rather than "in a
+    wheel with one fillet deleted", which is the question `make fillet` already asked.
+    """
+    R_hub_ship, R_rim_ship = float(genes[12]), float(genes[13])
+    out = {}
+    for junction in ("hub", "rim"):
+        rows = []
+        for R in radii:
+            R_hub = R if junction == "hub" else R_hub_ship
+            R_rim = R if junction == "rim" else R_rim_ship
+            grid = trimmed_spoke(genes, cfg, R_hub, R_rim)
+            if grid is None:
+                rows.append({"radius_mm": float(R), "built": False})
+                continue
+            q = block_quality(grid)
+            q.update({"radius_mm": float(R), "built": True})
+            rows.append(q)
+        out[junction] = rows
+    return out
+
+
+# ---------------------------------------------------------------------------
+# THE PRICE OF THE ONE THAT WORKS
+# ---------------------------------------------------------------------------
+
+def price(genes, cfg, junctions):
+    """What the boundary-layer block asks of its neighbours, measured at the shipped R.
+
+    The cut at `B` reaches PAST the ring circle by construction, so the ring circle stops
+    being the junction/collar interface over the fillet's footprint.  This section states
+    how far past, over how much arc, and how much of the collar/band depth that is -- the
+    numbers a blocking has to be designed against, rather than "it needs a notch".
+    """
+    cfgo = WW.get_config(cfg)
+    n_th = cfgo.nn(cfgo.n_thick)
+    out = {}
+    for junction in junctions:
+        R = float(genes[12] if junction == "hub" else genes[13])
+        g = junction_geometry(genes, cfg, junction, R)
+        if not g["tangency"]:
+            out[junction] = {"tangency": False}
+            continue
+        A, B, P_t = g["A"], g["B"], g["P_t"]
+        wall = float(np.linalg.norm(_cross_section(g, g["s_A"], n_th, A)[-1] - A))
+        d = cut_depth_mm(g, wall)
+        th_t = math.degrees(math.atan2(P_t[1], P_t[0]))
+        th_B = math.degrees(math.atan2(B[1], B[0]))
+        # Where the block's inner edge actually leaves the ring circle: the notch is the
+        # part of `j1` on the far side of it, and its angular extent is what the collar
+        # (hub) or band (rim) block has to be re-cut over.
+        j1 = candidate_boundary_layer(g, 401, n_th)[:, -1, :]
+        rad = np.linalg.norm(j1, axis=1)
+        past = ((rad - g["ring_r"]) * g["void_sign"]) < 0.0
+        th_j1 = np.degrees(np.arctan2(j1[:, 1], j1[:, 0]))
+        notch_deg = float(th_j1[past].max() - th_j1[past].min()) if past.any() else 0.0
+        out[junction] = {
+            "radius_mm": R,
+            "cut_depth_mm": d,
+            "ring_depth_available_mm": g["depth_available_mm"],
+            "cut_depth_fraction_of_ring": d / g["depth_available_mm"],
+            "footprint_deg": abs(th_B - th_t),
+            "notch_deg": notch_deg,
+            "notch_fraction_of_footprint": notch_deg / max(abs(th_B - th_t), 1e-12),
+            "footprint_fraction_of_sector": abs(th_B - th_t) / WW.SECTOR_DEG,
+            "spoke_stations_given_up": abs(g["s_A"] - g["s_end"]) / (
+                (g["s_rim"] - g["s_hub"]) / (cfgo.nn(cfgo.n_span) - 1)),
+            "wall_at_s_A_mm": wall,
+        }
+    return out
+
+
+# ---------------------------------------------------------------------------
+# THE SELF-CHECKS
+# ---------------------------------------------------------------------------
+
+def controls(genes, configs):
+    """The default mesh is untouched, and the trimmed spoke is the default one at R=0.
+
+    Both matter for the same reason: every number in this file is a DIFFERENCE from the
+    shipped construction, so if the baseline moved, all of them moved with it.
+    """
+    out = {}
+    for cfg in configs:
+        base = np.asarray(WW.sector_blocks(genes, cfg, fillet=None)["spoke"], float)
+        trim0 = trimmed_spoke(genes, cfg, 0.0, 0.0)
+        out[cfg] = {
+            "trimmed_spoke_at_zero_max_abs_dx_mm": float(np.abs(base - trim0).max()),
+            "default_spoke_clean": block_quality(base)["valid"],
+        }
+        out[cfg]["pass"] = bool(
+            out[cfg]["trimmed_spoke_at_zero_max_abs_dx_mm"] < 1.0e-12
+            and out[cfg]["default_spoke_clean"])
+    return out
+
+
+def self_checks(rec):
+    """The three claims this file exits nonzero on, each computed rather than asserted.
+
+    A characterisation finding -- which candidate folds, what `min_sj` it reaches -- is
+    NOT one of them.  These are the structural statements: the tangency is exact, so the
+    cusp at `B` is exact; the route-2 angle is a boundary quantity; and the baseline this
+    is all measured against is the shipped mesh.
+    """
+    checks = {}
+    checks["controls"] = all(c["pass"] for c in rec["controls"].values())
+    cusp = True
+    for per in rec["region"].values():
+        for rows in per.values():
+            for r in rows:
+                if r.get("tangency") and not r["is_cusp_at_B"]:
+                    cusp = False
+    checks["cusp_at_B_is_exact"] = cusp
+    inv = True
+    for per in rec["route2"].values():
+        for row in per.values():
+            if row and not row["angle_is_a_boundary_quantity"]:
+                inv = False
+    checks["route2_angle_is_a_boundary_quantity"] = inv
+    checks["pass"] = bool(all(v for k, v in checks.items() if k != "pass"))
+    return checks
+
+
+# ---------------------------------------------------------------------------
+
+def build(genes, configs, junctions, radii, refinements):
+    rec = {"configs": list(configs), "junctions": list(junctions),
+           "radii_mm": [float(R) for R in radii],
+           "refinements": list(refinements),
+           "shipped_radii_mm": {"hub": float(genes[12]), "rim": float(genes[13])},
+           "controls": controls(genes, configs),
+           "region": {}, "route2": {}, "spoke_trim": {}, "candidates": {}, "price": {}}
+    for cfg in configs:
+        rec["region"][cfg] = sweep_region(genes, cfg, junctions, radii)
+        rec["route2"][cfg] = {
+            j: moved_corner(genes, cfg, j,
+                            float(genes[12] if j == "hub" else genes[13]))
+            for j in junctions}
+        rec["spoke_trim"][cfg] = sweep_spoke_trim(genes, cfg, radii)
+        rec["candidates"][cfg] = sweep_candidates(genes, cfg, junctions, radii,
+                                                  refinements)
+        rec["price"][cfg] = price(genes, cfg, junctions)
+    rec["self_checks"] = self_checks(rec)
+    return rec
+
+
+def _shipped_row(rec, cfg, junction, name):
+    ship = rec["shipped_radii_mm"][junction]
+    for row in rec["candidates"][cfg][junction]:
+        if abs(row["radius_mm"] - ship) < 1e-9 and row.get("blocks"):
+            return row["blocks"][name]
+    return None
+
+
+def _print(rec):
+    print("\n  CONTROLS (the trimmed spoke at R=0 IS the default spoke)")
+    for cfg, c in rec["controls"].items():
+        print(f"    {cfg:7s} max|dx| = {c['trimmed_spoke_at_zero_max_abs_dx_mm']:.3e} mm"
+              f"   {'PASS' if c['pass'] else 'FAIL'}")
+
+    cfg0 = rec["configs"][0]
+    print("\n  ROUTE 1 AS WRITTEN: the region `A - P_t - B` has TWO CUSPS, "
+          "at every radius")
+    print(f"    {'junction':9s} {'R (mm)':>8s} {'at A (deg)':>11s} {'at P_t (deg)':>13s} "
+          f"{'at B (deg)':>11s} {'flank leg':>10s} {'ring leg':>9s} "
+          f"{'P_t as make junction chords it':>31s}")
+    for junction, rows in rec["region"][cfg0].items():
+        for r in rows:
+            if not r.get("tangency"):
+                print(f"    {junction:9s} {r['radius_mm']:8.4f} "
+                      f"{'no fillet is tangent to both legs':>46s}")
+                continue
+            print(f"    {junction:9s} {r['radius_mm']:8.4f} {r['at_A_deg']:11.4f} "
+                  f"{r['at_P_t_deg']:13.4f} {r['at_B_deg']:11.4f} "
+                  f"{r['leg_flank_mm']:10.4f} {r['leg_ring_chord_mm']:9.4f} "
+                  f"{r['at_P_t_chord_deg']:31.4f}")
+
+    print("\n  ROUTE 2: the angle that fails is a BOUNDARY quantity, so no generated "
+          "interior moves it")
+    for cfg in rec["configs"]:
+        for junction, row in rec["route2"][cfg].items():
+            if not row:
+                continue
+            print(f"    {cfg:7s} {junction:4s} corner {row['unfilleted_angle_deg']:7.3f}"
+                  f" -> {row['angle_deg']:7.3f} deg   end cross-section "
+                  f"{row['unfilleted_end_cross_section_mm']:6.3f} -> "
+                  f"{row['end_cross_section_mm']:6.3f} mm   after {WINSLOW_ITERS} "
+                  f"Winslow sweeps {row['angle_after_winslow_deg']:7.3f} deg "
+                  f"(boundary moved {row['winslow_max_boundary_shift_mm']:.1e} mm)")
+            print(f"    {'':7s} {'':4s} and the two BOUNDARY CURVES themselves meet at "
+                  f"{row['tangent_angle_deg']:.4f} deg -- the node angle above is that "
+                  f"angle sampled, which is why it moves with the config")
+
+    print("\n  THE SPOKE WAS NEVER THE BLOCKER: end it at `s_A` and it is clean")
+    for cfg in rec["configs"]:
+        for junction, rows in rec["spoke_trim"][cfg].items():
+            ok = [r["radius_mm"] for r in rows if r.get("built") and r["valid"]]
+            bad = [r["radius_mm"] for r in rows if r.get("built") and not r["valid"]]
+            no = [r["radius_mm"] for r in rows if not r.get("built")]
+            span = f" ({min(ok):.2f}-{max(ok):.2f} mm)" if ok else ""
+            print(f"    {cfg:7s} {junction:4s} clean at {len(ok)}/{len(rows)} swept "
+                  f"radii{span}"
+                  + (f", folds at {bad}" if bad else "")
+                  + (f", no tangency at {no}" if no else ""))
+
+    print("\n  THE CANDIDATE BLOCKS, AT THE SHIPPED RADII")
+    print(f"    {'config':7s} {'junction':9s} {'candidate':21s} "
+          f"{'mixed cells (1x/2x/4x)':>24s} {'min scaled J':>13s} {'valid':>6s}")
+    for cfg in rec["configs"]:
+        for junction in rec["junctions"]:
+            for name in CANDIDATES:
+                per = _shipped_row(rec, cfg, junction, name)
+                if per is None:
+                    continue
+                got = [per[str(m)] for m in rec["refinements"] if str(m) in per]
+                mixed = "/".join(str(q.get("mixed_sign_cells", "-")) for q in got)
+                sj = got[0].get("min_scaled_jacobian")
+                valid = all(q.get("valid") for q in got)
+                sjs = f"{sj:13.4f}" if sj is not None else f"{'-':>13s}"
+                print(f"    {cfg:7s} {junction:9s} {name:21s} {mixed:>24s} "
+                      f"{sjs} {'YES' if valid else 'no':>6s}")
+
+    print("\n  AND THE ONE THAT WORKS DOES SO ACROSS THE WHOLE GENE BOX")
+    for cfg in rec["configs"]:
+        for junction in rec["junctions"]:
+            rows = [r for r in rec["candidates"][cfg][junction] if r.get("blocks")]
+            per = [r["blocks"]["boundary_layer"] for r in rows]
+            ok = sum(1 for b in per
+                     if all(q["valid"] for q in b.values() if q.get("built")))
+            sj = min(q["min_scaled_jacobian"] for b in per for q in b.values()
+                     if q.get("built"))
+            print(f"    {cfg:7s} {junction:4s} valid at {ok}/{len(rows)} swept radii "
+                  f"x {len(rec['refinements'])} refinements, worst min scaled J "
+                  f"{sj:.4f} (MIN_SJ_TARGET is 0.2)")
+
+    print("\n  WHAT THE ONE THAT WORKS ASKS OF ITS NEIGHBOURS")
+    for cfg in rec["configs"]:
+        for junction, p in rec["price"][cfg].items():
+            if not p.get("radius_mm"):
+                continue
+            print(f"    {cfg:7s} {junction:4s} cut {p['cut_depth_mm']:.4f} mm past the "
+                  f"ring circle ({100.0 * p['cut_depth_fraction_of_ring']:.1f}% of the "
+                  f"{p['ring_depth_available_mm']:.2f} mm available), over a "
+                  f"{p['footprint_deg']:.3f} deg footprint "
+                  f"({100.0 * p['footprint_fraction_of_sector']:.1f}% of the sector); "
+                  f"the notch it needs in the ring block is {p['notch_deg']:.3f} deg; "
+                  f"the spoke gives up {p['spoke_stations_given_up']:.1f} stations")
+
+    sc = rec["self_checks"]
+    print("\n  SELF-CHECKS")
+    for k, v in sc.items():
+        if k == "pass":
+            continue
+        print(f"    {k:40s} {'PASS' if v else 'FAIL'}")
+    print()
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--genome", default="best_solution.json")
+    ap.add_argument("--configs", default=",".join(DEFAULT_CONFIGS))
+    ap.add_argument("--junctions", default=",".join(DEFAULT_JUNCTIONS))
+    ap.add_argument("--out", default="study_fillet_block.json")
+    args = ap.parse_args()
+
+    configs = tuple(c for c in args.configs.split(",") if c)
+    junctions = tuple(j for j in args.junctions.split(",") if j)
+    _gate_guard.refuse_degraded_out(ap, args, "study_fillet_block.json", [
+        (set(configs) != set(DEFAULT_CONFIGS),
+         f"--configs {args.configs} is not the committed "
+         f"{','.join(DEFAULT_CONFIGS)}"),
+        (set(junctions) != set(DEFAULT_JUNCTIONS),
+         f"--junctions {args.junctions} is not the committed "
+         f"{','.join(DEFAULT_JUNCTIONS)}"),
+        (args.genome != "best_solution.json",
+         f"--genome {args.genome} is not the shipped genome"),
+    ])
+
+    t0 = time.time()
+    genes = load_genes(args.genome)
+    rec = build(genes, configs, junctions, radius_grid(genes), REFINEMENTS)
+    rec["genome"] = args.genome
+    rec["seconds"] = round(time.time() - t0, 2)
+    out = os.path.join(HERE, args.out)
+    with open(out, "w") as fh:
+        json.dump(rec, fh, indent=2, sort_keys=True)
+    _print(rec)
+    print(f"  wrote {out}  ({rec['seconds']} s)")
+    raise SystemExit(0 if rec["self_checks"]["pass"] else 1)
+
+
+if __name__ == "__main__":
+    main()

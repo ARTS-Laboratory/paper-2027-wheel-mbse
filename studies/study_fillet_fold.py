@@ -73,6 +73,15 @@ qualitative claim PART 3 and PART 5 agreed on: THE LIMIT TIGHTENS UNDER REFINEME
 belongs to the construction and not to the notch.  Criterion C names which part of the
 construction.
 
+WHAT THIS DOES NOT ASK, AND WHERE THAT QUESTION LIVES
+-----------------------------------------------------
+This file measures at what radius the SHIPPED `fillet=` construction folds.  It does not
+ask whether either of PART 3's two routes out of that construction can be built at all --
+that is `studies/study_fillet_block.py` (`make filletblock`, PART 9), and the answer is
+that neither can as written: the region route 1 names has two zero-degree corners, and
+the angle route 2 would have to fix is between two boundary curves.  The window this file
+reports is therefore a property of one construction, not a bound on filleted meshes.
+
 WHAT THIS DOES NOT DO
 ---------------------
 It does not solve a field, does not touch `best_solution.json`, and does not change the

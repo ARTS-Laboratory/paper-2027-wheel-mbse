@@ -696,10 +696,42 @@ def _lerp_points(a, b, n, xp):
 #
 # Swept, the largest radius this construction survives is 0.20 mm at `coarse` and 0.10
 # at `medium` -- 3 to 30x below what ships, AND TIGHTENING UNDER REFINEMENT, which is
-# what says the limit belongs to the construction and not to the geometry.  A filleted
-# mesh needs a spoke block that is GENERATED (transfinite smoothing with a localised
-# boundary correction) or a dedicated fillet block with its own seam entries.  See
-# FILLET_PLAN.md STEP 1 RECORD PART 3.
+# what says the limit belongs to the construction and not to the geometry.
+#
+# THE TWO FIXES PART 3 PROPOSED FOR THAT ARE BOTH DEAD, MEASURED 2026-08-22
+# (`make filletblock`, FILLET_PLAN.md STEP 1 RECORD PART 9).  PART 3 wrote that a
+# filleted mesh needs "a spoke block that is GENERATED (transfinite smoothing with a
+# localised boundary correction) or a dedicated fillet block with its own seam entries",
+# and that sentence stood here until it was measured:
+#
+#   * GENERATED SPOKE BLOCK.  What fails is the angle at the moved corner -- 3.601 deg
+#     (hub) / 8.524 (rim) between the fillet arc and the end cross-section, 19.800 /
+#     12.432 between the two boundary CURVES.  Both curves are BOUNDARY curves of this
+#     block, and so are all three nodes carrying the angle.  A generated interior holds
+#     the boundary by definition: 2000 Winslow sweeps leave the corner BIT-IDENTICAL.
+#   * DEDICATED FILLET BLOCK on `A - P_t - B`.  A fillet is tangent to both legs, so the
+#     region it adds is a CUSP SLIVER, not a curvilinear triangle: interior angles
+#     0.0000 deg at `B` (exactly -- both curves are circles) and 0.42-0.60 at `A`,
+#     against 38.06 / 38.89 at `P_t`, at every radius in the gene box.  No quad covers a
+#     0 deg corner and no tri-block invents one, because a tri-block subdivides the
+#     region's corners rather than adding to them.
+#
+# WHAT DOES MESH is a BOUNDARY-LAYER block whose four corners are OFF both tangent
+# points: the fillet arc as its free edge, that arc offset INTO the material as its
+# inner edge (full wall at `A`, a cut of depth ~t/2 at `B`), the spoke's end cross
+# section at `s_A` at one end and a radial cut at `B` at the other.  Measured min scaled
+# Jacobian 0.91-1.00 with zero non-positive Gauss points, at every radius from 0.05 to
+# 4.00 mm, both junctions, `coarse` and `medium`, 1x/2x/4x refinement.  ITS PRICE IS THE
+# CUT AT `B`: it lands INSIDE the collar (0.711 mm, 14% of the 5 mm depth) or the band
+# (0.651 mm, 43% of 1.5), so the ring circle stops being the junction/collar interface
+# over the fillet's footprint and the ring block has to be notched -- 7.00 deg at the
+# hub, 2.94 at the rim.  That is a re-cut of the neighbours, and it is NOT built here.
+#
+# AND THE SPOKE WAS NEVER THE BLOCKER.  Take the arc off this block's flank edge and end
+# the spoke at the tangent station `s_A` instead, and the same ruled block is clean --
+# zero mixed cells, zero non-positive Gauss points -- at 0.05 to 4.00 mm at both configs,
+# where the construction below has a usable window of 0.12-0.24.  PART 3's "the spoke
+# block is ruled" was a statement about WHERE THE FILLET WAS PUT.
 #
 # THOSE TWO RADII WERE CONTESTED AND ARE NOW SETTLED IN THEIR FAVOUR (2026-08-22,
 # `make fillet`, FILLET_PLAN.md STEP 1 RECORD PART 6).  A second sweep on 2026-08-21 put

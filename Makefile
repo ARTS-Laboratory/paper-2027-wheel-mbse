@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner junction fillet reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner junction fillet filletblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -106,6 +106,9 @@ help:
 	@echo "              the field AT the corner — radial decay, and whether the"
 	@echo "              peak diverges under refinement — against Williams' wedge"
 	@echo "              eigenvalue. 8.5 s for the whole ladder (PLAN §30)"
+	@echo "make filletblock  can the fillet BE a block? the region PART 3 named has"
+	@echo "              two cusps; the boundary-layer block that meshes, and what"
+	@echo "              it asks of the collar. ~42 s, geometry only"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -704,6 +707,27 @@ FILLET_OUT ?= study_fillet_fold.json
 
 fillet:
 	$(PY_OPT) -u studies/study_fillet_fold.py --out $(FILLET_OUT)
+
+# ---------------------------------------------------------------------------
+# CAN THE FILLET BE A BLOCK AT ALL?  (FILLET_PLAN.md PART 9)
+# ---------------------------------------------------------------------------
+# ~42 s, GEOMETRY AND JACOBIANS ONLY, and like `fillet` and `junction` it is off the
+# `studies` critical path.  `make fillet` settled what "valid" MEANS for a filleted mesh
+# (det J at the Gauss points); this asks the question in front of it — whether either of
+# PART 3's two routes has a REGION that can be a block — before a week is spent building
+# one.  Same discipline as PART 7 and PART 8: re-check the premise before spending.
+#
+# It reports three things and exits nonzero on none of them: that the region PART 3 named
+# has TWO CUSPS (0.0000 deg at B, 0.42-0.60 at A) so route 1 as written is not a block;
+# that route 2's failing angle is between two BOUNDARY curves and an elliptic interior
+# solve leaves it bit-identical; and that a BOUNDARY-LAYER block whose corners are off
+# both tangent points meshes at every radius in the gene box, min scaled Jacobian 0.91+.
+# It EXITS NONZERO only on a self-check: the controls, the exactness of the cusp at B, or
+# the route-2 invariance.
+FILLETBLOCK_OUT ?= study_fillet_block.json
+
+filletblock:
+	$(PY_OPT) -u studies/study_fillet_block.py --out $(FILLETBLOCK_OUT)
 
 # ---------------------------------------------------------------------------
 # THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds
