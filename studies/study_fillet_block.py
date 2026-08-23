@@ -132,6 +132,15 @@ import study_fillet_fold as ff
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+# The barrier `wheel_objective` puts on the mesh.  Imported rather than repeated, for the
+# same reason `study_tri_block` imports it: a floor quoted from memory in a study is a
+# floor that drifts from the one the optimizer enforces.
+try:
+    import wheel_objective as WO
+    MIN_SJ_TARGET = float(WO.MIN_SJ_TARGET)
+except Exception:                                    # pragma: no cover - import guard
+    MIN_SJ_TARGET = 0.2
+
 DEFAULT_CONFIGS = ("coarse", "medium")
 DEFAULT_JUNCTIONS = ("hub", "rim")
 
@@ -1024,6 +1033,48 @@ def sector_fit_limit(genes, cfg, junction):
     return {"limited": True, "radius_mm": 0.5 * (lo + hi)}
 
 
+# PART 10 FINDING 6's refusal, turned from a count into a number that predicts it.  Six of
+# sixteen drawn genomes refused the blocking outright and every refusal was the same one --
+# the hub fillet's tangent point swept past the next sector's corner at that genome's own
+# `R_hub`.  That is `sector_fit_limit` arriving as a GENOME property rather than a radius
+# one, so the margin against it is computable per genome, before any block is built.
+SECTOR_FIT_CLAMP = 0.95
+
+
+def sector_fit_margin(genes, cfg, junctions=DEFAULT_JUNCTIONS):
+    """Each junction's radius against the radius its own sector has room for.
+
+    `binds` is the prediction: a genome whose drawn radius exceeds its own limit has no
+    free ring block to build and the blocking must refuse.  Reported as a MARGIN and not
+    as a boolean, because a gate written on a boolean cannot say how close the rest of the
+    box is to it -- and `sweep_genomes` finds margins from -0.48 mm to +5.90 mm on genomes
+    that all pass the same feasibility filter.
+    """
+    out = {}
+    for j in junctions:
+        R = float(genes[12 if j == "hub" else 13])
+        L = sector_fit_limit(genes, cfg, j)["radius_mm"]
+        out[j] = {"R_mm": R, "limit_mm": L,
+                  "margin_mm": None if L is None else float(L - R),
+                  "binds": bool(L is not None and R > L)}
+    return out
+
+
+def clamped_radii(margins, factor=SECTOR_FIT_CLAMP):
+    """The two radii, each pulled back to a fraction of the room its sector has.
+
+    A FIX rather than a gate, and the two are different things this file must not blur.
+    The gate is `binds` above: it costs nothing and loses the genome.  This keeps the
+    genome and models a SMALLER fillet than its genes asked for, which is honest for an
+    instrument sweeping the box and is honest for an optimizer only if the clamped value
+    is what the objective is told it got.  `factor` exists because the limit is where the
+    free ring block's span reaches ZERO, and a block of zero span is not a block.
+    """
+    return tuple(
+        m["R_mm"] if m["limit_mm"] is None else min(m["R_mm"], factor * m["limit_mm"])
+        for m in (margins["hub"], margins["rim"]))
+
+
 def landing_angles(genes, cfg, junctions):
     """Why the shallow cut cannot close: the offset lands TANGENT to the ring's circles.
 
@@ -1262,6 +1313,10 @@ def sweep_genomes(cfg, per_orientation=GENOME_SWEEP_PER_ORIENTATION,
             row = {"orientation": list(o), "genes": [float(x) for x in vec],
                    "R_hub_mm": float(vec[12]), "R_rim_mm": float(vec[13]),
                    "control_min_scaled_jacobian": ctl["min_scaled_jacobian"],
+                   # Carried so that a refusal has a NUMBER and not just a reason: the
+                   # margin is computed from the geometry alone and is what says whether
+                   # the refusal was predictable before the blocking was attempted.
+                   "fit": sector_fit_margin(vec, cfg),
                    "built": v["built"]}
             if v["built"]:
                 open_seams = [f"{x['a']}.{x['side_a']}~{x['b']}.{x['side_b']}"
@@ -1279,6 +1334,71 @@ def sweep_genomes(cfg, per_orientation=GENOME_SWEEP_PER_ORIENTATION,
         batch += 1
     return {"seed": seed, "config": cfg, "per_orientation": per_orientation,
             "groups": {str(list(k)): v for k, v in sorted(groups.items())}}
+
+
+SECTOR_FIT_FACTORS = (0.99, 0.95, 0.90, 0.75)
+
+
+def sweep_sector_fit_clamp(genes, cfg, genome_rows, factors=SECTOR_FIT_FACTORS):
+    """Does pulling each radius back inside its own sector's room fix the refusals?
+
+    PART 10 FINDING 6 counted six refusals of sixteen and named their mechanism; PART 13
+    then declined the genome-robust layer profile partly BECAUSE the refusals were
+    untouched by it, so "six of sixteen still refuse outright regardless" and nothing
+    would collect what the profile bought.  This measures the other half of that sentence.
+
+    Two profiles are crossed with the clamp on purpose.  The clamp's own worth is the
+    `built` column at the SHIPPED profile -- that is the refusal half of PLAN.md's item 2,
+    on its own.  Crossing it with the genome-robust profile is what re-prices PART 13's
+    decision, which was taken against a box where six genomes could not benefit from any
+    profile at all.
+    """
+    profiles = (("shipped", LAYER_ENTRY_SLOPE, LAYER_END_OFFSET),
+                ("genome_robust", GENOME_ROBUST_ENTRY, GENOME_ROBUST_END))
+    cells = [(np.asarray(r["genes"], float), r["fit"]) for r in genome_rows
+             if "fit" in r]
+    shipped_fit = sector_fit_margin(np.asarray(genes, float), cfg)
+    rows = []
+    for label, entry, end in profiles:
+        for factor in (None,) + tuple(factors):
+            built, clear, vals, n_clamped = 0, 0, [], {"hub": 0, "rim": 0}
+            refusals = []
+            for vec, fit in cells:
+                if factor is None:
+                    R_hub, R_rim = fit["hub"]["R_mm"], fit["rim"]["R_mm"]
+                else:
+                    R_hub, R_rim = clamped_radii(fit, factor)
+                    for j, R in (("hub", R_hub), ("rim", R_rim)):
+                        n_clamped[j] += int(R < fit[j]["R_mm"])
+                try:
+                    v = sector_verdict(vec, cfg, R_hub, R_rim, entry, end)
+                except Exception as exc:          # a drawn genome must not kill the driver
+                    refusals.append(f"{type(exc).__name__}")
+                    continue
+                if not v["built"]:
+                    refusals.append(v["why"].split(":")[0])
+                    continue
+                built += 1
+                vals.append(v["min_scaled_jacobian"])
+                clear += int(v["min_scaled_jacobian"] > MIN_SJ_TARGET)
+            rows.append({
+                "profile": label, "entry": float(entry), "end": float(end),
+                "factor": factor, "n_genomes": len(cells),
+                "n_built": built, "n_clears_target": clear,
+                "n_clamped": n_clamped, "refusals": refusals,
+                "min_scaled_jacobian_range": ([min(vals), max(vals)] if vals else None),
+                "median_min_scaled_jacobian": (float(sorted(vals)[len(vals) // 2])
+                                               if vals else None)})
+    return {"config": cfg, "factors": [float(f) for f in factors],
+            "clamp_used_in_report": SECTOR_FIT_CLAMP,
+            "shipped_fit": shipped_fit,
+            # The clamp is only free if it does not touch the genome every published
+            # number in this file is measured at.  Stated as a field rather than left to
+            # be inferred from the two radii above.
+            "shipped_is_clamped": bool(any(
+                m["limit_mm"] is not None and m["R_mm"] > SECTOR_FIT_CLAMP * m["limit_mm"]
+                for m in shipped_fit.values())),
+            "rows": rows}
 
 
 def build_sector_section(genes, configs, junctions):
@@ -1328,6 +1448,14 @@ def build_sector_section(genes, configs, junctions):
             # at the first config, reusing the genomes `sweep_genomes` already drew
             # rather than drawing a second set.
             "profile_genomes": (sweep_layer_profile_genomes(
+                genes, cfg,
+                [r for rows in out["genomes"]["groups"].values() for r in rows])
+                if cfg == configs[0] else None),
+            # The REFUSAL half of PLAN.md's item 2, priced.  Same config as the genome
+            # sweep it reads, for the same reason `profile_genomes` is: it re-uses those
+            # rows rather than drawing a second set, and the margins in them were the
+            # expensive part.
+            "fit_clamp": (sweep_sector_fit_clamp(
                 genes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows])
                 if cfg == configs[0] else None),
@@ -1407,6 +1535,19 @@ def self_checks(rec):
         rows = [r for v in sec["genomes"]["groups"].values() for r in v if r["built"]]
         checks["sector_seams_close_at_every_orientation"] = bool(
             rows and all(r["seams_close"] for r in rows))
+        # The margin is only useful if it PREDICTS.  Structural, so it gates: a margin
+        # that classified some other way would be a number this file reports as a cause
+        # while the causation ran elsewhere, which is worse than not reporting it.  How
+        # MANY genomes refuse is a characterisation finding and is not gated.
+        allr = [r for v in sec["genomes"]["groups"].values() for r in v]
+        checks["the_hub_margin_predicts_every_refusal"] = bool(
+            allr and all(r["fit"]["hub"]["binds"] != r["built"] for r in allr))
+        fc = sec["per_config"][rec["configs"][0]].get("fit_clamp")
+        if fc:
+            # And the clamp is only free if it leaves the genome every other number in
+            # this file is measured at alone.
+            checks["the_clamp_is_inert_on_the_shipped_genome"] = (
+                not fc["shipped_is_clamped"])
     checks["pass"] = bool(all(v for k, v in checks.items() if k != "pass"))
     return checks
 
@@ -1677,6 +1818,58 @@ def _print(rec):
               "passed the next sector's corner")
         print("    -- so the blocking is measured for STEP 2 (one genome, one mesh) and "
               "is NOT yet fit for the OPTIMIZER, which sweeps genomes.")
+
+        fc = sec["per_config"][cfg0].get("fit_clamp")
+        if fc:
+            print("\n  AND THE REFUSAL IS PREDICTED BY A NUMBER, NOT ONLY EXPLAINED "
+                  f"AFTERWARDS (at {cfg0})")
+            print(f"      {'orientation':13s} {'R_hub':>7s} {'limit':>8s} "
+                  f"{'margin':>8s} {'binds':>6s} {'built':>6s}")
+            wrong = 0
+            for r in allrows:
+                f = r["fit"]["hub"]
+                lim = "none" if f["limit_mm"] is None else f"{f['limit_mm']:.4f}"
+                mar = "-" if f["margin_mm"] is None else f"{f['margin_mm']:+.4f}"
+                wrong += int(f["binds"] == r["built"])
+                print(f"      {str(r['orientation']):13s} {f['R_mm']:7.4f} {lim:>8s} "
+                      f"{mar:>8s} {str(f['binds']):>6s} {str(r['built']):>6s}")
+            print(f"    the hub margin classifies {len(allrows) - wrong}/{len(allrows)}: "
+                  "every genome whose own R_hub exceeds its own sector-fit limit refuses, "
+                  "and no other does.")
+            sfit = fc["shipped_fit"]
+            print(f"    the SHIPPED genome is not near it — hub {sfit['hub']['R_mm']:.4f} "
+                  f"against a limit of "
+                  + ("none" if sfit["hub"]["limit_mm"] is None
+                     else f"{sfit['hub']['limit_mm']:.4f}")
+                  + f", rim {sfit['rim']['R_mm']:.4f} against "
+                  + ("none" if sfit["rim"]["limit_mm"] is None
+                     else f"{sfit['rim']['limit_mm']:.4f}")
+                  + f" — so the clamp is inert on it: {not fc['shipped_is_clamped']}")
+
+            print("\n  SO WHAT DOES CLAMPING EACH RADIUS INSIDE ITS OWN SECTOR'S ROOM BUY?")
+            print(f"      {'profile':14s} {'clamp':>6s} {'built':>7s} {'clears 0.2':>11s} "
+                  f"{'clamped h/r':>12s} {'min scaled J range':>21s} {'median':>8s}")
+            for row in fc["rows"]:
+                k = "none" if row["factor"] is None else f"{row['factor']:.2f}"
+                rng = ("-" if row["min_scaled_jacobian_range"] is None else
+                       f"{row['min_scaled_jacobian_range'][0]:+.4f}..."
+                       f"{row['min_scaled_jacobian_range'][1]:+.4f}")
+                print(f"      {row['profile']:14s} {k:>6s} "
+                      f"{row['n_built']:4d}/{row['n_genomes']:<2d} "
+                      f"{row['n_clears_target']:8d}/{row['n_genomes']:<2d} "
+                      f"{row['n_clamped']['hub']:6d}/{row['n_clamped']['rim']:<5d} "
+                      f"{rng:>21s} {row['median_min_scaled_jacobian']:8.4f}")
+            print("    the clamp is the REFUSAL half of PLAN.md's item 2 and it closes "
+                  "it: every drawn genome builds.")
+            print("    it is a FIX and not a gate — it models a smaller fillet than the "
+                  "genes asked for, which is honest")
+            print("    for an instrument sweeping the box and honest for an optimizer "
+                  "only if the objective is told")
+            print("    the clamped radius.  The `binds` column above is the gate, and it "
+                  "costs nothing.")
+            print("    MEASURED, NOT ADOPTED: `sector_blocks` and `build_wheel` are "
+                  "untouched and still take the")
+            print("    radii they are given.")
 
         print("\n  THE NODE COUNT IT FORCES")
         for cfg, per in sec["per_config"].items():

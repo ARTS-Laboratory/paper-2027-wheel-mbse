@@ -707,6 +707,91 @@ def test_the_genome_diverse_profile_clears_the_barrier_except_the_flank_defect_g
             row["R_hub_mm"], row["R_rim_mm"], v)
 
 
+def test_the_hub_margin_PREDICTS_the_refusal_rather_than_explaining_it(report):
+    """The refusal turned into a number, and the number checked as a classifier.
+
+    PART 10 FINDING 6 counted six refusals of sixteen and named the mechanism -- the hub
+    fillet's tangent point had swept past the next sector's corner.  A named mechanism is
+    not the same as a predictor, and this is the difference: `sector_fit_margin` is
+    computed from the geometry ALONE, before any block is attempted, and it must classify
+    the committed draw exactly.  Re-derived here rather than read, because a margin that
+    agreed with the artifact but not with the code would be the failure worth catching.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    assert len(rows) == 16, len(rows)
+    for row in rows:
+        fit = fb.sector_fit_margin(np.asarray(row["genes"], float), "coarse")
+        assert fit["hub"]["binds"] == row["fit"]["hub"]["binds"]
+        assert fit["hub"]["binds"] is not row["built"], (
+            f"the hub margin misclassifies R_hub={row['R_hub_mm']:.4f}: "
+            f"binds={fit['hub']['binds']} built={row['built']}")
+    assert sum(1 for r in rows if not r["built"]) == 6, (
+        "the committed draw's refusal count moved — a finding, not a pass")
+
+
+def test_clamping_to_the_sector_fit_limit_closes_the_REFUSAL_half(report):
+    """The fix, and the two halves of PLAN.md item 2 kept apart.
+
+    Clamping each radius inside the room its own sector has makes every drawn genome
+    build; it does NOT make them all clear the barrier, and those are the refusal half and
+    the quality half.  Both are asserted, so that a run in which the clamp appeared to
+    solve the whole item would register as a finding rather than as a pass.
+
+    And the clamp only counts as free because it is inert on the shipped genome -- every
+    other number in this file is measured there.
+    """
+    fc = report["sector"]["per_config"]["coarse"]["fit_clamp"]
+    assert fc["shipped_is_clamped"] is False
+    assert fc["shipped_fit"]["hub"]["binds"] is False
+
+    def row(profile, factor):
+        return next(r for r in fc["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    base = row("shipped", None)
+    clamped = row("shipped", fb.SECTOR_FIT_CLAMP)
+    assert base["n_built"] < base["n_genomes"], "nothing refused — that is a finding"
+    assert clamped["n_built"] == clamped["n_genomes"]
+    assert clamped["n_clears_target"] > base["n_clears_target"]
+    assert clamped["n_clears_target"] < clamped["n_genomes"], (
+        "the clamp now clears the barrier everywhere at the SHIPPED profile — the "
+        "quality half of item 2 would be closed too, which is a finding")
+
+    # and the clamp is insensitive to its own factor, or it would be a tuned constant
+    for f in fc["factors"]:
+        assert row("shipped", f)["n_built"] == clamped["n_genomes"]
+
+
+def test_the_clamp_re_prices_the_layer_profile_PART_13_declined(report):
+    """PART 13's premise, re-checked: it declined the profile partly because of a fact.
+
+    "the hub sector-fit refusal is untouched by either choice, so six of sixteen feasible
+    genomes still refuse outright regardless" -- so nothing would collect what the
+    genome-robust profile bought.  With the clamp that premise is false, and the prize is
+    much larger than it was weighed against.  This pins the re-pricing, and pins that the
+    profile is STILL not adopted, because PART 13's OTHER reason (the shipped genome's
+    deflection-convergence spread) is untouched by the clamp.
+    """
+    fc = report["sector"]["per_config"]["coarse"]["fit_clamp"]
+
+    def row(profile, factor):
+        return next(r for r in fc["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    k = fb.SECTOR_FIT_CLAMP
+    assert row("genome_robust", None)["n_built"] == row("shipped", None)["n_built"], (
+        "the profile does not change WHETHER a genome fits its sector, only how well "
+        "its blocks mesh — if that stopped being true the two halves have coupled")
+    assert row("genome_robust", k)["n_clears_target"] > row("shipped", k)["n_clears_target"]
+    assert (row("genome_robust", k)["n_clears_target"]
+            > row("genome_robust", None)["n_clears_target"])
+
+    # measured, not adopted: the module constants are still PART 10's
+    assert ww.FILLET_LAYER_ENTRY_SLOPE == fb.LAYER_ENTRY_SLOPE
+    assert ww.FILLET_LAYER_END_OFFSET == fb.LAYER_END_OFFSET
+    assert fb.GENOME_ROBUST_ENTRY != fb.LAYER_ENTRY_SLOPE
+
+
 @pytest.mark.parametrize("cfg", SECTOR_CFGS)
 def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
     """The tri-block's question, asked from the fillet's side and answered against it.

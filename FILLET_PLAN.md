@@ -1847,3 +1847,138 @@ untouched and is where the next unit of work on this item belongs — it is the 
 still costs six of sixteen genomes outright, at either profile. A third, unrelated
 finding — the flank near-self-intersection one genome's trim exposed — is filed above
 rather than folded into either.
+
+---
+
+# STEP 1 RECORD, PART 14 — 2026-08-23. THE REFUSAL HALF HAS A FIX, IT IS ONE LINE OF ARITHMETIC AGAINST A NUMBER THIS FILE ALREADY COMPUTED, AND IT RE-PRICES PART 13'S DECISION
+
+PART 13 split PLAN.md's item 2 into a QUALITY half and a REFUSAL half and said the
+refusal half "is where the next unit of work on this item belongs". This is that unit.
+It also named exactly what would change its own call — *"(1) the hub sector-fit refusal
+gets its own fix or its own exposed margin"* — and both of those turn out to be the same
+number.
+
+## THE REFUSAL WAS ALREADY PREDICTABLE AND NOBODY HAD ASKED IT TO PREDICT
+
+FINDING 4 bisected `sector_fit_limit`: the radius at which the fillet's tangent point
+reaches the NEXT sector's corner and the ring's free block runs out of span. FINDING 6
+then found six refusals of sixteen and named their mechanism as that same limit "arriving
+as a genome property rather than a radius one". What was never done is the obvious next
+step — compute the limit **per drawn genome** and compare it to that genome's own `R_hub`.
+
+`sector_fit_margin` does. On the committed draw at `coarse`:
+
+```
+  R_hub   limit   margin    binds   built          R_hub   limit   margin    binds   built
+ 0.7278  3.1846  +2.4569    False    True         0.7737  1.2503  +0.4766    False    True
+ 0.6021  3.6500  +3.0480    False    True         0.7065  3.8477  +3.1412    False    True
+ 0.8888  0.7220  -0.1668     True   False         0.5635  6.4615  +5.8980    False    True
+ 0.9002  1.5617  +0.6615    False    True         1.0398  0.9759  -0.0640     True   False
+ 0.8029  1.6434  +0.8405    False    True         1.1008  1.3555  +0.2547    False    True
+ 2.1081  1.7410  -0.3671     True   False         2.0455  1.6816  -0.3639     True   False
+ 0.9790  4.5276  +3.5486    False    True         0.5533  0.0699  -0.4833     True   False
+ 0.4411  0.5904  +0.1494    False    True         1.7547  1.5901  -0.1646     True   False
+```
+
+**It classifies 16 of 16.** Every genome whose own `R_hub` exceeds its own limit refuses;
+no other one does. That makes the refusal a *feasibility number computable before any
+block is attempted* rather than an exception caught afterwards, which is what a gate needs
+and what `evaluate_design`'s `x_order`/`hub_overlap` pair already are.
+`the_hub_margin_predicts_every_refusal` is a self-check, and
+`test_the_hub_margin_PREDICTS_the_refusal_rather_than_explaining_it` re-derives it rather
+than reading the artifact.
+
+**The margins are not marginal.** They run from **-0.4833 mm to +5.8980 mm** across
+sixteen genomes that all pass the same feasibility filter, and one genome's limit is
+**0.0699 mm** — a sector with essentially no room for a hub fillet at all. This is a
+genuinely wide feature of the design space, not a boundary effect.
+
+## AND THE FIX IS THE SAME NUMBER USED THE OTHER WAY
+
+`clamped_radii` pulls each radius back to a fraction of its own limit.
+`sweep_sector_fit_clamp` crosses that with both layer profiles:
+
+```
+  profile         clamp    built   clears 0.2   clamped h/r   min scaled J range    median
+  shipped          none    10/16       4/16         0/0        -0.0508...+0.2898    0.1780
+  shipped          0.95    16/16       8/16         6/1        -0.0508...+0.2898    0.2081
+  genome_robust    none    10/16       9/16         0/0        -0.0508...+0.4592    0.2872
+  genome_robust    0.95    16/16      15/16         6/1        -0.0508...+0.5156    0.2915
+```
+
+**The refusal half closes completely: 10/16 built becomes 16/16.** At the shipped profile
+that is 4/16 clearing the barrier becoming 8/16 — the refusal half was worth four genomes,
+and the quality half is still holding eight back.
+
+**And the clamp is free at the shipped genome.** Hub `R = 0.6636` against a limit of
+`3.1297`; the rim has no limit at all at any radius swept. `shipped_is_clamped` is False
+and `the_clamp_is_inert_on_the_shipped_genome` is a self-check, so every other number in
+this file is measured on a genome the clamp does not touch.
+
+**It is insensitive to its own factor.** 0.99, 0.95, 0.90 and 0.75 all give 16/16, and
+0.99..0.90 give the identical quality range. The factor exists only because the limit is
+where the free block's span reaches ZERO and a block of zero span is not a block; it is
+not a tuned constant, and the test asserts the insensitivity rather than the value.
+
+**A GATE AND A FIX ARE DIFFERENT THINGS AND THIS FILE MUST NOT BLUR THEM.** The `binds`
+column is a gate: it costs nothing, it is exact, and it loses the genome. The clamp keeps
+the genome and models a **smaller fillet than its genes asked for** — honest for an
+instrument sweeping the box, and honest for an optimizer *only if the objective is told
+the clamped radius*. If `R_hub`/`R_rim` become live FEA genes (Step 3 item 1) the clamp is
+exactly a bound projection, which is standard — but the projected value has to be what is
+reported back, or the mesh and the genome describe different parts.
+
+## WHAT THIS DOES TO PART 13'S DECISION
+
+PART 13 declined the genome-robust layer profile for two reasons. The first stands
+untouched: at that pair the shipped genome's filleted axle-drop spread more than triples
+(0.141% -> 0.513%) and crosses back over the +-0.3% band, and nothing about the clamp
+changes that — it is a measurement at the shipped genome, which the clamp is inert on.
+
+The second does not. PART 13 wrote:
+
+> the hub sector-fit refusal (PART 10 FINDING 4/6) is untouched by either choice, so six
+> of sixteen feasible genomes still refuse outright regardless — so adopting it now would
+> spend a working, already-published result on a benefit nothing yet reaches.
+
+**That premise is now false**, and the prize it was weighed against was too small by more
+than half. With the clamp, the genome-robust profile takes the draw from 8/16 clearing the
+barrier to **15/16** — the single exception being the genome whose own TRIMMED SPOKE
+folds, which PART 13 already isolated and which no choice of `entry`/`end` reaches. Against
+"9 of 10 built genomes" measured over a box where six could not participate, this is 15 of
+16 over the whole draw.
+
+**The call does not change today, and the reason it does not is now a single reason
+instead of two.** The shipped genome's deflection-convergence spread is a real, published
+cost and nothing yet consumes the genome robustness — `fillet=` is still not wired into
+`wheel_objective` or the GA. But "nothing yet consumes it" is a statement about ordering,
+not about worth, and the worth just went up by a factor of two. `test_the_clamp_re_prices_
+the_layer_profile_PART_13_declined` pins the re-pricing and pins that the constants have
+NOT moved.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, `FILLET_LAYER_
+ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET` still at PART 10's values, `sector_blocks` and
+`build_wheel` untouched and still taking the radii they are given, and no threshold
+moved.** The clamp exists as `clamped_radii` in the study and is called by nothing outside
+it. The regenerated `studies/study_fillet_block.json` was diffed field-by-field against the
+committed one: **purely additive** — the `fit` block on each genome row, the `fit_clamp`
+section, and two self-checks. Every previously-committed field reproduces exactly.
+
+`make filletblock` is now ~180 s rather than ~85 s — the margins are 32 bisections — and
+the Makefile's help says so.
+
+## WHAT PART 14 LEAVES
+
+1. **The quality half, which is now the whole of item 2.** Eight of sixteen still sit under
+   the barrier at the shipped profile with the clamp in place, and the genome-robust
+   profile takes that to 15/16 at a cost measured only at the shipped genome. The next
+   question is whether that cost can be avoided — a profile derived against genomes AND
+   constrained to hold the shipped genome's convergence spread, which is a two-objective
+   version of PART 13's argmax and has not been attempted.
+2. **Re-derive the profile argmax against the CLAMPED draw.** `GENOME_ROBUST_ENTRY/END` is
+   the argmax over ten genomes because six could not build. Sixteen can now. The pair may
+   or may not move; it has not been asked.
+3. **The trimmed-spoke fold**, unchanged and still the one genome no profile reaches.
+4. **The flank near-self-intersection** filed in PART 13, unchanged.

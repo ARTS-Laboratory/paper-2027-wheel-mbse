@@ -8407,3 +8407,92 @@ the committed one: the only non-additive change is the wall clock. `make tribloc
 9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 11. **The element-validity check** (§44).
+
+---
+
+## §57 — 2026-08-23. THE FILLETED BLOCKING'S REFUSAL HALF CLOSES, THE NUMBER THAT CLOSES IT WAS ALREADY IN THE FILE, AND IT DOUBLES WHAT §54'S SHELVED PROFILE IS WORTH
+
+§56 ranked "the filleted blocking's REFUSAL half — the hub sector-fit limit, 6 of 16
+feasible genomes" first, noting it had been ranked second through two revisions without
+being touched. It is now measured. FILLET_PLAN.md's STEP 1 RECORD PART 14 has the full
+record; this is the section number, the two findings that reach outside the fillet arc,
+and the ranking.
+
+**The refusal was already predictable.** §48's FINDING 4 bisected `sector_fit_limit` — the
+radius at which the fillet's tangent point reaches the next sector's corner — and FINDING 6
+named it as the mechanism behind all six refusals. What nobody had done is compute it **per
+drawn genome** and compare it to that genome's own `R_hub`. `sector_fit_margin` does, and
+**it classifies 16 of 16**: every genome whose radius exceeds its own limit refuses, no
+other does. The margins run -0.4833 to +5.8980 mm across genomes that all pass the same
+feasibility filter, so this is a wide feature of the design space rather than a boundary
+effect. That turns the refusal from an exception caught after a build attempt into a
+feasibility number of the same kind as `evaluate_design`'s `x_order`/`hub_overlap` pair —
+which is the shape the flank near-self-intersection gate (item 2 below) also wants.
+
+**And the fix is the same number used the other way.**
+
+```
+  profile         clamp    built   clears 0.2   min scaled J range    median
+  shipped          none    10/16       4/16      -0.0508...+0.2898    0.1780
+  shipped          0.95    16/16       8/16      -0.0508...+0.2898    0.2081
+  genome_robust    none    10/16       9/16      -0.0508...+0.4592    0.2872
+  genome_robust    0.95    16/16      15/16      -0.0508...+0.5156    0.2915
+```
+
+Clamping each radius inside its own sector's room makes **every drawn genome build**, and
+it is inert on the shipped genome (hub 0.6636 against a limit of 3.1297; the rim has no
+limit at all), so it costs the arc's published numbers nothing. It is insensitive to its
+own factor across 0.75-0.99, and the test asserts the insensitivity rather than the value.
+
+**A gate and a fix are different and the record keeps them apart.** `binds` is the gate:
+exact, free, and it loses the genome. The clamp keeps the genome and models a smaller
+fillet than the genes asked for — fine for an instrument sweeping the box, fine for an
+optimizer only if the objective is told the clamped radius. If `R_hub`/`R_rim` become live
+FEA genes the clamp is a bound projection, which is standard, provided the projected value
+is what is reported back.
+
+**THE FINDING THAT REACHES OUTSIDE THE FILLET ARC: §54's decision was taken against a
+premise that is now false.** §54/FILLET_PLAN PART 13 declined the genome-robust layer
+profile for two reasons. The first stands: it costs the shipped genome's filleted
+axle-drop spread 0.141% -> 0.513%, back across the ±0.3% band, and the clamp does not
+touch that. The second was that the refusals were untouched by any profile, so *"six of
+sixteen feasible genomes still refuse outright regardless"* and nothing would collect what
+the profile bought. With the clamp, that profile takes the draw from 8/16 clearing the
+barrier to **15/16** — the exception being the trimmed-spoke genome §54 already isolated.
+**The call does not change, and it now rests on one reason instead of two.** That is worth
+recording as a general lesson and not only as a fillet fact: a "measured, not adopted"
+decision is a decision against a *state of the world*, and this arc has now produced three
+of them in four sections. They need re-checking when the world moves, not just citing.
+
+**Measured, not adopted.** `sector_blocks` and `build_wheel` are untouched and still take
+the radii they are given; `clamped_radii` is called by nothing outside the study;
+`FILLET_LAYER_ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET` are still §48's. The regenerated
+artifact was diffed field-by-field against the committed one and is purely additive.
+`make filletblock` is now ~180 s and the Makefile's help says so.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §57
+
+1. **A feasibility gate that catches the flank near-self-intersection §54 found.** Now the
+   top item, and §57 makes it a better-posed one: `sector_fit_margin` is a worked example
+   of the exact shape wanted — a quantity computed from the geometry alone, before any
+   build, that classifies the draw without a false positive. The flank defect needs the
+   same treatment and does not have it.
+2. **The QUALITY half of the filleted blocking, which is now the whole of the old item 2.**
+   Eight of sixteen sit under the barrier at the shipped profile with the clamp in place.
+   The open question §57 leaves is whether §54's profile gain can be had without §54's
+   cost — a profile derived against genomes AND constrained to hold the shipped genome's
+   convergence spread, which is a two-objective version of §54's argmax and has not been
+   attempted. Re-deriving that argmax against the now-buildable sixteen (rather than ten)
+   is the cheap first half of it.
+3. **What makes a region impossible** (§56) — the quantity separating the 0.491-bow genome
+   that refuses the curved Y from the 0.498-bow one it reaches.
+4. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+5. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** §57 raises this
+   one's stakes: the clamp is exactly the bound projection such genes would need, and it is
+   now measured.
+6. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+7. **Make `modelled_area_reference` fillet-aware** (§50).
+8. **The REST of §45's audit list** (§49).
+9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+11. **The element-validity check** (§44).

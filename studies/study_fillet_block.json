@@ -9525,7 +9525,7 @@
       }
     }
   },
-  "seconds": 102.16,
+  "seconds": 177.32,
   "sector": {
     "block_order": [
       "spoke",
@@ -9589,6 +9589,20 @@
               "hub": -1,
               "rim": -1
             },
+            "fit": {
+              "hub": {
+                "R_mm": 0.7277530563973396,
+                "binds": false,
+                "limit_mm": 3.18461795388622,
+                "margin_mm": 2.4568648974888805
+              },
+              "rim": {
+                "R_mm": 2.950315107608208,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
+            },
             "genes": [
               9.634532323787912,
               -6.708958103454709,
@@ -9625,6 +9639,20 @@
               "hub": -1,
               "rim": -1
             },
+            "fit": {
+              "hub": {
+                "R_mm": 0.6020622237610639,
+                "binds": false,
+                "limit_mm": 3.6500289766779304,
+                "margin_mm": 3.0479667529168664
+              },
+              "rim": {
+                "R_mm": 2.085778174741535,
+                "binds": false,
+                "limit_mm": 4.910460382719354,
+                "margin_mm": 2.8246822079778187
+              }
+            },
             "genes": [
               9.476802129763865,
               -14.461237910255239,
@@ -9656,6 +9684,20 @@
             "R_rim_mm": 2.040798851720207,
             "built": false,
             "control_min_scaled_jacobian": 0.8070470162159806,
+            "fit": {
+              "hub": {
+                "R_mm": 0.8888180432185063,
+                "binds": true,
+                "limit_mm": 0.7219977075982273,
+                "margin_mm": -0.16682033562027898
+              },
+              "rim": {
+                "R_mm": 2.040798851720207,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
+            },
             "genes": [
               7.461925444644915,
               -31.334257234112172,
@@ -9687,6 +9729,20 @@
             "dk": {
               "hub": -1,
               "rim": -1
+            },
+            "fit": {
+              "hub": {
+                "R_mm": 0.9001968183990416,
+                "binds": false,
+                "limit_mm": 1.5616902710410487,
+                "margin_mm": 0.6614934526420071
+              },
+              "rim": {
+                "R_mm": 2.8927163486329652,
+                "binds": false,
+                "limit_mm": 3.3916942116704014,
+                "margin_mm": 0.4989778630374362
+              }
             },
             "genes": [
               8.93384068186625,
@@ -9726,6 +9782,20 @@
               "hub": -1,
               "rim": 1
             },
+            "fit": {
+              "hub": {
+                "R_mm": 0.802905306190049,
+                "binds": false,
+                "limit_mm": 1.6434448964095139,
+                "margin_mm": 0.8405395902194649
+              },
+              "rim": {
+                "R_mm": 2.8627221289967135,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
+            },
             "genes": [
               5.1216594094430015,
               -24.520601911898524,
@@ -9757,6 +9827,20 @@
             "R_rim_mm": 2.585846544789964,
             "built": false,
             "control_min_scaled_jacobian": 0.775494899500324,
+            "fit": {
+              "hub": {
+                "R_mm": 2.108130358578177,
+                "binds": true,
+                "limit_mm": 1.7409980790559123,
+                "margin_mm": -0.3671322795222647
+              },
+              "rim": {
+                "R_mm": 2.585846544789964,
+                "binds": true,
+                "limit_mm": 0.9754098766312111,
+                "margin_mm": -1.6104366681587527
+              }
+            },
             "genes": [
               3.09060822546242,
               -23.19723049643181,
@@ -9788,6 +9872,20 @@
             "dk": {
               "hub": -1,
               "rim": 1
+            },
+            "fit": {
+              "hub": {
+                "R_mm": 0.9790109838322899,
+                "binds": false,
+                "limit_mm": 4.527566941537138,
+                "margin_mm": 3.548555957704848
+              },
+              "rim": {
+                "R_mm": 1.5510087101624983,
+                "binds": false,
+                "limit_mm": 7.999537718618239,
+                "margin_mm": 6.448529008455741
+              }
             },
             "genes": [
               8.518071506355884,
@@ -9825,6 +9923,20 @@
               "hub": -1,
               "rim": 1
             },
+            "fit": {
+              "hub": {
+                "R_mm": 0.44107032051384076,
+                "binds": false,
+                "limit_mm": 0.5904420857656865,
+                "margin_mm": 0.1493717652518457
+              },
+              "rim": {
+                "R_mm": 2.322724606069681,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
+            },
             "genes": [
               4.561830042332513,
               -21.115943070446576,
@@ -9858,6 +9970,20 @@
             "R_rim_mm": 1.1260233910556952,
             "built": false,
             "control_min_scaled_jacobian": 0.40122470078455436,
+            "fit": {
+              "hub": {
+                "R_mm": 1.7547426787975895,
+                "binds": true,
+                "limit_mm": 1.5901197837494605,
+                "margin_mm": -0.164622895048129
+              },
+              "rim": {
+                "R_mm": 1.1260233910556952,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
+            },
             "genes": [
               9.764038782057256,
               24.782299515338536,
@@ -9889,6 +10015,20 @@
             "dk": {
               "hub": 1,
               "rim": -1
+            },
+            "fit": {
+              "hub": {
+                "R_mm": 0.7736648197553488,
+                "binds": false,
+                "limit_mm": 1.250256015558377,
+                "margin_mm": 0.4765911958030282
+              },
+              "rim": {
+                "R_mm": 1.5747733570186677,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
             },
             "genes": [
               7.928265283674952,
@@ -9926,6 +10066,20 @@
               "hub": 1,
               "rim": -1
             },
+            "fit": {
+              "hub": {
+                "R_mm": 0.7064832698219017,
+                "binds": false,
+                "limit_mm": 3.847706402917124,
+                "margin_mm": 3.1412231330952225
+              },
+              "rim": {
+                "R_mm": 2.275669362038914,
+                "binds": false,
+                "limit_mm": 3.7466768015267453,
+                "margin_mm": 1.4710074394878312
+              }
+            },
             "genes": [
               4.864037300085325,
               12.614204419523325,
@@ -9962,6 +10116,20 @@
               "hub": 1,
               "rim": -1
             },
+            "fit": {
+              "hub": {
+                "R_mm": 0.5635189870813017,
+                "binds": false,
+                "limit_mm": 6.46149990863408,
+                "margin_mm": 5.8979809215527785
+              },
+              "rim": {
+                "R_mm": 2.6695810127189628,
+                "binds": false,
+                "limit_mm": 7.247776024230255,
+                "margin_mm": 4.578195011511292
+              }
+            },
             "genes": [
               3.7753809971822303,
               9.944327557383787,
@@ -9995,6 +10163,20 @@
             "R_rim_mm": 2.5772036644707788,
             "built": false,
             "control_min_scaled_jacobian": 0.8969498270799041,
+            "fit": {
+              "hub": {
+                "R_mm": 1.0398434925377709,
+                "binds": true,
+                "limit_mm": 0.9758685694707685,
+                "margin_mm": -0.06397492306700236
+              },
+              "rim": {
+                "R_mm": 2.5772036644707788,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
+            },
             "genes": [
               4.69078091352994,
               27.260949714139343,
@@ -10027,6 +10209,20 @@
               "hub": 1,
               "rim": 1
             },
+            "fit": {
+              "hub": {
+                "R_mm": 1.100758387754178,
+                "binds": false,
+                "limit_mm": 1.35550196584403,
+                "margin_mm": 0.25474357808985193
+              },
+              "rim": {
+                "R_mm": 2.7020526760169643,
+                "binds": false,
+                "limit_mm": 3.07484019031238,
+                "margin_mm": 0.3727875142954158
+              }
+            },
             "genes": [
               8.621539234501089,
               25.133068919753775,
@@ -10058,6 +10254,20 @@
             "R_rim_mm": 1.2463704599127885,
             "built": false,
             "control_min_scaled_jacobian": 0.8841266535436947,
+            "fit": {
+              "hub": {
+                "R_mm": 2.0454825562627432,
+                "binds": true,
+                "limit_mm": 1.68161596163502,
+                "margin_mm": -0.3638665946277233
+              },
+              "rim": {
+                "R_mm": 1.2463704599127885,
+                "binds": false,
+                "limit_mm": null,
+                "margin_mm": null
+              }
+            },
             "genes": [
               9.953735458412297,
               31.779630927175255,
@@ -10085,6 +10295,20 @@
             "R_rim_mm": 0.825791670286095,
             "built": false,
             "control_min_scaled_jacobian": 0.710939658448311,
+            "fit": {
+              "hub": {
+                "R_mm": 0.5532587753997398,
+                "binds": true,
+                "limit_mm": 0.06992100475549426,
+                "margin_mm": -0.48333777064424555
+              },
+              "rim": {
+                "R_mm": 0.825791670286095,
+                "binds": false,
+                "limit_mm": 6.1347252902398814,
+                "margin_mm": 5.308933619953787
+              }
+            },
             "genes": [
               2.764068488405683,
               18.14121321202945,
@@ -11225,6 +11449,237 @@
           "min_scaled_jacobian": 0.7827354131892307,
           "n_blocks": 7,
           "worst_block": "rim_junction"
+        },
+        "fit_clamp": {
+          "clamp_used_in_report": 0.95,
+          "config": "coarse",
+          "factors": [
+            0.99,
+            0.95,
+            0.9,
+            0.75
+          ],
+          "rows": [
+            {
+              "end": 1.6,
+              "entry": -0.45,
+              "factor": null,
+              "median_min_scaled_jacobian": 0.17797227597288234,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.28982637096616615
+              ],
+              "n_built": 10,
+              "n_clamped": {
+                "hub": 0,
+                "rim": 0
+              },
+              "n_clears_target": 4,
+              "n_genomes": 16,
+              "profile": "shipped",
+              "refusals": [
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub"
+              ]
+            },
+            {
+              "end": 1.6,
+              "entry": -0.45,
+              "factor": 0.99,
+              "median_min_scaled_jacobian": 0.20811286422490177,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.28982637096616615
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 8,
+              "n_genomes": 16,
+              "profile": "shipped",
+              "refusals": []
+            },
+            {
+              "end": 1.6,
+              "entry": -0.45,
+              "factor": 0.95,
+              "median_min_scaled_jacobian": 0.20811286422490177,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.28982637096616615
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 8,
+              "n_genomes": 16,
+              "profile": "shipped",
+              "refusals": []
+            },
+            {
+              "end": 1.6,
+              "entry": -0.45,
+              "factor": 0.9,
+              "median_min_scaled_jacobian": 0.20811286422490177,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.28982637096616615
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 8,
+              "n_genomes": 16,
+              "profile": "shipped",
+              "refusals": []
+            },
+            {
+              "end": 1.6,
+              "entry": -0.45,
+              "factor": 0.75,
+              "median_min_scaled_jacobian": 0.20811286422490177,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.28982637096616615
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 7,
+                "rim": 3
+              },
+              "n_clears_target": 8,
+              "n_genomes": 16,
+              "profile": "shipped",
+              "refusals": []
+            },
+            {
+              "end": 0.7,
+              "entry": -0.75,
+              "factor": null,
+              "median_min_scaled_jacobian": 0.28715589493940163,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.4592058359675306
+              ],
+              "n_built": 10,
+              "n_clamped": {
+                "hub": 0,
+                "rim": 0
+              },
+              "n_clears_target": 9,
+              "n_genomes": 16,
+              "profile": "genome_robust",
+              "refusals": [
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub"
+              ]
+            },
+            {
+              "end": 0.7,
+              "entry": -0.75,
+              "factor": 0.99,
+              "median_min_scaled_jacobian": 0.2915220907002495,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.5156364196454902
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "genome_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.7,
+              "entry": -0.75,
+              "factor": 0.95,
+              "median_min_scaled_jacobian": 0.2915220907002495,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.5156364196454902
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "genome_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.7,
+              "entry": -0.75,
+              "factor": 0.9,
+              "median_min_scaled_jacobian": 0.2915220907002495,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.5128410721926869
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "genome_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.7,
+              "entry": -0.75,
+              "factor": 0.75,
+              "median_min_scaled_jacobian": 0.30977528862925463,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.4997634877434122
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 7,
+                "rim": 3
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "genome_robust",
+              "refusals": []
+            }
+          ],
+          "shipped_fit": {
+            "hub": {
+              "R_mm": 0.6636060402965218,
+              "binds": false,
+              "limit_mm": 3.1296998810584657,
+              "margin_mm": 2.466093840761944
+            },
+            "rim": {
+              "R_mm": 3.0,
+              "binds": false,
+              "limit_mm": null,
+              "margin_mm": null
+            }
+          },
+          "shipped_is_clamped": false
         },
         "fit_limit": {
           "hub": {
@@ -13653,6 +14108,7 @@
           "n_blocks": 7,
           "worst_block": "rim_junction"
         },
+        "fit_clamp": null,
         "fit_limit": {
           "hub": {
             "limited": true,
@@ -14057,6 +14513,8 @@
     "route2_angle_is_a_boundary_quantity": true,
     "sector_seams_close_at_every_orientation": true,
     "sector_seams_close_whole_edge": true,
+    "the_clamp_is_inert_on_the_shipped_genome": true,
+    "the_hub_margin_predicts_every_refusal": true,
     "unfilleted_sector_still_clean": true
   },
   "shipped_radii_mm": {
