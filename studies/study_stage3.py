@@ -100,6 +100,8 @@ import time
 import jax_config  # noqa: F401  — must precede every other jax import
 import numpy as np
 
+import _gate_guard
+
 import wheel_adjoint as WA
 import wheel_fea as W
 import wheel_fem as fem
@@ -179,8 +181,17 @@ _GRAD_DERIVED = ("grad", "coupling_frac")
 # The weight sets the feasibility probe descends.  Every barrier stays on in all three —
 # a "lowest reachable stress" that is reached through a folded, self-intersecting or
 # unmeshable design is not a bound on anything.
+#
+# `stress_margin` splits differently from every other name here, and the split is the
+# point of it.  `stress` is the BARRIER and it is flat below `util` = 1, so before the
+# margin term existed the `stress_only` probe was descending on a term that read zero
+# with a zero gradient at every feasible design — "lowest reachable stress" was being
+# asked of an objective that could not see stress.  The margin term is what makes that
+# probe a question rather than a formality, so it stays ON there.  `deflection_only`
+# zeroes it for the same reason it zeroes `stress`: whatever else that probe is, it is
+# not deflection-only if a stress term is still pulling.
 PROBE_ZERO = {"stress_only": ("deflection", "mass", "phase_ripple"),
-              "deflection_only": ("stress", "mass", "phase_ripple"),
+              "deflection_only": ("stress", "stress_margin", "mass", "phase_ripple"),
               "joint": ()}
 
 # The sections, and which milestone each answers to.  M8b-i's seven are the default and
@@ -1553,8 +1564,9 @@ def _print_mesh_convergence(rep):
     print(f"    p-norm is a quadrature of an integral — leaving `c = max/pnorm` to carry")
     print(f"    the mesh into `util`.  Read the `c` row against the `pnorm` row before")
     print(f"    accepting it: at p=30 the p-norm is ~1/1.38 of the max, which is a max in")
-    print(f"    disguise, and an unfilleted spoke/ring junction is a 349.5-degree re-entrant")
-    print(f"    corner whose r^-0.5 field no mesh resolves — see study_wheel_fea's")
+    print(f"    disguise, and an unfilleted spoke/ring junction is a strongly re-entrant")
+    print(f"    corner (at least 360 - MAX_ARRIVAL_DEG = 295 deg for ANY genome in the box)")
+    print(f"    whose r^-0.5 field no mesh resolves — see study_wheel_fea's")
     print(f"    `stress_report`, which measured this at M4 and prescribed a PERCENTILE.")
     print(f"    A p-norm that does not converge is not fixed by a gene or by a weight; it")
     print(f"    is fixed by lowering `p` until it does, and by replacing the rescale-to-max")
@@ -2063,6 +2075,20 @@ def main():
                          "measures concurrency rather than oversubscription wherever it "
                          "runs.")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.elites != "stage2_elites.json", "--elites %s" % args.elites),
+        (args.sections != ",".join(DEFAULT_SECTIONS), "--sections %s, not all %d" % (args.sections, len(DEFAULT_SECTIONS))),
+        (args.ladder_p != "", "--ladder-p %s" % args.ladder_p),
+        (args.ladder_configs != ",".join(LADDER_CONFIGS), "--ladder-configs %s" % args.ladder_configs),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     try:
         sections = parse_sections(args.sections)

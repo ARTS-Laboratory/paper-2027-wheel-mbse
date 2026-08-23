@@ -1,92 +1,81 @@
 {
-  "genes": {
-    "cx1": 2.1376143443155753,
-    "cy1": 27.952936734957692,
-    "cx2": 17.036327854201176,
-    "cy2": 31.718741219774294,
-    "cx3": 20.33476413480411,
-    "cy3": 24.32475682473731,
-    "cx4": 32.53984531294355,
-    "cy4": 29.291918496404325,
-    "t0": 2.477369725892206,
-    "t1": 2.0,
-    "t2": 2.0,
-    "t3": 2.0,
-    "R_hub": 1.5597674073242398,
-    "R_rim": 3.0
+ "genes": {
+  "cx1": 4.477962525158226,
+  "cy1": 8.721178572401975,
+  "cx2": 15.00274451694233,
+  "cy2": 11.808789310955788,
+  "cx3": 23.81875717533114,
+  "cy3": 9.419083794820828,
+  "cx4": 30.873165689265722,
+  "cy4": 6.4375467243695965,
+  "t0": 1.4738307537189006,
+  "t1": 1.2,
+  "t2": 1.2,
+  "t3": 1.4312949633290164,
+  "R_hub": 0.6636060402965218,
+  "R_rim": 3.0
+ },
+ "source": "wheel_stage3.py",
+ "search": {
+  "optimizer": "adam",
+  "config": "medium",
+  "steps": 100,
+  "phase_scheme": "uniform",
+  "n_phase": 8,
+  "seed": 0,
+  "start": "best",
+  "min_wall_mm": 1.2,
+  "cy_bound_mm": 32.0,
+  "kinematics": "svk",
+  "selection": {
+   "tier": 0,
+   "key": [
+    0.0,
+    0.0,
+    32.74463190340839
+   ]
   },
-  "geometry": {
-    "hub_radius_mm": 12.7,
-    "rim_radius_mm": 48.5,
-    "spoke_width_mm": 22.4,
-    "number_of_spokes": 12
-  },
-  "metrics": {
-    "deflection_mm": 1.9900552155589595,
-    "max_stress_mpa": 25.082721765374423,
-    "total_mass_g": 48.55583924286318,
-    "buckling_ratio": 0.09198127091279185,
-    "Kt_hub": 1.8608661732283212,
-    "Kt_rim": 1.4896335682000246
-  },
-  "model": {
-    "boundary_condition": "fixed_guided",
-    "ke_buckling": 0.5,
-    "n_curve_pts": 600,
-    "youngs_modulus_mpa": 2300.0,
-    "allowable_stress_mpa": 25.0,
-    "force_per_spoke_n": 16.680825,
-    "target_deflection_mm": 2.0,
-    "version": "2.1"
-  },
-  "search": {
-    "seed": 42,
-    "generations": 300,
-    "population": 300,
-    "cy_bound_mm": 32.0,
-    "smoke": false
-  },
-  "loss_terms": {
-    "deflection": 0.061811710986726026,
-    "mass": 39.90890896673686,
-    "stress": 0.04379449898662955,
-    "buckling": 0.0,
-    "x_order": 0.0,
-    "hub_overlap": 0.0,
-    "smoothness": 10.392789233196897,
-    "fold": 0.0,
-    "arrival": 0.0
-  },
-  "bound_saturation": [
-    {
-      "gene": "cy2",
-      "value": 31.718741219774294,
-      "at": "high",
-      "bound": 32.0
-    },
-    {
-      "gene": "t1",
-      "value": 2.0,
-      "at": "low",
-      "bound": 2.0
-    },
-    {
-      "gene": "t2",
-      "value": 2.0,
-      "at": "low",
-      "bound": 2.0
-    },
-    {
-      "gene": "t3",
-      "value": 2.0,
-      "at": "low",
-      "bound": 2.0
-    },
-    {
-      "gene": "R_rim",
-      "value": 3.0,
-      "at": "high",
-      "bound": 3.0
-    }
-  ]
+  "label": "best_solution",
+  "at_step": 74
+ },
+ "loss_terms": {
+  "x_order": 0.0,
+  "hub_overlap": 0.0,
+  "smoothness": 0.16782828102126746,
+  "fold": 0.0,
+  "arrival": 0.0,
+  "fillet": 0.0,
+  "fillet_cap": 0.0,
+  "buckling": 0.0,
+  "mass": 32.440977356532755,
+  "min_sj": 0.0,
+  "deflection": 0.004145690639631074,
+  "stress": 0.0,
+  "stress_margin": 0.13168057521473925,
+  "phase_ripple": 0.0
+ },
+ "metrics": {
+  "buckling_ratio": 0.13948640992941577,
+  "mesh_mass_g": 39.46985578378152,
+  "min_scaled_jacobian": 0.7827824270012664,
+  "axle_drop_mean_mm": 1.9974245184870767,
+  "axle_drop_min_mm": 1.740921372023573,
+  "axle_drop_max_mm": 2.3243884188091153,
+  "phase_ripple_std_over_mean": 0.1044285616356061,
+  "pnorm_stress_agg_mpa": 9.781070524669868,
+  "max_stress_mpa": 166.34892760504,
+  "stress_scale_measured": 19.352550328675115,
+  "kt_hub": 2.0962144629930166,
+  "kt_rim": 1.3939359631839685,
+  "hub_fillet_cap_mm": 0.6659554217567061,
+  "r_hub_effective_mm": 0.6397935889902162,
+  "stress_utilisation_hub": 0.8201288598947069,
+  "stress_utilisation_rim": 0.5453674385110407,
+  "stress_utilisation": 0.8201288598947069,
+  "stress_gauss_p": 4.0,
+  "n_phase": 8.0
+ },
+ "loss": 32.74463190340839,
+ "stage2_loss": 33.67363032479923,
+ "note": "THE SHIPPED GENOME.  Promoted 2026-08-14 from stage3_knee_best_medium.json, verbatim apart from this note.  PLAN.md 26: the production descent under 23's knee'd stress_margin -- medium, SVK, 100 steps, min-wall 1.2, selected at step 74.  Replaces e126cc3 (19), which is preserved as stage3_margin_best_medium.json.  48.64 g as built against 50.25, deflection -0.129% against +0.403%, util hub 0.8201, Kt error +0.0% at both junctions, feasible at coarse AND medium under both kinematics with every barrier 0.0.  Inventor import clean.  NOTE FOR WHOEVER PROMOTES NEXT (PLAN 25): drivers take constants measured on a SPECIFIC genome from this file; check what each reference means before assuming it still holds."
 }

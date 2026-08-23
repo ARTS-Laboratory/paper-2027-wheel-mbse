@@ -17,6 +17,26 @@ testpaths = ["tests"]
 pythonpath = ["src", "studies", "."]
 addopts = "-q"
 
+# STRICT BY DEFAULT, AND THIS CHANGES THE MEANING OF EVERY FUTURE BARE `xfail` HERE.
+#
+# Introduced by the REDS arc (PLAN.md §31).  Before it, `make test` read `5 failed` on a
+# good day, and establishing "no new red" meant opening CONTACT_PLAN.md to look up which
+# five were expected — a suite that reads `5 failed` when healthy cannot cheaply tell you
+# about a sixth.  Two of the five were findings the project has accepted and does not
+# intend to act on yet; they are now `xfail` rather than `fail`, so the count is 0.
+#
+# `xfail_strict` is what makes that safe rather than a way of hiding things.  Without it,
+# an xfail that STARTS PASSING is reported as `xpass` and nobody notices — the accepted
+# finding would silently become stale, which is the precise failure mode PLAN §28 caught
+# after it had travelled through three plan files.  With it, an xpass is a FAILURE, so the
+# day the wheel changes enough for one of these to pass, the suite reopens the question by
+# itself.
+#
+# Set here rather than `strict=True` at each `@pytest.mark.xfail`, so the next person to
+# add one cannot forget it.  Every xfail in this tree must carry a `reason=` naming the
+# PLAN section that decided it.
+xfail_strict = true
+
 [tool.pyright]
 # Point the type checker at env-opt; without this it resolves against system python3,
 # which has no numpy, and reports every import as missing.

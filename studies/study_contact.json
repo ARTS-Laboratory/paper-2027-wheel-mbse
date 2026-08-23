@@ -3,89 +3,100 @@
   "rows": [
    {
     "eps_n": 100.0,
-    "axle_drop_mm": 1.6667650432971424,
-    "contact_force_n": 66.7232998100041,
-    "max_penetration_mm": 0.013447934757948588,
-    "penetration_frac_of_band": 0.008965289838632392,
-    "patch_half_deg": 2.0507258609926327,
+    "axle_drop_mm": 1.4791445592271104,
+    "contact_force_n": 66.72330001961552,
+    "max_penetration_mm": 0.016303766533852126,
+    "penetration_frac_of_band": 0.010869177689234752,
+    "patch_half_deg": 1.5453486890066674,
     "iterations": 1,
-    "seconds": 12.32
+    "seconds": 8.84
    },
    {
     "eps_n": 1000.0,
-    "axle_drop_mm": 1.6566142407280762,
-    "contact_force_n": 66.72329999992273,
-    "max_penetration_mm": 0.0026696622961139838,
-    "penetration_frac_of_band": 0.0017797748640759892,
-    "patch_half_deg": 0.9209800831838214,
-    "iterations": 4,
-    "seconds": 15.32
+    "axle_drop_mm": 1.4674758857550416,
+    "contact_force_n": 66.72330036075216,
+    "max_penetration_mm": 0.003455488387530181,
+    "penetration_frac_of_band": 0.002303658925020121,
+    "patch_half_deg": 0.7540358544640493,
+    "iterations": 1,
+    "seconds": 11.24
    },
    {
     "eps_n": 10000.0,
-    "axle_drop_mm": 1.6546481509073006,
-    "contact_force_n": 66.72329999992212,
-    "max_penetration_mm": 0.0004989003904256606,
-    "penetration_frac_of_band": 0.0003326002602837737,
-    "patch_half_deg": 0.4687424752285117,
-    "iterations": 6,
-    "seconds": 25.65
+    "axle_drop_mm": 1.4637943596880436,
+    "contact_force_n": 66.72330000041859,
+    "max_penetration_mm": 0.0005516664128890625,
+    "penetration_frac_of_band": 0.0003677776085927083,
+    "patch_half_deg": 0.3245476355673108,
+    "iterations": 1,
+    "seconds": 17.33
    },
    {
     "eps_n": 100000.0,
-    "axle_drop_mm": 1.6540628866031193,
-    "contact_force_n": 66.72330000362874,
-    "max_penetration_mm": 9.10146327299799e-05,
-    "penetration_frac_of_band": 6.0676421819986594e-05,
-    "patch_half_deg": 0.23252159592248034,
-    "iterations": 6,
-    "seconds": 40.33
+    "axle_drop_mm": 1.462300810393809,
+    "contact_force_n": 66.72330000136132,
+    "max_penetration_mm": 6.231738127837616e-05,
+    "penetration_frac_of_band": 4.1544920852250776e-05,
+    "patch_half_deg": 0.20553954210689995,
+    "iterations": 2,
+    "seconds": 25.78
    }
   ],
-  "plateau_decades": 1,
+  "plateau_decades": 0,
+  "difference_ratios": [
+   0.31550510654106895,
+   0.4056875510465634
+  ],
+  "measured_order": 0.3918083188787017,
+  "extrapolated_limit_mm": 1.4612812888330335,
+  "default_vs_limit_rel": 0.0017197721439496938,
+  "sequence_monotone": true,
+  "sequence_contracting": true,
+  "solver_pass": true,
+  "regime_pass": false,
   "default_eps_n": 10000.0,
-  "penetration_frac_at_default": 0.0003326002602837737,
-  "default_vs_next_decade_rel": 0.00035370921839805725,
-  "worst_penetration_frac": 0.008965289838632392,
-  "pass": true
+  "penetration_frac_at_default": 0.0003677776085927083,
+  "default_vs_next_decade_rel": 0.001020327264106169,
+  "worst_penetration_frac": 0.010869177689234752,
+  "pass": false
  },
  "verification": {
-  "axle_drop_mm": 1.6546481509073006,
-  "contact_force_n": 66.72329999992212,
+  "axle_drop_mm": 1.4637943596880436,
+  "contact_force_n": 66.72330000041859,
   "target_force_n": 66.7233,
   "hub_reaction_n": [
-   2.9700686354772188e-12,
-   -66.72329999959348
+   -9.592326932761353e-14,
+   -66.72330000070781
   ],
-  "equilibrium_error_n": 3.2864022614376154e-10,
+  "equilibrium_error_n": 2.892193151637912e-10,
   "horizontal_resultant_n": 0.0,
   "min_pressure_mpa": 0.0,
-  "n_quad_points_in_contact": 4,
-  "centre_node_rise_mm": 1.6575019809575446,
-  "indentation_vs_centre_node_mm": 0.0028538300502440883,
-  "max_penetration_mm": 0.0004989003904256606,
+  "n_quad_points_in_contact": 2,
+  "centre_node_rise_mm": 1.4849876228453036,
+  "indentation_vs_centre_node_mm": 0.02119326315726,
+  "max_penetration_mm": 0.0005516664128890625,
   "periodicity": [
    {
     "phase_deg": 0.0,
-    "delta_mm": 1.6546481509073006,
-    "delta_plus_30_mm": 1.6546481509121445,
-    "rel_diff": 2.9274360713316128e-12
+    "delta_mm": 1.4637943596880436,
+    "delta_plus_30_mm": 1.4637943596734473,
+    "rel_diff": 9.971579117973306e-12
    },
    {
     "phase_deg": 7.0,
-    "delta_mm": 1.501513805225449,
-    "delta_plus_30_mm": 1.50151380524654,
-    "rel_diff": 1.4046430685255018e-11
+    "delta_mm": 1.9180699660412819,
+    "delta_plus_30_mm": 1.918069965991397,
+    "rel_diff": 2.6007862530263992e-11
    }
   ],
-  "worst_periodicity_rel": 1.4046430685255018e-11,
+  "worst_periodicity_rel": 2.6007862530263992e-11,
   "continuation_force_n": [
-   66.72329999992212,
-   66.72329999992212,
-   66.72329999992212
+   66.72330000041859,
+   66.72330000041859,
+   66.72330000041859
   ],
   "continuation_spread": 0.0,
-  "secant_iterations": 2,
+  "secant_iterations": 4,
   "pass": true
  },
  "patch": {
@@ -96,24 +107,34 @@
     "n_rim_segments": 96,
     "deg_per_segment": 3.75,
     "n_quad": 6,
-    "contact_drop_mm": 1.605098557958046,
-    "assumed_drop_mm": 1.6170683186409378,
-    "rel_diff": -0.007402136659848679,
-    "patch_half_deg": 0.45841811084872486,
-    "patch_centre_deg": 1.0652483260151786,
-    "patch_half_deg_sampled": 1.5103482139963376,
-    "peak_pressure_mpa_sampled": 2.637023003657646,
-    "n_quad_points_in_contact": 2,
+    "contact_drop_mm": 1.4229659494195266,
+    "assumed_drop_mm": 1.4994858146599337,
+    "rel_diff": -0.05103073633128097,
+    "patch_half_deg": 0.35205871377051534,
+    "patch_centre_deg": 1.7950973701831254,
+    "patch_half_deg_sampled": 1.7022972976303379,
+    "peak_pressure_mpa_sampled": 5.661298522241509,
+    "n_quad_points_in_contact": 1,
+    "max_penetration_mm": 0.0005661298522241509,
     "contact_split": {
-     "spoke": 0.6690530052629788,
-     "hub": 0.013938452146572614,
-     "rim": 0.3170085425904486
+     "spoke": 0.7047846642881848,
+     "hub": 0.03408876934631821,
+     "rim": 0.26112656636549697
     },
     "assumed_split": {
-     "spoke": 0.6676770601041004,
-     "hub": 0.013914250136701979,
-     "rim": 0.3184086897591976
-    }
+     "spoke": 0.6632375926192277,
+     "hub": 0.032489109319949715,
+     "rim": 0.3042732980608226
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.0004025450679918663,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.1422154078802484,
+    "local_seg_span_deg": 0.4686452308893081,
+    "rim_seg_span_min_deg": 0.46864523088922283,
+    "rim_seg_span_max_deg": 7.031354769110749,
+    "rim_seg_span_ratio": 15.003576918449006,
+    "patch_over_local_seg": 1.5024529881695095
    },
    {
     "config": "smoke",
@@ -121,99 +142,139 @@
     "n_rim_segments": 96,
     "deg_per_segment": 3.75,
     "n_quad": 20,
-    "contact_drop_mm": 1.6046574697250582,
-    "assumed_drop_mm": 1.6170683186409378,
-    "rel_diff": -0.00767490697381934,
-    "patch_half_deg": 0.3617899044187973,
-    "patch_centre_deg": 1.0493938121305786,
-    "patch_half_deg_sampled": 1.2400238431321782,
-    "peak_pressure_mpa_sampled": 6.58918153384036,
-    "n_quad_points_in_contact": 3,
-    "contact_split": {
-     "spoke": 0.6691776789075385,
-     "hub": 0.013938089870454197,
-     "rim": 0.3168842312220073
-    },
-    "assumed_split": {
-     "spoke": 0.6676770601041004,
-     "hub": 0.013914250136701979,
-     "rim": 0.3184086897591976
-    }
-   },
-   {
-    "config": "coarse",
-    "n_elements": 4704,
-    "n_rim_segments": 240,
-    "deg_per_segment": 1.5,
-    "n_quad": 6,
-    "contact_drop_mm": 1.6546481509073006,
-    "assumed_drop_mm": 1.666633456057599,
-    "rel_diff": -0.0071913263871766775,
-    "patch_half_deg": 0.4687424752285117,
-    "patch_centre_deg": 1.1987703823644167,
-    "patch_half_deg_sampled": 1.6437732700781567,
-    "peak_pressure_mpa_sampled": 4.989003904256606,
-    "n_quad_points_in_contact": 4,
-    "contact_split": {
-     "spoke": 0.6642354539261086,
-     "hub": 0.01384889152431788,
-     "rim": 0.32191565454957355
-    },
-    "assumed_split": {
-     "spoke": 0.66312181042786,
-     "hub": 0.013818354306063329,
-     "rim": 0.3230598352660767
-    }
-   },
-   {
-    "config": "coarse",
-    "n_elements": 4704,
-    "n_rim_segments": 240,
-    "deg_per_segment": 1.5,
-    "n_quad": 20,
-    "contact_drop_mm": 1.6546500284861012,
-    "assumed_drop_mm": 1.666633456057599,
-    "rel_diff": -0.00719019981744784,
-    "patch_half_deg": 0.4758763721823282,
-    "patch_centre_deg": 1.1948591069613703,
-    "patch_half_deg_sampled": 1.66005646217954,
-    "peak_pressure_mpa_sampled": 5.3689197392969845,
-    "n_quad_points_in_contact": 14,
-    "contact_split": {
-     "spoke": 0.6642431926364559,
-     "hub": 0.013849080821771524,
-     "rim": 0.32190772654177263
-    },
-    "assumed_split": {
-     "spoke": 0.66312181042786,
-     "hub": 0.013818354306063329,
-     "rim": 0.3230598352660767
-    }
-   },
-   {
-    "config": "medium",
-    "n_elements": 12288,
-    "n_rim_segments": 384,
-    "deg_per_segment": 0.9375,
-    "n_quad": 6,
-    "contact_drop_mm": 1.6637866270282127,
-    "assumed_drop_mm": 1.6759366609582487,
-    "rel_diff": -0.007249697564995716,
-    "patch_half_deg": 0.48182275669704133,
-    "patch_centre_deg": 1.1773175469690158,
-    "patch_half_deg_sampled": 1.6091395965147512,
-    "peak_pressure_mpa_sampled": 5.177867005485837,
+    "contact_drop_mm": 1.4201212524017688,
+    "assumed_drop_mm": 1.4994858146599337,
+    "rel_diff": -0.052927851322263963,
+    "patch_half_deg": 0.33695739947261594,
+    "patch_centre_deg": 1.6864690116064933,
+    "patch_half_deg_sampled": 2.045999781894608,
+    "peak_pressure_mpa_sampled": 7.253188005904576,
     "n_quad_points_in_contact": 6,
+    "max_penetration_mm": 0.0007253188005904576,
     "contact_split": {
-     "spoke": 0.6629816905231755,
-     "hub": 0.013979977070022973,
-     "rim": 0.3230383324068013
+     "spoke": 0.7078566241733414,
+     "hub": 0.03419706659017368,
+     "rim": 0.25794630923648487
     },
     "assumed_split": {
-     "spoke": 0.6619589015979412,
-     "hub": 0.013947430319994604,
-     "rim": 0.324093668082064
-    }
+     "spoke": 0.6632375926192277,
+     "hub": 0.032489109319949715,
+     "rim": 0.3042732980608226
+    },
+    "n_rim_nodes_in_patch": 1,
+    "worst_rim_node_gap_mm": -3.685379455475868e-05,
+    "a_rim_node_penetrates": true,
+    "patch_over_hertz": 1.0932208703340296,
+    "local_seg_span_deg": 0.4686452308893081,
+    "rim_seg_span_min_deg": 0.46864523088922283,
+    "rim_seg_span_max_deg": 7.031354769110749,
+    "rim_seg_span_ratio": 15.003576918449006,
+    "patch_over_local_seg": 1.4380063095198925
+   },
+   {
+    "config": "coarse",
+    "n_elements": 4704,
+    "n_rim_segments": 240,
+    "deg_per_segment": 1.5,
+    "n_quad": 6,
+    "contact_drop_mm": 1.4637943596880436,
+    "assumed_drop_mm": 1.5516446176990795,
+    "rel_diff": -0.0566175121602962,
+    "patch_half_deg": 0.3245476355673108,
+    "patch_centre_deg": 1.7097186649248863,
+    "patch_half_deg_sampled": 1.959525791168062,
+    "peak_pressure_mpa_sampled": 5.516664128890625,
+    "n_quad_points_in_contact": 2,
+    "max_penetration_mm": 0.0005516664128890625,
+    "contact_split": {
+     "spoke": 0.703625988871378,
+     "hub": 0.03617482160264544,
+     "rim": 0.2601991895259768
+    },
+    "assumed_split": {
+     "spoke": 0.6545356829597623,
+     "hub": 0.03418804073254936,
+     "rim": 0.3112762763076883
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 9.83044213711537e-05,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.052958769194743,
+    "local_seg_span_deg": 0.18746112517135316,
+    "rim_seg_span_min_deg": 0.18746112517135316,
+    "rim_seg_span_max_deg": 2.812538874828647,
+    "rim_seg_span_ratio": 15.003318006641543,
+    "patch_over_local_seg": 3.462559346858188
+   },
+   {
+    "config": "coarse",
+    "n_elements": 4704,
+    "n_rim_segments": 240,
+    "deg_per_segment": 1.5,
+    "n_quad": 20,
+    "contact_drop_mm": 1.4645607065718995,
+    "assumed_drop_mm": 1.5516446176990795,
+    "rel_diff": -0.056123618858238244,
+    "patch_half_deg": 0.3446141084907638,
+    "patch_centre_deg": 1.7411733696679668,
+    "patch_half_deg_sampled": 2.1750193358042225,
+    "peak_pressure_mpa_sampled": 7.3700870164117305,
+    "n_quad_points_in_contact": 6,
+    "max_penetration_mm": 0.000737008701641173,
+    "contact_split": {
+     "spoke": 0.7029114908388319,
+     "hub": 0.03614904937706595,
+     "rim": 0.2609394597841023
+    },
+    "assumed_split": {
+     "spoke": 0.6545356829597623,
+     "hub": 0.03418804073254936,
+     "rim": 0.3112762763076883
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.00015929507651435415,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.118062212621853,
+    "local_seg_span_deg": 0.18746112517135316,
+    "rim_seg_span_min_deg": 0.18746112517135316,
+    "rim_seg_span_max_deg": 2.812538874828647,
+    "rim_seg_span_ratio": 15.003318006641543,
+    "patch_over_local_seg": 3.676646111835308
+   },
+   {
+    "config": "medium",
+    "n_elements": 12288,
+    "n_rim_segments": 384,
+    "deg_per_segment": 0.9375,
+    "n_quad": 6,
+    "contact_drop_mm": 1.4743285672599893,
+    "assumed_drop_mm": 1.5629805689038112,
+    "rel_diff": -0.05671983606680253,
+    "patch_half_deg": 0.3542153967703645,
+    "patch_centre_deg": 1.735185662377552,
+    "patch_half_deg_sampled": 2.156939330032799,
+    "peak_pressure_mpa_sampled": 7.067031027290227,
+    "n_quad_points_in_contact": 3,
+    "max_penetration_mm": 0.0007067031027290227,
+    "contact_split": {
+     "spoke": 0.7001723359653262,
+     "hub": 0.037390975009180344,
+     "rim": 0.26243668902549355
+    },
+    "assumed_split": {
+     "spoke": 0.6491715057531333,
+     "hub": 0.03523663283635889,
+     "rim": 0.3155918614105079
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 8.585274215988647e-05,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.1492125264175468,
+    "local_seg_span_deg": 0.11716374348247882,
+    "rim_seg_span_min_deg": 0.11716374348242198,
+    "rim_seg_span_max_deg": 1.757836256517578,
+    "rim_seg_span_ratio": 15.00324421420783,
+    "patch_over_local_seg": 6.046501865542312
    },
    {
     "config": "medium",
@@ -221,236 +282,270 @@
     "n_rim_segments": 384,
     "deg_per_segment": 0.9375,
     "n_quad": 20,
-    "contact_drop_mm": 1.6638361010263794,
-    "assumed_drop_mm": 1.6759366609582487,
-    "rel_diff": -0.007220177357389224,
-    "patch_half_deg": 0.48656839964850956,
-    "patch_centre_deg": 1.1780159403135646,
-    "patch_half_deg_sampled": 1.6768834240474462,
-    "peak_pressure_mpa_sampled": 5.53094493334072,
-    "n_quad_points_in_contact": 20,
+    "contact_drop_mm": 1.4744261197007984,
+    "assumed_drop_mm": 1.5629805689038112,
+    "rel_diff": -0.05665742170110277,
+    "patch_half_deg": 0.35086382556100537,
+    "patch_centre_deg": 1.7375332420724723,
+    "patch_half_deg_sampled": 2.1664778163315077,
+    "peak_pressure_mpa_sampled": 7.075472884991996,
+    "n_quad_points_in_contact": 8,
+    "max_penetration_mm": 0.0007075472884991996,
     "contact_split": {
-     "spoke": 0.6629607562732486,
-     "hub": 0.01397933461214452,
-     "rim": 0.32305990911460686
+     "spoke": 0.7000711074574016,
+     "hub": 0.03738710973738733,
+     "rim": 0.26254178280521134
     },
     "assumed_split": {
-     "spoke": 0.6619589015979412,
-     "hub": 0.013947430319994604,
-     "rim": 0.324093668082064
-    }
+     "spoke": 0.6491715057531333,
+     "hub": 0.03523663283635889,
+     "rim": 0.3155918614105079
+    },
+    "n_rim_nodes_in_patch": 0,
+    "worst_rim_node_gap_mm": 0.00011040330864631187,
+    "a_rim_node_penetrates": false,
+    "patch_over_hertz": 1.1383387257524873,
+    "local_seg_span_deg": 0.11716374348247882,
+    "rim_seg_span_min_deg": 0.11716374348242198,
+    "rim_seg_span_max_deg": 1.757836256517578,
+    "rim_seg_span_ratio": 15.00324421420783,
+    "patch_over_local_seg": 5.989290118806678
    }
   ],
+  "convergence": {
+   "configs": [
+    "smoke",
+    "coarse",
+    "medium"
+   ],
+   "contact_drop_mm": [
+    1.4229659494195266,
+    1.4637943596880436,
+    1.4743285672599893
+   ],
+   "n_elements": [
+    960,
+    4704,
+    12288
+   ],
+   "successive_rel": [
+    0.028692471724409252,
+    0.007196507830642629
+   ],
+   "change_ratio": 3.8757932183954478,
+   "richardson_limit_mm": 1.477991628812733,
+   "finest_vs_limit_rel": 0.002478404803744616
+  },
   "hertz_half_deg": 0.3082244481571778,
   "assumed_half_deg": 3.0,
-  "measured_half_deg": 0.4841955781727755,
-  "assumed_over_measured": 6.19584344681791,
-  "drop_rel_diff_at_finest": -0.00723493746119247,
+  "measured_half_deg": 0.35253961116568494,
+  "assumed_over_measured": 8.509682047019885,
+  "drop_rel_diff_at_finest": -0.05668862888395265,
   "quadrature_sensitivity": {
-   "axle_drop": 2.9735783040329977e-05,
-   "patch_half_deg": 0.009849354115194275,
-   "patch_half_deg_sampled": 0.042099409945179245,
-   "peak_pressure_sampled": 0.06818984100611414
+   "axle_drop": 6.616736796360989e-05,
+   "patch_half_deg": 0.009552341863685143,
+   "patch_half_deg_sampled": 0.004422232079454913,
+   "peak_pressure_sampled": 0.0011945409138816032
   },
-  "sampled_patch_overstates_by": 3.3930193665004547
+  "sampled_patch_overstates_by": 6.132020407235791
  },
  "phase": {
   "rows": [
    {
     "phase_deg": 0.0,
-    "contact_drop_mm": 1.6546481509073006,
-    "assumed_drop_mm": 1.666633456057599,
-    "patch_half_deg": 0.4687424752285117,
-    "patch_centre_deg": 1.1987703823644167
+    "contact_drop_mm": 1.4637943596880436,
+    "assumed_drop_mm": 1.5516446176990795,
+    "patch_half_deg": 0.3245476355673108,
+    "patch_centre_deg": 1.7097186649248863
    },
    {
     "phase_deg": 2.5,
-    "contact_drop_mm": 1.666163905100436,
-    "assumed_drop_mm": 1.6678707329128117,
-    "patch_half_deg": 0.9416831612893956,
-    "patch_centre_deg": -0.8945002830496515
+    "contact_drop_mm": 1.6114127771340119,
+    "assumed_drop_mm": 1.7123292222444573,
+    "patch_half_deg": 0.6122930747608424,
+    "patch_centre_deg": 2.517445451851902
    },
    {
     "phase_deg": 5.0,
-    "contact_drop_mm": 1.573179127888798,
-    "assumed_drop_mm": 1.5927035354176522,
-    "patch_half_deg": 0.6142510846817466,
-    "patch_centre_deg": -1.20694766910029
+    "contact_drop_mm": 1.8144487137642153,
+    "assumed_drop_mm": 1.8600564024342574,
+    "patch_half_deg": 1.0851128194842865,
+    "patch_centre_deg": 1.6909920833761387
    },
    {
     "phase_deg": 7.5,
-    "contact_drop_mm": 1.4859026685513752,
-    "assumed_drop_mm": 1.5065591988176332,
-    "patch_half_deg": 0.5503807021461691,
-    "patch_centre_deg": -1.0562282637337086
+    "contact_drop_mm": 1.931681502538284,
+    "assumed_drop_mm": 1.9285130893866593,
+    "patch_half_deg": 1.7127403046792968,
+    "patch_centre_deg": 0.4475739183257914
    },
    {
     "phase_deg": 10.0,
-    "contact_drop_mm": 1.4239301055796751,
-    "assumed_drop_mm": 1.425476969882674,
-    "patch_half_deg": 0.4833851667970662,
-    "patch_centre_deg": -0.6476231811628251
+    "contact_drop_mm": 1.9378373123641779,
+    "assumed_drop_mm": 1.9316908458166124,
+    "patch_half_deg": 1.8931739816759499,
+    "patch_centre_deg": -0.4082707008948995
    },
    {
     "phase_deg": 12.5,
-    "contact_drop_mm": 1.3887068013541963,
-    "assumed_drop_mm": 1.3851410730248976,
-    "patch_half_deg": 0.48390629734282126,
-    "patch_centre_deg": -0.3183019192550696
+    "contact_drop_mm": 1.8487744852723682,
+    "assumed_drop_mm": 1.86000716575214,
+    "patch_half_deg": 1.168424887591831,
+    "patch_centre_deg": -1.4448084465330204
    },
    {
     "phase_deg": 15.0,
-    "contact_drop_mm": 1.3745776545664956,
-    "assumed_drop_mm": 1.3699571669317527,
-    "patch_half_deg": 0.3800769170838241,
-    "patch_centre_deg": -0.004292603646817633
+    "contact_drop_mm": 1.709195827340252,
+    "assumed_drop_mm": 1.7716020963583883,
+    "patch_half_deg": 0.7429421601121701,
+    "patch_centre_deg": -1.9104067398711444
    },
    {
     "phase_deg": 17.5,
-    "contact_drop_mm": 1.383353086947054,
-    "assumed_drop_mm": 1.3808754445976221,
-    "patch_half_deg": 0.3838346209122452,
-    "patch_centre_deg": 0.26841837050249695
+    "contact_drop_mm": 1.5679691443314505,
+    "assumed_drop_mm": 1.630658224283699,
+    "patch_half_deg": 0.5410902881008179,
+    "patch_centre_deg": -1.7350120425458515
    },
    {
     "phase_deg": 20.0,
-    "contact_drop_mm": 1.4096850019878608,
-    "assumed_drop_mm": 1.4091609318164409,
-    "patch_half_deg": 0.36509361940688195,
-    "patch_centre_deg": 0.4863608409150825
+    "contact_drop_mm": 1.4530340429042028,
+    "assumed_drop_mm": 1.4816134492591542,
+    "patch_half_deg": 0.4323382200574743,
+    "patch_centre_deg": -1.288523795423967
    },
    {
     "phase_deg": 22.5,
-    "contact_drop_mm": 1.4504448433686632,
-    "assumed_drop_mm": 1.4525448804425254,
-    "patch_half_deg": 0.36438984977724065,
-    "patch_centre_deg": 0.651340533717294
+    "contact_drop_mm": 1.3766057776778833,
+    "assumed_drop_mm": 1.3750677442487407,
+    "patch_half_deg": 0.4864544422596031,
+    "patch_centre_deg": -0.6195424439604755
    },
    {
     "phase_deg": 25.0,
-    "contact_drop_mm": 1.5052529343198044,
-    "assumed_drop_mm": 1.5220787771771496,
-    "patch_half_deg": 0.36543408458426,
-    "patch_centre_deg": 0.8608091869015959
+    "contact_drop_mm": 1.3521008070136915,
+    "assumed_drop_mm": 1.3438884044537953,
+    "patch_half_deg": 0.39330990039717506,
+    "patch_centre_deg": -0.01956062730064667
    },
    {
     "phase_deg": 27.5,
-    "contact_drop_mm": 1.5724207792450573,
-    "assumed_drop_mm": 1.5956507477270936,
-    "patch_half_deg": 0.3637146442798872,
-    "patch_centre_deg": 1.0113770708069452
+    "contact_drop_mm": 1.379565505890388,
+    "assumed_drop_mm": 1.3973264771475233,
+    "patch_half_deg": 0.369958746117223,
+    "patch_centre_deg": 0.8996263341704659
    },
    {
     "phase_deg": 30.0,
-    "contact_drop_mm": 1.6546481509121445,
-    "assumed_drop_mm": 1.6666334559640763,
-    "patch_half_deg": 0.4687424752293312,
-    "patch_centre_deg": 1.1987703823684763
+    "contact_drop_mm": 1.4637943596734473,
+    "assumed_drop_mm": 1.551644617638573,
+    "patch_half_deg": 0.32454763556446475,
+    "patch_centre_deg": 1.709718664914189
    }
   ],
-  "contact_ripple_std_over_mean": 0.07007125776842489,
-  "contact_peak_to_peak_over_mean": 0.19396398152452587,
-  "assumed_ripple_std_over_mean": 0.07361220830378407,
-  "assumed_peak_to_peak_over_mean": 0.1971803824171804,
+  "contact_ripple_std_over_mean": 0.12935967543779048,
+  "contact_peak_to_peak_over_mean": 0.364155734866454,
+  "assumed_ripple_std_over_mean": 0.12438243118363018,
+  "assumed_peak_to_peak_over_mean": 0.357142298108955,
   "patch_centre_range_deg": [
-   -1.20694766910029,
-   1.1987703823684763
+   -1.9104067398711444,
+   2.517445451851902
   ],
-  "patch_centre_swing_deg": 2.4057180514687664
+  "patch_centre_swing_deg": 4.427852191723046
  },
  "design_space": {
   "rows": [
    {
-    "patch_half_deg": 0.3617257411551465,
-    "contact_drop_mm": 0.1501069873912222,
-    "assumed_drop_mm": 0.14852538890144779,
-    "rel_diff": 0.010648674287086823,
-    "free_arc_fraction": 0.7414151873891894
+    "patch_half_deg": 0.39375322960564163,
+    "contact_drop_mm": 0.1664849396167894,
+    "assumed_drop_mm": 0.1668441676159043,
+    "rel_diff": -0.0021530749575968677,
+    "free_arc_fraction": 0.7510076305014858
    },
    {
-    "patch_half_deg": 0.3546494802027237,
-    "contact_drop_mm": 0.47978455683811744,
-    "assumed_drop_mm": 0.49527341498887617,
-    "rel_diff": -0.031273348582836036,
-    "free_arc_fraction": 0.8993689079662401
+    "patch_half_deg": 0.4175015898816106,
+    "contact_drop_mm": 0.18809729294281094,
+    "assumed_drop_mm": 0.19083112551097198,
+    "rel_diff": -0.014325925924509875,
+    "free_arc_fraction": 0.7387343610267254
    },
    {
-    "patch_half_deg": 0.4641343730863452,
-    "contact_drop_mm": 0.443938286871541,
-    "assumed_drop_mm": 0.45053537342963446,
-    "rel_diff": -0.014642771571683921,
-    "free_arc_fraction": 0.8572226284741415
+    "patch_half_deg": 0.3955160149042824,
+    "contact_drop_mm": 0.5621866854175992,
+    "assumed_drop_mm": 0.5966007316163985,
+    "rel_diff": -0.05768354675925336,
+    "free_arc_fraction": 0.8455125170290135
    },
    {
-    "patch_half_deg": 0.38704213115733277,
-    "contact_drop_mm": 0.16520404008949802,
-    "assumed_drop_mm": 0.1634140142011746,
-    "rel_diff": 0.010953931320234034,
-    "free_arc_fraction": 0.9032677983360381
+    "patch_half_deg": 0.42839183557742266,
+    "contact_drop_mm": 0.8242636208679498,
+    "assumed_drop_mm": 0.8733136430860646,
+    "rel_diff": -0.056165413888170534,
+    "free_arc_fraction": 0.9102123502372177
    },
    {
-    "patch_half_deg": 0.4555273391236824,
-    "contact_drop_mm": 0.6858261535436685,
-    "assumed_drop_mm": 0.7249122521231968,
-    "rel_diff": -0.053918385935744495,
-    "free_arc_fraction": 0.8906680116775039
+    "patch_half_deg": 0.4285968861431507,
+    "contact_drop_mm": 1.0083466546865276,
+    "assumed_drop_mm": 1.0852236561410737,
+    "rel_diff": -0.0708397766852149,
+    "free_arc_fraction": 0.9175018745101489
    },
    {
-    "patch_half_deg": 0.42640020805464707,
-    "contact_drop_mm": 0.07361462369269407,
-    "assumed_drop_mm": 0.07350523472929997,
-    "rel_diff": 0.001488179226921016,
-    "free_arc_fraction": 0.8948594145291604
+    "patch_half_deg": 0.4420011319740612,
+    "contact_drop_mm": 0.10749891837721556,
+    "assumed_drop_mm": 0.10451638337876085,
+    "rel_diff": 0.02853653084843355,
+    "free_arc_fraction": 0.8306769948511888
    },
    {
-    "patch_half_deg": 0.3888414375054476,
-    "contact_drop_mm": 0.2547923988105101,
-    "assumed_drop_mm": 0.2531272465519743,
-    "rel_diff": 0.006578320908625868,
-    "free_arc_fraction": 0.9014423855979758
+    "patch_half_deg": 0.43872788226756176,
+    "contact_drop_mm": 0.6183271928642209,
+    "assumed_drop_mm": 0.639170830514453,
+    "rel_diff": -0.032610433166131214,
+    "free_arc_fraction": 0.8682899091433955
    },
    {
-    "patch_half_deg": 0.43811287237413565,
-    "contact_drop_mm": 0.6560468388547063,
-    "assumed_drop_mm": 0.7563081557964345,
-    "rel_diff": -0.13256675360871584,
-    "free_arc_fraction": 0.8922362981984024
+    "patch_half_deg": 0.4443989726220047,
+    "contact_drop_mm": 0.49694381572216,
+    "assumed_drop_mm": 0.5074779411576442,
+    "rel_diff": -0.020757799662097787,
+    "free_arc_fraction": 0.9227209181180192
    }
   ],
   "shipped": {
-   "patch_half_deg": 0.4687424752285117,
-   "contact_drop_mm": 1.6546481509073006,
-   "assumed_drop_mm": 1.666633456057599
+   "patch_half_deg": 0.3245476355673108,
+   "contact_drop_mm": 1.4637943596880436,
+   "assumed_drop_mm": 1.5516446176990795
   },
-  "n_drawn": 328,
+  "n_drawn": 103,
   "n_failed": 0,
-  "patch_half_deg_min": 0.3546494802027237,
-  "patch_half_deg_max": 0.4641343730863452,
-  "patch_half_deg_ratio": 1.3087129658868752,
-  "drop_rel_diff_min": -0.13256675360871584,
-  "drop_rel_diff_max": 0.010953931320234034,
-  "drop_rel_diff_absmax": 0.13256675360871584,
+  "patch_half_deg_min": 0.39375322960564163,
+  "patch_half_deg_max": 0.4443989726220047,
+  "patch_half_deg_ratio": 1.1286230542593558,
+  "drop_rel_diff_min": -0.0708397766852149,
+  "drop_rel_diff_max": 0.02853653084843355,
+  "drop_rel_diff_absmax": 0.0708397766852149,
   "assumed_patch_is_adequate": false
  },
  "kinematics": {
   "linear": {
-   "axle_drop_mm": 1.6546481509073006,
-   "patch_half_deg": 0.4687424752285117,
-   "iterations": 6,
-   "equilibrium_error_n": 3.2864022614376154e-10
+   "axle_drop_mm": 1.4637943596880436,
+   "patch_half_deg": 0.3245476355673108,
+   "iterations": 1,
+   "equilibrium_error_n": 2.892193151637912e-10
   },
   "svk": {
-   "axle_drop_mm": 1.7165709295844938,
-   "patch_half_deg": 0.46452146214417217,
+   "axle_drop_mm": 1.7935371503168087,
+   "patch_half_deg": 0.3613421309317084,
    "iterations": 1,
-   "equilibrium_error_n": 1.8471268958819564e-10
+   "equilibrium_error_n": 1.0633129932102747e-09
   },
-  "svk_rel_diff": 0.03742353239462948,
-  "assumed_patch_svk_rel_diff": 0.03953102391897789,
-  "coupling": -0.002107491524348415
+  "svk_rel_diff": 0.22526578849438805,
+  "assumed_patch_svk_rel_diff": 0.22520536182563933,
+  "coupling": 6.0426668748725376e-05
  },
  "gradient": {
-  "indentation_mm": 1.666633456057599,
+  "indentation_mm": 1.5516446176990795,
   "genes": {
    "sharp": {
     "cy1": {
@@ -462,20 +557,20 @@
       1e-06
      ],
      "derivatives": [
-      -0.993570515801423,
-      -0.9935855395895032,
-      -0.9935895582202647,
-      -0.9935415448580897,
-      -0.992950887734878
+      -1.7974603573996717,
+      -1.797462821514273,
+      -1.7974617824023653,
+      -1.7974955206057073,
+      -1.797343117004857
      ],
      "consecutive_rel": [
-      1.5121008364538113e-05,
-      4.044574524630917e-06,
-      4.832313481739625e-05,
-      0.0005944966531781226
+      1.370886757667833e-06,
+      5.780992492487869e-07,
+      1.8769914149174838e-05,
+      8.478663735356218e-05
      ],
      "plateau_decades": 4,
-     "best_estimate": -0.9935895582202647,
+     "best_estimate": -1.7974617824023653,
      "insensitive": false
     },
     "t0": {
@@ -487,20 +582,20 @@
       1e-06
      ],
      "derivatives": [
-      10.461964307849314,
-      10.462005970182986,
-      10.462039381167187,
-      10.462052922122211,
-      10.46198481446936
+      33.63460580786111,
+      33.6327024858889,
+      33.63270055629641,
+      33.63268443692391,
+      33.632593698484925
      ],
      "consecutive_rel": [
-      3.982266852275984e-06,
-      3.193554304559143e-06,
-      1.294294021514375e-06,
-      6.509970209234162e-06
+      5.658820510878737e-05,
+      5.7372507855646404e-08,
+      4.792767823724731e-07,
+      2.6979243704650102e-06
      ],
      "plateau_decades": 4,
-     "best_estimate": 10.462052922122211,
+     "best_estimate": 33.63270055629641,
      "insensitive": false
     },
     "R_hub": {
@@ -564,27 +659,27 @@
       1e-06
      ],
      "derivatives": [
-      -0.9926651072355241,
-      -0.9926801657513806,
-      -0.9926880579058661,
-      -0.9926680696992206,
-      -0.9924298467467452
+      -1.7884049410518799,
+      -1.7884075566243496,
+      -1.7884095093023689,
+      -1.7884343854746019,
+      -1.7881274985143136
      ],
      "consecutive_rel": [
-      1.516978459981111e-05,
-      7.950349727670059e-06,
-      2.0135435786050593e-05,
-      0.00023998248734602434
+      1.462516910910594e-06,
+      1.091852923629233e-06,
+      1.3909662246680554e-05,
+      0.0001715953141925297
      ],
      "plateau_decades": 4,
-     "best_estimate": -0.9926880579058661,
+     "best_estimate": -1.7884095093023689,
      "insensitive": false
     }
    }
   },
   "smoothing_shift": {
    "smoothed_0.001mm": {
-    "cy1": -0.0009073166147332001
+    "cy1": -0.0050361421803905015
    }
   },
   "insensitive_genes": [
@@ -595,13 +690,24 @@
   "smoothing_is_needed": false,
   "pass": true
  },
- "pass": true,
+ "pass": false,
+ "solver_is_correct": true,
  "settings": {
   "config": "coarse",
   "genome": "best_solution.json",
   "quick": false,
+  "kinematics": "linear",
+  "sections": [
+   "penalty",
+   "verification",
+   "patch",
+   "phase",
+   "design_space",
+   "kinematics",
+   "gradient"
+  ],
   "eps_n_default": 10000.0,
   "rim_band_mm": 1.5,
-  "elapsed_s": 1539.9
+  "elapsed_s": 1161.4
  }
 }

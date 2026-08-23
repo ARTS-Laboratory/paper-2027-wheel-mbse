@@ -102,6 +102,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import jax_config  # noqa: F401
 import jax
 import jax.numpy as jnp
@@ -135,6 +137,19 @@ GATE_FACET_MUST_FALL = True       # G7  see `run_phase_smoothness` — the crite
 GATE_SECANT_REL = 1.0e-5          # G9  looser: the secant's own 1e-8 enters the value
 INSENSITIVE_EXPECTED = ("R_hub", "R_rim")   # G8  the census, not a tolerance
 
+# THE GATES ABOVE ARE NOT PER-KINEMATICS, AND THAT IS THE POINT OF `--kinematics`.
+# M7 has only ever been run under linear kinematics, because `wheel_contact_problem`
+# defaults to it and no section here overrode the default.  So the adjoint Stage 3 would
+# use under `--kinematics svk` is unproven — see SVK_PLAN.md step 1, which exists to prove
+# it against these same numbers.  The tolerances are NOT relaxed for SVK: an adjoint is
+# either the derivative of its own solve or it is not, and G1 in particular contains no
+# finite difference for a step size to excuse.
+#
+# `linear` REMAINS THE DEFAULT and that is load-bearing rather than cautious:
+# `study_gradient.json` in the tree is a committed artifact measured under it, and a
+# changed default would re-baseline every number in it silently.
+DEFAULT_KINEMATICS = "linear"
+
 # Genes carried through the expensive per-gene sections in --quick.  One curvature gene,
 # one taper gene, and one fillet radius: the last is there so that quick mode still
 # exercises the insensitive branch, which is where a classifier bug would hide.
@@ -150,22 +165,30 @@ def _ranges():
     return wg.bounds_arrays(W.GENE_SPACE)[2]
 
 
-def _service_indentation(genes, cfg):
+def _service_indentation(genes, cfg, kinematics=DEFAULT_KINEMATICS):
     """The indentation that carries service load, as the point every check is taken at.
 
     Taken once and reused: the per-gene sections differentiate the contact FORCE at a
     fixed indentation, which is what M6's G7 established as the right primitive — the
     drop at fixed force runs a secant loop whose tolerance would enter the difference.
+
+    `kinematics` reaches here too, and it has to: the SVK equilibrium sits at a different
+    indentation from the linear one (2.409 mm against 1.953 on the shipped genome — see
+    SVK_PLAN.md), so taking the SVK gradient at the LINEAR indentation would check the
+    adjoint at a state the wheel never occupies.  Every section takes its point from this
+    function for exactly that reason.
     """
     return float(fem.solve_wheel_contact(WW.build_wheel(genes, cfg),
-                                         force=SERVICE_FORCE_N)["axle_drop_mm"])
+                                         force=SERVICE_FORCE_N,
+                                         kinematics=kinematics)["axle_drop_mm"])
 
 
 # ---------------------------------------------------------------------------
 # G1 — THE ADJOINT AGAINST DIFFERENTIATING THE SOLVE ITSELF
 # ---------------------------------------------------------------------------
 
-def run_unrolled(genes, indentation_mm=None, cold_iters=14, warm_iters=(1, 2, 3)):
+def run_unrolled(genes, indentation_mm=None, cold_iters=14, warm_iters=(1, 2, 3),
+                 kinematics=DEFAULT_KINEMATICS):
     """Unroll the Newton loop on `tiny` and differentiate it with `jax.grad`.
 
     No finite difference anywhere, so this is the only check in the file whose tolerance
@@ -180,9 +203,11 @@ def run_unrolled(genes, indentation_mm=None, cold_iters=14, warm_iters=(1, 2, 3)
         # — it cannot resolve that patch and `wheel_problem` rightly refuses.  The seed
         # is a starting point for the secant, not a claim about the wheel.
         indentation_mm = float(fem.solve_wheel_contact(
-            mesh, force=SERVICE_FORCE_N, delta0=TINY_DELTA0_MM)["axle_drop_mm"])
+            mesh, force=SERVICE_FORCE_N, delta0=TINY_DELTA0_MM,
+            kinematics=kinematics)["axle_drop_mm"])
 
-    prob = fem.wheel_contact_problem(mesh, indentation_mm=indentation_mm)
+    prob = fem.wheel_contact_problem(mesh, indentation_mm=indentation_mm,
+                                     kinematics=kinematics)
     res = fem.solve_nonlinear(prob, max_iter=60)
     adjoint = WA.adjoint_grad(prob, mesh, res["u"], genes, "contact_force")
 
@@ -229,6 +254,7 @@ def run_unrolled(genes, indentation_mm=None, cold_iters=14, warm_iters=(1, 2, 3)
 
     return {
         "config": "tiny", "order": int(TINY.order),
+        "kinematics": kinematics, "nonlinear": bool(prob.nonlinear),
         "n_reduced_dof": int(prob.T.shape[1]),
         "indentation_mm": float(indentation_mm),
         "adjoint_grad": [float(x) for x in adjoint["grad"]],
@@ -246,7 +272,7 @@ def run_unrolled(genes, indentation_mm=None, cold_iters=14, warm_iters=(1, 2, 3)
 # ---------------------------------------------------------------------------
 
 def run_identities(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
-                   indentation_mm=1.65):
+                   indentation_mm=1.65, kinematics=DEFAULT_KINEMATICS):
     """Is the differentiated potential the solved one, and the differentiated mesh the
     solved mesh?
 
@@ -268,7 +294,8 @@ def run_identities(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
                 {"config": name, "phase_deg": phase,
                  "max_abs_mm": float(np.abs(c - np.asarray(m.coords)).max())})
 
-        prob = fem.wheel_contact_problem(mesh, indentation_mm=indentation_mm)
+        prob = fem.wheel_contact_problem(mesh, indentation_mm=indentation_mm,
+                                         kinematics=kinematics)
         res = fem.solve_nonlinear(prob, max_iter=60)
         u = res["u"]
         con = prob.contact
@@ -293,6 +320,7 @@ def run_identities(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
                                      "from_quadrature": f_quad,
                                      "rel": abs(f_energy / f_quad - 1.0)})
 
+    out["kinematics"] = kinematics
     out["worst_mesh_coords_mm"] = max(r["max_abs_mm"] for r in out["mesh_coords"])
     out["worst_residual_rel"] = max(r["max_abs_rel"] for r in out["residual"])
     out["worst_force_rel"] = max(r["rel"] for r in out["contact_force"])
@@ -307,7 +335,8 @@ def run_identities(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
 # ---------------------------------------------------------------------------
 
 def run_plateau(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, gene_ids=None,
-                steps=(1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7)):
+                steps=(1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7),
+                kinematics=DEFAULT_KINEMATICS):
     """Central differences of the contact force in each gene, over a ladder of steps.
 
     Steps are scaled by the GENE'S OWN RANGE, as the master plan specifies: `cy` spans
@@ -324,19 +353,21 @@ def run_plateau(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, gene_ids=None,
     genes = np.asarray(genes, dtype=float)
     mesh = WW.build_wheel(genes, cfg)
     if indentation_mm is None:
-        indentation_mm = _service_indentation(genes, cfg)
+        indentation_mm = _service_indentation(genes, cfg, kinematics)
     rng = _ranges()
     if gene_ids is None:
         gene_ids = tuple(range(wg.N_GENES))
 
     dead_names, col = WA.insensitive_genes(genes, mesh)
     base = WA.solve_and_grad(genes, cfg, "contact_force",
-                             indentation_mm=indentation_mm, mesh=mesh)
+                             indentation_mm=indentation_mm, mesh=mesh,
+                             kinematics=kinematics)
     warm = base["res"]["u_reduced"]
 
     def force(v):
         return fem.solve_wheel_contact_at(WW.build_wheel(np.asarray(v), cfg),
-                                          indentation_mm, u_reduced0=warm
+                                          indentation_mm, u_reduced0=warm,
+                                          kinematics=kinematics
                                           )["contact_force_n"]
 
     rows = {}
@@ -392,7 +423,8 @@ def run_plateau(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, gene_ids=None,
     live = [n for n, r in rows.items() if not r["insensitive"]]
     census_ok = sorted(dead_names) == sorted(INSENSITIVE_EXPECTED)
     return {
-        "config": cfg, "indentation_mm": float(indentation_mm),
+        "config": cfg, "kinematics": kinematics,
+        "indentation_mm": float(indentation_mm),
         "rows": rows,
         "insensitive_genes": list(dead_names),
         "insensitive_expected": list(INSENSITIVE_EXPECTED),
@@ -415,7 +447,7 @@ def run_plateau(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, gene_ids=None,
 # ---------------------------------------------------------------------------
 
 def run_directional(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, n=10, seed=0,
-                    steps=(1e-4, 1e-5, 1e-6)):
+                    steps=(1e-4, 1e-5, 1e-6), kinematics=DEFAULT_KINEMATICS):
     """Directional derivatives along random unit vectors in normalised gene space.
 
     Per-gene differences can agree one at a time and still be wrong together: a
@@ -433,17 +465,18 @@ def run_directional(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, n=10, seed=0
     """
     genes = np.asarray(genes, dtype=float)
     if indentation_mm is None:
-        indentation_mm = _service_indentation(genes, cfg)
+        indentation_mm = _service_indentation(genes, cfg, kinematics)
     rng = _ranges()
     base = WA.solve_and_grad(genes, cfg, "contact_force",
-                             indentation_mm=indentation_mm)
+                             indentation_mm=indentation_mm, kinematics=kinematics)
     warm = base["res"]["u_reduced"]
     grad = base["grad"]
     gen = np.random.default_rng(seed)
 
     def force(v):
         return fem.solve_wheel_contact_at(WW.build_wheel(np.asarray(v), cfg),
-                                          indentation_mm, u_reduced0=warm
+                                          indentation_mm, u_reduced0=warm,
+                                          kinematics=kinematics
                                           )["contact_force_n"]
 
     rows = []
@@ -464,6 +497,7 @@ def run_directional(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, n=10, seed=0
                      "best_step": float(steps[k])})
     worst = max(r["rel"] for r in rows)
     return {"rows": rows, "n": int(n), "steps": [float(s) for s in steps],
+            "kinematics": kinematics,
             "worst_rel": worst, "pass": bool(worst < GATE_DIRECTIONAL_REL)}
 
 
@@ -472,7 +506,8 @@ def run_directional(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, n=10, seed=0
 # ---------------------------------------------------------------------------
 
 def run_dense_sweep(genes, cfg="smoke", gene_id=6, n=400, span_rel=0.02,
-                    indentation_mm=None, steps=(1e-4, 1e-5)):
+                    indentation_mm=None, steps=(1e-4, 1e-5),
+                    kinematics=DEFAULT_KINEMATICS):
     """Adjoint vs central difference at every point of a fine sweep across one gene.
 
     The master plan asks for a 400-point sweep that is visibly smooth.  A plot is not a
@@ -496,7 +531,7 @@ def run_dense_sweep(genes, cfg="smoke", gene_id=6, n=400, span_rel=0.02,
     genes = np.asarray(genes, dtype=float)
     rng = _ranges()
     if indentation_mm is None:
-        indentation_mm = _service_indentation(genes, cfg)
+        indentation_mm = _service_indentation(genes, cfg, kinematics)
     half = 0.5 * span_rel * rng[gene_id]
     xs = np.linspace(genes[gene_id] - half, genes[gene_id] + half, int(n))
 
@@ -506,14 +541,16 @@ def run_dense_sweep(genes, cfg="smoke", gene_id=6, n=400, span_rel=0.02,
         v = genes.copy()
         v[gene_id] = x
         out = WA.solve_and_grad(v, cfg, "contact_force",
-                                indentation_mm=indentation_mm, u_reduced0=warm)
+                                indentation_mm=indentation_mm, u_reduced0=warm,
+                                kinematics=kinematics)
         warm = out["res"]["u_reduced"]
         ad.append(float(out["grad"][gene_id]))
         val.append(float(out["value"]))
 
         def force(vv):
             return fem.solve_wheel_contact_at(WW.build_wheel(vv, cfg), indentation_mm,
-                                              u_reduced0=warm)["contact_force_n"]
+                                              u_reduced0=warm,
+                                              kinematics=kinematics)["contact_force_n"]
         for j, h_rel in enumerate(steps):
             h = h_rel * rng[gene_id]
             vp, vm = v.copy(), v.copy()
@@ -548,6 +585,7 @@ def run_dense_sweep(genes, cfg="smoke", gene_id=6, n=400, span_rel=0.02,
                   for j in range(len(ladders) - 1))
     return {
         "config": cfg, "gene": wg.GENE_NAMES[gene_id], "gene_id": int(gene_id),
+        "kinematics": kinematics,
         "n": int(n), "span_rel": float(span_rel), "steps": [float(s) for s in steps],
         "indentation_mm": float(indentation_mm),
         "x": xs.tolist(), "value": val, "adjoint": ad.tolist(),
@@ -562,16 +600,43 @@ def run_dense_sweep(genes, cfg="smoke", gene_id=6, n=400, span_rel=0.02,
 # G7 — THE PHASE SWEEP, AND THE FACETING THAT DOES LIVE IN IT
 # ---------------------------------------------------------------------------
 
-def _phase_sweep(genes, cfg, phases, indentation_mm):
-    """Contact force at fixed indentation over a list of phases, warm-started along."""
-    warm, vals, patch = None, [], []
+def _phase_sweep(genes, cfg, phases, indentation_mm, kinematics=DEFAULT_KINEMATICS):
+    """Contact force at fixed indentation over a list of phases, warm-started along.
+
+    THE WARM START IS A SPEED OPTIMISATION AND UNDER SVK IT CAN LAND OUTSIDE THE BASIN.
+    Measured on the shipped genome at `smoke`, 60 phases, indentation 2.2095 mm: the chain
+    runs to phase 25.0 and then refuses with `Newton direction is not a descent direction
+    (slope 5.662e+02) ... the tangent is not positive definite`, while a COLD solve at that
+    identical phase converges without complaint to 71.9097 N.  So the equilibrium exists
+    and is reachable; what failed is the guess it was approached from.
+
+    Under LINEAR kinematics this cannot happen — `assemble_stiffness`'s Hessian is
+    independent of `u` (its own docstring says so, and PLAN.md §0(1) H2(a) measured the
+    difference at exactly 0.000e+00), so a bad starting guess costs iterations and nothing
+    else.  Under SVK the tangent is a function of the state, and a state carried across a
+    0.5 deg phase jump is not guaranteed to sit anywhere near the one it is being used to
+    find.
+
+    Falling back to cold is therefore the right repair rather than a workaround: it
+    changes which starting guess is used and not which equilibrium is reported.  The
+    phases where it fired are RETURNED rather than swallowed, because "the warm start
+    stopped working here" is exactly the kind of observation this repo has been bitten by
+    losing.
+    """
+    warm, vals, patch, retried = None, [], [], []
     for p in phases:
-        res = fem.solve_wheel_contact_at(WW.build_wheel(genes, cfg, phase_deg=float(p)),
-                                         indentation_mm, u_reduced0=warm)
+        mesh = WW.build_wheel(genes, cfg, phase_deg=float(p))
+        try:
+            res = fem.solve_wheel_contact_at(mesh, indentation_mm, u_reduced0=warm,
+                                             kinematics=kinematics)
+        except fem.NewtonDivergedError:
+            res = fem.solve_wheel_contact_at(mesh, indentation_mm,
+                                             kinematics=kinematics)
+            retried.append(float(p))
         warm = res["u_reduced"]
         vals.append(res["contact_force_n"])
         patch.append(res["patch_half_deg"])
-    return np.array(vals), np.array(patch)
+    return np.array(vals), np.array(patch), retried
 
 
 def _rim_node_spacing_deg(mesh):
@@ -589,7 +654,8 @@ def _rim_node_spacing_deg(mesh):
 
 
 def run_phase_smoothness(genes, configs=("smoke", "coarse"), n_period=200,
-                         window_deg=3.0, window_step_deg=0.05, indentation_mm=None):
+                         window_deg=3.0, window_step_deg=0.05, indentation_mm=None,
+                         kinematics=DEFAULT_KINEMATICS):
     """Does the contact facet on the rim discretisation as the wheel rolls?
 
     THE CRITERION WRITTEN DOWN BEFORE THE RUN MEASURED THE WRONG THING, AND THE DATA IS
@@ -615,11 +681,12 @@ def run_phase_smoothness(genes, configs=("smoke", "coarse"), n_period=200,
     genes = np.asarray(genes, dtype=float)
     lead = configs[0]
     if indentation_mm is None:
-        indentation_mm = _service_indentation(genes, lead)
+        indentation_mm = _service_indentation(genes, lead, kinematics)
 
     # -- the whole period once, for the ripple and to locate the window
     phases = np.linspace(0.0, 30.0, int(n_period), endpoint=False)
-    v_period, _ = _phase_sweep(genes, lead, phases, indentation_mm)
+    v_period, _, retried_period = _phase_sweep(genes, lead, phases, indentation_mm,
+                                               kinematics)
     w = max(2, int(round(window_deg / (30.0 / n_period))))
     drop = np.array([abs(v_period[min(i + w, n_period - 1)] - v_period[i])
                      for i in range(n_period - 1)])
@@ -628,7 +695,7 @@ def run_phase_smoothness(genes, configs=("smoke", "coarse"), n_period=200,
     win = np.arange(start, start + window_deg + 1e-9, window_step_deg)
     rows = []
     for name in configs:
-        v, patch = _phase_sweep(genes, name, win, indentation_mm)
+        v, patch, retried = _phase_sweep(genes, name, win, indentation_mm, kinematics)
         slope = np.gradient(v, win)
         # Detrend with a moving average wide enough to average over the quadrature
         # spacing but narrow enough to follow the real curve.
@@ -650,18 +717,23 @@ def run_phase_smoothness(genes, configs=("smoke", "coarse"), n_period=200,
             "facet_fraction": float(np.std(resid) / max(mean_slope, 1e-300)),
             "slope_min": float(slope.min()), "slope_max": float(slope.max()),
             "phase_deg": win.tolist(), "force_n": v.tolist(),
+            "cold_retry_phases_deg": retried,
         })
 
     falls = all(rows[i + 1]["facet_fraction"] < rows[i]["facet_fraction"]
                 for i in range(len(rows) - 1))
     return {
-        "configs": list(configs), "indentation_mm": float(indentation_mm),
+        "configs": list(configs), "kinematics": kinematics,
+        "indentation_mm": float(indentation_mm),
         "window_start_deg": start, "window_deg": float(window_deg),
         "window_step_deg": float(window_step_deg),
         "period_phase_deg": phases.tolist(), "period_force_n": v_period.tolist(),
         "peak_to_peak_over_mean": float((v_period.max() - v_period.min())
                                         / v_period.mean()),
         "rows": rows,
+        "cold_retry_phases_deg": retried_period,
+        "n_cold_retries": len(retried_period) + sum(len(r["cold_retry_phases_deg"])
+                                                    for r in rows),
         "facet_falls_with_refinement": bool(falls),
         "facet_ratio": (rows[0]["facet_fraction"] / rows[-1]["facet_fraction"]
                         if len(rows) > 1 and rows[-1]["facet_fraction"] > 0 else None),
@@ -674,27 +746,59 @@ def run_phase_smoothness(genes, configs=("smoke", "coarse"), n_period=200,
 # ---------------------------------------------------------------------------
 
 def run_axle_drop(genes, cfg=DEFAULT_CONFIG, gene_ids=(6, 8, 12),
-                  steps=(1e-4, 1e-5, 1e-6)):
+                  steps=(1e-4, 1e-5, 1e-6), kinematics=DEFAULT_KINEMATICS,
+                  fd_tol_rel=1e-9, fd_max_iter=40):
     """The quantity Stage 3 actually optimises, against a finite difference of the whole
     load-controlled solve — the only check here that exercises the secant.
 
-    THE SECANT'S TOLERANCE IS NOT WHAT LIMITS THIS, WHICH WAS WORTH MEASURING RATHER THAN
-    ASSUMING.  The obvious suspicion is that the FD reference inherits the secant's 1e-8
-    relative stopping rule on the force.  Tightening it to 1e-11 moves the difference by
+    THE SECANT'S TOLERANCE **IS** WHAT LIMITS THE REFERENCE, AND THIS DOCSTRING USED TO
+    SAY IT WAS NOT.  The old text read: "Tightening it to 1e-11 moves the difference by
     nothing at all — ten identical digits — so the residue is ordinary truncation in the
-    outer difference, and a step ladder removes it exactly as it does in G4 and G5.
+    outer difference."  That measurement was real, and it was taken on the mesh of the
+    day.  It does not generalise.  On the 2026-08-18 uncap default the same experiment
+    gives the opposite answer, on gene `cx4` at `smoke`:
 
-    That is also the point of computing the gradient by the implicit-function quotient
-    instead: the secant's tolerance lands in the VALUE, where it is a stated 1e-8, and
-    never in the derivative.
+        fd tol_rel   1e-8            1e-9            1e-10        rel vs adjoint
+        capped       -0.0307547723   -0.0307547723   -0.0307547723   1.85e-06
+        hub only     -0.0303006155   -0.0303006155   -0.0303006155   3.29e-06
+        rim only     -0.0212447596   -0.0212447596   -0.0212447596   4.75e-06
+        BOTH         -0.0209239528   -0.0209216681   -0.0209216681   1.07e-04 -> 1.99e-06
+
+    One decade on the REFERENCE moves G9 from 10x over its gate to 5x under it, and only
+    on the one setting where both rings are uncapped.  So `fd_tol_rel` is a parameter now
+    rather than an inherited default, and it is set where the reference has stopped
+    depending on it.
+
+    THE ADJOINT WAS NEVER THE PROBLEM, and that is checkable independently: split the
+    quotient and finite-difference each half separately, and `dF/d delta` agrees to
+    2.79e-06 and `dF/dp` to 2.03e-06 on that same setting — both already as good as
+    capped.  It was the whole-solve reference that was under-converged, in the one place
+    a stopping rule can still reach the derivative.
+
+    That is still the point of computing the gradient by the implicit-function quotient:
+    the secant's tolerance lands in the VALUE, where it is a stated 1e-8.  What this
+    correction adds is that a FINITE-DIFFERENCE REFERENCE built on the same solve does
+    NOT get that protection — it differences two separately-terminated secants, and their
+    termination bias does not cancel.  A tolerance that is invisible in one mesh's
+    reference can be first-order in another's.  Do not re-derive "the secant does not
+    matter" from a single mesh again.
+
+    NOT LOOSENED: `GATE_SECANT_REL` is untouched at 1e-5.  This tightens the reference the
+    gate is measured against, in the direction that makes the check harder to pass by
+    accident.  1e-11 STALLS the secant ("indentations 1.477174 and 1.477174 give the same
+    contact force"), which is the float64 floor on the force, so 1e-9 is two decades of
+    margin from where it breaks and one decade past where it stops mattering.
     """
     genes = np.asarray(genes, dtype=float)
     rng = _ranges()
-    out = WA.axle_drop_value_and_grad(genes, cfg, force=SERVICE_FORCE_N)
+    out = WA.axle_drop_value_and_grad(genes, cfg, force=SERVICE_FORCE_N,
+                                      kinematics=kinematics)
 
     def drop(v):
         return fem.solve_wheel_contact(WW.build_wheel(v, cfg),
-                                       force=SERVICE_FORCE_N)["axle_drop_mm"]
+                                       force=SERVICE_FORCE_N,
+                                       tol_rel=fd_tol_rel, max_iter=fd_max_iter,
+                                       kinematics=kinematics)["axle_drop_mm"]
 
     rows = []
     for gi in gene_ids:
@@ -717,7 +821,8 @@ def run_axle_drop(genes, cfg=DEFAULT_CONFIG, gene_ids=(6, 8, 12),
     live = [r for r in rows if r["adjoint"] != 0.0]
     worst = max((r["rel"] for r in live), default=float("inf"))
     return {
-        "config": cfg, "axle_drop_mm": out["value"],
+        "config": cfg, "kinematics": kinematics, "axle_drop_mm": out["value"],
+        "fd_tol_rel": float(fd_tol_rel),
         "contact_force_n": out["contact_force_n"],
         "d_force_d_indentation": out["d_force_d_indentation"],
         "grad": [float(x) for x in out["grad"]],
@@ -726,7 +831,8 @@ def run_axle_drop(genes, cfg=DEFAULT_CONFIG, gene_ids=(6, 8, 12),
     }
 
 
-def run_cost(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, repeats=3):
+def run_cost(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, repeats=3,
+             kinematics=DEFAULT_KINEMATICS):
     """What the gradient costs, and against WHICH forward solve — the ratio is not one
     number and reporting it as one would mis-size Stage 3.
 
@@ -745,24 +851,26 @@ def run_cost(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, repeats=3):
     genes = np.asarray(genes, dtype=float)
     mesh = WW.build_wheel(genes, cfg)
     if indentation_mm is None:
-        indentation_mm = _service_indentation(genes, cfg)
+        indentation_mm = _service_indentation(genes, cfg, kinematics)
     warm0 = WA.solve_and_grad(genes, cfg, "contact_force",
-                              indentation_mm=indentation_mm, mesh=mesh)   # trace
+                              indentation_mm=indentation_mm, mesh=mesh,
+                              kinematics=kinematics)                      # trace
     u0 = warm0["res"]["u_reduced"]
 
     cold, warm = [], []
     for _ in range(int(repeats)):
         cold.append(WA.solve_and_grad(genes, cfg, "contact_force",
-                                      indentation_mm=indentation_mm,
-                                      mesh=mesh)["timings"])
+                                      indentation_mm=indentation_mm, mesh=mesh,
+                                      kinematics=kinematics)["timings"])
         warm.append(WA.solve_and_grad(genes, cfg, "contact_force",
                                       indentation_mm=indentation_mm, mesh=mesh,
-                                      u_reduced0=u0)["timings"])
+                                      u_reduced0=u0,
+                                      kinematics=kinematics)["timings"])
 
     def med(rows, key):
         return float(np.median([r[key] for r in rows]))
 
-    return {"config": cfg, "cold": cold, "warm": warm,
+    return {"config": cfg, "kinematics": kinematics, "cold": cold, "warm": warm,
             "cold_forward_s": med(cold, "forward_s"),
             "warm_forward_s": med(warm, "forward_s"),
             "gradient_s": med(warm, "gradient_s"),
@@ -781,6 +889,12 @@ def _print(rep):
     print("=" * 78)
     print("  M7 GATE — GRADIENTS BY IMPLICIT DIFFERENTIATION")
     print("=" * 78)
+    # Printed at the top, not buried in the settings block: a report read without knowing
+    # which kinematics produced it is a report that can be quoted against the wrong wheel,
+    # which is the misattribution SVK_PLAN.md's standing rules exist to prevent.
+    kin = rep.get("settings", {}).get("kinematics", rep["unrolled"].get("kinematics"))
+    if kin is not None:
+        print(f"  kinematics: {str(kin).upper()}")
 
     u = rep["unrolled"]
     head("G1  *** THE ONE THAT MATTERS *** ADJOINT VS DIFFERENTIATING THE SOLVE")
@@ -925,11 +1039,16 @@ def _print(rep):
               f"{r['fd']:+.9e}  rel {r['rel']:.2e}  at h {r['best_step']:.0e}   "
               + "  ".join(f"{x:.1e}" for x in r["rel_ladder"]))
     print(f"    worst {a['worst_rel']:.2e}  [< {GATE_SECANT_REL:.0e}]")
-    print(f"    the secant's own tolerance is NOT what limits this — measured, "
-          f"tightening it from")
-    print(f"    1e-8 to 1e-11 moves the difference by nothing at all.  The residue is "
-          f"truncation in")
-    print(f"    the outer difference, and the ladder removes it.")
+    print(f"    the reference secant runs at fd_tol_rel {a.get('fd_tol_rel', 1e-9):.0e}, "
+          f"and THAT TOLERANCE IS WHAT LIMITS")
+    print(f"    THIS — the opposite of what this line said until 2026-08-19.  On the "
+          f"uncapped default,")
+    print(f"    cx4 at smoke reads 1.07e-04 at tol 1e-8 and 1.99e-06 at 1e-9: one decade "
+          f"on the")
+    print(f"    REFERENCE moves G9 from 10x over this gate to 5x under it.  (1e-11 is not "
+          f"an option;")
+    print(f"    the secant stalls at the float64 floor.)  See `run_axle_drop`'s docstring "
+          f"for the table.")
     print(f"    -> {'PASS' if a['pass'] else 'FAIL'}")
 
     c = rep["cost"]
@@ -971,10 +1090,30 @@ def main():
     ap.add_argument("--no-plot", action="store_true")
     ap.add_argument("--quick", action="store_true",
                     help="reduced meshes and sample counts; for the test suite")
+    # SVK_PLAN.md step 1.  Every gate in this file has only ever been measured under the
+    # linear default, so the adjoint Stage 3 would descend on under SVK is unproven.  The
+    # DEFAULT MUST STAY `linear`: `study_gradient.json` is a committed artifact and the
+    # `--kinematics svk` run writes its own `--out`.
+    ap.add_argument("--kinematics", choices=("linear", "svk"),
+                    default=DEFAULT_KINEMATICS,
+                    help="kinematics for every solve in the report; linear is the "
+                         "committed default and svk is SVK_PLAN.md step 1")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_gradient.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.kinematics != "linear", "--kinematics %s" % args.kinematics),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     genes = load_genes(args.genome)
     cfg = "smoke" if args.quick else args.config
+    kin = args.kinematics
     t0 = time.time()
 
     rep = {}
@@ -984,36 +1123,39 @@ def main():
     # differentiated Newton iteration each) and keeps the tolerance.
     rep["unrolled"] = run_unrolled(
         genes, cold_iters=8 if args.quick else 14,
-        warm_iters=(1,) if args.quick else (1, 2, 3))
+        warm_iters=(1,) if args.quick else (1, 2, 3), kinematics=kin)
     rep["identities"] = run_identities(
-        genes, cfg, configs=("smoke",) if args.quick else ("smoke", "coarse"))
-    delta = _service_indentation(genes, cfg)
+        genes, cfg, configs=("smoke",) if args.quick else ("smoke", "coarse"),
+        kinematics=kin)
+    delta = _service_indentation(genes, cfg, kin)
     rep["plateau"] = run_plateau(
         genes, cfg, indentation_mm=delta,
         gene_ids=QUICK_GENES if args.quick else None,
         steps=(1e-2, 1e-3, 1e-4, 1e-5) if args.quick
-        else (1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7))
+        else (1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7), kinematics=kin)
     rep["directional"] = run_directional(
         genes, cfg, indentation_mm=delta, n=3 if args.quick else 10,
-        steps=(1e-4, 1e-6) if args.quick else (1e-4, 1e-5, 1e-6))
-    rep["sweep"] = run_dense_sweep(genes, "smoke", n=60 if args.quick else 400)
+        steps=(1e-4, 1e-6) if args.quick else (1e-4, 1e-5, 1e-6), kinematics=kin)
+    rep["sweep"] = run_dense_sweep(genes, "smoke", n=60 if args.quick else 400,
+                                   kinematics=kin)
     # Two configs always: the whole content of G7 is whether the faceting CONVERGES, and
     # one mesh cannot answer that.  Quick mode shortens the window instead.
     rep["phase"] = run_phase_smoothness(
         genes, configs=("smoke", "coarse"),
         n_period=60 if args.quick else 200,
-        window_deg=1.0 if args.quick else 3.0)
+        window_deg=1.0 if args.quick else 3.0, kinematics=kin)
     rep["axle_drop"] = run_axle_drop(
         genes, cfg, gene_ids=(6,) if args.quick else (6, 8, 12),
-        steps=(1e-4, 1e-6) if args.quick else (1e-4, 1e-5, 1e-6))
+        steps=(1e-4, 1e-6) if args.quick else (1e-4, 1e-5, 1e-6), kinematics=kin)
     rep["cost"] = run_cost(genes, cfg, indentation_mm=delta,
-                           repeats=1 if args.quick else 3)
+                           repeats=1 if args.quick else 3, kinematics=kin)
 
     rep["pass"] = bool(rep["unrolled"]["pass"] and rep["identities"]["pass"]
                        and rep["plateau"]["pass"] and rep["directional"]["pass"]
                        and rep["sweep"]["pass"] and rep["phase"]["pass"]
                        and rep["axle_drop"]["pass"])
     rep["settings"] = {"config": cfg, "genome": args.genome, "quick": args.quick,
+                       "kinematics": kin,
                        "service_force_n": float(SERVICE_FORCE_N),
                        "indentation_mm": float(delta),
                        "elapsed_s": round(time.time() - t0, 1)}
@@ -1025,7 +1167,7 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1

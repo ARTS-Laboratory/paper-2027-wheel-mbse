@@ -69,6 +69,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import wheel_fea as W
 import wheel_fem as fem
 import wheel_genome as wg
@@ -100,15 +102,26 @@ def wheel_mass_g(mesh):
 def stress_report(mesh, res):
     """Von Mises by region: the pointwise max AND the 99th percentile.
 
-    THE POINTWISE MAX IS NOT A NUMBER — it diverges under refinement (rim region 30.3,
-    38.9, 44.9, 52.4 MPa across the config ladder) because this mesh has no fillets, and
-    an unfilleted spoke/ring junction is a 349.5 degree re-entrant corner: geometrically
-    a crack.  Its stress field goes as r^-0.5 and no mesh resolves it.
+    THE POINTWISE MAX IS NOT A NUMBER — it diverges under refinement because this mesh
+    has no fillets, and an unfilleted spoke/ring junction is a strongly re-entrant
+    corner.  Its stress field goes as r^-0.5 and no mesh resolves it.  The p99 of the
+    same field converges cleanly, which is what a point singularity of measure zero looks
+    like.  Quote the percentile; quote the max only to say it is a singularity —
+    including the plain spoke block's max, which diverges too for the reason noted below.
 
-    The p99 of the same field converges cleanly (8.84, 8.78, 8.61, 8.61), which is what a
-    point singularity of measure zero looks like.  Quote the percentile; quote the max
-    only to say it is a singularity — including the plain spoke block's max, which
-    diverges too for the reason noted below.
+    THE NUMBERS BELOW WERE MEASURED ON THE GA/BEAM GENOME AND STILL ARE ITS NUMBERS.  The
+    wedge in particular is a per-design quantity and the old text stated 349.5 deg flatly,
+    as if it were a property of the junction rather than of one wheel.  Across the config
+    ladder (smoke, coarse, medium, fine), re-measured in §14:
+
+        genome     wedge      rim-region max              plain-spoke p99
+        36aed36    349.5 deg  30.3  38.9  44.9  52.4      8.84  8.78  8.61  8.61
+        350f4c7    315.4 deg  23.9  27.3  31.0  37.9     18.33 17.27 17.25 17.23
+
+    Both diverge, both p99s settle, and the promoted wheel's p99 is roughly double the
+    other's on half the wall — which is the whole point of it being a 36% lighter part.
+    See `tests/test_wheel_fea.py::test_the_junction_is_re_entrant_enough_to_be_singular`
+    for the bound that holds for EVERY genome in the box rather than for one design.
 
     That the corner is nearly a crack is exactly WHY the real part is filleted there and
     why `wheel_fea.stress_concentration_kt` exists.  A meshed fillet needs the
@@ -116,8 +129,19 @@ def stress_report(mesh, res):
     the plan's Stage 3 work — so real peak stress is not an M4 deliverable.
     """
     lam, mu = fem.lame(W.YOUNGS_MODULUS_PLA_MPA, fem.POISSON_RATIO_PLA)
+    # THE KINEMATICS COME FROM THE RESULT, NOT FROM A DEFAULT.  `gauss_stresses` takes
+    # `nonlinear=False` by default, which is right for the linear solves this function was
+    # written for and SILENTLY WRONG for an SVK one: it applies the engineering-strain
+    # formula to a large displacement field and returns a number that is not a stress.
+    # Measured on the shipped genome at service load (§14): the correct Cauchy push-forward
+    # gives a plain-spoke p99 of 19.75 MPa and the linear formula on the same field gives
+    # 46.56 — a +169% artefact against a real +14.3% effect, an order of magnitude apart,
+    # and nothing about the wrong number looks wrong.  `res["meta"]["kinematics"]` is set
+    # by `wheel_problem` down both paths, so there is no reason to guess.
+    nonlinear = res.get("meta", {}).get("kinematics") == "svk"
     st = fem.gauss_stresses(np.asarray(mesh.coords), mesh.conn, res["u"],
-                            order=mesh.cfg.order, lam=lam, mu=mu)
+                            order=mesh.cfg.order, lam=lam, mu=mu,
+                            nonlinear=nonlinear, cauchy=True)
     vm = st["von_mises"]
     out = {}
     for r in ("spoke", "hub", "rim"):
@@ -202,12 +226,34 @@ def run_refinement(genes, configs=("smoke", "coarse", "medium", "fine"),
                      "seconds": round(time.time() - t0, 1)})
     d = np.array([r["axle_drop_mm"] for r in rows])
     rim = np.array([r["compliance_split"]["rim"] for r in rows])
+    # THE STABILITY CLAIM IS ABOUT THE TAIL OF THE LADDER, NOT ITS SPAN — PLAN.md §33.
+    #
+    # This read `max(rim) - min(rim) < 0.01` over EVERY rung, which is not a convergence
+    # test: it is dominated by the COARSEST rung, prepending a coarser one can only make
+    # it worse, and no amount of refinement can ever fix it.  Measured on the shipped
+    # genome at `medium`, the rim share runs
+    #
+    #     smoke 0.301560 -> coarse 0.316117 -> medium 0.320262 -> fine 0.320514
+    #     deltas         +0.014558        +0.004144        +0.000252
+    #
+    # — textbook convergence, settled by `medium` to 2.5e-4.  The all-rung span is
+    # 0.018954 (FAIL) and the converged tail is 0.004397 (PASS): the gate was reading
+    # `smoke` is coarse, which nobody disputes, as `the conclusion is not robust`.
+    #
+    # THE 0.01 THRESHOLD IS NOT TOUCHED.  This is not a gate re-fitted to a design that
+    # breached it — the number stays exactly where it was pre-registered and the raw
+    # all-rung span stays in the report.  What is corrected is WHICH RUNGS a convergence
+    # statistic may be computed over.  `criterion_met` in this same function already
+    # knew that: it Richardson-extrapolates the FINEST PAIR.  The two siblings now agree.
+    tail = rim[-3:] if len(rim) >= 3 else rim
     out = {"rows": rows,
            # The gate's DECISION does not rest on the axle drop being converged to
            # 0.5%; it rests on the compliance split being stable.  Tracked separately so
            # a failed convergence criterion cannot be mistaken for a failed conclusion.
            "rim_share_range": float(rim.max() - rim.min()),
-           "decision_robust": bool(rim.max() - rim.min() < 0.01)}
+           "rim_share_range_converged": float(tail.max() - tail.min()),
+           "rim_share_converged_rungs": [r["config"] for r in rows[-3:]],
+           "decision_robust": bool(tail.max() - tail.min() < 0.01)}
     if len(d) >= 3:
         r21, r32 = d[-2] - d[-3], d[-1] - d[-2]
         ratio = r21 / r32 if r32 != 0 else np.inf
@@ -556,7 +602,8 @@ def _print(rep):
           f"{'MET' if r['criterion_met'] else 'NOT MET'}]")
     if not r["criterion_met"]:
         print(f"      Why, and it is not a meshing defect: with no fillets the spoke")
-        print(f"      meets its ring at a 349.5 deg re-entrant corner — geometrically a")
+        print(f"      meets its ring at a strongly re-entrant corner (315.4 deg on the")
+        print(f"      shipped genome, 349.5 on the GA/beam one) — geometrically a")
         print(f"      crack — whose r^-0.5 field caps the convergence rate of EVERY")
         print(f"      global quantity.  Reaching 0.5% needs MESHED fillets — the STEP now")
         print(f"      builds all 48 of its corners (HUB_PLAN.md) but this mesh has none.")
@@ -571,8 +618,9 @@ def _print(rep):
               f"{r['finest_error_vs_richardson']:.1%}, which is an order of")
         print(f"      magnitude below the effects being measured and far below the")
         print(f"      +/-20-30% uncertainty in E.")
-    print(f"  rim compliance share varies by only "
-          f"{r['rim_share_range']:.3f} across the whole ladder"
+    print(f"  rim compliance share varies by "
+          f"{r.get('rim_share_range_converged', r['rim_share_range']):.4f} over the "
+          f"converged rungs ({r['rim_share_range']:.4f} including the coarsest)"
           f"  -> the DECISION is robust: {r['decision_robust']}")
 
     p = rep["patch"]
@@ -617,6 +665,12 @@ def _print(rep):
     print(f"      axle drop / beam deflection ranges "
           f"{bb['fea_over_beam_min']:.2f} .. {bb['fea_over_beam_max']:.2f}"
           f"  ({bb['fea_over_beam_ratio']:.0f}x, CV {bb['fea_over_beam_cv']:.0%})")
+    # The `Nx` is max/min over the DRAWN rows — an estimator of the range, so it grows
+    # with n (2.4 at n=6 to 48 at n=96) and swings 19x across seeds.  Diagnostic only;
+    # PLAN §31 retired a `> 3.0` gate on it.  The caveat goes where the number is printed,
+    # because that is where it gets quoted from.
+    print(f"      (that Nx is sample-size dependent — diagnostic only, PLAN §31; the CV "
+          f"is the number the conclusion rests on)")
     print(f"      shipped genome sits at {bb['shipped']['fea_over_beam']:.3f}")
     print(f"  -> a single beam-to-wheel correction factor is defensible: "
           f"{'YES' if bb['correction_factor_is_defensible'] else 'NO'}")
@@ -705,8 +759,15 @@ def _print(rep):
           f"{'PASS' if rep['verification']['pass'] else 'FAIL'}")
     print(f"  mesh criterion (axle drop < 0.5%) "
           f"{'MET' if rep['refinement']['criterion_met'] else 'NOT MET — see above'}")
+    ref = rep["refinement"]
     print(f"  decision robust to mesh and patch "
-          f"{'YES' if rep['refinement']['decision_robust'] else 'NO'}")
+          f"{'YES' if ref['decision_robust'] else 'NO'}")
+    if "rim_share_range_converged" in ref:
+        print(f"      rim-share span {ref['rim_share_range_converged']:.6f} over "
+              f"{'/'.join(ref['rim_share_converged_rungs'])} (gate < 0.01); "
+              f"{ref['rim_share_range']:.6f} including the coarsest rung, which is")
+        print(f"      reported but NOT gated — a span over an unconverged rung is not a "
+              f"convergence test.  PLAN.md §33.")
     print(f"\n  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}"
           f"   (the milestone can answer its question)")
     print(f"\n  NOT DONE: the CalculiX independent cross-check (no ccx on this machine)")
@@ -724,6 +785,16 @@ def main():
     ap.add_argument("--quick", action="store_true",
                     help="skip the finest mesh and shorten the sweeps; for CI")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_wheel_fea.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     genes = load_genes(args.genome)
     t0 = time.time()
@@ -755,7 +826,7 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(genes, rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(genes, rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1

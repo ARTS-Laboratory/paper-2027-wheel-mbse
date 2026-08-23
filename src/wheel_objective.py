@@ -75,8 +75,11 @@ mesh ladder: `max/pnorm` is the BEST-behaved quantity in the whole decomposition
 itself is at GCI 47% and the utilisation at 63%, while the axle drop off the very same
 solves converges at order 2.44 to GCI 0.14%.  At p=30 the p-norm is 1/1.38 of the true
 max — it IS the max in disguise — so it inherits the r^-0.5 field of the unfilleted
-349.5-degree spoke/ring corner that `study_wheel_fea.stress_report` identifies as
-geometrically a crack.  The exponent is therefore an argument (`stress_gauss_p`) and
+spoke/ring corner that `study_wheel_fea.stress_report` identifies as geometrically a
+crack.  (That corner was 349.5 deg when this was written, which was a per-design number;
+it is 315.4 on the shipped genome and at least 295 for anything in the box.  Still
+re-entrant, still singular, so the argument is unchanged — see
+`tests/test_wheel_fea.py::test_the_junction_is_re_entrant_enough_to_be_singular`.)  The exponent is therefore an argument (`stress_gauss_p`) and
 `t3_terms` can probe others on the same solve (`stress_p_probe`).
 
 AND THE RESCALE IS GONE.  M8b-i.6 swept ten exponents off one set of solves and settled
@@ -172,6 +175,16 @@ FILLET_SAFETY = 1.1
 #   meets the hub circle cannot grow past roughly half that thickness before it has eaten
 #   the whole flank.
 #
+# EACH LIMIT IS A CORNER FAMILY, AND THE FAMILIES ARE NAMED BY THEIR WEDGE ANGLE, not by
+# rank.  The twenty-four hub corners are two twelves: a SQUARE-ON family at a wedge of
+# 266-270 deg (one per spoke flank, the root-thickness mechanism) and a NEAR-CUSP family
+# at 294-332 deg (the slot mechanism).  `make hubcap` pairs each threshold with its own
+# wedge, so which family binds is observed rather than assumed — and it is not the same
+# family on every design.  At `t0` = 1.2, the floor everything ships at, the SQUARE-ON
+# family binds; on the `t0` = 2.55 Stage-2 elites the NEAR-CUSP family binds.  That matters
+# because the thickness share below was originally fitted on the elites, which is to say on
+# designs where the family it governs is NOT what OCC stops at.  See BUILD_PLAN.md step 1.
+#
 # WHICH ONE BINDS IS A MEASUREMENT, AND IT IS NOT THE ONE THIS STARTED WITH.  The slot
 # term alone was written first, on the strength of the hub fillet milestone's single
 # recorded export (void 2.196 mm, OCC built 1.127).  Bisecting the real per-corner
@@ -181,34 +194,110 @@ FILLET_SAFETY = 1.1
 # 1.344 / 1.334, a 3.4% range.  Two of those designs have IDENTICAL `t0` and thresholds
 # 0.7% apart despite the widest void difference in the set.  The slot was not what bound.
 #
-# So the slot term alone is falsified as THE cap.  It is kept, and kept at 0.5, because it
-# must bind eventually and nothing else knows that: as adjacent roots close on each other
-# the void goes to zero and then negative, and at that point no fillet exists at any radius
-# no matter how thick the spoke is.  The thickness term cannot see that at all.  Its own
-# share has never been observed binding, so 0.5 stays a modelling assumption rather than a
-# fit, and it is labelled as one.
+# So the slot term alone is falsified as THE cap.  It is kept because it must bind
+# eventually and nothing else knows that: as adjacent roots close on each other the void
+# goes to zero and then negative, and at that point no fillet exists at any radius no
+# matter how thick the spoke is.  The thickness term cannot see that at all.
 #
-# HUB_CAP_THICKNESS_SHARE is fitted, conservatively, to FIVE measured ratios spanning
-# `t0` = 2.0 to 2.5536 — the three designs above (0.5247 / 0.5263 / 0.5224) plus
-# `make hubcap`'s `t0_sweep`, which holds one centerline and walks `t0` across its box
-# (0.5214 at t0 = 2.0, 0.5254 at 2.5).  All five sit in a 0.9% band and 0.52 is under the
-# smallest of them.  Conservative is the direction that matters: a cap that under-promises
-# leaves fillet on the table, one that over-promises puts Stage 3 back to buying fillet the
-# part cannot build, which is the defect this milestone exists to remove.
+# ---------------------------------------------------------------------------------------
+# BOTH SHARES WERE RE-FITTED ON 2026-08-10.  BUILD_PLAN.md steps 1-3.  What follows is the
+# current calibration; the paragraph after it is what it replaced and why, because the
+# reason the old numbers were wrong is more useful than the numbers were.
+# ---------------------------------------------------------------------------------------
 #
-# THE LAW IS CALIBRATED ON [2.0, 2.6] AND IS NOT KNOWN OUTSIDE IT.  The sweep's rows above
-# t0 ~ 3 report shares of 0.63 to 0.94, and they are not evidence against this: by then the
-# void has collapsed and gone NEGATIVE (-0.92 deg at t0 = 6, -9.51 deg at t0 = 10), the
-# adjacent roots have merged, and there is no spoke-to-hub corner left for the number to be
-# about.  The driver marks those rows `same_feature: false` and excludes them from the fit
-# rather than averaging a different shape into this constant.  In that regime the SLOT term
-# is negative and takes the `min` anyway, so the cap is correct there for a different
-# reason: no fillet exists at any radius, which is exactly what a negative cap says.
+# HUB_CAP_THICKNESS_SHARE AND HUB_CAP_ARRIVAL_SLOPE — the square-on family.
 #
-# `MIN_WALL_MM` is 2.0 and every design on disk sits at 2.468-2.627, so the calibrated band
-# covers the reachable design space's lower half and everything the GA has ever produced.
-HUB_CAP_SHARE = 0.5
-HUB_CAP_THICKNESS_SHARE = 0.52
+#     square_on_threshold / t0  =  HUB_CAP_THICKNESS_SHARE
+#                                  - HUB_CAP_ARRIVAL_SLOPE * (1 - cos(arrival_hub))
+#
+# `arrival_hub` is `wheel_wheel.arrival_angles`' hub value: the angle between the
+# centerline and the hub circle's TANGENT, 0 deg tangential and 90 deg radial.  The
+# thickness law is not a constant, and that is the whole finding — it is a curve in a
+# variable the old constant did not take.  `studies/study_arrival_cap.py` rotates P1 about
+# the hub at fixed radius, which walks `arrival_hub` while moving NO other gene (P0 is
+# locked at the origin, so the first control-polygon edge IS `(cx1, cy1)`), and bisects the
+# per-corner OCC threshold at seven stations from 5 to 60 deg on two bases 2.128x apart in
+# `t0`.  Normalised by `t0` the two bases agree to within 10% across that whole thickness
+# range, while the ARRIVAL dependence spans a factor of 1.9.  The `t0` normalisation was
+# right; treating the rest as a constant was not.
+#
+# THE FIT IS UNDER EVERY ONE OF THE FOURTEEN, by 1.45-3.29% against the thin base and
+# 4.00-11.61% against the thick one — fitted under the THIN curve, which is under the thick
+# one at every station, for the same reason 0.52 was fitted under its smallest ratio.  The
+# residual scatter about the thin curve is +/-0.4%, well inside `study_hub_cap.BISECT_REL`
+# = 1%, and the bisection reports the largest radius KNOWN to be accepted, so every
+# measurement is itself a lower bound on the truth.
+#
+# OUT OF SAMPLE, on two designs in neither fit: `ae7092c` (arrival 48.40 deg) and `bc77614`
+# (48.89) are Stage-3 SVK descents whose centerlines differ from the sweep base in every
+# gene.  The law predicts their square-on thresholds at 0.4124 and 0.4088 mm against
+# measured 0.4266 and 0.4220 — under by 3.3% and 3.1%, the same margin it carries in
+# sample.
+#
+# CALIBRATED ON arrival in [5, 60] deg, which is all of the range the design can reach:
+# `wheel_geometry.MAX_ARRIVAL_DEG` is 65 and the `arrival` barrier holds it there.  Unlike
+# the thickness law this one is not being extrapolated anywhere the optimizer goes.  The
+# `(1 - cos)` form was chosen over a marginally better quadratic in the angle because it
+# stays POSITIVE across the whole physically reachable [0, 90] deg with no special case; a
+# quadratic crosses zero at 87.4 deg and would assert that a near-radial spoke admits no
+# fillet at all, which is a claim nothing measured.
+#
+# HUB_CAP_SHARE — the near-cusp family, AND IT HAS NOW BEEN OBSERVED BINDING.  The note
+# this replaces said its share "has never been observed binding, so 0.5 stays a modelling
+# assumption rather than a fit".  Pairing each threshold with its own wedge showed the cusp
+# family is what OCC stops at on BOTH `t0` = 2.55 elites, and 0.5 over-promised there by up
+# to 1.62x.  It is now fitted the way the thickness share was: under the smallest of eight
+# measured `cusp_threshold / slot_arc` ratios — 0.3096 (elite14, arrival 3.39 deg) through
+# 0.6955 (arrival 49.96) — by 3.1%.
+#
+# WHAT THAT SHARE STILL DOES NOT MODEL, named rather than buried: the cusp family has its
+# own arrival dependence, and it runs the OTHER WAY, 0.31 at 3.4 deg to 0.70 at 50.  0.30 is
+# its value as arrival goes to zero, so it is conservative at every larger angle and leaves
+# up to 2.2x of slot fillet on the table.  It is left as a constant because the only sweep
+# that reaches this family moves the void and the arrival TOGETHER — rotating P1 opens the
+# slot as it steepens the arrival — so those rows cannot separate the two.  The experiment
+# that would is the mirror of `t0_sweep`: hold the arrival fixed and walk the void.  Until
+# it is run, this stays one number and says so.
+#
+# THE TWO FAMILIES GO IN OPPOSITE DIRECTIONS IN ARRIVAL, which is why the buildable radius
+# is a PEAKED function of it rather than a monotone one, and why three designs at `t0` = 1.2
+# and two at 2.55 disagreed on the sign of the effect until the sweep separated them.  The
+# `min` was always the right structure; both of its arguments were the wrong shape.
+#
+# ---------------------------------------------------------------------------------------
+# WHAT THIS REPLACED, and the two ways it went wrong.
+#
+# HUB_CAP_THICKNESS_SHARE was 0.52, fitted conservatively to five measured ratios spanning
+# `t0` = 2.0 to 2.5536 (0.5247 / 0.5263 / 0.5224 from three designs, plus 0.5214 and 0.5254
+# from `t0_sweep`), all inside a 0.9% band.  The fit was sound.  Both of its premises were
+# not:
+#
+#   (1) THE FLOOR MOVED UNDER IT ON 2026-08-06.  The default `MIN_WALL_MM` became 1.2
+#       (PLAN.md §13) and the shipped genome went to `t0` = 1.2, below the [2.0, 2.6] the
+#       share was fitted on.  The note here recorded that and argued the extrapolation was
+#       harmless.  Measured at 1.2, the square-on ratio is 0.4872 at the shipped arrival —
+#       6.3% below 0.52, not above it.
+#   (2) THE FIVE RATIOS CAME FROM DESIGNS WHERE THIS FAMILY DOES NOT BIND.  Every one of
+#       them is a `t0` ~ 2.0-2.55 design, and on those OCC stops at the CUSP corner.  The
+#       constant was calibrated against a family that was never the limit, so its 0.9% band
+#       was measuring the wrong thing tightly.
+#
+# The result was a cap that over-promised on ALL FIVE designs `make hubcap` measures —
+# cap / (worst measured corner) of 1.067, 1.615, 1.199, 1.463, 1.479 — while the driver's
+# own `occ_limit` gate read green on the over-promise clause, because it compared the cap
+# against the LARGER of the two families.  The re-fit brings those five to 0.979, 0.969,
+# 0.827, 0.967, 0.969.
+#
+# The old note also said, of the slot term above `t0` ~ 3: the sweep reports shares of 0.63
+# to 0.94 there, and they are not evidence against the fit, because by then the void has
+# collapsed and gone NEGATIVE (-0.92 deg at `t0` = 6, -9.51 at 10), the adjacent roots have
+# merged, and there is no spoke-to-hub corner left for the number to be about.  The driver
+# marks those rows `same_feature: false` and excludes them.  THAT REASONING STILL HOLDS and
+# is why the slot term is kept at all: in that regime it goes negative and takes the `min`,
+# which is exactly the right answer — no fillet exists at any radius.
+HUB_CAP_SHARE = 0.30
+HUB_CAP_THICKNESS_SHARE = 0.505
+HUB_CAP_ARRIVAL_SLOPE = 0.48
 
 # `wheel_step_export._fillet_ladder` walks the requested radius DOWN by 15% a rung, so two
 # requested radii closer together than one rung cannot produce different built parts.  That
@@ -226,9 +315,36 @@ CAP_BLEND_FRAC = 1.0 - FILLET_LADDER_DECAY
 # closed the slot entirely and there is no fillet to be had at any radius.
 MIN_BUILDABLE_R_MM = 0.25
 
-TERMS = ("deflection", "mass", "stress", "buckling", "x_order", "hub_overlap",
-         "smoothness", "fold", "arrival", "fillet", "fillet_cap", "min_sj",
-         "phase_ripple")
+# WHERE MARGIN STARTS BEING WORTH ANYTHING.  A POLICY NUMBER, STATED LIKE THE WEIGHT.
+#
+# §19 named defect 8: `stress_margin` was `w * util**2`, whose marginal price `2*w*util` is
+# PROPORTIONAL to util, so a stated exchange rate can be right at exactly one design.
+# Measured across the range (DEFECT8_PLAN.md step 1a), that price varies by only **2.0x**
+# between util 0.50 and 0.99 — the term pays nearly as much for margin at a junction loafing
+# at half its allowable as at one about to yield.  §19 wrote the policy it should have had:
+# "margin below roughly 0.8 is close to worthless on this part, and margin above 0.95 is
+# close to priceless."
+#
+# So the term is now `soft_barrier(util - MARGIN_KNEE_UTIL)` — LITERALLY THE SAME FUNCTION AS
+# THE `stress` WALL, with the knee moved from 1.0 in to 0.80.  That is the whole change, and
+# it says the policy in one line: the wall is at 1.0, the price starts at 0.80.
+#
+# THE SECOND HALF OF "priceless above 0.95" IS DELIBERATELY NOT ENCODED HERE, because it is
+# already the wall's job — §18's own comment: "`stress` stays exactly as it is: the wall is
+# still there, this only stops the approach to it being free."  A quartic was measured (41x
+# at util 0.99 against this shape's 3.5x) and rejected for duplicating the barrier.
+#
+# 0.80 is a JUDGEMENT about a printed PLA part, not a measurement, and it is the number to
+# argue with: layer adhesion, print orientation and batch scatter are +/-10-20% effects, so a
+# junction below 0.8 of allowable has more margin than those can eat and buying more is
+# spending mass on nothing.  The shipped genome sits at 0.77952, i.e. essentially AT this
+# knee — see DEFECT8_PLAN.md step 1c, which is why this restates why that wheel is right
+# rather than condemning it.
+MARGIN_KNEE_UTIL = 0.80
+
+TERMS = ("deflection", "mass", "stress", "stress_margin", "buckling", "x_order",
+         "hub_overlap", "smoothness", "fold", "arrival", "fillet", "fillet_cap",
+         "min_sj", "phase_ripple")
 
 # Ported unchanged from `wheel_fea.evaluate_design` except where noted.  `smoothness` and
 # `fillet` are new scales and are what gate 10's calibration is for; `min_sj` and
@@ -237,6 +353,15 @@ DEFAULT_WEIGHTS = {
     "deflection":  2500.0,      # x (rel error)^2, two-sided about the 2.0 mm target
     "mass":        W.MASS_WEIGHT / W.MASS_REFERENCE_G,
     "stress":      4000.0,      # soft_barrier scale on utilisation - 1
+    # x util^2 per junction, LIVE EVERYWHERE — see the derivation at the term itself.
+    # This is the one weight in the table that sets an exchange rate rather than a scale:
+    # 1% of utilisation against 1% of mass at the shipped genome.
+    # 328.49 makes 1% of utilisation cost 1% of mass at MARGIN_KNEE_UTIL's reference point
+    # (util 0.855, §18's own), rounded DOWN for §18's reason: the rounding buys LESS margin,
+    # which is the conservative direction for a term whose purpose is to move the optimum.
+    # It is ~16x the old 20.0 ONLY because the argument shrank from `util` to `util - 0.80`;
+    # the RATE at the reference is unchanged, which is what makes this a shape change.
+    "stress_margin": 325.0,
     "buckling":    2000.0,      # soft_barrier scale on ratio - 1   [NO GRADIENT]
     "x_order":     80.0,        # per control-point pair
     "hub_overlap": 500.0,
@@ -256,6 +381,25 @@ DEFAULT_WEIGHTS = {
     "min_sj":      3000.0,
     "phase_ripple": 0.0,        # off by default; gate 10 reports what turning it on costs
 }
+
+# Which WEIGHTS entries are FEASIBILITY BARRIERS and which are objectives.  The split is
+# not cosmetic and it is not derivable from the weight table: a barrier is a term whose
+# only admissible value is zero, so it answers "may this design ship" and never trades
+# against `mass` or `deflection`, which answer "how good is it".  Nothing needed the
+# distinction while selection went by loss alone -- which is exactly defect 6.  A run that
+# reports its lowest-loss step reports whichever step bought the most objective with the
+# least constraint, and on 2026-08-11 that promoted a design in violation of the hub cap
+# at `coarse`.  `buckling` is here despite carrying no gradient (see its weight comment):
+# it still gates shippability, so a step that violates it is still not a candidate.
+BARRIER_TERMS = ("stress", "buckling", "x_order", "hub_overlap", "fold",
+                 "arrival", "fillet", "fillet_cap", "min_sj")
+OBJECTIVE_TERMS = ("deflection", "mass", "stress_margin", "smoothness", "phase_ripple")
+
+assert set(BARRIER_TERMS).isdisjoint(OBJECTIVE_TERMS), "a term is one or the other"
+assert set(BARRIER_TERMS) | set(OBJECTIVE_TERMS) == set(TERMS), (
+    "every term in TERMS must be classified as a barrier or an objective — a new term "
+    "added without a classification would silently be treated as an objective by "
+    "`wheel_stage3.selection_key`, i.e. as never able to make a design unshippable")
 
 # `smoothness` internals.  `400*n_infl` had literally zero gradient (an int from
 # `count_nonzero` behind a data-dependent mask) and is replaced by an integral plus a
@@ -297,9 +441,27 @@ def smooth_min(a, b, k):
     FD plateau needs the first derivative continuous.  The `min`'s kink is exactly
     cancelled — d/d|a-b| of `-(k-|a-b|)^2/(4k)` is `+1/2` at `|a-b| = 0` against `min`'s
     `-1/2`.
+
+    THE DERIVATIVE AT EXACTLY `a == b` USED TO BE WRONG, and only there.  Two primitives
+    are non-differentiable at the tie and autodiff picks a subgradient for each: `jnp.abs`
+    returns 0 at 0, which kills the blend term's contribution, and `jnp.minimum` hands the
+    full 1.0 to its first argument.  The sum was 1.0 against a true two-sided derivative of
+    0.5 — the function is perfectly smooth THROUGH the tie (a central difference reads
+    0.50000 on both sides), so this was an artifact of the spelling and not of the maths.
+
+    Writing the min symmetrically as `(a + b - |a - b|)/2` fixes it: at the tie that reads
+    0.5 directly, and `|a - b|`'s zero subgradient is then the RIGHT answer rather than a
+    dropped term.  It is confined to the blend by the `where`, because the symmetric form
+    is NOT bit-exact — `(a + b) - (b - a)` is not `2a` in floating point — and exactness
+    outside the blend is the property this function exists for and is separately asserted.
+    Measure-zero, never observed to bite, and worth fixing because §17's margin term drives
+    `R_hub` toward its cap on purpose, which makes the tie an attractor rather than an
+    accident.
     """
-    h = jnp.maximum(k - jnp.abs(a - b), 0.0) / k
-    return jnp.minimum(a, b) - h * h * k * 0.25
+    d = a - b
+    h = jnp.maximum(k - jnp.abs(d), 0.0) / k
+    blended = 0.5 * (a + b - jnp.abs(d)) - h * h * k * 0.25
+    return jnp.where(jnp.abs(d) >= k, jnp.minimum(a, b), blended)
 
 
 KT_CLAMP = (1.0, 3.5)
@@ -396,8 +558,9 @@ def junction_kt(genes, cfg="coarse", span_mm=W.S, flanks=None):
 
     IT IS NO LONGER PURE 14-VECTOR GENE SPACE, and that is the change.  The hub is priced
     on `smooth_min(R_hub, hub_fillet_cap_mm(...))`, and the cap is a function of where the
-    spoke flanks cross the hub circle — so `Kt_hub` now depends on the eight centerline
-    genes and `t0` as well, through `wheel_wheel.ring_station`.  Still no mesh and no
+    spoke flanks cross the hub circle (`wheel_wheel.ring_station`) and, since 2026-08-10,
+    of the ANGLE at which the centerline meets it (`wheel_wheel.arrival_angles`) — so
+    `Kt_hub` depends on the eight centerline genes and `t0` as well.  Still no mesh and no
     solve; it is a sampled curve, which is why this is affordable at all.  The consequence
     worth knowing: at any design more than one ladder rung above its cap, `dKt_hub/dR_hub`
     is EXACTLY zero, because buying more `R_hub` there buys exactly nothing.
@@ -539,15 +702,25 @@ def _fillet_margins(genes, cfg, span_mm, hub_radius, flanks, xp=jnp):
 
 
 def hub_fillet_cap_mm(genes, cfg, span_mm=W.S, hub_radius=W.HUB_RADIUS_MM, flanks=None,
-                      xp=jnp):
+                      a_hub_deg=None, xp=jnp):
     """The largest hub fillet the PART CAN BUILD [mm] — the smaller of two limits.
 
-        min(HUB_CAP_SHARE * slot_arc,  HUB_CAP_THICKNESS_SHARE * t0)
+        min(HUB_CAP_SHARE * slot_arc,
+            t0 * (HUB_CAP_THICKNESS_SHARE
+                  - HUB_CAP_ARRIVAL_SLOPE * (1 - cos(arrival_hub))))
 
-    See those two constants for which limit is measured, which is assumed, and why this is
-    a `min` — the short version is that the thickness term is the one `make hubcap` observes
-    binding on every design on disk, and the slot term is the only one that knows a closed
-    slot admits no fillet at all.
+    One limit per CORNER FAMILY, and each family is what OCC stops at on some design that
+    is on disk: the slot term is the near-cusp twelve, the thickness term the square-on
+    twelve.  See those three constants for what is measured, over what range, and what is
+    still assumed.
+
+    THE ARRIVAL DEPENDENCE IS THE POINT, and it is why this takes eight genes it used to
+    take through the void alone.  `arrival_hub` is a function of `(cx1, cy1)` and nothing
+    else — P0 is locked at the origin — so the square-on branch hands `jax.grad` a direct
+    path from the two genes that aim the spoke at the hub to the fillet the part can
+    actually be built with.  Before 2026-08-10 the cap could not see that at all, and the
+    Stage-3 SVK descent swung the hub arrival from 19.7 to 48.9 deg with every barrier
+    reading 0.0 while the buildable radius fell 28%.
 
     WHAT THIS IS FOR.  `R_hub`'s box bound is 4.0 mm and 15 of the 16 Stage-2 elites — both
     production multi-start points among them — sit above their own cap, so without this the
@@ -568,14 +741,22 @@ def hub_fillet_cap_mm(genes, cfg, span_mm=W.S, hub_radius=W.HUB_RADIUS_MM, flank
     `flanks=None` derives the crossing decision eagerly here (0.32 ms).  Pass the frozen
     tuple from a single `fillet_flanks` call whenever one is already in hand, so that the
     barrier and the `Kt` pricing cannot be built on two different discrete decisions.
+    `a_hub_deg=None` re-derives the arrival angle the same way and for the same reason —
+    `t1_vector` already has one in hand for the `arrival` barrier and passes it, so the
+    barrier and the cap cannot end up on two different arrivals either.
     """
     cfgo = WW.get_config(cfg)
     if flanks is None:
         flanks = fillet_flanks(genes, cfgo, span_mm=span_mm, hub_radius=hub_radius)
+    if a_hub_deg is None:
+        a_hub_deg = WW.arrival_angles(genes, cfgo, span_mm=span_mm,
+                                      hub_radius=hub_radius, xp=xp)[0]
     void = WW.hub_void_deg(genes, cfgo, span_mm=span_mm, hub_radius=hub_radius,
                            crossing_etas=flanks[0], xp=xp)
     by_slot = HUB_CAP_SHARE * hub_radius * xp.radians(void)
-    by_thickness = HUB_CAP_THICKNESS_SHARE * genes[8]
+    by_thickness = genes[8] * (HUB_CAP_THICKNESS_SHARE
+                               - HUB_CAP_ARRIVAL_SLOPE
+                               * (1.0 - xp.cos(xp.radians(a_hub_deg))))
     return xp.minimum(by_slot, by_thickness)
 
 
@@ -661,13 +842,20 @@ def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
     # into `fillet` would make "is the cap binding?" unanswerable from the loss table,
     # which is the one question it exists to answer.
     #
-    # NO SAFETY FACTOR, deliberately, and unlike `fillet` above.  The single OCC
-    # measurement says the cap is already conservative by 1.9% (see `HUB_CAP_SHARE`), and a
-    # factor stacked on top would be a threshold with no measurement behind it — the thing
-    # this repo removed once already when `stress_scale`'s rescale stopped holding.  If
-    # `make hubcap` ever shows the cap running OPTIMISTIC, that measurement buys the factor.
+    # NO SAFETY FACTOR, deliberately, and unlike `fillet` above.  A factor stacked on top
+    # would be a threshold with no measurement behind it — the thing this repo removed once
+    # already when `stress_scale`'s rescale stopped holding.  `make hubcap` DID show the cap
+    # running optimistic, on all five designs it measures, and the answer was to re-fit the
+    # two shares against the corner family that actually binds rather than to multiply a
+    # wrong model by a number.  The conservatism now lives in the fit, where it is
+    # measurable: 0.827-0.979 of the worst measured corner across those five.
+    #
+    # `a_hub` is the one computed for the `arrival` barrier above, passed rather than
+    # re-derived: the cap's square-on branch is a function of it, and a barrier and a cap
+    # disagreeing about the same angle is a class of bug worth making impossible.
     fillet_cap = soft_barrier(g[12] - hub_fillet_cap_mm(genes, cfgo, span_mm,
-                                                        W.HUB_RADIUS_MM, flanks),
+                                                        W.HUB_RADIUS_MM, flanks,
+                                                        a_hub_deg=a_hub),
                               w["fillet_cap"])
 
     return jnp.stack([x_order, hub_overlap, smoothness, fold, arrival, fillet, fillet_cap])
@@ -1007,12 +1195,51 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     # two calls just name the numbers so the run record can show WHY `kt_hub` is what it is.
     kt_cap = hub_fillet_cap_mm(genes, cfg, span_mm=span_mm, flanks=flanks)
     kt_reff = hub_fillet_r_effective(jnp.asarray(genes, dtype=float), kt_cap)
+    # -- stress_margin: THE SAME TWO UTILISATIONS, PRICED INSTEAD OF WALLED.  §15 defect 1.
+    #
+    # `stress` above is `soft_barrier(util - 1)`, which is identically zero AND identically
+    # flat for every `util <= 1`.  Below the knee the optimizer cannot see stress at all —
+    # measured: the term was > 0 on 0 of 602 descent steps — so it sees mass, and it thins
+    # the wall.  The barrier is a wall to stop at, never a cost to trade against.
+    #
+    # The consequence is not "slightly wrong weights", it is DEAD GENES.  The only paths
+    # from a fillet radius into the loss are `stress` and the fillet barriers, and all of
+    # them are flat unless breached, so over 602 steps `R_rim` had a nonzero gradient on 0
+    # steps and `R_hub` on 2 — exactly the two where `fillet_cap` was live.  Measured again
+    # at the shipped genome on 2026-08-12: `dL/dR_hub` and `dL/dR_rim` are both EXACTLY
+    # 0.0.  A nominally 14-dimensional search was running in 8.
+    #
+    # So: a term that is live everywhere `util > 0`, quadratic, and summed over the same two
+    # junctions for the same reason the barrier is (a `max` would zero the gradient of
+    # whichever junction is not currently worst).  It is an OBJECTIVE, not a barrier — it
+    # never decides shippability, it only says margin is worth something, which is why it is
+    # in `OBJECTIVE_TERMS`.  `stress` stays exactly as it is: the wall is still there, this
+    # only stops the approach to it being free.
+    #
+    # THE WEIGHT IS AN EXCHANGE RATE AND IT IS A POLICY, SO IT IS STATED.  At the shipped
+    # genome the mass term is 30.88 at 37.57 g, so 1% of mass is 0.309 of loss.  One percent
+    # of hub utilisation at `util` = 0.855 costs `w * (1.01^2 - 1) * 0.855^2` = 0.0147 `w`,
+    # so `w` = 21.0 makes the optimizer indifferent between 1% of mass and 1% of utilisation
+    # right where the design sits.  20.0 is that number rounded down — the rounding is
+    # toward buying LESS margin, i.e. toward the old behaviour, which is the conservative
+    # direction for a term whose whole purpose is to change the optimum.
+    #
+    # Quadratic rather than linear is deliberate and is the second half of the policy: the
+    # exchange rate steepens as margin disappears, so the last 10% of utilisation costs far
+    # more than the first, which is what "margin" is supposed to mean.  Linear would trade
+    # the same at 0.5 as at 0.99.
     stress, d_stress, utils = 0.0, np.zeros_like(dagg), {}
+    stress_margin, d_stress_margin = 0.0, np.zeros_like(dagg)
     for name, kt, dkt in (("hub", kt_hub, dkt_hub), ("rim", kt_rim, dkt_rim)):
         util_j = kt * agg / ALLOWABLE_STRESS_MPA
         d_util = (dkt * agg + kt * dagg) / ALLOWABLE_STRESS_MPA   # THE PRODUCT RULE
         stress += float(soft_barrier(util_j - 1.0, w["stress"]))
         d_stress = d_stress + 2.0 * w["stress"] * max(0.0, util_j - 1.0) * d_util
+        # THE SAME FUNCTION AS THE WALL ABOVE, WITH THE KNEE MOVED IN — see DEFECT 8.
+        stress_margin += float(soft_barrier(util_j - MARGIN_KNEE_UTIL,
+                                            w["stress_margin"]))
+        d_stress_margin = d_stress_margin + (
+            2.0 * w["stress_margin"] * max(0.0, util_j - MARGIN_KNEE_UTIL) * d_util)
         utils[name] = float(util_j)
     util = max(utils.values())          # the headline scalar — REPORTING ONLY
 
@@ -1048,8 +1275,10 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 
     return {
         "values": {"deflection": float(deflection), "stress": float(stress),
+                   "stress_margin": float(stress_margin),
                    "phase_ripple": float(phase_ripple)},
         "grads": {"deflection": d_deflection, "stress": d_stress,
+                  "stress_margin": d_stress_margin,
                   "phase_ripple": d_phase_ripple},
         "report": {"axle_drop_mean_mm": float(mean_drop),
                    "axle_drop_min_mm": float(drops.min()),

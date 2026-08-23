@@ -1,0 +1,423 @@
+{
+ "sweep": {
+  "genome": "shipped",
+  "config": "coarse",
+  "rows": [
+   {
+    "R_hub": 0.4,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 0.6636060402965218,
+    "is_shipped_value": true,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 0.7,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 1.0,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 1.2999999999999998,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 1.6,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 1.9,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 0.0,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": true,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 2.1999999999999997,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 4.982715774583515,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 2.5,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 244.8789206435074,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 2.8,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 844.7751255124308,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 3.0999999999999996,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 1804.6713303813556,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 3.4,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 3124.567535250283,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 3.6999999999999997,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 4804.463740119207,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   },
+   {
+    "R_hub": 4.0,
+    "is_shipped_value": false,
+    "barriers": {
+     "x_order": 0.0,
+     "hub_overlap": 6844.35994498813,
+     "fold": 0.0,
+     "arrival": 0.0
+    },
+    "feasible": false,
+    "hub": 0.03418804073254936,
+    "spoke": 0.6545356829597623,
+    "rim": 0.3112762763076883,
+    "axle_drop_mm": 1.5516446176990795
+   }
+  ],
+  "R_hub_shipped": 0.6636060402965218,
+  "box": [
+   0.4,
+   4.0
+  ]
+ },
+ "rungs": {
+  "shipped": {
+   "R_hub": 0.6636060402965218,
+   "rungs": {
+    "smoke": {
+     "hub": 0.032489109319949715,
+     "spoke": 0.6632375926192277,
+     "rim": 0.3042732980608226,
+     "axle_drop_mm": 1.4994858146599337,
+     "elapsed_s": 0.5
+    },
+    "coarse": {
+     "hub": 0.03418804073254936,
+     "spoke": 0.6545356829597623,
+     "rim": 0.3112762763076883,
+     "axle_drop_mm": 1.5516446176990795,
+     "elapsed_s": 0.5
+    },
+    "medium": {
+     "hub": 0.03523663283635889,
+     "spoke": 0.6491715057531333,
+     "rim": 0.3155918614105079,
+     "axle_drop_mm": 1.5629805689038112,
+     "elapsed_s": 1.9
+    },
+    "fine": {
+     "hub": 0.036482668687183424,
+     "spoke": 0.6471956097688022,
+     "rim": 0.31632172154401444,
+     "axle_drop_mm": 1.5705053322812605,
+     "elapsed_s": 4.2
+    },
+    "ultra": {
+     "hub": 0.037052524984222866,
+     "spoke": 0.6450365339929488,
+     "rim": 0.3179109410228282,
+     "axle_drop_mm": 1.5744619418133794,
+     "elapsed_s": 11.3
+    }
+   }
+  },
+  "ga_beam": {
+   "R_hub": 1.5597674073242398,
+   "rungs": {
+    "smoke": {
+     "hub": 0.013822685092494135,
+     "spoke": 0.6704194706406551,
+     "rim": 0.3157578442668507,
+     "axle_drop_mm": 1.6102830101758676,
+     "elapsed_s": 0.1
+    },
+    "coarse": {
+     "hub": 0.013722004451848286,
+     "spoke": 0.6659632501497844,
+     "rim": 0.3203147453983674,
+     "axle_drop_mm": 1.6587783471398534,
+     "elapsed_s": 0.6
+    },
+    "medium": {
+     "hub": 0.013849150306872572,
+     "spoke": 0.664821162399249,
+     "rim": 0.3213296872938785,
+     "axle_drop_mm": 1.6677421727164197,
+     "elapsed_s": 1.2
+    },
+    "fine": {
+     "hub": 0.014043278703661174,
+     "spoke": 0.6637367537758077,
+     "rim": 0.3222199675205312,
+     "axle_drop_mm": 1.6734428821242646,
+     "elapsed_s": 3.6
+    },
+    "ultra": {
+     "hub": 0.01414393484781521,
+     "spoke": 0.6632077642854474,
+     "rim": 0.32264830086673735,
+     "axle_drop_mm": 1.6734648308374176,
+     "elapsed_s": 9.4
+    }
+   }
+  }
+ },
+ "attribute": {
+  "config": "coarse",
+  "shipped_hub": 0.03418804073254936,
+  "ga_beam_hub": 0.013722004451848286,
+  "rows": [
+   {
+    "gene": 7,
+    "name": "cy4",
+    "shipped_value": 6.4375467243695965,
+    "ga_beam_value": 29.291918496404325,
+    "hub": 0.010681413832988018,
+    "delta": -0.023506626899561338,
+    "closes_frac": 1.148567635528305
+   },
+   {
+    "gene": 5,
+    "name": "cy3",
+    "shipped_value": 9.419083794820828,
+    "ga_beam_value": 24.32475682473731,
+    "hub": 0.01759989902627756,
+    "delta": -0.0165881417062718,
+    "closes_frac": 0.8105204876390244
+   },
+   {
+    "gene": 3,
+    "name": "cy2",
+    "shipped_value": 11.808789310955788,
+    "ga_beam_value": 31.718741219774294,
+    "hub": 0.020782491540172175,
+    "delta": -0.013405549192377183,
+    "closes_frac": 0.6550144350627511
+   },
+   {
+    "gene": 8,
+    "name": "t0",
+    "shipped_value": 1.4738307537189006,
+    "ga_beam_value": 2.477369725892206,
+    "hub": 0.04374809524741701,
+    "delta": 0.009560054514867654,
+    "closes_frac": -0.46711802831516186
+   },
+   {
+    "gene": 1,
+    "name": "cy1",
+    "shipped_value": 8.721178572401975,
+    "ga_beam_value": 27.952936734957692,
+    "hub": 0.02463094111230147,
+    "delta": -0.009557099620247887,
+    "closes_frac": 0.4669736479095357
+   },
+   {
+    "gene": 10,
+    "name": "t2",
+    "shipped_value": 1.2,
+    "ga_beam_value": 2.0,
+    "hub": 0.04031467613121349,
+    "delta": 0.006126635398664135,
+    "closes_frac": -0.2993562268059394
+   },
+   {
+    "gene": 9,
+    "name": "t1",
+    "shipped_value": 1.2,
+    "ga_beam_value": 2.0,
+    "hub": 0.03944696450718135,
+    "delta": 0.005258923774631989,
+    "closes_frac": -0.2569585875107147
+   },
+   {
+    "gene": 4,
+    "name": "cx3",
+    "shipped_value": 23.81875717533114,
+    "ga_beam_value": 20.33476413480411,
+    "hub": 0.03630399519640813,
+    "delta": 0.002115954463858774,
+    "closes_frac": -0.10338858168907199
+   },
+   {
+    "gene": 0,
+    "name": "cx1",
+    "shipped_value": 4.477962525158226,
+    "ga_beam_value": 2.1376143443155753,
+    "hub": 0.03237108164889961,
+    "delta": -0.0018169590836497468,
+    "closes_frac": 0.08877923691374918
+   },
+   {
+    "gene": 2,
+    "name": "cx2",
+    "shipped_value": 15.00274451694233,
+    "ga_beam_value": 17.036327854201176,
+    "hub": 0.03282506106705959,
+    "delta": -0.0013629796654897677,
+    "closes_frac": 0.066597148895657
+   },
+   {
+    "gene": 11,
+    "name": "t3",
+    "shipped_value": 1.4312949633290164,
+    "ga_beam_value": 2.0,
+    "hub": 0.033366317619711074,
+    "delta": -0.0008217231128382838,
+    "closes_frac": 0.040150574423301826
+   },
+   {
+    "gene": 6,
+    "name": "cx4",
+    "shipped_value": 30.873165689265722,
+    "ga_beam_value": 32.53984531294355,
+    "hub": 0.03350565921811416,
+    "delta": -0.0006823815144351986,
+    "closes_frac": 0.033342143299074777
+   }
+  ]
+ },
+ "settings": {
+  "elapsed_s": 45.3
+ }
+}

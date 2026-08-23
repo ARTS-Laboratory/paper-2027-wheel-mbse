@@ -1,98 +1,104 @@
 {
-  "genome_hash": "36aed36",
+  "genome_hash": "09e8188",
   "source": "best_solution.json",
-  "source_mtime": "2026-07-30T13:20:15",
-  "exported_at": "2026-07-31T15:29:59",
-  "export_seconds": 230.5,
+  "source_mtime": "2026-08-14T07:25:28",
+  "exported_at": "2026-08-14T07:26:31",
+  "export_seconds": 56.4,
   "solid": {
     "valid": true,
-    "volume_mm3": 59777.4,
-    "mass_g_pla": 74.12
+    "volume_mm3": 39224.5,
+    "mass_g_pla": 48.64,
+    "volume_nofillet_mm3": 36145.8
   },
   "junction_overlap_mm3": {
-    "hub": 78.53,
-    "rim": 392.37,
-    "floor": 50.0
+    "hub": 26.0,
+    "rim": 75.33,
+    "bite": {
+      "hub": 0.5344,
+      "rim": 1.6416
+    },
+    "t_mm": {
+      "hub": 1.4738,
+      "rim": 1.4313
+    },
+    "pass": {
+      "hub": true,
+      "rim": true
+    },
+    "bite_floor": 0.25
   },
   "fillets": {
     "hub_edges": 24,
     "rim_edges": 24,
+    "volume_mm3": 3078.77,
     "detail": [
       {
         "junction": "hub",
-        "r_requested_mm": 1.5597674073242398,
-        "r_built_mm": 0.3612685637965093,
+        "r_requested_mm": 0.6636060402965218,
+        "r_built_mm": 0.6636060402965218,
         "n_edges_filleted": 24,
         "n_edges_found": 24,
-        "worst_wedge_deg": 332.0,
+        "worst_wedge_deg": 322.0,
         "fillet_families": [
           {
-            "radius_mm": 1.126931951791763,
-            "n_edges": 12
-          },
-          {
-            "radius_mm": 0.3612685637965093,
-            "n_edges": 12
+            "radius_mm": 0.6636060402965218,
+            "n_edges": 24
           }
         ],
-        "kt_modeled": 1.8608661732283212,
-        "kt_built": 3.227588297117753,
-        "kt_error_pct": 73.44548165537212
+        "kt_modeled": 2.0704829079988825,
+        "kt_built": 2.0704829079988825,
+        "kt_error_pct": 0.0
       },
       {
         "junction": "rim",
         "r_requested_mm": 3.0,
-        "r_built_mm": 0.308309008592653,
+        "r_built_mm": 3.0,
         "n_edges_filleted": 24,
         "n_edges_found": 24,
-        "worst_wedge_deg": 356.0,
+        "worst_wedge_deg": 320.0,
         "fillet_families": [
           {
             "radius_mm": 3.0,
-            "n_edges": 12
-          },
-          {
-            "radius_mm": 0.308309008592653,
-            "n_edges": 12
+            "n_edges": 24
           }
         ],
-        "kt_modeled": 1.4896335682000246,
-        "kt_built": 3.148616766762584,
-        "kt_error_pct": 111.3685428401809
+        "kt_modeled": 1.3939359631839685,
+        "kt_built": 1.3939359631839685,
+        "kt_error_pct": 0.0
       }
     ]
   },
   "profile_health": {
-    "min_curvature_radius_mm": 10.789047,
+    "min_curvature_radius_mm": 6.879895,
     "self_intersections": 0,
     "worst_at": [
-      10.964,
-      35.38,
+      -7.196,
+      11.71,
       0.0
     ]
   },
   "step_health": {
     "surface_census": {
-      "Plane": 26,
-      "CylindricalSurface": 37,
-      "BSplineSurface": 48
+      "Plane": 14,
+      "BSplineSurface": 60,
+      "CylindricalSurface": 37
     },
     "counts": {
       "faces": 111,
       "edges": 327,
       "vertices": 218
     },
-    "min_edge_mm": 0.162221,
-    "min_face_mm2": 3.6338,
-    "max_edge_tolerance_mm": 1.0000003458482829e-07,
+    "min_edge_mm": 0.028647,
+    "min_face_mm2": 0.6417,
+    "max_edge_tolerance_mm": 1.000000231022446e-07,
     "degenerate_edges": 0,
     "brepcheck_valid": true,
     "self_intersecting": false,
-    "min_curvature_radius_mm": 0.308309,
+    "min_curvature_radius_mm": 0.66359,
     "min_curvature_at": [
-      -18.402,
-      44.592,
-      22.4
+      4.095,
+      12.178,
+      0.0
     ],
     "swept_surfaces_remaining": {}
   }

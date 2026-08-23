@@ -83,6 +83,39 @@ def test_mesh_coords_reproduces_build_wheel(genes, phase_deg):
     assert np.abs(c - np.asarray(m.coords)).max() < sg.GATE_MESH_COORDS_MM
 
 
+@pytest.mark.parametrize("build_order", [("default", "capped"), ("capped", "default")])
+def test_mesh_coords_reproduces_build_wheel_at_a_NON_DEFAULT_uncap(genes, build_order):
+    """The same tripwire, for a mesh built with an explicit `uncap` — which is the case
+    the test above cannot see, and the case that was BROKEN between 2026-08-18 and
+    2026-08-19.
+
+    `mesh_coords` and `coord_fn` both called `_sector_coords` WITHOUT passing `uncap`, so
+    the traced half silently took the module default. While `UNCAP_DEFAULT` was `False`
+    that could not disagree with anything: the default and every mesh's value were the
+    same object. PLAN.md §38 flipped the default to `(True, 1.0)` and the omission became
+    a wrong answer — a mesh built `uncap=False` was handed the FAITHFUL geometry's
+    coordinates, measured at **0.448 mm** against this file's 1e-9 mm gate. The shipped
+    path never noticed, because nothing on it builds a non-default mesh; what it broke is
+    exactly the capped-vs-faithful comparison §38 exists to make.
+
+    `build_order` is parametrized because the second half of the defect was the
+    `_COORD_FN_CACHE` key, which omitted `uncap` too. Two meshes differing ONLY in `uncap`
+    share every other key entry, so whichever was built first won and the other silently
+    got its jitted function. A single-order test passes with the cache still wrong.
+    """
+    kw = {"default": {}, "capped": {"uncap": False}}
+    meshes = [(name, WW.build_wheel(genes, CFG, **kw[name])) for name in build_order]
+    for name, m in meshes:
+        c = np.asarray(WW.mesh_coords(jnp.asarray(genes), m))
+        assert np.abs(c - np.asarray(m.coords)).max() < sg.GATE_MESH_COORDS_MM, name
+        # ... and via the explicit-numpy path, which is a separate call site.
+        c_np = np.asarray(WW.mesh_coords(genes, m, xp=np))
+        assert np.abs(c_np - np.asarray(m.coords)).max() < sg.GATE_MESH_COORDS_MM, name
+    # The two meshes must actually DIFFER, or the assertions above are vacuous.
+    (_, a), (_, b) = meshes
+    assert np.abs(np.asarray(a.coords) - np.asarray(b.coords)).max() > 1e-3
+
+
 def test_grad_of_the_potential_is_the_assembled_residual(solved):
     """`grad_u Pi` vs `internal_force + contact.force`, assembled by scatter.
 

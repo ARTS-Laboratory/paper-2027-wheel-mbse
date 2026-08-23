@@ -223,6 +223,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import jax_config  # noqa: F401
 import jax
 import jax.numpy as jnp
@@ -250,6 +252,31 @@ GATE_TOTAL_REL = 1e-4           # G7  the objective as a whole
 GATE_INERT_VALUE = 0.05         # G8  a term worth more than 5% of the loss ...
 GATE_INERT_GRAD_ABS = 1e-9      # G8  ... must have a NONZERO gradient
 GATE_DOMINATED_GRAD = 0.005     # G8  reported, not gated: under 0.5% of the grad norm
+
+# G4/G5 — WHICH JACOBIAN ENTRIES A CENTRAL DIFFERENCE CAN ACTUALLY RESOLVE.
+#
+# This was an ABSOLUTE 1e-10, and it was fine while no closed-form term had a gradient
+# spanning many decades: every entry above the floor carried enough signal for a difference
+# of two evaluations to see it.  `fillet_cap` broke that on 2026-08-10.  It used to be
+# INERT at the shipped genome — zero value, zero gradient, nothing to check — and
+# BUILD_PLAN.md step 3 made it live, at which point its jacobian runs from 6.9 down to
+# 5.6e-10, TEN DECADES.  The entries at the bottom of that range are the hub arrival's
+# leakage into the RIM-end control point, which is real (`global_sampler` re-parameterises
+# the whole curve) and is also smaller than the round-off in the quantity being
+# differentiated: `arrival_angles` takes its tangent as `sample(eps) - sample(0)` with
+# `eps = 1e-5`, so `d` is a cancelling difference and carries ~1e-6 relative noise.  A
+# central difference of that cannot see a component 1e-10 of the norm, and comparing it
+# against one measures the noise floor rather than the gradient.
+#
+# So the floor becomes RELATIVE TO THE TERM'S OWN GRADIENT NORM, which is the same notion
+# `GATE_DOMINATED_GRAD` above already uses for a different question.  1e-5 is chosen from
+# the measurement, not from what passes: on `fillet_cap` the smallest entry that a central
+# difference resolves to better than `GATE_T1_REL` is 5.2e-5 of the norm and the largest it
+# CANNOT is 8.7e-8, so the floor sits inside a gap of nearly three decades.
+#
+# WHAT IS EXCLUDED IS REPORTED, as `n_below_fd_floor` beside `n_live_genes`.  A floor that
+# quietly shrinks a gate's coverage is worse than no floor.
+GATE_FD_LIVE_FRAC = 1e-5
 
 # Known-inert, asserted rather than tolerated.  See the docstring.
 INERT_EXPECTED = ("buckling",)
@@ -536,8 +563,12 @@ def run_closed_form(genes, cfg=DEFAULT_CONFIG, steps=(1e-4, 1e-5, 1e-6)):
         for k, name in enumerate(names):
             worst = 0.0
             best_per_gene = []
+            jnorm = float(np.linalg.norm(J[k]))
+            floor = max(1e-10, GATE_FD_LIVE_FRAC * jnorm)
+            n_below = 0
             for gid in range(14):
-                if abs(J[k, gid]) < 1e-10:
+                if abs(J[k, gid]) < floor:
+                    n_below += int(abs(J[k, gid]) > 0.0)
                     continue
                 rel = []
                 for frac in steps:
@@ -551,8 +582,12 @@ def run_closed_form(genes, cfg=DEFAULT_CONFIG, steps=(1e-4, 1e-5, 1e-6)):
                 best_per_gene.append(min(rel))
                 worst = max(worst, min(rel))
             rows.append({"tier": label, "term": name, "value": float(v0[k]),
-                         "grad_norm": float(np.linalg.norm(J[k])),
+                         "grad_norm": jnorm,
                          "n_live_genes": len(best_per_gene),
+                         # Non-zero but below what a central difference can resolve — see
+                         # GATE_FD_LIVE_FRAC.  Coverage lost, stated rather than hidden.
+                         "n_below_fd_floor": n_below,
+                         "fd_floor": floor,
                          "worst_best_rel": float(worst)})
 
     tol = {"t1": GATE_T1_REL, "t2": GATE_MINSJ_REL}
@@ -937,6 +972,17 @@ def main():
                     help="reduced meshes and sample counts; for the test suite")
     args = ap.parse_args()
 
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_objective.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.elites != "stage2_elites.json", "--elites %s" % args.elites),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
+
     genes = load_genes(args.genome)
     cfg = "smoke" if args.quick else args.config
     # --quick shrinks sample counts and the mesh, never a TOLERANCE.  The one place it
@@ -972,7 +1018,7 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                              # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1

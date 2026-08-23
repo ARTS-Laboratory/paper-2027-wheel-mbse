@@ -26,13 +26,20 @@ THREE SECTIONS, AND ONLY THE FIRST TWO ARE GATES.
                This is the evidence that a fixed bound would have been right for exactly one
                genome — the caps span 0.99 to 1.53 mm across the 16 Stage-2 elites.
 
-WHAT THIS DOES NOT MEASURE, and it matters for reading the result.  The hub's twenty-four
-corners fall into two families: twelve square-on ones the slot limits, and twelve shallow
-near-cusp ones whose limit is the ARRIVAL ANGLE, a different mechanism the cap does not
-model.  The shallow family is what sets `r_built_mm` (0.361 mm) and therefore the manifest's
-`kt_error_pct` (+73.4%).  Capping `R_hub` closes the "optimizer prices 1.56, slot allows
-1.11" gap and nothing else; both clusters are reported so that is visible rather than
-inferred.
+TWO FAMILIES, NAMED BY WEDGE ANGLE, AND EITHER CAN BE THE ONE THAT BINDS.  The hub's
+twenty-four corners split into twelve SQUARE-ON ones at a wedge of 266-270 deg, limited by
+the root thickness and by the hub ARRIVAL ANGLE, and twelve NEAR-CUSP ones at 294-332 deg,
+limited by the slot.  Which family stops the exporter is a property of the design: the
+square-on one at `t0` = 1.2, where everything ships, and the near-cusp one on the `t0` = 2.55
+Stage-2 elites.  So the gate reads the WORST of the twenty-four rather than a named half —
+until 2026-08-10 it read the larger half of a RANK split, which is not the same partition's
+label on every design and is how a cap over-promising by up to 1.62x read green.
+
+The old note here said the near-cusp family's arrival-angle limit was "a different mechanism
+the cap does not model".  It is modelled as of 2026-08-10 for the square-on family
+(`wheel_objective.HUB_CAP_ARRIVAL_SLOPE`, calibrated by `studies/study_arrival_cap.py`).  For
+the near-cusp family it is still not: `HUB_CAP_SHARE` is that family's limit as the arrival
+goes to zero and is conservative above it.  BUILD_PLAN.md steps 1-4.
 
 Out of `make studies` for the `m8bi5` reason and one more: it needs BOTH interpreters, and
 what it measures is OCC's behaviour on this shape rather than anything this commit changed.
@@ -94,6 +101,13 @@ GATE_CAP_OVERPROMISE = 1.01
 GATE_CAP_FLOOR_FRAC = 0.5
 
 BISECT_REL = 0.01               # bisect the acceptance threshold to 1% of its own value
+
+# The wedge angle that separates the two hub-corner families.  Measured wedges cluster at
+# 266-270 (square-on) and 294-332 (near-cusp) across every design and every station of
+# `studies/study_arrival_cap.py`; 285 is the middle of that 24 deg gap.  A split constant,
+# not a threshold anything is gated on — `families_are_clean` reports whether a corner ever
+# landed near it.
+CUSP_WEDGE_DEG = 285.0
 
 
 _CAD_SNIPPET = r"""
@@ -168,6 +182,14 @@ for d in payload["designs"]:
             hi = d["hi_mm"]
             rec["thresholds_mm"] = [
                 threshold(part, e, X.MIN_CURVATURE_RADIUS_MM, hi) for e, _r, _w in hub]
+            # THE PER-CORNER WEDGE, PAIRED WITH ITS OWN THRESHOLD.  `_group_by_ring`
+            # already carries it and this used to drop it on the floor, which is why the
+            # shallow/square split downstream had to be taken at the MEDIAN on the
+            # assumption the families are equal-sized.  With the wedge in hand the split
+            # is observable instead, and BUILD_PLAN.md step 2 is about the per-corner
+            # relationship rather than the per-junction one.  Same order as
+            # `thresholds_mm` -- index i of one is index i of the other.
+            rec["wedges_deg"] = [float(w) for _e, _r, w in hub]
             rec["bisect_hi_mm"] = hi
     except Exception as exc:
         rec["error"] = "%s: %s" % (type(exc).__name__, exc)
@@ -198,6 +220,28 @@ def _designs():
     return out
 
 
+def _extra_designs(specs):
+    """`--extra LABEL=PATH` -> [(label, gene vector)], in the order given.
+
+    Genome files that are not `best_solution.json` and not a Stage-2 elite have no place in
+    `_designs()`, which walks the provenance chain.  A Stage-3 answer is not on that chain
+    — it is a search result — so it arrives by name and by path, which also means the
+    report says exactly which file each row came from (`settings.extra`).
+    """
+    out = []
+    for spec in specs:
+        if "=" not in spec:
+            raise SystemExit(f"--extra wants LABEL=PATH, got {spec!r}")
+        label, path = spec.split("=", 1)
+        label, path = label.strip(), path.strip()
+        if not os.path.isabs(path):
+            path = os.path.join(ROOT, path)
+        if not os.path.exists(path):
+            raise SystemExit(f"--extra {label}: no such file {path}")
+        out.append((label, _genes(path)))
+    return out
+
+
 def analytic_cap(genes, cfg="coarse"):
     """`(void_deg, cap_mm, r_hub_mm)` from the genome alone — no CAD."""
     cfgo = WW.get_config(cfg)
@@ -218,8 +262,13 @@ def _run_cad(designs, caps, bisect):
         #
         # `hi_mm` brackets the bisection from ABOVE and has to clear whichever limit
         # actually binds, or every corner reports the bracket instead of its threshold.
-        # `1.2 * t0` is comfortably above the ~0.52 * t0 the thickness law predicts, and
-        # `2 * slot cap` covers the case where the slot is the binding one.
+        # `1.2 * t0` is comfortably above the 0.505 * t0 the square-on law predicts at its
+        # most generous (a tangential arrival) and further above it at every steeper one,
+        # and `2 * slot cap` covers the case where the slot is the binding one.  NOTE that
+        # `1.2 * t0` dominates on every design measured so far, so re-fitting the shares
+        # downward on 2026-08-10 did not move a single bracket — and the near-cusp family
+        # on the `t0` = 1.2 designs stays CENSORED at 1.44 for exactly the same reason it
+        # was before.
         "designs": [{"name": n, "genes": wg.vector_to_genes(g), "cap_mm": caps[n],
                      "hi_mm": max(2.0 * caps[n], 1.2 * float(g[8]), 1.0)}
                     for n, g in designs],
@@ -287,7 +336,25 @@ def run_occ_limit(selected, cad_rows):
         shallow, square = th[:half], th[half:]
         rec["shallow_mean_mm"] = float(np.mean(shallow)) if shallow else 0.0
         rec["square_mean_mm"] = float(np.mean(square)) if square else 0.0
-        r_occ = rec["square_mean_mm"]
+
+        # THE GATE READS THE WORST CORNER, and it did not used to.  BUILD_PLAN.md step 4.
+        #
+        # It read `square_mean_mm` — the mean of the LARGER half of a rank split — on the
+        # reading that the larger family is the square-on one the cap models.  Pairing each
+        # threshold with its own wedge (step 1) showed the rank split does not carry that
+        # label: on `350f4c7` the smaller half IS the 270 deg square-on family and the
+        # larger half is the 328 deg cusp, and on elite14 it is the other way round.  So the
+        # gate was comparing the cap against whichever family happened to rank higher, which
+        # on three of five designs is the family that is NOT the limit.  A cap over-promising
+        # against the corner OCC actually stops at by 1.067x to 1.615x reported
+        # `over_promises: false` on all five.
+        #
+        # The exporter's ladder is driven by the corner that refuses first, so the honest
+        # comparison needs no families at all: the MINIMUM over all twenty-four.  Kept
+        # label-free on purpose — `worst_corner_mm` cannot be mis-assigned the way a named
+        # half can.
+        rec["worst_corner_mm"] = float(min(th))
+        r_occ = rec["worst_corner_mm"]
         rec["rel_error"] = abs(r_occ / cap - 1.0) if cap > 0 else float("inf")
         # `cap / r_occ`: below 1.0 the cap under-promises (safe), above it over-promises
         # (the defect).  Reported as the headline because it is the number the gate reads.
@@ -295,10 +362,46 @@ def run_occ_limit(selected, cad_rows):
         rec["over_promises"] = bool(rec["conservatism"] > GATE_CAP_OVERPROMISE)
         rec["vacuously_small"] = bool(rec["conservatism"] < GATE_CAP_FLOOR_FRAC)
         rec["pass"] = bool(not rec["over_promises"] and not rec["vacuously_small"])
-        # NOT gated, and named so nobody reads a green gate as "the manifest is fixed":
-        # the shallow family is an arrival-angle limit, a mechanism the cap does not model,
-        # and it is what sets `r_built_mm` and the +73.4% kt_error_pct.
-        rec["shallow_is_not_modelled"] = True
+
+        # ---- BUILD_PLAN.md step 1/2: the per-corner view, added, nothing above changed.
+        #
+        # THE SPLIT ABOVE IS TAKEN AT THE MEDIAN and says so — "because the clusters are
+        # known to be equal-sized, not because the gap is looked for".  With the wedge now
+        # paired to its own threshold that assumption is CHECKABLE, and an assumption that
+        # can be checked and is not is how a calibration goes stale.  `split_agrees_with_
+        # wedge` is False when ordering the corners by wedge does not reproduce the same
+        # two families ordering them by threshold does — in which case the shallow/square
+        # means above are averages over unlike things and must not be quoted.
+        wedges = cad.get("wedges_deg")
+        if wedges and len(wedges) == len(cad["thresholds_mm"]):
+            pairs = sorted(zip(wedges, cad["thresholds_mm"]))
+            rec["corners"] = [{"wedge_deg": w, "threshold_mm": t} for w, t in pairs]
+            by_wedge = [t for _w, t in pairs]
+            rec["split_agrees_with_wedge"] = bool(
+                sorted(by_wedge[:half]) == sorted(th[:half])
+                or sorted(by_wedge[half:]) == sorted(th[:half]))
+            # THE FAMILIES, NAMED BY THE THING THAT DEFINES THEM.  Every wedge measured so
+            # far is either 266-270 (a square-on corner: the flank meets the hub circle at
+            # right angles, and the root THICKNESS is what limits it) or 294-332 (a
+            # near-cusp corner, which the SLOT between adjacent roots limits).  The 24 deg
+            # gap between those two bands is wide and `CUSP_WEDGE_DEG` sits in the middle
+            # of it; if a design ever lands a corner inside the gap, `families_are_clean`
+            # goes False rather than silently sorting it into one side.
+            sq = [t for w, t in pairs if w < CUSP_WEDGE_DEG]
+            cu = [t for w, t in pairs if w >= CUSP_WEDGE_DEG]
+            rec["square_on_mm"] = float(np.mean(sq)) if sq else None
+            rec["near_cusp_mm"] = float(np.mean(cu)) if cu else None
+            rec["binds_at_wedge_deg"] = float(min(pairs, key=lambda p: p[1])[0])
+            rec["families_are_clean"] = bool(
+                len(sq) == len(cu) == half
+                and all(w <= 280.0 or w >= 290.0 for w, _t in pairs))
+        # The mechanism the cap MODELS AS OF 2026-08-10, reported beside the thing it
+        # predicts.  Free — it is analytic and already in the objective.  It used to be
+        # labelled "named-but-never-modelled"; `HUB_CAP_ARRIVAL_SLOPE` is that label coming
+        # off.
+        a_hub, a_rim = WW.arrival_angles(genes, WW.get_config("coarse"), xp=np)
+        rec["arrival_hub_deg"] = float(a_hub)
+        rec["arrival_rim_deg"] = float(a_rim)
         rows.append(rec)
     return {"rows": rows, "gate_cap_overpromise": GATE_CAP_OVERPROMISE,
             "gate_cap_floor_frac": GATE_CAP_FLOOR_FRAC,
@@ -309,7 +412,7 @@ def run_occ_limit(selected, cad_rows):
 T0_SWEEP = (2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0)
 
 
-def t0_sweep_designs(base_name="best_solution"):
+def t0_sweep_designs(base_name="best_solution", stations=T0_SWEEP):
     """One shape, `t0` swept across its whole box — the measurement the disk cannot give.
 
     Every genome on disk sits at `t0` between 2.468 and 2.627, i.e. 6% of a box that runs
@@ -322,14 +425,14 @@ def t0_sweep_designs(base_name="best_solution"):
     by_name = dict(_designs())
     base = np.asarray(by_name[base_name], dtype=float)
     out = []
-    for t0 in T0_SWEEP:
+    for t0 in stations:
         g = base.copy()
         g[8] = t0
         out.append((f"t0_{t0:g}", g))
     return out
 
 
-def run_t0_sweep(rows, cad_rows):
+def run_t0_sweep(rows, cad_rows, stations=T0_SWEEP):
     """Threshold against `t0` and against the slot, over the whole thickness box."""
     out = []
     for (name, genes), cad in zip(rows, cad_rows):
@@ -338,8 +441,15 @@ def run_t0_sweep(rows, cad_rows):
         # show that.  `analytic_cap` returns the min, which is the shipped cap.
         void, cap, _r = analytic_cap(genes)
         by_slot = WO.HUB_CAP_SHARE * W.HUB_RADIUS_MM * np.radians(void)
-        by_thickness = WO.HUB_CAP_THICKNESS_SHARE * float(genes[8])
+        # The arrival is CONSTANT down this sweep — only `t0` moves — so the arrival factor
+        # is a constant multiplier here.  Written out rather than folded into a share so the
+        # column stays comparable with `wheel_objective`'s own branch.
+        a_hub = float(WW.arrival_angles(genes, WW.get_config("coarse"), xp=np)[0])
+        by_thickness = float(genes[8]) * (WO.HUB_CAP_THICKNESS_SHARE
+                                          - WO.HUB_CAP_ARRIVAL_SLOPE
+                                          * (1.0 - np.cos(np.radians(a_hub))))
         rec = {"design": name, "t0_mm": float(genes[8]), "void_deg": void,
+               "arrival_hub_deg": a_hub,
                "cap_mm": cap, "slot_cap_mm": float(by_slot),
                "thickness_cap_mm": by_thickness,
                "binds": "slot" if by_slot < by_thickness else "thickness"}
@@ -352,25 +462,65 @@ def run_t0_sweep(rows, cad_rows):
         rec["n_corners"] = len(th)
         rec["shallow_mean_mm"] = float(np.mean(th[:half])) if half else 0.0
         rec["square_mean_mm"] = float(np.mean(th[half:])) if half else 0.0
-        rec["at_bracket"] = bool(rec["square_mean_mm"] >= cad["bisect_hi_mm"] - 1e-9)
-        rec["share_of_t0"] = rec["square_mean_mm"] / genes[8]
-        rec["cap_over_occ"] = (rec["cap_mm"] / rec["square_mean_mm"]
-                               if rec["square_mean_mm"] > 0 else float("inf"))
+        # `share_of_t0` IS THE CALIBRATION THIS SECTION EXISTS TO PRODUCE, so it has to come
+        # from the square-on family by NAME.  It used to come from `square_mean_mm`, the
+        # larger half of a rank split, which is the same mis-labelling `run_occ_limit`
+        # carried — see there.  It happened to pick the right family down this sweep,
+        # because a thicker root closes the slot and drags the cusp family under; that is
+        # luck, and it stops being luck the moment the base design changes.
+        wedges = cad.get("wedges_deg")
+        if wedges and len(wedges) == len(cad["thresholds_mm"]):
+            pairs = sorted(zip(wedges, cad["thresholds_mm"]))
+            sq = [t for w, t in pairs if w < CUSP_WEDGE_DEG]
+            rec["square_on_mm"] = float(np.mean(sq)) if sq else 0.0
+            rec["near_cusp_mm"] = float(np.mean([t for w, t in pairs
+                                                 if w >= CUSP_WEDGE_DEG])) or 0.0
+            # A MEAN OVER A FAMILY IS ONLY A MEASUREMENT IF THE FAMILY IS TIGHT, and down
+            # this sweep it is not always: the `t0` = 6 row reports a square-on share of
+            # 0.29 against 0.50-0.54 at every other intact station, and nothing in the row
+            # said whether that is one shape or twelve unlike corners averaged.  Reported
+            # so the next run answers it instead of the next reader guessing.
+            rec["square_on_spread"] = (float(max(sq) / min(sq) - 1.0)
+                                       if sq and min(sq) > 0 else None)
+            rec["corners"] = [{"wedge_deg": w, "threshold_mm": t} for w, t in pairs]
+        else:
+            rec["square_on_mm"] = rec["square_mean_mm"]
+        r_sq = rec["square_on_mm"]
+        rec["at_bracket"] = bool(r_sq >= cad["bisect_hi_mm"] - 1e-9)
+        rec["share_of_t0"] = r_sq / genes[8]
+        rec["cap_over_occ"] = (rec["cap_mm"] / min(th)) if min(th) > 0 else float("inf")
         # A ROW THAT IS NOT MEASURING THE SAME FEATURE.  Past t0 ~ 3 the void collapses and
         # then goes negative — adjacent roots have merged — so there is no spoke-to-hub
         # corner left and `_junction_edges` reports whatever re-entrant edges the merged
         # blob happens to have.  Those thresholds are real numbers about a different shape,
         # and averaging them into a calibration of the spoke-to-hub fillet would be reading
         # the instrument through the wrong window.  Kept in the report, excluded from the fit.
-        rec["same_feature"] = bool(void > 1.0 and not rec["at_bracket"])
+        #
+        # THE CORNER COUNT IS THE DIRECT TEST AND IT USED TO BE THE VOID.  `void > 1.0` is a
+        # proxy for "the roots have not merged", and BUILD_PLAN.md step 4 measured it too
+        # permissive: at `t0` = 8 the void still reads 2.577 deg and `_junction_edges`
+        # already finds **48** corners rather than 24, so that row was in the fit while
+        # describing a different junction.  Two corners per spoke is what an intact
+        # spoke-to-hub junction has; anything else is the merged blob, whatever the void
+        # says.  Observed rather than assumed, which is the same move `split_agrees_with_
+        # wedge` made for the family split.
+        n_ok = rec["n_corners"] == 2 * W.NUMBER_OF_SPOKES
+        rec["topology_is_intact"] = bool(n_ok)
+        rec["same_feature"] = bool(void > 1.0 and n_ok and not rec["at_bracket"])
         out.append(rec)
     good = [r for r in out if r.get("same_feature")]
-    return {"rows": out, "t0_values": list(T0_SWEEP),
+    return {"rows": out, "t0_values": list(stations),
             "n_same_feature": len(good),
             "t0_valid_range": ([min(r["t0_mm"] for r in good),
                                 max(r["t0_mm"] for r in good)] if good else None),
             "share_of_t0_min": min((r["share_of_t0"] for r in good), default=None),
             "share_of_t0_max": max((r["share_of_t0"] for r in good), default=None),
+            # WHAT THE MODEL CLAIMS AT THIS SWEEP'S ARRIVAL, so the two columns can be read
+            # against each other.  Constant down the sweep — only `t0` moves — and it is
+            # the number `share_of_t0` has to stay ABOVE for the fit to be conservative.
+            "model_share_of_t0": (out[0]["thickness_cap_mm"] / out[0]["t0_mm"]
+                                  if out else None),
+            "arrival_hub_deg": out[0]["arrival_hub_deg"] if out else None,
             # Reported, not gated: this section EXISTS to calibrate, so gating it on the
             # constant it is measuring would be circular.
             "pass": True}
@@ -434,10 +584,12 @@ def plot(rep, out):
         x = np.arange(len(names))
         ax.bar(x - 0.2, [r["cap_mm"] for r in ol["rows"] if "thresholds_mm" in r],
                0.4, label="analytic cap", color="tab:blue")
-        ax.bar(x + 0.2, [r["square_mean_mm"] for r in ol["rows"] if "thresholds_mm" in r],
-               0.4, label="OCC accepted (square corner)", color="tab:orange")
-        ax.plot(x, [r["shallow_mean_mm"] for r in ol["rows"] if "thresholds_mm" in r],
-                "kv", ms=7, label="OCC (shallow — NOT modelled)")
+        ax.bar(x + 0.2, [r["worst_corner_mm"] for r in ol["rows"] if "thresholds_mm" in r],
+               0.4, label="OCC worst corner (the gate)", color="tab:orange")
+        ax.plot(x, [r["square_on_mm"] for r in ol["rows"] if "thresholds_mm" in r],
+                "kv", ms=7, label="square-on family")
+        ax.plot(x, [r["near_cusp_mm"] for r in ol["rows"] if "thresholds_mm" in r],
+                "k^", ms=7, label="near-cusp family")
         ax.set_xticks(x)
         ax.set_xticklabels(names, rotation=20, ha="right", fontsize=8)
         ax.set_ylabel("radius [mm]")
@@ -461,6 +613,21 @@ def main():
     ap.add_argument("--designs", default="best_solution,elite14,elite13",
                     help="which genomes the CAD sections measure; `sweep` always "
                          "reports every design on disk")
+    # ADDITIVE, and that is load-bearing.  `studies/study_hub_cap.json` is the calibration
+    # evidence behind HUB_CAP_THICKNESS_SHARE (PLAN.md's Artifacts section: the `occ_limit`
+    # and `t0_sweep` blocks "should stay reproducible"), so this driver at its DEFAULTS has
+    # to keep producing that file.  Both flags below default to exactly what was committed;
+    # naming either one is what asks for something new.  Same shape as
+    # `study_svk_rescore.py --extra`, for the same reason.
+    ap.add_argument("--extra", action="append", default=[], metavar="LABEL=PATH",
+                    help="additional genome files to measure, e.g. "
+                         "--extra bc77614=stage3_svk_best_medium.json.  Repeatable.  "
+                         "Added to --designs' selection and to the `sweep` table.")
+    ap.add_argument("--t0-sweep", default=",".join(f"{v:g}" for v in T0_SWEEP),
+                    help="thickness stations for the t0_sweep section.  THE DEFAULT IS "
+                         "THE COMMITTED ONE and starts at 2.0; HUB_CAP_THICKNESS_SHARE is "
+                         "fitted on [2.0, 2.6] and the shipped floor is 1.2, so pass the "
+                         "lower stations explicitly to measure below the fit.")
     args = ap.parse_args()
 
     want = [s.strip() for s in args.sections.split(",") if s.strip()]
@@ -470,16 +637,34 @@ def main():
 
     t0 = time.time()
     all_designs = _designs()
+    extra = _extra_designs(args.extra)
+    all_designs = all_designs + extra
     by_name = dict(all_designs)
     picked = [n.strip() for n in args.designs.split(",") if n.strip()]
+    # An --extra genome is measured because it was named; asking for it twice in --designs
+    # is not an error but must not double the CAD work.
+    picked += [n for n, _g in extra if n not in picked]
     missing = [n for n in picked if n not in by_name]
     if missing:
         raise SystemExit(f"no such design(s) {missing}; have {sorted(by_name)}")
     selected = [(n, by_name[n]) for n in picked]
 
+    try:
+        t0_stations = tuple(float(v) for v in args.t0_sweep.split(",") if v.strip())
+    except ValueError:
+        raise SystemExit(f"--t0-sweep wants a comma-separated number list, "
+                         f"got {args.t0_sweep!r}")
+
     rep = {"settings": {"sections": want, "designs": picked,
                         "ring_samples": RING_SAMPLES, "bisect_rel": BISECT_REL,
-                        "config": "coarse", "elapsed_s": None}}
+                        "config": "coarse", "elapsed_s": None,
+                        # The stations and the extras go in the RECORD, not just in argv.
+                        # A calibration artifact that does not say which thicknesses it
+                        # measured is the misattribution risk PLAN.md flags for
+                        # MIN_WALL_MM, and this file IS the calibration.
+                        "t0_stations": list(t0_stations),
+                        "extra": {n: p for n, p in
+                                  (e.split("=", 1) for e in args.extra)}}}
 
     cad_rows = []
     needs_cad = [s for s in want if s in ("void", "occ_limit")]
@@ -494,9 +679,10 @@ def main():
     if "occ_limit" in want:
         rep["occ_limit"] = run_occ_limit(selected, cad_rows)
     if "t0_sweep" in want:
-        sw_rows = t0_sweep_designs()
+        sw_rows = t0_sweep_designs(stations=t0_stations)
         sw_caps = {n: analytic_cap(g)[1] for n, g in sw_rows}
-        rep["t0_sweep"] = run_t0_sweep(sw_rows, _run_cad(sw_rows, sw_caps, bisect=True))
+        rep["t0_sweep"] = run_t0_sweep(sw_rows, _run_cad(sw_rows, sw_caps, bisect=True),
+                                       stations=t0_stations)
     if "sweep" in want:
         rep["sweep"] = run_sweep(all_designs)
 
@@ -526,17 +712,23 @@ def main():
             else:
                 flag = ("OVER-PROMISES" if r["over_promises"] else
                         "vacuously small" if r["vacuously_small"] else "safe")
+                fam = (f"[square-on {r['square_on_mm']:.4f}  "
+                       f"near-cusp {r['near_cusp_mm']:.4f}  "
+                       f"binds at wedge {r['binds_at_wedge_deg']:.0f}]"
+                       if r.get("square_on_mm") is not None else "")
                 print(f"    {r['design']:<16} cap {r['cap_mm']:.4f}  "
-                      f"OCC square {r['square_mean_mm']:.4f}  "
-                      f"cap/OCC {r['conservatism']:.3f}  {flag:<15}"
-                      f"[shallow {r['shallow_mean_mm']:.4f}]")
-        print("    NOTE the shallow cluster is an ARRIVAL-ANGLE limit, which this cap does")
-        print("         not model.  It sets r_built_mm and the manifest's kt_error_pct, so")
-        print("         a passing gate here does NOT mean the manifest error is fixed.")
+                      f"OCC worst {r['worst_corner_mm']:.4f}  "
+                      f"cap/OCC {r['conservatism']:.3f}  {flag:<15}{fam}")
+        print("    The gate reads the WORST of the twenty-four corners, because that is the")
+        print("    one the exporter's ladder stops at.  Which FAMILY that is differs by")
+        print("    design — square-on at t0 = 1.2, near-cusp on the t0 = 2.55 elites — so it")
+        print("    is named by wedge angle rather than by rank.  BUILD_PLAN.md step 4.")
     if "t0_sweep" in want:
         s = rep["t0_sweep"]
         print(f"  t0_sweep  (calibration, not gated)   "
-              f"share of t0 {s['share_of_t0_min']:.4f}–{s['share_of_t0_max']:.4f}"
+              f"square-on share of t0 {s['share_of_t0_min']:.4f}–{s['share_of_t0_max']:.4f}"
+              f"   model claims {s['model_share_of_t0']:.4f} at arrival "
+              f"{s['arrival_hub_deg']:.2f} deg"
               if s["share_of_t0_min"] is not None else "  t0_sweep  no usable rows")
         print(f"    {'design':<10} {'t0':>6} {'void':>7} {'slot':>8} {'thick':>8} "
               f"{'cap':>8} {'OCC sq':>8} {'/t0':>7} {'binds':>10}")
@@ -549,7 +741,7 @@ def main():
                     else "  [void closed — NOT the same junction, excluded from the fit]")
             print(f"    {r['design']:<10} {r['t0_mm']:6.2f} {r['void_deg']:7.3f} "
                   f"{r['slot_cap_mm']:8.4f} {r['thickness_cap_mm']:8.4f} "
-                  f"{r['cap_mm']:8.4f} {r['square_mean_mm']:8.4f} "
+                  f"{r['cap_mm']:8.4f} {r['square_on_mm']:8.4f} "
                   f"{r['share_of_t0']:7.4f} {r['binds']:>10}" + note)
     if "sweep" in want:
         s = rep["sweep"]

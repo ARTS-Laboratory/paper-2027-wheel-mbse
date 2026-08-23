@@ -373,6 +373,50 @@ MAX_ARRIVAL_DEG = 65.0
 
 MIN_FOLD_MARGIN_MM = 0.1
 
+# How deep a spoke root must bury itself in its ring, measured in ROOT THICKNESSES.
+# Lives here for the same reason MAX_ARRIVAL_DEG does: the producer is the STEP exporter
+# (CadQuery env) and the consumer is a test in `make test` (jax env), and this module is
+# the only one both can import.
+MIN_JUNCTION_BITE = 0.25
+
+
+def junction_bite(overlap_mm3, t_mm, width_mm):
+    """Weld penetration in ROOT THICKNESSES: overlap_mm3 / (t_mm**2 * width_mm).
+
+    `overlap_mm3` is how much of ONE spoke's material lies inside its ring — the 2D
+    intersection area of the spoke outline with the hub disk (or the rim annulus) times
+    the face width.  `t_mm` is the spoke's thickness AT that ring: t0 at the hub, t3 at
+    the rim, which is what `thickness_at_arc_length` returns at s=0 and s=1.
+
+    Why the square.  A spoke arriving radially and burying itself a depth d past the
+    circle contributes overlap = t*d*W, so the ratio is exactly d/t — the number of root
+    thicknesses of engagement.  A spoke that only grazes the ring drives it to 0, which
+    is the failure the exporter's junction check exists to catch: a hairline weld that
+    looks fine in CAD and snaps in PLA.
+
+    Why NOT the raw volume, which is what the exporter used to gate on.  Overlap is
+    quadratic in t: once through the band width, and once again because a near-tangent
+    band of that width crosses the circle over a proportionally longer arc.  A fixed mm^3
+    floor is therefore a proxy for t and nothing else.  Measured on three genomes
+    spanning a 2x range in t0 (hub junction, W = 22.4 mm):
+
+        genome                          t0     hub mm^3    bite
+        stage3_minwall_best_1.2       1.20        18.12   0.562
+        stage3_prod_best_elite10      2.00        48.72   0.544
+        best_solution                 2.48        78.53   0.571
+
+    Same junction, three times over, 0.56 +/- 0.03 — while the raw volumes span 4.3x and
+    a 50 mm^3 floor "fails" the two thinner ones.
+
+    MIN_JUNCTION_BITE = 0.25 IS A GEOMETRIC FLOOR, NOT A CALIBRATED ONE.  Three samples
+    that agree to 3% cannot calibrate a threshold, and this repo has never produced a
+    junction that actually failed, so there is no negative example to fit against.  0.25
+    is half of what every measured design achieves — it leaves 2.2x margin and still
+    trips long before a grazing junction reaches 0.  Replace it the moment a real failure
+    turns up; do not read it as a validated limit.
+    """
+    return overlap_mm3 / (t_mm * t_mm * width_mm)
+
 
 def self_intersection_margin(curve, ctrl_pts, t0, t1, t2, t3, num_points, xp=np):
     """min_s ( |1/kappa(s)| - t(s)/2 ), the clearance before the offset band folds.

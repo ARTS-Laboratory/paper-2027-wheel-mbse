@@ -14,6 +14,7 @@ of steps, for the same reason `test_objective.py` does: a phase-batched contact 
 at all and are checked at full precision.
 """
 
+import json
 import os
 import sys
 
@@ -246,6 +247,220 @@ def test_a_stuck_run_stops_and_says_so(z0):
     assert min(lrs) >= S3.DEFAULT_LR * S3.LR_FLOOR_FRAC, (
         "the learning rate decayed below its floor, so a long storm would leave the run "
         "unable to move even once the refusals stopped")
+
+
+def test_the_run_record_carries_the_wall_floor_it_actually_descended():
+    """A MASS is unreadable without the floor that produced it — the production descents
+    pin all four thickness genes to it, so the reported grams are "the lightest wheel at
+    this floor" rather than "the lightest wheel".  The field is read off the module at
+    record time, so it cannot disagree with the box the descent projected into; a default
+    baked in at import would report 2.0 for every arm of the sweep.
+    """
+    saved = [(g["low"], g["high"]) for g in W.GENE_SPACE]
+    min_wall = W.MIN_WALL_MM
+    try:
+        W.set_min_wall(1.6)
+        low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+        z = wg.normalize(so3.load_genes(), low, high)
+        rec = S3.descend(z, CFG, steps=1, n_phase=N_PHASE, scheme="uniform",
+                         verbose=False)
+        assert rec["settings"]["min_wall_mm"] == 1.6
+    finally:
+        for g, (lo, hi) in zip(W.GENE_SPACE, saved):
+            g["low"], g["high"] = lo, hi
+        W.MIN_WALL_MM = min_wall
+        W._refresh_gene_arrays()
+
+
+def test_the_run_record_carries_the_kinematics_it_actually_descended():
+    """The sharper case of the floor above, and the reason SVK_PLAN.md exists.
+
+    A genome descended under SVK and one descended under linear are boundary optima of
+    DIFFERENT objectives — their losses are not comparable and their genes do not say
+    which solve produced them.  PLAN.md §14 is the record of what the missing field cost:
+    every Stage-3 headline for the promoted genome was linear, nothing written down said
+    so, and a 23% deflection error survived to promotion.
+
+    Read off the Evaluator's own `problem_kw`, so the record reports the dict that was
+    splatted into the solver rather than a parameter that could drift away from it.  The
+    default is asserted too: a record written before this key existed and one written
+    after must mean the same thing, so the absent case has to say `linear` — which is what
+    `wheel_contact_problem` itself defaults to.
+    """
+    low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+    z = wg.normalize(so3.load_genes(), low, high)
+    default = S3.descend(z, CFG, steps=1, n_phase=N_PHASE, scheme="uniform",
+                         verbose=False)
+    assert default["settings"]["kinematics"] == "linear", (
+        "a record written without the kwarg no longer means what every record written "
+        "before this key existed meant")
+    svk = S3.descend(z, CFG, steps=1, n_phase=N_PHASE, scheme="uniform",
+                     verbose=False, kinematics="svk")
+    assert svk["settings"]["kinematics"] == "svk"
+    # Not a provenance claim but the one that makes provenance worth having: the two runs
+    # have to be different runs.  Without this the field could be a label on nothing.
+    assert (svk["best"]["report"]["axle_drop_mean_mm"]
+            != default["best"]["report"]["axle_drop_mean_mm"]), (
+        "SVK and linear descended to the same axle drop, so `kinematics` is a string in "
+        "the record that never reached a solver")
+
+
+class _Args:
+    """Just the attributes `search_block` reads.  A real argparse.Namespace would work
+    too, but naming them here means adding a field to the block without deciding where
+    its value comes from fails loudly instead of picking up an argparse default."""
+    optimizer, config, steps = "adam", "coarse", 125
+    phase_scheme, n_phase, seed, start = "uniform", 8, 0, "best"
+    kinematics = "linear"
+
+
+def test_the_best_out_record_carries_the_box_it_was_descended_in():
+    """The `--best-out` file is the one a promotion reads, and until this it recorded
+    the optimizer settings but not the BOUNDS.
+
+    Every arm of the wall-floor sweep writes one of these with all four thickness genes
+    sitting exactly on the floor, so the genome is a boundary optimum and its mass means
+    nothing without the floor attached.  Four such files from four different floors were
+    byte-distinguishable only by the pinned t-values themselves — which is inference, not
+    provenance, and it stops working precisely when a genome comes back NOT pinned.
+
+    Read off the module, not off `args`, so that a floor moved through `set_min_wall` by
+    any route is what gets recorded.
+    """
+    saved = [(g["low"], g["high"]) for g in W.GENE_SPACE]
+    min_wall = W.MIN_WALL_MM
+    try:
+        # The module's value, not a literal — the default moved to 1.2 with §13 and the
+        # claim here is "the block reports whatever the module says", not any one number.
+        assert (S3.search_block(_Args, "best_solution", 125)["min_wall_mm"]
+                == W.MIN_WALL_MM)
+        W.set_min_wall(1.4)
+        blk = S3.search_block(_Args, "best_solution", 125)
+        assert blk["min_wall_mm"] == 1.4, (
+            "the promoted-genome record still claims the default floor — every sweep "
+            "arm would be indistinguishable from every other")
+        assert blk["cy_bound_mm"] == W.CY_BOUND_MM
+        # Off `args`, unlike the two bounds above: nothing mutates a module-level
+        # kinematics, so what argparse parsed IS what reached the solver.
+        class _Svk(_Args):
+            kinematics = "svk"
+        assert S3.search_block(_Svk, "best_solution", 125)["kinematics"] == "svk"
+        assert blk["kinematics"] == "linear"
+        # The settings that were already there must survive the refactor.
+        assert blk["config"] == "coarse" and blk["n_phase"] == 8
+        assert blk["label"] == "best_solution" and blk["at_step"] == 125
+    finally:
+        for g, (lo, hi) in zip(W.GENE_SPACE, saved):
+            g["low"], g["high"] = lo, hi
+        W.MIN_WALL_MM = min_wall
+        W._refresh_gene_arrays()
+
+
+def _brk(loss_terms, *, cap_mm=1.0):
+    """A breakdown with only what `selection_key` reads: term values and the hub cap."""
+    return {"terms": {k: {"value": float(v)} for k, v in loss_terms.items()},
+            "report": {"hub_fillet_cap_mm": float(cap_mm)}}
+
+
+def _genes_with_r_hub(r_hub):
+    g = np.zeros(wg.N_GENES)
+    g[12] = float(r_hub)
+    return g
+
+
+def test_no_amount_of_objective_buys_past_a_barrier():
+    """DEFECT 6, stated as the category error it is.
+
+    The loss is a weighted sum in which the barriers are terms like any other, so the
+    lowest-loss iterate is whichever bought the most objective for the least constraint —
+    and a barrier is not a thing that can be bought.  The rule was `min(loss)`, and on
+    2026-08-11 it reported an iterate in violation of the hub cap out of a run that held
+    53 comfortably-feasible ones.
+
+    The margin below is deliberately absurd: 1000 units of mass against a barrier reading
+    1e-9.  A rule that trades at ALL fails this, whatever its exchange rate.
+    """
+    feasible = S3.selection_key(1000.0, _brk({"mass": 1000.0, "fillet_cap": 0.0}),
+                                _genes_with_r_hub(0.5))
+    violating = S3.selection_key(0.001, _brk({"mass": 0.0, "fillet_cap": 1e-9}),
+                                 _genes_with_r_hub(0.5))
+    assert feasible < violating, (
+        "a violating iterate outranked a feasible one a million times its loss — the "
+        "selection rule is trading a shippability question against an objective")
+    assert feasible[0] == 0 and violating[0] == 2
+
+
+def test_every_barrier_can_veto_and_no_objective_can():
+    """The veto belongs to `WO.BARRIER_TERMS` entire, not to the two that happened to
+    bind in the run that exposed the defect.  Parameterising over the tuple means a term
+    added to it is tested by construction, and one added to `TERMS` without being
+    classified fails `wheel_objective`'s import-time assertion instead."""
+    base = _genes_with_r_hub(0.5)
+    clean = S3.selection_key(10.0, _brk({}), base)
+    assert clean[0] == 0
+    for term in WO.BARRIER_TERMS:
+        assert S3.selection_key(10.0, _brk({term: 1e-9}), base)[0] == 2, (
+            f"{term} is listed as a barrier but cannot veto an iterate")
+    for term in WO.OBJECTIVE_TERMS:
+        assert S3.selection_key(10.0, _brk({term: 1e9}), base)[0] == 0, (
+            f"{term} is an objective and must never make an iterate unshippable")
+
+
+def test_feasibility_at_one_mesh_is_not_feasibility():
+    """DEFECT 7.  A barrier reading exactly 0.0 certifies that THIS mesh saw no
+    violation, and nothing more.  Step 82 of the buildability re-descent cleared the cap
+    at `medium` by 53 nm and violated it at `coarse` by 93 nm; every barrier in its
+    breakdown read 0.0 and it was still not shippable.
+
+    So exact-zero feasibility is necessary and not sufficient, and the rule holds a band
+    below which a feasible iterate is demoted rather than promoted on loss.  The band is
+    a statement about mesh resolution, not about buildability — the wheel does not care
+    about a micron, the discretisation does.
+    """
+    knife_edge = S3.selection_key(1.0, _brk({}, cap_mm=0.5 + 53e-6),
+                                  _genes_with_r_hub(0.5))
+    comfortable = S3.selection_key(2.0, _brk({}, cap_mm=0.5 + 3.1e-3),
+                                   _genes_with_r_hub(0.5))
+    assert knife_edge[0] == 1 and comfortable[0] == 0
+    assert comfortable < knife_edge, (
+        "a 53 nm margin outranked a 3 um one on loss — this is the promotion that had "
+        "to be retracted on 2026-08-11")
+    # ... but a run with nothing better still reports its best, rather than nothing.
+    worse = S3.selection_key(9.0, _brk({}, cap_mm=0.5 + 10e-6), _genes_with_r_hub(0.5))
+    assert knife_edge < worse < S3.selection_key(0.0, _brk({"stress": 1e-12}),
+                                                 _genes_with_r_hub(0.5))
+
+
+def test_the_rule_reranks_the_run_that_exposed_it():
+    """The regression, against the real 101-step trace rather than a constructed one.
+
+    Synthetic breakdowns prove the ordering; only the trace proves the ordering applies
+    to iterates a descent actually produces.  Step 93 is what the old rule reported and
+    it is in violation; step 82 is what was promoted off it and it is on the knife edge;
+    both must now rank below a tier-0 iterate.
+    """
+    path = os.path.join(REPO, "stage3_buildcap2_medium.json")
+    if not os.path.exists(path):
+        pytest.skip("the buildability re-descent trace is not in the tree")
+    low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+    with open(path) as fh:
+        rows = json.load(fh)["steps"]
+    keyed = {}
+    for r in rows:
+        genes = wg.denormalize(np.asarray(r["z"], dtype=float), low, high)
+        keyed[r["step"]] = S3.selection_key(
+            r["loss"], {"terms": r["terms"], "report": r["report"]}, genes)
+
+    assert keyed[93][0] == 2, "step 93 is the violating iterate the old rule reported"
+    assert keyed[82][0] == 1, "step 82 is the 53 nm knife edge that was promoted off it"
+    assert keyed[71][0] == 0, "step 71 is what shipped"
+    chosen = min(keyed, key=lambda s: keyed[s])
+    assert keyed[chosen][0] == 0, (
+        f"the rule still reports a tier-{keyed[chosen][0]} iterate out of a run holding "
+        f"{sum(1 for k in keyed.values() if k[0] == 0)} feasible ones")
+    # The old rule's answer, kept explicit: it is still the minimum by loss, which is why
+    # nothing about the descent had to change to fix this.
+    assert min(rows, key=lambda r: r["loss"])["step"] == 93
 
 
 def test_the_run_record_carries_the_iterate_and_the_gradient(z0):

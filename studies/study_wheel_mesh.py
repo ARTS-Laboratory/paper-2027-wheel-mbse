@@ -44,6 +44,8 @@ import time
 
 import numpy as np
 
+import _gate_guard
+
 import wheel_fea as W
 import wheel_genome as wg
 import wheel_mesh as M
@@ -306,6 +308,16 @@ def main():
                     help="skip the two finest configs; for CI, not for the record")
     args = ap.parse_args()
 
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_wheel_mesh.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.samples < 200, "--samples %d, below the gate's 200" % args.samples),
+        (args.config != "coarse", "--config %s, not the gate's coarse" % args.config),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
+
     genes = shipped_genome()
     t0 = time.time()
     configs = ("smoke", "coarse") if args.quick else ("smoke", "coarse", "medium", "fine")
@@ -321,7 +333,7 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(genes, rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(genes, rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
     return 0 if rep["pass"] else 1

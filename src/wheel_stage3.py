@@ -180,6 +180,50 @@ REPORT_KEYS = ("axle_drop_mean_mm", "max_stress_mpa", "stress_utilisation",
                "phase_ripple_std_over_mean", "mesh_mass_g", "min_scaled_jacobian",
                "stress_scale_measured", "buckling_ratio")
 
+# How much hub-cap slack a feasible iterate must hold before it is preferred on loss
+# alone.  Zero would be the obvious threshold and it is the wrong one, because
+# feasibility is FIDELITY-DEPENDENT: on 2026-08-11 step 82 of the buildability
+# re-descent cleared the cap at `medium` by 53 nm and violated it at `coarse` by 93 nm,
+# and `run_closed_form` then failed it at 2.705e-06 against a 1e-6 tolerance.  A barrier
+# reading exactly 0.0 therefore certifies nothing on its own; it certifies that THIS mesh
+# saw no violation.  1e-3 mm is four orders above that crossover and four below the
+# 2951 nm the step actually promoted (step 71) was holding, so it separates the two
+# without being tight enough to be the binding constraint on any real design.
+MIN_CAP_SLACK_MM = 1e-3
+
+
+def selection_key(loss, breakdown, genes):
+    """Sort key for "which iterate of this run should be promoted" — DEFECT 6.
+
+    The rule was `min(loss)` and that is wrong in a way no amount of descent fixes: the
+    loss is a weighted sum in which the barriers are terms like any other, so a step that
+    violates the hub cap slightly and buys a lot of mass for it scores BELOW a feasible
+    step.  That is not a tuning failure, it is a category error — a barrier answers "may
+    this ship", and no amount of objective can buy its way past it.  The run this defect
+    was found in had 55 feasible iterates out of 101 and reported an infeasible one.
+
+    Three tiers, most shippable first:
+
+      0  feasible with cap slack to spare  -> ranked by loss, which is the intent
+      1  feasible but inside MIN_CAP_SLACK_MM -> ranked by slack, then loss
+      2  in violation -> ranked by total violation, then loss
+
+    Tier 2 always ranks last but is still ranked, so a run in which nothing is feasible
+    reports its least-violating step rather than nothing at all.  Ranking tier 1 by slack
+    before loss is deliberate: inside a 1 um band the loss differences are numerical
+    noise against a feasibility question the mesh cannot resolve, so the tiebreak that
+    means something is distance from the knee.
+    """
+    terms = breakdown.get("terms", {})
+    violation = sum(float(terms[k]["value"]) for k in WO.BARRIER_TERMS if k in terms)
+    if violation > 0.0:
+        return (2, violation, float(loss))
+    cap = float(breakdown.get("report", {}).get("hub_fillet_cap_mm", float("inf")))
+    slack = cap - float(genes[12])          # gene 12 is R_hub, the requested fillet radius
+    if slack < MIN_CAP_SLACK_MM:
+        return (1, -slack, float(loss))
+    return (0, 0.0, float(loss))
+
 
 # ---------------------------------------------------------------------------
 # THE OPTIMIZER, AS PURE FUNCTIONS
@@ -442,7 +486,8 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
         val, grad, brk = ev(z, low, high, phases=phases)
         wall = time.time() - t0
         warm = warm_from(brk) if warm_start else None
-        best = {"loss": val, "z": z.copy(), "step": 0, "breakdown": brk}
+        best = {"loss": val, "z": z.copy(), "step": 0, "breakdown": brk,
+                "key": selection_key(val, brk, wg.denormalize(z, low, high))}
         fc0 = (_fidelity_check(ev_fc, z, low, high, phases, fidelity_check_cfg)
                if fidelity_check_every else None)
         if fc0 is not None and fc0["failed"]:
@@ -547,8 +592,10 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
                                "pinned": list(orientation),
                                "live": [float(o) for o in live]})
 
-            if val < best["loss"]:
-                best = {"loss": val, "z": z.copy(), "step": i, "breakdown": brk}
+            key = selection_key(val, brk, wg.denormalize(z, low, high))
+            if key < best["key"]:
+                best = {"loss": val, "z": z.copy(), "step": i, "breakdown": brk,
+                        "key": key}
 
             # Pure observation: reuses THIS step's own `phases` (already drawn above),
             # never feeds a gradient back, never touches m/v/delta/z.  A scheduled step
@@ -637,6 +684,26 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
                      # number nobody on another machine can compare against.
                      "workers": getattr(getattr(ev, "pool", None), "n_workers", 0),
                      "cpu_count": os.cpu_count(),
+                     # Read off the module rather than passed in, so the record cannot
+                     # disagree with the box that was actually descended.  Same argument
+                     # as workers/cpu_count one line up: a MASS without the wall floor
+                     # that produced it is as unreadable as a wall clock without its
+                     # machine, and these runs pin all four thickness genes to it.
+                     "min_wall_mm": float(W.MIN_WALL_MM),
+                     # WHICH KINEMATICS THIS RUN DESCENDED ON.  Read off the Evaluator's
+                     # own `problem_kw` — the very dict it splats into the solver — rather
+                     # than off a parameter of this function, so the record cannot disagree
+                     # with what was actually solved.  Same argument as min_wall_mm four
+                     # lines up.  Defaulted to the string `wheel_contact_problem` itself
+                     # defaults to, so a record written before this key existed and one
+                     # written after mean the same thing.
+                     #
+                     # It is in the record for the reason SVK_PLAN.md exists at all: every
+                     # Stage-3 headline in PLAN.md was computed under linear kinematics and
+                     # NOTHING IN THE RECORD SAID SO, which is how a 23% deflection error
+                     # survived to promotion.  A loss is not comparable across kinematics.
+                     "kinematics": str(getattr(ev, "problem_kw", {})
+                                       .get("kinematics", "linear")),
                      # Same reasoning as workers/cpu_count: what a run's fidelity checks
                      # cost is unreadable without the policy that produced it.
                      "fidelity_check_every": fidelity_check_every,
@@ -656,6 +723,12 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
                   "bound_saturation": [list(t) for t in
                                        wg.bound_saturation(genes, low, high)]},
         "best": {"step": best["step"], "loss": float(best["loss"]),
+                 # The tier is the part a human reads: 0 means this run has something
+                 # shippable in it and this is the best of them.  1 or 2 means the run
+                 # produced no comfortably-feasible iterate and what follows is the least
+                 # bad one, which is NOT a promotion candidate.  See `selection_key`.
+                 "selection": {"tier": int(best["key"][0]),
+                               "key": [float(x) for x in best["key"]]},
                  "z": [float(x) for x in best["z"]],
                  "genes": wg.vector_to_genes(best_genes),
                  "genome_hash": wg.genome_hash(wg.vector_to_genes(best_genes)),
@@ -740,9 +813,11 @@ def descend_lbfgsb(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, weights=None,
         i = len(step_rows)
         step_rows.append(_row(i, val, grad, float("nan"), brk, phases,
                               time.time() - t0, 0, z=z))
-        if state["best"] is None or val < state["best"]["loss"]:
+        key = selection_key(val, brk, wg.denormalize(np.asarray(z, dtype=float),
+                                                     low, high))
+        if state["best"] is None or key < state["best"]["key"]:
             state["best"] = {"loss": val, "z": np.asarray(z, dtype=float).copy(),
-                             "step": i, "breakdown": brk}
+                             "step": i, "breakdown": brk, "key": key}
         if verbose:
             _log_step(i, val, grad, float("nan"), brk, time.time() - t0)
         return float(val), np.asarray(grad, dtype=float)
@@ -805,6 +880,51 @@ def start_points(spec, genome="best_solution.json", elites="stage2_elites.json")
     raise ValueError(f"unknown --start {spec!r}; expected 'best', 'all' or 'rank:N'")
 
 
+def search_block(args, label, at_step, selection=None):
+    """Search provenance for the `--best-out` record: which run produced this genome,
+    and inside WHAT BOX.
+
+    `min_wall_mm` and `cy_bound_mm` mirror the GA writer (wheel_fea.py:1393) for the same
+    reason, and it bites harder here, because this is the file a promotion reads.  A
+    descent drives all four thickness genes onto the wall floor and leaves them there, so
+    every genome written through this path is a boundary optimum whose mass is a statement
+    about the floor as much as about the design.  Without the floor recorded, two
+    artifacts descended at different floors are indistinguishable except by reading the
+    pinned t-values back out — and that inference silently stops working the moment a
+    genome comes back NOT pinned, which is exactly the outcome worth detecting.
+
+    Both are read off the `wheel_fea` module rather than off `args` because `--min-wall`
+    and `--cy-bound` are applied through `W.set_min_wall`/`W.set_cy_bound`, which are the
+    things that actually moved the box.  Reading the module means the record describes the
+    box that was descended in even if a future caller moves a bound some other way.
+
+    Split out of `main()` so it is testable without a solve: a run small enough to reach
+    this line still costs minutes, which is too slow to gate provenance on.
+
+    `kinematics` is here for the same reason and it is the sharper case of it: a genome
+    descended under SVK and one descended under linear are boundary optima of DIFFERENT
+    objectives, and the two files are otherwise indistinguishable — the genes alone do not
+    say which solve produced them.  PLAN.md §14 is the record of what that costs: every
+    Stage-3 headline for the promoted genome was linear and nothing written down said so.
+    Taken off `args` rather than off the module because, unlike the wall floor, nothing
+    mutates a module-level kinematics; `args.kinematics` IS what reached the solver, and a
+    `getattr(..., "linear")` fallback here would report "linear" for an SVK run whose
+    caller forgot the field — which is the exact failure this key exists to prevent.
+    """
+    return {"optimizer": args.optimizer, "config": args.config,
+            "steps": args.steps, "phase_scheme": args.phase_scheme,
+            "n_phase": args.n_phase, "seed": args.seed, "start": args.start,
+            "min_wall_mm": float(W.MIN_WALL_MM),
+            "cy_bound_mm": float(W.CY_BOUND_MM),
+            "kinematics": args.kinematics,
+            # WHY this step and not the lowest-loss one.  Recorded next to the box for the
+            # same reason the box is recorded: a promoted file that does not say which
+            # rule chose it cannot be re-derived, and this rule replaced one that shipped
+            # an infeasible genome.  Absent on files written before 2026-08-12.
+            "selection": selection,
+            "label": label, "at_step": at_step}
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -845,6 +965,48 @@ def main():
                          "'medium' against a primary --config coarse (2.8x coarse, not "
                          "the 4x once budgeted — see PLAN.md); required if "
                          "--fidelity-check-every is nonzero")
+    ap.add_argument("--min-wall", type=float, default=W.MIN_WALL_MM,
+                    help=f"printable wall floor in mm (default {W.MIN_WALL_MM}), the low "
+                         f"bound on t0..t3. Applied BEFORE the bounds are read, so it "
+                         f"changes the box this descent projects into. A start genome "
+                         f"below a raised floor is projected up onto it.")
+    # DEFAULT FLIPPED linear -> svk, PLAN.md §32 / KINEMATICS_PLAN.md step 2.  This is the
+    # SEARCH path and it is the one place where the strain measure decides which design
+    # comes out, so it is the one place the default was measured and changed.
+    #
+    # WHY: `linear` does not RANK designs the way SVK does, so a linear descent does not
+    # return the design SVK would pick.  Measured over 36 committed genomes at `coarse`
+    # (`make kinrank`, studies/study_kinematics_rank.json): Spearman rho **-0.83** on the
+    # subset feasible under both, 82% of pairs discordant, and different argmins.  The
+    # cleanest cell is the §8 minwall ladder — eight arms from ONE linear descent differing
+    # only in the wall floor — where rho is **-0.8333** and linear's best arm (0.8 mm) is
+    # SVK's WORST of eight.  It is not an offset that cancels in a ranking: at matched
+    # deflection the correction spans 5.70%-48.54% across feasible designs, cv 0.51 against
+    # study_gnl's own 0.10 bar.
+    #
+    # AND IT COSTS 1.49x, NOT THE MULTIPLE STEP 2 BUDGETED FOR.  Paired over those same 36
+    # genomes on shared meshes at 8 workers: linear 34.2 s median against SVK 51.9 s.
+    #
+    # `linear` REMAINS SUPPORTED AND IS NOT DEPRECATED — study_gnl, study_kinematics_rank
+    # and the M5/M7 controls all need it as an arm, and `wheel_fem`'s own kernel defaults
+    # are DELIBERATELY UNTOUCHED (§32: that is a reporting question this arc did not
+    # measure, and it reaches ~470 tests and 11 study drivers).  What changed is only which
+    # one you get by not saying.
+    #
+    # FOUR LIVE RECIPES TOOK THE OLD DEFAULT — `stage3`, `prod9`, `prod10` and `minwall-%`
+    # — so this DOES change what they do.  It does not restate history: every run records
+    # its own `kinematics` in `search_block`, with no fallback (§15), so the pre-§15
+    # artifacts that carry no key are still readable as exactly what they were.
+    ap.add_argument("--kinematics", choices=("linear", "svk"), default="svk",
+                    help="the strain measure every solve in the descent uses. svk "
+                         "(default since PLAN.md §32) is St Venant-Kirchhoff; linear is "
+                         "engineering strain, which is what `wheel_contact_problem` itself "
+                         "still defaults to and what every Stage-3 run before §15 used. "
+                         "For the promoted 1.2 mm genome SVK is a 31%% softer wheel at the "
+                         "service point — 24.68 vs 36.02 N/mm, measured against a "
+                         "same-session linear control (SVK_PLAN.md step 1) — so a loss "
+                         "from one is NOT comparable with the other, and linear does not "
+                         "rank designs the way svk does (§32: rho -0.83)")
     ap.add_argument("--start", default="best", help="best | rank:N | all")
     ap.add_argument("--genome", default="best_solution.json")
     ap.add_argument("--elites", default="stage2_elites.json")
@@ -852,6 +1014,15 @@ def main():
     ap.add_argument("--out", default="stage3_run.json")
     ap.add_argument("--best-out", default="stage3_best.json")
     args = ap.parse_args()
+
+    # BEFORE `bounds_arrays`, and before `start_points` normalises anything against them.
+    # Every consumer in this tree reads the bounds through `wg.bounds_arrays(W.GENE_SPACE)`
+    # inside a function rather than snapshotting them at module scope, so setting the floor
+    # here reaches `descend`, `objective(normalized=True)`'s chain rule and the record's
+    # saturation report alike.  Pool WORKERS need nothing: they receive physical genes and
+    # never touch the box (`wheel_pool_worker.run_phase`).
+    if args.min_wall != W.MIN_WALL_MM:
+        W.set_min_wall(args.min_wall)
 
     low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
     starts = start_points(args.start, args.genome, args.elites)
@@ -861,14 +1032,21 @@ def main():
         z0 = wg.normalize(genes0, low, high)
         out = args.out if len(starts) == 1 else \
             f"{os.path.splitext(args.out)[0]}_{label}.json"
+        # The kinematics is IN THE BANNER, not just in the run record, and that is the
+        # whole lesson of SVK_PLAN.md restated at the one place a human actually looks.
+        # The record has carried it since step 2 — but a record is read after the fact,
+        # and the failure this arc exists to correct is that four hours of descent looked
+        # identical from the outside whichever strain measure was under it.  A loss from
+        # one is not comparable with a loss from the other, so the banner that names the
+        # loss has to name the kinematics too.
         print(f"\n{'=' * 78}\n  STAGE 3 — {label}  ({args.optimizer}, {args.config}, "
-              f"{args.steps} steps, {args.phase_scheme})\n{'=' * 78}")
+              f"{args.steps} steps, {args.phase_scheme}, {args.kinematics})\n{'=' * 78}")
         print(wg.describe(genes0, low, high))
 
         if args.optimizer == "lbfgsb":
             rec = descend_lbfgsb(z0, args.config, steps=args.steps,
                                  n_phase=args.n_phase, scheme=args.phase_scheme,
-                                 out=out)
+                                 out=out, kinematics=args.kinematics)
         else:
             rec = descend(z0, args.config, steps=args.steps, lr=args.lr,
                           n_phase=args.n_phase, n_sub=args.n_sub,
@@ -877,24 +1055,31 @@ def main():
                           t1_reject=args.t1_reject, t1_precheck=not args.no_t1_precheck,
                           log_every=args.log_every, out=out, workers=args.workers,
                           fidelity_check_every=args.fidelity_check_every,
-                          fidelity_check_cfg=args.fidelity_check_config)
+                          fidelity_check_cfg=args.fidelity_check_config,
+                          kinematics=args.kinematics)
         rec["label"] = label
         runs.append(rec)
         print(f"\nwrote {out}  ({rec['settings']['elapsed_s']} s, "
               f"{rec['settings']['n_objective_calls']} objective calls)")
 
-    best = min(runs, key=lambda r: r["best"]["loss"])
+    # Across starts by the SAME rule as within one, or the fix would hold only until a
+    # multi-start run put a feasible iterate and a lower-loss violating one side by side.
+    best = min(runs, key=lambda r: tuple(r["best"]["selection"]["key"]))
+    tier = best["best"]["selection"]["tier"]
     print(f"\n{'=' * 78}\n  BEST OVER {len(runs)} START(S): {best['label']} at step "
-          f"{best['best']['step']}, loss {best['best']['loss']:.4f}\n{'=' * 78}")
+          f"{best['best']['step']}, loss {best['best']['loss']:.4f}, "
+          f"selection tier {tier}\n{'=' * 78}")
+    if tier:
+        print("  WARNING: tier %d — no iterate of this run cleared the hub cap by "
+              "%.0e mm.\n  This genome is NOT a promotion candidate; see "
+              "`wheel_stage3.selection_key`." % (tier, MIN_CAP_SLACK_MM))
     print(wg.describe(np.array(list(best["best"]["genes"].values())), low, high))
 
     h = wg.save_record(
         os.path.join(HERE, args.best_out), best["best"]["genes"],
         source="wheel_stage3.py",
-        search={"optimizer": args.optimizer, "config": args.config,
-                "steps": args.steps, "phase_scheme": args.phase_scheme,
-                "n_phase": args.n_phase, "seed": args.seed, "start": args.start,
-                "label": best["label"], "at_step": best["best"]["step"]},
+        search=search_block(args, best["label"], best["best"]["step"],
+                            selection=best["best"]["selection"]),
         loss_terms=best["best"]["terms"],
         metrics=best["best"]["report"],
         loss=best["best"]["loss"],

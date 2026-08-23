@@ -10,6 +10,12 @@ MEASURE how much geometric nonlinearity actually changes the answer — with an 
 off-ramp, "if < 2%, run the Stage-3 trajectory on the linear model and check GNL only
 at checkpoints".
 
+*** THE 3.95% BELOW IS THE GA/BEAM WHEEL `36aed36`, NOT WHAT SHIPS.  §32, 2026-08-16. ***
+The paragraph is kept as written because its ARGUMENT is unchanged and stronger — only the
+genome it was measured on has been promoted out from under it, three times.  The shipped
+`09e8188` reads **23.16% at `coarse`** (22.749 / 23.160 / 23.253 at smoke / coarse /
+medium, so this is converged and not resolution).  Every conclusion below holds a fortiori.
+
 THE ANSWER: 2% is exceeded, and the off-ramp is closed for the same structural reason
 M4's was.  At service load the wheel is 3.95% SOFTER under SVK than under linear
 kinematics — already twice the threshold — and, more decisively, that correction is not
@@ -33,6 +39,38 @@ tangent stiffness falls.  A geometric term that came out STIFFENING would be the
 signature of a sign error in the Green-Lagrange strain, which is why the direction is
 asserted rather than merely reported.
 
+WHAT THIS DRIVER'S EXIT CODE MEANS — READ THIS BEFORE CHANGING IT (PLAN.md §33)
+-------------------------------------------------------------------------------
+**`pass` means THE SOLVER IS CORRECT.  It does NOT mean the wheel is barely nonlinear.**
+
+This driver reports two different kinds of claim and they must not be conjoined:
+
+  SOLVER  G1 frame indifference, G3 Newton health, and G2's `all_softer` + fitted
+          exponent.  A stiffening geometric term is a sign error in the Green-Lagrange
+          strain; an exponent off first order means the correction is not entering the
+          way a geometric term must.  Any of these red and every number downstream is
+          void, so the run stops.  ALL FOUR PASS and always have.
+
+  WHEEL   G2's `small_load_rel_diff < GATE_SMALL_LOAD_REL`, and G4's headline.  These
+          say how nonlinear a 1.2 mm wall IS.  The small-load one is breached (0.2037%
+          against 0.1%) and is held breached deliberately — §14 item 4a refused to move
+          the gate twice, SVK_PLAN Step 0, §31 and §32 re-declared it.  A true statement
+          about the part is not a reason to refuse to run the four drivers that follow.
+
+Conjoining them cost the tree two weeks.  `make studies` runs nine drivers; `study_gnl`
+is line 5, it exited 1 on the WHEEL half alone, and `study_contact`, `study_gradient`,
+`study_objective` and `study_stage3` were unreachable by that recipe from 2026-08-06 —
+which is also why §15's stale `study_gradient.json` was never refreshed.  The tests had
+already made exactly this split one layer down: §31 moved the small-load gate out of
+`test_the_correction_enters_at_first_order_in_the_load` into its own xfail because,
+while it lived there, it took a passing assertion down with it on every run.  The exit
+code just never followed.
+
+`GATE_SMALL_LOAD_REL` IS UNCHANGED AT 1e-3 AND MUST STAY THERE.  This section is not a
+softening of that gate — the gate still reads FAIL, loudly, in the verdict block, and
+`tests/test_gnl.py` still pins it with a strict xfail that reopens if the wheel ever
+passes it.  What changed is only which half of the report the process exits on.
+
 WHAT THE PLAN ASKED FOR THAT HAD TO CHANGE
 ------------------------------------------
 "Residual < 1e-10" is not attainable at low load and this is not a solver defect.  The
@@ -54,6 +92,8 @@ import project_paths as PP
 import time
 
 import numpy as np
+
+import _gate_guard
 
 import wheel_fea as W
 import wheel_fem as fem
@@ -158,6 +198,14 @@ def run_load_ladder(genes, cfg=DEFAULT_CONFIG,
     exponent = float(np.polyfit(x, y, 1)[0])
     small = min(rows, key=lambda r: r["load_fraction"])
     service = min(rows, key=lambda r: abs(r["load_fraction"] - 1.0))
+    # THE TWO HALVES OF G2 ARE DIFFERENT KINDS OF CLAIM — see the SEMANTICS block in the
+    # module docstring.  `solver_pass` is about the SOLVE: a stiffening geometric term is
+    # a sign error in the Green-Lagrange strain, and an exponent off first order means the
+    # correction is not entering the way a geometric term must.  `regime_pass` is about
+    # the WHEEL: how nonlinear a 1.2 mm wall is at 1% of service load.  Only the first can
+    # invalidate a downstream number, so only the first gates the exit code.
+    solver_pass = bool(all(r["rel_diff"] > 0.0 for r in rows) and 0.7 < exponent < 1.4)
+    regime_pass = bool(abs(small["rel_diff"]) < GATE_SMALL_LOAD_REL)
     return {
         "rows": rows,
         "fitted_exponent": exponent,
@@ -167,9 +215,13 @@ def run_load_ladder(genes, cfg=DEFAULT_CONFIG,
         # Every entry must soften.  A stiffening geometric term at this scale would be a
         # sign error in the Green-Lagrange strain, not a physical finding.
         "all_softer": bool(all(r["rel_diff"] > 0.0 for r in rows)),
-        "pass": bool(abs(small["rel_diff"]) < GATE_SMALL_LOAD_REL
-                     and all(r["rel_diff"] > 0.0 for r in rows)
-                     and 0.7 < exponent < 1.4),
+        "solver_pass": solver_pass,
+        "regime_pass": regime_pass,
+        # UNCHANGED, and it is the one that reads False on the shipped wheel.  Kept
+        # computing the same conjunction it always has so that this field means the same
+        # thing in every study_gnl.json ever written; it is no longer what the exit code
+        # is built from.  `solver_pass` is.
+        "pass": bool(regime_pass and solver_pass),
     }
 
 
@@ -449,10 +501,11 @@ def _print(rep):
           f"{100 * r['rel_diff']:9.4f} {r['iterations']:4d} {r['backtracks']:3d}  "
           f"{r['criterion']}")
     p(f"    at {ll['small_load_fraction']:.0%} of service load the two agree to "
-      f"{100 * ll['small_load_rel_diff']:.4f}%  (gate {100 * GATE_SMALL_LOAD_REL:.1f}%)")
+      f"{100 * ll['small_load_rel_diff']:.4f}%  (gate {100 * GATE_SMALL_LOAD_REL:.1f}%)"
+      f"   -> {'PASS' if ll['regime_pass'] else 'FAIL — the WHEEL, held red on purpose'}")
     p(f"    fitted exponent {ll['fitted_exponent']:.3f} (first order = 1), "
       f"every point softer: {'yes' if ll['all_softer'] else 'NO'}"
-      f"   -> {'PASS' if ll['pass'] else 'FAIL'}")
+      f"   -> {'PASS' if ll['solver_pass'] else 'FAIL'}  (the SOLVER)")
 
     nh = rep["newton"]
     p("\nG3  NEWTON HEALTH")
@@ -495,6 +548,12 @@ def _print(rep):
           f"{100 * ds['iso_rel_diff_max']:.2f}%  "
           f"(a factor of {ds['iso_rel_diff_ratio']:.1f}), cv "
           f"{ds['iso_rel_diff_cv']:.2f}")
+        # The factor is max/min over the DRAWN rows — an estimator of the range, so it
+        # grows with n and swings by 40x across seeds.  It is a diagnostic and nothing
+        # may be gated on it; the CV beside it is the number that carries the claim.
+        # PLAN §31 retired a `> 3.0` gate on it.  Say so where the number is printed.
+        p(f"      (that factor is sample-size dependent — diagnostic only, PLAN §31; "
+          f"the cv is the number the conclusion rests on)")
         p(f"    one correction factor would be defensible: "
           f"{'YES' if ds['correction_factor_is_defensible'] else 'NO'}")
 
@@ -515,7 +574,21 @@ def _print(rep):
       f"plan's {100 * PLAN_GNL_THRESHOLD:.0f}% threshold")
     p(f"    the linear-trajectory off-ramp is "
       f"{'OPEN' if rep['linear_trajectory_is_enough'] else 'CLOSED'}")
-    p(f"\n  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}")
+    p(f"\n  SOLVER IS CORRECT: {'YES' if rep['solver_is_correct'] else 'NO'}"
+      f"    <- this is the exit code (PLAN.md §33)")
+    p(f"  WHEEL IS IN THE SMALL-STRAIN REGIME: "
+      f"{'YES' if rep['wheel_is_in_the_small_strain_regime'] else 'NO'}"
+      f"    <- reported, NOT gated")
+    if not rep["wheel_is_in_the_small_strain_regime"]:
+        p(f"       small_load_rel_diff {100 * rep['load_ladder']['small_load_rel_diff']:.4f}% "
+          f"vs a {100 * GATE_SMALL_LOAD_REL:.1f}% pre-registered gate.  This is a TRUE "
+          f"STATEMENT ABOUT A 1.2 mm WALL,")
+        p(f"       not a defect and not a solver problem — the exponent above passes.  "
+          f"GATE_SMALL_LOAD_REL IS NOT TO BE MOVED:")
+        p(f"       PLAN.md §14 item 4a refused twice, SVK_PLAN Step 0, §31 and §32 "
+          f"re-declared it.  Pinned by an xfail in tests/test_gnl.py.")
+    p(f"\n  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}"
+      f"   ({rep['pass_means']})")
     p(f"\n  NOT DONE: M4b still.  Every absolute number rests on E = 2300 MPa and an")
     p(f"            unconditional 0.80 FFF knockdown, both uncalibrated — a +-25%")
     p(f"            band on E swamps the 4% measured here for ABSOLUTE stiffness,")
@@ -531,6 +604,16 @@ def main():
     ap.add_argument("--quick", action="store_true",
                     help="shorter sweeps and a coarser ladder; for CI")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    _gate_guard.refuse_degraded_out(ap, args, "study_gnl.json", [
+        (args.quick, "--quick (reduced fidelity)"),
+        (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.genome != "best_solution.json", "--genome %s" % args.genome),
+        (args.no_plot, "--no-plot, which would refresh the .json and leave the "
+                       "committed .jpg stale"),
+    ])
 
     genes = load_genes(args.genome)
     t0 = time.time()
@@ -555,9 +638,20 @@ def main():
     rep["linear_trajectory_is_enough"] = bool(
         abs(rep["gnl_service_pct"]) < PLAN_GNL_THRESHOLD
         and rep["design_space"].get("correction_factor_is_defensible", False))
-    rep["pass"] = bool(rep["frame_indifference"]["pass"]
-                       and rep["load_ladder"]["pass"]
-                       and rep["newton"]["pass"])
+    # THE EXIT CODE IS BUILT FROM SOLVER CORRECTNESS ONLY (PLAN.md §33, 2026-08-16).
+    # G1 (frame indifference), G3 (Newton health) and G2's solver half are statements
+    # about the SOLVE; if any goes red, every number below it is void and stopping is
+    # right.  The small-load gate is a statement about the WHEEL, it is breached, and it
+    # is held breached on purpose — four arcs have refused to move it.
+    rep["solver_is_correct"] = bool(rep["frame_indifference"]["pass"]
+                                    and rep["load_ladder"]["solver_pass"]
+                                    and rep["newton"]["pass"])
+    rep["wheel_is_in_the_small_strain_regime"] = rep["load_ladder"]["regime_pass"]
+    # Recorded IN the artifact so a reader can tell which semantics wrote the file
+    # without dating it.  Artifacts written before 2026-08-16 have no such key and their
+    # `pass` is the old conjunction.
+    rep["pass_means"] = "solver_is_correct (PLAN.md §33); NOT the small-load regime gate"
+    rep["pass"] = rep["solver_is_correct"]
     rep["settings"] = {"config": args.config, "genome": args.genome,
                        "service_force_n": SERVICE_FORCE_N,
                        "elapsed_s": round(time.time() - t0, 1)}
@@ -568,10 +662,10 @@ def main():
           f"({rep['settings']['elapsed_s']} s)")
     if not args.no_plot:
         try:
-            print(f"wrote {_plot(rep, os.path.splitext(args.out)[0] + '.jpg')}")
+            print(f"wrote {_plot(rep, os.path.splitext(os.path.join(HERE, args.out))[0] + '.jpg')}")
         except Exception as exc:                            # pragma: no cover
             print(f"(plot skipped: {exc})")
-    return 0 if rep["pass"] else 1
+    return 0 if rep["solver_is_correct"] else 1
 
 
 def _plot(rep, path):

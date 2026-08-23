@@ -220,9 +220,21 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
     spoke-to-hub corners are back on r = 12.7.  `fillet_junctions` then fillets the
     leftover family instead of returning after the first one.
 
-    WHAT IS STILL OPEN, and why the error is not zero: the shallow corner of a near-tangent
-    arrival takes only 0.361 mm.  That is an ARRIVAL-ANGLE limit and it is what sets
-    `r_built_mm`, so it is what this junction is priced at — see the worst-corner rule.
+    WHAT USED TO BE OPEN, and is not any more.  On the old shipped genome the shallow corner
+    of a near-tangent arrival took only 0.361 mm against a requested 1.560, so the hub split
+    into two families and `kt_error_pct` sat at +73.4%.  The genome promoted in PLAN.md §13
+    asks for `R_hub` = 0.579 and OCC builds it on all 24 corners in ONE family:
+    `kt_error_pct` +0.0%, the first shipped part whose fillets are the ones its stress model
+    priced.  The worst-corner rule still applies and is still asserted — there is simply
+    only one corner radius to be worst now.
+
+    THAT +0.0% CLEARS BY 1.0%, and it is not a designed margin.  BUILD_PLAN.md step 1
+    bisected this design's worst hub corner at 0.5847 mm against the 0.578951 it asks for.
+    The note here used to add "under §5's cap of 0.624 for that genome" as if the cap were
+    what delivered the result; it was not, and step 3 re-fitted that cap to 0.5724 —
+    BELOW this `R_hub` — precisely because 0.624 was calibrated against the corner family
+    the exporter does not stop at.  What this manifest records is still true; what it was
+    credited to was wrong.
 
     THE OTHER HALF OF THIS NOTE USED TO BE WRONG.  It said the inter-spoke gap "caps ANY hub
     fillet near 1.1 mm", on the strength of half the 2.196 mm void agreeing with the
@@ -232,8 +244,12 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
     slot — three designs whose voids span a 54% range give thresholds 3.4% apart.  PLAN.md §5
     is the record; `wheel_objective.hub_fillet_cap_mm` is the constraint that now knows it.
 
-    Capping `R_hub` does NOT move the number this test gates.  `kt_error_pct` is set by the
-    shallow corner above, which the cap does not model.
+    Capping `R_hub` does not move `kt_error_pct` DIRECTLY — the cap does not model the
+    shallow corner that used to set it.  But a genome that lands under the cap never asks
+    OCC for a radius the shallow corner has to refuse, and that is how §13's genome reaches
+    +0.0%.  The `< 88.0` bound below is therefore still the real gate: it is what catches a
+    regression back toward a square hub, and it must not be tightened onto the current
+    genome's 0.0, which is a property of THIS design and not of the exporter.
     """
     hub = next(r for r in manifest["fillets"]["detail"] if r["junction"] == "hub")
     assert hub["r_built_mm"] > 0.0, (
@@ -245,13 +261,140 @@ def test_the_hub_junction_exists_and_every_corner_of_it_is_filleted(manifest):
     assert hub["worst_wedge_deg"] < 350.0, (
         f"{hub}\na wedge this close to a cusp is the spoke-to-spoke notch, not a "
         f"spoke-to-hub corner — `_embed` is running sideways again")
-    assert len(hub["fillet_families"]) == 2, (
-        f"{hub}\nexpected two families, one per flank: the square-on corner takes a much "
-        f"larger radius than the shallow one")
+    # THIS USED TO ASSERT `== 2`, and that was pinning a PATHOLOGY as an invariant.  Two
+    # families means OCC refused the requested radius on one flank and had to fall back;
+    # the promoted genome (§13) keeps `R_hub` under the cap and gets ONE family covering
+    # all 24 edges at the full requested radius, which is the outcome the whole hub-fillet
+    # milestone was aiming at — and the old assertion called it a failure.
+    #
+    # What this actually needs to guarantee is that no family is silently abandoned.  The
+    # edge count above already covers that; this makes the families account for it too, so
+    # a fallback split is still fine and a DROPPED family is not.
+    assert hub["fillet_families"], f"{hub}\nno fillet families recorded at all"
+    assert sum(f["n_edges"] for f in hub["fillet_families"]) == hub["n_edges_filleted"], (
+        f"{hub}\nthe families do not account for every filleted edge — `fillet_junctions` "
+        f"abandoned one, which is the bug that left the hub square")
+    assert hub["r_built_mm"] == pytest.approx(
+        min(f["radius_mm"] for f in hub["fillet_families"])), (
+        f"{hub}\n`r_built_mm` must be the WORST corner's radius — the junction is priced "
+        f"at its weakest fillet, not its best")
     assert hub["kt_error_pct"] < 88.0, (
         f"{hub}\nas-built hub utilisation is "
         f"{hub['kt_built'] / hub['kt_modeled']:.2f}x what the constraint reports; it was "
         f"1.88x when the hub shipped square, and it must not go back")
+
+
+# ---------------------------------------------------------------------------
+# THE WEAK-JUNCTION CHECK
+#
+# It had no coverage at all until now, which is how it came to spend the whole
+# MIN_WALL_MM sweep reporting a proxy for t0 as if it were a verdict on the weld.  See
+# `wheel_geometry.junction_bite`.
+# ---------------------------------------------------------------------------
+
+def test_the_junction_check_reports_a_bite_not_just_a_volume(manifest):
+    """The manifest has to carry the normalised number, or nothing can check it.
+
+    A raw mm³ is not falsifiable across designs: it is quadratic in the root thickness,
+    so the same junction reads 18.12 mm³ at t0=1.20 and 78.53 mm³ at t0=2.48.  The bite
+    divides that out, and `t_mm` is recorded next to it so the division is auditable
+    from the artifact alone.
+    """
+    block = manifest["junction_overlap_mm3"]
+    assert set(block) >= {"hub", "rim", "bite", "t_mm", "pass", "bite_floor"}, (
+        f"junction block is missing the normalised fields — re-export.  Got {block}")
+    for ring in ("hub", "rim"):
+        for value in (block[ring], block["bite"][ring], block["t_mm"][ring]):
+            assert isinstance(value, (int, float)) and value > 0.0, block
+        assert isinstance(block["pass"][ring], bool), block
+
+
+def test_the_bite_is_the_volume_divided_by_the_right_thickness(manifest):
+    """THE cross-interpreter check: recompute the bite here, from the genes.
+
+    The exporter prices the hub on t0 and the rim on t3 — the same pairing the stress
+    constraint uses, because `thickness_at_arc_length` is exactly t0 at s=0 and t3 at
+    s=1.  Swapping them is a one-character mistake that the raw volumes cannot reveal.
+    This test runs in the jax env against a manifest written by the CAD env, so it is
+    also what keeps `MIN_JUNCTION_BITE` from being defined twice.
+
+    THE TOLERANCE IS DERIVED, NOT CHOSEN, and it used to be a hard-coded 1e-4 that the
+    design drifted out from under.  The manifest rounds the overlap to 2 dp and the bite
+    to 4 dp, and bite = overlap/(t^2 W) — so the volume's half-ulp of 0.005 arrives here
+    DIVIDED BY t^2 W, which is not a constant across genomes.  1e-4 is only achievable
+    for t > 2.113 mm.  The docstring this replaces read "on the shipped genome (t0=2.48,
+    t3=2.00)": true of `36aed36`, whose worst case was 8.6e-5 and which passed.  Every
+    genome promoted since has thinned the walls, `09e8188` ships t0=1.4738 / t3=1.4313,
+    and the worst case is 1.53e-4 / 1.59e-4 — above the old bound at BOTH junctions.
+
+    So this was never the "export-precision defect" three plans deferred it as (§19
+    Group C, CONTACT_PLAN Steps 0 and 3).  Nothing was imprecise: a fixed tolerance was
+    compared against a quantity whose rounding scales as 1/t^2, and the wheel got
+    thinner.  It went green at PLAN §26's promotion by pure luck of where the volume
+    rounded (residual 4.5e-5 hub, 2.1e-5 rim, against a 1.53e-4 budget) — which is worse
+    than the red, because a test that passes on the rounding hides until it does not.
+
+    THE POWER THIS GIVES UP IS SMALL AND MEASURED.  The swap it exists to catch moves
+    the hub bite by 0.0322 on the shipped genome, still 210x the derived tolerance.  But
+    the MARGIN has collapsed and that is a real fact about the design, not the test: at
+    `36aed36` a swap moved the bite 53.4%, at `09e8188` it moves it 6.0%, because t0 and
+    t3 have converged to within 0.04 mm of each other.  If a future genome drives them
+    equal, a swap becomes undetectable HERE and needs catching at the exporter instead.
+    """
+    import wheel_genome as wg
+    from wheel_fea import SPOKE_WIDTH_MM
+    from wheel_geometry import junction_bite
+
+    with open(os.path.join(HERE, "best_solution.json")) as fh:
+        genes = json.load(fh)["genes"]
+    assert wg.genome_hash(genes).startswith(manifest["genome_hash"]), (
+        f"the manifest was exported from genome {manifest['genome_hash']} but "
+        f"best_solution.json now hashes to {wg.genome_hash(genes)}; re-export")
+
+    block = manifest["junction_overlap_mm3"]
+    for ring, t_key in (("hub", "t0"), ("rim", "t3")):
+        # t is rounded to 4 dp and compared against the gene directly, so a half-ulp of
+        # 5e-5 is the whole budget; 1e-4 leaves 2x and does not scale with anything.
+        assert block["t_mm"][ring] == pytest.approx(genes[t_key], abs=1e-4), (
+            f"{ring} was priced at t={block['t_mm'][ring]} but the gene {t_key} says "
+            f"{genes[t_key]} — the exporter has the two rings' thicknesses crossed")
+
+        # The bite is a QUOTIENT of two rounded numbers, so its budget is the volume's
+        # half-ulp pushed through the division plus the bite's own.  See the docstring:
+        # this is 1.5e-4 on the shipped genome and 8.6e-5 on `36aed36`, and the constant
+        # it replaces was 1e-4 for both.
+        tol = 0.005 / (genes[t_key] ** 2 * SPOKE_WIDTH_MM) + 0.00005
+        expect = junction_bite(block[ring], genes[t_key], SPOKE_WIDTH_MM)
+        assert block["bite"][ring] == pytest.approx(expect, abs=tol), (
+            f"{ring}: manifest bite {block['bite'][ring]} but "
+            f"{block[ring]} mm³ / (t² · W) = {expect}; the rounding alone allows "
+            f"{tol:.2e} at t={genes[t_key]:.4f} and the gap is "
+            f"{abs(block['bite'][ring] - expect):.2e}")
+
+
+def test_the_shipped_junctions_clear_their_own_floor(manifest):
+    """And `pass` is the floor comparison, not an independently written opinion.
+
+    The margin assertion is deliberately loose.  0.25 is a geometric floor — half of
+    what every genome measured so far achieves — not a limit fitted to a failure, since
+    this repo has never produced a junction that failed one.  So this pins that the
+    shipped part is not near it, and leaves the exact value free to move when a real
+    negative example turns up.
+    """
+    from wheel_geometry import MIN_JUNCTION_BITE
+
+    block = manifest["junction_overlap_mm3"]
+    assert block["bite_floor"] == MIN_JUNCTION_BITE, (
+        f"the manifest was written against a floor of {block['bite_floor']} and the "
+        f"code now says {MIN_JUNCTION_BITE} — re-export")
+    for ring in ("hub", "rim"):
+        assert block["pass"][ring] is (block["bite"][ring] >= MIN_JUNCTION_BITE), (
+            f"{ring}: pass={block['pass'][ring]} disagrees with "
+            f"{block['bite'][ring]} >= {MIN_JUNCTION_BITE}")
+        assert block["bite"][ring] >= MIN_JUNCTION_BITE, (
+            f"the SHIPPED wheel's {ring} weld is below the floor at "
+            f"{block['bite'][ring]} root thicknesses — this is not a threshold to "
+            f"loosen without reading wheel_geometry.junction_bite first")
 
 
 # ---------------------------------------------------------------------------
@@ -331,3 +474,46 @@ def test_the_wedge_classifier_agrees_with_an_independent_probe():
         f"{hub}\na hub corner is not on the hub circle — `_embed` is running sideways "
         f"again and the spokes are lapping over it")
     assert all(abs(r - 48.5) < 0.01 for r in rim), rim
+
+
+_MASS_KEY_PROBE = r"""
+import json
+import wheel_step_export as X
+print("RESULT:" + json.dumps([
+    X.optimizer_spoke_mass({"total_mass_g": 41.5, "mesh_mass_g": 58.7}),
+    X.optimizer_spoke_mass({"mesh_mass_g": 58.7}),
+    X.optimizer_spoke_mass({}),
+]))
+"""
+
+
+@pytest.mark.skipif(not os.path.exists(CAD_PY), reason="no .venv-cad on this machine")
+def test_the_solid_report_finds_a_mass_from_either_optimizer():
+    """The mass cross-check must survive promoting a Stage-3 genome.
+
+    `report()` compares the OCC solid's mass against the optimizer's own spoke mass, and
+    that is one of the few places the FEA and CadQuery pipelines are checked against each
+    other at all.  It read `metrics['total_mass_g']` through a `.get(..., nan)` — a key
+    only the GA/beam writer produces.  A Stage-3 descent writes `mesh_mass_g` instead, so
+    promoting one exported cleanly and printed `nan g`: the check did not fail, it went
+    silent, on exactly the genome that ships.
+
+    The GA key wins when both are present so the historical artifact keeps reporting the
+    number it always did, and the source key is returned rather than normalised away
+    because the two are the same ROLE measured two different ways (analytic beam area vs
+    integration over the FEA mesh) and are not interchangeable to a reader.
+    """
+    proc = subprocess.run(
+        [CAD_PY, "-c", _MASS_KEY_PROBE], cwd=HERE,
+        env={**os.environ, "PYTHONPATH": os.path.join(HERE, "src")},
+        capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 0, proc.stderr[-3000:]
+    line = [ln for ln in proc.stdout.splitlines() if ln.startswith("RESULT:")][0]
+    both, stage3_only, empty = json.loads(line[len("RESULT:"):])
+
+    assert both == [41.5, "total_mass_g"]
+    assert stage3_only == [58.7, "mesh_mass_g"]
+    # No key at all still must not crash the export — but it must SAY so, not print nan
+    # next to a label claiming the optimizer reported it.
+    assert empty[0] != empty[0], "expected nan"
+    assert "no mass key" in empty[1]

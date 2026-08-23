@@ -1,0 +1,105 @@
+{
+  "genome_hash": "09e8188",
+  "source": "stage3_knee_best_medium.json",
+  "source_mtime": "2026-08-14T03:15:14",
+  "exported_at": "2026-08-14T03:17:21",
+  "export_seconds": 56.0,
+  "solid": {
+    "valid": true,
+    "volume_mm3": 39224.5,
+    "mass_g_pla": 48.64,
+    "volume_nofillet_mm3": 36145.8
+  },
+  "junction_overlap_mm3": {
+    "hub": 26.0,
+    "rim": 75.33,
+    "bite": {
+      "hub": 0.5344,
+      "rim": 1.6416
+    },
+    "t_mm": {
+      "hub": 1.4738,
+      "rim": 1.4313
+    },
+    "pass": {
+      "hub": true,
+      "rim": true
+    },
+    "bite_floor": 0.25
+  },
+  "fillets": {
+    "hub_edges": 24,
+    "rim_edges": 24,
+    "volume_mm3": 3078.77,
+    "detail": [
+      {
+        "junction": "hub",
+        "r_requested_mm": 0.6636060402965218,
+        "r_built_mm": 0.6636060402965218,
+        "n_edges_filleted": 24,
+        "n_edges_found": 24,
+        "worst_wedge_deg": 322.0,
+        "fillet_families": [
+          {
+            "radius_mm": 0.6636060402965218,
+            "n_edges": 24
+          }
+        ],
+        "kt_modeled": 2.0704829079988825,
+        "kt_built": 2.0704829079988825,
+        "kt_error_pct": 0.0
+      },
+      {
+        "junction": "rim",
+        "r_requested_mm": 3.0,
+        "r_built_mm": 3.0,
+        "n_edges_filleted": 24,
+        "n_edges_found": 24,
+        "worst_wedge_deg": 320.0,
+        "fillet_families": [
+          {
+            "radius_mm": 3.0,
+            "n_edges": 24
+          }
+        ],
+        "kt_modeled": 1.3939359631839685,
+        "kt_built": 1.3939359631839685,
+        "kt_error_pct": 0.0
+      }
+    ]
+  },
+  "profile_health": {
+    "min_curvature_radius_mm": 6.879895,
+    "self_intersections": 0,
+    "worst_at": [
+      -7.196,
+      11.71,
+      0.0
+    ]
+  },
+  "step_health": {
+    "surface_census": {
+      "Plane": 14,
+      "BSplineSurface": 60,
+      "CylindricalSurface": 37
+    },
+    "counts": {
+      "faces": 111,
+      "edges": 327,
+      "vertices": 218
+    },
+    "min_edge_mm": 0.028647,
+    "min_face_mm2": 0.6417,
+    "max_edge_tolerance_mm": 1.000000231022446e-07,
+    "degenerate_edges": 0,
+    "brepcheck_valid": true,
+    "self_intersecting": false,
+    "min_curvature_radius_mm": 0.66359,
+    "min_curvature_at": [
+      4.095,
+      12.178,
+      0.0
+    ],
+    "swept_surfaces_remaining": {}
+  }
+}

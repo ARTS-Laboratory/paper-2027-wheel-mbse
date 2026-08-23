@@ -1,0 +1,189 @@
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+
+==============================================================================
+  STAGE 3 — best_solution  (adam, medium, 100 steps, uniform, svk)
+==============================================================================
+  gene        value       low      high    frac
+  cx1        4.9114     1.790    10.740   0.349
+  cy1        5.5115   -32.000    32.000   0.586
+  cx2       14.1654     7.876    19.690   0.532
+  cy2       10.8728   -32.000    32.000   0.670
+  cx3       24.6091    16.110    27.924   0.719
+  cy3        7.0342   -32.000    32.000   0.610
+  cx4       30.6472    25.060    34.010   0.624
+  cy4        4.5587   -32.000    32.000   0.571
+  t0         1.2008     1.200    10.000   0.000  <- pinned low
+  t1         1.2000     1.200     8.000   0.000  <- pinned low
+  t2         1.2000     1.200     8.000   0.000  <- pinned low
+  t3         1.2190     1.200     6.000   0.004  <- pinned low
+  R_hub      0.4571     0.400     4.000   0.016
+  R_rim      2.7495     0.500     3.000   0.900
+[step    0] loss      58.4115  |grad|      206.5  lr  0.01000  drop  2.000 mm  util  0.996  362.46 s
+
+STAGE 3 — START
+---------------
+    term                 value    share       |grad|  grad share
+    mass               30.8776    52.9%        40.08       14.0%
+    stress_margin      27.4694    47.0%          238       82.8%
+    smoothness          0.0645     0.1%        8.233        2.9%
+    deflection          0.0000     0.0%       0.9562        0.3%
+    x_order             0.0000     0.0%            0        0.0%
+    hub_overlap         0.0000     0.0%            0        0.0%
+    fold                0.0000     0.0%            0        0.0%
+    arrival             0.0000     0.0%            0        0.0%
+    fillet              0.0000     0.0%            0        0.0%
+    fillet_cap          0.0000     0.0%            0        0.0%
+    buckling            0.0000     0.0%            0        0.0%
+    min_sj              0.0000     0.0%            0        0.0%
+    stress              0.0000     0.0%            0        0.0%
+    phase_ripple        0.0000     0.0%            0        0.0%
+    TOTAL              58.4115
+
+    axle_drop_mean_mm                    1.99996
+    phase_ripple_std_over_mean           0.09437
+    max_stress_mpa                     280.14594
+    stress_utilisation                   0.99639
+    mesh_mass_g                         37.56779
+    min_scaled_jacobian                  0.65980
+    buckling_ratio                       0.14785
+[step    1] loss     132.0094  |grad|       5978  lr  0.01000  drop  1.645 mm  util  0.873  236.47 s
+[step    2] loss     106.3091  |grad|       5092  lr  0.01000  drop  1.708 mm  util  0.856  191.28 s
+[step    3] loss      60.6298  |grad|       1927  lr  0.00999  drop  1.897 mm  util  0.872  227.52 s
+[step    4] loss      64.1256  |grad|       2831  lr  0.00998  drop  2.118 mm  util  0.897  247.94 s
+[step    5] loss      76.0512  |grad|       4344  lr  0.00996  drop  2.180 mm  util  0.896  210.57 s
+[step    6] loss      73.0740  |grad|       4004  lr  0.00994  drop  2.167 mm  util  0.886  222.20 s
+[step    7] loss      57.7398  |grad|       1686  lr  0.00991  drop  2.071 mm  util  0.864  228.10 s
+[step    8] loss      56.9410  |grad|       1378  lr  0.00988  drop  1.924 mm  util  0.835  232.04 s
+[step    9] loss      62.7714  |grad|       2288  lr  0.00984  drop  1.874 mm  util  0.823  212.13 s
+[step   10] loss      60.1094  |grad|       1951  lr  0.00980  drop  1.893 mm  util  0.824  198.07 s
+[step   11] loss      54.0764  |grad|      543.3  lr  0.00976  drop  1.968 mm  util  0.834  203.00 s
+[step   12] loss      59.6196  |grad|       2112  lr  0.00970  drop  2.093 mm  util  0.852  211.54 s
+[step   13] loss      67.9963  |grad|       3358  lr  0.00965  drop  2.147 mm  util  0.859  219.61 s
+[step   14] loss      66.0298  |grad|       3102  lr  0.00959  drop  2.137 mm  util  0.856  219.08 s
+[step   15] loss      57.2846  |grad|       1663  lr  0.00952  drop  2.075 mm  util  0.845  224.90 s
+[step   16] loss      53.5865  |grad|      449.9  lr  0.00946  drop  1.973 mm  util  0.828  219.42 s
+[step   17] loss      55.5633  |grad|       1202  lr  0.00938  drop  1.933 mm  util  0.820  221.67 s
+[step   18] loss      54.7515  |grad|       1021  lr  0.00930  drop  1.943 mm  util  0.820  207.11 s
+[step   19] loss      52.9311  |grad|      40.33  lr  0.00922  drop  1.995 mm  util  0.826  208.31 s
+[step   20] loss      53.9903  |grad|      915.5  lr  0.00914  drop  2.039 mm  util  0.833  208.78 s
+[step   21] loss      53.6570  |grad|        841  lr  0.00905  drop  2.036 mm  util  0.831  218.09 s
+[step   22] loss      52.4935  |grad|      64.99  lr  0.00895  drop  1.992 mm  util  0.824  226.71 s
+[step   23] loss      52.4481  |grad|      157.1  lr  0.00885  drop  1.988 mm  util  0.824  215.25 s
+[step   24] loss      52.7388  |grad|      508.2  lr  0.00875  drop  2.021 mm  util  0.827  212.14 s
+[step   25] loss      52.4189  |grad|      332.4  lr  0.00864  drop  2.012 mm  util  0.823  214.38 s
+[step   26] loss      52.6219  |grad|      515.6  lr  0.00854  drop  1.968 mm  util  0.813  219.15 s
+[step   27] loss      52.6606  |grad|      556.4  lr  0.00842  drop  1.965 mm  util  0.810  210.46 s
+[step   28] loss      52.0914  |grad|       91.8  lr  0.00831  drop  1.998 mm  util  0.813  206.58 s
+[step   29] loss      52.0253  |grad|      167.2  lr  0.00819  drop  2.004 mm  util  0.813  210.70 s
+[step   30] loss      52.1642  |grad|      357.1  lr  0.00806  drop  1.977 mm  util  0.806  220.04 s
+[step   31] loss      51.9594  |grad|      200.9  lr  0.00794  drop  1.985 mm  util  0.805  211.47 s
+[step   32] loss      52.3262  |grad|      544.5  lr  0.00781  drop  2.024 mm  util  0.808  211.08 s
+[step   33] loss      52.3549  |grad|      594.6  lr  0.00768  drop  2.027 mm  util  0.805  203.02 s
+[step   34] loss      51.6746  |grad|      57.02  lr  0.00755  drop  1.998 mm  util  0.798  216.15 s
+[step   35] loss      53.0298  |grad|      869.3  lr  0.00741  drop  1.947 mm  util  0.785  222.22 s
+[step   36] loss      54.1374  |grad|       1121  lr  0.00727  drop  1.932 mm  util  0.778  210.35 s
+[step   37] loss      53.2772  |grad|      864.7  lr  0.00713  drop  1.946 mm  util  0.777  211.74 s
+[step   38] loss      51.9926  |grad|      211.1  lr  0.00699  drop  1.985 mm  util  0.781  210.51 s
+[step   39] loss      53.0263  |grad|        903  lr  0.00684  drop  2.040 mm  util  0.789  214.32 s
+[step   40] loss      54.3992  |grad|       1317  lr  0.00669  drop  2.063 mm  util  0.793  208.90 s
+[step   41] loss      53.7231  |grad|       1156  lr  0.00655  drop  2.056 mm  util  0.792  211.29 s
+[step   42] loss      51.9545  |grad|      526.7  lr  0.00639  drop  2.024 mm  util  0.787  217.90 s
+[step   43] loss      51.8146  |grad|      424.9  lr  0.00624  drop  1.973 mm  util  0.780  220.00 s
+[step   44] loss      52.7342  |grad|      794.8  lr  0.00609  drop  1.951 mm  util  0.777  212.24 s
+[step   45] loss      52.5314  |grad|      723.7  lr  0.00594  drop  1.956 mm  util  0.778  205.36 s
+[step   46] loss      51.6527  |grad|        273  lr  0.00578  drop  1.981 mm  util  0.782  204.22 s
+[step   47] loss      52.0582  |grad|      543.8  lr  0.00563  drop  2.026 mm  util  0.788  216.38 s
+[step   48] loss      52.8818  |grad|      874.9  lr  0.00547  drop  2.043 mm  util  0.790  214.16 s
+[step   49] loss      52.5295  |grad|      758.8  lr  0.00531  drop  2.037 mm  util  0.789  216.71 s
+[step   50] loss      51.6013  |grad|      277.2  lr  0.00516  drop  2.011 mm  util  0.784  214.20 s
+[step   51] loss      51.8531  |grad|      473.1  lr  0.00500  drop  1.970 mm  util  0.777  216.94 s
+[step   52] loss      52.5771  |grad|      773.5  lr  0.00484  drop  1.952 mm  util  0.774  211.15 s
+[step   53] loss      52.4100  |grad|      728.9  lr  0.00469  drop  1.955 mm  util  0.773  208.21 s
+[step   54] loss      51.6223  |grad|      391.9  lr  0.00453  drop  1.974 mm  util  0.775  203.07 s
+[step   55] loss      51.3892  |grad|      218.3  lr  0.00437  drop  2.008 mm  util  0.780  214.34 s
+[step   56] loss      51.6558  |grad|      457.8  lr  0.00422  drop  2.021 mm  util  0.781  212.74 s
+[step   57] loss      51.4952  |grad|      376.7  lr  0.00406  drop  2.016 mm  util  0.779  212.67 sTraceback (most recent call last):
+  File "/home/eric-bodhi/github/wheel/src/wheel_pool_worker.py", line 89, in main
+    WP._send(stdout, {"ok": True, "result": run_phase(task)})
+                                            ^^^^^^^^^^^^^^^
+  File "/home/eric-bodhi/github/wheel/src/wheel_pool_worker.py", line 64, in run_phase
+    o = WA.service_qoi_value_and_grad(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/eric-bodhi/github/wheel/src/wheel_adjoint.py", line 642, in service_qoi_value_and_grad
+    sec = fem.solve_wheel_contact(mesh, force=force, newton=newton, delta0=delta0,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/eric-bodhi/github/wheel/src/wheel_fem.py", line 1886, in solve_wheel_contact
+    raise RuntimeError(
+RuntimeError: contact load control did not reach 66.7233 N in 20 iterations; last force 66.723276 N at indentation 2.208358 mm
+[phase worker 1] the task above failed
+
+[step   58] loss      51.2205  |grad|      34.86  lr  0.00391  drop  1.997 mm  util  0.775  213.89 s
+[step   59] loss      51.6562  |grad|      477.7  lr  0.00376  drop  1.969 mm  util  0.771  219.60 s
+[step   60] loss      52.0687  |grad|      660.2  lr  0.00361  drop  1.958 mm  util  0.769  211.89 s
+[step   61] loss      51.8859  |grad|      588.8  lr  0.00345  drop  1.962 mm  util  0.769  209.15 s
+[step   62] loss      51.3771  |grad|      305.2  lr  0.00331  drop  1.978 mm  util  0.771  214.59 s
+[step   63] loss      51.2106  |grad|      102.6  lr  0.00316  drop  2.000 mm  util  0.774  209.04 s
+[step   64] loss      51.2966  |grad|      255.3  lr  0.00301  drop  2.009 mm  util  0.776  209.42 s
+[step   65] loss      51.2562  |grad|      217.6  lr  0.00287  drop  2.007 mm  util  0.776  210.22 s
+[step   66] loss      51.1681  |grad|      22.26  lr  0.00273  drop  1.997 mm  util  0.775  213.57 s
+[step   67] loss      51.3025  |grad|      278.2  lr  0.00259  drop  1.980 mm  util  0.772  210.88 s
+[step   68] loss      51.3955  |grad|      358.8  lr  0.00245  drop  1.976 mm  util  0.770  214.53 s
+[step   69] loss      51.3309  |grad|      310.1  lr  0.00232  drop  1.978 mm  util  0.770  209.16 s
+[step   70] loss      51.1864  |grad|      145.8  lr  0.00219  drop  1.987 mm  util  0.771  206.95 s
+[step   71] loss      51.1720  |grad|      122.7  lr  0.00206  drop  2.002 mm  util  0.773  210.45 s
+[step   72] loss      51.2352  |grad|      229.8  lr  0.00194  drop  2.008 mm  util  0.773  216.65 s
+[step   73] loss      51.2140  |grad|        213  lr  0.00181  drop  2.007 mm  util  0.773  208.06 s
+[step   74] loss      51.1401  |grad|      99.47  lr  0.00169  drop  2.001 mm  util  0.772  214.01 s
+[step   75] loss      51.1348  |grad|      99.14  lr  0.00158  drop  1.990 mm  util  0.771  213.29 s
+[step   76] loss      51.1635  |grad|      163.2  lr  0.00146  drop  1.987 mm  util  0.771  210.06 s
+[step   77] loss      51.1523  |grad|      146.9  lr  0.00136  drop  1.988 mm  util  0.771  208.15 s
+[step   78] loss      51.1177  |grad|      63.14  lr  0.00125  drop  1.993 mm  util  0.771  208.34 s
+[step   79] loss      51.1183  |grad|      72.84  lr  0.00115  drop  2.000 mm  util  0.772  211.64 s
+[step   80] loss      51.1319  |grad|      119.4  lr  0.00105  drop  2.002 mm  util  0.772  209.54 s
+[step   81] loss      51.1205  |grad|      100.5  lr  0.00095  drop  2.001 mm  util  0.772  211.87 s
+[step   82] loss      51.1003  |grad|      34.78  lr  0.00086  drop  1.998 mm  util  0.771  215.69 s
+[step   83] loss      51.0972  |grad|      22.14  lr  0.00078  drop  1.995 mm  util  0.771  243.56 s
+[step   84] loss      51.1030  |grad|      71.42  lr  0.00070  drop  1.992 mm  util  0.770  211.60 s
+[step   85] loss      51.1032  |grad|      80.07  lr  0.00062  drop  1.991 mm  util  0.770  205.84 s
+[step   86] loss      51.0955  |grad|      57.38  lr  0.00054  drop  1.993 mm  util  0.770  209.52 s
+[step   87] loss      51.0885  |grad|      19.48  lr  0.00048  drop  1.995 mm  util  0.770  211.37 s
+[step   88] loss      51.0887  |grad|      36.29  lr  0.00041  drop  1.997 mm  util  0.770  210.16 s
+[step   89] loss      51.0890  |grad|      49.04  lr  0.00035  drop  1.998 mm  util  0.770  205.93 s
+[step   90] loss      51.0862  |grad|      41.97  lr  0.00030  drop  1.998 mm  util  0.770  202.40 s
+[step   91] loss      51.0824  |grad|      23.48  lr  0.00024  drop  1.997 mm  util  0.770  210.60 s
+[step   92] loss      51.0804  |grad|      13.28  lr  0.00020  drop  1.995 mm  util  0.770  209.74 s
+[step   93] loss      51.0800  |grad|      25.14  lr  0.00016  drop  1.995 mm  util  0.770  209.88 s
+[step   94] loss      51.0796  |grad|      30.52  lr  0.00012  drop  1.994 mm  util  0.770  203.64 s
+[step   95] loss      51.0790  |grad|      30.24  lr  0.00009  drop  1.994 mm  util  0.770  200.29 s
+[step   96] loss      51.0782  |grad|      27.37  lr  0.00006  drop  1.994 mm  util  0.770  204.46 s
+[step   97] loss      51.0776  |grad|      24.15  lr  0.00004  drop  1.995 mm  util  0.770  203.25 s
+[step   98] loss      51.0773  |grad|      21.75  lr  0.00002  drop  1.995 mm  util  0.770  203.12 s
+[step   99] loss      51.0771  |grad|      20.48  lr  0.00001  drop  1.995 mm  util  0.770  202.97 s
+[step  100] loss      51.0771  |grad|      20.13  lr  0.00000  drop  1.995 mm  util  0.770  202.09 s
+
+wrote stage3_margin_medium.json  (22834.0 s, 101 objective calls)
+
+==============================================================================
+  BEST OVER 1 START(S): best_solution at step 55, loss 51.3892, selection tier 0
+==============================================================================
+  gene        value       low      high    frac
+  cx1        3.9745     1.790    10.740   0.244
+  cy1       10.0916   -32.000    32.000   0.658
+  cx2       15.9856     7.876    19.690   0.686
+  cy2       12.4952   -32.000    32.000   0.695
+  cx3       23.0578    16.110    27.924   0.588
+  cy3       10.0111   -32.000    32.000   0.656
+  cx4       31.0862    25.060    34.010   0.673
+  cy4        8.3509   -32.000    32.000   0.630
+  t0         1.5594     1.200    10.000   0.041
+  t1         1.2047     1.200     8.000   0.001  <- pinned low
+  t2         1.2524     1.200     8.000   0.008  <- pinned low
+  t3         1.4630     1.200     6.000   0.055
+  R_hub      0.7280     0.400     4.000   0.091
+  R_rim      3.0000     0.500     3.000   1.000  <- pinned high
+
+wrote /home/eric-bodhi/github/wheel/stage3_margin_best_medium.json  (genome_hash e126cc3)
