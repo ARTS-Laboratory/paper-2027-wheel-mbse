@@ -198,7 +198,7 @@ def gauss_verdict(grid):
 def build_verdict(genes, cfg, fillet):
     """PART 5's criterion: does `build_wheel` raise, and on how many elements."""
     try:
-        mesh = WW.build_wheel(genes, cfg, fillet=fillet)
+        mesh = WW.build_wheel(genes, cfg, fillet=fillet, fillet_blocking="spoke")
     except ValueError as exc:
         return {"raises": True, "message": str(exc).split(" — ")[0]}, None
     return {"raises": False, "message": None}, mesh
@@ -242,7 +242,8 @@ def diagnostics(genes, cfg, junction, R, grid):
     row, step = (0, 1) if junction == "hub" else (-1, -1)
     # The straddling flank is the eta side the fillet was cut into: the one whose end
     # point moved.  Compare against the unfilleted block rather than assuming a side.
-    g0 = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0))["spoke"], float)
+    g0 = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0),
+                                          fillet_blocking="spoke")["spoke"], float)
     moved = [j for j in (0, g.shape[1] - 1)
              if np.linalg.norm(g[row, j] - g0[row, j]) > 1e-9]
     j_f = moved[0] if moved else g.shape[1] - 1
@@ -274,7 +275,8 @@ def diagnostics(genes, cfg, junction, R, grid):
 
 def sweep_one(genes, cfg, junction, radii):
     """Every criterion at every radius, for one config and one junction."""
-    base = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0))["spoke"], float)
+    base = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0),
+                                          fillet_blocking="spoke")["spoke"], float)
     base_xs = float(np.linalg.norm(base[0 if junction == "hub" else -1, -1]
                                    - base[0 if junction == "hub" else -1, 0]))
     rows = []
@@ -282,7 +284,9 @@ def sweep_one(genes, cfg, junction, radii):
         fillet = (R, 0.0) if junction == "hub" else (0.0, R)
         row = {"radius_mm": float(R)}
         try:
-            spoke = np.asarray(WW.sector_blocks(genes, cfg, fillet=fillet)["spoke"], float)
+            spoke = np.asarray(
+                WW.sector_blocks(genes, cfg, fillet=fillet,
+                                 fillet_blocking="spoke")["spoke"], float)
         except ValueError as exc:
             row["sector_blocks_raises"] = str(exc)[:120]
             rows.append(row)
@@ -371,7 +375,8 @@ def controls(genes, configs):
     out = {}
     for cfg in configs:
         a = np.asarray(WW.sector_blocks(genes, cfg, fillet=None)["spoke"], float)
-        b = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0))["spoke"], float)
+        b = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0),
+                                          fillet_blocking="spoke")["spoke"], float)
         out[cfg] = {
             "max_abs_dx_mm": float(np.abs(a - b).max()),
             "none_clean": (cell_verdict(a)["mixed_sign_cells"] == 0

@@ -9525,7 +9525,7 @@
       }
     }
   },
-  "seconds": 85.94,
+  "seconds": 68.2,
   "sector": {
     "block_order": [
       "spoke",
@@ -9676,7 +9676,7 @@
               -1.0,
               -1.0
             ],
-            "why": "hub: the fillet's tangent point has passed the next sector's corner (-1.673 deg of free ring left)"
+            "why": "no filleted blocking exists at the hub: the fillet's tangent point has passed the next sector's corner (-1.673 deg of free ring left)."
           },
           {
             "R_hub_mm": 0.9001968183990416,
@@ -9777,7 +9777,7 @@
               -1.0,
               1.0
             ],
-            "why": "hub: the fillet's tangent point has passed the next sector's corner (-1.695 deg of free ring left)"
+            "why": "no filleted blocking exists at the hub: the fillet's tangent point has passed the next sector's corner (-1.695 deg of free ring left)."
           },
           {
             "R_hub_mm": 0.9790109838322899,
@@ -9878,7 +9878,7 @@
               1.0,
               -1.0
             ],
-            "why": "hub: the fillet's tangent point has passed the next sector's corner (-1.399 deg of free ring left)"
+            "why": "no filleted blocking exists at the hub: the fillet's tangent point has passed the next sector's corner (-1.399 deg of free ring left)."
           },
           {
             "R_hub_mm": 0.7736648197553488,
@@ -10015,7 +10015,7 @@
               1.0,
               1.0
             ],
-            "why": "hub: the fillet's tangent point has passed the next sector's corner (-0.703 deg of free ring left)"
+            "why": "no filleted blocking exists at the hub: the fillet's tangent point has passed the next sector's corner (-0.703 deg of free ring left)."
           },
           {
             "R_hub_mm": 1.100758387754178,
@@ -10078,7 +10078,7 @@
               1.0,
               1.0
             ],
-            "why": "hub: the fillet's tangent point has passed the next sector's corner (-2.812 deg of free ring left)"
+            "why": "no filleted blocking exists at the hub: the fillet's tangent point has passed the next sector's corner (-2.812 deg of free ring left)."
           },
           {
             "R_hub_mm": 0.5532587753997398,
@@ -10105,7 +10105,7 @@
               1.0,
               1.0
             ],
-            "why": "hub: the fillet's tangent point has passed the next sector's corner (-5.005 deg of free ring left)"
+            "why": "no filleted blocking exists at the hub: the fillet's tangent point has passed the next sector's corner (-5.005 deg of free ring left)."
           }
         ]
       },

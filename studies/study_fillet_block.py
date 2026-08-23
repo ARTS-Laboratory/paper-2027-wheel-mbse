@@ -365,8 +365,10 @@ def moved_corner(genes, cfg, junction, R):
     not as a matter of how good the smoother is.
     """
     fillet = (R, 0.0) if junction == "hub" else (0.0, R)
-    g = np.asarray(WW.sector_blocks(genes, cfg, fillet=fillet)["spoke"], float)
-    g0 = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0))["spoke"], float)
+    g = np.asarray(WW.sector_blocks(genes, cfg, fillet=fillet,
+                                    fillet_blocking="spoke")["spoke"], float)
+    g0 = np.asarray(WW.sector_blocks(genes, cfg, fillet=(0.0, 0.0),
+                                    fillet_blocking="spoke")["spoke"], float)
     row = 0 if junction == "hub" else -1
     nj = g.shape[1]
     moved = [j for j in (0, nj - 1) if np.linalg.norm(g[row, j] - g0[row, j]) > 1e-9]
@@ -845,257 +847,36 @@ def price(genes, cfg, junctions):
 # clean out of the material, and at the gene box's own floor `R_hub = 0.4` it folds the
 # weld block.  Measured, both ways round, before this construction was chosen.
 
-LAYER_ENTRY_SLOPE = -0.45
-LAYER_END_OFFSET = 1.60
-
-# The eleven blocks, in the order `build_wheel` would own their shared nodes.
-SECTOR_BLOCK_ORDER = (
-    "spoke",
-    "hub_fillet_a", "hub_fillet_b", "rim_fillet_a", "rim_fillet_b",
-    "hub_junction", "rim_junction",
-    "hub_ring_weld", "hub_ring_free", "rim_ring_weld", "rim_ring_free")
-
-SECTOR_BLOCK_REGION = {
-    "spoke": "spoke",
-    "hub_fillet_a": "spoke", "hub_fillet_b": "spoke",
-    "rim_fillet_a": "spoke", "rim_fillet_b": "spoke",
-    "hub_junction": "spoke", "rim_junction": "spoke",
-    "hub_ring_weld": "hub", "hub_ring_free": "hub",
-    "rim_ring_weld": "rim", "rim_ring_free": "rim"}
-
-
-def _seam_table_filleted(orientation, dirn):
-    """The fourteen seams of the filleted sector, in `_seam_table`'s own shape.
-
-    `(block_a, side_a, block_b, side_b, dk, reverse)`: side `side_a` of `block_a` in
-    sector k is the same node set as `side_b` of `block_b` in sector k + dk, walked
-    backwards if `reverse`.  Written in that shape on purpose -- the point of this
-    section is that STEP 1b is a wiring job, and a seam table that has to be re-derived
-    from a picture is not a wiring job.
-
-    Only two flags depend on the genome, and they are the same two the shipped table
-    has: the spoke indexes eta from -1 to +1 while a junction's matching edge starts at
-    the straddling flank.  The other twelve are fixed, because unlike `sector_blocks`
-    this blocking lays every ring block out from `theta_Q` toward the fillet rather than
-    in increasing theta, so "does the arc ascend" stops being a question.
-
-    `dirn` is +1 at a junction whose fillet sweeps toward increasing theta and -1 the
-    other way, and it is `flank_orientation`'s consequence rather than a second copy of
-    it.  IT IS NOT A COSMETIC FLAG.  `sector_blocks` lays both ring blocks out in
-    INCREASING theta whatever the genome does, exactly so that "the next sector" is
-    always `k + 1`; this blocking lays each ring out from `theta_Q` toward the fillet
-    instead, so the sector-closing seam runs to `k + dirn`.  Written as `dk = +1`
-    unconditionally it closes for the shipped genome and MISSES BY A WHOLE SECTOR for a
-    flipped one — 12.6 mm at the hub and 50.0 at the rim, measured, which is why the
-    genome sweep below exists.  `build_wheel` takes `(k + dk) % n_spokes`, so a negative
-    `dk` needs nothing from it.
-
-    THE RING BLOCKS KEEP THE SHIPPED RADIAL ORDER, which is why the hub and rim rows
-    differ.  `hub_collar_*` runs bore -> ring circle and `rim_band_*` runs ring circle ->
-    tyre surface, and `_edge_sets`/`_node_sets` name sides off exactly that: `hub_tie` is
-    `j0`, `rim_outer` is `j1`, `rim_inner_free` is `j0`.  Laying both rings out the same
-    way round would have been tidier here and would have silently moved three boundary
-    sets in STEP 1b.
-    """
-    eta_hub, eta_rim = orientation
-    dk_hub, dk_rim = int(dirn["hub"]), int(dirn["rim"])
-    return (
-        ("spoke", "i0", "hub_fillet_a", "i0", 0, float(eta_hub) > 0),
-        ("spoke", "i1", "rim_fillet_a", "i0", 0, float(eta_rim) > 0),
-        ("hub_fillet_a", "i1", "hub_fillet_b", "i0", 0, False),
-        ("rim_fillet_a", "i1", "rim_fillet_b", "i0", 0, False),
-        ("hub_fillet_a", "j1", "hub_junction", "i0", 0, True),
-        ("rim_fillet_a", "j1", "rim_junction", "i0", 0, True),
-        ("hub_fillet_b", "j1", "hub_ring_weld", "i1", 0, True),
-        ("rim_fillet_b", "j1", "rim_ring_weld", "i1", 0, False),
-        ("hub_fillet_b", "i1", "hub_ring_free", "i0", 0, True),
-        ("rim_fillet_b", "i1", "rim_ring_free", "i0", 0, False),
-        ("hub_junction", "j0", "hub_ring_weld", "j1", 0, True),
-        ("rim_junction", "j0", "rim_ring_weld", "j0", 0, True),
-        ("hub_ring_free", "i1", "hub_ring_weld", "i0", dk_hub, False),
-        ("rim_ring_free", "i1", "rim_ring_weld", "i0", dk_rim, False),
-    )
-
-
-def _hermite(y0, y1, m0, m1, u):
-    u = np.asarray(u, float)
-    u2, u3 = u * u, u * u * u
-    return ((2 * u3 - 3 * u2 + 1) * y0 + (u3 - 2 * u2 + u) * m0
-            + (-2 * u3 + 3 * u2) * y1 + (u3 - u2) * m1)
-
-
-def _unwrap(theta, ref):
-    return theta + 2.0 * math.pi * round((ref - theta) / (2.0 * math.pi))
-
-
-def far_boundary_radius(junction):
-    """The far side of the ring the cut has to reach: the bore, or the tyre surface."""
-    return (WW.HUB_RADIUS_MM - WW.COLLAR_DEPTH_MM if junction == "hub"
-            else WW.RIM_OUTER_RADIUS_MM)
-
-
-def sector_curves(genes, cfg, junction, R,
-                  entry=LAYER_ENTRY_SLOPE, end=LAYER_END_OFFSET):
-    """Every curve the filleted blocking needs at one junction, or `None` if it refuses.
-
-    Refusals are geometric and are reported as such: no fillet of that radius is tangent
-    to both legs, the offset profile would reach zero thickness, or the offset never
-    crosses the ring circle.  None of them is a mesh-quality verdict.
-    """
-    cfgo = WW.get_config(cfg)
-    n_th = cfgo.nn(cfgo.n_thick)
-    g = junction_geometry(genes, cfg, junction, R)
-    if not g["tangency"]:
-        return None
-    A, B, C = g["A"], g["B"], g["C"]
-    r_far = far_boundary_radius(junction)
-    i0 = _cross_section(g, g["s_A"], n_th, A)
-    far_sA = i0[-1]
-    wall = float(np.linalg.norm(far_sA - A))
-
-    a0 = math.atan2(A[1] - C[1], A[0] - C[0])
-    a1 = math.atan2(B[1] - C[1], B[0] - C[0])
-    dd = (a1 - a0 + math.pi) % (2.0 * math.pi) - math.pi
-    R_arc = 0.5 * (float(np.linalg.norm(A - C)) + float(np.linalg.norm(B - C)))
-    sweep = abs(dd)
-
-    def arc_at(u):
-        u = np.atleast_1d(np.asarray(u, float))
-        t = a0 + dd * u
-        return np.stack([C[0] + R_arc * np.cos(t), C[1] + R_arc * np.sin(t)], axis=1)
-
-    def normal_at(u):
-        p = arc_at(u) - np.asarray(C, float)[None, :]
-        return p / np.linalg.norm(p, axis=1)[:, None]
-
-    m0 = entry * (R_arc + wall) * sweep
-    w1 = end * wall
-
-    def offset_at(u):
-        u = np.atleast_1d(np.asarray(u, float))
-        w = _hermite(wall, w1, m0, 0.0, u)
-        return arc_at(u) + w[:, None] * normal_at(u), w
-
-    if float(_hermite(wall, w1, m0, 0.0, np.linspace(0.0, 1.0, 401)).min()) <= 1e-6:
-        return {"built": False, "why": "offset profile reaches zero thickness"}
-
-    def past(u):
-        return (float(np.linalg.norm(offset_at(u)[0][0])) - g["ring_r"]) * g["void_sign"]
-
-    if past(0.0) < 0.0 or past(1.0) > 0.0:
-        return {"built": False, "why": "the offset does not cross the ring circle once"}
-    lo, hi = 0.0, 1.0
-    for _ in range(200):
-        mid = 0.5 * (lo + hi)
-        if past(mid) > 0.0:
-            lo = mid
-        else:
-            hi = mid
-    u_N = 0.5 * (lo + hi)
-    N = offset_at(u_N)[0][0]
-    L = N * (r_far / float(np.linalg.norm(N)))
-
-    th_q = math.atan2(g["Q"][1], g["Q"][0])
-    th_B = _unwrap(math.atan2(B[1], B[0]), th_q)
-    th_N = _unwrap(math.atan2(N[1], N[0]), th_q)
-    dirn = 1.0 if th_B > th_q else -1.0
-    th_end = th_q + dirn * math.radians(WW.SECTOR_DEG)
-    return {"built": True, "g": g, "A": A, "B": B, "C": C, "N": N, "L": L,
-            "u_N": float(u_N), "i0": i0, "far_sA": far_sA, "wall_mm": wall,
-            "arc_at": arc_at, "offset_at": offset_at, "r_far": r_far,
-            "th_q": th_q, "th_B": th_B, "th_N": th_N, "th_end": th_end,
-            "dirn": dirn, "n_th": n_th, "sweep_deg": math.degrees(sweep),
-            "free_span_deg": math.degrees((th_end - th_B) * dirn)}
+# The construction itself now lives in `wheel_wheel` -- `filleted_sector`,
+# `_filleted_sector_blocks` and `_seam_table_filleted` -- because STEP 1b wired it into
+# `build_wheel` and a second copy here is exactly the drift this file's docstring is
+# about.  What stays here is the MEASUREMENT: the verdict on one cell, the sweeps, the
+# controls, and the two constants' re-derivation, which needs the profile open and is
+# why `wheel_wheel.filleted_sector` exposes `entry` and `end` at all.
+LAYER_ENTRY_SLOPE = WW.FILLET_LAYER_ENTRY_SLOPE
+LAYER_END_OFFSET = WW.FILLET_LAYER_END_OFFSET
+SECTOR_BLOCK_ORDER = WW.FILLETED_BLOCK_ORDER
+SECTOR_BLOCK_REGION = WW.FILLETED_BLOCK_REGION
+SEAM_TOL_MM = 1.0e-9
 
 
 def filleted_sector(genes, cfg, R_hub, R_rim,
                     entry=LAYER_ENTRY_SLOPE, end=LAYER_END_OFFSET):
-    """The eleven node grids of the FILLETED sector 0, or `None` if the geometry refuses.
+    """`wheel_wheel.filleted_sector`, with its refusal turned back into a verdict.
 
-    Built here rather than in `wheel_wheel` on purpose: PART 9's rule is that nothing in
-    this arc goes into `build_wheel` before the whole sector has been measured, and this
-    is the measurement.
+    The module RAISES when the geometry refuses, because for `build_wheel` a genome it
+    cannot block is the same class of event as a rim band of non-positive thickness.
+    This file sweeps refusals on purpose -- how often and why is half of what it
+    reports -- so it catches the reason and hands it back as data.
     """
-    cfgo = WW.get_config(cfg)
-    n_th = cfgo.nn(cfgo.n_thick)
-    n_weld = cfgo.nn(cfgo.n_weld)
-    curves = {}
-    for junction, R in (("hub", R_hub), ("rim", R_rim)):
-        c = sector_curves(genes, cfg, junction, R, entry, end)
-        if c is None:
-            return None, {"why": f"{junction}: no fillet of R={R:.4f} is tangent to "
-                                 f"both legs"}
-        if not c["built"]:
-            return None, {"why": f"{junction}: {c['why']}"}
-        if c["free_span_deg"] <= 0.0:
-            return None, {"why": f"{junction}: the fillet's tangent point has passed the "
-                                 f"next sector's corner ({c['free_span_deg']:.3f} deg "
-                                 f"of free ring left)"}
-        curves[junction] = c
-    spoke = trimmed_spoke(genes, cfg, R_hub, R_rim)
-    if spoke is None:
-        return None, {"why": "the two tangent stations cross: the fillets are longer "
-                             "than the spoke"}
-    blocks = {"spoke": spoke}
-    for junction in ("hub", "rim"):
-        c = curves[junction]
-        g = c["g"]
-        n_free = cfgo.nn(cfgo.n_collar_free if junction == "hub" else cfgo.n_rim_free)
-        u_N = c["u_N"]
-        P_split = c["arc_at"](u_N)[0]
-        cut_N = WW._lerp_points(P_split, c["N"], n_th, np)
-
-        ua = np.linspace(0.0, u_N, n_th)
-        ub = np.linspace(u_N, 1.0, n_th)
-        arc_a = c["arc_at"](ua).copy(); arc_a[0] = c["A"]; arc_a[-1] = P_split
-        arc_b = c["arc_at"](ub).copy(); arc_b[0] = P_split; arc_b[-1] = c["B"]
-        inner_a = c["offset_at"](ua)[0].copy()
-        inner_a[0] = c["far_sA"]; inner_a[-1] = c["N"]
-        inner_b = WW._lerp_points(c["N"], c["L"], n_th, np)   # the radial dive
-        cut_B = WW._lerp_points(c["B"], c["L"], n_th, np)
-        try:
-            fa = WW.coons_patch(bottom=arc_a, top=inner_a, left=c["i0"], right=cut_N,
-                                xp=np)
-            fb = WW.coons_patch(bottom=arc_b, top=inner_b, left=cut_N, right=cut_B,
-                                xp=np)
-        except ValueError as exc:                    # a corner that does not close
-            return None, {"why": f"{junction}: {exc}"}
-        blocks[f"{junction}_fillet_a"] = fa
-        blocks[f"{junction}_fillet_b"] = fb
-
-        eta, sample = g["eta"], g["sample"]
-        s_flank = np.linspace(g["s_A"], g["s_ring"], n_weld)
-        top = np.asarray(sample(s_flank, np.zeros(n_weld) - eta), float)
-        bottom = np.asarray(WW.arc_points(g["ring_r"], c["th_N"], c["th_q"], n_weld),
-                            float)
-        bottom[0], bottom[-1] = c["N"], g["Q"]
-        top[0], top[-1] = c["far_sA"], g["far_end"]
-        blocks[f"{junction}_junction"] = WW.coons_patch(
-            bottom=bottom, top=top, left=fa[:, -1, :][::-1],
-            right=WW._lerp_points(g["Q"], g["far_end"], n_th, np), xp=np)
-
-        # The ring keeps the SHIPPED radial order -- bore -> ring at the hub, ring ->
-        # tyre surface at the rim -- so `_edge_sets` keeps naming the same sides.  The
-        # cut's two ends are on different circles: `B` on the ring, `L` on the far side.
-        if junction == "hub":
-            r_j0, r_j1 = c["r_far"], g["ring_r"]
-            th_j0, th_j1 = c["th_N"], c["th_B"]
-            corner_j0, corner_j1 = c["L"], c["B"]
-            cut = fb[-1, :, :][::-1]                 # L -> B
-        else:
-            r_j0, r_j1 = g["ring_r"], c["r_far"]
-            th_j0, th_j1 = c["th_B"], c["th_N"]
-            corner_j0, corner_j1 = c["B"], c["L"]
-            cut = fb[-1, :, :]                       # B -> L
-        blocks[f"{junction}_ring_weld"] = WW.polar_block(
-            r_j0, r_j1, c["th_q"], c["th_N"], n_weld, n_th)
-        e_j0 = np.asarray(WW.arc_points(r_j0, th_j0, c["th_end"], n_free), float)
-        e_j1 = np.asarray(WW.arc_points(r_j1, th_j1, c["th_end"], n_free), float)
-        e_j0[0], e_j1[0] = corner_j0, corner_j1
-        blocks[f"{junction}_ring_free"] = WW.coons_patch(
-            bottom=e_j0, top=e_j1, left=cut,
-            right=WW._lerp_points(e_j0[-1], e_j1[-1], n_th, np), xp=np)
-    return blocks, {"why": None, "curves": curves}
+    try:
+        blocks = WW.filleted_sector(genes, cfg, fillet=(R_hub, R_rim),
+                                    entry=entry, end=end)
+    except (ValueError, NotImplementedError) as exc:
+        return None, {"why": str(exc).split("  See ")[0]}
+    dirn = blocks.pop("_dirn")
+    blocks.pop("_thetas", None)
+    return blocks, {"why": None, "dirn": dirn}
 
 
 def _side(block, side):
@@ -1118,7 +899,7 @@ def sector_seams(blocks, orientation, dirn):
     coordinate mismatch is a construction error, and they are not the same bug.
     """
     out = []
-    for a, sa, b, sb, dk, rev in _seam_table_filleted(orientation, dirn):
+    for a, sa, b, sb, dk, rev in WW._seam_table_filleted(orientation, dirn):
         ea = _side(blocks[a], sa)
         eb = _rotate(_side(blocks[b], sb), dk)
         row = {"a": a, "side_a": sa, "b": b, "side_b": sb, "dk": dk, "reverse": rev,
@@ -1146,7 +927,7 @@ def sector_verdict(genes, cfg, R_hub, R_rim, entry=LAYER_ENTRY_SLOPE,
     orientation = WW.flank_orientation(genes, WW.get_config(cfg),
                                        span_mm=WW.HUB_RIM_SPAN_MM)
     per = {k: block_quality(v) for k, v in blocks.items()}
-    dirn = {j: info["curves"][j]["dirn"] for j in ("hub", "rim")}
+    dirn = info["dirn"]
     seams = sector_seams(blocks, orientation, dirn)
     return {"built": True, "R_hub_mm": float(R_hub), "R_rim_mm": float(R_rim),
             "blocks": per, "dirn": {j: float(v) for j, v in dirn.items()},
@@ -1179,6 +960,41 @@ def sector_control(genes, cfg):
             "all_valid": all(q["valid"] for q in per.values())}
 
 
+def sector_curves(genes, cfg, junction, R,
+                  entry=LAYER_ENTRY_SLOPE, end=LAYER_END_OFFSET):
+    """`wheel_wheel._fillet_curves` at one junction, with the setup it needs done here.
+
+    The module computes these inside `_filleted_sector_blocks`, which returns BLOCKS.
+    This file measures the curves themselves -- where the inner edge crosses the ring
+    circle, where the cut lands, how much free ring is left -- so it calls the same
+    function with the same arguments rather than re-deriving any of it.
+    """
+    cfgo = WW.get_config(cfg)
+    n_th = cfgo.nn(cfgo.n_thick)
+    is_hub = junction == "hub"
+    span = WW.HUB_RIM_SPAN_MM
+    orientation = WW.flank_orientation(genes, cfgo, span_mm=span)
+    rim_inner = WW.rim_inner_radius(span)
+    sample, s_dense = WW.global_sampler(genes, cfgo, span_mm=span)
+    s_hub, s_rim = WW.junction_stations(sample, s_dense, orientation, rim_inner)
+    s_end, s_far = (s_hub, s_rim) if is_hub else (s_rim, s_hub)
+    eta = 1.0 if float(orientation[0 if is_hub else 1]) > 0 else -1.0
+    ring_r = WW.HUB_RADIUS_MM if is_hub else rim_inner
+    s_ring = 0.0 if is_hub else 1.0
+    blend = WW._uncap_blend(WW.UNCAP_DEFAULT, is_hub)
+    Q = (np.asarray(sample(np.asarray(s_ring), np.asarray(0.0)), float) if blend is None
+         else np.asarray(WW._uncap_corner(sample, s_ring, eta, ring_r, is_hub, blend, np),
+                         float))
+    c = WW._fillet_curves(sample, s_end, s_far, eta, ring_r,
+                          far_boundary_radius(junction), R, n_th, Q, entry, end)
+    return dict(c, r_far=far_boundary_radius(junction))
+
+
+def far_boundary_radius(junction):
+    """The far side of the ring the cut has to reach: the bore, or the tyre surface."""
+    return WW.ring_far_radius(junction == "hub")
+
+
 def sector_fit_limit(genes, cfg, junction):
     """The radius at which the fillet's tangent point reaches the NEXT sector's corner.
 
@@ -1191,7 +1007,7 @@ def sector_fit_limit(genes, cfg, junction):
 
     def span(R):
         c = sector_curves(genes, cfg, junction, R)
-        if c is None or not c.get("built"):
+        if not c.get("built"):
             return -1.0
         return c["free_span_deg"]
 

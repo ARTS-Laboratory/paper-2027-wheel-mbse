@@ -234,8 +234,8 @@ def test_the_shipped_construction_folds_where_the_trimmed_spoke_does_not(genes):
     in PART 9 is what needs re-reading.
     """
     R_hub, R_rim = float(genes[12]), float(genes[13])
-    shipped = np.asarray(ww.sector_blocks(genes, "coarse",
-                                          fillet=(R_hub, R_rim))["spoke"], float)
+    shipped = np.asarray(ww.sector_blocks(genes, "coarse", fillet=(R_hub, R_rim),
+                                          fillet_blocking="spoke")["spoke"], float)
     assert ff.gauss_verdict(shipped)["non_positive_elements"] > 0
     trimmed = fb.trimmed_spoke(genes, "coarse", R_hub, R_rim)
     assert ff.gauss_verdict(trimmed)["non_positive_elements"] == 0
@@ -410,9 +410,9 @@ def test_every_seam_of_the_filleted_sector_is_WHOLE_EDGE(genes, cfg):
     orientation = ww.flank_orientation(genes, ww.get_config(cfg),
                                        span_mm=ww.HUB_RIM_SPAN_MM)
     _, info = fb.filleted_sector(genes, cfg, float(genes[12]), float(genes[13]))
-    dirn = {j: info["curves"][j]["dirn"] for j in ("hub", "rim")}
+    dirn = info["dirn"]
     seen = {}
-    for a, sa, b, sb, dk, _rev in fb._seam_table_filleted(orientation, dirn):
+    for a, sa, b, sb, dk, _rev in ww._seam_table_filleted(orientation, dirn):
         for block, side, shift in ((a, sa, 0), (b, sb, dk)):
             key = (block, side)
             assert key not in seen, (
@@ -615,8 +615,7 @@ def test_the_sector_closing_seam_FOLLOWS_the_flank_orientation(genome_sweep):
     assert blocks is not None, info["why"]
     orientation = ww.flank_orientation(vec, ww.get_config("coarse"),
                                        span_mm=ww.HUB_RIM_SPAN_MM)
-    dirn = {j: info["curves"][j]["dirn"] for j in ("hub", "rim")}
-    good = fb.sector_seams(blocks, orientation, dirn)
+    good = fb.sector_seams(blocks, orientation, info["dirn"])
     assert all(x["closes"] for x in good), [x for x in good if not x["closes"]]
     bad = fb.sector_seams(blocks, orientation, {"hub": 1.0, "rim": 1.0})
     opened = [x for x in bad if not x["closes"]]

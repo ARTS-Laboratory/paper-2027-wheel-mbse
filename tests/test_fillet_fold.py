@@ -69,7 +69,8 @@ def test_zero_radius_reproduces_the_unfilleted_spoke(genes):
     """
     for cfg in ("coarse", "medium"):
         a = np.asarray(ww.sector_blocks(genes, cfg, fillet=None)["spoke"], float)
-        b = np.asarray(ww.sector_blocks(genes, cfg, fillet=(0.0, 0.0))["spoke"], float)
+        b = np.asarray(ww.sector_blocks(genes, cfg, fillet=(0.0, 0.0),
+                                     fillet_blocking="spoke")["spoke"], float)
         assert np.abs(a - b).max() < 1e-12, cfg
 
 
@@ -142,7 +143,8 @@ def test_build_wheel_accepts_a_mesh_with_inverted_gauss_points(genes):
     new measurement — the same rule FILLET_PLAN.md sets for
     `test_peak_stress_diverges_but_the_field_converges`.
     """
-    mesh = ww.build_wheel(genes, "coarse", fillet=(0.25, 0.0))      # does NOT raise
+    mesh = ww.build_wheel(genes, "coarse", fillet=(0.25, 0.0),      # does NOT raise
+                          fillet_blocking="spoke")
     bad = ff.mesh_gauss_verdict(mesh)
     assert bad["non_positive_elements"] > 0
     assert bad["min_det_j"] < 0.0
@@ -159,7 +161,7 @@ def test_the_shipped_radii_are_far_outside_anything_usable(genes):
     """
     assert genes[12] > 0.24 and genes[13] > 0.24
     with pytest.raises(ValueError, match="non-positive area"):
-        ww.build_wheel(genes, "medium", fillet=True)
+        ww.build_wheel(genes, "medium", fillet=True, fillet_blocking="spoke")
 
 
 # ---------------------------------------------------------------------------
