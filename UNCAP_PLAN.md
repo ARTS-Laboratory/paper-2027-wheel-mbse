@@ -1267,3 +1267,146 @@ ceiling itself says a rule alone cannot close it.
 `tests/test_tri_block.py::test_a_genome_robust_w_reaches_more_of_the_box_without_being_adopted`
 pins the comparison at the two named cells (re-derived fresh, not read from the artifact)
 and that `chosen` has not moved.
+
+---
+
+# STEP 3 RECORD, PART 4 — 2026-08-23. THE CURVED Y IS BUILT. IT RESCUES WHAT PART 2 SAID IT WOULD, AND THE ONE GENOME LEFT REFUSES FOR A REASON THE MEASUREMENT DOES NOT NAME
+
+PART 2's Winslow column found that an elliptic interior solve changes the tri-block's
+number by **0.000000**, because the Y's three spokes are BOUNDARIES of two blocks each and
+per-block smoothing holds them by definition. Its conclusion was that the number is set by
+where the spokes GO, and they were straight lines — so a curved Y was the successor and a
+better smoother was not. PART 3 then closed the interior point's half. This closes the
+other one.
+
+## WHAT THE CURVE IS, AND WHY THIS ONE
+
+`_bent_spoke` in `studies/study_tri_block.py`. Each spoke is the opposite edge of two of
+the three quads, and in each of them it faces a piece of the region's own boundary: `sC`
+faces the arc in `rim_tri_t` and the free side in `rim_tri_b`, `sA` faces the cross and the
+free side, `sB` faces the cross and the arc. Those two curves are what the spoke is bent
+TOWARD — the blend `(1-frac)*u + frac*v` at the fraction where the spoke's own foot sits
+between them, which is the curve the region's two sides say should be there. That blend
+does not pass through the spoke's endpoints; two linear terms pin it back to them, which is
+the Coons correction and is why **the endpoints are exact for every bend and the three
+internal seams stay exact by construction rather than by tolerance**.
+
+Three things fall out of the construction rather than being arranged:
+
+  * **It needs no resampling.** `splits` already forces `a1 == b2`, `a2 == c1` and
+    `c2 == b1`, so each spoke and the two curves it blends carry the SAME node count. The
+    blend is node-for-node.
+  * **`bend = 0.0` returns the straight spoke untouched**, not an array equal to it. Every
+    number this file published before the curve existed is reproduced bit for bit —
+    verified by diffing the regenerated artifact against the committed one, where the only
+    non-additive change is the wall clock.
+  * **The bend moves seams and nothing else.** The six boundary edges the region owns are
+    bit-identical across bends (`the_bend_moves_no_boundary`), the tiled area shifts by
+    7e-16 relative — one ULP of three shoelaces whose shared spokes cancel only to rounding
+    — and all 17 seams still close to 7.11e-15 mm at the bend the joint rule picks.
+
+## WHAT IT REACHES
+
+`sweep_bend_genomes` runs the same two-column claim `sweep_genomes` makes — a per-genome
+ceiling and one fixed rule — over the (w, bend) plane instead of the w one: 308 interior
+points x 11 bends x 17 genomes (the sixteen drawn plus the shipped one, named and
+appended), at both configs.
+
+```
+                        per-genome ceiling            one FIXED (w, bend) rule
+config   straight    curved   rescued      straight valid/clear/worst   curved valid/clear/worst
+coarse     16/17     16/17       0            15/16  13  -0.0204          16/16  13  +0.0478
+medium     14/17     16/17       2            13/16  12  -1.0000          13/16  13  -0.4875
+```
+
+**At `coarse` the curve turns a fixed rule that folds into one that does not.** The best
+fixed straight `w` leaves one of the sixteen reachable genomes inverted at -0.0204; the same
+`w` at **bend 0.20** puts every one of them valid, with the joint floor at **+0.0478**. And
+it costs the shipped genome nothing: 0.6262 at the published cell, 0.6262 at the joint
+curved rule, because the bend is inert there.
+
+**At `medium` it does not raise the count, and it raises the ceiling instead.** Two genomes
+that fold at every placement of the interior point become valid once the spokes may follow
+the region — 35.3° reaching **0.3464** and 15.9° **0.1698** — and a third, 22.7°, goes from
+0.0780 to **0.2366**, over `MIN_SJ_TARGET` rather than merely off the fold. The fixed rule's
+count is unchanged at 13/16 but it clears the barrier on one more and lifts the joint floor
+from -1.0000 to -0.4875. The shipped genome pays 0.5816 -> 0.4384 to sit at that joint rule
+— still more than double the barrier, and still a choice nothing is forced into.
+
+**THE BEND IS INERT WHERE THE REGION IS FAT.** This is the finding that says the curve is
+not a knob being tuned. Of seventeen genomes at `coarse`, exactly ONE wants a non-zero bend;
+at `medium`, four do. Every other genome's own optimum is bend 0.0 — the straight Y — and
+at the published cell the shipped genome's number moves across the WHOLE bend range by
+0.000000 at `coarse` and 0.001 at `medium`. A correction to cutting chords does nothing
+where the chords were fine.
+
+## THE MECHANISM, AND THE HALF OF IT THAT IS NOT ONE
+
+PART 2 named the straight Y's failure mode as **the wide weld arc**. That was right about
+the correlation and wrong about the quantity. The arc span is an angle; what a chord cannot
+survive is a side that **bows away from one by a fair fraction of the region's own width**,
+and `bow_over_width` — the arc's greatest departure from its chord, over the cross
+section's length — is now in `region_report` and in every genome row.
+
+It separates cleanly at `coarse`: the genomes the fixed straight rule folds on run
+**0.264-0.498**, the ones it does not run **0.009-0.129**, with nothing between. It is also
+what tells 18.5° (bow 0.149, drawn at `medium` and valid there at bend 0) from 15.9° (bow
+0.264, folded at `medium` at every straight placement) — two genomes the arc-span story
+gets backwards, because 18.5° is a wide arc across a fat 4.24 mm region and 15.9° is a
+narrower one across a 1.77 mm sliver.
+
+**And it does not explain the survivor, which is stated here because it would be easy to
+imply that it does.** The genome with the LARGEST bow in the whole box — 35.3° at 0.498 — is
+one the curve reaches, at both configs. The one that refuses has a bow of 0.491, smaller.
+So the bow says where the bend is NEEDED; it does not say what makes a region impossible,
+and that quantity is still unnamed. `test_what_the_curve_does_NOT_reach_stays_reported`
+asserts the non-separation rather than the separation, so that a future run which does
+separate them is a finding and not a silent pass.
+
+## THE REFUSAL, PRICED AT EVERY FREE COUNT
+
+One drawn genome — 41.2°, sides 34.88 / 29.41 / 6.32 mm — folds at every interior point AND
+every bend, at both configs. Because `B` is held across the gene box for a reason that has
+nothing to do with this question (it sets element counts, and a mesh whose count depends on
+the design cannot be compared across a search), the refusal is re-asked at **every
+admissible free count** rather than at the one that ships:
+
+```
+coarse   B = 8  -0.0134    B = 10 -0.0195    B = 12 -0.0189
+medium   B = 12 -0.0141    B = 14 -0.0194    B = 16 -0.0180    B = 18 -0.0174   B = 20 -0.0202
+```
+
+Valid at none of them. The ceiling is **-0.0134**, a hair below zero rather than a
+collapse, and a hand probe outside the published search box (pushing `w_Bstar` to 0, i.e.
+the interior point onto the P_t-Q chord) only reaches -0.0064 — so it is not the box
+clamping the answer either. `every_refusal_was_re-asked_at_every_free_count` is a
+self-check.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, `UNCAP_DEFAULT` still `(True, 1.0)`, and `sector_blocks` still returns seven
+blocks.** `bend` defaults to 0.0, `chosen` is still `sweep`'s single-genome argmax at the
+straight Y, and `per["sector"]` still reports 0.626233 / 0.581582 and 76.6x / 70.5x.
+`test_nothing_here_is_wired_into_the_mesh_the_tree_BUILDS` and
+`test_the_bend_is_OFF_by_default_and_off_means_untouched` pin both halves.
+
+`make triblock` is now ~290 s rather than ~15 s, and the Makefile's help says so.
+
+## THE SUCCESSORS THIS PART LEAVES
+
+1. **What makes a region impossible.** The bow explains the straight Y's folds and does not
+   explain the one refusal that survives the curve. Sixteen genomes with their bows, arc
+   spans, side lengths, three wedge angles and per-`B` ceilings are in the artifact, and
+   the refusal's ceiling is -0.013 rather than -0.9 — a hair, not a collapse. Whatever
+   separates it from the 0.498-bow genome the curve reaches is one quantity and it is not
+   yet measured.
+2. **A bend that is a FUNCTION of the genome rather than a constant.** The per-genome
+   ceiling at `medium` reaches 16 of 17; one fixed (w, bend) reaches 13 of 16. The gap is
+   larger than the straight Y's was, because the curve enlarged what is reachable without
+   making a constant rule better at reaching it. `bow_over_width` is the obvious argument
+   for such a function and the per-genome optima are in the artifact to fit against —
+   though note that they are argmaxes over a plateau and their scatter is partly that.
+3. **Then, and only then, the decision to adopt the faithful rim** — unchanged from PART 2.
+   A model change with its own baseline: full `make test`, `make studies`, and the mass /
+   hub-share / axle-drop deltas.

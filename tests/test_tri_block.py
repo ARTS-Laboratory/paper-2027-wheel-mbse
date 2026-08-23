@@ -419,6 +419,146 @@ def test_a_generated_interior_cannot_move_it(genes):
     assert abs(smoothed - raw) < 1.0e-9
 
 
+def test_the_bend_is_OFF_by_default_and_off_means_untouched(genes):
+    """`bend = 0.0` returns the straight Y's own arrays, not arrays equal to them.
+
+    Every number this file pinned before the curve existed is a `tri_sector` call with no
+    bend argument, so the curve is only free of them if the default path is IDENTICAL and
+    not merely close.  `_bent_spoke` short-circuits for that reason and this asserts it on
+    the node arrays rather than on a summary of them.
+    """
+    reg = tb.region(genes, "coarse", blend=0.0)
+    w = (0.124, 0.751, 0.124)
+    plain, _ = tb.tri_sector(reg, 10, w)
+    zero, aux = tb.tri_sector(reg, 10, w, 0.0)
+    for k in tb.TWELVE_BLOCK_ORDER:
+        assert np.array_equal(np.asarray(plain[k]), np.asarray(zero[k])), k
+    assert aux["bend"] == 0.0
+
+
+def test_the_bend_moves_the_SPOKES_and_nothing_else(genes):
+    """The curve is interior: the region's own three sides do not move with it.
+
+    A spoke is an internal seam, shared as ONE array by the two blocks it separates, so
+    bending it can neither open a seam nor change what the three quads cover.  Both are
+    asserted here at a bend the driver does not ship, because "interior" is a claim about
+    `_bent_spoke`'s arithmetic and that is code which can change.
+    """
+    reg = tb.region(genes, "coarse", blend=0.0)
+    w = (0.124, 0.751, 0.124)
+    straight = tb.sector_verdict(reg, 10, w, 0.0)
+    bent = tb.sector_verdict(reg, 10, w, 0.6)
+
+    # the nine blocks outside the Y are untouched, and the three inside it are not
+    sblocks, _ = tb.tri_sector(reg, 10, w, 0.0)
+    bblocks, _ = tb.tri_sector(reg, 10, w, 0.6)
+    for k in tb.TWELVE_BLOCK_ORDER:
+        same = np.array_equal(np.asarray(sblocks[k]), np.asarray(bblocks[k]))
+        assert same == (k not in tb.TRI_BLOCKS), k
+    assert bent["aux"]["bend"] == 0.6
+
+    # the six boundary edges the REGION owns do not move -- compared as arrays, because
+    # the area is a sum of three shoelaces whose shared spokes cancel only to rounding
+    # and so cannot carry an exact claim
+    for k, ix in (("rim_tri_t", (slice(None), 0)), ("rim_tri_t", (0, slice(None))),
+                  ("rim_tri_q", (slice(None), 0)), ("rim_tri_q", (-1, slice(None))),
+                  ("rim_tri_b", (slice(None), -1)), ("rim_tri_b", (0, slice(None)))):
+        assert np.array_equal(np.asarray(sblocks[k])[ix], np.asarray(bblocks[k])[ix]), k
+    assert bent["quad_region_area_mm2"] == straight["quad_region_area_mm2"]
+    assert abs(bent["tri_region_area_mm2"] - straight["tri_region_area_mm2"]) < 1.0e-12
+    # every seam still closes
+    assert bent["seams_close"] and bent["n_seams"] == 17
+
+
+def test_the_curve_reaches_genomes_the_straight_Y_cannot_and_is_not_adopted(report):
+    """The curved Y's claim, and the two halves of it that differ.
+
+    PART 2's Winslow column said the number is set by where the spokes GO, so the curve is
+    the lever it named.  What the artifact must keep saying is BOTH halves: that the
+    per-genome ceiling rises -- genomes no placement of the interior point rescues become
+    valid once the spokes may follow the region -- and that this is measured with `bend`
+    still defaulting to 0.0, so the headline cell is the straight Y.
+    """
+    for name, per in report["per_config"].items():
+        cy = per["curved_y"]
+        assert 0.0 in cy["bend_grid"], "the straight Y must be a slice of this sweep"
+        assert cy["n_curved_valid"] >= cy["n_straight_valid"]
+        assert cy["n_rescued_by_the_curve"] == (
+            sum(1 for r in cy["per_genome"] if r["rescued_by_the_curve"]))
+        # a genome the curve rescues was folded straight and is valid bent
+        for r in cy["per_genome"]:
+            if r["rescued_by_the_curve"]:
+                assert r["straight_min_scaled_jacobian"] is None
+                assert r["curved_min_scaled_jacobian"] is not None
+                assert r["curved_bend"] > 0.0
+        # measured, not adopted: the shipped cell is still bend 0
+        assert per["sector"]["bend"] == 0.0
+        assert per["sector"]["w"] == per["genomes"]["w_fixed"]
+        assert cy["shipped"]["published_cell"]["clears_target"] is True
+
+    # and the whole point of the exercise: at some config it rescues something
+    assert sum(per["curved_y"]["n_rescued_by_the_curve"]
+               for per in report["per_config"].values()) > 0
+
+
+def test_what_the_curve_does_NOT_reach_stays_reported(report):
+    """The refusal that survives the curve, and the fact that the bow does NOT explain it.
+
+    One drawn genome folds at every interior point AND every bend AND every admissible
+    free count, at both configs.  It is the load-bearing negative of this section exactly
+    as the gene box is of the last one: a driver that quietly reached everything would be
+    the one way the curved-Y claim could become an overstatement.
+
+    And the second half is as load-bearing as the first.  The bow over the region's width
+    is what separates the genomes the STRAIGHT Y folds on — but the genome with the
+    LARGEST bow in the whole box is one the curve reaches, and the survivor's bow is
+    smaller than it.  So the bow says where the bend is needed and NOT what makes a region
+    impossible, and the thing that does is still unnamed.  Asserting the separation here
+    would be asserting an explanation this file has not earned.
+    """
+    for name, per in report["per_config"].items():
+        cy = per["curved_y"]
+        assert cy["n_curved_valid"] < cy["n_genomes"], (
+            f"{name}: the curve is reported as reaching EVERY genome — if that is now "
+            "true it is a finding and this test is the place to record it")
+        assert cy["refusals_bow_over_width"], "a refusal must carry its mechanism"
+        assert cy["refusals"], "and it must have been re-asked at every free count"
+        for r in cy["refusals"]:
+            assert r["valid_at_any_B"] is False, (
+                f"{name}: the {r['arc_span_deg']:.1f}-deg refusal is now valid at some "
+                "free count — that is a finding, not a pass")
+            assert r["ceiling_over_every_B"] < 0.0
+            assert len(r["per_B"]) == len(tb.admissible(*(
+                (lambda cfg: (cfg.n_weld, cfg.n_thick))(ww.get_config(name)))))
+
+        # THE BOW DOES NOT EXPLAIN THE SURVIVOR, and that stays on the record
+        reached = [r["bow_over_width"] for r in cy["per_genome"] if r["curved_valid"]]
+        assert max(reached) > max(cy["refusals_bow_over_width"]), (
+            f"{name}: the bow now separates the surviving refusal from the rest — if "
+            "that is true it is a mechanism and the plan records should say so")
+
+        # the shipped genome is at the bottom of the bow range, which is WHY it is easy
+        shipped = [r for r in cy["per_genome"] if r["shipped_genome"]]
+        assert len(shipped) == 1
+        assert shipped[0]["bow_over_width"] < 0.05
+
+
+def test_the_bend_is_INERT_where_the_region_is_fat(genes):
+    """The curve is a correction to cutting chords, so a fat region needs none of it.
+
+    Re-derived rather than read: at the shipped genome, whose bow is the smallest in the
+    box, sweeping the bend across its whole range moves the number by almost nothing.
+    That is what says the curve is not a free knob being tuned -- it does nothing where
+    nothing is wrong, and the genomes it moves are the ones the bow column names.
+    """
+    reg = tb.region(genes, "coarse", blend=0.0)
+    w = (0.124, 0.751, 0.124)
+    vals = [tb.cell(reg, 10, w, b)["min_scaled_jacobian"] for b in tb.BEND_GRID]
+    assert max(vals) - min(vals) < 0.01, (
+        f"the bend moved the fattest region in the box by {max(vals) - min(vals):.4f}")
+    assert tb.region_report(reg)["bow_over_width"] < 0.05
+
+
 # ---------------------------------------------------------------------------
 # 6. THE SCOPE — the half this does NOT deliver
 # ---------------------------------------------------------------------------

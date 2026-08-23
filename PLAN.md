@@ -8322,3 +8322,88 @@ ceiling itself says a rule alone cannot close it. Item 1 below is narrowed accor
 8. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 9. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 10. **The element-validity check** (§44).
+
+---
+
+## §56 — 2026-08-23. THE CURVED Y IS BUILT, AND IT MAKES A FIXED RULE VALID ON THE WHOLE REACHABLE BOX AT ONE CONFIG — BUT THE GENOME THAT REFUSES IT IS NOT THE ONE THE MECHANISM PREDICTED
+
+§55's revised successors ranked the curved Y first, narrowed to "the one genome per config
+no placement of the straight Y's interior point can rescue." That is now built, measured at
+both configs, and it retires more than the narrowing expected and less than the mechanism
+promised. UNCAP_PLAN.md's STEP 3 RECORD PART 4 has the full record; this is the section
+number and the ranking.
+
+**What the curve is.** §53's Winslow column said the tri-block's number is set by where the
+Y's three spokes GO, not by how the interiors are filled, because each spoke is a BOUNDARY
+of two blocks and per-block smoothing holds it. `_bent_spoke` moves them. Each spoke is
+blended toward the two pieces of the region's own boundary it faces across its two quads,
+at the fraction where its own foot sits between them, with a Coons correction that pins its
+endpoints exactly — so **the three internal seams stay exact for every bend**, and no
+resampling enters, because `splits` already forces the spoke and the two curves it blends
+to carry the same node count. One parameter, `bend`, and `bend = 0.0` returns the straight
+spoke untouched rather than an array equal to it.
+
+```
+                        per-genome ceiling            one FIXED (w, bend) rule
+config   straight    curved   rescued      straight valid/clear/worst   curved valid/clear/worst
+coarse     16/17     16/17       0            15/16  13  -0.0204          16/16  13  +0.0478
+medium     14/17     16/17       2            13/16  12  -1.0000          13/16  13  -0.4875
+```
+
+**At `coarse` a single fixed rule becomes valid on every genome the plane reaches**, at
+bend 0.20, with the joint floor moving from -0.0204 to +0.0478 — and it costs the shipped
+genome nothing, 0.6262 either way. **At `medium` the curve raises the ceiling instead of
+the count**: two genomes no interior point rescues become valid (35.3° at 0.3464, 15.9° at
+0.1698) and a third crosses `MIN_SJ_TARGET` (22.7°, 0.0780 -> 0.2366), while one fixed rule
+still reaches 13 of 16 and the shipped genome would pay 0.5816 -> 0.4384 to sit at it.
+
+**The bend is inert where the region is fat.** One genome of seventeen wants a non-zero
+bend at `coarse` and four do at `medium`; at the published cell the shipped genome's number
+moves across the whole bend range by 0.000000 at `coarse` and 0.001 at `medium`. That is
+what says the curve is a correction to cutting chords and not a knob being tuned.
+
+**The mechanism is the BOW, not the arc span — and it does not explain the survivor.**
+§53's gene box named the straight Y's failure mode as the wide weld arc. The quantity is
+really the arc's greatest departure from its own chord over the region's cross-section
+length, now `bow_over_width`: at `coarse` the fixed straight rule folds on 0.264-0.498 and
+holds on 0.009-0.129, cleanly separated, and it sorts 18.5° (bow 0.149, fine) from 15.9°
+(bow 0.264, folded) the way the arc span cannot. But **the largest bow in the box, 0.498, is
+a genome the curve reaches**, and the one that refuses everything has a bow of 0.491.
+`test_what_the_curve_does_NOT_reach_stays_reported` asserts the NON-separation, so that a
+future run which does separate them registers as a finding.
+
+**The refusal is priced at every free count, not just the one that ships.** 41.2° folds at
+every interior point, every bend, and every admissible `B` at both configs — ceiling
+-0.0134, valid at none — and a hand probe pushing the interior point outside the published
+search box only reaches -0.0064, so the box is not the constraint either.
+
+**Measured, not adopted, for the third time in this arc and for §53's reason.** `bend`
+defaults to 0.0, `chosen` is still the straight Y's single-genome argmax, `per["sector"]`
+still reports 0.626233 / 0.581582 and 76.6x / 70.5x, `UNCAP_DEFAULT` is still `(True, 1.0)`
+and `sector_blocks` still returns seven blocks. The regenerated artifact was diffed against
+the committed one: the only non-additive change is the wall clock. `make triblock` is now
+~290 s and the Makefile's help says so.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §56
+
+1. **The filleted blocking's REFUSAL half** — the hub sector-fit limit, 6 of 16 feasible
+   genomes, unchanged from §54 and §55. Now the top item: the tri-block arc has had two
+   sessions and both of its named levers are measured, while this one has been ranked
+   second through two revisions without being touched.
+2. **A feasibility gate that catches the flank near-self-intersection §54 found.**
+   Unchanged from §54 and §55.
+3. **What makes a region impossible.** Demoted from §55's item 1 in substance as well as
+   rank: the curved Y is built, so what is left is not a construction but a QUANTITY — the
+   one that separates the 0.491-bow genome that refuses everything from the 0.498-bow one
+   the curve reaches. Everything needed to look for it is in the artifact.
+4. **A bend that is a FUNCTION of the genome rather than a constant.** The curve enlarged
+   what is reachable without making a constant rule better at reaching it, so at `medium`
+   the gap between the per-genome ceiling (16/17) and one fixed rule (13/16) is now wider
+   than the straight Y's was. `bow_over_width` is the obvious argument to fit against.
+5. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Unchanged.
+6. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+7. **Make `modelled_area_reference` fillet-aware** (§50).
+8. **The REST of §45's audit list** (§49).
+9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+11. **The element-validity check** (§44).
