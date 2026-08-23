@@ -125,11 +125,22 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 > the filleted drop also CONVERGING — 0.14% over `coarse..fine` against 1.22%. Scope
 > unchanged: `fillet=` is a measurement instrument for one genome, is not wired into the
 > optimizer, and that is now a test rather than a note.
+>
+> **AND AS OF §53 (2026-08-23) THE RIM TRI-BLOCK — THE THING §52's `rim:P_c` BLOCKER WAITS
+> ON — IS BUILT, AND IT IS NOT ADOPTABLE YET.** `make triblock`, 14 s. Both of §37's
+> clauses are retired: **TWELVE blocks and SEVENTEEN whole-edge seams**, closing at
+> 7.1e-15 mm, and the "forced 1-element strip" was §37's own choice of a FREE count. It
+> meshes at **0.626 / 0.582 against the quad block's 0.0082 / 0.0083 — a factor of 77** and
+> 3.1x over `MIN_SJ_TARGET`, at the 1.06 degree fidelity that was the point. **But the
+> faithful rim is not opt-in**, so the gene box is the measurement, and there it folds on
+> 4/16 and 6/16 genomes — the WIDE weld arcs, 15.9-41.2 deg against the shipped genome's
+> 2.73. The construction is proved; **the rule that places its interior point is not**, and
+> that is a third obstacle neither §37 nor §51 named.
 
 | # | file | the question | cost |
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
-| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52).** `R_hub`/`R_rim` move the solved wheel by 38% on the filleted mesh and are still invisible to the OPTIMIZER, which may not take that mesh. What is left is Step 3, behind the rim tri-block and genome-robustness | Steps 0-2 spent; Step 3 not cheap |
+| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52).** `R_hub`/`R_rim` move the solved wheel by 38% on the filleted mesh and are still invisible to the OPTIMIZER, which may not take that mesh. What is left is Step 3, behind genome-robustness — **and the rim tri-block is no longer part of that queue: §53 BUILT it, and it has the same genome problem** | Steps 0-2 spent; Step 3 not cheap |
 | 3 | `HUBSHARE_PLAN.md` | Should hub compliance be an objective term? `cy4` alone moves it by 102% of the gap (§31) | medium |
 | 4 | `WALLPIN_PLAN.md` | Re-derive Gate 1 at the 1.2 mm floor and drop the beam test's 2.0 mm pin (§14's reserved judgement, measured by §31) | small |
 | 5 | `RIMCAP_PLAN.md` | A rim cap model — the boundary as a function of `t3` and rim arrival angle, not at one design (§22, §24) | medium |
@@ -7837,6 +7848,12 @@ recorded here as a probe — no driver, no artifact, no test — precisely so th
 quotes it as this project's other numbers may be quoted.** What it would take to make it a
 measurement is named at the end.
 
+> **SUPERSEDED 2026-08-23 BY §53.** The unit named at the end of this subsection was built.
+> Both clauses are retired and the numbers below are replaced by measured ones — the
+> partition meshes at **0.626 / 0.582**, not ~0.25, and its factor over the block it
+> replaces is **77x**, not 30x. **Quote §53, not this.** And what stopped the tri-block was
+> neither of the two clauses this probe argues about.
+
 **Clause 1, "it needs PARTIAL-EDGE SEAMS".** True only if the neighbours may not be split,
 and §48 is the whole argument that they may: the Y-partition halves the ring arc and the
 end cross-section, so split `rim_band_weld` in theta and split the `spoke` along a j-line,
@@ -8019,6 +8036,8 @@ passes `R_hub_fillet=` to the EXPORTER, where fillets have always been geometry.
    the last artefact corner, it carries the global maximum, and only the faithful rim
    admits a fillet on it. §51's probe says §37 priced it wrong on both clauses. §48's
    driver is the template. **Do not quote §51's probe numbers until this exists.**
+   **DONE 2026-08-23 — §53. It is built, both clauses are retired, it meshes at 77x — and
+   it folds on a quarter of the gene box, which is what it left behind.**
 2. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Promoted from
    "after Step 2 confirms the singularity is gone" and re-scoped by what §52 measured:
    §31's finding was that sweeping `R_hub` leaves the solved wheel BIT-IDENTICAL, and the
@@ -8034,3 +8053,161 @@ passes `R_hub_fillet=` to the EXPORTER, where fillets have always been geometry.
 7. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 8. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 9. **The element-validity check** (§44).
+
+---
+
+### §53 — 2026-08-23. THE RIM TRI-BLOCK IS BUILT. BOTH OF §37's CLAUSES ARE RETIRED AND IT MESHES AT 77x THE BLOCK IT REPLACES — BUT IT FOLDS ON A QUARTER OF THE GENE BOX, AND THAT IS A THIRD OBSTACLE NEITHER §37 NOR §51 NAMED
+
+§52 promoted the rim tri-block to ranked item 1 and called it *"the whole remaining path to
+a quotable peak"*. §51 had already re-priced it, with a scratch probe it filed **as** a
+probe — *"no driver, no artifact, no test — precisely so that nobody quotes it as this
+project's other numbers may be quoted"* — and named the unit that would make it a
+measurement. This is that unit, and **§51's probe numbers are superseded by this section.**
+
+`make triblock`, 14 s, geometry and Jacobians only. Driver `studies/study_tri_block.py`,
+artifact `studies/study_tri_block.json`, 23 tests in `tests/test_tri_block.py`. Full
+working record in `UNCAP_PLAN.md`'s **STEP 3 RECORD, PART 2**.
+
+#### BOTH OF §37's CLAUSES ARE RETIRED, MEASURED
+
+**Clause 2, "forced 1-element strips".** §37's six-way constraint is correct and its input
+was not. `a1 = (A + B - C) / 2`, where A is the ring arc (`n_weld`), C the end
+cross-section (`n_thick`) and **B the free side, whose count was never inherited**. §37
+read B off the block it was replacing — 8 at `coarse` — and got 7x1, 3x1, 7x3. The
+admissible set is enumerable and is enumerated:
+
+```
+  config  A   C     admissible B          strip-free B
+  coarse  10  4     8, 10, 12             10
+  medium  16  6     12, 14, 16, 18, 20    14, 16, 18
+```
+
+§37 missed the strip-free choice at `coarse` by one grid point. The driver reproduces
+§37's own 7/3/1 and **gates its exit on doing so**, because a re-pricing that cannot
+reproduce the number it re-prices is measuring a different partition.
+
+**Clause 1, "it needs PARTIAL-EDGE SEAMS".** True only if the neighbours may not be split.
+Split `rim_band_weld` in theta and the `spoke` along a j-line; that cascades once into
+`hub_junction` — the spoke's hub row IS its `left` edge — and **stops**, because the
+junction's cut runs across the collar arc rather than along it. **Seven blocks become
+TWELVE and SEVENTEEN seams, every one a whole edge of both blocks it names, all closing at
+7.1e-15 mm** at both configs. The Y's own three internal edges are exactly 0.0, because
+each is passed as the same array to both of its blocks.
+
+#### AND IT MESHES — 77x, AT 80% OF THE SHIPPED MESH
+
+```
+  config   shipped blend 1.0   faithful QUAD   faithful TRI       x   clears 0.2
+  coarse       0.782735          0.008176        0.626233      76.6x     YES
+  medium       0.782926          0.008251        0.581582      70.5x     YES
+```
+
+Against `MIN_SJ_TARGET` = 0.2 (barrier weight 3000, imported from `wheel_objective` rather
+than written down) that is **3.1x of margin**, while delivering the **1.06 degree** corner
+fidelity that was the whole point. §51 said ~0.25 and called it a floor. It was one.
+
+The three cut neighbours are **sliced, not rebuilt** — bit-for-bit, pinned at `== 0.0` —
+so the 77x is a measurement of a partition and not a comparison of two constructions. The
+three quads' areas sum to the quad block's to 1e-5 relative.
+
+#### THE OBSTACLE THAT ACTUALLY STOPS IT, AND WHY §48's PRECEDENT DOES NOT APPLY
+
+**The faithful rim is not opt-in.** §48 could measure the filleted blocking at one genome,
+name six refusals out of sixteen and still hand Step 2 a usable instrument, because
+`fillet=` is passed by a study and never by the optimizer. Adopting blend 0.0 changes
+`sector_blocks` for **every genome the search touches**. So the gene box is the
+measurement, and one genome is not.
+
+Sixteen freshly drawn feasible genomes, four per flank orientation, `B` held per config
+because element counts may not depend on the design:
+
+```
+  config   fixed rule valid   best-per-genome valid   clears 0.2 (fixed)   seams
+  coarse       12/16                15/16                  11/12          all close
+  medium       10/16                12/16                  10/10          all close
+```
+
+The fixed rule applies the shipped genome's own barycentric triple — scale-free, so a
+construction with no free parameter left, which is what would actually ship. The second
+column re-sweeps the interior point per genome and is **the upper bound any adaptive rule
+could reach**; it is not 16/16 either.
+
+**The mechanism is named rather than counted:** it folds on the WIDE weld arcs — 15.9-41.2
+degrees against 3.7-11.9 on the ones it does not, at `coarse`, where the two ranges
+separate cleanly. **The shipped genome's arc is 2.73 degrees, at the very bottom of the
+box.** A point tuned on a 2.7-degree sliver is in the wrong place on a 40-degree triangle.
+
+**So the construction is proved and the rule that places its interior point is not.** That
+is a different sentence from §37's and §51's, and neither of them was in a position to
+write it: it is not visible until the thing is built.
+
+#### AND A GENERATED INTERIOR CANNOT MOVE IT — WHICH NAMES THE SUCCESSOR
+
+A Winslow solve on each quad's interior, boundaries held, changes the number by
+**0.000000**. The worst corner is on a held boundary, and the Y's three spokes are
+boundaries of two blocks each, so per-block smoothing holds them by definition. **The
+number is set by where the Y's spokes GO.** They are straight lines today. Same shape as
+§47's route-2 invariance, same conclusion: **a curved Y is the successor; a better smoother
+is not.**
+
+#### THE CELL IS A TUNED POINT AND THE REPORT SAYS SO
+
+The rule is the argmax over the **published** grid, and the grid is published in full for
+§48's reason. Here it is a tuned point rather than a plateau, and that is reported: **6.9%**
+of valid cells at `coarse` and **8.3%** at `medium` sit within 10% of the maximum, and only
+29/173 and 24/173 cells are valid at all. A finer local re-sweep is reported and
+**deliberately not adopted** — at `medium` it gains 0.045 by walking one weight down to the
+search box's clamp, and that cell generalises across the gene box *worse* than the grid
+point it beats.
+
+#### THE BUG THE INSTRUMENT FOUND, AND HOW IT HID
+
+The first seam table paired the wrong halves of the cut spoke and the cut hub junction: the
+junction's `left` edge is the spoke's hub row REVERSED when the straddling flank is at
+eta = +1. At `coarse`, `n_thick` splits 2/2, so **the node counts still agreed** and only
+the coordinates disagreed, by 0.62 mm. A seam check reporting closure as one boolean would
+have read "17/17 counts agree" and said nothing. It reports the count and the gap
+separately, which is why one run found it. A test reproduces the mismatch and asserts that
+the counts still agree under it. The second was the ring weld block's low-theta end, which
+is `P_t` or `Q` depending on the genome — exactly §48's `dk` trap.
+
+#### WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, `UNCAP_DEFAULT` still `(True, 1.0)`, `sector_blocks` still returns seven blocks, and
+the default mesh bit-identical.** Blend 0.0 is measured, never adopted. Pinned by
+`test_nothing_here_is_wired_into_the_mesh_the_tree_BUILDS`.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §53
+
+1. **A rule for the tri-block's interior point that holds across the gene box, and the
+   CURVED Y it probably needs alongside.** Was "the rim tri-block, BUILT"; the build is
+   done and this is what it left. It is now a well-posed problem rather than an open one:
+   the sixteen drawn genomes are in the artifact with their triangles' arc spans, side
+   lengths and three wedge angles, the failure mode is the wide arc, and the ceiling any
+   rule can reach at the current `B` is 15/16 and 12/16 — so a rule alone may not suffice.
+   The Winslow column says the lever is where the Y's spokes go.
+2. **Make the filleted blocking genome-robust** (§48) — was 3, unmoved in substance and now
+   the same shape of problem as item 1: 6 of 16 feasible genomes refuse it, 6 of the 10 that
+   build sit under `MIN_SJ_TARGET`. **These two are one arc if anyone wants them to be** —
+   the question in both is a construction that was measured at one genome and has to hold
+   across a search.
+3. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Was 2. Blocked
+   behind item 2, unchanged: feedback the optimizer may not use is not feedback.
+4. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+   What the optimizer sees is not the raw peak, and §52 measured the peak only.
+5. **Make `modelled_area_reference` fillet-aware** (§50).
+6. **The REST of §45's audit list** (§49).
+7. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+8. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+9. **The element-validity check** (§44).
+
+**AND ONE THING §52's RANKING GOT WRONG, RECORDED BECAUSE IT IS THE THIRD TIME.** §52 put
+the tri-block at 1 on the argument that it was *"the whole remaining path to a quotable
+peak"*. It is still the only path, and it is now built and valid — but a path that folds on
+a quarter of the gene box does not reach a quotable peak either, and **nothing in §52 or
+§51 could have priced that, because neither had built it.** §37's own lesson said "when a
+successor's value rests on *and then X will improve*, measure X on the CURRENT model
+first". This is the complement: **when a successor's value rests on a construction that
+does not exist, the thing that stops it is often not any of the reasons anyone listed** —
+§37 named seams and strips, §51 retired both, and what stopped it was neither.
