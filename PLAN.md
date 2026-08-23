@@ -93,6 +93,18 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 > Step 2 stays unreachable until that re-cut exists, and it must be judged on `det J` at the
 > Gauss points, because `build_wheel` returning is not the same statement as a mesh that
 > integrates.
+>
+> **AND AS OF §48 (2026-08-23) THE RE-CUT EXISTS AND IS MEASURED, THOUGH IT IS NOT WIRED.**
+> The whole filleted sector closes — **eleven blocks, fourteen whole-edge seams**, 48/48
+> cells across the shipped genome's radius box at `coarse` and `medium`, worst min scaled
+> Jacobian 0.357 against the unfilleted sector's 0.783. **PART 9's shallow cut is proved
+> uncloseable**: the cut has to reach the ring's far side. Two prices — the ring's radial
+> node count becomes `n_thick`, and `R_hub` is bounded at 3.130 mm by the SECTOR rather
+> than by the block. **And its scope is now named**: the radius box is not the gene box,
+> and on 16 feasible genomes spanning all four flank orientations, 6 refuse the fillet
+> outright and only 4 of the 10 that build clear the barrier. `fillet=True` is on course to
+> be a MEASUREMENT INSTRUMENT for one genome — which is what Step 2 needs — and not an
+> optimizer path.
 
 | # | file | the question | cost |
 |---|---|---|---|
@@ -1477,11 +1489,14 @@ make fillet                                               # §44, ~38 s: at what
                                                           # filleted spoke block fold, under the
                                                           # three criteria that disagreed by 20x.
                                                           # geometry + Jacobians, no field solved
-make filletblock                                          # §47, ~42 s: can the fillet BE a block?
-                                                          # the region PART 3 named has two 0 deg
-                                                          # corners; the boundary-layer block that
-                                                          # does mesh, and the notch it forces
-make test                                                 # 427 tests, ~22 min
+make filletblock                                          # §47/§48, ~85 s: can the fillet BE a
+                                                          # block, and can the sector be blocked
+                                                          # around it? two 0 deg corners in PART 3's
+                                                          # region; the boundary-layer block that
+                                                          # does mesh; and the whole filleted
+                                                          # sector, 11 blocks and 14 whole-edge
+                                                          # seams, with what it costs the ring
+make test                                                 # 612 passed / 3 xfailed, ~32 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
@@ -7439,3 +7454,146 @@ routes as the way forward.
 
 **`HUBSHARE_PLAN.md` remains off the list**, still blocked behind item 1 by its own Step 0
 rule — now for the eighth arc.
+
+### §48 — 2026-08-23. THE FILLETED SECTOR CLOSES: ELEVEN BLOCKS, FOURTEEN WHOLE-EDGE SEAMS, ACROSS THE BOX. AND PART 9's OWN CUT IS PROVED UNCLOSEABLE — THE OFFSET LANDS TANGENT
+
+§47 promoted a boundary-layer block on the strength of one block meshing. This is the
+half that a single block cannot answer, and it is ranked item **1a**: build EVERY block
+and EVERY seam of the filleted sector, geometry only, and judge on `det J` at the Gauss
+points AND on the seams closing. `make filletblock` (~85 s, was ~42), its regenerated
+report, and `tests/test_fillet_block.py` at **66 tests, was 44** — every one of which
+RE-MEASURES.
+
+#### IT CLOSES
+
+Eleven blocks — the trimmed spoke, two fillet blocks and one junction per junction, and
+each ring's weld and free re-cut — and fourteen seams, **every one whole-edge**. At the
+shipped radii: worst min scaled Jacobian **0.3594** (`coarse`) / **0.3623** (`medium`),
+worst seam gap **1.4e-14 mm**. Across the admissible gene box, 48 cells at each config:
+**48/48 valid AND closed**, worst 0.3569 against `MIN_SJ_TARGET`'s 0.2, and the same
+worst seam gap. The unfilleted control, measured by the same instrument in the same run,
+is **0.7827** — so the blocking costs a factor of **2.2** in the worst block and still
+clears the barrier by 1.8x.
+
+The fillet block is split at `N`, the point where its inner edge crosses the ring circle,
+because above `N` that edge's partner is the junction block and below it the ring: one
+edge with two partners is the partial-edge seam the arc had already refused. **Four extra
+blocks; the seam table gains eight entries and loses two — each ring's `weld.i1 ~ free.i0`
+goes, because the fillet block now separates them and they meet at a single POINT — and
+it is written in `_seam_table`'s own shape** — only two of the
+fourteen `reverse` flags depend on the genome, the same two the shipped table has.
+
+#### AND PART 9's SHALLOW CUT IS PROVED UNCLOSEABLE, WHICH IS THE FINDING
+
+PART 9 priced the re-cut as *"a notch of 7.003 deg at the hub and 2.935 at the rim"*.
+**That notch has no whole-edge blocking at any depth short of the ring's far side.** A cut
+stopping at depth `d` gives the free block's left edge two partners; splitting the free
+block to fix it gives its own right edge two partners, so the split propagates round the
+ring; and the block it propagates into is a **triangle**, because the fillet block's inner
+edge is a concentric offset of an arc TANGENT to the ring circle and is therefore tangent
+to every circle concentric with it. **Measured: that landing closes at 12.864 deg at the
+hub and 4.381 at the rim — scaled Jacobians 0.2226 and 0.0764, the second below the
+barrier outright.** Taking the cut to the bore (hub) / the tyre surface (rim) splits the
+ring into exactly two quads and terminates.
+
+#### TWO PRICES, NEITHER OF THEM THE ONE THAT WAS EXPECTED
+
+**The ring's radial node count is forced to `n_thick`.** The cut carries `n_thick` nodes
+and it is the free block's left edge, whose opposite edge is the next sector's weld
+block's — so `n_collar_r` and `n_rim_r` are **not used by the filleted blocking at all**
+(7 -> 9 at `coarse`, 9 -> 13 at `medium`). §47 anticipated a node-count coupling; this is
+it, and it is why `fillet=None` needs its own path rather than a flag.
+
+**And `R_hub` is now bounded by the SECTOR, not by the block.** §47 measured the block
+clean from 0.05 to 4.00 mm and **it still is** — what runs out first is the ring's free
+block, at **`R_hub` = 3.1297 mm**, where the fillet's tangent point sweeps past the next
+sector's corner. Bisected, because it is the number a gene bound would be written against,
+and `R_hub`'s box runs to 4.0. The rim never binds.
+
+#### THE RADIUS BOX IS NOT THE GENE BOX, AND MEASURING THE DIFFERENCE FOUND A BUG AND A LIMIT
+
+All of the above sweeps radii **at one genome**. `flank_orientation` is a property of the
+centreline and its own docstring records that **only 16 of 60 feasible genomes share the
+shipped one's `(+1, +1)`** — so a blocking measured there has been measured on a quarter of
+the design space, and §47's "the whole gene box" meant the radii. Sixteen freshly drawn
+feasible genomes, four per orientation, say two things.
+
+**A bug the radius sweep could not reach.** `sector_blocks` lays both rings out in
+increasing theta whatever the genome does, so that "the next sector" is always `k + 1`;
+this blocking lays each ring from `theta_Q` toward the fillet, so the sector-closing seam
+runs to `k + dirn`. Written `dk = +1` it closes for the shipped genome and **misses by a
+whole sector for a flipped one — 12.6 mm at the hub, 50.0 at the rim.** Fixed, and pinned
+both ways: the seam closes at `dk = dirn` and forcing `+1` re-opens it.
+
+**And the honest scope of everything above.** With that fixed, **every built cell closes at
+all four orientations, to 1.4e-14 mm** — but **6 of the 16 genomes refuse the fillet at
+their own shipped radii** (always the same refusal: the tangent point has passed the next
+sector's corner), and of the 10 that build, **only 4 clear `MIN_SJ_TARGET`** and one folds
+outright, in the TRIMMED SPOKE. **The blocking is fit for STEP 2 and is not yet fit for the
+optimizer**, which are different requirements rather than degrees of one: Step 2 needs one
+filleted mesh at the shipped genome; the optimizer sweeps genomes. Nothing above is
+retracted, and there is now a test whose whole job is to stop "48/48 across the box" being
+quoted as "works everywhere".
+
+#### THE ONE FREE PARAMETER, AND THE ZERO THAT WOULD HAVE BEEN TAKEN BY DEFAULT
+
+The fillet block's inner edge is the arc offset by a cubic-Hermite width, then a radial
+dive. Two constants, re-derived every run against the worst block over the whole box, on a
+grid the report prints in full: `LAYER_ENTRY_SLOPE` **-0.45**, `LAYER_END_OFFSET`
+**1.60**. The surface is a ridge — entry -0.35..-0.60 with end 1.4-1.8 all sit within 0.02
+of the maximum — so the choice is on a plateau rather than tuned.
+
+**The default anyone would have taken is the one that fails.** `entry = 0` is the plain
+boundary layer, and it leaves the end cross-section TANGENT to the far flank — which is
+the junction block's own top edge. Three blocks meet at that node and 180 degrees has to
+be shared; a layer that takes the full wall takes all of it, and the junction block
+becomes a cusp at **min scaled Jacobian 0.0400, against the chosen slope's 0.4272**. And the dive is radial because an offset
+carried to the ring's full depth is a spiral of radius `R + w` about the arc's centre: at
+the gene box's own floor, `R_hub = 0.4`, it folds the weld block. Both measured before the
+construction was chosen, both under test.
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, the default mesh
+bit-identical, no threshold moved, and `wheel_wheel.py` not edited at all** — every block
+is built inside the study from its primitives.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §48
+
+1. **STEP 1b: wire it into `sector_blocks`.** For the first time this item has no unknown
+   geometry in it — the blocking is measured, the seam table is written in
+   `_seam_table`'s shape and under test, and the node-count coupling is named.
+   `sector_blocks` gains four blocks and a re-cut ring under `fillet=`; `_seam_table`
+   gains eight entries and loses two; `BLOCK_ORDER`, `BLOCK_REGION`, `_edge_sets`,
+   `_node_sets` and `modelled_area_reference` follow the eleven names. **The ring blocks
+   keep the SHIPPED radial order per ring** — `_edge_sets` names `hub_tie`/`rim_outer`/
+   `rim_inner_free` by side, and laying both rings out the same way round would move
+   three boundary sets with nothing going red; §48 pins that on the coordinates. **`fillet=None`
+   must stay the default and stay bit-identical.** DONE when
+   `build_wheel(genes, cfg, fillet=True)` has zero non-positive Gauss points at `coarse`
+   and `medium`, `check_seams` passes, and
+   `test_axle_drop_is_exactly_12_fold_periodic` holds to 1e-10 on the FILLETED mesh.
+   **FILLET_PLAN Step 2 becomes reachable the moment it lands** — and Step 2 deserves its
+   own session, because it re-runs `make corner` on a filleted mesh and re-ranks the arc.
+   **Scope, from §48's genome sweep: `fillet=True` lands as a MEASUREMENT INSTRUMENT for
+   one genome. It must NOT be wired into `wheel_objective` or the GA** — 6 of 16 feasible
+   genomes refuse it outright and 6 of the 10 that build sit under the barrier.
+2. **Make the filleted blocking genome-robust** — NEW, and it is what stands between
+   `fillet=True` and the optimizer. Two named causes, both measured in §48: the sector-fit
+   refusal (the hub fillet's tangent point passing the next sector's corner, which is a
+   bound on `R_hub` that depends on the centreline) and the barrier (the trimmed spoke and
+   `<j>_ring_free` are the two blocks that go under). Ranked below 1b because Step 2 does
+   not need it and above the tri-block because nothing else can use the fillet until it is
+   done.
+3. **The rim tri-block, RE-PRICED against §48 rather than against §37.** §37 priced it as
+   partial-edge seams and §46 raised its payoff 4.6x. §48 changes the third term: a block
+   CAN cross a ring circle with whole-edge seams, but only by carrying the cut to the
+   ring's far boundary, and the price of that is a forced radial node count and a factor
+   of 2.2 in the worst block. Re-price before spending; the re-pricing is itself a unit.
+4. **Re-run the pre-flip study artifacts**, `study_deflection_gci.json` first — §45's
+   audit list is the rest, and §45 measured it without doing it.
+5. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+6. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+7. **The element-validity check** (§44) — make the fold guard and the minSJ barrier see
+   sub-element folds.
+
+**`HUBSHARE_PLAN.md` remains off the list**, blocked behind item 1 by its own Step 0 rule
+— now for the ninth arc.
