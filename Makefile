@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -115,6 +115,11 @@ help:
 	@echo "              the boundary-layer block that meshes; and the whole"
 	@echo "              filleted sector, 11 blocks and 14 whole-edge seams, with"
 	@echo "              what it costs the ring. ~85 s, geometry only"
+	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
+	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
+	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
+	@echo "              12 blocks and 17 whole-edge seams; and the gene box says"
+	@echo "              the interior point's RULE is what is missing. ~15 s"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -783,6 +788,55 @@ FILLETBLOCK_OUT ?= study_fillet_block.json
 
 filletblock:
 	$(PY_OPT) -u studies/study_fillet_block.py --out $(FILLETBLOCK_OUT)
+
+# ---------------------------------------------------------------------------
+# THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)
+# ---------------------------------------------------------------------------
+# ~15 s, GEOMETRY AND JACOBIANS ONLY, and off the `studies` critical path like
+# `filletblock`, `fillet` and `junction`.
+#
+# At the FAITHFUL rim -- `uncap` blend 0.0, what the exporter's `_embed` actually uses --
+# the rim junction stops being a quadrilateral: the corner at `far_end` opens to 179.5
+# deg, so the region is a curvilinear TRIANGLE and a four-sided block on it collapses to
+# min scaled Jacobian 0.0072.  §37 named the three-quad Y-partition as the fix and
+# shelved it on two clauses; §51 re-priced both with a scratch probe, said both were
+# wrong, and filed the probe AS a probe with "do not quote these numbers until this
+# exists".  This is what makes them quotable, and it supersedes them.
+#
+# BOTH OF §37's CLAUSES ARE RETIRED, MEASURED.  Clause 1's partial-edge seams: splitting
+# the two shared neighbours instead cascades once and stops -- SEVEN blocks become TWELVE
+# and SEVENTEEN seams, every one a whole edge of both blocks it names, closing at
+# 7.1e-15 mm.  Clause 2's forced 1-element strip: real at §37's own free count (B = 8 ->
+# 7x1, 3x1, 7x3, reproduced here as a self-check) and absent at three of the five B's the
+# algebra admits, because B is the FREE side and its count was never inherited.
+#
+# AND IT MESHES, at the shipped genome, by a wide margin: min scaled Jacobian 0.6262 at
+# `coarse` and 0.5816 at `medium`, against the un-partitioned block's 0.0082 / 0.0083 --
+# a factor of 77 and 70 -- and 3.1x over MIN_SJ_TARGET, with the region's area conserved
+# to 1e-5.  §51's probe said 0.25 and called it a floor; it was one.
+#
+# WHAT STOPS IT, AND IT IS A THIRD THING NEITHER §37 NOR §51 NAMED.  The faithful rim is
+# NOT opt-in -- adopting it moves the mesh under every genome the search touches -- so the
+# gene box is the measurement and one genome is not.  Sixteen freshly drawn feasible
+# genomes, four per flank orientation: the shipped genome's own interior-point rule holds
+# on 12/16 at `coarse` and 10/16 at `medium`, and re-sweeping the point per genome only
+# reaches 15/16 and 12/16.  The ones it folds on are the WIDE weld arcs (16-41 deg against
+# the shipped genome's 2.73), and at `coarse` the two ranges separate cleanly.  So the
+# construction is PROVED and the RULE THAT PLACES ITS INTERIOR POINT is not.
+#
+# A Winslow solve on the interiors changes it by 0.000000: the worst corner is on a held
+# boundary, so the number is set by where the Y's spokes GO.  A CURVED Y is the successor;
+# a better smoother is not.
+#
+# It EXITS NONZERO only on a self-check: the two controls, that every declared seam
+# closes, that there are twelve blocks and seventeen seams, that the partition covers the
+# same region as the block it replaces, that the three cut neighbours are SLICES of what
+# the tree builds today, and that the algebra reproduces §37's own arithmetic.  A block's
+# min scaled Jacobian is a characterisation finding and is reported, never gated.
+TRIBLOCK_OUT ?= study_tri_block.json
+
+triblock:
+	$(PY_OPT) -u studies/study_tri_block.py --out $(TRIBLOCK_OUT)
 
 # ---------------------------------------------------------------------------
 # THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds
