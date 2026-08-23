@@ -1013,3 +1013,186 @@ with a red gate (they are written before the non-zero exit), and `study_gradient
    is dated 2026-08-03 with `kinematics` unset, i.e. measured on the LINEAR kernel at
    `coarse`/125 steps. The re-run under SVK is genuinely unmeasured. Pure compute.
 5. **The rim tri-block**, still filed, still not binding (UNCAP_PLAN Step 3).
+   **SUPERSEDED 2026-08-23 — it is BUILT; see STEP 3 RECORD, PART 2 at the end of this
+   file, and PLAN §53.**
+
+---
+
+# STEP 3 RECORD, PART 2 — 2026-08-23. THE TRI-BLOCK IS BUILT. BOTH OF STEP 3's CLAUSES ARE RETIRED, IT MESHES AT 77x THE BLOCK IT REPLACES — AND A THIRD OBSTACLE NEITHER §37 NOR §51 NAMED IS WHAT ACTUALLY STOPS IT
+
+Step 3 stopped **before building it**, on two checks that needed nothing built, and was
+right to: neither of them was about whether the partition works. §51 re-priced both with a
+scratch probe, said both were wrong, filed the probe **as** a probe — *"no driver, no
+artifact, no test — precisely so that nobody quotes it as this project's other numbers may
+be quoted"* — and named the unit that would make it a measurement. This is that unit.
+
+Driver `studies/study_tri_block.py`, artifact `studies/study_tri_block.json`,
+`make triblock`, 23 tests in `tests/test_tri_block.py`, 14 seconds.
+
+**§51's probe numbers are superseded by everything below and may now be quoted from
+here.**
+
+## THE ALGEBRA — CLAUSE 2 IS RETIRED, AND STEP 3's OWN ARITHMETIC WAS NEVER WRONG
+
+Step 3 derived the constraint and it is correct. Writing the three sides as A (the ring
+arc, `n_weld`), B (the free side) and C (the end cross-section, `n_thick`), matching
+opposite sides of the three quads forces `a1 = b2`, `a2 = c1`, `c2 = b1`, hence
+
+```
+    a1 = (A + B - C) / 2
+```
+
+**The input was wrong, not the algebra.** Step 3 took `B = 8` at `coarse` — the count the
+block it was replacing happened to carry — and got 7x1, 3x1, 7x3 with a forced 1-element
+strip. The driver reproduces that exactly and gates its own exit on doing so. But **B is
+the free side and its count was never inherited**: the admissible set is every B with
+`|A - C| < B < A + C` and `A + B - C` even, enumerated rather than argued.
+
+```
+  config  A   C     admissible B          strip-free B
+  coarse  10  4     8, 10, 12             10
+  medium  16  6     12, 14, 16, 18, 20    14, 16, 18
+```
+
+At `coarse` the strip-free choice is unique and Step 3 missed it by one grid point. At
+`medium` three of the five have no strip at all.
+
+## THE SEAMS — CLAUSE 1 IS RETIRED, AND IT IS A CLAIM ABOUT INDICES
+
+Step 3: *"it splits all three sides, two of which are shared ... **so it needs PARTIAL-EDGE
+SEAMS**, and whole-edge single ownership is what this module's docstring calls the whole
+safety net."* True **only if the neighbours may not be split**, and §48 is the whole
+argument that they may.
+
+`rim_band_weld` is cut in theta at `M_A`; the `spoke` is cut along a j-line at `M_C`; that
+cascades once into `hub_junction`, because the spoke's hub row IS the junction's `left`
+edge, and **stops** there, because the junction's cut runs across the collar arc rather
+than along it. **Seven blocks become twelve and SEVENTEEN seams, every one a whole edge of
+both blocks it names.**
+
+```
+  the twelve                          the seventeen, by kind
+  spoke_eta_lo / spoke_eta_hi         1  the cut through the spoke
+  hub_junction_lo / hub_junction_hi   2  the spoke's hub cross-section, in two pieces
+  rim_tri_t / rim_tri_q / rim_tri_b   1  the cut through the hub junction
+  hub_collar_weld / hub_collar_free   2  the spoke's rim cross-section, onto two quads
+  rim_band_weld_q / rim_band_weld_t   3  the Y's own internal edges
+  rim_band_free                       3  the two arcs onto their ring blocks
+                                      1  the cut through the ring's weld block
+                                      2  weld to free, both rings
+                                      2  free to the NEXT sector's weld — closes the 360
+```
+
+**Every seam closes, at both configs, worst gap 7.1e-15 mm**, and the Y's own three are
+exactly 0.0 because each internal edge is passed as the SAME array to both of its blocks.
+
+## AND IT MESHES — BY A FACTOR OF 77
+
+```
+  config   shipped blend 1.0   faithful QUAD   faithful TRI       x   clears 0.2
+  coarse       0.782735          0.008176        0.626233      76.6x     YES
+  medium       0.782926          0.008251        0.581582      70.5x     YES
+```
+
+`MIN_SJ_TARGET` is 0.2 with a barrier weight of 3000, and it is imported from
+`wheel_objective` rather than written down. The tri-block clears it by **3.1x** and lands
+at **80%** of the shipped mesh's own 0.783 — while delivering the 1.06 degree corner
+fidelity that was the whole point. **§51's probe said ~0.25 and called it "a floor rather
+than an estimate". It was one.**
+
+The three neighbours are **sliced, not rebuilt**: `spoke`, `hub_junction` and
+`rim_band_weld` come out of `sector_blocks` and are cut at a node index, bit-for-bit, so
+the 77x is a measurement of a partition and not a comparison of two constructions. Pinned
+at `== 0.0`, not at a tolerance. The three quads' areas sum to the quad block's to 1e-5
+relative — they tile the region rather than overlap it, and the residual is the free
+side's own re-distribution, which the partition is allowed.
+
+## THE THIRD OBSTACLE, WHICH IS THE ONE THAT ACTUALLY STOPS IT
+
+**The faithful rim is not opt-in.** §48 could measure the filleted blocking at one genome,
+name six refusals out of sixteen and still hand STEP 2 a usable instrument, because
+`fillet=` is passed by a study and never by the optimizer. Adopting blend 0.0 changes
+`sector_blocks` for **every genome the search touches**. So the gene box is the
+measurement and one genome is not.
+
+Sixteen freshly drawn feasible genomes, four per flank orientation, `B` held at its
+per-config value because element counts may not depend on the design:
+
+```
+  config   fixed rule valid   best-per-genome valid   clears 0.2 (fixed)   seams
+  coarse       12/16                15/16                  11/12          all close
+  medium       10/16                12/16                  10/10          all close
+```
+
+`fixed rule` applies the shipped genome's own barycentric triple — barycentric weights are
+scale-free, so that is a construction with no free parameter left, which is what would
+actually ship. `best-per-genome` re-sweeps the interior point and is **the upper bound any
+adaptive rule could reach**. It is not 16/16 either.
+
+**The mechanism is named, not just counted.** The ones it folds on are the WIDE weld arcs:
+15.9-41.2 degrees against 3.7-11.9 on the ones it does not, at `coarse`, where the two
+ranges separate cleanly. The shipped genome's arc is **2.73 degrees**, at the very bottom
+of the box. A barycentric point tuned on a 2.7-degree sliver is in the wrong place on a
+40-degree triangle.
+
+**So the CONSTRUCTION is proved and the RULE THAT PLACES ITS INTERIOR POINT is not.**
+
+## AND A GENERATED INTERIOR CANNOT HELP — WHICH NAMES THE SUCCESSOR
+
+A Winslow solve on each quad's interior, boundaries held, changes the number by
+**0.000000** at both configs. The worst corner is ON a held boundary. The Y's three spokes
+are boundaries of two blocks each, so per-block smoothing holds them by definition — the
+number is set by **where the Y's spokes go**, not by how the interiors are filled.
+
+Same shape as PART 9's route-2 invariance, and the same conclusion: **a curved Y is the
+successor; a better smoother is not.**
+
+## THE RULE THAT PICKS THE CELL, AND ONE PLACE IT WAS NOT FOLLOWED AND SHOULD NOT BE
+
+The argmax of the worst tri block's min scaled Jacobian over the **published** grid, and
+the grid is published in full so a plateau and a tuned point are told apart by looking.
+**Here it is a tuned point and the report says so**: only 6.9% of valid cells at `coarse`
+and 8.3% at `medium` sit within 10% of the maximum, and only 29/173 and 24/173 cells are
+valid at all.
+
+A finer local re-sweep is reported and **deliberately not adopted**. At `medium` it gains
+0.045 by walking `w_Pt` down to the search box's own clamp, and that cell generalises
+across the gene box *worse* than the grid point it beats. A number that only exists at
+four decimal places of one weight is the thing §48's ridge rule was written to keep
+visible rather than to chase.
+
+## THE BUG THE INSTRUMENT FOUND, RECORDED BECAUSE OF HOW IT HID
+
+The first seam table paired the wrong halves of the cut spoke and the cut hub junction.
+The hub junction's `left` edge is the spoke's hub row **reversed** when the straddling
+flank there is at eta = +1, so the low-j half of one is the high-j half of the other. At
+`coarse` `n_thick` splits 2/2, so **the node counts still agreed** — only the coordinates
+disagreed, by 0.62 mm. A seam check that reported closure as a single boolean would have
+read "17/17 counts agree" and said nothing. It reports the count and the gap separately,
+which is why this took one run to find. `test_the_seam_table_follows_the_GENOME_and_not_a_constant`
+reproduces the mismatch and asserts that the counts still agree under it.
+
+The second was the ring's weld block: its low-theta end is `P_t` when the junction's arc
+ascends and `Q` when it descends, so which half is which follows the genome. Exactly the
+trap §48 hit on the sector-closing seam's `dk`.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, `UNCAP_DEFAULT` still `(True, 1.0)`, and `sector_blocks` still returns seven
+blocks.** Blend 0.0 is measured, never adopted. `test_nothing_here_is_wired_into_the_mesh_the_tree_BUILDS`
+pins all of it.
+
+## THE SUCCESSORS THIS STEP LEAVES
+
+1. **A rule for the interior point that holds across the gene box.** This is the whole of
+   what is missing, and it is now a well-posed problem rather than an open one: 16 drawn
+   genomes with their triangles' arc spans, side lengths and three wedge angles are in the
+   artifact, the failure mode is the wide arc, and the upper bound any rule can reach at
+   the current `B` is 15/16 and 12/16 — so a rule alone may not be enough and the curved Y
+   below may be needed with it.
+2. **The curved Y.** The Winslow column says the number is set by where the spokes go, and
+   they are straight lines today. This is the only lever the measurement points at.
+3. **Then, and only then, the decision to adopt the faithful rim** — which is a model
+   change with its own baseline: full `make test`, `make studies`, and the mass /
+   hub-share / axle-drop deltas, exactly as Step 4 needed for the flip.
