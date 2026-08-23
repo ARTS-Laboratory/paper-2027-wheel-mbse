@@ -1503,7 +1503,7 @@ make filletblock                                          # §47/§48, ~85 s: ca
                                                           # does mesh; and the whole filleted
                                                           # sector, 11 blocks and 14 whole-edge
                                                           # seams, with what it costs the ring
-make test                                                 # 631 passed / 3 xfailed, ~32 min
+make test                                                 # 633 passed / 3 xfailed, ~32 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
@@ -7782,3 +7782,87 @@ drivers and tests.
 8. **The element-validity check** (§44) — and it is worth more now than it was: the
    filleted mesh is the first construction in this tree whose validity the corner-only
    checks were never going to be able to judge.
+
+### §51 — 2026-08-23. THE RE-CUT DOES NOT RESCUE THE FAITHFUL RIM AND MAKES IT WORSE, SO THE TRI-BLOCK KEEPS ITS PLACE — AND A PROBE SAYS §37 PRICED IT WRONG IN BOTH CLAUSES
+
+§50 ranked the rim tri-block third and said to re-price it against §48 rather than
+against §37. The first half of that re-pricing is cheap, is a question about the
+construction that now ships, and is measured here. The second half is a probe and is
+recorded AS a probe.
+
+#### THE CHEAP HALF, MEASURED AND UNDER TEST
+
+§46 promoted the tri-block because on the FAITHFUL rim — `uncap` blend 0.0, the geometry
+it exists to make buildable — `rim:P_c`'s admissible fillet radius goes 0.561 -> 2.585 mm,
+and that corner carries the wheel's global peak. The obvious hope after §50 is that the
+re-cut which fixed `P_t` also fixes blend 0.0 and retires the tri-block with it.
+
+**It does not, and it makes it worse.**
+
+```
+  config   rim blend   unfilleted worst   filleted worst   worst block
+  coarse       1.00        0.782735          0.359414      rim_ring_free
+  coarse       0.50        0.449821          0.359548      rim_ring_free
+  coarse       0.25        0.222789          0.215146      rim_junction
+  coarse       0.00        0.008176          0.000343      rim_junction
+  medium       0.00        0.008251          0.003334      rim_junction
+```
+
+The unfilleted column is the control and it lands where §37 did: 0.008176 by the block
+instrument here, 0.007208 by `quality_report` on the ASSEMBLED mesh, which is §37's
+committed number to the digit. **What collapses at blend 0.0 is a
+corner opening to 180 degrees** — the junction block's corner at `far_end`, where the
+uncap edge becomes the flank's own straight continuation — measured at **179.35 deg** at
+`coarse` against 128.12 at the shipped blend. The filleted junction block is SHORTER, so
+the straight corner dominates more of it. Pinned as the ORDERING rather than as values, so
+a construction that ever did fix it would go red and reopen the ranking.
+
+#### THE PROBE, WHICH IS NOT A MEASUREMENT AND IS FILED AS ONE
+
+§37 priced the tri-block on two clauses and a scratch probe says both are wrong. **It is
+recorded here as a probe — no driver, no artifact, no test — precisely so that nobody
+quotes it as this project's other numbers may be quoted.** What it would take to make it a
+measurement is named at the end.
+
+**Clause 1, "it needs PARTIAL-EDGE SEAMS".** True only if the neighbours may not be split,
+and §48 is the whole argument that they may: the Y-partition halves the ring arc and the
+end cross-section, so split `rim_band_weld` in theta and split the `spoke` along a j-line,
+which cascades once into the hub junction block and stops. The probe's arithmetic says
+7 blocks -> 12, whole-edge throughout. **Not built.**
+
+**Clause 2, "forced 1-element strips".** §37's algebra is right and its inputs are not.
+Writing the three sides as A (arc, `n_weld`), B (free) and C (cross-section, `n_thick`),
+the Y-partition forces `a1 = b2`, `a2 = c1`, `c2 = b1`, so `a1 = (A + B − C)/2`. §37 took
+**B = 8** order-2 elements and got 7/3/1 — the strip. **B is the FREE side and its count is
+free**; at B = 10, the same count the arc has, the splits are 8/2, 2/8, 2/2 and there is no
+strip at all. The same at `medium`: A = 16, C = 6, B = 16 gives 13/3, 3/13, 3/3.
+
+**And the three quads mesh.** Built in a scratch probe at both configs, swept over B and
+over the interior point: worst min scaled Jacobian **~0.25**, zero non-positive Gauss
+points, against the un-partitioned block's **0.0082** by the same instrument — a factor of
+**30** in the number that shelved it. The interior point was a weighted centroid and nothing was smoothed, so
+0.25 is a floor rather than an estimate.
+
+**What would make this a measurement**: the driver §48 got — build all twelve blocks and
+all their seams, sweep the free count and the interior point, and report validity and
+seam closure at both configs. That is the unit, and it is ranked 2 below.
+
+#### WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, and the default mesh bit-identical.** `uncap`'s default is unchanged at
+`(True, 1.0)`; blend 0.0 is swept, never adopted.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §51
+
+1. **FILLET_PLAN Step 2** — reachable since §50 and unchanged at the top. Its own session.
+2. **The rim tri-block, BUILT** — promoted from "re-price" to "build", because the
+   re-pricing came back in its favour on both of §37's clauses and the probe meshes at 30x
+   the number that shelved it. §48's driver is the template. **Do not quote §51's probe
+   numbers until this exists.**
+3. **Make the filleted blocking genome-robust** (§48) — 6 of 16 feasible genomes refuse it.
+4. **Make `modelled_area_reference` fillet-aware** (§50).
+5. **The REST of §45's audit list** (§49).
+6. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+7. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+8. **The element-validity check** (§44).
