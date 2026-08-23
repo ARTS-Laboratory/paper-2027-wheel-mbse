@@ -1196,3 +1196,74 @@ pins all of it.
 3. **Then, and only then, the decision to adopt the faithful rim** — which is a model
    change with its own baseline: full `make test`, `make studies`, and the mass /
    hub-share / axle-drop deltas, exactly as Step 4 needed for the flip.
+
+---
+
+# STEP 3 RECORD, PART 3 — 2026-08-23. A FIXED RULE DOES REACH THE CEILING, AND FOR ONE CONFIG IT COSTS THE SHIPPED GENOME NOTHING TO GET THERE
+
+PART 2's item 1 asked whether a FIXED barycentric triple — the one with no free parameter
+left, the one that would actually ship — can be re-derived to reach every genome its own
+`best_w` reaches, rather than the sixteen-genome argmax `sweep` performs at one genome
+alone. `sweep_w_genomes`, new in `studies/study_tri_block.py`, answers it: a joint argmax
+of the worst genome's worst block, over the same sixteen genomes `sweep_genomes` already
+draws PLUS the shipped genome (named and appended, exactly as
+`study_fillet_block.sweep_layer_profile_genomes` does for its own shipped genome), against
+a dedicated 25x25 barycentric grid published in full (`GENOME_ROBUST_X_GRID_N`).
+
+**The objective is `n_clear` first and the worst value second, not the reverse.** A raw
+argmax of the worst genome's worst block chases whichever genome sits closest to folding,
+which turned out to be a DIFFERENT question from how many genomes clear the barrier the
+optimizer actually enforces — at `coarse` the published grid has exactly one cell where
+every fixable genome is simultaneously valid, and it is not the cell a worst-case argmax
+would have picked, nor is it the cell that clears the most genomes. Ranking by
+`(n_clear, worst)` finds the one that does both.
+
+```
+config   n_cells   current w valid/clear   genome-robust w valid/clear   shipped genome
+coarse      16           13 / 12                  15 / 13               0.6262 (UNCHANGED)
+medium      13           11 / 11                  13 / 12               0.4336 (was 0.5816)
+```
+
+`n_cells` is the drawn genomes `sweep_w_genomes` can even ask the question of — the sixteen
+`sweep_genomes` draws, MINUS the one no `w` rescues at that config (`best_w_valid: False`:
+`41.2°` alone at `coarse`; `35.3°, 15.9°, 41.2°, 22.7°` at `medium`) — PLUS the shipped
+genome, appended and counted in. It is not the same denominator as PART 2's "12/16" /
+"10/16" table, which counts against all sixteen drawn genomes without excluding the
+unfixable one; both are reported in the artifact and neither should be read as the other.
+
+**At `coarse` this is free.** The genome-robust cell leaves the shipped genome's own min
+scaled Jacobian at 0.6262 — bit-identical to today's single-genome rule — while lifting two
+more of the drawn genomes off the fold and one more over the barrier. There is no reason
+not to prefer it if this arc is picked up.
+
+**At `medium` it is not free, but it is cheap.** The shipped genome's own number drops from
+0.5816 to 0.4336 — the quoted multiplier over the collapse falls from roughly 70x to
+roughly 52x — while two more drawn genomes stop folding and one more clears the barrier.
+0.4336 still clears `MIN_SJ_TARGET` by more than double, so nothing that reads this file's
+headline table as "does the tri-block clear the barrier" would see a different answer; only
+the specific multiplier would print a smaller number.
+
+**It is measured, not adopted, and the reason is different from every prior use of that
+phrase in this project.** `blend 0.0` and §48/§54's fillet profile were reported-not-shipped
+because adopting them would move a mesh the OPTIMIZER or an already-published FEA result
+depends on. Nothing here does: the tri-block is not wired into `sector_blocks`, so
+`chosen` — the cell `sweep`'s single-genome argmax picks — is read by nothing except this
+file's own printed table and `per["sector"]` in the committed artifact. Adopting the
+genome-robust cell would change a quoted number and nothing else. It is left unshipped
+anyway, so that a single stated rule ("the argmax over the published grid, at the shipped
+genome") keeps meaning one thing, and so that the choice of which number this arc quotes
+going forward is made by whoever next picks it up rather than by this session substituting
+one argmax for another inside a file that already had a settled headline.
+
+**What this retires, and what it does not.** PART 2's item 1 asked whether "a rule alone
+may not be enough" — a FIXED rule reaches full validity on every genome its own `best_w` (a
+free per-genome parameter) reaches at `medium` (13/13), and within one genome of it at
+`coarse` (15/16), which is the strongest form of "a rule holds across the gene box" this
+file can state without inventing a new construction. What it does not do is rescue the
+genome no `w` reaches at either config (41.2°, plus three more that are unreachable at
+`medium` alone) — that is still the curved Y's question, unchanged from PART 2, and the
+ceiling itself says a rule alone cannot close it.
+
+`tests/test_tri_block.py::test_a_genome_robust_w_reaches_more_of_the_box_without_being_adopted`
+pins the comparison at the two named cells (re-derived fresh, not read from the artifact)
+and that `chosen` has not moved.

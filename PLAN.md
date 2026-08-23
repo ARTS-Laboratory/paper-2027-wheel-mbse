@@ -8274,3 +8274,51 @@ this section touches.
 8. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 9. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 10. **The element-validity check** (§44).
+
+---
+
+### §55 — 2026-08-23. THE TRI-BLOCK'S INTERIOR-POINT RULE HOLDS ACROSS THE GENE BOX AT ONE CONFIG FOR FREE, AND AT THE OTHER FOR A PRICE SMALLER THAN THE ONE THE FILLET PAID
+
+§54's ranking put "a rule for the tri-block's interior point that holds across the gene
+box" at 1, framed as the same shape of problem the fillet's layer profile was. It is: a
+joint argmax of the worst genome's worst block, over the sixteen genomes UNCAP_PLAN Step 3
+PART 2 already drew plus the shipped genome, against a dedicated 25x25 barycentric grid
+(`sweep_w_genomes`, new in `studies/study_tri_block.py`) reaches the SAME validity ceiling
+`best_w` — a free per-genome parameter — reaches at `medium` (13/13 of the reachable
+genomes) and within one of it at `coarse` (15/16). Full record: UNCAP_PLAN.md STEP 3
+RECORD PART 3.
+
+**The price is asymmetric, and at one config there isn't one.** At `coarse` the
+genome-robust cell leaves the shipped genome's own number UNCHANGED — 0.6262 either way —
+while fixing two more drawn genomes. At `medium` it costs the shipped genome's quoted
+multiplier (0.5816 -> 0.4336, roughly 70x -> 52x over the collapse) while fixing two more
+drawn genomes and gaining one more over the barrier; 0.4336 still clears `MIN_SJ_TARGET` by
+more than double. Measured and not adopted — but for a reason distinct from every prior use
+of that phrase: nothing reads the tri-block's `chosen` cell except this file's own printed
+table, since the construction is not wired into `sector_blocks` at all. Adopting the
+genome-robust cell would change a quoted number and nothing else, which is why the choice
+is left to whoever next picks up this arc rather than decided here.
+
+**What is still open.** The genome no `w` reaches at either config (41.2°, plus three more
+unreachable at `medium` alone) is untouched — that is the curved Y's question, and the
+ceiling itself says a rule alone cannot close it. Item 1 below is narrowed accordingly.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §55
+
+1. **The curved Y.** Narrowed from "a rule for the interior point that holds across the
+   gene box, and the curved Y it probably needs alongside" — the rule half now has a
+   measured (if unshipped) answer at the ceiling `best_w` sets, and what is left is the one
+   genome per config no placement of the straight Y's interior point can rescue. The
+   Winslow column said the number is set by where the spokes go, not by how the interiors
+   are filled, and they are straight lines today.
+2. **The filleted blocking's REFUSAL half** — the hub sector-fit limit, 6 of 16 feasible
+   genomes, unchanged from §54.
+3. **A feasibility gate that catches the flank near-self-intersection §54 found.**
+   Unchanged from §54.
+4. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Unchanged.
+5. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+6. **Make `modelled_area_reference` fillet-aware** (§50).
+7. **The REST of §45's audit list** (§49).
+8. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+9. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+10. **The element-validity check** (§44).

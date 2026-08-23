@@ -836,6 +836,78 @@ def sweep_genomes(cfg_name, B, w_fixed, per_orientation=GENOME_SWEEP_PER_ORIENTA
                               if ok else None)}
 
 
+# `sweep_genomes` already tells us WHICH drawn genomes no placement of X can rescue at this
+# `B` (`best_w_valid` is False for them) -- that is the "curved Y" question named in
+# UNCAP_PLAN Step 3 PART 2 and is not this one.  What it leaves open is whether the FIXED
+# rule -- the one with no free parameter left, the one that would actually ship -- can be
+# re-derived to reach every genome ITS OWN `best_w` can, the same question §48 PART 13
+# asked of the fillet's layer profile.  `GENOME_ROBUST_X_GRID_N` is its own grid, published
+# in full for the same reason every grid here is: `sweep`'s own single-genome argmax showed
+# a plateau of only 6.9%-8.3% of valid cells, and a joint argmax over sixteen genomes can be
+# a far narrower ridge than that -- visible only by publishing the surface, not by trusting
+# the one cell an argmax reports.
+GENOME_ROBUST_X_GRID_N = 25
+
+
+def sweep_w_genomes(cfg_name, B, genome_rows, shipped_genes, current_w, grid=None):
+    """The interior point's barycentric triple, re-derived against the GENOME BOX.
+
+    `genome_rows` is `sweep_genomes`'s own group rows for this config.  The shipped genome
+    is NOT one of them -- `sweep_genomes` draws sixteen OTHER genomes -- so it is appended
+    here explicitly and named rather than folded in silently, exactly as
+    `study_fillet_block.sweep_layer_profile_genomes` appends its own shipped genome.  A
+    genome `sweep_genomes` already marked `best_w_valid: False` is EXCLUDED and named: no
+    placement of X rescues it at this `B`, so it would dominate every worst-case comparison
+    for a reason this sweep cannot fix and should not be blamed for.
+
+    The objective is `n_clear` first and `worst_min_scaled_jacobian` second, not the
+    reverse.  A raw argmax of the worst genome's worst block chases whichever genome is
+    CLOSEST to folding, which is a different question from how many genomes clear the
+    barrier the optimizer actually enforces -- the published grid at `coarse` has exactly
+    one cell where all fixable genomes are simultaneously valid, and it is not the cell a
+    worst-case argmax would pick.
+    """
+    grid = grid if grid is not None else x_grid(n=GENOME_ROBUST_X_GRID_N)
+    fixable = [r for r in genome_rows if r.get("best_w_valid")]
+    excluded = [r for r in genome_rows if not r.get("best_w_valid")]
+    regs = [region(np.asarray(r["genes"], float), cfg_name, blend=0.0) for r in fixable]
+    regs.append(region(np.asarray(shipped_genes, float), cfg_name, blend=0.0))
+    n_cells = len(regs)
+
+    def stats(w):
+        worst, n_valid, n_clear = 9.0, 0, 0
+        for reg in regs:
+            c = cell(reg, B, w)
+            worst = min(worst, c["min_scaled_jacobian"])
+            n_valid += int(c["all_valid"])
+            n_clear += int(c["min_scaled_jacobian"] > MIN_SJ_TARGET)
+        return {"w": [float(x) for x in w], "worst_min_scaled_jacobian": float(worst),
+                "n_valid": n_valid, "n_clear": n_clear}
+
+    rows = [stats(w) for w in grid]
+    rows.sort(key=lambda r: (-r["n_clear"], -r["worst_min_scaled_jacobian"]))
+    best = rows[0]
+    at_current = stats(tuple(current_w))
+    shipped_reg = regs[-1]
+    shipped_at_best = cell(shipped_reg, B, tuple(best["w"]))
+    shipped_at_current = cell(shipped_reg, B, tuple(current_w))
+    fully_valid = [r for r in rows if r["n_valid"] == n_cells]
+    return {
+        "n_cells": n_cells, "n_fixable": len(fixable),
+        "excluded_arc_span_deg": [r["arc_span_deg"] for r in excluded],
+        "grid_n": len(grid),
+        "best": best, "at_current_w": at_current,
+        "n_fully_valid_cells": len(fully_valid),
+        "shipped_min_scaled_jacobian_at_best": shipped_at_best["min_scaled_jacobian"],
+        "shipped_clears_target_at_best": bool(
+            shipped_at_best["min_scaled_jacobian"] > MIN_SJ_TARGET),
+        "shipped_min_scaled_jacobian_at_current": shipped_at_current["min_scaled_jacobian"],
+        "shipped_clears_target_at_current": bool(
+            shipped_at_current["min_scaled_jacobian"] > MIN_SJ_TARGET),
+        "rows": rows,
+    }
+
+
 # ---------------------------------------------------------------------------
 # BUILD
 # ---------------------------------------------------------------------------
@@ -895,6 +967,9 @@ def build(genes, configs, genome_sweep=True):
             per["winslow"] = winslow_column(reg, chosen["B"], chosen["w"])
             if genome_sweep:
                 per["genomes"] = sweep_genomes(name, chosen["B"], chosen["w"])
+                grows = [r for v in per["genomes"]["groups"].values() for r in v]
+                per["genome_robust_w"] = sweep_w_genomes(
+                    name, chosen["B"], grows, genes, chosen["w"])
         rec["per_config"][name] = per
 
     rec["self_checks"] = self_checks(rec)
@@ -1069,6 +1144,38 @@ def _print(rec):
             print(f"      (the shipped genome's is {c['region']['arc_span_deg']:.3f} deg, "
                   f"at the very bottom of the box; the two ranges "
                   f"{'SEPARATE' if sb[0] > sg[-1] else 'OVERLAP'})")
+
+    print("\n  THE INTERIOR POINT, RE-DERIVED AGAINST THE GENOME BOX -- MEASURED, NOT "
+          "ADOPTED")
+    for name, c in rec["per_config"].items():
+        gr = c.get("genome_robust_w")
+        if not gr:
+            continue
+        cur, best = gr["at_current_w"], gr["best"]
+        print(f"    {name}  n_cells = {gr['n_cells']} ({gr['n_fixable']} drawn + shipped), "
+              f"excluded (no `w` rescues them): "
+              f"{[round(a, 1) for a in gr['excluded_arc_span_deg']]} deg")
+        print(f"      current w {tuple(round(x, 3) for x in cur['w'])}: "
+              f"worst {cur['worst_min_scaled_jacobian']:.4f}, "
+              f"{cur['n_valid']}/{gr['n_cells']} valid, "
+              f"{cur['n_clear']}/{gr['n_cells']} clear {MIN_SJ_TARGET}")
+        print(f"      genome-robust w {tuple(round(x, 3) for x in best['w'])}: "
+              f"worst {best['worst_min_scaled_jacobian']:.4f}, "
+              f"{best['n_valid']}/{gr['n_cells']} valid, "
+              f"{best['n_clear']}/{gr['n_cells']} clear {MIN_SJ_TARGET}   "
+              f"({gr['n_fully_valid_cells']}/{gr['grid_n']} grid cells are fully valid)")
+        print(f"      the SHIPPED genome at the genome-robust w: "
+              f"{gr['shipped_min_scaled_jacobian_at_best']:.4f} "
+              f"(clears {MIN_SJ_TARGET}: {gr['shipped_clears_target_at_best']}), "
+              f"against {gr['shipped_min_scaled_jacobian_at_current']:.4f} today")
+    print("    a fixed rule exists that reaches nearly every genome its own best-per-genome")
+    print("    point can reach, at a per-config cost to the shipped genome's own margin "
+          "shown above (zero at")
+    print("    some configs, real at others).  Reported and not shipped as THE rule, on "
+          "§53's `blend 0.0`")
+    print("    precedent: nothing yet reads `chosen` besides this file's own headline "
+          "table, so adopting it")
+    print("    changes a quoted number and nothing else.")
 
     print("\n  SELF-CHECKS")
     for k, v in rec["self_checks"].items():

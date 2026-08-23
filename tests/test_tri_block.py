@@ -445,6 +445,53 @@ def test_the_gene_box_is_what_this_does_NOT_deliver(report):
         assert g["all_seams_close"] is True, "the seams are not what fails"
 
 
+def test_a_genome_robust_w_reaches_more_of_the_box_without_being_adopted(genes, report):
+    """A fixed rule exists that beats the single-genome one across the drawn genomes.
+
+    Re-derived fresh at the two specific cells the artifact names -- `at_current_w` and
+    `best` -- rather than by re-running the whole published grid, which is `make triblock`'s
+    own job and would make this file as slow as that driver.  `sweep_w_genomes` is not
+    wired into `chosen`: adopting it would only change a quoted number in this file's own
+    headline table, and this pins that it has NOT been changed.
+    """
+    for name, per in report["per_config"].items():
+        gr = per["genome_robust_w"]
+        grows = [r for v in per["genomes"]["groups"].values() for r in v]
+        fixable = [r for r in grows if r.get("best_w_valid")]
+        excluded = [r for r in grows if not r.get("best_w_valid")]
+        assert [r["arc_span_deg"] for r in excluded] == gr["excluded_arc_span_deg"]
+        assert gr["n_cells"] == len(fixable) + 1
+
+        regs = [tb.region(np.asarray(r["genes"], float), name, blend=0.0) for r in fixable]
+        regs.append(tb.region(genes, name, blend=0.0))
+        B = per["sector"]["B"]
+
+        def stats(w):
+            worst, n_valid, n_clear = 9.0, 0, 0
+            for reg in regs:
+                c = tb.cell(reg, B, w)
+                worst = min(worst, c["min_scaled_jacobian"])
+                n_valid += int(c["all_valid"])
+                n_clear += int(c["min_scaled_jacobian"] > wo.MIN_SJ_TARGET)
+            return worst, n_valid, n_clear
+
+        worst_cur, nv_cur, nc_cur = stats(tuple(gr["at_current_w"]["w"]))
+        worst_best, nv_best, nc_best = stats(tuple(gr["best"]["w"]))
+        assert abs(worst_cur - gr["at_current_w"]["worst_min_scaled_jacobian"]) < 1.0e-9
+        assert (nv_cur, nc_cur) == (gr["at_current_w"]["n_valid"], gr["at_current_w"]["n_clear"])
+        assert abs(worst_best - gr["best"]["worst_min_scaled_jacobian"]) < 1.0e-9
+        assert (nv_best, nc_best) == (gr["best"]["n_valid"], gr["best"]["n_clear"])
+
+        # the genome box is reached at least as well by the genome-robust choice
+        assert gr["best"]["n_valid"] >= gr["at_current_w"]["n_valid"]
+        assert gr["best"]["n_clear"] >= gr["at_current_w"]["n_clear"]
+
+        # and it is measured, not adopted: the headline cell is still the single-genome rule
+        assert per["sector"]["w"] == per["genomes"]["w_fixed"]
+        assert per["sector"]["w"] != gr["best"]["w"]
+        assert gr["shipped_clears_target_at_best"]
+
+
 def test_the_free_count_is_a_CONFIG_constant_and_not_a_genome_one(report):
     """`B` sets element counts, so it may not vary with the genome.
 
