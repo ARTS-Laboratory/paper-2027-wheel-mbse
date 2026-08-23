@@ -106,9 +106,11 @@ help:
 	@echo "              the field AT the corner — radial decay, and whether the"
 	@echo "              peak diverges under refinement — against Williams' wedge"
 	@echo "              eigenvalue. 8.5 s for the whole ladder (PLAN §30)"
-	@echo "make filletblock  can the fillet BE a block? the region PART 3 named has"
-	@echo "              two cusps; the boundary-layer block that meshes, and what"
-	@echo "              it asks of the collar. ~42 s, geometry only"
+	@echo "make filletblock  can the fillet BE a block, and can the sector be"
+	@echo "              blocked around it? the region PART 3 named has two cusps;"
+	@echo "              the boundary-layer block that meshes; and the whole"
+	@echo "              filleted sector, 11 blocks and 14 whole-edge seams, with"
+	@echo "              what it costs the ring. ~85 s, geometry only"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -709,9 +711,10 @@ fillet:
 	$(PY_OPT) -u studies/study_fillet_fold.py --out $(FILLET_OUT)
 
 # ---------------------------------------------------------------------------
-# CAN THE FILLET BE A BLOCK AT ALL?  (FILLET_PLAN.md PART 9)
+# CAN THE FILLET BE A BLOCK, AND CAN THE SECTOR BE BLOCKED AROUND IT?
+# (FILLET_PLAN.md PART 9 and PART 10)
 # ---------------------------------------------------------------------------
-# ~42 s, GEOMETRY AND JACOBIANS ONLY, and like `fillet` and `junction` it is off the
+# ~85 s, GEOMETRY AND JACOBIANS ONLY, and like `fillet` and `junction` it is off the
 # `studies` critical path.  `make fillet` settled what "valid" MEANS for a filleted mesh
 # (det J at the Gauss points); this asks the question in front of it — whether either of
 # PART 3's two routes has a REGION that can be a block — before a week is spent building
@@ -722,8 +725,31 @@ fillet:
 # that route 2's failing angle is between two BOUNDARY curves and an elliptic interior
 # solve leaves it bit-identical; and that a BOUNDARY-LAYER block whose corners are off
 # both tangent points meshes at every radius in the gene box, min scaled Jacobian 0.91+.
-# It EXITS NONZERO only on a self-check: the controls, the exactness of the cusp at B, or
-# the route-2 invariance.
+#
+# PART 10 added the half that a single block cannot answer: the WHOLE filleted sector,
+# ELEVEN blocks and FOURTEEN seams, every seam whole-edge.  The fillet block's inner edge
+# crosses the ring circle, so it has two partners unless it is split at the crossing, and
+# the ring blocks it lands in have to close as quads whose node counts agree.  Measured
+# at `coarse` and `medium` across the admissible gene box: 48/48 cells valid AND closed,
+# worst min scaled Jacobian 0.357 against the unfilleted sector's 0.783 and
+# MIN_SJ_TARGET's 0.2, worst seam gap 1.4e-14 mm.  Two prices come with it — the ring's
+# radial node count becomes `n_thick` rather than `n_collar_r`/`n_rim_r`, and `R_hub` is
+# now bounded at 3.130 mm by the SECTOR (the tangent point reaches the next sector's
+# corner) rather than by the block, which is still clean at 4.00.
+#
+#
+# AND IT NAMES ITS OWN SCOPE, because the radius box is not the gene box.  Sixteen freshly
+# drawn feasible genomes, four per flank orientation, close every seam — after they found
+# the bug that the sector-closing seam's `dk` follows the genome and not the constant +1 —
+# but SIX REFUSE the fillet at their own shipped radii and only four of the ten that build
+# clear the barrier.  So the blocking is fit for STEP 2, which needs one filleted mesh at
+# one genome, and is NOT yet fit for the optimizer, which sweeps genomes.
+#
+# It EXITS NONZERO only on a self-check: the controls, the exactness of the cusp at B,
+# the route-2 invariance, that every seam of the filleted sector CLOSES whole-edge at the
+# shipped genome AND at every flank orientation, and that the unfilleted sector is still
+# clean.  A block's min scaled Jacobian is a characterisation finding and is reported,
+# never gated.
 FILLETBLOCK_OUT ?= study_fillet_block.json
 
 filletblock:

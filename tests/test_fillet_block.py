@@ -1,5 +1,5 @@
 """
-Pins for `studies/study_fillet_block.py` — FILLET_PLAN.md STEP 1 RECORD PART 9.
+Pins for `studies/study_fillet_block.py` — FILLET_PLAN.md STEP 1 RECORD PARTS 9 and 10.
 
 WHY THIS FILE EXISTS.  `make filletblock` retires both of the routes that have stood at
 the top of PLAN.md's ranked list for nine arcs, and promotes a third that nobody had
@@ -11,6 +11,13 @@ the three claims it rests on are structural rather than numerical:
      generates an interior can move it;
   3. a block whose corners are OFF both tangent points meshes, and does so across the
      whole gene box.
+
+STEP 1a ADDS A FOURTH, AND IT IS THE ONE THAT MATTERS FOR STEP 1b: the eleven blocks and
+fourteen seams of the WHOLE filleted sector close, every seam whole-edge.  A block that
+meshes is not a mesh — the fillet block's inner edge crosses the ring circle, so it has
+two partners unless it is split, and the ring blocks it lands in have to close as quads
+with node counts that agree.  Those tests build the sector fresh and check both halves of
+"closes": the counts, and the coordinates.
 
 EVERY TEST HERE RE-MEASURES.  PART 7's lesson is that a committed artifact whose driver
 takes a bare default rots silently, because every test that reads it reads the same stale
@@ -377,6 +384,282 @@ def test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces(
     assert abs(a["at_P_t_chord_deg"] - row["void_deg"]) < 1e-9, (
         a["at_P_t_chord_deg"], row["void_deg"])
     assert 0.4 < a["chord_minus_tangent_deg"] < 1.0, a["chord_minus_tangent_deg"]
+
+
+# ---------------------------------------------------------------------------
+# THE WHOLE SECTOR: EVERY BLOCK, EVERY SEAM  (STEP 1a)
+# ---------------------------------------------------------------------------
+#
+# A block that meshes is not a mesh.  These pin the BLOCKING — that the eleven blocks
+# close into a sector whose every seam is whole-edge — because that, and not the single
+# block PART 9 measured, is what STEP 1b would be wiring into `build_wheel`.
+
+SECTOR_CFGS = ("coarse", "medium")
+
+
+@pytest.mark.parametrize("cfg", SECTOR_CFGS)
+def test_every_seam_of_the_filleted_sector_is_WHOLE_EDGE(genes, cfg):
+    """No side of any block may appear in the seam table twice.
+
+    This is the one structural rule the arc committed to before building anything, and
+    it is the rule a partial-edge seam breaks: `_seam_table`'s docstring calls whole-edge
+    single ownership "the whole safety net", and a mechanism that lets one edge have two
+    partners can mis-pair silently while every Jacobian stays positive.  Asserted on the
+    TABLE rather than on the geometry, because the table is what STEP 1b copies.
+    """
+    orientation = ww.flank_orientation(genes, ww.get_config(cfg),
+                                       span_mm=ww.HUB_RIM_SPAN_MM)
+    _, info = fb.filleted_sector(genes, cfg, float(genes[12]), float(genes[13]))
+    dirn = {j: info["curves"][j]["dirn"] for j in ("hub", "rim")}
+    seen = {}
+    for a, sa, b, sb, dk, _rev in fb._seam_table_filleted(orientation, dirn):
+        for block, side, shift in ((a, sa, 0), (b, sb, dk)):
+            key = (block, side)
+            assert key not in seen, (
+                f"{block}.{side} is claimed by two seams — that is a partial-edge seam "
+                f"in all but name: {seen[key]} and {(a, sa, b, sb, dk)}")
+            seen[key] = (a, sa, b, sb, dk)
+        assert shift in (-1, 0, 1)
+
+
+@pytest.mark.parametrize("cfg", SECTOR_CFGS)
+def test_the_filleted_sector_closes_at_the_shipped_radii(genes, cfg):
+    """Built fresh, not read: every seam's node counts agree and its nodes coincide.
+
+    The tolerance is `SEAM_TOL_MM` (1e-9 mm) and the measurement comes in at 1e-14, so
+    this is not a tolerance being tuned to pass — it is round-off against a bound four
+    orders wider.
+    """
+    v = fb.sector_verdict(genes, cfg, float(genes[12]), float(genes[13]))
+    assert v["built"], v.get("why")
+    assert v["n_blocks"] == 11 and v["n_seams"] == 14
+    for s in v["seams"]:
+        assert s["counts_agree"], (s["a"], s["side_a"], s["b"], s["side_b"],
+                                   s["n_a"], s["n_b"])
+        assert s["closes"], (s["a"], s["side_a"], s["b"], s["side_b"], s["max_gap_mm"])
+    assert v["max_seam_gap_mm"] < 1e-12
+
+
+@pytest.mark.parametrize("cfg", SECTOR_CFGS)
+def test_every_block_of_the_filleted_sector_INTEGRATES(genes, cfg):
+    """§44's criterion, applied to all eleven: `det J` at the Gauss points, not "it built".
+
+    And against `MIN_SJ_TARGET`, because a mesh the optimizer's barrier would reject is
+    not a mesh this arc can hand to STEP 2.
+    """
+    v = fb.sector_verdict(genes, cfg, float(genes[12]), float(genes[13]))
+    assert v["built"], v.get("why")
+    for name, q in v["blocks"].items():
+        assert q["non_positive_gauss_elements"] == 0, (name, q)
+        assert q["mixed_sign_cells"] == 0, (name, q)
+        assert q["min_scaled_jacobian"] > wo.MIN_SJ_TARGET, (name, q)
+
+
+@pytest.mark.parametrize("R_hub,R_rim", [(0.40, 0.50), (0.91, 2.37), (3.00, 3.00)])
+def test_the_sector_closes_OFF_the_committed_grid_too(genes, R_hub, R_rim):
+    """Including at the gene box's own two floors, which is where the blocking is worst.
+
+    `R_hub = 0.4` is the floor, and it is the cell that ruled out the alternative inner
+    edge: an offset carried to the ring's full depth folds the weld block there, because
+    an offset of `w >> R` is a spiral of radius `R + w` about the arc's centre.
+    """
+    v = fb.sector_verdict(genes, "coarse", R_hub, R_rim)
+    assert v["built"], v.get("why")
+    assert v["all_blocks_valid"] and v["seams_close"], v["worst_block"]
+    assert v["min_scaled_jacobian"] > wo.MIN_SJ_TARGET
+
+
+@pytest.mark.parametrize("junction", ("hub", "rim"))
+def test_the_cut_at_B_reaches_the_rings_FAR_boundary_exactly(genes, junction):
+    """Not a depth that was tuned: the far boundary, to round-off.
+
+    It has to be exact, because that point is a corner of BOTH ring blocks and of the
+    fillet block, and a cut that lands 1e-6 mm short of the bore leaves a sliver that no
+    seam declares.
+    """
+    R = float(genes[12] if junction == "hub" else genes[13])
+    c = fb.sector_curves(genes, "coarse", junction, R)
+    assert c["built"], c.get("why")
+    r_far = fb.far_boundary_radius(junction)
+    assert abs(float(np.linalg.norm(c["L"])) - r_far) < 1e-12
+    # and the dive is radial: L, N and the origin are colinear
+    cross = float(c["N"][0] * c["L"][1] - c["N"][1] * c["L"][0])
+    assert abs(cross) < 1e-9, cross
+
+
+@pytest.mark.parametrize("junction", ("hub", "rim"))
+def test_the_SHALLOW_cut_lands_tangent_which_is_why_it_cannot_close(genes, junction):
+    """PART 9's own block, re-measured for the reason it cannot be the sector's.
+
+    Its inner edge is a concentric offset of an arc TANGENT to the ring circle, so it is
+    tangent to every circle concentric with that one — and the block cornered between the
+    two is a sliver.  Pinned as a bound rather than a value: whatever the width profile
+    does, the residual has to stay small enough that the sliver is unusable, and at the
+    rim it is under `MIN_SJ_TARGET` outright.
+    """
+    row = fb.landing_angles(genes, "coarse", (junction,))[junction]
+    assert row["landing_angle_deg"] < 15.0, row
+    if junction == "rim":
+        assert row["sliver_scaled_jacobian"] < wo.MIN_SJ_TARGET, row
+
+
+def test_the_SECTOR_bounds_the_hub_radius_before_the_BLOCK_does(genes):
+    """The limit moved, and it is worth knowing which limit it is.
+
+    PART 9 measured the boundary-layer block clean out to 4.00 mm and it still is.  What
+    runs out first is the ring's FREE block: past ~3.13 mm the fillet's tangent point has
+    swept past the next sector's corner, and there is no free ring left to block.  A
+    geometric statement about the sector, not a mesh-quality one — so both halves are
+    asserted here, in one test, so neither can be quoted without the other.
+    """
+    lim = fb.sector_fit_limit(genes, "coarse", "hub")
+    assert lim["limited"]
+    assert 3.0 < lim["radius_mm"] < 3.3, lim
+    # the BLOCK alone, at a radius the sector cannot take
+    g = fb.junction_geometry(genes, "coarse", "hub", 4.0)
+    n_th = ww.get_config("coarse").nn(ww.get_config("coarse").n_thick)
+    q = fb.block_quality(fb.candidate_boundary_layer(g, 2 * n_th - 1, n_th))
+    assert q["valid"] and q["min_scaled_jacobian"] > wo.MIN_SJ_TARGET, q
+    assert fb.sector_verdict(genes, "coarse", 4.0, 3.0)["built"] is False
+
+
+@pytest.mark.parametrize("cfg", SECTOR_CFGS)
+def test_the_ring_blocks_radial_count_is_FORCED_to_n_thick(genes, cfg):
+    """The node-count coupling, measured on the blocks rather than described.
+
+    The cut at `B` carries `n_thick` nodes and it is the ring free block's left edge, so
+    that block's radial count is `n_thick`; its right edge is the next sector's weld
+    block's left edge, so the weld's is too.  `n_collar_r` and `n_rim_r` are therefore
+    NOT what the filleted ring uses, and at `coarse` they are 7 against `n_thick`'s 9 —
+    which is exactly why `fillet=None` needs its own path rather than a flag.
+    """
+    cfgo = ww.get_config(cfg)
+    n_th = cfgo.nn(cfgo.n_thick)
+    blocks, info = fb.filleted_sector(genes, cfg, float(genes[12]), float(genes[13]))
+    assert blocks is not None, info["why"]
+    for name in ("hub_ring_weld", "hub_ring_free", "rim_ring_weld", "rim_ring_free"):
+        assert blocks[name].shape[1] == n_th, (name, blocks[name].shape, n_th)
+    assert cfgo.nn(cfgo.n_collar_r) != n_th and cfgo.nn(cfgo.n_rim_r) != n_th, (
+        "the coupling stopped being a coupling — n_collar_r now equals n_thick, so "
+        "this test no longer says anything")
+
+
+@pytest.mark.parametrize("cfg", SECTOR_CFGS)
+def test_the_ring_blocks_keep_the_SHIPPED_radial_order(genes, cfg):
+    """`_edge_sets` and `_node_sets` name three boundary sets by SIDE, not by radius.
+
+    `hub_tie` is `j0`, `rim_outer` is `j1`, `rim_inner_free` is `j0` — and they are named
+    off `hub_collar_*` running bore -> ring circle while `rim_band_*` runs ring circle ->
+    tyre surface.  Laying both rings out the same way round in the filleted blocking
+    would be tidier to write and would move three boundary sets in STEP 1b without
+    anything going red, because a set of the wrong radius is still a set.  Pinned on the
+    COORDINATES, so it cannot be satisfied by a comment.
+    """
+    blocks, info = fb.filleted_sector(genes, cfg, float(genes[12]), float(genes[13]))
+    assert blocks is not None, info["why"]
+    expect = {"hub": (ww.HUB_RADIUS_MM - ww.COLLAR_DEPTH_MM, ww.HUB_RADIUS_MM),
+              "rim": (ww.rim_inner_radius(ww.HUB_RIM_SPAN_MM), ww.RIM_OUTER_RADIUS_MM)}
+    for junction, (r_j0, r_j1) in expect.items():
+        for kind in ("weld", "free"):
+            b = blocks[f"{junction}_ring_{kind}"]
+            for side, want in (("j0", r_j0), ("j1", r_j1)):
+                got = np.linalg.norm(fb._side(b, side), axis=1)
+                assert np.allclose(got, want, atol=1e-9), (
+                    junction, kind, side, float(got.min()), float(got.max()), want)
+
+
+def test_the_entry_slope_is_what_keeps_the_junction_block_open(genes):
+    """The mechanism behind `LAYER_ENTRY_SLOPE`, not just its value.
+
+    Three blocks meet where the fillet block's inner edge leaves the far flank, and 180
+    degrees has to be shared between two of them.  At entry 0 the inner edge leaves
+    tangent to the flank — which is the junction block's own top edge — and the junction
+    block is a cusp.  Re-measured: the chosen slope must beat it by a wide margin, and
+    the block that improves must be the junction.
+    """
+    ship = (float(genes[12]), float(genes[13]))
+    chosen = fb.sector_verdict(genes, "coarse", *ship)
+    flat = fb.sector_verdict(genes, "coarse", *ship, entry=0.0,
+                             end=fb.LAYER_END_OFFSET)
+    assert flat["built"] and chosen["built"]
+    assert flat["blocks"]["hub_junction"]["min_scaled_jacobian"] < 0.05, flat
+    assert chosen["blocks"]["hub_junction"]["min_scaled_jacobian"] > 10.0 * flat[
+        "blocks"]["hub_junction"]["min_scaled_jacobian"]
+
+
+@pytest.fixture(scope="module")
+def genome_sweep():
+    """One feasible genome per flank orientation, re-drawn rather than read."""
+    return fb.sweep_genomes("coarse", per_orientation=1)
+
+
+def test_the_sector_closing_seam_FOLLOWS_the_flank_orientation(genome_sweep):
+    """The `dk` bug, reproduced and then fixed, on a genome that actually flips.
+
+    `sector_blocks` lays both ring blocks out in INCREASING theta whatever the genome
+    does, precisely so that "the next sector" is always `k + 1`.  This blocking lays each
+    ring out from `theta_Q` toward the fillet, so the sector-closing seam runs to
+    `k + dirn` — and `flank_orientation`'s own docstring records that only 16 of 60
+    feasible genomes share the shipped one's `(+1, +1)`.  Written as `dk = +1` the seam
+    closes for the shipped genome and misses by a WHOLE SECTOR for a flipped one.  Both
+    halves are asserted, because a test that only checks the fixed behaviour cannot tell
+    you the bug was ever possible.
+    """
+    flipped = [r for rows in genome_sweep["groups"].values() for r in rows
+               if r["built"] and min(r["dk"].values()) < 0]
+    if not flipped:
+        pytest.skip("no flipped-orientation genome in this draw")
+    row = flipped[0]
+    vec = np.asarray(row["genes"], float)
+    blocks, info = fb.filleted_sector(vec, "coarse", float(vec[12]), float(vec[13]))
+    assert blocks is not None, info["why"]
+    orientation = ww.flank_orientation(vec, ww.get_config("coarse"),
+                                       span_mm=ww.HUB_RIM_SPAN_MM)
+    dirn = {j: info["curves"][j]["dirn"] for j in ("hub", "rim")}
+    good = fb.sector_seams(blocks, orientation, dirn)
+    assert all(x["closes"] for x in good), [x for x in good if not x["closes"]]
+    bad = fb.sector_seams(blocks, orientation, {"hub": 1.0, "rim": 1.0})
+    opened = [x for x in bad if not x["closes"]]
+    assert opened, "dk = +1 no longer opens a seam — this genome does not flip after all"
+    assert max(x["max_gap_mm"] for x in opened) > 1.0, (
+        "the miss is supposed to be a whole sector, not a tolerance")
+
+
+def test_the_blocking_is_measured_at_ONE_genome_and_the_others_are_worse(genome_sweep):
+    """The scope, pinned so "48/48 across the box" cannot be quoted as "works everywhere".
+
+    The radius sweep holds the centreline fixed, and the centreline is what decides both
+    the flank orientation and how much room the fillet has in the sector.  Re-measured on
+    freshly drawn feasible genomes whose UNFILLETED sector is clean: some REFUSE outright
+    — the hub fillet's tangent point has swept past the next sector's corner — and of
+    those that build, not all clear the optimizer's barrier.  That is the difference
+    between a blocking fit for STEP 2 (one genome, one mesh) and one fit for the
+    optimizer, and it is a finding rather than a failure.
+    """
+    rows = [r for v in genome_sweep["groups"].values() for r in v]
+    assert len(rows) >= 3, rows
+    built = [r for r in rows if r["built"]]
+    assert all(r["seams_close"] for r in built)
+    refused = [r for r in rows if not r["built"]]
+    clears = [r for r in built if r["min_scaled_jacobian"] > wo.MIN_SJ_TARGET]
+    assert refused or len(clears) < len(built), (
+        "every drawn genome now both fits the sector and clears the barrier — the "
+        "blocking may have become genome-robust, in which case this test and the "
+        "record that ranks STEP 1b behind it both need re-deriving")
+
+
+def test_the_filleted_sector_costs_the_unfilleted_one_nothing(genes):
+    """The control: `sector_blocks(fillet=None)` is not touched by any of this.
+
+    Everything in STEP 1a is built inside the study from `wheel_wheel`'s primitives, so
+    the seven-block sector the tree ships has to come back exactly as clean as it was —
+    and the number it is clean AT is what the filleted sector's 0.36 is a degradation
+    from, so it is asserted rather than remembered.
+    """
+    for cfg in SECTOR_CFGS:
+        ctl = fb.sector_control(genes, cfg)
+        assert ctl["n_blocks"] == 7 and ctl["all_valid"]
+        assert ctl["min_scaled_jacobian"] > 0.7, ctl
 
 
 # ---------------------------------------------------------------------------

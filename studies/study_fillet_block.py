@@ -1,7 +1,8 @@
 """
 =============================================================================
-  CAN THE FILLET BE A BLOCK?  THE REGION HAS TWO CUSPS, AND THE ONLY BLOCK
-  THAT MESHES IS THE ONE WHOSE CORNERS ARE OFF BOTH TANGENT POINTS
+  CAN THE FILLET BE A BLOCK, AND CAN THE SECTOR BE BLOCKED AROUND IT?  THE
+  REGION HAS TWO CUSPS; THE BLOCK THAT MESHES HAS ITS CORNERS OFF BOTH TANGENT
+  POINTS; AND THE SECTOR AROUND IT CLOSES IN ELEVEN BLOCKS AND FOURTEEN SEAMS
 =============================================================================
     .venv-opt/bin/python studies/study_fillet_block.py       (make filletblock)
 
@@ -83,6 +84,23 @@ surfaces through a tangent point:
 
 Both fold, both get WORSE under refinement, and an elliptic interior solve does not
 rescue either.
+
+AND THE WHOLE SECTOR, WHICH IS WHAT A BLOCK THAT MESHES IS NOT
+-------------------------------------------------------------
+A block that meshes is not a mesh.  The block above has an inner edge that CROSSES the
+ring circle, so half of it seams to the junction block and half to the ring block, and
+one edge with two partners is a partial-edge seam -- which this tree has never had.
+`filleted_sector` builds the whole thing: ELEVEN blocks and FOURTEEN seams, every seam
+whole-edge, with the fillet block split at the crossing `N`.  Measured at `coarse` and
+`medium`, at the shipped radii and across the admissible gene box: every block valid,
+every seam closed to under 1.5e-14 mm, worst min scaled Jacobian 0.35 against the
+unfilleted sector's 0.78 and `MIN_SJ_TARGET`'s 0.2.
+
+Two things fall out of it that PART 9 could not see from one block.  The cut at `B` has
+to reach the ring's FAR boundary -- the hub bore, the rim's outer surface -- because a
+shallow one cannot be closed with whole-edge quads at all; and the radius is now bounded
+by the SECTOR rather than by the block, at `R_hub = 3.130 mm`, where the fillet's tangent
+point reaches the next sector's corner.
 
 WHAT THIS DOES NOT DO
 ---------------------
@@ -744,6 +762,650 @@ def price(genes, cfg, junctions):
 
 
 # ---------------------------------------------------------------------------
+# THE WHOLE FILLETED SECTOR: EVERY BLOCK, EVERY SEAM
+# ---------------------------------------------------------------------------
+#
+# PART 9 measured ONE block.  A block that meshes is not a mesh: the fillet block's
+# inner edge crosses the ring circle, so the block it seams to changes half way along
+# that edge, and the ring blocks it lands in have to close as quads with node counts
+# that agree.  This section builds the WHOLE sector -- all eleven blocks and all
+# fourteen seams -- so that "what does it cost" is a measurement rather than a list of
+# worries.  Nothing here is wired into `build_wheel`; it is the same discipline as the
+# rest of this file, geometry and Jacobians only.
+#
+# THE BLOCKING, AND WHY IT IS THE ONE IT IS
+# ----------------------------------------
+# Per junction the fillet adds TWO blocks and re-cuts the three it touches:
+#
+#     <j>_fillet_a   the boundary layer along the arc, ABOVE the ring circle
+#     <j>_fillet_b   the wedge that crosses it, from the arc down to the ring's FAR
+#                    boundary (the hub bore, the rim's outer surface)
+#     <j>_junction   unchanged in shape; its end cross-section is replaced by
+#                    `fillet_a`'s inner edge and its arc now starts at `N`
+#     <j>_ring_weld  the ring's weld block, ending at `N` instead of at `P_t`
+#     <j>_ring_free  the ring's free block, starting at the CUT rather than at `P_t`
+#
+# `N` is where the fillet block's inner edge crosses the ring circle.  It is the whole
+# reason for the split: above `N` that edge's partner is the junction block, below it
+# the ring, and one edge with two partners is a PARTIAL-EDGE SEAM.  This tree has never
+# had one -- `_seam_table`'s docstring calls whole-edge single ownership "the whole
+# safety net" -- so the block is split at `N` instead, at the cost of one extra block
+# per junction.
+#
+# WHY THE CUT GOES ALL THE WAY THROUGH THE RING, WHICH IS NOT A PREFERENCE
+# -----------------------------------------------------------------------
+# PART 9's block stopped at a shallow depth `d` inside the collar.  That cannot be
+# closed with whole-edge quad seams, and the reason is mechanical rather than a matter
+# of trying harder.  A cut that stops at depth `d` puts the ring's free block's left
+# edge -- which spans the ring's whole depth -- against TWO partners, the notch below
+# `B''` and the fillet block above it.  Splitting the free block at `|B''|` to fix that
+# leaves its own right edge, at the sector boundary, against two partners again, so the
+# split propagates round the ring; and the block it propagates into, the sliver between
+# the fillet block's inner edge and a concentric circle, is a TRIANGLE, because the
+# inner edge is a concentric offset of an arc that is TANGENT to the ring circle and is
+# therefore tangent to every circle concentric with it.  Measured: that landing angle is
+# 12.86 deg at the hub and 4.38 at the rim (`landing` in the report).  Taking the cut to
+# the ring's far boundary instead splits the ring into exactly two quads and terminates.
+#
+# WHAT THAT FORCES ON THE NODE COUNTS
+# -----------------------------------
+# The cut carries `n_thick` nodes.  It is the ring free block's left edge, so that
+# block is [n_free, n_thick]; its right edge is then `n_thick` too, and that edge is the
+# next sector's weld block's left edge, so the weld is [n_weld, n_thick] as well.
+# **`n_collar_r` and `n_rim_r` are not used by the filleted blocking** -- the ring's
+# radial count becomes `n_thick` (7 -> 9 at `coarse`, 9 -> 13 at `medium`).  That is the
+# node-count coupling; it is reported rather than hidden, and it is why `fillet=None`
+# has to keep its own path.
+#
+# THE INNER EDGE'S SHAPE IS THE ONE FREE PARAMETER, AND IT IS MEASURED
+# -------------------------------------------------------------------
+# The inner edge is the arc offset by `w(u)`, a cubic Hermite in the arc parameter, and
+# then a RADIAL dive from `N` to the far boundary.  Two constants set it:
+#
+#   LAYER_ENTRY_SLOPE  `w'(0)`, as a multiple of `(R + wall) * sweep`.  NEGATIVE on
+#                      purpose.  Zero means the layer leaves the end cross-section
+#                      tangent to the FAR FLANK -- which is the junction block's own
+#                      top edge -- and a zero-degree corner in the junction block is
+#                      what that costs: min scaled Jacobian 0.012 at the hub, measured.
+#                      Three blocks meet at that node and 180 degrees has to be shared.
+#   LAYER_END_OFFSET   `w(1)`, as a multiple of the wall.
+#
+# The RULE that picks them, so that a re-run picks the same pair for the same reason:
+# take the argmax of the WORST block's min scaled Jacobian over the whole box, on the
+# published grid.  The surface is a RIDGE, not a peak -- everything from entry -0.35 to
+# -0.60 with end 1.4-1.8 sits within 0.02 of the maximum -- so the argmax is a choice
+# ON a plateau rather than a tuned point, and the report prints the whole grid so that
+# is visible instead of asserted.  Off the ridge it falls away fast and in a way that
+# names its own mechanism: end >= 2.4 collapses (0.07-0.29) because the layer thickens
+# past what the wall has to give, and entry >= -0.20 collapses (0.19-0.26) because the
+# junction block's corner is being squeezed shut.
+#
+# The dive is RADIAL because an offset whose `w` grows to the ring's full depth is a
+# spiral of radius `R + w` about the arc's centre: for `R` small and `w` large it swings
+# clean out of the material, and at the gene box's own floor `R_hub = 0.4` it folds the
+# weld block.  Measured, both ways round, before this construction was chosen.
+
+LAYER_ENTRY_SLOPE = -0.45
+LAYER_END_OFFSET = 1.60
+
+# The eleven blocks, in the order `build_wheel` would own their shared nodes.
+SECTOR_BLOCK_ORDER = (
+    "spoke",
+    "hub_fillet_a", "hub_fillet_b", "rim_fillet_a", "rim_fillet_b",
+    "hub_junction", "rim_junction",
+    "hub_ring_weld", "hub_ring_free", "rim_ring_weld", "rim_ring_free")
+
+SECTOR_BLOCK_REGION = {
+    "spoke": "spoke",
+    "hub_fillet_a": "spoke", "hub_fillet_b": "spoke",
+    "rim_fillet_a": "spoke", "rim_fillet_b": "spoke",
+    "hub_junction": "spoke", "rim_junction": "spoke",
+    "hub_ring_weld": "hub", "hub_ring_free": "hub",
+    "rim_ring_weld": "rim", "rim_ring_free": "rim"}
+
+
+def _seam_table_filleted(orientation, dirn):
+    """The fourteen seams of the filleted sector, in `_seam_table`'s own shape.
+
+    `(block_a, side_a, block_b, side_b, dk, reverse)`: side `side_a` of `block_a` in
+    sector k is the same node set as `side_b` of `block_b` in sector k + dk, walked
+    backwards if `reverse`.  Written in that shape on purpose -- the point of this
+    section is that STEP 1b is a wiring job, and a seam table that has to be re-derived
+    from a picture is not a wiring job.
+
+    Only two flags depend on the genome, and they are the same two the shipped table
+    has: the spoke indexes eta from -1 to +1 while a junction's matching edge starts at
+    the straddling flank.  The other twelve are fixed, because unlike `sector_blocks`
+    this blocking lays every ring block out from `theta_Q` toward the fillet rather than
+    in increasing theta, so "does the arc ascend" stops being a question.
+
+    `dirn` is +1 at a junction whose fillet sweeps toward increasing theta and -1 the
+    other way, and it is `flank_orientation`'s consequence rather than a second copy of
+    it.  IT IS NOT A COSMETIC FLAG.  `sector_blocks` lays both ring blocks out in
+    INCREASING theta whatever the genome does, exactly so that "the next sector" is
+    always `k + 1`; this blocking lays each ring out from `theta_Q` toward the fillet
+    instead, so the sector-closing seam runs to `k + dirn`.  Written as `dk = +1`
+    unconditionally it closes for the shipped genome and MISSES BY A WHOLE SECTOR for a
+    flipped one — 12.6 mm at the hub and 50.0 at the rim, measured, which is why the
+    genome sweep below exists.  `build_wheel` takes `(k + dk) % n_spokes`, so a negative
+    `dk` needs nothing from it.
+
+    THE RING BLOCKS KEEP THE SHIPPED RADIAL ORDER, which is why the hub and rim rows
+    differ.  `hub_collar_*` runs bore -> ring circle and `rim_band_*` runs ring circle ->
+    tyre surface, and `_edge_sets`/`_node_sets` name sides off exactly that: `hub_tie` is
+    `j0`, `rim_outer` is `j1`, `rim_inner_free` is `j0`.  Laying both rings out the same
+    way round would have been tidier here and would have silently moved three boundary
+    sets in STEP 1b.
+    """
+    eta_hub, eta_rim = orientation
+    dk_hub, dk_rim = int(dirn["hub"]), int(dirn["rim"])
+    return (
+        ("spoke", "i0", "hub_fillet_a", "i0", 0, float(eta_hub) > 0),
+        ("spoke", "i1", "rim_fillet_a", "i0", 0, float(eta_rim) > 0),
+        ("hub_fillet_a", "i1", "hub_fillet_b", "i0", 0, False),
+        ("rim_fillet_a", "i1", "rim_fillet_b", "i0", 0, False),
+        ("hub_fillet_a", "j1", "hub_junction", "i0", 0, True),
+        ("rim_fillet_a", "j1", "rim_junction", "i0", 0, True),
+        ("hub_fillet_b", "j1", "hub_ring_weld", "i1", 0, True),
+        ("rim_fillet_b", "j1", "rim_ring_weld", "i1", 0, False),
+        ("hub_fillet_b", "i1", "hub_ring_free", "i0", 0, True),
+        ("rim_fillet_b", "i1", "rim_ring_free", "i0", 0, False),
+        ("hub_junction", "j0", "hub_ring_weld", "j1", 0, True),
+        ("rim_junction", "j0", "rim_ring_weld", "j0", 0, True),
+        ("hub_ring_free", "i1", "hub_ring_weld", "i0", dk_hub, False),
+        ("rim_ring_free", "i1", "rim_ring_weld", "i0", dk_rim, False),
+    )
+
+
+def _hermite(y0, y1, m0, m1, u):
+    u = np.asarray(u, float)
+    u2, u3 = u * u, u * u * u
+    return ((2 * u3 - 3 * u2 + 1) * y0 + (u3 - 2 * u2 + u) * m0
+            + (-2 * u3 + 3 * u2) * y1 + (u3 - u2) * m1)
+
+
+def _unwrap(theta, ref):
+    return theta + 2.0 * math.pi * round((ref - theta) / (2.0 * math.pi))
+
+
+def far_boundary_radius(junction):
+    """The far side of the ring the cut has to reach: the bore, or the tyre surface."""
+    return (WW.HUB_RADIUS_MM - WW.COLLAR_DEPTH_MM if junction == "hub"
+            else WW.RIM_OUTER_RADIUS_MM)
+
+
+def sector_curves(genes, cfg, junction, R,
+                  entry=LAYER_ENTRY_SLOPE, end=LAYER_END_OFFSET):
+    """Every curve the filleted blocking needs at one junction, or `None` if it refuses.
+
+    Refusals are geometric and are reported as such: no fillet of that radius is tangent
+    to both legs, the offset profile would reach zero thickness, or the offset never
+    crosses the ring circle.  None of them is a mesh-quality verdict.
+    """
+    cfgo = WW.get_config(cfg)
+    n_th = cfgo.nn(cfgo.n_thick)
+    g = junction_geometry(genes, cfg, junction, R)
+    if not g["tangency"]:
+        return None
+    A, B, C = g["A"], g["B"], g["C"]
+    r_far = far_boundary_radius(junction)
+    i0 = _cross_section(g, g["s_A"], n_th, A)
+    far_sA = i0[-1]
+    wall = float(np.linalg.norm(far_sA - A))
+
+    a0 = math.atan2(A[1] - C[1], A[0] - C[0])
+    a1 = math.atan2(B[1] - C[1], B[0] - C[0])
+    dd = (a1 - a0 + math.pi) % (2.0 * math.pi) - math.pi
+    R_arc = 0.5 * (float(np.linalg.norm(A - C)) + float(np.linalg.norm(B - C)))
+    sweep = abs(dd)
+
+    def arc_at(u):
+        u = np.atleast_1d(np.asarray(u, float))
+        t = a0 + dd * u
+        return np.stack([C[0] + R_arc * np.cos(t), C[1] + R_arc * np.sin(t)], axis=1)
+
+    def normal_at(u):
+        p = arc_at(u) - np.asarray(C, float)[None, :]
+        return p / np.linalg.norm(p, axis=1)[:, None]
+
+    m0 = entry * (R_arc + wall) * sweep
+    w1 = end * wall
+
+    def offset_at(u):
+        u = np.atleast_1d(np.asarray(u, float))
+        w = _hermite(wall, w1, m0, 0.0, u)
+        return arc_at(u) + w[:, None] * normal_at(u), w
+
+    if float(_hermite(wall, w1, m0, 0.0, np.linspace(0.0, 1.0, 401)).min()) <= 1e-6:
+        return {"built": False, "why": "offset profile reaches zero thickness"}
+
+    def past(u):
+        return (float(np.linalg.norm(offset_at(u)[0][0])) - g["ring_r"]) * g["void_sign"]
+
+    if past(0.0) < 0.0 or past(1.0) > 0.0:
+        return {"built": False, "why": "the offset does not cross the ring circle once"}
+    lo, hi = 0.0, 1.0
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if past(mid) > 0.0:
+            lo = mid
+        else:
+            hi = mid
+    u_N = 0.5 * (lo + hi)
+    N = offset_at(u_N)[0][0]
+    L = N * (r_far / float(np.linalg.norm(N)))
+
+    th_q = math.atan2(g["Q"][1], g["Q"][0])
+    th_B = _unwrap(math.atan2(B[1], B[0]), th_q)
+    th_N = _unwrap(math.atan2(N[1], N[0]), th_q)
+    dirn = 1.0 if th_B > th_q else -1.0
+    th_end = th_q + dirn * math.radians(WW.SECTOR_DEG)
+    return {"built": True, "g": g, "A": A, "B": B, "C": C, "N": N, "L": L,
+            "u_N": float(u_N), "i0": i0, "far_sA": far_sA, "wall_mm": wall,
+            "arc_at": arc_at, "offset_at": offset_at, "r_far": r_far,
+            "th_q": th_q, "th_B": th_B, "th_N": th_N, "th_end": th_end,
+            "dirn": dirn, "n_th": n_th, "sweep_deg": math.degrees(sweep),
+            "free_span_deg": math.degrees((th_end - th_B) * dirn)}
+
+
+def filleted_sector(genes, cfg, R_hub, R_rim,
+                    entry=LAYER_ENTRY_SLOPE, end=LAYER_END_OFFSET):
+    """The eleven node grids of the FILLETED sector 0, or `None` if the geometry refuses.
+
+    Built here rather than in `wheel_wheel` on purpose: PART 9's rule is that nothing in
+    this arc goes into `build_wheel` before the whole sector has been measured, and this
+    is the measurement.
+    """
+    cfgo = WW.get_config(cfg)
+    n_th = cfgo.nn(cfgo.n_thick)
+    n_weld = cfgo.nn(cfgo.n_weld)
+    curves = {}
+    for junction, R in (("hub", R_hub), ("rim", R_rim)):
+        c = sector_curves(genes, cfg, junction, R, entry, end)
+        if c is None:
+            return None, {"why": f"{junction}: no fillet of R={R:.4f} is tangent to "
+                                 f"both legs"}
+        if not c["built"]:
+            return None, {"why": f"{junction}: {c['why']}"}
+        if c["free_span_deg"] <= 0.0:
+            return None, {"why": f"{junction}: the fillet's tangent point has passed the "
+                                 f"next sector's corner ({c['free_span_deg']:.3f} deg "
+                                 f"of free ring left)"}
+        curves[junction] = c
+    spoke = trimmed_spoke(genes, cfg, R_hub, R_rim)
+    if spoke is None:
+        return None, {"why": "the two tangent stations cross: the fillets are longer "
+                             "than the spoke"}
+    blocks = {"spoke": spoke}
+    for junction in ("hub", "rim"):
+        c = curves[junction]
+        g = c["g"]
+        n_free = cfgo.nn(cfgo.n_collar_free if junction == "hub" else cfgo.n_rim_free)
+        u_N = c["u_N"]
+        P_split = c["arc_at"](u_N)[0]
+        cut_N = WW._lerp_points(P_split, c["N"], n_th, np)
+
+        ua = np.linspace(0.0, u_N, n_th)
+        ub = np.linspace(u_N, 1.0, n_th)
+        arc_a = c["arc_at"](ua).copy(); arc_a[0] = c["A"]; arc_a[-1] = P_split
+        arc_b = c["arc_at"](ub).copy(); arc_b[0] = P_split; arc_b[-1] = c["B"]
+        inner_a = c["offset_at"](ua)[0].copy()
+        inner_a[0] = c["far_sA"]; inner_a[-1] = c["N"]
+        inner_b = WW._lerp_points(c["N"], c["L"], n_th, np)   # the radial dive
+        cut_B = WW._lerp_points(c["B"], c["L"], n_th, np)
+        try:
+            fa = WW.coons_patch(bottom=arc_a, top=inner_a, left=c["i0"], right=cut_N,
+                                xp=np)
+            fb = WW.coons_patch(bottom=arc_b, top=inner_b, left=cut_N, right=cut_B,
+                                xp=np)
+        except ValueError as exc:                    # a corner that does not close
+            return None, {"why": f"{junction}: {exc}"}
+        blocks[f"{junction}_fillet_a"] = fa
+        blocks[f"{junction}_fillet_b"] = fb
+
+        eta, sample = g["eta"], g["sample"]
+        s_flank = np.linspace(g["s_A"], g["s_ring"], n_weld)
+        top = np.asarray(sample(s_flank, np.zeros(n_weld) - eta), float)
+        bottom = np.asarray(WW.arc_points(g["ring_r"], c["th_N"], c["th_q"], n_weld),
+                            float)
+        bottom[0], bottom[-1] = c["N"], g["Q"]
+        top[0], top[-1] = c["far_sA"], g["far_end"]
+        blocks[f"{junction}_junction"] = WW.coons_patch(
+            bottom=bottom, top=top, left=fa[:, -1, :][::-1],
+            right=WW._lerp_points(g["Q"], g["far_end"], n_th, np), xp=np)
+
+        # The ring keeps the SHIPPED radial order -- bore -> ring at the hub, ring ->
+        # tyre surface at the rim -- so `_edge_sets` keeps naming the same sides.  The
+        # cut's two ends are on different circles: `B` on the ring, `L` on the far side.
+        if junction == "hub":
+            r_j0, r_j1 = c["r_far"], g["ring_r"]
+            th_j0, th_j1 = c["th_N"], c["th_B"]
+            corner_j0, corner_j1 = c["L"], c["B"]
+            cut = fb[-1, :, :][::-1]                 # L -> B
+        else:
+            r_j0, r_j1 = g["ring_r"], c["r_far"]
+            th_j0, th_j1 = c["th_B"], c["th_N"]
+            corner_j0, corner_j1 = c["B"], c["L"]
+            cut = fb[-1, :, :]                       # B -> L
+        blocks[f"{junction}_ring_weld"] = WW.polar_block(
+            r_j0, r_j1, c["th_q"], c["th_N"], n_weld, n_th)
+        e_j0 = np.asarray(WW.arc_points(r_j0, th_j0, c["th_end"], n_free), float)
+        e_j1 = np.asarray(WW.arc_points(r_j1, th_j1, c["th_end"], n_free), float)
+        e_j0[0], e_j1[0] = corner_j0, corner_j1
+        blocks[f"{junction}_ring_free"] = WW.coons_patch(
+            bottom=e_j0, top=e_j1, left=cut,
+            right=WW._lerp_points(e_j0[-1], e_j1[-1], n_th, np), xp=np)
+    return blocks, {"why": None, "curves": curves}
+
+
+def _side(block, side):
+    b = np.asarray(block, float)
+    return {"i0": b[0, :, :], "i1": b[-1, :, :],
+            "j0": b[:, 0, :], "j1": b[:, -1, :]}[side]
+
+
+def _rotate(P, k):
+    a = k * math.radians(WW.SECTOR_DEG)
+    c, s = math.cos(a), math.sin(a)
+    return np.asarray(P, float) @ np.array([[c, s], [-s, c]])
+
+
+def sector_seams(blocks, orientation, dirn):
+    """Every seam's node count agreement and worst coordinate mismatch, in mm.
+
+    A seam CLOSES when the two edges carry the same number of nodes AND those nodes
+    coincide.  Both halves are reported: a count mismatch is a blocking error and a
+    coordinate mismatch is a construction error, and they are not the same bug.
+    """
+    out = []
+    for a, sa, b, sb, dk, rev in _seam_table_filleted(orientation, dirn):
+        ea = _side(blocks[a], sa)
+        eb = _rotate(_side(blocks[b], sb), dk)
+        row = {"a": a, "side_a": sa, "b": b, "side_b": sb, "dk": dk, "reverse": rev,
+               "n_a": int(ea.shape[0]), "n_b": int(eb.shape[0])}
+        if ea.shape != eb.shape:
+            row.update({"counts_agree": False, "max_gap_mm": None, "closes": False})
+        else:
+            gap = float(np.abs(ea - (eb[::-1] if rev else eb)).max())
+            row.update({"counts_agree": True, "max_gap_mm": gap,
+                        "closes": gap < SEAM_TOL_MM})
+        out.append(row)
+    return out
+
+
+SEAM_TOL_MM = 1.0e-9
+
+
+def sector_verdict(genes, cfg, R_hub, R_rim, entry=LAYER_ENTRY_SLOPE,
+                   end=LAYER_END_OFFSET):
+    """One (config, R_hub, R_rim) cell: every block's validity and every seam's gap."""
+    blocks, info = filleted_sector(genes, cfg, R_hub, R_rim, entry, end)
+    if blocks is None:
+        return {"built": False, "why": info["why"], "R_hub_mm": float(R_hub),
+                "R_rim_mm": float(R_rim)}
+    orientation = WW.flank_orientation(genes, WW.get_config(cfg),
+                                       span_mm=WW.HUB_RIM_SPAN_MM)
+    per = {k: block_quality(v) for k, v in blocks.items()}
+    dirn = {j: info["curves"][j]["dirn"] for j in ("hub", "rim")}
+    seams = sector_seams(blocks, orientation, dirn)
+    return {"built": True, "R_hub_mm": float(R_hub), "R_rim_mm": float(R_rim),
+            "blocks": per, "dirn": {j: float(v) for j, v in dirn.items()},
+            "orientation": [float(o) for o in orientation],
+            "n_blocks": len(blocks),
+            "min_scaled_jacobian": min(q["min_scaled_jacobian"] for q in per.values()),
+            "worst_block": min(per, key=lambda k: per[k]["min_scaled_jacobian"]),
+            "non_positive_gauss_elements": sum(q["non_positive_gauss_elements"]
+                                               for q in per.values()),
+            "mixed_sign_cells": sum(q["mixed_sign_cells"] for q in per.values()),
+            "all_blocks_valid": all(q["valid"] for q in per.values()),
+            "n_seams": len(seams),
+            "seams_close": all(s["closes"] for s in seams),
+            "max_seam_gap_mm": max(s["max_gap_mm"] or 0.0 for s in seams),
+            "seams": seams}
+
+
+def sector_control(genes, cfg):
+    """The UNFILLETED sector, measured with the same instrument.
+
+    Every number in this section is a difference from the seven-block mesh the tree
+    ships, and a degradation is only readable against what it degrades from.
+    """
+    blocks = WW.sector_blocks(genes, cfg, fillet=None)
+    per = {k: block_quality(np.asarray(v, float))
+           for k, v in blocks.items() if k != "_thetas"}
+    return {"n_blocks": len(per),
+            "min_scaled_jacobian": min(q["min_scaled_jacobian"] for q in per.values()),
+            "worst_block": min(per, key=lambda k: per[k]["min_scaled_jacobian"]),
+            "all_valid": all(q["valid"] for q in per.values())}
+
+
+def sector_fit_limit(genes, cfg, junction):
+    """The radius at which the fillet's tangent point reaches the NEXT sector's corner.
+
+    A geometric limit of the SECTOR, not of the block: PART 9 measured the block itself
+    clean out to 4.00 mm, and it still is -- what runs out first is the ring's free
+    block, whose angular span this drives to zero.  Bisected rather than estimated,
+    because it is the number a gene bound would have to be written against.
+    """
+    lo, hi = 0.05, 8.0
+
+    def span(R):
+        c = sector_curves(genes, cfg, junction, R)
+        if c is None or not c.get("built"):
+            return -1.0
+        return c["free_span_deg"]
+
+    if span(hi) > 0.0:
+        return {"limited": False, "radius_mm": None}
+    if span(lo) <= 0.0:
+        return {"limited": True, "radius_mm": lo}
+    for _ in range(80):
+        mid = 0.5 * (lo + hi)
+        if span(mid) > 0.0:
+            lo = mid
+        else:
+            hi = mid
+    return {"limited": True, "radius_mm": 0.5 * (lo + hi)}
+
+
+def landing_angles(genes, cfg, junctions):
+    """Why the shallow cut cannot close: the offset lands TANGENT to the ring's circles.
+
+    PART 9's block stopped at depth `d` inside the ring.  Its inner edge is a concentric
+    offset of an arc that is tangent to the ring circle, so it is tangent to the circle
+    `d` inside it as well -- and a block cornered between the two is a sliver.  Measured
+    at the shipped radii: the residual angle is the width profile's own slope and
+    nothing else.
+    """
+    cfgo = WW.get_config(cfg)
+    n_th = cfgo.nn(cfgo.n_thick)
+    out = {}
+    for junction in junctions:
+        R = float(genes[12] if junction == "hub" else genes[13])
+        g = junction_geometry(genes, cfg, junction, R)
+        if not g["tangency"]:
+            out[junction] = {"tangency": False}
+            continue
+        j1 = candidate_boundary_layer(g, 4001, n_th)[:, -1, :]
+        wall = float(np.linalg.norm(_cross_section(g, g["s_A"], n_th, g["A"])[-1]
+                                    - g["A"]))
+        end, prev = j1[-1], j1[-2]
+        circ = np.array([-end[1], end[0]], float)
+        a = _angle_deg(end - prev, circ)
+        out[junction] = {"cut_depth_mm": cut_depth_mm(g, wall),
+                         "landing_angle_deg": min(a, 180.0 - a),
+                         "sliver_scaled_jacobian": abs(math.sin(math.radians(
+                             min(a, 180.0 - a))))}
+    return out
+
+
+def sweep_layer_profile(genes, cfg, entries, ends, box):
+    """The two inner-edge constants, swept against the WORST block in the whole box.
+
+    This is the evidence for `LAYER_ENTRY_SLOPE` and `LAYER_END_OFFSET`.  A constant
+    that is only asserted is a constant that drifts; this one is re-derived every run,
+    and the report carries the whole surface rather than the argmax, so a reader can see
+    how wide the plateau is.
+    """
+    rows = []
+    for entry in entries:
+        for end in ends:
+            worst, where, fails = 9.0, None, 0
+            for R_hub, R_rim in box:
+                v = sector_verdict(genes, cfg, R_hub, R_rim, entry, end)
+                if not v["built"]:
+                    fails += 1
+                    continue
+                if not v["all_blocks_valid"] or not v["seams_close"]:
+                    fails += 1
+                if v["min_scaled_jacobian"] < worst:
+                    worst = v["min_scaled_jacobian"]
+                    where = [v["R_hub_mm"], v["R_rim_mm"], v["worst_block"]]
+            rows.append({"entry": float(entry), "end": float(end),
+                         "worst_min_scaled_jacobian": (None if where is None
+                                                       else float(worst)),
+                         "worst_at": where, "cells_failed": fails})
+    return rows
+
+
+def sweep_sector(genes, cfg, radii_hub, radii_rim):
+    """Every (R_hub, R_rim) on the grid, at the chosen profile."""
+    ship_h, ship_r = float(genes[12]), float(genes[13])
+    rows = []
+    for R_hub in radii_hub:
+        for R_rim in radii_rim:
+            v = sector_verdict(genes, cfg, R_hub, R_rim)
+            v.pop("seams", None)
+            v.pop("blocks", None)
+            v["is_shipped"] = bool(abs(R_hub - ship_h) < 1e-9
+                                   and abs(R_rim - ship_r) < 1e-9)
+            rows.append(v)
+    return rows
+
+
+GENOME_SWEEP_SEED = 20260823
+GENOME_SWEEP_PER_ORIENTATION = 4
+
+
+def sweep_genomes(cfg, per_orientation=GENOME_SWEEP_PER_ORIENTATION,
+                  seed=GENOME_SWEEP_SEED, max_batches=40):
+    """The blocking at OTHER GENOMES, grouped by flank orientation.
+
+    THE REST OF THIS SECTION SWEEPS RADII AT ONE GENOME, AND THAT IS NOT THE GENE BOX.
+    `flank_orientation` is a property of the centreline, not of `R_hub`/`R_rim`, and its
+    own docstring records that of 60 feasible Latin-hypercube genomes **only 16 have the
+    shipped genome's `(+1, +1)`** — so a blocking measured at the shipped genome alone has
+    been measured on a quarter of the design space.  This draws feasible genomes until it
+    has some of each of the four orientations and reports the blocking on them.
+
+    It found a real bug the radius sweep could not: the sector-closing seam's `dk`.  It is
+    also the honest place for what the blocking COSTS away from the shipped genome, which
+    is not the same number, and for how often the fillet at the shipped radii simply does
+    not fit the sector.
+
+    Feasibility is `evaluate_design`'s own geometric pair (`x_order`, `hub_overlap`) plus
+    the requirement that the UNFILLETED sector is clean — the filleted verdict is only
+    readable against a baseline that is itself valid, and a genome whose default mesh
+    folds is not this blocking's problem.
+    """
+    from study_mesh_quality import latin_hypercube
+    import wheel_fea as WFEA
+
+    low, high, _ = wg.bounds_arrays(WFEA.GENE_SPACE)
+    cfgo = WW.get_config(cfg)
+    groups = {}
+    batch = 0
+    while batch < max_batches and any(
+            len(groups.get(o, [])) < per_orientation
+            for o in ((1.0, 1.0), (1.0, -1.0), (-1.0, 1.0), (-1.0, -1.0))):
+        for vec in latin_hypercube(512, low, high, seed=seed + batch):
+            _, loss = WFEA.evaluate_design(vec)
+            if loss["x_order"] != 0.0 or loss["hub_overlap"] != 0.0:
+                continue
+            try:
+                o = tuple(float(x) for x in WW.flank_orientation(vec, cfgo))
+            except Exception:
+                continue
+            if len(groups.setdefault(o, [])) >= per_orientation:
+                continue
+            try:
+                ctl = sector_control(vec, cfg)
+            except Exception:
+                continue
+            if not ctl["all_valid"]:
+                continue
+            try:
+                v = sector_verdict(vec, cfg, float(vec[12]), float(vec[13]))
+            except Exception as exc:      # a drawn genome must never kill the driver
+                v = {"built": False, "why": f"{type(exc).__name__}: {exc}"}
+            row = {"orientation": list(o), "genes": [float(x) for x in vec],
+                   "R_hub_mm": float(vec[12]), "R_rim_mm": float(vec[13]),
+                   "control_min_scaled_jacobian": ctl["min_scaled_jacobian"],
+                   "built": v["built"]}
+            if v["built"]:
+                open_seams = [f"{x['a']}.{x['side_a']}~{x['b']}.{x['side_b']}"
+                              for x in v["seams"] if not x["closes"]]
+                row.update({"min_scaled_jacobian": v["min_scaled_jacobian"],
+                            "worst_block": v["worst_block"],
+                            "seams_close": v["seams_close"],
+                            "max_seam_gap_mm": v["max_seam_gap_mm"],
+                            "open_seams": open_seams,
+                            "all_blocks_valid": v["all_blocks_valid"],
+                            "dk": {j: int(d) for j, d in v["dirn"].items()}})
+            else:
+                row["why"] = v["why"]
+            groups[o].append(row)
+        batch += 1
+    return {"seed": seed, "config": cfg, "per_orientation": per_orientation,
+            "groups": {str(list(k)): v for k, v in sorted(groups.items())}}
+
+
+def build_sector_section(genes, configs, junctions):
+    """The whole-sector measurement, per config."""
+    box_h = tuple(sorted({0.40, 0.60, float(genes[12]), 1.00, 1.50, 2.00, 2.50, 3.00}))
+    box_r = tuple(sorted({0.50, 1.00, 1.50, 2.00, 2.50, float(genes[13])}))
+    profile_box = ((0.40, 0.50), (float(genes[12]), float(genes[13])),
+                   (1.50, 1.50), (3.00, 3.00), (0.40, 3.00), (3.00, 0.50))
+    out = {"entry_slope": LAYER_ENTRY_SLOPE, "end_offset": LAYER_END_OFFSET,
+           "seam_tol_mm": SEAM_TOL_MM,
+           "block_order": list(SECTOR_BLOCK_ORDER),
+           "block_region": dict(SECTOR_BLOCK_REGION),
+           "gene_box": {"R_hub_mm": list(box_h), "R_rim_mm": list(box_r)},
+           "genomes": sweep_genomes(configs[0]),
+           "per_config": {}}
+    for cfg in configs:
+        cfgo = WW.get_config(cfg)
+        shipped = sector_verdict(genes, cfg, float(genes[12]), float(genes[13]))
+        seams = shipped.pop("seams", [])
+        blocks = shipped.pop("blocks", {})
+        out["per_config"][cfg] = {
+            "control": sector_control(genes, cfg),
+            "node_counts": {"n_thick": cfgo.nn(cfgo.n_thick),
+                            "n_collar_r": cfgo.nn(cfgo.n_collar_r),
+                            "n_rim_r": cfgo.nn(cfgo.n_rim_r),
+                            "ring_radial_used": cfgo.nn(cfgo.n_thick)},
+            "shipped": shipped,
+            "shipped_blocks": blocks,
+            "shipped_seams": seams,
+            "box": sweep_sector(genes, cfg, box_h, box_r),
+            "fit_limit": {j: sector_fit_limit(genes, cfg, j) for j in junctions},
+            "landing": landing_angles(genes, cfg, junctions),
+            # The profile sweep is a DERIVATION OF TWO CONSTANTS, not a per-config
+            # measurement, and it is the expensive part of this section -- 30 pairs x 6
+            # box corners is 180 sectors.  Run at the first config only, and reported
+            # with the reason: the box column above shows the two configs agreeing on
+            # the worst block to four figures, so a second copy of this surface would
+            # cost a minute to say the same thing twice.
+            "profile": (sweep_layer_profile(
+                genes, cfg,
+                (-0.30, -0.35, -0.40, -0.45, -0.50, -0.60),
+                (1.20, 1.40, 1.60, 1.80, 2.00), profile_box)
+                if cfg == configs[0] else None),
+        }
+    return out
+
+
+# ---------------------------------------------------------------------------
 # THE SELF-CHECKS
 # ---------------------------------------------------------------------------
 
@@ -790,6 +1452,31 @@ def self_checks(rec):
             if row and not row["angle_is_a_boundary_quantity"]:
                 inv = False
     checks["route2_angle_is_a_boundary_quantity"] = inv
+    # The whole-sector blocking: STRUCTURAL claims only.  Whether a block's min scaled
+    # Jacobian is 0.35 or 0.20 is a characterisation finding and is reported, not gated.
+    # Whether the seams CLOSE is not: a blocking whose seams do not close is not a
+    # blocking, and STEP 1b would be wiring a mesh that cannot be assembled.
+    sec = rec.get("sector")
+    if sec:
+        closes, control = True, True
+        for per in sec["per_config"].values():
+            if not per["shipped"].get("built"):
+                closes = False
+                continue
+            for s in per["shipped_seams"]:
+                if not s["counts_agree"] or not s["closes"]:
+                    closes = False
+            if not per["control"]["all_valid"]:
+                control = False
+        checks["sector_seams_close_whole_edge"] = closes
+        checks["unfilleted_sector_still_clean"] = control
+        # And at EVERY flank orientation, which is a different claim: the sector-closing
+        # seam's `dk` follows the genome, and written as +1 it misses by a whole sector.
+        # Structural, so it gates.  Whether those genomes' BLOCKS are good enough is a
+        # characterisation finding and is reported, not gated.
+        rows = [r for v in sec["genomes"]["groups"].values() for r in v if r["built"]]
+        checks["sector_seams_close_at_every_orientation"] = bool(
+            rows and all(r["seams_close"] for r in rows))
     checks["pass"] = bool(all(v for k, v in checks.items() if k != "pass"))
     return checks
 
@@ -813,6 +1500,7 @@ def build(genes, configs, junctions, radii, refinements):
         rec["candidates"][cfg] = sweep_candidates(genes, cfg, junctions, radii,
                                                   refinements)
         rec["price"][cfg] = price(genes, cfg, junctions)
+    rec["sector"] = build_sector_section(genes, configs, junctions)
     rec["self_checks"] = self_checks(rec)
     return rec
 
@@ -918,6 +1606,117 @@ def _print(rec):
                   f"({100.0 * p['footprint_fraction_of_sector']:.1f}% of the sector); "
                   f"the notch it needs in the ring block is {p['notch_deg']:.3f} deg; "
                   f"the spoke gives up {p['spoke_stations_given_up']:.1f} stations")
+
+    sec = rec.get("sector")
+    if sec:
+        print("\n  THE WHOLE FILLETED SECTOR: ELEVEN BLOCKS, FOURTEEN SEAMS, "
+              "AT THE SHIPPED RADII")
+        print(f"    {'config':7s} {'blocks':>6s} {'seams':>5s} {'worst min scaled J':>19s} "
+              f"{'worst block':>14s} {'max seam gap (mm)':>18s} "
+              f"{'unfilleted control':>19s}")
+        for cfg, per in sec["per_config"].items():
+            sh = per["shipped"]
+            if not sh.get("built"):
+                print(f"    {cfg:7s} REFUSED: {sh.get('why')}")
+                continue
+            print(f"    {cfg:7s} {sh['n_blocks']:6d} {sh['n_seams']:5d} "
+                  f"{sh['min_scaled_jacobian']:19.4f} {sh['worst_block']:>14s} "
+                  f"{sh['max_seam_gap_mm']:18.2e} "
+                  f"{per['control']['min_scaled_jacobian']:19.4f}")
+        cfg0 = rec["configs"][0]
+        print("\n  EVERY BLOCK OF IT, AT THE SHIPPED RADII, AT "
+              f"{cfg0}")
+        for name in sec["block_order"]:
+            q = sec["per_config"][cfg0]["shipped_blocks"].get(name)
+            if q is None:
+                continue
+            print(f"    {name:16s} {str(q['shape']):>10s}  min scaled J {q['min_scaled_jacobian']:7.4f}"
+                  f"   mixed {q['mixed_sign_cells']:3d}   non-positive Gauss "
+                  f"{q['non_positive_gauss_elements']:3d}   "
+                  f"{'VALID' if q['valid'] else 'FOLDS'}")
+        print("\n  EVERY SEAM OF IT, AT "
+              f"{cfg0} -- whole edge, matching counts, coincident nodes")
+        for s in sec["per_config"][cfg0]["shipped_seams"]:
+            gap = "-" if s["max_gap_mm"] is None else f"{s['max_gap_mm']:.2e}"
+            print(f"    {s['a']:14s}.{s['side_a']:2s} ~ {s['b']:14s}.{s['side_b']:2s} "
+                  f"dk={s['dk']} rev={str(s['reverse']):5s} "
+                  f"n {s['n_a']:3d}/{s['n_b']:3d} gap {gap:>9s} mm  "
+                  f"{'CLOSES' if s['closes'] else 'OPEN'}")
+        print("\n  AND IT CLOSES ACROSS THE GENE BOX")
+        for cfg, per in sec["per_config"].items():
+            rows = per["box"]
+            built = [r for r in rows if r["built"]]
+            ok = [r for r in built if r["all_blocks_valid"] and r["seams_close"]]
+            sj = min((r["min_scaled_jacobian"] for r in built), default=float("nan"))
+            gap = max((r["max_seam_gap_mm"] for r in built), default=float("nan"))
+            refused = [r for r in rows if not r["built"]]
+            print(f"    {cfg:7s} {len(ok)}/{len(rows)} cells valid AND closed, worst min "
+                  f"scaled J {sj:.4f} (MIN_SJ_TARGET is 0.2), worst seam gap {gap:.2e} mm"
+                  + (f", {len(refused)} refused geometrically" if refused else ""))
+        print("\n  WHAT BOUNDS THE RADIUS IS NOW THE SECTOR, NOT THE BLOCK")
+        for cfg, per in sec["per_config"].items():
+            for junction, lim in per["fit_limit"].items():
+                if lim["limited"]:
+                    print(f"    {cfg:7s} {junction:4s} the ring's free block runs out at "
+                          f"R = {lim['radius_mm']:.4f} mm -- the tangent point reaches "
+                          f"the NEXT sector's corner")
+                else:
+                    print(f"    {cfg:7s} {junction:4s} fits the sector at every radius "
+                          f"swept")
+        print("\n  WHY THE SHALLOW CUT CANNOT CLOSE: THE OFFSET LANDS TANGENT")
+        for cfg, per in sec["per_config"].items():
+            for junction, row in per["landing"].items():
+                if not row.get("landing_angle_deg"):
+                    continue
+                print(f"    {cfg:7s} {junction:4s} PART 9's cut of "
+                      f"{row['cut_depth_mm']:.4f} mm lands on the circle it stops at "
+                      f"at {row['landing_angle_deg']:6.3f} deg -- a sliver whose scaled "
+                      f"Jacobian is {row['sliver_scaled_jacobian']:.4f}")
+        print("\n  THE INNER EDGE'S TWO CONSTANTS, RE-DERIVED (worst block over the "
+              f"box, at {cfg0})")
+        cfgp = sec["per_config"][cfg0]["profile"] or []
+        ends = sorted({r["end"] for r in cfgp})
+        print("    entry \\ end " + "".join(f"{e:>10.2f}" for e in ends))
+        for entry in sorted({r["entry"] for r in cfgp}, reverse=True):
+            cells = []
+            for e in ends:
+                r = next(x for x in cfgp if x["entry"] == entry and x["end"] == e)
+                cells.append("    FAILS" if r["cells_failed"]
+                             else f"{r['worst_min_scaled_jacobian']:10.4f}")
+            star = " <- chosen" if abs(entry - sec["entry_slope"]) < 1e-12 else ""
+            print(f"    {entry:11.2f} " + "".join(cells) + star)
+        print(f"    the chosen pair is entry {sec['entry_slope']:.2f}, end "
+              f"{sec['end_offset']:.2f}")
+        gs = sec["genomes"]
+        print("\n  AND AT OTHER GENOMES, WHICH IS WHAT THE RADIUS BOX ABOVE IS NOT")
+        print(f"    {'orientation':13s} {'n':>3s} {'refused':>8s} {'seams close':>12s} "
+              f"{'min scaled J (built)':>21s} {'clear MIN_SJ_TARGET':>20s}")
+        allrows = []
+        for key, rows in gs["groups"].items():
+            allrows += rows
+            built = [r for r in rows if r["built"]]
+            sjs = [r["min_scaled_jacobian"] for r in built]
+            rng = (f"{min(sjs):.4f} - {max(sjs):.4f}" if sjs else "-")
+            print(f"    {key:13s} {len(rows):3d} {len(rows) - len(built):8d} "
+                  f"{str(all(r['seams_close'] for r in built)):>12s} {rng:>21s} "
+                  f"{sum(1 for x in sjs if x > 0.2):>13d}/{len(sjs):<6d}")
+        built = [r for r in allrows if r["built"]]
+        sjs = [r["min_scaled_jacobian"] for r in built]
+        print(f"    ALL           {len(allrows):3d} {len(allrows) - len(built):8d} "
+              f"{str(all(r['seams_close'] for r in built)):>12s} "
+              f"{min(sjs):.4f} - {max(sjs):.4f}".ljust(70)
+              + f"{sum(1 for x in sjs if x > 0.2):>7d}/{len(sjs):<6d}")
+        print("    every REFUSAL is the same one: the hub fillet's tangent point has "
+              "passed the next sector's corner")
+        print("    -- so the blocking is measured for STEP 2 (one genome, one mesh) and "
+              "is NOT yet fit for the OPTIMIZER, which sweeps genomes.")
+
+        print("\n  THE NODE COUNT IT FORCES")
+        for cfg, per in sec["per_config"].items():
+            nc = per["node_counts"]
+            print(f"    {cfg:7s} the ring blocks' radial count becomes n_thick = "
+                  f"{nc['ring_radial_used']}, not n_collar_r = {nc['n_collar_r']} / "
+                  f"n_rim_r = {nc['n_rim_r']}")
 
     sc = rec["self_checks"]
     print("\n  SELF-CHECKS")

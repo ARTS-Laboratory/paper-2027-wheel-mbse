@@ -9525,12 +9525,3880 @@
       }
     }
   },
-  "seconds": 41.79,
+  "seconds": 85.94,
+  "sector": {
+    "block_order": [
+      "spoke",
+      "hub_fillet_a",
+      "hub_fillet_b",
+      "rim_fillet_a",
+      "rim_fillet_b",
+      "hub_junction",
+      "rim_junction",
+      "hub_ring_weld",
+      "hub_ring_free",
+      "rim_ring_weld",
+      "rim_ring_free"
+    ],
+    "block_region": {
+      "hub_fillet_a": "spoke",
+      "hub_fillet_b": "spoke",
+      "hub_junction": "spoke",
+      "hub_ring_free": "hub",
+      "hub_ring_weld": "hub",
+      "rim_fillet_a": "spoke",
+      "rim_fillet_b": "spoke",
+      "rim_junction": "spoke",
+      "rim_ring_free": "rim",
+      "rim_ring_weld": "rim",
+      "spoke": "spoke"
+    },
+    "end_offset": 1.6,
+    "entry_slope": -0.45,
+    "gene_box": {
+      "R_hub_mm": [
+        0.4,
+        0.6,
+        0.6636060402965218,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0
+      ],
+      "R_rim_mm": [
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0
+      ]
+    },
+    "genomes": {
+      "config": "coarse",
+      "groups": {
+        "[-1.0, -1.0]": [
+          {
+            "R_hub_mm": 0.7277530563973396,
+            "R_rim_mm": 2.950315107608208,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.5000122949455009,
+            "dk": {
+              "hub": -1,
+              "rim": -1
+            },
+            "genes": [
+              9.634532323787912,
+              -6.708958103454709,
+              17.011576501318565,
+              -19.94790816689327,
+              24.352648660716298,
+              9.072324991447381,
+              26.40932791834031,
+              -19.17830280754457,
+              2.5358223512471065,
+              1.958914311513697,
+              5.382656573946083,
+              3.0192082021723685,
+              0.7277530563973396,
+              2.950315107608208
+            ],
+            "max_seam_gap_mm": 8.881784197001252e-15,
+            "min_scaled_jacobian": 0.12163565840657427,
+            "open_seams": [],
+            "orientation": [
+              -1.0,
+              -1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.6020622237610639,
+            "R_rim_mm": 2.085778174741535,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.7028040308830127,
+            "dk": {
+              "hub": -1,
+              "rim": -1
+            },
+            "genes": [
+              9.476802129763865,
+              -14.461237910255239,
+              15.361065566038999,
+              27.924913503659774,
+              24.825442505634427,
+              -31.915709669703908,
+              33.58878760336924,
+              -23.36936898134699,
+              1.5052111629823426,
+              7.571886245708928,
+              4.392886742283636,
+              5.8993763597231865,
+              0.6020622237610639,
+              2.085778174741535
+            ],
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.1698230610470318,
+            "open_seams": [],
+            "orientation": [
+              -1.0,
+              -1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.8888180432185063,
+            "R_rim_mm": 2.040798851720207,
+            "built": false,
+            "control_min_scaled_jacobian": 0.8070470162159806,
+            "genes": [
+              7.461925444644915,
+              -31.334257234112172,
+              18.22168457958333,
+              2.0252559847347555,
+              25.233382485543483,
+              19.07264877301202,
+              33.223257122845794,
+              -30.535023980976614,
+              2.987492226698244,
+              5.950692244302942,
+              2.3765071296649323,
+              1.2601734660745159,
+              0.8888180432185063,
+              2.040798851720207
+            ],
+            "orientation": [
+              -1.0,
+              -1.0
+            ],
+            "why": "hub: the fillet's tangent point has passed the next sector's corner (-1.673 deg of free ring left)"
+          },
+          {
+            "R_hub_mm": 0.9001968183990416,
+            "R_rim_mm": 2.8927163486329652,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.8589238005961484,
+            "dk": {
+              "hub": -1,
+              "rim": -1
+            },
+            "genes": [
+              8.93384068186625,
+              -22.61397609618308,
+              13.85522151896368,
+              -23.489390435449966,
+              17.97401754317495,
+              -30.672198386365633,
+              25.42374345540322,
+              -16.63531526179966,
+              1.4220056576973619,
+              5.113990109327825,
+              2.1208504739321015,
+              5.0840850271747655,
+              0.9001968183990416,
+              2.8927163486329652
+            ],
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.22690846597142186,
+            "open_seams": [],
+            "orientation": [
+              -1.0,
+              -1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          }
+        ],
+        "[-1.0, 1.0]": [
+          {
+            "R_hub_mm": 0.802905306190049,
+            "R_rim_mm": 2.8627221289967135,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.9134966158268317,
+            "dk": {
+              "hub": -1,
+              "rim": 1
+            },
+            "genes": [
+              5.1216594094430015,
+              -24.520601911898524,
+              14.03669439593831,
+              7.558606216222984,
+              25.379709223487943,
+              2.5730985054599884,
+              28.43083252383789,
+              22.218770282331874,
+              1.2714722124742013,
+              1.73911323135933,
+              5.912293389615348,
+              2.4774481490763076,
+              0.802905306190049,
+              2.8627221289967135
+            ],
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.11936181639794972,
+            "open_seams": [],
+            "orientation": [
+              -1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.108130358578177,
+            "R_rim_mm": 2.585846544789964,
+            "built": false,
+            "control_min_scaled_jacobian": 0.775494899500324,
+            "genes": [
+              3.09060822546242,
+              -23.19723049643181,
+              15.23161031927081,
+              28.019231793971812,
+              26.67593285711333,
+              17.900264079430812,
+              32.6493793033092,
+              30.089400494391327,
+              1.3394903767254276,
+              3.9121111972072873,
+              6.355358717703742,
+              5.5019205967515745,
+              2.108130358578177,
+              2.585846544789964
+            ],
+            "orientation": [
+              -1.0,
+              1.0
+            ],
+            "why": "hub: the fillet's tangent point has passed the next sector's corner (-1.695 deg of free ring left)"
+          },
+          {
+            "R_hub_mm": 0.9790109838322899,
+            "R_rim_mm": 1.5510087101624983,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.45775017693039405,
+            "dk": {
+              "hub": -1,
+              "rim": 1
+            },
+            "genes": [
+              8.518071506355884,
+              -10.232951711675536,
+              12.115325352119019,
+              27.360592544010316,
+              16.141689966099943,
+              12.509578498360504,
+              27.24920972430355,
+              4.213159665345621,
+              2.790195325038156,
+              3.3219554698063023,
+              2.284354229163994,
+              2.8261737756323404,
+              0.9790109838322899,
+              1.5510087101624983
+            ],
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.28982637096616615,
+            "open_seams": [],
+            "orientation": [
+              -1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.44107032051384076,
+            "R_rim_mm": 2.322724606069681,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.28397250671775753,
+            "dk": {
+              "hub": -1,
+              "rim": 1
+            },
+            "genes": [
+              4.561830042332513,
+              -21.115943070446576,
+              15.693472559604714,
+              -24.763724653011973,
+              24.03323278800754,
+              6.747276374763587,
+              28.248672062205532,
+              1.9888651748046016,
+              2.961519593378261,
+              6.662589545030331,
+              3.1069907797528113,
+              4.2030449921397945,
+              0.44107032051384076,
+              2.322724606069681
+            ],
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.17797227597288234,
+            "open_seams": [],
+            "orientation": [
+              -1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          }
+        ],
+        "[1.0, -1.0]": [
+          {
+            "R_hub_mm": 1.7547426787975895,
+            "R_rim_mm": 1.1260233910556952,
+            "built": false,
+            "control_min_scaled_jacobian": 0.40122470078455436,
+            "genes": [
+              9.764038782057256,
+              24.782299515338536,
+              15.271816451241703,
+              20.973501013533856,
+              22.60901284274437,
+              -12.349040370701431,
+              32.99907691785996,
+              -1.1567986398224939,
+              1.4637294403165484,
+              4.493038163522212,
+              3.917888438314428,
+              4.286587832436826,
+              1.7547426787975895,
+              1.1260233910556952
+            ],
+            "orientation": [
+              1.0,
+              -1.0
+            ],
+            "why": "hub: the fillet's tangent point has passed the next sector's corner (-1.399 deg of free ring left)"
+          },
+          {
+            "R_hub_mm": 0.7736648197553488,
+            "R_rim_mm": 1.5747733570186677,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.7487246221303798,
+            "dk": {
+              "hub": 1,
+              "rim": -1
+            },
+            "genes": [
+              7.928265283674952,
+              21.19726069957251,
+              17.623809441845346,
+              -4.918170022909205,
+              21.517690313970736,
+              -0.11957967801631142,
+              28.868906996884192,
+              -18.631500056536566,
+              3.105885604843727,
+              5.604284697528243,
+              4.13127126119743,
+              3.3274532041439393,
+              0.7736648197553488,
+              1.5747733570186677
+            ],
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.20811286422490177,
+            "open_seams": [],
+            "orientation": [
+              1.0,
+              -1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.7064832698219017,
+            "R_rim_mm": 2.275669362038914,
+            "all_blocks_valid": false,
+            "built": true,
+            "control_min_scaled_jacobian": 0.578739171821427,
+            "dk": {
+              "hub": 1,
+              "rim": -1
+            },
+            "genes": [
+              4.864037300085325,
+              12.614204419523325,
+              17.244597302720507,
+              -27.18105740254775,
+              26.625328674729865,
+              -20.721813677304812,
+              32.50445704629429,
+              -18.51912836952931,
+              3.280391775175085,
+              2.572828675766349,
+              2.630504925104108,
+              1.4632982099440612,
+              0.7064832698219017,
+              2.275669362038914
+            ],
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": -0.05082317154824384,
+            "open_seams": [],
+            "orientation": [
+              1.0,
+              -1.0
+            ],
+            "seams_close": true,
+            "worst_block": "spoke"
+          },
+          {
+            "R_hub_mm": 0.5635189870813017,
+            "R_rim_mm": 2.6695810127189628,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.7546911121458675,
+            "dk": {
+              "hub": 1,
+              "rim": -1
+            },
+            "genes": [
+              3.7753809971822303,
+              9.944327557383787,
+              19.228716840207312,
+              -13.31268054667909,
+              23.72288928754877,
+              -17.231590929588837,
+              30.072589327516766,
+              -14.312918613984902,
+              1.4487678319655661,
+              1.4738749424681505,
+              2.1981322758880557,
+              1.9568802842728137,
+              0.5635189870813017,
+              2.6695810127189628
+            ],
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.26843691399789893,
+            "open_seams": [],
+            "orientation": [
+              1.0,
+              -1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          }
+        ],
+        "[1.0, 1.0]": [
+          {
+            "R_hub_mm": 1.0398434925377709,
+            "R_rim_mm": 2.5772036644707788,
+            "built": false,
+            "control_min_scaled_jacobian": 0.8969498270799041,
+            "genes": [
+              4.69078091352994,
+              27.260949714139343,
+              15.160741549045115,
+              7.194301675859073,
+              18.12147877099936,
+              -1.6236714514138981,
+              31.784300943284798,
+              27.860212682918814,
+              1.257672825498437,
+              5.25905050455114,
+              2.354040546712745,
+              1.2923905264277193,
+              1.0398434925377709,
+              2.5772036644707788
+            ],
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "why": "hub: the fillet's tangent point has passed the next sector's corner (-0.703 deg of free ring left)"
+          },
+          {
+            "R_hub_mm": 1.100758387754178,
+            "R_rim_mm": 2.7020526760169643,
+            "all_blocks_valid": true,
+            "built": true,
+            "control_min_scaled_jacobian": 0.82924755256906,
+            "dk": {
+              "hub": 1,
+              "rim": 1
+            },
+            "genes": [
+              8.621539234501089,
+              25.133068919753775,
+              13.230437909744778,
+              -12.890036034604247,
+              21.343227900510087,
+              31.892525515465486,
+              32.554084695591364,
+              23.70516881295606,
+              1.722212573102821,
+              7.023106411134474,
+              3.7363936559368174,
+              2.384663399263108,
+              1.100758387754178,
+              2.7020526760169643
+            ],
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.15192867141968422,
+            "open_seams": [],
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.0454825562627432,
+            "R_rim_mm": 1.2463704599127885,
+            "built": false,
+            "control_min_scaled_jacobian": 0.8841266535436947,
+            "genes": [
+              9.953735458412297,
+              31.779630927175255,
+              19.528581830209458,
+              9.864403279061257,
+              23.739881568514235,
+              -11.74487591405352,
+              27.359686908715396,
+              20.25343604981405,
+              1.607496277286736,
+              1.585611077821424,
+              4.154114715997669,
+              2.4521074088487946,
+              2.0454825562627432,
+              1.2463704599127885
+            ],
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "why": "hub: the fillet's tangent point has passed the next sector's corner (-2.812 deg of free ring left)"
+          },
+          {
+            "R_hub_mm": 0.5532587753997398,
+            "R_rim_mm": 0.825791670286095,
+            "built": false,
+            "control_min_scaled_jacobian": 0.710939658448311,
+            "genes": [
+              2.764068488405683,
+              18.14121321202945,
+              9.473317521050731,
+              10.342331940933207,
+              20.972901222968243,
+              12.374548566623034,
+              29.46350364749926,
+              12.619786381860457,
+              4.412863088776467,
+              7.4594398464462905,
+              7.313123584991215,
+              4.425789551657327,
+              0.5532587753997398,
+              0.825791670286095
+            ],
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "why": "hub: the fillet's tangent point has passed the next sector's corner (-5.005 deg of free ring left)"
+          }
+        ]
+      },
+      "per_orientation": 4,
+      "seed": 20260823
+    },
+    "per_config": {
+      "coarse": {
+        "box": [
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569141764868269,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3569141764868269,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569141764868269,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3569141764868269,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3569141764868269,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3569141764868269,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38186222331754127,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.38186222331754127,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38186222331754127,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.38186222331754127,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.38186222331754127,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38914124072454054,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.38914124072454054,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38914124072454054,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.38914124072454054,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3859373389065913,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": true,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4234414012498343,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4234414012498343,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4234414012498343,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4181539660392237,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3859373389065913,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.425949934512608,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.425949934512608,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.425949934512608,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4181539660392237,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3859373389065913,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4242384313757854,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4242384313757854,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4242384313757854,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4181539660392237,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3859373389065913,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.42269260565903694,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.42269260565903694,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.42269260565903694,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4181539660392237,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3859373389065913,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4212275384303419,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4212275384303419,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4212275384303419,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.4181539660392237,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3859373389065913,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 7.105427357601002e-15,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          }
+        ],
+        "control": {
+          "all_valid": true,
+          "min_scaled_jacobian": 0.7827354131892307,
+          "n_blocks": 7,
+          "worst_block": "rim_junction"
+        },
+        "fit_limit": {
+          "hub": {
+            "limited": true,
+            "radius_mm": 3.1296998810584657
+          },
+          "rim": {
+            "limited": false,
+            "radius_mm": null
+          }
+        },
+        "landing": {
+          "hub": {
+            "cut_depth_mm": 0.7110488693399791,
+            "landing_angle_deg": 12.863985136070978,
+            "sliver_scaled_jacobian": 0.22263735854882521
+          },
+          "rim": {
+            "cut_depth_mm": 0.6512994925414519,
+            "landing_angle_deg": 4.381367043770195,
+            "sliver_scaled_jacobian": 0.07639477610401453
+          }
+        },
+        "node_counts": {
+          "n_collar_r": 7,
+          "n_rim_r": 7,
+          "n_thick": 9,
+          "ring_radial_used": 9
+        },
+        "profile": [
+          {
+            "cells_failed": 0,
+            "end": 1.2,
+            "entry": -0.3,
+            "worst_at": [
+              3.0,
+              3.0,
+              "hub_junction"
+            ],
+            "worst_min_scaled_jacobian": 0.3213487146161727
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.4,
+            "entry": -0.3,
+            "worst_at": [
+              3.0,
+              3.0,
+              "hub_junction"
+            ],
+            "worst_min_scaled_jacobian": 0.3138860496997207
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.6,
+            "entry": -0.3,
+            "worst_at": [
+              3.0,
+              3.0,
+              "hub_junction"
+            ],
+            "worst_min_scaled_jacobian": 0.30677963218542265
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.8,
+            "entry": -0.3,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_junction"
+            ],
+            "worst_min_scaled_jacobian": 0.2981188144633736
+          },
+          {
+            "cells_failed": 0,
+            "end": 2.0,
+            "entry": -0.3,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_junction"
+            ],
+            "worst_min_scaled_jacobian": 0.26243925578916605
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.2,
+            "entry": -0.35,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3246281247276669
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.4,
+            "entry": -0.35,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3461030635485417
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.6,
+            "entry": -0.35,
+            "worst_at": [
+              3.0,
+              3.0,
+              "hub_junction"
+            ],
+            "worst_min_scaled_jacobian": 0.3462493504922104
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.8,
+            "entry": -0.35,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.32854908361747104
+          },
+          {
+            "cells_failed": 0,
+            "end": 2.0,
+            "entry": -0.35,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_junction"
+            ],
+            "worst_min_scaled_jacobian": 0.2972080074731229
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.2,
+            "entry": -0.4,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3195093898164176
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.4,
+            "entry": -0.4,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3410877792194017
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.6,
+            "entry": -0.4,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.3539902944503016
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.8,
+            "entry": -0.4,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.3336284652254893
+          },
+          {
+            "cells_failed": 0,
+            "end": 2.0,
+            "entry": -0.4,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.31579082818777515
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.2,
+            "entry": -0.45,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3143943587827399
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.4,
+            "entry": -0.45,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.33607389249052194
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.6,
+            "entry": -0.45,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3569141764868269
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.8,
+            "entry": -0.45,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.3387036610992879
+          },
+          {
+            "cells_failed": 0,
+            "end": 2.0,
+            "entry": -0.45,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.3205628521300399
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.2,
+            "entry": -0.5,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3092849885182396
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.4,
+            "entry": -0.5,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3310630635878646
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.6,
+            "entry": -0.5,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.35198813866070144
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.8,
+            "entry": -0.5,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.3437717405190353
+          },
+          {
+            "cells_failed": 0,
+            "end": 2.0,
+            "entry": -0.5,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.3253328193565445
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.2,
+            "entry": -0.6,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.2990915975310338
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.4,
+            "entry": -0.6,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3210576299357784
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.6,
+            "entry": -0.6,
+            "worst_at": [
+              0.4,
+              0.5,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.3421440382729171
+          },
+          {
+            "cells_failed": 0,
+            "end": 1.8,
+            "entry": -0.6,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.3538751685452404
+          },
+          {
+            "cells_failed": 0,
+            "end": 2.0,
+            "entry": -0.6,
+            "worst_at": [
+              0.6636060402965218,
+              3.0,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.334856800907228
+          }
+        ],
+        "shipped": {
+          "R_hub_mm": 0.6636060402965218,
+          "R_rim_mm": 3.0,
+          "all_blocks_valid": true,
+          "built": true,
+          "dirn": {
+            "hub": 1.0,
+            "rim": 1.0
+          },
+          "max_seam_gap_mm": 7.105427357601002e-15,
+          "min_scaled_jacobian": 0.3594139496729975,
+          "mixed_sign_cells": 0,
+          "n_blocks": 11,
+          "n_seams": 14,
+          "non_positive_gauss_elements": 0,
+          "orientation": [
+            1.0,
+            1.0
+          ],
+          "seams_close": true,
+          "worst_block": "rim_ring_free"
+        },
+        "shipped_blocks": {
+          "hub_fillet_a": {
+            "min_det_j": 0.004524857640386449,
+            "min_scaled_jacobian": 0.9103224086250716,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              9,
+              9
+            ],
+            "valid": true
+          },
+          "hub_fillet_b": {
+            "min_det_j": 0.006847635721306881,
+            "min_scaled_jacobian": 0.38914124072454054,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              9,
+              9
+            ],
+            "valid": true
+          },
+          "hub_junction": {
+            "min_det_j": 0.0016156615734217203,
+            "min_scaled_jacobian": 0.42721486837960315,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              21,
+              9
+            ],
+            "valid": true
+          },
+          "hub_ring_free": {
+            "min_det_j": 0.030793528338494146,
+            "min_scaled_jacobian": 0.924403478895084,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              21,
+              9
+            ],
+            "valid": true
+          },
+          "hub_ring_weld": {
+            "min_det_j": 0.0072692609646760374,
+            "min_scaled_jacobian": 0.9999971127237139,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              21,
+              9
+            ],
+            "valid": true
+          },
+          "rim_fillet_a": {
+            "min_det_j": 0.017185719266385464,
+            "min_scaled_jacobian": 0.9001290400672556,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              9,
+              9
+            ],
+            "valid": true
+          },
+          "rim_fillet_b": {
+            "min_det_j": 0.008152830475896862,
+            "min_scaled_jacobian": 0.4077628499541833,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              9,
+              9
+            ],
+            "valid": true
+          },
+          "rim_junction": {
+            "min_det_j": 0.006392087615467066,
+            "min_scaled_jacobian": 0.4441517036559281,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              21,
+              9
+            ],
+            "valid": true
+          },
+          "rim_ring_free": {
+            "min_det_j": 0.043367432137543564,
+            "min_scaled_jacobian": 0.3594139496729975,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              21,
+              9
+            ],
+            "valid": true
+          },
+          "rim_ring_weld": {
+            "min_det_j": 0.017178757358011793,
+            "min_scaled_jacobian": 0.9999953254880848,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              21,
+              9
+            ],
+            "valid": true
+          },
+          "spoke": {
+            "min_det_j": 0.014772985162078056,
+            "min_scaled_jacobian": 0.9997805593408844,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              97,
+              9
+            ],
+            "valid": true
+          }
+        },
+        "shipped_seams": [
+          {
+            "a": "spoke",
+            "b": "hub_fillet_a",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 4.440892098500626e-16,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": true,
+            "side_a": "i0",
+            "side_b": "i0"
+          },
+          {
+            "a": "spoke",
+            "b": "rim_fillet_a",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": true,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_fillet_a",
+            "b": "hub_fillet_b",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_fillet_a",
+            "b": "rim_fillet_b",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_fillet_a",
+            "b": "hub_junction",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": true,
+            "side_a": "j1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_fillet_a",
+            "b": "rim_junction",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": true,
+            "side_a": "j1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_fillet_b",
+            "b": "hub_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 3.552713678800501e-15,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": true,
+            "side_a": "j1",
+            "side_b": "i1"
+          },
+          {
+            "a": "rim_fillet_b",
+            "b": "rim_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": false,
+            "side_a": "j1",
+            "side_b": "i1"
+          },
+          {
+            "a": "hub_fillet_b",
+            "b": "hub_ring_free",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": true,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_fillet_b",
+            "b": "rim_ring_free",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_junction",
+            "b": "hub_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 3.552713678800501e-15,
+            "n_a": 21,
+            "n_b": 21,
+            "reverse": true,
+            "side_a": "j0",
+            "side_b": "j1"
+          },
+          {
+            "a": "rim_junction",
+            "b": "rim_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 21,
+            "n_b": 21,
+            "reverse": true,
+            "side_a": "j0",
+            "side_b": "j0"
+          },
+          {
+            "a": "hub_ring_free",
+            "b": "hub_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 1,
+            "max_gap_mm": 1.7763568394002505e-15,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_ring_free",
+            "b": "rim_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 1,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 9,
+            "n_b": 9,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          }
+        ]
+      },
+      "medium": {
+        "box": [
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569140915334981,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569140915334981,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569140915334981,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569140915334981,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569140915334981,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.4,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3569140915334981,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38186217538972034,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38186217538972034,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38186217538972034,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38186217538972034,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.38186217538972034,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3891412380137749,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3891412380137749,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3891412380137749,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3891412380137749,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3890187291712712,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 0.6636060402965218,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": true,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4234413217957961,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4234413217957961,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4234413217957961,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_fillet_b"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4214048152829123,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3890187291712712,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.0,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4243232700966708,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4243232700966708,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4243232700966708,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4214048152829123,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3890187291712712,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 1.5,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4232246689996206,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4232246689996206,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4232246689996206,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4214048152829123,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3890187291712712,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.0,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4222167926196251,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4222167926196251,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4222167926196251,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4214048152829123,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3890187291712712,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 2.5,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 0.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4212517357143166,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 1.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4212517357143166,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 1.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4212517357143166,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 2.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.4212517357143166,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "hub_junction"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 2.5,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.3890187291712712,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "R_hub_mm": 3.0,
+            "R_rim_mm": 3.0,
+            "all_blocks_valid": true,
+            "built": true,
+            "dirn": {
+              "hub": 1.0,
+              "rim": 1.0
+            },
+            "is_shipped": false,
+            "max_seam_gap_mm": 1.4210854715202004e-14,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "n_blocks": 11,
+            "n_seams": 14,
+            "non_positive_gauss_elements": 0,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "seams_close": true,
+            "worst_block": "rim_ring_free"
+          }
+        ],
+        "control": {
+          "all_valid": true,
+          "min_scaled_jacobian": 0.7829261393407941,
+          "n_blocks": 7,
+          "worst_block": "rim_junction"
+        },
+        "fit_limit": {
+          "hub": {
+            "limited": true,
+            "radius_mm": 3.1296983751204612
+          },
+          "rim": {
+            "limited": false,
+            "radius_mm": null
+          }
+        },
+        "landing": {
+          "hub": {
+            "cut_depth_mm": 0.7110488652318342,
+            "landing_angle_deg": 12.863985243977861,
+            "sliver_scaled_jacobian": 0.22263736038488652
+          },
+          "rim": {
+            "cut_depth_mm": 0.6512994715964967,
+            "landing_angle_deg": 4.3813670523932515,
+            "sliver_scaled_jacobian": 0.07639477625407545
+          }
+        },
+        "node_counts": {
+          "n_collar_r": 9,
+          "n_rim_r": 9,
+          "n_thick": 13,
+          "ring_radial_used": 13
+        },
+        "profile": null,
+        "shipped": {
+          "R_hub_mm": 0.6636060402965218,
+          "R_rim_mm": 3.0,
+          "all_blocks_valid": true,
+          "built": true,
+          "dirn": {
+            "hub": 1.0,
+            "rim": 1.0
+          },
+          "max_seam_gap_mm": 1.4210854715202004e-14,
+          "min_scaled_jacobian": 0.36231160191995937,
+          "mixed_sign_cells": 0,
+          "n_blocks": 11,
+          "n_seams": 14,
+          "non_positive_gauss_elements": 0,
+          "orientation": [
+            1.0,
+            1.0
+          ],
+          "seams_close": true,
+          "worst_block": "rim_ring_free"
+        },
+        "shipped_blocks": {
+          "hub_fillet_a": {
+            "min_det_j": 0.001966549326447638,
+            "min_scaled_jacobian": 0.9105751456468085,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              13,
+              13
+            ],
+            "valid": true
+          },
+          "hub_fillet_b": {
+            "min_det_j": 0.0028917289625452086,
+            "min_scaled_jacobian": 0.3891412380137749,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              13,
+              13
+            ],
+            "valid": true
+          },
+          "hub_junction": {
+            "min_det_j": 0.0006637961942628733,
+            "min_scaled_jacobian": 0.42512384235246076,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              33,
+              13
+            ],
+            "valid": true
+          },
+          "hub_ring_free": {
+            "min_det_j": 0.012816860217202117,
+            "min_scaled_jacobian": 0.9231954406496505,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              33,
+              13
+            ],
+            "valid": true
+          },
+          "hub_ring_weld": {
+            "min_det_j": 0.0030107137132026006,
+            "min_scaled_jacobian": 0.9999988721570188,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              33,
+              13
+            ],
+            "valid": true
+          },
+          "rim_fillet_a": {
+            "min_det_j": 0.007513451329135482,
+            "min_scaled_jacobian": 0.9037664013177847,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              13,
+              13
+            ],
+            "valid": true
+          },
+          "rim_fillet_b": {
+            "min_det_j": 0.0035225805078222838,
+            "min_scaled_jacobian": 0.3935920421341478,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              13,
+              13
+            ],
+            "valid": true
+          },
+          "rim_junction": {
+            "min_det_j": 0.002588424308458001,
+            "min_scaled_jacobian": 0.4363272326175446,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              33,
+              13
+            ],
+            "valid": true
+          },
+          "rim_ring_free": {
+            "min_det_j": 0.017979499805432668,
+            "min_scaled_jacobian": 0.36231160191995937,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              33,
+              13
+            ],
+            "valid": true
+          },
+          "rim_ring_weld": {
+            "min_det_j": 0.00715572301476461,
+            "min_scaled_jacobian": 0.9999981740145996,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              33,
+              13
+            ],
+            "valid": true
+          },
+          "spoke": {
+            "min_det_j": 0.004920557236056218,
+            "min_scaled_jacobian": 0.9998777407176835,
+            "mixed_sign_cells": 0,
+            "non_positive_gauss_elements": 0,
+            "shape": [
+              193,
+              13
+            ],
+            "valid": true
+          }
+        },
+        "shipped_seams": [
+          {
+            "a": "spoke",
+            "b": "hub_fillet_a",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 1.7763568394002505e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": true,
+            "side_a": "i0",
+            "side_b": "i0"
+          },
+          {
+            "a": "spoke",
+            "b": "rim_fillet_a",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": true,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_fillet_a",
+            "b": "hub_fillet_b",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_fillet_a",
+            "b": "rim_fillet_b",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_fillet_a",
+            "b": "hub_junction",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 1.7763568394002505e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": true,
+            "side_a": "j1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_fillet_a",
+            "b": "rim_junction",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": true,
+            "side_a": "j1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_fillet_b",
+            "b": "hub_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 3.552713678800501e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": true,
+            "side_a": "j1",
+            "side_b": "i1"
+          },
+          {
+            "a": "rim_fillet_b",
+            "b": "rim_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": false,
+            "side_a": "j1",
+            "side_b": "i1"
+          },
+          {
+            "a": "hub_fillet_b",
+            "b": "hub_ring_free",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 1.7763568394002505e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": true,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_fillet_b",
+            "b": "rim_ring_free",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 0.0,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "hub_junction",
+            "b": "hub_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 3.552713678800501e-15,
+            "n_a": 33,
+            "n_b": 33,
+            "reverse": true,
+            "side_a": "j0",
+            "side_b": "j1"
+          },
+          {
+            "a": "rim_junction",
+            "b": "rim_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 0,
+            "max_gap_mm": 7.105427357601002e-15,
+            "n_a": 33,
+            "n_b": 33,
+            "reverse": true,
+            "side_a": "j0",
+            "side_b": "j0"
+          },
+          {
+            "a": "hub_ring_free",
+            "b": "hub_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 1,
+            "max_gap_mm": 3.552713678800501e-15,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          },
+          {
+            "a": "rim_ring_free",
+            "b": "rim_ring_weld",
+            "closes": true,
+            "counts_agree": true,
+            "dk": 1,
+            "max_gap_mm": 1.4210854715202004e-14,
+            "n_a": 13,
+            "n_b": 13,
+            "reverse": false,
+            "side_a": "i1",
+            "side_b": "i0"
+          }
+        ]
+      }
+    },
+    "seam_tol_mm": 1e-09
+  },
   "self_checks": {
     "controls": true,
     "cusp_at_B_is_exact": true,
     "pass": true,
-    "route2_angle_is_a_boundary_quantity": true
+    "route2_angle_is_a_boundary_quantity": true,
+    "sector_seams_close_at_every_orientation": true,
+    "sector_seams_close_whole_edge": true,
+    "unfilleted_sector_still_clean": true
   },
   "shipped_radii_mm": {
     "hub": 0.6636060402965218,
