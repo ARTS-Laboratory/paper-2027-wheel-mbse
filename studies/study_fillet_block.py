@@ -1084,6 +1084,55 @@ def sweep_layer_profile(genes, cfg, entries, ends, box):
     return rows
 
 
+UNCAP_BLENDS = (1.0, 0.5, 0.25, 0.0)
+
+
+def sweep_uncap(genes, cfg, blends=UNCAP_BLENDS):
+    """The filleted blocking against the rim's uncap blend, with the unfilleted control.
+
+    THIS IS A QUESTION ABOUT THE TRI-BLOCK, ASKED FROM THE FILLET'S SIDE.  §37 shelved
+    the rim tri-block and §46 promoted it: on the FAITHFUL rim -- `uncap` blend 0.0, the
+    geometry the tri-block exists to make buildable -- `rim:P_c`'s admissible fillet
+    radius goes 0.561 -> 2.585 mm, and `rim:P_c` carries the wheel's global peak.  So the
+    obvious hope after PART 10 is that the re-cut which fixed `P_t` also fixes the rim
+    junction at blend 0.0 and retires the tri-block with it.
+
+    IT DOES NOT, AND IT MAKES IT WORSE.  What collapses at blend 0.0 is a corner opening
+    to 180 degrees -- the junction block's corner at `far_end`, where the uncap edge
+    becomes the flank's own straight continuation -- and the filleted blocking SHORTENS
+    that block, so the straight corner dominates more of it, not less.  Measured here at
+    every blend, filleted and not, so the tri-block's ranking rests on a number from the
+    current construction rather than on §37's from before the flip.
+    """
+    rows = []
+    for blend in blends:
+        row = {"rim_blend": float(blend)}
+        try:
+            ctl = WW.sector_blocks(genes, cfg, uncap=(True, blend))
+            per = {k: block_quality(np.asarray(v, float))
+                   for k, v in ctl.items() if not k.startswith("_")}
+            row["control_min_scaled_jacobian"] = min(
+                q["min_scaled_jacobian"] for q in per.values())
+            row["control_worst_block"] = min(
+                per, key=lambda k: per[k]["min_scaled_jacobian"])
+        except Exception as exc:
+            row["control_why"] = f"{type(exc).__name__}: {exc}"
+        try:
+            b = WW.filleted_sector(genes, cfg, uncap=(True, blend))
+            b.pop("_thetas"); b.pop("_dirn")
+            per = {k: block_quality(np.asarray(v, float)) for k, v in b.items()}
+            row.update({
+                "min_scaled_jacobian": min(q["min_scaled_jacobian"]
+                                           for q in per.values()),
+                "worst_block": min(per, key=lambda k: per[k]["min_scaled_jacobian"]),
+                "non_positive_gauss_elements": sum(
+                    q["non_positive_gauss_elements"] for q in per.values())})
+        except (ValueError, NotImplementedError) as exc:
+            row["why"] = str(exc).split("  See ")[0]
+        rows.append(row)
+    return rows
+
+
 def sweep_sector(genes, cfg, radii_hub, radii_rim):
     """Every (R_hub, R_rim) on the grid, at the chosen profile."""
     ship_h, ship_r = float(genes[12]), float(genes[13])
@@ -1206,6 +1255,7 @@ def build_sector_section(genes, configs, junctions):
             "box": sweep_sector(genes, cfg, box_h, box_r),
             "fit_limit": {j: sector_fit_limit(genes, cfg, j) for j in junctions},
             "landing": landing_angles(genes, cfg, junctions),
+            "uncap": sweep_uncap(genes, cfg),
             # The profile sweep is a DERIVATION OF TWO CONSTANTS, not a per-config
             # measurement, and it is the expensive part of this section -- 30 pairs x 6
             # box corners is 180 sectors.  Run at the first config only, and reported
@@ -1503,6 +1553,21 @@ def _print(rec):
             print(f"    {entry:11.2f} " + "".join(cells) + star)
         print(f"    the chosen pair is entry {sec['entry_slope']:.2f}, end "
               f"{sec['end_offset']:.2f}")
+        print("\n  AND AGAINST THE RIM'S UNCAP BLEND, WHICH IS THE TRI-BLOCK'S QUESTION")
+        print(f"    {'config':7s} {'rim blend':>9s} {'unfilleted worst':>17s} "
+              f"{'filleted worst':>15s} {'worst block':>14s}")
+        for cfg, per in sec["per_config"].items():
+            for row in per["uncap"]:
+                got = (f"{row['min_scaled_jacobian']:15.6f}" if "min_scaled_jacobian"
+                       in row else f"{'REFUSED':>15s}")
+                print(f"    {cfg:7s} {row['rim_blend']:9.2f} "
+                      f"{row.get('control_min_scaled_jacobian', float('nan')):17.6f} "
+                      f"{got} {row.get('worst_block', '-'):>14s}")
+        print("    the faithful rim (blend 0.00) is NOT rescued by the re-cut and is made "
+              "worse by it:")
+        print("    what collapses is a corner opening to 180 deg at `far_end`, and the "
+              "filleted junction block is shorter, so it dominates more of it.")
+
         gs = sec["genomes"]
         print("\n  AND AT OTHER GENOMES, WHICH IS WHAT THE RADIUS BOX ABOVE IS NOT")
         print(f"    {'orientation':13s} {'n':>3s} {'refused':>8s} {'seams close':>12s} "

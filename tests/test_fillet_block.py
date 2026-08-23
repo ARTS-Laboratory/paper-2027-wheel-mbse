@@ -647,6 +647,35 @@ def test_the_blocking_is_measured_at_ONE_genome_and_the_others_are_worse(genome_
         "record that ranks STEP 1b behind it both need re-deriving")
 
 
+@pytest.mark.parametrize("cfg", SECTOR_CFGS)
+def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
+    """The tri-block's question, asked from the fillet's side and answered against it.
+
+    §46 promoted the rim tri-block because on the faithful rim — `uncap` blend 0.0 —
+    `rim:P_c`'s admissible fillet radius goes 0.561 -> 2.585 mm, and that corner carries
+    the wheel's global peak.  The obvious hope after the re-cut is that it fixes blend 0.0
+    too.  It does not, and it makes it WORSE: what collapses there is a corner opening to
+    180 degrees at `far_end`, and the filleted junction block is SHORTER, so the straight
+    corner dominates more of it.  Re-measured rather than read, and asserted as the
+    ORDERING — filleted below unfilleted below the barrier — so a future construction that
+    fixed it would go red here and reopen the tri-block's ranking.
+    """
+    ctl = ww.sector_blocks(genes, cfg, uncap=(True, 0.0))
+    ctl_sj = min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
+                 for k, v in ctl.items() if not k.startswith("_"))
+    blocks = ww.filleted_sector(genes, cfg, uncap=(True, 0.0))
+    blocks.pop("_thetas"); blocks.pop("_dirn")
+    fil_sj = min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
+                 for v in blocks.values())
+    assert ctl_sj < wo.MIN_SJ_TARGET, ctl_sj
+    assert fil_sj < ctl_sj, (fil_sj, ctl_sj)
+    # and the default blend is where both are usable
+    good = ww.filleted_sector(genes, cfg)
+    good.pop("_thetas"); good.pop("_dirn")
+    assert min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
+               for v in good.values()) > wo.MIN_SJ_TARGET
+
+
 def test_the_filleted_sector_costs_the_unfilleted_one_nothing(genes):
     """The control: `sector_blocks(fillet=None)` is not touched by any of this.
 

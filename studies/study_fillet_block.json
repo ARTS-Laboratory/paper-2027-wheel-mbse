@@ -9525,7 +9525,7 @@
       }
     }
   },
-  "seconds": 68.2,
+  "seconds": 69.5,
   "sector": {
     "block_order": [
       "spoke",
@@ -11914,6 +11914,40 @@
             "side_a": "i1",
             "side_b": "i0"
           }
+        ],
+        "uncap": [
+          {
+            "control_min_scaled_jacobian": 0.7827354131892307,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.3594139496729975,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 1.0,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "control_min_scaled_jacobian": 0.44982103580355154,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.35954760398611163,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 0.5,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "control_min_scaled_jacobian": 0.22278856819701304,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.2151455185072353,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 0.25,
+            "worst_block": "rim_junction"
+          },
+          {
+            "control_min_scaled_jacobian": 0.008176076174077567,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.0003430018209071876,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 0.0,
+            "worst_block": "rim_junction"
+          }
         ]
       },
       "medium": {
@@ -13385,6 +13419,40 @@
             "reverse": false,
             "side_a": "i1",
             "side_b": "i0"
+          }
+        ],
+        "uncap": [
+          {
+            "control_min_scaled_jacobian": 0.7829261393407941,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.36231160191995937,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 1.0,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "control_min_scaled_jacobian": 0.45006195464998766,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.36239507705984075,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 0.5,
+            "worst_block": "rim_ring_free"
+          },
+          {
+            "control_min_scaled_jacobian": 0.2229401344965609,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.21814471256988316,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 0.25,
+            "worst_block": "rim_junction"
+          },
+          {
+            "control_min_scaled_jacobian": 0.008250840893498194,
+            "control_worst_block": "rim_junction",
+            "min_scaled_jacobian": 0.0033344441275069813,
+            "non_positive_gauss_elements": 0,
+            "rim_blend": 0.0,
+            "worst_block": "rim_junction"
           }
         ]
       }
