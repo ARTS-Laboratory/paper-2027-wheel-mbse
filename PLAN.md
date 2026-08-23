@@ -7597,3 +7597,82 @@ is built inside the study from its primitives.
 
 **`HUBSHARE_PLAN.md` remains off the list**, blocked behind item 1 by its own Step 0 rule
 — now for the ninth arc.
+
+### §49 — 2026-08-23. THE GCI LADDER IS RE-RUN POST-FLIP. §29's CALL SURVIVES AND EVERY NUMBER UNDER IT MOVED: THE WHEEL IS 4.5% STIFFER AND ITS DEFLECTION ERROR CHANGED SIGN
+
+§45 ranked this and did not run it. The premise was checked before the 95 minutes were
+spent rather than after, and it held three ways. `studies/study_deflection_gci.py` calls
+`build_wheel(genes, cfg)` bare at line 117, so it takes `UNCAP_DEFAULT`, which §38 flipped
+on **2026-08-18**. The artifact's **run** is 2026-08-14 — the Makefile's own recipe note,
+not its 2026-08-16 commit date, and §45's rule that a commit date is not a run date cuts
+both ways here. And the flip moves the shipped mesh's coordinates by **0.3366 mm** at
+`smoke` and `coarse` alike while leaving the element and node counts **identical**, which
+is exactly the shape of staleness that a count-based freshness check cannot see —
+`test_mesh_counts_come_from_the_wheel_that_was_actually_solved` passes on the stale file.
+
+`make gci` re-run in full — 8 phases, both kinematics, `smoke,coarse,medium,fine`,
+`--workers 0`, **5843 s**.
+
+#### THE VERDICT IS UNCHANGED, AND IT IS THE ONLY THING THAT IS
+
+```
+                          2026-08-14 (capped)      2026-08-23 (uncapped)
+  svk  axle drop @fine       2.01274 mm               1.92328 mm      -4.45%
+  svk  deflection error      +0.637 %                 -3.836 %
+  svk  extrapolated          2.05700 mm  (+2.850%)    1.94306 mm  (-2.847%)
+  svk  observed order p      0.6379                   0.7947
+  svk  GCI(fine)             2.749 %                  1.286 %
+  lin  axle drop @fine       1.70683 mm               1.63929 mm      -3.96%
+  lin  extrapolated          1.73532 mm  (-13.234%)   1.65500 mm  (-17.250%)
+  lin  observed order p      0.7440                   0.8100
+  lin  GCI(fine)             2.087 %                  1.198 %
+```
+
+**§29's call stands**: GCI(fine) is still far wider than the ±0.3% band — 4.3x rather than
+9.2x — the ladder is still monotone, and the gate is still undecidable under every
+definition of `h` the study tries (p in [0.182, 0.847], GCI in [1.150%, 10.731%]).
+
+**But the wheel it describes is a different wheel.** Removing the end cap stiffened it by
+**4.5% under SVK and 4.0% under linear**, and the central estimate of the deflection error
+**changed sign**: the design used to extrapolate to +2.85% of the 2.0 mm target and now
+extrapolates to −2.85%. It was over-deflecting; it is now under-deflecting, by the same
+margin to three figures. Nothing in this project had that number post-flip until today.
+
+**And the convergence got better, not worse.** GCI halves and `p` rises at both
+kinematics. §36 attributed 28.7 degrees of hub wedge error to the cap; a mesh whose
+corners are the part's converges more like the part.
+
+#### THE MISMATCH §45 FLAGGED AND DECLINED TO RELY ON IS GONE
+
+`test_the_p_norm_the_optimizer_uses_diverges_far_more_slowly` compares a slope taken from
+this artifact against one taken from `study_corner_singularity.json`, and §45 recorded in
+that test's own docstring that the two came from **different mesh vintages** and that the
+inequality survived only because it is an order of magnitude wide. Both sides are now
+post-flip. The measured slope moves **−0.0441 → −0.0262** against a peak slope of −0.4695,
+so the margin widened from 10.6x to 17.9x, and the docstring no longer has to warn about
+its own inputs.
+
+#### WHAT THIS DOES NOT DO
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, no gate verdict changed.** This driver is not on `make studies`, so no `make
+studies` verdict is computed from it. And it is **one** artifact off §45's list: the nine
+`make studies` gate artifacts were already covered by §40's post-flip run, and the rest of
+the pre-flip remainder is still unaudited and still ranked.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §49
+
+1. **STEP 1b: wire the filleted blocking into `sector_blocks`** — unchanged from §48, and
+   §48's scope note travels with it: `fillet=True` lands as a measurement instrument for
+   one genome, not as an optimizer path.
+2. **Make the filleted blocking genome-robust** (§48).
+3. **The rim tri-block, re-priced against §48** (§46's payoff, §37's price, §48's new
+   third term).
+4. **The REST of §45's audit list.** `study_deflection_gci.json` is done. What is left is
+   the audit itself — which committed `studies/*.json` predate the flip AND come from a
+   driver that builds a wheel on the bare default — and §45's rule that a commit date is
+   not a run date means it cannot be answered from `git log`. That makes it a driver with
+   an artifact and a test, not a table in a plan file.
+5. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+6. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+7. **The element-validity check** (§44).
