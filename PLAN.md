@@ -105,6 +105,13 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 > outright and only 4 of the 10 that build clear the barrier. `fillet=True` is on course to
 > be a MEASUREMENT INSTRUMENT for one genome — which is what Step 2 needs — and not an
 > optimizer path.
+>
+> **AND AS OF §50 (2026-08-23) IT IS WIRED. `build_wheel(genes, cfg, fillet=True)` RETURNS
+> A MESH THAT INTEGRATES** — eleven blocks, zero non-positive Gauss points at `coarse` and
+> `medium`, seam error 3e-14 mm, and exactly twelve-fold periodic under a real solve.
+> `fillet=None` is bit-identical. **STEP 2 IS REACHABLE FOR THE FIRST TIME** and is the
+> arc's top item; it deserves its own session because it re-ranks the arc. `mesh_coords`
+> REFUSES a filleted mesh, which is §48's scope note made mechanical.
 
 | # | file | the question | cost |
 |---|---|---|---|
@@ -1496,7 +1503,7 @@ make filletblock                                          # §47/§48, ~85 s: ca
                                                           # does mesh; and the whole filleted
                                                           # sector, 11 blocks and 14 whole-edge
                                                           # seams, with what it costs the ring
-make test                                                 # 612 passed / 3 xfailed, ~32 min
+make test                                                 # 631 passed / 3 xfailed, ~32 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
 ```
@@ -7676,3 +7683,102 @@ the pre-flip remainder is still unaudited and still ranked.
 5. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 6. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 7. **The element-validity check** (§44).
+
+### §50 — 2026-08-23. STEP 1b LANDS: `build_wheel(fillet=True)` IS AN ELEVEN-BLOCK MESH THAT INTEGRATES, `fillet=None` IS BIT-IDENTICAL, AND THE PORT'S ONE BUG WAS CAUGHT BY §48's OWN NUMBERS FAILING TO REPRODUCE
+
+§48 measured the blocking and called what was left a wiring job. This is it, and it is
+ranked item 1. `wheel_wheel` gained the construction, a filleted seam table, and per-mesh
+block order, block regions and boundary sets; `tests/test_filleted_mesh.py` is new at 19
+tests, and `tests/test_fillet_block.py` and `tests/test_fillet_fold.py` moved onto the
+module's copy.
+
+#### EVERY ACCEPTANCE CRITERION, MEASURED
+
+```
+  config   nodes            elements        min scaled J      seam error    non-positive
+                                            (assembled)                     Gauss points
+  coarse   21012 -> 26196   4704 -> 5952    0.7822 -> 0.3517   3.06e-14 mm       0
+  medium   53124 -> 66468  12288 -> 15552   0.7826 -> 0.3575   3.24e-14 mm       0
+```
+
+and `test_axle_drop_is_exactly_12_fold_periodic` — the check FILLET_PLAN Step 1 names,
+and the one that has already caught a real bug in this tree — **holds on the FILLETED mesh
+through a real solve: 1.016e-11 at phase 0, 7.492e-12 at phase 7, against 1e-10.** The worst block is
+`rim_ring_free` at both configs and it clears `MIN_SJ_TARGET` by 1.8x.
+
+**And `fillet=None` is bit-identical** — coordinates, connectivity, all three node sets,
+all three edge sets and the seam error, hashed at `smoke`, `coarse` and `medium` against
+the previous commit's build. That is the half that could have gone wrong silently: the
+block order and the boundary sets are now chosen per mesh rather than being module
+constants.
+
+#### THE PORT HAD ONE BUG AND §48's OWN NUMBERS ARE WHAT FOUND IT
+
+`Q`, the ring blocks' other corner, follows `uncap` — it is where the FAR FLANK crosses
+the ring circle, not the centreline endpoint, and `sector_blocks` has read it that way
+since §38. The first port took the centreline endpoint unconditionally. **Nothing raised.**
+What caught it is that the study's committed numbers stopped reproducing: the sector-fit
+limit moved **3.1297 -> 3.4836 mm** and the worst block **0.3594 -> 0.3592**. Both
+reproduce exactly with the fix.
+
+*It has a second witness, and it is a cross-check three arcs old.* The filleted mesh
+models **+8.7625% (coarse) / +8.6965% (medium)** more area than the unfilleted one,
+against **§24's 8.77%** for the fillets' share of the part — measured on the CAD solid, by
+mass, by a completely different computation. With the bug in place it read 8.06%. Two
+independent paths landing within 0.01 of a point is not proof — a 2-D area fraction equals
+a mass fraction only for a uniform extrusion, which this part is — but it is worth more
+than either alone, and it is the first time this arc has had an external check on the
+geometry it adds.
+
+#### THE TWO THINGS THAT NOW REFUSE RATHER THAN ANSWER
+
+**`mesh_coords` and `coord_fn` refuse a filleted mesh.** They rebuild the sector without
+`fillet` and index it with `mesh.owners`; a filleted mesh has 26196 owners against 21012,
+so the silent answer was another mesh's coordinates gathered through this one's index — a
+*plausible* wrong number, which is the worst kind. This is also the mechanical guarantee
+behind §48's scope note: the filleted mesh cannot reach the optimizer through the
+differentiable path even by accident.
+
+**`area_report` withholds its reference for a filleted mesh**, because
+`modelled_area_reference` models the unfilleted region and `error_vs_modelled` would book
+the fillets' 8.76% as a discretisation residual against a reference that is otherwise good
+to 2e-4. Making that reference fillet-aware is not a closed form — the fillet's legs are a
+spline and a circle, not two straight lines — and it is ranked below.
+
+#### AND PART 3's CONSTRUCTION IS KEPT ON PURPOSE
+
+`fillet_blocking="spoke"` still builds the arc-on-the-flank-edge geometry §47 retired,
+**because `make fillet` measures it**: PART 6's usable window of 0.12-0.24 mm is a
+statement about that geometry, and deleting it would leave the table in the plan file with
+nothing behind it. Its artifact came back identical apart from its wall-clock field and is
+not re-committed.
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved.** `fillet=` is opt-in and nothing in the tree passes it except this arc's own
+drivers and tests.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §50
+
+1. **FILLET_PLAN Step 2 — REACHABLE FOR THE FIRST TIME IN THE ARC.** Re-run `make corner`
+   on a filleted mesh and ask whether the junction corner's peak still diverges under
+   refinement once the corner is rounded. **It deserves its own session**: it re-ranks the
+   arc, and PART 8's chain says the peak sits on `rim:P_c`, which this fillet does not
+   reach — so the honest prior is that Step 2 answers "the corner the fillet reaches stops
+   diverging and the peak does not move", and that has to be measured rather than assumed.
+2. **Make the filleted blocking genome-robust** (§48) — 6 of 16 feasible genomes refuse it
+   and 6 of the 10 that build sit under the barrier. Until this is done `fillet=True` is a
+   measurement instrument and `mesh_coords` refuses it on purpose.
+3. **The rim tri-block, re-priced against §48** — §46's payoff (4.6x on `rim:P_c`), §37's
+   price, and §48's third term (a ring circle CAN be crossed whole-edge, at the cost of a
+   forced radial node count and a factor of 2.2 in the worst block).
+4. **Make `modelled_area_reference` fillet-aware** — NEW, small, and named by §50. The
+   region is the unfilleted one, so a filleted mesh has no area cross-check at all today.
+   Not a closed form; the legs are a spline and a circle.
+5. **The REST of §45's audit list** (§49) — which committed `studies/*.json` predate the
+   flip AND come from a driver that builds a wheel on the bare default. A driver with an
+   artifact and a test, not a table in a plan file.
+6. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+7. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+8. **The element-validity check** (§44) — and it is worth more now than it was: the
+   filleted mesh is the first construction in this tree whose validity the corner-only
+   checks were never going to be able to judge.

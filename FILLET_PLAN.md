@@ -1327,3 +1327,123 @@ take, and it must not be wired into `wheel_objective` or the GA on the strength 
 Making it genome-robust is separate work, and after this PART it has a measured price:
 6 of 16 feasible genomes refuse the shipped-radius fillet outright, and 6 of the 10 that
 build sit under the barrier.
+
+---
+
+# STEP 1 RECORD, PART 11 — 2026-08-23. STEP 1b IS DONE. `build_wheel(fillet=True)` RETURNS AN ELEVEN-BLOCK MESH THAT INTEGRATES, AND `fillet=None` IS BIT-IDENTICAL. STEP 2 IS REACHABLE FOR THE FIRST TIME.
+
+PART 10 measured the blocking and called what was left "a wiring job with no unknown
+geometry in it". This is that job. `wheel_wheel.sector_blocks` grew a second filleted
+construction, `_seam_table` grew a filleted twin, and `BLOCK_ORDER`, `BLOCK_REGION`,
+`_edge_sets`, `_node_sets`, `quality_report`, `area_report` and `mesh_coords` all stopped
+being written as though there were one blocking.
+
+## THE ACCEPTANCE CRITERIA, EACH MEASURED
+
+```
+  config   nodes            elements        min scaled J     seam error      non-positive
+                                            (assembled)                      Gauss points
+  coarse   21012 -> 26196   4704 -> 5952    0.7822 -> 0.3517   3.06e-14 mm        0
+  medium   53124 -> 66468  12288 -> 15552   0.7826 -> 0.3575   3.24e-14 mm        0
+```
+
+and `test_axle_drop_is_exactly_12_fold_periodic` — Step 1's own named check, the one
+`tests/test_wheel_fea.py` records as exercising the mesh, the seams, the sector indexing,
+the load and the solve at once — **holds on the FILLETED mesh through a real solve:
+1.016e-11 at phase 0 and 7.492e-12 at phase 7, against the 1e-10 the arc asked for.**
+
+`min scaled J` here is `quality_report`'s, over assembled Q9 elements, and it is a
+slightly different instrument from PART 10's per-cell 0.3594; both say the same thing
+about the same block, `rim_ring_free`, and both clear `MIN_SJ_TARGET` by 1.8x.
+
+## AND THE CONTROL, WHICH IS THE HALF THAT COULD HAVE GONE WRONG SILENTLY
+
+**`fillet=None` is bit-identical.** Coordinates, connectivity, all three node sets, all
+three edge sets and the seam error, hashed at `smoke`, `coarse` and `medium` against the
+same build from the previous commit: **identical, every one.** That is not a formality.
+The block order and the boundary sets are now chosen per mesh rather than being module
+constants, and both of those are ways for the default wheel — which every study, every
+gate and every committed artifact describes — to move by something too small to notice
+and too large to ignore.
+
+## THE BUG THE PORT FOUND, AND HOW IT ANNOUNCED ITSELF
+
+`Q` is the ring blocks' other corner. Under `uncap` it is where the FAR FLANK crosses the
+ring circle, not the centreline endpoint — `sector_blocks` has read it that way since
+§38 — and the first port of the blocking took the centreline endpoint unconditionally.
+Nothing raised. What caught it is that **the study's own numbers stopped reproducing**:
+the sector-fit limit moved 3.1297 -> 3.4836 mm and the worst block 0.3594 -> 0.3592, and
+those were committed values with a plan section behind them. Fixed, and both reproduce
+exactly.
+
+*And the fix has a second witness.* The filleted mesh models **+8.7625% (coarse) /
++8.6965% (medium)** more area than the unfilleted one, against **§24's 8.77%** for the
+fillets' share of the part — measured on the CAD solid, by mass, three arcs ago and by a
+completely different computation. With the bug in place that number read 8.06%. The
+agreement is not proof and should not be quoted as one — a 2-D area fraction equals a mass
+fraction only for a uniform extrusion, which this part is — but two independent paths
+landing within 0.01 of a point is worth more than either alone.
+
+## TWO FILLETED CONSTRUCTIONS, AND WHY BOTH STAY
+
+`sector_blocks(..., fillet_blocking=)` selects.
+
+  `"sector"`, the default, is PART 10's eleven blocks.
+
+  `"spoke"` is PART 3's — the arc on the spoke block's own flank edge, which §47
+  retired as a mesh. **It is kept because `make fillet` measures it**: PART 6's usable
+  window of 0.12-0.24 mm at `coarse` is a statement about THAT geometry, and deleting the
+  geometry would make the measurement unreproducible while leaving the table in the plan
+  file. `studies/study_fillet_fold.py` and its tests now name it explicitly, and its
+  artifact came back identical apart from its wall-clock field, so it is not re-committed.
+
+The sector blocking **refuses a zero radius at either end**, where the spoke one allows
+it. Not an oversight: the re-cut moves the spoke's end, the junction's left edge and both
+ring blocks together, so "no fillet at this end" is a different blocking rather than the
+same one at `R = 0`.
+
+## THE TWO THINGS THAT NOW REFUSE RATHER THAN ANSWER
+
+**`mesh_coords` and `coord_fn` refuse a filleted mesh.** They rebuild the sector WITHOUT
+`fillet` and index it with `mesh.owners`; a filleted mesh has 26196 owners against 21012,
+so the silent answer was a different mesh's coordinates gathered through this one's index.
+That is worse than a wrong number and worse than a crash, because it is a *plausible*
+number. `WheelMesh` carries `fillet` for the same reason it carries `uncap`.
+
+**`area_report` withholds its reference for a filleted mesh.** `modelled_area_reference`
+derives its region from the exporter's geometry, which has no fillet, so
+`error_vs_modelled` would book the fillets' 8.76% as a discretisation residual against a
+reference that is otherwise good to 2e-4. Withheld with a reason; the measured half is
+still returned. Making the reference fillet-aware is real work and is **not** a closed
+form — the fillet's legs are a spline and a circle, not two straight lines, so the
+inscribed-wedge formula does not apply — and it is ranked, not done.
+
+## THE STUDY NO LONGER KEEPS A COPY
+
+`studies/study_fillet_block.py` built the eleven blocks itself in PART 10, which was right
+then and is exactly the drift its own docstring warns about now that the construction
+ships. It calls `wheel_wheel.filleted_sector`, `_filleted_sector_blocks` and
+`_seam_table_filleted` instead, and keeps what it is for: the verdict on one cell, the
+sweeps, the controls, and the two profile constants' re-derivation — which is why the
+module exposes `entry` and `end` at all. **Every measured number in the regenerated
+report is unchanged**; the only diff is the wording of six refusal messages, which are now
+the module's.
+
+## WHAT THIS DOES NOT DO
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, and the default mesh bit-identical.** `fillet=` is opt-in and nothing in the tree
+passes it except this arc's own drivers and tests.
+
+**And PART 10's scope stands unchanged.** The filleted mesh is a MEASUREMENT INSTRUMENT
+for one genome. 6 of 16 feasible genomes refuse it at their own radii and 6 of the 10 that
+build sit under the barrier, so it must not be wired into `wheel_objective` or the GA —
+and `mesh_coords` refusing is now the mechanical guarantee of that rather than a note.
+
+## STEP 2 IS REACHABLE
+
+For the first time in the arc. It re-runs `make corner` on a filleted mesh and asks
+whether the junction corner's peak still diverges under refinement once the corner is
+rounded — which is the question the whole arc exists to answer. It deserves its own
+session: it re-ranks the arc, and PART 8's chain says the peak is on `rim:P_c`, which this
+fillet does not reach.
