@@ -226,13 +226,14 @@ def test_the_p_norm_the_optimizer_uses_diverges_far_more_slowly(report):
     therefore not the raw singularity, and a reader who takes "the peak diverges" as
     "the constraint is meaningless" has over-read it.
 
-    THE TWO SIDES COME FROM DIFFERENT MESH VINTAGES AS OF 2026-08-22, and that is stated
-    rather than quietly relied on. `study_corner_singularity.json` was refreshed against
-    the uncapped default (PLAN §45); `study_deflection_gci.json` is 2026-08-16 and its
-    driver takes the same bare default, so it still describes the CAPPED mesh and is 95
-    minutes to re-run. The comparison is an inequality between two slopes an order of
-    magnitude apart, so it survives the mismatch — but it is a mismatch, and the number
-    to fix is the GCI ladder's, not this assertion's.
+    THE TWO SIDES CAME FROM DIFFERENT MESH VINTAGES BETWEEN 2026-08-18 AND 2026-08-23,
+    AND NO LONGER DO. §45 refreshed `study_corner_singularity.json` against the uncapped
+    default and recorded here, rather than quietly relying on it, that
+    `study_deflection_gci.json` was still the 2026-08-14 CAPPED ladder and 95 minutes to
+    re-run. §49 re-ran it. Both sides are now post-flip, and the margin the inequality
+    rests on widened rather than narrowed — the p-norm slope moved −0.0441 → −0.0262
+    against a peak slope of −0.4695, so 10.6x became 17.9x. The assertion is unchanged;
+    what changed is that it no longer has to survive a mismatch to hold.
     """
     gci = os.path.join(REPO, "studies", "study_deflection_gci.json")
     with open(gci) as fh:
