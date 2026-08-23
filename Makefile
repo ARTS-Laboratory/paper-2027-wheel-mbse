@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner junction fillet filletblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -106,6 +106,10 @@ help:
 	@echo "              the field AT the corner — radial decay, and whether the"
 	@echo "              peak diverges under refinement — against Williams' wedge"
 	@echo "              eigenvalue. 8.5 s for the whole ladder (PLAN §30)"
+	@echo "make corner-fillet  the SAME ladder on the FILLETED mesh — FILLET_PLAN.md"
+	@echo "              Step 2. Adds the fillet's own probes (both tangent points,"
+	@echo "              the arc, and the peak over the whole arc surface) and the"
+	@echo "              R -> 0 control that says it is the same wheel. ~22 s"
 	@echo "make filletblock  can the fillet BE a block, and can the sector be"
 	@echo "              blocked around it? the region PART 3 named has two cusps;"
 	@echo "              the boundary-layer block that meshes; and the whole"
@@ -668,6 +672,31 @@ CORNER_OUT ?= studies/study_corner_singularity.json
 corner:
 	$(PY_OPT) -u studies/study_corner_singularity.py --genome $(CORNER_GENOME) \
 	    --ladder $(CORNER_LADDER) --out $(CORNER_OUT)
+
+# THE SAME LADDER ON A FILLETED MESH.  FILLET_PLAN.md Step 2, reachable since PART 11.
+#
+# ~22 s and it is the same driver — one flag — which is the point: a filleted "before and
+# after" measured by two scripts is two instruments, and this arc has already been bitten
+# once by exactly that (PART 6, two recorded fold tables disagreeing 20x with neither
+# criterion written down).  `--fillet genome` takes genes 12 and 13.
+#
+# `--continuity coarse` is NOT decoration.  The filleted ladder reports an axle drop 38%
+# below the unfilleted one, and one ladder cannot tell the fillet's stiffness from a
+# different model.  The control drives the radius pair toward zero and asks the filleted
+# blocking to reproduce the unfilleted wheel; it does, to -0.17% at R = 0.05 mm.  Thirteen
+# extra `coarse` solves, ~8 s of the 22.
+#
+# SCOPE, WHICH IS PART 10's AND HAS NOT MOVED: `fillet=` is a MEASUREMENT INSTRUMENT for
+# one genome.  6 of 16 feasible genomes refuse it at their own radii.  Nothing on this
+# recipe may be read as a licence to wire it into `wheel_objective` or the GA.
+CORNER_FILLET ?= genome
+CORNER_FILLET_CONTINUITY ?= coarse
+CORNER_FILLET_OUT ?= studies/study_corner_singularity_fillet.json
+
+corner-fillet:
+	$(PY_OPT) -u studies/study_corner_singularity.py --genome $(CORNER_GENOME) \
+	    --ladder $(CORNER_LADDER) --fillet $(CORNER_FILLET) \
+	    --continuity $(CORNER_FILLET_CONTINUITY) --out $(CORNER_FILLET_OUT)
 
 # ---------------------------------------------------------------------------
 # DOES THE MESH HAVE THE CORNERS THE PART HAS?  (UNCAP_PLAN.md, PLAN §34)

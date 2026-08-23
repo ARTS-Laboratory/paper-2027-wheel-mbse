@@ -7,6 +7,7 @@
     "fine"
   ],
   "n_spokes": 12,
+  "fillet": null,
   "probe_radius_mm": 0.3,
   "rungs": [
     {
@@ -45,6 +46,10 @@
           "wedge_deg": 274.0295071241372,
           "n_incident_corner_elements": 3
         }
+      },
+      "global_peak": {
+        "nearest_probe": "rim:P_c",
+        "distance_mm": 0.054056451079665085
       }
     },
     {
@@ -83,6 +88,10 @@
           "wedge_deg": 271.920099176996,
           "n_incident_corner_elements": 3
         }
+      },
+      "global_peak": {
+        "nearest_probe": "rim:P_c",
+        "distance_mm": 0.023764369742903326
       }
     },
     {
@@ -121,6 +130,10 @@
           "wedge_deg": 271.3927478678404,
           "n_incident_corner_elements": 3
         }
+      },
+      "global_peak": {
+        "nearest_probe": "rim:P_c",
+        "distance_mm": 0.015325151131911324
       }
     },
     {
@@ -289,29 +302,41 @@
             ]
           }
         }
+      },
+      "global_peak": {
+        "nearest_probe": "rim:P_c",
+        "distance_mm": 0.010167678877996248
       }
     }
   ],
   "williams": {
     "hub:P_t": {
       "wedge_deg": 321.1320505418498,
-      "lambda": 0.5031970288826322,
-      "re_entrant": true
+      "kind": "re_entrant",
+      "re_entrant": true,
+      "node_gap_mm": 1.7763568394002505e-15,
+      "lambda": 0.5031970288826322
     },
     "hub:P_c": {
       "wedge_deg": 268.08192230639156,
-      "lambda": 0.5476500081318947,
-      "re_entrant": true
+      "kind": "re_entrant",
+      "re_entrant": true,
+      "node_gap_mm": 0.0,
+      "lambda": 0.5476500081318947
     },
     "rim:P_t": {
       "wedge_deg": 321.3245154644778,
-      "lambda": 0.5031488799745367,
-      "re_entrant": true
+      "kind": "re_entrant",
+      "re_entrant": true,
+      "node_gap_mm": 7.108895957933346e-15,
+      "lambda": 0.5031488799745367
     },
     "rim:P_c": {
       "wedge_deg": 271.0160686370091,
-      "lambda": 0.5428703051810333,
-      "re_entrant": true
+      "kind": "re_entrant",
+      "re_entrant": true,
+      "node_gap_mm": 0.0,
+      "lambda": 0.5428703051810333
     }
   },
   "williams_checks": {
@@ -330,6 +355,19 @@
       "slope_finest3": -0.4092257100540704,
       "lambda_from_slope": 0.5907742899459296,
       "growth_over_ladder": 2.252027070345372,
+      "increments_mpa": [
+        25.520167095546157,
+        17.423966761048902,
+        17.413587190827897
+      ],
+      "increment_ratios": [
+        0.6827528478091265,
+        0.9994042935019706
+      ],
+      "increment_ratio_finest": 0.9994042935019706,
+      "tail_fraction": 0.16039673497005288,
+      "settling": false,
+      "settled_estimate_mpa": null,
       "diverges": true
     },
     "hub:P_t": {
@@ -343,6 +381,19 @@
       "slope_finest3": -0.5719095200967754,
       "lambda_from_slope": 0.4280904799032246,
       "growth_over_ladder": 5.142622941741943,
+      "increments_mpa": [
+        33.32006601890248,
+        16.559236784435633,
+        19.34051452446016
+      ],
+      "increment_ratios": [
+        0.49697490920460885,
+        1.1679592952399056
+      ],
+      "increment_ratio_finest": 1.1679592952399056,
+      "tail_fraction": 0.22507553846913664,
+      "settling": false,
+      "settled_estimate_mpa": null,
       "diverges": true
     },
     "hub:P_c": {
@@ -356,6 +407,19 @@
       "slope_finest3": -0.4439033231206144,
       "lambda_from_slope": 0.5560966768793856,
       "growth_over_ladder": 2.3298174459319294,
+      "increments_mpa": [
+        15.216896128526894,
+        10.635098654087379,
+        12.259449881257183
+      ],
+      "increment_ratios": [
+        0.6989006538692154,
+        1.1527349468023522
+      ],
+      "increment_ratio_finest": 1.1527349468023522,
+      "tail_fraction": 0.18360550741460402,
+      "settling": false,
+      "settled_estimate_mpa": null,
       "diverges": true
     },
     "rim:P_t": {
@@ -369,6 +433,19 @@
       "slope_finest3": -0.510236454830891,
       "lambda_from_slope": 0.489763545169109,
       "growth_over_ladder": 5.0111408134179065,
+      "increments_mpa": [
+        25.34542296761655,
+        10.992796094053979,
+        12.237898983489124
+      ],
+      "increment_ratios": [
+        0.43371918109629903,
+        1.1132653493053166
+      ],
+      "increment_ratio_finest": 1.1132653493053166,
+      "tail_fraction": 0.2016579558528462,
+      "settling": false,
+      "settled_estimate_mpa": null,
       "diverges": true
     },
     "rim:P_c": {
@@ -382,6 +459,19 @@
       "slope_finest3": -0.4092257100540704,
       "lambda_from_slope": 0.5907742899459296,
       "growth_over_ladder": 2.252027070345372,
+      "increments_mpa": [
+        25.520167095546157,
+        17.423966761048902,
+        17.413587190827897
+      ],
+      "increment_ratios": [
+        0.6827528478091265,
+        0.9994042935019706
+      ],
+      "increment_ratio_finest": 0.9994042935019706,
+      "tail_fraction": 0.16039673497005288,
+      "settling": false,
+      "settled_estimate_mpa": null,
       "diverges": true
     }
   }

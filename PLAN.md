@@ -109,14 +109,27 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 > **AND AS OF §50 (2026-08-23) IT IS WIRED. `build_wheel(genes, cfg, fillet=True)` RETURNS
 > A MESH THAT INTEGRATES** — eleven blocks, zero non-positive Gauss points at `coarse` and
 > `medium`, seam error 3e-14 mm, and exactly twelve-fold periodic under a real solve.
-> `fillet=None` is bit-identical. **STEP 2 IS REACHABLE FOR THE FIRST TIME** and is the
-> arc's top item; it deserves its own session because it re-ranks the arc. `mesh_coords`
-> REFUSES a filleted mesh, which is §48's scope note made mechanical.
+> `fillet=None` is bit-identical. `mesh_coords` REFUSES a filleted mesh, which is §48's
+> scope note made mechanical.
+>
+> **AND AS OF §52 (2026-08-23) STEP 2 IS RUN, WITH A SPLIT VERDICT.** `make corner-fillet`,
+> 22 s, same driver as `make corner` with one flag. **At `P_t` — the PART's own corner, the
+> one this fillet reaches — the singularity is GONE**: on the filleted body it is not a
+> corner but an interior point, and the fillet SURFACE's peak settles to **36.8 / 16.1 MPa**
+> where the sharp corner ran to 85.9 / 60.7 and was still climbing. **STEP 2's HEADLINE IS
+> NOT DELIVERED**: the wheel's global maximum is still on `rim:P_c`, the END CAP's artefact
+> corner, which the fillet does not reach and which only the RIM TRI-BLOCK removes — §46's
+> chain arriving intact, and why the tri-block is now ranked 1. **And the unfilleted wheel
+> has been overstating its own deflection — its axle drop is 61.2% HIGHER than the filleted
+> mesh's, equivalently the fillet takes 37.97% off it** (single-phase, linear, one genome), with
+> the filleted drop also CONVERGING — 0.14% over `coarse..fine` against 1.22%. Scope
+> unchanged: `fillet=` is a measurement instrument for one genome, is not wired into the
+> optimizer, and that is now a test rather than a note.
 
 | # | file | the question | cost |
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
-| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. The top open item for five arcs, and `R_hub`/`R_rim` are **invisible to the FEA** until it is done | expensive, not cheap |
+| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52).** `R_hub`/`R_rim` move the solved wheel by 38% on the filleted mesh and are still invisible to the OPTIMIZER, which may not take that mesh. What is left is Step 3, behind the rim tri-block and genome-robustness | Steps 0-2 spent; Step 3 not cheap |
 | 3 | `HUBSHARE_PLAN.md` | Should hub compliance be an objective term? `cy4` alone moves it by 102% of the gap (§31) | medium |
 | 4 | `WALLPIN_PLAN.md` | Re-derive Gate 1 at the 1.2 mm floor and drop the beam test's 2.0 mm pin (§14's reserved judgement, measured by §31) | small |
 | 5 | `RIMCAP_PLAN.md` | A rim cap model — the boundary as a function of `t3` and rim arrival angle, not at one design (§22, §24) | medium |
@@ -7866,3 +7879,158 @@ moved, and the default mesh bit-identical.** `uncap`'s default is unchanged at
 6. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 7. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 8. **The element-validity check** (§44).
+
+---
+
+### §52 — 2026-08-23. STEP 2 IS RUN. THE FILLET DELETES THE SINGULARITY AT BOTH CORNERS IT REACHES, ITS HEADLINE IS STILL BLOCKED ON `rim:P_c` EXACTLY AS §46's CHAIN PREDICTED — AND THE UNFILLETED WHEEL'S AXLE DROP IS 61% HIGHER THAN THE FILLETED ONE'S
+
+Ranked item 1 since §50. `studies/study_corner_singularity.py` grew a `--fillet` flag —
+one driver, so the before and the after are one instrument — and `make corner-fillet`
+(22 s) writes `studies/study_corner_singularity_fillet.json`. FILLET_PLAN.md PART 12 has
+all of it.
+
+#### THE HEADLINE IS NOT DELIVERED AND THAT IS THE PREDICTION ARRIVING
+
+FILLET_PLAN Step 2's claim to test is *"the peak stress stops diverging — this is the one
+that unlocks quoting a max"*. **It does not.** The wheel's global maximum is on `rim:P_c`
+at every rung from `coarse` up — located by `argmax` over the whole Gauss field, 25.0 um
+away at `fine`, by the driver now rather than by hand in a plan file — and its successive
+differences hold a ratio of **+1.264**.
+
+`rim:P_c` is the END CAP's corner. This fillet is tangent to `P_t`. That is §46's chain,
+end to end, and **its wedge is unmoved across the re-cut — 271.02 deg unfilleted against
+270.85 filleted** — which is what licenses comparing the two ladders' `P_c` columns at all.
+Its magnitude fell 45% (108.57 -> 59.31 MPa at `fine`) because the whole wheel got
+stiffer; **the claim is "still diverges", not "diverges faster"**, because the filleted
+ring's radial count comes from `n_thick` and the near-corner mesh is a different mesh.
+
+#### AND AT `P_t` THE SINGULARITY IS GONE, NOT REDUCED
+
+`P_t` is not a corner on the filleted body — it is a point in the material's INTERIOR
+(360.00 deg, four incident elements, 104-135 um from the nearest node):
+
+```
+  probe                     peak MPa up the ladder             d(N)/d(N-1)   verdict
+  hub:P_t  unfilleted    16.71   50.03   66.59   85.93            +1.168     diverges
+  hub:P_t  FILLETED       5.37    5.49    5.49    5.51            (noise)    settled
+  rim:P_t  unfilleted    12.11   37.46   48.45   60.69            +1.113     diverges
+  rim:P_t  FILLETED       3.81    3.59    3.96    3.98            +0.048     settling
+```
+
+**The successive differences are the instrument, not the log-log slope**, which was
+written for a ladder where every probe was singular. On the unfilleted ladder all four
+corners hold their ratio at **0.999 or above**; the filleted `P_t` pair's last increments
+are 0.014 and 0.018 MPa on values of 5.5 and 4.0.
+
+And the fillet's peak is a NUMBER, taken over the whole arc rather than at sampled points —
+a tube of fixed radius about the analytic arc, so the region does not move with the mesh:
+**hub 28.85 / 33.11 / 34.94 / 35.86 MPa** (ratios 0.430, 0.507, geometric tail -> **36.8**)
+and **rim 12.90 / 15.10 / 15.87 / 16.05** (0.347, 0.242 -> **16.1**), against a sharp corner
+running to 85.93 / 60.69 and still climbing. Nothing on the arc is re-entrant — both tangent
+points measure 183-185 deg and `N`, where four blocks meet, is interior — so **the
+construction introduces no corner of its own.**
+
+#### THE RESULT NOBODY WENT LOOKING FOR
+
+```
+  axle drop mm      smoke     coarse    medium     fine     spread, coarse..fine
+  unfilleted      1.499486  1.551645  1.562981  1.570505         1.216%
+  FILLETED        0.902237  0.962456  0.963816  0.962579         0.141%
+```
+
+**-37.97% at the shipped radii — equivalently the unfilleted mesh reports a drop 61.2%
+HIGHER — and it converges.** Two of FILLET_PLAN's four stated reasons for existing,
+answered in one table.
+
+*The magnitude* is reason 4, §31's: sweeping `R_hub` across its box used to leave the
+solved wheel **bit-identical**, so two of the fourteen genes steered on a `Kt` correlation
+with no mechanical feedback at all. On the filleted mesh the radius ladder moves the axle
+drop from 1.567 to 0.765 mm, monotonically. **They are still invisible to the OPTIMIZER**,
+which may not build this mesh — what changed is that the feedback exists and is measured.
+§24 priced the fillets at 4.406 g and 8.77% of the part by mass; this is what that mass is
+worth structurally, and `R_rim = 3.0` mm puts 8.5 mm of tangent length on a 41 mm flank at
+the root, where the moment is.
+
+*The convergence* is reason 2: the unfilleted drop is still climbing at `fine` and spans
+1.216% over `coarse..fine`, the filleted one spans 0.141% and is flat from `coarse` up.
+That is the singular field polluting a global functional — the mechanism §29 spent 95
+minutes failing to identify from a convergence order.
+
+*And the fillet is the PART's.* `export/wheel_step_manifest.json` reports both junctions
+BUILT at exactly what was requested — 0.663606 and 3.000000 mm, 24 of 24 edges each,
+`kt_error_pct` 0.0 — on corners whose `worst_wedge_deg` is 322.0 / 320.0, which is `P_t`'s.
+`P_c`'s 268 / 271 appears nowhere in it. **The exporter and the mesh round the same corner
+family at the same radius, and neither rounds `P_c`** — which is why the mesh's last
+artefact corner is an artefact. Under test, and the check is not a formality: `kt_report`'s
+own docstring records the rim once shipping twelve of twenty-four corners square while
+reporting `kt_error_pct = +0.0%`.
+
+**THE SCOPE TRAVELS WITH THE NUMBER, IN TWO DIRECTIONS.** *Kinematics*: this is
+`solve_wheel`'s `axle_drop_mm`, ONE phase, LINEAR, one genome — §33's item 3 registered
+that caveat for this driver in advance, and a 38% deflection change is exactly the
+*"magnitude / `R_hub`-`R_rim` sensitivity"* class it names. The EXPONENT half of §52 does
+not inherit it: Williams is linear-elastic and the driver reproduces the 360 deg crack at
+0.5. *Which QoI*: the ±0.3% band §29 retired belongs to the GATE's quantity,
+`axle_drop_mean_mm` — eight phases, both kinematics, `make gci`, re-run post-flip at §49 —
+so **§52 does not earn the absolute band back.** It says the mechanism §29 named as the
+obstacle is measurably the obstacle, and is gone on the filleted mesh for the cheap
+single-phase surrogate. Whether the gate's own QoI follows is item 4 below.
+
+**THE CONTROL IS WHAT MAKES THAT READABLE AND IT IS IN THE ARTIFACT.** A 38% shift between
+two meshes is equally well explained by the fillet's stiffness and by a different model.
+The blocking takes an explicit radius pair, so drive it toward zero: **-0.17% at R = 0.05
+mm** against the unfilleted wheel, monotone in `R` everywhere above the floor. It is a
+limit and not an identity — `sector_blocks` refuses `R = 0`, because the re-cut moves four
+blocks — so the smallest rung's residual is asserted rather than hidden.
+
+#### THE BUG THE MEASUREMENT FOUND
+
+`measured_wedge_deg` took the nearest node of any kind. A Q9 midside is skipped by the
+angle sum, so landing on one returns **0.00 deg and zero incident elements** — a number
+shaped like a measurement. It could not fire while every probe was an exact vertex, which
+the four unfilleted corners are; on the filleted mesh `rim:P_t` reported 0.00 against
+`hub:P_t`'s correct 360.00, on which of two equally-near nodes came first. Restricted to
+Q9 vertices.
+
+#### WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, and the default mesh bit-identical.** The refreshed unfilleted artifact was diffed
+field by field against the committed one: every measured value identical, the additions
+being `fillet`, `global_peak`, `kind`, `node_gap_mm` and the difference columns.
+
+**`test_peak_stress_diverges_but_the_field_converges` still passes and was NOT touched.**
+Step 2 anticipated it failing; it calls `build_wheel(genes, cfg)` bare, so it measures the
+unfilleted default. Updating it would assert a filleted result against an unfilleted
+measurement.
+
+**§48's scope stands and is now under test.** `fillet=` is a measurement instrument for one
+genome — 6 of 16 feasible genomes refuse it — and
+`test_nothing_wires_the_fillet_into_the_objective` PARSES five `src/` modules and refuses
+any non-`None` `fillet=` / `fillet_blocking=` keyword. It parses rather than greps because
+both greps that would do the job are wrong: `wheel_objective` has a LOCAL `fillet =
+jnp.sum(...)` — the fillet-MARGIN barrier, nothing to do with the mesh — and `wheel_fea`
+passes `R_hub_fillet=` to the EXPORTER, where fillets have always been geometry.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §52
+
+1. **The rim tri-block, BUILT** — was 2, now 1. §52 removed the fillet's half of the chain
+   and left the tri-block as the *whole* remaining path to a quotable peak: `rim:P_c` is
+   the last artefact corner, it carries the global maximum, and only the faithful rim
+   admits a fillet on it. §51's probe says §37 priced it wrong on both clauses. §48's
+   driver is the template. **Do not quote §51's probe numbers until this exists.**
+2. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Promoted from
+   "after Step 2 confirms the singularity is gone" and re-scoped by what §52 measured:
+   §31's finding was that sweeping `R_hub` leaves the solved wheel BIT-IDENTICAL, and the
+   filleted mesh moves the axle drop by 38% and monotonically in `R`. The two fillet genes
+   have mechanical feedback for the first time. **This is blocked behind item 3**, because
+   feedback the optimizer may not use is not feedback.
+3. **Make the filleted blocking genome-robust** (§48) — 6 of 16 feasible genomes refuse it,
+   and 6 of the 10 that build sit under `MIN_SJ_TARGET`. Was 3.
+4. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+   What the optimizer actually sees is not the raw peak, and §52 measured the peak only.
+5. **Make `modelled_area_reference` fillet-aware** (§50).
+6. **The REST of §45's audit list** (§49).
+7. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+8. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+9. **The element-validity check** (§44).

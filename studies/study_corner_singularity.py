@@ -46,6 +46,31 @@ THREE MEASUREMENTS, in increasing order of how hard they are to explain away:
       the field does, and it is the one that decides if the stress constraint is a
       physical quantity or a mesh setting.
 
+FOURTH, SINCE 2026-08-23: THE SAME THREE ON A FILLETED MESH.  `--fillet genome`
+(`make corner-fillet`) is FILLET_PLAN.md's Step 2, and it is one flag on this driver rather
+than a second script on purpose — a before/after measured by two instruments is not a
+before/after, and this arc has already been bitten by that once (PART 6 found two recorded
+fold tables disagreeing by 20x with neither criterion written down).  Three things change
+and each is named where it happens:
+
+  * `corner_points` stays UNFILLETED.  The four corners are the arc's reference LOCATIONS
+    and may not move when the mesh does.  A filleted `<ring>_junction` patch has the same
+    shape and index convention and its `[0, 0]` is NOT `P_t` — it is `N`, 4.34 mm away at
+    the rim — so reading them off the filleted blocking would keep the label and move the
+    place.  The filleted body's own points come from `fillet_points` under their own names.
+  * `P_t` stops being a boundary corner at all, so Williams is WITHHELD there rather than
+    printing a crack's 0.5000 for a point in the middle of the material, and the wedge
+    search had to stop being able to land on a midside node.
+  * "Does the peak diverge" gets a second instrument.  The log-log slope was written for a
+    ladder on which every probe was singular; the ratio of successive DIFFERENCES separates
+    a settling tail from a divergence, and on the unfilleted ladder every corner comes in at
+    0.999 or above.  Both are reported and neither is dropped.
+
+AND THE CONTROL THAT LICENSES ANY OF IT, `--continuity`.  The filleted ladder's axle drop is
+38% below the unfilleted one, which is equally well explained by the fillet's stiffness and
+by a different model.  The blocking takes an explicit radius pair, so drive it toward zero
+and demand the unfilleted wheel back.
+
 WILLIAMS' EIGENVALUE is computed per corner from a wedge angle MEASURED ON THE MESH — the
 sum of the incident elements' interior angles at the corner node — rather than quoted from
 the export manifest.  The manifest measures the exported SOLID, which is filleted; the
@@ -73,6 +98,30 @@ LADDER = ("smoke", "coarse", "medium", "fine")
 PROBE_RADIUS_MM = 0.3       # "at the corner", for picking the loaded copy and the peak
 FIT_MAX_MM = 1.5            # outer limit of the radial fit window
 FIT_DECADE = 10.0           # fit the inner decade only, where the singular term leads
+
+# A node in the material's interior sums to exactly 360 deg; the tolerance is for
+# floating point, not for a corner that is nearly interior.  `SMOOTH_WEDGE_TOL_DEG` is
+# looser on purpose: a node on a DISCRETISED curved boundary sums to 180 plus the arc's
+# turn across one node, which is a mesh number and goes to zero under refinement, so the
+# band has to hold the coarsest rung's facet angle without holding a real corner.
+INTERIOR_WEDGE_DEG = 359.0
+SMOOTH_WEDGE_TOL_DEG = 25.0
+
+# TEST B's second instrument.  A divergent peak holds the ratio of its successive
+# differences at or above 1 — measured, every unfilleted corner comes in at 0.999 or
+# higher — so anything comfortably below separates.  `SETTLED_TAIL_FRACTION` is the
+# escape hatch for a series that has already arrived, where the increments are noise and
+# their ratio means nothing.
+SETTLING_RATIO = 0.75
+SETTLED_TAIL_FRACTION = 0.01
+
+# The continuity control's radius ladder, in mm.  Both ends are chosen: the smallest is
+# near the construction's floor (below it the boundary layer is thinner than the mesh can
+# resolve and the drop reads HIGH, which is a discretisation statement and is reported
+# rather than trimmed), the largest is `R_rim`'s own gene bound.  The genome's OWN two
+# radii are spliced in at run time rather than written here, so this list cannot go stale
+# against a promotion — which is how a committed constant last went wrong in this tree.
+CONTINUITY_RADII_MM = (0.02, 0.05, 0.1, 0.2, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0)
 
 
 def load_genes(path):
@@ -116,6 +165,16 @@ def corner_points(genes, cfg):
     [-1, 0] nodes — are exactly P_t (where the straddling flank crosses the ring circle)
     and P_c (the centerline endpoint, locked on the circle by the genome).  Those are the
     two places the ring's free surface stops being free.
+
+    ALWAYS THE UNFILLETED BLOCKING, AND THAT IS THE POINT.  These four points are the
+    arc's REFERENCE LOCATIONS: what "the peak at `rim:P_t` stopped diverging" means is
+    that the field at the same place in the same wheel stopped diverging, so the place
+    may not move when the mesh does.  It would move if this read the filleted blocking,
+    and it would move SILENTLY: the filleted `<ring>_junction` patch has the same shape
+    and the same index convention, its `[-1, 0]` really is still `P_c`, and its `[0, 0]`
+    is `N` — the fillet block's inner-edge crossing — which is 0.47 mm from `P_t` at the
+    hub and 4.34 mm at the rim.  A filleted mesh's own points come from `fillet_points`
+    under their own names.
     """
     b = WW.sector_blocks(genes, cfg)
     out = {}
@@ -123,6 +182,124 @@ def corner_points(genes, cfg):
         out[f"{label}:P_t"] = np.asarray(b[ring][0, 0], dtype=float)
         out[f"{label}:P_c"] = np.asarray(b[ring][-1, 0], dtype=float)
     return out
+
+
+def fillet_points(genes, cfg, fillet):
+    """The filleted mesh's OWN named points at both junctions.
+
+    `P_t` is the corner the fillet removes, so it has no counterpart on the filleted
+    body; what the filleted body has instead is an arc, and these are the places on it
+    where a corner could have survived the construction:
+
+      `A`    the tangent point on the straddling flank,
+      `arc`  the middle of the fillet arc,
+      `B`    the tangent point on the ring circle,
+      `N`    where the fillet block's inner edge crosses the ring circle — the one point
+             in the list that is INTERIOR, and the one where four blocks meet.
+
+    A fillet is tangent to both legs, so `A` and `B` should measure a smooth boundary and
+    `N` a smooth interior; anything re-entrant here would be a corner the construction
+    introduced, which is a thing worth being able to see rather than assume.
+
+    Read off the block grids rather than re-solving the tangency, so this cannot drift
+    from what `build_wheel` meshed.  `hub_fillet_a[0, 0]` is `A` and `hub_fillet_b[-1, 0]`
+    is `B` because `_filleted_sector_blocks` passes `arc_a`/`arc_b` as each patch's
+    `bottom`; `hub_fillet_b[0, -1]` is `N` because `inner_b` is its `top` and starts
+    there.  Pinned in `tests/test_corner_singularity.py` on the geometry — `A` and `B` lie
+    on one circle of the gene's own radius, and `B` and `N` lie on the ring circle.
+    """
+    b = WW.sector_blocks(genes, cfg, fillet=fillet)
+    out = {}
+    for label in ("hub", "rim"):
+        fa, fb = b[f"{label}_fillet_a"], b[f"{label}_fillet_b"]
+        arc = np.concatenate([fa[:, 0, :], fb[1:, 0, :]])
+        out[f"{label}:A"] = np.asarray(fa[0, 0], dtype=float)
+        out[f"{label}:arc"] = np.asarray(arc[len(arc) // 2], dtype=float)
+        out[f"{label}:B"] = np.asarray(fb[-1, 0], dtype=float)
+        out[f"{label}:N"] = np.asarray(fb[0, -1], dtype=float)
+    return out
+
+
+def fillet_arcs(genes, cfg, fillet):
+    """Each junction's fillet arc as `(centre, radius, a0, a1)` — analytic, not sampled.
+
+    Recovered by a least-squares circle fit through the arc's own mesh nodes, which is a
+    fit only in form: the residual is 7e-14 mm and the radius comes back as the gene's own
+    value to twelve digits, because the nodes ARE on a circle by construction.  Fitting
+    rather than re-solving `_fillet_tangency` keeps this reading what `build_wheel`
+    meshed; a second tangency solve here is the duplicated-geometry drift
+    `study_fillet_block.py`'s docstring is about.
+
+    Wanted because three sampled points are not a verdict on a surface.  `A`, `arc` and
+    `B` each answer "does the field at THIS spot settle"; what Step 2 asks is whether the
+    fillet's peak is a number, and that is a maximum over the whole arc.
+    """
+    b = WW.sector_blocks(genes, cfg, fillet=fillet)
+    out = {}
+    for label in ("hub", "rim"):
+        fa, fb = b[f"{label}_fillet_a"], b[f"{label}_fillet_b"]
+        arc = np.concatenate([fa[:, 0, :], fb[1:, 0, :]])
+        M = np.c_[2.0 * arc[:, 0], 2.0 * arc[:, 1], np.ones(len(arc))]
+        sol, *_ = np.linalg.lstsq(M, (arc ** 2).sum(axis=1), rcond=None)
+        C = np.array([sol[0], sol[1]])
+        R = math.sqrt(sol[2] + C @ C)
+        resid = float(np.abs(np.linalg.norm(arc - C, axis=1) - R).max())
+        a0 = math.atan2(arc[0, 1] - C[1], arc[0, 0] - C[0])
+        a1 = math.atan2(arc[-1, 1] - C[1], arc[-1, 0] - C[0])
+        a1 = a0 + ((a1 - a0 + math.pi) % (2.0 * math.pi) - math.pi)
+        out[label] = {"centre": C, "radius": R, "a0": a0, "a1": a1,
+                      "A": arc[0].copy(), "B": arc[-1].copy(), "fit_residual_mm": resid}
+    return out
+
+
+def _distance_to_arc(pts, arc):
+    """Perpendicular distance from each point to the arc, folding to the endpoints
+    outside the sweep.  Vectorised; `pts` is (n, 2)."""
+    C, R, a0, a1 = arc["centre"], arc["radius"], arc["a0"], arc["a1"]
+    d = pts - C[None, :]
+    r = np.linalg.norm(d, axis=1)
+    ang = np.arctan2(d[:, 1], d[:, 0])
+    lo, hi = (a0, a1) if a1 >= a0 else (a1, a0)
+    # Unwrap each angle into the sweep's own branch before testing containment.
+    ang = lo + ((ang - lo) % (2.0 * math.pi))
+    inside = ang <= hi
+    perp = np.abs(r - R)
+    ends = np.minimum(np.linalg.norm(pts - arc["A"][None, :], axis=1),
+                      np.linalg.norm(pts - arc["B"][None, :], axis=1))
+    return np.where(inside, perp, ends)
+
+
+def arc_peak(arc, xy, vm, n_sp, radius=PROBE_RADIUS_MM):
+    """TEST B, over the fillet's whole free surface rather than at three points on it.
+
+    The peak von Mises within `radius` of the arc, on the rotational copy that carries
+    it — the same loaded-copy rule `loaded_copy` uses, for the same reason: the wheel is
+    loaded at one contact patch and the twelve images of a fillet see twelve loads.
+
+    THE REGION IS DEFINED ANALYTICALLY AND SO DOES NOT MOVE WITH THE MESH.  A tube round a
+    polyline of the arc's own nodes would be a slightly different region at every rung,
+    which is the one thing a convergence measurement may not have.
+    """
+    ca, sa = np.cos(-2.0 * np.pi * np.arange(n_sp) / n_sp), np.sin(
+        -2.0 * np.pi * np.arange(n_sp) / n_sp)
+    best, best_k = 0.0, None
+    for k in range(n_sp):
+        rot = np.column_stack([ca[k] * xy[:, 0] - sa[k] * xy[:, 1],
+                               sa[k] * xy[:, 0] + ca[k] * xy[:, 1]])
+        m = _distance_to_arc(rot, arc) < radius
+        if m.any() and float(vm[m].max()) > best:
+            best, best_k = float(vm[m].max()), k
+    return {"peak_vm_mpa": best, "loaded_copy": best_k}
+
+
+def probe_points(genes, cfg, fillet=None):
+    """Every point the ladder measures: the four reference corners, plus — on a filleted
+    mesh — the eight the fillet itself creates.  The four are in both lists on purpose,
+    because the before/after comparison is the whole measurement."""
+    pts = corner_points(genes, cfg)
+    if fillet is not None:
+        pts.update(fillet_points(genes, cfg, fillet))
+    return pts
 
 
 def measured_wedge_deg(mesh, point, order):
@@ -135,9 +312,21 @@ def measured_wedge_deg(mesh, point, order):
 
     This measures the MESHED body.  That is the point: the exported solid is filleted at
     these corners and has no wedge to measure.
+
+    THE NEAREST NODE IS SEARCHED OVER Q9 VERTICES ONLY.  A midside node contributes a
+    straight 180 deg and is skipped by the loop below, so a search that can land on one
+    returns `wedge_deg = 0.0` and `n_incident_corner_elements = 0` — a number that looks
+    like a measurement and is not.  It never fired while every probe was an exact mesh
+    node (`node_gap_mm = 0`), which is what the four unfilleted junction corners are.  It
+    fires immediately on a FILLETED mesh, where `P_t` is no longer a node at all but a
+    point in the material's interior: `rim:P_t` at `coarse` reported 0.00 deg against
+    `hub:P_t`'s correct 360.00, purely on which of two equally-good nodes was nearer.
+    Restricting to vertices costs nothing on the unfilleted mesh — the regenerated
+    unfilleted report is unchanged in every field — and makes the filleted one readable.
     """
     xy = mesh.coords
-    nid = int(np.argmin(np.linalg.norm(xy - point, axis=1)))
+    verts = np.unique(mesh.conn[:, :4])
+    nid = int(verts[np.argmin(np.linalg.norm(xy[verts] - point, axis=1))])
     gap = float(np.linalg.norm(xy[nid] - point))
     conn = mesh.conn
     total = 0.0
@@ -162,8 +351,8 @@ def measured_wedge_deg(mesh, point, order):
 # THE FIELD
 # ---------------------------------------------------------------------------
 
-def solve_field(genes, cfg):
-    mesh = WW.build_wheel(genes, cfg)
+def solve_field(genes, cfg, fillet=None):
+    mesh = WW.build_wheel(genes, cfg, fillet=fillet)
     res = fem.solve_wheel(mesh)
     lam, mu = fem.lame(fem.YOUNGS_MODULUS_PLA_MPA, fem.POISSON_RATIO_PLA, plane="stress")
     gs = fem.gauss_stresses(mesh.coords, mesh.conn, res["u"], order=cfg.order,
@@ -223,42 +412,132 @@ def radial_decay(xy, vm, centre, n_bins=13):
             "bin_r_mm": [float(x) for x in br], "bin_max_vm": [float(x) for x in bv]}
 
 
-def run(genome=GENOME, ladder=LADDER):
+def nearest_probe(point, pts, n_sp):
+    """The named probe nearest `point`, over all `n_sp` rotational copies of each.
+
+    The wheel's global peak has been located by hand in FILLET_PLAN's PART 4 and PART 7
+    and the answer — `rim:P_c`, 15-24 um away — is load-bearing for the whole arc: it is
+    why a fillet at `P_t` cannot deliver Step 2's headline.  It was measured twice in a
+    plan file and never by the driver, so it is measured here.
+    """
+    best, best_d = None, float("inf")
+    for name, p0 in pts.items():
+        for c in _copies(p0, n_sp):
+            d = float(np.linalg.norm(point - c))
+            if d < best_d:
+                best, best_d = name, d
+    return {"nearest_probe": best, "distance_mm": best_d}
+
+
+def continuity_sweep(genes, cfg_name, radii, fillet_ref=True):
+    """DOES THE FILLETED BLOCKING SOLVE THE SAME WHEEL?  The control for the whole run.
+
+    A filleted ladder that reports a 38% shift in `axle_drop_mm` against the unfilleted
+    one is reporting either the fillet's stiffness or a different model, and the two are
+    indistinguishable from one ladder.  They are separable by a limit: the filleted
+    blocking takes an explicit radius pair, so drive it to zero and the mesh must
+    reproduce the unfilleted wheel.  It cannot be driven TO zero — `sector_blocks`
+    refuses a zero radius at either end, because the re-cut moves four blocks and "no
+    fillet here" is a different blocking rather than this one at `R = 0` — so the
+    statement is a limit rather than an identity, and both halves are reported.
+
+    One linear solve per radius at one config.  Nothing here is a corner measurement.
+    """
+    if fillet_ref is None:
+        raise ValueError("the continuity control compares a FILLETED ladder against the "
+                         "unfilleted wheel; there is nothing to control on a run with "
+                         "`fillet=None`.")
+    cfg = WW.get_config(cfg_name)
+    base = fem.solve_wheel(WW.build_wheel(genes, cfg))["axle_drop_mm"]
+    radii = sorted(set(radii) | {float(genes[12]), float(genes[13])})
+    rows = []
+    for R in radii:
+        pair = (float(R), float(R))
+        try:
+            mesh = WW.build_wheel(genes, cfg, fillet=pair)
+        except ValueError as exc:
+            rows.append({"R_mm": float(R), "built": False, "why": str(exc)[:120]})
+            continue
+        drop = float(fem.solve_wheel(mesh)["axle_drop_mm"])
+        rows.append({"R_mm": float(R), "built": True, "axle_drop_mm": drop,
+                     "rel_to_unfilleted": drop / float(base) - 1.0})
+    shipped = float(fem.solve_wheel(
+        WW.build_wheel(genes, cfg, fillet=fillet_ref))["axle_drop_mm"])
+    return {"config": cfg_name, "unfilleted_axle_drop_mm": float(base),
+            "shipped_fillet_axle_drop_mm": shipped,
+            "shipped_rel_to_unfilleted": shipped / float(base) - 1.0,
+            "rows": rows}
+
+
+def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None):
     genes = load_genes(genome)
     n_sp = WW.NUMBER_OF_SPOKES
     out = {"genome": genome, "ladder": list(ladder), "n_spokes": n_sp,
+           "fillet": (fillet if fillet is None or fillet is True
+                      else [float(v) for v in fillet]),
            "probe_radius_mm": PROBE_RADIUS_MM, "rungs": [], "williams": {}}
 
     finest = WW.get_config(ladder[-1])
-    pts = corner_points(genes, finest)
+    pts = probe_points(genes, finest, fillet)
 
     for name in ladder:
         cfg = WW.get_config(name)
-        mesh, res, xy, vm = solve_field(genes, cfg)
+        mesh, res, xy, vm = solve_field(genes, cfg, fillet=fillet)
         rec = {"config": name, "n_elements": int(mesh.n_elements),
                "n_nodes": int(mesh.n_nodes),
                "h": 1.0 / math.sqrt(mesh.n_elements),
                "axle_drop_mm": float(res["axle_drop_mm"]),
                "global_max_vm_mpa": float(vm.max()), "corners": {}}
-        for cname, p0 in corner_points(genes, cfg).items():
+        rung_pts = probe_points(genes, cfg, fillet)
+        rec["global_peak"] = nearest_probe(xy[int(np.argmax(vm))], rung_pts, n_sp)
+        for cname, p0 in rung_pts.items():
             centre, peak = loaded_copy(p0, xy, vm, n_sp)
             entry = {"peak_vm_mpa": peak}
             entry.update(measured_wedge_deg(mesh, p0, cfg.order))
             if name == ladder[-1] and centre is not None:
                 entry["radial_decay"] = radial_decay(xy, vm, centre)
             rec["corners"][cname] = entry
+        if fillet is not None:
+            rec["surfaces"] = {}
+            for label, arc in fillet_arcs(genes, cfg, fillet).items():
+                e = arc_peak(arc, xy, vm, n_sp)
+                e.update({"radius_mm": arc["radius"],
+                          "sweep_deg": math.degrees(abs(arc["a1"] - arc["a0"])),
+                          "fit_residual_mm": arc["fit_residual_mm"]})
+                rec["surfaces"][f"{label}:surface"] = e
         out["rungs"].append(rec)
+        gp = rec["global_peak"]
         print(f"  {name:<7} elem {rec['n_elements']:>6}  h {rec['h']:.6f}  "
               f"drop {rec['axle_drop_mm']:.5f}  global vm max "
-              f"{rec['global_max_vm_mpa']:8.2f} MPa", flush=True)
+              f"{rec['global_max_vm_mpa']:8.2f} MPa  at {gp['nearest_probe']} "
+              f"+{gp['distance_mm'] * 1000.0:.1f} um", flush=True)
 
     # Williams, from the wedge angles the FINEST mesh actually has.
+    #
+    # `kind` IS NOT DECORATION.  On the unfilleted mesh every probe is a re-entrant
+    # boundary corner and Williams applies to all four.  On a filleted one it applies to
+    # none of the fillet's own points and to neither `P_t`: `P_t` is now INTERIOR (four
+    # elements, 360 deg) and an interior node is not a traction-free wedge, so quoting
+    # `williams_lambda(360)` there would print a crack's 0.5000 for a point in the middle
+    # of the material.  `lambda` is therefore withheld unless the wedge is a re-entrant
+    # BOUNDARY corner, and the reason is carried in the record rather than left to the
+    # reader.
     fine_rec = out["rungs"][-1]
     for cname, e in fine_rec["corners"].items():
-        out["williams"][cname] = {
-            "wedge_deg": e["wedge_deg"],
-            "lambda": williams_lambda(e["wedge_deg"]),
-            "re_entrant": bool(e["wedge_deg"] > 180.0)}
+        w = e["wedge_deg"]
+        if w >= INTERIOR_WEDGE_DEG:
+            kind = "interior"
+        elif w > 180.0 + SMOOTH_WEDGE_TOL_DEG:
+            kind = "re_entrant"
+        elif w > 180.0 - SMOOTH_WEDGE_TOL_DEG:
+            kind = "smooth"
+        else:
+            kind = "convex"
+        rec = {"wedge_deg": w, "kind": kind, "re_entrant": bool(kind == "re_entrant"),
+               "node_gap_mm": e["node_gap_mm"]}
+        if kind == "re_entrant":
+            rec["lambda"] = williams_lambda(w)
+        out["williams"][cname] = rec
     out["williams_checks"] = {"crack_360deg": williams_lambda(360.0),
                               "textbook_270deg": williams_lambda(270.0)}
 
@@ -268,34 +547,84 @@ def run(genome=GENOME, ladder=LADDER):
     series = {"global_max_vm": [r["global_max_vm_mpa"] for r in out["rungs"]]}
     for cname in pts:
         series[cname] = [r["corners"][cname]["peak_vm_mpa"] for r in out["rungs"]]
+    for sname in out["rungs"][-1].get("surfaces", {}):
+        series[sname] = [r["surfaces"][sname]["peak_vm_mpa"] for r in out["rungs"]]
     for k, v in series.items():
         v = np.array(v, dtype=float)
         if (v <= 0).any():
             continue
         s_all = float(np.polyfit(lh, np.log(v), 1)[0])
         s_fin = float(np.polyfit(lh[-3:], np.log(v[-3:]), 1)[0])
+        # THE SLOPE IS NOT THE ONLY READ, AND ON A FILLETED MESH IT IS NOT THE BEST ONE.
+        # `slope_finest3` fits a power law through three rungs and calls anything steeper
+        # than -0.15 divergent; that separates a singular corner from a smooth one and it
+        # was written for a ladder where every probe was singular.  A BOUNDED quantity
+        # still approaching its limit has a nonzero slope over three rungs, and two of the
+        # fillet's own probes land there: `hub:B` fits -0.2331 while its successive
+        # differences run 1.76, 0.96, 0.22 mm — a ratio falling 0.55 -> 0.23, which is a
+        # tail, not a divergence.  The differences are the sharper instrument and both are
+        # reported.  A divergent series holds its ratio near or above 1 (`rim:P_c`
+        # unfilleted: 0.68 -> 1.00); a convergent one decays.
+        d = np.diff(v)
+        ratios = [float(b / a) if abs(a) > 1e-12 else float("nan")
+                  for a, b in zip(d, d[1:])]
+        tail = float(abs(d[-1]) / v[-1])
         out["divergence"][k] = {
             "peak_mpa": [float(x) for x in v],
             "slope_all": s_all, "slope_finest3": s_fin,
             "lambda_from_slope": s_fin + 1.0,
             "growth_over_ladder": float(v[-1] / v[0]),
+            "increments_mpa": [float(x) for x in d],
+            "increment_ratios": ratios,
+            "increment_ratio_finest": ratios[-1] if ratios else None,
+            "tail_fraction": tail,
+            # SETTLING IS NOT "THE RATIO FELL".  A geometrically convergent sequence has a
+            # roughly CONSTANT ratio below 1 — demanding a falling one demands superlinear
+            # convergence and would refuse `hub:surface`'s 0.430 -> 0.507, which is textbook
+            # behaviour.  What separates settling from diverging is the ratio's DISTANCE
+            # below 1, and the second clause catches the case the ratio cannot speak to at
+            # all: a series already at its limit, whose increments are noise about zero and
+            # whose ratio is therefore arbitrary (`hub:P_t` filleted: 0.12, -0.003, 0.014
+            # MPa on a value of 5.5, and a ratio of -4.78).
+            "settling": bool(tail < SETTLED_TAIL_FRACTION
+                             or (ratios and abs(ratios[-1]) < SETTLING_RATIO
+                                 and tail < 0.10)),
+            # The limit of the remaining geometric tail, WHERE THERE IS ONE.  Withheld
+            # for anything not settling, which is the only discipline that keeps this
+            # from being a way to quote a number for a divergent series: summing
+            # d * r / (1 - r) needs |r| < 1, and a divergent peak's r is >= 1 by
+            # definition.  It is an estimate and the measurement is `peak_mpa[-1]`.
+            "settled_estimate_mpa": None,
             # A convergent peak gives ~0.  The threshold is deliberately loose: this
             # separates "diverges" from "converges", not one lambda from another.
             "diverges": bool(s_fin < -0.15)}
+        rec = out["divergence"][k]
+        if rec["settling"] and ratios and abs(ratios[-1]) < 1.0:
+            r = abs(ratios[-1])
+            rec["settled_estimate_mpa"] = float(v[-1] + d[-1] * r / (1.0 - r))
+
+    if continuity is not None:
+        out["continuity"] = continuity_sweep(genes, continuity, CONTINUITY_RADII_MM,
+                                             fillet_ref=fillet)
     return out
 
 
 def _print(rep):
+    fil = rep.get("fillet")
+    tag = ("unfilleted" if fil is None else
+           "FILLETED (genome radii)" if fil is True else
+           f"FILLETED R = {fil[0]:.4f} / {fil[1]:.4f} mm")
     print("\n" + "=" * 78)
-    print(f"  JUNCTION CORNER SINGULARITY — {rep['genome']}")
+    print(f"  JUNCTION CORNER SINGULARITY — {rep['genome']} — {tag}")
     print("=" * 78)
     w = rep["williams_checks"]
     print(f"  Williams check: crack (360 deg) -> {w['crack_360deg']:.6f} (exact 0.5), "
           f"270 deg -> {w['textbook_270deg']:.4f} (textbook 0.5445)")
-    print(f"\n  {'corner':<10}{'wedge deg':>11}{'re-entrant':>12}{'lambda_W':>10}")
+    print(f"\n  {'probe':<11}{'wedge deg':>11}{'gap um':>9}{'kind':>13}{'lambda_W':>10}")
     for c, d in rep["williams"].items():
-        print(f"  {c:<10}{d['wedge_deg']:>11.2f}{str(d['re_entrant']):>12}"
-              f"{d['lambda']:>10.4f}")
+        lam = f"{d['lambda']:>10.4f}" if "lambda" in d else f"{'-':>10}"
+        print(f"  {c:<11}{d['wedge_deg']:>11.2f}"
+              f"{d['node_gap_mm'] * 1000.0:>9.1f}{d['kind']:>13}{lam}")
 
     print(f"\n  TEST A — radial decay at the finest rung "
           f"(binned max over theta, inner decade)")
@@ -311,24 +640,79 @@ def _print(rep):
 
     print(f"\n  TEST B — does the peak DIVERGE under refinement?")
     print(f"    {'quantity':<16}{'peak MPa across the ladder':<44}"
-          f"{'d log/d log h':>14}{'lambda':>9}  diverges")
+          f"{'d log/d log h':>14}{'lambda':>9}  {'diverges':<6}{'dN/dN-1':>8}")
     for k, d in rep["divergence"].items():
         peaks = "  ".join(f"{x:7.2f}" for x in d["peak_mpa"])
+        r = d.get("increment_ratio_finest")
+        rs = f"{r:>+8.3f}" if r is not None else f"{'-':>8}"
+        est = d.get("settled_estimate_mpa")
+        note = f"settling -> {est:.2f} MPa" if est is not None else (
+            "settling" if d.get("settling") else "")
         print(f"    {k:<16}{peaks:<44}{d['slope_finest3']:>+14.4f}"
-              f"{d['lambda_from_slope']:>9.4f}  {d['diverges']}")
+              f"{d['lambda_from_slope']:>9.4f}  {str(d['diverges']):<6}"
+              f"{rs}  {note}")
     print("    (a convergent peak gives a slope of ~0; these grow by "
           f"{max(d['growth_over_ladder'] for d in rep['divergence'].values()):.2f}x "
-          "across the ladder)")
+          "across the ladder.  The last column is the ratio of the two finest successive "
+          "differences:\n     a divergent series holds it near 1, a settling one decays.)")
+
+    print(f"\n  WHERE THE WHEEL'S GLOBAL MAXIMUM ACTUALLY IS")
+    for r in rep["rungs"]:
+        g = r["global_peak"]
+        print(f"    {r['config']:<8}{r['global_max_vm_mpa']:>9.2f} MPa   "
+              f"{g['nearest_probe']:<11} + {g['distance_mm'] * 1000.0:8.1f} um")
+
+    print(f"\n  DEFLECTION ACROSS THE LADDER")
+    for r in rep["rungs"]:
+        print(f"    {r['config']:<8}{r['axle_drop_mm']:>12.6f} mm")
+
+    if "continuity" in rep:
+        c = rep["continuity"]
+        print(f"\n  CONTROL — IS THIS THE SAME WHEEL?  R -> 0 against the unfilleted "
+              f"mesh at `{c['config']}`")
+        print(f"    unfilleted           {c['unfilleted_axle_drop_mm']:>12.6f} mm")
+        for row in c["rows"]:
+            if not row["built"]:
+                print(f"    R = {row['R_mm']:<8.4f}     REFUSED  {row['why']}")
+                continue
+            print(f"    R = {row['R_mm']:<8.4f}     {row['axle_drop_mm']:>12.6f} mm  "
+                  f"{row['rel_to_unfilleted']:+8.2%}")
+        print(f"    genome's own pair    {c['shipped_fillet_axle_drop_mm']:>12.6f} mm  "
+              f"{c['shipped_rel_to_unfilleted']:+8.2%}")
     print("=" * 78 + "\n")
+
+
+def parse_fillet(text):
+    """`--fillet` as `none`, `genome`, or an explicit `R_hub,R_rim` pair, in mm.
+
+    `genome` rather than `true` because that is what `build_wheel(fillet=True)` means —
+    genes 12 and 13 — and a flag reading `--fillet true` invites the reading "on, at
+    whatever the default radius is", which there is no such thing as.
+    """
+    t = (text or "none").strip().lower()
+    if t in ("none", "off", ""):
+        return None
+    if t in ("genome", "true", "on"):
+        return True
+    parts = [p for p in t.replace(",", " ").split() if p]
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError(
+            f"--fillet takes `none`, `genome`, or `R_hub,R_rim` in mm; got {text!r}")
+    return tuple(float(p) for p in parts)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--genome", default=GENOME)
     ap.add_argument("--ladder", default=",".join(LADDER))
+    ap.add_argument("--fillet", type=parse_fillet, default=None,
+                    help="none (default) | genome | R_hub,R_rim in mm")
+    ap.add_argument("--continuity", default=None,
+                    help="config name for the R -> 0 control; filleted runs only")
     ap.add_argument("--out", default=os.path.join(HERE, "study_corner_singularity.json"))
     args = ap.parse_args()
-    rep = run(args.genome, tuple(args.ladder.split(",")))
+    rep = run(args.genome, tuple(args.ladder.split(",")),
+              fillet=args.fillet, continuity=args.continuity)
     _print(rep)
     with open(args.out, "w") as fh:
         json.dump(rep, fh, indent=2)

@@ -16,6 +16,7 @@ starting from a 960-element mesh do not determine an exponent to two decimals an
 pretending otherwise is how §29 went wrong in the first place.
 """
 
+import ast
 import json
 import math
 import os
@@ -43,6 +44,15 @@ def genes():
 @pytest.fixture(scope="module")
 def report():
     with open(os.path.join(REPO, "studies", "study_corner_singularity.json")) as fh:
+        return json.load(fh)
+
+
+@pytest.fixture(scope="module")
+def fillet_report():
+    """FILLET_PLAN.md Step 2's ladder — `make corner-fillet`, the same driver with
+    `--fillet genome`."""
+    path = os.path.join(REPO, "studies", "study_corner_singularity_fillet.json")
+    with open(path) as fh:
         return json.load(fh)
 
 
@@ -246,3 +256,436 @@ def test_the_p_norm_the_optimizer_uses_diverges_far_more_slowly(report):
     assert abs(slope) < abs(peak) / 5.0, (
         f"the p-norm ({slope:+.4f}) is no longer far flatter than the raw peak "
         f"({peak:+.4f}) — §30's qualifier needs re-deriving")
+
+
+# ---------------------------------------------------------------------------
+# STEP 2 — THE SAME LADDER ON A FILLETED MESH
+# ---------------------------------------------------------------------------
+#
+# Everything below reads `studies/study_corner_singularity_fillet.json` or rebuilds
+# geometry; none of it solves a field, which is what keeps the set cheap enough to be
+# tests rather than a study.
+#
+# THE SCOPE THESE PIN IS PART 10's AND IT HAS NOT MOVED. `fillet=` is a measurement
+# instrument for ONE genome — 6 of 16 feasible genomes refuse it at their own radii — so
+# nothing here asserts anything about the optimizer, and `test_nothing_wires_the_fillet_
+# into_the_objective` says so in a form that can go red.
+
+
+def test_the_probe_points_the_fillet_adds_are_on_the_geometry_they_claim(genes):
+    """`A`, `arc` and `B` on one circle of the gene's radius; `B` and `N` on the ring.
+
+    Checked against the construction rather than against stored coordinates, because the
+    whole value of `fillet_points` is that it reads what `build_wheel` MESHED. A version
+    that read the wrong grid index would still return four plausible points near the
+    junction, and only geometry catches that.
+    """
+    cfg = ww.get_config("coarse")
+    arcs = cs.fillet_arcs(genes, cfg, True)
+    pts = cs.fillet_points(genes, cfg, True)
+    for label, R_gene in (("hub", float(genes[12])), ("rim", float(genes[13]))):
+        arc = arcs[label]
+        assert arc["fit_residual_mm"] < 1e-9, (
+            f"{label}: the arc's nodes are not on a circle to {arc['fit_residual_mm']:.2e} "
+            f"mm — `fillet_arcs` is fitting the wrong grid")
+        assert arc["radius"] == pytest.approx(R_gene, rel=1e-9), (
+            f"{label}: fitted radius {arc['radius']:.6f} against gene {R_gene:.6f}")
+        for name in ("A", "arc", "B"):
+            d = float(np.linalg.norm(pts[f"{label}:{name}"] - arc["centre"]))
+            assert d == pytest.approx(arc["radius"], abs=1e-9), f"{label}:{name} off arc"
+
+        ring_r = (ww.HUB_RADIUS_MM if label == "hub"
+                  else ww.rim_inner_radius(ww.HUB_RIM_SPAN_MM))
+        for name in ("B", "N"):
+            r = float(np.linalg.norm(pts[f"{label}:{name}"]))
+            assert r == pytest.approx(ring_r, abs=1e-9), (
+                f"{label}:{name} is at r = {r:.6f}, not on the ring circle {ring_r}")
+
+
+def test_the_reference_corners_do_not_move_when_the_mesh_is_filleted(genes):
+    """`corner_points` is the arc's BEFORE/AFTER anchor and must be blind to `fillet`.
+
+    THE TRAP IS SPECIFIC AND IT IS SILENT. The filleted `<ring>_junction` patch has the
+    same shape and the same index convention as the unfilleted one, and its `[-1, 0]` node
+    really is still `P_c`. Its `[0, 0]` is not `P_t` — it is `N`, 0.47 mm away at the hub
+    and 4.34 mm at the rim — so a `corner_points` that read the filleted blocking would
+    keep the label, move the place, and report that `rim:P_t` stopped diverging on the
+    strength of a measurement taken somewhere else.
+    """
+    cfg = ww.get_config("coarse")
+    plain = cs.corner_points(genes, cfg)
+    with_fillet = cs.probe_points(genes, cfg, fillet=True)
+    for name, p in plain.items():
+        assert np.allclose(with_fillet[name], p, atol=0.0), name
+
+    filleted_blocks = ww.sector_blocks(genes, cfg, fillet=True)
+    for ring, label in (("hub_junction", "hub"), ("rim_junction", "rim")):
+        N = np.asarray(filleted_blocks[ring][0, 0], dtype=float)
+        assert np.linalg.norm(N - plain[f"{label}:P_t"]) > 0.4, (
+            f"{label}: `N` and `P_t` have come together, so this test no longer "
+            f"distinguishes the two blockings — re-derive it before trusting it")
+        assert np.allclose(filleted_blocks[ring][-1, 0], plain[f"{label}:P_c"])
+
+
+def test_the_wedge_search_cannot_land_on_a_midside_node(genes):
+    """A midside contributes a straight 180 deg and is skipped, so a nearest-node search
+    that can select one returns 0.00 deg — a number shaped like a measurement.
+
+    It never fired while every probe was an exact vertex, which the four unfilleted
+    corners are. On a filleted mesh `P_t` is interior and not a node at all, and
+    `rim:P_t` at `coarse` reported 0.00 deg against `hub:P_t`'s correct 360.00 purely on
+    which of two equally-near nodes came first.
+    """
+    cfg = ww.get_config("coarse")
+    mesh = ww.build_wheel(genes, cfg, fillet=True)
+    for name, p in cs.corner_points(genes, cfg).items():
+        got = cs.measured_wedge_deg(mesh, p, cfg.order)
+        assert got["n_incident_corner_elements"] > 0, (
+            f"{name}: the wedge search landed on a midside node and returned "
+            f"{got['wedge_deg']:.2f} deg")
+        if name.endswith("P_t"):
+            assert got["wedge_deg"] == pytest.approx(360.0, abs=1.0), (
+                f"{name}: {got['wedge_deg']:.2f} deg — the fillet should have made this "
+                f"an interior point")
+
+
+def test_the_filleted_report_describes_the_mesh_the_tree_BUILDS_TODAY(genes,
+                                                                     fillet_report):
+    """The filleted artifact's twin of the check §45 had to write for the unfilleted one.
+
+    Same failure mode, same cost: rebuild the finest rung and ask whether the committed
+    report still describes it. `study_corner_singularity_fillet.json` is not on `make
+    studies` either, and `fillet=` reaches deeper into `wheel_wheel` than `uncap` did.
+    """
+    finest = ww.get_config(fillet_report["ladder"][-1])
+    mesh = ww.build_wheel(genes, finest, fillet=True)
+    fine_rung = fillet_report["rungs"][-1]
+    assert mesh.n_elements == fine_rung["n_elements"]
+    assert mesh.n_nodes == fine_rung["n_nodes"]
+    for name, p in cs.probe_points(genes, finest, True).items():
+        got = cs.measured_wedge_deg(mesh, p, finest.order)
+        assert got["wedge_deg"] == pytest.approx(
+            fillet_report["williams"][name]["wedge_deg"], abs=0.05), (
+            f"{name}: the filleted mesh built today has a {got['wedge_deg']:.2f} deg "
+            f"wedge and the committed report says "
+            f"{fillet_report['williams'][name]['wedge_deg']:.2f} — re-run "
+            f"`make corner-fillet` and read what moved before trusting either")
+
+
+def test_the_two_reports_are_the_same_instrument(report, fillet_report):
+    """One driver, one flag. A before/after measured by two scripts is two instruments,
+    and this arc was already bitten by that once — PART 6 found two recorded fold tables
+    disagreeing by 20x with neither criterion written down and no script of either
+    surviving."""
+    for key in ("genome", "ladder", "n_spokes", "probe_radius_mm"):
+        assert report[key] == fillet_report[key], key
+    assert report["fillet"] is None
+    assert fillet_report["fillet"] is True
+
+
+def test_the_fillet_removes_the_corner_it_reaches_and_not_the_other_one(fillet_report):
+    """THE STEP 2 FINDING, both halves, and the second half is the one that limits it.
+
+    `P_t` is the PART's corner and the one this fillet is tangent to. On the filleted mesh
+    it is not a corner at all — it is a point in the material's interior, 360 deg, four
+    incident elements — and its peak stops diverging.
+
+    `P_c` is the END CAP's corner. The fillet does not reach it, it is still re-entrant to
+    within 0.2 deg of its unfilleted wedge, and it still diverges. That is not a
+    disappointment to be worked around: FILLET_PLAN's PART 8 closed the chain that
+    predicts it, and this is the prediction arriving.
+    """
+    w = fillet_report["williams"]
+    d = fillet_report["divergence"]
+    for label in ("hub", "rim"):
+        pt, pc = f"{label}:P_t", f"{label}:P_c"
+
+        assert w[pt]["kind"] == "interior", (
+            f"{pt}: {w[pt]['wedge_deg']:.2f} deg, kind {w[pt]['kind']} — the fillet was "
+            f"supposed to take this corner out of the boundary")
+        assert "lambda" not in w[pt], (
+            f"{pt}: Williams' eigenvalue is quoted for an INTERIOR point, where it is "
+            f"not defined — a 360 deg interior node would print a crack's 0.5000")
+        assert not d[pt]["diverges"], (
+            f"{pt}: d log(peak)/d log(h) = {d[pt]['slope_finest3']:+.4f} on the FILLETED "
+            f"mesh — the fillet did not remove the singularity")
+
+        assert w[pc]["kind"] == "re_entrant", f"{pc}: {w[pc]['kind']}"
+        assert d[pc]["diverges"], (
+            f"{pc}: the end-cap corner has stopped diverging on the filleted mesh. That "
+            f"would be a bigger result than Step 2's and it needs its own measurement — "
+            f"do not update this test without one")
+
+
+def test_the_wedge_of_the_corner_the_fillet_does_not_reach_is_unchanged(report,
+                                                                       fillet_report):
+    """`P_c`'s wedge is a property of the END CAP, so re-blocking the sector around a
+    fillet must not move it. Pinned because it is what licenses comparing the two `P_c`
+    columns at all: if the wedge moved, the exponent moved, and the two ladders would be
+    measuring different corners under one name."""
+    for label in ("hub", "rim"):
+        pc = f"{label}:P_c"
+        a = report["williams"][pc]["wedge_deg"]
+        b = fillet_report["williams"][pc]["wedge_deg"]
+        assert b == pytest.approx(a, abs=0.5), (
+            f"{pc}: {a:.2f} deg unfilleted against {b:.2f} filleted")
+
+
+def test_the_fillet_surface_is_smooth_and_introduces_no_new_corner(fillet_report):
+    """A fillet is tangent to both legs, so nothing on it may be re-entrant.
+
+    The construction could have made one anyway: `A` and `B` are block corners as well as
+    tangent points, and `N` is where four blocks meet. A re-entrant wedge at any of them
+    would be a singularity the fillet INTRODUCED, which would be worth far more attention
+    than the one it removed.
+
+    `smooth` is a 25 deg band, and the width is the measurement rather than a slack
+    tolerance: a node on a discretised curved boundary sums to 180 plus the arc's turn
+    across one node, which is a mesh number that goes to zero under refinement. The finest
+    rung's arc nodes come in at 183-189 deg.
+    """
+    w = fillet_report["williams"]
+    for label in ("hub", "rim"):
+        for name in ("A", "arc", "B"):
+            k = w[f"{label}:{name}"]
+            assert k["kind"] == "smooth", (
+                f"{label}:{name} measures {k['wedge_deg']:.2f} deg ({k['kind']}) — the "
+                f"fillet has introduced a corner where it should be tangent")
+        n = w[f"{label}:N"]
+        assert n["kind"] == "interior", f"{label}:N is {n['wedge_deg']:.2f} deg"
+
+
+def test_the_fillet_surface_peak_settles_where_the_sharp_corner_never_did(report,
+                                                                         fillet_report):
+    """THE HEADLINE, AS A COMPARISON RATHER THAN AS A THRESHOLD.
+
+    "Does the peak converge" is answered here by the ratio of successive differences up
+    the ladder, not by the log-log slope. The slope was written for a ladder on which
+    every probe was singular; a BOUNDED quantity still approaching its limit has a nonzero
+    slope over three rungs, and two of the fillet's probes land there — `hub:B` fits
+    -0.2331 while its differences run 1.76, 0.96, 0.22 MPa. The differences are the
+    sharper instrument, and on the unfilleted ladder they are unambiguous: every one of
+    the four corners holds its ratio at 0.999 or above.
+    """
+    for label in ("hub", "rim"):
+        sharp = report["divergence"][f"{label}:P_t"]
+        assert sharp["increment_ratio_finest"] > 0.9, (
+            f"{label}:P_t unfilleted has stopped diverging on the successive-difference "
+            f"test ({sharp['increment_ratio_finest']:+.3f}) — the whole before/after "
+            f"rests on it")
+
+        surf = fillet_report["divergence"][f"{label}:surface"]
+        assert surf["settling"], (
+            f"{label}:surface differences {surf['increments_mpa']} give ratios "
+            f"{surf['increment_ratios']} — the fillet's own surface peak is not settling")
+        assert surf["increment_ratio_finest"] < cs.SETTLING_RATIO
+        assert surf["tail_fraction"] < 0.03, (
+            f"{label}:surface still moves {surf['tail_fraction']:.2%} on the last rung")
+        assert surf["peak_mpa"][-1] < sharp["peak_mpa"][-1], (
+            f"{label}: the fillet surface's peak {surf['peak_mpa'][-1]:.2f} MPa is not "
+            f"below the sharp corner's {sharp['peak_mpa'][-1]:.2f} MPa at `fine`")
+
+
+def test_step_2s_HEADLINE_is_not_delivered_and_the_reason_is_measured(fillet_report):
+    """FILLET_PLAN Step 2 says the claim to test is that "the peak stress stops
+    diverging — this is the one that unlocks quoting a max". IT DOES NOT, and this test
+    exists so that nobody reads the surface result above as though it had.
+
+    The wheel's global maximum is on `rim:P_c`, the END CAP's artefact corner, which the
+    fillet does not reach — located here by `argmax` over the whole Gauss field rather
+    than asserted, exactly as PART 4 and PART 7 did by hand. `smoke` is excluded and the
+    exclusion is the finding's own edge: on a 1152-element mesh the peak is out on the hub
+    fillet instead, which is what a mesh too coarse to resolve a singularity looks like.
+    """
+    for rung in fillet_report["rungs"]:
+        if rung["config"] == fillet_report["ladder"][0]:
+            continue
+        g = rung["global_peak"]
+        assert g["nearest_probe"] == "rim:P_c", (
+            f"{rung['config']}: the wheel's peak has moved to {g['nearest_probe']} "
+            f"({g['distance_mm'] * 1000.0:.1f} um) — if the fillet has taken the peak off "
+            f"the end-cap corner then Step 2's headline IS delivered, and that needs "
+            f"its own section rather than a tolerance change here")
+        assert g["distance_mm"] < 0.1
+
+    assert fillet_report["divergence"]["global_max_vm"]["diverges"]
+    assert fillet_report["divergence"]["global_max_vm"]["increment_ratio_finest"] > 0.9
+
+
+def test_the_filleted_blocking_solves_the_SAME_WHEEL(fillet_report):
+    """THE CONTROL. Without it the filleted ladder's 38% shift in `axle_drop_mm` is
+    equally well explained by the fillet's stiffness and by a different model.
+
+    The filleted blocking takes an explicit radius pair, so drive it toward zero: the mesh
+    must reproduce the unfilleted wheel. It cannot be driven TO zero — `sector_blocks`
+    refuses a zero radius, because the re-cut moves four blocks and "no fillet here" is a
+    different blocking rather than this one at `R = 0` — so this is a limit, not an
+    identity, and the smallest rung's residual is asserted rather than hidden.
+    """
+    c = fillet_report["continuity"]
+    rows = [r for r in c["rows"] if r["built"]]
+    assert len(rows) >= 8
+
+    near_zero = min(rows, key=lambda r: r["R_mm"])
+    assert abs(near_zero["rel_to_unfilleted"]) < 0.02, (
+        f"at R = {near_zero['R_mm']} mm the filleted blocking gives "
+        f"{near_zero['axle_drop_mm']:.6f} mm against the unfilleted "
+        f"{c['unfilleted_axle_drop_mm']:.6f} — the two are not the same wheel and no "
+        f"comparison in Step 2 is safe")
+
+    # Monotone above the floor. The very smallest radius is excluded on a stated ground:
+    # its boundary layer is thinner than `coarse` resolves and the drop reads HIGH, which
+    # is a discretisation statement about the control and not about the wheel.
+    body = sorted((r for r in rows if r["R_mm"] >= 0.05), key=lambda r: r["R_mm"])
+    drops = [r["axle_drop_mm"] for r in body]
+    assert all(b < a for a, b in zip(drops, drops[1:])), (
+        f"the fillet's stiffening is not monotone in R: {drops}")
+
+    assert c["shipped_rel_to_unfilleted"] < -0.30, (
+        f"the genome's own fillet moves the axle drop by only "
+        f"{c['shipped_rel_to_unfilleted']:+.2%}")
+
+
+def test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one(
+        report, fillet_report):
+    """FILLET_PLAN's reason 2 for this arc, measured: "the ±0.3% absolute deflection band
+    could not be adjudicated", retired by §29 to a relative clause.
+
+    The unfilleted axle drop is still climbing at `fine` — the corner's singular field
+    pollutes a global functional, which is the mechanism §29 spent 95 minutes failing to
+    identify. The filleted one is flat from `coarse` up. Both spreads are computed over
+    the same three rungs of the same ladder.
+    """
+    def spread(rep):
+        d = [r["axle_drop_mm"] for r in rep["rungs"][1:]]
+        return (max(d) - min(d)) / min(d)
+
+    sharp, rounded = spread(report), spread(fillet_report)
+    assert rounded < 0.003, (
+        f"the filleted axle drop spans {rounded:.4%} over coarse..fine — it no longer "
+        f"sits inside the +-0.3% band this arc exists partly to earn back")
+    assert sharp > rounded * 2.0, (
+        f"the unfilleted deflection ({sharp:.4%}) is no longer materially worse "
+        f"converged than the filleted one ({rounded:.4%})")
+
+
+def test_nothing_wires_the_fillet_into_the_objective():
+    """PART 10's scope, as a check rather than a note. `fillet=` is a measurement
+    instrument for ONE genome — 6 of 16 feasible genomes refuse it at their own radii and
+    6 of the 10 that build sit under `MIN_SJ_TARGET` — so it must not reach the optimizer
+    on the strength of Step 2. Step 2 measured corners; it did not measure genomes."""
+    # PARSED, NOT GREPPED, and the two failures a grep gives here are both real. A pattern
+    # loose enough to catch `fillet=True` also catches `wheel_objective`'s local
+    # `fillet = jnp.sum(...)` — the fillet-MARGIN barrier, which has nothing to do with the
+    # mesh — and `wheel_fea`'s `R_hub_fillet=`, which goes to the EXPORTER, where the
+    # fillets have always been geometry. What may not appear is the keyword argument, and
+    # `ast` knows the difference between one of those and an assignment.
+    for mod in ("wheel_objective.py", "wheel_stage3.py", "wheel_fea.py",
+                "wheel_adjoint.py", "wheel_pool.py"):
+        with open(os.path.join(REPO, "src", mod)) as fh:
+            tree = ast.parse(fh.read(), filename=mod)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            for kw in node.keywords:
+                if kw.arg not in ("fillet", "fillet_blocking"):
+                    continue
+                assert isinstance(kw.value, ast.Constant) and kw.value.value is None, (
+                    f"{mod}:{node.lineno} passes {kw.arg}= to a call — `fillet=` is a "
+                    f"measurement instrument for one genome and must not reach the "
+                    f"optimizer (PLAN §48, §52)")
+
+
+def test_parse_fillet_refuses_what_it_cannot_mean():
+    assert cs.parse_fillet("none") is None
+    assert cs.parse_fillet(None) is None
+    assert cs.parse_fillet("genome") is True
+    assert cs.parse_fillet("0.5,2.0") == (0.5, 2.0)
+    for bad in ("0.5", "0.5,1.0,2.0", "big"):
+        with pytest.raises(Exception):
+            cs.parse_fillet(bad)
+
+
+def test_the_mesh_fillets_the_CORNERS_AND_RADII_THE_EXPORTER_ACTUALLY_BUILT(genes,
+                                                                              report):
+    """The filleted mesh has to be a model of the shipped part, not of the request.
+
+    `wheel_step_export.kt_report`'s own docstring records the failure this guards: OCC
+    quietly delivers a fraction of a radius it cannot fit, and the rim once shipped twelve
+    of its twenty-four corners SQUARE while the manifest reported `kt_error_pct = +0.0%`.
+    A mesh that rounds a corner the part has sharp would understate its stress and its
+    compliance, and §52 quotes a 38% deflection change off exactly this construction.
+
+    Two halves, and the second is the one that is not circular. The radius the mesh builds
+    must equal the radius the exporter BUILT (not the one the genome asked for); and the
+    manifest's `worst_wedge_deg` must be `P_t`'s, which is how we know the two bodies round
+    the same corner family — the part does not have `P_c` at all, and that is why the mesh's
+    last artefact corner is an artefact.
+    """
+    man_path = os.path.join(REPO, "export", "wheel_step_manifest.json")
+    if not os.path.exists(man_path):
+        pytest.skip("no export/wheel_step_manifest.json in this tree")
+    with open(man_path) as fh:
+        detail = {d["junction"]: d for d in json.load(fh)["fillets"]["detail"]}
+
+    cfg = ww.get_config("coarse")
+    arcs = cs.fillet_arcs(genes, cfg, True)
+    # The FINEST rung's wedges, off the committed unfilleted report. A `coarse` wedge is
+    # 1.9 deg off the `fine` one — the wedge is summed from incident element angles and
+    # the elements are what refine — and the manifest's own value is rounded to whole
+    # degrees, so a comparison run at `coarse` is comparing two roundings.
+    unfilleted_wedges = {k: v["wedge_deg"] for k, v in report["williams"].items()}
+
+    for label in ("hub", "rim"):
+        d = detail[label]
+        assert d["r_built_mm"] == pytest.approx(arcs[label]["radius"], rel=1e-9), (
+            f"{label}: the mesh models a {arcs[label]['radius']:.4f} mm fillet and the "
+            f"exporter BUILT {d['r_built_mm']:.4f} mm on {d['n_edges_filleted']} of "
+            f"{d['n_edges_found']} edges — the mesh is a model of the request, not of "
+            f"the part")
+        assert d["n_edges_filleted"] == d["n_edges_found"], (
+            f"{label}: {d['n_edges_found'] - d['n_edges_filleted']} corners shipped square")
+
+        assert d["worst_wedge_deg"] == pytest.approx(
+            unfilleted_wedges[f"{label}:P_t"], abs=2.0), (
+            f"{label}: the manifest fillets a {d['worst_wedge_deg']:.1f} deg corner and "
+            f"the mesh's P_t is {unfilleted_wedges[f'{label}:P_t']:.2f} deg — the two "
+            f"bodies are rounding different corners")
+        assert abs(d["worst_wedge_deg"] - unfilleted_wedges[f"{label}:P_c"]) > 20.0, (
+            f"{label}: P_t and P_c have come within 20 deg of each other, so the wedge no "
+            f"longer identifies which family the exporter filleted")
+
+
+def test_the_arc_distance_is_a_distance_to_the_ARC_and_not_to_its_circle(genes):
+    """`arc_peak`'s region is a tube round the fillet, and `_distance_to_arc` is what
+    makes it one. Checked against four cases whose answers are known by construction
+    rather than against stored numbers.
+
+    The failure this rules out is the one that would not look like a failure: dropping the
+    sweep test makes the region a tube round the whole CIRCLE, which at the rim is a 3 mm
+    ring reaching well into the spoke and the rim band. The peak inside it would be a
+    perfectly plausible number, larger than the fillet's, and mesh-dependent in a way the
+    fillet's is not.
+    """
+    cfg = ww.get_config("coarse")
+    for label, arc in cs.fillet_arcs(genes, cfg, True).items():
+        C, R, a0, a1 = arc["centre"], arc["radius"], arc["a0"], arc["a1"]
+        t = np.linspace(a0, a1, 501)
+        on = C + R * np.column_stack([np.cos(t), np.sin(t)])
+        assert cs._distance_to_arc(on, arc).max() < 1e-12, f"{label}: on-arc"
+
+        off = C + (R + 0.1) * np.column_stack([np.cos(t), np.sin(t)])
+        assert cs._distance_to_arc(off, arc) == pytest.approx(0.1, abs=1e-12), label
+
+        # Past the far endpoint, the answer is the chord back to it — NOT zero, which is
+        # what a circle-distance would give for a point still on the circle.
+        step = np.radians(np.linspace(1.0, 20.0, 20))
+        ext = a1 + math.copysign(1.0, a1 - a0) * step
+        past = C + R * np.column_stack([np.cos(ext), np.sin(ext)])
+        assert cs._distance_to_arc(past, arc) == pytest.approx(
+            2.0 * R * np.sin(step / 2.0), abs=1e-12), f"{label}: past the endpoint"
+
+        far = np.array([[-40.0, 0.0]])
+        assert cs._distance_to_arc(far, arc)[0] == pytest.approx(
+            min(float(np.linalg.norm(far[0] - arc["A"])),
+                float(np.linalg.norm(far[0] - arc["B"]))), abs=1e-12), label
