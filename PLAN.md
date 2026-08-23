@@ -81,12 +81,18 @@
 These replace the deleted plan files. Each is a live arc with its own steps; this table is the
 index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted.**
 
-> **ARC 2 IS NO LONGER "UNSTARTED" — Step 0 and Step 1 are answered (§34, §38, §44).** The
-> seam merge survives untouched, half the mesh's corners are not the part's, what blocks a
-> filleted mesh is the spoke block, and as of **§44 the instrument is reconciled, committed
-> and tested** (`make fillet`). Step 2 stays unreachable until a dedicated fillet block or a
-> generated spoke block exists — and both must be judged on `det J` at the Gauss points,
-> because `build_wheel` returning is not the same statement as a mesh that integrates.
+> **ARC 2 IS NO LONGER "UNSTARTED" — Step 0 and Step 1 are answered (§34, §38, §44, §47).**
+> The seam merge survives untouched, half the mesh's corners are not the part's, and as of
+> **§44 the instrument is reconciled, committed and tested** (`make fillet`). **§47 retired
+> both of the routes that stood here** — a dedicated block on `A - P_t - B` (that region has
+> two 0 deg corners) and a generated spoke block (the angle that fails is between two
+> BOUNDARY curves) — **and it retired "what blocks a filleted mesh is the spoke block" with
+> them**: end the spoke at the tangent station and it is clean across the whole gene box.
+> What replaces them is a boundary-layer block, measured to mesh at min scaled Jacobian
+> 0.91+ everywhere in the box, whose price is a notch in the ring block (`make filletblock`).
+> Step 2 stays unreachable until that re-cut exists, and it must be judged on `det J` at the
+> Gauss points, because `build_wheel` returning is not the same statement as a mesh that
+> integrates.
 
 | # | file | the question | cost |
 |---|---|---|---|
@@ -1471,6 +1477,10 @@ make fillet                                               # §44, ~38 s: at what
                                                           # filleted spoke block fold, under the
                                                           # three criteria that disagreed by 20x.
                                                           # geometry + Jacobians, no field solved
+make filletblock                                          # §47, ~42 s: can the fillet BE a block?
+                                                          # the region PART 3 named has two 0 deg
+                                                          # corners; the boundary-layer block that
+                                                          # does mesh, and the notch it forces
 make test                                                 # 427 tests, ~22 min
 make export                                               # rebuild wheel.step, ~4 min
 make studies                                              # all gates; NOT m8bi5/m8bi6/m8bii1
@@ -7324,3 +7334,108 @@ necessary but not sufficient.**
 **Nothing promoted, `best_solution.json` untouched, no threshold moved.** `make junction`'s
 change is additive: every pre-existing field in its artifact is byte-identical, checked
 before the refresh.
+
+### §47 — 2026-08-22. THE ARC'S RANKED ITEM 1 HAD A PREMISE AND IT IS FALSE: BOTH OF PART 3's ROUTES NAME THINGS THAT CANNOT BE BUILT, AND THE SPOKE BLOCK WAS NEVER THE BLOCKER
+
+§44 and §46 ranked `FILLET_PLAN.md` route 1 or route 2 first, for the ninth arc. Taken at
+last, and taken the way §45 and §46 were taken — **re-check the step's premise before
+spending on the step.** Route 1's premise is that the region it names can be a block. It
+cannot, and the measurement costs 42 s.
+
+`studies/study_fillet_block.py` + `make filletblock` (geometry and Jacobians only, no
+field solved), its committed report, and `tests/test_fillet_block.py` — 44 tests, every
+one of which RE-MEASURES rather than reading the artifact, because §45's lesson is that a
+committed artifact rots silently when every test that reads it reads the same stale file.
+
+#### ROUTE 2 IS DEAD, AND NOT BY A TOLERANCE
+
+What fails in the shipped `fillet=` construction is the angle at the moved corner —
+3.601 deg (hub) / 8.524 (rim), reproduced on the current default. **Both curves that make
+it are BOUNDARY curves of the spoke block**: the fillet arc sits on its flank edge and the
+end cross-section is its end edge, so all three nodes carrying the angle are boundary
+nodes. Route 2 is "a generated spoke block"; every generating scheme holds the boundary.
+Measured, 2000 Winslow sweeps move the boundary by **exactly 0.0 mm** and return the angle
+**bit-identical**. Pinned as an equality, because the claim is not that smoothing barely
+helps.
+
+*A separate correction falls out of it:* 3.601 is a SAMPLED angle and reads 10.543 at
+`medium`. The angle between the two boundary curves is 19.800 / 12.432 and is
+config-independent to 0.001 deg. Both are now reported.
+
+#### ROUTE 1 AS WRITTEN NAMES A REGION WITH TWO ZERO-DEGREE CORNERS
+
+PART 3 called `A - P_t - B` "the curvilinear triangle". A fillet is tangent to both legs,
+so it meets each at zero angle and the region it adds is a **cusp sliver** — measured
+interior angles **0.0000 deg at `B`** (exactly: both curves are circles and the tangency
+is constructed, not solved) and **0.42-0.60 at `A`** (the spline flank's own curvature —
+it stays inside a 0.2 deg band across a 30x span of radius, which a convergence residue
+would not), against 38.06 / 38.89 at `P_t`. **No quad covers a 0 deg corner and a
+tri-block invents none** — a tri-block subdivides a region's corners rather than adding to
+them. Two ways of closing the region into a quad were built and both fold, both get WORSE
+under refinement (3→9 and 6→15 mixed cells at the coarse hub), and an elliptic interior
+rescues neither.
+
+#### AND THE SPOKE BLOCK WAS NEVER THE BLOCKER
+
+PART 3's standing headline — "the spoke block is ruled, and a fillet 1.3-5.8x the wall
+cannot be absorbed by ruling" — is a statement about **where the fillet was put**. Take
+the arc off the flank edge, end the spoke at the tangent station `s_A`, change nothing
+else, and the same ruled block is clean — zero mixed cells, zero non-positive Gauss points
+— **at every radius from 0.05 to 4.00 mm at both configs**, where the shipped construction
+has a usable window of 0.12-0.24. At `R = 0` it is the default block to the bit. The fold
+does not vanish; it moves, whole, into whichever block then carries the fillet.
+
+#### WHAT DOES MESH, AND WHAT IT COSTS
+
+A **boundary-layer block whose four corners are all OFF the tangencies**: the fillet arc
+as its free edge, that arc offset into the material as its inner edge, the spoke's end
+cross-section at `s_A` at one end, a radial cut at `B` at the other. **Min scaled Jacobian
+0.91-1.00 with zero non-positive Gauss points at every radius in the gene box**, both
+junctions, `coarse` and `medium`, 1x/2x/4x — against `MIN_SJ_TARGET` of 0.2. The first
+filleted block in this arc that meshes at the radii that ship.
+
+Its price is the cut at `B`, and the price is not optional: at `B` the material on the
+free-surface side has zero thickness, so a block that stops at the ring circle degenerates
+and one that crosses it does not. **The ring circle stops being the junction/collar
+interface over the fillet's footprint** — a notch of 7.00 deg at the hub (cut 0.711 mm,
+14% of the collar's depth) and 2.94 at the rim (0.651 mm, 43% of the band's), and the
+spoke gives up 3.7 / 16.6 stations at `coarse`. So what remains is a **re-cut of the
+neighbours**, not an eighth block: notch the ring block, split the spoke at `s_A`, extend
+`_seam_table`.
+
+#### A FINDING ABOUT `make junction`, FOUND ON THE WAY
+
+Its `void_deg` at `P_t` — what §46's re-pricing table is built on — is the angle to the
+spoke block's **second flank node**, not to the flank's tangent. Reproduced to the digit
+and now reported next to the tangent: 38.8606 vs 38.0556 at the hub, 39.4546 vs 38.8886 at
+the rim. The chord is **0.8 deg optimistic** because the flank is a spline. **No §46
+verdict moves:** both `P_t` rows clear by 5-20x, and the `P_c` rows are unaffected because
+under `uncap` that corner's leg is a straight continuation whose chord and tangent are the
+same direction exactly.
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, the default mesh
+bit-identical, no threshold moved.** No candidate block is wired into `build_wheel`;
+`sector_blocks` changed only in its comment block, which had been carrying PART 3's two
+routes as the way forward.
+
+#### The successors, ranked — REVISED 2026-08-22 AFTER §47
+
+1. **The boundary-layer fillet block, wired into `sector_blocks`** — route 1, corrected.
+   The block itself is measured and meshes across the box; what is left is the re-cut it
+   forces: notch the collar/band over the fillet's footprint, split the spoke at `s_A`,
+   and extend `_seam_table` (the fillet block adds one whole-edge seam per junction; the
+   notch is what may not stay whole-edge). **Judge it on `det J` at the Gauss points
+   (§44), and on `test_axle_drop_is_exactly_12_fold_periodic`.** This is the first time
+   this item has had a construction behind it rather than two names.
+2. **The rim tri-block** — unchanged from §46. §37's price stands, its stated payoff was
+   wrong by 4.6x, and it is still the only measured route to `rim:P_c`, which still
+   carries the peak. Nothing in §47 touches that chain: `P_c`'s refusal is geometric
+   (5.34x its leg), not a meshing question.
+3. **Re-run the pre-flip study artifacts**, `study_deflection_gci.json` first (§45).
+4. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+5. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+6. **The element-validity check** (§44) — make the fold guard and the minSJ barrier see
+   sub-element folds.
+
+**`HUBSHARE_PLAN.md` remains off the list**, still blocked behind item 1 by its own Step 0
+rule — now for the eighth arc.

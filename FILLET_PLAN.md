@@ -912,3 +912,207 @@ The chain is now closed and every link is measured:
 **So the tri-block is no longer a fidelity nicety filed behind this arc. It is on the only
 measured path to Step 2's success condition**, and the fillet arc's two routes are
 necessary but not sufficient. Ranked in PLAN §46.
+
+---
+
+# STEP 1 RECORD, PART 9 — 2026-08-22. BOTH OF PART 3's ROUTES ARE DEAD, THE SPOKE BLOCK WAS NEVER THE BLOCKER, AND THE BLOCK THAT DOES MESH IS THE ONE WHOSE CORNERS ARE OFF BOTH TANGENT POINTS.
+
+PLAN §44 and §46 ranked route 1 or route 2 first, for the ninth arc. This is that item,
+started the way PART 7 and PART 8 were: **re-check the step's premise before spending on
+the step.** Route 1 has a premise — that the region it names can be a block — and it had
+never been measured. It cannot.
+
+**The apparatus is `studies/study_fillet_block.py` (`make filletblock`, ~42 s, geometry
+and Jacobians only, no field solved), committed with its report, and under test —
+`tests/test_fillet_block.py`, 44 tests.** It calls `wheel_wheel`'s own `_fillet_tangency`
+and `coons_patch` rather than a second copy, so every number below is a statement about
+the construction the tree ships. `make fillet` settled what *valid* means (§44: `det J` at
+the Gauss points); this asks the question in front of it.
+
+## FINDING 1 — ROUTE 2 CANNOT REACH THE ANGLE THAT FAILS. IT IS A BOUNDARY QUANTITY
+
+PART 3 diagnosed the fold as the spoke's **corner interior angle collapsing** from ~89 deg
+to 3.601 (hub) / 8.524 (rim). Re-measured on the current default — the numbers reproduce,
+and PART 3's four figures are the one place in this arc a pre-flip number may be quoted
+forward, because the fillet is at `P_t` and §38's flip left `P_t` alone to 0.01 deg (PART 7):
+
+```
+  cfg      junction   corner angle         end cross-section    the two BOUNDARY CURVES
+  coarse   hub        88.678 -> 3.601      1.452 -> 2.759 mm         19.8003 deg
+  coarse   rim        88.987 -> 8.524      1.416 -> 8.596 mm         12.4318 deg
+  medium   hub        89.070 -> 10.543     1.452 -> 2.759 mm         19.8004 deg
+  medium   rim        89.264 -> 10.418     1.416 -> 8.596 mm         12.4318 deg
+```
+
+Two things in that table. First, **the 3.601 is a SAMPLED angle** — corner to its two
+neighbours — which is why it reads 10.5 at `medium`; the angle between the two boundary
+*curves* is 19.80 / 12.43 and agrees between configs to under 0.001 deg. Both are now
+reported so nobody has to work out which a quoted number was.
+
+Second, and this is what decides route 2: **the fillet arc is on the spoke block's flank
+EDGE and the end cross-section is its end EDGE.** All three nodes carrying the angle are
+boundary nodes. Route 2 is "a generated spoke block", and every generating scheme —
+transfinite, elliptic, Winslow — holds the boundary and moves the interior. Measured: 2000
+Winslow sweeps move the boundary by **exactly 0.0 mm** and return the corner angle
+**bit-identical**. Pinned as an equality, not a tolerance, because the claim is not that
+smoothing barely helps — it is that the quantity is out of a smoother's reach by
+construction.
+
+## FINDING 2 — ROUTE 1 AS WRITTEN NAMES A REGION WITH TWO ZERO-DEGREE CORNERS
+
+PART 3's route 1 is *"a dedicated fillet block covering the curvilinear triangle
+`A - P_t - B`, with its own seam entries"*. **It is not a curvilinear triangle.** A fillet
+is tangent to both legs by definition, so it meets each of them at zero angle and the
+region it adds is a **cusp sliver**:
+
+```
+  junction   R (mm)   at A (deg)   at P_t (deg)   at B (deg)
+  hub        0.05        0.6031      38.0556       0.0000
+  hub        0.6636      0.6027      38.0556       0.0000     <- shipped
+  hub        4.00        0.5297      38.0556       0.0000
+  rim        0.05        0.4374      38.8886       0.0000
+  rim        3.0000      0.4503      38.8886       0.0000     <- shipped
+  rim        4.00        0.4651      38.8886       0.0000
+```
+
+**`B` is zero exactly**, and that is construction rather than tolerance: both curves
+meeting there are circles, and `_fillet_tangency` places the arc's centre radially above
+`B` by exactly `R`, so the tangency is not solved for. **`A` is 0.42-0.60 deg and the
+residue is the spline flank's own curvature**, not slack in the bisection — across a 30x
+span of radius it stays inside a 0.2 deg band, which is what a curvature term does and
+what a convergence residue does not.
+
+**No quad block covers a 0 deg corner, and a tri-block does not rescue it.** A tri-block
+*subdivides* a region's corners — its three quads inherit the region's three vertices, one
+each — so the smallest corner any decomposition of `A - P_t - B` can offer is that
+region's own smallest, and that is `B`'s zero. `38 + 0.6 + 0` is not a triangle anybody
+meshes, and **the 38 is the only one of the three anybody had looked at.**
+
+Both obvious ways to close the region into a quad were built and measured, and both fail
+the same way, because both keep a block edge on a **pre-fillet surface through a tangent
+point**:
+
+```
+  candidate                        mixed cells at the shipped R, 1x / 2x / 4x refinement
+                                   coarse:hub   coarse:rim   medium:hub   medium:rim
+  grown_junction                    3 / 4 / 9    7 /10/ 19    4 /10/ 17   12 /18/ 30
+    (junction block's ring edge run on past P_t and onto the fillet arc)
+  pre_fillet_surfaces               6 / 8 /15    8 /11/ 21    8 /12/ 23   12 /17/ 32
+    (PART 3's region, closed by the two end cross-sections)
+```
+
+**Both get WORSE under refinement**, which is the distinction that matters: a fold that
+shrinks when you refine is a resolution problem, a fold that grows means the region is
+wrong. And an elliptic interior solve — route 2's technique, offered to route 1's
+candidates as the fair test — rescues neither.
+
+## FINDING 3 — THE SPOKE BLOCK WAS NEVER THE BLOCKER
+
+PART 3's headline has stood since 2026-08-17: *"what actually blocks a filleted mesh is
+that the spoke block is ruled, and a fillet whose tangent length is 1.3-5.8x the wall
+thickness cannot be absorbed by ruling."* **That is a statement about where the fillet was
+put, not about ruling.**
+
+Take the arc off the spoke's flank edge and end the spoke at the tangent station `s_A`
+instead — the same ruled Coons block, a shorter station range, nothing else changed:
+
+```
+  config   junction   trimmed spoke, det J at the Gauss points
+  coarse   hub        clean at 10/10 swept radii, 0.05 - 4.00 mm
+  coarse   rim        clean at 10/10 swept radii, 0.05 - 4.00 mm
+  medium   hub        clean at 10/10 swept radii, 0.05 - 4.00 mm
+  medium   rim        clean at 10/10 swept radii, 0.05 - 4.00 mm
+```
+
+Against the shipped construction's usable window of **0.12-0.24 mm** at `coarse` and
+0.07-0.11 at `medium` (PART 6). At `R = 0` the trimmed spoke is the default block **to the
+bit** (max\|dx\| = 0.000e+00), so this is not a new construction — it is an ownership
+change. **The fold does not disappear; it moves, whole, into whatever block then carries
+the fillet.** Which is the right place for it, and is why the next finding is possible.
+
+## FINDING 4 — THE BLOCK THAT MESHES, AND IT MESHES ACROSS THE WHOLE GENE BOX
+
+What a structured mesher builds along a fillet is a **boundary layer**, and its defining
+property is that **none of its corners sits on a tangency**:
+
+```
+  j0   the fillet arc  A -> B                         the free surface
+  j1   that arc offset INTO the material              full wall at A, depth d at B
+  i0   the spoke's end cross-section at s_A           cuts ACROSS the flank at A
+  i1   a radial cut  B -> B''  of depth d             cuts ACROSS the ring circle at B
+```
+
+Both cusps become interior points of an edge instead of corners, and that is the whole of
+why it works. The offset is taken along the arc's own outward normal, so `j1` is a
+concentric arc of radius `R + w` and can never cusp however small `R` is — offsetting the
+other way, toward the centre, folds, and that mutation is a test rather than a comment.
+
+```
+  config   junction   mixed cells 1x/2x/4x   min scaled J at shipped R   worst over the box
+  coarse   hub            0 / 0 / 0                  0.9615                   0.9146
+  coarse   rim            0 / 0 / 0                  0.9910                   0.9149
+  medium   hub            0 / 0 / 0                  0.9668                   0.9226
+  medium   rim            0 / 0 / 0                  0.9937                   0.9228
+```
+
+Zero non-positive Gauss points at **every radius from 0.05 to 4.00 mm**, both junctions,
+both configs, three refinements. `wheel_objective.MIN_SJ_TARGET` is 0.2 with a barrier
+weight of 3000 — the floor §38 measured the faithful rim's junction block collapsing under
+at 0.0072. **This block clears it by more than 4x everywhere tested. It is the first
+filleted block in this arc that meshes at the radii that actually ship.**
+
+## FINDING 5 — WHAT IT COSTS, WHICH IS NOT OPTIONAL AND IS NOT AN EIGHTH BLOCK
+
+The cut at `B` lands on **the far side of the ring circle** — inside the collar at the hub,
+inside the band at the rim. That is not a tuning choice: at `B` the material on the
+free-surface side has zero thickness, so a block that stops at the ring circle there
+degenerates and a block that crosses it does not. **The ring circle therefore stops being
+the junction/collar interface over the fillet's footprint.**
+
+```
+  junction   cut depth      of the ring's       fillet footprint    notch needed    spoke gives up
+             (mm)           available depth     on the ring         in the ring     (coarse/medium)
+  hub        0.7110         14.2% of 5.00       7.125 deg (23.8%)     7.003 deg      3.7 / 7.3 stations
+  rim        0.6513         43.4% of 1.50       9.137 deg (30.5%)     2.935 deg     16.6 / 33.1 stations
+```
+
+So the remaining work is a **re-cut of the neighbours**, not a block bolted on: notch the
+collar/band block over the footprint, split the spoke at `s_A`, and extend `_seam_table`.
+That is real work and it is not done here. What is done is that it now has a target that
+is known to mesh, instead of two that are known not to.
+
+## ONE THING THIS FOUND ON THE WAY, WHICH IS ABOUT `make junction`
+
+`make junction`'s `void_deg` at `P_t` — the quantity PART 8's whole re-pricing table is
+built on — is **the angle to the spoke block's SECOND flank node, not to the flank's
+tangent**. Reproduced from the committed artifact to the digit (38.86057256986532 at the
+hub, 39.45464066055605 at the rim) and now reported next to the tangent:
+
+```
+  junction   void, one-node chord   void, analytic tangent   gap
+  hub             38.8606                 38.0556           0.805 deg
+  rim             39.4546                 38.8886           0.566 deg
+```
+
+The chord is **0.8 deg optimistic** because the flank is a spline that has already turned
+over one `coarse` station. **No verdict in PART 8 moves on it:** both `P_t` rows clear by
+5-20x, and the `P_c` rows are unaffected because under `uncap` that corner's leg is a
+straight continuation whose chord and tangent are the same direction exactly. Which one is
+right depends on the question — for "how much room does a fillet have" the chord is a fair
+sample; for "what angle does a block corner have" only the tangent decides, because a
+block corner is a limit and not a chord.
+
+## WHAT IS UNCHANGED
+
+**Nothing was promoted, `best_solution.json` is untouched and still 2026-08-14, the default
+mesh is bit-identical, and no threshold moved.** `wheel_wheel.sector_blocks` is unchanged
+except for its comment block, which had been carrying PART 3's two routes as the way
+forward and now carries this. Every candidate block in this arc is built inside the study
+from `wheel_wheel`'s own primitives; none of them is wired into `build_wheel` yet.
+
+**Step 2 remains unreachable**, and PART 8's chain is untouched by any of this: the peak is
+still on `rim:P_c`, which still refuses a fillet as built at 5.34x its leg. What changed is
+that the corner routes 1 and 2 were aimed at — `P_t`, the SECOND-ranked corner since
+PART 7 — now has a construction that can carry a fillet at the shipped radius, and the two
+routes that had been ranked first for nine arcs are both retired with a measurement rather
+than deferred again.
