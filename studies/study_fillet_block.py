@@ -1084,6 +1084,62 @@ def sweep_layer_profile(genes, cfg, entries, ends, box):
     return rows
 
 
+GENOME_PROFILE_ENTRIES = (-0.30, -0.45, -0.60, -0.70, -0.75, -0.80, -0.90)
+GENOME_PROFILE_ENDS = (0.50, 0.60, 0.70, 0.80, 1.00, 1.30, 1.60)
+
+# The argmax of `sweep_layer_profile_genomes`' own grid (FILLET_PLAN.md PART 13).
+# MEASURED, NOT ADOPTED as `WW.FILLET_LAYER_ENTRY_SLOPE` / `FILLET_LAYER_END_OFFSET`:
+# it clears `MIN_SJ_TARGET` for nine of the ten non-pathological genomes PART 13 drew
+# (against four of ten at the shipped constant), but it costs the shipped genome the
+# margin PART 12's deflection-convergence finding relied on -- see `WW._fillet_curves`'s
+# docstring for the trade, measured both ways.
+GENOME_ROBUST_ENTRY = -0.75
+GENOME_ROBUST_END = 0.70
+
+
+def sweep_layer_profile_genomes(genes, cfg, genome_rows, entries=GENOME_PROFILE_ENTRIES,
+                                ends=GENOME_PROFILE_ENDS):
+    """PART 10's derivation, re-run against GENOMES rather than one radius box.
+
+    `sweep_layer_profile` picked `LAYER_ENTRY_SLOPE`/`LAYER_END_OFFSET` as the argmax of
+    the worst block over a radius box AT ONE GENOME -- the shipped one -- and FINDING 6
+    already named the consequence before this file used it: `flank_orientation` is a
+    property of the centreline, and a construction measured at the shipped genome alone
+    has been measured on a quarter of the design space.  This sweeps the same two
+    constants against the worst block over the GENOMES `sweep_genomes` already drew, each
+    at its OWN drawn radii, plus the shipped genome at its own.
+
+    One drawn genome is excluded and named rather than silently dropped: a genome whose
+    worst block is the TRIMMED SPOKE fails at every `(entry, end)` in the grid, including
+    `entry = 0`, because the spoke block samples the centreline directly and neither
+    constant reaches it -- see `test_a_spoke_fold_genome_does_not_move_with_the_profile`.
+    Folding it into the argmax would not move the argmax; every cell would report the same
+    floor and the ridge underneath it would be invisible.  It is a real finding on its own
+    and PART 13 gives it its own paragraph rather than burying it in this one.
+    """
+    cells = [(np.asarray(r["genes"], float), r["R_hub_mm"], r["R_rim_mm"])
+             for r in genome_rows if r.get("built") and r["worst_block"] != "spoke"]
+    cells.append((np.asarray(genes, float), float(genes[12]), float(genes[13])))
+    rows = []
+    for entry in entries:
+        for end in ends:
+            worst, where, refused = 9.0, None, 0
+            for vec, R_hub, R_rim in cells:
+                v = sector_verdict(vec, cfg, R_hub, R_rim, entry, end)
+                if not v["built"]:
+                    refused += 1
+                    continue
+                if v["min_scaled_jacobian"] < worst:
+                    worst = v["min_scaled_jacobian"]
+                    where = [float(R_hub), float(R_rim), v["worst_block"]]
+            rows.append({"entry": float(entry), "end": float(end),
+                         "n_genomes": len(cells),
+                         "worst_min_scaled_jacobian": (None if where is None
+                                                       else float(worst)),
+                         "worst_at": where, "refused": refused})
+    return rows
+
+
 UNCAP_BLENDS = (1.0, 0.5, 0.25, 0.0)
 
 
@@ -1266,6 +1322,14 @@ def build_sector_section(genes, configs, junctions):
                 genes, cfg,
                 (-0.30, -0.35, -0.40, -0.45, -0.50, -0.60),
                 (1.20, 1.40, 1.60, 1.80, 2.00), profile_box)
+                if cfg == configs[0] else None),
+            # The genome-diverse re-derivation.  Expensive for the same reason
+            # `profile` is -- 49 (entry, end) pairs x 11 genomes -- so it is run once,
+            # at the first config, reusing the genomes `sweep_genomes` already drew
+            # rather than drawing a second set.
+            "profile_genomes": (sweep_layer_profile_genomes(
+                genes, cfg,
+                [r for rows in out["genomes"]["groups"].values() for r in rows])
                 if cfg == configs[0] else None),
         }
     return out
@@ -1553,6 +1617,28 @@ def _print(rec):
             print(f"    {entry:11.2f} " + "".join(cells) + star)
         print(f"    the chosen pair is entry {sec['entry_slope']:.2f}, end "
               f"{sec['end_offset']:.2f}")
+        print("\n  THE SAME TWO CONSTANTS, RE-DERIVED AGAINST GENOMES RATHER THAN A "
+              f"RADIUS BOX (at {cfg0})")
+        cfgg = sec["per_config"][cfg0]["profile_genomes"] or []
+        if cfgg:
+            n_gen = cfgg[0]["n_genomes"]
+            gends = sorted({r["end"] for r in cfgg})
+            print(f"    {n_gen} genomes (the spoke-fold one excluded -- neither "
+                  "constant reaches it)")
+            print("    entry \\ end " + "".join(f"{e:>10.2f}" for e in gends))
+            for entry in sorted({r["entry"] for r in cfgg}, reverse=True):
+                cells = []
+                for e in gends:
+                    r = next(x for x in cfgg if x["entry"] == entry and x["end"] == e)
+                    cells.append(f"{'REFUSE':>10s}" if r["worst_min_scaled_jacobian"]
+                                 is None else f"{r['worst_min_scaled_jacobian']:10.4f}")
+                star = " <- chosen" if abs(entry - sec["entry_slope"]) < 1e-12 else ""
+                print(f"    {entry:11.2f} " + "".join(cells) + star)
+            best = max(cfgg, key=lambda r: (r["worst_min_scaled_jacobian"]
+                                            if r["worst_min_scaled_jacobian"] is not None
+                                            else -9.0))
+            print(f"    argmax over genomes: entry {best['entry']:.2f}, end "
+                  f"{best['end']:.2f}, worst min scaled J {best['worst_min_scaled_jacobian']:.4f}")
         print("\n  AND AGAINST THE RIM'S UNCAP BLEND, WHICH IS THE TRI-BLOCK'S QUESTION")
         print(f"    {'config':7s} {'rim blend':>9s} {'unfilleted worst':>17s} "
               f"{'filleted worst':>15s} {'worst block':>14s}")

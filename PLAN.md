@@ -8211,3 +8211,66 @@ successor's value rests on *and then X will improve*, measure X on the CURRENT m
 first". This is the complement: **when a successor's value rests on a construction that
 does not exist, the thing that stops it is often not any of the reasons anyone listed** —
 §37 named seams and strips, §51 retired both, and what stopped it was neither.
+
+---
+
+### §54 — 2026-08-23. THE FILLETED SECTOR'S QUALITY FAILURE IS FIXABLE ACROSS GENOMES — NINE OF NINE CLEAR INSTEAD OF FOUR OF NINE — BUT IT IS NOT ADOPTED, BECAUSE IT SPENDS §52's OWN RESULT FOR A BENEFIT NOTHING YET COLLECTS. AND THE SWEEP FOUND A GENOME BUG THAT HAS NOTHING TO DO WITH THE FILLET
+
+§48 ranked item 2 as "make the filleted blocking genome-robust" — 6 of 16 feasible
+genomes refuse it outright, 6 of the 10 that build sit under `MIN_SJ_TARGET`. This is
+that item, worked on the QUALITY half only. Full record: FILLET_PLAN.md STEP 1 RECORD
+PART 13.
+
+**The quality half is fixable, and by a wide margin.** §48's `LAYER_ENTRY_SLOPE` /
+`LAYER_END_OFFSET` were an argmax over ONE genome's radius box — the same scope limit
+§48 FINDING 6 already diagnosed for the blocking itself. Re-derived against the ten
+genomes §48 already drew (`sweep_layer_profile_genomes`, new in
+`studies/study_fillet_block.py`), a different pair — `entry = -0.75, end = 0.70` against
+the shipped `-0.45, 1.60` — clears `MIN_SJ_TARGET` for **nine of nine** non-pathological
+built genomes, against **four of nine** at the shipped pair.
+
+**It is measured and reported, not shipped, and the reason is a priced trade rather than
+caution.** The same shipped genome §52 measured PART 12's headline result on pays for the
+other nine: at the genome-robust pair, the filleted axle-drop spread over `coarse..fine`
+widens from §52's **0.141%** to **0.513%**, crossing back over the +-0.3% band that
+result was measured against. And the REFUSAL half of item 2 — the hub sector-fit
+limit — is untouched by this pair or any other choice of `entry`/`end`; it is a pure
+function of the genome's own geometry and the fixed 30-degree sector. So adopting the
+new pair today would spend a working, published result (§52's) to partially fix one of
+two problems that still leaves the blocking un-robust either way. `blend 0.0` in §53 is
+the standing precedent for this exact call.
+
+**The sweep also found a genome defect that is not about the fillet at all.** One drawn
+genome's UNFILLETED flank has a near self-intersection around one arc-length station
+that its own shipped 97-station grid happens to straddle without ever landing a folded
+element — so §48's own "unfilleted sector is clean" feasibility gate passed it. The
+fillet's trim re-parametrises the spoke's station grid onto `[s_A(hub), s_A(rim)]`, which
+for this genome puts a station almost exactly on the defect, and the trimmed spoke folds
+outright (`min scaled Jacobian` -0.05, sign-flipped). Confirmed independent of `entry`/
+`end` — bit-identical across three widely separated profiles. **The fillet is the
+instrument that found it, not the cause.** Filed rather than fixed: strengthening the
+feasibility gate to catch this class of flank defect is separate work from either item
+this section touches.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §54
+
+1. **A rule for the tri-block's interior point that holds across the gene box, and the
+   CURVED Y it probably needs alongside.** Unchanged from §53 — still open, still the
+   same shape of problem this section just solved half of for the fillet.
+2. **The filleted blocking's REFUSAL half** — the hub sector-fit limit, 6 of 16 feasible
+   genomes, untouched by §54. Narrowed from "make the filleted blocking genome-robust"
+   now that the quality half has a measured (if unshipped) fix; this is what is actually
+   left of §48's item.
+3. **A feasibility gate that catches the flank near-self-intersection §54 found.** New,
+   ranked on the strength of being a genome-validity bug independent of anything this arc
+   is about — `sweep_genomes`' own "unfilleted sector is clean" check passed a genome
+   whose flank already had it.
+4. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Unchanged.
+   Blocked behind item 2: feedback the optimizer may not use is not feedback, and item 2
+   is now item 2 above rather than fully closed.
+5. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+6. **Make `modelled_area_reference` fillet-aware** (§50).
+7. **The REST of §45's audit list** (§49).
+8. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+9. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+10. **The element-validity check** (§44).

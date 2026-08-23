@@ -1739,3 +1739,111 @@ what removes `rim:P_c`. What is new is that the fillet's own half is no longer a
 `P_t`'s singularity is gone, the fillet surface has a peak that is a number, and the
 deflection moved 38% and started converging. Two of this arc's four reasons for existing
 are answered; the one the headline names is not.
+
+---
+
+# STEP 1 RECORD, PART 13 — 2026-08-23. THE LAYER PROFILE RE-DERIVED AGAINST GENOMES CLEARS THE BARRIER FOR NINE OF NINE, NOT FOUR OF NINE — AND IT IS MEASURED RATHER THAN SHIPPED, BECAUSE ADOPTING IT SPENDS PART 12's OWN RESULT FOR NOTHING YET BOUGHT
+
+PLAN.md ranked "make the filleted sector blocking genome-robust" (§48) as item 2 behind
+the tri-block's own successor. This is that item, worked from PART 10's own genome
+sweep: of the ten drawn genomes that build at their own radii, six sit under
+`MIN_SJ_TARGET`, always at `rim_ring_free` or a neighbour — the same failure PART 10
+FINDING 5 traced to `LAYER_ENTRY_SLOPE`/`LAYER_END_OFFSET` being an argmax over ONE
+genome's radius box. `studies/study_fillet_block.py` gained
+`sweep_layer_profile_genomes`, which runs the same argmax against the genomes
+`sweep_genomes` already drew instead, and it is under test in
+`tests/test_fillet_block.py`.
+
+## THE RIDGE EXISTS, AND IT IS NARROWER THAN PART 10's
+
+```
+  entry \ end     0.50    0.60    0.70    0.80    1.00    1.30    1.60
+       -0.30     0.072   0.065   0.058   0.052   0.040   0.024   0.009
+       -0.45     0.197   0.190   0.184   0.177   0.164   0.139   0.119  <- shipped
+       -0.60     0.228   0.238   0.221   0.206   0.182   0.154   0.132
+       -0.70     0.217   0.234   0.236   0.220   0.194   0.164   0.141
+       -0.75     0.213   0.229   0.244   0.227   0.200   0.169   0.145  <- argmax
+       -0.80     0.208   0.227   0.239   0.235   0.206   0.174   0.150
+       -0.90     0.198   0.218   0.231   0.244   0.219   0.185   0.159
+```
+
+worst min scaled Jacobian over ten genomes (nine drawn plus the shipped one at its own
+radii), one excluded and named below. The argmax sits at `entry = -0.75, end = 0.70`,
+worst 0.2444 — against the shipped pair's 0.1194, which is what "six of ten under the
+barrier" was measuring. **At the argmax, all nine clear; at the shipped pair, four of
+nine do** (the tenth, shipped-genome cell clears at both, always).
+
+## ONE DRAWN GENOME IS NOT ON THAT RIDGE AT ALL, AND IT IS A DIFFERENT BUG
+
+One genome's worst block is the TRIMMED SPOKE, at `min_scaled_jacobian = -0.0508` —
+sign-flipped, not merely thin. Neither `entry` nor `end` moves it, at all, because the
+spoke block is `sample(s_grid, eta_grid)` directly and is built before either constant
+is consulted — confirmed bit-identical across three widely separated profiles in
+`test_a_spoke_fold_genome_does_not_move_with_the_layer_profile`.
+
+Traced to source: this genome's UNFILLETED flank has a near self-intersection around
+`s = 0.051` on one edge (`eta = -1`) — a fine 2000-point resample finds the shoelace
+sign flip there, magnitude -0.405. **The shipped, untrimmed 97-station grid over
+`[0, 1]` steps over it** — its nearest stations (s = 0.042, 0.052) bracket the dip
+without any corner actually crossing zero, so `sweep_genomes`' own "unfilleted sector
+is clean" feasibility gate passes this genome. **The fillet's TRIM moves the grid to
+`[s_A(hub), s_A(rim)]` instead**, and for this genome that puts a station almost exactly
+on top of the dip, where the untrimmed grid did not. The fillet did not create this
+defect — it re-sampled a flank that already had it, at a resolution the shipped mesh's
+own station spacing happens not to expose. Filed rather than fixed: strengthening
+`sweep_genomes`' feasibility gate to catch this class of defect is a different piece of
+work than either successor PLAN.md ranked, and is not this arc's to do unprompted.
+
+## MEASURED, NOT ADOPTED — AND THE REASON IS A CONCRETE COST, NOT CAUTION
+
+The genome-diverse pair was NOT made `FILLET_LAYER_ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET`.
+`study_fillet_block.py` carries it as `GENOME_ROBUST_ENTRY`/`GENOME_ROBUST_END` instead,
+reported and tested but not wired anywhere `build_wheel` reaches. The reason is PART 12's
+own result, re-checked against the trade before assuming it survives:
+
+```
+  quantity (shipped genome, coarse..fine spread)      PART 10 pair    genome-robust pair
+  worst block min scaled Jacobian (shipped R)              0.3569              0.2221
+  filleted axle-drop spread, coarse..fine                   0.141%              0.513%
+```
+
+PART 12's deflection-convergence finding — *"the filleted one is flat from `coarse` up
+... 0.141%"* — was checked against the +-0.3% band this arc exists partly to earn back.
+At the genome-robust pair that spread **more than triples and crosses back over that
+band**, on the SAME shipped genome PART 12 measured. Nothing today is wired to the
+sector blocking that would collect the genome-robustness this pair buys — the hub
+sector-fit refusal (PART 10 FINDING 4/6) is untouched by either choice, so six of
+sixteen feasible genomes still refuse outright regardless — so adopting it now would
+spend a working, already-published result on a benefit nothing yet reaches. `blend 0.0`
+in §53 set the precedent for this call: measure it, report it, do not ship it until
+something needs it.
+
+## WHAT WOULD CHANGE THE CALL
+
+Two things, and neither happened here: (1) the hub sector-fit refusal gets its own fix
+or its own exposed margin, so genome robustness stops being partial the moment this
+profile is adopted, or (2) something is actually wired to consume the genome-diverse
+path — which PLAN.md's own ranking still puts behind item 2 finishing. Until one of
+those is true, re-deriving the SAME argmax again would reproduce this table; it would
+not change the decision.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, `FILLET_LAYER_
+ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET` untouched at PART 10's values, and the default
+mesh (and the default filleted mesh) bit-identical** — `studies/study_corner_
+singularity_fillet.json` was regenerated and reproduces PART 12's numbers to the bit.
+The only artifact that moved is `studies/study_fillet_block.json`, which gained the
+`profile_genomes` section above and nothing else; every previously-committed field in it
+reproduces unchanged.
+
+## WHAT PART 13 LEAVES
+
+Item 2 in PLAN.md's ranking ("make the filleted blocking genome-robust", §48) is now
+split into two named, independently-priced pieces instead of one: the QUALITY half
+(`rim_ring_free` and neighbours sitting under the barrier) has a known, tested fix that
+is not yet worth shipping, and the REFUSAL half (the hub sector-fit limit) is
+untouched and is where the next unit of work on this item belongs — it is the one that
+still costs six of sixteen genomes outright, at either profile. A third, unrelated
+finding — the flank near-self-intersection one genome's trim exposed — is filed above
+rather than folded into either.

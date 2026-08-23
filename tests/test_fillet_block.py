@@ -645,6 +645,66 @@ def test_the_blocking_is_measured_at_ONE_genome_and_the_others_are_worse(genome_
         "every drawn genome now both fits the sector and clears the barrier — the "
         "blocking may have become genome-robust, in which case this test and the "
         "record that ranks STEP 1b behind it both need re-deriving")
+    # PART 13 closed the quality half of this gap (the layer profile is now derived
+    # against genomes, not the shipped one alone) without touching the refusal half —
+    # the hub sector-fit limit does not depend on `entry`/`end` at all.  So this
+    # assertion still holds, and it now holds for a different reason than PART 10's.
+
+
+def test_a_spoke_fold_genome_does_not_move_with_the_layer_profile(report):
+    """The one drawn genome `sweep_layer_profile_genomes` excludes, and why.
+
+    Its worst block is the TRIMMED SPOKE, which is `sample(s_grid, eta_grid)` directly —
+    built before `entry`/`end` are ever consulted — so no choice of either constant can
+    rescue it.  PART 13 found it by accident while re-deriving the profile: a genome
+    whose UNFILLETED sector reads clean (its 97-station grid over `[0, 1]` steps over a
+    near self-intersection in the flank near `s = 0.05`) has its trim boundary land
+    right where the pathology is, because the trimmed grid's stations are spaced over
+    `[s_A(hub), s_A(rim)]` instead.  Confirmed rather than assumed: the verdict is
+    recomputed at three very different profiles and the spoke block's own min scaled
+    Jacobian does not move at all.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    fold = [r for r in rows if r.get("built") and r["worst_block"] == "spoke"]
+    if not fold:
+        pytest.skip("no spoke-fold genome in the committed draw")
+    row = fold[0]
+    genes_vec = np.asarray(row["genes"], float)
+    Rh, Rr = row["R_hub_mm"], row["R_rim_mm"]
+    sj = set()
+    for entry, end in ((0.0, 1.60), (-0.45, 1.60),
+                       (fb.LAYER_ENTRY_SLOPE, fb.LAYER_END_OFFSET)):
+        v = fb.sector_verdict(genes_vec, "coarse", Rh, Rr, entry, end)
+        assert v["built"], v
+        sj.add(round(v["blocks"]["spoke"]["min_scaled_jacobian"], 12))
+    assert len(sj) == 1, sj
+    assert next(iter(sj)) < 0.0, sj
+
+
+def test_the_genome_diverse_profile_clears_the_barrier_except_the_flank_defect_genome(
+        report):
+    """The improvement PART 13 measured, pinned against the committed genomes.
+
+    NOT the shipped `LAYER_ENTRY_SLOPE`/`LAYER_END_OFFSET` — those are PART 10's
+    single-genome argmax and this is the whole reason PART 13 exists: at that pair, most
+    of the drawn box sits under `MIN_SJ_TARGET` (`rim_ring_free`, mostly).  At
+    `GENOME_ROBUST_ENTRY`/`GENOME_ROBUST_END` instead, every BUILT genome in the
+    committed draw clears it except the one whose own trimmed spoke folds regardless of
+    the profile — that one is `test_a_spoke_fold_genome_does_not_move_with_the_layer_
+    profile`'s genome and is excluded here for the same reason
+    `sweep_layer_profile_genomes` excludes it: it would report the same floor at every
+    cell and hide the result being pinned here.  The pair is measured and reported, not
+    adopted as the module default — see `WW._fillet_curves`'s docstring for why not.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    built = [r for r in rows if r["built"] and r["worst_block"] != "spoke"]
+    assert len(built) >= 5, built
+    for row in built:
+        genes_vec = np.asarray(row["genes"], float)
+        v = fb.sector_verdict(genes_vec, "coarse", row["R_hub_mm"], row["R_rim_mm"],
+                              fb.GENOME_ROBUST_ENTRY, fb.GENOME_ROBUST_END)
+        assert v["min_scaled_jacobian"] > wo.MIN_SJ_TARGET, (
+            row["R_hub_mm"], row["R_rim_mm"], v)
 
 
 @pytest.mark.parametrize("cfg", SECTOR_CFGS)

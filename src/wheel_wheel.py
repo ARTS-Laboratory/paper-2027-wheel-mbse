@@ -996,6 +996,17 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
     chosen slope.  `end` is the width at `B` as a multiple of the wall.  Both were
     picked by sweeping them against the worst block over the whole box; the surface is a
     ridge and `studies/study_fillet_block.py` prints it.
+
+    FILLET_PLAN.md PART 13 re-ran that same derivation against a box of GENOMES rather
+    than one genome's radius box, because a construction tuned at the shipped genome
+    alone has been tuned on a quarter of the design space (PART 10 FINDING 6).  A
+    genome-diverse ridge exists near `entry = -0.75, end = 0.70` and clears
+    `MIN_SJ_TARGET` for nine of the ten non-pathological genomes PART 13 drew, against
+    four of ten at this pair.  It is MEASURED, NOT ADOPTED: it costs the shipped genome
+    the margin PART 12's deflection-convergence finding was measured against -- the
+    coarse..fine spread widens from 0.14% to 0.51%, crossing back over the +-0.3% band
+    that PART 12 checked itself against -- and nothing yet consumes the genome-diverse
+    path to be worth that trade.  `studies/study_fillet_block.py` prints both surfaces.
     """
     far_pt = np.asarray(sample(np.asarray(float(s_end)), np.asarray(-eta)), float)
     void_sign = 1.0 if float(np.linalg.norm(far_pt)) > ring_r else -1.0
