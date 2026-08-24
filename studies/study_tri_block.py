@@ -1059,6 +1059,102 @@ def _separation(refusals, reached, key):
             "gap_over_spread": float(gap / spread) if spread > 0 else None}
 
 
+# AND THE SAMPLER THAT ANSWERS IT.  PART 7 ran the box out to 64 genomes, found no second
+# refusal, and identified WHY: the uniform Latin hypercube puts one genome above 35 degrees
+# of arc span in sixty-four, so the band where the single refusal lives is essentially
+# unsampled.  A bigger draw of the same sampler cannot fix that; a different one can.
+#
+# This screens the stream on `arc_span_deg` BEFORE meshing -- the region and its report are
+# cheap, the control mesh is not -- and keeps only the band.  What it buys is a rate rather
+# than another anecdote: measured, 22 of 40 regions above 30 degrees refuse the curve at
+# every bend and every free count, against 1 of 64 in the uniform box.  That is a 34x
+# enrichment and it is what turns the arc span from a candidate into a risk factor.
+#
+# It does NOT make it a gate, and the section reports both halves: inside the band the
+# refusals and the reached OVERLAP (30.27-44.41 against 30.08-36.14), so arc span predicts
+# how often a region is impossible and does not say which one is.
+ARC_BAND_MIN_DEG = 30.0
+ARC_BAND_TARGET = 40
+ARC_BAND_MAX_BATCHES = 400
+
+
+def sweep_arc_span_band(cfg_name, B, w_fixed, shipped_genes, current_w,
+                        lo=ARC_BAND_MIN_DEG, target=ARC_BAND_TARGET,
+                        max_batches=ARC_BAND_MAX_BATCHES):
+    """Draw CONDITIONED on a large arc span, and report the refusal rate in the band.
+
+    The seed offset keeps this stream disjoint from `sweep_genomes`' so the band is not
+    the published box with the easy genomes filtered out -- it is its own sample, and the
+    rate it reports is comparable with the box's precisely because the two do not share
+    genomes.
+    """
+    from study_mesh_quality import latin_hypercube
+    import wheel_fea as WFEA
+
+    low, high, _ = wg.bounds_arrays(WFEA.GENE_SPACE)
+    rows, screened, drawn = [], 0, 0
+    for batch in range(max_batches):
+        if len(rows) >= target:
+            break
+        for vec in latin_hypercube(512, low, high,
+                                   seed=GENOME_SWEEP_SEED + 1000 + batch):
+            drawn += 1
+            _, loss = WFEA.evaluate_design(vec)
+            if loss["x_order"] != 0.0 or loss["hub_overlap"] != 0.0:
+                continue
+            try:
+                rr = region_report(region(vec, cfg_name, blend=0.0))
+            except Exception:
+                continue
+            if rr["arc_span_deg"] <= lo:
+                continue
+            screened += 1
+            try:                      # the same mesh gates `sweep_genomes` applies
+                if not control(vec, cfg_name, 1.0)["all_valid"]:
+                    continue
+                control(vec, cfg_name, 0.0)
+            except Exception:
+                continue
+            rows.append({"genes": [float(x) for x in vec],
+                         "arc_span_deg": rr["arc_span_deg"],
+                         "bow_over_width": rr["bow_over_width"],
+                         "wedges_deg": [rr["wedge_at_P_t_deg"], rr["wedge_at_Q_deg"],
+                                        rr["wedge_at_B_star_deg"]],
+                         "side_lengths_mm": [rr["A_length_mm"], rr["B_length_mm"],
+                                             rr["C_length_mm"]],
+                         "turn_at_far_end_deg": rr["turn_at_far_end_deg"],
+                         "fixed_w_valid": True})
+            if len(rows) >= target:
+                break
+    if not rows:
+        return {"config": cfg_name, "lo_deg": float(lo), "n_drawn": drawn,
+                "n_in_band": screened, "n_meshable": 0, "rows": []}
+
+    bend = sweep_bend_genomes(cfg_name, B, rows, shipped_genes, current_w,
+                              grid=x_grid(n=GENOME_X_GRID_N))
+    per = bend["per_genome"][:len(rows)]
+    bad = [r for g, r in zip(per, rows) if not g["curved_valid"]]
+    good = [r for g, r in zip(per, rows) if g["curved_valid"]]
+    return {
+        "config": cfg_name, "lo_deg": float(lo),
+        "n_drawn": drawn, "n_in_band": screened, "n_meshable": len(rows),
+        "n_refusals": len(bad), "n_reached": len(good),
+        "refusal_rate": len(bad) / len(rows),
+        "arc_span_range": [min(r["arc_span_deg"] for r in rows),
+                           max(r["arc_span_deg"] for r in rows)],
+        # THE HALF THAT SAYS IT IS NOT A GATE.  If these two ranges separated, the arc span
+        # would classify; they overlap, so it only predicts a rate.
+        "refusal_arc_span_range": ([min(r["arc_span_deg"] for r in bad),
+                                    max(r["arc_span_deg"] for r in bad)] if bad else None),
+        "reached_arc_span_range": ([min(r["arc_span_deg"] for r in good),
+                                    max(r["arc_span_deg"] for r in good)] if good else None),
+        "separation": {k: _separation([_shape(r) for r in bad],
+                                      [_shape(r) for r in good], k)
+                       for k in ("arc_span_deg", "wedge_sum_deg", "bow_over_width")},
+        "genomes": [{"curved_valid": bool(g["curved_valid"]), **_shape(r)}
+                    for g, r in zip(per, rows)]}
+
+
 def sweep_refusal_search(cfg_name, B, w_fixed, shipped_genes, current_w,
                          per_orientation=REFUSAL_SEARCH_PER_ORIENTATION):
     """Draw deeper until a SECOND region refuses the curve, and re-test PART 6's candidates.
@@ -1318,6 +1414,9 @@ def build(genes, configs, genome_sweep=True):
                 if name == rec["configs"][0]:
                     per["refusal_search"] = sweep_refusal_search(
                         name, chosen["B"], chosen["w"], genes, chosen["w"])
+                    # And the sampler that answers what the uniform one cannot.
+                    per["arc_span_band"] = sweep_arc_span_band(
+                        name, chosen["B"], chosen["w"], genes, chosen["w"])
                 # The curve moves the three spokes, which are seams.  They are shared
                 # arrays so this cannot fail -- which is exactly why it is checked, at
                 # the bend the joint rule picked rather than at the one that ships.
@@ -1430,6 +1529,16 @@ def self_checks(rec):
             r["n_genomes"] >= per["genomes"]["n_genomes"]
             for per, r in ((p, p["refusal_search"]) for p in rec["per_config"].values()
                            if "refusal_search" in p))
+    # The band's rate is only a comparison if BOTH classes are present in it and it is a
+    # different sample from the box.  Structural, so it gates; the RATE is the finding and
+    # is reported.
+    bands = [per["arc_span_band"] for per in rec["per_config"].values()
+             if per.get("arc_span_band")]
+    if bands:
+        out["the_arc_span_band_has_both_classes"] = all(
+            b["n_refusals"] > 0 and b["n_reached"] > 0 for b in bands)
+        out["the_arc_span_band_is_above_its_threshold"] = all(
+            b["arc_span_range"][0] > b["lo_deg"] for b in bands)
     out["the_fold_margin_does_not_explain_the_tri_block"] = all(
         _fold_is_not_the_story(per) for per in rec["per_config"].values())
     rows = rec["algebra"].get("coarse", {}).get("rows", [])
@@ -1613,14 +1722,36 @@ def _print(rec):
             print(f"      {k:22s} {v['refusals'][0]:10.3f} {rng:>22s} "
                   f"{v['gap']:+9.3f} {gs}")
         print(f"    still separating: {', '.join(rs['still_separating'])}")
-        print("    a separation that survives a fourfold box and one that decays with it "
-              "are different claims —")
-        print("    the interior-angle sum went 0.573 -> 0.257 -> 0.041 of the spread over "
-              "16, 32 and 64 genomes,")
-        print("    while the arc span held at 0.187 -> 0.187 -> 0.176.  NO second refusal "
-              "appeared, so every")
-        print("    statistic here is still one against many and the arc span is a "
-              "CANDIDATE, not a mechanism.")
+        bd = c.get("arc_span_band")
+        if bd and bd.get("n_meshable"):
+            print(f"\n    AND THE SAMPLER THAT ANSWERS IT — drawn CONDITIONED on arc span "
+                  f"> {bd['lo_deg']:.0f} deg")
+            print(f"      {bd['n_drawn']} drawn, {bd['n_in_band']} in the band, "
+                  f"{bd['n_meshable']} of those mesh clean")
+            print(f"      {bd['n_refusals']}/{bd['n_meshable']} REFUSE the curve at every "
+                  f"bend and every free count — {100*bd['refusal_rate']:.1f}%")
+            print(f"      against {rs['n_refusals']}/{rs['n_genomes']} "
+                  f"({100*rs['n_refusals']/rs['n_genomes']:.1f}%) in the uniform box: "
+                  f"a {bd['refusal_rate']/(rs['n_refusals']/rs['n_genomes']):.0f}x "
+                  "enrichment.")
+            print("      SO THE ARC SPAN IS A REAL RISK FACTOR — and it is still not a "
+                  "gate, because inside")
+            print(f"      the band the two classes OVERLAP: refusals "
+                  f"[{bd['refusal_arc_span_range'][0]:.2f}, "
+                  f"{bd['refusal_arc_span_range'][1]:.2f}] against reached "
+                  f"[{bd['reached_arc_span_range'][0]:.2f}, "
+                  f"{bd['reached_arc_span_range'][1]:.2f}].")
+            print("      It predicts HOW OFTEN a region is impossible, not WHICH one is.")
+        print("\n    HOW THE THREE CANDIDATES FARED AS THE BOX GREW: a separation that "
+              "survives a fourfold draw")
+        print("    and one that decays with it are different claims.  The interior-angle "
+              "sum went 0.573 -> 0.257")
+        print("    -> 0.041 of the spread over 16, 32 and 64 genomes; the arc span held "
+              "at 0.187 -> 0.187 -> 0.176.")
+        print("    No second refusal appeared in the uniform box, so the CONDITIONED draw "
+              "above is what settled it:")
+        print("    the arc span is a risk factor with a measured rate, and the angle sum "
+              "is a small-sample artefact.")
 
     print("\n  THE INTERIOR POINT, RE-DERIVED AGAINST THE GENOME BOX -- MEASURED, NOT "
           "ADOPTED")

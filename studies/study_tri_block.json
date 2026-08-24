@@ -250,6 +250,528 @@
   "min_sj_target": 0.2,
   "per_config": {
     "coarse": {
+      "arc_span_band": {
+        "arc_span_range": [
+          30.077811255437503,
+          44.41132196336025
+        ],
+        "config": "coarse",
+        "genomes": [
+          {
+            "A_over_C": 12.924238236653089,
+            "arc_span_deg": 35.550223239600676,
+            "bow_over_width": 0.9942259236376297,
+            "curved_valid": true,
+            "min_wedge_deg": 19.93289724926808,
+            "turn_at_far_end_deg": 173.68470241243276,
+            "wedge_sum_deg": 186.1960744631721,
+            "wedge_sum_minus_180": 6.196074463172096
+          },
+          {
+            "A_over_C": 14.279520981844819,
+            "arc_span_deg": 33.14342020112781,
+            "bow_over_width": 1.0251919411091752,
+            "curved_valid": false,
+            "min_wedge_deg": 15.322605756691587,
+            "turn_at_far_end_deg": 177.47896766844977,
+            "wedge_sum_deg": 177.7144751842941,
+            "wedge_sum_minus_180": 2.2855248157059123
+          },
+          {
+            "A_over_C": 3.7090684481428253,
+            "arc_span_deg": 31.332546138304366,
+            "bow_over_width": 0.2519283421192539,
+            "curved_valid": false,
+            "min_wedge_deg": 10.917598121968211,
+            "turn_at_far_end_deg": 171.21247982970397,
+            "wedge_sum_deg": 171.97741641513426,
+            "wedge_sum_minus_180": 8.022583584865743
+          },
+          {
+            "A_over_C": 9.261814133270333,
+            "arc_span_deg": 34.49608444065524,
+            "bow_over_width": 0.6916836569964184,
+            "curved_valid": true,
+            "min_wedge_deg": 20.78935892975943,
+            "turn_at_far_end_deg": 175.0213406161625,
+            "wedge_sum_deg": 190.21042537820713,
+            "wedge_sum_minus_180": 10.210425378207134
+          },
+          {
+            "A_over_C": 3.759825921014021,
+            "arc_span_deg": 30.273984809156083,
+            "bow_over_width": 0.24685038030473044,
+            "curved_valid": false,
+            "min_wedge_deg": 15.63203852431053,
+            "turn_at_far_end_deg": 173.4844592627691,
+            "wedge_sum_deg": 167.202509069102,
+            "wedge_sum_minus_180": 12.797490930897993
+          },
+          {
+            "A_over_C": 6.5644210596816475,
+            "arc_span_deg": 38.33128167301135,
+            "bow_over_width": 0.5437762090594986,
+            "curved_valid": false,
+            "min_wedge_deg": 17.489233702668002,
+            "turn_at_far_end_deg": 179.3599681429912,
+            "wedge_sum_deg": 172.60230429656,
+            "wedge_sum_minus_180": 7.397695703440007
+          },
+          {
+            "A_over_C": 3.514219844882231,
+            "arc_span_deg": 31.124610750302462,
+            "bow_over_width": 0.237129285095286,
+            "curved_valid": false,
+            "min_wedge_deg": 15.62436517616814,
+            "turn_at_far_end_deg": 172.53336897269017,
+            "wedge_sum_deg": 156.06458975426665,
+            "wedge_sum_minus_180": 23.93541024573335
+          },
+          {
+            "A_over_C": 8.925256716158199,
+            "arc_span_deg": 35.89176454599956,
+            "bow_over_width": 0.693084127200513,
+            "curved_valid": true,
+            "min_wedge_deg": 19.759057934169817,
+            "turn_at_far_end_deg": 177.30171432991824,
+            "wedge_sum_deg": 179.002085500615,
+            "wedge_sum_minus_180": 0.99791449938499
+          },
+          {
+            "A_over_C": 4.362433267761248,
+            "arc_span_deg": 30.077811255437503,
+            "bow_over_width": 0.28457986828458925,
+            "curved_valid": true,
+            "min_wedge_deg": 17.738680074387474,
+            "turn_at_far_end_deg": 176.84360238136088,
+            "wedge_sum_deg": 157.66657602610204,
+            "wedge_sum_minus_180": 22.333423973897965
+          },
+          {
+            "A_over_C": 8.592452410376048,
+            "arc_span_deg": 35.95609420049486,
+            "bow_over_width": 0.6684167276032053,
+            "curved_valid": true,
+            "min_wedge_deg": 19.79855081551534,
+            "turn_at_far_end_deg": 176.01367631155898,
+            "wedge_sum_deg": 184.791430407551,
+            "wedge_sum_minus_180": 4.79143040755099
+          },
+          {
+            "A_over_C": 7.162504829405423,
+            "arc_span_deg": 31.75253256046689,
+            "bow_over_width": 0.4929316051941124,
+            "curved_valid": true,
+            "min_wedge_deg": 19.233813201231925,
+            "turn_at_far_end_deg": 175.30092348758254,
+            "wedge_sum_deg": 196.64105428003276,
+            "wedge_sum_minus_180": 16.641054280032762
+          },
+          {
+            "A_over_C": 6.694985169824316,
+            "arc_span_deg": 34.41419015878604,
+            "bow_over_width": 0.49882062683178985,
+            "curved_valid": true,
+            "min_wedge_deg": 20.296929878336073,
+            "turn_at_far_end_deg": 177.85469246258617,
+            "wedge_sum_deg": 180.75955257635218,
+            "wedge_sum_minus_180": 0.7595525763521778
+          },
+          {
+            "A_over_C": 7.990153889936755,
+            "arc_span_deg": 33.68943057945669,
+            "bow_over_width": 0.5829647617371293,
+            "curved_valid": false,
+            "min_wedge_deg": 16.256571030942553,
+            "turn_at_far_end_deg": 179.38425661145695,
+            "wedge_sum_deg": 165.8525651706244,
+            "wedge_sum_minus_180": 14.147434829375612
+          },
+          {
+            "A_over_C": 4.738040535344277,
+            "arc_span_deg": 33.612737586711816,
+            "bow_over_width": 0.344913660292486,
+            "curved_valid": false,
+            "min_wedge_deg": 17.10957296551615,
+            "turn_at_far_end_deg": 176.56441693511027,
+            "wedge_sum_deg": 164.1796216253761,
+            "wedge_sum_minus_180": 15.820378374623914
+          },
+          {
+            "A_over_C": 13.45363302241374,
+            "arc_span_deg": 32.16642258707716,
+            "bow_over_width": 0.9378053101210999,
+            "curved_valid": false,
+            "min_wedge_deg": 13.475000533124813,
+            "turn_at_far_end_deg": 178.7969573161087,
+            "wedge_sum_deg": 171.81834508950914,
+            "wedge_sum_minus_180": 8.181654910490863
+          },
+          {
+            "A_over_C": 4.360129272661734,
+            "arc_span_deg": 33.29061653730568,
+            "bow_over_width": 0.3144042676088889,
+            "curved_valid": false,
+            "min_wedge_deg": 14.95931948397046,
+            "turn_at_far_end_deg": 174.58133677618596,
+            "wedge_sum_deg": 151.79125903289497,
+            "wedge_sum_minus_180": 28.20874096710503
+          },
+          {
+            "A_over_C": 6.294870196891127,
+            "arc_span_deg": 32.2784068104016,
+            "bow_over_width": 0.4403006205773605,
+            "curved_valid": false,
+            "min_wedge_deg": 12.542204368117694,
+            "turn_at_far_end_deg": 176.91338326102115,
+            "wedge_sum_deg": 159.94049396084264,
+            "wedge_sum_minus_180": 20.059506039157355
+          },
+          {
+            "A_over_C": 3.570064972736285,
+            "arc_span_deg": 32.850353522533,
+            "bow_over_width": 0.25407607742299854,
+            "curved_valid": true,
+            "min_wedge_deg": 22.73768443604999,
+            "turn_at_far_end_deg": 175.91540069527332,
+            "wedge_sum_deg": 173.6858322421445,
+            "wedge_sum_minus_180": 6.3141677578555
+          },
+          {
+            "A_over_C": 5.94582637242519,
+            "arc_span_deg": 31.89377194577319,
+            "bow_over_width": 0.4109951178301471,
+            "curved_valid": true,
+            "min_wedge_deg": 17.16442663440921,
+            "turn_at_far_end_deg": 179.31570548989203,
+            "wedge_sum_deg": 174.98681692046495,
+            "wedge_sum_minus_180": 5.013183079535054
+          },
+          {
+            "A_over_C": 7.087902725055461,
+            "arc_span_deg": 33.0157893217007,
+            "bow_over_width": 0.5069404701345614,
+            "curved_valid": true,
+            "min_wedge_deg": 18.64494028598841,
+            "turn_at_far_end_deg": 177.76328705906099,
+            "wedge_sum_deg": 183.2242383244561,
+            "wedge_sum_minus_180": 3.2242383244561097
+          },
+          {
+            "A_over_C": 6.7215399700036,
+            "arc_span_deg": 36.07857422027535,
+            "bow_over_width": 0.5246279888587763,
+            "curved_valid": false,
+            "min_wedge_deg": 16.344438562828515,
+            "turn_at_far_end_deg": 178.31085882672127,
+            "wedge_sum_deg": 159.14746005530367,
+            "wedge_sum_minus_180": 20.852539944696332
+          },
+          {
+            "A_over_C": 4.366762328977535,
+            "arc_span_deg": 37.58441218519715,
+            "bow_over_width": 0.35480875537346496,
+            "curved_valid": false,
+            "min_wedge_deg": 13.682010506821996,
+            "turn_at_far_end_deg": 173.2771793924088,
+            "wedge_sum_deg": 159.11922667055273,
+            "wedge_sum_minus_180": 20.880773329447265
+          },
+          {
+            "A_over_C": 7.257912666210243,
+            "arc_span_deg": 36.14281114802385,
+            "bow_over_width": 0.5674847059655936,
+            "curved_valid": true,
+            "min_wedge_deg": 18.897843336471936,
+            "turn_at_far_end_deg": 178.87073709899008,
+            "wedge_sum_deg": 180.46207310817448,
+            "wedge_sum_minus_180": 0.46207310817447933
+          },
+          {
+            "A_over_C": 6.170735360265367,
+            "arc_span_deg": 35.815373160196785,
+            "bow_over_width": 0.47818060004205293,
+            "curved_valid": false,
+            "min_wedge_deg": 13.84254413747314,
+            "turn_at_far_end_deg": 177.00260740057718,
+            "wedge_sum_deg": 166.77938608732393,
+            "wedge_sum_minus_180": 13.220613912676072
+          },
+          {
+            "A_over_C": 7.452164167170853,
+            "arc_span_deg": 30.203698537677536,
+            "bow_over_width": 0.4881471361484238,
+            "curved_valid": true,
+            "min_wedge_deg": 17.62786608415942,
+            "turn_at_far_end_deg": 177.5072253060879,
+            "wedge_sum_deg": 181.98068000223964,
+            "wedge_sum_minus_180": 1.9806800022396374
+          },
+          {
+            "A_over_C": 5.683253723794311,
+            "arc_span_deg": 34.9586689704178,
+            "bow_over_width": 0.43003607116483317,
+            "curved_valid": true,
+            "min_wedge_deg": 22.325254728171643,
+            "turn_at_far_end_deg": 178.92759944106984,
+            "wedge_sum_deg": 184.52586728275895,
+            "wedge_sum_minus_180": 4.525867282758952
+          },
+          {
+            "A_over_C": 7.621027203372644,
+            "arc_span_deg": 38.49509634277203,
+            "bow_over_width": 0.6339494037167931,
+            "curved_valid": false,
+            "min_wedge_deg": 18.476531346837504,
+            "turn_at_far_end_deg": 178.85641999710165,
+            "wedge_sum_deg": 168.62705361112347,
+            "wedge_sum_minus_180": 11.372946388876528
+          },
+          {
+            "A_over_C": 4.4115052778807815,
+            "arc_span_deg": 32.506226548290265,
+            "bow_over_width": 0.310715594195465,
+            "curved_valid": true,
+            "min_wedge_deg": 20.380437067455887,
+            "turn_at_far_end_deg": 177.90998620909536,
+            "wedge_sum_deg": 170.7488494301009,
+            "wedge_sum_minus_180": 9.251150569899096
+          },
+          {
+            "A_over_C": 14.73218369465461,
+            "arc_span_deg": 39.42142273260129,
+            "bow_over_width": 1.2543991612788177,
+            "curved_valid": false,
+            "min_wedge_deg": 17.907806432271116,
+            "turn_at_far_end_deg": 176.58713553034963,
+            "wedge_sum_deg": 187.4966873306201,
+            "wedge_sum_minus_180": 7.496687330620091
+          },
+          {
+            "A_over_C": 6.268313674566178,
+            "arc_span_deg": 44.41132196336025,
+            "bow_over_width": 0.5996875991623872,
+            "curved_valid": false,
+            "min_wedge_deg": 18.132375571165966,
+            "turn_at_far_end_deg": 177.5466886353472,
+            "wedge_sum_deg": 173.35625653692398,
+            "wedge_sum_minus_180": 6.643743463076021
+          },
+          {
+            "A_over_C": 10.054338954388617,
+            "arc_span_deg": 33.276962412031445,
+            "bow_over_width": 0.724714474802369,
+            "curved_valid": true,
+            "min_wedge_deg": 18.856151893580943,
+            "turn_at_far_end_deg": 177.72731939874654,
+            "wedge_sum_deg": 193.83659834281866,
+            "wedge_sum_minus_180": 13.836598342818661
+          },
+          {
+            "A_over_C": 5.014345935448404,
+            "arc_span_deg": 34.98665816519881,
+            "bow_over_width": 0.37972072437247045,
+            "curved_valid": true,
+            "min_wedge_deg": 19.17102905130045,
+            "turn_at_far_end_deg": 179.20631048163438,
+            "wedge_sum_deg": 157.70448584858343,
+            "wedge_sum_minus_180": 22.29551415141657
+          },
+          {
+            "A_over_C": 6.007517148467391,
+            "arc_span_deg": 36.319400055358756,
+            "bow_over_width": 0.47197484087774594,
+            "curved_valid": false,
+            "min_wedge_deg": 16.392156211161677,
+            "turn_at_far_end_deg": 177.4169066297323,
+            "wedge_sum_deg": 184.58422724685016,
+            "wedge_sum_minus_180": 4.584227246850162
+          },
+          {
+            "A_over_C": 7.3676996759887174,
+            "arc_span_deg": 30.304777153601506,
+            "bow_over_width": 0.48421064840466066,
+            "curved_valid": true,
+            "min_wedge_deg": 18.024238021212597,
+            "turn_at_far_end_deg": 177.32287748471487,
+            "wedge_sum_deg": 182.6660578081257,
+            "wedge_sum_minus_180": 2.666057808125686
+          },
+          {
+            "A_over_C": 3.8256724446046384,
+            "arc_span_deg": 30.56134030043606,
+            "bow_over_width": 0.25352944720411746,
+            "curved_valid": false,
+            "min_wedge_deg": 13.087048804593394,
+            "turn_at_far_end_deg": 172.08664988173982,
+            "wedge_sum_deg": 180.74477784804122,
+            "wedge_sum_minus_180": 0.7447778480412239
+          },
+          {
+            "A_over_C": 10.704770790204341,
+            "arc_span_deg": 37.973893644581544,
+            "bow_over_width": 0.8786344861746983,
+            "curved_valid": false,
+            "min_wedge_deg": 18.648085775929587,
+            "turn_at_far_end_deg": 176.71660808948587,
+            "wedge_sum_deg": 178.3554302318147,
+            "wedge_sum_minus_180": 1.6445697681853062
+          },
+          {
+            "A_over_C": 4.218501063973644,
+            "arc_span_deg": 34.65058518987431,
+            "bow_over_width": 0.31643236272249214,
+            "curved_valid": false,
+            "min_wedge_deg": 15.060537322873813,
+            "turn_at_far_end_deg": 174.2297341460981,
+            "wedge_sum_deg": 168.57191701624646,
+            "wedge_sum_minus_180": 11.42808298375354
+          },
+          {
+            "A_over_C": 4.336664542658228,
+            "arc_span_deg": 30.759996457905277,
+            "bow_over_width": 0.2892389128131291,
+            "curved_valid": true,
+            "min_wedge_deg": 20.644931910462674,
+            "turn_at_far_end_deg": 179.31291598011035,
+            "wedge_sum_deg": 175.15172972409366,
+            "wedge_sum_minus_180": 4.848270275906344
+          },
+          {
+            "A_over_C": 4.619859559975166,
+            "arc_span_deg": 37.18338076816223,
+            "bow_over_width": 0.3714389622625693,
+            "curved_valid": false,
+            "min_wedge_deg": 14.778592320010489,
+            "turn_at_far_end_deg": 173.4983657850013,
+            "wedge_sum_deg": 184.14109964184868,
+            "wedge_sum_minus_180": 4.141099641848683
+          },
+          {
+            "A_over_C": 7.888606313350294,
+            "arc_span_deg": 34.78231567811562,
+            "bow_over_width": 0.593944249255619,
+            "curved_valid": false,
+            "min_wedge_deg": 14.589982011686402,
+            "turn_at_far_end_deg": 179.28416107372564,
+            "wedge_sum_deg": 153.76911736231307,
+            "wedge_sum_minus_180": 26.230882637686932
+          }
+        ],
+        "lo_deg": 30.0,
+        "n_drawn": 29582,
+        "n_in_band": 67,
+        "n_meshable": 40,
+        "n_reached": 18,
+        "n_refusals": 22,
+        "reached_arc_span_range": [
+          30.077811255437503,
+          36.14281114802385
+        ],
+        "refusal_arc_span_range": [
+          30.273984809156083,
+          44.41132196336025
+        ],
+        "refusal_rate": 0.55,
+        "separation": {
+          "arc_span_deg": {
+            "gap": -5.86882633886777,
+            "gap_over_spread": -0.9676548133235128,
+            "reached_max": 36.14281114802385,
+            "reached_min": 30.077811255437503,
+            "refusal_is_low": false,
+            "refusals": [
+              33.14342020112781,
+              31.332546138304366,
+              30.273984809156083,
+              38.33128167301135,
+              31.124610750302462,
+              33.68943057945669,
+              33.612737586711816,
+              32.16642258707716,
+              33.29061653730568,
+              32.2784068104016,
+              36.07857422027535,
+              37.58441218519715,
+              35.815373160196785,
+              38.49509634277203,
+              39.42142273260129,
+              44.41132196336025,
+              36.319400055358756,
+              30.56134030043606,
+              37.973893644581544,
+              34.65058518987431,
+              37.18338076816223,
+              34.78231567811562
+            ],
+            "separates": false
+          },
+          "bow_over_width": {
+            "gap": -0.7570966385423438,
+            "gap_over_spread": -1.0228964343023024,
+            "reached_max": 0.9942259236376297,
+            "reached_min": 0.25407607742299854,
+            "refusal_is_low": false,
+            "refusals": [
+              1.0251919411091752,
+              0.2519283421192539,
+              0.24685038030473044,
+              0.5437762090594986,
+              0.237129285095286,
+              0.5829647617371293,
+              0.344913660292486,
+              0.9378053101210999,
+              0.3144042676088889,
+              0.4403006205773605,
+              0.5246279888587763,
+              0.35480875537346496,
+              0.47818060004205293,
+              0.6339494037167931,
+              1.2543991612788177,
+              0.5996875991623872,
+              0.47197484087774594,
+              0.25352944720411746,
+              0.8786344861746983,
+              0.31643236272249214,
+              0.3714389622625693,
+              0.593944249255619
+            ],
+            "separates": false
+          },
+          "wedge_sum_deg": {
+            "gap": -29.830111304518056,
+            "gap_over_spread": -0.7653755134364005,
+            "reached_max": 196.64105428003276,
+            "reached_min": 157.66657602610204,
+            "refusal_is_low": false,
+            "refusals": [
+              177.7144751842941,
+              171.97741641513426,
+              167.202509069102,
+              172.60230429656,
+              156.06458975426665,
+              165.8525651706244,
+              164.1796216253761,
+              171.81834508950914,
+              151.79125903289497,
+              159.94049396084264,
+              159.14746005530367,
+              159.11922667055273,
+              166.77938608732393,
+              168.62705361112347,
+              187.4966873306201,
+              173.35625653692398,
+              184.58422724685016,
+              180.74477784804122,
+              178.3554302318147,
+              168.57191701624646,
+              184.14109964184868,
+              153.76911736231307
+            ],
+            "separates": false
+          }
+        }
+      },
       "control_faithful": {
         "all_valid": true,
         "blend": 0.0,
@@ -41958,7 +42480,7 @@
       }
     }
   },
-  "seconds": 443.34,
+  "seconds": 665.84,
   "self_checks": {
     "algebra_reproduces_section_37": true,
     "all_seams_close": true,
@@ -41970,6 +42492,8 @@
     "pass": true,
     "seventeen_seams": true,
     "shipped_control_is_the_published_0.78": true,
+    "the_arc_span_band_has_both_classes": true,
+    "the_arc_span_band_is_above_its_threshold": true,
     "the_bend_closes_every_seam": true,
     "the_bend_moves_no_boundary": true,
     "the_bend_tiles_the_same_area": true,

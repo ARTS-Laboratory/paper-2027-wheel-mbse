@@ -616,6 +616,48 @@ def test_the_refusal_SEARCH_weakened_the_candidate_it_was_built_to_confirm(repor
         assert sep[k]["separates"] is False, (k, sep[k])
 
 
+def test_conditioning_the_draw_on_ARC_SPAN_turns_it_from_candidate_to_risk_factor(report):
+    """The experiment PART 7 named, and the reason a bigger draw could not substitute.
+
+    The uniform Latin hypercube puts about one genome above 35 degrees of arc span in
+    sixty-four, so the band where the single refusal lives is essentially unsampled and no
+    amount of the SAME sampler reaches it.  Screening the stream on the region's arc span
+    before meshing costs nothing and reaches it directly.
+
+    What comes back is a rate rather than another anecdote — and both halves of it are
+    pinned, because the second is what keeps this from being overstated:
+
+      * refusals are enormously enriched in the band against the uniform box, so the arc
+        span is a real risk factor rather than a coincidence of one draw;
+      * inside the band the two classes OVERLAP in arc span, so it predicts HOW OFTEN a
+        region is impossible and not WHICH one is.  If those ranges ever separate, the arc
+        span has become a classifier and that is a finding this test should fail on.
+    """
+    band = None
+    for per in report["per_config"].values():
+        band = per.get("arc_span_band") or band
+    assert band is not None, "the conditioned draw is missing from the artifact"
+    assert band["n_meshable"] >= 20, band["n_meshable"]
+    assert band["arc_span_range"][0] > band["lo_deg"]
+
+    rs = None
+    for per in report["per_config"].values():
+        rs = per.get("refusal_search") or rs
+    uniform_rate = rs["n_refusals"] / rs["n_genomes"]
+    assert band["refusal_rate"] > 10.0 * uniform_rate, (
+        f"the band's refusal rate is {band['refusal_rate']:.3f} against the uniform box's "
+        f"{uniform_rate:.3f} — the enrichment that makes the arc span a risk factor has "
+        "gone, and PART 8's conclusion with it")
+    assert 0.2 < band["refusal_rate"] < 0.9, band["refusal_rate"]
+
+    lo_b, hi_b = band["refusal_arc_span_range"]
+    lo_g, hi_g = band["reached_arc_span_range"]
+    assert lo_b <= hi_g and lo_g <= hi_b, (
+        f"refusals [{lo_b:.2f}, {hi_b:.2f}] and reached [{lo_g:.2f}, {hi_g:.2f}] no "
+        "longer overlap — inside the band the arc span has become a CLASSIFIER, which is "
+        "a stronger result than PART 8 recorded and the plan files should say so")
+
+
 def test_the_bend_is_INERT_where_the_region_is_fat(genes):
     """The curve is a correction to cutting chords, so a fat region needs none of it.
 

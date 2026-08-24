@@ -1581,3 +1581,61 @@ the first version of this question that could return a mechanism rather than a c
 committed field in `study_tri_block.json` reproduces exactly** — the artifact gains the
 `refusal_search` section, a `num_points` key inside each row's `fold` block, and two
 self-checks.  `make triblock` is ~445 s rather than ~290 s and the search is the difference.
+
+---
+
+# STEP 3 RECORD, PART 8 — 2026-08-24. CONDITION THE DRAW ON ARC SPAN AND 22 OF 40 REGIONS REFUSE THE CURVE, AGAINST 1 OF 64 UNIFORM. IT IS A RISK FACTOR WITH A RATE — AND STILL NOT A GATE
+
+PART 7 ran the box out to 64 genomes, found no second refusal, and identified why: the
+uniform Latin hypercube puts about one genome above 35 degrees of arc span in sixty-four,
+so the band where the refusal lives is essentially unsampled.  It named the fix — a
+different sampler, not a bigger one — and this is that.
+
+Screening the stream on `arc_span_deg` before meshing costs nothing (the region and its
+report are cheap; the control mesh is not), so the band is reachable directly:
+
+```
+  29582 drawn -> 67 above 30 degrees -> 40 of those mesh clean
+  22 of the 40 REFUSE the curve at every bend and every admissible free count       55.0%
+  the uniform box, for comparison                                          1 of 64   1.6%
+```
+
+**A 35x enrichment.**  So the arc span is not a coincidence of one draw: regions with a wide
+arc really are far more often impossible, and PART 6's third-ranked candidate — the one it
+discounted, and the only one PART 7's fourfold box did not decay — is a real risk factor
+with a measured rate.
+
+## AND IT IS STILL NOT A GATE, WHICH IS THE HALF THAT KEEPS THIS HONEST
+
+Inside the band the two classes **overlap**:
+
+```
+  refusals   arc span 30.27 - 44.41
+  reached    arc span 30.08 - 36.14
+```
+
+So the arc span predicts HOW OFTEN a region is impossible and not WHICH one is.  Neither
+does anything else here: the refusals' interior-angle sums run 151.8 to 187.5 and their
+bows 0.25 to 1.25, both straight across the reached ranges.  Whatever picks the individual
+out of the band is still unnamed, and the band is now the right place to look for it —
+forty genomes with a 55% failure rate is a far better testbed than sixteen with one.
+
+The conditioned draw also reaches regions the uniform one never produced: bows up to 1.25
+against a uniform-box maximum of 0.54.  That is worth knowing on its own — every "the box
+spans X" statement in PARTS 1-7 is a statement about what the UNIFORM sampler reaches.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no threshold moved, `bend` still defaults to 0.0, and the draw the
+published numbers rest on is untouched** — the band is its own stream (seed offset +1000)
+so it shares no genome with the box, which is exactly what makes the two rates comparable.
+`study_tri_block.json` gains the `arc_span_band` section and two self-checks; every
+previously committed field reproduces exactly.  `make triblock` is ~670 s and the Makefile
+says so.
+
+## WHAT PART 8 LEAVES
+
+1. **What picks the refusal out of the band.**  Forty genomes, 55% failing, all shape
+   numbers overlapping — the first genuinely well-conditioned version of §56's question.
+2. **Every "the box spans X" claim in PARTS 1-7 is about the uniform sampler**, and the
+   band shows it reaches less than was assumed.  Worth a pass over those statements.

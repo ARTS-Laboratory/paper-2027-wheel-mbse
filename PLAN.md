@@ -9456,3 +9456,53 @@ gains `refusal_search`, a `num_points` key in each row's `fold` block, and two s
 6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
    fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
    **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §72 — 2026-08-24. CONDITION THE DRAW ON ARC SPAN AND 22 OF 40 REGIONS REFUSE THE CURVE, AGAINST 1 OF 64 UNIFORM — A 35x ENRICHMENT. THE ARC SPAN IS A RISK FACTOR WITH A RATE, AND STILL NOT A GATE
+
+§71's item 1.  §71 found no second refusal in a fourfold box and diagnosed why: the uniform
+Latin hypercube puts about one genome above 35 degrees of arc span in sixty-four, so the
+band where the refusal lives is unsampled and no amount of the same sampler reaches it.
+Screening the stream on `arc_span_deg` before meshing costs nothing and reaches it directly:
+
+```
+  29582 drawn -> 67 above 30 degrees -> 40 of those mesh clean
+  22 of the 40 REFUSE the curve at every bend and every admissible free count       55.0%
+  the uniform box, for comparison                                          1 of 64   1.6%
+```
+
+**A 35x enrichment**, so the arc span is a real risk factor rather than a coincidence of one
+draw — §70's third-ranked candidate, the one it discounted and the only one §71's larger box
+did not decay.
+
+**And it is still not a gate.**  Inside the band the classes overlap: refusals span
+30.27-44.41 degrees, reached span 30.08-36.14.  Nothing else separates there either — the
+refusals' interior-angle sums run 151.8-187.5 and their bows 0.25-1.25, straight across the
+reached ranges.  The arc span predicts how often a region is impossible, not which one is.
+
+**A methodological note worth more than the result.**  The conditioned draw reaches regions
+the uniform one never produced — bows to 1.25 against a uniform maximum of 0.54 — so every
+"the box spans X" statement in §51-§71 is a statement about what the UNIFORM sampler reaches,
+not about the design space.  Three sections in a row were spent on statistics from a sampler
+that could not visit the region under study, and the fix was two lines of screening.
+
+**Nothing promoted; the published draw is untouched** — the band is its own stream (seed
+offset +1000) and shares no genome with the box, which is what makes the two rates
+comparable.  Artifact purely additive.  `make triblock` ~670 s.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §72
+
+1. **What picks the refusal out of the band** (§72).  Forty genomes at a 55% failure rate,
+   with every shape number overlapping, is the first well-conditioned version of §56's
+   question — sixteen genomes with one refusal never was.  The band is now the testbed.
+2. **A pass over "the box spans X" claims in §51-§71** (§72), which are all statements about
+   the uniform sampler's reach rather than the design space's.
+3. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+4. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+5. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
