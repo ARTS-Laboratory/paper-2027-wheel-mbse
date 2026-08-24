@@ -8813,7 +8813,7 @@ result and nothing consumes them yet.
 
 ---
 
-## §62 — 2026-08-23. EVERY DEFLECTION NUMBER THIS PROJECT HAS QUOTED WAS READ AT WHICHEVER NODE HAPPENED TO BE NEAREST THE GROUND, AND AWAY FROM THE SHIPPED GENOME THAT COSTS UP TO 1.1% — FOUR TIMES THE BAND IT IS GATED ON
+## §62 — 2026-08-23. [PARTLY WRONG — SEE §65, WHICH CORRECTS THE TWO HEADLINE CLAIMS.]  EVERY DEFLECTION NUMBER THIS PROJECT HAS QUOTED WAS READ AT WHICHEVER NODE HAPPENED TO BE NEAREST THE GROUND, AND AWAY FROM THE SHIPPED GENOME THAT COSTS UP TO 1.1% — FOUR TIMES THE BAND IT IS GATED ON
 
 §61's item 1.  §61 found the nearest-node reading inside the fillet arc and said the
 optimizer's history was *probably* safe, with "probably" doing the work.  This prices it,
@@ -8890,7 +8890,7 @@ audit with its own baseline rather than a line in another arc's unit.
 
 ---
 
-## §63 — 2026-08-23. THE NEAREST-NODE SNAP MOVES THE VALUE BY UP TO 1.1% AND THE GRADIENT BY 4-7%, AND THE GRADIENT ERROR GROWS WITH STEP LENGTH — SO §62 IS A GATING DEFECT FIRST AND A STEERING ONE SECOND
+## §63 — 2026-08-23. [MEASURES A PATH THE OPTIMIZER DOES NOT USE — SEE §65.]  THE NEAREST-NODE SNAP MOVES THE VALUE BY UP TO 1.1% AND THE GRADIENT BY 4-7%, AND THE GRADIENT ERROR GROWS WITH STEP LENGTH — SO §62 IS A GATING DEFECT FIRST AND A STEERING ONE SECOND
 
 §62's item 3, which was filed as the measurement that decides whether §62 is a reporting
 defect or an optimizer one.  Central differences of the 8-phase mean drop under both
@@ -9021,6 +9021,78 @@ completable piece; executing it needs a session that can finish it.
 4. **Adopt `(-0.85, 1.00)`** as the layer profile (§61), after items 2-3.
 5. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60).
 6. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §65 — 2026-08-23. CORRECTION TO §62 AND §63: THE OPTIMIZER AND THE ±0.3% GATE DO NOT USE THE CONTAMINATED READING. I TRACED A VARIABLE NAME INSTEAD OF THE CALL THAT PRODUCED IT
+
+§62 claimed the nearest-node reading "reaches the optimizer", citing
+`wheel_adjoint.py:644`'s `delta = float(sec["axle_drop_mm"])`.  That line is real.  **What
+`sec` is, I did not check**, and it decides the whole claim:
+
+```
+  wheel_adjoint:588,643   sec = fem.solve_wheel_contact(mesh, force=..., ...)
+  wheel_fem:1816          _attach_contact_report:  res["axle_drop_mm"] = float(indentation_mm)
+```
+
+`solve_wheel_contact` secant-iterates the indentation until the reaction matches the target
+force, and the `axle_drop_mm` it returns is **that converged prescribed indentation** — a
+boundary condition, not a reading off a node.  `solve_wheel`'s nearest-node value appears in
+that path exactly once, at `wheel_fem:1882`, as the secant's INITIAL GUESS, which a
+converged iteration forgets.
+
+**So the objective is immune, and so is its gradient.**  And §63's gradient comparison,
+which I ran on `fem.solve_wheel` directly, measures a quantity the optimizer does not
+consume.  Its numbers are correct about `solve_wheel` and irrelevant to the descent.
+
+**The gate is immune too, and its own file says so in as many words.**
+`study_deflection_gci`'s docstring: *"THE QoI HERE IS THE GATE'S ... The gate is stated on
+`axle_drop_mean_mm` under SVK: the mean over the 8-phase uniform stencil, which is what the
+`deflection` term is scored on and what every promotion has been judged by"* — and it
+explicitly contrasts that with `run_refinement`'s use of `fem.solve_wheel(mesh)`, *"ONE
+phase, LINEAR kinematics"*.  §62's headline — "four times the band it is gated on" — is
+therefore wrong: the band is not gated on this quantity.  **The file that would have told me
+this is the one whose docstring I quoted two sections earlier for something else.**
+
+**What survives, and it is still worth having:**
+
+  * `solve_wheel`'s `axle_drop_mm` genuinely carries the nearest-node error.  §61's
+    measurement of it, and the mechanism — `uy` runs monotonically through the bottom at
+    about -0.024 mm/deg because the spokes are a spiral — are unaffected.
+  * **§61's correction to §54's filleted convergence stands in full.**  Both corner ladders
+    call `fem.solve_wheel`, so "0.141% and flat from `coarse` up" really is an artefact and
+    the interpolated ladder really does settle at ratio 0.229.  That was the finding this
+    whole thread came from and it is untouched.
+  * The affected consumers are `study_corner_singularity` (both ladders),
+    `study_reds_hub_share`, `study_wheel_fea.run_refinement`, and `study_contact`'s
+    assumed-drop comparisons.  **All single-phase** — and single-phase is where the error
+    is LARGEST, up to 2.7% in §62's own table, so the number that matters for them is
+    bigger than the 8-phase figure §62 led with.
+  * §62's 8-phase table measures a mean of `solve_wheel` that nothing in the tree computes.
+    It is not wrong, it is about nobody's quantity.
+  * Class B and Class C of §64's manifest are both confirmed immune, Class D was already
+    corrected to empty, and **Class A shrinks to the four consumers above.**
+
+**The lesson, which is this file's own and I did not apply it:** §29 read a convergence
+order off a cell size measured on the wrong mesh; §60 caught a band separating profiles by
+their contact patch; and here I read a QoI's provenance off the name of the variable holding
+it.  A `["axle_drop_mm"]` subscript does not tell you which solve produced it.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §65
+
+1. **Move the four affected consumers to `axle_drop_interp_mm`.**  Much smaller than §64
+   scoped: no optimizer change, no gate change, no SVK re-run, no `make gci`.  Two of the
+   four are the corner ladders, which §61 has already re-measured; `study_reds_hub_share`
+   and `study_wheel_fea.run_refinement` are short.  The naming decision from §64 still
+   applies and is now the main open question.
+2. **Adopt `(-0.85, 1.00)`** as the layer profile (§61), which item 1 no longer blocks in
+   any large way.
+3. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60).
+4. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
    impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
    as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
    §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
