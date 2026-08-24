@@ -9506,3 +9506,69 @@ comparable.  Artifact purely additive.  `make triblock` ~670 s.
 7. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
    fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
    **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §73 — 2026-08-24. WHAT MAKES A REGION IMPOSSIBLE, ANSWERED: THE SMALLEST CORNER ANGLE, AT AUC 0.043 INSIDE THE WIDE-ARC BAND — AND A HELD-OUT DRAW CUTS THE FITTED RULE FROM 1.000 TO 0.833 AND FALSIFIES HALF OF IT
+
+§72 left forty band genomes at a 55% failure rate as the first well-conditioned version of
+§56's question.  Twenty-two refusals against eighteen reached is a classification problem,
+so it can be scored.
+
+**The answer is the smallest interior angle of the curvilinear triangle**, and it is not
+close.  Concordance between the two classes:
+
+```
+  min_wedge_deg 0.043 | wedge_sum 0.227 | |sum-180| 0.679 | arc_span 0.667
+  turn_at_far_end 0.366 | A_over_C 0.429 | bow_over_width 0.472
+```
+
+AUC 0.043 means a random refusal has a smaller minimum corner angle than a random reached
+region 95.7% of the time — and it is mechanically the right shape, since a transfinite blend
+has to squeeze a structured grid into a sharp corner and that is what folds.
+
+**It is a quantity §70 tested and dismissed**, and the reason is now visible: ten of the
+sixty-three uniform reached genomes have a minimum wedge under 17 degrees and **none has an
+arc span above 30**.  A sharp corner is harmless in a narrow region.  The two factors are
+CONJUNCTIVE — which is why six sections of one-quantity-at-a-time searching found nothing,
+and why §72's conditioned sampler was the precondition for seeing it.
+
+**And then the hold-out, which is the part worth keeping.**  A conjunctive rule —
+`arc > 36.16 OR (arc > 30 AND min_wedge < 17.12)` — fits all 104 genomes measured so far
+perfectly: 23 of 23, no false positives, accuracy 1.000.  Both thresholds are fitted on the
+data they are scored on and one lands 0.02 degrees from the nearest counterexample, so that
+number is not evidence.  Frozen and scored on a fresh band from a disjoint stream:
+
+```
+  30 held-out genomes, 12 refuse (40% base rate)
+    accuracy 0.833   precision 0.733   recall 0.917     (majority baseline 0.600)
+```
+
+**And it falsifies half the rule outright**: a region with arc span 39.97 and min wedge
+20.27 was REACHED, so "a wide enough arc always refuses" — six for six in sample — is false.
+
+**Established:** the minimum wedge dominates inside the difficult regime; the arc span sets
+how often a region is in that regime; the two are conjunctive.  **Not established:** any
+threshold.  §56 asked for a mechanism; this is a mechanism with an unvalidated threshold,
+and the in-sample 1.000 would have been the wrong number to publish.
+
+**Nothing promoted, no code changed, no artifact regenerated** — every number is computed
+from the committed `arc_span_band` and `refusal_search` sections except the hold-out, whose
+stream is named in UNCAP_PLAN PART 9 so it can be re-run.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §73
+
+1. **Calibrate the two thresholds on a proper hold-out protocol** (§73) — fit on the band,
+   score on a disjoint band, repeat over several streams.  The structure is settled; only
+   the numbers are not, and the machinery to do it now exists and costs ~150 s a stream.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+3. **A pass over "the box spans X" claims in §51-§71** (§72), which are statements about the
+   uniform sampler's reach rather than the design space's.
+4. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+5. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56) — now with a target to fit against;
+   **`modelled_area_reference` fillet-aware** (§50); **the REST of §45's audit list** (§49);
+   **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity check**
+   (§44).

@@ -1639,3 +1639,74 @@ says so.
    numbers overlapping — the first genuinely well-conditioned version of §56's question.
 2. **Every "the box spans X" claim in PARTS 1-7 is about the uniform sampler**, and the
    band shows it reaches less than was assumed.  Worth a pass over those statements.
+
+---
+
+# STEP 3 RECORD, PART 9 — 2026-08-24. WHAT PICKS THE REFUSAL OUT OF THE BAND IS THE SMALLEST CORNER ANGLE, AT AUC 0.043 — AND A HELD-OUT DRAW CUTS THE FITTED RULE FROM 1.000 TO 0.833 AND FALSIFIES HALF OF IT
+
+PART 8 left forty band genomes at a 55% failure rate as "the first well-conditioned version
+of §56's question".  With twenty-two refusals against eighteen reached this is a
+classification problem rather than a set of one, so it can be scored properly.
+
+## THE ANSWER IS THE SMALLEST WEDGE, AND IT IS NOT CLOSE
+
+Concordance (AUC) of each shape quantity between the 22 refusals and 18 reached:
+
+```
+  min_wedge_deg          0.043      <- a random refusal has a SMALLER minimum corner
+  wedge_sum_deg          0.227         angle than a random reached region 95.7% of the time
+  wedge_sum_minus_180    0.679
+  arc_span_deg           0.667
+  turn_at_far_end_deg    0.366
+  A_over_C               0.429
+  bow_over_width         0.472      <- no signal at all
+```
+
+**The smallest interior angle of the curvilinear triangle.**  Which is mechanically the
+right shape: a transfinite blend on a region with a very sharp corner has to squeeze a
+structured grid into it, and that is what folds.
+
+**And it is a quantity PART 6 tested and dismissed** — in the uniform box the refusal's
+19.284 sat inside the reached range [10.053, 36.971].  The reason is now visible: ten of
+the sixty-three uniform reached genomes have a minimum wedge under 17 degrees and **none of
+them has an arc span above 30**.  A sharp corner is harmless in a narrow region; it is only
+in the wide-arc regime that it decides anything.  PART 6 could not have seen that, because
+its sampler never put the two together.
+
+## AND THEN A HOLD-OUT, WHICH IS THE PART WORTH KEEPING
+
+A conjunctive rule fits the 104 genomes measured so far **perfectly** — `arc > 36.16 OR
+(arc > 30 AND min_wedge < 17.12)`, 23 of 23 refusals caught, zero false positives, accuracy
+1.000.  Both thresholds are fitted on the same observations they are scored on, and one of
+them lands 0.02 degrees from the nearest counterexample, so that number is not evidence.
+
+Scored on a fresh band drawn from a disjoint stream (seed offset +7000), thresholds frozen:
+
+```
+  30 held-out band genomes, 12 refuse (40% base rate)
+    accuracy 0.833   precision 0.733   recall 0.917
+    11 caught, 1 missed, 4 false positives, 14 cleared
+```
+
+Above the majority-class baseline of 0.600, and a long way below 1.000.  **And the hold-out
+falsifies half the rule outright**: a region with arc span **39.97** and min wedge 20.27
+was REACHED, so "a wide enough arc always refuses" — which looked like six for six — is
+simply false.  The other three errors are all the corner branch firing too early
+(min wedge 16.59, 16.69, 17.08 at arcs 31-32, all reached), so 17.12 is too aggressive.
+
+## WHAT IS ESTABLISHED AND WHAT IS NOT
+
+**Established:** the minimum wedge angle is the dominant separator inside the difficult
+regime (AUC 0.043 over 40 genomes); the arc span sets how often a region is in that regime
+at all (35x enrichment, PART 8); and the two are conjunctive — neither works alone, which
+is why six sections of single-quantity searching found nothing.
+
+**Not established:** any threshold.  The fitted pair scores 1.000 in sample and 0.833 out,
+and its wide-arc branch has a counterexample.  What §56 asked for was a mechanism, and a
+mechanism with an unvalidated threshold is where this stands.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no code changed, no artifact regenerated.**  Every number above is
+computed from `study_tri_block.json`'s committed `arc_span_band` and `refusal_search`
+sections except the hold-out, whose stream is named here so it can be re-run.
