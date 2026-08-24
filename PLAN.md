@@ -9353,3 +9353,49 @@ re-ranking of the same shelf.
 6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
    fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
    **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §70 — 2026-08-23. WHAT MAKES A REGION IMPOSSIBLE: THE REFUSAL IS EXTREMAL ON THE INTERIOR-ANGLE SUM BY 57% OF THE OTHERS' SPREAD, AND WITH ONE NEGATIVE EXAMPLE THAT IS WHERE TO LOOK, NOT AN ANSWER
+
+§56's question, asked of the shape numbers the tri-block artifact already carries.  Three
+quantities separate the single curved-Y refusal from all fifteen reached genomes at both
+configs; the widest is the region's interior-angle sum, where the refusal sits **14 degrees
+below the minimum of the others — 57% of their entire spread** (coarse 156.371 against
+[170.330, 194.703]; medium 156.667 against [170.489, 194.906]).  `arc_span_deg` separates
+by only 19% of its spread and is partly the straight-Y effect §56 already named.
+`bow_over_width`, `turn_at_far_end_deg`, the smallest wedge and the A/C side ratio do not
+separate — §56's negative, reconfirmed and extended.
+
+**Not claimed as a mechanism, and the attempted derivation is reported as failing.**  Any
+quantity on which a set of one is extremal will separate it from a set of fifteen.  In the
+plane Gauss-Bonnet gives `interior angle sum = 180 + total boundary turning`, which would
+have made this a statement about concavity — measured, the sides' turnings correlate with
+`sum - 180` at **0.355**, because the three sides are not consistently oriented between
+flank orientations.  The identity is presumably recoverable once they are reconciled; it is
+not recovered here, so the interpretation is withheld.
+
+**What settles it is a second refusal**, and the box has one only because sixteen genomes is
+a small draw.  Drawing to thirty-two would turn all four candidates into testable claims at
+once and costs about one more `make triblock` (~290 s for sixteen; the curved-Y sweep is the
+expensive part).
+
+**Nothing promoted, no code changed, no artifact regenerated** — every number is read from
+the committed artifact or computed from the genes in it.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §70
+
+1. **Draw the tri-block box to thirty-two genomes and find a second refusal** (§70).  It
+   converts four candidate separators into tested ones in a single run, it is the cheapest
+   remaining item with a real result attached, and unlike everything in the fillet arc it
+   is not waiting on a consumer.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+3. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced, and
+   it moves every genome-box number in §54 through §69.  Worth bundling with item 1, which
+   redraws that box anyway.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).

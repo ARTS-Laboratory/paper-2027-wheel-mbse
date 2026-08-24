@@ -1467,3 +1467,63 @@ bow does not explain the surviving refusal, and now neither does the fold margin
 known about it is narrow and worth restating: the refusal's ceiling over every admissible
 free count is **-0.013**, a hair rather than a collapse, and it sits at bow 0.491 while the
 box's largest bow, 0.498, is a genome the curve reaches.
+
+---
+
+# STEP 3 RECORD, PART 6 — 2026-08-23. THE REFUSAL IS EXTREMAL ON THE REGION'S INTERIOR-ANGLE SUM, BY MORE THAN HALF THE SPREAD OF EVERYTHING ELSE — AND WITH ONE NEGATIVE EXAMPLE THAT IS A CANDIDATE, NOT A MECHANISM
+
+PART 4 left "what makes a region impossible" as its first successor: one drawn genome folds
+at every interior point, every bend and every admissible free count, at both configs, and
+neither the bow (PART 4) nor the fold margin (PART 5) explains it.  This asks the artifact's
+remaining shape numbers.
+
+**Three of them separate the refusal from all fifteen reached genomes, at both configs:**
+
+```
+  quantity              refusal   others min   others max      gap   gap/spread
+  coarse
+    wedge sum deg       156.371      170.330      194.703   13.960        0.573
+    |wedge sum - 180|    23.629        0.174       14.703    8.927        0.614
+    arc_span_deg         41.209        3.714       35.312    5.897        0.187
+  medium
+    wedge sum deg       156.667      170.489      194.906   13.822        0.566
+    |wedge sum - 180|    23.333        0.308       14.906    8.427        0.577
+    arc_span_deg         41.217        3.714       35.324    5.893        0.186
+```
+
+**The interior-angle sum is the widest: the refusal sits 14 degrees below the minimum of the
+other fifteen, a gap that is 57% of their entire spread.**  Arc span separates too but only
+by 19% of its spread, and it is the quantity PART 4's print already uses for the STRAIGHT
+Y's folds — where the ranges genuinely do separate — so its appearance here is partly that
+same effect.  `bow_over_width`, `turn_at_far_end_deg`, the smallest wedge and the A/C side
+ratio all fail to separate, which is PART 4's negative reconfirmed and extended.
+
+## AND WITH ONE NEGATIVE EXAMPLE THIS IS NOT YET A MECHANISM
+
+Stated plainly because it would be easy to write this up as an answer: **any quantity on
+which the single refusal happens to be extremal will "separate" a set of one from a set of
+fifteen.**  What makes the angle sum more interesting than that is the size of the gap
+relative to the spread, and that it is stable across configs — not that it is derived.
+
+A derivation was attempted and does not hold.  In the plane, Gauss-Bonnet gives
+`interior angle sum = 180 deg + total boundary turning`, which would have made the sum a
+statement about how concave the region is.  Measured, the three sides' turnings correlate
+with `sum - 180` at only **0.355** across the box — because the sides are not consistently
+oriented between flank orientations, so the signed total is not comparable genome to genome.
+The identity is presumably recoverable with the orientations reconciled; it is not
+recovered here, and the interpretation is therefore withheld rather than asserted.
+
+## WHAT WOULD SETTLE IT
+
+**A second refusal.**  The box has one because sixteen genomes is a small draw, and every
+statistic above is a set of one against a set of fifteen.  Drawing further until a second
+region refuses the curve at every bend and every free count would turn all four candidates
+into testable claims at once, and would cost about one more `make triblock` — the curved-Y
+sweep is the expensive part at roughly 290 s for sixteen genomes, so thirty-two is ten
+minutes.  Until then the honest statement is the one this part opens with: the refusal is
+extremal on the interior-angle sum by more than half the spread, and that is where to look.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no code changed, no artifact regenerated** — every number above is read
+from the committed `study_tri_block.json` or computed from the genes it carries.
