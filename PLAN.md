@@ -8810,3 +8810,80 @@ result and nothing consumes them yet.
    (§56); **`R_hub`/`R_rim` as live FEA genes**; **`modelled_area_reference` fillet-aware**
    (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**; **§32's
    successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §62 — 2026-08-23. EVERY DEFLECTION NUMBER THIS PROJECT HAS QUOTED WAS READ AT WHICHEVER NODE HAPPENED TO BE NEAREST THE GROUND, AND AWAY FROM THE SHIPPED GENOME THAT COSTS UP TO 1.1% — FOUR TIMES THE BAND IT IS GATED ON
+
+§61's item 1.  §61 found the nearest-node reading inside the fillet arc and said the
+optimizer's history was *probably* safe, with "probably" doing the work.  This prices it,
+and the answer is that the shipped genome is a lucky draw.
+
+**The defect.**  `solve_wheel`'s `axle_drop_mm` is `uy` at whichever `rim_outer` node is
+closest to `theta = -90`.  That is a first-order error rather than a rounding one, because
+`uy` does not peak at the bottom — the spokes are a spiral, the wheel has no mirror
+symmetry about the vertical, and `uy` runs monotonically through the bottom.  Pinned by
+`test_the_vertical_displacement_runs_MONOTONICALLY_through_the_bottom` rather than argued.
+
+**What it costs, over 7 genomes at `coarse`, unfilleted, on the gate's own 8-phase uniform
+stencil:**
+
+```
+  genome      8-phase mean bias    worst single phase
+  shipped            -0.103%             0.726%
+  drawn 0            +0.077%             0.270%
+  drawn 1            +0.122%             2.139%
+  drawn 2            -1.133%             2.061%
+  drawn 3            +0.165%             1.886%
+  drawn 4            +1.019%             2.668%
+  drawn 5            +0.250%             1.781%
+                 |bias| max 1.133%, mean 0.410%
+```
+
+**The shipped genome is at the low end of that range.**  The tree's own headline deflection
+numbers are about 0.1% off, which is why nothing has ever looked wrong — but that is luck,
+not design, and the ±0.3% band this project gates on is exceeded by a factor of four
+elsewhere in the box.
+
+**It reaches the optimizer.**  `wheel_adjoint.py:644` takes `delta = float(sec
+["axle_drop_mm"])` for both the objective value and the quantity whose gradient the
+descent follows.  So the QoI carries a genome-dependent discretisation term of order 0.4%,
+and a design can improve its reading by moving the rim's node phase rather than its
+structure.  **NOT claimed: that any past optimization outcome was wrong.**  The adjoint
+differentiates `uy` at a fixed node index, which is a legitimate gradient of a slightly
+different functional; whether a 0.4% drift changes a descent path is unmeasured and is
+filed rather than asserted.
+
+**This was predicted in the tree and never chased.**  `phase_stencil`'s own docstring
+describes `uniform` as *"the one that lets the rim's contact faceting alias into a
+chaseable bias"* — and the aliasing is visible: across 8 uniform phases the unfilleted
+centre-node offset takes only three distinct values.  Measured, `rqmc` does not fix it, it
+RANDOMISES it: on the worst genome the systematic -1.133% becomes -0.600%, +0.614%,
++0.614%, +0.341% over four shifts, mean magnitude 0.542%.  A bias becomes noise of the same
+size, which is worse for a gradient and no better for a gate.
+
+**The fix is one `np.interp` and it is already in the tree.**  `axle_drop_interp_mm` and
+`patch_centre_offset_deg` are additional fields on `solve_wheel`'s result (§61), consumed
+by nothing.  Making the interpolated value THE axle drop is the right change and it is not
+made here: it re-dates every deflection number in the repo at once, which is a mechanical
+audit with its own baseline rather than a line in another arc's unit.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §62
+
+1. **Make `axle_drop_interp_mm` the axle drop.**  The most load-bearing known defect in the
+   tree, the fix is measured and free, and everything below it is priced against numbers
+   that carry it.  The work is the audit: `test_promotion.py`'s checklist, every committed
+   artifact re-derived and re-dated, and the ±0.3% band re-stated.
+2. **Then re-derive the ±0.3% band itself** on the corrected reading, wherever quoted.
+3. **Whether the 0.4% drift changes a descent path** (§62) — one short descent from the
+   shipped genome under each reading, compared step by step.  Cheap relative to what it
+   settles, and it decides whether §62 is a reporting defect or an optimizer one.
+4. **Adopt `(-0.85, 1.00)`** as the layer profile (§61) — trade quantified and small, but it
+   should follow items 1-2 rather than precede them, because its own trade was measured on
+   the uncorrected reading.
+5. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60).
+6. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
