@@ -1331,6 +1331,54 @@
       "diverges": false
     }
   },
+  "deflection": {
+    "node": {
+      "rungs": [
+        "coarse",
+        "medium",
+        "fine"
+      ],
+      "values_mm": [
+        0.9624561937884566,
+        0.9638155818152128,
+        0.9625792359804273
+      ],
+      "spread_pct": 0.14116906908370655,
+      "increments_mm": [
+        0.0013593880267561698,
+        -0.0012363458347854905
+      ],
+      "increment_ratio": -0.9094870709842223,
+      "monotone": false,
+      "settling": false,
+      "remaining_tail_mm": 0.0005888704715989616,
+      "remaining_tail_pct": 0.061176311475197406,
+      "settled_estimate_mm": 0.9631681064520262
+    },
+    "interp": {
+      "rungs": [
+        "coarse",
+        "medium",
+        "fine"
+      ],
+      "values_mm": [
+        0.956651579141851,
+        0.9610861918386404,
+        0.9621001199960181
+      ],
+      "spread_pct": 0.5675882873031728,
+      "increments_mm": [
+        0.004434612696789464,
+        0.0010139281573776637
+      ],
+      "increment_ratio": 0.2286396189934962,
+      "monotone": true,
+      "settling": true,
+      "remaining_tail_mm": 0.0003005393500857701,
+      "remaining_tail_pct": 0.031237845608730823,
+      "settled_estimate_mm": 0.9624006593461039
+    }
+  },
   "continuity": {
     "config": "coarse",
     "unfilleted_axle_drop_mm": 1.5516446176990795,

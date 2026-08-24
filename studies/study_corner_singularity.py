@@ -714,6 +714,34 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=Fal
             r = abs(ratios[-1])
             rec["settled_estimate_mpa"] = float(v[-1] + d[-1] * r / (1.0 - r))
 
+    # THE DEFLECTION LADDER'S CONVERGENCE, ON BOTH READINGS AND WITH THE TAIL.
+    #
+    # PART 12 stated this arc's reason 2 as a SPREAD over `coarse..fine` of `axle_drop_mm`
+    # and got 0.141%.  PART 18 showed that reading snaps to the nearest node and that the
+    # sequence it produces has increments of +0.001359 then -0.001236 -- a ratio of
+    # -0.909, which is noise.  Read at the bottom the ladder is monotone and settles, and
+    # the honest statement of reason 2 is not the spread at all but the REMAINING TAIL:
+    # what is still to come after the finest rung.  Both are reported, so the claim can be
+    # checked against the reading it was not made with.
+    rung_drops = {"node": [r["axle_drop_mm"] for r in out["rungs"]],
+                  "interp": [r["axle_drop_interp_mm"] for r in out["rungs"]]}
+    out["deflection"] = {}
+    for key, v in rung_drops.items():
+        v = v[1:]                      # `smoke` is not on the convergence ladder
+        d = [v[i + 1] - v[i] for i in range(len(v) - 1)]
+        r = (d[-1] / d[-2]) if len(d) > 1 and abs(d[-2]) > 1e-15 else None
+        tail = (abs(d[-1] * r / (1.0 - r)) if r is not None and abs(r) < 1.0 else None)
+        out["deflection"][key] = {
+            "rungs": list(ladder[1:]), "values_mm": list(v),
+            "spread_pct": 100.0 * (max(v) - min(v)) / (sum(v) / len(v)),
+            "increments_mm": d, "increment_ratio": r,
+            "monotone": bool(d) and (all(x > 0 for x in d) or all(x < 0 for x in d)),
+            "settling": bool(r is not None and abs(r) < SETTLING_RATIO),
+            "remaining_tail_mm": tail,
+            "remaining_tail_pct": (None if tail is None else 100.0 * tail / v[-1]),
+            "settled_estimate_mm": (None if tail is None
+                                    else v[-1] + d[-1] * r / (1.0 - r))}
+
     if continuity is not None:
         out["continuity"] = continuity_sweep(genes, continuity, CONTINUITY_RADII_MM,
                                              fillet_ref=fillet)
@@ -815,6 +843,28 @@ def _print(rep):
                   f"{row['rel_to_unfilleted']:+8.2%}")
         print(f"    genome's own pair    {c['shipped_fillet_axle_drop_mm']:>12.6f} mm  "
               f"{c['shipped_rel_to_unfilleted']:+8.2%}")
+
+    if "deflection" in rep:
+        print("\n  THE DEFLECTION LADDER, ON BOTH READINGS — the spread is not the claim, "
+              "the remaining TAIL is")
+        print(f"      {'reading':>8s} {'spread':>8s} {'monotone':>9s} {'ratio':>8s}"
+              f" {'settles':>8s} {'tail':>10s} {'tail %':>8s}   values")
+        for key, dd in rep["deflection"].items():
+            r = dd["increment_ratio"]
+            t, tp = dd["remaining_tail_mm"], dd["remaining_tail_pct"]
+            print(f"      {key:>8s} {dd['spread_pct']:7.3f}% "
+                  f"{str(dd['monotone']):>9s} "
+                  + (f"{r:8.3f}" if r is not None else f"{'-':>8s}")
+                  + f" {str(dd['settling']):>8s} "
+                  + (f"{t:10.6f} {tp:7.3f}%" if t is not None
+                     else f"{'-':>10s} {'-':>8s}")
+                  + "   " + "  ".join(f"{v:.6f}" for v in dd["values_mm"]))
+        n, i = rep["deflection"]["node"], rep["deflection"]["interp"]
+        if not n["monotone"] and i["monotone"]:
+            print("    the node reading is NOT monotone and the interpolated one is — "
+                  "PART 12's spread was")
+            print("    computed on a sequence whose increments change sign, which is "
+                  "noise rather than convergence.")
 
     if "profiles" in rep:
         pr = rep["profiles"]

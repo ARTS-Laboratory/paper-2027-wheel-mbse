@@ -2577,3 +2577,51 @@ pairs; nothing previously committed changed value.
 3. **The ±0.3% band should be re-derived on the interpolated reading**, wherever it is
    quoted.  It is one of this arc's four stated reasons and it has been evaluated with an
    instrument that snaps to nodes.
+
+
+---
+
+# STEP 1 RECORD, PART 19 — 2026-08-23. THE ARC'S REASON 2, RESTATED ON THE READING THAT WORKS: THE FILLETED DEFLECTION'S REMAINING TAIL IS 0.031% AND THE UNFILLETED ONE'S IS 0.371%
+
+PART 18 showed PART 12's "0.141% and flat from `coarse` up" was read off a sequence whose
+increments change sign.  It left the arc's reason 2 without a number.  This gives it one,
+and the corrected statement is stronger than the original.
+
+**A spread over three rungs was always the wrong instrument** — this file says so about the
+stress peaks, in `divergence`'s own comment, and the same argument applies to the
+deflection: a spread cannot tell a settled series from two rungs agreeing by luck.  What
+reason 2 actually needs is what is STILL TO COME after the finest rung.  On the
+interpolated reading both ladders are monotone and both settle, so the tail is well defined
+for each:
+
+```
+  reading      spread   monotone    ratio   settles       tail    tail %       values
+  UNFILLETED
+    node       1.208%      True     0.664     True    0.014857   0.946%   1.551645 1.562981 1.570505
+    interp     1.294%      True     0.473     True    0.005821   0.371%   1.549819 1.563534 1.570021
+  FILLETED
+    node       0.141%     False    -0.909    False    0.000589   0.061%   0.962456 0.963816 0.962579
+    interp     0.568%      True     0.229     True    0.000301   0.031%   0.956652 0.961086 0.962100
+```
+
+**The filleted deflection's remaining discretisation tail is 0.031% — inside the ±0.3% band
+by a factor of ten.  The unfilleted one's is 0.371% — outside it.**  That is reason 2, and
+it is a cleaner claim than the spread ever was: it says what is left rather than how much
+the three rungs happened to wander.
+
+Note what the node reading does to the filleted case: it reports a *smaller* tail (0.061%)
+off a non-monotone sequence, and `settles` is False because the ratio is -0.909.  The number
+was small and meaningless at the same time, which is exactly how it survived four sections.
+
+`test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one` is restated on
+the tail and now asserts monotonicity and settling first, so a future run cannot report a
+tail off a sequence that has not settled.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `axle_drop_mm` still the centre-node reading and still computed exactly
+as before, both layer-profile constants untouched, every mesh bit-identical.**  The naming
+decision §64 raised is settled the conservative way: `axle_drop_mm` keeps its meaning —
+`test_gnl`'s own docstring explains that meaning, and twenty-odd committed artifacts carry
+it — and the consumers that need the corrected number take `axle_drop_interp_mm` explicitly.
+`study_corner_singularity.json` and its fillet twin each gain one `deflection` block.

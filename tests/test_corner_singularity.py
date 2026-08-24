@@ -557,17 +557,34 @@ def test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one(
     identify. The filleted one is flat from `coarse` up. Both spreads are computed over
     the same three rungs of the same ladder.
     """
-    def spread(rep):
-        d = [r["axle_drop_mm"] for r in rep["rungs"][1:]]
-        return (max(d) - min(d)) / min(d)
+    sharp = report["deflection"]["interp"]
+    rounded = fillet_report["deflection"]["interp"]
 
-    sharp, rounded = spread(report), spread(fillet_report)
-    assert rounded < 0.003, (
-        f"the filleted axle drop spans {rounded:.4%} over coarse..fine — it no longer "
-        f"sits inside the +-0.3% band this arc exists partly to earn back")
-    assert sharp > rounded * 2.0, (
-        f"the unfilleted deflection ({sharp:.4%}) is no longer materially worse "
-        f"converged than the filleted one ({rounded:.4%})")
+    # RESTATED AFTER PART 18.  This used to compare the SPREAD of `axle_drop_mm` and
+    # demand the filleted one be under 0.3%.  That reading snaps to the nearest node and
+    # on the filleted mesh its ladder is not even monotone -- increments +0.001359 then
+    # -0.001236 -- so the 0.141% it reported was noise that happened to be small.  The
+    # claim the arc actually needs is about what is STILL TO COME after the finest rung,
+    # and on the interpolated reading both ladders are monotone and both settle, so the
+    # remaining tail is well defined for each.
+    for name, dd in (("unfilleted", sharp), ("filleted", rounded)):
+        assert dd["monotone"], (name, dd["values_mm"])
+        assert dd["settling"], (name, dd["increment_ratio"])
+        assert dd["remaining_tail_pct"] is not None, name
+
+    assert rounded["remaining_tail_pct"] < 0.3, (
+        f"the filleted deflection's remaining tail is "
+        f"{rounded['remaining_tail_pct']:.3f}% — it no longer sits inside the +-0.3% "
+        "band this arc exists partly to earn back")
+    assert sharp["remaining_tail_pct"] > 0.3, (
+        f"the unfilleted deflection's tail is {sharp['remaining_tail_pct']:.3f}% — if it "
+        "is now inside the band too, the fillet's convergence argument has lost its "
+        "contrast and that is a finding")
+    assert sharp["remaining_tail_pct"] > 5.0 * rounded["remaining_tail_pct"]
+
+    # and the node reading is kept in the artifact precisely so this stays checkable:
+    # on the filleted mesh it is NOT monotone, which is why its spread meant nothing
+    assert fillet_report["deflection"]["node"]["monotone"] is False
 
 
 def test_nothing_wires_the_fillet_into_the_objective():
