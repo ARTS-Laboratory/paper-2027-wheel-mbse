@@ -1020,6 +1020,13 @@ with a red gate (they are written before the non-zero exit), and `study_gradient
 
 # STEP 3 RECORD, PART 2 — 2026-08-23. THE TRI-BLOCK IS BUILT. BOTH OF STEP 3's CLAUSES ARE RETIRED, IT MESHES AT 77x THE BLOCK IT REPLACES — AND A THIRD OBSTACLE NEITHER §37 NOR §51 NAMED IS WHAT ACTUALLY STOPS IT
 
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
 Step 3 stopped **before building it**, on two checks that needed nothing built, and was
 right to: neither of them was about whether the partition works. §51 re-priced both with a
 scratch probe, said both were wrong, filed the probe **as** a probe — *"no driver, no
@@ -1201,6 +1208,13 @@ pins all of it.
 
 # STEP 3 RECORD, PART 3 — 2026-08-23. A FIXED RULE DOES REACH THE CEILING, AND FOR ONE CONFIG IT COSTS THE SHIPPED GENOME NOTHING TO GET THERE
 
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
 PART 2's item 1 asked whether a FIXED barycentric triple — the one with no free parameter
 left, the one that would actually ship — can be re-derived to reach every genome its own
 `best_w` reaches, rather than the sixteen-genome argmax `sweep` performs at one genome
@@ -1271,6 +1285,13 @@ and that `chosen` has not moved.
 ---
 
 # STEP 3 RECORD, PART 4 — 2026-08-23. THE CURVED Y IS BUILT. IT RESCUES WHAT PART 2 SAID IT WOULD, AND THE ONE GENOME LEFT REFUSES FOR A REASON THE MEASUREMENT DOES NOT NAME
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
 
 PART 2's Winslow column found that an elliptic interior solve changes the tri-block's
 number by **0.000000**, because the Y's three spokes are BOUNDARIES of two blocks each and
@@ -1358,6 +1379,9 @@ narrower one across a 1.77 mm sliver.
 **And it does not explain the survivor, which is stated here because it would be easy to
 imply that it does.** The genome with the LARGEST bow in the whole box — 35.3° at 0.498 — is
 one the curve reaches, at both configs. The one that refuses has a bow of 0.491, smaller.
+**[READ "THE WHOLE BOX" AS "THE UNIFORM DRAW" — PART 8.** A draw conditioned on arc span
+reaches bows to 1.25 against this sampler's 0.54, so 0.498 is not the largest bow the design
+space holds. The comparison between the two genomes stands; the superlative does not.**]**
 So the bow says where the bend is NEEDED; it does not say what makes a region impossible,
 and that quantity is still unnamed. `test_what_the_curve_does_NOT_reach_stays_reported`
 asserts the non-separation rather than the separation, so that a future run which does
@@ -1415,6 +1439,13 @@ straight Y, and `per["sector"]` still reports 0.626233 / 0.581582 and 76.6x / 70
 
 # STEP 3 RECORD, PART 5 — 2026-08-23. THE FOLD MARGIN IS RULED OUT AS THE THING THAT MAKES A REGION IMPOSSIBLE, WHICH IS ONE CANDIDATE OFF PART 4's OWN LIST
 
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
 PART 4 left "what makes a region impossible" as its first successor and said the
 separating quantity is *"one quantity and it is not yet measured"*.  Nothing here measures
 it.  What this does is remove a candidate that was about to be reached for, and remove it
@@ -1471,6 +1502,13 @@ box's largest bow, 0.498, is a genome the curve reaches.
 ---
 
 # STEP 3 RECORD, PART 6 — 2026-08-23. THE REFUSAL IS EXTREMAL ON THE REGION'S INTERIOR-ANGLE SUM, BY MORE THAN HALF THE SPREAD OF EVERYTHING ELSE — AND WITH ONE NEGATIVE EXAMPLE THAT IS A CANDIDATE, NOT A MECHANISM
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
 
 PART 4 left "what makes a region impossible" as its first successor: one drawn genome folds
 at every interior point, every bend and every admissible free count, at both configs, and
@@ -1531,6 +1569,13 @@ from the committed `study_tri_block.json` or computed from the genes it carries.
 ---
 
 # STEP 3 RECORD, PART 7 — 2026-08-24. THE EXPERIMENT PART 6 NAMED, RUN: NO SECOND REFUSAL AT SIXTY-FOUR GENOMES, AND THE CANDIDATE IT WAS BUILT TO CONFIRM COLLAPSED FROM 57% OF THE SPREAD TO 4%
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
 
 PART 6 ranked the region's interior-angle sum first among three separators and said plainly
 that with one negative example it was arithmetic rather than evidence, naming the fix: draw

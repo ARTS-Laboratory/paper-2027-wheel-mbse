@@ -940,6 +940,37 @@ def _filleted_spoke(sample, s_hub, s_rim, orientation, rim_inner, n_sp, n_th,
 FILLET_LAYER_ENTRY_SLOPE = -0.45
 FILLET_LAYER_END_OFFSET = 1.60
 
+# THE REFUSAL ABOVE, TURNED INTO A BOUND PROJECTION.  PLAN §57 / FILLET_PLAN PART 14.
+#
+# All six of the refusals in the scope note were the same one -- the fillet's tangent point
+# swept past the next sector's corner at that genome's own `R_hub` -- and the radius at
+# which that happens is a property of the GENOME, computable before any block is built.
+# Comparing each drawn radius to its own sector's limit classifies 16 of 16 with no false
+# positive, and pulling each radius back inside that limit takes the drawn box from 10/16
+# BUILDING to 16/16.  It is inert at the shipped genome (hub 0.6636 against a limit of
+# 3.1297; the rim has no limit at all), so the arc's published numbers are unchanged.
+#
+# 0.95 RATHER THAN 1.00 because the limit is where the free ring block's angular span
+# reaches ZERO, and a block of zero span is not a block.  The factor is insensitive across
+# 0.75-0.99 -- every one of them builds all sixteen -- so the test asserts the
+# INSENSITIVITY and not this value.
+#
+# A CLAMP IS NOT A GATE, and the two must not blur.  The gate is exact, costs nothing, and
+# LOSES the genome; this keeps the genome and models a SMALLER fillet than its genes asked
+# for.  That is honest only if the applied radius is what the caller is told it got, which
+# is why `build_wheel` reports `fillet_radii_mm` and `fillet_clamped` and why the clamp
+# applies to `fillet=True` alone -- an explicit `fillet=(R_hub, R_rim)` is a request for
+# those radii and is honoured exactly, or refused as before.
+SECTOR_FIT_CLAMP = 0.95
+
+# The bracket the limit is bisected in, and the step count.  `study_fillet_block`'s own
+# `sector_fit_limit` uses [0.05, 8.0] and the two must agree or §57's margins stop being
+# reproducible from the mesh.  40 halvings of a 7.95 mm bracket is 7e-12 mm, which is far
+# under the 1e-4 the margins are quoted to; the study's 80 was already past double
+# precision on the bracket.
+SECTOR_FIT_BRACKET = (0.05, 8.0)
+SECTOR_FIT_BISECTIONS = 40
+
 FILLETED_BLOCK_ORDER = (
     "spoke",
     "hub_fillet_a", "hub_fillet_b", "rim_fillet_a", "rim_fillet_b",
@@ -1092,6 +1123,62 @@ def _fillet_cross_section(sample, s, eta, n_th, first):
     return np.concatenate([np.asarray(first, float)[None, :], row[1:]], axis=0)
 
 
+def _sector_fit_span(curves_at, R):
+    """`free_span_deg` at one radius, or a negative number when nothing builds there.
+
+    ANY refusal counts as "no room", which matches `study_fillet_block.sector_fit_limit`
+    exactly and is what makes §57's per-genome margins reproducible from the mesh rather
+    than only from the study.  A tangency that fails and a tangent point that has swept
+    past the corner are different reasons, but both mean this radius has nowhere to go.
+    """
+    c = curves_at(R)
+    return float(c["free_span_deg"]) if c["built"] else -1.0
+
+
+def _sector_fit_limit(curves_at, bracket=SECTOR_FIT_BRACKET,
+                      steps=SECTOR_FIT_BISECTIONS):
+    """The radius at which this genome's fillet reaches the next sector's corner.
+
+    `None` means the junction has no limit inside the bracket -- the rim usually does not
+    -- and the caller must treat that as "no clamp", never as zero.  Bisected rather than
+    solved because `free_span_deg` runs through `_fillet_tangency`'s own root-find; it is
+    monotone decreasing in `R`, which is what makes a bisection the right instrument and
+    is the same assumption §57 made.
+    """
+    lo, hi = float(bracket[0]), float(bracket[1])
+    if _sector_fit_span(curves_at, hi) > 0.0:
+        return None
+    if _sector_fit_span(curves_at, lo) <= 0.0:
+        return lo
+    for _ in range(steps):
+        mid = 0.5 * (lo + hi)
+        if _sector_fit_span(curves_at, mid) > 0.0:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def _clamp_to_sector(curves_at, R, factor):
+    """`(R_used, clamped)` -- the radius pulled back inside its own sector's room.
+
+    ONE PROBE BEFORE ANY BISECTION, because the bisection is ~40 `_fillet_curves` calls
+    and the clamp is inert at almost every genome that matters.  `free_span_deg` is
+    monotone in `R`, so free ring left at `R / factor` proves `factor * limit > R` and the
+    clamp cannot bite -- one extra call instead of forty.  At the shipped genome that is
+    the whole cost.
+    """
+    if factor is None:
+        return float(R), False
+    probe = min(float(R) / float(factor), float(SECTOR_FIT_BRACKET[1]))
+    if _sector_fit_span(curves_at, probe) > 0.0:
+        return float(R), False
+    limit = _sector_fit_limit(curves_at)
+    if limit is None or float(R) <= factor * limit:
+        return float(R), False
+    return float(factor * limit), True
+
+
 def _layer_profile(layer_profile):
     """`(entry, end)`, defaulting to the two measured constants.
 
@@ -1116,12 +1203,20 @@ def _layer_profile(layer_profile):
 def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                             rim_outer, genes, fillet, uncap=None,
                             entry=FILLET_LAYER_ENTRY_SLOPE,
-                            end=FILLET_LAYER_END_OFFSET):
+                            end=FILLET_LAYER_END_OFFSET,
+                            clamp=SECTOR_FIT_CLAMP):
     """The eleven node grids of a filleted sector 0, keyed by `FILLETED_BLOCK_ORDER`.
 
     Raises `ValueError` when the geometry refuses, with the reason, because the caller
     is `sector_blocks` and a refusal there is the same class of event as the rim band
     having non-positive thickness: a genome this construction cannot build.
+
+    Carries `_applied` alongside `_thetas` and `_dirn` -- the radii actually built and
+    which of them the sector-fit clamp moved, see `SECTOR_FIT_CLAMP`.  It rides in the
+    dict rather than in a second return value for the same reason those two do: every
+    caller already spreads this dict by `FILLETED_BLOCK_ORDER` and would have to grow a
+    tuple unpack otherwise.  It is there because a clamp the caller cannot see is exactly
+    the defect §57 warns about.
     """
     # `UNCAP_DEFAULT` is defined below `sector_blocks`, so it cannot be a default
     # ARGUMENT here without a forward reference; `None` is not a legal `uncap` value and
@@ -1130,11 +1225,19 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
     n_th = cfg.nn(cfg.n_thick)
     n_sp = cfg.nn(cfg.n_span)
     n_weld = cfg.nn(cfg.n_weld)
+    # THE CLAMP APPLIES TO THE GENE-DERIVED BRANCH ALONE.  `fillet=True` means "this
+    # genome's fillets", and a genome whose radius has no room is the case §57 measured;
+    # an explicit pair is a request for those exact radii -- every caller that passes one
+    # is measuring the radius itself -- so it is honoured or refused, never quietly moved.
     if fillet is True:
-        radii = (float(genes[12]), float(genes[13]))
+        radii, clamp_factor = (float(genes[12]), float(genes[13])), clamp
     else:
-        radii = tuple(float(v) for v in fillet)
+        radii, clamp_factor = tuple(float(v) for v in fillet), None
 
+    applied = {"requested_mm": tuple(radii), "radii_mm": None,
+               "clamped": {"hub": False, "rim": False},
+               "clamp_factor": clamp_factor}
+    used = {}
     curves = {}
     for junction, R, s_end, s_far, ring_r, k_eta in (
             ("hub", radii[0], s_hub, s_rim, HUB_RADIUS_MM, 0),
@@ -1156,15 +1259,25 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
              if blend is None else
              np.asarray(_uncap_corner(sample, s_ring, eta, ring_r, is_hub_j, blend, np),
                         float))
-        c = _fillet_curves(sample, s_end, s_far, eta, ring_r,
-                           ring_far_radius(junction == "hub", rim_outer), R, n_th, Q,
-                           entry, end)
+        def curves_at(R_try, _a=(s_end, s_far, eta, ring_r, is_hub_j, Q)):
+            s_e, s_f, et, rr, hub_j, q = _a
+            return _fillet_curves(sample, s_e, s_f, et, rr,
+                                  ring_far_radius(hub_j, rim_outer), R_try, n_th, q,
+                                  entry, end)
+
+        R_used, was_clamped = _clamp_to_sector(curves_at, R, clamp_factor)
+        applied["clamped"][junction] = was_clamped
+        used[junction] = R_used
+        c = curves_at(R_used)
         if not c["built"]:
             raise ValueError(
                 f"no filleted blocking exists at the {junction}: {c['why']}.  "
                 f"See FILLET_PLAN.md PART 10.")
-        c.update({"eta": eta, "s_ring": s_ring, "ring_r": float(ring_r), "Q": Q})
+        c.update({"eta": eta, "s_ring": s_ring, "ring_r": float(ring_r), "Q": Q,
+                  "R_mm": R_used, "R_requested_mm": float(R)})
         curves[junction] = c
+
+    applied["radii_mm"] = (used["hub"], used["rim"])
 
     lo, hi = curves["hub"]["s_A"], curves["rim"]["s_A"]
     if not lo < hi:
@@ -1242,12 +1355,14 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
     out = {name: blocks[name] for name in FILLETED_BLOCK_ORDER}
     out["_thetas"] = thetas
     out["_dirn"] = dirn
+    out["_applied"] = applied
     return out
 
 
 def filleted_sector(genes, cfg, fillet=True, span_mm=HUB_RIM_SPAN_MM,
                     orientation=None, rim_outer=RIM_OUTER_RADIUS_MM, uncap=None,
-                    entry=FILLET_LAYER_ENTRY_SLOPE, end=FILLET_LAYER_END_OFFSET):
+                    entry=FILLET_LAYER_ENTRY_SLOPE, end=FILLET_LAYER_END_OFFSET,
+                    clamp=SECTOR_FIT_CLAMP):
     """The eleven blocks of a filleted sector 0, from the genes, with the profile exposed.
 
     `sector_blocks(..., fillet=)` is the path `build_wheel` takes and it holds `entry`
@@ -1261,6 +1376,9 @@ def filleted_sector(genes, cfg, fillet=True, span_mm=HUB_RIM_SPAN_MM,
     `_sector_coords` and `build_wheel` now take `layer_profile=(entry, end)` as well —
     same two numbers, threaded to the full assembly.  Use that one when a mesh is wanted
     and this one when the blocks are.
+
+    `clamp=None` restores the pre-§57 behaviour — the genes' own radii, refused when they
+    have no room — which is what a study re-deriving a published refusal COUNT wants.
     """
     cfg = get_config(cfg)
     if orientation is None:
@@ -1269,7 +1387,7 @@ def filleted_sector(genes, cfg, fillet=True, span_mm=HUB_RIM_SPAN_MM,
     sample, s_dense = global_sampler(genes, cfg, span_mm=span_mm)
     s_hub, s_rim = junction_stations(sample, s_dense, orientation, rim_inner)
     return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
-                                   rim_outer, genes, fillet, uncap, entry, end)
+                                   rim_outer, genes, fillet, uncap, entry, end, clamp)
 
 
 def _seam_table_filleted(orientation, dirn):
@@ -1461,7 +1579,8 @@ UNCAP_DEFAULT = (True, 1.0)
 
 def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
                   rim_outer=RIM_OUTER_RADIUS_MM, fillet=None, uncap=UNCAP_DEFAULT,
-                  fillet_blocking="sector", layer_profile=None):
+                  fillet_blocking="sector", layer_profile=None,
+                  fillet_clamp=SECTOR_FIT_CLAMP):
     """The seven node grids of sector 0 — eleven when the fillet is blocked — as a dict.
 
     Ordering matters: `build_wheel` gives ownership of a shared node to the block that
@@ -1479,6 +1598,11 @@ def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
     `fillet` rounds the `P_t` corner of each junction (FILLET_PLAN.md).  `None` is the
     unfilleted geometry and is the default; `True` takes the radii from the genome's
     `R_hub`/`R_rim`; a `(R_hub, R_rim)` pair overrides them.
+
+    `fillet_clamp` pulls a gene-derived radius back inside the room its own sector has --
+    see `SECTOR_FIT_CLAMP`, which is where the number and its provenance live.  It acts on
+    `fillet=True` ONLY, never on an explicit pair, and `None` disables it.  The mesh
+    reports what it actually built: `mesh.fillet_radii_mm` and `mesh.fillet_clamped`.
 
     `fillet_blocking` picks WHICH filleted construction, and the two are not variants of
     one thing — they are the arc's before and after.
@@ -1527,7 +1651,7 @@ def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
                 "coordinates; see its guard.")
         return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation,
                                        rim_inner, rim_outer, genes, fillet, uncap,
-                                       *_layer_profile(layer_profile))
+                                       *_layer_profile(layer_profile), fillet_clamp)
     if fillet is None:
         s_grid = xp.linspace(s_hub, s_rim, n_sp)
         spoke = sample(s_grid[:, None], eta_grid[None, :])
@@ -1713,14 +1837,14 @@ class WheelMesh:
     __slots__ = ("coords", "conn", "cfg", "element_block", "element_region",
                  "node_sets", "edge_sets", "seam_error_mm", "n_merged", "rim_outer",
                  "genes", "span_mm", "n_spokes", "owners", "orientation", "phase_deg",
-                 "uncap", "fillet", "_coord_fn")
+                 "uncap", "fillet", "fillet_radii_mm", "fillet_clamped", "_coord_fn")
 
     def __init__(self, coords, conn, cfg, element_block, element_region,
                  node_sets, edge_sets, seam_error_mm, n_merged,
                  rim_outer=RIM_OUTER_RADIUS_MM, genes=None,
                  span_mm=HUB_RIM_SPAN_MM, n_spokes=NUMBER_OF_SPOKES,
                  owners=None, orientation=None, phase_deg=0.0,
-                 uncap=UNCAP_DEFAULT, fillet=None):
+                 uncap=UNCAP_DEFAULT, fillet=None, applied=None):
         # Carried so `area_report` can ask `modelled_area_reference` for the region this
         # mesh ACTUALLY builds.  A mesh that does not remember how its junctions were
         # closed cannot be area-checked against anything.
@@ -1728,6 +1852,13 @@ class WheelMesh:
         # Carried for the same reason `uncap` is, and for one more: `mesh_coords` would
         # otherwise rebuild the UNFILLETED sector and index it with THIS mesh's owners.
         self.fillet = fillet
+        # WHAT WAS ACTUALLY BUILT, not what was asked for.  `fillet=True` with a radius
+        # that has no room in its own sector builds a SMALLER fillet (see
+        # `SECTOR_FIT_CLAMP`), and a consumer pricing `R_hub` against a deflection has to
+        # be able to see that -- §57's condition on the clamp being honest.  Both are
+        # `None` off the filleted path, which is not the same as "nothing was clamped".
+        self.fillet_radii_mm = None if applied is None else applied["radii_mm"]
+        self.fillet_clamped = None if applied is None else applied["clamped"]
         self.coords = coords
         self.conn = conn
         self.cfg = cfg
@@ -1796,7 +1927,8 @@ def _rotate(grid, angle_rad, xp):
 
 def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
                    phase_deg, fillet=None, uncap=UNCAP_DEFAULT,
-                   fillet_blocking="sector", layer_profile=None):
+                   fillet_blocking="sector", layer_profile=None,
+                   fillet_clamp=SECTOR_FIT_CLAMP):
     """The raw node coordinates of all twelve sectors, before the seams are merged.
 
     THE ENTIRE TRACED HALF OF `build_wheel`, factored out so that `mesh_coords` can run
@@ -1804,18 +1936,21 @@ def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
     makes a discrete decision: the orientation is an argument, the block shapes come out
     of `sector_blocks`, and every arithmetic operation goes through `xp`.
 
-    Returns (coords_all [n_raw, 2], shapes, offsets, thetas, dirn), where `dirn` is
-    `None` for the unfilleted blocking and the per-junction sweep direction for the
+    Returns (coords_all [n_raw, 2], shapes, offsets, thetas, dirn, applied), where `dirn`
+    is `None` for the unfilleted blocking and the per-junction sweep direction for the
     filleted one — `build_wheel` needs it to pick the seam table AND to set that table's
-    `dk`, which follows the genome (see `_seam_table_filleted`).
+    `dk`, which follows the genome (see `_seam_table_filleted`) — and `applied` is the
+    sector-fit clamp's record, `None` off the filleted path.
     """
     sector0 = sector_blocks(genes, cfg, xp=xp, span_mm=span_mm,
                             orientation=orientation, rim_outer=rim_outer,
                             fillet=fillet, uncap=uncap,
                             fillet_blocking=fillet_blocking,
-                            layer_profile=layer_profile)
+                            layer_profile=layer_profile,
+                            fillet_clamp=fillet_clamp)
     thetas = sector0.pop("_thetas")
     dirn = sector0.pop("_dirn", None)
+    applied = sector0.pop("_applied", None)
     order = FILLETED_BLOCK_ORDER if dirn is not None else BLOCK_ORDER
 
     parts, offsets, shapes = [], {}, {}
@@ -1835,7 +1970,7 @@ def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
             cursor += shapes[(k, name)][0] * shapes[(k, name)][1]
             parts.append(g.reshape(-1, 2))
 
-    return xp.concatenate(parts, axis=0), shapes, offsets, thetas, dirn
+    return xp.concatenate(parts, axis=0), shapes, offsets, thetas, dirn, applied
 
 
 def mesh_coords(genes, mesh, xp=None):
@@ -1869,7 +2004,7 @@ def mesh_coords(genes, mesh, xp=None):
         return coord_fn(mesh)(genes)
 
     _refuse_filleted_gradient(mesh)
-    coords_all, _, _, _, _ = _sector_coords(
+    coords_all, _, _, _, _, _ = _sector_coords(
         genes, mesh.cfg, xp, mesh.span_mm, mesh.n_spokes, mesh.orientation,
         mesh.rim_outer, mesh.phase_deg, uncap=getattr(mesh, "uncap", UNCAP_DEFAULT))
     return coords_all[xp.asarray(mesh.owners)]
@@ -1950,9 +2085,9 @@ def coord_fn(mesh):
 
         @jax.jit
         def f(v):                                   # noqa: F811
-            coords_all, _, _, _, _ = _sector_coords(v, cfg, jnp, span, n_spokes,
-                                                    orientation, rim_outer, phase,
-                                                    uncap=uncap)
+            coords_all, _, _, _, _, _ = _sector_coords(v, cfg, jnp, span, n_spokes,
+                                                       orientation, rim_outer, phase,
+                                                       uncap=uncap)
             return coords_all[owners]
 
         if len(_COORD_FN_CACHE) >= _COORD_FN_CACHE_MAX:
@@ -1965,7 +2100,8 @@ def coord_fn(mesh):
 def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
                 n_spokes=NUMBER_OF_SPOKES, orientation=None,
                 rim_outer=RIM_OUTER_RADIUS_MM, phase_deg=0.0, fillet=None,
-                uncap=UNCAP_DEFAULT, fillet_blocking="sector", layer_profile=None):
+                uncap=UNCAP_DEFAULT, fillet_blocking="sector", layer_profile=None,
+                fillet_clamp=SECTOR_FIT_CLAMP):
     """Assemble the full 360 degree mesh.
 
     Sector 0's seven blocks are built once and rotated, so the twelve sectors are
@@ -1980,9 +2116,9 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
     cfg = get_config(cfg)
     if orientation is None:
         orientation = flank_orientation(genes, cfg, span_mm=span_mm)
-    coords_all, shapes, offsets, thetas, dirn = _sector_coords(
+    coords_all, shapes, offsets, thetas, dirn, applied = _sector_coords(
         genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer, phase_deg,
-        fillet, uncap, fillet_blocking, layer_profile)
+        fillet, uncap, fillet_blocking, layer_profile, fillet_clamp)
     filleted = dirn is not None
     order = FILLETED_BLOCK_ORDER if filleted else BLOCK_ORDER
     region = FILLETED_BLOCK_REGION if filleted else BLOCK_REGION
@@ -2044,7 +2180,7 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
                      int(n_raw - owners.size), rim_outer=rim_outer,
                      genes=genes, span_mm=span_mm, n_spokes=n_spokes,
                      owners=owners, orientation=orientation, phase_deg=phase_deg,
-                     uncap=uncap, fillet=fillet)
+                     uncap=uncap, fillet=fillet, applied=applied)
 
 
 def _orient_elements(xy, conn, elem_block):

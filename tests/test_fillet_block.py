@@ -967,16 +967,14 @@ def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
     ctl_sj = min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
                  for k, v in ctl.items() if not k.startswith("_"))
     blocks = ww.filleted_sector(genes, cfg, uncap=(True, 0.0))
-    blocks.pop("_thetas"); blocks.pop("_dirn")
     fil_sj = min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
-                 for v in blocks.values())
+                 for k, v in blocks.items() if not k.startswith("_"))
     assert ctl_sj < wo.MIN_SJ_TARGET, ctl_sj
     assert fil_sj < ctl_sj, (fil_sj, ctl_sj)
     # and the default blend is where both are usable
     good = ww.filleted_sector(genes, cfg)
-    good.pop("_thetas"); good.pop("_dirn")
     assert min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
-               for v in good.values()) > wo.MIN_SJ_TARGET
+               for k, v in good.items() if not k.startswith("_")) > wo.MIN_SJ_TARGET
 
 
 def test_the_filleted_sector_costs_the_unfilleted_one_nothing(genes):
@@ -1055,3 +1053,62 @@ def test_a_degraded_run_may_not_be_filed_as_the_committed_artifact():
     with pytest.raises(SystemExit):
         fb._gate_guard.refuse_degraded_out(
             ap, args, "study_fillet_block.json", [(True, "a degraded probe run")])
+
+
+# ---------------------------------------------------------------------------
+# §68's CLIFF, AS A COLUMN (PLAN §77, FILLET_PLAN PART 20 measured it by hand)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("end,published", fb.CLIFF_PUBLISHED)
+def test_the_cliff_column_reproduces_PART_20s_hand_bisections(genes, end, published):
+    """The automated column has to land on the four numbers the record was written from.
+
+    PLAN §68 and FILLET_PLAN PART 20 declined the genome-robust layer profile on these
+    four bisections and the margins they imply, so a column that disagreed with them
+    would mean either the decision or the code is wrong.  Pinned against the RECORD
+    rather than against a re-run of itself, at the precision §68 published to.
+    """
+    got = fb.cliff_entry(genes, "coarse", end)
+    assert got["entry"] is not None, got["why"]
+    assert abs(got["entry"] - published) < 1e-4, (end, got["entry"], published)
+    assert fb.CLIFF_REASON in got["why"], got["why"]
+
+
+def test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first(genes):
+    """A bisection that accepted any refusal would report a different limit under this name.
+
+    The blocking refuses for four distinct geometric reasons and only one of them is the
+    layer losing its thickness.  `cliff_entry` checks which bounded it and returns `None`
+    with the reason when it is something else — so a future change that made, say, the
+    sector-fit limit bind first shows up as a missing column rather than as a margin
+    quietly measured against the wrong edge.
+    """
+    got = fb.cliff_entry(genes, "coarse", 1.00)
+    assert fb.CLIFF_REASON in got["why"]
+    # and the verdict at an entry just past the cliff refuses for exactly that reason
+    v = fb.sector_verdict(genes, "coarse", float(genes[12]), float(genes[13]),
+                          entry=got["entry"] - 0.01, end=1.00)
+    assert not v["built"] and fb.CLIFF_REASON in v["why"], v
+    # while just inside it, the sector builds
+    v = fb.sector_verdict(genes, "coarse", float(genes[12]), float(genes[13]),
+                          entry=got["entry"] + 0.01, end=1.00)
+    assert v["built"], v
+
+
+def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(genes):
+    """§68's finding, as a check: the arc's candidates are all closer to the edge.
+
+    Every pair this arc proposed stands within 0.08 of a hard refusal of the shipped
+    genome and the pair that ships stands 0.55 from it — which is the whole reason the
+    profile is measured and not adopted.  A future grid that produced a roomier candidate
+    would go red here, and that is the outcome that should reopen the call rather than a
+    line in a plan file nobody re-reads.
+    """
+    shipped = fb.cliff_entry(genes, "coarse", fb.LAYER_END_OFFSET)
+    shipped_margin = fb.LAYER_ENTRY_SLOPE - shipped["entry"]
+    assert shipped_margin == pytest.approx(0.5520, abs=1e-3), shipped_margin
+    for entry, end in fb.LAYER_PROFILE_FINE_CANDIDATES + fb.LAYER_PROFILE_CANDIDATES:
+        c = fb.cliff_entry(genes, "coarse", end)
+        if c["entry"] is None:
+            continue
+        assert entry - c["entry"] < shipped_margin, (entry, end, entry - c["entry"])

@@ -885,8 +885,14 @@ def filleted_sector(genes, cfg, R_hub, R_rim,
     except (ValueError, NotImplementedError) as exc:
         return None, {"why": str(exc).split("  See ")[0]}
     dirn = blocks.pop("_dirn")
+    applied = blocks.pop("_applied", None)
     blocks.pop("_thetas", None)
-    return blocks, {"why": None, "dirn": dirn}
+    # Every `_`-prefixed key, not the two this file happens to know about.  `_applied`
+    # arrived with PLAN §57's clamp and broke four call sites that popped by name; the
+    # prefix is the convention the rest of the tree already filters on.
+    for k in [k for k in blocks if k.startswith("_")]:
+        blocks.pop(k)
+    return blocks, {"why": None, "dirn": dirn, "applied": applied}
 
 
 def _side(block, side):
@@ -1012,26 +1018,21 @@ def sector_fit_limit(genes, cfg, junction):
     clean out to 4.00 mm, and it still is -- what runs out first is the ring's free
     block, whose angular span this drives to zero.  Bisected rather than estimated,
     because it is the number a gene bound would have to be written against.
+
+    THE BISECTION ITSELF NOW LIVES IN THE MODULE (PART 21).  `wheel_wheel` clamps to this
+    limit on the `fillet=True` path, so a second copy here would be two implementations of
+    one criterion drifting apart -- the failure this file's own docstrings are about.
+    `sector_curves` stays, because the rest of this section measures the CURVES; only the
+    root-find is delegated.  The module bisects 40 times against the 80 here, which moves
+    the shipped genome's hub limit from 3.1296998810584657 to 3.1296998810549430 -- 3.5e-12
+    mm, eight orders under the 1e-4 these margins are quoted to.
     """
-    lo, hi = 0.05, 8.0
-
-    def span(R):
+    def curves_at(R):
         c = sector_curves(genes, cfg, junction, R)
-        if not c.get("built"):
-            return -1.0
-        return c["free_span_deg"]
+        return c if "built" in c else dict(c, built=False)
 
-    if span(hi) > 0.0:
-        return {"limited": False, "radius_mm": None}
-    if span(lo) <= 0.0:
-        return {"limited": True, "radius_mm": lo}
-    for _ in range(80):
-        mid = 0.5 * (lo + hi)
-        if span(mid) > 0.0:
-            lo = mid
-        else:
-            hi = mid
-    return {"limited": True, "radius_mm": 0.5 * (lo + hi)}
+    R = WW._sector_fit_limit(curves_at)
+    return {"limited": R is not None, "radius_mm": R}
 
 
 # PART 10 FINDING 6's refusal, turned from a count into a number that predicts it.  Six of
@@ -1039,7 +1040,11 @@ def sector_fit_limit(genes, cfg, junction):
 # the hub fillet's tangent point swept past the next sector's corner at that genome's own
 # `R_hub`.  That is `sector_fit_limit` arriving as a GENOME property rather than a radius
 # one, so the margin against it is computable per genome, before any block is built.
-SECTOR_FIT_CLAMP = 0.95
+#
+# THE VALUE MOVED INTO THE MODULE AT PART 21, because `wheel_wheel` now clamps to it on the
+# `fillet=True` path and a study-local copy would be a second number to keep in step.  Kept
+# under this name so every reference in this file and its tests still reads.
+SECTOR_FIT_CLAMP = WW.SECTOR_FIT_CLAMP
 
 
 def sector_fit_margin(genes, cfg, junctions=DEFAULT_JUNCTIONS):
@@ -1274,7 +1279,14 @@ LAYER_PROFILE_FINE_CANDIDATES = ((-0.90, 1.10),
 
 
 def profile_candidates(table, target=None):
-    """Every cell that clears the barrier on all cells and refuses none of them.
+    """Every cell that clears the barrier on all DRAWN GENOMES and refuses none of them.
+
+    "ALL" IS THE DRAW, NOT THE DESIGN SPACE, and this docstring used to say "on all cells"
+    without saying whose.  It is the source of the "clears the barrier on the whole box"
+    wording in PLAN §59 and §69, and PLAN §72 measured what that box actually reaches: the
+    uniform Latin hypercube puts about one genome above 35 degrees of arc span in sixty-four.
+    A cell that clears every genome HERE is a cell no genome in `sweep_layer_profile_genomes`
+    refused; it is not a cell proved safe over the gene box.
 
     Sorted by `(entry, end)` rather than by score, because this is a SET and its order
     should not move when a floor wobbles by 0.001.  Refusing cells are excluded for the
@@ -1287,6 +1299,100 @@ def profile_candidates(table, target=None):
           and r["worst_min_scaled_jacobian"] > target]
     ok.sort(key=lambda r: (r["entry"], r["end"]))
     return tuple((float(r["entry"]), float(r["end"])) for r in ok)
+
+
+# PART 20 / PLAN §68's CLIFF, TURNED FROM FOUR HAND BISECTIONS INTO A COLUMN.
+#
+# The best genome-box floor on either grid refuses ONE genome, and it is the SHIPPED one --
+# `the layer's width profile reaches zero thickness` at the rim, a hard geometric loss of the
+# wheel every published number in this project is measured at.  §68 bisected `entry` at four
+# `end`s by hand and found every candidate this arc produced standing within 0.08 of that
+# edge while the shipped pair stands 0.55 from it, and then wrote the sentence this constant
+# exists to retire: *"the distance to that edge was never a column in any table."*
+#
+# The bracket is wide on the safe side and stops short of -2.0, which is far past any entry
+# either grid visits.  Bisection for the same reason `sector_fit_limit` uses one: the
+# refusal comes out of `_hermite`'s minimum over a sampled profile and has no closed form.
+CLIFF_BRACKET = (-2.0, 0.0)
+CLIFF_BISECTIONS = 30
+CLIFF_REASON = "width profile reaches zero"
+
+# PART 20's four hand bisections, at the precision they were published to.  Kept so the
+# automated column is checked against the RECORD rather than against itself -- if the two
+# disagree, one of them is wrong and this file should say so before anyone quotes either.
+CLIFF_PUBLISHED = ((0.85, -0.845458), (1.00, -0.881143),
+                   (1.10, -0.903400), (1.60, -1.001967))
+
+
+def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS):
+    """The `entry` at which THIS genome loses its rim layer, at a fixed `end`.
+
+    Returns `{"entry": float|None, "why": str}`.  `None` means the genome does not lose the
+    layer anywhere in the bracket, which is not the same as a margin of zero and must not be
+    read as one.
+
+    THE REASON IS CHECKED, NOT ASSUMED.  A steeper entry is not the only way the blocking
+    can refuse, and a bisection that accepted any refusal would happily report a sector-fit
+    or tangency limit under this name -- the exact class of error PART 6 caught this file
+    making once already.  `why` carries whatever actually bounded it.
+    """
+    lo, hi = float(bracket[0]), float(bracket[1])   # lo refuses, hi builds
+
+    def refuses(entry):
+        v = sector_verdict(genes, cfg, float(genes[12]), float(genes[13]),
+                           entry=entry, end=float(end))
+        return (not v["built"]), v.get("why", "")
+
+    ref_hi, why_hi = refuses(hi)
+    if ref_hi:
+        return {"entry": None, "why": f"refuses across the whole bracket: {why_hi}"}
+    ref_lo, why_lo = refuses(lo)
+    if not ref_lo:
+        return {"entry": None, "why": "builds across the whole bracket"}
+    if CLIFF_REASON not in why_lo:
+        return {"entry": None, "why": f"bounded by something else: {why_lo}"}
+    for _ in range(steps):
+        mid = 0.5 * (lo + hi)
+        if refuses(mid)[0]:
+            lo = mid
+        else:
+            hi = mid
+    return {"entry": 0.5 * (lo + hi), "why": why_lo}
+
+
+def profile_candidate_rows(table, genes, cfg, target=None):
+    """`profile_candidates`, as rows, with the distance to §68's cliff as a column.
+
+    A SIBLING RATHER THAN A WIDER RETURN TYPE.  `profile_candidates` returns bare
+    `(entry, end)` pairs and three things depend on that shape -- the self-check comparing
+    it to `LAYER_PROFILE_CANDIDATES`, `build()`, and `study_corner_singularity`, which
+    imports the constant and iterates it as pairs.  Widening it to buy one column would
+    make a cross-study consumer pay for this file's convenience.
+
+    The cliff is a property of `(genome, cfg, end)` and not of the cell, so it is bisected
+    once per distinct `end` -- eleven cells over six ends on the fine grid.
+    """
+    target = MIN_SJ_TARGET if target is None else target
+    ok = [r for r in table
+          if r["worst_min_scaled_jacobian"] is not None and r["refused"] == 0
+          and r["worst_min_scaled_jacobian"] > target]
+    ok.sort(key=lambda r: (r["entry"], r["end"]))
+    cliffs = {}
+    rows = []
+    for r in ok:
+        end = float(r["end"])
+        if end not in cliffs:
+            cliffs[end] = cliff_entry(genes, cfg, end)
+        c = cliffs[end]
+        rows.append({
+            "entry": float(r["entry"]), "end": end,
+            "worst_min_scaled_jacobian": r["worst_min_scaled_jacobian"],
+            "n_genomes": r.get("n_genomes"),
+            "cliff_entry": c["entry"],
+            "cliff_margin": (None if c["entry"] is None
+                             else float(r["entry"]) - c["entry"]),
+            "cliff_why": c["why"]})
+    return rows
 
 
 def profile_argmax(table):
@@ -1356,8 +1462,8 @@ def sweep_uncap(genes, cfg, blends=UNCAP_BLENDS):
             row["control_why"] = f"{type(exc).__name__}: {exc}"
         try:
             b = WW.filleted_sector(genes, cfg, uncap=(True, blend))
-            b.pop("_thetas"); b.pop("_dirn")
-            per = {k: block_quality(np.asarray(v, float)) for k, v in b.items()}
+            per = {k: block_quality(np.asarray(v, float))
+                   for k, v in b.items() if not k.startswith("_")}
             row.update({
                 "min_scaled_jacobian": min(q["min_scaled_jacobian"]
                                            for q in per.values()),
@@ -1857,6 +1963,34 @@ def build_sector_section(genes, configs, junctions):
             "constant": [list(p) for p in LAYER_PROFILE_CANDIDATES],
             "target": MIN_SJ_TARGET}
             if per["profile_genomes_buildable"] else None)
+        # §68's cliff as a COLUMN, which is the sentence that section ended on: "the
+        # distance to that edge was never a column in any table."  Alongside the pair
+        # lists rather than inside them, because those are consumed as pairs.
+        per["profile_candidate_rows_fine"] = (
+            profile_candidate_rows(per["profile_genomes_fine"], genes, cfg)
+            if per["profile_genomes_fine"] else None)
+        per["profile_candidate_rows"] = (
+            profile_candidate_rows(per["profile_genomes_buildable"], genes, cfg)
+            if per["profile_genomes_buildable"] else None)
+        # The shipped pair's own margin, which is what every candidate above is measured
+        # AGAINST.  It is not a candidate -- it does not clear the box floor -- so it
+        # cannot appear in the rows, and quoting 0.031 without the 0.552 it is small
+        # relative to is how §60 published that cell as a curiosity.
+        # The four `end`s PART 20 bisected by hand, re-measured so the self-check can
+        # compare the automated column against the published numbers rather than against
+        # itself.  Cheap: four bisections, and two of the ends are already cached above.
+        per["_cliff_audit"] = ([
+            {"end": end, "published": pub,
+             "got": cliff_entry(genes, cfg, end)["entry"]}
+            for end, pub in CLIFF_PUBLISHED]
+            if cfg == configs[0] else None)
+        _cliff_shipped = cliff_entry(genes, cfg, LAYER_END_OFFSET)
+        per["shipped_profile_cliff"] = {
+            "entry": LAYER_ENTRY_SLOPE, "end": LAYER_END_OFFSET,
+            "cliff_entry": _cliff_shipped["entry"],
+            "cliff_margin": (None if _cliff_shipped["entry"] is None
+                             else LAYER_ENTRY_SLOPE - _cliff_shipped["entry"]),
+            "cliff_why": _cliff_shipped["why"]}
     return out
 
 
@@ -1994,6 +2128,26 @@ def self_checks(rec):
             if pr:
                 checks[f"{name}_matches_the_measured_surface"] = bool(
                     pr["measured"] == pr["constant"])
+        # THE CLIFF REPRODUCES PART 20's HAND BISECTIONS.  Those four numbers are quoted
+        # in PLAN §68 and FILLET_PLAN PART 20 and are the whole evidence for declining
+        # the profile, so the automated column has to land on them or one of the two is
+        # wrong.  1e-4 is the precision §68 published to.
+        cliffs = sec["per_config"][rec["configs"][0]].get("_cliff_audit")
+        if cliffs:
+            checks["the_cliff_column_reproduces_PART_20s_bisections"] = bool(
+                all(c["got"] is not None and abs(c["got"] - c["published"]) < 1e-4
+                    for c in cliffs))
+        sh = sec["per_config"][rec["configs"][0]].get("shipped_profile_cliff")
+        rows = sec["per_config"][rec["configs"][0]].get("profile_candidate_rows_fine")
+        if sh and rows:
+            # PART 20's finding, as a check rather than a sentence: every candidate the
+            # arc produced stands closer to the cliff than the pair that ships.  A future
+            # grid that produced a roomier candidate would go red here, which is the
+            # outcome that should reopen the call.
+            margins = [r["cliff_margin"] for r in rows if r["cliff_margin"] is not None]
+            checks["the_shipped_profile_is_farthest_from_the_cliff"] = bool(
+                sh["cliff_margin"] is not None and margins
+                and sh["cliff_margin"] > max(margins))
     checks["pass"] = bool(all(v for k, v in checks.items() if k != "pass"))
     return checks
 
@@ -2281,6 +2435,32 @@ def _print(rec):
                                            for e, n in pr["measured"]))
                 print(f"      constant in this module matches the surface: "
                       f"{pr['measured'] == pr['constant']}")
+            # PART 20 / PLAN §68's cliff, as the column that section said no table had.
+            for key, label in (("profile_candidate_rows", "buildable grid"),
+                               ("profile_candidate_rows_fine", "fine grid")):
+                rows = sec["per_config"][cfg0].get(key)
+                if not rows:
+                    continue
+                sh = sec["per_config"][cfg0].get("shipped_profile_cliff") or {}
+                print(f"\n    HOW FAR EACH CANDIDATE STANDS FROM THE SHIPPED GENOME'S "
+                      f"RIM-LAYER CLIFF ({label})")
+                print(f"      {'entry':>6s} {'end':>5s} {'box floor':>10s} "
+                      f"{'cliff entry':>12s} {'margin':>8s}")
+                for r in sorted(rows, key=lambda r: -(r["cliff_margin"] or -1e9)):
+                    m = ("     -" if r["cliff_margin"] is None
+                         else f"{r['cliff_margin']:8.4f}")
+                    ce = ("       -" if r["cliff_entry"] is None
+                          else f"{r['cliff_entry']:12.6f}")
+                    print(f"      {r['entry']:+6.2f} {r['end']:5.2f} "
+                          f"{r['worst_min_scaled_jacobian']:10.4f} {ce} {m}")
+                if sh.get("cliff_margin") is not None:
+                    best = max((r["cliff_margin"] for r in rows
+                                if r["cliff_margin"] is not None), default=None)
+                    print(f"      the SHIPPED pair ({sh['entry']:+.2f}, {sh['end']:.2f}) "
+                          f"stands {sh['cliff_margin']:.4f} from it"
+                          + ("" if best is None else
+                             f" — {sh['cliff_margin'] / best:.1f}x the best candidate's "
+                             f"{best:.4f}"))
         print("\n  AND AGAINST THE RIM'S UNCAP BLEND, WHICH IS THE TRI-BLOCK'S QUESTION")
         print(f"    {'config':7s} {'rim blend':>9s} {'unfilleted worst':>17s} "
               f"{'filleted worst':>15s} {'worst block':>14s}")

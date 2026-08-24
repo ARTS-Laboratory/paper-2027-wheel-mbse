@@ -60,11 +60,26 @@ def load(name):
         return wg.genes_to_vector(json.load(fh)["genes"])
 
 
-def shares(genes, cfg):
-    """The three compliance shares plus the axle drop, at one design and one rung."""
-    res = fem.solve_wheel(WW.build_wheel(genes, cfg))
+def shares(genes, cfg, fillet=None, kinematics="linear"):
+    """The three compliance shares plus the axle drop, at one design and one rung.
+
+    `fillet=True` MESHES the junction fillets, which is what turns this sweep from a
+    control into FILLET_PLAN Step 3's acceptance test -- see `sweep`.  `kinematics` is
+    explicit because `solve_wheel` defaults to the LINEAR kernel and FILLET_PLAN's cost
+    section forbids Step 3 taking that default silently.
+    """
+    mesh = WW.build_wheel(genes, cfg, fillet=fillet)
+    res = fem.solve_wheel(mesh, kinematics=kinematics)
     s = res["compliance_split"]
     return {"hub": float(s["hub"]), "spoke": float(s["spoke"]), "rim": float(s["rim"]),
+            # What the mesh ACTUALLY built.  `fillet=True` clamps a radius with no room in
+            # its own sector (`wheel_wheel.SECTOR_FIT_CLAMP`), and the top of `R_hub`'s
+            # gene box is past the shipped genome's limit of 3.130 -- so on this sweep of
+            # all sweeps the requested and applied radii diverge, and a row that did not
+            # carry both would be plotting a radius the wheel does not have.
+            "fillet_radii_mm": (None if mesh.fillet_radii_mm is None
+                                else list(mesh.fillet_radii_mm)),
+            "fillet_clamped": mesh.fillet_clamped,
             "axle_drop_mm": float(res["axle_drop_mm"]),
             # `axle_drop_mm` reads `uy` at whichever rim node is nearest the ground, and
             # that is a first-order error (PLAN.md §62).  The shares above are ratios of
@@ -73,8 +88,22 @@ def shares(genes, cfg):
             "axle_drop_interp_mm": float(res["axle_drop_interp_mm"])}
 
 
-def sweep(name, cfg, points):
-    """§14's hypothesis, controlled: move R_hub only, and watch the hub share."""
+def sweep(name, cfg, points, fillet=None, kinematics="linear"):
+    """§14's hypothesis, controlled: move R_hub only, and watch the hub share.
+
+    AND, WITH `fillet=True`, FILLET_PLAN STEP 3's OWN ACCEPTANCE TEST.  Step 3 item 1
+    names this exact sweep and states what passing looks like: *"it currently returns the
+    same 17 significant figures at every point in the box, and it should not."*  It does
+    return them, because the mesh models no fillets -- `R_hub` and `R_rim` are genes 12
+    and 13 and `dcoords/dgene` is identically zero for both (`wheel_adjoint`'s header).
+    Meshing the fillet is the only thing that gives either of them mechanical feedback.
+
+    THIS IS SENSITIVITY, NOT A GRADIENT, and the difference is not cosmetic.
+    `mesh_coords` still refuses a filleted mesh outright, so nothing here reaches the
+    optimizer; what a moving row buys is a MEASURED answer to "what does the fillet do to
+    the wheel", against which the `Kt` correlation the objective actually prices these two
+    genes through can be checked for the first time.
+    """
     base = load(name)
     lo, hi = W.GENE_SPACE[R_HUB_GENE]["low"], W.GENE_SPACE[R_HUB_GENE]["high"]
     rows = []
@@ -87,13 +116,39 @@ def sweep(name, cfg, points):
                "barriers": {t: float(loss[t]) for t in BARRIERS},
                "feasible": bool(all(loss[t] <= 0.0 for t in BARRIERS))}
         try:
-            row.update(shares(v, cfg))
+            row.update(shares(v, cfg, fillet=fillet, kinematics=kinematics))
         except Exception as exc:                                  # pragma: no cover
             row["error"] = f"{type(exc).__name__}: {exc}"
         rows.append(row)
     rows.sort(key=lambda x: x["R_hub"])
     return {"genome": name, "config": cfg, "rows": rows,
-            "R_hub_shipped": float(base[R_HUB_GENE]), "box": [lo, hi]}
+            "fillet": bool(fillet), "kinematics": kinematics,
+            "R_hub_shipped": float(base[R_HUB_GENE]), "box": [lo, hi],
+            "spread": _spread(rows)}
+
+
+def _spread(rows):
+    """How much each reported quantity MOVED across the sweep -- the whole point.
+
+    Reported rather than left to a reader's eye because "bit-identical" is the claim
+    being tested and a table of 17-significant-figure repeats does not read as one.  A
+    zero here is the pre-Step-3 state; anything else is the acceptance test passing.
+    """
+    out = {}
+    for key in ("hub", "spoke", "rim", "axle_drop_mm", "axle_drop_interp_mm"):
+        vals = [r[key] for r in rows if key in r]
+        if len(vals) < 2:
+            continue
+        out[key] = {"min": min(vals), "max": max(vals),
+                    "range": max(vals) - min(vals),
+                    "distinct_values": len(set(vals)),
+                    "bit_identical": len(set(vals)) == 1}
+    out["n_rows"] = len(rows)
+    out["n_solved"] = sum(1 for r in rows if "hub" in r)
+    out["n_clamped"] = sum(1 for r in rows
+                           if isinstance(r.get("fillet_clamped"), dict)
+                           and any(r["fillet_clamped"].values()))
+    return out
 
 
 # One rung ABOVE `fine`, built here rather than added to `wheel_wheel.CONFIGS`.
@@ -177,24 +232,53 @@ def _print_attribute(rep):
 
 
 def _print_sweep(rep):
+    mesh = "FILLETED" if rep.get("fillet") else "unfilleted"
     print(f"\n=== R_hub sweep, genome={rep['genome']} cfg={rep['config']} "
+          f"mesh={mesh} kinematics={rep.get('kinematics', 'linear')} "
           f"(box {rep['box'][0]} - {rep['box'][1]}, shipped {rep['R_hub_shipped']:.4f}) ===")
-    print("   R_hub    hub      spoke     rim     drop_mm   feasible  binding barrier")
+    print("   R_hub  applied    hub      spoke     rim     drop_mm   feasible  "
+          "binding barrier")
     for r in rep["rows"]:
         if "error" in r:
             print(f"  {r['R_hub']:6.3f}   {r['error']}")
             continue
         worst = max(r["barriers"].items(), key=lambda kv: kv[1])
         mark = "  <-- SHIPPED" if r["is_shipped_value"] else ""
-        print(f"  {r['R_hub']:6.3f}  {r['hub']:.4f}   {r['spoke']:.4f}  {r['rim']:.4f}  "
-              f"{r['axle_drop_mm']:7.4f}    {str(r['feasible']):5s}    "
+        rad = r.get("fillet_radii_mm")
+        clamped = isinstance(r.get("fillet_clamped"), dict) and r["fillet_clamped"]["hub"]
+        app = "     -" if rad is None else f"{rad[0]:6.3f}{'*' if clamped else ' '}"
+        print(f"  {r['R_hub']:6.3f} {app}  {r['hub']:.4f}   {r['spoke']:.4f}  "
+              f"{r['rim']:.4f}  {r['axle_drop_mm']:7.4f}    {str(r['feasible']):5s}    "
               f"{worst[0]}={worst[1]:.4g}{mark}")
+    sp = rep.get("spread") or {}
+    if sp.get("n_clamped"):
+        print(f"  * {sp['n_clamped']} of {sp['n_rows']} rows had R_hub clamped inside its "
+              f"own sector's room (limit 3.130 at this genome)")
+    # FILLET_PLAN Step 3's acceptance test, stated as a verdict rather than left to the
+    # reader to spot in a column of repeated digits.
+    for key in ("hub", "axle_drop_mm"):
+        s = sp.get(key)
+        if not s:
+            continue
+        verdict = ("BIT-IDENTICAL across the box" if s["bit_identical"]
+                   else f"MOVES: range {s['range']:.6g} over {s['distinct_values']} "
+                        f"distinct values")
+        print(f"  {key:<20s} {s['min']:.10g} .. {s['max']:.10g}   {verdict}")
     ok = [r for r in rep["rows"] if r["feasible"] and "error" not in r]
     if len(ok) >= 2:
         first, last = ok[0], ok[-1]
-        direction = ("RISES as R_hub falls — §14's hypothesis SURVIVES"
-                     if first["hub"] > last["hub"] else
-                     "FALLS as R_hub falls — §14's hypothesis IS KILLED")
+        # THREE-WAY, AND THE THIRD BRANCH IS THE ONE THAT WAS MISSING.  `>` is False when
+        # the two are EXACTLY equal, so on the unfilleted mesh -- where every row of this
+        # sweep is bit-identical because `R_hub` moves no node -- this printed "§14's
+        # hypothesis IS KILLED".  A mesh that cannot express a hypothesis cannot falsify
+        # it, and that line was the falsification's only evidence.  See FILLET_PLAN Step 3.
+        if first["hub"] == last["hub"]:
+            direction = ("does not move at all — this mesh models no fillets, so it "
+                         "cannot answer §14 either way")
+        elif first["hub"] > last["hub"]:
+            direction = "RISES as R_hub falls — §14's hypothesis SURVIVES"
+        else:
+            direction = "FALLS as R_hub falls — §14's hypothesis IS KILLED"
         print(f"\n  over the FEASIBLE range {first['R_hub']:.3f} - {last['R_hub']:.3f}: "
               f"hub share {first['hub']:.4f} -> {last['hub']:.4f}")
         print(f"  the hub share {direction}")
@@ -226,6 +310,12 @@ def main(argv=None):
     ap.add_argument("--genome", default="shipped", choices=sorted(GENOMES))
     ap.add_argument("--config", default="coarse", help="rung for the sweep")
     ap.add_argument("--points", type=int, default=13)
+    ap.add_argument("--fillet", action="store_true",
+                    help="mesh the junction fillets (FILLET_PLAN Step 3's acceptance "
+                         "test); implies --kinematics svk unless one is given")
+    ap.add_argument("--kinematics", default=None, choices=("linear", "svk"),
+                    help="default: linear unfilleted, svk filleted -- FILLET_PLAN's cost "
+                         "section forbids Step 3 taking the kernel default silently")
     ap.add_argument("--configs", default="smoke,coarse,medium,fine")
     ap.add_argument("--out", default="study_reds_hub_share.json")
     args = ap.parse_args(argv)
@@ -234,8 +324,19 @@ def main(argv=None):
 
     t0, rep = time.time(), {}
     if args.sweep:
-        rep["sweep"] = sweep(args.genome, args.config, args.points)
-        _print_sweep(rep["sweep"])
+        kin = args.kinematics or ("svk" if args.fillet else "linear")
+        # ONE KEY PER ARM, because these runs do not SUPERSEDE each other -- the
+        # unfilleted sweep IS the control that makes "it stopped being bit-identical" a
+        # finding, and overwriting it would delete the thing being compared against.
+        # `sweep` keeps the historical default (unfilleted, linear) under the name every
+        # reader of this artifact already knows; anything else names its own two arms, so
+        # a filleted row can never be read against a differently-kernelled control by
+        # accident.  Same reason the driver merges into an existing artifact at all.
+        key = ("sweep" if not args.fillet and kin == "linear" else
+               f"sweep_{'filleted' if args.fillet else 'unfilleted'}_{kin}")
+        rep[key] = sweep(args.genome, args.config, args.points,
+                         fillet=True if args.fillet else None, kinematics=kin)
+        _print_sweep(rep[key])
     if args.rungs:
         rep["rungs"] = rungs(args.configs.split(","))
         _print_rungs(rep["rungs"])

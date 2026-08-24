@@ -9525,7 +9525,7 @@
       }
     }
   },
-  "seconds": 306.49,
+  "seconds": 301.09,
   "sector": {
     "block_order": [
       "spoke",
@@ -9705,8 +9705,8 @@
               "hub": {
                 "R_mm": 0.7277530563973396,
                 "binds": false,
-                "limit_mm": 3.18461795388622,
-                "margin_mm": 2.4568648974888805
+                "limit_mm": 3.1846179538827757,
+                "margin_mm": 2.456864897485436
               },
               "rim": {
                 "R_mm": 2.950315107608208,
@@ -9762,14 +9762,14 @@
               "hub": {
                 "R_mm": 0.6020622237610639,
                 "binds": false,
-                "limit_mm": 3.6500289766779304,
-                "margin_mm": 3.0479667529168664
+                "limit_mm": 3.650028976678345,
+                "margin_mm": 3.047966752917281
               },
               "rim": {
                 "R_mm": 2.085778174741535,
                 "binds": false,
-                "limit_mm": 4.910460382719354,
-                "margin_mm": 2.8246822079778187
+                "limit_mm": 4.910460382721409,
+                "margin_mm": 2.824682207979874
               }
             },
             "fold": {
@@ -9814,8 +9814,8 @@
               "hub": {
                 "R_mm": 0.8888180432185063,
                 "binds": true,
-                "limit_mm": 0.7219977075982273,
-                "margin_mm": -0.16682033562027898
+                "limit_mm": 0.7219977075957332,
+                "margin_mm": -0.1668203356227731
               },
               "rim": {
                 "R_mm": 2.040798851720207,
@@ -9867,14 +9867,14 @@
               "hub": {
                 "R_mm": 0.9001968183990416,
                 "binds": false,
-                "limit_mm": 1.5616902710410487,
-                "margin_mm": 0.6614934526420071
+                "limit_mm": 1.5616902710438123,
+                "margin_mm": 0.6614934526447707
               },
               "rim": {
                 "R_mm": 2.8927163486329652,
                 "binds": false,
-                "limit_mm": 3.3916942116704014,
-                "margin_mm": 0.4989778630374362
+                "limit_mm": 3.3916942116671867,
+                "margin_mm": 0.4989778630342214
               }
             },
             "fold": {
@@ -9926,8 +9926,8 @@
               "hub": {
                 "R_mm": 0.802905306190049,
                 "binds": false,
-                "limit_mm": 1.6434448964095139,
-                "margin_mm": 0.8405395902194649
+                "limit_mm": 1.643444896405958,
+                "margin_mm": 0.8405395902159091
               },
               "rim": {
                 "R_mm": 2.8627221289967135,
@@ -9978,14 +9978,14 @@
               "hub": {
                 "R_mm": 2.108130358578177,
                 "binds": true,
-                "limit_mm": 1.7409980790559123,
-                "margin_mm": -0.3671322795222647
+                "limit_mm": 1.7409980790582038,
+                "margin_mm": -0.3671322795199732
               },
               "rim": {
                 "R_mm": 2.585846544789964,
                 "binds": true,
-                "limit_mm": 0.9754098766312111,
-                "margin_mm": -1.6104366681587527
+                "limit_mm": 0.975409876632716,
+                "margin_mm": -1.6104366681572477
               }
             },
             "fold": {
@@ -10031,14 +10031,14 @@
               "hub": {
                 "R_mm": 0.9790109838322899,
                 "binds": false,
-                "limit_mm": 4.527566941537138,
-                "margin_mm": 3.548555957704848
+                "limit_mm": 4.5275669415392485,
+                "margin_mm": 3.5485559577069585
               },
               "rim": {
                 "R_mm": 1.5510087101624983,
                 "binds": false,
-                "limit_mm": 7.999537718618239,
-                "margin_mm": 6.448529008455741
+                "limit_mm": 7.99953771861799,
+                "margin_mm": 6.448529008455492
               }
             },
             "fold": {
@@ -10088,8 +10088,8 @@
               "hub": {
                 "R_mm": 0.44107032051384076,
                 "binds": false,
-                "limit_mm": 0.5904420857656865,
-                "margin_mm": 0.1493717652518457
+                "limit_mm": 0.5904420857675405,
+                "margin_mm": 0.14937176525369977
               },
               "rim": {
                 "R_mm": 2.322724606069681,
@@ -10142,8 +10142,8 @@
               "hub": {
                 "R_mm": 1.7547426787975895,
                 "binds": true,
-                "limit_mm": 1.5901197837494605,
-                "margin_mm": -0.164622895048129
+                "limit_mm": 1.5901197837482641,
+                "margin_mm": -0.16462289504932537
               },
               "rim": {
                 "R_mm": 1.1260233910556952,
@@ -10195,8 +10195,8 @@
               "hub": {
                 "R_mm": 0.7736648197553488,
                 "binds": false,
-                "limit_mm": 1.250256015558377,
-                "margin_mm": 0.4765911958030282
+                "limit_mm": 1.2502560155607854,
+                "margin_mm": 0.4765911958054365
               },
               "rim": {
                 "R_mm": 1.5747733570186677,
@@ -10252,14 +10252,14 @@
               "hub": {
                 "R_mm": 0.7064832698219017,
                 "binds": false,
-                "limit_mm": 3.847706402917124,
-                "margin_mm": 3.1412231330952225
+                "limit_mm": 3.8477064029190164,
+                "margin_mm": 3.1412231330971148
               },
               "rim": {
                 "R_mm": 2.275669362038914,
                 "binds": false,
-                "limit_mm": 3.7466768015267453,
-                "margin_mm": 1.4710074394878312
+                "limit_mm": 3.7466768015244494,
+                "margin_mm": 1.4710074394855353
               }
             },
             "fold": {
@@ -10309,14 +10309,14 @@
               "hub": {
                 "R_mm": 0.5635189870813017,
                 "binds": false,
-                "limit_mm": 6.46149990863408,
-                "margin_mm": 5.8979809215527785
+                "limit_mm": 6.4614999086305716,
+                "margin_mm": 5.89798092154927
               },
               "rim": {
                 "R_mm": 2.6695810127189628,
                 "binds": false,
-                "limit_mm": 7.247776024230255,
-                "margin_mm": 4.578195011511292
+                "limit_mm": 7.247776024228756,
+                "margin_mm": 4.578195011509793
               }
             },
             "fold": {
@@ -10363,8 +10363,8 @@
               "hub": {
                 "R_mm": 1.0398434925377709,
                 "binds": true,
-                "limit_mm": 0.9758685694707685,
-                "margin_mm": -0.06397492306700236
+                "limit_mm": 0.9758685694718451,
+                "margin_mm": -0.06397492306592578
               },
               "rim": {
                 "R_mm": 2.5772036644707788,
@@ -10416,14 +10416,14 @@
               "hub": {
                 "R_mm": 1.100758387754178,
                 "binds": false,
-                "limit_mm": 1.35550196584403,
-                "margin_mm": 0.25474357808985193
+                "limit_mm": 1.3555019658471563,
+                "margin_mm": 0.2547435780929783
               },
               "rim": {
                 "R_mm": 2.7020526760169643,
                 "binds": false,
-                "limit_mm": 3.07484019031238,
-                "margin_mm": 0.3727875142954158
+                "limit_mm": 3.074840190312829,
+                "margin_mm": 0.37278751429586476
               }
             },
             "fold": {
@@ -10468,8 +10468,8 @@
               "hub": {
                 "R_mm": 2.0454825562627432,
                 "binds": true,
-                "limit_mm": 1.68161596163502,
-                "margin_mm": -0.3638665946277233
+                "limit_mm": 1.6816159616381583,
+                "margin_mm": -0.3638665946245849
               },
               "rim": {
                 "R_mm": 1.2463704599127885,
@@ -10516,14 +10516,14 @@
               "hub": {
                 "R_mm": 0.5532587753997398,
                 "binds": true,
-                "limit_mm": 0.06992100475549426,
-                "margin_mm": -0.48333777064424555
+                "limit_mm": 0.06992100475756613,
+                "margin_mm": -0.48333777064217365
               },
               "rim": {
                 "R_mm": 0.825791670286095,
                 "binds": false,
-                "limit_mm": 6.1347252902398814,
-                "margin_mm": 5.308933619953787
+                "limit_mm": 6.134725290241544,
+                "margin_mm": 5.308933619955449
               }
             },
             "fold": {
@@ -10562,6 +10562,28 @@
     },
     "per_config": {
       "coarse": {
+        "_cliff_audit": [
+          {
+            "end": 0.85,
+            "got": -0.8454581657424569,
+            "published": -0.845458
+          },
+          {
+            "end": 1.0,
+            "got": -0.8811426302418113,
+            "published": -0.881143
+          },
+          {
+            "end": 1.1,
+            "got": -0.9034370379522443,
+            "published": -0.9034
+          },
+          {
+            "end": 1.6,
+            "got": -1.0019673248752952,
+            "published": -1.001967
+          }
+        ],
         "box": [
           {
             "R_hub_mm": 0.4,
@@ -11857,7 +11879,7 @@
               "median_min_scaled_jacobian": 0.2915220907002495,
               "min_scaled_jacobian_range": [
                 -0.05082317154824384,
-                0.5128410721926869
+                0.5128410721924224
               ],
               "n_built": 16,
               "n_clamped": {
@@ -11873,10 +11895,10 @@
               "end": 0.7,
               "entry": -0.75,
               "factor": 0.75,
-              "median_min_scaled_jacobian": 0.30977528862925463,
+              "median_min_scaled_jacobian": 0.30977528862941517,
               "min_scaled_jacobian_range": [
                 -0.05082317154824384,
-                0.4997634877434122
+                0.49976348774318
               ],
               "n_built": 16,
               "n_clamped": {
@@ -11893,8 +11915,8 @@
             "hub": {
               "R_mm": 0.6636060402965218,
               "binds": false,
-              "limit_mm": 3.1296998810584657,
-              "margin_mm": 2.466093840761944
+              "limit_mm": 3.129699881054943,
+              "margin_mm": 2.466093840758421
             },
             "rim": {
               "R_mm": 3.0,
@@ -12047,7 +12069,7 @@
               "factor": 0.99,
               "median_min_scaled_jacobian": 0.2915220907002495,
               "min_scaled_jacobian_range": [
-                0.24137674255807162,
+                0.24137674256707534,
                 0.5156364196454902
               ],
               "n_built": 14,
@@ -12066,7 +12088,7 @@
               "factor": 0.95,
               "median_min_scaled_jacobian": 0.2915220907002495,
               "min_scaled_jacobian_range": [
-                0.24302680524446127,
+                0.24302680524455858,
                 0.5156364196454902
               ],
               "n_built": 14,
@@ -12086,7 +12108,7 @@
               "median_min_scaled_jacobian": 0.2915220907002495,
               "min_scaled_jacobian_range": [
                 0.24436838299566985,
-                0.5128410721926869
+                0.5128410721924224
               ],
               "n_built": 14,
               "n_clamped": {
@@ -12102,10 +12124,10 @@
               "end": 0.7,
               "entry": -0.75,
               "factor": 0.75,
-              "median_min_scaled_jacobian": 0.30977528862925463,
+              "median_min_scaled_jacobian": 0.30977528862941517,
               "min_scaled_jacobian_range": [
                 0.24436838299566985,
-                0.4997634877434122
+                0.49976348774318
               ],
               "n_built": 14,
               "n_clamped": {
@@ -12122,8 +12144,8 @@
             "hub": {
               "R_mm": 0.6636060402965218,
               "binds": false,
-              "limit_mm": 3.1296998810584657,
-              "margin_mm": 2.466093840761944
+              "limit_mm": 3.129699881054943,
+              "margin_mm": 2.466093840758421
             },
             "rim": {
               "R_mm": 3.0,
@@ -12137,7 +12159,7 @@
         "fit_limit": {
           "hub": {
             "limited": true,
-            "radius_mm": 3.1296998810584657
+            "radius_mm": 3.129699881054943
           },
           "rim": {
             "limited": false,
@@ -12496,7 +12518,7 @@
         ],
         "profile_argmax": {
           "buildable": {
-            "bias": 0.0009981881332794262,
+            "bias": 0.0009981881331821152,
             "n_cells": 49,
             "n_zero_refusal_cells": 41,
             "no_refusal": {
@@ -12505,11 +12527,11 @@
               "n_genomes": 15,
               "refused": 0,
               "worst_at": [
-                1.6539481751031166,
-                0.9266393827996505,
+                1.6539481751052936,
+                0.9266393828010802,
                 "rim_ring_free"
               ],
-              "worst_min_scaled_jacobian": 0.24302680524446127
+              "worst_min_scaled_jacobian": 0.24302680524455858
             },
             "over_built": {
               "end": 0.8,
@@ -12556,6 +12578,235 @@
             "rules_agree": true
           }
         },
+        "profile_candidate_rows": [
+          {
+            "cliff_entry": -0.8064025165513158,
+            "cliff_margin": 0.00640251655131574,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.7,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.23943348333713735
+          },
+          {
+            "cliff_entry": -0.8328615771606565,
+            "cliff_margin": 0.03286157716065641,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.8,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.23473237605814037
+          },
+          {
+            "cliff_entry": -0.8811426302418113,
+            "cliff_margin": 0.08114263024181123,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
+            "end": 1.0,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.206138497588094
+          },
+          {
+            "cliff_entry": -0.7779302848502994,
+            "cliff_margin": 0.02793028485029936,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.6,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.22854174958261766
+          },
+          {
+            "cliff_entry": -0.8064025165513158,
+            "cliff_margin": 0.056402516551315784,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.7,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.24302680524455858
+          },
+          {
+            "cliff_entry": -0.8328615771606565,
+            "cliff_margin": 0.08286157716065645,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.8,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.22738372641732865
+          },
+          {
+            "cliff_entry": -0.7469183383509517,
+            "cliff_margin": 0.046918338350951716,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.5,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.2165178648566225
+          },
+          {
+            "cliff_entry": -0.7779302848502994,
+            "cliff_margin": 0.0779302848502994,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.6,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.23398623520502493
+          },
+          {
+            "cliff_entry": -0.8064025165513158,
+            "cliff_margin": 0.10640251655131583,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.7,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.23470306160405402
+          },
+          {
+            "cliff_entry": -0.8328615771606565,
+            "cliff_margin": 0.1328615771606565,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.8,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.22014306691787267
+          },
+          {
+            "cliff_entry": -0.7469183383509517,
+            "cliff_margin": 0.1469183383509517,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.5,
+            "entry": -0.6,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.22789593068691072
+          },
+          {
+            "cliff_entry": -0.7779302848502994,
+            "cliff_margin": 0.17793028485029938,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.6,
+            "entry": -0.6,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.23099095776821324
+          },
+          {
+            "cliff_entry": -0.8064025165513158,
+            "cliff_margin": 0.2064025165513158,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.7,
+            "entry": -0.6,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.21896480478059752
+          },
+          {
+            "cliff_entry": -0.8328615771606565,
+            "cliff_margin": 0.23286157716065647,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.8,
+            "entry": -0.6,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.2060150995844214
+          }
+        ],
+        "profile_candidate_rows_fine": [
+          {
+            "cliff_entry": -0.9034370379522443,
+            "cliff_margin": 0.0034370379522442596,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
+            "end": 1.1,
+            "entry": -0.9,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.20619203004616196
+          },
+          {
+            "cliff_entry": -0.8576905829831958,
+            "cliff_margin": 0.007690582983195804,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.9,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.22632934403590482
+          },
+          {
+            "cliff_entry": -0.8811426302418113,
+            "cliff_margin": 0.031142630241811298,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
+            "end": 1.0,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.21247920514744661
+          },
+          {
+            "cliff_entry": -0.9034370379522443,
+            "cliff_margin": 0.053437037952244304,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
+            "end": 1.1,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.2002032805228762
+          },
+          {
+            "cliff_entry": -0.8454581657424569,
+            "cliff_margin": 0.04545816574245687,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.85,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.2268415297689311
+          },
+          {
+            "cliff_entry": -0.8576905829831958,
+            "cliff_margin": 0.05769058298319574,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.9,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.21948694792764575
+          },
+          {
+            "cliff_entry": -0.8811426302418113,
+            "cliff_margin": 0.08114263024181123,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
+            "end": 1.0,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.206138497588094
+          },
+          {
+            "cliff_entry": -0.8454581657424569,
+            "cliff_margin": 0.09545816574245691,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.85,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.2198060706962201
+          },
+          {
+            "cliff_entry": -0.8576905829831958,
+            "cliff_margin": 0.10769058298319578,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.9,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.21273496495648989
+          },
+          {
+            "cliff_entry": -0.8454581657424569,
+            "cliff_margin": 0.14545816574245696,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.85,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.21287280809058506
+          },
+          {
+            "cliff_entry": -0.8576905829831958,
+            "cliff_margin": 0.15769058298319583,
+            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "end": 0.9,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "worst_min_scaled_jacobian": 0.20607978323100143
+          }
+        ],
         "profile_candidates": {
           "constant": [
             [
@@ -13547,11 +13798,11 @@
             "n_genomes": 15,
             "refused": 0,
             "worst_at": [
-              1.6539481751031166,
-              0.9266393827996505,
+              1.6539481751052936,
+              0.9266393828010802,
               "rim_ring_free"
             ],
-            "worst_min_scaled_jacobian": 0.23099095776811726
+            "worst_min_scaled_jacobian": 0.23099095776821324
           },
           {
             "end": 0.7,
@@ -13559,11 +13810,11 @@
             "n_genomes": 15,
             "refused": 0,
             "worst_at": [
-              1.6539481751031166,
-              0.9266393827996505,
+              1.6539481751052936,
+              0.9266393828010802,
               "rim_ring_free"
             ],
-            "worst_min_scaled_jacobian": 0.2189648047805025
+            "worst_min_scaled_jacobian": 0.21896480478059752
           },
           {
             "end": 0.8,
@@ -13643,11 +13894,11 @@
             "n_genomes": 15,
             "refused": 0,
             "worst_at": [
-              1.6539481751031166,
-              0.9266393827996505,
+              1.6539481751052936,
+              0.9266393828010802,
               "rim_ring_free"
             ],
-            "worst_min_scaled_jacobian": 0.2347030616039664
+            "worst_min_scaled_jacobian": 0.23470306160405402
           },
           {
             "end": 0.8,
@@ -13727,11 +13978,11 @@
             "n_genomes": 15,
             "refused": 0,
             "worst_at": [
-              1.6539481751031166,
-              0.9266393827996505,
+              1.6539481751052936,
+              0.9266393828010802,
               "rim_ring_free"
             ],
-            "worst_min_scaled_jacobian": 0.24302680524446127
+            "worst_min_scaled_jacobian": 0.24302680524455858
           },
           {
             "end": 0.8,
@@ -14529,6 +14780,13 @@
             "valid": true
           }
         },
+        "shipped_profile_cliff": {
+          "cliff_entry": -1.0019673248752952,
+          "cliff_margin": 0.5519673248752952,
+          "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
+          "end": 1.6,
+          "entry": -0.45
+        },
         "shipped_seams": [
           {
             "a": "spoke",
@@ -14749,6 +15007,7 @@
         ]
       },
       "medium": {
+        "_cliff_audit": null,
         "box": [
           {
             "R_hub_mm": 0.4,
@@ -15866,7 +16125,7 @@
         "fit_limit": {
           "hub": {
             "limited": true,
-            "radius_mm": 3.1296983751204612
+            "radius_mm": 3.129698375118891
           },
           "rim": {
             "limited": false,
@@ -15893,6 +16152,8 @@
         },
         "profile": null,
         "profile_argmax": null,
+        "profile_candidate_rows": null,
+        "profile_candidate_rows_fine": null,
         "profile_candidates": null,
         "profile_candidates_fine": null,
         "profile_genomes": null,
@@ -16042,6 +16303,13 @@
             ],
             "valid": true
           }
+        },
+        "shipped_profile_cliff": {
+          "cliff_entry": -1.0019673304632306,
+          "cliff_margin": 0.5519673304632307,
+          "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
+          "end": 1.6,
+          "entry": -0.45
         },
         "shipped_seams": [
           {
@@ -16276,12 +16544,14 @@
     "sector_seams_close_whole_edge": true,
     "the_candidate_constant_matches_the_measured_surface": true,
     "the_clamp_is_inert_on_the_shipped_genome": true,
+    "the_cliff_column_reproduces_PART_20s_bisections": true,
     "the_closed_form_fold_does_not_move_with_the_sampling": true,
     "the_closed_form_fold_is_the_sampled_flank": true,
     "the_fine_candidate_constant_matches_the_measured_surface": true,
     "the_fold_gate_is_inert_on_the_shipped_genome": true,
     "the_hub_margin_predicts_every_refusal": true,
     "the_re_derived_argmax_is_still_PART_13s_pair": true,
+    "the_shipped_profile_is_farthest_from_the_cliff": true,
     "unfilleted_sector_still_clean": true
   },
   "shipped_radii_mm": {

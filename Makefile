@@ -131,6 +131,13 @@ help:
 	@echo "              the box drawn out to 64 genomes, and a draw CONDITIONED on"
 	@echo "              arc span — 22 of 40 in the band refuse, against 1 of 64"
 	@echo "              uniform. ~670 s"
+	@echo "make reds-hub-fillet  FILLET_PLAN Step 3's ACCEPTANCE TEST, and the one"
+	@echo "              the whole fillet arc was aimed at: the R_hub sweep on a"
+	@echo "              FILLETED mesh under SVK. It stops being bit-identical —"
+	@echo "              11 distinct values of 14 rows against the control's ONE —"
+	@echo "              §14's hub-share direction survives, and the Kt term the"
+	@echo "              objective prices R_hub through goes EXACTLY flat above"
+	@echo "              its cap while the wheel keeps stiffening. ~80 s (§75)"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -885,11 +892,35 @@ reds-ratio:
 	    --glob "$(REDS_CELLS)/*.json" --out $(REDS_RATIO_OUT)
 
 # PLAN §14 item 4b, finally measured: what moves the hub compliance share?
-# --sweep kills the `R_hub` hypothesis, --attribute names the gene that does move it,
-# --rungs separates design from discretisation.  `ultra` is built by the driver, not by
-# `wheel_wheel.CONFIGS` — see the comment there for why it is not a rung the tree acquires.
+# --attribute names the gene that moves it, --rungs separates design from discretisation.
+# `ultra` is built by the driver, not by `wheel_wheel.CONFIGS` — see the comment there for
+# why it is not a rung the tree acquires.
+#
+# --sweep DID NOT KILL THE `R_hub` HYPOTHESIS, AND THIS COMMENT SAID IT DID (PLAN §75).
+# On the unfilleted mesh every row of that sweep is bit-identical, because `R_hub` is gene
+# 12 and moves no node — so the sweep could not answer §14 either way, and the driver's
+# verdict line reported a falsification off an exact tie.  Use `reds-hub-fillet` below for
+# the sweep that can.  This target is kept as the CONTROL: "it stopped being
+# bit-identical" is only a finding against a run that was.
 reds-hub:
 	studies/redsrun.sh studies/study_reds_hub_share.py --sweep --attribute --rungs \
 	    --config coarse --configs smoke,coarse,medium,fine,ultra --out $(notdir $(REDS_HUB_OUT))
+
+# FILLET_PLAN Step 3's ACCEPTANCE TEST — the one the whole fillet arc has been aimed at
+# (PLAN §75, FILLET_PLAN STEP 3 RECORD PART 1).  ~80 s at `coarse`.
+#
+# Meshes the junction fillets, so `R_hub` finally reaches the solve, and runs SVK rather
+# than the linear default because FILLET_PLAN's cost section says Step 3 must not take that
+# default silently.  It writes `sweep_filleted` alongside `reds-hub`'s `sweep` rather than
+# over it.
+#
+# It reports 11 distinct values of 14 rows against the control's one; the hub share running
+# 0.007755 -> 0.003703 over the feasible range, which is §14's direction; and the term the
+# objective actually prices `R_hub` through going EXACTLY flat above its 0.6657 mm cap while
+# the wheel keeps stiffening — 8.8% of axle drop over a span where the gradient is zero.
+# Four rows clamp (PLAN §74) and are marked `*`; all four are infeasible anyway.
+reds-hub-fillet:
+	studies/redsrun.sh studies/study_reds_hub_share.py --sweep --fillet \
+	    --config coarse --out $(notdir $(REDS_HUB_OUT))
 
 reds: reds-ratio reds-hub

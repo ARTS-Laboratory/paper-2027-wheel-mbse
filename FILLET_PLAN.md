@@ -1744,6 +1744,12 @@ are answered; the one the headline names is not.
 
 # STEP 1 RECORD, PART 13 — 2026-08-23. THE LAYER PROFILE RE-DERIVED AGAINST GENOMES CLEARS THE BARRIER FOR NINE OF NINE, NOT FOUR OF NINE — AND IT IS MEASURED RATHER THAN SHIPPED, BECAUSE ADOPTING IT SPENDS PART 12's OWN RESULT FOR NOTHING YET BOUGHT
 
+> **SCOPE — THE GENOME BOX HERE IS THE UNIFORM DRAW (PLAN §72, §76).**  The sixteen
+> genomes come from `study_mesh_quality.latin_hypercube` over the full gene box at
+> `GENOME_SWEEP_SEED`, and that sampler's reach is much narrower than "the box"
+> suggests — about one genome above 35 degrees of arc span in sixty-four.  The counts
+> below are correct about what was drawn.
+
 PLAN.md ranked "make the filleted sector blocking genome-robust" (§48) as item 2 behind
 the tri-block's own successor. This is that item, worked from PART 10's own genome
 sweep: of the ten drawn genomes that build at their own radii, six sit under
@@ -1851,6 +1857,12 @@ rather than folded into either.
 ---
 
 # STEP 1 RECORD, PART 14 — 2026-08-23. THE REFUSAL HALF HAS A FIX, IT IS ONE LINE OF ARITHMETIC AGAINST A NUMBER THIS FILE ALREADY COMPUTED, AND IT RE-PRICES PART 13'S DECISION
+
+> **SCOPE — THE GENOME BOX HERE IS THE UNIFORM DRAW (PLAN §72, §76).**  The sixteen
+> genomes come from `study_mesh_quality.latin_hypercube` over the full gene box at
+> `GENOME_SWEEP_SEED`, and that sampler's reach is much narrower than "the box"
+> suggests — about one genome above 35 degrees of arc span in sixty-four.  The counts
+> below are correct about what was drawn.
 
 PART 13 split PLAN.md's item 2 into a QUALITY half and a REFUSAL half and said the
 refusal half "is where the next unit of work on this item belongs". This is that unit.
@@ -1986,6 +1998,12 @@ the Makefile's help says so.
 ---
 
 # STEP 1 RECORD, PART 15 — 2026-08-23. THE FLANK DEFECT PART 13 FILED HAS A GATE, THE GATE IS THE OPTIMIZER'S OWN FOLD BARRIER, AND THE ONLY REASON IT DID NOT CATCH THIS IS THAT THIS STUDY'S DRAW FILTER DOES NOT ASK IT
+
+> **SCOPE — THE GENOME BOX HERE IS THE UNIFORM DRAW (PLAN §72, §76).**  The sixteen
+> genomes come from `study_mesh_quality.latin_hypercube` over the full gene box at
+> `GENOME_SWEEP_SEED`, and that sampler's reach is much narrower than "the box"
+> suggests — about one genome above 35 degrees of arc span in sixty-four.  The counts
+> below are correct about what was drawn.
 
 PART 13 found one drawn genome whose TRIMMED SPOKE is sign-flipped at
 `min_scaled_jacobian = -0.0508`, traced it to a near self-intersection in the
@@ -2667,6 +2685,10 @@ boundary is the thing nobody did:
   (-0.45, 1.60)  SHIPPED    -1.0020     0.5520
 ```
 
+**[SCOPE, ADDED PART 22: TRUE OF THE FIVE PROPOSALS NAMED ABOVE, NOT OF THE CANDIDATE SET.**
+Computed for every cell rather than five, six of the buildable grid's fourteen candidates
+exceed 0.08 and the roomiest stands at **0.2329** while still clearing `MIN_SJ_TARGET`.**]**
+
 **Every profile this arc has proposed stands within 0.08 of a cliff.  The pair that ships
 stands 0.55 from it — an order of magnitude more margin.**  `(-0.90, 1.10)`, which PART 17
 listed as admissible and which has the BEST convergence of the four (0.091% on the node
@@ -2704,3 +2726,171 @@ function is one bisection and is recorded above at four ends.
 **Nothing promoted, both layer-profile constants still PART 10's, `best_solution.json`
 untouched, no artifact regenerated, and no code changed** — this part is a measurement and
 a decision.
+
+---
+
+# STEP 1 RECORD, PART 21 — 2026-08-24. THE CLAMP PART 14 MEASURED IS ADOPTED INTO THE MESH. `fillet=True` NOW BUILDS ON 16 OF 16 DRAWN GENOMES WHERE IT BUILT ON 10, AND THE SHIPPED GENOME'S MESH IS BIT-IDENTICAL
+
+PART 14 measured the refusal half's fix and then left it in the study: *"`sector_blocks` and
+`build_wheel` are untouched and still take the radii they are given; `clamped_radii` is
+called by nothing outside the study."*  This is the adoption, and it is the precondition
+for STEP 3 below rather than a tidy-up.
+
+**WHAT MOVED.**  `wheel_wheel` gains `SECTOR_FIT_CLAMP = 0.95`, the bisection that finds
+each junction's limit, and a `fillet_clamp=` keyword threaded through `sector_blocks`,
+`_sector_coords`, `build_wheel` and `filleted_sector` — the same three-signature thread
+`layer_profile` took at PART 16, and pinned by the same shape of test.
+
+**IT APPLIES TO `fillet=True` ALONE.**  An explicit `fillet=(R_hub, R_rim)` is a request
+for those radii and is honoured exactly or refused exactly as before.  That is not
+caution, it is what every existing caller needs: `make fillet`'s fold table, this study's
+radius grid and both `(0, 0)` controls all pass pairs *in order to measure the radius
+itself*, and a clamp there would silently retitle their x-axis.
+
+**THE HEADLINE, REPRODUCED FROM THE MESH RATHER THAN FROM THE STUDY.**  The same sixteen
+drawn genomes, built through `build_wheel(fillet=True)`:
+
+```
+  clamp        genomes that BUILD
+  None                  10/16          <- PART 10 FINDING 6's refusal count
+  0.95                  16/16
+```
+
+Six genomes clamp, which is the six refusals, one for one.  Four clamp at the hub only and
+one at both junctions; the pull-backs are not small — `0.5533 -> 0.0664` and
+`2.5858 -> 0.9266` at the rim — so a consumer that did not know it had been clamped would
+be pricing a fillet the wheel does not have.  **It is therefore reported**:
+`mesh.fillet_radii_mm` and `mesh.fillet_clamped` carry what was actually built, and are
+`None` on the unfilleted path because "there is no fillet" and "nothing was clamped" are
+different claims.
+
+**AND IT IS INERT WHERE IT HAD TO BE.**  The shipped genome's hub radius is 0.6636 mm
+against a limit of 3.1297 and its rim junction has no limit at all, so
+`build_wheel(genes, cfg, fillet=True)` is **bit-identical** at `coarse` and `medium` with
+the clamp on, off, and passed explicitly.  Every number in PARTS 11-20 and PLAN §50-§69 was
+taken on that mesh and none of them moves.
+
+**THE SECOND COPY OF THE CRITERION IS GONE.**  `study_fillet_block.sector_fit_limit` now
+delegates its root-find to the module's; `sector_curves` stays, because the rest of that
+section measures the curves and only the bisection was duplicated.  The module bisects 40
+times against the study's 80, which moves the shipped genome's hub limit from
+3.1296998810584657 to 3.1296998810549430 — **3.5e-12 mm**, eight orders under the 1e-4 these
+margins are quoted to.  The artifact is regenerated for that digit.
+
+**COST.**  One extra `_fillet_curves` call per junction per build — a probe at `R / factor`,
+which proves the clamp inert without bisecting, because `free_span_deg` is monotone in `R`.
+At the shipped genome that is the whole cost, 0.08 s -> 0.15 s on a `coarse` assembly.  A
+genome that actually binds pays the 40-step bisection, ~1.3 s per junction.
+
+**WHAT IS UNCHANGED.**  `best_solution.json` untouched.  `mesh_coords` and `coord_fn` still
+refuse a filleted mesh, and `tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective`
+still passes — this changes what the instrument can BUILD, not who may use it.  PLAN §48's
+scope note keeps its second clause: the barrier half is untouched and the layer profile is
+still not adopted.
+
+---
+
+# STEP 3 RECORD, PART 1 — 2026-08-24. STEP 3's ACCEPTANCE TEST PASSES. THE `R_hub` SWEEP STOPS BEING BIT-IDENTICAL, §14's HYPOTHESIS SURVIVES ITS FIRST REAL TEST — AND THE OBJECTIVE'S OWN SURROGATE IS EXACTLY BLIND OVER HALF THE FEASIBLE RANGE
+
+Step 3 item 1 named the test and what passing looks like:
+
+> Re-run the `R_hub` sweep from `studies/study_reds_hub_share.py --sweep`; it should stop
+> being bit-identical.  **That sweep is the cleanest possible acceptance test for this whole
+> arc** — it currently returns the same 17 significant figures at every point in the box,
+> and it should not.
+
+It is run.  `--fillet` meshes the junction fillets; `--kinematics` is explicit and defaults
+to `svk` on that path, because this file's cost section says **do not let Step 3 take the
+kernel default**.  Both arms below are SVK at `coarse`, so this is mesh against mesh and not
+mesh against kernel.
+
+**THE TEST PASSES.**
+
+```
+                            hub share                    axle drop (mm)
+  UNFILLETED    0.02940959791 at EVERY point       1.901083305 at EVERY point
+  FILLETED      0.002888 .. 0.007755               0.889754 .. 1.152108
+                  11 distinct values of 14 rows      11 distinct values of 14 rows
+```
+
+Four of the fourteen rows share a value because `R_hub` at 3.1, 3.4, 3.7 and 4.0 all clamp
+to the same 2.973 (PART 21) — every one of them already infeasible on `hub_overlap`.  Ten
+distinct radii give ten distinct wheels.
+
+**AND §14's HYPOTHESIS SURVIVES ITS FIRST TEST THAT COULD HAVE KILLED IT.**  §14 wrote that
+the hub share rising was *"the one where the direction is surprising"* and named
+`R_hub` falling as the plausible cause, *"but that is a hypothesis and it has not been
+measured."*  Over the feasible range, on the filleted mesh:
+
+```
+  R_hub   0.400 -> 1.900        hub share  0.007755 -> 0.003703     -52.25%
+                                axle drop  1.152108 -> 0.971531     -15.67%
+                                (interp)   1.145895 -> 0.965494     -15.74%
+```
+
+The hub share RISES as `R_hub` falls, monotonically, by a factor of 2.1 across the feasible
+range.  **The unfilleted sweep never falsified this — it could not express it.**  This
+driver's own verdict line has been printing *"§14's hypothesis IS KILLED"* on that sweep for
+as long as it has existed, because it tested `first > last` and the two were EXACTLY equal.
+A mesh that models no fillets cannot answer §14 either way, and that line was the
+falsification's only evidence.  It now has a third branch and says so.
+
+**THE FINDING THAT REACHES OUTSIDE THIS ARC: THE OBJECTIVE'S SURROGATE SATURATES AND THE
+WHEEL DOES NOT.**  `wheel_objective` prices both fillet genes through
+`stress_concentration_kt(smooth_min(R_hub, hub_fillet_cap_mm(...)), t0)`.  At the shipped
+genome that cap is **0.6657 mm**:
+
+```
+  R_hub    Kt_hub     R_effective        axle drop (filleted, svk, coarse)
+  0.400    2.4876       0.4000                   1.152108
+  0.664    2.0961       0.6399                   1.110221   <- shipped
+  1.000    2.0683       0.6657                   1.065081
+  1.300    2.0683       0.6657                   1.030303
+  1.600    2.0683       0.6657                   0.999389
+  1.900    2.0683       0.6657                   0.971531
+```
+
+`Kt_hub` is **identical to four decimal places from 1.0 mm upward** — `wheel_objective`'s own
+comment states it exactly: *"at any design more than one ladder rung above its cap,
+`dKt_hub/dR_hub` is EXACTLY zero, because buying more `R_hub` there buys exactly nothing."*
+Over that same span the wheel gets **8.8% stiffer**.  So the answer to "does the surrogate
+agree with the FEA" is not "yes" or "no": **it agrees in sign where it is alive and is
+exactly zero where the wheel is still moving**, and the dead half is more than half the
+feasible range.
+
+**THE SHIPPED GENOME IS SITTING AT THE CAP.**  `R_hub` = 0.6636 against a cap of 0.6657 —
+99.7% of it.  `wheel_objective` records that the tie is an attractor *on purpose*.  The
+optimizer walked `R_hub` up to the point where its only live term went flat and stopped;
+the filleted FEA says there was another **12.49%** of axle drop between there and the
+feasibility edge at ~1.9 mm.
+
+**IT IS NOT A FREE 12.49%, AND THE RECORD SAYS SO.**  The fillet is material, and over the
+same span the modelled area rises **+1.67%** (1564.51 -> 1590.56 mm^2).  The objective cannot
+see that either — the mesh models no fillets, so the mass term is blind for the same reason
+the stiffness term is.  **Both sides of the trade are unpriced**, which is a sharper
+statement than either half alone: it is 12.49% of deflection for 1.67% of area, roughly
+7.5 points of deflection per point of mass, and the optimizer has never been shown the
+exchange.
+
+**WHAT THIS IS NOT.**  It is SENSITIVITY, not a gradient.  `mesh_coords` and `coord_fn` still
+refuse a filleted mesh — the tangency and crossing solves are bracketed root-finds and are
+numpy-only — so nothing here reaches the optimizer and the census tests that pin
+`R_hub`/`R_rim` as the insensitive pair are all still correct and all still green.  Step 3
+item 1 is answered as a MEASUREMENT; the differentiable path it would take to act on the
+answer is a separate arc, and this is the first time it can be ranked with a number.
+
+**AND ONE FOR `HUBSHARE_PLAN.md`, FLAGGED RATHER THAN CLAIMED.**  Step 3 item 4 said this arc
+might resolve the hub-share gate for free.  At `coarse` under SVK the filleted mesh puts the
+shipped genome's hub share at **0.0062** against the unfilleted **0.0294**, a factor of 4.7,
+where the gate is `< 0.03`.  That is ONE RUNG.  The quantity's known defect is that it
+climbs with refinement (+14.05% smoke->ultra), which would not close a factor of 4.7 — but
+the ladder is `HUBSHARE_PLAN`'s and is not run here, so this is a strong prior and not a
+result.
+
+**WHAT IS UNCHANGED.**  `best_solution.json` untouched.  No threshold moved, no gate
+re-instated, nothing promoted.  Each arm keeps its own artifact key, named for its mesh and
+its kernel — `sweep` stays the historical unfilleted/linear run under the name every reader
+of that file already knows, and the two new ones are `sweep_filleted_svk` and
+`sweep_unfilleted_svk`.  The controls are kept rather than overwritten because they are what
+makes "it stopped being bit-identical" a finding at all, and the kernel is in the key so a
+filleted row can never be read against a differently-kernelled control by accident.

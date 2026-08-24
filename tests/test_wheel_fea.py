@@ -203,13 +203,28 @@ def test_the_hub_junction_holds_under_three_percent_of_the_compliance(res):
         `R_hub` dropping 1.5598 -> 0.5790 — much less material at the hub junction — but
         that is a hypothesis and it has not been measured."
 
-    IT IS MEASURED NOW, by `studies/study_reds_hub_share.py`, AND THE HYPOTHESIS IS DEAD —
-    not falsified by a close call, but structurally impossible.  Sweeping `R_hub` across
-    its whole gene box (0.4 to 4.0) on the shipped genome leaves the solved wheel
-    BIT-IDENTICAL: hub share 0.04165644522132511 and axle drop 1.6207901051335216 at every
-    point.  `wheel_wheel.py:44` says why in three words — "FILLETS ARE NOT MODELLED".
-    `R_hub` and `R_rim` reach the beam model, the objective and the buildability barriers,
-    but never the mesh, so they cannot move a compliance split.
+    IT WAS MEASURED BY `studies/study_reds_hub_share.py`, WHICH SWEPT `R_hub` ACROSS ITS
+    WHOLE GENE BOX AND FOUND THE SOLVED WHEEL BIT-IDENTICAL — hub share
+    0.04165644522132511 and axle drop 1.6207901051335216 at every point.  This docstring
+    read that as the hypothesis being dead, *"not falsified by a close call, but
+    structurally impossible"*.
+
+    **THAT INFERENCE WAS WRONG AND §75 CORRECTS IT.**  The sentence after it had the
+    mechanism exactly right — `wheel_wheel.py:44`, "FILLETS ARE NOT MODELLED"; `R_hub`
+    reaches the beam model, the objective and the buildability barriers but never the mesh
+    — and that is precisely why the sweep could not answer §14.  **A model that cannot
+    express a hypothesis cannot falsify it.**  Bit-identical rows are the instrument
+    reporting its own blindness, not the wheel reporting indifference.
+
+    ON A FILLETED MESH THE HYPOTHESIS SURVIVES (§75, FILLET_PLAN STEP 3 RECORD PART 1).
+    `--sweep --fillet` at `coarse` under SVK gives eleven distinct values of fourteen rows,
+    and over the feasible range the hub share runs 0.007755 -> 0.003703 as `R_hub` goes
+    0.400 -> 1.900: it RISES as `R_hub` FALLS, monotonically, which is §14's direction.
+
+    THE REST OF THIS DOCSTRING IS UNAFFECTED.  What follows is a comparison BETWEEN
+    genomes on one mesh, and the curvature finding does not depend on `R_hub` moving
+    anything — `cy4` alone still takes the share under the bound.  §14's instinct was
+    right in sign and swamped, rather than wrong.
 
     WHAT DOES MOVE IT is the spoke's CURVATURE.  One-at-a-time gene swaps from the shipped
     genome toward `best_solution_ga_beam.json` (the design the 3% bound was calibrated on),
