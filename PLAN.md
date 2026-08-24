@@ -8736,3 +8736,77 @@ made knowingly.  Both artifacts diffed field-by-field and are purely additive.
 9. **Make `modelled_area_reference` fillet-aware** (§50); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+---
+
+## §61 — 2026-08-23. THE DEFLECTION WAS BEING READ AT WHICHEVER NODE HAPPENED TO BE NEAREST THE BOTTOM, §54's 0.141% IS THAT ARTEFACT, AND CORRECTING IT REINSTATES §54's DECLINE ON A BETTER REASON
+
+§60's item 2 was "why does the patch count move with the layer profile at all", filed as
+cheap and possibly able to remove item 1's ambiguity without the 95 minutes.  It does, and
+the answer is larger than the question.
+
+**The mechanism is in `solve_wheel`, not in the fillet.**  `axle_drop_mm` is `uy` at
+whichever `rim_outer` node is closest to `theta = -90`.  That would be harmless if `uy`
+peaked at the bottom — but the spokes are a spiral, the wheel has no mirror symmetry about
+the vertical, and `uy` runs MONOTONICALLY through the bottom at about **-0.024 mm/deg**.
+So the reading carries a first-order error set by where the nearest node happens to sit,
+and where it sits is a property of the blocking: the unfilleted mesh puts a node within
+0.05° of the bottom at every rung, while the FILLETED mesh's re-cut rim shifts the phase
+and its offset runs -0.163 / -0.076 / -0.013° up the ladder — a shrinking, h-dependent term
+injected straight into the drop.
+
+```
+  FILLETED, shipped profile      coarse    medium      fine    spread     increments      ratio
+  axle_drop_mm  (§54)          0.962456  0.963816  0.962579    0.141%   +0.001359 -0.001236  -0.909
+  interpolated at the bottom   0.956652  0.961086  0.962100    0.568%   +0.004435 +0.001014  +0.229
+```
+
+**§54 read "0.141% and flat from `coarse` up" off a sequence whose increments flip sign.**
+Read at the bottom it is monotone, spans 0.568%, and settles at ratio 0.229.  §54's OTHER
+finding — the 38% deflection reduction — is a magnitude at one rung, reads -38.7% on the
+corrected numbers, and stands.
+
+**And the instrument this repo already owns separates the profiles where the band cannot.**
+Across all 33 priced pairs the interpolated spread runs 0.464-0.665% — every profile,
+including the one that ships — so §59's and §60's "holds the band / fails the band" split
+was reading the artefact.  The ratio of successive increments does separate them, against
+`SETTLING_RATIO = 0.75`, this module's own threshold:
+
+```
+  pair                    genome-box floor    interp spread    ratio    settles?   settled est
+  shipped  (-0.45, 1.60)          0.1194          0.568%       0.229      yes       0.962401
+  (-0.85, 1.00)                   0.2125          0.565%       0.406      yes       0.963117
+  (-0.80, 1.00)  §59              0.2061          0.548%       0.458      yes       0.963508
+  (-0.75, 0.70)  §54's argmax     0.2430          0.499%       0.851      NO        0.974754
+```
+
+**The ratio orders the profiles the other way up from the genome-box floor**, and it puts
+§54's argmax above the settling threshold.  So §54's decline SURVIVES on a reason it did
+not have: the pair does not settle, rather than its spread tripling.  §59's and §60's
+candidates do settle and remain admissible.  The promotion trade is now correctly signed
+and small: **+0.07% on the extrapolated deflection for +78% on the genome-box floor**, at
+`(-0.85, 1.00)`.
+
+**Nothing promoted, every mesh bit-identical, `axle_drop_mm` computed exactly as before** —
+`axle_drop_interp_mm` and `patch_centre_offset_deg` are additional fields on `solve_wheel`'s
+result and nothing consumes them yet.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §61
+
+1. **Audit the nearest-node reading across the tree.**  Every deflection number this
+   project has quoted came from `axle_drop_mm`.  On the unfilleted mesh the offsets are
+   small and the error looks like ~0.1%, but that has been checked at ONE genome.  The
+   ±0.3% band is one of this project's load-bearing gates and it has been evaluated with an
+   instrument that snaps to nodes; `make gci`'s eight phases rotate the mesh under the
+   ground, which SAMPLES the offset rather than averaging it away.  This now outranks the
+   fillet work: it is cheap at one genome, it is the same class of defect as §29's
+   wrong-mesh cell size, and everything downstream of it is currently unpriced.
+2. **Re-derive the ±0.3% band on the interpolated reading**, wherever it is quoted.
+3. **Adopt `(-0.85, 1.00)`** — trade quantified and small, audit unchanged in size.
+4. **`(-0.95, 0.85)` scores 0.2448, the best floor on either grid, and refuses one genome**
+   (§60).  Nothing has asked which genome or why.
+5. **Apply the fold gate to the draw and re-derive the box** (§58).
+6. **What makes a region impossible** (§56); **a bend that is a FUNCTION of the genome**
+   (§56); **`R_hub`/`R_rim` as live FEA genes**; **`modelled_area_reference` fillet-aware**
+   (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**; **§32's
+   successors 3 and 4**; **the element-validity check** (§44).

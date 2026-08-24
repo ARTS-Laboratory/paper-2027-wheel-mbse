@@ -2454,3 +2454,126 @@ are additions to existing objects rather than changes to existing values.
    avoidable rather than a trade.
 3. **The finer grid is still a grid.**  `(-0.95, 0.85)` scores 0.2448, the best floor
    anywhere on either grid, and refuses one genome; nothing has asked which genome or why.
+
+---
+
+# STEP 1 RECORD, PART 18 — 2026-08-23. THE DEFLECTION WAS BEING READ AT WHICHEVER NODE HAPPENED TO BE NEAREST THE BOTTOM. PART 12's 0.141% IS THAT ARTEFACT, AND CORRECTING IT REINSTATES PART 13's DECLINE ON A BETTER REASON
+
+PART 17 found that the ±0.3% band separates layer profiles by their contact-patch node
+count and said the mechanism — that the fillet's re-cut of the rim blocks moves the rim's
+circumferential node phase — was plausible and unmeasured.  It is measured now, and it is
+worse than PART 17 thought: the patch count is a symptom, not the cause, and the cause
+invalidates the instrument rather than just perturbing it.
+
+## THE MECHANISM, AND IT IS IN `solve_wheel` RATHER THAN IN THE FILLET
+
+`axle_drop_mm` is `uy` at whichever `rim_outer` node is closest to `theta = -90`.  That
+would be harmless if `uy` peaked at the bottom.  **It does not.**  The spokes are a spiral,
+so the wheel has no mirror symmetry about the vertical and `uy` runs MONOTONICALLY through
+the bottom — measured, a slope of about **-0.024 mm/deg**:
+
+```
+  d from bottom, deg   -2.813   -1.663   -0.514   -0.163   +0.187   +0.537   +0.888
+  uy, mm             1.010117 1.000069 0.973674 0.962456 0.950013 0.936728 0.922872
+                                                  ^ the node `axle_drop_mm` reports
+```
+
+So the reading carries a FIRST-ORDER error proportional to how far the nearest node
+happens to sit from the bottom.  And where that node sits is a property of the blocking:
+
+```
+  centre-node offset from the bottom, deg      coarse    medium      fine
+  UNFILLETED                                  -0.045    +0.013    -0.012
+  FILLETED, shipped profile                   -0.163    -0.076    -0.013
+```
+
+The unfilleted mesh puts a node essentially at the bottom at every rung, so its two
+readings agree (1.208% against 1.294%).  The filleted mesh does not, and its offset shrinks
+monotonically up the ladder — which injects a spurious, h-dependent term into the drop.
+
+## WHICH IS WHERE PART 12's HEADLINE CAME FROM
+
+```
+  FILLETED, shipped profile      coarse    medium      fine    spread    increments      ratio
+  axle_drop_mm  (PART 12)      0.962456  0.963816  0.962579    0.141%   +0.001359 -0.001236  -0.909
+  interpolated at the bottom   0.956652  0.961086  0.962100    0.568%   +0.004435 +0.001014  +0.229
+```
+
+**PART 12 read "0.141% and flat from `coarse` up" off a sequence whose successive
+increments flip sign** — ratio -0.909, which this very file's own `divergence` machinery
+would refuse to call settled.  Read at the bottom, the same ladder is monotone, spans
+0.568%, and settles with ratio 0.229.  `axle_drop_interp_mm` and `patch_centre_offset_deg`
+are now recorded on every rung, in `solve_wheel` itself, next to the two readings that
+snap to nodes.
+
+**PART 12's other finding is untouched**: the 38% deflection reduction is a magnitude at
+one rung, it reads -38.7% on the corrected numbers, and it stands.  What falls is the claim
+that the filleted deflection is settled at 0.141%.
+
+## AND THE INSTRUMENT THIS FILE ALREADY OWNS SEPARATES THE PROFILES CLEANLY
+
+The spread does not.  Across all 33 priced pairs the interpolated spread runs 0.464% to
+0.665% — **every profile, including the one that ships**.  PART 16's and PART 17's
+"holds the band / fails the band" split was reading the artefact.  The ratio of successive
+increments does separate them, and `SETTLING_RATIO = 0.75` is this module's own threshold,
+reused rather than re-invented:
+
+```
+  pair                    genome-box floor    interp spread    ratio    settles?   settled est
+  shipped  (-0.45, 1.60)          0.1194          0.568%       0.229      yes       0.962401
+  (-0.85, 1.00)                   0.2125          0.565%       0.406      yes       0.963117
+  (-0.80, 1.00)  PART 16          0.2061          0.548%       0.458      yes       0.963508
+  (-0.80, 0.70)                   0.2394          0.520%       0.672      yes       0.966161
+  (-0.75, 0.70)  §54's pair       0.2430          0.499%       0.851      NO        0.974754
+  (-0.70, 0.70)                   0.2347          0.471%       0.890      NO        0.979367
+```
+
+**The ratio orders the profiles the other way up from the genome-box floor**, and it puts
+§54's pair — the argmax, the one PART 13 declined and PART 16 confirmed as the argmax —
+above the settling threshold, extrapolating to 0.9748 against the shipped pair's 0.9624.
+Three of the 33 fail to settle and two of them are the high-floor cells this arc kept being
+drawn to.
+
+**So PART 13's decline SURVIVES, on a reason it did not have.**  It declined the
+genome-robust pair because the spread more than tripled; that number was an artefact.  The
+real objection is that the pair does not settle at all.
+
+## WHAT THIS DOES TO PART 16 AND PART 17
+
+Both stand as measurements and both need their conclusions restated:
+
+  * **PART 16's "the two-objective profile exists" is still true**, but not for the reason
+    given.  `(-0.80, 1.00)` and `(-0.85, 1.00)` clear the barrier AND settle — 0.458 and
+    0.406 — so they remain admissible.  What is wrong is "it holds the band and the
+    shipped pair's 0.141% is the number to beat": on the corrected reading every profile
+    has a similar spread and the shipped pair settles FASTEST.
+  * **PART 17's contact-patch finding is right about the phase shift and wrong about
+    which symptom matters.**  The patch count (30 against 31) and the centre-node offset
+    are the same fact seen twice; the offset is the one that moves the number.
+
+The promotion trade is therefore real, small, and now correctly signed: **+0.07% on the
+extrapolated deflection (0.962401 -> 0.963117) for +78% on the genome-box floor
+(0.1194 -> 0.2125)**, at `(-0.85, 1.00)`.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, both layer-profile
+constants untouched, every mesh bit-identical, and `axle_drop_mm` still computed exactly as
+before** — the interpolated reading is an ADDITIONAL field on `solve_wheel`'s result and
+nothing consumes it yet, so every committed number in this tree still means what it meant.
+`study_corner_singularity_fillet.json` gains three fields per rung and ten more priced
+pairs; nothing previously committed changed value.
+
+## WHAT PART 18 LEAVES
+
+1. **Every deflection number in this tree was read at the nearest node.**  On the
+   unfilleted mesh the offsets are small and the error is ~0.1%, so the optimizer's
+   history is probably safe — *probably* is doing work in that sentence and it has not been
+   checked at any genome but this one.  `make gci`'s `axle_drop_mean_mm` averages eight
+   phases, which rotates the mesh under the ground and therefore SAMPLES the offset rather
+   than averaging it away; whether that helps or hurts is unmeasured.
+2. **Adopt `(-0.85, 1.00)`**, whose trade is now quantified and small.  Still an audit of
+   every filleted artifact.
+3. **The ±0.3% band should be re-derived on the interpolated reading**, wherever it is
+   quoted.  It is one of this arc's four stated reasons and it has been evaluated with an
+   instrument that snaps to nodes.

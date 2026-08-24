@@ -1599,6 +1599,32 @@ def solve_wheel(mesh, *, newton=None, **kw):
     res["axle_drop_patch_mean_mm"] = (float(disp[in_patch, 1].mean())
                                       if in_patch.size else float("nan"))
     res["n_nodes_in_patch"] = int(in_patch.size)
+    # AND THE SAME DEFLECTION READ *AT* THE BOTTOM RATHER THAN AT THE NEAREST NODE.
+    #
+    # `axle_drop_mm` is `uy` at whichever rim_outer node happens to be closest to
+    # theta = -90.  That is a first-order error, not a rounding one: the spokes are a
+    # spiral, so the wheel has no mirror symmetry about the vertical and `uy` runs
+    # MONOTONICALLY through the bottom rather than peaking there -- measured, the slope is
+    # about -0.024 mm/deg.  A node sitting 0.16 deg off centre therefore reads 0.004 mm
+    # high, which is 0.4% of the drop.
+    #
+    # It matters because WHERE that node sits is a property of the blocking, not of the
+    # physics: on the unfilleted mesh the nearest node is within 0.05 deg at every rung
+    # and the two readings agree, while on the FILLETED mesh the re-cut rim shifts the
+    # circumferential phase and the offset runs -0.163 / -0.076 / -0.013 deg up the
+    # ladder.  That shrinking offset adds a spurious h-dependent term to the drop:
+    # FILLET_PLAN PART 12 read the filleted ladder as "0.141% and flat from coarse up"
+    # off a sequence whose successive increments are +0.001359 then -0.001236 -- a ratio
+    # of -0.909, which is noise rather than convergence.  Interpolated, the same ladder is
+    # monotone with a ratio of 0.229 and a spread of 0.568%.
+    #
+    # Linear between the two nodes bracketing the bottom.  Both readings are kept: this
+    # one is what a convergence claim should use, and `axle_drop_mm` is what every
+    # committed number in this tree was measured with.
+    order = np.argsort(d)
+    res["axle_drop_interp_mm"] = float(
+        np.interp(0.0, d[order], disp[patch_nodes][order, 1]))
+    res["patch_centre_offset_deg"] = float(d[np.argmin(np.abs(d))])
 
     # Compliance split, exact for a linear body under one load system.  Under SVK it is
     # still an exact decomposition of the stored energy, but U = F*delta/2 no longer
