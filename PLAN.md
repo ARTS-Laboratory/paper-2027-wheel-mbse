@@ -9283,3 +9283,73 @@ decision.
 6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
    fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
    **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §69 — 2026-08-23. CONSTRAIN ON THE MARGIN AND THE CANDIDATE CHANGES: `(-0.70, 0.90)` HAS FIVE TIMES THE CLEARANCE FOR THREE PERCENT OF THE FLOOR — AND IT IS A CELL §60 EXCLUDED WITH THE CRITERION §61 SHOWED WAS AN ARTEFACT
+
+§68's item 1: build the candidate set with the cliff margin as a CONSTRAINT rather than
+discovering it afterwards, and see whether anything survives.  The entry floor is one
+bisection per `end`:
+
+```
+  end    0.50     0.60     0.70     0.80     0.85     0.90     1.00     1.10     1.20     1.30     1.60
+  floor -0.7469  -0.7779  -0.8064  -0.8329  -0.8455  -0.8577  -0.8811  -0.9034  -0.9247  -0.9451  -1.0020
+```
+
+Twenty-four cells across both grids clear `MIN_SJ_TARGET` on all fifteen and refuse none.
+Scored on all three criteria at once — box floor, margin to the shipped genome's cliff, and
+the settling ratio on the interpolated deflection:
+
+```
+  pair                 box floor   refuses   margin   ratio   settled est   vs shipped
+  (-0.45, 1.60) SHIPPED   0.1194       0     0.5520   0.229     0.962401      +0.000%
+  (-0.60, 0.80)           0.2060       0     0.2329   0.560     0.964523      +0.221%
+  (-0.70, 0.90)           0.2061       0     0.1577   0.437     0.963277      +0.091%
+  (-0.85, 1.00) §60       0.2125       0     0.0311   0.406     0.963117      +0.074%
+  (-0.60, 0.70)           0.2190       0     0.2064   0.680     0.966099      +0.384%
+```
+
+**`(-0.70, 0.90)` dominates §60's candidate on the criterion §68 added and gives up almost
+nothing for it**: five times the margin (0.1577 against 0.0311) for 3% of the floor (0.2061
+against 0.2125) and 0.017 points of extrapolated deflection (+0.091% against +0.074%).
+`(-0.60, 0.80)` buys still more margin (0.2329) but pays for it in convergence — ratio
+0.560 and +0.221%.  So the front is real and it is short, and the middle of it is the place
+to stand.
+
+**And `(-0.70, 0.90)` is a cell this arc already had and threw away.**  §60 listed it as
+"node yes / patch NO" — it held the single-node band at 0.137% and failed the patch-mean
+band at 0.471%, so it was dropped from the admissible four.  §61 then showed that BOTH of
+those readings snap to nodes and that the patch band was separating profiles by their
+contact-patch count.  On the reading that does not snap, it settles at 0.437, comfortably
+inside `SETTLING_RATIO`.  **The criterion that excluded the best-conditioned candidate was
+the artefact.**
+
+**The adoption call does not change, and one of its two reasons does.**  §68 declined on a
+0.031 margin AND on the floor being measured in a box built from two unadopted mechanisms
+that nothing consumes.  The margin objection is largely answered — 0.1577 is a real
+clearance, if still 3.5x less than the shipped pair's.  The second reason stands untouched
+and is now the whole of it: **there is still no consumer for the filleted blocking, so the
+genome-box floor these profiles compete on is a number nothing reads.**  `(-0.70, 0.90)`
+replaces `(-0.85, 1.00)` as the candidate of record.
+
+**Nothing promoted, no code changed, no artifact regenerated** — §69 is a measurement and a
+re-ranking of the same shelf.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §69
+
+1. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  This is now the ONLY thing standing between the arc and its profile, and it is
+   the item that makes every trade above stop being hypothetical.  Everything else in the
+   fillet arc is measured and shelved behind it.
+2. **Carry the margin into `profile_candidates` as a column** (§68) so a future search
+   constrains on it.  Cheap; the boundary function is one bisection per `end` and §69
+   records eleven.
+3. **Apply the fold gate to the draw and re-derive the box** (§58) — one word in a filter
+   tuple, priced, and it moves every genome-box number in §54 through §69.
+4. **What makes a region impossible** (§56) — the bow, the fold margin and the interior
+   point are all ruled out with numbers.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
