@@ -127,6 +127,7 @@ import numpy as np
 import project_paths as PP  # noqa: F401  (puts src/ on the path)
 import _gate_guard
 import wheel_genome as wg
+import wheel_geometry as WG
 import wheel_wheel as WW
 import study_fillet_fold as ff
 
@@ -1255,6 +1256,201 @@ def sweep_sector(genes, cfg, radii_hub, radii_rim):
     return rows
 
 
+# ---------------------------------------------------------------------------
+# THE FOLD GATE -- the OTHER feasibility number, and it was already in the tree
+# ---------------------------------------------------------------------------
+#
+# PART 13 found one drawn genome whose TRIMMED SPOKE is sign-flipped and traced it to a
+# near self-intersection in the UNFILLETED flank at `s = 0.051`, which the shipped
+# station grid steps over and the fillet's trim happens to land on.  It filed the finding
+# and said a feasibility gate that catches the class is a different piece of work.
+#
+# It is one import.  `wheel_geometry.self_intersection_margin` is exactly that gate --
+# closed form, no mesh, no build -- and it is already calibrated (`MIN_FOLD_MARGIN_MM`,
+# measured over 2001 genomes) and already in five studies' draw filters (`study_gnl`,
+# `study_contact`, `study_wheel_fea`, and the two that read them).  `sweep_genomes` here
+# and in `study_tri_block` use the two-term filter that omits it.  Everything below is
+# the arithmetic that says what that omission costs.
+
+FOLD_AGREEMENT_TOL_MM = 1.0e-3
+FOLD_AUDIT_POINTS = 2000
+FOLD_GATE_BATCHES = 40
+
+
+def _curve_and_ctrl(vec, n):
+    import wheel_fea as WFEA
+    return WG.bezier_centerline(*[float(vec[i]) for i in range(8)],
+                                span_mm=WFEA.HUB_RIM_SPAN_MM, num_points=n)
+
+
+def fold_margin(genes, cfg, num_points=None):
+    """`min_s (|1/kappa(s)| - t(s)/2)`, wrapped the way `sector_fit_margin` is wrapped.
+
+    Same shape and the same purpose: a refusal wants a NUMBER computed from the geometry
+    alone, before anything is built, and a study that names a mechanism has usually not
+    been asked to predict with it.  The computation is
+    `wheel_geometry.self_intersection_margin` -- the optimizer's own fold barrier, not a
+    second opinion about it -- and at `num_points=None` this returns exactly what
+    `study_mesh_quality.fold_margin` returns for the same config, pinned by a test.
+
+    The two thresholds are NOT the same claim.  `folds` says the part does not exist --
+    the outward offset has passed the centre of curvature and the flank turns inside out.
+    `binds` says the optimizer's barrier is active, which `MIN_FOLD_MARGIN_MM`'s own
+    calibration puts 0.1 mm clear of the fold because element quality degrades before it.
+
+    `num_points` exists so the number's INDEPENDENCE from the sampling can be measured
+    rather than asserted.  It comes off the Bezier hodograph in closed form, so refining
+    it should move nothing; `sweep_fold_gate` reports how much it actually moves, next to
+    how much the sampled statement of the same fact moves, which is the whole argument.
+    """
+    vec = np.asarray(genes, float)
+    n = WW.get_config(cfg).n_curve if num_points is None else int(num_points)
+    curve, ctrl = _curve_and_ctrl(vec, n)
+    m = float(WG.self_intersection_margin(curve, ctrl,
+                                          *[float(vec[i]) for i in range(8, 12)],
+                                          num_points=n))
+    return {"margin_mm": m, "limit_mm": float(WG.MIN_FOLD_MARGIN_MM),
+            "num_points": n, "binds": bool(m < WG.MIN_FOLD_MARGIN_MM),
+            "folds": bool(m < 0.0)}
+
+
+def flank_reversal_mm(genes, cfg, num_points=None):
+    """The SAMPLED statement of the same thing: least forward progress along a flank.
+
+    Each flank node's step is projected on the centreline tangent it came from.  Negative
+    means the outline doubles back on itself between two stations -- the same defect
+    PART 13 found by hand with a 2000-point shoelace resample, stated as a signed scalar
+    so the closed form can be checked against it rather than trusted.
+
+    Kept separate from `fold_margin` on purpose, and it is the one that MOVES.  A fold
+    narrower than the station spacing is stepped over and this returns a positive number
+    for a part that self-intersects -- which is exactly PART 13's genome, and exactly why
+    the mesh-based filter `sweep_genomes` uses leaks.  Refine it and the misses go away;
+    the closed form did not need refining, because there is no grid in it.
+    """
+    vec = np.asarray(genes, float)
+    n = WW.get_config(cfg).n_curve if num_points is None else int(num_points)
+    curve, ctrl = _curve_and_ctrl(vec, n)
+    tang = WG.bezier_tangent(ctrl, n)
+    band = WG.offset_band(curve, *[float(vec[i]) for i in range(8, 12)], n_across=1,
+                          normals=WG.normals_from_tangents(tang))
+    return min(float((np.diff(band[:, c, :], axis=0) * tang[:-1]).sum(axis=1).min())
+               for c in (0, 1))
+
+
+FOLD_LADDER_POINTS = (97, 600, 1200, 2000, 4000)
+
+
+def fold_resolution_ladder(genes, cfg, points=FOLD_LADDER_POINTS):
+    """The two statements of "this flank folds", side by side, against the sampling.
+
+    97 is the station count PART 13 named -- the shipped, untrimmed grid whose spacing
+    steps over the dip.  It is the interesting rung: whatever the sampled test says
+    there, the closed form has already made its call, and the rest of the ladder shows
+    which of the two is converging and which is switching sides.
+    """
+    vec = np.asarray(genes, float)
+    return [{"num_points": int(n),
+             "margin_mm": fold_margin(vec, cfg, n)["margin_mm"],
+             "flank_reversal_mm": flank_reversal_mm(vec, cfg, n)}
+            for n in points]
+
+
+def sweep_fold_gate(cfg, genes, batches=FOLD_GATE_BATCHES, seed=None):
+    """How leaky is the gate `sweep_genomes` already had, and is the closed form right?
+
+    Two populations over the SAME Latin-hypercube stream the genome sweep draws from, so
+    the leak rate below is the rate that stream feeds the box above and not a rate
+    measured somewhere else:
+
+      * genomes passing `evaluate_design`'s geometric pair, and how many of those fold;
+      * those that ALSO mesh a clean unfilleted sector -- which is the filter
+        `sweep_genomes` actually applies -- and how many of THOSE still fold.
+
+    The second number is what the existing filter misses.  It is a proxy for the fold and
+    a good one, but it is a proxy: whether a folded flank shows up as an inverted element
+    depends on whether a station lands on the dip, and the shipped grid's spacing is not
+    a property of the part.
+
+    `agreement` is the closed form audited against `flank_reversal_mm` on every
+    geometrically feasible draw, both AT `FOLD_AUDIT_POINTS`, which is fine enough to
+    resolve the folds this box contains.  A disagreement within `FOLD_AGREEMENT_TOL_MM`
+    of zero is two ways of straddling the same point; one outside it would mean the
+    closed form is not measuring what it claims.
+
+    `resolution` is the other half and is the reason the first half has to name its
+    sampling.  The same two quantities are recomputed at the CONFIG's own `n_curve` and
+    the shifts compared: the closed form's should be numerical noise, and the sampled
+    one's should be whole misses -- folded parts whose dip falls between two stations.
+    That is PART 13's genome stated as a rate instead of an anecdote, and it is the same
+    failure mode as the mesh-based draw filter, one level down.
+    """
+    from study_mesh_quality import latin_hypercube
+    import wheel_fea as WFEA
+
+    seed = GENOME_SWEEP_SEED if seed is None else seed
+    low, high, _ = wg.bounds_arrays(WFEA.GENE_SPACE)
+    n = {"drawn": 0, "geom": 0, "geom_folds": 0, "geom_binds_only": 0,
+         "mesh_clean": 0, "mesh_clean_folds": 0, "mesh_clean_binds_only": 0}
+    worst_disagreement = 0.0
+    disagreements = 0
+    margin_shift = 0.0
+    margin_flips = 0
+    sampled_misses = 0
+    for batch in range(batches):
+        for vec in latin_hypercube(512, low, high, seed=seed + batch):
+            n["drawn"] += 1
+            _, loss = WFEA.evaluate_design(vec)
+            if loss["x_order"] != 0.0 or loss["hub_overlap"] != 0.0:
+                continue
+            n["geom"] += 1
+            f = fold_margin(vec, cfg, FOLD_AUDIT_POINTS)
+            n["geom_folds"] += int(f["folds"])
+            n["geom_binds_only"] += int(f["binds"] and not f["folds"])
+            if f["folds"] != (flank_reversal_mm(vec, cfg, FOLD_AUDIT_POINTS) < 0.0):
+                disagreements += 1
+                worst_disagreement = max(worst_disagreement, abs(f["margin_mm"]))
+            # the SAME two quantities at the config's own sampling, which is what every
+            # mesh in this file is built on
+            at_cfg = fold_margin(vec, cfg)
+            margin_shift = max(margin_shift, abs(at_cfg["margin_mm"] - f["margin_mm"]))
+            margin_flips += int(at_cfg["folds"] != f["folds"])
+            sampled_misses += int(f["folds"] and flank_reversal_mm(vec, cfg) >= 0.0)
+            try:
+                if not sector_control(vec, cfg)["all_valid"]:
+                    continue
+            except Exception:
+                continue
+            n["mesh_clean"] += 1
+            n["mesh_clean_folds"] += int(f["folds"])
+            n["mesh_clean_binds_only"] += int(f["binds"] and not f["folds"])
+    return {"config": cfg, "seed": int(seed), "batches": int(batches),
+            "limit_mm": float(WG.MIN_FOLD_MARGIN_MM), "counts": n,
+            # The gate is only free if it leaves the genome every other number in this
+            # file is measured at alone -- the same question `shipped_is_clamped` asks of
+            # the clamp, and the same answer is needed before either is worth having.
+            "shipped": fold_margin(genes, cfg),
+            "leak_rate": (n["mesh_clean_folds"] / n["mesh_clean"]
+                          if n["mesh_clean"] else None),
+            "fold_rate": (n["geom_folds"] / n["geom"] if n["geom"] else None),
+            "agreement": {"n": n["geom"], "at_points": FOLD_AUDIT_POINTS,
+                          "disagreements": disagreements,
+                          "worst_disagreement_margin_mm": worst_disagreement,
+                          "tol_mm": FOLD_AGREEMENT_TOL_MM,
+                          "closed_form_is_the_sampled_one": bool(
+                              worst_disagreement < FOLD_AGREEMENT_TOL_MM)},
+            # What each of the two costs when the sampling is the config's rather than
+            # the audit's.  These are not error bars on the same thing: one is roundoff
+            # and the other is a miss.
+            "resolution": {"config_points": WW.get_config(cfg).n_curve,
+                           "audit_points": FOLD_AUDIT_POINTS,
+                           "closed_form_worst_shift_mm": margin_shift,
+                           "closed_form_verdict_flips": margin_flips,
+                           "sampled_flank_missed_folds": sampled_misses,
+                           "sampled_flank_miss_rate": (sampled_misses / n["geom_folds"]
+                                                       if n["geom_folds"] else None)}}
+
+
 GENOME_SWEEP_SEED = 20260823
 GENOME_SWEEP_PER_ORIENTATION = 4
 
@@ -1267,7 +1463,13 @@ def sweep_genomes(cfg, per_orientation=GENOME_SWEEP_PER_ORIENTATION,
     `flank_orientation` is a property of the centreline, not of `R_hub`/`R_rim`, and its
     own docstring records that of 60 feasible Latin-hypercube genomes **only 16 have the
     shipped genome's `(+1, +1)`** — so a blocking measured at the shipped genome alone has
-    been measured on a quarter of the design space.  This draws feasible genomes until it
+    been measured on a quarter of the design space.  THE LAST CLAUSE OF THAT FILTER IS A
+    PROXY AND IT LEAKS: "the unfilleted sector is clean" is a statement about one sampling
+    of the flank, not about the flank, and `sweep_fold_gate` measures how often a genome
+    whose part genuinely self-intersects meshes clean anyway.  The draw is left as it is
+    so every number already published against this box reproduces; the closed-form margin
+    rides on each row as `fold` instead, and `fit_clamp_fold_clean` re-tallies the box
+    over the rows that survive it.  This draws feasible genomes until it
     has some of each of the four orientations and reports the blocking on them.
 
     It found a real bug the radius sweep could not: the sector-closing seam's `dk`.  It is
@@ -1317,6 +1519,11 @@ def sweep_genomes(cfg, per_orientation=GENOME_SWEEP_PER_ORIENTATION,
                    # margin is computed from the geometry alone and is what says whether
                    # the refusal was predictable before the blocking was attempted.
                    "fit": sector_fit_margin(vec, cfg),
+                   # And the other one.  `fit` says whether the fillet has room in the
+                   # sector; `fold` says whether the SPOKE the fillet is trimming exists
+                   # at all.  The draw filter above tests neither -- it tests whether one
+                   # particular sampling of this genome happens to mesh.
+                   "fold": fold_margin(vec, cfg),
                    "built": v["built"]}
             if v["built"]:
                 open_seams = [f"{x['a']}.{x['side_a']}~{x['b']}.{x['side_b']}"
@@ -1413,7 +1620,18 @@ def build_sector_section(genes, configs, junctions):
            "block_region": dict(SECTOR_BLOCK_REGION),
            "gene_box": {"R_hub_mm": list(box_h), "R_rim_mm": list(box_r)},
            "genomes": sweep_genomes(configs[0]),
+           # The population the box above is drawn from, and what the draw filter misses
+           # in it.  Same stream, same config, so the leak rate is this box's own.
+           "fold_gate": sweep_fold_gate(configs[0], genes),
            "per_config": {}}
+    # The population above as an anecdote you can read: the same two numbers against the
+    # sampling, on the genomes the gate actually rejects -- one of which is PART 13's.
+    out["fold_gate"]["ladder"] = [
+        {"orientation": r["orientation"], "R_hub_mm": r["R_hub_mm"],
+         "worst_block": r.get("worst_block"),
+         "rungs": fold_resolution_ladder(np.asarray(r["genes"], float), configs[0])}
+        for rows in out["genomes"]["groups"].values() for r in rows
+        if r["fold"]["folds"]]
     for cfg in configs:
         cfgo = WW.get_config(cfg)
         shipped = sector_verdict(genes, cfg, float(genes[12]), float(genes[13]))
@@ -1458,6 +1676,16 @@ def build_sector_section(genes, configs, junctions):
             "fit_clamp": (sweep_sector_fit_clamp(
                 genes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows])
+                if cfg == configs[0] else None),
+            # The same table over the genomes that describe a part that EXISTS.  Same
+            # function and the same rows, minus the ones the closed-form fold margin
+            # rejects -- so the difference between the two tables is the gate's price,
+            # measured on the same genomes rather than on a second draw that would move
+            # everything else at the same time.
+            "fit_clamp_fold_clean": (sweep_sector_fit_clamp(
+                genes, cfg,
+                [r for rows in out["genomes"]["groups"].values() for r in rows
+                 if not r["fold"]["binds"]])
                 if cfg == configs[0] else None),
         }
     return out
@@ -1548,6 +1776,30 @@ def self_checks(rec):
             # this file is measured at alone.
             checks["the_clamp_is_inert_on_the_shipped_genome"] = (
                 not fc["shipped_is_clamped"])
+        # The fold gate, stated as the ONE-SIDED claim it can actually support.  Whether a
+        # folded flank shows up as an inverted element depends on where the trim puts a
+        # station, so "folds => the block inverts" is luck and is reported, not gated.
+        # "Fold-clean => nothing inverts" is the gate's own promise and gates.
+        builtr = [r for r in allr if r["built"]]
+        checks["no_fold_clean_genome_inverts_a_block"] = bool(
+            builtr and all(r["all_blocks_valid"] for r in builtr
+                           if not r["fold"]["folds"]))
+        # And the closed form has to BE the thing it stands in for.  A disagreement
+        # further than a micron from the fold point would mean it is not.
+        fg = sec.get("fold_gate")
+        if fg:
+            checks["the_closed_form_fold_is_the_sampled_flank"] = bool(
+                fg["agreement"]["closed_form_is_the_sampled_one"])
+            # And the closed form has to be the one that does not move, or the gate is
+            # just a second grid.  Gated because the whole argument for it rests here.
+            # The SHIFT is what gates: it bounds every verdict change between the two
+            # samplings at once, and the barrier it has to stay inside of is 100x it.
+            # How many verdicts actually flipped is reported next to how many folds the
+            # sampled test outright missed, and is a characterisation finding.
+            checks["the_closed_form_fold_does_not_move_with_the_sampling"] = bool(
+                fg["resolution"]["closed_form_worst_shift_mm"] < 0.1 * fg["limit_mm"])
+            checks["the_fold_gate_is_inert_on_the_shipped_genome"] = (
+                not fg["shipped"]["binds"])
     checks["pass"] = bool(all(v for k, v in checks.items() if k != "pass"))
     return checks
 
@@ -1870,6 +2122,101 @@ def _print(rec):
             print("    MEASURED, NOT ADOPTED: `sector_blocks` and `build_wheel` are "
                   "untouched and still take the")
             print("    radii they are given.")
+
+        fg = sec.get("fold_gate")
+        if fg:
+            c = fg["counts"]
+            print("\n  AND THE OTHER FEASIBILITY NUMBER: DOES THE SPOKE THE FILLET TRIMS "
+                  "EVEN EXIST?")
+            print(f"      {'genome':13s} {'fold margin':>12s} {'folds':>6s} "
+                  f"{'binds':>6s} {'built':>6s} {'worst block':>14s} {'min scaled J':>13s}")
+            for r in allrows:
+                f = r["fold"]
+                sj = ("-" if r.get("min_scaled_jacobian") is None
+                      else f"{r['min_scaled_jacobian']:+.4f}")
+                print(f"      {str(r['orientation']):13s} {f['margin_mm']:+12.4f} "
+                      f"{str(f['folds']):>6s} {str(f['binds']):>6s} "
+                      f"{str(r['built']):>6s} {r.get('worst_block', '-'):>14s} {sj:>13s}")
+            folded = [r for r in allrows if r["fold"]["folds"]]
+            inverted = [r for r in allrows if r["built"] and not r["all_blocks_valid"]]
+            print(f"    {len(folded)}/{len(allrows)} describe a part that does not exist; "
+                  f"{len(inverted)}/{len(allrows)} invert a block, and every one of those "
+                  "is in the first set.")
+            print("    the converse does NOT hold and is not claimed: whether a folded "
+                  "flank SHOWS as an inverted")
+            print("    element depends on whether a station lands on the dip, which is a "
+                  "property of the grid.")
+            print("    that is the whole argument for the closed form -- the mesh-based "
+                  "filter this box was drawn")
+            print(f"    through is a proxy for it, and over {c['drawn']} draws on the "
+                  "same stream it leaks:")
+            print(f"      pass (x_order, hub_overlap)             {c['geom']:6d}   "
+                  f"folded {c['geom_folds']:5d}  ({100 * fg['fold_rate']:.1f}%)")
+            print(f"      AND the unfilleted sector meshes clean  {c['mesh_clean']:6d}   "
+                  f"folded {c['mesh_clean_folds']:5d}  ({100 * fg['leak_rate']:.1f}%)"
+                  "   <- what the draw filter misses")
+            ag, rs = fg["agreement"], fg["resolution"]
+            print(f"    audited against the SAMPLED flank on all {ag['n']} of them, both "
+                  f"at {ag['at_points']} points: {ag['disagreements']} disagreement(s), "
+                  f"worst at |margin| = {ag['worst_disagreement_margin_mm']:.2e} mm")
+            print(f"    against a barrier of {fg['limit_mm']:.2f} mm — the two are the "
+                  "same statement except within a micron of the fold point.")
+            print(f"    AND THAT QUALIFIER IS THE POINT.  Recompute both at the config's "
+                  f"own {rs['config_points']} points instead:")
+            print(f"      the closed form moves by at most "
+                  f"{rs['closed_form_worst_shift_mm']:.2e} mm — a hundredth of the "
+                  f"barrier — and flips {rs['closed_form_verdict_flips']} verdict(s)")
+            print(f"      the sampled flank MISSES "
+                  f"{rs['sampled_flank_missed_folds']}/{c['geom_folds']} of the folds "
+                  + ("" if rs["sampled_flank_miss_rate"] is None
+                     else f"({100 * rs['sampled_flank_miss_rate']:.1f}%) ")
+                  + "outright — the dip falls between two stations")
+            print("    those are not two error bars on the same thing: one is a "
+                  "converging number and the other is")
+            print("    a classification miss.  Read it on the rejected genomes "
+                  "themselves:")
+            for lad in fg.get("ladder", []):
+                head = (f"{str(lad['orientation'])} R_hub {lad['R_hub_mm']:.4f}"
+                        + (f", worst block {lad['worst_block']}"
+                           if lad["worst_block"] else " (refused)"))
+                print(f"      {head}")
+                print(f"        {'points':>7s} {'closed form':>13s} "
+                      f"{'sampled flank':>15s}")
+                for rung in lad["rungs"]:
+                    note = ("   <- PART 13's grid" if rung["num_points"] == 97 else "")
+                    print(f"        {rung['num_points']:7d} {rung['margin_mm']:+13.6f} "
+                          f"{rung['flank_reversal_mm']:+15.3e}{note}")
+            print("    the closed form makes the same call at every rung including the "
+                  "shipped one; the sampled")
+            print("    statement changes sides.  That is the whole argument, and it is "
+                  "the same failure the draw")
+            print("    filter has one level up.  A gate has to be the first kind of "
+                  "number.")
+            sh = fg["shipped"]
+            print(f"    the SHIPPED genome is nowhere near it — margin "
+                  f"{sh['margin_mm']:.4f} mm against a limit of {sh['limit_mm']:.2f} — so "
+                  f"the gate is inert on it: {not sh['binds']}")
+
+            fcc = sec["per_config"][cfg0].get("fit_clamp_fold_clean")
+            if fcc and fc:
+                print("\n  AND WHAT THE ARC'S OWN TABLE LOOKS LIKE OVER PARTS THAT EXIST")
+                print(f"      {'profile':14s} {'clamp':>6s} {'all 16':>13s} "
+                      f"{'fold-clean':>13s}")
+                by = {(r["profile"], r["factor"]): r for r in fcc["rows"]}
+                for row in fc["rows"]:
+                    k = "none" if row["factor"] is None else f"{row['factor']:.2f}"
+                    o = by.get((row["profile"], row["factor"]))
+                    if o is None:
+                        continue
+                    print(f"      {row['profile']:14s} {k:>6s} "
+                          f"{row['n_built']:2d}/{row['n_genomes']:<2d} built "
+                          f"{row['n_clears_target']:2d} clear   "
+                          f"{o['n_built']:2d}/{o['n_genomes']:<2d} built "
+                          f"{o['n_clears_target']:2d} clear")
+                print("    the gate costs the box two genomes and buys back the one "
+                      "defect no profile and no clamp")
+                print("    reaches — §54's trimmed-spoke fold, which was never this "
+                      "blocking's to fix.")
 
         print("\n  THE NODE COUNT IT FORCES")
         for cfg, per in sec["per_config"].items():

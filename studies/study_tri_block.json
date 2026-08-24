@@ -10857,6 +10857,12 @@
               "fixed_w_min_scaled_jacobian": 0.4959656698893962,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 2.933254446757111
+              },
               "genes": [
                 9.634532323787912,
                 -6.708958103454709,
@@ -10906,6 +10912,12 @@
               "fixed_w_min_scaled_jacobian": -0.06547725217242466,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.26481976646674754
+              },
               "genes": [
                 9.476802129763865,
                 -14.461237910255239,
@@ -10955,6 +10967,12 @@
               "fixed_w_min_scaled_jacobian": -0.14854315973278456,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.12439845665756066
+              },
               "genes": [
                 7.461925444644915,
                 -31.334257234112172,
@@ -11004,6 +11022,12 @@
               "fixed_w_min_scaled_jacobian": 0.6014076945373927,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 3.0257149103586007
+              },
               "genes": [
                 8.93384068186625,
                 -22.61397609618308,
@@ -11055,6 +11079,12 @@
               "fixed_w_min_scaled_jacobian": 0.37405777368512105,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.9291419400979528
+              },
               "genes": [
                 5.1216594094430015,
                 -24.520601911898524,
@@ -11100,6 +11130,12 @@
               "fixed_w_min_scaled_jacobian": -0.9596793288690592,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.12994297974305002
+              },
               "genes": [
                 3.09060822546242,
                 -23.19723049643181,
@@ -11149,6 +11185,12 @@
               "fixed_w_min_scaled_jacobian": 0.4843488067876333,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_t",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.8082991092892629
+              },
               "genes": [
                 8.518071506355884,
                 -10.232951711675536,
@@ -11198,6 +11240,12 @@
               "fixed_w_min_scaled_jacobian": 0.31701136948862535,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_t",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.825079336653464
+              },
               "genes": [
                 4.561830042332513,
                 -21.115943070446576,
@@ -11249,6 +11297,12 @@
               "fixed_w_min_scaled_jacobian": 0.5336840860928732,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_t",
+              "fold": {
+                "binds": true,
+                "folds": true,
+                "limit_mm": 0.1,
+                "margin_mm": -0.34362068454502026
+              },
               "genes": [
                 9.764038782057256,
                 24.782299515338536,
@@ -11298,6 +11352,12 @@
               "fixed_w_min_scaled_jacobian": 0.4263926857651241,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 2.110637907353543
+              },
               "genes": [
                 7.928265283674952,
                 21.19726069957251,
@@ -11347,6 +11407,12 @@
               "fixed_w_min_scaled_jacobian": 0.210440103645648,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": true,
+                "folds": true,
+                "limit_mm": 0.1,
+                "margin_mm": -0.013083996022784428
+              },
               "genes": [
                 4.864037300085325,
                 12.614204419523325,
@@ -11396,6 +11462,12 @@
               "fixed_w_min_scaled_jacobian": 0.41640623702269325,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.572910258196691
+              },
               "genes": [
                 3.7753809971822303,
                 9.944327557383787,
@@ -11447,6 +11519,12 @@
               "fixed_w_min_scaled_jacobian": 0.14160500974698015,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.9088314168378409
+              },
               "genes": [
                 4.69078091352994,
                 27.260949714139343,
@@ -11496,6 +11574,12 @@
               "fixed_w_min_scaled_jacobian": -0.14567869623983745,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 2.7719679060052638
+              },
               "genes": [
                 8.621539234501089,
                 25.133068919753775,
@@ -11545,6 +11629,12 @@
               "fixed_w_min_scaled_jacobian": 0.43841370400505175,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.873417551934311
+              },
               "genes": [
                 9.953735458412297,
                 31.779630927175255,
@@ -11594,6 +11684,12 @@
               "fixed_w_min_scaled_jacobian": 0.5057272389523623,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 3.631298092602421
+              },
               "genes": [
                 2.764068488405683,
                 18.14121321202945,
@@ -29107,6 +29203,12 @@
               "fixed_w_min_scaled_jacobian": 0.340305985417209,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 2.9332326041769874
+              },
               "genes": [
                 9.634532323787912,
                 -6.708958103454709,
@@ -29152,6 +29254,12 @@
               "fixed_w_min_scaled_jacobian": -0.9711106229958593,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.26481262621208934
+              },
               "genes": [
                 9.476802129763865,
                 -14.461237910255239,
@@ -29197,6 +29305,12 @@
               "fixed_w_min_scaled_jacobian": -0.9999667688575186,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.12429275551750618
+              },
               "genes": [
                 7.461925444644915,
                 -31.334257234112172,
@@ -29246,6 +29360,12 @@
               "fixed_w_min_scaled_jacobian": 0.595998441753406,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 3.0257124891554796
+              },
               "genes": [
                 8.93384068186625,
                 -22.61397609618308,
@@ -29297,6 +29417,12 @@
               "fixed_w_min_scaled_jacobian": -0.01686857965440222,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.929129775625964
+              },
               "genes": [
                 5.1216594094430015,
                 -24.520601911898524,
@@ -29342,6 +29468,12 @@
               "fixed_w_min_scaled_jacobian": -0.9947491575253169,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.1299188023926221
+              },
               "genes": [
                 3.09060822546242,
                 -23.19723049643181,
@@ -29391,6 +29523,12 @@
               "fixed_w_min_scaled_jacobian": 0.44374779666716335,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.8081388674637495
+              },
               "genes": [
                 8.518071506355884,
                 -10.232951711675536,
@@ -29440,6 +29578,12 @@
               "fixed_w_min_scaled_jacobian": 0.3178067411215312,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_t",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.8250464442357122
+              },
               "genes": [
                 4.561830042332513,
                 -21.115943070446576,
@@ -29491,6 +29635,12 @@
               "fixed_w_min_scaled_jacobian": 0.47561736996051074,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": true,
+                "folds": true,
+                "limit_mm": 0.1,
+                "margin_mm": -0.34362068454502026
+              },
               "genes": [
                 9.764038782057256,
                 24.782299515338536,
@@ -29540,6 +29690,12 @@
               "fixed_w_min_scaled_jacobian": 0.333517218540839,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 2.1106019038361827
+              },
               "genes": [
                 7.928265283674952,
                 21.19726069957251,
@@ -29589,6 +29745,12 @@
               "fixed_w_min_scaled_jacobian": 0.417109495496481,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.5728065160572855
+              },
               "genes": [
                 3.7753809971822303,
                 9.944327557383787,
@@ -29638,6 +29800,12 @@
               "fixed_w_min_scaled_jacobian": 0.2532080430648596,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 0.27543679729834825
+              },
               "genes": [
                 5.499893854382799,
                 8.305933826439208,
@@ -29689,6 +29857,12 @@
               "fixed_w_min_scaled_jacobian": -0.21777188162414107,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.9087930871248853
+              },
               "genes": [
                 4.69078091352994,
                 27.260949714139343,
@@ -29734,6 +29908,12 @@
               "fixed_w_min_scaled_jacobian": -0.9999933226196674,
               "fixed_w_valid": false,
               "fixed_w_worst_block": "rim_tri_b",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 2.7719557108298885
+              },
               "genes": [
                 8.621539234501089,
                 25.133068919753775,
@@ -29783,6 +29963,12 @@
               "fixed_w_min_scaled_jacobian": 0.35483446665833107,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 1.8733944863824976
+              },
               "genes": [
                 9.953735458412297,
                 31.779630927175255,
@@ -29832,6 +30018,12 @@
               "fixed_w_min_scaled_jacobian": 0.32429908958544296,
               "fixed_w_valid": true,
               "fixed_w_worst_block": "rim_tri_q",
+              "fold": {
+                "binds": false,
+                "folds": false,
+                "limit_mm": 0.1,
+                "margin_mm": 3.6312313219811276
+              },
               "genes": [
                 2.764068488405683,
                 18.14121321202945,
@@ -40923,7 +41115,7 @@
       }
     }
   },
-  "seconds": 289.42,
+  "seconds": 293.0,
   "self_checks": {
     "algebra_reproduces_section_37": true,
     "all_seams_close": true,
@@ -40938,6 +41130,7 @@
     "the_bend_closes_every_seam": true,
     "the_bend_moves_no_boundary": true,
     "the_bend_tiles_the_same_area": true,
+    "the_fold_margin_does_not_explain_the_tri_block": true,
     "the_straight_y_is_a_slice_of_the_bend_grid": true,
     "twelve_blocks": true
   },

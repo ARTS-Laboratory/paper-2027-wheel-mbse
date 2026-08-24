@@ -8496,3 +8496,87 @@ artifact was diffed field-by-field against the committed one and is purely addit
 9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 11. **The element-validity check** (§44).
+
+---
+
+## §58 — 2026-08-23. THE FLANK DEFECT'S GATE IS THE OPTIMIZER'S OWN FOLD BARRIER, WHICH FIVE STUDIES ALREADY USE AND THE TWO BLOCKING STUDIES NEVER ASKED
+
+§57's rank-1 successor was a feasibility gate for the flank near-self-intersection §54
+found — the one drawn genome whose trimmed spoke is sign-flipped at `-0.0508`, traced to a
+near self-intersection in the **unfilleted** flank at `s = 0.051`.  §57 posed it well: the
+shape wanted is a quantity computed from the geometry alone, before any build, that
+classifies the draw without a false positive.
+
+**It already existed.**  `wheel_geometry.self_intersection_margin` — `min_s(|1/kappa| -
+t/2)`, closed form off the Bezier hodograph — is exactly that, its threshold
+`MIN_FOLD_MARGIN_MM = 0.1` was calibrated over 2001 genomes, `wheel_objective` has carried
+it as a live barrier since the objective was rewritten, and `study_gnl`, `study_contact`
+and `study_wheel_fea` all gate their draws on it.  `study_fillet_block.sweep_genomes` and
+`study_tri_block.sweep_genomes` use a two-term filter plus a mesh-based clause and never
+ask.  That is the whole of why §54's genome was in the box.
+
+**It classifies.**  Two of the sixteen drawn genomes describe a part that does not exist,
+at margins `-0.3436` and `-0.0131` against a next-smallest of `+0.1244`; one of sixteen
+inverts a block, and it is in that pair; no fold-clean genome inverts anything.  The
+converse is deliberately NOT claimed — whether a folded flank shows as an inverted element
+depends on where the trim puts a station, which is a property of the grid — so the gate
+promises the direction that is a property of the geometry.
+
+**The filter it replaces leaks, and by how much is measured.**  Over 20480 draws on the
+same stream: 1454 pass the geometric pair and 514 of those fold (35.4%); 925 also mesh a
+clean unfilleted sector and **25 of those still fold (2.7%)**.  The mesh clause removes 489
+of 514 — it is a good proxy — but the box of sixteen got two, which is that rate.
+
+**And the reason the answer is a closed form and not a finer grid is measurable.**  Audited
+against the sampled flank on all 1454 at 2000 points: one disagreement, at |margin| =
+2.09e-04 mm.  Recomputed at the config's own 1200: the closed form moves ≤1.59e-03 mm and
+flips zero verdicts; the sampled flank misses two folds outright.  At the 97 stations §54's
+shipped grid uses, **the sampled test calls both folded genomes healthy and the closed form
+has already rejected both** — `-0.343621` constant to six decimals across a 40x refinement,
+against a sampled value that changes sign.  §54's anecdote is a mechanism: not "the grid
+happened to step over it" but "any grid can, and this quantity has no grid in it."
+
+**What it does to the arc's own table.**  Over parts that exist, the genome-robust profile
+under §57's clamp clears the barrier on **14 of 14** rather than 15 of 16 — §54's named
+exception disappears, because it was never this blocking's defect.  §54 already excluded
+that genome from its argmax by hand; the gate is that exclusion made principled and taken
+before the build.  The adoption call on the profile is unchanged: §54's surviving reason,
+the shipped genome's convergence spread, is measured at the shipped genome and untouched.
+
+**And what it is not.**  `study_tri_block` draws the same sixteen genomes from the same
+seed — verified — and the margin is anti-informative there: the fold-negative genomes sit
+at fixed-rule `+0.5337` and `+0.2104`, and the worst cell in the box, `-0.9597`, is
+fold-clean.  §56's "what makes a region impossible" loses a candidate rather than gaining
+an answer, and the negative is gated so it cannot rot into an assumption.
+
+**Measured, not adopted, and specifically:** the DRAW is unchanged.  Applying the gate
+would swap two genomes and move every genome-box number §54 through §57 published, at the
+same time as the gate was being judged.  Instead the margin rides on every row and the box
+is re-tallied over the survivors with the same function on the same genomes, so the
+difference between the two tables is the gate's price and nothing is confounded with it.
+Both artifacts diffed field-by-field: purely additive.  `make filletblock` ~200 s.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §58
+
+1. **The QUALITY half of the filleted blocking, which is now the only half.**  Eight of
+   sixteen sit under the barrier at the shipped profile with §57's clamp; seven of fourteen
+   over parts that exist.  Two named pieces, cheap one first: re-derive §54's `(entry, end)`
+   argmax against the now-buildable, fold-clean fourteen rather than the ten it was fitted
+   to; then the two-objective version — genome-robust AND holding the shipped genome's
+   deflection-convergence spread inside the ±0.3% band, which is the one reason §54's call
+   still rests on and has never been attacked directly.
+2. **Apply the fold gate to the draw and re-derive the box** (§58).  Priced and not taken:
+   one word in a filter tuple, two genomes out, two in, and every genome-box number in §54
+   through §57 moves at once.  Worth its own unit, where that movement is the subject.
+3. **What makes a region impossible** (§56) — the quantity separating the 0.491-bow genome
+   that refuses the curved Y from the 0.498-bow one it reaches.  Two candidates now ruled
+   out with numbers: the bow (§56) and the fold margin (§58).
+4. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+5. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.**  §57's clamp is
+   the bound projection such genes need; §58 adds the other half of the feasibility pair.
+6. **Step 2's part C — the p-norm on a filleted mesh.**  `make gci`, 95 minutes, 20.6 GB.
+7. **Make `modelled_area_reference` fillet-aware** (§50).
+8. **The REST of §45's audit list** (§49).
+9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+11. **The element-validity check** (§44).

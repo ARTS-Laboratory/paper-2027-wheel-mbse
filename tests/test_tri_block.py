@@ -543,6 +543,39 @@ def test_what_the_curve_does_NOT_reach_stays_reported(report):
         assert shipped[0]["bow_over_width"] < 0.05
 
 
+def test_the_fold_margin_is_NOT_what_makes_a_region_impossible(report):
+    """The other feasibility number, ruled out here rather than assumed away.
+
+    `study_fillet_block`'s fold gate classifies that study's one inverted spoke block
+    exactly, and the same two-term draw filter feeds this box, so folded genomes are in
+    here too.  The temptation is to reach for the margin as a general difficulty
+    predictor.  It is not one, and this pins the negative: the tri-block partitions the
+    rim JUNCTION region and never touches the offset band, so the box's fold-negative
+    genomes are ordinary and the hardest cell in it is fold-clean.
+
+    Load-bearing in the same way `test_what_the_curve_does_NOT_reach_stays_reported` is:
+    what makes a region impossible is still unnamed, and a run where the fold margin
+    started explaining it would be a finding, so it fails here rather than passing quietly.
+    """
+    for name, per in report["per_config"].items():
+        rows = [r for v in per["genomes"]["groups"].values() for r in v
+                if r.get("fixed_w_min_scaled_jacobian") is not None]
+        assert rows, name
+        for r in rows:
+            f = tb.fbk.fold_margin(np.asarray(r["genes"], float), name)
+            assert f["margin_mm"] == pytest.approx(r["fold"]["margin_mm"], abs=1e-9)
+        folded = [r for r in rows if r["fold"]["folds"]]
+        assert folded, f"{name}: no folded genome in the box — the negative is untestable"
+        worst = min(rows, key=lambda r: r["fixed_w_min_scaled_jacobian"])
+        assert not worst["fold"]["folds"], (
+            f"{name}: the worst cell in the box is now a folded genome — the fold margin "
+            "may be saying something about this construction after all, which is a finding")
+        clean = [r for r in rows if not r["fold"]["folds"]]
+        assert min(r["fixed_w_min_scaled_jacobian"] for r in clean) <= min(
+            r["fixed_w_min_scaled_jacobian"] for r in folded), (
+            f"{name}: folded genomes are now the hard ones — same finding")
+
+
 def test_the_bend_is_INERT_where_the_region_is_fat(genes):
     """The curve is a correction to cutting chords, so a fat region needs none of it.
 

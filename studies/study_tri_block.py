@@ -850,6 +850,14 @@ def sweep_genomes(cfg_name, B, w_fixed, per_orientation=GENOME_SWEEP_PER_ORIENTA
                    # and `B` and the weights are held.
                    "arc_span_deg": rr["arc_span_deg"],
                    "bow_over_width": rr["bow_over_width"],
+                   # And the OTHER mechanism, carried so it can be ruled out rather than
+                   # assumed away.  `study_fillet_block`'s fold gate is the closed-form
+                   # statement of whether this genome's spoke exists at all, and the same
+                   # two-term draw filter above lets folded ones through here too.  The
+                   # tri-block does not touch the spoke block, so the expectation is that
+                   # it explains nothing about this construction -- which is a claim, and
+                   # `the_fold_margin_does_not_explain_the_tri_block` is where it is tested.
+                   "fold": fbk.fold_margin(vec, cfg_name),
                    "side_lengths_mm": [rr["A_length_mm"], rr["B_length_mm"],
                                        rr["C_length_mm"]],
                    "wedges_deg": [rr["wedge_at_P_t_deg"], rr["wedge_at_Q_deg"],
@@ -1289,6 +1297,24 @@ def self_checks(rec):
                                            - c["curved_y"]["n_curved_valid"])
         and all(not r["valid_at_any_B"] for r in c["curved_y"]["refusals"])
         for c in cy)
+    # A NEGATIVE result, gated so it cannot rot into a positive one by assumption.
+    # `study_fillet_block`'s fold margin classifies that study's one inverted spoke block
+    # 16/16, and the temptation is to reach for it here as a general difficulty predictor.
+    # It is not one: the tri-block partitions the rim JUNCTION region and never touches
+    # the offset band, and this box's fold-negative genomes are among its easiest.  The
+    # check is that the two are not merely uncorrelated but ANTI-informative -- the worst
+    # cell at the fixed rule is a fold-CLEAN genome -- so a future run where the fold
+    # margin does start explaining refusals here shows up as a failure and gets looked at.
+    def _fold_is_not_the_story(per):
+        grows = [r for v in per["genomes"]["groups"].values() for r in v
+                 if "fold" in r and r.get("fixed_w_min_scaled_jacobian") is not None]
+        if not grows:
+            return True
+        worst = min(grows, key=lambda r: r["fixed_w_min_scaled_jacobian"])
+        return not worst["fold"]["folds"]
+
+    out["the_fold_margin_does_not_explain_the_tri_block"] = all(
+        _fold_is_not_the_story(per) for per in rec["per_config"].values())
     rows = rec["algebra"].get("coarse", {}).get("rows", [])
     s37 = [r for r in rows if r["is_section_37_choice"]]
     out["algebra_reproduces_section_37"] = bool(
@@ -1434,6 +1460,23 @@ def _print(rec):
                   f"straight Y cuts chords,")
             print(f"      and what a chord cannot survive is a side that bows away from "
                   f"one by a fair fraction of the region's width")
+        folded = [r for r in rows if r.get("fold", {}).get("folds")]
+        if folded and good:
+            worst = min((r for r in rows
+                         if r.get("fixed_w_min_scaled_jacobian") is not None),
+                        key=lambda r: r["fixed_w_min_scaled_jacobian"])
+            print(f"      and it is NOT the fold margin, which is the other feasibility "
+                  f"number the same draw filter misses:")
+            print(f"      {len(folded)}/{len(rows)} of this box describe a spoke that "
+                  f"self-intersects, and they sit at fixed-rule "
+                  + ", ".join(f"{r['fixed_w_min_scaled_jacobian']:+.4f}"
+                              for r in folded)
+                  + f" — while the WORST cell in the box, at "
+                  f"{worst['fixed_w_min_scaled_jacobian']:+.4f}, has margin "
+                  f"{worst['fold']['margin_mm']:+.4f} mm and folds nothing.")
+            print(f"      the tri-block partitions the rim JUNCTION and never touches the "
+                  f"offset band, so this is the expected answer — recorded because the "
+                  f"expectation is worth a number.")
 
     print("\n  THE INTERIOR POINT, RE-DERIVED AGAINST THE GENOME BOX -- MEASURED, NOT "
           "ADOPTED")

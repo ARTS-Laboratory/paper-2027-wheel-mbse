@@ -1410,3 +1410,60 @@ straight Y, and `per["sector"]` still reports 0.626233 / 0.581582 and 76.6x / 70
 3. **Then, and only then, the decision to adopt the faithful rim** — unchanged from PART 2.
    A model change with its own baseline: full `make test`, `make studies`, and the mass /
    hub-share / axle-drop deltas.
+
+---
+
+# STEP 3 RECORD, PART 5 — 2026-08-23. THE FOLD MARGIN IS RULED OUT AS THE THING THAT MAKES A REGION IMPOSSIBLE, WHICH IS ONE CANDIDATE OFF PART 4's OWN LIST
+
+PART 4 left "what makes a region impossible" as its first successor and said the
+separating quantity is *"one quantity and it is not yet measured"*.  Nothing here measures
+it.  What this does is remove a candidate that was about to be reached for, and remove it
+with a number rather than an argument.
+
+`study_fillet_block`'s PART 15 built a fold gate: `wheel_geometry.self_intersection_margin`,
+the closed-form clearance before a spoke's offset band turns inside out, which classifies
+that study's one inverted block exactly and catches a class of drawn genome whose part does
+not exist.  **Both blocking studies draw from the same seed and the same stream, and draw
+the same sixteen genomes** — verified rather than assumed — so those genomes are in this
+box too, and the fold margin is now carried on every row here as `fold`.
+
+It explains nothing about this construction:
+
+```
+  coarse   2/16 fold.  They sit at fixed-rule +0.5337 and +0.2104 — both above the barrier,
+           and one of them is the best cell in its whole orientation group.
+           The WORST cell in the box, -0.9597, has margin +0.1299 mm and folds nothing.
+  medium   1/16 folds, at +0.4756.
+           The WORST cell, -1.0000, has margin +2.7720 mm and folds nothing.
+```
+
+This is the expected answer and that is exactly why it is written down.  The tri-block
+partitions the rim JUNCTION region; the fold margin is a statement about the spoke's OFFSET
+BAND, which no block in this partition touches.  Two boxes drawn from the same sixteen
+genomes, two different constructions, and the feasibility number that classifies one of
+them 16/16 is anti-informative on the other — the hardest cell here is fold-clean at both
+configs.
+
+`the_fold_margin_does_not_explain_the_tri_block` gates it, and
+`test_the_fold_margin_is_NOT_what_makes_a_region_impossible` pins it per genome.  Both are
+written so that a future run in which the fold margin DOES start explaining refusals here
+fails rather than passing quietly, because that would be a finding: it would mean the two
+regions are coupled in a way nothing in this file currently believes.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, `UNCAP_DEFAULT` still `(True, 1.0)`, `bend` still defaults to 0.0, and no draw
+filter changed** — the margin is reported on each row, not applied to the draw.
+`study_tri_block.json` was diffed field-by-field against the committed one and is **purely
+additive**: sixteen `fold` blocks per config and one self-check, 33 fields in all, with
+every previously-committed field reproducing exactly.  `make triblock` is unchanged at
+~290 s.
+
+## WHAT PART 5 LEAVES
+
+Unchanged from PART 4, minus one candidate.  The separating quantity is still unnamed; the
+bow does not explain the surviving refusal, and now neither does the fold margin.  What is
+known about it is narrow and worth restating: the refusal's ceiling over every admissible
+free count is **-0.013**, a hair rather than a collapse, and it sits at bow 0.491 while the
+box's largest bow, 0.498, is a genome the curve reaches.

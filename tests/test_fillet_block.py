@@ -792,6 +792,164 @@ def test_the_clamp_re_prices_the_layer_profile_PART_13_declined(report):
     assert fb.GENOME_ROBUST_ENTRY != fb.LAYER_ENTRY_SLOPE
 
 
+def test_the_fold_margin_is_the_SAMPLED_flank_and_not_a_proxy_for_it(report):
+    """The closed form checked against the thing it stands in for, on this box.
+
+    `fold_margin` is `min_s(|1/kappa| - t/2)` off the Bezier hodograph -- no sampling of
+    the flank enters it.  `flank_reversal_mm` is the sampled statement: project each
+    flank node's step on the tangent it came from and take the least.  If the first is a
+    valid gate then their SIGNS agree, and the point of asserting it here rather than
+    trusting the identity is that `offset_band` uses finite-difference normals in the
+    exported outline and exact ones in the mesh, so "the curvature says it folds" and
+    "the sampled outline doubles back" are two different computations that happen to be
+    about the same fact.
+
+    AND THE SAMPLING IS NAMED, because the second one moves.  At `FOLD_AUDIT_POINTS` the
+    two agree on this box; at the 97 stations PART 13's shipped grid uses, the sampled
+    test calls both folded genomes healthy and the closed form has already rejected them.
+    Both halves are asserted -- the agreement so the closed form is checked rather than
+    trusted, and the disagreement at 97 so the reason a closed form is the gate stays on
+    the record instead of being an argument in a docstring.
+
+    Re-derived from the genes, not read off the artifact.  The margin is also pinned
+    against `study_mesh_quality.fold_margin`, so the repo keeps ONE computation of this.
+    """
+    import study_mesh_quality as smq
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    assert len(rows) == 16, len(rows)
+    folded = []
+    for row in rows:
+        vec = np.asarray(row["genes"], float)
+        f = fb.fold_margin(vec, "coarse")
+        assert f["margin_mm"] == pytest.approx(row["fold"]["margin_mm"], abs=1e-9)
+        assert f["margin_mm"] == pytest.approx(
+            smq.fold_margin(vec, ww.get_config("coarse")), abs=1e-12)
+        fine = fb.fold_margin(vec, "coarse", fb.FOLD_AUDIT_POINTS)
+        rev = fb.flank_reversal_mm(vec, "coarse", fb.FOLD_AUDIT_POINTS)
+        assert (fine["margin_mm"] < 0.0) == (rev < 0.0), (
+            f"closed form {fine['margin_mm']:+.6f} and sampled flank {rev:+.6e} disagree "
+            f"at {fb.FOLD_AUDIT_POINTS} points")
+        if f["folds"]:
+            folded.append(vec)
+    assert len(folded) == 2, (
+        "the committed draw's fold count moved — a finding, not a pass")
+
+    # and at PART 13's own grid the sampled statement changes sides while the closed
+    # form does not — which is why the gate is the closed form
+    for vec in folded:
+        coarse_rev = fb.flank_reversal_mm(vec, "coarse", 97)
+        assert coarse_rev > 0.0, (
+            "the 97-station flank now catches this fold — PART 13's mechanism has "
+            "changed and the record should say so")
+        rungs = fb.fold_resolution_ladder(vec, "coarse")
+        assert all(r["margin_mm"] < 0.0 for r in rungs), rungs
+        spread = max(r["margin_mm"] for r in rungs) - min(r["margin_mm"] for r in rungs)
+        assert spread < 0.1 * fb.WG.MIN_FOLD_MARGIN_MM, (
+            f"the closed form moved by {spread:.2e} mm across the ladder")
+
+
+def test_no_fold_clean_genome_INVERTS_a_block_and_the_converse_is_not_claimed(report):
+    """The gate's promise, and the exact shape of it.
+
+    One direction is the gate and is asserted: a genome whose flank does not fold builds
+    a sector with no inverted block.  The other direction is NOT a property of the part
+    -- whether a folded flank shows up as an inverted element depends on whether the
+    trim happens to put a station on the dip, which is a property of the grid -- so it is
+    asserted as the weaker, true thing: every inverted block in the box belongs to a
+    genome the margin already rejected.
+
+    PART 13 found the one such genome by accident and traced it by hand.  This is that
+    finding as a classifier, and the asymmetry is the reason the closed form is the gate
+    and `sweep_genomes`' mesh-based filter is not.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    built = [r for r in rows if r["built"]]
+    clean = [r for r in built if not r["fold"]["folds"]]
+    assert len(clean) >= 8, len(clean)
+    for row in clean:
+        assert row["all_blocks_valid"], (
+            f"a fold-clean genome inverted {row['worst_block']} at "
+            f"{row['min_scaled_jacobian']:+.4f} — the gate has a MISS")
+    inverted = [r for r in built if not r["all_blocks_valid"]]
+    assert len(inverted) == 1, [r["worst_block"] for r in inverted]
+    assert inverted[0]["worst_block"] == "spoke"
+    assert inverted[0]["fold"]["folds"] is True
+    # and the converse is genuinely open: the other folded genome is not inverted here,
+    # it is simply refused for an unrelated reason.
+    folded = [r for r in rows if r["fold"]["folds"]]
+    assert len(folded) == 2 and any(not r["built"] for r in folded)
+
+
+def test_the_draw_filter_this_box_used_LEAKS_and_the_rate_is_measured(report):
+    """Why a gate was needed at all, given `sweep_genomes` already had one.
+
+    Its filter ends with "the unfilleted sector is clean", which is a mesh-based proxy
+    for the fold and a good one -- but a proxy.  `sweep_fold_gate` runs both over the
+    same Latin-hypercube stream the box is drawn from and counts what gets through.  The
+    assertions are one-sided on purpose: the leak must be small enough that the proxy is
+    clearly doing most of the work, and nonzero, because a zero would mean this whole
+    section is answering a question nobody has.
+    """
+    fg = report["sector"]["fold_gate"]
+    c = fg["counts"]
+    assert c["drawn"] >= 512 * 8 and c["geom"] > 100
+    assert 0.2 < fg["fold_rate"] < 0.6, fg["fold_rate"]
+    assert 0.0 < fg["leak_rate"] < 0.15, (
+        f"the mesh-based filter leaks at {fg['leak_rate']:.3f} — if that is 0 the closed "
+        "form buys nothing here, and if it is large the filter is not a proxy at all")
+    assert c["mesh_clean_folds"] < c["geom_folds"], c
+    ag = fg["agreement"]
+    assert ag["worst_disagreement_margin_mm"] < fb.FOLD_AGREEMENT_TOL_MM
+    assert ag["worst_disagreement_margin_mm"] < 0.1 * fg["limit_mm"], (
+        "a disagreement inside the barrier band would make the barrier unreadable")
+
+
+def test_the_fold_gate_is_INERT_on_the_shipped_genome(genes, report):
+    """The same question §57 asked of the clamp, and it has to be asked of every gate.
+
+    Every number in this file is measured at the shipped genome.  A gate that excluded it
+    would not be a gate, it would be a promotion — so this is re-derived from
+    `best_solution.json` rather than read, and the margin is asserted to clear the
+    barrier by a wide factor rather than merely to clear it.
+    """
+    f = fb.fold_margin(genes, "coarse")
+    assert f["folds"] is False and f["binds"] is False
+    assert f["margin_mm"] > 10.0 * f["limit_mm"], f
+    assert fb.flank_reversal_mm(genes, "coarse") > 0.0
+    assert report["sector"]["fold_gate"]["shipped"]["margin_mm"] == pytest.approx(
+        f["margin_mm"], rel=1e-9)
+
+
+def test_the_gate_costs_the_box_two_genomes_and_buys_the_one_defect(report):
+    """What applying the gate would do to the arc's own table, on the same genomes.
+
+    `fit_clamp_fold_clean` is `sweep_sector_fit_clamp` over the rows the margin keeps, so
+    the two tables differ only by the exclusion.  What must hold: the fold-clean box is
+    smaller, still fully buildable under the clamp, and no longer contains a genome that
+    inverts -- which is the whole of what the gate buys, stated so that a run where it
+    bought more (or less) registers.
+    """
+    per = report["sector"]["per_config"]["coarse"]
+    fc, fcc = per["fit_clamp"], per["fit_clamp_fold_clean"]
+    k = fb.SECTOR_FIT_CLAMP
+
+    def row(table, profile, factor):
+        return next(r for r in table["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    assert row(fcc, "shipped", k)["n_genomes"] == row(fc, "shipped", k)["n_genomes"] - 2
+    for profile in ("shipped", "genome_robust"):
+        clamped = row(fcc, profile, k)
+        assert clamped["n_built"] == clamped["n_genomes"], clamped
+    # the quality half is not what the gate is for, and it does not close it
+    assert (row(fcc, "shipped", k)["n_clears_target"]
+            < row(fcc, "shipped", k)["n_genomes"])
+    # §54's excluded genome leaves with the gate, so the floor stops being an inversion
+    assert row(fcc, "genome_robust", k)["min_scaled_jacobian_range"][0] > 0.0, (
+        "an inverted block survived the fold gate — the exclusion did not do its job")
+    assert row(fc, "genome_robust", k)["min_scaled_jacobian_range"][0] < 0.0
+
+
 @pytest.mark.parametrize("cfg", SECTOR_CFGS)
 def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
     """The tri-block's question, asked from the fillet's side and answered against it.

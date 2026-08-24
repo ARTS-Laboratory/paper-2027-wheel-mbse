@@ -1982,3 +1982,196 @@ the Makefile's help says so.
    or may not move; it has not been asked.
 3. **The trimmed-spoke fold**, unchanged and still the one genome no profile reaches.
 4. **The flank near-self-intersection** filed in PART 13, unchanged.
+
+---
+
+# STEP 1 RECORD, PART 15 — 2026-08-23. THE FLANK DEFECT PART 13 FILED HAS A GATE, THE GATE IS THE OPTIMIZER'S OWN FOLD BARRIER, AND THE ONLY REASON IT DID NOT CATCH THIS IS THAT THIS STUDY'S DRAW FILTER DOES NOT ASK IT
+
+PART 13 found one drawn genome whose TRIMMED SPOKE is sign-flipped at
+`min_scaled_jacobian = -0.0508`, traced it to a near self-intersection in the
+**unfilleted** flank at `s = 0.051`, and filed it: *"strengthening `sweep_genomes`'
+feasibility gate to catch this class of defect is a different piece of work."*  PART 14
+left it as item 4 and PLAN.md's §57 ranked it first.  This is that unit.
+
+It is one import, and the same shape §57 turned out to have.
+
+## THE GATE ALREADY EXISTED, IS ALREADY CALIBRATED, AND FIVE STUDIES ALREADY USE IT
+
+`wheel_geometry.self_intersection_margin` is `min_s (|1/kappa(s)| - t(s)/2)`: the
+clearance before the outward offset passes the centre of curvature and the flank turns
+inside out.  Closed form off the Bezier hodograph, no mesh, no build.  Its threshold
+`MIN_FOLD_MARGIN_MM = 0.1` is not a guess either — `study_mesh_quality` measured it over
+2001 genomes and its docstring carries the sweep, 0.1 being the smallest threshold with
+zero missed bad meshes.  `wheel_objective` has had it as a live barrier term (`fold`)
+since the objective was rewritten, and `study_gnl`, `study_contact` and `study_wheel_fea`
+all gate their draws on `loss["fold"] > 0.0`.
+
+`study_fillet_block.sweep_genomes` and `study_tri_block.sweep_genomes` use the two-term
+filter `x_order`/`hub_overlap` and then a mesh-based clause — "the unfilleted sector is
+clean".  Neither asks the fold.  **The gate the two blocking studies needed was already in
+the tree, already calibrated, and already used by half the studies that draw genomes.**
+
+## IT CLASSIFIES THE BOX, AND ONE-SIDEDLY, WHICH IS THE HONEST SHAPE
+
+```
+  genome         fold margin  folds  binds  built    worst block  min scaled J
+  [-1.0, -1.0]       +2.9333  False  False   True  rim_ring_free       +0.1216
+  [-1.0, -1.0]       +0.2648  False  False   True  rim_ring_free       +0.1698
+  [-1.0, -1.0]       +0.1244  False  False  False              -             -
+  [-1.0, -1.0]       +3.0257  False  False   True  rim_ring_free       +0.2269
+  [-1.0,  1.0]       +0.9291  False  False   True  rim_ring_free       +0.1194
+  [-1.0,  1.0]       +0.1299  False  False  False              -             -
+  [-1.0,  1.0]       +0.8083  False  False   True  rim_ring_free       +0.2898
+  [-1.0,  1.0]       +1.8251  False  False   True  rim_ring_free       +0.1780
+  [ 1.0, -1.0]       -0.3436   True   True  False              -             -
+  [ 1.0, -1.0]       +2.1106  False  False   True  rim_ring_free       +0.2081
+  [ 1.0, -1.0]       -0.0131   True   True   True          spoke       -0.0508   <- PART 13's
+  [ 1.0, -1.0]       +1.5729  False  False   True  rim_ring_free       +0.2684
+  [ 1.0,  1.0]       +1.9088  False  False  False              -             -
+  [ 1.0,  1.0]       +2.7720  False  False   True  rim_ring_free       +0.1519
+  [ 1.0,  1.0]       +1.8734  False  False  False              -             -
+  [ 1.0,  1.0]       +3.6313  False  False  False              -             -
+```
+
+**Two of sixteen describe a part that does not exist.  One of sixteen inverts a block, and
+it is in that pair.**  No fold-clean genome inverts anything — that is
+`no_fold_clean_genome_inverts_a_block`, and it gates.  The margin also separates cleanly
+in this box: the two rejects are at `-0.3436` and `-0.0131`, and the next smallest is
+`+0.1244`, so the calibrated 0.1 mm barrier excludes exactly the two and costs no false
+positive.
+
+**The converse is NOT claimed and must not be.**  Whether a folded flank SHOWS UP as an
+inverted element depends on whether a station lands on the dip, which is a property of the
+grid and not of the part — the other folded genome refuses for an unrelated reason (its
+own sector-fit limit, §57) and would very likely have built.  A gate that promised
+"folds <=> inverts" would be promising something about the sampling.  The gate promises
+the direction that is a property of the geometry: **fold-clean => nothing inverts.**
+
+## THE FILTER IT REPLACES IS A PROXY, AND THE LEAK RATE IS MEASURED
+
+Over 20480 draws on the same Latin-hypercube stream this box is drawn from:
+
+```
+  pass (x_order, hub_overlap)               1454   folded   514  (35.4%)
+  AND the unfilleted sector meshes clean     925   folded    25  (2.7%)   <- the leak
+```
+
+The mesh clause is doing real work — it removes 489 of the 514 — but it is a proxy and it
+leaks at about one in forty.  The drawn box of sixteen got two, which is that rate.
+
+## WHY A CLOSED FORM AND NOT SIMPLY A FINER GRID
+
+Because the two behave differently under refinement, and the difference is a difference in
+kind.  `flank_reversal_mm` is the SAMPLED statement of the same fact — project each flank
+node's step on the tangent it came from, take the least, negative means the outline
+doubles back.  Audited against the closed form on all 1454 geometrically feasible draws at
+2000 points: **1 disagreement, at |margin| = 2.09e-04 mm**, which is two ways of straddling
+the same point 500x inside the barrier.  Recompute both at the config's own 1200 points:
+
+  * the closed form moves by at most **1.59e-03 mm** and flips **0** verdicts;
+  * the sampled flank **misses 2 of 514 folds outright** — the dip falls between stations.
+
+Read on the two rejected genomes themselves, at the 97 stations PART 13's shipped grid
+uses:
+
+```
+  [1.0, -1.0]  R_hub 1.7547 (refused)      [1.0, -1.0]  R_hub 0.7065, worst block spoke
+   points   closed form  sampled flank      points   closed form  sampled flank
+       97     -0.343621     +2.350e-02          97     -0.012575     +5.371e-03
+      600     -0.343621     -3.294e-03         600     -0.013091     -4.118e-04
+     1200     -0.343621     -2.025e-03        1200     -0.013084     -2.252e-04
+     2000     -0.343621     -1.307e-03        2000     -0.013028     -1.381e-04
+     4000     -0.343621     -6.883e-04        4000     -0.013090     -6.951e-05
+```
+
+**At PART 13's own grid the sampled test declares both folded parts healthy and the closed
+form has already rejected both** — the second column is constant to six decimal places
+across a 40x refinement while the first changes sign.  That is PART 13's anecdote as a
+mechanism: not "the grid happened to step over it", but "any grid can, and this quantity
+has no grid in it."  It is also the same failure the draw filter has one level up, which is
+why the answer is a closed form and not a finer mesh.
+
+## WHAT THE ARC'S OWN TABLE LOOKS LIKE OVER PARTS THAT EXIST
+
+`fit_clamp_fold_clean` is §57's table run again over the rows the margin keeps — same
+function, same genomes, minus the two — so the two columns differ only by the exclusion:
+
+```
+  profile         clamp        all 16    fold-clean
+  shipped          none 10/16 built  4 clear    9/14 built  4 clear
+  shipped          0.95 16/16 built  8 clear   14/14 built  7 clear
+  genome_robust    none 10/16 built  9 clear    9/14 built  9 clear
+  genome_robust    0.95 16/16 built 15 clear   14/14 built 14 clear
+```
+
+**With the gate, the genome-robust profile under §57's clamp clears the barrier on every
+genome in the box.**  §54's "15 of 16, the exception being the trimmed-spoke genome" had a
+named exception; over parts that exist there is no exception, because the exception was
+never this blocking's defect.  §54 already excluded that genome from its argmax BY HAND —
+the gate is that exclusion made principled, automatic, and taken before the build rather
+than after it.
+
+This does not change the adoption call on the profile.  PART 13's surviving reason — the
+shipped genome's filleted deflection-convergence spread going 0.141% -> 0.513% across the
++-0.3% band — is measured at the shipped genome and is untouched by anything here.
+
+## AND WHAT IT IS NOT: THE TRI-BLOCK
+
+`study_tri_block.sweep_genomes` uses the same seed and the same stream and draws **the same
+sixteen genomes** — verified, not assumed.  So the fold-negative pair is literally the same
+pair there, and the temptation is to reach for the margin as a general difficulty
+predictor.  It is not one, and the negative is recorded and gated rather than left implied:
+
+```
+  coarse   2/16 fold; they sit at fixed-rule +0.5337 and +0.2104 — both above the barrier
+           the WORST cell in the box, -0.9597, has margin +0.1299 mm and folds nothing
+  medium   1/16 folds, at +0.4756
+           the WORST cell, -1.0000, has margin +2.7720 mm and folds nothing
+```
+
+The tri-block partitions the rim JUNCTION region and never touches the offset band, so
+this is the expected answer — recorded because the expectation is worth a number, and
+because §56's "what makes a region impossible" is still unnamed and one more candidate is
+now ruled out rather than untried.
+
+## MEASURED, NOT ADOPTED — AND WHAT "NOT ADOPTED" MEANS HERE IS SPECIFIC
+
+**The draw is unchanged.**  `sweep_genomes` still uses its two-term filter and still draws
+the same sixteen genomes, deliberately: applying the gate to the draw would replace two
+genomes and move every number §54, §55, §56 and §57 published against this box at the same
+time as the gate was being evaluated.  Instead the margin rides on every row as `fold`, and
+the box is re-tallied over the survivors in `fit_clamp_fold_clean` — the same function on
+the same genomes, so the difference between the two tables IS the gate's price and nothing
+else is confounded with it.
+
+Applying it to the draw is now a one-word change (`"fold"` into the filter tuple) with its
+cost already measured, and it is filed below rather than taken here.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, `MIN_FOLD_MARGIN_MM`
+untouched, `wheel_objective`'s barrier untouched, `sector_blocks` and `build_wheel`
+untouched, and no draw filter changed.**  The gate is inert on the shipped genome by a wide
+margin — 14.3655 mm against a limit of 0.10 — which is asserted rather than assumed, for
+the same reason §57 asserted the clamp was.  Both artifacts were diffed field-by-field
+against the committed ones and are **purely additive**: `study_fillet_block.json` gains the
+`fold` block on each genome row, the `fold_gate` section, `fit_clamp_fold_clean`, and four
+self-checks; `study_tri_block.json` gains the `fold` block on each row and one self-check.
+Every previously-committed field in both reproduces exactly.
+
+`make filletblock` is ~200 s rather than ~180 s and the Makefile's help says so;
+`make triblock` is unchanged at ~290 s.
+
+## WHAT PART 15 LEAVES
+
+1. **Apply the gate to the draw and re-derive the box.**  Priced above and not taken: two
+   genomes leave, two replacements arrive, and every genome-box number in §54 through §57
+   moves at once.  Worth doing as its own unit, where the movement is the subject rather
+   than a side effect.
+2. **The quality half, still.**  Eight of sixteen under the barrier at the shipped profile
+   with the clamp; seven of fourteen over parts that exist.  The two-objective profile
+   PART 14 named — genome-robust AND holding the shipped genome's convergence spread — has
+   still not been attempted, and re-deriving the argmax against the fourteen buildable
+   fold-clean genomes is still the cheap first half of it.
+3. **The trimmed-spoke fold is CLOSED as a defect** and reclassified: it was never a defect
+   of the blocking, and there is now a number that says so before the build.
