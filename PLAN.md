@@ -9097,3 +9097,71 @@ it.  A `["axle_drop_mm"]` subscript does not tell you which solve produced it.
    as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
    §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
    element-validity check** (§44).
+
+---
+
+## §66 — 2026-08-23. THE CORRECTED READING NEARLY DOUBLES A COMMITTED CONVERGENCE ORDER — 0.880 TO 1.607 — AND FLIPS THAT LADDER'S `criterion_met` FROM FALSE TO TRUE
+
+§65's item 1 was "move the four affected consumers to `axle_drop_interp_mm`", filed as
+mechanical.  Two of the four were mechanical.  The third was not.
+
+`study_wheel_fea.run_refinement` does a Richardson extrapolation and a GCI on
+`fem.solve_wheel`'s axle drop up the `smoke..fine` ladder.  That is a CONVERGENCE RATE
+computed on a quantity that snaps to the nearest node, which is the same class of defect
+as §61's filleted ladder — but here there is a threshold sitting on it.  At the shipped
+genome, unfilleted:
+
+```
+  cfg      n_elem       node     interp   centre offset   patch n
+  smoke       960   1.499486   1.497743      -0.04518          9
+  coarse     4704   1.551645   1.549819      -0.04518         23
+  medium    12288   1.562981   1.563534      +0.01341         36
+  fine      31200   1.570505   1.570021      -0.01170         64
+
+  reading   ratio   observed order   Richardson   finest err   GCI      criterion_met
+  node     1.5065       0.880         1.585362      0.937%    1.183%       False
+  interp   2.1144       1.607         1.575841      0.369%    0.463%       True
+```
+
+**The observed order goes 0.880 -> 1.607, a factor of 1.83, and `criterion_met` flips.**
+The GCI more than halves.  The offsets are individually small — a few hundredths of a
+degree — but they are not the same at each rung and they do not shrink monotonically, so
+what they inject into the ladder is noise in the *increments*, which is exactly what an
+observed order is computed from.
+
+**This is the gate §64 went looking for and put in the wrong place.**  §64 guessed
+`study_contact`'s plateau test and was corrected the same day; the threshold that actually
+moves is here.  Note what saves it from being a changed verdict: this study already
+decoupled its DECISION from this number — *"The gate's decision does not rest on the axle
+drop being converged to 0.5%; it rests on the compliance split being stable"* — and
+`decision_robust` is computed on the rim compliance share, which is a ratio and untouched.
+So the gate's conclusion stands; what was wrong is a convergence rate the file reports and
+a criterion it recorded as unmet.
+
+**AND IT DOES NOT REACH §29.**  Checked before claiming, because I got exactly this wrong
+once tonight: §29's p = 0.638 — the number matched against a Williams eigenvalue and the
+reason the corner arc exists — comes from `study_deflection_gci`, which computes
+`axle_drop_mean_mm` through `WO.objective` and therefore through the contact path, whose
+`axle_drop_mm` is a prescribed indentation.  Immune.  **The sub-second-order rate §29
+chased is a different QoI and survives.**  What §66 says is narrower and still worth
+saying: the OTHER ladder in this tree, the one-phase linear one, reports an order that is
+nearly half of what it should be.
+
+**Nothing promoted, `axle_drop_mm` still the node reading, every top-level key in
+`study_wheel_fea.json` unchanged** — the new `extrapolation` block carries both fits side
+by side and is the one to quote, and the artifact diff is additive apart from a timing
+field.  `study_reds_hub_share` now carries both readings for the same reason.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §66
+
+1. **Finish §65's item 1: `study_contact`'s assumed-drop comparisons**, the last of the
+   four, and then re-derive any convergence rate in the tree that is computed on
+   `solve_wheel`.  §66 is the demonstration that these are not cosmetic.
+2. **Adopt `(-0.85, 1.00)`** as the layer profile (§61).
+3. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60) — which
+   genome, and why, is unasked.
+4. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).

@@ -40,6 +40,8 @@
     "n_elements": 960,
     "n_dof": 8904,
     "axle_drop_mm": 1.4994858146599337,
+    "axle_drop_interp_mm": 1.497743225902695,
+    "patch_centre_offset_deg": -0.04518450869250046,
     "n_nodes_in_patch": 9,
     "compliance_split": {
      "spoke": 0.6632375926192277,
@@ -53,39 +55,45 @@
     "n_elements": 4704,
     "n_dof": 41064,
     "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127,
+    "patch_centre_offset_deg": -0.045176926653311966,
     "n_nodes_in_patch": 23,
     "compliance_split": {
      "spoke": 0.6545356829597623,
      "hub": 0.03418804073254936,
      "rim": 0.3112762763076883
     },
-    "seconds": 0.7
+    "seconds": 0.8
    },
    {
     "config": "medium",
     "n_elements": 12288,
     "n_dof": 104712,
     "axle_drop_mm": 1.5629805689038112,
+    "axle_drop_interp_mm": 1.5635343813664888,
+    "patch_centre_offset_deg": 0.0134071060892893,
     "n_nodes_in_patch": 36,
     "compliance_split": {
      "spoke": 0.6491715057531333,
      "hub": 0.03523663283635889,
      "rim": 0.3155918614105079
     },
-    "seconds": 1.0
+    "seconds": 1.1
    },
    {
     "config": "fine",
     "n_elements": 31200,
     "n_dof": 261864,
     "axle_drop_mm": 1.5705053322812605,
+    "axle_drop_interp_mm": 1.5700208441767491,
+    "patch_centre_offset_deg": -0.011698915282806865,
     "n_nodes_in_patch": 64,
     "compliance_split": {
      "spoke": 0.6471956097688022,
      "hub": 0.036482668687183424,
      "rim": 0.31632172154401444
     },
-    "seconds": 3.5
+    "seconds": 3.6
    }
   ],
   "rim_share_range": 0.01204842348319185,
@@ -100,6 +108,25 @@
   "convergence_ratio": 1.5064860695425983,
   "finest_error_vs_richardson": 0.00937123571085463,
   "gci": 0.011824858171742997,
+  "extrapolation": {
+   "node": {
+    "richardson_mm": 1.5853621345310143,
+    "convergence_ratio": 1.5064860695425983,
+    "observed_order": 0.8795494041606515,
+    "finest_error_vs_richardson": 0.00937123571085463,
+    "gci": 0.011824858171742997,
+    "criterion_met": false
+   },
+   "interp": {
+    "richardson_mm": 1.575841489246522,
+    "convergence_ratio": 2.1143889951210113,
+    "observed_order": 1.607147377113812,
+    "finest_error_vs_richardson": 0.00369367421120248,
+    "gci": 0.004634210026065792,
+    "criterion_met": true
+   },
+   "order_ratio": 1.8272394586492873
+  },
   "criterion_met": false,
   "pass": false,
   "patch_control": {
@@ -812,6 +839,6 @@
   "genome": "best_solution.json",
   "patch_half_deg": 3.0,
   "calculix_cross_check": "not run \u2014 no ccx on this machine",
-  "elapsed_s": 77.8
+  "elapsed_s": 79.8
  }
 }

@@ -65,7 +65,12 @@ def shares(genes, cfg):
     res = fem.solve_wheel(WW.build_wheel(genes, cfg))
     s = res["compliance_split"]
     return {"hub": float(s["hub"]), "spoke": float(s["spoke"]), "rim": float(s["rim"]),
-            "axle_drop_mm": float(res["axle_drop_mm"])}
+            "axle_drop_mm": float(res["axle_drop_mm"]),
+            # `axle_drop_mm` reads `uy` at whichever rim node is nearest the ground, and
+            # that is a first-order error (PLAN.md §62).  The shares above are ratios of
+            # compliances and do not touch it; the drop is carried for context, so both
+            # readings are carried and the difference is visible rather than absorbed.
+            "axle_drop_interp_mm": float(res["axle_drop_interp_mm"])}
 
 
 def sweep(name, cfg, points):
