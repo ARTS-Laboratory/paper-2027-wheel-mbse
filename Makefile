@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock triblock trirule reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -855,6 +855,18 @@ TRIBLOCK_OUT ?= study_tri_block.json
 
 triblock:
 	$(PY_OPT) -u studies/study_tri_block.py --out $(TRIBLOCK_OUT)
+
+# ---------------------------------------------------------------------------
+# THE TRI-BLOCK'S FOLD RULE, CALIBRATED -- WORK IN PROGRESS
+# ---------------------------------------------------------------------------
+# A fit-freeze-score-swap hold-out calibration of the conjunctive fold family
+# `arc > t_wide OR (arc > t_conj AND min_wedge < t_wedge)`.  Shakedown run is on the
+# STRAIGHT-Y label (best_w_valid); the target subject is section 73's curved-Y refusal,
+# which this driver has NOT yet been aimed at.  Committed as WIP.
+TRIRULE_OUT ?= study_tri_rule.json
+
+trirule:
+	$(PY_OPT) -u studies/study_tri_rule.py --out $(TRIRULE_OUT)
 
 # ---------------------------------------------------------------------------
 # THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds

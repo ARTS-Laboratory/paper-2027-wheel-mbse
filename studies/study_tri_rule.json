@@ -1,0 +1,711 @@
+{
+  "_streams_for_checks": {
+    "coarse": {
+      "fit": [
+        "c17f69f8488d3252",
+        "c0609b1b5efb7e5f",
+        "4f0105c0a4ca02c4",
+        "5329010ec6d2d733",
+        "62857dc58572f9c6",
+        "708b17a174e15c97",
+        "993b031be31ecd73",
+        "4d2a99718de732aa",
+        "f5b00642da461001",
+        "07182fcb16dcdc16",
+        "053b7a77aa46b1e8",
+        "188b8070fed240d9",
+        "adcf310fe3c8ce57",
+        "8975bd79628967d4",
+        "56919185e42c9c66",
+        "6a5e05c7c2c7c6df",
+        "d33855ffa1638f37",
+        "2afae060f17f3f5a",
+        "81e9f2f75994f0ec",
+        "64c3fb781a616a40",
+        "e59b472600534c38",
+        "78ad6f3e2cb6817b",
+        "6691f9e1324f2b93",
+        "c53feb87243e6880",
+        "2abd246be38bda7f",
+        "81a90d2d44a6febc",
+        "bfdbf2cb3a43ef59",
+        "d6f22c52db15ea1e",
+        "70d9f39833090be1",
+        "c1ca2468500b059a",
+        "51ef82bc16502db2",
+        "dc445aad0b357303"
+      ],
+      "holdout": [
+        "a8c63df718b3a72d",
+        "2ce958d6a0e809f8",
+        "c8bf27db95bf5200",
+        "ad5b67e239be4dbe",
+        "54ba339ad3fde783",
+        "e698971c45f25376",
+        "9ddd5ede5e6cad8c",
+        "f991473679451f6c",
+        "1e5d7ef6f816375a",
+        "e61ef2ab4d06e44d",
+        "adf84e51ce6c1038",
+        "a2d5343c6d1969c0",
+        "be1efe51a3058f8a",
+        "d8741c3ce34edf93",
+        "b9bd25f108ef017c",
+        "73a3f391a30e2638"
+      ]
+    },
+    "medium": {
+      "fit": [
+        "336028f108a11139",
+        "e2810f2a416abfa2",
+        "fc629c14aaac7e98",
+        "f0476b35c9fa0c51",
+        "372813b6480983b2",
+        "f893f287f8fde521",
+        "a43e1908d989b101",
+        "5a731f116c1ab700",
+        "2a98a1470dc8c95f",
+        "f72cc462fd305dbe",
+        "a230b6e9dc84fac4",
+        "9e49b6aff5965c66",
+        "946f023e8140363a",
+        "0685dc80b06e4a36",
+        "705bacb0cc30b6b9",
+        "995effe602c1a9e3",
+        "9121ea6f713f97f6",
+        "04382a8040fa6c58",
+        "2a3a1b33683c50a2",
+        "fd9a396e3d96a138",
+        "3b66f45f4ad1ab29",
+        "41f24bb5a494f18a",
+        "874fd08c79f5a652",
+        "0438ab8e14fc0a95",
+        "18eb9fce18febce3",
+        "1d6e38dc29fa718c",
+        "f46966e1348d61b0",
+        "1ec3cd8fed771684",
+        "b4c5cb91557d5ef4",
+        "6c9b6fc84e14c330",
+        "f0d267aef746d5e9",
+        "ed2f653e5bac8976"
+      ],
+      "holdout": [
+        "c1d51a98d91829f7",
+        "726fc79276374bb6",
+        "0dbbc210de741741",
+        "22e647303035a504",
+        "3923718f41add159",
+        "2c36a157432f0bc0",
+        "d71f6314415d115e",
+        "9eef39bef2a883d3",
+        "f5e5e7db1513d5fb",
+        "52f4b2bab051bb1e",
+        "ae6115cc4d60e204",
+        "44aef00f40a3d43f",
+        "c69119068beff97f",
+        "1bebd4d4b618bbd1",
+        "2aece887c55fc88a",
+        "9f7930638eeb2e3e"
+      ]
+    }
+  },
+  "min_sj_target": 0.2,
+  "per_config": {
+    "coarse": {
+      "class_balance": {
+        "fit": {
+          "clean": 31,
+          "folds": 1,
+          "n": 32
+        },
+        "holdout": {
+          "clean": 15,
+          "folds": 1,
+          "n": 16
+        }
+      },
+      "corroboration_part2_stream": {
+        "accuracy": 0.8125,
+        "false_fires": [
+          {
+            "arc_span_deg": 35.31219595663455,
+            "best_w_min_scaled_jacobian": 0.015606274438360363,
+            "branch": "wide",
+            "min_wedge_deg": 19.940391808299353,
+            "orientation": [
+              -1.0,
+              -1.0
+            ],
+            "wedges_deg": [
+              58.40312145938975,
+              19.940391808299353,
+              96.82933590334777
+            ]
+          },
+          {
+            "arc_span_deg": 15.917904388740418,
+            "best_w_min_scaled_jacobian": 0.018619199376858298,
+            "branch": "conjunctive",
+            "min_wedge_deg": 10.052872767454375,
+            "orientation": [
+              -1.0,
+              -1.0
+            ],
+            "wedges_deg": [
+              72.2799344541892,
+              10.052872767454375,
+              87.99756928038654
+            ]
+          },
+          {
+            "arc_span_deg": 10.627038069969013,
+            "best_w_min_scaled_jacobian": 0.21190574958236552,
+            "branch": "conjunctive",
+            "min_wedge_deg": 12.234057460565367,
+            "orientation": [
+              1.0,
+              1.0
+            ],
+            "wedges_deg": [
+              79.70043751064925,
+              12.234057460565367,
+              88.23984783469935
+            ]
+          }
+        ],
+        "fn": 0,
+        "fold_rate": 0.0625,
+        "fp": 3,
+        "missed_folds": [],
+        "n": 16,
+        "outside_the_protocol": true,
+        "per_branch": {
+          "conjunctive": {
+            "fp": 2,
+            "tp": 0
+          },
+          "wide": {
+            "fp": 1,
+            "tp": 1
+          }
+        },
+        "seed": 20260823,
+        "tn": 12,
+        "tp": 1,
+        "unlabelled_dropped": 0
+      },
+      "forward": {
+        "frozen_rule": {
+          "t_conj": 2.724716993209065,
+          "t_wedge": 13.124448495347053,
+          "t_wide": 26.350807871432817
+        },
+        "holdout_scored_once": {
+          "accuracy": 1.0,
+          "false_fires": [],
+          "fn": 0,
+          "fold_rate": 0.0625,
+          "fp": 0,
+          "missed_folds": [],
+          "n": 16,
+          "per_branch": {
+            "conjunctive": {
+              "fp": 0,
+              "tp": 0
+            },
+            "wide": {
+              "fp": 0,
+              "tp": 1
+            }
+          },
+          "tn": 15,
+          "tp": 1,
+          "unlabelled_dropped": 0
+        },
+        "in_sample_fit": {
+          "accuracy": 1.0,
+          "fires": 1,
+          "fn": 0,
+          "fp": 0,
+          "n": 32,
+          "tn": 31,
+          "tp": 1
+        },
+        "informal_rule_on_same_holdout": {
+          "accuracy": 1.0,
+          "false_fires": [],
+          "fn": 0,
+          "fold_rate": 0.0625,
+          "fp": 0,
+          "missed_folds": [],
+          "n": 16,
+          "outside_the_protocol": true,
+          "per_branch": {
+            "conjunctive": {
+              "fp": 0,
+              "tp": 0
+            },
+            "wide": {
+              "fp": 0,
+              "tp": 1
+            }
+          },
+          "rule": {
+            "t_conj": 30.0,
+            "t_wedge": 17.12,
+            "t_wide": 36.16
+          },
+          "tn": 15,
+          "tp": 1,
+          "unlabelled_dropped": 0
+        }
+      },
+      "frozen_cell": {
+        "B": 10,
+        "w": [
+          0.12444444444444444,
+          0.7511111111111111,
+          0.12444444444444447
+        ]
+      },
+      "seeds": {
+        "fit": [
+          20260800,
+          20260900
+        ],
+        "holdout": [
+          20261000
+        ]
+      },
+      "streams": {
+        "fit": {
+          "B": 10,
+          "config": "coarse",
+          "draws": [
+            {
+              "n_best_w_valid": 15,
+              "n_fixed_w_valid": 14,
+              "n_genomes": 16,
+              "orientations_complete": true,
+              "seed": 20260800
+            },
+            {
+              "n_best_w_valid": 16,
+              "n_fixed_w_valid": 16,
+              "n_genomes": 16,
+              "orientations_complete": true,
+              "seed": 20260900
+            }
+          ],
+          "orientations_complete": true,
+          "seeds": [
+            20260800,
+            20260900
+          ],
+          "w_fixed": [
+            0.12444444444444444,
+            0.7511111111111111,
+            0.12444444444444447
+          ]
+        },
+        "holdout": {
+          "B": 10,
+          "config": "coarse",
+          "draws": [
+            {
+              "n_best_w_valid": 15,
+              "n_fixed_w_valid": 15,
+              "n_genomes": 16,
+              "orientations_complete": true,
+              "seed": 20261000
+            }
+          ],
+          "orientations_complete": true,
+          "seeds": [
+            20261000
+          ],
+          "w_fixed": [
+            0.12444444444444444,
+            0.7511111111111111,
+            0.12444444444444447
+          ]
+        }
+      },
+      "swapped": {
+        "frozen_rule": {
+          "t_conj": 1.7828434863235216,
+          "t_wedge": Infinity,
+          "t_wide": 32.1041851476355
+        },
+        "holdout_scored_once": {
+          "accuracy": 0.96875,
+          "false_fires": [],
+          "fn": 1,
+          "fold_rate": 0.03125,
+          "fp": 0,
+          "missed_folds": [
+            {
+              "arc_span_deg": 31.313689442182408,
+              "min_wedge_deg": 12.24413032284184,
+              "orientation": [
+                -1.0,
+                -1.0
+              ]
+            }
+          ],
+          "n": 32,
+          "per_branch": {
+            "conjunctive": {
+              "fp": 0,
+              "tp": 0
+            },
+            "wide": {
+              "fp": 0,
+              "tp": 0
+            }
+          },
+          "tn": 31,
+          "tp": 0,
+          "unlabelled_dropped": 0
+        },
+        "in_sample_fit": {
+          "accuracy": 1.0,
+          "fires": 1,
+          "fn": 0,
+          "fp": 0,
+          "n": 16,
+          "tn": 15,
+          "tp": 1
+        }
+      }
+    },
+    "medium": {
+      "class_balance": {
+        "fit": {
+          "clean": 30,
+          "folds": 2,
+          "n": 32
+        },
+        "holdout": {
+          "clean": 15,
+          "folds": 1,
+          "n": 16
+        }
+      },
+      "corroboration_part2_stream": {
+        "accuracy": 0.875,
+        "false_fires": [],
+        "fn": 2,
+        "fold_rate": 0.25,
+        "fp": 0,
+        "missed_folds": [
+          {
+            "arc_span_deg": 35.324037033329375,
+            "min_wedge_deg": 20.26696051391886,
+            "orientation": [
+              -1.0,
+              -1.0
+            ]
+          },
+          {
+            "arc_span_deg": 41.21669366478882,
+            "min_wedge_deg": 19.667179276561114,
+            "orientation": [
+              -1.0,
+              1.0
+            ]
+          }
+        ],
+        "n": 16,
+        "outside_the_protocol": true,
+        "per_branch": {
+          "conjunctive": {
+            "fp": 0,
+            "tp": 2
+          },
+          "wide": {
+            "fp": 0,
+            "tp": 0
+          }
+        },
+        "seed": 20260823,
+        "tn": 12,
+        "tp": 2,
+        "unlabelled_dropped": 0
+      },
+      "forward": {
+        "frozen_rule": {
+          "t_conj": 15.160663350342436,
+          "t_wedge": 19.055349595409453,
+          "t_wide": Infinity
+        },
+        "holdout_scored_once": {
+          "accuracy": 1.0,
+          "false_fires": [],
+          "fn": 0,
+          "fold_rate": 0.0625,
+          "fp": 0,
+          "missed_folds": [],
+          "n": 16,
+          "per_branch": {
+            "conjunctive": {
+              "fp": 0,
+              "tp": 1
+            },
+            "wide": {
+              "fp": 0,
+              "tp": 0
+            }
+          },
+          "tn": 15,
+          "tp": 1,
+          "unlabelled_dropped": 0
+        },
+        "in_sample_fit": {
+          "accuracy": 1.0,
+          "fires": 2,
+          "fn": 0,
+          "fp": 0,
+          "n": 32,
+          "tn": 30,
+          "tp": 2
+        },
+        "informal_rule_on_same_holdout": {
+          "accuracy": 0.9375,
+          "false_fires": [],
+          "fn": 1,
+          "fold_rate": 0.0625,
+          "fp": 0,
+          "missed_folds": [
+            {
+              "arc_span_deg": 29.46114531428329,
+              "min_wedge_deg": 18.27543487415676,
+              "orientation": [
+                -1.0,
+                1.0
+              ]
+            }
+          ],
+          "n": 16,
+          "outside_the_protocol": true,
+          "per_branch": {
+            "conjunctive": {
+              "fp": 0,
+              "tp": 0
+            },
+            "wide": {
+              "fp": 0,
+              "tp": 0
+            }
+          },
+          "rule": {
+            "t_conj": 30.0,
+            "t_wedge": 17.12,
+            "t_wide": 36.16
+          },
+          "tn": 15,
+          "tp": 0,
+          "unlabelled_dropped": 0
+        }
+      },
+      "frozen_cell": {
+        "B": 18,
+        "w": [
+          0.07222222222222222,
+          0.8033333333333333,
+          0.12444444444444447
+        ]
+      },
+      "seeds": {
+        "fit": [
+          20261100,
+          20261200
+        ],
+        "holdout": [
+          20261300
+        ]
+      },
+      "streams": {
+        "fit": {
+          "B": 18,
+          "config": "medium",
+          "draws": [
+            {
+              "n_best_w_valid": 15,
+              "n_fixed_w_valid": 13,
+              "n_genomes": 16,
+              "orientations_complete": true,
+              "seed": 20261100
+            },
+            {
+              "n_best_w_valid": 15,
+              "n_fixed_w_valid": 13,
+              "n_genomes": 16,
+              "orientations_complete": true,
+              "seed": 20261200
+            }
+          ],
+          "orientations_complete": true,
+          "seeds": [
+            20261100,
+            20261200
+          ],
+          "w_fixed": [
+            0.07222222222222222,
+            0.8033333333333333,
+            0.12444444444444447
+          ]
+        },
+        "holdout": {
+          "B": 18,
+          "config": "medium",
+          "draws": [
+            {
+              "n_best_w_valid": 15,
+              "n_fixed_w_valid": 14,
+              "n_genomes": 16,
+              "orientations_complete": true,
+              "seed": 20261300
+            }
+          ],
+          "orientations_complete": true,
+          "seeds": [
+            20261300
+          ],
+          "w_fixed": [
+            0.07222222222222222,
+            0.8033333333333333,
+            0.12444444444444447
+          ]
+        }
+      },
+      "swapped": {
+        "frozen_rule": {
+          "t_conj": 5.5817186641261785,
+          "t_wedge": 19.37629659760465,
+          "t_wide": Infinity
+        },
+        "holdout_scored_once": {
+          "accuracy": 0.90625,
+          "false_fires": [
+            {
+              "arc_span_deg": 8.805279479790062,
+              "best_w_min_scaled_jacobian": 0.23162010494975258,
+              "branch": "conjunctive",
+              "min_wedge_deg": 15.95738125056144,
+              "orientation": [
+                -1.0,
+                -1.0
+              ],
+              "wedges_deg": [
+                79.72625237758379,
+                15.95738125056144,
+                87.04844724312179
+              ]
+            },
+            {
+              "arc_span_deg": 14.772666286380533,
+              "best_w_min_scaled_jacobian": 0.07638416693384564,
+              "branch": "conjunctive",
+              "min_wedge_deg": 17.85842419683385,
+              "orientation": [
+                -1.0,
+                1.0
+              ],
+              "wedges_deg": [
+                63.50965275258666,
+                17.85842419683385,
+                76.43701631217724
+              ]
+            },
+            {
+              "arc_span_deg": 7.826023649745958,
+              "best_w_min_scaled_jacobian": 0.24182354293501981,
+              "branch": "conjunctive",
+              "min_wedge_deg": 18.334535622355787,
+              "orientation": [
+                1.0,
+                -1.0
+              ],
+              "wedges_deg": [
+                73.60641044451191,
+                18.334535622355787,
+                90.8097643578054
+              ]
+            }
+          ],
+          "fn": 0,
+          "fold_rate": 0.0625,
+          "fp": 3,
+          "missed_folds": [],
+          "n": 32,
+          "per_branch": {
+            "conjunctive": {
+              "fp": 3,
+              "tp": 2
+            },
+            "wide": {
+              "fp": 0,
+              "tp": 0
+            }
+          },
+          "tn": 27,
+          "tp": 2,
+          "unlabelled_dropped": 0
+        },
+        "in_sample_fit": {
+          "accuracy": 1.0,
+          "fires": 1,
+          "fn": 0,
+          "fp": 0,
+          "n": 16,
+          "tn": 15,
+          "tp": 1
+        }
+      }
+    }
+  },
+  "protocol": {
+    "amendment": "first registration drew one seed per role; its fit streams came back fold-free at both configs, so the fit side pools two independent draws. A first seed spacing tens apart shared candidate batches (batch b draws from seed + b) and failed disjointness; the registered seeds are >= 100 apart.",
+    "family": "arc > t_wide OR (arc > t_conj AND min_wedge < t_wedge)",
+    "grid": "midpoints of consecutive distinct FIT-stream values + inf",
+    "informal_rule": {
+      "t_conj": 30.0,
+      "t_wedge": 17.12,
+      "t_wide": 36.16
+    },
+    "label": "not best_w_valid (no interior point exists on the grid)",
+    "order": "fit -> freeze -> score holdout once -> swap",
+    "seeds": {
+      "coarse": {
+        "fit": [
+          20260800,
+          20260900
+        ],
+        "holdout": [
+          20261000
+        ]
+      },
+      "medium": {
+        "fit": [
+          20261100,
+          20261200
+        ],
+        "holdout": [
+          20261300
+        ]
+      }
+    },
+    "selection": "max fit accuracy; ties: fewer fires, then lexicographic"
+  },
+  "seconds": 25.0,
+  "self_checks": {
+    "duplicate_gene_vectors": null,
+    "every_config_produced_a_finite_frozen_rule": true,
+    "fit_streams_have_both_classes": true,
+    "orientations_complete_everywhere": true,
+    "pass": true,
+    "six_streams_pairwise_disjoint": true,
+    "stream_with_no_folds_at_all": null
+  }
+}
