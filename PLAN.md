@@ -9893,3 +9893,142 @@ recorded and this section is now the worked example of.
 `LAYER_PROFILE_CANDIDATES` is still what `study_corner_singularity` imports; the column is a
 sibling, because widening a return type that a cross-study consumer iterates would make that
 consumer pay for this file's convenience.  The artifact gains keys and loses none.
+
+---
+
+## §78 — 2026-08-24. §74's "16 OF 16" SURVIVES A HELD-OUT DRAW AT 32 OF 32, THE BARRIER HALF IS CONFIRMED OPEN AT EXACTLY HALF THE BOX ON BOTH — AND THE HELD-OUT GENOMES CONTAIN THE FIRST RIM REFUSAL, WHICH NARROWS §57's WORDING RATHER THAN ITS MECHANISM
+
+§74 retired the first clause of §48's scope note on sixteen genomes **that the clamp was
+designed against**, and UNCAP_PLAN PART 9 had just finished showing this project what an
+in-sample rate is worth: a rule fitting 104 genomes at accuracy 1.000 scored **0.833** on a
+disjoint stream and had half of itself falsified. §74's number deserved the same treatment
+before anything was ranked behind it.
+
+Same sampler, same feasibility filter, same config, a stream disjoint by construction and
+checked from the genes: `GENOME_SWEEP_SEED + 7000`, eight per flank orientation, **32
+genomes**.
+
+```
+                                    in-sample (16)      held-out (32)
+  shipped profile, no clamp        10/16 built         26/32 built
+                                    4/16 clear         13/32 clear
+  shipped profile, clamp 0.95      16/16 built         32/32 built
+                                    8/16 clear         16/32 clear
+  genome-robust,   clamp 0.95      16/16 built         32/32 built
+                                   15/16 clear         31/32 clear
+```
+
+**THE REFUSAL HALF IS GENUINELY CLOSED.** 32 of 32, on genomes the clamp never saw. This is
+the outcome UNCAP_PLAN's rule did not get, and the reason is worth stating rather than
+enjoying: §57's clamp is not a fitted threshold. It is a **projection onto a limit each
+genome computes for itself**, so there was no parameter to overfit — the only free number is
+the factor, and §74 already measured every value in 0.75-0.99 building all sixteen.
+
+**AND THE BARRIER HALF IS CONFIRMED OPEN, AT EXACTLY HALF THE BOX BOTH TIMES.** 8/16 and
+16/32 clear `MIN_SJ_TARGET` at the shipped profile. §48's surviving clause is not an artefact
+of the first draw, and ranking item 2 keeps its place.
+
+### The held-out box contains the first rim refusal
+
+All six in-sample refusals bind at the **hub**, and §57 and §74 both wrote the predictor up
+in those words — *"the hub margin classifies 16 of 16"*. One held-out genome refuses at the
+**rim**:
+
+```
+  hub margin alone                 31/32
+  sector-fit margin, either junction  32/32
+```
+
+**The mechanism is untouched** — a tangent point swept past the next sector's corner is the
+same event at either ring, and the clamp already applied to both. What was in-sample was the
+**junction in the sentence**, not the physics. Corrected in the self-check
+(`the_sector_fit_margin_predicts_every_refusal_held_out`) and pinned by a test that goes red
+if the rim refusal ever disappears from the draw, because the narrow form is the one that
+would quietly come back.
+
+### The per-genome layer profile, priced — and it does not rescue §68
+
+§68 declined `GENOME_ROBUST_*` because it spends the shipped genome's cliff margin down to
+~0.056 against the shipped pair's **0.5520**. Every candidate that section weighed was a
+**global** pair, and a global pair has to be safe for the tightest genome in the box. §77's
+`cliff_entry` makes the per-genome version measurable for the first time — the layer-width
+cliff is a property of the genome, exactly as the sector-fit limit is — so each genome can
+take a share of **its own** room. That is the shape §57's clamp works in, and it is the
+obvious repair.
+
+At `end` = 0.70, each genome built at `factor * cliff_entry(genome)` with its radii already
+inside the sector-fit clamp (held-out box; the in-sample box agrees):
+
+```
+  factor   built    clears 0.2   shipped margin
+   0.95    32/32      29/32          0.0403
+   0.85    32/32      31/32          0.1210
+   0.75    32/32      31/32          0.2016
+   0.65    32/32      31/32          0.2822
+   0.55    32/32      31/32          0.3629
+  --------------------------------------------
+  genome_robust (global)   31/32     0.0564
+  shipped pair  (global)   16/32     0.5520
+```
+
+**IT DOMINATES THE GLOBAL PAIR §68 DECLINED.** At 0.75 and below the per-genome rule clears
+**the same 31 of 32** as `GENOME_ROBUST_*` while leaving the shipped genome **0.2016 to
+0.3629** of cliff margin against that pair's **0.0564** — between **3.6x and 6.4x the
+clearance for identical barrier performance**. That is not a trade, it is the same purchase
+at a lower price, and it is available because the limit is per-genome: a global pair has to
+be safe for the tightest genome in the box and pays for that everywhere.
+
+**AND THE FIRST VERSION OF THIS SECTION CONCLUDED THE OPPOSITE, OFF A MISCOUNT.**
+`cliff_entry` returns `None` in two cases that read identically in a tally and mean opposite
+things: *"bounded by something else"* is a measurement that failed, and *"builds across the
+whole bracket"* is a genome with **no layer-width edge to stand back from at all** — the
+safest case in the box. All three such genomes are the second kind. Tallied as losses they
+made the rule look like it built 29 of 32 and cleared 28, and the section published
+"dominated on both axes". Given the global entry instead — exactly as `_clamp_to_sector`
+honours a radius when the junction has no limit — they build, and the rule clears 31. **The
+conclusion inverted on the handling of three genomes.** Same class of error as reading a
+bit-identical column as a falsification (§75): a `None` meaning "nothing to do here" tallied
+as a `None` meaning "this did not work".
+
+**WHAT THIS DOES AND DOES NOT REOPEN.** §68 declined `GENOME_ROBUST_*` on two reasons: a
+~0.056 margin is indefensible, and the floor it buys is measured on a box built from
+unadopted mechanisms. **The per-genome rule answers the first and not the second.** It also
+does not beat the shipped pair, which still holds the most margin at 0.5520 — but the shipped
+pair clears 16 of 32 against this rule's 31, so the comparison between those two is a real
+two-objective choice and no longer a one-sided one. **Nothing is adopted here**: this is a
+measurement, it is not wired into anything, and the module constants are untouched. What it
+changes is that ranking item 2 now has a candidate with a number rather than an open
+construction question.
+
+### What is unchanged
+
+**Nothing promoted, no module constant moved, `best_solution.json` untouched.**
+`FILLET_LAYER_ENTRY_SLOPE`, `FILLET_LAYER_END_OFFSET` and `SECTOR_FIT_CLAMP` are as they
+were. The committed box is **not re-drawn** — `sector.genomes`, `fit_clamp`, and both
+configs' existing keys are unchanged field-for-field against the previous artifact, which was
+checked rather than assumed; the artifact gains keys and loses none. `make filletblock` goes
+301 s -> **462 s**.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §78
+
+1. **The differentiable filleted mesh** — unchanged at the top, and §78 strengthens its
+   premise rather than its price: the instrument it would differentiate now builds on a
+   disjoint draw at 32 of 32.
+2. **The barrier half of the filleted blocking** (§48's surviving clause) — confirmed open
+   out of sample at 16 of 32, and §78 has priced a repair that **clears 31 of 32 at 3.6-6.4x
+   the cliff margin of the global pair §68 declined**. It is measured and not adopted, and
+   adopting it is a decision with §68's second reason still standing against it. That
+   decision is now the item, and it is a smaller one than "make the blocking genome-robust"
+   was.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and §78 is
+   the second worked example of the protocol in this project.
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Re-run the hub-share ladder on a filleted mesh** (§75) — one rung is not a ladder.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+**Two items left this list by being done rather than by being re-ranked**: §72's "box spans
+X" audit and §68's cliff column landed as §76 and §77, and the ranking revised after §75 was
+still carrying both.

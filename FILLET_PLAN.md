@@ -13,10 +13,13 @@ twelve PARTs:
   gone and the fillet's surface peak is a number; **the HEADLINE is not delivered**, because
   the wheel's peak is on `rim:P_c`, which needs the rim tri-block and not a fillet. The
   filleted wheel also deflects 37.97% less than the unfilleted mesh said it would.
-- **Step 3** — what it unlocks. **Blocked on two things that are not this arc's**: the rim
-  tri-block (PLAN §52 ranked 1) and making the filleted blocking genome-robust (PLAN §48) —
-  6 of 16 feasible genomes refuse it, so `fillet=` is a MEASUREMENT INSTRUMENT for one
-  genome and is not a path the optimizer may take.
+- **Step 3** — what it unlocks. Its ACCEPTANCE TEST PASSES (STEP 3 RECORD PART 1, PLAN §75).
+  Of the two things that blocked it, **the refusal half is closed and the barrier half is
+  not**: PART 21's sector-fit clamp builds 16 of 16 in sample and **32 of 32 on a held-out
+  draw** (PART 22, PLAN §78), so §48's first clause is retired — but **half of each box
+  still sits under `MIN_SJ_TARGET`** (8/16 and 16/32), which is §48's surviving clause and
+  is why `fillet=` is still a MEASUREMENT INSTRUMENT and not a path the optimizer may take.
+  The rim tri-block is the other blocker and is not this arc's.
 
 **NOT CHEAP — read the cost section first.**
 
@@ -2894,3 +2897,43 @@ of that file already knows, and the two new ones are `sweep_filleted_svk` and
 `sweep_unfilleted_svk`.  The controls are kept rather than overwritten because they are what
 makes "it stopped being bit-identical" a finding at all, and the kernel is in the key so a
 filleted row can never be read against a differently-kernelled control by accident.
+
+---
+
+# STEP 1 RECORD, PART 22 — 2026-08-24. PART 21's CLAMP HOLDS ON A HELD-OUT DRAW AT 32 OF 32, THE BARRIER HALF IS OPEN ON BOTH BOXES AT EXACTLY HALF, AND THE PER-GENOME LAYER PROFILE PART 20 WOULD HAVE WANTED IS PRICED AND DOMINATED
+
+PART 21 closed the refusal half of §48's scope note on **the sixteen genomes the clamp was
+designed against**. PLAN §78 is the check that this was not an in-sample number, and the
+full record is there. The four things this file needs:
+
+**THE CLAMP HOLDS OUT OF SAMPLE.** A disjoint draw — same sampler, same filter, same config,
+`GENOME_SWEEP_SEED + 7000`, 32 genomes — builds **32 of 32** clamped, against 26 of 32
+unclamped. PART 21's number was not fitted, because §57's clamp is a projection onto a limit
+each genome computes for itself rather than a threshold with a parameter to overfit.
+
+**THE BARRIER HALF IS CONFIRMED OPEN.** 8/16 in sample and 16/32 held out clear
+`MIN_SJ_TARGET` at the shipped profile — exactly half of each box. **Step 3's second blocker
+is real and is not an artefact of the first draw.**
+
+**THE FIRST RIM REFUSAL.** All six in-sample refusals bind at the hub, and PART 21 wrote the
+predictor up in those words. One held-out genome refuses at the **rim**, so the hub margin
+alone classifies 31 of 32 and the either-junction margin classifies 32 of 32. The mechanism
+is unchanged and the clamp already applied to both junctions; **the junction in the sentence
+was in-sample, and the sentence is corrected here and in the self-check.**
+
+**AND THE PER-GENOME PROFILE IS PRICED, AND IT WINS THE COMPARISON PART 20 LOST.** PART 20
+declined `GENOME_ROBUST_*` because it leaves the shipped genome ~0.056 from a hard refusal
+against the shipped pair's 0.5520 — every candidate it weighed being a **global** pair, which
+has to be safe for the tightest genome in the box and pays for that everywhere. PART 20's own
+`cliff_entry` makes the per-genome version measurable: at factor 0.75 and below it clears
+**the same 31 of 32** as the global pair while leaving **0.20-0.36** of margin, i.e.
+**3.6-6.4x the clearance for identical barrier performance**.
+
+**PART 20's FIRST REASON IS ANSWERED AND ITS SECOND IS NOT** — the floor is still measured on
+a box built from unadopted mechanisms — so nothing is adopted here. Note also that the first
+draft of this record concluded the opposite, having tallied *"builds across the whole
+bracket"* (a genome with no edge to stand back from, the safest case) as a failed
+measurement; three genomes handled that way inverted the finding. See PLAN §78.
+
+**Nothing adopted.** No module constant moved, the committed box is not re-drawn, and the
+artifact is purely additive. `make filletblock` goes 301 s -> 462 s.

@@ -1317,14 +1317,48 @@ CLIFF_BRACKET = (-2.0, 0.0)
 CLIFF_BISECTIONS = 30
 CLIFF_REASON = "width profile reaches zero"
 
+# `cliff_entry`'s OTHER `None`, and it is the opposite of a problem: the genome builds at
+# every entry in the bracket, so it has no layer-width edge to stand back from.  Named as a
+# constant because §78 needs to tell it apart from "bounded by something else", which is the
+# `None` that means a measurement failed.
+CLIFF_NO_EDGE = "builds across the whole bracket"
+
 # PART 20's four hand bisections, at the precision they were published to.  Kept so the
 # automated column is checked against the RECORD rather than against itself -- if the two
 # disagree, one of them is wrong and this file should say so before anyone quotes either.
 CLIFF_PUBLISHED = ((0.85, -0.845458), (1.00, -0.881143),
                    (1.10, -0.903400), (1.60, -1.001967))
 
+# THE PER-GENOME LAYER PROFILE, PRICED THE WAY §57's CLAMP WAS.  PLAN §78.
+#
+# §74 closed the REFUSAL half of §48's scope note and left the BARRIER half open: with the
+# clamp on, 16 of 16 drawn genomes build and only 8 clear `MIN_SJ_TARGET`.  The profile that
+# does close it is `GENOME_ROBUST_*`, which buys 15 of 16 -- and §68 declined it because it
+# leaves the SHIPPED genome about 0.07 from a hard refusal against the shipped profile's
+# 0.5520.  Every candidate in that section was a GLOBAL pair, and a global pair has to be
+# safe for the tightest genome in the box.
+#
+# `cliff_entry` makes the per-genome version measurable: the layer-width cliff is a property
+# of the genome, computable before any block is built, exactly as `sector_fit_limit` is.  So
+# each genome can take a share of ITS OWN room instead of every genome sharing one constant.
+#
+# THE FACTORS ARE SWEPT AND NOTHING IS ADOPTED.  A multiplicative factor leaves a margin of
+# `(1 - f) * |cliff|`, which is a much tighter clearance than the shipped pair's 0.5520 at
+# any `f` near 1 -- so the margin each factor leaves is REPORTED next to what it buys rather
+# than assumed acceptable, and the band is swept because §68's objection was about margin
+# and this is the number that has to answer it.
+CLIFF_PROFILE_FACTORS = (0.95, 0.85, 0.75, 0.65, 0.55)
 
-def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS):
+# ONE `end`, AND THE REASON.  The cliff moves with `end`, so a per-genome entry rule has to
+# name one.  `GENOME_ROBUST_END` is the choice because the whole point of the measurement is
+# to face the per-genome rule off against the global pair that buys 15 of 16 -- holding `end`
+# at that pair's own value makes the ENTRY rule the only difference between them.  A second
+# `end` would double the bisection cost, which is the expensive half of this section.
+CLIFF_PROFILE_END = GENOME_ROBUST_END
+
+
+def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS,
+                R_hub=None, R_rim=None):
     """The `entry` at which THIS genome loses its rim layer, at a fixed `end`.
 
     Returns `{"entry": float|None, "why": str}`.  `None` means the genome does not lose the
@@ -1335,12 +1369,19 @@ def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS):
     can refuse, and a bisection that accepted any refusal would happily report a sector-fit
     or tangency limit under this name -- the exact class of error PART 6 caught this file
     making once already.  `why` carries whatever actually bounded it.
+
+    `R_hub`/`R_rim` DEFAULT TO THE GENOME'S OWN GENES, WHICH IS NOT ALWAYS WHAT IT BUILDS AT.
+    Six of the sixteen drawn genomes are pulled back by the sector-fit clamp (§74), and a
+    cliff measured at a radius the genome will never be built at describes a mesh nobody
+    builds.  Every caller that quotes a published cliff -- `CLIFF_PUBLISHED`, the candidate
+    table -- passes neither and is unaffected; the clamped box passes both.
     """
     lo, hi = float(bracket[0]), float(bracket[1])   # lo refuses, hi builds
+    R_h = float(genes[12]) if R_hub is None else float(R_hub)
+    R_r = float(genes[13]) if R_rim is None else float(R_rim)
 
     def refuses(entry):
-        v = sector_verdict(genes, cfg, float(genes[12]), float(genes[13]),
-                           entry=entry, end=float(end))
+        v = sector_verdict(genes, cfg, R_h, R_r, entry=entry, end=float(end))
         return (not v["built"]), v.get("why", "")
 
     ref_hi, why_hi = refuses(hi)
@@ -1689,6 +1730,13 @@ def sweep_fold_gate(cfg, genes, batches=FOLD_GATE_BATCHES, seed=None):
 GENOME_SWEEP_SEED = 20260823
 GENOME_SWEEP_PER_ORIENTATION = 4
 
+# The held-out box (PLAN §78).  Eight per orientation rather than four because the number
+# being tested is a RATE and the in-sample one is 16 genomes wide; the offset is
+# UNCAP_PLAN PART 9's and must stay far above `sweep_genomes`' `max_batches`, or the two
+# streams overlap and the hold-out is not one.
+GENOME_HELD_OUT_PER_ORIENTATION = 8
+GENOME_HELD_OUT_OFFSET = 7000
+
 
 def sweep_genomes(cfg, per_orientation=GENOME_SWEEP_PER_ORIENTATION,
                   seed=GENOME_SWEEP_SEED, max_batches=40):
@@ -1843,6 +1891,109 @@ def sweep_sector_fit_clamp(genes, cfg, genome_rows, factors=SECTOR_FIT_FACTORS):
             "rows": rows}
 
 
+def sweep_cliff_clamped_profile(genes, cfg, genome_rows,
+                                factors=CLIFF_PROFILE_FACTORS,
+                                end=CLIFF_PROFILE_END, clamp=SECTOR_FIT_CLAMP):
+    """The BARRIER half, priced against a per-genome entry instead of a global pair.
+
+    Each genome is built at `factor * cliff_entry(genome)` -- a share of its OWN room --
+    with its radii already pulled inside the sector-fit clamp, since a cliff measured at a
+    radius the genome will not be built at describes a mesh nobody builds.
+
+    THE COMPARISON THIS EXISTS FOR is the `genome_robust` row of `sweep_sector_fit_clamp`
+    at the same `end`: that pair buys 15 of 16 by spending the shipped genome's cliff margin
+    down to ~0.07, and the question is whether a per-genome rule buys the same barrier
+    clearance for more margin.  So `shipped_margin` rides on every row -- what the rule
+    leaves the one genome every published number in this file is measured at -- and it is
+    the number that faces §68's 0.5520.
+
+    A GENOME WITH NO CLIFF FALLS BACK TO THE GLOBAL ENTRY, exactly as `_clamp_to_sector`
+    honours the requested radius when the junction has no limit.  `cliff_entry` returns
+    `None` in two very different cases and only one is a problem: *"builds across the whole
+    bracket"* means the genome has no layer-width edge to project onto at all -- the SAFEST
+    case, not a failure -- while *"bounded by something else"* means the bisection ran into a
+    different refusal and the rule genuinely cannot be evaluated there.  Counting the first
+    as a loss understates the rule by three genomes of sixteen, so the two are tallied
+    separately and neither can be read as the other.
+    """
+    cells = []
+    for r in genome_rows:
+        if "fit" not in r:
+            continue
+        vec = np.asarray(r["genes"], float)
+        R_hub, R_rim = clamped_radii(r["fit"], clamp)
+        c = cliff_entry(vec, cfg, end, R_hub=R_hub, R_rim=R_rim)
+        cells.append({"genes": vec, "R_hub": R_hub, "R_rim": R_rim,
+                      "cliff": c["entry"], "why": c["why"]})
+
+    shipped = np.asarray(genes, float)
+    shipped_fit = sector_fit_margin(shipped, cfg)
+    sR_hub, sR_rim = clamped_radii(shipped_fit, clamp)
+    shipped_cliff = cliff_entry(shipped, cfg, end, R_hub=sR_hub, R_rim=sR_rim)
+
+    rows = []
+    for factor in factors:
+        built, clear, vals, margins = 0, 0, [], []
+        no_edge, unevaluable, refusals = 0, 0, []
+        for c in cells:
+            if c["cliff"] is None:
+                if CLIFF_NO_EDGE in c["why"]:
+                    # No edge to project onto: the rule has no opinion, so the genome
+                    # takes the global entry and still COUNTS -- it is a genome the rule
+                    # does not harm, not a genome it fails.
+                    no_edge += 1
+                    entry = float(GENOME_ROBUST_ENTRY)
+                else:
+                    unevaluable += 1
+                    continue
+            else:
+                entry = float(factor) * float(c["cliff"])
+                margins.append(entry - float(c["cliff"]))
+            try:
+                v = sector_verdict(c["genes"], cfg, c["R_hub"], c["R_rim"], entry, end)
+            except Exception as exc:      # a drawn genome must not kill the driver
+                refusals.append(f"{type(exc).__name__}")
+                continue
+            if not v["built"]:
+                refusals.append(v["why"].split(":")[0])
+                continue
+            built += 1
+            vals.append(v["min_scaled_jacobian"])
+            clear += int(v["min_scaled_jacobian"] > MIN_SJ_TARGET)
+        s_entry = (None if shipped_cliff["entry"] is None
+                   else float(factor) * float(shipped_cliff["entry"]))
+        rows.append({
+            "factor": float(factor), "end": float(end),
+            "n_genomes": len(cells),
+            # Kept apart on purpose: one of these is the rule declining to act and the
+            # other is the rule being unable to.
+            "n_without_cliff": no_edge, "n_unevaluable": unevaluable,
+            "n_built": built, "n_clears_target": clear, "refusals": refusals,
+            # What the rule LEAVES, which is the half §68's objection is about.
+            "shipped_entry": s_entry,
+            "shipped_margin": (None if s_entry is None
+                               else s_entry - float(shipped_cliff["entry"])),
+            "margin_range": ([min(margins), max(margins)] if margins else None),
+            "min_scaled_jacobian_range": ([min(vals), max(vals)] if vals else None),
+            "median_min_scaled_jacobian": (float(sorted(vals)[len(vals) // 2])
+                                           if vals else None)})
+    return {"config": cfg, "end": float(end), "clamp": float(clamp),
+            "factors": [float(f) for f in factors],
+            "shipped_cliff": shipped_cliff,
+            # The two global pairs this rule is measured against, so the comparison does
+            # not have to be assembled by hand from another section.
+            "reference": {
+                "shipped": {"entry": float(LAYER_ENTRY_SLOPE),
+                            "end": float(LAYER_END_OFFSET)},
+                "genome_robust": {"entry": float(GENOME_ROBUST_ENTRY),
+                                  "end": float(GENOME_ROBUST_END)}},
+            "per_genome_cliff": [
+                {"cliff": c["cliff"], "why": (None if c["cliff"] is not None
+                                              else c["why"]),
+                 "R_hub_mm": c["R_hub"], "R_rim_mm": c["R_rim"]} for c in cells],
+            "rows": rows}
+
+
 def build_sector_section(genes, configs, junctions):
     """The whole-sector measurement, per config."""
     box_h = tuple(sorted({0.40, 0.60, float(genes[12]), 1.00, 1.50, 2.00, 2.50, 3.00}))
@@ -1855,6 +2006,19 @@ def build_sector_section(genes, configs, junctions):
            "block_region": dict(SECTOR_BLOCK_REGION),
            "gene_box": {"R_hub_mm": list(box_h), "R_rim_mm": list(box_r)},
            "genomes": sweep_genomes(configs[0]),
+           # THE HELD-OUT BOX (PLAN §78).  §74's "16 of 16" was measured on the genomes the
+           # clamp was designed against, and UNCAP_PLAN PART 9 has just shown this project
+           # what an in-sample rate is worth -- 1.000 fitted, 0.833 held out, half the rule
+           # falsified.  Same sampler, same filter, same config; a DISJOINT stream.
+           #
+           # The offset must clear `sweep_genomes`' own batch range, which walks
+           # `seed + batch` for `batch < max_batches`: at 40 batches the in-sample run
+           # occupies 20260823-20260862 and this one 20267823-20267862.  `+7000` is
+           # UNCAP_PLAN PART 9's offset, so the two hold-outs in this project are named the
+           # same way.
+           "genomes_held_out": sweep_genomes(
+               configs[0], per_orientation=GENOME_HELD_OUT_PER_ORIENTATION,
+               seed=GENOME_SWEEP_SEED + GENOME_HELD_OUT_OFFSET),
            # The population the box above is drawn from, and what the draw filter misses
            # in it.  Same stream, same config, so the leak rate is this box's own.
            "fold_gate": sweep_fold_gate(configs[0], genes),
@@ -1940,6 +2104,27 @@ def build_sector_section(genes, configs, junctions):
                 genes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows
                  if not r["fold"]["binds"]])
+                if cfg == configs[0] else None),
+            # THE SAME TABLE ON GENOMES THE CLAMP HAS NEVER SEEN (PLAN §78).  Identical
+            # function and identical factors, so the only thing that differs between this
+            # and `fit_clamp` above is the draw -- which is what makes the two rates
+            # comparable at all.
+            "fit_clamp_held_out": (sweep_sector_fit_clamp(
+                genes, cfg,
+                [r for rows in out["genomes_held_out"]["groups"].values()
+                 for r in rows])
+                if cfg == configs[0] else None),
+            # THE BARRIER HALF, priced against a per-genome entry rather than a global
+            # pair, on both boxes.  See `sweep_cliff_clamped_profile`: this is the half
+            # §74 left open and the half §68's declined profile would have closed.
+            "cliff_profile": (sweep_cliff_clamped_profile(
+                genes, cfg,
+                [r for rows in out["genomes"]["groups"].values() for r in rows])
+                if cfg == configs[0] else None),
+            "cliff_profile_held_out": (sweep_cliff_clamped_profile(
+                genes, cfg,
+                [r for rows in out["genomes_held_out"]["groups"].values()
+                 for r in rows])
                 if cfg == configs[0] else None),
         }
         per = out["per_config"][cfg]
@@ -2079,6 +2264,38 @@ def self_checks(rec):
             # this file is measured at alone.
             checks["the_clamp_is_inert_on_the_shipped_genome"] = (
                 not fc["shipped_is_clamped"])
+        # THE HELD-OUT BOX (PLAN §78), SPLIT THE WAY EVERYTHING ELSE HERE IS.
+        #
+        # The MECHANISM gates and the RATE does not.  "The hub margin predicts every
+        # refusal" is §57's whole claim -- that the refusal is a property of the genome,
+        # computable before the blocking is attempted -- and a claim of that shape either
+        # survives fresh genomes or is not a mechanism.  How many of the held-out genomes
+        # BUILD is exactly the kind of characterisation finding this file reports rather
+        # than gates, and gating it would be gating the answer to the question.
+        ho = sec.get("genomes_held_out")
+        if ho:
+            hall = [r for v in ho["groups"].values() for r in v]
+            # THE EITHER-JUNCTION FORM, AND THE HOLD-OUT IS WHY.  In-sample every one of
+            # the six refusals binds at the HUB, and §57/§74 wrote the mechanism up in
+            # those words.  The held-out draw contains the first RIM refusal, so the hub
+            # margin alone classifies 31 of 32 and the sector-fit margin at either
+            # junction classifies 32 of 32.  The mechanism is unchanged -- a tangent point
+            # past the next sector's corner -- and the JUNCTION in its phrasing was an
+            # artefact of which genomes the first draw happened to contain.
+            checks["the_sector_fit_margin_predicts_every_refusal_held_out"] = bool(
+                hall and all(
+                    (r["fit"]["hub"]["binds"] or r["fit"]["rim"]["binds"]) != r["built"]
+                    for r in hall))
+            checks["sector_seams_close_at_every_orientation_held_out"] = bool(
+                hall and all(r["seams_close"] for r in hall if r["built"]))
+            # And the hold-out has to BE one.  Two draws that overlapped would make the
+            # comparison meaningless in the direction that flatters it, so the disjointness
+            # is computed from the genes rather than trusted to the seed arithmetic.
+            insample = {tuple(round(x, 12) for x in r["genes"])
+                        for v in sec["genomes"]["groups"].values() for r in v}
+            checks["the_held_out_draw_is_disjoint"] = bool(
+                hall and not any(tuple(round(x, 12) for x in r["genes"]) in insample
+                                 for r in hall))
         # The fold gate, stated as the ONE-SIDED claim it can actually support.  Whether a
         # folded flank shows up as an inverted element depends on where the trim puts a
         # station, so "folds => the block inverts" is luck and is reported, not gated.
@@ -2551,6 +2768,75 @@ def _print(rec):
             print("    MEASURED, NOT ADOPTED: `sector_blocks` and `build_wheel` are "
                   "untouched and still take the")
             print("    radii they are given.")
+
+        # PLAN §78: the same table on genomes the clamp was not designed against, printed
+        # BESIDE the in-sample one rather than in its own section, because the only reading
+        # of either number that means anything is the comparison.
+        ho = sec["per_config"][cfg0].get("fit_clamp_held_out")
+        if ho and fc:
+            print("\n  AND THE SAME TABLE ON A HELD-OUT DRAW (PLAN §78) — DISJOINT STREAM, "
+                  "SAME SAMPLER AND FILTER")
+
+            def _row(table, profile, factor):
+                return next((r for r in table["rows"] if r["profile"] == profile
+                             and r["factor"] == factor), None)
+
+            print(f"      {'profile':14s} {'clamp':>6s} {'in-sample':>18s} "
+                  f"{'held-out':>18s}")
+            for profile in ("shipped", "genome_robust"):
+                for factor in (None, SECTOR_FIT_CLAMP):
+                    a, b = _row(fc, profile, factor), _row(ho, profile, factor)
+                    if not a or not b:
+                        continue
+                    k = "none" if factor is None else f"{factor:.2f}"
+                    print(f"      {profile:14s} {k:>6s} "
+                          f"{a['n_built']:6d}/{a['n_genomes']:<3d} built"
+                          f"{b['n_built']:7d}/{b['n_genomes']:<3d} built")
+                    print(f"      {'':14s} {'':>6s} "
+                          f"{a['n_clears_target']:6d}/{a['n_genomes']:<3d} clear"
+                          f"{b['n_clears_target']:7d}/{b['n_genomes']:<3d} clear")
+            hb = _row(ho, "shipped", SECTOR_FIT_CLAMP)
+            if hb:
+                print(f"    the clamp builds {hb['n_built']}/{hb['n_genomes']} of the "
+                      f"held-out box at the shipped profile.")
+                if hb["refusals"]:
+                    print(f"    AND IT DOES NOT CLOSE THE REFUSAL HALF OUT OF SAMPLE — "
+                          f"{len(hb['refusals'])} refusals remain: "
+                          + "; ".join(sorted(set(hb["refusals"]))))
+
+        # And the barrier half, priced against a PER-GENOME entry rather than a global pair.
+        for key, label in (("cliff_profile", "in-sample"),
+                           ("cliff_profile_held_out", "held-out")):
+            cp = sec["per_config"][cfg0].get(key)
+            if not cp:
+                continue
+            sc = cp["shipped_cliff"]
+            print(f"\n  THE BARRIER HALF, AGAINST A PER-GENOME ENTRY ({label} box, "
+                  f"end {cp['end']:.2f})")
+            print(f"      {'factor':>6s} {'built':>8s} {'clears 0.2':>11s} "
+                  f"{'no edge':>8s} {'n/a':>4s} {'shipped entry':>14s} "
+                  f"{'shipped margin':>15s} {'median J':>9s}")
+            for r in cp["rows"]:
+                se = ("      -" if r["shipped_entry"] is None
+                      else f"{r['shipped_entry']:+14.4f}")
+                sm = ("      -" if r["shipped_margin"] is None
+                      else f"{r['shipped_margin']:15.4f}")
+                mj = ("        -" if r["median_min_scaled_jacobian"] is None
+                      else f"{r['median_min_scaled_jacobian']:9.4f}")
+                print(f"      {r['factor']:6.2f} {r['n_built']:5d}/{r['n_genomes']:<2d} "
+                      f"{r['n_clears_target']:8d}/{r['n_genomes']:<2d} "
+                      f"{r['n_without_cliff']:8d} {r['n_unevaluable']:4d} "
+                      f"{se} {sm} {mj}")
+            if sc["entry"] is not None:
+                print(f"    the shipped genome's own cliff at this `end` is "
+                      f"{sc['entry']:+.6f}; the SHIPPED PAIR "
+                      f"({LAYER_ENTRY_SLOPE:+.2f}, {LAYER_END_OFFSET:.2f}) stands 0.5520 "
+                      f"from its own (§68),")
+                print(f"    and the GLOBAL pair that buys the barrier half "
+                      f"({GENOME_ROBUST_ENTRY:+.2f}, {GENOME_ROBUST_END:.2f}) stands "
+                      f"{GENOME_ROBUST_ENTRY - sc['entry']:+.4f} from it.")
+            print("    MEASURED, NOT ADOPTED: no module constant moves and this rule is "
+                  "not wired into anything.")
 
         fg = sec.get("fold_gate")
         if fg:

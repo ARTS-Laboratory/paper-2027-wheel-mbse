@@ -1107,8 +1107,161 @@ def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(ge
     shipped = fb.cliff_entry(genes, "coarse", fb.LAYER_END_OFFSET)
     shipped_margin = fb.LAYER_ENTRY_SLOPE - shipped["entry"]
     assert shipped_margin == pytest.approx(0.5520, abs=1e-3), shipped_margin
+    compared = 0
     for entry, end in fb.LAYER_PROFILE_FINE_CANDIDATES + fb.LAYER_PROFILE_CANDIDATES:
         c = fb.cliff_entry(genes, "coarse", end)
         if c["entry"] is None:
             continue
+        compared += 1
         assert entry - c["entry"] < shipped_margin, (entry, end, entry - c["entry"])
+    # or the loop above proves nothing: every candidate having no cliff would pass it
+    # silently, and the assertion is about the candidates rather than about the shipped
+    # pair alone.
+    assert compared == len(fb.LAYER_PROFILE_FINE_CANDIDATES
+                           + fb.LAYER_PROFILE_CANDIDATES), compared
+
+
+# ---------------------------------------------------------------------------
+# THE HELD-OUT BOX (PLAN §78) — is §74's "16 of 16" an in-sample number?
+# ---------------------------------------------------------------------------
+
+def test_the_held_out_draw_is_actually_disjoint_from_the_committed_one(report):
+    """A hold-out that shared genomes with the fitted box would flatter every rate on it.
+
+    Checked from the GENES rather than trusted to the seed arithmetic, because the thing
+    that would break it is `sweep_genomes`' batch walk (`seed + batch`) overrunning the
+    offset — an off-by-one in `max_batches` would overlap the two streams silently and
+    every number in this section would quietly become in-sample again.
+    """
+    sec = report["sector"]
+    a = {tuple(round(x, 12) for x in r["genes"])
+         for v in sec["genomes"]["groups"].values() for r in v}
+    b = {tuple(round(x, 12) for x in r["genes"])
+         for v in sec["genomes_held_out"]["groups"].values() for r in v}
+    assert len(a) == 16 and len(b) == 32, (len(a), len(b))
+    assert not (a & b), f"{len(a & b)} genomes appear in both draws"
+    assert sec["genomes_held_out"]["seed"] == (
+        fb.GENOME_SWEEP_SEED + fb.GENOME_HELD_OUT_OFFSET)
+
+
+def test_the_clamp_closes_the_refusal_half_OUT_OF_SAMPLE_too(report):
+    """§74's headline was measured on the sixteen genomes the clamp was designed against.
+
+    UNCAP_PLAN PART 9 is the reason this is worth a test rather than an assumption: a rule
+    fitted on 104 genomes scored 1.000 in sample and 0.833 held out, and the hold-out
+    falsified half of it.  This one survives — every genome of a disjoint draw builds once
+    its radii are inside its own sector's room.
+
+    THE BARRIER HALF IS ASSERTED TO STILL BE OPEN, for the same reason the in-sample test
+    asserts it: a run in which the clamp appeared to close both halves is a finding and
+    must not read as a pass.
+    """
+    ho = report["sector"]["per_config"]["coarse"]["fit_clamp_held_out"]
+
+    def row(profile, factor):
+        return next(r for r in ho["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    base = row("shipped", None)
+    clamped = row("shipped", fb.SECTOR_FIT_CLAMP)
+    assert base["n_genomes"] == 32
+    assert base["n_built"] < base["n_genomes"], "nothing refused — that is a finding"
+    assert clamped["n_built"] == clamped["n_genomes"], (
+        f"the clamp does NOT close the refusal half out of sample: "
+        f"{clamped['n_built']}/{clamped['n_genomes']}, {clamped['refusals']}")
+    assert clamped["n_clears_target"] < clamped["n_genomes"], (
+        "the clamp now clears the barrier everywhere on the held-out box too — the "
+        "quality half would be closed, which is a finding")
+
+
+def test_the_held_out_draw_contains_the_first_RIM_refusal(report):
+    """And it narrows §57's wording: the mechanism is the junction's, not the hub's.
+
+    Every one of the six in-sample refusals binds at the HUB, and §57 and §74 both wrote
+    the predictor up in those words — "the hub margin classifies 16 of 16".  The held-out
+    box contains a genome that refuses at the RIM, so the hub margin alone classifies 31
+    of 32 and the sector-fit margin at EITHER junction classifies 32 of 32.
+
+    Nothing about the mechanism changed — a tangent point past the next sector's corner is
+    the same event at either ring.  What was in-sample was the JUNCTION, and this pins the
+    corrected form so the narrow one cannot come back.
+    """
+    rows = [r for v in report["sector"]["genomes_held_out"]["groups"].values()
+            for r in v]
+    refused = [r for r in rows if not r["built"]]
+    assert refused, "nothing refused in the held-out draw — that is a finding"
+    assert any(r["fit"]["rim"]["binds"] for r in refused), (
+        "no rim-bound refusal in the held-out box — if the draw changed, §78's "
+        "narrowing of §57's wording needs re-reading rather than this test relaxing")
+
+    hub_only = sum(1 for r in rows if r["fit"]["hub"]["binds"] != r["built"])
+    either = sum(1 for r in rows
+                 if (r["fit"]["hub"]["binds"] or r["fit"]["rim"]["binds"]) != r["built"])
+    assert either == len(rows), (either, len(rows))
+    assert hub_only < len(rows), (
+        "the hub margin alone now classifies the whole held-out box — the rim refusal "
+        "is gone and §78's narrowing should be re-read")
+
+
+# ---------------------------------------------------------------------------
+# THE BARRIER HALF, AGAINST A PER-GENOME ENTRY (PLAN §78)
+# ---------------------------------------------------------------------------
+
+def test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined(report):
+    """§78's finding: the same barrier clearance for several times the cliff margin.
+
+    §68 declined `GENOME_ROBUST_*` because it spends the shipped genome's cliff margin down
+    to ~0.056.  A per-genome entry — each genome taking a share of its OWN room, the shape
+    §57's clamp works in — clears the SAME 31 of 32 while leaving 0.20-0.36, because a
+    global pair has to be safe for the tightest genome in the box and pays for that
+    everywhere.
+
+    Pinned because it is the number that reopens §68's first reason, and because the first
+    draft of §78 concluded the exact opposite off a miscount — three genomes that build at
+    every entry in the bracket were tallied as measurement failures.  If that handling
+    regresses, this test is what catches it.
+    """
+    for key in ("cliff_profile", "cliff_profile_held_out"):
+        cp = report["sector"]["per_config"]["coarse"][key]
+        assert cp["end"] == fb.GENOME_ROBUST_END
+        rows = {r["factor"]: r for r in cp["rows"]}
+        assert set(rows) == set(fb.CLIFF_PROFILE_FACTORS)
+
+        # the margin the rule leaves grows as the factor falls, and monotonically —
+        # that is the only reason sweeping the factor says anything
+        margins = [rows[f]["shipped_margin"] for f in sorted(rows, reverse=True)]
+        assert all(b > a for a, b in zip(margins, margins[1:])), margins
+
+        # and not one of them reaches the shipped pair's clearance
+        assert max(margins) < 0.5520, (key, max(margins))
+
+        # "no edge to project onto" and "could not be measured" are different claims and
+        # must not be tallied together — the first is the SAFEST genome in the box, and
+        # folding it into the second understated this rule by three of sixteen once
+        # already (§78).
+        for r in cp["rows"]:
+            assert r["n_built"] + r["n_unevaluable"] == r["n_genomes"], r
+            assert r["n_without_cliff"] > 0, (
+                "no genome builds across the whole bracket any more — the fallback "
+                "branch is now dead code and §78's correction should be re-read")
+
+    # THE DOMINANCE ITSELF, on the held-out box: at least one factor matches the global
+    # pair's barrier clearance while leaving several times its margin.
+    ho = report["sector"]["per_config"]["coarse"]["fit_clamp_held_out"]
+    gr = next(r for r in ho["rows"] if r["profile"] == "genome_robust"
+              and r["factor"] == fb.SECTOR_FIT_CLAMP)
+    cp = report["sector"]["per_config"]["coarse"]["cliff_profile_held_out"]
+    gr_margin = fb.GENOME_ROBUST_ENTRY - cp["shipped_cliff"]["entry"]
+    wins = [r for r in cp["rows"]
+            if r["n_clears_target"] >= gr["n_clears_target"]
+            and r["shipped_margin"] > 3.0 * gr_margin]
+    assert wins, (
+        f"no per-genome factor matches the global pair's {gr['n_clears_target']} clears "
+        f"at 3x its {gr_margin:.4f} margin — §78's finding has moved")
+    # and every one of them builds the whole box, or the clears are over a smaller set
+    for r in wins:
+        assert r["n_built"] == r["n_genomes"], r
+
+    # measured, not adopted — no module constant moved for any of this
+    assert ww.FILLET_LAYER_ENTRY_SLOPE == fb.LAYER_ENTRY_SLOPE
+    assert ww.FILLET_LAYER_END_OFFSET == fb.LAYER_END_OFFSET
