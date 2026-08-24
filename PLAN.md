@@ -8945,3 +8945,76 @@ here re-runs a descent.
    as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
    §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
    element-validity check** (§44).
+
+---
+
+## §64 — 2026-08-23. THE AXLE-DROP PROMOTION'S AUDIT, MEASURED AND SCOPED — AND HALF OF IT TURNS OUT TO BE EXACTLY IMMUNE
+
+§63 left "make `axle_drop_interp_mm` the axle drop" as item 1 and called the work an audit.
+An audit whose size nobody has measured is not a plan, and this tree's own discipline says a
+promotion is never a one-file change.  So: the blast radius, enumerated, with the part that
+does not need re-running separated from the part that does.
+
+**The consumers, by what they do with the number.**  Both readings are LINEAR functionals of
+the displacement field — `uy` at one node, or `uy` interpolated between two.  That is what
+splits the list, and it is verified rather than assumed:
+
+```
+  same mesh, two loads, linear solve:   node ratio 1.300000   interp ratio 1.300000
+  shipped genome, value error +0.118%   |   drawn genome, value error -0.195%
+  ratio difference: +0.00000% at both
+```
+
+  * **CLASS A — the value is used absolutely.  Re-running required.**
+    `wheel_adjoint` (objective value and gradient), `study_corner_singularity` and its
+    fillet twin (the deflection ladders), `study_reds_hub_share`, `study_deflection_gci`
+    (the ±0.3% band itself), `study_objective`, `study_gradient`, `study_stage3_m8bi5`.
+  * **CLASS B — a RATIO of two readings on the SAME mesh.  Exactly immune where the fields
+    are proportional, second-order otherwise, and NOT re-running required.**
+    `study_wheel_fea`'s load ladder (exactly immune, measured above), `study_gnl` and
+    `study_svk_rescore`'s linear-vs-SVK ratios (the offset is identical and both readings
+    are linear functionals of their own field, so the residue is
+    `(slope_svk - slope_lin) x offset`).  **This is the expensive half of the tree and it
+    is the half that does not move** — which is the finding that makes item 1 affordable.
+  * **CLASS C — the drop is fed BACK IN as an indentation.**  `study_m9`,
+    `study_m9_buckling`, via `solve_wheel_contact_at(mesh, sec["axle_drop_mm"])`.  These
+    carry the 0.1-1% error into a contact solve rather than merely reporting it, and they
+    are the ones where the consequence is unpriced.
+  * **CLASS D — ratios across DIFFERENT meshes, so not immune.**  `study_contact`'s
+    patch-resolution plateau test compares successive resolutions, and each has its own
+    offset.  Its `GATE_EPS_PLATEAU_REL` is being applied to a quantity that carries a
+    per-mesh term.
+
+**What is NOT yet known and should be settled before the promotion, not during it:**
+
+  1. Class C's sensitivity — does a 0.1-1% shift in the indentation move `study_m9`'s
+     buckling result at all?  One rerun at two indentations answers it.
+  2. Class D — whether `study_contact`'s plateau gate is inside or outside its own epsilon
+     once the per-mesh term is removed.  This is a GATE, so it is the one that could
+     change a verdict rather than a number.
+  3. Whether `axle_drop_mm` should keep its name.  The honest options are to redefine it
+     (every historical number silently changes meaning) or to leave it and move the
+     consumers (every consumer must be found, which is what this section is for).  The
+     second is what this tree has done before and `test_promotion.py` is where the
+     checklist for it belongs.
+
+**Not started, deliberately.**  The re-runs include `make gci` at 95 minutes and 20.6 GB and
+`make m8bi5` at roughly two hours, and a partial promotion leaves the tree inconsistent —
+which is precisely the failure `test_promotion.py` exists to prevent.  Scoping it is the
+completable piece; executing it needs a session that can finish it.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §64
+
+1. **§64's three unknowns**, in order: Class D's gate (could change a verdict), Class C's
+   sensitivity, and the naming decision.  All three are short and all three are
+   prerequisites for item 2.
+2. **Make `axle_drop_interp_mm` the axle drop**, with Class B excluded from the re-run set
+   and `test_promotion.py` extended to carry the checklist.
+3. **Re-derive the ±0.3% band on the corrected reading.**
+4. **Adopt `(-0.85, 1.00)`** as the layer profile (§61), after items 2-3.
+5. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60).
+6. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
