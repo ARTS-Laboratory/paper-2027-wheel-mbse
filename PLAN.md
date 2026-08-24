@@ -8980,18 +8980,24 @@ splits the list, and it is verified rather than assumed:
     `study_m9_buckling`, via `solve_wheel_contact_at(mesh, sec["axle_drop_mm"])`.  These
     carry the 0.1-1% error into a contact solve rather than merely reporting it, and they
     are the ones where the consequence is unpriced.
-  * **CLASS D — ratios across DIFFERENT meshes, so not immune.**  `study_contact`'s
-    patch-resolution plateau test compares successive resolutions, and each has its own
-    offset.  Its `GATE_EPS_PLATEAU_REL` is being applied to a quantity that carries a
-    per-mesh term.
+  * **CLASS D — ratios across DIFFERENT meshes, so not immune.  CORRECTED THE SAME DAY:
+    THIS CLASS IS EMPTY.**  `study_contact` was put here on the strength of the phrase
+    "patch-resolution matrix" without reading what its sweep varies.  It varies `eps_n`,
+    the contact penalty, on a mesh built ONCE outside the loop — same mesh, same offset,
+    so it is Class B.  Its other ratio compares `phase` to `phase + 30`, which is one
+    whole sector of a twelve-fold wheel and therefore the same geometry against the
+    ground: measured, the offsets are identical to six decimals and both ratios are
+    exactly 1.000000000.  The only place ratios genuinely cross meshes is the mesh-ladder
+    convergence in `study_deflection_gci`, which is Class A already.
+    Recorded rather than quietly fixed because the error is the one this file keeps
+    catching: a class assigned from a name instead of from the code.
 
 **What is NOT yet known and should be settled before the promotion, not during it:**
 
   1. Class C's sensitivity — does a 0.1-1% shift in the indentation move `study_m9`'s
      buckling result at all?  One rerun at two indentations answers it.
-  2. Class D — whether `study_contact`'s plateau gate is inside or outside its own epsilon
-     once the per-mesh term is removed.  This is a GATE, so it is the one that could
-     change a verdict rather than a number.
+  2. ~~Class D — `study_contact`'s plateau gate.~~  **Settled the same day: there is no
+     per-mesh term in it to remove.**  See the correction above.
   3. Whether `axle_drop_mm` should keep its name.  The honest options are to redefine it
      (every historical number silently changes meaning) or to leave it and move the
      consumers (every consumer must be found, which is what this section is for).  The
@@ -9005,9 +9011,10 @@ completable piece; executing it needs a session that can finish it.
 
 #### The successors, ranked — REVISED 2026-08-23 AFTER §64
 
-1. **§64's three unknowns**, in order: Class D's gate (could change a verdict), Class C's
-   sensitivity, and the naming decision.  All three are short and all three are
-   prerequisites for item 2.
+1. **§64's remaining two unknowns**: Class C's sensitivity — does a 0.1-1% shift in the
+   indentation move `study_m9`'s buckling result at all — and the naming decision.  Both
+   are short and both are prerequisites for item 2.  (The third, Class D's gate, was
+   settled by reading the code: the class is empty.)
 2. **Make `axle_drop_interp_mm` the axle drop**, with Class B excluded from the re-run set
    and `test_promotion.py` extended to carry the checklist.
 3. **Re-derive the ±0.3% band on the corrected reading.**
