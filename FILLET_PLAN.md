@@ -2332,3 +2332,125 @@ Makefile's help says so.
    spreads ~0.5%; the mechanism is unnamed, and PART 12's own reading — that the fillet's
    convergence comes from removing the corner singularity — does not obviously predict a
    region that gets WORSE than the shipped pair while still being filleted.
+
+---
+
+# STEP 1 RECORD, PART 17 — 2026-08-23. THE REFINEMENT FINDS A BETTER CELL, AND THEN FINDS THAT THE CRITERION IT WAS RANKED BY IS PARTLY MEASURING THE CONTACT PATCH — WHICH ALSO MEANS PART 12's 0.141% IS A SINGLE-NODE READING
+
+PART 16 named `(-0.80, 1.00)` and said in its own successor list that it is a grid point of
+a sweep laid out for a different question — ends jumping 0.80 -> 1.00 -> 1.30 — so the
+band-holding, barrier-clearing region was located but not resolved, and its best point was
+not known to be that one.  This resolves it, at half the step in both variables, and the
+answer is two findings rather than one.
+
+## THE REFINEMENT: A BETTER CELL, AND PART 16's WAS THIRD
+
+```
+  entry \ end     0.85    0.90    1.00    1.10    1.20    1.30   refused
+        -0.70   0.2129  0.2061  0.1937  0.1827  0.1727  0.1637   0 0 0 0 0 0
+        -0.75   0.2198  0.2127  0.1999  0.1884  0.1782  0.1688   0 0 0 0 0 0
+        -0.80   0.2268  0.2195  0.2061  0.1943  0.1836  0.1740   0 0 0 0 0 0
+        -0.85   0.2340  0.2263  0.2125  0.2002  0.1892  0.1792   1 0 0 0 0 0
+        -0.90   0.2412  0.2333  0.2189  0.2062  0.1948  0.1845   1 1 1 0 0 0
+        -0.95   0.2448  0.2403  0.2254  0.2122  0.2005  0.1899   1 1 1 1 1 1
+```
+
+Eleven cells clear `MIN_SJ_TARGET` on all fifteen and refuse none.  Priced against the
+band, **four are admissible on every criterion at once**, and PART 16's cell is third of
+the four:
+
+```
+  pair               genome-box floor    1-node spread    patch-mean spread   patch n, fine
+  (-0.85, 1.00)              0.2125           0.109%            0.195%             31
+  (-0.90, 1.10)              0.2062           0.091%            0.186%             31
+  (-0.80, 1.00)  <- PART 16  0.2061           0.110%            0.170%             31
+  (-0.85, 1.10)              0.2002           0.116%            0.161%             31
+  shipped (-0.45, 1.60)      0.1194           0.141%            0.672%             35
+```
+
+`(-0.85, 1.00)` has the best floor of the four — 0.2125 against PART 16's 0.2061, and
+against the shipped pair's 0.1194.  PART 16's cell was the first grid point inside the
+region, not the best point of it, which is exactly what its own successor list suspected.
+
+## AND THEN THE CRITERION TURNED OUT TO BE READING SOMETHING ELSE
+
+Between adjacent cells the 1-node spread jumps by a factor of four — `(-0.70, 0.90)` at
+0.137% next to `(-0.75, 0.90)` at 0.451% — with coarse and medium agreeing to 0.0002 mm
+and the whole difference in the `fine` rung.  That is not convergence behaviour, so it was
+chased rather than reported.
+
+It is **not** mesh quality (min scaled Jacobian is 0.269-0.283 across the cliff and is
+*identical* at all three configs), **not** aspect ratio (a holding cell runs AR 103 and a
+failing one AR 33), and **not** topology (every mesh has 37632 elements and 158388 nodes at
+`fine`).  It is the contact patch:
+
+```
+  cell            patch n over coarse..medium..fine     1-node      patch-mean
+  (-0.70, 0.90)              [11, 17, 30]                0.137%       0.471%
+  (-0.75, 0.90)              [11, 17, 30]                0.451%       0.490%
+  (-0.80, 1.00)              [11, 17, 31]                0.110%       0.170%
+  (-0.85, 1.00)              [11, 17, 31]                0.109%       0.195%
+  shipped                    [13, 20, 35]                0.141%       0.672%
+```
+
+**Every cell that holds both bands reaches 31 patch nodes at `fine`; every cell that fails
+either reaches 29 or 30.**  How many nodes fall in the contact patch is a discretisation
+fact, the layer profile moves it because the fillet re-cuts the rim blocks, and a
+single-node axle drop moves ~0.005 mm — 0.5% — when it changes.  So what the ±0.3% band is
+separating in this region is the CONTACT PATCH's resolution, not the fillet's convergence.
+
+## WHICH RE-PRICES PART 12's HEADLINE
+
+PART 12 reported the filleted ladder as *"0.141% and flat from `coarse` up"* and checked it
+against the ±0.3% band.  That is `axle_drop_mm`, **one node**.  The same three rungs read
+over the whole contact patch give the shipped pair **0.672%** — outside the band by more
+than a factor of two — and the patch-mean was never recorded, at any rung, in any committed
+artifact.  Checked, not assumed: `study_corner_singularity_fillet.json` as committed has no
+patch-mean field at all.
+
+Both readings and the patch count are now recorded on every rung, so a convergence claim
+can be checked against the one it was not made with.  **This does not overturn PART 12's
+other finding** — the 38% deflection reduction is a magnitude at one rung, not a
+convergence claim, and it stands.  What it overturns is the reading that the filleted
+deflection is settled at 0.141%: on the more robust of the two single-phase QoIs it is not
+settled, and neither is the shipped layer profile the best-converged one available.
+
+## MEASURED, NOT ADOPTED — AND PART 16's PROMOTION IS NOW BLOCKED ON A DIFFERENT THING
+
+PART 16 deferred the promotion because of the size of the audit.  That reason stands and a
+second one is now in front of it: **`(-0.85, 1.00)` is better than the shipped pair on
+every number measured here, and every number measured here is a single-phase, three-rung
+statistic that has just been shown to carry a contact-patch discontinuity worth 0.5%.**
+The gate's own QoI is `axle_drop_mean_mm` — eight phases under both kinematics, which is
+`make gci`, 95 minutes and 20.6 GB, already ranked.  Promoting the layer profile on a
+statistic this arc has just discredited would be the same mistake as PART 12's, made
+knowingly.
+
+So: four admissible profiles, `(-0.85, 1.00)` the best of them on the floor, none adopted,
+and the promotion is now sequenced BEHIND the gci run rather than in front of it.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14,
+`FILLET_LAYER_ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET` still PART 10's, and every mesh
+bit-identical at its default.**  `study_fillet_block.json` gains `profile_genomes_fine`,
+`profile_candidates_fine` and one self-check; `study_corner_singularity_fillet.json` gains
+the patch-mean and patch count on each rung and the refined pairs in `profiles`.  Every
+previously-committed field in both reproduces exactly except the two new rung fields, which
+are additions to existing objects rather than changes to existing values.
+
+`make filletblock` is ~305 s; `make corner-fillet` is ~230 s.
+
+## WHAT PART 17 LEAVES
+
+1. **`make gci` on the filleted mesh at the four admissible profiles**, which is the only
+   instrument that settles the promotion.  95 minutes a pass, so this is a real cost and
+   the four should be cut to two first — `(-0.85, 1.00)` on the floor and `(-0.85, 1.10)`
+   on the patch spread bracket the set.
+2. **Why the patch count moves with the layer profile at all.**  The fillet re-cuts
+   `rim_ring_free` and `rim_ring_weld`, so the rim's circumferential node distribution near
+   the contact is profile-dependent — plausible, unmeasured, and if it is that then the
+   effect is a property of the re-cut and not of the profile, which would make it
+   avoidable rather than a trade.
+3. **The finer grid is still a grid.**  `(-0.95, 0.85)` scores 0.2448, the best floor
+   anywhere on either grid, and refuses one genome; nothing has asked which genome or why.

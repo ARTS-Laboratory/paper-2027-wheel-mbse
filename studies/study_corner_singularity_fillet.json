@@ -16,6 +16,8 @@
       "n_nodes": 5508,
       "h": 0.029462782549439483,
       "axle_drop_mm": 0.9022366921257526,
+      "axle_drop_patch_mean_mm": 0.8681546837478384,
+      "n_nodes_in_patch": 5,
       "global_max_vm_mpa": 28.853544613863484,
       "corners": {
         "hub:P_t": {
@@ -130,6 +132,8 @@
       "n_nodes": 26196,
       "h": 0.012961896184130316,
       "axle_drop_mm": 0.9624561937884566,
+      "axle_drop_patch_mean_mm": 0.9221018649170228,
+      "n_nodes_in_patch": 13,
       "global_max_vm_mpa": 37.81690049766126,
       "corners": {
         "hub:P_t": {
@@ -244,6 +248,8 @@
       "n_nodes": 66468,
       "h": 0.008018753738744801,
       "axle_drop_mm": 0.9638155818152128,
+      "axle_drop_patch_mean_mm": 0.9254133144513226,
+      "n_nodes_in_patch": 20,
       "global_max_vm_mpa": 47.30955330641393,
       "corners": {
         "hub:P_t": {
@@ -358,6 +364,8 @@
       "n_nodes": 158388,
       "h": 0.005154913117764516,
       "axle_drop_mm": 0.9625792359804273,
+      "axle_drop_patch_mean_mm": 0.9283188112505166,
+      "n_nodes_in_patch": 35,
       "global_max_vm_mpa": 59.305887678810485,
       "corners": {
         "hub:P_t": {
@@ -1416,9 +1424,22 @@
           0.9591784783043408,
           0.9639162004366918
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9257342190325578,
+          0.9267659208471357,
+          0.9333249401081007
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          29
+        ],
         "why": null,
         "spread_pct": 0.4929648744397856,
-        "inside_band": false
+        "patch_spread_pct": 0.8174297586095591,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.8,
@@ -1433,9 +1454,22 @@
           0.9594053287314517,
           0.9641108619742742
         ],
+        "axle_drop_patch_mean_mm": [
+          0.926604107316168,
+          0.9278299901523765,
+          0.9311887607894404
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
         "why": null,
         "spread_pct": 0.4895561033584327,
-        "inside_band": false
+        "patch_spread_pct": 0.4937481173750161,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.8,
@@ -1450,9 +1484,22 @@
           0.9606194113213423,
           0.9596727694678036
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9288949557698216,
+          0.9304777165846922,
+          0.9304520489729037
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          31
+        ],
         "why": null,
         "spread_pct": 0.10956951591728782,
-        "inside_band": true
+        "patch_spread_pct": 0.170200027561324,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": true
       },
       {
         "entry": -0.75,
@@ -1467,9 +1514,22 @@
           0.958905002881292,
           0.9634607223791499
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9246425131732813,
+          0.9314768927615362,
+          0.9322174073546148
+        ],
+        "n_nodes_in_patch": [
+          11,
+          16,
+          29
+        ],
         "why": null,
         "spread_pct": 0.47420908290742225,
-        "inside_band": false
+        "patch_spread_pct": 0.8149905863485675,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.75,
@@ -1484,9 +1544,22 @@
           0.9591740683160379,
           0.9640974424179845
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9263151270365593,
+          0.9269750446000549,
+          0.9336876447389318
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          29
+        ],
         "why": null,
         "spread_pct": 0.5121832299976309,
-        "inside_band": false
+        "patch_spread_pct": 0.7936034860830542,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.75,
@@ -1501,9 +1574,22 @@
           0.9595988164710544,
           0.9642321435302637
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9270128103102947,
+          0.9282207495899617,
+          0.9315210907786485
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
         "why": null,
         "spread_pct": 0.48196103671620494,
-        "inside_band": false
+        "patch_spread_pct": 0.48532587545037714,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.7,
@@ -1518,9 +1604,22 @@
           0.9582360821456704,
           0.9631914630064335
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9327613316062973,
+          0.9301617437495308,
+          0.9311816300801429
+        ],
+        "n_nodes_in_patch": [
+          10,
+          16,
+          29
+        ],
         "why": null,
         "spread_pct": 0.5160296673557864,
-        "inside_band": false
+        "patch_spread_pct": 0.27911493635606816,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": true
       },
       {
         "entry": -0.7,
@@ -1535,9 +1634,22 @@
           0.9591670111907684,
           0.9635915463515619
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9251586292104736,
+          0.9318949127168394,
+          0.9325331835720361
+        ],
+        "n_nodes_in_patch": [
+          11,
+          16,
+          29
+        ],
         "why": null,
         "spread_pct": 0.46044111581757113,
-        "inside_band": false
+        "patch_spread_pct": 0.7930803112323754,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.7,
@@ -1552,9 +1664,22 @@
           0.9592624975404005,
           0.9640989215530775
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9268014799027234,
+          0.9272726001100977,
+          0.930722631613349
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
         "why": null,
         "spread_pct": 0.5030748166421415,
-        "inside_band": false
+        "patch_spread_pct": 0.4224170145980778,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.7,
@@ -1569,9 +1694,22 @@
           0.9598123403529862,
           0.9643793773762209
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9274410099386698,
+          0.9286363730480973,
+          0.9318840081651829
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
         "why": null,
         "spread_pct": 0.4749736064606315,
-        "inside_band": false
+        "patch_spread_pct": 0.4780910783714912,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.6,
@@ -1586,9 +1724,22 @@
           0.9586152155268902,
           0.9634178274887458
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9335702107758527,
+          0.9308691104296306,
+          0.9317837881516233
+        ],
+        "n_nodes_in_patch": [
+          10,
+          16,
+          29
+        ],
         "why": null,
         "spread_pct": 0.49993436746319686,
-        "inside_band": false
+        "patch_spread_pct": 0.28979450929898287,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": true
       },
       {
         "entry": -0.6,
@@ -1603,9 +1754,22 @@
           0.9594728170754898,
           0.9639160611531685
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9261872872549439,
+          0.9269536876099332,
+          0.9332442498496785
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          29
+        ],
         "why": null,
         "spread_pct": 0.4621903161047693,
-        "inside_band": false
+        "patch_spread_pct": 0.7597975899535722,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.6,
@@ -1620,9 +1784,22 @@
           0.9595714156106743,
           0.9641799526056777
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9271663181454382,
+          0.9280068616242584,
+          0.9312691045437386
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
         "why": null,
         "spread_pct": 0.47933444538963277,
-        "inside_band": false
+        "patch_spread_pct": 0.44172309845398317,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.6,
@@ -1637,9 +1814,322 @@
           0.9602957317428235,
           0.9647376390999206
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9283504642212729,
+          0.9295403338501516,
+          0.932690632465396
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
         "why": null,
         "spread_pct": 0.4617560629673536,
-        "inside_band": false
+        "patch_spread_pct": 0.46658752150674665,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
+      },
+      {
+        "entry": -0.9,
+        "end": 1.1,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9605706929347549,
+          0.9605685951977635,
+          0.9596958682798731
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9290163488275417,
+          0.9307021276829959,
+          0.9307444356935018
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          31
+        ],
+        "why": null,
+        "spread_pct": 0.09110115026206338,
+        "patch_spread_pct": 0.1857849669030609,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": true
+      },
+      {
+        "entry": -0.85,
+        "end": 0.9,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9599943076429721,
+          0.9598168465176687,
+          0.9644318730865463
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9271823860777321,
+          0.9287825749118043,
+          0.9320878736349963
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
+        "why": null,
+        "spread_pct": 0.48002472662114454,
+        "patch_spread_pct": 0.5278401646134765,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
+      },
+      {
+        "entry": -0.85,
+        "end": 1.0,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9604278267621225,
+          0.9605464558344291,
+          0.9594990551102376
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9283781501018037,
+          0.9301872726474384,
+          0.9300774525619228
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          31
+        ],
+        "why": null,
+        "spread_pct": 0.10908631340000974,
+        "patch_spread_pct": 0.19462397587566677,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": true
+      },
+      {
+        "entry": -0.85,
+        "end": 1.1,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.960916896625884,
+          0.9607375608446574,
+          0.9598046372683567
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9295795827529577,
+          0.9310771085062397,
+          0.9310600731844934
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          31
+        ],
+        "why": null,
+        "spread_pct": 0.11580168112308613,
+        "patch_spread_pct": 0.1609252527715224,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": true
+      },
+      {
+        "entry": -0.8,
+        "end": 0.85,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9601144538198595,
+          0.9597083824883047,
+          0.9643294068603634
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9271145394687615,
+          0.9285083132969694,
+          0.9318084773521097
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
+        "why": null,
+        "spread_pct": 0.4806637079929633,
+        "patch_spread_pct": 0.5051896166155649,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
+      },
+      {
+        "entry": -0.8,
+        "end": 0.9,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9602813951430131,
+          0.9600551275036395,
+          0.9646038336308063
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9276878143606442,
+          0.9292134561746044,
+          0.9324651163379641
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
+        "why": null,
+        "spread_pct": 0.47301214916998413,
+        "patch_spread_pct": 0.513805070549569,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
+      },
+      {
+        "entry": -0.75,
+        "end": 0.85,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9603474988681158,
+          0.9599349287091482,
+          0.9644908732067511
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9275716529037639,
+          0.9289319571691637,
+          0.9321800927727429
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
+        "why": null,
+        "spread_pct": 0.4737922903367846,
+        "patch_spread_pct": 0.49576506625076866,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
+      },
+      {
+        "entry": -0.75,
+        "end": 0.9,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9605414825174357,
+          0.960306425132896,
+          0.9646396581223912
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9281714639799176,
+          0.9296625374530257,
+          0.9327294375308395
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
+        "why": null,
+        "spread_pct": 0.4505200134177063,
+        "patch_spread_pct": 0.49000572650816565,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
+      },
+      {
+        "entry": -0.7,
+        "end": 0.85,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9605847007641254,
+          0.9601779706720415,
+          0.9646706998299265
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9280380014075029,
+          0.9293773733009825,
+          0.9325756297715585
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
+        "why": null,
+        "spread_pct": 0.4671113742522832,
+        "patch_spread_pct": 0.4879186015405702,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
+      },
+      {
+        "entry": -0.7,
+        "end": 0.9,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.960802007097072,
+          0.9605725018570297,
+          0.9594906245562234
+        ],
+        "axle_drop_patch_mean_mm": [
+          0.9286613125109885,
+          0.9301318778583257,
+          0.9330436144050049
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
+        "why": null,
+        "spread_pct": 0.1365613258595032,
+        "patch_spread_pct": 0.47090523556272446,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": false
       },
       {
         "entry": -0.45,
@@ -1654,9 +2144,22 @@
           0.9638155818152128,
           0.9625792359804273
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9221018649170228,
+          0.9254133144513226,
+          0.9283188112505166
+        ],
+        "n_nodes_in_patch": [
+          13,
+          20,
+          35
+        ],
         "why": null,
         "spread_pct": 0.14116906908370655,
-        "inside_band": true
+        "patch_spread_pct": 0.6719003752930928,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": false
       },
       {
         "entry": -0.3,
@@ -1671,9 +2174,22 @@
           0.9608741041300919,
           0.959788899085024
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9297936827437865,
+          0.9307481795927356,
+          0.9305814011609894
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          31
+        ],
         "why": null,
         "spread_pct": 0.18934477365368588,
-        "inside_band": true
+        "patch_spread_pct": 0.10259276558281126,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": true
       },
       {
         "entry": -0.45,
@@ -1688,9 +2204,22 @@
           0.9602415484654164,
           0.9646597606767411
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9283996545345999,
+          0.9293532719752091,
+          0.9324709068905318
+        ],
+        "n_nodes_in_patch": [
+          11,
+          17,
+          30
+        ],
         "why": null,
         "spread_pct": 0.4592821746872415,
-        "inside_band": false
+        "patch_spread_pct": 0.4377339524374698,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.9,
@@ -1701,9 +2230,14 @@
           "fine"
         ],
         "axle_drop_mm": [],
+        "axle_drop_patch_mean_mm": [],
+        "n_nodes_in_patch": [],
         "why": "ValueError: no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.  See FILLET_PLAN.md PART 10.",
         "spread_pct": null,
-        "inside_band": null
+        "patch_spread_pct": null,
+        "inside_band": null,
+        "inside_band_patch": null,
+        "patch_count_moves": null
       },
       {
         "entry": -0.3,
@@ -1718,9 +2252,22 @@
           0.964162368414504,
           0.9631313953533797
         ],
+        "axle_drop_patch_mean_mm": [
+          0.923645915853061,
+          0.9269896312316608,
+          0.9299775070301729
+        ],
+        "n_nodes_in_patch": [
+          13,
+          20,
+          35
+        ],
         "why": null,
         "spread_pct": 1.412300216060756,
-        "inside_band": false
+        "patch_spread_pct": 0.6831145924178941,
+        "patch_count_moves": true,
+        "inside_band": false,
+        "inside_band_patch": false
       },
       {
         "entry": -0.6,
@@ -1735,9 +2282,22 @@
           0.9634200505531646,
           0.9620210704329395
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9279893857776319,
+          0.9285832831291383,
+          0.9294191764794896
+        ],
+        "n_nodes_in_patch": [
+          12,
+          19,
+          34
+        ],
         "why": null,
         "spread_pct": 0.14534607431733798,
-        "inside_band": true
+        "patch_spread_pct": 0.15396211990628833,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": true
       },
       {
         "entry": -0.7,
@@ -1752,9 +2312,22 @@
           0.9628909818146223,
           0.9617950895620392
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9269589340551357,
+          0.927438329865681,
+          0.9285675885992666
+        ],
+        "n_nodes_in_patch": [
+          12,
+          19,
+          34
+        ],
         "why": null,
         "spread_pct": 0.12139379404072066,
-        "inside_band": true
+        "patch_spread_pct": 0.1734108725096696,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": true
       },
       {
         "entry": -0.75,
@@ -1769,9 +2342,22 @@
           0.9626747307597163,
           0.9616613340892346
         ],
+        "axle_drop_patch_mean_mm": [
+          0.926317673826116,
+          0.9269193299462126,
+          0.930879089770102
+        ],
+        "n_nodes_in_patch": [
+          12,
+          19,
+          33
+        ],
         "why": null,
         "spread_pct": 0.13518953661980843,
-        "inside_band": true
+        "patch_spread_pct": 0.49151139435952024,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": false
       },
       {
         "entry": -0.8,
@@ -1786,9 +2372,22 @@
           0.9625008914780673,
           0.961421709598663
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9256935623588981,
+          0.9264445245196639,
+          0.9303784574158106
+        ],
+        "n_nodes_in_patch": [
+          12,
+          19,
+          33
+        ],
         "why": null,
         "spread_pct": 0.15215645980662224,
-        "inside_band": true
+        "patch_spread_pct": 0.5051069758976641,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": false
       },
       {
         "entry": -0.9,
@@ -1803,9 +2402,22 @@
           0.962408428496396,
           0.9610717930267161
         ],
+        "axle_drop_patch_mean_mm": [
+          0.9244969514597701,
+          0.9257365960229512,
+          0.9295121498198944
+        ],
+        "n_nodes_in_patch": [
+          12,
+          19,
+          33
+        ],
         "why": null,
         "spread_pct": 0.20874201452731594,
-        "inside_band": true
+        "patch_spread_pct": 0.5412579681289824,
+        "patch_count_moves": true,
+        "inside_band": true,
+        "inside_band_patch": false
       }
     ],
     "shipped_pair": [
@@ -1872,6 +2484,46 @@
       [
         -0.6,
         0.8
+      ],
+      [
+        -0.9,
+        1.1
+      ],
+      [
+        -0.85,
+        0.9
+      ],
+      [
+        -0.85,
+        1.0
+      ],
+      [
+        -0.85,
+        1.1
+      ],
+      [
+        -0.8,
+        0.85
+      ],
+      [
+        -0.8,
+        0.9
+      ],
+      [
+        -0.75,
+        0.85
+      ],
+      [
+        -0.75,
+        0.9
+      ],
+      [
+        -0.7,
+        0.85
+      ],
+      [
+        -0.7,
+        0.9
       ]
     ]
   }

@@ -9525,7 +9525,7 @@
       }
     }
   },
-  "seconds": 268.01,
+  "seconds": 306.49,
   "sector": {
     "block_order": [
       "spoke",
@@ -12675,6 +12675,101 @@
           ],
           "target": 0.2
         },
+        "profile_candidates_fine": {
+          "constant": [
+            [
+              -0.9,
+              1.1
+            ],
+            [
+              -0.85,
+              0.9
+            ],
+            [
+              -0.85,
+              1.0
+            ],
+            [
+              -0.85,
+              1.1
+            ],
+            [
+              -0.8,
+              0.85
+            ],
+            [
+              -0.8,
+              0.9
+            ],
+            [
+              -0.8,
+              1.0
+            ],
+            [
+              -0.75,
+              0.85
+            ],
+            [
+              -0.75,
+              0.9
+            ],
+            [
+              -0.7,
+              0.85
+            ],
+            [
+              -0.7,
+              0.9
+            ]
+          ],
+          "measured": [
+            [
+              -0.9,
+              1.1
+            ],
+            [
+              -0.85,
+              0.9
+            ],
+            [
+              -0.85,
+              1.0
+            ],
+            [
+              -0.85,
+              1.1
+            ],
+            [
+              -0.8,
+              0.85
+            ],
+            [
+              -0.8,
+              0.9
+            ],
+            [
+              -0.8,
+              1.0
+            ],
+            [
+              -0.75,
+              0.85
+            ],
+            [
+              -0.75,
+              0.9
+            ],
+            [
+              -0.7,
+              0.85
+            ],
+            [
+              -0.7,
+              0.9
+            ]
+          ],
+          "target": 0.2
+        },
         "profile_genomes": [
           {
             "end": 0.5,
@@ -13853,6 +13948,440 @@
               "rim_ring_free"
             ],
             "worst_min_scaled_jacobian": 0.15858636522811298
+          }
+        ],
+        "profile_genomes_fine": [
+          {
+            "end": 0.85,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.21287280809058506
+          },
+          {
+            "end": 0.9,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.20607978323100143
+          },
+          {
+            "end": 1.0,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.19370881344920496
+          },
+          {
+            "end": 1.1,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.18267847653096747
+          },
+          {
+            "end": 1.2,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.17273452244499377
+          },
+          {
+            "end": 1.3,
+            "entry": -0.7,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.16368752027589398
+          },
+          {
+            "end": 0.85,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.2198060706962201
+          },
+          {
+            "end": 0.9,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.21273496495648989
+          },
+          {
+            "end": 1.0,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.19988008788069314
+          },
+          {
+            "end": 1.1,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.18844251840589335
+          },
+          {
+            "end": 1.2,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.17815070575608646
+          },
+          {
+            "end": 1.3,
+            "entry": -0.75,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.16880280867787353
+          },
+          {
+            "end": 0.85,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.2268415297689311
+          },
+          {
+            "end": 0.9,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.21948694792764575
+          },
+          {
+            "end": 1.0,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.206138497588094
+          },
+          {
+            "end": 1.1,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.19428536764709206
+          },
+          {
+            "end": 1.2,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.1836385059566473
+          },
+          {
+            "end": 1.3,
+            "entry": -0.8,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.1739834791004084
+          },
+          {
+            "end": 0.85,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.23397177461388194
+          },
+          {
+            "end": 0.9,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.22632934403590482
+          },
+          {
+            "end": 1.0,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.21247920514744661
+          },
+          {
+            "end": 1.1,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.2002032805228762
+          },
+          {
+            "end": 1.2,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.18919497180633624
+          },
+          {
+            "end": 1.3,
+            "entry": -0.85,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.17922716787124643
+          },
+          {
+            "end": 0.85,
+            "entry": -0.9,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.2411885339078145
+          },
+          {
+            "end": 0.9,
+            "entry": -0.9,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.2332550028968134
+          },
+          {
+            "end": 1.0,
+            "entry": -0.9,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.21889676988218684
+          },
+          {
+            "end": 1.1,
+            "entry": -0.9,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.20619203004616196
+          },
+          {
+            "end": 1.2,
+            "entry": -0.9,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.19481676029554637
+          },
+          {
+            "end": 1.3,
+            "entry": -0.9,
+            "n_genomes": 15,
+            "refused": 0,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.18453119013469904
+          },
+          {
+            "end": 0.85,
+            "entry": -0.95,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.5635189870813017,
+              2.6695810127189628,
+              "hub_fillet_b"
+            ],
+            "worst_min_scaled_jacobian": 0.2447997255886177
+          },
+          {
+            "end": 0.9,
+            "entry": -0.95,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.240256065853126
+          },
+          {
+            "end": 1.0,
+            "entry": -0.95,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.22538517821345175
+          },
+          {
+            "end": 1.1,
+            "entry": -0.95,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.21224692291813566
+          },
+          {
+            "end": 1.2,
+            "entry": -0.95,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.20050014580815317
+          },
+          {
+            "end": 1.3,
+            "entry": -0.95,
+            "n_genomes": 15,
+            "refused": 1,
+            "worst_at": [
+              0.802905306190049,
+              2.8627221289967135,
+              "rim_ring_free"
+            ],
+            "worst_min_scaled_jacobian": 0.18989254442563547
           }
         ],
         "shipped": {
@@ -15365,8 +15894,10 @@
         "profile": null,
         "profile_argmax": null,
         "profile_candidates": null,
+        "profile_candidates_fine": null,
         "profile_genomes": null,
         "profile_genomes_buildable": null,
+        "profile_genomes_fine": null,
         "shipped": {
           "R_hub_mm": 0.6636060402965218,
           "R_rim_mm": 3.0,
@@ -15747,6 +16278,7 @@
     "the_clamp_is_inert_on_the_shipped_genome": true,
     "the_closed_form_fold_does_not_move_with_the_sampling": true,
     "the_closed_form_fold_is_the_sampled_flank": true,
+    "the_fine_candidate_constant_matches_the_measured_surface": true,
     "the_fold_gate_is_inert_on_the_shipped_genome": true,
     "the_hub_margin_predicts_every_refusal": true,
     "the_re_derived_argmax_is_still_PART_13s_pair": true,

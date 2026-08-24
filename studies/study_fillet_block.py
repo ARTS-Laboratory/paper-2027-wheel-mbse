@@ -1258,6 +1258,20 @@ LAYER_PROFILE_FRONTIER = tuple((float(e), float(n))
                                for n in LAYER_PROFILE_FRONTIER_ENDS
                                for e in GENOME_PROFILE_ENTRIES)
 
+# AND THE REFINEMENT, because the winner above is a grid point of a sweep laid out for a
+# different question -- the ends jump 0.80 -> 1.00 -> 1.30 and the entries -0.80 -> -0.90,
+# so the band-holding, barrier-clearing region was located but not resolved.  This walks
+# the neighbourhood at half the step in both variables.  Reported through the same two
+# functions as the coarse grid, so the refinement is the same measurement and not a
+# second instrument -- which is the mistake PART 6 caught this arc making once already.
+LAYER_PROFILE_FINE_ENTRIES = (-0.70, -0.75, -0.80, -0.85, -0.90, -0.95)
+LAYER_PROFILE_FINE_ENDS = (0.85, 0.90, 1.00, 1.10, 1.20, 1.30)
+LAYER_PROFILE_FINE_CANDIDATES = ((-0.90, 1.10),
+                                 (-0.85, 0.90), (-0.85, 1.00), (-0.85, 1.10),
+                                 (-0.80, 0.85), (-0.80, 0.90), (-0.80, 1.00),
+                                 (-0.75, 0.85), (-0.75, 0.90),
+                                 (-0.70, 0.85), (-0.70, 0.90))
+
 
 def profile_candidates(table, target=None):
     """Every cell that clears the barrier on all cells and refuses none of them.
@@ -1794,6 +1808,15 @@ def build_sector_section(genes, configs, junctions):
                 [r for rows in out["genomes"]["groups"].values() for r in rows],
                 clamp=SECTOR_FIT_CLAMP, fold_gate=True)
                 if cfg == configs[0] else None),
+            # The same derivation again on the refined neighbourhood of the winner.
+            # PART 17: whether the two-objective cell PART 16 named is the best point of
+            # the region or just the first grid point inside it.
+            "profile_genomes_fine": (sweep_layer_profile_genomes(
+                genes, cfg,
+                [r for rows in out["genomes"]["groups"].values() for r in rows],
+                entries=LAYER_PROFILE_FINE_ENTRIES, ends=LAYER_PROFILE_FINE_ENDS,
+                clamp=SECTOR_FIT_CLAMP, fold_gate=True)
+                if cfg == configs[0] else None),
             # The REFUSAL half of PLAN.md's item 2, priced.  Same config as the genome
             # sweep it reads, for the same reason `profile_genomes` is: it re-uses those
             # rows rather than drawing a second set, and the margins in them were the
@@ -1822,6 +1845,12 @@ def build_sector_section(genes, configs, junctions):
             "part_13": profile_argmax(per["profile_genomes"]),
             "buildable": profile_argmax(per["profile_genomes_buildable"])}
             if per["profile_genomes"] else None)
+        per["profile_candidates_fine"] = ({
+            "measured": [list(p) for p in
+                         profile_candidates(per["profile_genomes_fine"])],
+            "constant": [list(p) for p in LAYER_PROFILE_FINE_CANDIDATES],
+            "target": MIN_SJ_TARGET}
+            if per["profile_genomes_fine"] else None)
         per["profile_candidates"] = ({
             "measured": [list(p) for p in
                          profile_candidates(per["profile_genomes_buildable"])],
@@ -1959,10 +1988,12 @@ def self_checks(rec):
         # `LAYER_PROFILE_CANDIDATES` is read by ANOTHER study, the only reason it is
         # a constant rather than a derivation.  Gated so it cannot drift from the surface
         # it names without this file going red first.
-        pr = sec["per_config"][rec["configs"][0]].get("profile_candidates")
-        if pr:
-            checks["the_candidate_constant_matches_the_measured_surface"] = bool(
-                pr["measured"] == pr["constant"])
+        for key, name in (("profile_candidates", "the_candidate_constant"),
+                          ("profile_candidates_fine", "the_fine_candidate_constant")):
+            pr = sec["per_config"][rec["configs"][0]].get(key)
+            if pr:
+                checks[f"{name}_matches_the_measured_surface"] = bool(
+                    pr["measured"] == pr["constant"])
     checks["pass"] = bool(all(v for k, v in checks.items() if k != "pass"))
     return checks
 

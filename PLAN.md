@@ -8660,3 +8660,79 @@ additive.  `make corner-fillet` ~180 s.
 10. **The REST of §45's audit list** (§49).
 11. **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity check**
     (§44).
+
+---
+
+## §60 — 2026-08-23. THE REFINEMENT FINDS A BETTER PROFILE AND THEN FINDS THAT THE CRITERION RANKING IT IS PARTLY MEASURING THE CONTACT PATCH — WHICH ALSO MAKES §54's 0.141% A SINGLE-NODE READING
+
+§59 named `(-0.80, 1.00)` and said in its own successor list that it is a grid point of a
+sweep laid out for a different question, so the admissible region was located but not
+resolved.  This resolves it at half the step, and produces two findings.
+
+**A better cell, and §59's was third.**  Eleven cells of the refined grid clear
+`MIN_SJ_TARGET` on all fifteen clamped fold-clean cells and refuse none; four are
+admissible on every criterion at once:
+
+```
+  pair               genome-box floor    1-node spread    patch-mean spread   patch n, fine
+  (-0.85, 1.00)              0.2125           0.109%            0.195%             31
+  (-0.90, 1.10)              0.2062           0.091%            0.186%             31
+  (-0.80, 1.00)  <- §59      0.2061           0.110%            0.170%             31
+  (-0.85, 1.10)              0.2002           0.116%            0.161%             31
+  shipped (-0.45, 1.60)      0.1194           0.141%            0.672%             35
+```
+
+**And then the criterion turned out to be reading something else.**  The 1-node spread
+jumps fourfold between adjacent cells with coarse and medium agreeing to 0.0002 mm and the
+whole difference in `fine`.  Chased rather than reported: not mesh quality (min scaled
+Jacobian 0.269-0.283 across the cliff, and identical at all three configs), not aspect
+ratio (a holding cell runs AR 103, a failing one 33), not topology (same element and node
+counts everywhere).  **It is the contact patch.**  Every cell that holds both bands reaches
+31 patch nodes at `fine`; every cell that fails either reaches 29 or 30.  The layer profile
+moves the patch count because the fillet re-cuts the rim blocks, and a single-node axle
+drop moves ~0.005 mm — 0.5% — when it changes.
+
+**Which re-prices §54's headline.**  *"0.141% and flat from `coarse` up"* is
+`axle_drop_mm`, one node.  The same three rungs read over the whole patch give the shipped
+pair **0.672%**, outside the band by more than a factor of two — and the patch-mean had
+never been recorded, at any rung, in any committed artifact.  Checked, not assumed.  §54's
+OTHER finding, the 38% deflection reduction, is a magnitude at one rung rather than a
+convergence claim and stands.  What falls is the reading that the filleted deflection is
+settled at 0.141%, and with it the premise that the shipped layer profile is the
+best-converged one available.
+
+**Not adopted, and now blocked on a different thing.**  §59 deferred the promotion on the
+size of the audit; that stands, and a second reason is in front of it.  `(-0.85, 1.00)` is
+better than the shipped pair on every number measured here, and every number measured here
+is a single-phase three-rung statistic just shown to carry a 0.5% contact-patch
+discontinuity.  The gate's own QoI is `axle_drop_mean_mm` — eight phases, both kinematics,
+`make gci`.  Promoting on a statistic this arc has just discredited would be §54's mistake
+made knowingly.  Both artifacts diffed field-by-field and are purely additive.
+`make filletblock` ~305 s, `make corner-fillet` ~230 s.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §60
+
+1. **`make gci` on the filleted mesh at two of the four admissible profiles.**  The only
+   instrument that settles the promotion, and now the thing everything else waits on.  95
+   minutes a pass and 20.6 GB, so cut the four to two first: `(-0.85, 1.00)` on the floor
+   and `(-0.85, 1.10)` on the patch spread bracket the set.  This subsumes what was item 8
+   — Step 2's part C is the same run.
+2. **Why the patch count moves with the layer profile at all** (§60).  The fillet re-cuts
+   `rim_ring_free` and `rim_ring_weld`, so the rim's circumferential node distribution near
+   the contact is profile-dependent — plausible, unmeasured, and if that is the mechanism
+   then the effect belongs to the re-cut rather than to the profile, which would make it
+   avoidable rather than a trade.  Cheap, geometry only, and it may remove item 1's
+   ambiguity without the 95 minutes.
+3. **Then adopt the winner** — every filleted artifact re-derived and re-dated, §54's
+   convergence and 38% figure re-measured, and `test_promotion.py`'s checklist extended to
+   cover a layer-profile change the way it covers a genome change.
+4. **`(-0.95, 0.85)` scores 0.2448, the best floor anywhere on either grid, and refuses one
+   genome** (§60).  Nothing has asked which genome or why.
+5. **Apply the fold gate to the draw and re-derive the box** (§58).
+6. **What makes a region impossible** (§56) — the bow, the fold margin and the interior
+   point are all ruled out with numbers.
+7. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+8. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.**
+9. **Make `modelled_area_reference` fillet-aware** (§50); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).

@@ -498,26 +498,46 @@ def profile_convergence(genes, pairs, ladder=CONVERGENCE_LADDER, fillet=True):
     along as controls.  A pair that refuses to build at any rung is reported with its
     reason and no spread, never silently dropped.
     """
+    def _spread(v):
+        return 100.0 * (max(v) - min(v)) / (sum(v) / len(v))
+
     rows = []
     for entry, end in pairs:
-        drops, why = [], None
+        drops, patch, npatch, why = [], [], [], None
         for name in ladder:
             try:
                 mesh = WW.build_wheel(genes, name, fillet=fillet,
                                       layer_profile=(entry, end))
-                drops.append(float(fem.solve_wheel(mesh)["axle_drop_mm"]))
+                res = fem.solve_wheel(mesh)
+                drops.append(float(res["axle_drop_mm"]))
+                patch.append(float(res["axle_drop_patch_mean_mm"]))
+                npatch.append(int(res["n_nodes_in_patch"]))
             except Exception as exc:          # a candidate must not kill the driver
                 why = f"{type(exc).__name__}: {exc}"
                 break
         row = {"entry": float(entry), "end": float(end),
-               "ladder": list(ladder), "axle_drop_mm": drops, "why": why}
+               "ladder": list(ladder), "axle_drop_mm": drops,
+               # THE SECOND QoI, AND IT IS THE ONE THAT MEANS SOMETHING HERE.
+               # `axle_drop_mm` reads ONE node.  How many nodes fall in the contact
+               # patch is a discretisation fact that the layer profile moves -- measured,
+               # 30 against 31 at `fine` between two adjacent cells -- and a single-node
+               # drop jumps ~0.005 mm when it changes, which is 0.5% and swamps the
+               # convergence this band is trying to read.  `axle_drop_patch_mean_mm`
+               # averages over the patch and does not have that discontinuity.  Both are
+               # reported, with the patch counts, so the reader can see which is which.
+               "axle_drop_patch_mean_mm": patch,
+               "n_nodes_in_patch": npatch, "why": why}
         if why is None and len(drops) == len(ladder):
-            lo, hi = min(drops), max(drops)
-            mean = sum(drops) / len(drops)
-            row["spread_pct"] = 100.0 * (hi - lo) / mean
+            row["spread_pct"] = _spread(drops)
+            row["patch_spread_pct"] = _spread(patch)
+            row["patch_count_moves"] = bool(len(set(npatch)) > 1)
             row["inside_band"] = bool(row["spread_pct"] <= CONVERGENCE_BAND_PCT)
+            row["inside_band_patch"] = bool(
+                row["patch_spread_pct"] <= CONVERGENCE_BAND_PCT)
         else:
-            row["spread_pct"], row["inside_band"] = None, None
+            row["spread_pct"] = row["patch_spread_pct"] = None
+            row["inside_band"] = row["inside_band_patch"] = None
+            row["patch_count_moves"] = None
         rows.append(row)
     return {"band_pct": CONVERGENCE_BAND_PCT, "ladder": list(ladder), "rows": rows}
 
@@ -540,6 +560,16 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=Fal
                "n_nodes": int(mesh.n_nodes),
                "h": 1.0 / math.sqrt(mesh.n_elements),
                "axle_drop_mm": float(res["axle_drop_mm"]),
+               # THE SAME DEFLECTION, READ OVER THE WHOLE CONTACT PATCH.  PART 12 quoted
+               # the filleted ladder's convergence off `axle_drop_mm`, which is ONE node,
+               # and PART 17 found that reading carries a discrete jump: how many nodes
+               # fall in the patch is a discretisation fact, it changes between adjacent
+               # layer profiles at `fine` (30 against 31, measured), and a single-node
+               # drop moves ~0.005 mm when it does.  Both readings and the patch count
+               # are recorded from here on so that a convergence claim can be checked
+               # against the one it was not made with.
+               "axle_drop_patch_mean_mm": float(res["axle_drop_patch_mean_mm"]),
+               "n_nodes_in_patch": int(res["n_nodes_in_patch"]),
                "global_max_vm_mpa": float(vm.max()), "corners": {}}
         rung_pts = probe_points(genes, cfg, fillet)
         rec["global_peak"] = nearest_probe(xy[int(np.argmax(vm))], rung_pts, n_sp)
@@ -666,6 +696,7 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=Fal
         # number this whole sweep exists to put in context.  De-duplicated, order kept.
         pairs, seen = [], set()
         for p in (tuple(fbk.LAYER_PROFILE_CANDIDATES)
+                  + tuple(fbk.LAYER_PROFILE_FINE_CANDIDATES)
                   + ((fbk.GENOME_ROBUST_ENTRY, fbk.GENOME_ROBUST_END),
                      (fbk.LAYER_ENTRY_SLOPE, fbk.LAYER_END_OFFSET))
                   + tuple(fbk.LAYER_PROFILE_FRONTIER)):
@@ -680,7 +711,9 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=Fal
         # Which of the priced pairs were CANDIDATES rather than controls.  Carried so a
         # reader (and a test) can tell "holds the band" from "holds the band AND clears
         # the barrier" without re-deriving the candidate set from the other study.
-        out["profiles"]["candidates"] = [list(p) for p in fbk.LAYER_PROFILE_CANDIDATES]
+        out["profiles"]["candidates"] = [
+            list(p) for p in dict.fromkeys(tuple(fbk.LAYER_PROFILE_CANDIDATES)
+                                           + tuple(fbk.LAYER_PROFILE_FINE_CANDIDATES))]
     return out
 
 
@@ -762,22 +795,37 @@ def _print(rep):
               "(FILLET_PLAN PART 16)")
         print(f"    the band is +-{pr['band_pct']:.1f}% over "
               + "..".join(pr["ladder"]) + ", which is what PART 12 checked 0.141% against")
-        print(f"      {'entry':>6s} {'end':>5s} " + "".join(
-            f"{n:>11s}" for n in pr["ladder"])
-            + f"{'spread':>9s} {'in band':>8s}   note")
+        print("    TWO READINGS OF THE SAME DEFLECTION, because the one PART 12 used "
+              "reads a SINGLE NODE and")
+        print("    how many nodes fall in the contact patch is a discretisation fact the "
+              "profile moves:")
+        print(f"      {'entry':>6s} {'end':>5s} {'1-node spread':>14s} {'band':>5s}"
+              f" {'patch-mean':>11s} {'band':>5s}  {'patch n':>14s}   note")
         for row in pr["rows"]:
             pair = (row["entry"], row["end"])
             note = ("<- shipped" if pair == ship else
                     "<- genome-robust (§54)" if pair == robust else "")
             if row["spread_pct"] is None:
                 print(f"      {row['entry']:+6.2f} {row['end']:5.2f} "
-                      f"{'REFUSED: ' + (row['why'] or '')[:40]:>50s}   {note}")
+                      f"{'REFUSED: ' + (row['why'] or '')[:38]:>48s}   {note}")
                 continue
             print(f"      {row['entry']:+6.2f} {row['end']:5.2f} "
-                  + "".join(f"{d:11.6f}" for d in row["axle_drop_mm"])
-                  + f"{row['spread_pct']:8.3f}% {str(row['inside_band']):>8s}   {note}")
+                  f"{row['spread_pct']:13.3f}% "
+                  f"{'yes' if row['inside_band'] else 'NO':>5s} "
+                  f"{row['patch_spread_pct']:10.3f}% "
+                  f"{'yes' if row['inside_band_patch'] else 'NO':>5s}  "
+                  f"{str(row['n_nodes_in_patch']):>14s}   {note}")
         ok = [r for r in pr["rows"] if r["inside_band"]]
-        print(f"    {len(ok)}/{len(pr['rows'])} candidates hold the band.")
+        okp = [r for r in pr["rows"] if r["inside_band_patch"]]
+        print(f"    {len(ok)}/{len(pr['rows'])} hold the band on the single node, "
+              f"{len(okp)}/{len(pr['rows'])} on the patch mean.")
+        srow = next((r for r in pr["rows"] if (r["entry"], r["end"]) == ship), None)
+        if srow and srow["inside_band"] and not srow["inside_band_patch"]:
+            print(f"    AND THE SHIPPED PAIR IS ONE OF THE ONES THAT DISAGREE: "
+                  f"{srow['spread_pct']:.3f}% on the node it was")
+            print(f"    measured on, {srow['patch_spread_pct']:.3f}% over the patch — so "
+                  "PART 12's 0.141% is a single-node")
+            print("    reading and the band it was checked against is not settled by it.")
         by_entry, by_end = {}, {}
         for r in pr["rows"]:
             if r["spread_pct"] is not None:
@@ -796,20 +844,29 @@ def _print(rep):
         print("    the failing set is the MIDDLE of the space — a short end with an entry "
               "steep enough to matter —")
         print("    and it covers almost all of the barrier-clearing region.  Almost.")
-        clears = [r for r in pr["rows"] if r["inside_band"] and
-                  (r["entry"], r["end"]) in [tuple(p) for p in pr["candidates"]]]
-        if clears:
-            for r in clears:
-                print(f"    THE TWO-OBJECTIVE PROFILE EXISTS: entry {r['entry']:+.2f}, "
-                      f"end {r['end']:.2f} — spread {r['spread_pct']:.3f}%, inside the "
-                      f"band and BETTER than the shipped pair's.")
-            print("    it is one cell of fourteen, and it is the one a rank cut-off over "
-                  "the ridge would have")
-            print("    dropped: it has the LOWEST genome-box floor of the fourteen that "
-                  "clear the barrier.")
+        cand = {tuple(p) for p in pr["candidates"]}
+        both = [r for r in pr["rows"] if (r["entry"], r["end"]) in cand
+                and r["inside_band"] and r["inside_band_patch"]]
+        if both:
+            print(f"    {len(both)} of the {len(cand)} barrier-clearing candidates hold "
+                  "the band on BOTH readings:")
+            for r in sorted(both, key=lambda x: (x["entry"], x["end"])):
+                print(f"      entry {r['entry']:+.2f}, end {r['end']:.2f} — "
+                      f"{r['spread_pct']:.3f}% on the node, "
+                      f"{r['patch_spread_pct']:.3f}% over the patch, "
+                      f"patch n {r['n_nodes_in_patch'][-1]} at the finest rung")
+            print("    every one of them reaches a patch of "
+                  + str(sorted({r['n_nodes_in_patch'][-1] for r in both}))
+                  + " nodes at `fine`, and every candidate that fails")
+            print("    reaches fewer — so what the band is separating here is the "
+                  "CONTACT PATCH's resolution,")
+            print("    not the fillet's.  Which of these is best is a question for the "
+                  "genome-box floor, and")
+            print("    `study_fillet_block` reports that; this file reports only that "
+                  "they are admissible.")
         else:
-            print("    and no candidate holds the band: the two-objective profile does "
-                  "not exist on this grid.")
+            print("    and no candidate holds both bands: the two-objective profile "
+                  "does not exist on this grid.")
     print("=" * 78 + "\n")
 
 
