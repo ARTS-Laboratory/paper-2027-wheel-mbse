@@ -2625,3 +2625,82 @@ decision §64 raised is settled the conservative way: `axle_drop_mm` keeps its m
 `test_gnl`'s own docstring explains that meaning, and twenty-odd committed artifacts carry
 it — and the consumers that need the corrected number take `axle_drop_interp_mm` explicitly.
 `study_corner_singularity.json` and its fillet twin each gain one `deflection` block.
+
+---
+
+# STEP 1 RECORD, PART 20 — 2026-08-23. THE GENOME `(-0.95, 0.85)` REFUSES IS THE SHIPPED ONE, THE REFUSAL IS A CLIFF, AND EVERY CANDIDATE THIS ARC PRODUCED IS STANDING NEXT TO IT. NOT ADOPTED, AND NOW FOR A MEASURED REASON
+
+PART 17 left `(-0.95, 0.85)` as a curiosity: the best genome-box floor anywhere on either
+grid, 0.2448, refusing one genome, and *"nothing has asked which genome or why"*.
+
+**It is the shipped genome.**  `no filleted blocking exists at the rim: the layer's width
+profile reaches zero thickness` — a hard geometric refusal of the wheel every published
+number in this project is measured at.  So the best-floor cell on either grid is
+disqualified in the strongest way available, and the `profile_candidates` rule that
+excluded it ("refuses none of the fifteen") was already doing the right thing for a reason
+it never stated: the shipped genome is one of the fifteen cells.
+
+## THE REFUSAL IS A BOUNDARY, AND IT HAS NEVER BEEN MEASURED
+
+Bisected against the shipped genome — identical at `coarse` and `medium`, so it is geometry
+and not discretisation:
+
+```
+  end offset    entry at which the shipped genome loses its rim layer
+      0.85                    -0.845458
+      1.00                    -0.881143
+      1.10                    -0.903400
+      1.60                    -1.001967
+```
+
+A longer end buys a steeper entry, which is why the failures at entry -0.90 and -0.95 in
+both grids were never about `end` alone.  And measuring each candidate's DISTANCE to that
+boundary is the thing nobody did:
+
+```
+  pair                   entry floor    margin
+  (-0.85, 1.00)  PART 17    -0.8811     0.0311   <- the candidate
+  (-0.80, 1.00)  PART 16    -0.8811     0.0811
+  (-0.85, 1.10)             -0.9034     0.0534
+  (-0.90, 1.10)             -0.9034     0.0034   <- admissible only by luck
+  (-0.75, 0.70)  §54        -0.8064     0.0564
+  (-0.45, 1.60)  SHIPPED    -1.0020     0.5520
+```
+
+**Every profile this arc has proposed stands within 0.08 of a cliff.  The pair that ships
+stands 0.55 from it — an order of magnitude more margin.**  `(-0.90, 1.10)`, which PART 17
+listed as admissible and which has the BEST convergence of the four (0.091% on the node
+reading), clears the cliff by **0.0034**.  It builds by luck.
+
+The whole search has been maximising a floor while walking toward an edge, and the distance
+to that edge was never a column in any table.
+
+## THE CALL: NOT ADOPTED, AND THE REASON HAS CHANGED
+
+PART 16 deferred on the size of the audit.  PART 18 added the gci run, and §65 removed that
+(the gate is immune).  By those records the only blocker left was affordable — roughly two
+study re-runs — so the deferral needed re-deciding rather than repeating.  Re-decided:
+
+**`(-0.85, 1.00)` is not adopted, because a 0.031 margin to a hard refusal of the shipped
+genome is not a defensible place to put a default.**  The gain it buys is real — the
+genome-box floor goes 0.1194 -> 0.2125 — but that floor is measured on a box built with
+§57's clamp and §58's fold gate, neither of which is adopted and neither of which anything
+consumes; while the margin it spends is on the one genome every published number uses.
+That is the wrong side of the trade to be spending on a benefit nothing yet collects.
+
+Two things would change it, and both are concrete: a candidate found with a margin
+comparable to the shipped pair's, or a consumer for the filleted blocking (Step 3's live
+`R_hub`/`R_rim` genes) that makes the genome-box floor a number something actually reads.
+
+## WHAT THIS ADDS TO THE CANDIDATE SET
+
+`profile_candidates` should carry the margin as a column, and a future search should
+constrain on it rather than discover it afterwards.  Not wired here — the measurement is
+the deliverable and the constant would be a fourth unadopted mechanism — but the boundary
+function is one bisection and is recorded above at four ends.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, both layer-profile constants still PART 10's, `best_solution.json`
+untouched, no artifact regenerated, and no code changed** — this part is a measurement and
+a decision.

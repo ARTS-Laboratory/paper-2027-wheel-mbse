@@ -9222,3 +9222,64 @@ now priced, and only one of them — `run_refinement`'s convergence order, §66 
    as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
    §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
    element-validity check** (§44).
+
+---
+
+## §68 — 2026-08-23. THE GENOME THE BEST-FLOOR PROFILE REFUSES IS THE SHIPPED ONE, AND EVERY CANDIDATE THIS ARC PRODUCED STANDS WITHIN 0.08 OF THAT CLIFF. THE PROFILE IS NOT ADOPTED, AND THE REASON IS NOW MEASURED
+
+§60 left `(-0.95, 0.85)` — the best genome-box floor on either grid, 0.2448 — as a
+curiosity that "refuses one genome", with *"nothing has asked which genome or why"*.
+
+**It is the shipped genome**, and the refusal is `the layer's width profile reaches zero
+thickness` at the rim: a hard geometric loss of the wheel every published number in this
+project is measured at.  Bisected, identical at `coarse` and `medium`:
+
+```
+  end offset   entry at which the shipped genome loses its rim layer      candidate margins
+      0.85                 -0.845458           (-0.85, 1.00)  §60 candidate   0.0311
+      1.00                 -0.881143           (-0.80, 1.00)  §59 candidate   0.0811
+      1.10                 -0.903400           (-0.85, 1.10)                  0.0534
+      1.60                 -1.001967           (-0.90, 1.10)                  0.0034
+                                               (-0.75, 0.70)  §54             0.0564
+                                               (-0.45, 1.60)  SHIPPED         0.5520
+```
+
+**Every profile this arc has proposed stands within 0.08 of a cliff; the pair that ships
+stands 0.55 from it.**  `(-0.90, 1.10)`, listed as admissible in §60 and the best-converged
+of the four, clears it by 0.0034 — it builds by luck.  The whole search maximised a floor
+while walking toward an edge, and the distance to that edge was never a column in any table.
+
+**The call, re-decided rather than repeated.**  §59 deferred on the audit's size; §61 added
+the gci run; §65 removed that.  By those records the blocker was down to two study re-runs,
+so the deferral had to be re-taken on its merits.  **`(-0.85, 1.00)` is not adopted: a
+0.031 margin to a hard refusal of the shipped genome is not a defensible place to put a
+default.**  The floor it buys (0.1194 -> 0.2125) is measured on a box built with §57's clamp
+and §58's fold gate, neither adopted and neither consumed by anything; the margin it spends
+is on the one genome every published number uses.  Wrong side of the trade for a benefit
+nothing yet collects.
+
+Two things would change it, both concrete: a candidate with a margin comparable to the
+shipped pair's, or a consumer for the filleted blocking (Step 3's live `R_hub`/`R_rim`
+genes) that makes the genome-box floor a number something reads.
+
+**Nothing promoted, no artifact regenerated, no code changed** — §68 is a measurement and a
+decision.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §68
+
+1. **Search the profile surface with the margin as a CONSTRAINT**, not as an afterthought.
+   The boundary is one bisection per `end` (§68 records four), so a candidate set defined as
+   "clears `MIN_SJ_TARGET`, refuses nothing, AND stands at least as far from the cliff as
+   some stated floor" is cheap to build.  Whether anything survives it is the open question,
+   and it is the one that decides whether this arc has a profile to offer at all.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  Until one exists the genome-box floor is a number nothing reads, which is what
+   makes every profile trade above hypothetical.
+3. **Apply the fold gate to the draw and re-derive the box** (§58) — one word in a filter
+   tuple, priced, and it moves every genome-box number in §54 through §68.
+4. **What makes a region impossible** (§56) — the bow, the fold margin and the interior
+   point are all ruled out with numbers.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
