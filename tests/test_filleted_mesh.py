@@ -271,3 +271,50 @@ def test_the_filleted_blocking_refuses_a_switched_off_end(genes, R):
         ww.sector_blocks(genes, "coarse", fillet=R)
     blocks = ww.sector_blocks(genes, "coarse", fillet=R, fillet_blocking="spoke")
     assert tuple(k for k in blocks if not k.startswith("_")) == ww.BLOCK_ORDER
+
+
+# ---------------------------------------------------------------------------
+# THE LAYER PROFILE, THREADED TO THE FULL ASSEMBLY (FILLET_PLAN PART 16)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("cfg", CFGS)
+def test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default(genes, filleted,
+                                                                       cfg):
+    """`layer_profile=None` must be the mesh that shipped before the parameter existed.
+
+    `build_wheel`, `_sector_coords` and `sector_blocks` grew a `layer_profile` keyword so
+    PART 16 could price what a candidate `(entry, end)` costs the SOLVE — the one reason
+    PART 13's declined call still rests on.  A pass-through added to shipped geometry is
+    only safe if its default path is the old path exactly, so this asserts bitwise
+    equality rather than closeness, three ways: omitted, `None`, and the two module
+    constants passed explicitly.
+
+    The unfilleted path is asserted too.  It never reaches `_layer_profile` at all, and
+    the way that could stop being true is a future edit moving the call up a level.
+    """
+    ref = filleted[cfg].coords
+    assert np.array_equal(ref, ww.build_wheel(genes, cfg, fillet=True,
+                                              layer_profile=None).coords)
+    assert np.array_equal(ref, ww.build_wheel(
+        genes, cfg, fillet=True,
+        layer_profile=(ww.FILLET_LAYER_ENTRY_SLOPE,
+                       ww.FILLET_LAYER_END_OFFSET)).coords)
+    plain_ref = ww.build_wheel(genes, cfg).coords
+    assert np.array_equal(plain_ref,
+                          ww.build_wheel(genes, cfg, layer_profile=(-0.9, 0.5)).coords)
+
+
+def test_the_layer_profile_actually_MOVES_the_filleted_mesh(genes, filleted):
+    """And the pass-through has to bite, or the bit-identity above is vacuous.
+
+    A parameter that changed nothing would pass every equality test in this file and
+    silently make PART 16's whole sweep a measurement of one profile nine times.  The
+    node count must NOT change — the profile moves where the boundary layer's stations
+    sit, not how many there are — so both halves are asserted.
+    """
+    moved = ww.build_wheel(genes, "coarse", fillet=True, layer_profile=(-0.75, 0.70))
+    ref = filleted["coarse"]
+    assert moved.coords.shape == ref.coords.shape
+    assert moved.n_nodes == ref.n_nodes and moved.n_elements == ref.n_elements
+    d = np.abs(moved.coords - ref.coords).max()
+    assert d > 0.1, f"the layer profile moved the mesh by only {d:.2e} mm"

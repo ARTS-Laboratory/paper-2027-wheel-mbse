@@ -1150,7 +1150,7 @@ GENOME_ROBUST_END = 0.70
 
 
 def sweep_layer_profile_genomes(genes, cfg, genome_rows, entries=GENOME_PROFILE_ENTRIES,
-                                ends=GENOME_PROFILE_ENDS):
+                                ends=GENOME_PROFILE_ENDS, clamp=None, fold_gate=False):
     """PART 10's derivation, re-run against GENOMES rather than one radius box.
 
     `sweep_layer_profile` picked `LAYER_ENTRY_SLOPE`/`LAYER_END_OFFSET` as the argmax of
@@ -1168,9 +1168,37 @@ def sweep_layer_profile_genomes(genes, cfg, genome_rows, entries=GENOME_PROFILE_
     Folding it into the argmax would not move the argmax; every cell would report the same
     floor and the ridge underneath it would be invisible.  It is a real finding on its own
     and PART 13 gives it its own paragraph rather than burying it in this one.
+
+    `clamp` AND `fold_gate` ARE WHAT PARTS 14 AND 15 MADE POSSIBLE, and they retire both
+    of the apologies above.  Ten cells is what was left after six genomes refused their
+    sector and one was excluded by hand.  §57's clamp makes the six build; §58's fold
+    margin replaces the hand-exclusion with a number taken before the build -- and it
+    removes the OTHER folded genome too, which the hand-exclusion never saw, because that
+    one refused for an unrelated reason and so never reached the `worst_block` test.  At
+    `clamp=SECTOR_FIT_CLAMP, fold_gate=True` the argmax is over fourteen drawn genomes
+    plus the shipped one, every one of which builds and every one of which describes a
+    part that exists.
+
+    The default is left exactly as PART 13 ran it so that its table keeps reproducing.
+    The re-derivation is a second call and the two sit side by side in the artifact.
     """
-    cells = [(np.asarray(r["genes"], float), r["R_hub_mm"], r["R_rim_mm"])
-             for r in genome_rows if r.get("built") and r["worst_block"] != "spoke"]
+    if clamp is None and not fold_gate:
+        cells = [(np.asarray(r["genes"], float), r["R_hub_mm"], r["R_rim_mm"])
+                 for r in genome_rows if r.get("built") and r["worst_block"] != "spoke"]
+    else:
+        cells = []
+        for r in genome_rows:
+            if "fit" not in r or "fold" not in r:
+                continue
+            if fold_gate and r["fold"]["binds"]:
+                continue
+            if clamp is None:
+                if not r.get("built") or r["worst_block"] == "spoke":
+                    continue
+                R_hub, R_rim = r["R_hub_mm"], r["R_rim_mm"]
+            else:
+                R_hub, R_rim = clamped_radii(r["fit"], clamp)
+            cells.append((np.asarray(r["genes"], float), R_hub, R_rim))
     cells.append((np.asarray(genes, float), float(genes[12]), float(genes[13])))
     rows = []
     for entry in entries:
@@ -1190,6 +1218,93 @@ def sweep_layer_profile_genomes(genes, cfg, genome_rows, entries=GENOME_PROFILE_
                                                        else float(worst)),
                          "worst_at": where, "refused": refused})
     return rows
+
+
+# EVERY PROFILE THAT COULD BE THE TWO-OBJECTIVE ANSWER, so that a negative result is a
+# negative over the whole candidate set rather than over a sample of it.  The criterion is
+# not a rank and not a tuned cut-off: it is `MIN_SJ_TARGET`, the barrier `wheel_objective`
+# actually enforces, plus "refuses no genome" for the reason `profile_argmax` gives.  A
+# cell that fails either is not a candidate for a genome-robust default whatever else it
+# does, and a cell that passes both has to be priced against the deflection band before
+# the two-objective profile can be said not to exist.
+#
+# Written as a constant so `study_corner_singularity` can price each pair without reading
+# this study's artifact -- one study's freshness must not become another's problem, which
+# is what PART 7 was about.  `the_candidate_constant_matches_the_measured_surface`
+# re-derives it from the grid every run, so it cannot go stale silently.
+LAYER_PROFILE_CANDIDATES = ((-0.80, 0.70), (-0.80, 0.80), (-0.80, 1.00),
+                            (-0.75, 0.60), (-0.75, 0.70), (-0.75, 0.80),
+                            (-0.70, 0.50), (-0.70, 0.60), (-0.70, 0.70), (-0.70, 0.80),
+                            (-0.60, 0.50), (-0.60, 0.60), (-0.60, 0.70), (-0.60, 0.80))
+
+
+# AND THE FRONTIER, which is what keeps the ridge's answer from being an anecdote.  Every
+# cell on the ridge has a steep entry, so pricing only those would show eight profiles
+# failing the convergence band without showing WHERE the failure begins -- and `entry` is
+# the obvious suspect, since it is the one the shipped pair differs from all eight in.
+# This walks the whole entry ladder at two ends: the ridge's own (0.70) and the shipped
+# one (1.60).  A pure cross product, so unlike the candidate set it cannot go stale.
+# THE ANSWER, once the whole candidate set was priced rather than a sample of it: exactly
+# one of the fourteen holds the deflection band, and it is the one with the LOWEST
+# genome-box floor of the fourteen -- so every ranking rule that takes a top-k of the
+# ridge drops it.  Named here because FILLET_PLAN PART 16 turns it into a promotion
+# proposal and a proposal needs a symbol; NOT wired into `wheel_wheel`, which is still
+# PART 10's pair.  See PART 16 for what adopting it would cost to re-derive.
+TWO_OBJECTIVE_ENTRY = -0.80
+TWO_OBJECTIVE_END = 1.00
+
+LAYER_PROFILE_FRONTIER_ENDS = (0.70, 1.60)
+LAYER_PROFILE_FRONTIER = tuple((float(e), float(n))
+                               for n in LAYER_PROFILE_FRONTIER_ENDS
+                               for e in GENOME_PROFILE_ENTRIES)
+
+
+def profile_candidates(table, target=None):
+    """Every cell that clears the barrier on all cells and refuses none of them.
+
+    Sorted by `(entry, end)` rather than by score, because this is a SET and its order
+    should not move when a floor wobbles by 0.001.  Refusing cells are excluded for the
+    reason `profile_argmax` gives: a cell that loses a genome is not a candidate for a
+    genome-robust default, whatever floor it reports over the ones it kept.
+    """
+    target = MIN_SJ_TARGET if target is None else target
+    ok = [r for r in table
+          if r["worst_min_scaled_jacobian"] is not None and r["refused"] == 0
+          and r["worst_min_scaled_jacobian"] > target]
+    ok.sort(key=lambda r: (r["entry"], r["end"]))
+    return tuple((float(r["entry"]), float(r["end"])) for r in ok)
+
+
+def profile_argmax(table):
+    """The two ranking rules over a `sweep_layer_profile_genomes` grid, and their gap.
+
+    PART 13 ranked cells on "the worst min scaled Jacobian over the genomes that BUILT
+    at this (entry, end)".  THAT RULE PAYS A CELL FOR REFUSING A HARD GENOME: the worst
+    is taken over the survivors, so a profile steep enough to lose a difficult genome
+    reports a better floor than one that keeps it.  PART 13's own argmax happened to sit
+    on a cell where nothing refused, so its answer is unaffected -- checked here rather
+    than assumed -- but the bias is real and it bites as soon as the cell set reaches the
+    steep-entry corner where the layer profile itself starts refusing, which is exactly
+    what §57's clamp added.
+
+    `no_refusal` is the corrected rule and is the one to quote.  `over_built` is kept so
+    the two can be compared, because the gap between them is the size of the bias.
+    """
+    ok = [r for r in table if r["worst_min_scaled_jacobian"] is not None]
+    if not ok:
+        return None
+    clean = [r for r in ok if r["refused"] == 0]
+    over_built = max(ok, key=lambda r: r["worst_min_scaled_jacobian"])
+    no_refusal = (max(clean, key=lambda r: r["worst_min_scaled_jacobian"])
+                  if clean else None)
+    return {"over_built": over_built, "no_refusal": no_refusal,
+            "n_cells": len(table), "n_zero_refusal_cells": len(clean),
+            "rules_agree": bool(no_refusal is not None
+                                and no_refusal["entry"] == over_built["entry"]
+                                and no_refusal["end"] == over_built["end"]),
+            "bias": (None if no_refusal is None else
+                        float(over_built["worst_min_scaled_jacobian"]
+                              - no_refusal["worst_min_scaled_jacobian"]))}
 
 
 UNCAP_BLENDS = (1.0, 0.5, 0.25, 0.0)
@@ -1669,6 +1784,16 @@ def build_sector_section(genes, configs, junctions):
                 genes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows])
                 if cfg == configs[0] else None),
+            # The SAME derivation over the cells §57 and §58 added: every drawn genome
+            # clamped inside its own sector's room, minus the ones whose spoke does not
+            # exist.  §54's argmax was fitted to ten cells because six could not build
+            # and one was thrown out by hand; this one is fitted to fifteen, and whether
+            # the pair moves is the cheap half of PLAN.md's item 1.
+            "profile_genomes_buildable": (sweep_layer_profile_genomes(
+                genes, cfg,
+                [r for rows in out["genomes"]["groups"].values() for r in rows],
+                clamp=SECTOR_FIT_CLAMP, fold_gate=True)
+                if cfg == configs[0] else None),
             # The REFUSAL half of PLAN.md's item 2, priced.  Same config as the genome
             # sweep it reads, for the same reason `profile_genomes` is: it re-uses those
             # rows rather than drawing a second set, and the margins in them were the
@@ -1688,6 +1813,21 @@ def build_sector_section(genes, configs, junctions):
                  if not r["fold"]["binds"]])
                 if cfg == configs[0] else None),
         }
+        per = out["per_config"][cfg]
+        # The ranking rule, applied to both grids and stated rather than left to whoever
+        # reads the table.  See `profile_argmax`: the rule PART 13 used pays a cell for
+        # refusing a hard genome, and the clamped cell set reaches the corner where that
+        # starts to matter.
+        per["profile_argmax"] = ({
+            "part_13": profile_argmax(per["profile_genomes"]),
+            "buildable": profile_argmax(per["profile_genomes_buildable"])}
+            if per["profile_genomes"] else None)
+        per["profile_candidates"] = ({
+            "measured": [list(p) for p in
+                         profile_candidates(per["profile_genomes_buildable"])],
+            "constant": [list(p) for p in LAYER_PROFILE_CANDIDATES],
+            "target": MIN_SJ_TARGET}
+            if per["profile_genomes_buildable"] else None)
     return out
 
 
@@ -1800,6 +1940,29 @@ def self_checks(rec):
                 fg["resolution"]["closed_form_worst_shift_mm"] < 0.1 * fg["limit_mm"])
             checks["the_fold_gate_is_inert_on_the_shipped_genome"] = (
                 not fg["shipped"]["binds"])
+        # The profile pair is only defensible if the cell it comes from kept every
+        # genome.  Structural, so it gates: an argmax that won by refusing a hard genome
+        # is not an argmax over the box, it is an argmax over a subset the cell chose.
+        pam = sec["per_config"][rec["configs"][0]].get("profile_argmax")
+        if pam:
+            checks["every_profile_argmax_kept_every_genome"] = bool(
+                all(a and a["no_refusal"] is not None
+                    and a["no_refusal"]["refused"] == 0 for a in pam.values()))
+            # And PART 13's published pair has to still BE the corrected argmax on the
+            # larger cell set, or the constant it left behind is stale.  Reported as a
+            # check because the alternative -- quietly keeping it -- is the failure mode
+            # `measured-not-adopted decisions expire` exists to catch.
+            nr = pam["buildable"]["no_refusal"]
+            checks["the_re_derived_argmax_is_still_PART_13s_pair"] = bool(
+                nr and abs(nr["entry"] - GENOME_ROBUST_ENTRY) < 1e-12
+                and abs(nr["end"] - GENOME_ROBUST_END) < 1e-12)
+        # `LAYER_PROFILE_CANDIDATES` is read by ANOTHER study, the only reason it is
+        # a constant rather than a derivation.  Gated so it cannot drift from the surface
+        # it names without this file going red first.
+        pr = sec["per_config"][rec["configs"][0]].get("profile_candidates")
+        if pr:
+            checks["the_candidate_constant_matches_the_measured_surface"] = bool(
+                pr["measured"] == pr["constant"])
     checks["pass"] = bool(all(v for k, v in checks.items() if k != "pass"))
     return checks
 
@@ -2032,6 +2195,61 @@ def _print(rec):
                                             else -9.0))
             print(f"    argmax over genomes: entry {best['entry']:.2f}, end "
                   f"{best['end']:.2f}, worst min scaled J {best['worst_min_scaled_jacobian']:.4f}")
+
+        pam = sec["per_config"][cfg0].get("profile_argmax")
+        newg = sec["per_config"][cfg0].get("profile_genomes_buildable") or []
+        if pam and newg:
+            print("\n  AND RE-DERIVED AGAINST THE CELLS §57 AND §58 ADDED — EVERY DRAWN "
+                  "GENOME CLAMPED INSIDE ITS")
+            print("  OWN SECTOR'S ROOM, MINUS THE ONES WHOSE SPOKE DOES NOT EXIST")
+            gends = sorted({r["end"] for r in newg})
+            print(f"    {newg[0]['n_genomes']} cells, against the "
+                  f"{cfgg[0]['n_genomes'] if cfgg else '?'} the pair was fitted to")
+            print("    entry \\ end " + "".join(f"{e:>10.2f}" for e in gends)
+                  + "   refused")
+            for entry in sorted({r["entry"] for r in newg}, reverse=True):
+                cells, ref = [], []
+                for e in gends:
+                    r = next(x for x in newg if x["entry"] == entry and x["end"] == e)
+                    cells.append(f"{'REFUSE':>10s}" if r["worst_min_scaled_jacobian"]
+                                 is None else f"{r['worst_min_scaled_jacobian']:10.4f}")
+                    ref.append(r["refused"])
+                print(f"    {entry:11.2f} " + "".join(cells)
+                      + "   " + "".join(f"{x:2d}" for x in ref))
+            for rule in ("over_built", "no_refusal"):
+                b = pam["buildable"][rule]
+                if b is None:
+                    continue
+                print(f"    argmax, {rule:11s}: entry {b['entry']:+.2f}, end "
+                      f"{b['end']:.2f}, worst {b['worst_min_scaled_jacobian']:.4f}, "
+                      f"refused {b['refused']}, bound by {b['worst_at'][2]}")
+            print("    THE TWO RULES DISAGREE HERE AND THEY DID NOT BEFORE.  Ranking on "
+                  "the worst of the genomes")
+            print("    that BUILT pays a cell for refusing a hard one, and the clamped "
+                  "cells reach the steep-entry")
+            print("    corner where the layer profile itself starts refusing — which the "
+                  "ten-cell set never did.")
+            p13 = pam["part_13"]
+            print(f"    on PART 13's own grid the two rules AGREE "
+                  f"({p13['rules_agree']}), so its answer was never biased.")
+            nr = pam["buildable"]["no_refusal"]
+            if nr is not None:
+                print(f"    and on the corrected rule the re-derivation REPRODUCES that "
+                      f"answer: entry {nr['entry']:+.2f}, end {nr['end']:.2f} — "
+                      f"§54's pair, at {nr['worst_min_scaled_jacobian']:.4f} against its "
+                      f"published {p13['no_refusal']['worst_min_scaled_jacobian']:.4f}.")
+            print("    so the argmax is NOT what is stale about §54's decision, and the "
+                  "whole of what remains")
+            print("    on it is the convergence cost measured at the shipped genome.")
+            pr = sec["per_config"][cfg0].get("profile_candidates")
+            if pr:
+                print(f"    every cell that clears {pr['target']:.2f} on all "
+                      f"{newg[0]['n_genomes']} and refuses none — the set "
+                      f"`make corner-fillet` prices against the band:")
+                print("      " + "  ".join(f"({e:+.2f}, {n:.2f})"
+                                           for e, n in pr["measured"]))
+                print(f"      constant in this module matches the surface: "
+                      f"{pr['measured'] == pr['constant']}")
         print("\n  AND AGAINST THE RIM'S UNCAP BLEND, WHICH IS THE TRI-BLOCK'S QUESTION")
         print(f"    {'config':7s} {'rim blend':>9s} {'unfilleted worst':>17s} "
               f"{'filleted worst':>15s} {'worst block':>14s}")

@@ -469,7 +469,60 @@ def continuity_sweep(genes, cfg_name, radii, fillet_ref=True):
             "rows": rows}
 
 
-def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None):
+# PART 12 quoted the filleted deflection's convergence as the spread of `axle_drop_mm`
+# over `coarse..fine` -- 0.141% -- and checked it against the +-0.3% band this arc exists
+# partly to earn back.  Both are repeated here as constants rather than as prose, because
+# PART 16 turns that one number into a criterion applied to nine candidate profiles and a
+# criterion has to be stated before it is applied.
+CONVERGENCE_LADDER = ("coarse", "medium", "fine")
+CONVERGENCE_BAND_PCT = 0.3
+
+
+def profile_convergence(genes, pairs, ladder=CONVERGENCE_LADDER, fillet=True):
+    """What each candidate layer profile costs the SOLVE, which the blocking cannot see.
+
+    FILLET_PLAN PART 13 declined the genome-robust profile for two reasons; PART 14 killed
+    one of them and PART 16 showed the argmax itself is not stale, so the whole of what is
+    left is this: at `GENOME_ROBUST_ENTRY/END` the shipped genome's filleted axle-drop
+    spread over `coarse..fine` goes 0.141% -> 0.513% and crosses back over the +-0.3%
+    band.  That was measured at ONE alternative pair.  The profile surface is a broad
+    ridge, so the question nobody has asked is whether some OTHER cell on it is
+    genome-robust AND stays inside the band -- which is the two-objective version, and it
+    is three linear solves per pair rather than an optimisation.
+
+    `pairs` comes from `study_fillet_block.LAYER_PROFILE_CANDIDATES` -- every cell that
+    clears `MIN_SJ_TARGET` on the whole clamped, fold-clean box and refuses none of it,
+    so a negative here is a negative over the entire candidate set and not over a sample.
+    A constant rather than a read of that study's artifact, deliberately: one study's
+    freshness must not become another's problem.  The shipped pair and the frontier ride
+    along as controls.  A pair that refuses to build at any rung is reported with its
+    reason and no spread, never silently dropped.
+    """
+    rows = []
+    for entry, end in pairs:
+        drops, why = [], None
+        for name in ladder:
+            try:
+                mesh = WW.build_wheel(genes, name, fillet=fillet,
+                                      layer_profile=(entry, end))
+                drops.append(float(fem.solve_wheel(mesh)["axle_drop_mm"]))
+            except Exception as exc:          # a candidate must not kill the driver
+                why = f"{type(exc).__name__}: {exc}"
+                break
+        row = {"entry": float(entry), "end": float(end),
+               "ladder": list(ladder), "axle_drop_mm": drops, "why": why}
+        if why is None and len(drops) == len(ladder):
+            lo, hi = min(drops), max(drops)
+            mean = sum(drops) / len(drops)
+            row["spread_pct"] = 100.0 * (hi - lo) / mean
+            row["inside_band"] = bool(row["spread_pct"] <= CONVERGENCE_BAND_PCT)
+        else:
+            row["spread_pct"], row["inside_band"] = None, None
+        rows.append(row)
+    return {"band_pct": CONVERGENCE_BAND_PCT, "ladder": list(ladder), "rows": rows}
+
+
+def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=False):
     genes = load_genes(genome)
     n_sp = WW.NUMBER_OF_SPOKES
     out = {"genome": genome, "ladder": list(ladder), "n_spokes": n_sp,
@@ -606,6 +659,28 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None):
     if continuity is not None:
         out["continuity"] = continuity_sweep(genes, continuity, CONTINUITY_RADII_MM,
                                              fillet_ref=fillet)
+    if profiles and fillet is not None:
+        import study_fillet_block as fbk
+        # The ridge, plus BOTH published pairs as controls -- the shipped one because it
+        # is what 0.141% was measured at, and the genome-robust one because 0.513% is the
+        # number this whole sweep exists to put in context.  De-duplicated, order kept.
+        pairs, seen = [], set()
+        for p in (tuple(fbk.LAYER_PROFILE_CANDIDATES)
+                  + ((fbk.GENOME_ROBUST_ENTRY, fbk.GENOME_ROBUST_END),
+                     (fbk.LAYER_ENTRY_SLOPE, fbk.LAYER_END_OFFSET))
+                  + tuple(fbk.LAYER_PROFILE_FRONTIER)):
+            if p not in seen:
+                seen.add(p)
+                pairs.append(p)
+        out["profiles"] = profile_convergence(genes, pairs, fillet=fillet)
+        out["profiles"]["shipped_pair"] = [float(fbk.LAYER_ENTRY_SLOPE),
+                                           float(fbk.LAYER_END_OFFSET)]
+        out["profiles"]["genome_robust_pair"] = [float(fbk.GENOME_ROBUST_ENTRY),
+                                                 float(fbk.GENOME_ROBUST_END)]
+        # Which of the priced pairs were CANDIDATES rather than controls.  Carried so a
+        # reader (and a test) can tell "holds the band" from "holds the band AND clears
+        # the barrier" without re-deriving the candidate set from the other study.
+        out["profiles"]["candidates"] = [list(p) for p in fbk.LAYER_PROFILE_CANDIDATES]
     return out
 
 
@@ -679,6 +754,62 @@ def _print(rep):
                   f"{row['rel_to_unfilleted']:+8.2%}")
         print(f"    genome's own pair    {c['shipped_fillet_axle_drop_mm']:>12.6f} mm  "
               f"{c['shipped_rel_to_unfilleted']:+8.2%}")
+
+    if "profiles" in rep:
+        pr = rep["profiles"]
+        ship, robust = tuple(pr["shipped_pair"]), tuple(pr["genome_robust_pair"])
+        print("\n  WHAT EACH CANDIDATE LAYER PROFILE COSTS THE DEFLECTION'S CONVERGENCE "
+              "(FILLET_PLAN PART 16)")
+        print(f"    the band is +-{pr['band_pct']:.1f}% over "
+              + "..".join(pr["ladder"]) + ", which is what PART 12 checked 0.141% against")
+        print(f"      {'entry':>6s} {'end':>5s} " + "".join(
+            f"{n:>11s}" for n in pr["ladder"])
+            + f"{'spread':>9s} {'in band':>8s}   note")
+        for row in pr["rows"]:
+            pair = (row["entry"], row["end"])
+            note = ("<- shipped" if pair == ship else
+                    "<- genome-robust (§54)" if pair == robust else "")
+            if row["spread_pct"] is None:
+                print(f"      {row['entry']:+6.2f} {row['end']:5.2f} "
+                      f"{'REFUSED: ' + (row['why'] or '')[:40]:>50s}   {note}")
+                continue
+            print(f"      {row['entry']:+6.2f} {row['end']:5.2f} "
+                  + "".join(f"{d:11.6f}" for d in row["axle_drop_mm"])
+                  + f"{row['spread_pct']:8.3f}% {str(row['inside_band']):>8s}   {note}")
+        ok = [r for r in pr["rows"] if r["inside_band"]]
+        print(f"    {len(ok)}/{len(pr['rows'])} candidates hold the band.")
+        by_entry, by_end = {}, {}
+        for r in pr["rows"]:
+            if r["spread_pct"] is not None:
+                by_entry.setdefault(r["entry"], []).append(r["spread_pct"])
+                by_end.setdefault(r["end"], []).append(r["spread_pct"])
+        print("    NEITHER VARIABLE ALONE PREDICTS IT, which is why the whole candidate "
+              "set had to be priced:")
+        print(f"      {'entry':>6s}   spread over the ends priced")
+        for e in sorted(by_entry, reverse=True):
+            print(f"      {e:+6.2f}   "
+                  + ", ".join(f"{x:.3f}%" for x in sorted(by_entry[e])))
+        print(f"      {'end':>6s}   spread over the entries priced")
+        for n in sorted(by_end):
+            print(f"      {n:6.2f}   "
+                  + ", ".join(f"{x:.3f}%" for x in sorted(by_end[n])))
+        print("    the failing set is the MIDDLE of the space — a short end with an entry "
+              "steep enough to matter —")
+        print("    and it covers almost all of the barrier-clearing region.  Almost.")
+        clears = [r for r in pr["rows"] if r["inside_band"] and
+                  (r["entry"], r["end"]) in [tuple(p) for p in pr["candidates"]]]
+        if clears:
+            for r in clears:
+                print(f"    THE TWO-OBJECTIVE PROFILE EXISTS: entry {r['entry']:+.2f}, "
+                      f"end {r['end']:.2f} — spread {r['spread_pct']:.3f}%, inside the "
+                      f"band and BETTER than the shipped pair's.")
+            print("    it is one cell of fourteen, and it is the one a rank cut-off over "
+                  "the ridge would have")
+            print("    dropped: it has the LOWEST genome-box floor of the fourteen that "
+                  "clear the barrier.")
+        else:
+            print("    and no candidate holds the band: the two-objective profile does "
+                  "not exist on this grid.")
     print("=" * 78 + "\n")
 
 
@@ -709,10 +840,13 @@ def main():
                     help="none (default) | genome | R_hub,R_rim in mm")
     ap.add_argument("--continuity", default=None,
                     help="config name for the R -> 0 control; filleted runs only")
+    ap.add_argument("--profiles", action="store_true",
+                    help="price each candidate layer profile's deflection convergence "
+                         "(FILLET_PLAN PART 16); filleted runs only, ~80 s")
     ap.add_argument("--out", default=os.path.join(HERE, "study_corner_singularity.json"))
     args = ap.parse_args()
     rep = run(args.genome, tuple(args.ladder.split(",")),
-              fillet=args.fillet, continuity=args.continuity)
+              fillet=args.fillet, continuity=args.continuity, profiles=args.profiles)
     _print(rep)
     with open(args.out, "w") as fh:
         json.dump(rep, fh, indent=2)

@@ -8580,3 +8580,83 @@ Both artifacts diffed field-by-field: purely additive.  `make filletblock` ~200 
 9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
 10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
 11. **The element-validity check** (§44).
+
+---
+
+## §59 — 2026-08-23. THE TWO-OBJECTIVE LAYER PROFILE EXISTS, IT BEATS THE SHIPPED PAIR ON BOTH OBJECTIVES AT ONCE, AND IT IS THE CELL EVERY SHORTLIST THROWS AWAY
+
+§58's rank-1 item was the quality half of the filleted blocking, in two named pieces: the
+cheap one, re-deriving §54's `(entry, end)` argmax against the now-buildable fold-clean
+cells; and the open one, whether §54's genome-robustness can be had without §54's cost.
+
+**The cheap piece is a negative and a useful one.**  Re-derived over fifteen cells rather
+than ten, the argmax appears to move to `(-0.90, 0.80)` — and that cell refuses one of the
+fifteen.  Ranking on "the worst over the genomes that BUILT" pays a cell for refusing a
+hard genome; §54's own argmax happened to sit where nothing refused, so its answer was
+never biased, but the clamped cells reach the corner where the profile itself starts
+refusing and there the bias bites.  On the corrected rule the re-derivation **reproduces
+§54's pair exactly**.  The argmax is not stale, so everything rested on the convergence
+cost — which is one number, measured at one alternative pair, on a broad ridge.
+
+**Pricing it needed the profile threaded to a full `build_wheel`.**  `sector_blocks`,
+`_sector_coords` and `build_wheel` now take `layer_profile=(entry, end)`; `None` is the
+shipped pair and the default path is asserted bit-identical three ways, with a test on the
+other side so that bit-identity is not vacuous.  Three linear solves per pair, nine
+seconds a ladder.
+
+**Then two wrong answers, which is the part worth keeping.**  The top eight of the ridge
+all failed the band and all had a steep entry — a clean negative, nearly written down.  The
+entry ladder falsified it: at end 1.60 every entry from -0.45 to -0.90 holds the band.  So
+the cost is carried by `end` — also wrong.  Enumerating the whole candidate set shows every
+entry straddling the band and all but two ends straddling it: **neither variable alone
+predicts the cost**, the failing set is the middle of the space, and it covers almost all
+of the barrier-clearing region.
+
+```
+  profile                      genome-box floor (15 cells)     convergence, coarse..fine
+  shipped       (-0.45, 1.60)   0.1194  under MIN_SJ_TARGET      0.141%  inside the band
+  §54's pair    (-0.75, 0.70)   0.2430  CLEARS                   0.512%  OUTSIDE
+  (-0.80, 1.00)                 0.2061  CLEARS                   0.110%  inside, and BETTER
+```
+
+`entry = -0.80, end = 1.00` clears the barrier on all fifteen, refuses none, and holds the
+deflection band more tightly than the pair that ships — floor +73%, spread 0.141% ->
+0.110%.  **It dominates the shipped profile on both measured objectives at once**, and it
+is the one cell of fourteen that every shortlist drops, because it has the lowest
+genome-box floor of the fourteen that clear the barrier.  A top-k rule ranks it fourteenth
+of fourteen.  The candidate set is now the criterion that matters — clears
+`MIN_SJ_TARGET` on the whole box, refuses none of it — and a self-check re-derives it.
+
+**Not adopted here, and for a different reason than the last three times.**  Those were
+declines: adoption would have traded away a published result.  This one would not — nothing
+measured gets worse.  It is deferred because `FILLET_LAYER_ENTRY_SLOPE`/`END_OFFSET` are
+the geometry underneath every filleted number this arc has published, and moving them
+re-dates all of it at once.  The pair is named, measured, tested and unwired; the promotion
+is its own unit with its own baseline.  Both artifacts diffed field-by-field: purely
+additive.  `make corner-fillet` ~180 s.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §59
+
+1. **Adopt `(-0.80, 1.00)` as the layer profile.**  The audit is the work, not the
+   decision: every filleted artifact re-derived and re-dated, §54's convergence and 38%
+   figure re-measured, the two constants moved, and `test_promotion.py`'s checklist
+   extended to cover a layer-profile change the way it covers a genome change.
+2. **A finer grid around `(-0.80, 1.00)`** (§59).  It is a grid point of a sweep laid out
+   for a different question — ends jump 0.80 -> 1.00 -> 1.30 — so the band-holding,
+   barrier-clearing region is located but not resolved, and its best point is not known to
+   be this one.  Cheap, and it should precede item 1 rather than follow it.
+3. **Why the middle of the profile space fails** (§59).  Short end plus steep entry spreads
+   ~0.5%; unnamed mechanism, and §54's reading — that the fillet's convergence comes from
+   removing the corner singularity — does not obviously predict a filleted region that is
+   WORSE converged than the shipped pair.
+4. **Apply the fold gate to the draw and re-derive the box** (§58).  One word in a filter
+   tuple, priced, and it moves every genome-box number in §54 through §59 at once.
+5. **What makes a region impossible** (§56) — three candidates now ruled out with numbers:
+   the bow (§56), the fold margin (§58), and the interior point (§55).
+6. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+7. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.**
+8. **Step 2's part C — the p-norm on a filleted mesh.**  `make gci`, 95 minutes, 20.6 GB.
+9. **Make `modelled_area_reference` fillet-aware** (§50).
+10. **The REST of §45's audit list** (§49).
+11. **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity check**
+    (§44).

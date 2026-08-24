@@ -1092,6 +1092,27 @@ def _fillet_cross_section(sample, s, eta, n_th, first):
     return np.concatenate([np.asarray(first, float)[None, :], row[1:]], axis=0)
 
 
+def _layer_profile(layer_profile):
+    """`(entry, end)`, defaulting to the two measured constants.
+
+    `None` means "the shipped profile" and returns exactly `FILLET_LAYER_ENTRY_SLOPE`
+    and `FILLET_LAYER_END_OFFSET`, so every caller that does not pass one takes the
+    same path it took before this parameter existed -- which is the property
+    `test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default` pins.
+
+    Why the pass-through exists at all.  `filleted_sector` already exposed these two so
+    `study_fillet_block` could re-derive them against the BLOCKING rather than assert
+    them.  FILLET_PLAN PART 16 needs the other half of that derivation -- what a
+    candidate pair costs the SOLVE, which is the one reason PART 13's decision still
+    rests on -- and that needs a full `build_wheel`, not a sector.  Same reason, one
+    level up: the study must not keep a second copy of the assembly.
+    """
+    if layer_profile is None:
+        return FILLET_LAYER_ENTRY_SLOPE, FILLET_LAYER_END_OFFSET
+    entry, end = layer_profile
+    return float(entry), float(end)
+
+
 def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                             rim_outer, genes, fillet, uncap=None,
                             entry=FILLET_LAYER_ENTRY_SLOPE,
@@ -1235,6 +1256,11 @@ def filleted_sector(genes, cfg, fillet=True, span_mm=HUB_RIM_SPAN_MM,
     against the worst block over the gene box instead of asserting them — the study
     calls this rather than keeping a second copy of the geometry, which is the failure
     mode its own docstring is about.
+
+    For the profile's cost to the SOLVE rather than to the blocking, `sector_blocks`,
+    `_sector_coords` and `build_wheel` now take `layer_profile=(entry, end)` as well —
+    same two numbers, threaded to the full assembly.  Use that one when a mesh is wanted
+    and this one when the blocks are.
     """
     cfg = get_config(cfg)
     if orientation is None:
@@ -1435,7 +1461,7 @@ UNCAP_DEFAULT = (True, 1.0)
 
 def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
                   rim_outer=RIM_OUTER_RADIUS_MM, fillet=None, uncap=UNCAP_DEFAULT,
-                  fillet_blocking="sector"):
+                  fillet_blocking="sector", layer_profile=None):
     """The seven node grids of sector 0 — eleven when the fillet is blocked — as a dict.
 
     Ordering matters: `build_wheel` gives ownership of a shared node to the block that
@@ -1500,7 +1526,8 @@ def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
                 "filleted mesh outright rather than silently returning the unfilleted "
                 "coordinates; see its guard.")
         return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation,
-                                       rim_inner, rim_outer, genes, fillet, uncap)
+                                       rim_inner, rim_outer, genes, fillet, uncap,
+                                       *_layer_profile(layer_profile))
     if fillet is None:
         s_grid = xp.linspace(s_hub, s_rim, n_sp)
         spoke = sample(s_grid[:, None], eta_grid[None, :])
@@ -1769,7 +1796,7 @@ def _rotate(grid, angle_rad, xp):
 
 def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
                    phase_deg, fillet=None, uncap=UNCAP_DEFAULT,
-                   fillet_blocking="sector"):
+                   fillet_blocking="sector", layer_profile=None):
     """The raw node coordinates of all twelve sectors, before the seams are merged.
 
     THE ENTIRE TRACED HALF OF `build_wheel`, factored out so that `mesh_coords` can run
@@ -1785,7 +1812,8 @@ def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
     sector0 = sector_blocks(genes, cfg, xp=xp, span_mm=span_mm,
                             orientation=orientation, rim_outer=rim_outer,
                             fillet=fillet, uncap=uncap,
-                            fillet_blocking=fillet_blocking)
+                            fillet_blocking=fillet_blocking,
+                            layer_profile=layer_profile)
     thetas = sector0.pop("_thetas")
     dirn = sector0.pop("_dirn", None)
     order = FILLETED_BLOCK_ORDER if dirn is not None else BLOCK_ORDER
@@ -1937,7 +1965,7 @@ def coord_fn(mesh):
 def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
                 n_spokes=NUMBER_OF_SPOKES, orientation=None,
                 rim_outer=RIM_OUTER_RADIUS_MM, phase_deg=0.0, fillet=None,
-                uncap=UNCAP_DEFAULT, fillet_blocking="sector"):
+                uncap=UNCAP_DEFAULT, fillet_blocking="sector", layer_profile=None):
     """Assemble the full 360 degree mesh.
 
     Sector 0's seven blocks are built once and rotated, so the twelve sectors are
@@ -1954,7 +1982,7 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
         orientation = flank_orientation(genes, cfg, span_mm=span_mm)
     coords_all, shapes, offsets, thetas, dirn = _sector_coords(
         genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer, phase_deg,
-        fillet, uncap, fillet_blocking)
+        fillet, uncap, fillet_blocking, layer_profile)
     filleted = dirn is not None
     order = FILLETED_BLOCK_ORDER if filleted else BLOCK_ORDER
     region = FILLETED_BLOCK_REGION if filleted else BLOCK_REGION

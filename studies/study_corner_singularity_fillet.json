@@ -1394,5 +1394,485 @@
         "rel_to_unfilleted": -0.5071075918743451
       }
     ]
+  },
+  "profiles": {
+    "band_pct": 0.3,
+    "ladder": [
+      "coarse",
+      "medium",
+      "fine"
+    ],
+    "rows": [
+      {
+        "entry": -0.8,
+        "end": 0.7,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9601059576542402,
+          0.9591784783043408,
+          0.9639162004366918
+        ],
+        "why": null,
+        "spread_pct": 0.4929648744397856,
+        "inside_band": false
+      },
+      {
+        "entry": -0.8,
+        "end": 0.8,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9600347714057572,
+          0.9594053287314517,
+          0.9641108619742742
+        ],
+        "why": null,
+        "spread_pct": 0.4895561033584327,
+        "inside_band": false
+      },
+      {
+        "entry": -0.8,
+        "end": 1.0,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9607250083303409,
+          0.9606194113213423,
+          0.9596727694678036
+        ],
+        "why": null,
+        "spread_pct": 0.10956951591728782,
+        "inside_band": true
+      },
+      {
+        "entry": -0.75,
+        "end": 0.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.959729744058518,
+          0.958905002881292,
+          0.9634607223791499
+        ],
+        "why": null,
+        "spread_pct": 0.47420908290742225,
+        "inside_band": false
+      },
+      {
+        "entry": -0.75,
+        "end": 0.7,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9604859886881957,
+          0.9591740683160379,
+          0.9640974424179845
+        ],
+        "why": null,
+        "spread_pct": 0.5121832299976309,
+        "inside_band": false
+      },
+      {
+        "entry": -0.75,
+        "end": 0.8,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9602156991091337,
+          0.9595988164710544,
+          0.9642321435302637
+        ],
+        "why": null,
+        "spread_pct": 0.48196103671620494,
+        "inside_band": false
+      },
+      {
+        "entry": -0.7,
+        "end": 0.5,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9594422037648384,
+          0.9582360821456704,
+          0.9631914630064335
+        ],
+        "why": null,
+        "spread_pct": 0.5160296673557864,
+        "inside_band": false
+      },
+      {
+        "entry": -0.7,
+        "end": 0.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9600433961475283,
+          0.9591670111907684,
+          0.9635915463515619
+        ],
+        "why": null,
+        "spread_pct": 0.46044111581757113,
+        "inside_band": false
+      },
+      {
+        "entry": -0.7,
+        "end": 0.7,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9607567196111589,
+          0.9592624975404005,
+          0.9640989215530775
+        ],
+        "why": null,
+        "spread_pct": 0.5030748166421415,
+        "inside_band": false
+      },
+      {
+        "entry": -0.7,
+        "end": 0.8,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9604130020574045,
+          0.9598123403529862,
+          0.9643793773762209
+        ],
+        "why": null,
+        "spread_pct": 0.4749736064606315,
+        "inside_band": false
+      },
+      {
+        "entry": -0.6,
+        "end": 0.5,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9599124328827512,
+          0.9586152155268902,
+          0.9634178274887458
+        ],
+        "why": null,
+        "spread_pct": 0.49993436746319686,
+        "inside_band": false
+      },
+      {
+        "entry": -0.6,
+        "end": 0.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9606465003954466,
+          0.9594728170754898,
+          0.9639160611531685
+        ],
+        "why": null,
+        "spread_pct": 0.4621903161047693,
+        "inside_band": false
+      },
+      {
+        "entry": -0.6,
+        "end": 0.7,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9605835920579749,
+          0.9595714156106743,
+          0.9641799526056777
+        ],
+        "why": null,
+        "spread_pct": 0.47933444538963277,
+        "inside_band": false
+      },
+      {
+        "entry": -0.6,
+        "end": 0.8,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9608458064997727,
+          0.9602957317428235,
+          0.9647376390999206
+        ],
+        "why": null,
+        "spread_pct": 0.4617560629673536,
+        "inside_band": false
+      },
+      {
+        "entry": -0.45,
+        "end": 1.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9624561937884566,
+          0.9638155818152128,
+          0.9625792359804273
+        ],
+        "why": null,
+        "spread_pct": 0.14116906908370655,
+        "inside_band": true
+      },
+      {
+        "entry": -0.3,
+        "end": 0.7,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9616080422807506,
+          0.9608741041300919,
+          0.959788899085024
+        ],
+        "why": null,
+        "spread_pct": 0.18934477365368588,
+        "inside_band": true
+      },
+      {
+        "entry": -0.45,
+        "end": 0.7,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9610449270687325,
+          0.9602415484654164,
+          0.9646597606767411
+        ],
+        "why": null,
+        "spread_pct": 0.4592821746872415,
+        "inside_band": false
+      },
+      {
+        "entry": -0.9,
+        "end": 0.7,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [],
+        "why": "ValueError: no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.  See FILLET_PLAN.md PART 10.",
+        "spread_pct": null,
+        "inside_band": null
+      },
+      {
+        "entry": -0.3,
+        "end": 1.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9506141352558567,
+          0.964162368414504,
+          0.9631313953533797
+        ],
+        "why": null,
+        "spread_pct": 1.412300216060756,
+        "inside_band": false
+      },
+      {
+        "entry": -0.6,
+        "end": 1.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9621087357179807,
+          0.9634200505531646,
+          0.9620210704329395
+        ],
+        "why": null,
+        "spread_pct": 0.14534607431733798,
+        "inside_band": true
+      },
+      {
+        "entry": -0.7,
+        "end": 1.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9617230079836319,
+          0.9628909818146223,
+          0.9617950895620392
+        ],
+        "why": null,
+        "spread_pct": 0.12139379404072066,
+        "inside_band": true
+      },
+      {
+        "entry": -0.75,
+        "end": 1.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9613743379191524,
+          0.9626747307597163,
+          0.9616613340892346
+        ],
+        "why": null,
+        "spread_pct": 0.13518953661980843,
+        "inside_band": true
+      },
+      {
+        "entry": -0.8,
+        "end": 1.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.961037673671106,
+          0.9625008914780673,
+          0.961421709598663
+        ],
+        "why": null,
+        "spread_pct": 0.15215645980662224,
+        "inside_band": true
+      },
+      {
+        "entry": -0.9,
+        "end": 1.6,
+        "ladder": [
+          "coarse",
+          "medium",
+          "fine"
+        ],
+        "axle_drop_mm": [
+          0.9604018040174944,
+          0.962408428496396,
+          0.9610717930267161
+        ],
+        "why": null,
+        "spread_pct": 0.20874201452731594,
+        "inside_band": true
+      }
+    ],
+    "shipped_pair": [
+      -0.45,
+      1.6
+    ],
+    "genome_robust_pair": [
+      -0.75,
+      0.7
+    ],
+    "candidates": [
+      [
+        -0.8,
+        0.7
+      ],
+      [
+        -0.8,
+        0.8
+      ],
+      [
+        -0.8,
+        1.0
+      ],
+      [
+        -0.75,
+        0.6
+      ],
+      [
+        -0.75,
+        0.7
+      ],
+      [
+        -0.75,
+        0.8
+      ],
+      [
+        -0.7,
+        0.5
+      ],
+      [
+        -0.7,
+        0.6
+      ],
+      [
+        -0.7,
+        0.7
+      ],
+      [
+        -0.7,
+        0.8
+      ],
+      [
+        -0.6,
+        0.5
+      ],
+      [
+        -0.6,
+        0.6
+      ],
+      [
+        -0.6,
+        0.7
+      ],
+      [
+        -0.6,
+        0.8
+      ]
+    ]
   }
 }

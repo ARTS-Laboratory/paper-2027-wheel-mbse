@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(
 import wheel_genome as wg            # noqa: E402
 import wheel_wheel as ww             # noqa: E402
 import study_corner_singularity as cs  # noqa: E402
+import study_fillet_block as fb       # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -689,3 +690,90 @@ def test_the_arc_distance_is_a_distance_to_the_ARC_and_not_to_its_circle(genes):
         assert cs._distance_to_arc(far, arc)[0] == pytest.approx(
             min(float(np.linalg.norm(far[0] - arc["A"])),
                 float(np.linalg.norm(far[0] - arc["B"]))), abs=1e-12), label
+
+
+# ---------------------------------------------------------------------------
+# THE TWO-OBJECTIVE PROFILE QUESTION (FILLET_PLAN PART 16)
+# ---------------------------------------------------------------------------
+
+def test_ONE_genome_robust_layer_profile_holds_the_deflection_band(fillet_report):
+    """PART 13's surviving reason, attacked directly — and it turns out to be beatable.
+
+    PART 13 declined the genome-robust profile on two grounds; PART 14 falsified one and
+    PART 16 showed the argmax is not stale, so everything rested on this: at
+    `GENOME_ROBUST_ENTRY/END` the shipped genome's filleted axle-drop spread over
+    `coarse..fine` more than triples and leaves the +-0.3% band.  That was ONE alternative
+    pair.  Priced across the WHOLE candidate set -- every cell clearing `MIN_SJ_TARGET` on
+    the clamped, fold-clean box while refusing none of it -- exactly one holds the band,
+    and it holds it better than the shipped pair does.
+
+    Both halves are asserted because both are load-bearing and each fails differently.
+    If the winner stops holding the band, the promotion PART 16 proposes is off.  If a
+    SECOND candidate starts holding it, the choice is no longer forced and the record
+    naming this one has to say why.
+    """
+    pr = fillet_report["profiles"]
+    ship = tuple(pr["shipped_pair"])
+    cand = {tuple(p) for p in pr["candidates"]}
+    rows = {(r["entry"], r["end"]): r for r in pr["rows"]}
+    assert len(cand) >= 10, len(cand)
+    assert cand <= set(rows), "a candidate was never priced"
+
+    winners = sorted(p for p in cand if rows[p]["inside_band"])
+    assert len(winners) == 1, (
+        f"{len(winners)} candidates hold the band: {winners} — one is the result PART 16 "
+        "records; zero or two is a finding and this test is where it surfaces")
+    assert winners[0] == (fb.TWO_OBJECTIVE_ENTRY, fb.TWO_OBJECTIVE_END), winners
+
+    # and it beats the pair it would replace on the objective that pair was chosen for
+    assert rows[winners[0]]["spread_pct"] < rows[ship]["spread_pct"]
+    assert ship not in cand, (
+        "the shipped pair now clears the barrier on the genome box — the whole quality "
+        "half of PLAN item 2 would be closed, which is a finding")
+
+    robust = tuple(pr["genome_robust_pair"])
+    assert rows[robust]["inside_band"] is False
+    assert rows[robust]["spread_pct"] > 3.0 * rows[ship]["spread_pct"]
+
+
+def test_neither_entry_nor_end_alone_predicts_the_convergence_cost(fillet_report):
+    """Why the whole candidate set had to be priced instead of a sample of it.
+
+    The first eight cells priced all had a steep entry and all failed, which reads as
+    "steep entry costs the band" — and that is wrong: at entry -0.80 the spread runs from
+    0.110% to 0.493% across its four ends.  Reading `end` as the culprit instead is also
+    wrong: end 0.70 fails at every entry from -0.45 to -0.80 and holds at -0.30.  The
+    failing set is the middle of the space, and the one cell that escapes it is on the
+    edge of the barrier-clearing region, which is exactly where a top-k rule stops
+    looking.
+
+    Pinned as a NEGATIVE about both variables so that a future single-variable
+    explanation has to beat it rather than replace it silently.
+    """
+    pr = fillet_report["profiles"]
+    by_entry, by_end = {}, {}
+    for r in pr["rows"]:
+        if r["spread_pct"] is not None:
+            by_entry.setdefault(r["entry"], []).append(r["spread_pct"])
+            by_end.setdefault(r["end"], []).append(r["spread_pct"])
+    band = pr["band_pct"]
+
+    def straddles(groups):
+        return [k for k, v in groups.items()
+                if len(v) > 1 and min(v) <= band < max(v)]
+
+    assert straddles(by_entry), (
+        "every entry now falls wholly inside or wholly outside the band — `entry` alone "
+        "predicts the cost, which is a mechanism and the records should say so")
+    assert straddles(by_end), (
+        "every end now falls wholly inside or wholly outside the band — `end` alone "
+        "predicts the cost, same finding")
+
+
+def test_the_layer_profile_sweep_moved_the_mesh_it_claims_to_have_moved(fillet_report):
+    """A sweep of nine profiles that silently priced one mesh nine times would pass every
+    assertion above by reporting identical spreads.  The axle drops must actually differ.
+    """
+    pr = fillet_report["profiles"]
+    drops = [tuple(r["axle_drop_mm"]) for r in pr["rows"] if r["axle_drop_mm"]]
+    assert len(set(drops)) == len(drops), "two candidate profiles produced the same ladder"

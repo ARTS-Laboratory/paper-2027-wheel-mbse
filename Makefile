@@ -108,8 +108,11 @@ help:
 	@echo "              eigenvalue. 8.5 s for the whole ladder (PLAN §30)"
 	@echo "make corner-fillet  the SAME ladder on the FILLETED mesh — FILLET_PLAN.md"
 	@echo "              Step 2. Adds the fillet's own probes (both tangent points,"
-	@echo "              the arc, and the peak over the whole arc surface) and the"
-	@echo "              R -> 0 control that says it is the same wheel. ~22 s"
+	@echo "              the arc, and the peak over the whole arc surface), the"
+	@echo "              R -> 0 control that says it is the same wheel, and what"
+	@echo "              each candidate LAYER PROFILE costs the deflection's"
+	@echo "              convergence — the two-objective half of PART 13's"
+	@echo "              declined call. ~110 s"
 	@echo "make filletblock  can the fillet BE a block, and can the sector be"
 	@echo "              blocked around it? the region PART 3 named has two cusps;"
 	@echo "              the boundary-layer block that meshes; and the whole"
@@ -706,7 +709,7 @@ CORNER_FILLET_OUT ?= studies/study_corner_singularity_fillet.json
 corner-fillet:
 	$(PY_OPT) -u studies/study_corner_singularity.py --genome $(CORNER_GENOME) \
 	    --ladder $(CORNER_LADDER) --fillet $(CORNER_FILLET) \
-	    --continuity $(CORNER_FILLET_CONTINUITY) --out $(CORNER_FILLET_OUT)
+	    --continuity $(CORNER_FILLET_CONTINUITY) --profiles --out $(CORNER_FILLET_OUT)
 
 # ---------------------------------------------------------------------------
 # DOES THE MESH HAVE THE CORNERS THE PART HAS?  (UNCAP_PLAN.md, PLAN §34)

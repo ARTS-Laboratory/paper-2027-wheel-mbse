@@ -2175,3 +2175,160 @@ Every previously-committed field in both reproduces exactly.
    fold-clean genomes is still the cheap first half of it.
 3. **The trimmed-spoke fold is CLOSED as a defect** and reclassified: it was never a defect
    of the blocking, and there is now a number that says so before the build.
+
+---
+
+# STEP 1 RECORD, PART 16 — 2026-08-23. THE TWO-OBJECTIVE PROFILE EXISTS. IT IS ONE CELL OF FOURTEEN, IT BEATS THE SHIPPED PAIR ON BOTH OBJECTIVES AT ONCE, AND EVERY SHORTLIST I TRIED FIRST THREW IT AWAY
+
+PART 13 declined the genome-robust layer profile for two reasons.  PART 14 falsified one
+of them.  This part takes the other one apart, and the answer is not the one PART 13, PART
+14, PART 15 or the first two-thirds of this part expected.
+
+## FIRST, THE CHEAP HALF: THE ARGMAX IS NOT WHAT IS STALE
+
+`GENOME_ROBUST_ENTRY/END = (-0.75, 0.70)` is the argmax over **ten** cells, which is what
+was left after six genomes refused their sector and one was excluded by hand.  §57's clamp
+makes the six build and §58's fold margin retires the hand-exclusion, so the same
+derivation now runs over **fifteen**: fourteen drawn genomes clamped inside their own
+sectors, all fold-clean, plus the shipped genome.
+
+Re-derived, the argmax appears to MOVE — to `(-0.90, 0.80)`, worst 0.2440 against
+`(-0.75, 0.70)`'s 0.2430 — and it does not.  **That cell refuses one of the fifteen.**
+
+```
+  entry \ end     0.50    0.60    0.70    0.80    1.00    1.30    1.60    refused
+        -0.30   0.0723  0.0650  0.0582  0.0518  0.0400  0.0238  0.0091    0 0 0 0 0 0 0
+        -0.45   0.1973  0.1901  0.1835  0.1773  0.1643  0.1392  0.1194    0 0 0 0 0 0 0
+        -0.60   0.2279  0.2310  0.2190  0.2060  0.1816  0.1537  0.1320    0 0 0 0 0 0 0
+        -0.70   0.2165  0.2340  0.2347  0.2201  0.1937  0.1637  0.1406    0 0 0 0 0 0 0
+        -0.75   0.2125  0.2285  0.2430  0.2274  0.1999  0.1688  0.1450    1 0 0 0 0 0 0
+        -0.80   0.2076  0.2271  0.2394  0.2347  0.2061  0.1740  0.1495    1 1 0 0 0 0 0
+        -0.90   0.1981  0.2175  0.2313  0.2440  0.2189  0.1845  0.1586    2 1 1 1 1 0 0
+```
+
+**Ranking cells on "the worst over the genomes that BUILT" pays a cell for refusing a hard
+genome.**  PART 13's rule, and its own argmax happened to sit where nothing refused, so its
+answer was never biased — checked, not assumed.  But the clamped cell set reaches the
+steep-entry corner where the layer profile itself starts refusing, which the ten-cell set
+never did, and there the bias bites.  `profile_argmax` reports both rules and the gap
+between them; the corrected one is `no_refusal`, and on it the re-derivation **reproduces
+PART 13's pair exactly**: `(-0.75, 0.70)`, 0.2430 against its published 0.2444.
+
+So the argmax is not stale.  Everything rested on the convergence cost.
+
+## THE EXPENSIVE HALF, AND WHAT IT NEEDED FIRST
+
+PART 13's surviving reason is one number: at `(-0.75, 0.70)` the shipped genome's filleted
+axle-drop spread over `coarse..fine` goes 0.141% -> 0.513% and crosses the ±0.3% band.
+**That was measured at one alternative pair**, and the profile surface is a broad ridge, so
+the question nobody had asked is whether some OTHER cell is genome-robust and stays inside
+the band.  Three linear solves per pair — the whole ladder is nine seconds.
+
+It needed the profile threaded to a full `build_wheel`, not just to a sector.
+`filleted_sector` already exposed `entry`/`end` for the blocking; `sector_blocks`,
+`_sector_coords` and `build_wheel` now take `layer_profile=(entry, end)` for the solve.
+`None` is the shipped pair, and
+`test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default` asserts bitwise
+equality three ways — omitted, `None`, and the constants passed explicitly — with
+`test_the_layer_profile_actually_MOVES_the_filleted_mesh` on the other side so the
+bit-identity is not vacuous.
+
+## AND THEN I GOT IT WRONG TWICE, WHICH IS THE PART WORTH KEEPING
+
+**Shortlist 1 — the top eight of the ridge.**  All eight failed the band, 0.460% to 0.512%,
+and all eight had a steep entry.  The obvious reading: genome robustness needs a steep
+entry, the band forbids one, no two-objective profile exists.  A clean negative, and it was
+about to be written down.
+
+**Shortlist 2 — the entry ladder, to check that reading.**  It falsified it immediately:
+at end 1.60 *every* entry from -0.45 to -0.90 holds the band (0.121%-0.209%).  The cost is
+not carried by entry.  The obvious new reading: it is carried by `end`.
+
+**That was wrong too**, and only enumerating the whole candidate set showed it:
+
+```
+   entry   spread over the ends priced          end   spread over the entries priced
+   -0.30   0.189%, 1.412%                      0.50   0.500%, 0.516%
+   -0.45   0.141%, 0.459%                      0.60   0.460%, 0.462%, 0.474%
+   -0.60   0.145%, 0.462%, 0.462%, ...         0.70   0.189%, 0.459%, ..., 0.512%
+   -0.70   0.121%, 0.460%, ..., 0.516%         0.80   0.462%, 0.475%, 0.482%, 0.490%
+   -0.75   0.135%, 0.474%, 0.482%, 0.512%      1.00   0.110%
+   -0.80   0.110%, 0.152%, 0.490%, 0.493%      1.60   0.121%, ..., 0.209%, 1.412%
+```
+
+Every entry straddles the band and every end but two straddles it.  **Neither variable
+alone predicts the cost.**  The failing set is the MIDDLE of the space — a short end with
+an entry steep enough to matter — and it covers almost all of the barrier-clearing region.
+
+Almost.
+
+## THE RESULT
+
+```
+  profile                       genome-box floor (15 cells)      convergence, coarse..fine
+  shipped        (-0.45, 1.60)   0.1194   under MIN_SJ_TARGET       0.141%   inside the band
+  §54's pair     (-0.75, 0.70)   0.2430   CLEARS                    0.512%   OUTSIDE
+  (-0.80, 1.00)                  0.2061   CLEARS                    0.110%   inside, and BETTER
+```
+
+**`entry = -0.80, end = 1.00` clears the barrier on all fifteen cells, refuses none of
+them, and holds the deflection band more tightly than the pair that ships.**  It dominates
+the shipped profile on both measured objectives at once: the genome-box floor goes 0.1194
+-> 0.2061, +73%, and the convergence spread goes 0.141% -> 0.110%.  Re-derived
+independently of the driver before being written here.
+
+It is one cell of fourteen.  **And it is the one every shortlist drops**, because it has
+the LOWEST genome-box floor of the fourteen that clear the barrier — a top-k rule over the
+ridge ranks it fourteenth of fourteen.  The candidate set is now defined by the criterion
+that actually matters rather than by a rank: every cell clearing `MIN_SJ_TARGET` on the
+whole clamped fold-clean box while refusing none of it.  `LAYER_PROFILE_CANDIDATES` is that
+set, `the_candidate_constant_matches_the_measured_surface` re-derives it every run, and
+`study_corner_singularity` prices all fourteen.
+
+## MEASURED, NOT ADOPTED — AND HERE THAT IS A DEFERRAL, NOT A DECLINE
+
+The three previous times this arc wrote "measured, not adopted" it was because adoption
+would have traded away a published result.  **This one would not**: nothing measured here
+gets worse.  The reason it is not adopted in this part is different and is about the size
+of the audit, not the merit of the change.
+
+`FILLET_LAYER_ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET` are the default for every filleted
+mesh the tree builds.  They do not touch `best_solution.json`, the shipped unfilleted mesh,
+the optimizer or the exporter — `fillet=` is an instrument and `build_wheel`'s default is
+still `fillet=None` — but they are the geometry underneath **every filleted number this
+arc has published**: PART 12's 38% deflection reduction and its whole corner ladder, the
+arc-surface peaks, `study_fillet_block`'s entire radius box, the uncap table, and the
+seam-closure claims at both configs.  Changing them re-dates all of it at once.  This tree
+has a memory of exactly that going wrong, and the discipline it produced is that a default
+change audits every re-derivation that took it bare.
+
+So the pair is named (`TWO_OBJECTIVE_ENTRY`/`TWO_OBJECTIVE_END`), measured, tested and left
+unwired, and the promotion is PART 17 with its own baseline.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14,
+`FILLET_LAYER_ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET` still PART 10's, `GENOME_ROBUST_ENTRY/
+END` still PART 13's, `sector_blocks` and `build_wheel` still returning the same meshes
+bit-for-bit at their defaults, and no draw filter changed.**  Both artifacts were diffed
+field-by-field: `study_corner_singularity_fillet.json` gains exactly one key (`profiles`)
+and changes nothing; `study_fillet_block.json` gains `profile_genomes_buildable`,
+`profile_argmax`, `profile_candidates` and three self-checks, and changes nothing.
+
+`make filletblock` is ~270 s; `make corner-fillet` is ~180 s rather than ~22 s, and the
+Makefile's help says so.
+
+## WHAT PART 16 LEAVES
+
+1. **PART 17: adopt `(-0.80, 1.00)`.**  The audit is the work, not the decision.  Every
+   filleted artifact re-derived and re-dated, PART 12's convergence and 38% figure
+   re-measured, the two constants moved, and `test_promotion.py`'s checklist extended to
+   cover a layer-profile change the way it covers a genome change.
+2. **A finer grid around `(-0.80, 1.00)`.**  It is a grid point of a sweep laid out for a
+   different question — ends jump 0.80 -> 1.00 -> 1.30 and entries -0.80 -> -0.90.  The
+   band-holding, barrier-clearing region has been located but not resolved, and its best
+   point is not known to be this one.
+3. **Why the middle of the space fails.**  Every cell with a short end and a steep entry
+   spreads ~0.5%; the mechanism is unnamed, and PART 12's own reading — that the fillet's
+   convergence comes from removing the corner singularity — does not obviously predict a
+   region that gets WORSE than the shipped pair while still being filleted.
