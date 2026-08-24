@@ -9165,3 +9165,60 @@ field.  `study_reds_hub_share` now carries both readings for the same reason.
    as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
    §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
    element-validity check** (§44).
+
+---
+
+## §67 — 2026-08-23. THE LAST OF THE FOUR CONSUMERS, PRICED: `study_contact`'s COMPARISONS MOVE BY 0.1-0.3 POINTS AND NOTHING FLIPS, AND CLASS B IS CONFIRMED AT 0.016 POINTS
+
+§66's item 1 left one consumer unpriced.  `study_contact` compares a contact solve's drop —
+a PRESCRIBED indentation, exact — against `solve_wheel`'s assumed-patch drop, which is the
+node reading.  A mixed comparison, so unlike the same-mesh ratios it does not cancel.
+
+Measured at the shipped genome, `coarse`, across phase:
+
+```
+   phase    contact  assumed node  assumed interp   rel node   rel interp
+     0.0   1.463794      1.551645        1.549819    -5.662%     -5.551%
+    10.0   1.937837      1.931691        1.932351    +0.318%     +0.284%
+    20.0   1.453034      1.481613        1.485833    -1.929%     -2.207%
+    30.0   1.463794      1.551645        1.549819    -5.662%     -5.551%
+   spread of rel_diff                                 5.980%      5.835%
+```
+
+**Every comparison moves by 0.03 to 0.28 percentage points, on a quantity that spans six
+points across phase.  No sign changes and no conclusion moves.**  The phase-0 and phase-30
+rows agreeing to the last digit is the twelve-fold periodicity, unaffected either way.
+
+**And Class B is confirmed by measurement rather than by argument.**  §64 claimed that a
+ratio of two readings on the SAME mesh is immune because both are linear functionals of
+their own field, and verified it only for the exactly-proportional case (two loads, ratio
+1.300000 either way).  The non-proportional case is SVK against linear on one mesh, where
+the offset is identical but the two fields have different slopes through the bottom:
+
+```
+   SVK vs linear, same mesh:   node +22.52054%    interp +22.53687%
+```
+
+0.016 points on 22.5 — the residue is `(slope_svk - slope_lin) x offset`, and it is
+second-order as claimed.
+
+**Nothing changed in `study_contact.py`.**  Regenerating that artifact is 1161 s and the
+correction it would carry is a 0.2-point annotation that flips nothing, so the code change
+belongs with the next run of that study for its own reasons rather than as a stale-artifact
+hazard tonight.  The measurement is the deliverable: **all four consumers §65 identified are
+now priced, and only one of them — `run_refinement`'s convergence order, §66 — mattered.**
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §67
+
+1. **Adopt `(-0.85, 1.00)`** as the layer profile (§61): clears `MIN_SJ_TARGET` on the whole
+   clamped fold-clean box at 0.2125 against the shipped pair's 0.1194, settles at ratio
+   0.406, and costs +0.07% on the extrapolated deflection.  The audit is every filleted
+   artifact re-derived and `test_promotion.py` extended.
+2. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60) — which
+   genome, and why, is unasked, and it is cheap.
+3. **Carry `axle_drop_interp_mm` into `study_contact`** next time that study runs anyway.
+4. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
