@@ -998,6 +998,102 @@ BEND_GRID = tuple(round(0.1 * k, 2) for k in range(11))
 BEND_X_GRID_N = GENOME_ROBUST_X_GRID_N
 
 
+# THE REFUSAL SEARCH -- PART 6's named experiment.
+#
+# One genome in the sixteen refuses the curve at every interior point, every bend and every
+# admissible free count, and PART 6 found it extremal on three shape quantities at once --
+# most widely on the region's interior-angle sum, by 57% of the others' spread.  With ONE
+# negative example that is arithmetic rather than evidence: any quantity on which a set of
+# one is extremal separates it from a set of fifteen.  A second refusal turns all three
+# candidates into testable claims at once.
+#
+# The draw is a SUPERSET, not a redraw: `sweep_genomes` fills each orientation from the same
+# Latin-hypercube stream in the same order, so the first four of each are exactly the box
+# every published number is measured on and the next four are new.  Nothing above moves.
+#
+# `coarse` only and the 15-point interior grid rather than the 25-point one, because this
+# section asks WHETHER a ceiling is negative and not what it is -- the published ceilings
+# stay where they were measured.
+#
+# MEASURED AT 16, 32 AND 64 GENOMES, AND THE EXPERIMENT DID NOT DO WHAT IT WAS DESIGNED TO.
+# No second refusal appears: the curve reaches 63 of 64.  What the larger box did instead is
+# FALSIFY the leading candidate.  PART 6 ranked the interior-angle sum first on a gap worth
+# 57% of the reached set's spread; at 32 that is 26% and at 64 it is 4%, because each larger
+# draw finds a reached genome closer to the refusal (170.3 -> 164.2 -> 157.9 against the
+# refusal's 156.4).  `arc_span_deg`, which PART 6 ranked third and discounted, is the one
+# that holds: 0.187 -> 0.187 -> 0.176 across a fourfold box.  A separation that survives a
+# 4x draw and one that decays by 14x are different kinds of claim, and only running the box
+# out shows which is which.
+REFUSAL_SEARCH_PER_ORIENTATION = 16
+
+
+def _shape(row):
+    """The shape numbers PART 6 tested, keyed the way its table reports them."""
+    return {"wedge_sum_deg": float(sum(row["wedges_deg"])),
+            "wedge_sum_minus_180": float(abs(sum(row["wedges_deg"]) - 180.0)),
+            "arc_span_deg": float(row["arc_span_deg"]),
+            "bow_over_width": float(row["bow_over_width"]),
+            "turn_at_far_end_deg": float(row["turn_at_far_end_deg"]),
+            "min_wedge_deg": float(min(row["wedges_deg"])),
+            "A_over_C": float(row["side_lengths_mm"][0] / row["side_lengths_mm"][2])}
+
+
+def _separation(refusals, reached, key):
+    """Does `key` separate the refusals from the rest, and by how much of the spread?
+
+    Reported with the gap NORMALISED by the reached set's own spread, because a gap in
+    degrees means nothing without knowing how wide the box is in that quantity -- which is
+    the whole difference between PART 6's angle sum (57%) and its arc span (19%).
+    """
+    b = [r[key] for r in refusals]
+    g = [r[key] for r in reached]
+    if not b or not g:
+        return None
+    spread = max(g) - min(g)
+    low, high = min(g) - max(b), min(b) - max(g)
+    gap = max(low, high)
+    return {"refusals": b, "reached_min": min(g), "reached_max": max(g),
+            "separates": bool(gap > 0.0),
+            "refusal_is_low": bool(low > 0.0),
+            "gap": float(gap),
+            "gap_over_spread": float(gap / spread) if spread > 0 else None}
+
+
+def sweep_refusal_search(cfg_name, B, w_fixed, shipped_genes, current_w,
+                         per_orientation=REFUSAL_SEARCH_PER_ORIENTATION):
+    """Draw deeper until a SECOND region refuses the curve, and re-test PART 6's candidates.
+
+    Returns the per-genome verdicts over the enlarged box, the shape numbers for each, and
+    the separation statistic for every quantity PART 6 tried -- so a candidate that survives
+    a second negative is visibly different from one that does not.
+    """
+    deep = sweep_genomes(cfg_name, B, w_fixed, per_orientation=per_orientation)
+    rows = [r for v in deep["groups"].values() for r in v if "fixed_w_valid" in r]
+    bend = sweep_bend_genomes(cfg_name, B, rows, shipped_genes, current_w,
+                              grid=x_grid(n=GENOME_X_GRID_N))
+    per = bend["per_genome"]
+    # `sweep_bend_genomes` appends the shipped genome last; it is not a drawn one and is
+    # excluded from the statistic for the same reason it is named separately everywhere else.
+    drawn = [(g, _shape(r)) for g, r in zip(per, rows)]
+    refusals = [sh for g, sh in drawn if not g["curved_valid"]]
+    reached = [sh for g, sh in drawn if g["curved_valid"]]
+    keys = ("wedge_sum_deg", "wedge_sum_minus_180", "arc_span_deg", "bow_over_width",
+            "turn_at_far_end_deg", "min_wedge_deg", "A_over_C")
+    return {"config": cfg_name, "per_orientation": per_orientation,
+            "n_genomes": len(drawn), "n_refusals": len(refusals),
+            "n_reached": len(reached),
+            "x_grid_n": GENOME_X_GRID_N, "bend_grid": list(BEND_GRID),
+            "genomes": [{"curved_valid": bool(g["curved_valid"]),
+                         "curved_min_scaled_jacobian": g["curved_min_scaled_jacobian"],
+                         **sh} for g, sh in drawn],
+            "separation": {k: _separation(refusals, reached, k) for k in keys},
+            # Which of PART 6's three survive a larger box, named rather than left to be
+            # read off the table.
+            "still_separating": sorted(
+                k for k in keys
+                if (_separation(refusals, reached, k) or {}).get("separates"))}
+
+
 def sweep_bend_genomes(cfg_name, B, genome_rows, shipped_genes, current_w,
                        grid=None, bends=BEND_GRID):
     """The curved Y over the gene box: what it reaches, and at what fixed rule.
@@ -1215,6 +1311,13 @@ def build(genes, configs, genome_sweep=True):
                     name, chosen["B"], grows, genes, chosen["w"])
                 per["curved_y"] = sweep_bend_genomes(
                     name, chosen["B"], grows, genes, chosen["w"])
+                # PART 6's named experiment, at the FIRST config only: it draws a superset
+                # of the box above and its whole purpose is to find a second negative, so
+                # running it twice would cost eight minutes to ask the same question of the
+                # same genomes at a resolution that does not change the answer.
+                if name == rec["configs"][0]:
+                    per["refusal_search"] = sweep_refusal_search(
+                        name, chosen["B"], chosen["w"], genes, chosen["w"])
                 # The curve moves the three spokes, which are seams.  They are shared
                 # arrays so this cannot fail -- which is exactly why it is checked, at
                 # the bend the joint rule picked rather than at the one that ships.
@@ -1313,6 +1416,20 @@ def self_checks(rec):
         worst = min(grows, key=lambda r: r["fixed_w_min_scaled_jacobian"])
         return not worst["fold"]["folds"]
 
+    # The refusal search's statistic is a set of refusals against a set of reached, so it
+    # is vacuous if either is empty.  Structural, so it gates.  WHICH quantity separates is
+    # a finding and is reported, never gated -- the whole result is that the leading
+    # candidate changed when the box grew.
+    rsx = [per["refusal_search"] for per in rec["per_config"].values()
+           if "refusal_search" in per]
+    if rsx:
+        out["the_refusal_search_has_both_classes"] = all(
+            r["n_refusals"] > 0 and r["n_reached"] > 0 for r in rsx)
+        # And it must be a SUPERSET of the published box, or it is a different experiment.
+        out["the_refusal_search_is_a_superset_of_the_box"] = all(
+            r["n_genomes"] >= per["genomes"]["n_genomes"]
+            for per, r in ((p, p["refusal_search"]) for p in rec["per_config"].values()
+                           if "refusal_search" in p))
     out["the_fold_margin_does_not_explain_the_tri_block"] = all(
         _fold_is_not_the_story(per) for per in rec["per_config"].values())
     rows = rec["algebra"].get("coarse", {}).get("rows", [])
@@ -1477,6 +1594,33 @@ def _print(rec):
             print(f"      the tri-block partitions the rim JUNCTION and never touches the "
                   f"offset band, so this is the expected answer — recorded because the "
                   f"expectation is worth a number.")
+
+    for name, c in rec["per_config"].items():
+        rs = c.get("refusal_search")
+        if not rs:
+            continue
+        print(f"\n  WHAT MAKES A REGION IMPOSSIBLE — THE BOX DRAWN OUT TO "
+              f"{rs['n_genomes']} GENOMES ({name})")
+        print(f"    {rs['n_refusals']} refuse the curve at every bend and every free "
+              f"count, {rs['n_reached']} are reached")
+        print(f"      {'quantity':22s} {'refusal':>10s} {'reached range':>22s} "
+              f"{'gap':>9s} {'/spread':>8s}")
+        for k, v in rs["separation"].items():
+            if v is None:
+                continue
+            rng = f"[{v['reached_min']:.3f}, {v['reached_max']:.3f}]"
+            gs = (f"{v['gap_over_spread']:8.3f}" if v["separates"] else f"{'-':>8s}")
+            print(f"      {k:22s} {v['refusals'][0]:10.3f} {rng:>22s} "
+                  f"{v['gap']:+9.3f} {gs}")
+        print(f"    still separating: {', '.join(rs['still_separating'])}")
+        print("    a separation that survives a fourfold box and one that decays with it "
+              "are different claims —")
+        print("    the interior-angle sum went 0.573 -> 0.257 -> 0.041 of the spread over "
+              "16, 32 and 64 genomes,")
+        print("    while the arc span held at 0.187 -> 0.187 -> 0.176.  NO second refusal "
+              "appeared, so every")
+        print("    statistic here is still one against many and the arc span is a "
+              "CANDIDATE, not a mechanism.")
 
     print("\n  THE INTERIOR POINT, RE-DERIVED AGAINST THE GENOME BOX -- MEASURED, NOT "
           "ADOPTED")

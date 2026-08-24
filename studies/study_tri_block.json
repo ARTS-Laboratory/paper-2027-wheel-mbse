@@ -10861,7 +10861,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 2.933254446757111
+                "margin_mm": 2.933254446757111,
+                "num_points": 1200
               },
               "genes": [
                 9.634532323787912,
@@ -10916,7 +10917,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.26481976646674754
+                "margin_mm": 0.26481976646674754,
+                "num_points": 1200
               },
               "genes": [
                 9.476802129763865,
@@ -10971,7 +10973,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.12439845665756066
+                "margin_mm": 0.12439845665756066,
+                "num_points": 1200
               },
               "genes": [
                 7.461925444644915,
@@ -11026,7 +11029,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 3.0257149103586007
+                "margin_mm": 3.0257149103586007,
+                "num_points": 1200
               },
               "genes": [
                 8.93384068186625,
@@ -11083,7 +11087,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.9291419400979528
+                "margin_mm": 0.9291419400979528,
+                "num_points": 1200
               },
               "genes": [
                 5.1216594094430015,
@@ -11134,7 +11139,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.12994297974305002
+                "margin_mm": 0.12994297974305002,
+                "num_points": 1200
               },
               "genes": [
                 3.09060822546242,
@@ -11189,7 +11195,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.8082991092892629
+                "margin_mm": 0.8082991092892629,
+                "num_points": 1200
               },
               "genes": [
                 8.518071506355884,
@@ -11244,7 +11251,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.825079336653464
+                "margin_mm": 1.825079336653464,
+                "num_points": 1200
               },
               "genes": [
                 4.561830042332513,
@@ -11301,7 +11309,8 @@
                 "binds": true,
                 "folds": true,
                 "limit_mm": 0.1,
-                "margin_mm": -0.34362068454502026
+                "margin_mm": -0.34362068454502026,
+                "num_points": 1200
               },
               "genes": [
                 9.764038782057256,
@@ -11356,7 +11365,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 2.110637907353543
+                "margin_mm": 2.110637907353543,
+                "num_points": 1200
               },
               "genes": [
                 7.928265283674952,
@@ -11411,7 +11421,8 @@
                 "binds": true,
                 "folds": true,
                 "limit_mm": 0.1,
-                "margin_mm": -0.013083996022784428
+                "margin_mm": -0.013083996022784428,
+                "num_points": 1200
               },
               "genes": [
                 4.864037300085325,
@@ -11466,7 +11477,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.572910258196691
+                "margin_mm": 1.572910258196691,
+                "num_points": 1200
               },
               "genes": [
                 3.7753809971822303,
@@ -11523,7 +11535,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.9088314168378409
+                "margin_mm": 1.9088314168378409,
+                "num_points": 1200
               },
               "genes": [
                 4.69078091352994,
@@ -11578,7 +11591,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 2.7719679060052638
+                "margin_mm": 2.7719679060052638,
+                "num_points": 1200
               },
               "genes": [
                 8.621539234501089,
@@ -11633,7 +11647,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.873417551934311
+                "margin_mm": 1.873417551934311,
+                "num_points": 1200
               },
               "genes": [
                 9.953735458412297,
@@ -11688,7 +11703,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 3.631298092602421
+                "margin_mm": 3.631298092602421,
+                "num_points": 1200
               },
               "genes": [
                 2.764068488405683,
@@ -11738,6 +11754,817 @@
           0.12444444444444444,
           0.7511111111111111,
           0.12444444444444447
+        ],
+        "x_grid_n": 15
+      },
+      "refusal_search": {
+        "bend_grid": [
+          0.0,
+          0.1,
+          0.2,
+          0.3,
+          0.4,
+          0.5,
+          0.6,
+          0.7,
+          0.8,
+          0.9,
+          1.0
+        ],
+        "config": "coarse",
+        "genomes": [
+          {
+            "A_over_C": 1.996731944217367,
+            "arc_span_deg": 8.499644826476317,
+            "bow_over_width": 0.03700374909912928,
+            "curved_min_scaled_jacobian": 0.4959656698893962,
+            "curved_valid": true,
+            "min_wedge_deg": 29.733447879816396,
+            "turn_at_far_end_deg": 174.94612685793706,
+            "wedge_sum_deg": 175.7384848148109,
+            "wedge_sum_minus_180": 4.261515185189097
+          },
+          {
+            "A_over_C": 6.5109618110718355,
+            "arc_span_deg": 35.31219595663455,
+            "bow_over_width": 0.4975700584939287,
+            "curved_min_scaled_jacobian": 0.048256091474575116,
+            "curved_valid": true,
+            "min_wedge_deg": 19.940391808299353,
+            "turn_at_far_end_deg": 177.52394609814704,
+            "wedge_sum_deg": 175.1728491710369,
+            "wedge_sum_minus_180": 4.827150828963113
+          },
+          {
+            "A_over_C": 7.60992172517308,
+            "arc_span_deg": 15.917904388740418,
+            "bow_over_width": 0.263810366738197,
+            "curved_min_scaled_jacobian": 0.03997207465893459,
+            "curved_valid": true,
+            "min_wedge_deg": 10.052872767454375,
+            "turn_at_far_end_deg": 178.26299077172226,
+            "wedge_sum_deg": 170.3303765020301,
+            "wedge_sum_minus_180": 9.669623497969894
+          },
+          {
+            "A_over_C": 2.028390356312581,
+            "arc_span_deg": 10.754364443850811,
+            "bow_over_width": 0.04754904391905328,
+            "curved_min_scaled_jacobian": 0.6014076945373927,
+            "curved_valid": true,
+            "min_wedge_deg": 36.9707830066651,
+            "turn_at_far_end_deg": 175.81053952132737,
+            "wedge_sum_deg": 194.70251611401483,
+            "wedge_sum_minus_180": 14.702516114014827
+          },
+          {
+            "A_over_C": 4.251911097608816,
+            "arc_span_deg": 10.703863182308426,
+            "bow_over_width": 0.09920492069357698,
+            "curved_min_scaled_jacobian": 0.2948514233358758,
+            "curved_valid": true,
+            "min_wedge_deg": 17.148628281189957,
+            "turn_at_far_end_deg": 179.52676800642288,
+            "wedge_sum_deg": 182.7744063309091,
+            "wedge_sum_minus_180": 2.774406330909102
+          },
+          {
+            "A_over_C": 3.2216946830905258,
+            "arc_span_deg": 26.30225638679425,
+            "bow_over_width": 0.1840322346953362,
+            "curved_min_scaled_jacobian": 0.2900726400179398,
+            "curved_valid": true,
+            "min_wedge_deg": 22.262684793079472,
+            "turn_at_far_end_deg": 175.29878415901922,
+            "wedge_sum_deg": 183.06043950992034,
+            "wedge_sum_minus_180": 3.060439509920343
+          },
+          {
+            "A_over_C": 2.678891036871461,
+            "arc_span_deg": 7.976232091462262,
+            "bow_over_width": 0.04659097387589164,
+            "curved_min_scaled_jacobian": 0.36019722466821613,
+            "curved_valid": true,
+            "min_wedge_deg": 21.112308757046037,
+            "turn_at_far_end_deg": 174.22291652567037,
+            "wedge_sum_deg": 178.13703599552582,
+            "wedge_sum_minus_180": 1.862964004474179
+          },
+          {
+            "A_over_C": 3.5226232798621124,
+            "arc_span_deg": 25.35457635670505,
+            "bow_over_width": 0.19403234364959843,
+            "curved_min_scaled_jacobian": 0.24534668168175153,
+            "curved_valid": true,
+            "min_wedge_deg": 20.643697677389298,
+            "turn_at_far_end_deg": 178.07092594397773,
+            "wedge_sum_deg": 169.90253293971818,
+            "wedge_sum_minus_180": 10.097467060281815
+          },
+          {
+            "A_over_C": 3.427151613672236,
+            "arc_span_deg": 21.17032821115546,
+            "bow_over_width": 0.1578154315209871,
+            "curved_min_scaled_jacobian": 0.369693457505333,
+            "curved_valid": true,
+            "min_wedge_deg": 21.69671326028211,
+            "turn_at_far_end_deg": 179.3513758522582,
+            "wedge_sum_deg": 176.23288210370794,
+            "wedge_sum_minus_180": 3.7671178962920635
+          },
+          {
+            "A_over_C": 1.7568346990678712,
+            "arc_span_deg": 6.123296984355898,
+            "bow_over_width": 0.023460496607192988,
+            "curved_min_scaled_jacobian": 0.5376790095701381,
+            "curved_valid": true,
+            "min_wedge_deg": 32.52577830907947,
+            "turn_at_far_end_deg": 175.81812001267602,
+            "wedge_sum_deg": 164.7410323158826,
+            "wedge_sum_minus_180": 15.258967684117408
+          },
+          {
+            "A_over_C": 2.1001968928359136,
+            "arc_span_deg": 12.088009327869376,
+            "bow_over_width": 0.055326896883982714,
+            "curved_min_scaled_jacobian": 0.5471774581051259,
+            "curved_valid": true,
+            "min_wedge_deg": 33.173589461210696,
+            "turn_at_far_end_deg": 175.50766903669853,
+            "wedge_sum_deg": 191.31292554989108,
+            "wedge_sum_minus_180": 11.312925549891077
+          },
+          {
+            "A_over_C": 2.8840625737690035,
+            "arc_span_deg": 8.433777452009606,
+            "bow_over_width": 0.053034084192077044,
+            "curved_min_scaled_jacobian": 0.30914281918994885,
+            "curved_valid": true,
+            "min_wedge_deg": 18.007580396864142,
+            "turn_at_far_end_deg": 174.43303415848604,
+            "wedge_sum_deg": 166.21448814294246,
+            "wedge_sum_minus_180": 13.785511857057543
+          },
+          {
+            "A_over_C": 3.00966425329988,
+            "arc_span_deg": 10.67062173613887,
+            "bow_over_width": 0.07000325324577533,
+            "curved_min_scaled_jacobian": 0.42162335401222406,
+            "curved_valid": true,
+            "min_wedge_deg": 24.937119107222827,
+            "turn_at_far_end_deg": 177.77979582135967,
+            "wedge_sum_deg": 189.42066916285688,
+            "wedge_sum_minus_180": 9.420669162856882
+          },
+          {
+            "A_over_C": 1.4121522687768084,
+            "arc_span_deg": 8.495156652083335,
+            "bow_over_width": 0.02615642067269675,
+            "curved_min_scaled_jacobian": 0.5303883622592168,
+            "curved_valid": true,
+            "min_wedge_deg": 32.03169865624233,
+            "turn_at_far_end_deg": 173.22101346271316,
+            "wedge_sum_deg": 174.12466063794386,
+            "wedge_sum_minus_180": 5.875339362056138
+          },
+          {
+            "A_over_C": 3.3189122059166434,
+            "arc_span_deg": 26.169185782079047,
+            "bow_over_width": 0.18863477190261504,
+            "curved_min_scaled_jacobian": 0.12373104979649525,
+            "curved_valid": true,
+            "min_wedge_deg": 17.565907716240503,
+            "turn_at_far_end_deg": 172.2110180045703,
+            "wedge_sum_deg": 165.50647220710613,
+            "wedge_sum_minus_180": 14.493527792893872
+          },
+          {
+            "A_over_C": 8.381390505597967,
+            "arc_span_deg": 29.719404232797405,
+            "bow_over_width": 0.540311818006209,
+            "curved_min_scaled_jacobian": 0.16695808903996268,
+            "curved_valid": true,
+            "min_wedge_deg": 18.425871791826182,
+            "turn_at_far_end_deg": 176.7748111877147,
+            "wedge_sum_deg": 187.81054451735505,
+            "wedge_sum_minus_180": 7.810544517355055
+          },
+          {
+            "A_over_C": 2.6473343724271756,
+            "arc_span_deg": 10.920798821934527,
+            "bow_over_width": 0.06301715054193692,
+            "curved_min_scaled_jacobian": 0.37940444458726696,
+            "curved_valid": true,
+            "min_wedge_deg": 22.296797467787286,
+            "turn_at_far_end_deg": 174.45105076036089,
+            "wedge_sum_deg": 177.84864441454192,
+            "wedge_sum_minus_180": 2.1513555854580773
+          },
+          {
+            "A_over_C": 5.520175535749128,
+            "arc_span_deg": 41.20870910493954,
+            "bow_over_width": 0.4908854631916546,
+            "curved_min_scaled_jacobian": null,
+            "curved_valid": false,
+            "min_wedge_deg": 19.284408891689907,
+            "turn_at_far_end_deg": 178.85552604205427,
+            "wedge_sum_deg": 156.3706381284602,
+            "wedge_sum_minus_180": 23.6293618715398
+          },
+          {
+            "A_over_C": 1.1228885225848755,
+            "arc_span_deg": 3.7139096865504007,
+            "bow_over_width": 0.009096080480833699,
+            "curved_min_scaled_jacobian": 0.4843488067876333,
+            "curved_valid": true,
+            "min_wedge_deg": 28.96981680952055,
+            "turn_at_far_end_deg": 179.0146504594957,
+            "wedge_sum_deg": 185.4537333869199,
+            "wedge_sum_minus_180": 5.453733386919907
+          },
+          {
+            "A_over_C": 1.0416819633662424,
+            "arc_span_deg": 5.120472314042137,
+            "bow_over_width": 0.011633147268574145,
+            "curved_min_scaled_jacobian": 0.31701136948862535,
+            "curved_valid": true,
+            "min_wedge_deg": 18.482281119616005,
+            "turn_at_far_end_deg": 178.304396968362,
+            "wedge_sum_deg": 187.9046629650725,
+            "wedge_sum_minus_180": 7.904662965072504
+          },
+          {
+            "A_over_C": 1.8379457196105924,
+            "arc_span_deg": 10.392091728671609,
+            "bow_over_width": 0.04163535526747288,
+            "curved_min_scaled_jacobian": 0.5965209757757642,
+            "curved_valid": true,
+            "min_wedge_deg": 36.62113512947235,
+            "turn_at_far_end_deg": 176.9713309811033,
+            "wedge_sum_deg": 188.13471141301918,
+            "wedge_sum_minus_180": 8.134711413019176
+          },
+          {
+            "A_over_C": 1.4737556122863735,
+            "arc_span_deg": 6.545874940673846,
+            "bow_over_width": 0.021037755055202237,
+            "curved_min_scaled_jacobian": 0.7450441956792437,
+            "curved_valid": true,
+            "min_wedge_deg": 48.16289514281675,
+            "turn_at_far_end_deg": 176.0096698914567,
+            "wedge_sum_deg": 190.8107929813342,
+            "wedge_sum_minus_180": 10.810792981334203
+          },
+          {
+            "A_over_C": 2.098958397725439,
+            "arc_span_deg": 10.431622977508395,
+            "bow_over_width": 0.04772875057622127,
+            "curved_min_scaled_jacobian": 0.5721396847666187,
+            "curved_valid": true,
+            "min_wedge_deg": 34.89956766025966,
+            "turn_at_far_end_deg": 172.00185054149884,
+            "wedge_sum_deg": 190.0110912112878,
+            "wedge_sum_minus_180": 10.011091211287805
+          },
+          {
+            "A_over_C": 1.0005706903469853,
+            "arc_span_deg": 5.895740192640175,
+            "bow_over_width": 0.012865143373523156,
+            "curved_min_scaled_jacobian": 0.018618218998353826,
+            "curved_valid": true,
+            "min_wedge_deg": 3.0119310885337995,
+            "turn_at_far_end_deg": 178.5242350255417,
+            "wedge_sum_deg": 184.40519689405463,
+            "wedge_sum_minus_180": 4.405196894054626
+          },
+          {
+            "A_over_C": 2.4547505037419044,
+            "arc_span_deg": 11.899934640753287,
+            "bow_over_width": 0.0636628221519766,
+            "curved_min_scaled_jacobian": 0.39964196248580636,
+            "curved_valid": true,
+            "min_wedge_deg": 23.555797734367985,
+            "turn_at_far_end_deg": 175.14308636221452,
+            "wedge_sum_deg": 166.23820491109674,
+            "wedge_sum_minus_180": 13.761795088903256
+          },
+          {
+            "A_over_C": 2.8879358718719064,
+            "arc_span_deg": 8.68762818965949,
+            "bow_over_width": 0.0547022320578682,
+            "curved_min_scaled_jacobian": 0.39309567820861274,
+            "curved_valid": true,
+            "min_wedge_deg": 23.147259202282214,
+            "turn_at_far_end_deg": 178.3667297263826,
+            "wedge_sum_deg": 185.37860453831735,
+            "wedge_sum_minus_180": 5.378604538317347
+          },
+          {
+            "A_over_C": 4.012762347118415,
+            "arc_span_deg": 27.624394122939478,
+            "bow_over_width": 0.240633449378234,
+            "curved_min_scaled_jacobian": 0.22553313319636697,
+            "curved_valid": true,
+            "min_wedge_deg": 20.76140405718448,
+            "turn_at_far_end_deg": 178.62100662604024,
+            "wedge_sum_deg": 173.54647813940508,
+            "wedge_sum_minus_180": 6.453521860594918
+          },
+          {
+            "A_over_C": 2.66359270647212,
+            "arc_span_deg": 7.717018491412545,
+            "bow_over_width": 0.044820585840880584,
+            "curved_min_scaled_jacobian": 0.39887429714086636,
+            "curved_valid": true,
+            "min_wedge_deg": 23.507824199796772,
+            "turn_at_far_end_deg": 178.90773983464305,
+            "wedge_sum_deg": 178.87538865211982,
+            "wedge_sum_minus_180": 1.124611347880176
+          },
+          {
+            "A_over_C": 2.887027677442583,
+            "arc_span_deg": 12.677369384748731,
+            "bow_over_width": 0.0797556328501665,
+            "curved_min_scaled_jacobian": 0.417890952004432,
+            "curved_valid": true,
+            "min_wedge_deg": 24.701505906701016,
+            "turn_at_far_end_deg": 177.43179401349641,
+            "wedge_sum_deg": 180.77096933150463,
+            "wedge_sum_minus_180": 0.7709693315046309
+          },
+          {
+            "A_over_C": 1.5779864421491483,
+            "arc_span_deg": 9.407252175824732,
+            "bow_over_width": 0.03236282555539008,
+            "curved_min_scaled_jacobian": 0.6410093792238288,
+            "curved_valid": true,
+            "min_wedge_deg": 41.903203661230435,
+            "turn_at_far_end_deg": 173.6036370455486,
+            "wedge_sum_deg": 180.19986284980178,
+            "wedge_sum_minus_180": 0.19986284980177516
+          },
+          {
+            "A_over_C": 4.413889406930272,
+            "arc_span_deg": 13.566769109721275,
+            "bow_over_width": 0.13047124278254804,
+            "curved_min_scaled_jacobian": 0.29652354410024967,
+            "curved_valid": true,
+            "min_wedge_deg": 17.248918252936107,
+            "turn_at_far_end_deg": 179.16082165289907,
+            "wedge_sum_deg": 185.3817192082968,
+            "wedge_sum_minus_180": 5.381719208296801
+          },
+          {
+            "A_over_C": 4.490252121715595,
+            "arc_span_deg": 19.067030460666917,
+            "bow_over_width": 0.18632698355721533,
+            "curved_min_scaled_jacobian": 0.3346753691907369,
+            "curved_valid": true,
+            "min_wedge_deg": 19.55279852740489,
+            "turn_at_far_end_deg": 175.87461907371681,
+            "wedge_sum_deg": 179.21942010498688,
+            "wedge_sum_minus_180": 0.7805798950131191
+          },
+          {
+            "A_over_C": 1.1187779504916582,
+            "arc_span_deg": 5.628765956513988,
+            "bow_over_width": 0.013733906529423329,
+            "curved_min_scaled_jacobian": 0.5336840860928732,
+            "curved_valid": true,
+            "min_wedge_deg": 32.25471331424845,
+            "turn_at_far_end_deg": 179.8157035581897,
+            "wedge_sum_deg": 192.9226249673933,
+            "wedge_sum_minus_180": 12.92262496739329
+          },
+          {
+            "A_over_C": 2.544576570263329,
+            "arc_span_deg": 10.621596635784725,
+            "bow_over_width": 0.0589140196107695,
+            "curved_min_scaled_jacobian": 0.4263926857651241,
+            "curved_valid": true,
+            "min_wedge_deg": 25.238847765284845,
+            "turn_at_far_end_deg": 178.53461885596695,
+            "wedge_sum_deg": 178.87741567236276,
+            "wedge_sum_minus_180": 1.1225843276372416
+          },
+          {
+            "A_over_C": 5.083797004769387,
+            "arc_span_deg": 10.9103908726462,
+            "bow_over_width": 0.12089955255634988,
+            "curved_min_scaled_jacobian": 0.24101508036750385,
+            "curved_valid": true,
+            "min_wedge_deg": 13.946458961116718,
+            "turn_at_far_end_deg": 178.1910160274083,
+            "wedge_sum_deg": 183.29986589896095,
+            "wedge_sum_minus_180": 3.2998658989609453
+          },
+          {
+            "A_over_C": 2.607513817563203,
+            "arc_span_deg": 6.145095232595671,
+            "bow_over_width": 0.034944230048574186,
+            "curved_min_scaled_jacobian": 0.41640623702269325,
+            "curved_valid": true,
+            "min_wedge_deg": 24.607905188086193,
+            "turn_at_far_end_deg": 179.55959156457803,
+            "wedge_sum_deg": 182.8745675418614,
+            "wedge_sum_minus_180": 2.87456754186141
+          },
+          {
+            "A_over_C": 3.694766558981923,
+            "arc_span_deg": 18.500234609200604,
+            "bow_over_width": 0.14878012765769189,
+            "curved_min_scaled_jacobian": 0.3671026953633626,
+            "curved_valid": true,
+            "min_wedge_deg": 21.537043588772434,
+            "turn_at_far_end_deg": 176.885011254178,
+            "wedge_sum_deg": 176.82069788837924,
+            "wedge_sum_minus_180": 3.179302111620757
+          },
+          {
+            "A_over_C": 1.2328099486771855,
+            "arc_span_deg": 5.437738821640997,
+            "bow_over_width": 0.01462033419712489,
+            "curved_min_scaled_jacobian": 0.5453231744574677,
+            "curved_valid": true,
+            "min_wedge_deg": 33.04675100885456,
+            "turn_at_far_end_deg": 174.6877023462087,
+            "wedge_sum_deg": 186.44773380587105,
+            "wedge_sum_minus_180": 6.447733805871053
+          },
+          {
+            "A_over_C": 2.211669899567146,
+            "arc_span_deg": 10.093236775604534,
+            "bow_over_width": 0.048662483436111376,
+            "curved_min_scaled_jacobian": 0.4300022131919581,
+            "curved_valid": true,
+            "min_wedge_deg": 25.46770059724892,
+            "turn_at_far_end_deg": 175.17752286166,
+            "wedge_sum_deg": 165.52046327966224,
+            "wedge_sum_minus_180": 14.479536720337762
+          },
+          {
+            "A_over_C": 2.98640936488019,
+            "arc_span_deg": 22.82524817250538,
+            "bow_over_width": 0.14820149411368505,
+            "curved_min_scaled_jacobian": 0.42411861250867283,
+            "curved_valid": true,
+            "min_wedge_deg": 25.094887203756628,
+            "turn_at_far_end_deg": 176.5709412514553,
+            "wedge_sum_deg": 186.2238071823694,
+            "wedge_sum_minus_180": 6.223807182369399
+          },
+          {
+            "A_over_C": 2.509207170786602,
+            "arc_span_deg": 12.267351414250685,
+            "bow_over_width": 0.06708057835752154,
+            "curved_min_scaled_jacobian": 0.4038536710849803,
+            "curved_valid": true,
+            "min_wedge_deg": 23.81931220037478,
+            "turn_at_far_end_deg": 177.54648029425354,
+            "wedge_sum_deg": 164.4467923280614,
+            "wedge_sum_minus_180": 15.553207671938594
+          },
+          {
+            "A_over_C": 1.007186617061519,
+            "arc_span_deg": 3.0526376922947263,
+            "bow_over_width": 0.006706313570293316,
+            "curved_min_scaled_jacobian": 0.1118817181733148,
+            "curved_valid": true,
+            "min_wedge_deg": 6.423799767498366,
+            "turn_at_far_end_deg": 178.35734160448845,
+            "wedge_sum_deg": 182.57205283991095,
+            "wedge_sum_minus_180": 2.5720528399109526
+          },
+          {
+            "A_over_C": 2.7690909128088586,
+            "arc_span_deg": 19.235371505171912,
+            "bow_over_width": 0.11591562391028405,
+            "curved_min_scaled_jacobian": 0.41539369959659517,
+            "curved_valid": true,
+            "min_wedge_deg": 24.544112066701757,
+            "turn_at_far_end_deg": 176.55972978589114,
+            "wedge_sum_deg": 179.65662163817592,
+            "wedge_sum_minus_180": 0.34337836182407955
+          },
+          {
+            "A_over_C": 3.0627936851146487,
+            "arc_span_deg": 23.929452809995567,
+            "bow_over_width": 0.15929268652154427,
+            "curved_min_scaled_jacobian": 0.13389311105200605,
+            "curved_valid": true,
+            "min_wedge_deg": 18.866561278711657,
+            "turn_at_far_end_deg": 172.75888072566894,
+            "wedge_sum_deg": 159.32886830050438,
+            "wedge_sum_minus_180": 20.671131699495618
+          },
+          {
+            "A_over_C": 5.010798916113563,
+            "arc_span_deg": 12.557306881548527,
+            "bow_over_width": 0.13711757037337083,
+            "curved_min_scaled_jacobian": 0.23920105487304186,
+            "curved_valid": true,
+            "min_wedge_deg": 13.83939078358361,
+            "turn_at_far_end_deg": 178.45914688205653,
+            "wedge_sum_deg": 175.80750989371398,
+            "wedge_sum_minus_180": 4.192490106286016
+          },
+          {
+            "A_over_C": 1.3417367417654629,
+            "arc_span_deg": 3.1871976346790323,
+            "bow_over_width": 0.009327658548123126,
+            "curved_min_scaled_jacobian": 0.6568183223983516,
+            "curved_valid": true,
+            "min_wedge_deg": 41.057669011412656,
+            "turn_at_far_end_deg": 174.936387936254,
+            "wedge_sum_deg": 171.9920657734783,
+            "wedge_sum_minus_180": 8.007934226521712
+          },
+          {
+            "A_over_C": 2.9818100616330647,
+            "arc_span_deg": 19.62113959365775,
+            "bow_over_width": 0.12731132809055098,
+            "curved_min_scaled_jacobian": 0.35584110526234936,
+            "curved_valid": true,
+            "min_wedge_deg": 21.73338609286398,
+            "turn_at_far_end_deg": 177.8011488959495,
+            "wedge_sum_deg": 161.07876035193368,
+            "wedge_sum_minus_180": 18.92123964806632
+          },
+          {
+            "A_over_C": 9.56524513747648,
+            "arc_span_deg": 24.638166045137574,
+            "bow_over_width": 0.5121000950608203,
+            "curved_min_scaled_jacobian": 0.08341759066524351,
+            "curved_valid": true,
+            "min_wedge_deg": 14.87069298523295,
+            "turn_at_far_end_deg": 177.34459441755706,
+            "wedge_sum_deg": 181.9324262492782,
+            "wedge_sum_minus_180": 1.932426249278194
+          },
+          {
+            "A_over_C": 5.579399716487402,
+            "arc_span_deg": 10.627038069969013,
+            "bow_over_width": 0.12924469319201667,
+            "curved_min_scaled_jacobian": 0.21190574958236552,
+            "curved_valid": true,
+            "min_wedge_deg": 12.234057460565367,
+            "turn_at_far_end_deg": 178.24535481308803,
+            "wedge_sum_deg": 180.17434280591397,
+            "wedge_sum_minus_180": 0.174342805913966
+          },
+          {
+            "A_over_C": 5.771579222437022,
+            "arc_span_deg": 22.722676799898373,
+            "bow_over_width": 0.28513778678694307,
+            "curved_min_scaled_jacobian": 0.05826201027585606,
+            "curved_valid": true,
+            "min_wedge_deg": 14.398631412982809,
+            "turn_at_far_end_deg": 177.84037103276532,
+            "wedge_sum_deg": 181.15315026138717,
+            "wedge_sum_minus_180": 1.153150261387168
+          },
+          {
+            "A_over_C": 2.3268139668840973,
+            "arc_span_deg": 7.5925830970132955,
+            "bow_over_width": 0.03852269288472167,
+            "curved_min_scaled_jacobian": 0.43841370400505175,
+            "curved_valid": true,
+            "min_wedge_deg": 26.00271294301342,
+            "turn_at_far_end_deg": 177.03220016175896,
+            "wedge_sum_deg": 177.61767928815925,
+            "wedge_sum_minus_180": 2.382320711840748
+          },
+          {
+            "A_over_C": 1.9103094158062155,
+            "arc_span_deg": 11.883419203318194,
+            "bow_over_width": 0.04947435829136995,
+            "curved_min_scaled_jacobian": 0.5261744271586023,
+            "curved_valid": true,
+            "min_wedge_deg": 31.747338808821354,
+            "turn_at_far_end_deg": 174.4419014193236,
+            "wedge_sum_deg": 174.93821712300547,
+            "wedge_sum_minus_180": 5.061782876994528
+          },
+          {
+            "A_over_C": 2.9448303076497826,
+            "arc_span_deg": 9.219642440567975,
+            "bow_over_width": 0.05919218411652972,
+            "curved_min_scaled_jacobian": 0.42400328465258,
+            "curved_valid": true,
+            "min_wedge_deg": 25.087590876580634,
+            "turn_at_far_end_deg": 178.3212258775314,
+            "wedge_sum_deg": 190.13891154396407,
+            "wedge_sum_minus_180": 10.13891154396407
+          },
+          {
+            "A_over_C": 1.1665505913914216,
+            "arc_span_deg": 5.845380825337975,
+            "bow_over_width": 0.014871217826770188,
+            "curved_min_scaled_jacobian": 0.40382670474193794,
+            "curved_valid": true,
+            "min_wedge_deg": 23.81762329816428,
+            "turn_at_far_end_deg": 175.63938019562804,
+            "wedge_sum_deg": 164.21167221050953,
+            "wedge_sum_minus_180": 15.788327789490467
+          },
+          {
+            "A_over_C": 2.3867557678255666,
+            "arc_span_deg": 11.932046037457841,
+            "bow_over_width": 0.06206614106341851,
+            "curved_min_scaled_jacobian": 0.5308837446975738,
+            "curved_valid": true,
+            "min_wedge_deg": 32.06518536147769,
+            "turn_at_far_end_deg": 176.41251962951617,
+            "wedge_sum_deg": 193.41683057815942,
+            "wedge_sum_minus_180": 13.41683057815942
+          },
+          {
+            "A_over_C": 1.0803760652584107,
+            "arc_span_deg": 6.765504363112083,
+            "bow_over_width": 0.015939448535287896,
+            "curved_min_scaled_jacobian": 0.3627918642630303,
+            "curved_valid": true,
+            "min_wedge_deg": 21.271753284645598,
+            "turn_at_far_end_deg": 169.9170924235359,
+            "wedge_sum_deg": 166.55035064870702,
+            "wedge_sum_minus_180": 13.449649351292976
+          },
+          {
+            "A_over_C": 4.506703152661759,
+            "arc_span_deg": 7.809651643313491,
+            "bow_over_width": 0.07674442226477586,
+            "curved_min_scaled_jacobian": 0.23448791472951117,
+            "curved_valid": true,
+            "min_wedge_deg": 13.561439031668215,
+            "turn_at_far_end_deg": 179.1534363202826,
+            "wedge_sum_deg": 172.568587603097,
+            "wedge_sum_minus_180": 7.431412396902999
+          },
+          {
+            "A_over_C": 2.1131528873692296,
+            "arc_span_deg": 8.656337151850437,
+            "bow_over_width": 0.03988254421680511,
+            "curved_min_scaled_jacobian": 0.38551078304774117,
+            "curved_valid": true,
+            "min_wedge_deg": 22.6754539565691,
+            "turn_at_far_end_deg": 169.31629406091122,
+            "wedge_sum_deg": 163.66935227089576,
+            "wedge_sum_minus_180": 16.330647729104243
+          },
+          {
+            "A_over_C": 1.0524838033541255,
+            "arc_span_deg": 1.8367069769559545,
+            "bow_over_width": 0.004216676971252454,
+            "curved_min_scaled_jacobian": 0.3992552142457112,
+            "curved_valid": true,
+            "min_wedge_deg": 23.53162657882703,
+            "turn_at_far_end_deg": 171.8621058471069,
+            "wedge_sum_deg": 173.32319843632314,
+            "wedge_sum_minus_180": 6.676801563676861
+          },
+          {
+            "A_over_C": 2.802100746087839,
+            "arc_span_deg": 15.79154930680736,
+            "bow_over_width": 0.09637076590728524,
+            "curved_min_scaled_jacobian": 0.3176306990908649,
+            "curved_valid": true,
+            "min_wedge_deg": 18.869592515020514,
+            "turn_at_far_end_deg": 172.71368302664436,
+            "wedge_sum_deg": 157.89625790791047,
+            "wedge_sum_minus_180": 22.103742092089533
+          },
+          {
+            "A_over_C": 4.108619458663718,
+            "arc_span_deg": 13.20806548620474,
+            "bow_over_width": 0.11824384142629861,
+            "curved_min_scaled_jacobian": 0.31062186881844744,
+            "curved_valid": true,
+            "min_wedge_deg": 18.096711180214072,
+            "turn_at_far_end_deg": 178.16293219697835,
+            "wedge_sum_deg": 186.85485847971265,
+            "wedge_sum_minus_180": 6.854858479712647
+          },
+          {
+            "A_over_C": 3.501028568118256,
+            "arc_span_deg": 13.549298115438745,
+            "bow_over_width": 0.10335480621441574,
+            "curved_min_scaled_jacobian": 0.3387721388190744,
+            "curved_valid": true,
+            "min_wedge_deg": 19.802083784410087,
+            "turn_at_far_end_deg": 175.29706458184793,
+            "wedge_sum_deg": 171.07339824474084,
+            "wedge_sum_minus_180": 8.926601755259156
+          },
+          {
+            "A_over_C": 1.5704560598874293,
+            "arc_span_deg": 4.43822577785457,
+            "bow_over_width": 0.015202157139267659,
+            "curved_min_scaled_jacobian": 0.6009963080513461,
+            "curved_valid": true,
+            "min_wedge_deg": 36.94128632786433,
+            "turn_at_far_end_deg": 173.77355367759407,
+            "wedge_sum_deg": 170.06499878610623,
+            "wedge_sum_minus_180": 9.93500121389377
+          },
+          {
+            "A_over_C": 4.190305805988371,
+            "arc_span_deg": 20.61180287713052,
+            "bow_over_width": 0.18789473910321672,
+            "curved_min_scaled_jacobian": 0.3549666646666536,
+            "curved_valid": true,
+            "min_wedge_deg": 20.791401349400218,
+            "turn_at_far_end_deg": 179.15536363083328,
+            "wedge_sum_deg": 186.54492880688557,
+            "wedge_sum_minus_180": 6.544928806885565
+          }
+        ],
+        "n_genomes": 64,
+        "n_reached": 63,
+        "n_refusals": 1,
+        "per_orientation": 16,
+        "separation": {
+          "A_over_C": {
+            "gap": -4.045069601727353,
+            "gap_over_spread": -0.4722969479690011,
+            "reached_max": 9.56524513747648,
+            "reached_min": 1.0005706903469853,
+            "refusal_is_low": false,
+            "refusals": [
+              5.520175535749128
+            ],
+            "separates": false
+          },
+          "arc_span_deg": {
+            "gap": 5.89651314830499,
+            "gap_over_spread": 0.17614419768101036,
+            "reached_max": 35.31219595663455,
+            "reached_min": 1.8367069769559545,
+            "refusal_is_low": false,
+            "refusals": [
+              41.20870910493954
+            ],
+            "separates": true
+          },
+          "bow_over_width": {
+            "gap": -0.049426354814554374,
+            "gap_over_spread": -0.09219698339204214,
+            "reached_max": 0.540311818006209,
+            "reached_min": 0.004216676971252454,
+            "refusal_is_low": false,
+            "refusals": [
+              0.4908854631916546
+            ],
+            "separates": false
+          },
+          "min_wedge_deg": {
+            "gap": -16.272477803156107,
+            "gap_over_spread": -0.36040155828328374,
+            "reached_max": 48.16289514281675,
+            "reached_min": 3.0119310885337995,
+            "refusal_is_low": false,
+            "refusals": [
+              19.284408891689907
+            ],
+            "separates": false
+          },
+          "turn_at_far_end_deg": {
+            "gap": -0.9601775161354453,
+            "gap_over_spread": -0.09145062075960833,
+            "reached_max": 179.8157035581897,
+            "reached_min": 169.31629406091122,
+            "refusal_is_low": false,
+            "refusals": [
+              178.85552604205427
+            ],
+            "separates": false
+          },
+          "wedge_sum_deg": {
+            "gap": 1.5256197794502668,
+            "gap_over_spread": 0.0414500102375862,
+            "reached_max": 194.70251611401483,
+            "reached_min": 157.89625790791047,
+            "refusal_is_low": true,
+            "refusals": [
+              156.3706381284602
+            ],
+            "separates": true
+          },
+          "wedge_sum_minus_180": {
+            "gap": 1.5256197794502668,
+            "gap_over_spread": 0.06956961107512084,
+            "reached_max": 22.103742092089533,
+            "reached_min": 0.174342805913966,
+            "refusal_is_low": false,
+            "refusals": [
+              23.6293618715398
+            ],
+            "separates": true
+          }
+        },
+        "still_separating": [
+          "arc_span_deg",
+          "wedge_sum_deg",
+          "wedge_sum_minus_180"
         ],
         "x_grid_n": 15
       },
@@ -29207,7 +30034,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 2.9332326041769874
+                "margin_mm": 2.9332326041769874,
+                "num_points": 2400
               },
               "genes": [
                 9.634532323787912,
@@ -29258,7 +30086,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.26481262621208934
+                "margin_mm": 0.26481262621208934,
+                "num_points": 2400
               },
               "genes": [
                 9.476802129763865,
@@ -29309,7 +30138,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.12429275551750618
+                "margin_mm": 0.12429275551750618,
+                "num_points": 2400
               },
               "genes": [
                 7.461925444644915,
@@ -29364,7 +30194,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 3.0257124891554796
+                "margin_mm": 3.0257124891554796,
+                "num_points": 2400
               },
               "genes": [
                 8.93384068186625,
@@ -29421,7 +30252,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.929129775625964
+                "margin_mm": 0.929129775625964,
+                "num_points": 2400
               },
               "genes": [
                 5.1216594094430015,
@@ -29472,7 +30304,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.1299188023926221
+                "margin_mm": 0.1299188023926221,
+                "num_points": 2400
               },
               "genes": [
                 3.09060822546242,
@@ -29527,7 +30360,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.8081388674637495
+                "margin_mm": 0.8081388674637495,
+                "num_points": 2400
               },
               "genes": [
                 8.518071506355884,
@@ -29582,7 +30416,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.8250464442357122
+                "margin_mm": 1.8250464442357122,
+                "num_points": 2400
               },
               "genes": [
                 4.561830042332513,
@@ -29639,7 +30474,8 @@
                 "binds": true,
                 "folds": true,
                 "limit_mm": 0.1,
-                "margin_mm": -0.34362068454502026
+                "margin_mm": -0.34362068454502026,
+                "num_points": 2400
               },
               "genes": [
                 9.764038782057256,
@@ -29694,7 +30530,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 2.1106019038361827
+                "margin_mm": 2.1106019038361827,
+                "num_points": 2400
               },
               "genes": [
                 7.928265283674952,
@@ -29749,7 +30586,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.5728065160572855
+                "margin_mm": 1.5728065160572855,
+                "num_points": 2400
               },
               "genes": [
                 3.7753809971822303,
@@ -29804,7 +30642,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 0.27543679729834825
+                "margin_mm": 0.27543679729834825,
+                "num_points": 2400
               },
               "genes": [
                 5.499893854382799,
@@ -29861,7 +30700,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.9087930871248853
+                "margin_mm": 1.9087930871248853,
+                "num_points": 2400
               },
               "genes": [
                 4.69078091352994,
@@ -29912,7 +30752,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 2.7719557108298885
+                "margin_mm": 2.7719557108298885,
+                "num_points": 2400
               },
               "genes": [
                 8.621539234501089,
@@ -29967,7 +30808,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 1.8733944863824976
+                "margin_mm": 1.8733944863824976,
+                "num_points": 2400
               },
               "genes": [
                 9.953735458412297,
@@ -30022,7 +30864,8 @@
                 "binds": false,
                 "folds": false,
                 "limit_mm": 0.1,
-                "margin_mm": 3.6312313219811276
+                "margin_mm": 3.6312313219811276,
+                "num_points": 2400
               },
               "genes": [
                 2.764068488405683,
@@ -41115,7 +41958,7 @@
       }
     }
   },
-  "seconds": 293.0,
+  "seconds": 443.34,
   "self_checks": {
     "algebra_reproduces_section_37": true,
     "all_seams_close": true,
@@ -41131,6 +41974,8 @@
     "the_bend_moves_no_boundary": true,
     "the_bend_tiles_the_same_area": true,
     "the_fold_margin_does_not_explain_the_tri_block": true,
+    "the_refusal_search_has_both_classes": true,
+    "the_refusal_search_is_a_superset_of_the_box": true,
     "the_straight_y_is_a_slice_of_the_bend_grid": true,
     "twelve_blocks": true
   },

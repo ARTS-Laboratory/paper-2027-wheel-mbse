@@ -9399,3 +9399,60 @@ the committed artifact or computed from the genes in it.
 6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
    fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
    **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §71 — 2026-08-24. THE EXPERIMENT §70 NAMED, RUN: NO SECOND REFUSAL AT SIXTY-FOUR GENOMES, AND THE CANDIDATE IT WAS BUILT TO CONFIRM DECAYED BY A FACTOR OF FOURTEEN
+
+§70 ranked the interior-angle sum first among three separators, said with one negative
+example that was arithmetic rather than evidence, and named the fix: draw deeper until a
+second region refuses.  Run at 16, 32 and 64 genomes, on a draw that is a SUPERSET of the
+published box — same stream, same order, so the sixteen every other number is measured on
+are the first four of each orientation and nothing above moves.
+
+**No second refusal appeared; the curve reaches 63 of 64.**  The experiment did not do what
+it was designed to do, and what it did instead is more useful:
+
+```
+  gap / reached-set spread          16 genomes   32 genomes   64 genomes
+    interior-angle sum                  0.573        0.257        0.041
+    |angle sum - 180|                   0.614        0.502        0.070
+    arc_span_deg                        0.187        0.187        0.176
+```
+
+Each larger draw finds a reached genome closer to the refusal in angle sum — 170.3, 164.2,
+157.9 against its 156.4 — so **§70's first-ranked quantity decays fourteenfold as the box
+grows and its third-ranked one holds.**  `bow_over_width` is now decisively out rather than
+merely unhelpful: a reached genome has bow 0.540 against the refusal's 0.491, so the refusal
+is not extremal on it at all.
+
+**A demotion, not a promotion.**  Arc span survived a fourfold box; it is still one refusal
+against sixty-three.  What changed is that two of three candidates are now known to be
+small-sample artefacts, and were caught being so — which is the only thing a bigger box can
+do when the negative it was hunting does not appear.
+
+**And why the negative is hard to find is itself the result:** the Latin-hypercube draw
+produces almost nothing above 35 degrees of arc span — sixty-four genomes yielded exactly
+one, and it is the refusal.  So the next experiment is not a bigger draw but a DIFFERENT
+sampler: draw conditioned on large arc span, populate 35-45 degrees deliberately, and see
+whether refusals cluster.  That is the first version of this question that could return a
+mechanism instead of a candidate.
+
+**Nothing promoted, every previously committed field reproduces exactly**; the artifact
+gains `refusal_search`, a `num_points` key in each row's `fold` block, and two self-checks.
+`make triblock` is ~445 s and the Makefile says so.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §71
+
+1. **Draw conditioned on large arc span** (§71).  The uniform sampler cannot answer this
+   question — it puts one genome above 35 degrees in sixty-four — so the next step is a
+   sampler that targets the band, not a longer run of the same one.  It is the only route
+   from candidate to mechanism, and it is cheap once the draw is conditioned.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+3. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).

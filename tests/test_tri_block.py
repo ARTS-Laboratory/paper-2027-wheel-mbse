@@ -576,6 +576,46 @@ def test_the_fold_margin_is_NOT_what_makes_a_region_impossible(report):
             f"{name}: folded genomes are now the hard ones — same finding")
 
 
+def test_the_refusal_SEARCH_weakened_the_candidate_it_was_built_to_confirm(report):
+    """PART 6 ranked the interior-angle sum first; a fourfold box demoted it.
+
+    The search draws a SUPERSET of the published box — same stream, same order, so the
+    first four of each orientation are the sixteen every other number here is measured on
+    — and asks whether a second region refuses the curve.  None does: 63 of 64 are reached.
+    What the larger draw did instead was find reached genomes ever closer to the refusal in
+    angle sum (170.3 at sixteen, 164.2 at thirty-two, 157.9 at sixty-four against the
+    refusal's 156.4), collapsing that separation from 57% of the spread to 4%, while the
+    arc span held.
+
+    Pinned as the SHAPE of the evidence rather than as a mechanism, because it is still one
+    refusal against sixty-three.  Two things would be findings and both fail here: a second
+    refusal appearing, and the angle sum recovering.
+    """
+    rs = None
+    for per in report["per_config"].values():
+        rs = per.get("refusal_search") or rs
+    assert rs is not None, "the refusal search is missing from the artifact"
+    assert rs["n_genomes"] >= 64, rs["n_genomes"]
+    assert rs["n_refusals"] >= 1 and rs["n_reached"] >= 1, rs
+
+    assert rs["n_refusals"] == 1, (
+        f"{rs['n_refusals']} regions now refuse the curve — a second negative is exactly "
+        "what PART 6 asked for and every separation statistic can now be tested")
+
+    sep = rs["separation"]
+    assert sep["arc_span_deg"]["separates"] is True
+    assert sep["arc_span_deg"]["gap_over_spread"] > 0.10, sep["arc_span_deg"]
+    # the angle sum still separates, but only just — that decay is the result
+    assert sep["wedge_sum_deg"]["separates"] is True
+    assert sep["wedge_sum_deg"]["gap_over_spread"] < 0.5 * \
+        sep["arc_span_deg"]["gap_over_spread"], (
+        "the interior-angle sum has recovered against the arc span — PART 6's ranking "
+        "would be back and the records should say so")
+    # and the quantities PART 4 and PART 6 ruled out stay ruled out
+    for k in ("bow_over_width", "turn_at_far_end_deg", "min_wedge_deg", "A_over_C"):
+        assert sep[k]["separates"] is False, (k, sep[k])
+
+
 def test_the_bend_is_INERT_where_the_region_is_fat(genes):
     """The curve is a correction to cutting chords, so a fat region needs none of it.
 

@@ -1527,3 +1527,57 @@ extremal on the interior-angle sum by more than half the spread, and that is whe
 
 **Nothing promoted, no code changed, no artifact regenerated** — every number above is read
 from the committed `study_tri_block.json` or computed from the genes it carries.
+
+---
+
+# STEP 3 RECORD, PART 7 — 2026-08-24. THE EXPERIMENT PART 6 NAMED, RUN: NO SECOND REFUSAL AT SIXTY-FOUR GENOMES, AND THE CANDIDATE IT WAS BUILT TO CONFIRM COLLAPSED FROM 57% OF THE SPREAD TO 4%
+
+PART 6 ranked the region's interior-angle sum first among three separators and said plainly
+that with one negative example it was arithmetic rather than evidence, naming the fix: draw
+deeper until a second region refuses the curve.  `sweep_refusal_search` is that, at 16, 32
+and 64 genomes.  The draw is a SUPERSET — `sweep_genomes` fills each orientation from the
+same Latin-hypercube stream in the same order, so the first four of each are exactly the
+published sixteen and nothing above moves.
+
+**No second refusal appeared.  The curve reaches 63 of 64.**  So the experiment did not
+produce what it was designed to produce — and it produced something better:
+
+```
+  gap / reached-set spread          16 genomes   32 genomes   64 genomes
+    interior-angle sum                  0.573        0.257        0.041
+    |angle sum - 180|                   0.614        0.502        0.070
+    arc_span_deg                        0.187        0.187        0.176
+```
+
+Each larger draw finds a reached genome closer to the refusal in angle sum — 170.3, then
+164.2, then 157.9, against the refusal's 156.4 — so **the quantity PART 6 ranked first
+decays by a factor of fourteen as the box grows, and the one it ranked third and discounted
+is the one that holds.**  At 64 genomes `arc_span_deg` is the only separator with a gap
+worth more than a tenth of its spread, and no drawn genome has ever exceeded arc span
+35.312 while the refusal sits at 41.209.
+
+`bow_over_width` is now decisively out rather than merely unhelpful: a reached genome has
+bow 0.540 against the refusal's 0.491, so the refusal is not even extremal on it.
+`turn_at_far_end_deg`, the smallest wedge and the A/C ratio stay out.
+
+## WHAT THIS IS AND IS NOT
+
+**It is a demotion, not a promotion.**  Arc span survives a fourfold box; it is still one
+refusal against sixty-three, and "the largest arc span in the draw refuses" remains a set of
+one.  What has changed is that two of the three candidates are now known to be small-sample
+artefacts and were caught being so — a separation that decays as the box grows and one that
+holds are different kinds of claim, and only running the box out distinguishes them.
+
+**And the reason a second refusal is hard to find is itself a result:** the LHC draw
+produces almost nothing above 35 degrees of arc span.  Sixty-four genomes yielded exactly
+one above that, and it is the refusal.  So the next experiment is not "draw more" — it is
+**draw CONDITIONED on large arc span**, populating 35-45 degrees deliberately, and see
+whether refusals cluster there.  That is a different sampler, not a bigger one, and it is
+the first version of this question that could return a mechanism rather than a candidate.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no threshold moved, `bend` still defaults to 0.0, and every previously
+committed field in `study_tri_block.json` reproduces exactly** — the artifact gains the
+`refusal_search` section, a `num_points` key inside each row's `fold` block, and two
+self-checks.  `make triblock` is ~445 s rather than ~290 s and the search is the difference.
