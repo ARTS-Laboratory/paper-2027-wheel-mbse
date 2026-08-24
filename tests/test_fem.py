@@ -435,3 +435,63 @@ def test_mesh_resolution_must_scale_with_thickness():
     assert err[1] < 0 < err[8], (
         f"expected h~t to read stiff and h=t/8 to read soft, got "
         f"h~t: {err[1]:+.4%}, h=t/8: {err[8]:+.4%}")
+
+
+# ---------------------------------------------------------------------------
+# THE AXLE DROP IS READ AT A NODE, AND THAT IS A FIRST-ORDER ERROR (PLAN §62)
+# ---------------------------------------------------------------------------
+
+def test_the_vertical_displacement_runs_MONOTONICALLY_through_the_bottom():
+    """Why `axle_drop_mm`'s nearest-node snap is a first-order error and not a rounding one.
+
+    If `uy` peaked at the bottom, reading it at a node a fraction of a degree away would
+    cost a SECOND-order error and nobody would need to care.  It does not peak: the spokes
+    are a spiral, so the wheel has no mirror symmetry about the vertical and `uy` has a
+    nonzero slope through `theta = -90`.  Measured here rather than argued, because every
+    consequence in §62 follows from this one fact.
+    """
+    import wheel_wheel as ww
+    with open(os.path.join(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))), "best_solution.json")) as fh:
+        genes = wg.genes_to_vector(json.load(fh)["genes"])
+    mesh = ww.build_wheel(genes, "coarse")
+    res = fem.solve_wheel(mesh)
+    xy = np.asarray(mesh.coords)
+    disp = res["u"].reshape(-1, 2)
+    pn = np.unique(mesh.edge_sets["rim_outer"])
+    th = np.degrees(np.arctan2(xy[pn, 1], xy[pn, 0]))
+    d = (th + 90.0 + 180.0) % 360.0 - 180.0
+    near = np.abs(d) < 1.0
+    o = np.argsort(d[near])
+    uy = disp[pn][near][o, 1]
+    # strictly monotone across the bottom, so the reading is first-order in the offset
+    steps = np.diff(uy)
+    assert (steps < 0).all() or (steps > 0).all(), uy
+    slope = (uy[-1] - uy[0]) / (d[near][o][-1] - d[near][o][0])
+    assert abs(slope) > 0.005, f"slope {slope:.4f} mm/deg — the snap would be harmless"
+
+
+def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom():
+    """The correction has to be inert where the artefact is absent, or it is a new bias.
+
+    `axle_drop_interp_mm` interpolates `uy` to `theta = -90` exactly.  Where the nearest
+    node already sits at the bottom the two readings must agree; where it does not, they
+    must differ by roughly the offset times the slope above.  Both halves are asserted so
+    that the correction is pinned as a correction rather than as a different quantity.
+    """
+    import wheel_wheel as ww
+    with open(os.path.join(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))), "best_solution.json")) as fh:
+        genes = wg.genes_to_vector(json.load(fh)["genes"])
+    res = fem.solve_wheel(ww.build_wheel(genes, "coarse"))
+    off, gap = res["patch_centre_offset_deg"], (res["axle_drop_mm"]
+                                                - res["axle_drop_interp_mm"])
+    assert abs(off) < 0.10, off          # unfilleted: a node sits essentially at the bottom
+    assert abs(gap) < 0.01 * res["axle_drop_interp_mm"]
+
+    # and on the FILLETED mesh, where the re-cut rim moves the phase, it does not
+    fres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True))
+    assert abs(fres["patch_centre_offset_deg"]) > 3.0 * abs(off), (
+        off, fres["patch_centre_offset_deg"])
+    fgap = fres["axle_drop_mm"] - fres["axle_drop_interp_mm"]
+    assert abs(fgap) > 3.0 * abs(gap), (gap, fgap)

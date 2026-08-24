@@ -108,18 +108,36 @@ help:
 	@echo "              eigenvalue. 8.5 s for the whole ladder (PLAN §30)"
 	@echo "make corner-fillet  the SAME ladder on the FILLETED mesh — FILLET_PLAN.md"
 	@echo "              Step 2. Adds the fillet's own probes (both tangent points,"
-	@echo "              the arc, and the peak over the whole arc surface) and the"
-	@echo "              R -> 0 control that says it is the same wheel. ~22 s"
+	@echo "              the arc, and the peak over the whole arc surface), the"
+	@echo "              R -> 0 control that says it is the same wheel, and what"
+	@echo "              each candidate LAYER PROFILE costs the deflection's"
+	@echo "              convergence — the two-objective half of PART 13's"
+	@echo "              declined call. ~110 s"
 	@echo "make filletblock  can the fillet BE a block, and can the sector be"
 	@echo "              blocked around it? the region PART 3 named has two cusps;"
 	@echo "              the boundary-layer block that meshes; and the whole"
 	@echo "              filleted sector, 11 blocks and 14 whole-edge seams, with"
-	@echo "              what it costs the ring. ~85 s, geometry only"
+	@echo "              what it costs the ring; plus the sector-fit MARGIN that"
+	@echo "              predicts every refusal, what clamping to it buys, and"
+	@echo "              the FOLD gate — the closed-form margin that catches the"
+	@echo "              one genome whose spoke does not exist, and how often the"
+	@echo "              mesh-based filter it replaces leaks. ~230 s, geometry only"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
-	@echo "              12 blocks and 17 whole-edge seams; and the gene box says"
-	@echo "              the interior point's RULE is what is missing. ~15 s"
+	@echo "              12 blocks and 17 whole-edge seams; plus the interior"
+	@echo "              point re-derived against the gene box, and the CURVED"
+	@echo "              Y — one genome refuses all of it; plus the REFUSAL search,"
+	@echo "              the box drawn out to 64 genomes, and a draw CONDITIONED on"
+	@echo "              arc span — 22 of 40 in the band refuse, against 1 of 64"
+	@echo "              uniform. ~670 s"
+	@echo "make reds-hub-fillet  FILLET_PLAN Step 3's ACCEPTANCE TEST, and the one"
+	@echo "              the whole fillet arc was aimed at: the R_hub sweep on a"
+	@echo "              FILLETED mesh under SVK. It stops being bit-identical —"
+	@echo "              11 distinct values of 14 rows against the control's ONE —"
+	@echo "              §14's hub-share direction survives, and the Kt term the"
+	@echo "              objective prices R_hub through goes EXACTLY flat above"
+	@echo "              its cap while the wheel keeps stiffening. ~80 s (§75)"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -701,7 +719,7 @@ CORNER_FILLET_OUT ?= studies/study_corner_singularity_fillet.json
 corner-fillet:
 	$(PY_OPT) -u studies/study_corner_singularity.py --genome $(CORNER_GENOME) \
 	    --ladder $(CORNER_LADDER) --fillet $(CORNER_FILLET) \
-	    --continuity $(CORNER_FILLET_CONTINUITY) --out $(CORNER_FILLET_OUT)
+	    --continuity $(CORNER_FILLET_CONTINUITY) --profiles --out $(CORNER_FILLET_OUT)
 
 # ---------------------------------------------------------------------------
 # DOES THE MESH HAVE THE CORNERS THE PART HAS?  (UNCAP_PLAN.md, PLAN §34)
@@ -874,11 +892,35 @@ reds-ratio:
 	    --glob "$(REDS_CELLS)/*.json" --out $(REDS_RATIO_OUT)
 
 # PLAN §14 item 4b, finally measured: what moves the hub compliance share?
-# --sweep kills the `R_hub` hypothesis, --attribute names the gene that does move it,
-# --rungs separates design from discretisation.  `ultra` is built by the driver, not by
-# `wheel_wheel.CONFIGS` — see the comment there for why it is not a rung the tree acquires.
+# --attribute names the gene that moves it, --rungs separates design from discretisation.
+# `ultra` is built by the driver, not by `wheel_wheel.CONFIGS` — see the comment there for
+# why it is not a rung the tree acquires.
+#
+# --sweep DID NOT KILL THE `R_hub` HYPOTHESIS, AND THIS COMMENT SAID IT DID (PLAN §75).
+# On the unfilleted mesh every row of that sweep is bit-identical, because `R_hub` is gene
+# 12 and moves no node — so the sweep could not answer §14 either way, and the driver's
+# verdict line reported a falsification off an exact tie.  Use `reds-hub-fillet` below for
+# the sweep that can.  This target is kept as the CONTROL: "it stopped being
+# bit-identical" is only a finding against a run that was.
 reds-hub:
 	studies/redsrun.sh studies/study_reds_hub_share.py --sweep --attribute --rungs \
 	    --config coarse --configs smoke,coarse,medium,fine,ultra --out $(notdir $(REDS_HUB_OUT))
+
+# FILLET_PLAN Step 3's ACCEPTANCE TEST — the one the whole fillet arc has been aimed at
+# (PLAN §75, FILLET_PLAN STEP 3 RECORD PART 1).  ~80 s at `coarse`.
+#
+# Meshes the junction fillets, so `R_hub` finally reaches the solve, and runs SVK rather
+# than the linear default because FILLET_PLAN's cost section says Step 3 must not take that
+# default silently.  It writes `sweep_filleted` alongside `reds-hub`'s `sweep` rather than
+# over it.
+#
+# It reports 11 distinct values of 14 rows against the control's one; the hub share running
+# 0.007755 -> 0.003703 over the feasible range, which is §14's direction; and the term the
+# objective actually prices `R_hub` through going EXACTLY flat above its 0.6657 mm cap while
+# the wheel keeps stiffening — 8.8% of axle drop over a span where the gradient is zero.
+# Four rows clamp (PLAN §74) and are marked `*`; all four are infeasible anyway.
+reds-hub-fillet:
+	studies/redsrun.sh studies/study_reds_hub_share.py --sweep --fillet \
+	    --config coarse --out $(notdir $(REDS_HUB_OUT))
 
 reds: reds-ratio reds-hub

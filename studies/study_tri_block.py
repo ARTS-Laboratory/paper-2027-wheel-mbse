@@ -255,6 +255,24 @@ def region(genes, cfgname, blend=0.0):
             "sample": sample, "s_rim": float(s_rim)}
 
 
+def _bow_mm(reg):
+    """How far the arc side departs from its own chord, at its furthest, in mm.
+
+    The straight Y cuts CHORDS across the region, so the quantity that decides whether a
+    chord stays inside it is how far the region's long side bows away from one.  Reported
+    against the cross section's length in `bow_over_width`, because a 3 mm bow across a
+    6 mm region and a 0.2 mm bow across the same region are not the same geometry -- and
+    that ratio, not the arc span, is what separates the genomes the straight Y folds on
+    from the ones it does not.
+    """
+    n = reg["cfg"].nn(reg["cfg"].n_weld) * 4
+    A = WW.arc_points(reg["rim_inner"], reg["th_t"], reg["th_q"], n)
+    d = reg["Q"] - reg["P_t"]
+    d = d / np.linalg.norm(d)
+    off = A - reg["P_t"]
+    return float(np.abs(off[:, 0] * d[1] - off[:, 1] * d[0]).max())
+
+
 def region_report(reg):
     """The three vertices, the three side lengths, and the vertex that is not one.
 
@@ -265,7 +283,11 @@ def region_report(reg):
     B_dense = reg["B_dense"]
     k = B_CURVE_SAMPLES - 1
     arc_len = abs(reg["th_q"] - reg["th_t"]) * reg["rim_inner"]
+    cross_len = float(np.linalg.norm(np.diff(reg["cross"], axis=0), axis=1).sum())
+    bow = _bow_mm(reg)
     return {
+        "bow_mm": bow,
+        "bow_over_width": bow / cross_len,
         "P_t": [float(x) for x in reg["P_t"]],
         "Q": [float(x) for x in reg["Q"]],
         "B_star": [float(x) for x in reg["B_star"]],
@@ -273,8 +295,7 @@ def region_report(reg):
         "arc_span_deg": float(math.degrees(abs(reg["th_q"] - reg["th_t"]))),
         "A_length_mm": float(arc_len),
         "B_length_mm": float(np.linalg.norm(np.diff(B_dense, axis=0), axis=1).sum()),
-        "C_length_mm": float(np.linalg.norm(np.diff(reg["cross"], axis=0),
-                                            axis=1).sum()),
+        "C_length_mm": cross_len,
         "turn_at_far_end_deg": float(_turn_deg(B_dense[k - 1], B_dense[k],
                                                B_dense[k + 1])),
         "wedge_at_P_t_deg": float(_turn_deg(reg["cross"][1], reg["P_t"], _arc_pt(reg, 1))),
@@ -310,7 +331,37 @@ TWELVE_BLOCK_REGION = {
     "rim_band_weld_q": "rim", "rim_band_weld_t": "rim", "rim_band_free": "rim"}
 
 
-def tri_sector(reg, B, w):
+def _bent_spoke(straight, u, v, frac, p0, p1, q0, q1, bend):
+    """One spoke, bent from a straight line toward the two sides it runs between.
+
+    THE CURVED Y, AND WHY THIS PARTICULAR CURVE.  Each spoke is the OPPOSITE edge of two
+    of the three quads, and in each of them it faces a piece of the region's own boundary:
+    `sC` faces the arc in `rim_tri_t` and the free side in `rim_tri_b`, and so on round.
+    Those two curves are `u` and `v` here, already running the spoke's own direction and
+    -- because `splits` forces `a1 == b2`, `a2 == c1` and `c2 == b1` -- already carrying
+    its exact node count, so no resampling enters and the blend is node-for-node.
+
+    `frac` is where the spoke's own foot sits between them, as a fraction, so the blend
+    `(1-frac)*u + frac*v` is the curve the region's two sides say should be there.  It
+    does NOT pass through the spoke's endpoints, and the two linear terms are what pin it
+    back to them -- which is the Coons correction, and is why the endpoints are exact for
+    every `bend` and the three internal seams stay exact by construction rather than by
+    tolerance.
+
+    `bend = 0.0` returns `straight` UNTOUCHED, not merely equal to it, so every number this
+    file published before the curve existed is reproduced bit for bit rather than
+    approximately.
+    """
+    if bend == 0.0:
+        return straight
+    t = np.linspace(0.0, 1.0, straight.shape[0])[:, None]
+    blend = (1.0 - frac) * u + frac * v
+    d0 = straight[0] - ((1.0 - frac) * p0 + frac * p1)
+    d1 = straight[-1] - ((1.0 - frac) * q0 + frac * q1)
+    return straight + bend * (blend + (1.0 - t) * d0 + t * d1 - straight)
+
+
+def tri_sector(reg, B, w, bend=0.0):
     """The twelve node grids of a faithful-rim sector 0, or `None` if `B` is inadmissible.
 
     THE THREE NEIGHBOURS ARE SLICED, NOT REBUILT.  `spoke`, `hub_junction` and
@@ -319,7 +370,9 @@ def tri_sector(reg, B, w):
     consequence of the PARTITION rather than of a second construction of the same thing.
     Only `rim_junction` is replaced.
 
-    `w` is a barycentric weight triple on (P_t, Q, B*) for the interior point.
+    `w` is a barycentric weight triple on (P_t, Q, B*) for the interior point.  `bend` is
+    how far the three spokes follow the region rather than cutting across it; 0.0 is the
+    straight Y this file built first, and `_bent_spoke` has the construction.
     """
     cfg = reg["cfg"]
     A, C = cfg.n_weld, cfg.n_thick
@@ -350,6 +403,12 @@ def tri_sector(reg, B, w):
     X = np.asarray(w, float) @ np.stack([P_t, Q, B_star]) / float(np.sum(w))
     lerp = lambda p, q, n: WW._lerp_points(p, q, o * n + 1, np)       # noqa: E731
     sA, sB, sC = lerp(M_A, X, c2), lerp(M_B, X, a2), lerp(M_C, X, a1)
+
+    # The bend, if any.  Each spoke is named by the side its foot is on, and the two
+    # curves it is blended toward are the ones it faces across its own two quads.
+    sC = _bent_spoke(sC, A1, Bn[:iB + 1], c2 / (c1 + c2), P_t, B_star, M_A, M_B, bend)
+    sA = _bent_spoke(sA, cross[:iC + 1], Bn[iB:][::-1], a1 / A, P_t, Q, M_C, M_B, bend)
+    sB = _bent_spoke(sB, cross[iC:][::-1], A2[::-1], b2 / B, B_star, Q, M_C, M_A, bend)
 
     blocks = {}
     # The Y's three quads.  Every internal edge is passed as the SAME array to both of
@@ -397,7 +456,8 @@ def tri_sector(reg, B, w):
         blocks[k] = np.asarray(base[k], float)
 
     aux = {"splits": {k: int(v) for k, v in sp.items()}, "B": int(B),
-           "w": [float(x) for x in w], "X": [float(x) for x in X],
+           "w": [float(x) for x in w], "bend": float(bend),
+           "X": [float(x) for x in X],
            "M_A": [float(x) for x in M_A], "M_B": [float(x) for x in M_B],
            "M_C": [float(x) for x in M_C], "theta_M": float(th_M),
            "j_star": int(j_star), "j_hub": int(j_hub), "i_star": int(i_star),
@@ -518,6 +578,11 @@ def block_area_mm2(grid):
 # THE SWEEPS
 # ---------------------------------------------------------------------------
 
+def block_area_mm2s(blocks):
+    """The area the Y's three quads tile between them, in mm^2."""
+    return sum(block_area_mm2(blocks[k]) for k in TRI_BLOCKS)
+
+
 def x_grid(n=X_GRID_N, lo=X_GRID_LO, hi=X_GRID_HI):
     """The barycentric weights swept, as (w_Pt, w_Q, w_Bstar) triples."""
     out = []
@@ -529,20 +594,20 @@ def x_grid(n=X_GRID_N, lo=X_GRID_LO, hi=X_GRID_HI):
     return tuple(out)
 
 
-def cell(reg, B, w):
-    """One (B, X) cell: the three quads' validity, and nothing else.
+def cell(reg, B, w, bend=0.0):
+    """One (B, X, bend) cell: the three quads' validity, and nothing else.
 
     The sweep runs on the Y alone rather than on the whole sector because the other nine
     blocks do not depend on either swept quantity -- `spoke`, `hub_junction` and
     `rim_band_weld` are CUT at a node index and their interiors never move.  That is
     checked once, in `self_checks`, rather than re-measured 900 times.
     """
-    built = tri_sector(reg, B, w)
+    built = tri_sector(reg, B, w, bend)
     if built is None:
         return None
     blocks, aux = built
     q = {k: fbk.block_quality(np.asarray(blocks[k], float)) for k in TRI_BLOCKS}
-    return {"B": int(B), "w": [float(x) for x in w],
+    return {"B": int(B), "w": [float(x) for x in w], "bend": float(bend),
             "min_scaled_jacobian": min(v["min_scaled_jacobian"] for v in q.values()),
             "worst_block": min(q, key=lambda k: q[k]["min_scaled_jacobian"]),
             "non_positive_gauss_elements": sum(v["non_positive_gauss_elements"]
@@ -677,16 +742,16 @@ def control(genes, cfgname, blend):
 # THE SECTOR, AT THE CHOSEN CELL
 # ---------------------------------------------------------------------------
 
-def sector_verdict(reg, B, w):
+def sector_verdict(reg, B, w, bend=0.0):
     """All twelve blocks and all seventeen seams at one cell."""
-    blocks, aux = tri_sector(reg, B, w)
+    blocks, aux = tri_sector(reg, B, w, bend)
     per = {k: fbk.block_quality(np.asarray(v, float)) for k, v in blocks.items()}
     tbl = seam_table(reg, aux)
     sm = seams(blocks, tbl)
     quad_area = block_area_mm2(reg["base"]["rim_junction"])
     tri_area = sum(block_area_mm2(blocks[k]) for k in TRI_BLOCKS)
     return {
-        "B": int(B), "w": [float(x) for x in w], "aux": aux,
+        "B": int(B), "w": [float(x) for x in w], "bend": float(bend), "aux": aux,
         "n_blocks": len(blocks), "n_seams": len(sm),
         "blocks": per,
         "min_scaled_jacobian": min(q["min_scaled_jacobian"] for q in per.values()),
@@ -784,6 +849,15 @@ def sweep_genomes(cfg_name, B, w_fixed, per_orientation=GENOME_SWEEP_PER_ORIENTA
                    # triangle's own shape is the only thing that changes between genomes,
                    # and `B` and the weights are held.
                    "arc_span_deg": rr["arc_span_deg"],
+                   "bow_over_width": rr["bow_over_width"],
+                   # And the OTHER mechanism, carried so it can be ruled out rather than
+                   # assumed away.  `study_fillet_block`'s fold gate is the closed-form
+                   # statement of whether this genome's spoke exists at all, and the same
+                   # two-term draw filter above lets folded ones through here too.  The
+                   # tri-block does not touch the spoke block, so the expectation is that
+                   # it explains nothing about this construction -- which is a claim, and
+                   # `the_fold_margin_does_not_explain_the_tri_block` is where it is tested.
+                   "fold": fbk.fold_margin(vec, cfg_name),
                    "side_lengths_mm": [rr["A_length_mm"], rr["B_length_mm"],
                                        rr["C_length_mm"]],
                    "wedges_deg": [rr["wedge_at_P_t_deg"], rr["wedge_at_Q_deg"],
@@ -834,6 +908,439 @@ def sweep_genomes(cfg_name, B, w_fixed, per_orientation=GENOME_SWEEP_PER_ORIENTA
             "fixed_w_range": ([min(r["fixed_w_min_scaled_jacobian"] for r in ok),
                                max(r["fixed_w_min_scaled_jacobian"] for r in ok)]
                               if ok else None)}
+
+
+# `sweep_genomes` already tells us WHICH drawn genomes no placement of X can rescue at this
+# `B` (`best_w_valid` is False for them) -- that is the "curved Y" question named in
+# UNCAP_PLAN Step 3 PART 2 and is not this one.  What it leaves open is whether the FIXED
+# rule -- the one with no free parameter left, the one that would actually ship -- can be
+# re-derived to reach every genome ITS OWN `best_w` can, the same question §48 PART 13
+# asked of the fillet's layer profile.  `GENOME_ROBUST_X_GRID_N` is its own grid, published
+# in full for the same reason every grid here is: `sweep`'s own single-genome argmax showed
+# a plateau of only 6.9%-8.3% of valid cells, and a joint argmax over sixteen genomes can be
+# a far narrower ridge than that -- visible only by publishing the surface, not by trusting
+# the one cell an argmax reports.
+GENOME_ROBUST_X_GRID_N = 25
+
+
+def sweep_w_genomes(cfg_name, B, genome_rows, shipped_genes, current_w, grid=None):
+    """The interior point's barycentric triple, re-derived against the GENOME BOX.
+
+    `genome_rows` is `sweep_genomes`'s own group rows for this config.  The shipped genome
+    is NOT one of them -- `sweep_genomes` draws sixteen OTHER genomes -- so it is appended
+    here explicitly and named rather than folded in silently, exactly as
+    `study_fillet_block.sweep_layer_profile_genomes` appends its own shipped genome.  A
+    genome `sweep_genomes` already marked `best_w_valid: False` is EXCLUDED and named: no
+    placement of X rescues it at this `B`, so it would dominate every worst-case comparison
+    for a reason this sweep cannot fix and should not be blamed for.
+
+    The objective is `n_clear` first and `worst_min_scaled_jacobian` second, not the
+    reverse.  A raw argmax of the worst genome's worst block chases whichever genome is
+    CLOSEST to folding, which is a different question from how many genomes clear the
+    barrier the optimizer actually enforces -- the published grid at `coarse` has exactly
+    one cell where all fixable genomes are simultaneously valid, and it is not the cell a
+    worst-case argmax would pick.
+    """
+    grid = grid if grid is not None else x_grid(n=GENOME_ROBUST_X_GRID_N)
+    fixable = [r for r in genome_rows if r.get("best_w_valid")]
+    excluded = [r for r in genome_rows if not r.get("best_w_valid")]
+    regs = [region(np.asarray(r["genes"], float), cfg_name, blend=0.0) for r in fixable]
+    regs.append(region(np.asarray(shipped_genes, float), cfg_name, blend=0.0))
+    n_cells = len(regs)
+
+    def stats(w):
+        worst, n_valid, n_clear = 9.0, 0, 0
+        for reg in regs:
+            c = cell(reg, B, w)
+            worst = min(worst, c["min_scaled_jacobian"])
+            n_valid += int(c["all_valid"])
+            n_clear += int(c["min_scaled_jacobian"] > MIN_SJ_TARGET)
+        return {"w": [float(x) for x in w], "worst_min_scaled_jacobian": float(worst),
+                "n_valid": n_valid, "n_clear": n_clear}
+
+    rows = [stats(w) for w in grid]
+    rows.sort(key=lambda r: (-r["n_clear"], -r["worst_min_scaled_jacobian"]))
+    best = rows[0]
+    at_current = stats(tuple(current_w))
+    shipped_reg = regs[-1]
+    shipped_at_best = cell(shipped_reg, B, tuple(best["w"]))
+    shipped_at_current = cell(shipped_reg, B, tuple(current_w))
+    fully_valid = [r for r in rows if r["n_valid"] == n_cells]
+    return {
+        "n_cells": n_cells, "n_fixable": len(fixable),
+        "excluded_arc_span_deg": [r["arc_span_deg"] for r in excluded],
+        "grid_n": len(grid),
+        "best": best, "at_current_w": at_current,
+        "n_fully_valid_cells": len(fully_valid),
+        "shipped_min_scaled_jacobian_at_best": shipped_at_best["min_scaled_jacobian"],
+        "shipped_clears_target_at_best": bool(
+            shipped_at_best["min_scaled_jacobian"] > MIN_SJ_TARGET),
+        "shipped_min_scaled_jacobian_at_current": shipped_at_current["min_scaled_jacobian"],
+        "shipped_clears_target_at_current": bool(
+            shipped_at_current["min_scaled_jacobian"] > MIN_SJ_TARGET),
+        "rows": rows,
+    }
+
+
+# THE CURVED Y.  PART 2's Winslow column found that a generated interior changes the
+# number by 0.000000, because the Y's three spokes are BOUNDARIES of two blocks each and
+# per-block smoothing holds them by definition -- so the only lever left is where the
+# spokes GO, and they were straight lines.  `_bent_spoke` is that lever and `bend` is its
+# one parameter.  This sweep is the same two-column claim `sweep_genomes` makes, run over
+# the (w, bend) plane instead of the w one: a per-genome ceiling, which says whether the
+# curve can reach a genome AT ALL, and a joint fixed rule, which says whether one
+# construction with no free parameter left can reach it.
+BEND_GRID = tuple(round(0.1 * k, 2) for k in range(11))
+# The same 25 the interior point's own genome-robust sweep uses, and for the reason that
+# sweep found the hard way: at 15 the joint argmax at `coarse` reaches 14 of 16 genomes
+# and at 21 it reaches all 16, so the coarser grid was reporting the SPACING and not the
+# rule.  Two sweeps answering the same shape of question are on the same grid.
+BEND_X_GRID_N = GENOME_ROBUST_X_GRID_N
+
+
+# THE REFUSAL SEARCH -- PART 6's named experiment.
+#
+# One genome in the sixteen refuses the curve at every interior point, every bend and every
+# admissible free count, and PART 6 found it extremal on three shape quantities at once --
+# most widely on the region's interior-angle sum, by 57% of the others' spread.  With ONE
+# negative example that is arithmetic rather than evidence: any quantity on which a set of
+# one is extremal separates it from a set of fifteen.  A second refusal turns all three
+# candidates into testable claims at once.
+#
+# The draw is a SUPERSET, not a redraw: `sweep_genomes` fills each orientation from the same
+# Latin-hypercube stream in the same order, so the first four of each are exactly the box
+# every published number is measured on and the next four are new.  Nothing above moves.
+#
+# `coarse` only and the 15-point interior grid rather than the 25-point one, because this
+# section asks WHETHER a ceiling is negative and not what it is -- the published ceilings
+# stay where they were measured.
+#
+# MEASURED AT 16, 32 AND 64 GENOMES, AND THE EXPERIMENT DID NOT DO WHAT IT WAS DESIGNED TO.
+# No second refusal appears: the curve reaches 63 of 64.  What the larger box did instead is
+# FALSIFY the leading candidate.  PART 6 ranked the interior-angle sum first on a gap worth
+# 57% of the reached set's spread; at 32 that is 26% and at 64 it is 4%, because each larger
+# draw finds a reached genome closer to the refusal (170.3 -> 164.2 -> 157.9 against the
+# refusal's 156.4).  `arc_span_deg`, which PART 6 ranked third and discounted, is the one
+# that holds: 0.187 -> 0.187 -> 0.176 across a fourfold box.  A separation that survives a
+# 4x draw and one that decays by 14x are different kinds of claim, and only running the box
+# out shows which is which.
+REFUSAL_SEARCH_PER_ORIENTATION = 16
+
+
+def _shape(row):
+    """The shape numbers PART 6 tested, keyed the way its table reports them."""
+    return {"wedge_sum_deg": float(sum(row["wedges_deg"])),
+            "wedge_sum_minus_180": float(abs(sum(row["wedges_deg"]) - 180.0)),
+            "arc_span_deg": float(row["arc_span_deg"]),
+            "bow_over_width": float(row["bow_over_width"]),
+            "turn_at_far_end_deg": float(row["turn_at_far_end_deg"]),
+            "min_wedge_deg": float(min(row["wedges_deg"])),
+            "A_over_C": float(row["side_lengths_mm"][0] / row["side_lengths_mm"][2])}
+
+
+def _separation(refusals, reached, key):
+    """Does `key` separate the refusals from the rest, and by how much of the spread?
+
+    Reported with the gap NORMALISED by the reached set's own spread, because a gap in
+    degrees means nothing without knowing how wide the box is in that quantity -- which is
+    the whole difference between PART 6's angle sum (57%) and its arc span (19%).
+    """
+    b = [r[key] for r in refusals]
+    g = [r[key] for r in reached]
+    if not b or not g:
+        return None
+    spread = max(g) - min(g)
+    low, high = min(g) - max(b), min(b) - max(g)
+    gap = max(low, high)
+    return {"refusals": b, "reached_min": min(g), "reached_max": max(g),
+            "separates": bool(gap > 0.0),
+            "refusal_is_low": bool(low > 0.0),
+            "gap": float(gap),
+            "gap_over_spread": float(gap / spread) if spread > 0 else None}
+
+
+# AND THE SAMPLER THAT ANSWERS IT.  PART 7 ran the box out to 64 genomes, found no second
+# refusal, and identified WHY: the uniform Latin hypercube puts one genome above 35 degrees
+# of arc span in sixty-four, so the band where the single refusal lives is essentially
+# unsampled.  A bigger draw of the same sampler cannot fix that; a different one can.
+#
+# This screens the stream on `arc_span_deg` BEFORE meshing -- the region and its report are
+# cheap, the control mesh is not -- and keeps only the band.  What it buys is a rate rather
+# than another anecdote: measured, 22 of 40 regions above 30 degrees refuse the curve at
+# every bend and every free count, against 1 of 64 in the uniform box.  That is a 34x
+# enrichment and it is what turns the arc span from a candidate into a risk factor.
+#
+# It does NOT make it a gate, and the section reports both halves: inside the band the
+# refusals and the reached OVERLAP (30.27-44.41 against 30.08-36.14), so arc span predicts
+# how often a region is impossible and does not say which one is.
+ARC_BAND_MIN_DEG = 30.0
+ARC_BAND_TARGET = 40
+ARC_BAND_MAX_BATCHES = 400
+
+
+def sweep_arc_span_band(cfg_name, B, w_fixed, shipped_genes, current_w,
+                        lo=ARC_BAND_MIN_DEG, target=ARC_BAND_TARGET,
+                        max_batches=ARC_BAND_MAX_BATCHES):
+    """Draw CONDITIONED on a large arc span, and report the refusal rate in the band.
+
+    The seed offset keeps this stream disjoint from `sweep_genomes`' so the band is not
+    the published box with the easy genomes filtered out -- it is its own sample, and the
+    rate it reports is comparable with the box's precisely because the two do not share
+    genomes.
+    """
+    from study_mesh_quality import latin_hypercube
+    import wheel_fea as WFEA
+
+    low, high, _ = wg.bounds_arrays(WFEA.GENE_SPACE)
+    rows, screened, drawn = [], 0, 0
+    for batch in range(max_batches):
+        if len(rows) >= target:
+            break
+        for vec in latin_hypercube(512, low, high,
+                                   seed=GENOME_SWEEP_SEED + 1000 + batch):
+            drawn += 1
+            _, loss = WFEA.evaluate_design(vec)
+            if loss["x_order"] != 0.0 or loss["hub_overlap"] != 0.0:
+                continue
+            try:
+                rr = region_report(region(vec, cfg_name, blend=0.0))
+            except Exception:
+                continue
+            if rr["arc_span_deg"] <= lo:
+                continue
+            screened += 1
+            try:                      # the same mesh gates `sweep_genomes` applies
+                if not control(vec, cfg_name, 1.0)["all_valid"]:
+                    continue
+                control(vec, cfg_name, 0.0)
+            except Exception:
+                continue
+            rows.append({"genes": [float(x) for x in vec],
+                         "arc_span_deg": rr["arc_span_deg"],
+                         "bow_over_width": rr["bow_over_width"],
+                         "wedges_deg": [rr["wedge_at_P_t_deg"], rr["wedge_at_Q_deg"],
+                                        rr["wedge_at_B_star_deg"]],
+                         "side_lengths_mm": [rr["A_length_mm"], rr["B_length_mm"],
+                                             rr["C_length_mm"]],
+                         "turn_at_far_end_deg": rr["turn_at_far_end_deg"],
+                         "fixed_w_valid": True})
+            if len(rows) >= target:
+                break
+    if not rows:
+        return {"config": cfg_name, "lo_deg": float(lo), "n_drawn": drawn,
+                "n_in_band": screened, "n_meshable": 0, "rows": []}
+
+    bend = sweep_bend_genomes(cfg_name, B, rows, shipped_genes, current_w,
+                              grid=x_grid(n=GENOME_X_GRID_N))
+    per = bend["per_genome"][:len(rows)]
+    bad = [r for g, r in zip(per, rows) if not g["curved_valid"]]
+    good = [r for g, r in zip(per, rows) if g["curved_valid"]]
+    return {
+        "config": cfg_name, "lo_deg": float(lo),
+        "n_drawn": drawn, "n_in_band": screened, "n_meshable": len(rows),
+        "n_refusals": len(bad), "n_reached": len(good),
+        "refusal_rate": len(bad) / len(rows),
+        "arc_span_range": [min(r["arc_span_deg"] for r in rows),
+                           max(r["arc_span_deg"] for r in rows)],
+        # THE HALF THAT SAYS IT IS NOT A GATE.  If these two ranges separated, the arc span
+        # would classify; they overlap, so it only predicts a rate.
+        "refusal_arc_span_range": ([min(r["arc_span_deg"] for r in bad),
+                                    max(r["arc_span_deg"] for r in bad)] if bad else None),
+        "reached_arc_span_range": ([min(r["arc_span_deg"] for r in good),
+                                    max(r["arc_span_deg"] for r in good)] if good else None),
+        "separation": {k: _separation([_shape(r) for r in bad],
+                                      [_shape(r) for r in good], k)
+                       for k in ("arc_span_deg", "wedge_sum_deg", "bow_over_width")},
+        "genomes": [{"curved_valid": bool(g["curved_valid"]), **_shape(r)}
+                    for g, r in zip(per, rows)]}
+
+
+def sweep_refusal_search(cfg_name, B, w_fixed, shipped_genes, current_w,
+                         per_orientation=REFUSAL_SEARCH_PER_ORIENTATION):
+    """Draw deeper until a SECOND region refuses the curve, and re-test PART 6's candidates.
+
+    Returns the per-genome verdicts over the enlarged box, the shape numbers for each, and
+    the separation statistic for every quantity PART 6 tried -- so a candidate that survives
+    a second negative is visibly different from one that does not.
+    """
+    deep = sweep_genomes(cfg_name, B, w_fixed, per_orientation=per_orientation)
+    rows = [r for v in deep["groups"].values() for r in v if "fixed_w_valid" in r]
+    bend = sweep_bend_genomes(cfg_name, B, rows, shipped_genes, current_w,
+                              grid=x_grid(n=GENOME_X_GRID_N))
+    per = bend["per_genome"]
+    # `sweep_bend_genomes` appends the shipped genome last; it is not a drawn one and is
+    # excluded from the statistic for the same reason it is named separately everywhere else.
+    drawn = [(g, _shape(r)) for g, r in zip(per, rows)]
+    refusals = [sh for g, sh in drawn if not g["curved_valid"]]
+    reached = [sh for g, sh in drawn if g["curved_valid"]]
+    keys = ("wedge_sum_deg", "wedge_sum_minus_180", "arc_span_deg", "bow_over_width",
+            "turn_at_far_end_deg", "min_wedge_deg", "A_over_C")
+    return {"config": cfg_name, "per_orientation": per_orientation,
+            "n_genomes": len(drawn), "n_refusals": len(refusals),
+            "n_reached": len(reached),
+            "x_grid_n": GENOME_X_GRID_N, "bend_grid": list(BEND_GRID),
+            "genomes": [{"curved_valid": bool(g["curved_valid"]),
+                         "curved_min_scaled_jacobian": g["curved_min_scaled_jacobian"],
+                         **sh} for g, sh in drawn],
+            "separation": {k: _separation(refusals, reached, k) for k in keys},
+            # Which of PART 6's three survive a larger box, named rather than left to be
+            # read off the table.
+            "still_separating": sorted(
+                k for k in keys
+                if (_separation(refusals, reached, k) or {}).get("separates"))}
+
+
+def sweep_bend_genomes(cfg_name, B, genome_rows, shipped_genes, current_w,
+                       grid=None, bends=BEND_GRID):
+    """The curved Y over the gene box: what it reaches, and at what fixed rule.
+
+    Every genome `sweep_genomes` drew is here, INCLUDING the ones it marked
+    `best_w_valid: False` -- those are the whole question, and excluding them is what
+    `sweep_w_genomes` had to do and this one must not.  The shipped genome is appended and
+    named, as there.
+
+    `bend = 0.0` is in the grid on purpose rather than assumed: the straight-Y column of
+    every table below is re-measured here against the identical objective, so the
+    comparison is one sweep's own two slices and not this sweep against a remembered
+    number from another.
+    """
+    grid = grid if grid is not None else x_grid(n=BEND_X_GRID_N)
+    # A row `sweep_genomes` recorded a `why` on is one whose cell RAISED; it carries the
+    # region's shape but no verdict, and asking the same question of it again would raise
+    # here too.  `fixed_w_valid` is present only on the path that got a verdict.
+    rows_in = [r for r in genome_rows if "fixed_w_valid" in r]
+    regs = [region(np.asarray(r["genes"], float), cfg_name, blend=0.0) for r in rows_in]
+    regs.append(region(np.asarray(shipped_genes, float), cfg_name, blend=0.0))
+    labels = [{"arc_span_deg": r["arc_span_deg"], "bow_over_width": r["bow_over_width"],
+               "shipped_genome": False} for r in rows_in]
+    shipped_rr = region_report(regs[-1])
+    labels.append({"arc_span_deg": shipped_rr["arc_span_deg"],
+                   "bow_over_width": shipped_rr["bow_over_width"],
+                   "shipped_genome": True})
+
+    # [genome][bend][w] once, and every column below is a slice of it.
+    table = [[[cell(reg, B, w, bend) for w in grid] for bend in bends] for reg in regs]
+
+    def ceiling(gi, only_zero_bend):
+        best = None
+        for bi, bend in enumerate(bends):
+            if only_zero_bend and bend != 0.0:
+                continue
+            for wi, c in enumerate(table[gi][bi]):
+                if c is None or not c["all_valid"]:
+                    continue
+                if best is None or c["min_scaled_jacobian"] > best[0]:
+                    best = (c["min_scaled_jacobian"], float(bend), list(grid[wi]))
+        return best
+
+    per_genome = []
+    for gi, lab in enumerate(labels):
+        st, cu = ceiling(gi, True), ceiling(gi, False)
+        per_genome.append({
+            **lab,
+            "straight_valid": st is not None,
+            "straight_min_scaled_jacobian": st[0] if st else None,
+            "curved_valid": cu is not None,
+            "curved_min_scaled_jacobian": cu[0] if cu else None,
+            "curved_bend": cu[1] if cu else None,
+            "curved_w": cu[2] if cu else None,
+            "rescued_by_the_curve": bool(cu is not None and st is None)})
+
+    # The joint fixed rule runs on the genomes SOME (w, bend) reaches, and the ones it
+    # does not are excluded and named -- the same convention `sweep_w_genomes` set, and
+    # for the same reason: a genome no cell in the plane rescues dominates every
+    # worst-case comparison for a reason the rule cannot fix.  Keeping the convention is
+    # also what makes the two functions' numbers readable against each other.
+    keep = [gi for gi, g in enumerate(per_genome) if g["curved_valid"]]
+    rows = []
+    for bi, bend in enumerate(bends):
+        for wi, w in enumerate(grid):
+            worst, n_valid, n_clear = 9.0, 0, 0
+            for gi in keep:
+                c = table[gi][bi][wi]
+                worst = min(worst, c["min_scaled_jacobian"])
+                n_valid += int(c["all_valid"])
+                n_clear += int(c["min_scaled_jacobian"] > MIN_SJ_TARGET)
+            rows.append({"bend": float(bend), "w": [float(x) for x in w],
+                         "worst_min_scaled_jacobian": float(worst),
+                         "n_valid": n_valid, "n_clear": n_clear})
+    key = lambda r: (-r["n_clear"], -r["worst_min_scaled_jacobian"])   # noqa: E731
+    straight_rows = [r for r in rows if r["bend"] == 0.0]
+    best = min(rows, key=key)
+    best_straight = min(straight_rows, key=key)
+
+    # PUBLISHED, BUT NOT ALL OF IT.  Every grid in this file is published whole so that a
+    # plateau and a tuned point can be told apart by looking, and the (w, bend) plane is
+    # eleven times the last one -- large enough that committing it whole would double the
+    # artifact.  So the two slices where the question is actually asked go out whole: the
+    # straight Y, and the bend the joint rule picked.  Every other bend goes out as its
+    # own argmax, which is what says whether the winning bend is a spike or a shelf.
+    per_bend = [min([r for r in rows if r["bend"] == float(b)], key=key) for b in bends]
+    at_best_bend = [r for r in rows if r["bend"] == best["bend"]]
+    # The 10% band is taken off the MAGNITUDE, not as a multiplier: the joint worst can be
+    # negative, and `0.9 * x` moves the wrong way when it is -- a band that excludes the
+    # maximum itself is not a plateau measurement, it is a sign error.
+    band = best["worst_min_scaled_jacobian"] - 0.1 * abs(best["worst_min_scaled_jacobian"])
+    near = [r for r in at_best_bend
+            if r["n_clear"] == best["n_clear"]
+            and r["worst_min_scaled_jacobian"] >= band]
+
+    # THE REFUSAL, PRICED PROPERLY.  A genome no cell of the (w, bend) plane rescues is
+    # this section's load-bearing negative, and at the shipped `B` alone it is a weaker
+    # claim than it sounds: `B` is held across the gene box because it sets element
+    # counts, but the question "is this region Y-partitionable at all" is not about the
+    # count that ships.  So the refusals -- and only they, because this is the expensive
+    # sweep -- are re-asked at every admissible `B`.
+    cfg = WW.get_config(cfg_name)
+    refusals = []
+    for gi, lab in enumerate(labels):
+        if per_genome[gi]["curved_valid"]:
+            continue
+        per_B = []
+        for Bx in admissible(cfg.n_weld, cfg.n_thick):
+            top = None
+            for bend in bends:
+                for w in grid:
+                    c = cell(regs[gi], Bx, w, bend)
+                    if c is None:
+                        continue
+                    if top is None or c["min_scaled_jacobian"] > top[0]:
+                        top = (c["min_scaled_jacobian"], float(bend), c["all_valid"])
+            per_B.append({"B": int(Bx), "ceiling": top[0], "bend": top[1],
+                          "valid": bool(top[2])})
+        refusals.append({**lab, "per_B": per_B,
+                         "ceiling_over_every_B": max(r["ceiling"] for r in per_B),
+                         "valid_at_any_B": any(r["valid"] for r in per_B)})
+
+    shipped = {}
+    for tag, r in (("best", best), ("best_straight", best_straight)):
+        c = cell(regs[-1], B, tuple(r["w"]), r["bend"])
+        shipped[tag] = {"min_scaled_jacobian": c["min_scaled_jacobian"],
+                        "clears_target": bool(c["min_scaled_jacobian"] > MIN_SJ_TARGET)}
+    c = cell(regs[-1], B, tuple(current_w), 0.0)
+    shipped["published_cell"] = {
+        "min_scaled_jacobian": c["min_scaled_jacobian"],
+        "clears_target": bool(c["min_scaled_jacobian"] > MIN_SJ_TARGET)}
+
+    return {
+        "config": cfg_name, "B": int(B), "n_genomes": len(regs),
+        "n_cells": len(keep),
+        "bend_grid": [float(b) for b in bends], "grid_n": len(grid),
+        "per_genome": per_genome,
+        "n_straight_valid": sum(1 for r in per_genome if r["straight_valid"]),
+        "n_curved_valid": sum(1 for r in per_genome if r["curved_valid"]),
+        "n_rescued_by_the_curve": sum(1 for r in per_genome
+                                      if r["rescued_by_the_curve"]),
+        "refusals_bow_over_width": [r["bow_over_width"] for r in per_genome
+                                    if not r["curved_valid"]],
+        "refusals": refusals,
+        "best": best, "best_straight": best_straight,
+        "shipped": shipped,
+        "per_bend": per_bend,
+        "plateau_at_best_bend": {"n_cells": len(at_best_bend), "n_within_10pc": len(near)},
+        "surface_straight": straight_rows,
+        "surface_at_best_bend": at_best_bend,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -895,6 +1402,46 @@ def build(genes, configs, genome_sweep=True):
             per["winslow"] = winslow_column(reg, chosen["B"], chosen["w"])
             if genome_sweep:
                 per["genomes"] = sweep_genomes(name, chosen["B"], chosen["w"])
+                grows = [r for v in per["genomes"]["groups"].values() for r in v]
+                per["genome_robust_w"] = sweep_w_genomes(
+                    name, chosen["B"], grows, genes, chosen["w"])
+                per["curved_y"] = sweep_bend_genomes(
+                    name, chosen["B"], grows, genes, chosen["w"])
+                # PART 6's named experiment, at the FIRST config only: it draws a superset
+                # of the box above and its whole purpose is to find a second negative, so
+                # running it twice would cost eight minutes to ask the same question of the
+                # same genomes at a resolution that does not change the answer.
+                if name == rec["configs"][0]:
+                    per["refusal_search"] = sweep_refusal_search(
+                        name, chosen["B"], chosen["w"], genes, chosen["w"])
+                    # And the sampler that answers what the uniform one cannot.
+                    per["arc_span_band"] = sweep_arc_span_band(
+                        name, chosen["B"], chosen["w"], genes, chosen["w"])
+                # The curve moves the three spokes, which are seams.  They are shared
+                # arrays so this cannot fail -- which is exactly why it is checked, at
+                # the bend the joint rule picked rather than at the one that ships.
+                bw = tuple(per["curved_y"]["best"]["w"])
+                bb = per["curved_y"]["best"]["bend"]
+                per["curved_y"]["sector_at_best"] = {
+                    k: sector_verdict(reg, chosen["B"], bw, bb)[k]
+                    for k in ("seams_close", "max_seam_gap_mm", "n_seams",
+                              "tri_region_area_mm2", "area_relative_difference",
+                              "element_count")}
+                # THE BOUNDARY, NOT ITS AREA.  Summing three shoelaces cancels the shared
+                # spokes only to rounding, so an area comparison cannot be exact and is
+                # the wrong instrument for an exact claim.  The claim is that the SIX
+                # boundary edges the region owns do not move with the bend, and those are
+                # arrays: compared as arrays, at one `w` so that only `bend` differs.
+                owned = (("rim_tri_t", (slice(None), 0)), ("rim_tri_t", (0, slice(None))),
+                         ("rim_tri_q", (slice(None), 0)), ("rim_tri_q", (-1, slice(None))),
+                         ("rim_tri_b", (slice(None), -1)), ("rim_tri_b", (0, slice(None))))
+                flat, bent = (tri_sector(reg, chosen["B"], bw, x)[0] for x in (0.0, bb))
+                per["curved_y"]["region_sides_are_untouched"] = bool(all(
+                    np.array_equal(np.asarray(flat[k])[ix], np.asarray(bent[k])[ix])
+                    for k, ix in owned))
+                per["curved_y"]["tiled_area_relative_shift"] = float(abs(
+                    block_area_mm2s(bent) - block_area_mm2s(flat))
+                    / block_area_mm2s(flat))
         rec["per_config"][name] = per
 
     rec["self_checks"] = self_checks(rec)
@@ -932,6 +1479,68 @@ def self_checks(rec):
     out["cuts_are_slices"] = all(
         all(x["max_gap_mm"] == 0.0 for x in c["cuts_are_slices"])
         for c in cs.values() if "cuts_are_slices" in c)
+    # THE CURVE MOVES SEAMS AND NOTHING ELSE.  `_bent_spoke` touches only the three
+    # internal spokes, so bending them must leave the region's own boundary — and
+    # therefore the tiled area — bit-for-bit what the straight Y tiled, at a DIFFERENT
+    # interior point and a different bend.  A curve that leaked into the boundary would
+    # be a different region silently measured against the same control.
+    cy = [c for c in cs.values() if "curved_y" in c and "sector" in c]
+    out["the_bend_moves_no_boundary"] = all(
+        c["curved_y"]["region_sides_are_untouched"] for c in cy)
+    out["the_bend_tiles_the_same_area"] = all(
+        c["curved_y"]["tiled_area_relative_shift"] < 1.0e-12 for c in cy)
+    out["the_bend_closes_every_seam"] = all(
+        c["curved_y"]["sector_at_best"]["seams_close"]
+        and c["curved_y"]["sector_at_best"]["n_seams"] == 17 for c in cy)
+    out["the_straight_y_is_a_slice_of_the_bend_grid"] = all(
+        0.0 in c["curved_y"]["bend_grid"] for c in cy)
+    out["every_refusal_was_re-asked_at_every_free_count"] = all(
+        len(c["curved_y"]["refusals"]) == (c["curved_y"]["n_genomes"]
+                                           - c["curved_y"]["n_curved_valid"])
+        and all(not r["valid_at_any_B"] for r in c["curved_y"]["refusals"])
+        for c in cy)
+    # A NEGATIVE result, gated so it cannot rot into a positive one by assumption.
+    # `study_fillet_block`'s fold margin classifies that study's one inverted spoke block
+    # 16/16, and the temptation is to reach for it here as a general difficulty predictor.
+    # It is not one: the tri-block partitions the rim JUNCTION region and never touches
+    # the offset band, and this box's fold-negative genomes are among its easiest.  The
+    # check is that the two are not merely uncorrelated but ANTI-informative -- the worst
+    # cell at the fixed rule is a fold-CLEAN genome -- so a future run where the fold
+    # margin does start explaining refusals here shows up as a failure and gets looked at.
+    def _fold_is_not_the_story(per):
+        grows = [r for v in per["genomes"]["groups"].values() for r in v
+                 if "fold" in r and r.get("fixed_w_min_scaled_jacobian") is not None]
+        if not grows:
+            return True
+        worst = min(grows, key=lambda r: r["fixed_w_min_scaled_jacobian"])
+        return not worst["fold"]["folds"]
+
+    # The refusal search's statistic is a set of refusals against a set of reached, so it
+    # is vacuous if either is empty.  Structural, so it gates.  WHICH quantity separates is
+    # a finding and is reported, never gated -- the whole result is that the leading
+    # candidate changed when the box grew.
+    rsx = [per["refusal_search"] for per in rec["per_config"].values()
+           if "refusal_search" in per]
+    if rsx:
+        out["the_refusal_search_has_both_classes"] = all(
+            r["n_refusals"] > 0 and r["n_reached"] > 0 for r in rsx)
+        # And it must be a SUPERSET of the published box, or it is a different experiment.
+        out["the_refusal_search_is_a_superset_of_the_box"] = all(
+            r["n_genomes"] >= per["genomes"]["n_genomes"]
+            for per, r in ((p, p["refusal_search"]) for p in rec["per_config"].values()
+                           if "refusal_search" in p))
+    # The band's rate is only a comparison if BOTH classes are present in it and it is a
+    # different sample from the box.  Structural, so it gates; the RATE is the finding and
+    # is reported.
+    bands = [per["arc_span_band"] for per in rec["per_config"].values()
+             if per.get("arc_span_band")]
+    if bands:
+        out["the_arc_span_band_has_both_classes"] = all(
+            b["n_refusals"] > 0 and b["n_reached"] > 0 for b in bands)
+        out["the_arc_span_band_is_above_its_threshold"] = all(
+            b["arc_span_range"][0] > b["lo_deg"] for b in bands)
+    out["the_fold_margin_does_not_explain_the_tri_block"] = all(
+        _fold_is_not_the_story(per) for per in rec["per_config"].values())
     rows = rec["algebra"].get("coarse", {}).get("rows", [])
     s37 = [r for r in rows if r["is_section_37_choice"]]
     out["algebra_reproduces_section_37"] = bool(
@@ -1069,6 +1678,183 @@ def _print(rec):
             print(f"      (the shipped genome's is {c['region']['arc_span_deg']:.3f} deg, "
                   f"at the very bottom of the box; the two ranges "
                   f"{'SEPARATE' if sb[0] > sg[-1] else 'OVERLAP'})")
+            wb = sorted(r["bow_over_width"] for r in bad)
+            wg = sorted(r["bow_over_width"] for r in good)
+            print(f"      the arc's BOW over the region's own width separates them "
+                  f"{'CLEANLY' if wb[0] > wg[-1] else 'no better'}: "
+                  f"{wb[0]:.3f}-{wb[-1]:.3f} against {wg[0]:.3f}-{wg[-1]:.3f} — the "
+                  f"straight Y cuts chords,")
+            print(f"      and what a chord cannot survive is a side that bows away from "
+                  f"one by a fair fraction of the region's width")
+        folded = [r for r in rows if r.get("fold", {}).get("folds")]
+        if folded and good:
+            worst = min((r for r in rows
+                         if r.get("fixed_w_min_scaled_jacobian") is not None),
+                        key=lambda r: r["fixed_w_min_scaled_jacobian"])
+            print(f"      and it is NOT the fold margin, which is the other feasibility "
+                  f"number the same draw filter misses:")
+            print(f"      {len(folded)}/{len(rows)} of this box describe a spoke that "
+                  f"self-intersects, and they sit at fixed-rule "
+                  + ", ".join(f"{r['fixed_w_min_scaled_jacobian']:+.4f}"
+                              for r in folded)
+                  + f" — while the WORST cell in the box, at "
+                  f"{worst['fixed_w_min_scaled_jacobian']:+.4f}, has margin "
+                  f"{worst['fold']['margin_mm']:+.4f} mm and folds nothing.")
+            print(f"      the tri-block partitions the rim JUNCTION and never touches the "
+                  f"offset band, so this is the expected answer — recorded because the "
+                  f"expectation is worth a number.")
+
+    for name, c in rec["per_config"].items():
+        rs = c.get("refusal_search")
+        if not rs:
+            continue
+        print(f"\n  WHAT MAKES A REGION IMPOSSIBLE — THE BOX DRAWN OUT TO "
+              f"{rs['n_genomes']} GENOMES ({name})")
+        print(f"    {rs['n_refusals']} refuse the curve at every bend and every free "
+              f"count, {rs['n_reached']} are reached")
+        print(f"      {'quantity':22s} {'refusal':>10s} {'reached range':>22s} "
+              f"{'gap':>9s} {'/spread':>8s}")
+        for k, v in rs["separation"].items():
+            if v is None:
+                continue
+            rng = f"[{v['reached_min']:.3f}, {v['reached_max']:.3f}]"
+            gs = (f"{v['gap_over_spread']:8.3f}" if v["separates"] else f"{'-':>8s}")
+            print(f"      {k:22s} {v['refusals'][0]:10.3f} {rng:>22s} "
+                  f"{v['gap']:+9.3f} {gs}")
+        print(f"    still separating: {', '.join(rs['still_separating'])}")
+        bd = c.get("arc_span_band")
+        if bd and bd.get("n_meshable"):
+            print(f"\n    AND THE SAMPLER THAT ANSWERS IT — drawn CONDITIONED on arc span "
+                  f"> {bd['lo_deg']:.0f} deg")
+            print(f"      {bd['n_drawn']} drawn, {bd['n_in_band']} in the band, "
+                  f"{bd['n_meshable']} of those mesh clean")
+            print(f"      {bd['n_refusals']}/{bd['n_meshable']} REFUSE the curve at every "
+                  f"bend and every free count — {100*bd['refusal_rate']:.1f}%")
+            print(f"      against {rs['n_refusals']}/{rs['n_genomes']} "
+                  f"({100*rs['n_refusals']/rs['n_genomes']:.1f}%) in the uniform box: "
+                  f"a {bd['refusal_rate']/(rs['n_refusals']/rs['n_genomes']):.0f}x "
+                  "enrichment.")
+            print("      SO THE ARC SPAN IS A REAL RISK FACTOR — and it is still not a "
+                  "gate, because inside")
+            print(f"      the band the two classes OVERLAP: refusals "
+                  f"[{bd['refusal_arc_span_range'][0]:.2f}, "
+                  f"{bd['refusal_arc_span_range'][1]:.2f}] against reached "
+                  f"[{bd['reached_arc_span_range'][0]:.2f}, "
+                  f"{bd['reached_arc_span_range'][1]:.2f}].")
+            print("      It predicts HOW OFTEN a region is impossible, not WHICH one is.")
+        print("\n    HOW THE THREE CANDIDATES FARED AS THE BOX GREW: a separation that "
+              "survives a fourfold draw")
+        print("    and one that decays with it are different claims.  The interior-angle "
+              "sum went 0.573 -> 0.257")
+        print("    -> 0.041 of the spread over 16, 32 and 64 genomes; the arc span held "
+              "at 0.187 -> 0.187 -> 0.176.")
+        print("    No second refusal appeared in the uniform box, so the CONDITIONED draw "
+              "above is what settled it:")
+        print("    the arc span is a risk factor with a measured rate, and the angle sum "
+              "is a small-sample artefact.")
+
+    print("\n  THE INTERIOR POINT, RE-DERIVED AGAINST THE GENOME BOX -- MEASURED, NOT "
+          "ADOPTED")
+    for name, c in rec["per_config"].items():
+        gr = c.get("genome_robust_w")
+        if not gr:
+            continue
+        cur, best = gr["at_current_w"], gr["best"]
+        print(f"    {name}  n_cells = {gr['n_cells']} ({gr['n_fixable']} drawn + shipped), "
+              f"excluded (no `w` rescues them): "
+              f"{[round(a, 1) for a in gr['excluded_arc_span_deg']]} deg")
+        print(f"      current w {tuple(round(x, 3) for x in cur['w'])}: "
+              f"worst {cur['worst_min_scaled_jacobian']:.4f}, "
+              f"{cur['n_valid']}/{gr['n_cells']} valid, "
+              f"{cur['n_clear']}/{gr['n_cells']} clear {MIN_SJ_TARGET}")
+        print(f"      genome-robust w {tuple(round(x, 3) for x in best['w'])}: "
+              f"worst {best['worst_min_scaled_jacobian']:.4f}, "
+              f"{best['n_valid']}/{gr['n_cells']} valid, "
+              f"{best['n_clear']}/{gr['n_cells']} clear {MIN_SJ_TARGET}   "
+              f"({gr['n_fully_valid_cells']}/{gr['grid_n']} grid cells are fully valid)")
+        print(f"      the SHIPPED genome at the genome-robust w: "
+              f"{gr['shipped_min_scaled_jacobian_at_best']:.4f} "
+              f"(clears {MIN_SJ_TARGET}: {gr['shipped_clears_target_at_best']}), "
+              f"against {gr['shipped_min_scaled_jacobian_at_current']:.4f} today")
+    print("    a fixed rule exists that reaches nearly every genome its own best-per-genome")
+    print("    point can reach, at a per-config cost to the shipped genome's own margin "
+          "shown above (zero at")
+    print("    some configs, real at others).  Reported and not shipped as THE rule, on "
+          "§53's `blend 0.0`")
+    print("    precedent: nothing yet reads `chosen` besides this file's own headline "
+          "table, so adopting it")
+    print("    changes a quoted number and nothing else.")
+
+    print("\n  THE CURVED Y — the spokes FOLLOW the region instead of cutting across it")
+    for name, c in rec["per_config"].items():
+        cy = c.get("curved_y")
+        if not cy:
+            continue
+        b, bs, sh = cy["best"], cy["best_straight"], cy["shipped"]
+        print(f"    {name}  B = {cy['B']}, {cy['grid_n']} interior points x "
+              f"{len(cy['bend_grid'])} bends, {cy['n_genomes']} genomes "
+              f"({cy['n_genomes'] - 1} drawn + shipped)")
+        print(f"      per-genome ceiling   straight {cy['n_straight_valid']}"
+              f"/{cy['n_genomes']} valid -> curved {cy['n_curved_valid']}"
+              f"/{cy['n_genomes']}, {cy['n_rescued_by_the_curve']} RESCUED by the bend "
+              f"alone")
+        print(f"      (the straight half is RE-MEASURED here on this sweep's own "
+              f"{cy['grid_n']}-point grid, so it is not the gene box block's "
+              f"`best w valid` above, which is on a {c['genomes']['x_grid_n']}-point one)")
+        print(f"      one fixed rule       straight {bs['n_valid']}/{cy['n_cells']} valid, "
+              f"{bs['n_clear']} clear {MIN_SJ_TARGET}, worst "
+              f"{bs['worst_min_scaled_jacobian']:+.4f}")
+        print(f"                             curved {b['n_valid']}/{cy['n_cells']} valid, "
+              f"{b['n_clear']} clear {MIN_SJ_TARGET}, worst "
+              f"{b['worst_min_scaled_jacobian']:+.4f}  at bend {b['bend']:.2f}, w "
+              f"{tuple(round(x, 3) for x in b['w'])}")
+        pl = cy["plateau_at_best_bend"]
+        frac = pl["n_within_10pc"] / pl["n_cells"]
+        shape = "SHELF" if frac >= 0.10 else "ridge" if frac >= 0.01 else "SPIKE"
+        print(f"      and the winning cell is a {shape}: {pl['n_within_10pc']}"
+              f"/{pl['n_cells']} interior points at that bend are within 10% of it — "
+              f"the argmax at each bend runs")
+        print("        " + "  ".join(
+            f"{r['bend']:.1f}:{r['n_valid']}/{r['n_clear']}" for r in cy["per_bend"])
+            + f"   (valid/clear, out of {cy['n_cells']})")
+        pub = sh["published_cell"]["min_scaled_jacobian"]
+        print(f"      the SHIPPED genome   {pub:.4f} at the published cell, "
+              f"{sh['best']['min_scaled_jacobian']:.4f} at the joint curved rule")
+        sa = cy["sector_at_best"]
+        print(f"      all {sa['n_seams']} seams still close at that bend: "
+              f"{sa['seams_close']} (max gap {sa['max_seam_gap_mm']:.2e} mm), and the "
+              f"three quads still tile the region to "
+              f"{sa['area_relative_difference']:.1e}")
+        print(f"      {'bow/width':>9s} {'arc deg':>8s} {'straight':>9s} "
+              f"{'curved':>9s} {'bend':>5s}")
+        for r in sorted(cy["per_genome"], key=lambda x: -x["bow_over_width"]):
+            f = (lambda v: "FOLD" if v is None else "%+.4f" % v)
+            tag = ("  <- SHIPPED" if r["shipped_genome"] else
+                   "  RESCUED" if r["rescued_by_the_curve"] else
+                   "  refuses at every bend" if not r["curved_valid"] else "")
+            bd = "--" if r["curved_bend"] is None else "%.2f" % r["curved_bend"]
+            print(f"      {r['bow_over_width']:9.3f} {r['arc_span_deg']:8.2f} "
+                  f"{f(r['straight_min_scaled_jacobian']):>9s} "
+                  f"{f(r['curved_min_scaled_jacobian']):>9s} {bd:>5s}{tag}")
+        for r in cy["refusals"]:
+            pb = ", ".join(f"B={x['B']} {x['ceiling']:+.4f}" for x in r["per_B"])
+            print(f"      the {r['arc_span_deg']:.1f}-deg refusal is not the free count "
+                  f"either — over EVERY admissible B its ceiling is "
+                  f"{r['ceiling_over_every_B']:+.4f}, valid at none")
+            print(f"        ({pb})")
+    print("    the bend is INERT where the region is fat and decisive where it is a "
+          "sliver, which is the")
+    print("    same statement as the bow column: it is a correction to cutting chords, "
+          "and a fat region's")
+    print("    chords needed no correction.  But the bow does NOT explain the survivor — "
+          "the LARGEST bow in")
+    print("    the box is a genome the curve reaches, and the one that refuses has a "
+          "smaller one.  So the bow")
+    print("    says where the bend is needed and not what makes a region impossible, and "
+          "that is still open.")
+    print("    Measured, not adopted — `bend` defaults to 0.0 and every number above "
+          "this block is the")
+    print("    straight Y this file published first.")
 
     print("\n  SELF-CHECKS")
     for k, v in rec["self_checks"].items():

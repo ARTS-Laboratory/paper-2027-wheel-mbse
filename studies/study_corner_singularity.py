@@ -469,7 +469,106 @@ def continuity_sweep(genes, cfg_name, radii, fillet_ref=True):
             "rows": rows}
 
 
-def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None):
+# PART 12 quoted the filleted deflection's convergence as the spread of `axle_drop_mm`
+# over `coarse..fine` -- 0.141% -- and checked it against the +-0.3% band this arc exists
+# partly to earn back.  Both are repeated here as constants rather than as prose, because
+# PART 16 turns that one number into a criterion applied to nine candidate profiles and a
+# criterion has to be stated before it is applied.
+CONVERGENCE_LADDER = ("coarse", "medium", "fine")
+CONVERGENCE_BAND_PCT = 0.3
+
+
+def profile_convergence(genes, pairs, ladder=CONVERGENCE_LADDER, fillet=True):
+    """What each candidate layer profile costs the SOLVE, which the blocking cannot see.
+
+    FILLET_PLAN PART 13 declined the genome-robust profile for two reasons; PART 14 killed
+    one of them and PART 16 showed the argmax itself is not stale, so the whole of what is
+    left is this: at `GENOME_ROBUST_ENTRY/END` the shipped genome's filleted axle-drop
+    spread over `coarse..fine` goes 0.141% -> 0.513% and crosses back over the +-0.3%
+    band.  That was measured at ONE alternative pair.  The profile surface is a broad
+    ridge, so the question nobody has asked is whether some OTHER cell on it is
+    genome-robust AND stays inside the band -- which is the two-objective version, and it
+    is three linear solves per pair rather than an optimisation.
+
+    `pairs` comes from `study_fillet_block.LAYER_PROFILE_CANDIDATES` -- every cell that
+    clears `MIN_SJ_TARGET` on the whole clamped, fold-clean box and refuses none of it,
+    so a negative here is a negative over the entire candidate set and not over a sample.
+    A constant rather than a read of that study's artifact, deliberately: one study's
+    freshness must not become another's problem.  The shipped pair and the frontier ride
+    along as controls.  A pair that refuses to build at any rung is reported with its
+    reason and no spread, never silently dropped.
+    """
+    def _spread(v):
+        return 100.0 * (max(v) - min(v)) / (sum(v) / len(v))
+
+    rows = []
+    for entry, end in pairs:
+        drops, patch, interp, npatch, offs, why = [], [], [], [], [], None
+        for name in ladder:
+            try:
+                mesh = WW.build_wheel(genes, name, fillet=fillet,
+                                      layer_profile=(entry, end))
+                res = fem.solve_wheel(mesh)
+                drops.append(float(res["axle_drop_mm"]))
+                patch.append(float(res["axle_drop_patch_mean_mm"]))
+                interp.append(float(res["axle_drop_interp_mm"]))
+                npatch.append(int(res["n_nodes_in_patch"]))
+                offs.append(float(res["patch_centre_offset_deg"]))
+            except Exception as exc:          # a candidate must not kill the driver
+                why = f"{type(exc).__name__}: {exc}"
+                break
+        row = {"entry": float(entry), "end": float(end),
+               "ladder": list(ladder), "axle_drop_mm": drops,
+               # THE SECOND QoI, AND IT IS THE ONE THAT MEANS SOMETHING HERE.
+               # `axle_drop_mm` reads ONE node.  How many nodes fall in the contact
+               # patch is a discretisation fact that the layer profile moves -- measured,
+               # 30 against 31 at `fine` between two adjacent cells -- and a single-node
+               # drop jumps ~0.005 mm when it changes, which is 0.5% and swamps the
+               # convergence this band is trying to read.  `axle_drop_patch_mean_mm`
+               # averages over the patch and does not have that discontinuity.  Both are
+               # reported, with the patch counts, so the reader can see which is which.
+               "axle_drop_patch_mean_mm": patch,
+               # AND THE READING A CONVERGENCE CLAIM SHOULD ACTUALLY USE.  Both of the
+               # above snap to nodes -- one to the nearest, one to a count inside a fixed
+               # window -- and the layer profile moves the rim's circumferential phase, so
+               # both carry a term that is about the blocking rather than the solution.
+               # `axle_drop_interp_mm` reads the drop AT the bottom.  See `wheel_fem`.
+               "axle_drop_interp_mm": interp,
+               "patch_centre_offset_deg": offs,
+               "n_nodes_in_patch": npatch, "why": why}
+        if why is None and len(drops) == len(ladder):
+            row["spread_pct"] = _spread(drops)
+            row["patch_spread_pct"] = _spread(patch)
+            row["interp_spread_pct"] = _spread(interp)
+            # THE SHARPER INSTRUMENT, and this file already argued for it once: a spread
+            # over three rungs cannot tell a settled series from two rungs agreeing by
+            # luck, while the ratio of successive differences can.  `SETTLING_RATIO` is
+            # this module's own threshold, measured against ladders where every probe was
+            # singular, and it is reused here rather than a second number invented.
+            di = [interp[i + 1] - interp[i] for i in range(len(interp) - 1)]
+            r = (di[-1] / di[-2]) if len(di) > 1 and abs(di[-2]) > 1e-15 else None
+            row["interp_increments_mm"] = di
+            row["interp_increment_ratio"] = r
+            row["interp_settling"] = bool(r is not None and abs(r) < SETTLING_RATIO)
+            row["interp_settled_estimate_mm"] = (
+                float(interp[-1] + di[-1] * r / (1.0 - r))
+                if r is not None and abs(r) < 1.0 else None)
+            row["patch_count_moves"] = bool(len(set(npatch)) > 1)
+            row["inside_band"] = bool(row["spread_pct"] <= CONVERGENCE_BAND_PCT)
+            row["inside_band_patch"] = bool(
+                row["patch_spread_pct"] <= CONVERGENCE_BAND_PCT)
+        else:
+            row["spread_pct"] = row["patch_spread_pct"] = None
+            row["interp_spread_pct"] = row["interp_increment_ratio"] = None
+            row["interp_increments_mm"] = row["interp_settled_estimate_mm"] = None
+            row["interp_settling"] = None
+            row["inside_band"] = row["inside_band_patch"] = None
+            row["patch_count_moves"] = None
+        rows.append(row)
+    return {"band_pct": CONVERGENCE_BAND_PCT, "ladder": list(ladder), "rows": rows}
+
+
+def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=False):
     genes = load_genes(genome)
     n_sp = WW.NUMBER_OF_SPOKES
     out = {"genome": genome, "ladder": list(ladder), "n_spokes": n_sp,
@@ -487,6 +586,18 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None):
                "n_nodes": int(mesh.n_nodes),
                "h": 1.0 / math.sqrt(mesh.n_elements),
                "axle_drop_mm": float(res["axle_drop_mm"]),
+               # THE SAME DEFLECTION, READ OVER THE WHOLE CONTACT PATCH.  PART 12 quoted
+               # the filleted ladder's convergence off `axle_drop_mm`, which is ONE node,
+               # and PART 17 found that reading carries a discrete jump: how many nodes
+               # fall in the patch is a discretisation fact, it changes between adjacent
+               # layer profiles at `fine` (30 against 31, measured), and a single-node
+               # drop moves ~0.005 mm when it does.  Both readings and the patch count
+               # are recorded from here on so that a convergence claim can be checked
+               # against the one it was not made with.
+               "axle_drop_patch_mean_mm": float(res["axle_drop_patch_mean_mm"]),
+               "axle_drop_interp_mm": float(res["axle_drop_interp_mm"]),
+               "patch_centre_offset_deg": float(res["patch_centre_offset_deg"]),
+               "n_nodes_in_patch": int(res["n_nodes_in_patch"]),
                "global_max_vm_mpa": float(vm.max()), "corners": {}}
         rung_pts = probe_points(genes, cfg, fillet)
         rec["global_peak"] = nearest_probe(xy[int(np.argmax(vm))], rung_pts, n_sp)
@@ -603,9 +714,62 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None):
             r = abs(ratios[-1])
             rec["settled_estimate_mpa"] = float(v[-1] + d[-1] * r / (1.0 - r))
 
+    # THE DEFLECTION LADDER'S CONVERGENCE, ON BOTH READINGS AND WITH THE TAIL.
+    #
+    # PART 12 stated this arc's reason 2 as a SPREAD over `coarse..fine` of `axle_drop_mm`
+    # and got 0.141%.  PART 18 showed that reading snaps to the nearest node and that the
+    # sequence it produces has increments of +0.001359 then -0.001236 -- a ratio of
+    # -0.909, which is noise.  Read at the bottom the ladder is monotone and settles, and
+    # the honest statement of reason 2 is not the spread at all but the REMAINING TAIL:
+    # what is still to come after the finest rung.  Both are reported, so the claim can be
+    # checked against the reading it was not made with.
+    rung_drops = {"node": [r["axle_drop_mm"] for r in out["rungs"]],
+                  "interp": [r["axle_drop_interp_mm"] for r in out["rungs"]]}
+    out["deflection"] = {}
+    for key, v in rung_drops.items():
+        v = v[1:]                      # `smoke` is not on the convergence ladder
+        d = [v[i + 1] - v[i] for i in range(len(v) - 1)]
+        r = (d[-1] / d[-2]) if len(d) > 1 and abs(d[-2]) > 1e-15 else None
+        tail = (abs(d[-1] * r / (1.0 - r)) if r is not None and abs(r) < 1.0 else None)
+        out["deflection"][key] = {
+            "rungs": list(ladder[1:]), "values_mm": list(v),
+            "spread_pct": 100.0 * (max(v) - min(v)) / (sum(v) / len(v)),
+            "increments_mm": d, "increment_ratio": r,
+            "monotone": bool(d) and (all(x > 0 for x in d) or all(x < 0 for x in d)),
+            "settling": bool(r is not None and abs(r) < SETTLING_RATIO),
+            "remaining_tail_mm": tail,
+            "remaining_tail_pct": (None if tail is None else 100.0 * tail / v[-1]),
+            "settled_estimate_mm": (None if tail is None
+                                    else v[-1] + d[-1] * r / (1.0 - r))}
+
     if continuity is not None:
         out["continuity"] = continuity_sweep(genes, continuity, CONTINUITY_RADII_MM,
                                              fillet_ref=fillet)
+    if profiles and fillet is not None:
+        import study_fillet_block as fbk
+        # The ridge, plus BOTH published pairs as controls -- the shipped one because it
+        # is what 0.141% was measured at, and the genome-robust one because 0.513% is the
+        # number this whole sweep exists to put in context.  De-duplicated, order kept.
+        pairs, seen = [], set()
+        for p in (tuple(fbk.LAYER_PROFILE_CANDIDATES)
+                  + tuple(fbk.LAYER_PROFILE_FINE_CANDIDATES)
+                  + ((fbk.GENOME_ROBUST_ENTRY, fbk.GENOME_ROBUST_END),
+                     (fbk.LAYER_ENTRY_SLOPE, fbk.LAYER_END_OFFSET))
+                  + tuple(fbk.LAYER_PROFILE_FRONTIER)):
+            if p not in seen:
+                seen.add(p)
+                pairs.append(p)
+        out["profiles"] = profile_convergence(genes, pairs, fillet=fillet)
+        out["profiles"]["shipped_pair"] = [float(fbk.LAYER_ENTRY_SLOPE),
+                                           float(fbk.LAYER_END_OFFSET)]
+        out["profiles"]["genome_robust_pair"] = [float(fbk.GENOME_ROBUST_ENTRY),
+                                                 float(fbk.GENOME_ROBUST_END)]
+        # Which of the priced pairs were CANDIDATES rather than controls.  Carried so a
+        # reader (and a test) can tell "holds the band" from "holds the band AND clears
+        # the barrier" without re-deriving the candidate set from the other study.
+        out["profiles"]["candidates"] = [
+            list(p) for p in dict.fromkeys(tuple(fbk.LAYER_PROFILE_CANDIDATES)
+                                           + tuple(fbk.LAYER_PROFILE_FINE_CANDIDATES))]
     return out
 
 
@@ -679,6 +843,135 @@ def _print(rep):
                   f"{row['rel_to_unfilleted']:+8.2%}")
         print(f"    genome's own pair    {c['shipped_fillet_axle_drop_mm']:>12.6f} mm  "
               f"{c['shipped_rel_to_unfilleted']:+8.2%}")
+
+    if "deflection" in rep:
+        print("\n  THE DEFLECTION LADDER, ON BOTH READINGS — the spread is not the claim, "
+              "the remaining TAIL is")
+        print(f"      {'reading':>8s} {'spread':>8s} {'monotone':>9s} {'ratio':>8s}"
+              f" {'settles':>8s} {'tail':>10s} {'tail %':>8s}   values")
+        for key, dd in rep["deflection"].items():
+            r = dd["increment_ratio"]
+            t, tp = dd["remaining_tail_mm"], dd["remaining_tail_pct"]
+            print(f"      {key:>8s} {dd['spread_pct']:7.3f}% "
+                  f"{str(dd['monotone']):>9s} "
+                  + (f"{r:8.3f}" if r is not None else f"{'-':>8s}")
+                  + f" {str(dd['settling']):>8s} "
+                  + (f"{t:10.6f} {tp:7.3f}%" if t is not None
+                     else f"{'-':>10s} {'-':>8s}")
+                  + "   " + "  ".join(f"{v:.6f}" for v in dd["values_mm"]))
+        n, i = rep["deflection"]["node"], rep["deflection"]["interp"]
+        if not n["monotone"] and i["monotone"]:
+            print("    the node reading is NOT monotone and the interpolated one is — "
+                  "PART 12's spread was")
+            print("    computed on a sequence whose increments change sign, which is "
+                  "noise rather than convergence.")
+
+    if "profiles" in rep:
+        pr = rep["profiles"]
+        ship, robust = tuple(pr["shipped_pair"]), tuple(pr["genome_robust_pair"])
+        print("\n  WHAT EACH CANDIDATE LAYER PROFILE COSTS THE DEFLECTION'S CONVERGENCE "
+              "(FILLET_PLAN PART 16)")
+        print(f"    the band is +-{pr['band_pct']:.1f}% over "
+              + "..".join(pr["ladder"]) + ", which is what PART 12 checked 0.141% against")
+        print("    TWO READINGS OF THE SAME DEFLECTION, because the one PART 12 used "
+              "reads a SINGLE NODE and")
+        print("    how many nodes fall in the contact patch is a discretisation fact the "
+              "profile moves:")
+        print(f"      {'entry':>6s} {'end':>5s} {'1-node spread':>14s} {'band':>5s}"
+              f" {'patch-mean':>11s} {'band':>5s}  {'patch n':>14s}   note")
+        for row in pr["rows"]:
+            pair = (row["entry"], row["end"])
+            note = ("<- shipped" if pair == ship else
+                    "<- genome-robust (§54)" if pair == robust else "")
+            if row["spread_pct"] is None:
+                print(f"      {row['entry']:+6.2f} {row['end']:5.2f} "
+                      f"{'REFUSED: ' + (row['why'] or '')[:38]:>48s}   {note}")
+                continue
+            print(f"      {row['entry']:+6.2f} {row['end']:5.2f} "
+                  f"{row['spread_pct']:13.3f}% "
+                  f"{'yes' if row['inside_band'] else 'NO':>5s} "
+                  f"{row['patch_spread_pct']:10.3f}% "
+                  f"{'yes' if row['inside_band_patch'] else 'NO':>5s}  "
+                  f"{str(row['n_nodes_in_patch']):>14s}   {note}")
+        ok = [r for r in pr["rows"] if r["inside_band"]]
+        okp = [r for r in pr["rows"] if r["inside_band_patch"]]
+        print(f"    {len(ok)}/{len(pr['rows'])} hold the band on the single node, "
+              f"{len(okp)}/{len(pr['rows'])} on the patch mean.")
+        srow = next((r for r in pr["rows"] if (r["entry"], r["end"]) == ship), None)
+        if srow and srow["inside_band"] and not srow["inside_band_patch"]:
+            print(f"    AND THE SHIPPED PAIR IS ONE OF THE ONES THAT DISAGREE: "
+                  f"{srow['spread_pct']:.3f}% on the node it was")
+            print(f"    measured on, {srow['patch_spread_pct']:.3f}% over the patch — so "
+                  "PART 12's 0.141% is a single-node")
+            print("    reading and the band it was checked against is not settled by it.")
+        by_entry, by_end = {}, {}
+        for r in pr["rows"]:
+            if r["spread_pct"] is not None:
+                by_entry.setdefault(r["entry"], []).append(r["spread_pct"])
+                by_end.setdefault(r["end"], []).append(r["spread_pct"])
+        print("    NEITHER VARIABLE ALONE PREDICTS IT, which is why the whole candidate "
+              "set had to be priced:")
+        print(f"      {'entry':>6s}   spread over the ends priced")
+        for e in sorted(by_entry, reverse=True):
+            print(f"      {e:+6.2f}   "
+                  + ", ".join(f"{x:.3f}%" for x in sorted(by_entry[e])))
+        print(f"      {'end':>6s}   spread over the entries priced")
+        for n in sorted(by_end):
+            print(f"      {n:6.2f}   "
+                  + ", ".join(f"{x:.3f}%" for x in sorted(by_end[n])))
+        print("    the failing set is the MIDDLE of the space — a short end with an entry "
+              "steep enough to matter —")
+        print("    and it covers almost all of the barrier-clearing region.  Almost.")
+        print("    AND THE READING THAT SNAPS TO NO NODE AT ALL, which is the one a "
+              "convergence claim should use:")
+        print(f"      {'entry':>6s} {'end':>5s} {'interp spread':>14s} {'ratio':>7s}"
+              f" {'settling':>9s} {'settled est':>12s}   {'centre offset, deg':>26s}")
+        for row in sorted(pr["rows"], key=lambda x: (x["interp_increment_ratio"]
+                                                     if x["interp_increment_ratio"]
+                                                     is not None else 9.0)):
+            if row["interp_spread_pct"] is None:
+                continue
+            est = row["interp_settled_estimate_mm"]
+            note = ("  <- shipped" if (row["entry"], row["end"]) == ship else
+                    "  <- genome-robust (§54)"
+                    if (row["entry"], row["end"]) == robust else "")
+            print(f"      {row['entry']:+6.2f} {row['end']:5.2f} "
+                  f"{row['interp_spread_pct']:13.3f}% "
+                  f"{row['interp_increment_ratio']:7.3f} "
+                  f"{'yes' if row['interp_settling'] else 'NO':>9s} "
+                  + (f"{est:12.6f}" if est is not None else f"{'-':>12s}")
+                  + "   " + ", ".join(f"{o:+.3f}" for o in
+                                      row["patch_centre_offset_deg"]) + note)
+        print(f"    the SPREAD no longer separates the profiles at all — every one of "
+              "them is near 0.5%, including")
+        print("    the pair that ships.  The RATIO does, and it orders them the other "
+              "way up from the genome-box")
+        print(f"    floor.  `SETTLING_RATIO` is this module's own threshold "
+              f"({SETTLING_RATIO}) and is not re-invented here.")
+
+        cand = {tuple(p) for p in pr["candidates"]}
+        both = [r for r in pr["rows"] if (r["entry"], r["end"]) in cand
+                and r["interp_settling"]]
+        if both:
+            print(f"    {len(both)} of the {len(cand)} barrier-clearing candidates "
+                  "SETTLE on the interpolated reading:")
+            for r in sorted(both, key=lambda x: (x["entry"], x["end"])):
+                print(f"      entry {r['entry']:+.2f}, end {r['end']:.2f} — "
+                      f"{r['spread_pct']:.3f}% on the node, "
+                      f"{r['patch_spread_pct']:.3f}% over the patch, "
+                      f"patch n {r['n_nodes_in_patch'][-1]} at the finest rung")
+            print("    every one of them reaches a patch of "
+                  + str(sorted({r['n_nodes_in_patch'][-1] for r in both}))
+                  + " nodes at `fine`, and every candidate that fails")
+            print("    reaches fewer — so what the band is separating here is the "
+                  "CONTACT PATCH's resolution,")
+            print("    not the fillet's.  Which of these is best is a question for the "
+                  "genome-box floor, and")
+            print("    `study_fillet_block` reports that; this file reports only that "
+                  "they are admissible.")
+        else:
+            print("    and no candidate holds both bands: the two-objective profile "
+                  "does not exist on this grid.")
     print("=" * 78 + "\n")
 
 
@@ -709,10 +1002,13 @@ def main():
                     help="none (default) | genome | R_hub,R_rim in mm")
     ap.add_argument("--continuity", default=None,
                     help="config name for the R -> 0 control; filleted runs only")
+    ap.add_argument("--profiles", action="store_true",
+                    help="price each candidate layer profile's deflection convergence "
+                         "(FILLET_PLAN PART 16); filleted runs only, ~80 s")
     ap.add_argument("--out", default=os.path.join(HERE, "study_corner_singularity.json"))
     args = ap.parse_args()
     rep = run(args.genome, tuple(args.ladder.split(",")),
-              fillet=args.fillet, continuity=args.continuity)
+              fillet=args.fillet, continuity=args.continuity, profiles=args.profiles)
     _print(rep)
     with open(args.out, "w") as fh:
         json.dump(rep, fh, indent=2)

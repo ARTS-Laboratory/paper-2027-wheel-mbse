@@ -8058,6 +8058,13 @@ passes `R_hub_fillet=` to the EXPORTER, where fillets have always been geometry.
 
 ### §53 — 2026-08-23. THE RIM TRI-BLOCK IS BUILT. BOTH OF §37's CLAUSES ARE RETIRED AND IT MESHES AT 77x THE BLOCK IT REPLACES — BUT IT FOLDS ON A QUARTER OF THE GENE BOX, AND THAT IS A THIRD OBSTACLE NEITHER §37 NOR §51 NAMED
 
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (§72, §76).**
+> Every genome-box figure in this section comes from the uniform Latin hypercube in
+> `study_mesh_quality.latin_hypercube` over the full gene box. That sampler puts about
+> **one genome above 35 degrees of arc span in sixty-four**, and a draw conditioned on
+> arc span reaches bows to 1.25 against its maximum of 0.54. The numbers below are
+> correct about what was drawn; read "the box" as "this draw" throughout.
+
 §52 promoted the rim tri-block to ranked item 1 and called it *"the whole remaining path to
 a quotable peak"*. §51 had already re-priced it, with a scratch probe it filed **as** a
 probe — *"no driver, no artifact, no test — precisely so that nobody quotes it as this
@@ -8211,3 +8218,1817 @@ successor's value rests on *and then X will improve*, measure X on the CURRENT m
 first". This is the complement: **when a successor's value rests on a construction that
 does not exist, the thing that stops it is often not any of the reasons anyone listed** —
 §37 named seams and strips, §51 retired both, and what stopped it was neither.
+
+---
+
+### §54 — 2026-08-23. THE FILLETED SECTOR'S QUALITY FAILURE IS FIXABLE ACROSS GENOMES — NINE OF NINE CLEAR INSTEAD OF FOUR OF NINE — BUT IT IS NOT ADOPTED, BECAUSE IT SPENDS §52's OWN RESULT FOR A BENEFIT NOTHING YET COLLECTS. AND THE SWEEP FOUND A GENOME BUG THAT HAS NOTHING TO DO WITH THE FILLET
+
+§48 ranked item 2 as "make the filleted blocking genome-robust" — 6 of 16 feasible
+genomes refuse it outright, 6 of the 10 that build sit under `MIN_SJ_TARGET`. This is
+that item, worked on the QUALITY half only. Full record: FILLET_PLAN.md STEP 1 RECORD
+PART 13.
+
+**The quality half is fixable, and by a wide margin.** §48's `LAYER_ENTRY_SLOPE` /
+`LAYER_END_OFFSET` were an argmax over ONE genome's radius box — the same scope limit
+§48 FINDING 6 already diagnosed for the blocking itself. Re-derived against the ten
+genomes §48 already drew (`sweep_layer_profile_genomes`, new in
+`studies/study_fillet_block.py`), a different pair — `entry = -0.75, end = 0.70` against
+the shipped `-0.45, 1.60` — clears `MIN_SJ_TARGET` for **nine of nine** non-pathological
+built genomes, against **four of nine** at the shipped pair.
+
+**It is measured and reported, not shipped, and the reason is a priced trade rather than
+caution.** The same shipped genome §52 measured PART 12's headline result on pays for the
+other nine: at the genome-robust pair, the filleted axle-drop spread over `coarse..fine`
+widens from §52's **0.141%** to **0.513%**, crossing back over the +-0.3% band that
+result was measured against. And the REFUSAL half of item 2 — the hub sector-fit
+limit — is untouched by this pair or any other choice of `entry`/`end`; it is a pure
+function of the genome's own geometry and the fixed 30-degree sector. So adopting the
+new pair today would spend a working, published result (§52's) to partially fix one of
+two problems that still leaves the blocking un-robust either way. `blend 0.0` in §53 is
+the standing precedent for this exact call.
+
+**The sweep also found a genome defect that is not about the fillet at all.** One drawn
+genome's UNFILLETED flank has a near self-intersection around one arc-length station
+that its own shipped 97-station grid happens to straddle without ever landing a folded
+element — so §48's own "unfilleted sector is clean" feasibility gate passed it. The
+fillet's trim re-parametrises the spoke's station grid onto `[s_A(hub), s_A(rim)]`, which
+for this genome puts a station almost exactly on the defect, and the trimmed spoke folds
+outright (`min scaled Jacobian` -0.05, sign-flipped). Confirmed independent of `entry`/
+`end` — bit-identical across three widely separated profiles. **The fillet is the
+instrument that found it, not the cause.** Filed rather than fixed: strengthening the
+feasibility gate to catch this class of flank defect is separate work from either item
+this section touches.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §54
+
+1. **A rule for the tri-block's interior point that holds across the gene box, and the
+   CURVED Y it probably needs alongside.** Unchanged from §53 — still open, still the
+   same shape of problem this section just solved half of for the fillet.
+2. **The filleted blocking's REFUSAL half** — the hub sector-fit limit, 6 of 16 feasible
+   genomes, untouched by §54. Narrowed from "make the filleted blocking genome-robust"
+   now that the quality half has a measured (if unshipped) fix; this is what is actually
+   left of §48's item.
+3. **A feasibility gate that catches the flank near-self-intersection §54 found.** New,
+   ranked on the strength of being a genome-validity bug independent of anything this arc
+   is about — `sweep_genomes`' own "unfilleted sector is clean" check passed a genome
+   whose flank already had it.
+4. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Unchanged.
+   Blocked behind item 2: feedback the optimizer may not use is not feedback, and item 2
+   is now item 2 above rather than fully closed.
+5. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+6. **Make `modelled_area_reference` fillet-aware** (§50).
+7. **The REST of §45's audit list** (§49).
+8. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+9. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+10. **The element-validity check** (§44).
+
+---
+
+### §55 — 2026-08-23. THE TRI-BLOCK'S INTERIOR-POINT RULE HOLDS ACROSS THE GENE BOX AT ONE CONFIG FOR FREE, AND AT THE OTHER FOR A PRICE SMALLER THAN THE ONE THE FILLET PAID
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (§72, §76).**
+> Every genome-box figure in this section comes from the uniform Latin hypercube in
+> `study_mesh_quality.latin_hypercube` over the full gene box. That sampler puts about
+> **one genome above 35 degrees of arc span in sixty-four**, and a draw conditioned on
+> arc span reaches bows to 1.25 against its maximum of 0.54. The numbers below are
+> correct about what was drawn; read "the box" as "this draw" throughout.
+
+§54's ranking put "a rule for the tri-block's interior point that holds across the gene
+box" at 1, framed as the same shape of problem the fillet's layer profile was. It is: a
+joint argmax of the worst genome's worst block, over the sixteen genomes UNCAP_PLAN Step 3
+PART 2 already drew plus the shipped genome, against a dedicated 25x25 barycentric grid
+(`sweep_w_genomes`, new in `studies/study_tri_block.py`) reaches the SAME validity ceiling
+`best_w` — a free per-genome parameter — reaches at `medium` (13/13 of the reachable
+genomes) and within one of it at `coarse` (15/16). Full record: UNCAP_PLAN.md STEP 3
+RECORD PART 3.
+
+**The price is asymmetric, and at one config there isn't one.** At `coarse` the
+genome-robust cell leaves the shipped genome's own number UNCHANGED — 0.6262 either way —
+while fixing two more drawn genomes. At `medium` it costs the shipped genome's quoted
+multiplier (0.5816 -> 0.4336, roughly 70x -> 52x over the collapse) while fixing two more
+drawn genomes and gaining one more over the barrier; 0.4336 still clears `MIN_SJ_TARGET` by
+more than double. Measured and not adopted — but for a reason distinct from every prior use
+of that phrase: nothing reads the tri-block's `chosen` cell except this file's own printed
+table, since the construction is not wired into `sector_blocks` at all. Adopting the
+genome-robust cell would change a quoted number and nothing else, which is why the choice
+is left to whoever next picks up this arc rather than decided here.
+
+**What is still open.** The genome no `w` reaches at either config (41.2°, plus three more
+unreachable at `medium` alone) is untouched — that is the curved Y's question, and the
+ceiling itself says a rule alone cannot close it. Item 1 below is narrowed accordingly.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §55
+
+1. **The curved Y.** Narrowed from "a rule for the interior point that holds across the
+   gene box, and the curved Y it probably needs alongside" — the rule half now has a
+   measured (if unshipped) answer at the ceiling `best_w` sets, and what is left is the one
+   genome per config no placement of the straight Y's interior point can rescue. The
+   Winslow column said the number is set by where the spokes go, not by how the interiors
+   are filled, and they are straight lines today.
+2. **The filleted blocking's REFUSAL half** — the hub sector-fit limit, 6 of 16 feasible
+   genomes, unchanged from §54.
+3. **A feasibility gate that catches the flank near-self-intersection §54 found.**
+   Unchanged from §54.
+4. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Unchanged.
+5. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+6. **Make `modelled_area_reference` fillet-aware** (§50).
+7. **The REST of §45's audit list** (§49).
+8. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+9. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+10. **The element-validity check** (§44).
+
+---
+
+## §56 — 2026-08-23. [READ "THE WHOLE REACHABLE BOX" AS "THE UNIFORM DRAW" — SEE §72 AND §76.] THE CURVED Y IS BUILT, AND IT MAKES A FIXED RULE VALID ON THE WHOLE REACHABLE BOX AT ONE CONFIG — BUT THE GENOME THAT REFUSES IT IS NOT THE ONE THE MECHANISM PREDICTED
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (§72, §76).**
+> Every genome-box figure in this section comes from the uniform Latin hypercube in
+> `study_mesh_quality.latin_hypercube` over the full gene box. That sampler puts about
+> **one genome above 35 degrees of arc span in sixty-four**, and a draw conditioned on
+> arc span reaches bows to 1.25 against its maximum of 0.54. The numbers below are
+> correct about what was drawn; read "the box" as "this draw" throughout.
+
+§55's revised successors ranked the curved Y first, narrowed to "the one genome per config
+no placement of the straight Y's interior point can rescue." That is now built, measured at
+both configs, and it retires more than the narrowing expected and less than the mechanism
+promised. UNCAP_PLAN.md's STEP 3 RECORD PART 4 has the full record; this is the section
+number and the ranking.
+
+**What the curve is.** §53's Winslow column said the tri-block's number is set by where the
+Y's three spokes GO, not by how the interiors are filled, because each spoke is a BOUNDARY
+of two blocks and per-block smoothing holds it. `_bent_spoke` moves them. Each spoke is
+blended toward the two pieces of the region's own boundary it faces across its two quads,
+at the fraction where its own foot sits between them, with a Coons correction that pins its
+endpoints exactly — so **the three internal seams stay exact for every bend**, and no
+resampling enters, because `splits` already forces the spoke and the two curves it blends
+to carry the same node count. One parameter, `bend`, and `bend = 0.0` returns the straight
+spoke untouched rather than an array equal to it.
+
+```
+                        per-genome ceiling            one FIXED (w, bend) rule
+config   straight    curved   rescued      straight valid/clear/worst   curved valid/clear/worst
+coarse     16/17     16/17       0            15/16  13  -0.0204          16/16  13  +0.0478
+medium     14/17     16/17       2            13/16  12  -1.0000          13/16  13  -0.4875
+```
+
+**At `coarse` a single fixed rule becomes valid on every genome the plane reaches**, at
+bend 0.20, with the joint floor moving from -0.0204 to +0.0478 — and it costs the shipped
+genome nothing, 0.6262 either way. **At `medium` the curve raises the ceiling instead of
+the count**: two genomes no interior point rescues become valid (35.3° at 0.3464, 15.9° at
+0.1698) and a third crosses `MIN_SJ_TARGET` (22.7°, 0.0780 -> 0.2366), while one fixed rule
+still reaches 13 of 16 and the shipped genome would pay 0.5816 -> 0.4384 to sit at it.
+
+**The bend is inert where the region is fat.** One genome of seventeen wants a non-zero
+bend at `coarse` and four do at `medium`; at the published cell the shipped genome's number
+moves across the whole bend range by 0.000000 at `coarse` and 0.001 at `medium`. That is
+what says the curve is a correction to cutting chords and not a knob being tuned.
+
+**The mechanism is the BOW, not the arc span — and it does not explain the survivor.**
+§53's gene box named the straight Y's failure mode as the wide weld arc. The quantity is
+really the arc's greatest departure from its own chord over the region's cross-section
+length, now `bow_over_width`: at `coarse` the fixed straight rule folds on 0.264-0.498 and
+holds on 0.009-0.129, cleanly separated, and it sorts 18.5° (bow 0.149, fine) from 15.9°
+(bow 0.264, folded) the way the arc span cannot. But **the largest bow in the box, 0.498, is
+a genome the curve reaches**, and the one that refuses everything has a bow of 0.491.
+**[FALSIFIED AS A STATEMENT ABOUT THE DESIGN SPACE — §72.** "The largest bow in the box" is
+the largest bow the UNIFORM sampler drew. Conditioning the draw on arc span reaches bows to
+**1.25**, against that sampler's maximum of 0.54. The non-separation below is real and the
+sentence around it is a fact about a draw.**]**
+`test_what_the_curve_does_NOT_reach_stays_reported` asserts the NON-separation, so that a
+future run which does separate them registers as a finding.
+
+**The refusal is priced at every free count, not just the one that ships.** 41.2° folds at
+every interior point, every bend, and every admissible `B` at both configs — ceiling
+-0.0134, valid at none — and a hand probe pushing the interior point outside the published
+search box only reaches -0.0064, so the box is not the constraint either.
+
+**Measured, not adopted, for the third time in this arc and for §53's reason.** `bend`
+defaults to 0.0, `chosen` is still the straight Y's single-genome argmax, `per["sector"]`
+still reports 0.626233 / 0.581582 and 76.6x / 70.5x, `UNCAP_DEFAULT` is still `(True, 1.0)`
+and `sector_blocks` still returns seven blocks. The regenerated artifact was diffed against
+the committed one: the only non-additive change is the wall clock. `make triblock` is now
+~290 s and the Makefile's help says so.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §56
+
+1. **The filleted blocking's REFUSAL half** — the hub sector-fit limit, 6 of 16 feasible
+   genomes, unchanged from §54 and §55. Now the top item: the tri-block arc has had two
+   sessions and both of its named levers are measured, while this one has been ranked
+   second through two revisions without being touched.
+2. **A feasibility gate that catches the flank near-self-intersection §54 found.**
+   Unchanged from §54 and §55.
+3. **What makes a region impossible.** Demoted from §55's item 1 in substance as well as
+   rank: the curved Y is built, so what is left is not a construction but a QUANTITY — the
+   one that separates the 0.491-bow genome that refuses everything from the 0.498-bow one
+   the curve reaches. Everything needed to look for it is in the artifact.
+4. **A bend that is a FUNCTION of the genome rather than a constant.** The curve enlarged
+   what is reachable without making a constant rule better at reaching it, so at `medium`
+   the gap between the per-genome ceiling (16/17) and one fixed rule (13/16) is now wider
+   than the straight Y's was. `bow_over_width` is the obvious argument to fit against.
+5. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** Unchanged.
+6. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+7. **Make `modelled_area_reference` fillet-aware** (§50).
+8. **The REST of §45's audit list** (§49).
+9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+11. **The element-validity check** (§44).
+
+---
+
+## §57 — 2026-08-23. THE FILLETED BLOCKING'S REFUSAL HALF CLOSES, THE NUMBER THAT CLOSES IT WAS ALREADY IN THE FILE, AND IT DOUBLES WHAT §54'S SHELVED PROFILE IS WORTH
+
+§56 ranked "the filleted blocking's REFUSAL half — the hub sector-fit limit, 6 of 16
+feasible genomes" first, noting it had been ranked second through two revisions without
+being touched. It is now measured. FILLET_PLAN.md's STEP 1 RECORD PART 14 has the full
+record; this is the section number, the two findings that reach outside the fillet arc,
+and the ranking.
+
+**The refusal was already predictable.** §48's FINDING 4 bisected `sector_fit_limit` — the
+radius at which the fillet's tangent point reaches the next sector's corner — and FINDING 6
+named it as the mechanism behind all six refusals. What nobody had done is compute it **per
+drawn genome** and compare it to that genome's own `R_hub`. `sector_fit_margin` does, and
+**it classifies 16 of 16**: every genome whose radius exceeds its own limit refuses, no
+other does. The margins run -0.4833 to +5.8980 mm across genomes that all pass the same
+feasibility filter, so this is a wide feature of the design space rather than a boundary
+effect. That turns the refusal from an exception caught after a build attempt into a
+feasibility number of the same kind as `evaluate_design`'s `x_order`/`hub_overlap` pair —
+which is the shape the flank near-self-intersection gate (item 2 below) also wants.
+
+**And the fix is the same number used the other way.**
+
+```
+  profile         clamp    built   clears 0.2   min scaled J range    median
+  shipped          none    10/16       4/16      -0.0508...+0.2898    0.1780
+  shipped          0.95    16/16       8/16      -0.0508...+0.2898    0.2081
+  genome_robust    none    10/16       9/16      -0.0508...+0.4592    0.2872
+  genome_robust    0.95    16/16      15/16      -0.0508...+0.5156    0.2915
+```
+
+Clamping each radius inside its own sector's room makes **every drawn genome build**, and
+it is inert on the shipped genome (hub 0.6636 against a limit of 3.1297; the rim has no
+limit at all), so it costs the arc's published numbers nothing. It is insensitive to its
+own factor across 0.75-0.99, and the test asserts the insensitivity rather than the value.
+
+**A gate and a fix are different and the record keeps them apart.** `binds` is the gate:
+exact, free, and it loses the genome. The clamp keeps the genome and models a smaller
+fillet than the genes asked for — fine for an instrument sweeping the box, fine for an
+optimizer only if the objective is told the clamped radius. If `R_hub`/`R_rim` become live
+FEA genes the clamp is a bound projection, which is standard, provided the projected value
+is what is reported back.
+
+**THE FINDING THAT REACHES OUTSIDE THE FILLET ARC: §54's decision was taken against a
+premise that is now false.** §54/FILLET_PLAN PART 13 declined the genome-robust layer
+profile for two reasons. The first stands: it costs the shipped genome's filleted
+axle-drop spread 0.141% -> 0.513%, back across the ±0.3% band, and the clamp does not
+touch that. The second was that the refusals were untouched by any profile, so *"six of
+sixteen feasible genomes still refuse outright regardless"* and nothing would collect what
+the profile bought. With the clamp, that profile takes the draw from 8/16 clearing the
+barrier to **15/16** — the exception being the trimmed-spoke genome §54 already isolated.
+**The call does not change, and it now rests on one reason instead of two.** That is worth
+recording as a general lesson and not only as a fillet fact: a "measured, not adopted"
+decision is a decision against a *state of the world*, and this arc has now produced three
+of them in four sections. They need re-checking when the world moves, not just citing.
+
+**Measured, not adopted.** `sector_blocks` and `build_wheel` are untouched and still take
+the radii they are given; `clamped_radii` is called by nothing outside the study;
+`FILLET_LAYER_ENTRY_SLOPE`/`FILLET_LAYER_END_OFFSET` are still §48's. The regenerated
+artifact was diffed field-by-field against the committed one and is purely additive.
+`make filletblock` is now ~180 s and the Makefile's help says so.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §57
+
+1. **A feasibility gate that catches the flank near-self-intersection §54 found.** Now the
+   top item, and §57 makes it a better-posed one: `sector_fit_margin` is a worked example
+   of the exact shape wanted — a quantity computed from the geometry alone, before any
+   build, that classifies the draw without a false positive. The flank defect needs the
+   same treatment and does not have it.
+2. **The QUALITY half of the filleted blocking, which is now the whole of the old item 2.**
+   Eight of sixteen sit under the barrier at the shipped profile with the clamp in place.
+   The open question §57 leaves is whether §54's profile gain can be had without §54's
+   cost — a profile derived against genomes AND constrained to hold the shipped genome's
+   convergence spread, which is a two-objective version of §54's argmax and has not been
+   attempted. Re-deriving that argmax against the now-buildable sixteen (rather than ten)
+   is the cheap first half of it.
+3. **What makes a region impossible** (§56) — the quantity separating the 0.491-bow genome
+   that refuses the curved Y from the 0.498-bow one it reaches.
+4. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+5. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.** §57 raises this
+   one's stakes: the clamp is exactly the bound projection such genes would need, and it is
+   now measured.
+6. **Step 2's part C — the p-norm on a filleted mesh.** `make gci`, 95 minutes and 20.6 GB.
+7. **Make `modelled_area_reference` fillet-aware** (§50).
+8. **The REST of §45's audit list** (§49).
+9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+11. **The element-validity check** (§44).
+
+---
+
+## §58 — 2026-08-23. THE FLANK DEFECT'S GATE IS THE OPTIMIZER'S OWN FOLD BARRIER, WHICH FIVE STUDIES ALREADY USE AND THE TWO BLOCKING STUDIES NEVER ASKED
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (§72, §76).**
+> Every genome-box figure in this section comes from the uniform Latin hypercube in
+> `study_mesh_quality.latin_hypercube` over the full gene box. That sampler puts about
+> **one genome above 35 degrees of arc span in sixty-four**, and a draw conditioned on
+> arc span reaches bows to 1.25 against its maximum of 0.54. The numbers below are
+> correct about what was drawn; read "the box" as "this draw" throughout.
+
+§57's rank-1 successor was a feasibility gate for the flank near-self-intersection §54
+found — the one drawn genome whose trimmed spoke is sign-flipped at `-0.0508`, traced to a
+near self-intersection in the **unfilleted** flank at `s = 0.051`.  §57 posed it well: the
+shape wanted is a quantity computed from the geometry alone, before any build, that
+classifies the draw without a false positive.
+
+**It already existed.**  `wheel_geometry.self_intersection_margin` — `min_s(|1/kappa| -
+t/2)`, closed form off the Bezier hodograph — is exactly that, its threshold
+`MIN_FOLD_MARGIN_MM = 0.1` was calibrated over 2001 genomes, `wheel_objective` has carried
+it as a live barrier since the objective was rewritten, and `study_gnl`, `study_contact`
+and `study_wheel_fea` all gate their draws on it.  `study_fillet_block.sweep_genomes` and
+`study_tri_block.sweep_genomes` use a two-term filter plus a mesh-based clause and never
+ask.  That is the whole of why §54's genome was in the box.
+
+**It classifies.**  Two of the sixteen drawn genomes describe a part that does not exist,
+at margins `-0.3436` and `-0.0131` against a next-smallest of `+0.1244`; one of sixteen
+inverts a block, and it is in that pair; no fold-clean genome inverts anything.  The
+converse is deliberately NOT claimed — whether a folded flank shows as an inverted element
+depends on where the trim puts a station, which is a property of the grid — so the gate
+promises the direction that is a property of the geometry.
+
+**The filter it replaces leaks, and by how much is measured.**  Over 20480 draws on the
+same stream: 1454 pass the geometric pair and 514 of those fold (35.4%); 925 also mesh a
+clean unfilleted sector and **25 of those still fold (2.7%)**.  The mesh clause removes 489
+of 514 — it is a good proxy — but the box of sixteen got two, which is that rate.
+
+**And the reason the answer is a closed form and not a finer grid is measurable.**  Audited
+against the sampled flank on all 1454 at 2000 points: one disagreement, at |margin| =
+2.09e-04 mm.  Recomputed at the config's own 1200: the closed form moves ≤1.59e-03 mm and
+flips zero verdicts; the sampled flank misses two folds outright.  At the 97 stations §54's
+shipped grid uses, **the sampled test calls both folded genomes healthy and the closed form
+has already rejected both** — `-0.343621` constant to six decimals across a 40x refinement,
+against a sampled value that changes sign.  §54's anecdote is a mechanism: not "the grid
+happened to step over it" but "any grid can, and this quantity has no grid in it."
+
+**What it does to the arc's own table.**  Over parts that exist, the genome-robust profile
+under §57's clamp clears the barrier on **14 of 14** rather than 15 of 16 — §54's named
+exception disappears, because it was never this blocking's defect.  §54 already excluded
+that genome from its argmax by hand; the gate is that exclusion made principled and taken
+before the build.  The adoption call on the profile is unchanged: §54's surviving reason,
+the shipped genome's convergence spread, is measured at the shipped genome and untouched.
+
+**And what it is not.**  `study_tri_block` draws the same sixteen genomes from the same
+seed — verified — and the margin is anti-informative there: the fold-negative genomes sit
+at fixed-rule `+0.5337` and `+0.2104`, and the worst cell in the box, `-0.9597`, is
+fold-clean.  §56's "what makes a region impossible" loses a candidate rather than gaining
+an answer, and the negative is gated so it cannot rot into an assumption.
+
+**Measured, not adopted, and specifically:** the DRAW is unchanged.  Applying the gate
+would swap two genomes and move every genome-box number §54 through §57 published, at the
+same time as the gate was being judged.  Instead the margin rides on every row and the box
+is re-tallied over the survivors with the same function on the same genomes, so the
+difference between the two tables is the gate's price and nothing is confounded with it.
+Both artifacts diffed field-by-field: purely additive.  `make filletblock` ~200 s.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §58
+
+1. **The QUALITY half of the filleted blocking, which is now the only half.**  Eight of
+   sixteen sit under the barrier at the shipped profile with §57's clamp; seven of fourteen
+   over parts that exist.  Two named pieces, cheap one first: re-derive §54's `(entry, end)`
+   argmax against the now-buildable, fold-clean fourteen rather than the ten it was fitted
+   to; then the two-objective version — genome-robust AND holding the shipped genome's
+   deflection-convergence spread inside the ±0.3% band, which is the one reason §54's call
+   still rests on and has never been attacked directly.
+2. **Apply the fold gate to the draw and re-derive the box** (§58).  Priced and not taken:
+   one word in a filter tuple, two genomes out, two in, and every genome-box number in §54
+   through §57 moves at once.  Worth its own unit, where that movement is the subject.
+3. **What makes a region impossible** (§56) — the quantity separating the 0.491-bow genome
+   that refuses the curved Y from the 0.498-bow one it reaches.  Two candidates now ruled
+   out with numbers: the bow (§56) and the fold margin (§58).
+4. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+5. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.**  §57's clamp is
+   the bound projection such genes need; §58 adds the other half of the feasibility pair.
+6. **Step 2's part C — the p-norm on a filleted mesh.**  `make gci`, 95 minutes, 20.6 GB.
+7. **Make `modelled_area_reference` fillet-aware** (§50).
+8. **The REST of §45's audit list** (§49).
+9. **G1's fourth revision** — §40 confirmed the gate blocks nothing.
+10. **§32's successors 3 and 4** — §8's wall-floor economics under SVK.
+11. **The element-validity check** (§44).
+
+---
+
+## §59 — 2026-08-23. THE TWO-OBJECTIVE LAYER PROFILE EXISTS, IT BEATS THE SHIPPED PAIR ON BOTH OBJECTIVES AT ONCE, AND IT IS THE CELL EVERY SHORTLIST THROWS AWAY
+
+§58's rank-1 item was the quality half of the filleted blocking, in two named pieces: the
+cheap one, re-deriving §54's `(entry, end)` argmax against the now-buildable fold-clean
+cells; and the open one, whether §54's genome-robustness can be had without §54's cost.
+
+**The cheap piece is a negative and a useful one.**  Re-derived over fifteen cells rather
+than ten, the argmax appears to move to `(-0.90, 0.80)` — and that cell refuses one of the
+fifteen.  Ranking on "the worst over the genomes that BUILT" pays a cell for refusing a
+hard genome; §54's own argmax happened to sit where nothing refused, so its answer was
+never biased, but the clamped cells reach the corner where the profile itself starts
+refusing and there the bias bites.  On the corrected rule the re-derivation **reproduces
+§54's pair exactly**.  The argmax is not stale, so everything rested on the convergence
+cost — which is one number, measured at one alternative pair, on a broad ridge.
+
+**Pricing it needed the profile threaded to a full `build_wheel`.**  `sector_blocks`,
+`_sector_coords` and `build_wheel` now take `layer_profile=(entry, end)`; `None` is the
+shipped pair and the default path is asserted bit-identical three ways, with a test on the
+other side so that bit-identity is not vacuous.  Three linear solves per pair, nine
+seconds a ladder.
+
+**Then two wrong answers, which is the part worth keeping.**  The top eight of the ridge
+all failed the band and all had a steep entry — a clean negative, nearly written down.  The
+entry ladder falsified it: at end 1.60 every entry from -0.45 to -0.90 holds the band.  So
+the cost is carried by `end` — also wrong.  Enumerating the whole candidate set shows every
+entry straddling the band and all but two ends straddling it: **neither variable alone
+predicts the cost**, the failing set is the middle of the space, and it covers almost all
+of the barrier-clearing region.
+
+```
+  profile                      genome-box floor (15 cells)     convergence, coarse..fine
+  shipped       (-0.45, 1.60)   0.1194  under MIN_SJ_TARGET      0.141%  inside the band
+  §54's pair    (-0.75, 0.70)   0.2430  CLEARS                   0.512%  OUTSIDE
+  (-0.80, 1.00)                 0.2061  CLEARS                   0.110%  inside, and BETTER
+```
+
+`entry = -0.80, end = 1.00` clears the barrier on all fifteen, refuses none, and holds the
+deflection band more tightly than the pair that ships — floor +73%, spread 0.141% ->
+0.110%.  **It dominates the shipped profile on both measured objectives at once**, and it
+is the one cell of fourteen that every shortlist drops, because it has the lowest
+genome-box floor of the fourteen that clear the barrier.  A top-k rule ranks it fourteenth
+of fourteen.  The candidate set is now the criterion that matters — clears
+`MIN_SJ_TARGET` on the whole box, refuses none of it — and a self-check re-derives it.
+
+**Not adopted here, and for a different reason than the last three times.**  Those were
+declines: adoption would have traded away a published result.  This one would not — nothing
+measured gets worse.  It is deferred because `FILLET_LAYER_ENTRY_SLOPE`/`END_OFFSET` are
+the geometry underneath every filleted number this arc has published, and moving them
+re-dates all of it at once.  The pair is named, measured, tested and unwired; the promotion
+is its own unit with its own baseline.  Both artifacts diffed field-by-field: purely
+additive.  `make corner-fillet` ~180 s.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §59
+
+1. **Adopt `(-0.80, 1.00)` as the layer profile.**  The audit is the work, not the
+   decision: every filleted artifact re-derived and re-dated, §54's convergence and 38%
+   figure re-measured, the two constants moved, and `test_promotion.py`'s checklist
+   extended to cover a layer-profile change the way it covers a genome change.
+2. **A finer grid around `(-0.80, 1.00)`** (§59).  It is a grid point of a sweep laid out
+   for a different question — ends jump 0.80 -> 1.00 -> 1.30 — so the band-holding,
+   barrier-clearing region is located but not resolved, and its best point is not known to
+   be this one.  Cheap, and it should precede item 1 rather than follow it.
+3. **Why the middle of the profile space fails** (§59).  Short end plus steep entry spreads
+   ~0.5%; unnamed mechanism, and §54's reading — that the fillet's convergence comes from
+   removing the corner singularity — does not obviously predict a filleted region that is
+   WORSE converged than the shipped pair.
+4. **Apply the fold gate to the draw and re-derive the box** (§58).  One word in a filter
+   tuple, priced, and it moves every genome-box number in §54 through §59 at once.
+5. **What makes a region impossible** (§56) — three candidates now ruled out with numbers:
+   the bow (§56), the fold margin (§58), and the interior point (§55).
+6. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+7. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.**
+8. **Step 2's part C — the p-norm on a filleted mesh.**  `make gci`, 95 minutes, 20.6 GB.
+9. **Make `modelled_area_reference` fillet-aware** (§50).
+10. **The REST of §45's audit list** (§49).
+11. **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity check**
+    (§44).
+
+---
+
+## §60 — 2026-08-23. THE REFINEMENT FINDS A BETTER PROFILE AND THEN FINDS THAT THE CRITERION RANKING IT IS PARTLY MEASURING THE CONTACT PATCH — WHICH ALSO MAKES §54's 0.141% A SINGLE-NODE READING
+
+§59 named `(-0.80, 1.00)` and said in its own successor list that it is a grid point of a
+sweep laid out for a different question, so the admissible region was located but not
+resolved.  This resolves it at half the step, and produces two findings.
+
+**A better cell, and §59's was third.**  Eleven cells of the refined grid clear
+`MIN_SJ_TARGET` on all fifteen clamped fold-clean cells and refuse none; four are
+admissible on every criterion at once:
+
+```
+  pair               genome-box floor    1-node spread    patch-mean spread   patch n, fine
+  (-0.85, 1.00)              0.2125           0.109%            0.195%             31
+  (-0.90, 1.10)              0.2062           0.091%            0.186%             31
+  (-0.80, 1.00)  <- §59      0.2061           0.110%            0.170%             31
+  (-0.85, 1.10)              0.2002           0.116%            0.161%             31
+  shipped (-0.45, 1.60)      0.1194           0.141%            0.672%             35
+```
+
+**And then the criterion turned out to be reading something else.**  The 1-node spread
+jumps fourfold between adjacent cells with coarse and medium agreeing to 0.0002 mm and the
+whole difference in `fine`.  Chased rather than reported: not mesh quality (min scaled
+Jacobian 0.269-0.283 across the cliff, and identical at all three configs), not aspect
+ratio (a holding cell runs AR 103, a failing one 33), not topology (same element and node
+counts everywhere).  **It is the contact patch.**  Every cell that holds both bands reaches
+31 patch nodes at `fine`; every cell that fails either reaches 29 or 30.  The layer profile
+moves the patch count because the fillet re-cuts the rim blocks, and a single-node axle
+drop moves ~0.005 mm — 0.5% — when it changes.
+
+**Which re-prices §54's headline.**  *"0.141% and flat from `coarse` up"* is
+`axle_drop_mm`, one node.  The same three rungs read over the whole patch give the shipped
+pair **0.672%**, outside the band by more than a factor of two — and the patch-mean had
+never been recorded, at any rung, in any committed artifact.  Checked, not assumed.  §54's
+OTHER finding, the 38% deflection reduction, is a magnitude at one rung rather than a
+convergence claim and stands.  What falls is the reading that the filleted deflection is
+settled at 0.141%, and with it the premise that the shipped layer profile is the
+best-converged one available.
+
+**Not adopted, and now blocked on a different thing.**  §59 deferred the promotion on the
+size of the audit; that stands, and a second reason is in front of it.  `(-0.85, 1.00)` is
+better than the shipped pair on every number measured here, and every number measured here
+is a single-phase three-rung statistic just shown to carry a 0.5% contact-patch
+discontinuity.  The gate's own QoI is `axle_drop_mean_mm` — eight phases, both kinematics,
+`make gci`.  Promoting on a statistic this arc has just discredited would be §54's mistake
+made knowingly.  Both artifacts diffed field-by-field and are purely additive.
+`make filletblock` ~305 s, `make corner-fillet` ~230 s.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §60
+
+1. **`make gci` on the filleted mesh at two of the four admissible profiles.**  The only
+   instrument that settles the promotion, and now the thing everything else waits on.  95
+   minutes a pass and 20.6 GB, so cut the four to two first: `(-0.85, 1.00)` on the floor
+   and `(-0.85, 1.10)` on the patch spread bracket the set.  This subsumes what was item 8
+   — Step 2's part C is the same run.
+2. **Why the patch count moves with the layer profile at all** (§60).  The fillet re-cuts
+   `rim_ring_free` and `rim_ring_weld`, so the rim's circumferential node distribution near
+   the contact is profile-dependent — plausible, unmeasured, and if that is the mechanism
+   then the effect belongs to the re-cut rather than to the profile, which would make it
+   avoidable rather than a trade.  Cheap, geometry only, and it may remove item 1's
+   ambiguity without the 95 minutes.
+3. **Then adopt the winner** — every filleted artifact re-derived and re-dated, §54's
+   convergence and 38% figure re-measured, and `test_promotion.py`'s checklist extended to
+   cover a layer-profile change the way it covers a genome change.
+4. **`(-0.95, 0.85)` scores 0.2448, the best floor anywhere on either grid, and refuses one
+   genome** (§60).  Nothing has asked which genome or why.
+5. **Apply the fold gate to the draw and re-derive the box** (§58).
+6. **What makes a region impossible** (§56) — the bow, the fold margin and the interior
+   point are all ruled out with numbers.
+7. **A bend that is a FUNCTION of the genome rather than a constant** (§56).
+8. **FILLET_PLAN Step 3, item 1 — `R_hub` and `R_rim` as live FEA genes.**
+9. **Make `modelled_area_reference` fillet-aware** (§50); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+---
+
+## §61 — 2026-08-23. THE DEFLECTION WAS BEING READ AT WHICHEVER NODE HAPPENED TO BE NEAREST THE BOTTOM, §54's 0.141% IS THAT ARTEFACT, AND CORRECTING IT REINSTATES §54's DECLINE ON A BETTER REASON
+
+§60's item 2 was "why does the patch count move with the layer profile at all", filed as
+cheap and possibly able to remove item 1's ambiguity without the 95 minutes.  It does, and
+the answer is larger than the question.
+
+**The mechanism is in `solve_wheel`, not in the fillet.**  `axle_drop_mm` is `uy` at
+whichever `rim_outer` node is closest to `theta = -90`.  That would be harmless if `uy`
+peaked at the bottom — but the spokes are a spiral, the wheel has no mirror symmetry about
+the vertical, and `uy` runs MONOTONICALLY through the bottom at about **-0.024 mm/deg**.
+So the reading carries a first-order error set by where the nearest node happens to sit,
+and where it sits is a property of the blocking: the unfilleted mesh puts a node within
+0.05° of the bottom at every rung, while the FILLETED mesh's re-cut rim shifts the phase
+and its offset runs -0.163 / -0.076 / -0.013° up the ladder — a shrinking, h-dependent term
+injected straight into the drop.
+
+```
+  FILLETED, shipped profile      coarse    medium      fine    spread     increments      ratio
+  axle_drop_mm  (§54)          0.962456  0.963816  0.962579    0.141%   +0.001359 -0.001236  -0.909
+  interpolated at the bottom   0.956652  0.961086  0.962100    0.568%   +0.004435 +0.001014  +0.229
+```
+
+**§54 read "0.141% and flat from `coarse` up" off a sequence whose increments flip sign.**
+Read at the bottom it is monotone, spans 0.568%, and settles at ratio 0.229.  §54's OTHER
+finding — the 38% deflection reduction — is a magnitude at one rung, reads -38.7% on the
+corrected numbers, and stands.
+
+**And the instrument this repo already owns separates the profiles where the band cannot.**
+Across all 33 priced pairs the interpolated spread runs 0.464-0.665% — every profile,
+including the one that ships — so §59's and §60's "holds the band / fails the band" split
+was reading the artefact.  The ratio of successive increments does separate them, against
+`SETTLING_RATIO = 0.75`, this module's own threshold:
+
+```
+  pair                    genome-box floor    interp spread    ratio    settles?   settled est
+  shipped  (-0.45, 1.60)          0.1194          0.568%       0.229      yes       0.962401
+  (-0.85, 1.00)                   0.2125          0.565%       0.406      yes       0.963117
+  (-0.80, 1.00)  §59              0.2061          0.548%       0.458      yes       0.963508
+  (-0.75, 0.70)  §54's argmax     0.2430          0.499%       0.851      NO        0.974754
+```
+
+**The ratio orders the profiles the other way up from the genome-box floor**, and it puts
+§54's argmax above the settling threshold.  So §54's decline SURVIVES on a reason it did
+not have: the pair does not settle, rather than its spread tripling.  §59's and §60's
+candidates do settle and remain admissible.  The promotion trade is now correctly signed
+and small: **+0.07% on the extrapolated deflection for +78% on the genome-box floor**, at
+`(-0.85, 1.00)`.
+
+**Nothing promoted, every mesh bit-identical, `axle_drop_mm` computed exactly as before** —
+`axle_drop_interp_mm` and `patch_centre_offset_deg` are additional fields on `solve_wheel`'s
+result and nothing consumes them yet.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §61
+
+1. **Audit the nearest-node reading across the tree.**  Every deflection number this
+   project has quoted came from `axle_drop_mm`.  On the unfilleted mesh the offsets are
+   small and the error looks like ~0.1%, but that has been checked at ONE genome.  The
+   ±0.3% band is one of this project's load-bearing gates and it has been evaluated with an
+   instrument that snaps to nodes; `make gci`'s eight phases rotate the mesh under the
+   ground, which SAMPLES the offset rather than averaging it away.  This now outranks the
+   fillet work: it is cheap at one genome, it is the same class of defect as §29's
+   wrong-mesh cell size, and everything downstream of it is currently unpriced.
+2. **Re-derive the ±0.3% band on the interpolated reading**, wherever it is quoted.
+3. **Adopt `(-0.85, 1.00)`** — trade quantified and small, audit unchanged in size.
+4. **`(-0.95, 0.85)` scores 0.2448, the best floor on either grid, and refuses one genome**
+   (§60).  Nothing has asked which genome or why.
+5. **Apply the fold gate to the draw and re-derive the box** (§58).
+6. **What makes a region impossible** (§56); **a bend that is a FUNCTION of the genome**
+   (§56); **`R_hub`/`R_rim` as live FEA genes**; **`modelled_area_reference` fillet-aware**
+   (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**; **§32's
+   successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §62 — 2026-08-23. [PARTLY WRONG — SEE §65, WHICH CORRECTS THE TWO HEADLINE CLAIMS.]  EVERY DEFLECTION NUMBER THIS PROJECT HAS QUOTED WAS READ AT WHICHEVER NODE HAPPENED TO BE NEAREST THE GROUND, AND AWAY FROM THE SHIPPED GENOME THAT COSTS UP TO 1.1% — FOUR TIMES THE BAND IT IS GATED ON
+
+§61's item 1.  §61 found the nearest-node reading inside the fillet arc and said the
+optimizer's history was *probably* safe, with "probably" doing the work.  This prices it,
+and the answer is that the shipped genome is a lucky draw.
+
+**The defect.**  `solve_wheel`'s `axle_drop_mm` is `uy` at whichever `rim_outer` node is
+closest to `theta = -90`.  That is a first-order error rather than a rounding one, because
+`uy` does not peak at the bottom — the spokes are a spiral, the wheel has no mirror
+symmetry about the vertical, and `uy` runs monotonically through the bottom.  Pinned by
+`test_the_vertical_displacement_runs_MONOTONICALLY_through_the_bottom` rather than argued.
+
+**What it costs, over 7 genomes at `coarse`, unfilleted, on the gate's own 8-phase uniform
+stencil:**
+
+```
+  genome      8-phase mean bias    worst single phase
+  shipped            -0.103%             0.726%
+  drawn 0            +0.077%             0.270%
+  drawn 1            +0.122%             2.139%
+  drawn 2            -1.133%             2.061%
+  drawn 3            +0.165%             1.886%
+  drawn 4            +1.019%             2.668%
+  drawn 5            +0.250%             1.781%
+                 |bias| max 1.133%, mean 0.410%
+```
+
+**The shipped genome is at the low end of that range.**  The tree's own headline deflection
+numbers are about 0.1% off, which is why nothing has ever looked wrong — but that is luck,
+not design, and the ±0.3% band this project gates on is exceeded by a factor of four
+elsewhere in the box.
+
+**It reaches the optimizer.**  `wheel_adjoint.py:644` takes `delta = float(sec
+["axle_drop_mm"])` for both the objective value and the quantity whose gradient the
+descent follows.  So the QoI carries a genome-dependent discretisation term of order 0.4%,
+and a design can improve its reading by moving the rim's node phase rather than its
+structure.  **NOT claimed: that any past optimization outcome was wrong.**  The adjoint
+differentiates `uy` at a fixed node index, which is a legitimate gradient of a slightly
+different functional; whether a 0.4% drift changes a descent path is unmeasured and is
+filed rather than asserted.
+
+**This was predicted in the tree and never chased.**  `phase_stencil`'s own docstring
+describes `uniform` as *"the one that lets the rim's contact faceting alias into a
+chaseable bias"* — and the aliasing is visible: across 8 uniform phases the unfilleted
+centre-node offset takes only three distinct values.  Measured, `rqmc` does not fix it, it
+RANDOMISES it: on the worst genome the systematic -1.133% becomes -0.600%, +0.614%,
++0.614%, +0.341% over four shifts, mean magnitude 0.542%.  A bias becomes noise of the same
+size, which is worse for a gradient and no better for a gate.
+
+**The fix is one `np.interp` and it is already in the tree.**  `axle_drop_interp_mm` and
+`patch_centre_offset_deg` are additional fields on `solve_wheel`'s result (§61), consumed
+by nothing.  Making the interpolated value THE axle drop is the right change and it is not
+made here: it re-dates every deflection number in the repo at once, which is a mechanical
+audit with its own baseline rather than a line in another arc's unit.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §62
+
+1. **Make `axle_drop_interp_mm` the axle drop.**  The most load-bearing known defect in the
+   tree, the fix is measured and free, and everything below it is priced against numbers
+   that carry it.  The work is the audit: `test_promotion.py`'s checklist, every committed
+   artifact re-derived and re-dated, and the ±0.3% band re-stated.
+2. **Then re-derive the ±0.3% band itself** on the corrected reading, wherever quoted.
+3. **Whether the 0.4% drift changes a descent path** (§62) — one short descent from the
+   shipped genome under each reading, compared step by step.  Cheap relative to what it
+   settles, and it decides whether §62 is a reporting defect or an optimizer one.
+4. **Adopt `(-0.85, 1.00)`** as the layer profile (§61) — trade quantified and small, but it
+   should follow items 1-2 rather than precede them, because its own trade was measured on
+   the uncorrected reading.
+5. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60).
+6. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §63 — 2026-08-23. [MEASURES A PATH THE OPTIMIZER DOES NOT USE — SEE §65.]  THE NEAREST-NODE SNAP MOVES THE VALUE BY UP TO 1.1% AND THE GRADIENT BY 4-7%, AND THE GRADIENT ERROR GROWS WITH STEP LENGTH — SO §62 IS A GATING DEFECT FIRST AND A STEERING ONE SECOND
+
+§62's item 3, which was filed as the measurement that decides whether §62 is a reporting
+defect or an optimizer one.  Central differences of the 8-phase mean drop under both
+readings, at `coarse`, same solves feeding both so the reading is the only difference.
+
+**At the shipped genome the two gradients are the same vector:**
+
+```
+  |grad_node| 1.22142   |grad_interp| 1.22296   cosine 0.999994   |difference|/|grad| 0.0038
+```
+
+Twelve of the fourteen components agree to four or five digits; gene 7 differs by 14% of a
+small component and gene 11 by 0.5% of a large one.  **The descent that produced the
+shipped design was not being misled**, which is the reassuring half and it is worth having
+explicitly rather than assuming.
+
+**Away from it, it is not the same vector, and it gets worse with the step:**
+
+```
+  genome with the largest value bias (-1.133%)
+    FD step 1e-3 of the gene range   cosine 0.999195   |difference|/|grad| 0.0414
+    FD step 1e-2 of the gene range   cosine 0.997677   |difference|/|grad| 0.0727
+    worst component (gene 11)        -0.03710 vs -0.04053   ->   -0.03522 vs -0.04240
+```
+
+Ten to twenty times the shipped genome's disagreement, and **it grows with step length**,
+which is the signature of the mechanism: a longer step is more likely to cross a
+node-switch, and the objective jumps by ~0.005 mm when it does.  Cosine 0.9977 is still
+under 4 degrees, so the direction survives; individual components move by up to 17%.
+
+**So the ranking of §62's consequences is now measured rather than guessed.**  The value and
+the gate carry up to 1.1% — four times the ±0.3% band — everywhere except near the shipped
+genome.  The gradient carries 4-7% away from the shipped genome and 0.4% at it, with the
+direction intact.  A defect in what the project REPORTS and gates on, and a mild one in
+what it steers by.  **Still not claimed: that any past optimization outcome was wrong.**
+A 4-degree rotation with intact descent directions is not evidence of that, and nothing
+here re-runs a descent.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §63
+
+1. **Make `axle_drop_interp_mm` the axle drop.**  Unchanged as the top item and now
+   correctly motivated: the case is the reported value and the ±0.3% gate, not a rescue of
+   the optimizer.  The work is the audit — `test_promotion.py`'s checklist, every committed
+   artifact re-derived and re-dated, and the band re-stated.
+2. **Re-derive the ±0.3% band on the corrected reading**, wherever quoted.
+3. **Adopt `(-0.85, 1.00)`** as the layer profile (§61), after items 1-2, because its own
+   trade was measured on the uncorrected reading.
+4. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60) — which
+   genome, and why, is unasked.
+5. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §64 — 2026-08-23. THE AXLE-DROP PROMOTION'S AUDIT, MEASURED AND SCOPED — AND HALF OF IT TURNS OUT TO BE EXACTLY IMMUNE
+
+§63 left "make `axle_drop_interp_mm` the axle drop" as item 1 and called the work an audit.
+An audit whose size nobody has measured is not a plan, and this tree's own discipline says a
+promotion is never a one-file change.  So: the blast radius, enumerated, with the part that
+does not need re-running separated from the part that does.
+
+**The consumers, by what they do with the number.**  Both readings are LINEAR functionals of
+the displacement field — `uy` at one node, or `uy` interpolated between two.  That is what
+splits the list, and it is verified rather than assumed:
+
+```
+  same mesh, two loads, linear solve:   node ratio 1.300000   interp ratio 1.300000
+  shipped genome, value error +0.118%   |   drawn genome, value error -0.195%
+  ratio difference: +0.00000% at both
+```
+
+  * **CLASS A — the value is used absolutely.  Re-running required.**
+    `wheel_adjoint` (objective value and gradient), `study_corner_singularity` and its
+    fillet twin (the deflection ladders), `study_reds_hub_share`, `study_deflection_gci`
+    (the ±0.3% band itself), `study_objective`, `study_gradient`, `study_stage3_m8bi5`.
+  * **CLASS B — a RATIO of two readings on the SAME mesh.  Exactly immune where the fields
+    are proportional, second-order otherwise, and NOT re-running required.**
+    `study_wheel_fea`'s load ladder (exactly immune, measured above), `study_gnl` and
+    `study_svk_rescore`'s linear-vs-SVK ratios (the offset is identical and both readings
+    are linear functionals of their own field, so the residue is
+    `(slope_svk - slope_lin) x offset`).  **This is the expensive half of the tree and it
+    is the half that does not move** — which is the finding that makes item 1 affordable.
+  * **CLASS C — the drop is fed BACK IN as an indentation.**  `study_m9`,
+    `study_m9_buckling`, via `solve_wheel_contact_at(mesh, sec["axle_drop_mm"])`.  These
+    carry the 0.1-1% error into a contact solve rather than merely reporting it, and they
+    are the ones where the consequence is unpriced.
+  * **CLASS D — ratios across DIFFERENT meshes, so not immune.  CORRECTED THE SAME DAY:
+    THIS CLASS IS EMPTY.**  `study_contact` was put here on the strength of the phrase
+    "patch-resolution matrix" without reading what its sweep varies.  It varies `eps_n`,
+    the contact penalty, on a mesh built ONCE outside the loop — same mesh, same offset,
+    so it is Class B.  Its other ratio compares `phase` to `phase + 30`, which is one
+    whole sector of a twelve-fold wheel and therefore the same geometry against the
+    ground: measured, the offsets are identical to six decimals and both ratios are
+    exactly 1.000000000.  The only place ratios genuinely cross meshes is the mesh-ladder
+    convergence in `study_deflection_gci`, which is Class A already.
+    Recorded rather than quietly fixed because the error is the one this file keeps
+    catching: a class assigned from a name instead of from the code.
+
+**What is NOT yet known and should be settled before the promotion, not during it:**
+
+  1. Class C's sensitivity — does a 0.1-1% shift in the indentation move `study_m9`'s
+     buckling result at all?  One rerun at two indentations answers it.
+  2. ~~Class D — `study_contact`'s plateau gate.~~  **Settled the same day: there is no
+     per-mesh term in it to remove.**  See the correction above.
+  3. Whether `axle_drop_mm` should keep its name.  The honest options are to redefine it
+     (every historical number silently changes meaning) or to leave it and move the
+     consumers (every consumer must be found, which is what this section is for).  The
+     second is what this tree has done before and `test_promotion.py` is where the
+     checklist for it belongs.
+
+**Not started, deliberately.**  The re-runs include `make gci` at 95 minutes and 20.6 GB and
+`make m8bi5` at roughly two hours, and a partial promotion leaves the tree inconsistent —
+which is precisely the failure `test_promotion.py` exists to prevent.  Scoping it is the
+completable piece; executing it needs a session that can finish it.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §64
+
+1. **§64's remaining two unknowns**: Class C's sensitivity — does a 0.1-1% shift in the
+   indentation move `study_m9`'s buckling result at all — and the naming decision.  Both
+   are short and both are prerequisites for item 2.  (The third, Class D's gate, was
+   settled by reading the code: the class is empty.)
+2. **Make `axle_drop_interp_mm` the axle drop**, with Class B excluded from the re-run set
+   and `test_promotion.py` extended to carry the checklist.
+3. **Re-derive the ±0.3% band on the corrected reading.**
+4. **Adopt `(-0.85, 1.00)`** as the layer profile (§61), after items 2-3.
+5. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60).
+6. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §65 — 2026-08-23. CORRECTION TO §62 AND §63: THE OPTIMIZER AND THE ±0.3% GATE DO NOT USE THE CONTAMINATED READING. I TRACED A VARIABLE NAME INSTEAD OF THE CALL THAT PRODUCED IT
+
+§62 claimed the nearest-node reading "reaches the optimizer", citing
+`wheel_adjoint.py:644`'s `delta = float(sec["axle_drop_mm"])`.  That line is real.  **What
+`sec` is, I did not check**, and it decides the whole claim:
+
+```
+  wheel_adjoint:588,643   sec = fem.solve_wheel_contact(mesh, force=..., ...)
+  wheel_fem:1816          _attach_contact_report:  res["axle_drop_mm"] = float(indentation_mm)
+```
+
+`solve_wheel_contact` secant-iterates the indentation until the reaction matches the target
+force, and the `axle_drop_mm` it returns is **that converged prescribed indentation** — a
+boundary condition, not a reading off a node.  `solve_wheel`'s nearest-node value appears in
+that path exactly once, at `wheel_fem:1882`, as the secant's INITIAL GUESS, which a
+converged iteration forgets.
+
+**So the objective is immune, and so is its gradient.**  And §63's gradient comparison,
+which I ran on `fem.solve_wheel` directly, measures a quantity the optimizer does not
+consume.  Its numbers are correct about `solve_wheel` and irrelevant to the descent.
+
+**The gate is immune too, and its own file says so in as many words.**
+`study_deflection_gci`'s docstring: *"THE QoI HERE IS THE GATE'S ... The gate is stated on
+`axle_drop_mean_mm` under SVK: the mean over the 8-phase uniform stencil, which is what the
+`deflection` term is scored on and what every promotion has been judged by"* — and it
+explicitly contrasts that with `run_refinement`'s use of `fem.solve_wheel(mesh)`, *"ONE
+phase, LINEAR kinematics"*.  §62's headline — "four times the band it is gated on" — is
+therefore wrong: the band is not gated on this quantity.  **The file that would have told me
+this is the one whose docstring I quoted two sections earlier for something else.**
+
+**What survives, and it is still worth having:**
+
+  * `solve_wheel`'s `axle_drop_mm` genuinely carries the nearest-node error.  §61's
+    measurement of it, and the mechanism — `uy` runs monotonically through the bottom at
+    about -0.024 mm/deg because the spokes are a spiral — are unaffected.
+  * **§61's correction to §54's filleted convergence stands in full.**  Both corner ladders
+    call `fem.solve_wheel`, so "0.141% and flat from `coarse` up" really is an artefact and
+    the interpolated ladder really does settle at ratio 0.229.  That was the finding this
+    whole thread came from and it is untouched.
+  * The affected consumers are `study_corner_singularity` (both ladders),
+    `study_reds_hub_share`, `study_wheel_fea.run_refinement`, and `study_contact`'s
+    assumed-drop comparisons.  **All single-phase** — and single-phase is where the error
+    is LARGEST, up to 2.7% in §62's own table, so the number that matters for them is
+    bigger than the 8-phase figure §62 led with.
+  * §62's 8-phase table measures a mean of `solve_wheel` that nothing in the tree computes.
+    It is not wrong, it is about nobody's quantity.
+  * Class B and Class C of §64's manifest are both confirmed immune, Class D was already
+    corrected to empty, and **Class A shrinks to the four consumers above.**
+
+**The lesson, which is this file's own and I did not apply it:** §29 read a convergence
+order off a cell size measured on the wrong mesh; §60 caught a band separating profiles by
+their contact patch; and here I read a QoI's provenance off the name of the variable holding
+it.  A `["axle_drop_mm"]` subscript does not tell you which solve produced it.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §65
+
+1. **Move the four affected consumers to `axle_drop_interp_mm`.**  Much smaller than §64
+   scoped: no optimizer change, no gate change, no SVK re-run, no `make gci`.  Two of the
+   four are the corner ladders, which §61 has already re-measured; `study_reds_hub_share`
+   and `study_wheel_fea.run_refinement` are short.  The naming decision from §64 still
+   applies and is now the main open question.
+2. **Adopt `(-0.85, 1.00)`** as the layer profile (§61), which item 1 no longer blocks in
+   any large way.
+3. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60).
+4. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §66 — 2026-08-23. THE CORRECTED READING NEARLY DOUBLES A COMMITTED CONVERGENCE ORDER — 0.880 TO 1.607 — AND FLIPS THAT LADDER'S `criterion_met` FROM FALSE TO TRUE
+
+§65's item 1 was "move the four affected consumers to `axle_drop_interp_mm`", filed as
+mechanical.  Two of the four were mechanical.  The third was not.
+
+`study_wheel_fea.run_refinement` does a Richardson extrapolation and a GCI on
+`fem.solve_wheel`'s axle drop up the `smoke..fine` ladder.  That is a CONVERGENCE RATE
+computed on a quantity that snaps to the nearest node, which is the same class of defect
+as §61's filleted ladder — but here there is a threshold sitting on it.  At the shipped
+genome, unfilleted:
+
+```
+  cfg      n_elem       node     interp   centre offset   patch n
+  smoke       960   1.499486   1.497743      -0.04518          9
+  coarse     4704   1.551645   1.549819      -0.04518         23
+  medium    12288   1.562981   1.563534      +0.01341         36
+  fine      31200   1.570505   1.570021      -0.01170         64
+
+  reading   ratio   observed order   Richardson   finest err   GCI      criterion_met
+  node     1.5065       0.880         1.585362      0.937%    1.183%       False
+  interp   2.1144       1.607         1.575841      0.369%    0.463%       True
+```
+
+**The observed order goes 0.880 -> 1.607, a factor of 1.83, and `criterion_met` flips.**
+The GCI more than halves.  The offsets are individually small — a few hundredths of a
+degree — but they are not the same at each rung and they do not shrink monotonically, so
+what they inject into the ladder is noise in the *increments*, which is exactly what an
+observed order is computed from.
+
+**This is the gate §64 went looking for and put in the wrong place.**  §64 guessed
+`study_contact`'s plateau test and was corrected the same day; the threshold that actually
+moves is here.  Note what saves it from being a changed verdict: this study already
+decoupled its DECISION from this number — *"The gate's decision does not rest on the axle
+drop being converged to 0.5%; it rests on the compliance split being stable"* — and
+`decision_robust` is computed on the rim compliance share, which is a ratio and untouched.
+So the gate's conclusion stands; what was wrong is a convergence rate the file reports and
+a criterion it recorded as unmet.
+
+**AND IT DOES NOT REACH §29.**  Checked before claiming, because I got exactly this wrong
+once tonight: §29's p = 0.638 — the number matched against a Williams eigenvalue and the
+reason the corner arc exists — comes from `study_deflection_gci`, which computes
+`axle_drop_mean_mm` through `WO.objective` and therefore through the contact path, whose
+`axle_drop_mm` is a prescribed indentation.  Immune.  **The sub-second-order rate §29
+chased is a different QoI and survives.**  What §66 says is narrower and still worth
+saying: the OTHER ladder in this tree, the one-phase linear one, reports an order that is
+nearly half of what it should be.
+
+**Nothing promoted, `axle_drop_mm` still the node reading, every top-level key in
+`study_wheel_fea.json` unchanged** — the new `extrapolation` block carries both fits side
+by side and is the one to quote, and the artifact diff is additive apart from a timing
+field.  `study_reds_hub_share` now carries both readings for the same reason.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §66
+
+1. **Finish §65's item 1: `study_contact`'s assumed-drop comparisons**, the last of the
+   four, and then re-derive any convergence rate in the tree that is computed on
+   `solve_wheel`.  §66 is the demonstration that these are not cosmetic.
+2. **Adopt `(-0.85, 1.00)`** as the layer profile (§61).
+3. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60) — which
+   genome, and why, is unasked.
+4. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §67 — 2026-08-23. THE LAST OF THE FOUR CONSUMERS, PRICED: `study_contact`'s COMPARISONS MOVE BY 0.1-0.3 POINTS AND NOTHING FLIPS, AND CLASS B IS CONFIRMED AT 0.016 POINTS
+
+§66's item 1 left one consumer unpriced.  `study_contact` compares a contact solve's drop —
+a PRESCRIBED indentation, exact — against `solve_wheel`'s assumed-patch drop, which is the
+node reading.  A mixed comparison, so unlike the same-mesh ratios it does not cancel.
+
+Measured at the shipped genome, `coarse`, across phase:
+
+```
+   phase    contact  assumed node  assumed interp   rel node   rel interp
+     0.0   1.463794      1.551645        1.549819    -5.662%     -5.551%
+    10.0   1.937837      1.931691        1.932351    +0.318%     +0.284%
+    20.0   1.453034      1.481613        1.485833    -1.929%     -2.207%
+    30.0   1.463794      1.551645        1.549819    -5.662%     -5.551%
+   spread of rel_diff                                 5.980%      5.835%
+```
+
+**Every comparison moves by 0.03 to 0.28 percentage points, on a quantity that spans six
+points across phase.  No sign changes and no conclusion moves.**  The phase-0 and phase-30
+rows agreeing to the last digit is the twelve-fold periodicity, unaffected either way.
+
+**And Class B is confirmed by measurement rather than by argument.**  §64 claimed that a
+ratio of two readings on the SAME mesh is immune because both are linear functionals of
+their own field, and verified it only for the exactly-proportional case (two loads, ratio
+1.300000 either way).  The non-proportional case is SVK against linear on one mesh, where
+the offset is identical but the two fields have different slopes through the bottom:
+
+```
+   SVK vs linear, same mesh:   node +22.52054%    interp +22.53687%
+```
+
+0.016 points on 22.5 — the residue is `(slope_svk - slope_lin) x offset`, and it is
+second-order as claimed.
+
+**Nothing changed in `study_contact.py`.**  Regenerating that artifact is 1161 s and the
+correction it would carry is a 0.2-point annotation that flips nothing, so the code change
+belongs with the next run of that study for its own reasons rather than as a stale-artifact
+hazard tonight.  The measurement is the deliverable: **all four consumers §65 identified are
+now priced, and only one of them — `run_refinement`'s convergence order, §66 — mattered.**
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §67
+
+1. **Adopt `(-0.85, 1.00)`** as the layer profile (§61): clears `MIN_SJ_TARGET` on the whole
+   clamped fold-clean box at 0.2125 against the shipped pair's 0.1194, settles at ratio
+   0.406, and costs +0.07% on the extrapolated deflection.  The audit is every filleted
+   artifact re-derived and `test_promotion.py` extended.
+2. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60) — which
+   genome, and why, is unasked, and it is cheap.
+3. **Carry `axle_drop_interp_mm` into `study_contact`** next time that study runs anyway.
+4. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §68 — 2026-08-23. THE GENOME THE BEST-FLOOR PROFILE REFUSES IS THE SHIPPED ONE, AND EVERY CANDIDATE THIS ARC PRODUCED STANDS WITHIN 0.08 OF THAT CLIFF. THE PROFILE IS NOT ADOPTED, AND THE REASON IS NOW MEASURED
+
+§60 left `(-0.95, 0.85)` — the best genome-box floor on either grid, 0.2448 — as a
+curiosity that "refuses one genome", with *"nothing has asked which genome or why"*.
+
+**It is the shipped genome**, and the refusal is `the layer's width profile reaches zero
+thickness` at the rim: a hard geometric loss of the wheel every published number in this
+project is measured at.  Bisected, identical at `coarse` and `medium`:
+
+```
+  end offset   entry at which the shipped genome loses its rim layer      candidate margins
+      0.85                 -0.845458           (-0.85, 1.00)  §60 candidate   0.0311
+      1.00                 -0.881143           (-0.80, 1.00)  §59 candidate   0.0811
+      1.10                 -0.903400           (-0.85, 1.10)                  0.0534
+      1.60                 -1.001967           (-0.90, 1.10)                  0.0034
+                                               (-0.75, 0.70)  §54             0.0564
+                                               (-0.45, 1.60)  SHIPPED         0.5520
+```
+
+**[SCOPE, ADDED §77: TRUE OF THE FIVE PROPOSALS NAMED ABOVE, NOT OF THE CANDIDATE SET THEY
+WERE DRAWN FROM.**  With the margin computed for every cell rather than five, six of the
+buildable grid's fourteen candidates exceed 0.08 and the roomiest stands at **0.2329** — 7.5x
+`(-0.85, 1.00)`'s — while still clearing `MIN_SJ_TARGET`.  The sentence below is a fact about
+what was proposed; the paragraph after it, about the search walking toward an edge, is a fact
+about what was RANKED.  Both stand, and neither is a fact about the set.**]**
+
+**Every profile this arc has proposed stands within 0.08 of a cliff; the pair that ships
+stands 0.55 from it.**  `(-0.90, 1.10)`, listed as admissible in §60 and the best-converged
+of the four, clears it by 0.0034 — it builds by luck.  The whole search maximised a floor
+while walking toward an edge, and the distance to that edge was never a column in any table.
+
+**The call, re-decided rather than repeated.**  §59 deferred on the audit's size; §61 added
+the gci run; §65 removed that.  By those records the blocker was down to two study re-runs,
+so the deferral had to be re-taken on its merits.  **`(-0.85, 1.00)` is not adopted: a
+0.031 margin to a hard refusal of the shipped genome is not a defensible place to put a
+default.**  The floor it buys (0.1194 -> 0.2125) is measured on a box built with §57's clamp
+and §58's fold gate, neither adopted and neither consumed by anything; the margin it spends
+is on the one genome every published number uses.  Wrong side of the trade for a benefit
+nothing yet collects.
+
+Two things would change it, both concrete: a candidate with a margin comparable to the
+shipped pair's, or a consumer for the filleted blocking (Step 3's live `R_hub`/`R_rim`
+genes) that makes the genome-box floor a number something reads.
+
+**Nothing promoted, no artifact regenerated, no code changed** — §68 is a measurement and a
+decision.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §68
+
+1. **Search the profile surface with the margin as a CONSTRAINT**, not as an afterthought.
+   The boundary is one bisection per `end` (§68 records four), so a candidate set defined as
+   "clears `MIN_SJ_TARGET`, refuses nothing, AND stands at least as far from the cliff as
+   some stated floor" is cheap to build.  Whether anything survives it is the open question,
+   and it is the one that decides whether this arc has a profile to offer at all.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  Until one exists the genome-box floor is a number nothing reads, which is what
+   makes every profile trade above hypothetical.
+3. **Apply the fold gate to the draw and re-derive the box** (§58) — one word in a filter
+   tuple, priced, and it moves every genome-box number in §54 through §68.
+4. **What makes a region impossible** (§56) — the bow, the fold margin and the interior
+   point are all ruled out with numbers.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §69 — 2026-08-23. CONSTRAIN ON THE MARGIN AND THE CANDIDATE CHANGES: `(-0.70, 0.90)` HAS FIVE TIMES THE CLEARANCE FOR THREE PERCENT OF THE FLOOR — AND IT IS A CELL §60 EXCLUDED WITH THE CRITERION §61 SHOWED WAS AN ARTEFACT
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (§72, §76).**
+> Every genome-box figure in this section comes from the uniform Latin hypercube in
+> `study_mesh_quality.latin_hypercube` over the full gene box. That sampler puts about
+> **one genome above 35 degrees of arc span in sixty-four**, and a draw conditioned on
+> arc span reaches bows to 1.25 against its maximum of 0.54. The numbers below are
+> correct about what was drawn; read "the box" as "this draw" throughout.
+
+§68's item 1: build the candidate set with the cliff margin as a CONSTRAINT rather than
+discovering it afterwards, and see whether anything survives.  The entry floor is one
+bisection per `end`:
+
+```
+  end    0.50     0.60     0.70     0.80     0.85     0.90     1.00     1.10     1.20     1.30     1.60
+  floor -0.7469  -0.7779  -0.8064  -0.8329  -0.8455  -0.8577  -0.8811  -0.9034  -0.9247  -0.9451  -1.0020
+```
+
+Twenty-four cells across both grids clear `MIN_SJ_TARGET` on all fifteen and refuse none.
+Scored on all three criteria at once — box floor, margin to the shipped genome's cliff, and
+the settling ratio on the interpolated deflection:
+
+```
+  pair                 box floor   refuses   margin   ratio   settled est   vs shipped
+  (-0.45, 1.60) SHIPPED   0.1194       0     0.5520   0.229     0.962401      +0.000%
+  (-0.60, 0.80)           0.2060       0     0.2329   0.560     0.964523      +0.221%
+  (-0.70, 0.90)           0.2061       0     0.1577   0.437     0.963277      +0.091%
+  (-0.85, 1.00) §60       0.2125       0     0.0311   0.406     0.963117      +0.074%
+  (-0.60, 0.70)           0.2190       0     0.2064   0.680     0.966099      +0.384%
+```
+
+**`(-0.70, 0.90)` dominates §60's candidate on the criterion §68 added and gives up almost
+nothing for it**: five times the margin (0.1577 against 0.0311) for 3% of the floor (0.2061
+against 0.2125) and 0.017 points of extrapolated deflection (+0.091% against +0.074%).
+`(-0.60, 0.80)` buys still more margin (0.2329) but pays for it in convergence — ratio
+0.560 and +0.221%.  So the front is real and it is short, and the middle of it is the place
+to stand.
+
+**And `(-0.70, 0.90)` is a cell this arc already had and threw away.**  §60 listed it as
+"node yes / patch NO" — it held the single-node band at 0.137% and failed the patch-mean
+band at 0.471%, so it was dropped from the admissible four.  §61 then showed that BOTH of
+those readings snap to nodes and that the patch band was separating profiles by their
+contact-patch count.  On the reading that does not snap, it settles at 0.437, comfortably
+inside `SETTLING_RATIO`.  **The criterion that excluded the best-conditioned candidate was
+the artefact.**
+
+**The adoption call does not change, and one of its two reasons does.**  §68 declined on a
+0.031 margin AND on the floor being measured in a box built from two unadopted mechanisms
+that nothing consumes.  The margin objection is largely answered — 0.1577 is a real
+clearance, if still 3.5x less than the shipped pair's.  The second reason stands untouched
+and is now the whole of it: **there is still no consumer for the filleted blocking, so the
+genome-box floor these profiles compete on is a number nothing reads.**  `(-0.70, 0.90)`
+replaces `(-0.85, 1.00)` as the candidate of record.
+
+**Nothing promoted, no code changed, no artifact regenerated** — §69 is a measurement and a
+re-ranking of the same shelf.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §69
+
+1. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  This is now the ONLY thing standing between the arc and its profile, and it is
+   the item that makes every trade above stop being hypothetical.  Everything else in the
+   fillet arc is measured and shelved behind it.
+2. **Carry the margin into `profile_candidates` as a column** (§68) so a future search
+   constrains on it.  Cheap; the boundary function is one bisection per `end` and §69
+   records eleven.
+3. **Apply the fold gate to the draw and re-derive the box** (§58) — one word in a filter
+   tuple, priced, and it moves every genome-box number in §54 through §69.
+4. **What makes a region impossible** (§56) — the bow, the fold margin and the interior
+   point are all ruled out with numbers.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §70 — 2026-08-23. WHAT MAKES A REGION IMPOSSIBLE: THE REFUSAL IS EXTREMAL ON THE INTERIOR-ANGLE SUM BY 57% OF THE OTHERS' SPREAD, AND WITH ONE NEGATIVE EXAMPLE THAT IS WHERE TO LOOK, NOT AN ANSWER
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (§72, §76).**
+> Every genome-box figure in this section comes from the uniform Latin hypercube in
+> `study_mesh_quality.latin_hypercube` over the full gene box. That sampler puts about
+> **one genome above 35 degrees of arc span in sixty-four**, and a draw conditioned on
+> arc span reaches bows to 1.25 against its maximum of 0.54. The numbers below are
+> correct about what was drawn; read "the box" as "this draw" throughout.
+
+§56's question, asked of the shape numbers the tri-block artifact already carries.  Three
+quantities separate the single curved-Y refusal from all fifteen reached genomes at both
+configs; the widest is the region's interior-angle sum, where the refusal sits **14 degrees
+below the minimum of the others — 57% of their entire spread** (coarse 156.371 against
+[170.330, 194.703]; medium 156.667 against [170.489, 194.906]).  `arc_span_deg` separates
+by only 19% of its spread and is partly the straight-Y effect §56 already named.
+`bow_over_width`, `turn_at_far_end_deg`, the smallest wedge and the A/C side ratio do not
+separate — §56's negative, reconfirmed and extended.
+
+**Not claimed as a mechanism, and the attempted derivation is reported as failing.**  Any
+quantity on which a set of one is extremal will separate it from a set of fifteen.  In the
+plane Gauss-Bonnet gives `interior angle sum = 180 + total boundary turning`, which would
+have made this a statement about concavity — measured, the sides' turnings correlate with
+`sum - 180` at **0.355**, because the three sides are not consistently oriented between
+flank orientations.  The identity is presumably recoverable once they are reconciled; it is
+not recovered here, so the interpretation is withheld.
+
+**What settles it is a second refusal**, and the box has one only because sixteen genomes is
+a small draw.  Drawing to thirty-two would turn all four candidates into testable claims at
+once and costs about one more `make triblock` (~290 s for sixteen; the curved-Y sweep is the
+expensive part).
+
+**Nothing promoted, no code changed, no artifact regenerated** — every number is read from
+the committed artifact or computed from the genes in it.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §70
+
+1. **Draw the tri-block box to thirty-two genomes and find a second refusal** (§70).  It
+   converts four candidate separators into tested ones in a single run, it is the cheapest
+   remaining item with a real result attached, and unlike everything in the fillet arc it
+   is not waiting on a consumer.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+3. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced, and
+   it moves every genome-box number in §54 through §69.  Worth bundling with item 1, which
+   redraws that box anyway.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §71 — 2026-08-24. THE EXPERIMENT §70 NAMED, RUN: NO SECOND REFUSAL AT SIXTY-FOUR GENOMES, AND THE CANDIDATE IT WAS BUILT TO CONFIRM DECAYED BY A FACTOR OF FOURTEEN
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (§72, §76).**
+> Every genome-box figure in this section comes from the uniform Latin hypercube in
+> `study_mesh_quality.latin_hypercube` over the full gene box. That sampler puts about
+> **one genome above 35 degrees of arc span in sixty-four**, and a draw conditioned on
+> arc span reaches bows to 1.25 against its maximum of 0.54. The numbers below are
+> correct about what was drawn; read "the box" as "this draw" throughout.
+
+§70 ranked the interior-angle sum first among three separators, said with one negative
+example that was arithmetic rather than evidence, and named the fix: draw deeper until a
+second region refuses.  Run at 16, 32 and 64 genomes, on a draw that is a SUPERSET of the
+published box — same stream, same order, so the sixteen every other number is measured on
+are the first four of each orientation and nothing above moves.
+
+**No second refusal appeared; the curve reaches 63 of 64.**  The experiment did not do what
+it was designed to do, and what it did instead is more useful:
+
+```
+  gap / reached-set spread          16 genomes   32 genomes   64 genomes
+    interior-angle sum                  0.573        0.257        0.041
+    |angle sum - 180|                   0.614        0.502        0.070
+    arc_span_deg                        0.187        0.187        0.176
+```
+
+Each larger draw finds a reached genome closer to the refusal in angle sum — 170.3, 164.2,
+157.9 against its 156.4 — so **§70's first-ranked quantity decays fourteenfold as the box
+grows and its third-ranked one holds.**  `bow_over_width` is now decisively out rather than
+merely unhelpful: a reached genome has bow 0.540 against the refusal's 0.491, so the refusal
+is not extremal on it at all.
+
+**A demotion, not a promotion.**  Arc span survived a fourfold box; it is still one refusal
+against sixty-three.  What changed is that two of three candidates are now known to be
+small-sample artefacts, and were caught being so — which is the only thing a bigger box can
+do when the negative it was hunting does not appear.
+
+**And why the negative is hard to find is itself the result:** the Latin-hypercube draw
+produces almost nothing above 35 degrees of arc span — sixty-four genomes yielded exactly
+one, and it is the refusal.  So the next experiment is not a bigger draw but a DIFFERENT
+sampler: draw conditioned on large arc span, populate 35-45 degrees deliberately, and see
+whether refusals cluster.  That is the first version of this question that could return a
+mechanism instead of a candidate.
+
+**Nothing promoted, every previously committed field reproduces exactly**; the artifact
+gains `refusal_search`, a `num_points` key in each row's `fold` block, and two self-checks.
+`make triblock` is ~445 s and the Makefile says so.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §71
+
+1. **Draw conditioned on large arc span** (§71).  The uniform sampler cannot answer this
+   question — it puts one genome above 35 degrees in sixty-four — so the next step is a
+   sampler that targets the band, not a longer run of the same one.  It is the only route
+   from candidate to mechanism, and it is cheap once the draw is conditioned.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+3. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+6. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §72 — 2026-08-24. CONDITION THE DRAW ON ARC SPAN AND 22 OF 40 REGIONS REFUSE THE CURVE, AGAINST 1 OF 64 UNIFORM — A 35x ENRICHMENT. THE ARC SPAN IS A RISK FACTOR WITH A RATE, AND STILL NOT A GATE
+
+§71's item 1.  §71 found no second refusal in a fourfold box and diagnosed why: the uniform
+Latin hypercube puts about one genome above 35 degrees of arc span in sixty-four, so the
+band where the refusal lives is unsampled and no amount of the same sampler reaches it.
+Screening the stream on `arc_span_deg` before meshing costs nothing and reaches it directly:
+
+```
+  29582 drawn -> 67 above 30 degrees -> 40 of those mesh clean
+  22 of the 40 REFUSE the curve at every bend and every admissible free count       55.0%
+  the uniform box, for comparison                                          1 of 64   1.6%
+```
+
+**A 35x enrichment**, so the arc span is a real risk factor rather than a coincidence of one
+draw — §70's third-ranked candidate, the one it discounted and the only one §71's larger box
+did not decay.
+
+**And it is still not a gate.**  Inside the band the classes overlap: refusals span
+30.27-44.41 degrees, reached span 30.08-36.14.  Nothing else separates there either — the
+refusals' interior-angle sums run 151.8-187.5 and their bows 0.25-1.25, straight across the
+reached ranges.  The arc span predicts how often a region is impossible, not which one is.
+
+**A methodological note worth more than the result.**  The conditioned draw reaches regions
+the uniform one never produced — bows to 1.25 against a uniform maximum of 0.54 — so every
+"the box spans X" statement in §51-§71 is a statement about what the UNIFORM sampler reaches,
+not about the design space.  Three sections in a row were spent on statistics from a sampler
+that could not visit the region under study, and the fix was two lines of screening.
+
+**Nothing promoted; the published draw is untouched** — the band is its own stream (seed
+offset +1000) and shares no genome with the box, which is what makes the two rates
+comparable.  Artifact purely additive.  `make triblock` ~670 s.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §72
+
+1. **What picks the refusal out of the band** (§72).  Forty genomes at a 55% failure rate,
+   with every shape number overlapping, is the first well-conditioned version of §56's
+   question — sixteen genomes with one refusal never was.  The band is now the testbed.
+2. **A pass over "the box spans X" claims in §51-§71** (§72), which are all statements about
+   the uniform sampler's reach rather than the design space's.
+3. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+4. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+5. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §73 — 2026-08-24. WHAT MAKES A REGION IMPOSSIBLE, ANSWERED: THE SMALLEST CORNER ANGLE, AT AUC 0.043 INSIDE THE WIDE-ARC BAND — AND A HELD-OUT DRAW CUTS THE FITTED RULE FROM 1.000 TO 0.833 AND FALSIFIES HALF OF IT
+
+§72 left forty band genomes at a 55% failure rate as the first well-conditioned version of
+§56's question.  Twenty-two refusals against eighteen reached is a classification problem,
+so it can be scored.
+
+**The answer is the smallest interior angle of the curvilinear triangle**, and it is not
+close.  Concordance between the two classes:
+
+```
+  min_wedge_deg 0.043 | wedge_sum 0.227 | |sum-180| 0.679 | arc_span 0.667
+  turn_at_far_end 0.366 | A_over_C 0.429 | bow_over_width 0.472
+```
+
+AUC 0.043 means a random refusal has a smaller minimum corner angle than a random reached
+region 95.7% of the time — and it is mechanically the right shape, since a transfinite blend
+has to squeeze a structured grid into a sharp corner and that is what folds.
+
+**It is a quantity §70 tested and dismissed**, and the reason is now visible: ten of the
+sixty-three uniform reached genomes have a minimum wedge under 17 degrees and **none has an
+arc span above 30**.  A sharp corner is harmless in a narrow region.  The two factors are
+CONJUNCTIVE — which is why six sections of one-quantity-at-a-time searching found nothing,
+and why §72's conditioned sampler was the precondition for seeing it.
+
+**And then the hold-out, which is the part worth keeping.**  A conjunctive rule —
+`arc > 36.16 OR (arc > 30 AND min_wedge < 17.12)` — fits all 104 genomes measured so far
+perfectly: 23 of 23, no false positives, accuracy 1.000.  Both thresholds are fitted on the
+data they are scored on and one lands 0.02 degrees from the nearest counterexample, so that
+number is not evidence.  Frozen and scored on a fresh band from a disjoint stream:
+
+```
+  30 held-out genomes, 12 refuse (40% base rate)
+    accuracy 0.833   precision 0.733   recall 0.917     (majority baseline 0.600)
+```
+
+**And it falsifies half the rule outright**: a region with arc span 39.97 and min wedge
+20.27 was REACHED, so "a wide enough arc always refuses" — six for six in sample — is false.
+
+**Established:** the minimum wedge dominates inside the difficult regime; the arc span sets
+how often a region is in that regime; the two are conjunctive.  **Not established:** any
+threshold.  §56 asked for a mechanism; this is a mechanism with an unvalidated threshold,
+and the in-sample 1.000 would have been the wrong number to publish.
+
+**Nothing promoted, no code changed, no artifact regenerated** — every number is computed
+from the committed `arc_span_band` and `refusal_search` sections except the hold-out, whose
+stream is named in UNCAP_PLAN PART 9 so it can be re-run.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §73
+
+1. **Calibrate the two thresholds on a proper hold-out protocol** (§73) — fit on the band,
+   score on a disjoint band, repeat over several streams.  The structure is settled; only
+   the numbers are not, and the machinery to do it now exists and costs ~150 s a stream.
+2. **A consumer for the filleted blocking** — FILLET_PLAN Step 3's live `R_hub`/`R_rim`
+   genes.  The whole fillet arc (§54-§69) is measured and shelved behind this one item.
+3. **A pass over "the box spans X" claims in §51-§71** (§72), which are statements about the
+   uniform sampler's reach rather than the design space's.
+4. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+5. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56) — now with a target to fit against;
+   **`modelled_area_reference` fillet-aware** (§50); **the REST of §45's audit list** (§49);
+   **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity check**
+   (§44).
+
+---
+
+## §74 — 2026-08-24. THE CLAMP §57 MEASURED IS IN THE MESH. `fillet=True` BUILDS ON 16 OF 16 DRAWN GENOMES WHERE IT BUILT ON 10, THE SHIPPED MESH IS BIT-IDENTICAL, AND §48's SCOPE NOTE LOSES ITS FIRST CLAUSE
+
+§57 measured the fix for the filleted blocking's refusal half and then, correctly for that
+section, left it in the study: *"`clamped_radii` is called by nothing outside the study."*
+Three revisions of the ranking have carried "a consumer for the filleted blocking" as the
+item everything else waits behind.  This is the half of it that is a mesh change.
+FILLET_PLAN STEP 1 RECORD PART 21 has the full record.
+
+**§48's scope note reads, in full**: *"`fillet=True` lands as a MEASUREMENT INSTRUMENT for
+one genome.  It must NOT be wired into `wheel_objective` or the GA — 6 of 16 feasible
+genomes refuse it outright and 6 of the 10 that build sit under the barrier."*  The first
+clause is now retired and the second is untouched:
+
+```
+  clamp        genomes that BUILD
+  None                  10/16      <- §48 FINDING 6, reproduced from the mesh
+  0.95                  16/16
+```
+
+Six genomes clamp and they are the six refusals, one for one.  **The clamp is inert at the
+shipped genome** — hub 0.6636 against a limit of 3.1297, rim unlimited — so
+`build_wheel(fillet=True)` is bit-identical at `coarse` and `medium` with the clamp on, off,
+and passed explicitly, and every number in §50-§69 stands.
+
+**A CLAMP IS NOT A GATE AND THE MESH SAYS WHICH IT DID.**  §57's condition on adopting this
+was that *"the projected value is what is reported back"*, and the pull-backs are not
+cosmetic — `0.5533 -> 0.0664` on one drawn genome.  `mesh.fillet_radii_mm` and
+`mesh.fillet_clamped` carry what was built; both are `None` on the unfilleted path, because
+"there is no fillet" and "nothing was clamped" are different claims.
+
+**IT APPLIES TO `fillet=True` ALONE.**  An explicit `fillet=(R_hub, R_rim)` is honoured or
+refused exactly as before, which is what every existing caller needs — `make fillet`'s fold
+table and the study's radius grid pass pairs precisely in order to measure the radius, and a
+clamp there would silently retitle their x-axis.
+
+**AND THE SECOND COPY OF THE CRITERION IS GONE.**  `study_fillet_block.sector_fit_limit`
+delegates its root-find to the module's.  The module bisects 40 times against 80, moving the
+shipped hub limit by **3.5e-12 mm** — eight orders under the 1e-4 these margins are quoted
+to — and the artifact is regenerated for that digit.
+
+**Nothing promoted, `best_solution.json` untouched.**  `mesh_coords` still refuses a filleted
+mesh and `test_nothing_wires_the_fillet_into_the_objective` is still green: this changes what
+the instrument can BUILD, not who may use it.
+
+---
+
+## §75 — 2026-08-24. FILLET_PLAN STEP 3's ACCEPTANCE TEST PASSES: THE `R_hub` SWEEP STOPS BEING BIT-IDENTICAL AFTER TWENTY-ODD SECTIONS OF FILLET WORK — AND THE TERM THE OBJECTIVE PRICES `R_hub` THROUGH IS EXACTLY FLAT OVER HALF THE FEASIBLE RANGE
+
+The fillet arc has had a single named acceptance test since it opened, and §74 made it
+runnable.  FILLET_PLAN Step 3 item 1: *"Re-run the `R_hub` sweep from
+`studies/study_reds_hub_share.py --sweep`; it should stop being bit-identical.  That sweep
+is the cleanest possible acceptance test for this whole arc — it currently returns the same
+17 significant figures at every point in the box, and it should not."*  Both arms below are
+SVK at `coarse`, because FILLET_PLAN's cost section forbids Step 3 taking the kernel default
+and a linear control against an SVK test would be a comparison of kernels.
+
+**IT PASSES.**
+
+```
+                            hub share                    axle drop (mm)
+  UNFILLETED    0.02940959791 at EVERY point       1.901083305 at EVERY point
+  FILLETED      0.002888 .. 0.007755               0.889754 .. 1.152108
+```
+
+**§14's HYPOTHESIS SURVIVES ITS FIRST TEST THAT COULD HAVE KILLED IT.**  Over the feasible
+range the hub share runs 0.007755 -> 0.003703 as `R_hub` goes 0.400 -> 1.900 — it RISES as
+`R_hub` falls, monotonically, which is what §14 predicted and called *"the one where the
+direction is surprising"*.  **And the sweep that was supposed to have killed it never
+tested it**: this driver printed *"§14's hypothesis IS KILLED"* off `first["hub"] >
+last["hub"]`, which is False when the two are EXACTLY equal — and on a mesh with no fillets
+every row is exactly equal.  A model that cannot express a hypothesis cannot falsify it.
+The verdict has a third branch now and names the reason.
+
+**THE FINDING THAT REACHES OUTSIDE THE FILLET ARC.**  `wheel_objective` prices `R_hub`
+through `stress_concentration_kt(smooth_min(R_hub, hub_fillet_cap_mm(...)), t0)`, and at the
+shipped genome that cap is 0.6657 mm:
+
+```
+  R_hub    Kt_hub    axle drop        R_hub    Kt_hub    axle drop
+  0.400    2.4876     1.152108        1.300    2.0683     1.030303
+  0.664    2.0961     1.110221        1.600    2.0683     0.999389
+  1.000    2.0683     1.065081        1.900    2.0683     0.971531
+```
+
+`Kt_hub` is **identical from 1.0 mm upward** — `wheel_objective`'s own comment says
+`dKt_hub/dR_hub` is EXACTLY zero above the cap — while over that same span the wheel gets
+**8.8% stiffer**.  The surrogate agrees in sign where it is alive and is exactly zero where
+the wheel is still moving, and the dead half is more than half the feasible range.
+
+**THE SHIPPED GENOME IS PARKED AT THE CAP**: `R_hub` = 0.6636 against 0.6657, 99.7% of it,
+and `wheel_objective` records that tie as an attractor on purpose.  The optimizer walked the
+gene up until its only live term went flat and stopped.  Between there and the feasibility
+edge near 1.9 mm the filleted FEA finds another **12.49%** of axle drop.
+
+**AND IT IS NOT A FREE 12.49%.**  The fillet is material: over the same span the modelled
+area rises **+1.67%**.  The objective is blind to that too, for the same reason — the mesh
+models no fillets, so the mass term cannot see `R_hub` any more than the stiffness term can.
+**Both sides of the trade are unpriced**, which is the sharper claim: 12.49% of deflection
+for 1.67% of area, and the optimizer has never been shown the exchange rate.
+
+**WHAT THIS IS NOT.**  Sensitivity, not a gradient.  `mesh_coords` and `coord_fn` still
+refuse a filleted mesh, nothing here reaches the optimizer, and every census test pinning
+`R_hub`/`R_rim` as the insensitive pair is still correct and still green.  What changed is
+that the differentiable filleted path can now be ranked with a number instead of an
+intuition — which is exactly what §48 and §50 said was missing when they shelved it.
+
+**Nothing promoted, no threshold moved, `best_solution.json` untouched.**  The unfilleted
+sweep is kept under its own artifact key, because it is the control that makes "it stopped
+being bit-identical" a finding.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §75
+
+1. **The differentiable filleted mesh** — now the top item and now priced.  §48 and §50
+   shelved it for having no consumer; §75 gives it one and a number: 12.49% of axle drop
+   for 1.67% of area, over a span where the objective's gradient is exactly zero.  The
+   blocker is unchanged and specific — `_fillet_tangency` and `_fillet_curves` are bracketed
+   root-finds with data-dependent refusals — and `wheel_adjoint`'s header already says the
+   pieces are separated so a `custom_vjp` is mechanical.
+2. **The barrier half of the filleted blocking** (§48's surviving clause) — 6 of the 10 that
+   built sat under `MIN_SJ_TARGET`, and §57's clamp does not touch it.  This is what stands
+   between item 1 and an optimizer that may take the path.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — the structure is
+   settled, no threshold is, and the machinery costs ~150 s a stream.
+4. **A pass over "the box spans X" claims in §51-§71** (§72), which are statements about the
+   uniform sampler's reach rather than the design space's.
+5. **Carry the cliff margin into `profile_candidates` as a column** (§68).
+6. **Re-run the hub-share ladder on a filleted mesh** (§75) — `HUBSHARE_PLAN`'s gate is
+   `hub < 0.03`, the filleted mesh puts the shipped genome at 0.0062 against 0.0294, and one
+   rung is not a ladder.
+7. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+8. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+9. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50) — §75 makes this one bite, since the filleted mesh is ~10% larger
+   and has no area cross-check at all; **the REST of §45's audit list** (§49); **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §76 — 2026-08-24. THE "BOX SPANS X" AUDIT: SIXTEEN SECTIONS MARKED IN PLACE, TWO CLAIMS FALSIFIED OUTRIGHT, AND THE WORDING'S SOURCE FIXED IN THE CODE THAT GENERATES IT
+
+§72's methodological note ranked this: *"every 'the box spans X' statement in §51-§71 is a
+statement about what the UNIFORM sampler reaches, not about the design space."*  This is that
+pass.  It changes no measurement — every number in those sections is correct about what was
+drawn — and it changes what they are claims ABOUT.
+
+**THE SAMPLER IS ONE FUNCTION, WHICH MAKES THE SCOPE ONE SENTENCE.**
+`study_mesh_quality.latin_hypercube` over the full gene box via
+`wg.bounds_arrays(WFEA.GENE_SPACE)`, called from four places across the two blocking
+studies, all at the same `GENOME_SWEEP_SEED = 20260823` — which is why both studies draw the
+same sixteen genomes.  There is no second sampler and no sub-box anywhere, so one qualifier
+covers every affected section.
+
+**MARKED IN PLACE, NOT REWRITTEN**, because these are dated records of what was measured:
+seven sections of `PLAN.md` (§53, §55, §56, §58, §69, §70, §71), six PARTs of
+`UNCAP_PLAN.md` (2-7) and three of `FILLET_PLAN.md` (13, 14, 15) now carry a scope block at
+the head naming the sampler and its reach.  **Per section rather than per claim** —
+about forty-five individual claims are in scope, and a reader who jumps to §53 for its arc
+ranges needs the caveat where they land, not forty-five times over.
+
+**TWO CLAIMS ARE NOT SCOPE PROBLEMS, THEY ARE FALSE, AND THEY ARE MARKED AS SUCH.**
+
+- **"The largest bow in the box, 0.498, is a genome the curve reaches"** (§56, and the same
+  sentence in UNCAP PART 4).  §72's conditioned draw reaches bows to **1.25** against this
+  sampler's maximum of 0.54, so 0.498 is not the largest bow the design space holds.  The
+  comparison between the two genomes stands; the superlative does not.
+- **§56's heading, "A FIXED RULE VALID ON THE WHOLE REACHABLE BOX"** — §72 and §73 put 22
+  refusals of 40 in a band that draw never visited.  Marked in the heading, where §62 and
+  §63's corrections also live, so the section cannot be read standalone.
+
+**AND THE WORDING HAS A SOURCE IN THE CODE.**  `profile_candidates`' docstring read *"Every
+cell that clears the barrier on all cells and refuses none of them"* — without saying whose
+cells.  That sentence is where §59's and §69's "clears the barrier on the whole box" came
+from, so it is fixed at the generator rather than only at the two places it printed.
+
+**THE ONE THING THIS AUDIT DID NOT FIND** is a claim whose NUMBER is wrong.  Every count,
+range and rate in the marked sections reproduces; what was wrong was the noun they attached
+to.  That is worth stating, because "the box" appearing forty-five times looked at the outset
+like a defect list and turned out to be one wording error propagated by copying.
+
+**Nothing promoted, no code path changed, no artifact regenerated** — one docstring, sixteen
+scope blocks and three corrections.
+
+---
+
+## §77 — 2026-08-24. §68's CLIFF IS A COLUMN NOW, IT REPRODUCES THAT SECTION'S FOUR HAND BISECTIONS TO 1e-7, AND THE FINDING IT CARRIES IS PINNED BY A CHECK INSTEAD OF A SENTENCE
+
+§68 ended on a diagnosis of its own search: *"The whole search maximised a floor while
+walking toward an edge, and the distance to that edge was never a column in any table."*
+It is one now.
+
+**WHAT THE CLIFF IS.**  For a fixed `end`, the `entry` at which the SHIPPED genome loses its
+rim layer — `the layer's width profile reaches zero thickness`, a hard geometric loss of the
+one design every published number in this project is measured at.  `cliff_entry` bisects it;
+`profile_candidate_rows` carries `cliff_entry` and `cliff_margin` alongside the box floor,
+once per distinct `end` rather than once per cell.
+
+**IT REPRODUCES §68 EXACTLY**, which is the point of automating a number that a decision
+already rests on:
+
+```
+  end     bisected        §68 published      delta
+  0.85    -0.845458       -0.845458          1.7e-07
+  1.00    -0.881143       -0.881143          3.7e-07
+  1.10    -0.903437       -0.903400          3.7e-05   (§68 quoted 4 dp)
+  1.60    -1.001967       -1.001967          3.2e-07
+```
+
+and so do all six of that section's margins — 0.0311, 0.0811, 0.0534, 0.0034, 0.0564, and
+the shipped pair's 0.5520.
+
+**THE REASON IS CHECKED, NOT ASSUMED.**  The blocking refuses for four distinct geometric
+reasons and only one of them is the layer thinning.  A bisection that accepted any refusal
+would happily report a sector-fit or tangency limit under this name — the exact class of
+error PART 6 caught this file making once already — so `cliff_entry` returns `None` with the
+reason when something else bounds it, and a test drives the verdict either side of the edge
+to confirm which one it found.
+
+**AND §68's FINDING IS NOW A CHECK RATHER THAN A SENTENCE.**  "Every candidate this arc
+produced stands closer to the cliff than the pair that ships" is asserted over both grids,
+in the study's self-checks and in the test file.  **A future grid that produced a roomier
+candidate would go red** — which is the outcome that should reopen §68's call, and is a
+better trigger than a line in a plan file nobody re-reads.
+
+**AND IT FOUND SOMETHING ON ITS FIRST RUN, WHICH IS WHY IT WAS WORTH ADDING.**  §68's
+sentence *"every profile this arc has proposed stands within 0.08 of a cliff"* is true of the
+five proposals it listed and is not true of the candidate SET those were drawn from.  With
+the margin computed for every cell:
+
+```
+  grid          roomiest candidate     margin   box floor      §60's (-0.85, 1.00)
+  buildable     (-0.60, 0.80)          0.2329      0.2060      0.0311
+  fine          (-0.70, 0.90)          0.1577      0.2061      (§69 found this one)
+```
+
+Six of the buildable grid's fourteen candidates clear 0.08, and the roomiest stands **7.5x**
+farther from the cliff than the cell §60 published — while still clearing `MIN_SJ_TARGET`.
+The trade §68 described as a search "maximising a floor while walking toward an edge" is real
+but much less sharp than five cells suggested: the best floor is 0.2430 at a margin of 0.0564,
+and giving up **15% of that floor** buys **4.1x the clearance**.  §69 found the fine grid's
+version of this and reported 5x for 3% of the floor; the coarse grid has a bigger version
+that nothing had looked at, because looking required the column.
+
+**This is §59's failure mode again, in a section that was correcting §60 for it** — a claim
+about a shortlist stated as a claim about the set.  Marked in place in both files rather than
+rewritten.
+
+**THE CALL DOES NOT CHANGE, AND NOW RESTS ON ONE REASON.**  §68 declined `(-0.85, 1.00)` on
+two: a 0.031 margin is indefensible, and the floor it buys is measured on a box built from
+two unadopted mechanisms.  The first no longer generalises — roomier candidates exist — but
+the shipped pair still stands **2.4x** farther out than the best of them, and the second
+reason is untouched.  This is the third time this arc a "measured, not adopted" decision has
+had to be re-taken because the world moved under its premise, which is the lesson §57 already
+recorded and this section is now the worked example of.
+
+**Nothing promoted, no constant moved.**  `profile_candidates` still returns bare pairs and
+`LAYER_PROFILE_CANDIDATES` is still what `study_corner_singularity` imports; the column is a
+sibling, because widening a return type that a cross-study consumer iterates would make that
+consumer pay for this file's convenience.  The artifact gains keys and loses none.
+
+---
+
+## §78 — 2026-08-24. §74's "16 OF 16" SURVIVES A HELD-OUT DRAW AT 32 OF 32, THE BARRIER HALF IS CONFIRMED OPEN AT EXACTLY HALF THE BOX ON BOTH — AND THE HELD-OUT GENOMES CONTAIN THE FIRST RIM REFUSAL, WHICH NARROWS §57's WORDING RATHER THAN ITS MECHANISM
+
+§74 retired the first clause of §48's scope note on sixteen genomes **that the clamp was
+designed against**, and UNCAP_PLAN PART 9 had just finished showing this project what an
+in-sample rate is worth: a rule fitting 104 genomes at accuracy 1.000 scored **0.833** on a
+disjoint stream and had half of itself falsified. §74's number deserved the same treatment
+before anything was ranked behind it.
+
+Same sampler, same feasibility filter, same config, a stream disjoint by construction and
+checked from the genes: `GENOME_SWEEP_SEED + 7000`, eight per flank orientation, **32
+genomes**.
+
+```
+                                    in-sample (16)      held-out (32)
+  shipped profile, no clamp        10/16 built         26/32 built
+                                    4/16 clear         13/32 clear
+  shipped profile, clamp 0.95      16/16 built         32/32 built
+                                    8/16 clear         16/32 clear
+  genome-robust,   clamp 0.95      16/16 built         32/32 built
+                                   15/16 clear         31/32 clear
+```
+
+**THE REFUSAL HALF IS GENUINELY CLOSED.** 32 of 32, on genomes the clamp never saw. This is
+the outcome UNCAP_PLAN's rule did not get, and the reason is worth stating rather than
+enjoying: §57's clamp is not a fitted threshold. It is a **projection onto a limit each
+genome computes for itself**, so there was no parameter to overfit — the only free number is
+the factor, and §74 already measured every value in 0.75-0.99 building all sixteen.
+
+**AND THE BARRIER HALF IS CONFIRMED OPEN, AT EXACTLY HALF THE BOX BOTH TIMES.** 8/16 and
+16/32 clear `MIN_SJ_TARGET` at the shipped profile. §48's surviving clause is not an artefact
+of the first draw, and ranking item 2 keeps its place.
+
+### The held-out box contains the first rim refusal
+
+All six in-sample refusals bind at the **hub**, and §57 and §74 both wrote the predictor up
+in those words — *"the hub margin classifies 16 of 16"*. One held-out genome refuses at the
+**rim**:
+
+```
+  hub margin alone                 31/32
+  sector-fit margin, either junction  32/32
+```
+
+**The mechanism is untouched** — a tangent point swept past the next sector's corner is the
+same event at either ring, and the clamp already applied to both. What was in-sample was the
+**junction in the sentence**, not the physics. Corrected in the self-check
+(`the_sector_fit_margin_predicts_every_refusal_held_out`) and pinned by a test that goes red
+if the rim refusal ever disappears from the draw, because the narrow form is the one that
+would quietly come back.
+
+### The per-genome layer profile, priced — and it does not rescue §68
+
+§68 declined `GENOME_ROBUST_*` because it spends the shipped genome's cliff margin down to
+~0.056 against the shipped pair's **0.5520**. Every candidate that section weighed was a
+**global** pair, and a global pair has to be safe for the tightest genome in the box. §77's
+`cliff_entry` makes the per-genome version measurable for the first time — the layer-width
+cliff is a property of the genome, exactly as the sector-fit limit is — so each genome can
+take a share of **its own** room. That is the shape §57's clamp works in, and it is the
+obvious repair.
+
+At `end` = 0.70, each genome built at `factor * cliff_entry(genome)` with its radii already
+inside the sector-fit clamp (held-out box; the in-sample box agrees):
+
+```
+  factor   built    clears 0.2   shipped margin
+   0.95    32/32      29/32          0.0403
+   0.85    32/32      31/32          0.1210
+   0.75    32/32      31/32          0.2016
+   0.65    32/32      31/32          0.2822
+   0.55    32/32      31/32          0.3629
+  --------------------------------------------
+  genome_robust (global)   31/32     0.0564
+  shipped pair  (global)   16/32     0.5520
+```
+
+**IT DOMINATES THE GLOBAL PAIR §68 DECLINED.** At 0.75 and below the per-genome rule clears
+**the same 31 of 32** as `GENOME_ROBUST_*` while leaving the shipped genome **0.2016 to
+0.3629** of cliff margin against that pair's **0.0564** — between **3.6x and 6.4x the
+clearance for identical barrier performance**. That is not a trade, it is the same purchase
+at a lower price, and it is available because the limit is per-genome: a global pair has to
+be safe for the tightest genome in the box and pays for that everywhere.
+
+**AND THE FIRST VERSION OF THIS SECTION CONCLUDED THE OPPOSITE, OFF A MISCOUNT.**
+`cliff_entry` returns `None` in two cases that read identically in a tally and mean opposite
+things: *"bounded by something else"* is a measurement that failed, and *"builds across the
+whole bracket"* is a genome with **no layer-width edge to stand back from at all** — the
+safest case in the box. All three such genomes are the second kind. Tallied as losses they
+made the rule look like it built 29 of 32 and cleared 28, and the section published
+"dominated on both axes". Given the global entry instead — exactly as `_clamp_to_sector`
+honours a radius when the junction has no limit — they build, and the rule clears 31. **The
+conclusion inverted on the handling of three genomes.** Same class of error as reading a
+bit-identical column as a falsification (§75): a `None` meaning "nothing to do here" tallied
+as a `None` meaning "this did not work".
+
+**WHAT THIS DOES AND DOES NOT REOPEN.** §68 declined `GENOME_ROBUST_*` on two reasons: a
+~0.056 margin is indefensible, and the floor it buys is measured on a box built from
+unadopted mechanisms. **The per-genome rule answers the first and not the second.** It also
+does not beat the shipped pair, which still holds the most margin at 0.5520 — but the shipped
+pair clears 16 of 32 against this rule's 31, so the comparison between those two is a real
+two-objective choice and no longer a one-sided one. **Nothing is adopted here**: this is a
+measurement, it is not wired into anything, and the module constants are untouched. What it
+changes is that ranking item 2 now has a candidate with a number rather than an open
+construction question.
+
+### What is unchanged
+
+**Nothing promoted, no module constant moved, `best_solution.json` untouched.**
+`FILLET_LAYER_ENTRY_SLOPE`, `FILLET_LAYER_END_OFFSET` and `SECTOR_FIT_CLAMP` are as they
+were. The committed box is **not re-drawn** — `sector.genomes`, `fit_clamp`, and both
+configs' existing keys are unchanged field-for-field against the previous artifact, which was
+checked rather than assumed; the artifact gains keys and loses none. `make filletblock` goes
+301 s -> **462 s**.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §78
+
+1. **The differentiable filleted mesh** — unchanged at the top, and §78 strengthens its
+   premise rather than its price: the instrument it would differentiate now builds on a
+   disjoint draw at 32 of 32.
+2. **The barrier half of the filleted blocking** (§48's surviving clause) — confirmed open
+   out of sample at 16 of 32, and §78 has priced a repair that **clears 31 of 32 at 3.6-6.4x
+   the cliff margin of the global pair §68 declined**. It is measured and not adopted, and
+   adopting it is a decision with §68's second reason still standing against it. That
+   decision is now the item, and it is a smaller one than "make the blocking genome-robust"
+   was.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and §78 is
+   the second worked example of the protocol in this project.
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Re-run the hub-share ladder on a filleted mesh** (§75) — one rung is not a ladder.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **`modelled_area_reference`
+   fillet-aware** (§50); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+**Two items left this list by being done rather than by being re-ranked**: §72's "box spans
+X" audit and §68's cliff column landed as §76 and §77, and the ranking revised after §75 was
+still carrying both.

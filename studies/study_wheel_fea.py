@@ -221,6 +221,15 @@ def run_refinement(genes, configs=("smoke", "coarse", "medium", "fine"),
         rows.append({"config": name, "n_elements": mesh.n_elements,
                      "n_dof": res["n_dof_reduced"],
                      "axle_drop_mm": res["axle_drop_mm"],
+                     # THE SAME DROP READ *AT* THE BOTTOM.  `axle_drop_mm` is `uy` at
+                     # whichever `rim_outer` node is nearest theta = -90, and `uy` runs
+                     # MONOTONICALLY through the bottom -- the spokes are a spiral, so the
+                     # wheel has no mirror symmetry about the vertical.  That makes the
+                     # reading first-order in how far the nearest node happens to sit from
+                     # the ground, and this ladder's whole purpose is a convergence rate.
+                     # PLAN.md §62 and §66; `wheel_fem` carries the mechanism.
+                     "axle_drop_interp_mm": res["axle_drop_interp_mm"],
+                     "patch_centre_offset_deg": res["patch_centre_offset_deg"],
                      "n_nodes_in_patch": res["n_nodes_in_patch"],
                      "compliance_split": res["compliance_split"],
                      "seconds": round(time.time() - t0, 1)})
@@ -255,15 +264,43 @@ def run_refinement(genes, configs=("smoke", "coarse", "medium", "fine"),
            "rim_share_converged_rungs": [r["config"] for r in rows[-3:]],
            "decision_robust": bool(tail.max() - tail.min() < 0.01)}
     if len(d) >= 3:
-        r21, r32 = d[-2] - d[-3], d[-1] - d[-2]
-        ratio = r21 / r32 if r32 != 0 else np.inf
-        rich = d[-1] + r32 / (ratio - 1.0) if np.isfinite(ratio) and ratio > 1 else d[-1]
-        out.update({"richardson_mm": float(rich),
+        def _extrapolate(v, h):
+            r21, r32 = v[-2] - v[-3], v[-1] - v[-2]
+            ratio = r21 / r32 if r32 != 0 else np.inf
+            rich = (v[-1] + r32 / (ratio - 1.0)
+                    if np.isfinite(ratio) and ratio > 1 else v[-1])
+            return {"richardson_mm": float(rich),
                     "convergence_ratio": float(ratio),
-                    "finest_error_vs_richardson": float(abs(d[-1] / rich - 1.0))})
-        # GCI with the customary 1.25 safety factor, on the finest pair.
-        out["gci"] = float(1.25 * abs(r32 / d[-1]) / (abs(ratio) - 1.0)) \
-            if np.isfinite(ratio) and abs(ratio) > 1 else float("nan")
+                    # The observed ORDER, which is what §29 read off this kind of ladder
+                    # and matched against a Williams eigenvalue.  Reported rather than
+                    # left as a ratio, because the ratio alone hides how much the reading
+                    # moves it: 1.5065 against 2.1144 is p = 0.880 against p = 1.607.
+                    "observed_order": (float(np.log(abs(ratio))
+                                             / np.log(h[-2] / h[-1]))
+                                       if np.isfinite(ratio) and ratio > 0
+                                       else float("nan")),
+                    "finest_error_vs_richardson": float(abs(v[-1] / rich - 1.0)),
+                    # GCI with the customary 1.25 safety factor, on the finest pair.
+                    "gci": (float(1.25 * abs(r32 / v[-1]) / (abs(ratio) - 1.0))
+                            if np.isfinite(ratio) and abs(ratio) > 1
+                            else float("nan")),
+                    "criterion_met": bool(abs(v[-1] / rich - 1.0) < 0.005)}
+
+        h = np.array([1.0 / np.sqrt(r["n_elements"]) for r in rows])
+        di = np.array([r["axle_drop_interp_mm"] for r in rows])
+        node_fit, interp_fit = _extrapolate(d, h), _extrapolate(di, h)
+        # THE TOP-LEVEL KEYS STAY ON THE NODE READING so that every previously committed
+        # number in this artifact still means what it meant.  `extrapolation` carries both
+        # and is the one to quote: a convergence RATE read off a quantity that snaps to
+        # the nearest node is measuring the node spacing as much as the solution, and here
+        # it costs a factor of two in the order and flips `criterion_met`.
+        out.update({k: node_fit[k] for k in
+                    ("richardson_mm", "convergence_ratio",
+                     "finest_error_vs_richardson", "gci")})
+        out["extrapolation"] = {"node": node_fit, "interp": interp_fit,
+                                "order_ratio": (interp_fit["observed_order"]
+                                                / node_fit["observed_order"]
+                                                if node_fit["observed_order"] else None)}
         out["criterion_met"] = bool(out["finest_error_vs_richardson"] < 0.005)
         out["pass"] = out["criterion_met"]
         if not out["criterion_met"]:

@@ -16,6 +16,10 @@
       "n_nodes": 4644,
       "h": 0.03227486121839514,
       "axle_drop_mm": 1.4994858146599337,
+      "axle_drop_patch_mean_mm": 1.4803467749653114,
+      "axle_drop_interp_mm": 1.497743225902695,
+      "patch_centre_offset_deg": -0.04518450869250046,
+      "n_nodes_in_patch": 9,
       "global_max_vm_mpa": 48.20800003211852,
       "corners": {
         "hub:P_t": {
@@ -58,6 +62,10 @@
       "n_nodes": 21012,
       "h": 0.014580296087995107,
       "axle_drop_mm": 1.5516446176990795,
+      "axle_drop_patch_mean_mm": 1.530387317380647,
+      "axle_drop_interp_mm": 1.5498194757832127,
+      "patch_centre_offset_deg": -0.045176926653311966,
+      "n_nodes_in_patch": 23,
       "global_max_vm_mpa": 73.72816712766468,
       "corners": {
         "hub:P_t": {
@@ -100,6 +108,10 @@
       "n_nodes": 53124,
       "h": 0.009021097956087904,
       "axle_drop_mm": 1.5629805689038112,
+      "axle_drop_patch_mean_mm": 1.5466812348133876,
+      "axle_drop_interp_mm": 1.5635343813664888,
+      "patch_centre_offset_deg": 0.0134071060892893,
+      "n_nodes_in_patch": 36,
       "global_max_vm_mpa": 91.15213388871358,
       "corners": {
         "hub:P_t": {
@@ -142,6 +154,10 @@
       "n_nodes": 132276,
       "h": 0.005661385170722979,
       "axle_drop_mm": 1.5705053322812605,
+      "axle_drop_patch_mean_mm": 1.551808578245717,
+      "axle_drop_interp_mm": 1.5700208441767491,
+      "patch_centre_offset_deg": -0.011698915282806865,
+      "n_nodes_in_patch": 64,
       "global_max_vm_mpa": 108.56572107954148,
       "corners": {
         "hub:P_t": {
@@ -473,6 +489,54 @@
       "settling": false,
       "settled_estimate_mpa": null,
       "diverges": true
+    }
+  },
+  "deflection": {
+    "node": {
+      "rungs": [
+        "coarse",
+        "medium",
+        "fine"
+      ],
+      "values_mm": [
+        1.5516446176990795,
+        1.5629805689038112,
+        1.5705053322812605
+      ],
+      "spread_pct": 1.2076962107774816,
+      "increments_mm": [
+        0.011335951204731742,
+        0.007524763377449339
+      ],
+      "increment_ratio": 0.6637963803433121,
+      "monotone": true,
+      "settling": true,
+      "remaining_tail_mm": 0.014856802249753609,
+      "remaining_tail_pct": 0.9459886537394396,
+      "settled_estimate_mm": 1.5853621345310143
+    },
+    "interp": {
+      "rungs": [
+        "coarse",
+        "medium",
+        "fine"
+      ],
+      "values_mm": [
+        1.5498194757832127,
+        1.5635343813664888,
+        1.5700208441767491
+      ],
+      "spread_pct": 1.2940264028723734,
+      "increments_mm": [
+        0.013714905583276149,
+        0.0064864628102603294
+      ],
+      "increment_ratio": 0.4729498698241038,
+      "monotone": true,
+      "settling": true,
+      "remaining_tail_mm": 0.005820645069772934,
+      "remaining_tail_pct": 0.3707368020852633,
+      "settled_estimate_mm": 1.575841489246522
     }
   }
 }

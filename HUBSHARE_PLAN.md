@@ -22,8 +22,16 @@ Settled in §31, do not reopen without new evidence:
 
 - `compliance_split["hub"] < 0.03` **stays at 0.03**, and the assertion stays a strict `xfail`
   (`tests/test_wheel_fea.py::test_the_hub_junction_holds_under_three_percent_of_the_compliance`).
-- §14's hypothesis — that the share rose because `R_hub` fell — is **structurally impossible**.
-  Fillets are not meshed, so the wheel is bit-identical across the whole `R_hub` box.
+- ~~§14's hypothesis — that the share rose because `R_hub` fell — is **structurally
+  impossible**. Fillets are not meshed, so the wheel is bit-identical across the whole
+  `R_hub` box.~~ **REOPENED 2026-08-24 BY NEW EVIDENCE — PLAN §75, FILLET_PLAN STEP 3 RECORD
+  PART 1.** The second sentence is true and is the reason the first does not follow: a mesh
+  with no fillets cannot express this hypothesis, so a bit-identical sweep is the instrument
+  reporting its own blindness rather than the wheel reporting indifference. On a FILLETED
+  mesh at `coarse` under SVK the sweep gives eleven distinct values of fourteen rows, and
+  the hub share runs 0.007755 -> 0.003703 as `R_hub` goes 0.400 -> 1.900 — **it rises as
+  `R_hub` falls, monotonically, which is §14's direction.** This bullet said "do not reopen
+  without new evidence"; this is the new evidence.
 - The bound is neither unreachable nor a mesh artefact: `best_solution_ga_beam.json` meets it
   **converged**, 0.0139–0.0143 across five rungs, with 53% to spare.
 
@@ -156,12 +164,20 @@ one: the field of suspects narrowed by one and the symptom did not.
   `tests/test_wheel_fea.py::test_the_hub_junction_holds_under_three_percent_of_the_compliance`
   stays an `xfail` and still fails — which, under `xfail_strict = true`, is the outcome that
   keeps the suite green. **Nothing here reopens the `< 0.03` bound.**
-- **§14's hypothesis is killed harder than before.** The `R_hub` sweep is now *bit-identical*
-  — 0.0342 at every one of the 14 sample points across the whole 0.4–4.0 box, feasible and
-  infeasible alike. The plan above says "structurally impossible, fillets are not meshed";
-  the faithful mesh shows it to the last digit. (The driver still prints the canned line
-  "the hub share FALLS as `R_hub` falls", which is false when the column is constant. Cosmetic,
-  in `studies/study_reds_hub_share.py`, and deliberately not touched here.)
+- ~~**§14's hypothesis is killed harder than before.** The `R_hub` sweep is now
+  *bit-identical* — 0.0342 at every one of the 14 sample points across the whole 0.4–4.0
+  box, feasible and infeasible alike. The plan above says "structurally impossible, fillets
+  are not meshed"; the faithful mesh shows it to the last digit. (The driver still prints
+  the canned line "the hub share FALLS as `R_hub` falls", which is false when the column is
+  constant. Cosmetic, in `studies/study_reds_hub_share.py`, and deliberately not touched
+  here.)~~
+
+  **RETRACTED 2026-08-24 — PLAN §75.** A bit-identical column is not a sharper kill, it is
+  the absence of a test: the sweep moves a gene the mesh does not read. **And the parenthesis
+  was the tell.** The canned line was noticed, correctly diagnosed as false, and filed as
+  *cosmetic* — but a verdict function that reports a falsification off an exact tie is not a
+  formatting bug, it is the only evidence the bullet had. It now has a third branch naming
+  the reason. On a filleted mesh the hypothesis survives; see the reopened bullet above.
 - **The attribution re-ranked, and `cy1`/`cy2` swapped.** One-at-a-time swaps at `coarse`:
 
   | gene | capped closes | faithful closes |

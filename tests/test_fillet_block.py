@@ -645,6 +645,309 @@ def test_the_blocking_is_measured_at_ONE_genome_and_the_others_are_worse(genome_
         "every drawn genome now both fits the sector and clears the barrier — the "
         "blocking may have become genome-robust, in which case this test and the "
         "record that ranks STEP 1b behind it both need re-deriving")
+    # PART 13 closed the quality half of this gap (the layer profile is now derived
+    # against genomes, not the shipped one alone) without touching the refusal half —
+    # the hub sector-fit limit does not depend on `entry`/`end` at all.  So this
+    # assertion still holds, and it now holds for a different reason than PART 10's.
+
+
+def test_a_spoke_fold_genome_does_not_move_with_the_layer_profile(report):
+    """The one drawn genome `sweep_layer_profile_genomes` excludes, and why.
+
+    Its worst block is the TRIMMED SPOKE, which is `sample(s_grid, eta_grid)` directly —
+    built before `entry`/`end` are ever consulted — so no choice of either constant can
+    rescue it.  PART 13 found it by accident while re-deriving the profile: a genome
+    whose UNFILLETED sector reads clean (its 97-station grid over `[0, 1]` steps over a
+    near self-intersection in the flank near `s = 0.05`) has its trim boundary land
+    right where the pathology is, because the trimmed grid's stations are spaced over
+    `[s_A(hub), s_A(rim)]` instead.  Confirmed rather than assumed: the verdict is
+    recomputed at three very different profiles and the spoke block's own min scaled
+    Jacobian does not move at all.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    fold = [r for r in rows if r.get("built") and r["worst_block"] == "spoke"]
+    if not fold:
+        pytest.skip("no spoke-fold genome in the committed draw")
+    row = fold[0]
+    genes_vec = np.asarray(row["genes"], float)
+    Rh, Rr = row["R_hub_mm"], row["R_rim_mm"]
+    sj = set()
+    for entry, end in ((0.0, 1.60), (-0.45, 1.60),
+                       (fb.LAYER_ENTRY_SLOPE, fb.LAYER_END_OFFSET)):
+        v = fb.sector_verdict(genes_vec, "coarse", Rh, Rr, entry, end)
+        assert v["built"], v
+        sj.add(round(v["blocks"]["spoke"]["min_scaled_jacobian"], 12))
+    assert len(sj) == 1, sj
+    assert next(iter(sj)) < 0.0, sj
+
+
+def test_the_genome_diverse_profile_clears_the_barrier_except_the_flank_defect_genome(
+        report):
+    """The improvement PART 13 measured, pinned against the committed genomes.
+
+    NOT the shipped `LAYER_ENTRY_SLOPE`/`LAYER_END_OFFSET` — those are PART 10's
+    single-genome argmax and this is the whole reason PART 13 exists: at that pair, most
+    of the drawn box sits under `MIN_SJ_TARGET` (`rim_ring_free`, mostly).  At
+    `GENOME_ROBUST_ENTRY`/`GENOME_ROBUST_END` instead, every BUILT genome in the
+    committed draw clears it except the one whose own trimmed spoke folds regardless of
+    the profile — that one is `test_a_spoke_fold_genome_does_not_move_with_the_layer_
+    profile`'s genome and is excluded here for the same reason
+    `sweep_layer_profile_genomes` excludes it: it would report the same floor at every
+    cell and hide the result being pinned here.  The pair is measured and reported, not
+    adopted as the module default — see `WW._fillet_curves`'s docstring for why not.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    built = [r for r in rows if r["built"] and r["worst_block"] != "spoke"]
+    assert len(built) >= 5, built
+    for row in built:
+        genes_vec = np.asarray(row["genes"], float)
+        v = fb.sector_verdict(genes_vec, "coarse", row["R_hub_mm"], row["R_rim_mm"],
+                              fb.GENOME_ROBUST_ENTRY, fb.GENOME_ROBUST_END)
+        assert v["min_scaled_jacobian"] > wo.MIN_SJ_TARGET, (
+            row["R_hub_mm"], row["R_rim_mm"], v)
+
+
+def test_the_hub_margin_PREDICTS_the_refusal_rather_than_explaining_it(report):
+    """The refusal turned into a number, and the number checked as a classifier.
+
+    PART 10 FINDING 6 counted six refusals of sixteen and named the mechanism -- the hub
+    fillet's tangent point had swept past the next sector's corner.  A named mechanism is
+    not the same as a predictor, and this is the difference: `sector_fit_margin` is
+    computed from the geometry ALONE, before any block is attempted, and it must classify
+    the committed draw exactly.  Re-derived here rather than read, because a margin that
+    agreed with the artifact but not with the code would be the failure worth catching.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    assert len(rows) == 16, len(rows)
+    for row in rows:
+        fit = fb.sector_fit_margin(np.asarray(row["genes"], float), "coarse")
+        assert fit["hub"]["binds"] == row["fit"]["hub"]["binds"]
+        assert fit["hub"]["binds"] is not row["built"], (
+            f"the hub margin misclassifies R_hub={row['R_hub_mm']:.4f}: "
+            f"binds={fit['hub']['binds']} built={row['built']}")
+    assert sum(1 for r in rows if not r["built"]) == 6, (
+        "the committed draw's refusal count moved — a finding, not a pass")
+
+
+def test_clamping_to_the_sector_fit_limit_closes_the_REFUSAL_half(report):
+    """The fix, and the two halves of PLAN.md item 2 kept apart.
+
+    Clamping each radius inside the room its own sector has makes every drawn genome
+    build; it does NOT make them all clear the barrier, and those are the refusal half and
+    the quality half.  Both are asserted, so that a run in which the clamp appeared to
+    solve the whole item would register as a finding rather than as a pass.
+
+    And the clamp only counts as free because it is inert on the shipped genome -- every
+    other number in this file is measured there.
+    """
+    fc = report["sector"]["per_config"]["coarse"]["fit_clamp"]
+    assert fc["shipped_is_clamped"] is False
+    assert fc["shipped_fit"]["hub"]["binds"] is False
+
+    def row(profile, factor):
+        return next(r for r in fc["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    base = row("shipped", None)
+    clamped = row("shipped", fb.SECTOR_FIT_CLAMP)
+    assert base["n_built"] < base["n_genomes"], "nothing refused — that is a finding"
+    assert clamped["n_built"] == clamped["n_genomes"]
+    assert clamped["n_clears_target"] > base["n_clears_target"]
+    assert clamped["n_clears_target"] < clamped["n_genomes"], (
+        "the clamp now clears the barrier everywhere at the SHIPPED profile — the "
+        "quality half of item 2 would be closed too, which is a finding")
+
+    # and the clamp is insensitive to its own factor, or it would be a tuned constant
+    for f in fc["factors"]:
+        assert row("shipped", f)["n_built"] == clamped["n_genomes"]
+
+
+def test_the_clamp_re_prices_the_layer_profile_PART_13_declined(report):
+    """PART 13's premise, re-checked: it declined the profile partly because of a fact.
+
+    "the hub sector-fit refusal is untouched by either choice, so six of sixteen feasible
+    genomes still refuse outright regardless" -- so nothing would collect what the
+    genome-robust profile bought.  With the clamp that premise is false, and the prize is
+    much larger than it was weighed against.  This pins the re-pricing, and pins that the
+    profile is STILL not adopted, because PART 13's OTHER reason (the shipped genome's
+    deflection-convergence spread) is untouched by the clamp.
+    """
+    fc = report["sector"]["per_config"]["coarse"]["fit_clamp"]
+
+    def row(profile, factor):
+        return next(r for r in fc["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    k = fb.SECTOR_FIT_CLAMP
+    assert row("genome_robust", None)["n_built"] == row("shipped", None)["n_built"], (
+        "the profile does not change WHETHER a genome fits its sector, only how well "
+        "its blocks mesh — if that stopped being true the two halves have coupled")
+    assert row("genome_robust", k)["n_clears_target"] > row("shipped", k)["n_clears_target"]
+    assert (row("genome_robust", k)["n_clears_target"]
+            > row("genome_robust", None)["n_clears_target"])
+
+    # measured, not adopted: the module constants are still PART 10's
+    assert ww.FILLET_LAYER_ENTRY_SLOPE == fb.LAYER_ENTRY_SLOPE
+    assert ww.FILLET_LAYER_END_OFFSET == fb.LAYER_END_OFFSET
+    assert fb.GENOME_ROBUST_ENTRY != fb.LAYER_ENTRY_SLOPE
+
+
+def test_the_fold_margin_is_the_SAMPLED_flank_and_not_a_proxy_for_it(report):
+    """The closed form checked against the thing it stands in for, on this box.
+
+    `fold_margin` is `min_s(|1/kappa| - t/2)` off the Bezier hodograph -- no sampling of
+    the flank enters it.  `flank_reversal_mm` is the sampled statement: project each
+    flank node's step on the tangent it came from and take the least.  If the first is a
+    valid gate then their SIGNS agree, and the point of asserting it here rather than
+    trusting the identity is that `offset_band` uses finite-difference normals in the
+    exported outline and exact ones in the mesh, so "the curvature says it folds" and
+    "the sampled outline doubles back" are two different computations that happen to be
+    about the same fact.
+
+    AND THE SAMPLING IS NAMED, because the second one moves.  At `FOLD_AUDIT_POINTS` the
+    two agree on this box; at the 97 stations PART 13's shipped grid uses, the sampled
+    test calls both folded genomes healthy and the closed form has already rejected them.
+    Both halves are asserted -- the agreement so the closed form is checked rather than
+    trusted, and the disagreement at 97 so the reason a closed form is the gate stays on
+    the record instead of being an argument in a docstring.
+
+    Re-derived from the genes, not read off the artifact.  The margin is also pinned
+    against `study_mesh_quality.fold_margin`, so the repo keeps ONE computation of this.
+    """
+    import study_mesh_quality as smq
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    assert len(rows) == 16, len(rows)
+    folded = []
+    for row in rows:
+        vec = np.asarray(row["genes"], float)
+        f = fb.fold_margin(vec, "coarse")
+        assert f["margin_mm"] == pytest.approx(row["fold"]["margin_mm"], abs=1e-9)
+        assert f["margin_mm"] == pytest.approx(
+            smq.fold_margin(vec, ww.get_config("coarse")), abs=1e-12)
+        fine = fb.fold_margin(vec, "coarse", fb.FOLD_AUDIT_POINTS)
+        rev = fb.flank_reversal_mm(vec, "coarse", fb.FOLD_AUDIT_POINTS)
+        assert (fine["margin_mm"] < 0.0) == (rev < 0.0), (
+            f"closed form {fine['margin_mm']:+.6f} and sampled flank {rev:+.6e} disagree "
+            f"at {fb.FOLD_AUDIT_POINTS} points")
+        if f["folds"]:
+            folded.append(vec)
+    assert len(folded) == 2, (
+        "the committed draw's fold count moved — a finding, not a pass")
+
+    # and at PART 13's own grid the sampled statement changes sides while the closed
+    # form does not — which is why the gate is the closed form
+    for vec in folded:
+        coarse_rev = fb.flank_reversal_mm(vec, "coarse", 97)
+        assert coarse_rev > 0.0, (
+            "the 97-station flank now catches this fold — PART 13's mechanism has "
+            "changed and the record should say so")
+        rungs = fb.fold_resolution_ladder(vec, "coarse")
+        assert all(r["margin_mm"] < 0.0 for r in rungs), rungs
+        spread = max(r["margin_mm"] for r in rungs) - min(r["margin_mm"] for r in rungs)
+        assert spread < 0.1 * fb.WG.MIN_FOLD_MARGIN_MM, (
+            f"the closed form moved by {spread:.2e} mm across the ladder")
+
+
+def test_no_fold_clean_genome_INVERTS_a_block_and_the_converse_is_not_claimed(report):
+    """The gate's promise, and the exact shape of it.
+
+    One direction is the gate and is asserted: a genome whose flank does not fold builds
+    a sector with no inverted block.  The other direction is NOT a property of the part
+    -- whether a folded flank shows up as an inverted element depends on whether the
+    trim happens to put a station on the dip, which is a property of the grid -- so it is
+    asserted as the weaker, true thing: every inverted block in the box belongs to a
+    genome the margin already rejected.
+
+    PART 13 found the one such genome by accident and traced it by hand.  This is that
+    finding as a classifier, and the asymmetry is the reason the closed form is the gate
+    and `sweep_genomes`' mesh-based filter is not.
+    """
+    rows = [r for v in report["sector"]["genomes"]["groups"].values() for r in v]
+    built = [r for r in rows if r["built"]]
+    clean = [r for r in built if not r["fold"]["folds"]]
+    assert len(clean) >= 8, len(clean)
+    for row in clean:
+        assert row["all_blocks_valid"], (
+            f"a fold-clean genome inverted {row['worst_block']} at "
+            f"{row['min_scaled_jacobian']:+.4f} — the gate has a MISS")
+    inverted = [r for r in built if not r["all_blocks_valid"]]
+    assert len(inverted) == 1, [r["worst_block"] for r in inverted]
+    assert inverted[0]["worst_block"] == "spoke"
+    assert inverted[0]["fold"]["folds"] is True
+    # and the converse is genuinely open: the other folded genome is not inverted here,
+    # it is simply refused for an unrelated reason.
+    folded = [r for r in rows if r["fold"]["folds"]]
+    assert len(folded) == 2 and any(not r["built"] for r in folded)
+
+
+def test_the_draw_filter_this_box_used_LEAKS_and_the_rate_is_measured(report):
+    """Why a gate was needed at all, given `sweep_genomes` already had one.
+
+    Its filter ends with "the unfilleted sector is clean", which is a mesh-based proxy
+    for the fold and a good one -- but a proxy.  `sweep_fold_gate` runs both over the
+    same Latin-hypercube stream the box is drawn from and counts what gets through.  The
+    assertions are one-sided on purpose: the leak must be small enough that the proxy is
+    clearly doing most of the work, and nonzero, because a zero would mean this whole
+    section is answering a question nobody has.
+    """
+    fg = report["sector"]["fold_gate"]
+    c = fg["counts"]
+    assert c["drawn"] >= 512 * 8 and c["geom"] > 100
+    assert 0.2 < fg["fold_rate"] < 0.6, fg["fold_rate"]
+    assert 0.0 < fg["leak_rate"] < 0.15, (
+        f"the mesh-based filter leaks at {fg['leak_rate']:.3f} — if that is 0 the closed "
+        "form buys nothing here, and if it is large the filter is not a proxy at all")
+    assert c["mesh_clean_folds"] < c["geom_folds"], c
+    ag = fg["agreement"]
+    assert ag["worst_disagreement_margin_mm"] < fb.FOLD_AGREEMENT_TOL_MM
+    assert ag["worst_disagreement_margin_mm"] < 0.1 * fg["limit_mm"], (
+        "a disagreement inside the barrier band would make the barrier unreadable")
+
+
+def test_the_fold_gate_is_INERT_on_the_shipped_genome(genes, report):
+    """The same question §57 asked of the clamp, and it has to be asked of every gate.
+
+    Every number in this file is measured at the shipped genome.  A gate that excluded it
+    would not be a gate, it would be a promotion — so this is re-derived from
+    `best_solution.json` rather than read, and the margin is asserted to clear the
+    barrier by a wide factor rather than merely to clear it.
+    """
+    f = fb.fold_margin(genes, "coarse")
+    assert f["folds"] is False and f["binds"] is False
+    assert f["margin_mm"] > 10.0 * f["limit_mm"], f
+    assert fb.flank_reversal_mm(genes, "coarse") > 0.0
+    assert report["sector"]["fold_gate"]["shipped"]["margin_mm"] == pytest.approx(
+        f["margin_mm"], rel=1e-9)
+
+
+def test_the_gate_costs_the_box_two_genomes_and_buys_the_one_defect(report):
+    """What applying the gate would do to the arc's own table, on the same genomes.
+
+    `fit_clamp_fold_clean` is `sweep_sector_fit_clamp` over the rows the margin keeps, so
+    the two tables differ only by the exclusion.  What must hold: the fold-clean box is
+    smaller, still fully buildable under the clamp, and no longer contains a genome that
+    inverts -- which is the whole of what the gate buys, stated so that a run where it
+    bought more (or less) registers.
+    """
+    per = report["sector"]["per_config"]["coarse"]
+    fc, fcc = per["fit_clamp"], per["fit_clamp_fold_clean"]
+    k = fb.SECTOR_FIT_CLAMP
+
+    def row(table, profile, factor):
+        return next(r for r in table["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    assert row(fcc, "shipped", k)["n_genomes"] == row(fc, "shipped", k)["n_genomes"] - 2
+    for profile in ("shipped", "genome_robust"):
+        clamped = row(fcc, profile, k)
+        assert clamped["n_built"] == clamped["n_genomes"], clamped
+    # the quality half is not what the gate is for, and it does not close it
+    assert (row(fcc, "shipped", k)["n_clears_target"]
+            < row(fcc, "shipped", k)["n_genomes"])
+    # §54's excluded genome leaves with the gate, so the floor stops being an inversion
+    assert row(fcc, "genome_robust", k)["min_scaled_jacobian_range"][0] > 0.0, (
+        "an inverted block survived the fold gate — the exclusion did not do its job")
+    assert row(fc, "genome_robust", k)["min_scaled_jacobian_range"][0] < 0.0
 
 
 @pytest.mark.parametrize("cfg", SECTOR_CFGS)
@@ -664,16 +967,14 @@ def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
     ctl_sj = min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
                  for k, v in ctl.items() if not k.startswith("_"))
     blocks = ww.filleted_sector(genes, cfg, uncap=(True, 0.0))
-    blocks.pop("_thetas"); blocks.pop("_dirn")
     fil_sj = min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
-                 for v in blocks.values())
+                 for k, v in blocks.items() if not k.startswith("_"))
     assert ctl_sj < wo.MIN_SJ_TARGET, ctl_sj
     assert fil_sj < ctl_sj, (fil_sj, ctl_sj)
     # and the default blend is where both are usable
     good = ww.filleted_sector(genes, cfg)
-    good.pop("_thetas"); good.pop("_dirn")
     assert min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
-               for v in good.values()) > wo.MIN_SJ_TARGET
+               for k, v in good.items() if not k.startswith("_")) > wo.MIN_SJ_TARGET
 
 
 def test_the_filleted_sector_costs_the_unfilleted_one_nothing(genes):
@@ -752,3 +1053,215 @@ def test_a_degraded_run_may_not_be_filed_as_the_committed_artifact():
     with pytest.raises(SystemExit):
         fb._gate_guard.refuse_degraded_out(
             ap, args, "study_fillet_block.json", [(True, "a degraded probe run")])
+
+
+# ---------------------------------------------------------------------------
+# §68's CLIFF, AS A COLUMN (PLAN §77, FILLET_PLAN PART 20 measured it by hand)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("end,published", fb.CLIFF_PUBLISHED)
+def test_the_cliff_column_reproduces_PART_20s_hand_bisections(genes, end, published):
+    """The automated column has to land on the four numbers the record was written from.
+
+    PLAN §68 and FILLET_PLAN PART 20 declined the genome-robust layer profile on these
+    four bisections and the margins they imply, so a column that disagreed with them
+    would mean either the decision or the code is wrong.  Pinned against the RECORD
+    rather than against a re-run of itself, at the precision §68 published to.
+    """
+    got = fb.cliff_entry(genes, "coarse", end)
+    assert got["entry"] is not None, got["why"]
+    assert abs(got["entry"] - published) < 1e-4, (end, got["entry"], published)
+    assert fb.CLIFF_REASON in got["why"], got["why"]
+
+
+def test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first(genes):
+    """A bisection that accepted any refusal would report a different limit under this name.
+
+    The blocking refuses for four distinct geometric reasons and only one of them is the
+    layer losing its thickness.  `cliff_entry` checks which bounded it and returns `None`
+    with the reason when it is something else — so a future change that made, say, the
+    sector-fit limit bind first shows up as a missing column rather than as a margin
+    quietly measured against the wrong edge.
+    """
+    got = fb.cliff_entry(genes, "coarse", 1.00)
+    assert fb.CLIFF_REASON in got["why"]
+    # and the verdict at an entry just past the cliff refuses for exactly that reason
+    v = fb.sector_verdict(genes, "coarse", float(genes[12]), float(genes[13]),
+                          entry=got["entry"] - 0.01, end=1.00)
+    assert not v["built"] and fb.CLIFF_REASON in v["why"], v
+    # while just inside it, the sector builds
+    v = fb.sector_verdict(genes, "coarse", float(genes[12]), float(genes[13]),
+                          entry=got["entry"] + 0.01, end=1.00)
+    assert v["built"], v
+
+
+def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(genes):
+    """§68's finding, as a check: the arc's candidates are all closer to the edge.
+
+    Every pair this arc proposed stands within 0.08 of a hard refusal of the shipped
+    genome and the pair that ships stands 0.55 from it — which is the whole reason the
+    profile is measured and not adopted.  A future grid that produced a roomier candidate
+    would go red here, and that is the outcome that should reopen the call rather than a
+    line in a plan file nobody re-reads.
+    """
+    shipped = fb.cliff_entry(genes, "coarse", fb.LAYER_END_OFFSET)
+    shipped_margin = fb.LAYER_ENTRY_SLOPE - shipped["entry"]
+    assert shipped_margin == pytest.approx(0.5520, abs=1e-3), shipped_margin
+    compared = 0
+    for entry, end in fb.LAYER_PROFILE_FINE_CANDIDATES + fb.LAYER_PROFILE_CANDIDATES:
+        c = fb.cliff_entry(genes, "coarse", end)
+        if c["entry"] is None:
+            continue
+        compared += 1
+        assert entry - c["entry"] < shipped_margin, (entry, end, entry - c["entry"])
+    # or the loop above proves nothing: every candidate having no cliff would pass it
+    # silently, and the assertion is about the candidates rather than about the shipped
+    # pair alone.
+    assert compared == len(fb.LAYER_PROFILE_FINE_CANDIDATES
+                           + fb.LAYER_PROFILE_CANDIDATES), compared
+
+
+# ---------------------------------------------------------------------------
+# THE HELD-OUT BOX (PLAN §78) — is §74's "16 of 16" an in-sample number?
+# ---------------------------------------------------------------------------
+
+def test_the_held_out_draw_is_actually_disjoint_from_the_committed_one(report):
+    """A hold-out that shared genomes with the fitted box would flatter every rate on it.
+
+    Checked from the GENES rather than trusted to the seed arithmetic, because the thing
+    that would break it is `sweep_genomes`' batch walk (`seed + batch`) overrunning the
+    offset — an off-by-one in `max_batches` would overlap the two streams silently and
+    every number in this section would quietly become in-sample again.
+    """
+    sec = report["sector"]
+    a = {tuple(round(x, 12) for x in r["genes"])
+         for v in sec["genomes"]["groups"].values() for r in v}
+    b = {tuple(round(x, 12) for x in r["genes"])
+         for v in sec["genomes_held_out"]["groups"].values() for r in v}
+    assert len(a) == 16 and len(b) == 32, (len(a), len(b))
+    assert not (a & b), f"{len(a & b)} genomes appear in both draws"
+    assert sec["genomes_held_out"]["seed"] == (
+        fb.GENOME_SWEEP_SEED + fb.GENOME_HELD_OUT_OFFSET)
+
+
+def test_the_clamp_closes_the_refusal_half_OUT_OF_SAMPLE_too(report):
+    """§74's headline was measured on the sixteen genomes the clamp was designed against.
+
+    UNCAP_PLAN PART 9 is the reason this is worth a test rather than an assumption: a rule
+    fitted on 104 genomes scored 1.000 in sample and 0.833 held out, and the hold-out
+    falsified half of it.  This one survives — every genome of a disjoint draw builds once
+    its radii are inside its own sector's room.
+
+    THE BARRIER HALF IS ASSERTED TO STILL BE OPEN, for the same reason the in-sample test
+    asserts it: a run in which the clamp appeared to close both halves is a finding and
+    must not read as a pass.
+    """
+    ho = report["sector"]["per_config"]["coarse"]["fit_clamp_held_out"]
+
+    def row(profile, factor):
+        return next(r for r in ho["rows"]
+                    if r["profile"] == profile and r["factor"] == factor)
+
+    base = row("shipped", None)
+    clamped = row("shipped", fb.SECTOR_FIT_CLAMP)
+    assert base["n_genomes"] == 32
+    assert base["n_built"] < base["n_genomes"], "nothing refused — that is a finding"
+    assert clamped["n_built"] == clamped["n_genomes"], (
+        f"the clamp does NOT close the refusal half out of sample: "
+        f"{clamped['n_built']}/{clamped['n_genomes']}, {clamped['refusals']}")
+    assert clamped["n_clears_target"] < clamped["n_genomes"], (
+        "the clamp now clears the barrier everywhere on the held-out box too — the "
+        "quality half would be closed, which is a finding")
+
+
+def test_the_held_out_draw_contains_the_first_RIM_refusal(report):
+    """And it narrows §57's wording: the mechanism is the junction's, not the hub's.
+
+    Every one of the six in-sample refusals binds at the HUB, and §57 and §74 both wrote
+    the predictor up in those words — "the hub margin classifies 16 of 16".  The held-out
+    box contains a genome that refuses at the RIM, so the hub margin alone classifies 31
+    of 32 and the sector-fit margin at EITHER junction classifies 32 of 32.
+
+    Nothing about the mechanism changed — a tangent point past the next sector's corner is
+    the same event at either ring.  What was in-sample was the JUNCTION, and this pins the
+    corrected form so the narrow one cannot come back.
+    """
+    rows = [r for v in report["sector"]["genomes_held_out"]["groups"].values()
+            for r in v]
+    refused = [r for r in rows if not r["built"]]
+    assert refused, "nothing refused in the held-out draw — that is a finding"
+    assert any(r["fit"]["rim"]["binds"] for r in refused), (
+        "no rim-bound refusal in the held-out box — if the draw changed, §78's "
+        "narrowing of §57's wording needs re-reading rather than this test relaxing")
+
+    hub_only = sum(1 for r in rows if r["fit"]["hub"]["binds"] != r["built"])
+    either = sum(1 for r in rows
+                 if (r["fit"]["hub"]["binds"] or r["fit"]["rim"]["binds"]) != r["built"])
+    assert either == len(rows), (either, len(rows))
+    assert hub_only < len(rows), (
+        "the hub margin alone now classifies the whole held-out box — the rim refusal "
+        "is gone and §78's narrowing should be re-read")
+
+
+# ---------------------------------------------------------------------------
+# THE BARRIER HALF, AGAINST A PER-GENOME ENTRY (PLAN §78)
+# ---------------------------------------------------------------------------
+
+def test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined(report):
+    """§78's finding: the same barrier clearance for several times the cliff margin.
+
+    §68 declined `GENOME_ROBUST_*` because it spends the shipped genome's cliff margin down
+    to ~0.056.  A per-genome entry — each genome taking a share of its OWN room, the shape
+    §57's clamp works in — clears the SAME 31 of 32 while leaving 0.20-0.36, because a
+    global pair has to be safe for the tightest genome in the box and pays for that
+    everywhere.
+
+    Pinned because it is the number that reopens §68's first reason, and because the first
+    draft of §78 concluded the exact opposite off a miscount — three genomes that build at
+    every entry in the bracket were tallied as measurement failures.  If that handling
+    regresses, this test is what catches it.
+    """
+    for key in ("cliff_profile", "cliff_profile_held_out"):
+        cp = report["sector"]["per_config"]["coarse"][key]
+        assert cp["end"] == fb.GENOME_ROBUST_END
+        rows = {r["factor"]: r for r in cp["rows"]}
+        assert set(rows) == set(fb.CLIFF_PROFILE_FACTORS)
+
+        # the margin the rule leaves grows as the factor falls, and monotonically —
+        # that is the only reason sweeping the factor says anything
+        margins = [rows[f]["shipped_margin"] for f in sorted(rows, reverse=True)]
+        assert all(b > a for a, b in zip(margins, margins[1:])), margins
+
+        # and not one of them reaches the shipped pair's clearance
+        assert max(margins) < 0.5520, (key, max(margins))
+
+        # "no edge to project onto" and "could not be measured" are different claims and
+        # must not be tallied together — the first is the SAFEST genome in the box, and
+        # folding it into the second understated this rule by three of sixteen once
+        # already (§78).
+        for r in cp["rows"]:
+            assert r["n_built"] + r["n_unevaluable"] == r["n_genomes"], r
+            assert r["n_without_cliff"] > 0, (
+                "no genome builds across the whole bracket any more — the fallback "
+                "branch is now dead code and §78's correction should be re-read")
+
+    # THE DOMINANCE ITSELF, on the held-out box: at least one factor matches the global
+    # pair's barrier clearance while leaving several times its margin.
+    ho = report["sector"]["per_config"]["coarse"]["fit_clamp_held_out"]
+    gr = next(r for r in ho["rows"] if r["profile"] == "genome_robust"
+              and r["factor"] == fb.SECTOR_FIT_CLAMP)
+    cp = report["sector"]["per_config"]["coarse"]["cliff_profile_held_out"]
+    gr_margin = fb.GENOME_ROBUST_ENTRY - cp["shipped_cliff"]["entry"]
+    wins = [r for r in cp["rows"]
+            if r["n_clears_target"] >= gr["n_clears_target"]
+            and r["shipped_margin"] > 3.0 * gr_margin]
+    assert wins, (
+        f"no per-genome factor matches the global pair's {gr['n_clears_target']} clears "
+        f"at 3x its {gr_margin:.4f} margin — §78's finding has moved")
+    # and every one of them builds the whole box, or the clears are over a smaller set
+    for r in wins:
+        assert r["n_built"] == r["n_genomes"], r
+
+    # measured, not adopted — no module constant moved for any of this
+    assert ww.FILLET_LAYER_ENTRY_SLOPE == fb.LAYER_ENTRY_SLOPE
+    assert ww.FILLET_LAYER_END_OFFSET == fb.LAYER_END_OFFSET

@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(
 import wheel_genome as wg            # noqa: E402
 import wheel_wheel as ww             # noqa: E402
 import study_corner_singularity as cs  # noqa: E402
+import study_fillet_block as fb       # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -556,17 +557,34 @@ def test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one(
     identify. The filleted one is flat from `coarse` up. Both spreads are computed over
     the same three rungs of the same ladder.
     """
-    def spread(rep):
-        d = [r["axle_drop_mm"] for r in rep["rungs"][1:]]
-        return (max(d) - min(d)) / min(d)
+    sharp = report["deflection"]["interp"]
+    rounded = fillet_report["deflection"]["interp"]
 
-    sharp, rounded = spread(report), spread(fillet_report)
-    assert rounded < 0.003, (
-        f"the filleted axle drop spans {rounded:.4%} over coarse..fine — it no longer "
-        f"sits inside the +-0.3% band this arc exists partly to earn back")
-    assert sharp > rounded * 2.0, (
-        f"the unfilleted deflection ({sharp:.4%}) is no longer materially worse "
-        f"converged than the filleted one ({rounded:.4%})")
+    # RESTATED AFTER PART 18.  This used to compare the SPREAD of `axle_drop_mm` and
+    # demand the filleted one be under 0.3%.  That reading snaps to the nearest node and
+    # on the filleted mesh its ladder is not even monotone -- increments +0.001359 then
+    # -0.001236 -- so the 0.141% it reported was noise that happened to be small.  The
+    # claim the arc actually needs is about what is STILL TO COME after the finest rung,
+    # and on the interpolated reading both ladders are monotone and both settle, so the
+    # remaining tail is well defined for each.
+    for name, dd in (("unfilleted", sharp), ("filleted", rounded)):
+        assert dd["monotone"], (name, dd["values_mm"])
+        assert dd["settling"], (name, dd["increment_ratio"])
+        assert dd["remaining_tail_pct"] is not None, name
+
+    assert rounded["remaining_tail_pct"] < 0.3, (
+        f"the filleted deflection's remaining tail is "
+        f"{rounded['remaining_tail_pct']:.3f}% — it no longer sits inside the +-0.3% "
+        "band this arc exists partly to earn back")
+    assert sharp["remaining_tail_pct"] > 0.3, (
+        f"the unfilleted deflection's tail is {sharp['remaining_tail_pct']:.3f}% — if it "
+        "is now inside the band too, the fillet's convergence argument has lost its "
+        "contrast and that is a finding")
+    assert sharp["remaining_tail_pct"] > 5.0 * rounded["remaining_tail_pct"]
+
+    # and the node reading is kept in the artifact precisely so this stays checkable:
+    # on the filleted mesh it is NOT monotone, which is why its spread meant nothing
+    assert fillet_report["deflection"]["node"]["monotone"] is False
 
 
 def test_nothing_wires_the_fillet_into_the_objective():
@@ -689,3 +707,91 @@ def test_the_arc_distance_is_a_distance_to_the_ARC_and_not_to_its_circle(genes):
         assert cs._distance_to_arc(far, arc)[0] == pytest.approx(
             min(float(np.linalg.norm(far[0] - arc["A"])),
                 float(np.linalg.norm(far[0] - arc["B"]))), abs=1e-12), label
+
+
+# ---------------------------------------------------------------------------
+# THE TWO-OBJECTIVE PROFILE QUESTION (FILLET_PLAN PART 16)
+# ---------------------------------------------------------------------------
+
+def test_a_genome_robust_layer_profile_holds_the_deflection_band(fillet_report):
+    """PART 13's surviving reason, attacked directly — and it turns out to be beatable.
+
+    PART 13 declined the genome-robust profile on two grounds; PART 14 falsified one and
+    PART 16 showed the argmax is not stale, so everything rested on this: at
+    `GENOME_ROBUST_ENTRY/END` the shipped genome's filleted axle-drop spread over
+    `coarse..fine` more than triples and leaves the +-0.3% band.  That was ONE alternative
+    pair.  Priced across the whole candidate set — every cell clearing `MIN_SJ_TARGET` on
+    the clamped, fold-clean box while refusing none of it — several hold the band on BOTH
+    readings of the deflection, and the pair that SHIPS holds only one of them.
+
+    Asserted so that each half fails differently.  If the admissible set empties, the
+    promotion PART 17 sequences is off.  If the shipped pair starts holding both, the
+    argument that it is not the best-converged profile available has gone away.
+    """
+    pr = fillet_report["profiles"]
+    ship = tuple(pr["shipped_pair"])
+    cand = {tuple(p) for p in pr["candidates"]}
+    rows = {(r["entry"], r["end"]): r for r in pr["rows"]}
+    assert len(cand) >= 20, len(cand)
+    assert cand <= set(rows), "a candidate was never priced"
+
+    both = sorted(p for p in cand
+                  if rows[p]["inside_band"] and rows[p]["inside_band_patch"])
+    assert both, ("no candidate holds both bands — the two-objective profile PART 16 and "
+                  "PART 17 record would not exist, which is a finding")
+    assert (fb.TWO_OBJECTIVE_ENTRY, fb.TWO_OBJECTIVE_END) in both
+
+    # the shipped pair holds the single-node band and NOT the patch one; that asymmetry
+    # is PART 17's re-pricing of PART 12 and it is the reason the promotion is not taken
+    # on these statistics
+    assert rows[ship]["inside_band"] is True
+    assert rows[ship]["inside_band_patch"] is False, (
+        "the shipped pair now holds the patch-mean band too — PART 17's re-pricing of "
+        "PART 12's 0.141% no longer applies and the records should say so")
+    for p in both:
+        assert rows[p]["patch_spread_pct"] < rows[ship]["patch_spread_pct"]
+
+    robust = tuple(pr["genome_robust_pair"])
+    assert rows[robust]["inside_band"] is False
+
+
+def test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet(fillet_report):
+    """The finding that stops PART 17 from promoting on its own numbers.
+
+    The 1-node spread jumps fourfold between adjacent cells with coarse and medium
+    agreeing to 0.0002 mm, and it is not mesh quality, aspect ratio or topology — every
+    mesh has the same element count.  It is how many nodes land in the contact patch at
+    the finest rung, which the layer profile moves because the fillet re-cuts the rim
+    blocks.  Every cell holding both bands reaches the same patch count; every cell
+    failing either reaches fewer.
+
+    If that stops being true, the band has started measuring the fillet again and the
+    promotion can be settled without `make gci` — so this fails rather than passing.
+    """
+    pr = fillet_report["profiles"]
+    cand = {tuple(p) for p in pr["candidates"]}
+    ok, bad = set(), set()
+    for r in pr["rows"]:
+        if r["spread_pct"] is None or (r["entry"], r["end"]) not in cand:
+            continue
+        (ok if r["inside_band"] and r["inside_band_patch"] else bad).add(
+            r["n_nodes_in_patch"][-1])
+    assert ok and bad, (sorted(ok), sorted(bad))
+    assert not (ok & bad), (
+        f"patch counts {sorted(ok & bad)} appear on both sides — the band is no longer "
+        "separated by the contact patch alone, which is a finding")
+    assert min(ok) > max(bad), (sorted(ok), sorted(bad))
+
+    # and the patch count really does move up the ladder, or the claim is about nothing
+    for r in pr["rows"]:
+        if r["patch_count_moves"] is not None:
+            assert r["patch_count_moves"], r
+
+
+def test_the_layer_profile_sweep_moved_the_mesh_it_claims_to_have_moved(fillet_report):
+    """A sweep of nine profiles that silently priced one mesh nine times would pass every
+    assertion above by reporting identical spreads.  The axle drops must actually differ.
+    """
+    pr = fillet_report["profiles"]
+    drops = [tuple(r["axle_drop_mm"]) for r in pr["rows"] if r["axle_drop_mm"]]
+    assert len(set(drops)) == len(drops), "two candidate profiles produced the same ladder"

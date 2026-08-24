@@ -271,3 +271,144 @@ def test_the_filleted_blocking_refuses_a_switched_off_end(genes, R):
         ww.sector_blocks(genes, "coarse", fillet=R)
     blocks = ww.sector_blocks(genes, "coarse", fillet=R, fillet_blocking="spoke")
     assert tuple(k for k in blocks if not k.startswith("_")) == ww.BLOCK_ORDER
+
+
+# ---------------------------------------------------------------------------
+# THE LAYER PROFILE, THREADED TO THE FULL ASSEMBLY (FILLET_PLAN PART 16)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("cfg", CFGS)
+def test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default(genes, filleted,
+                                                                       cfg):
+    """`layer_profile=None` must be the mesh that shipped before the parameter existed.
+
+    `build_wheel`, `_sector_coords` and `sector_blocks` grew a `layer_profile` keyword so
+    PART 16 could price what a candidate `(entry, end)` costs the SOLVE — the one reason
+    PART 13's declined call still rests on.  A pass-through added to shipped geometry is
+    only safe if its default path is the old path exactly, so this asserts bitwise
+    equality rather than closeness, three ways: omitted, `None`, and the two module
+    constants passed explicitly.
+
+    The unfilleted path is asserted too.  It never reaches `_layer_profile` at all, and
+    the way that could stop being true is a future edit moving the call up a level.
+    """
+    ref = filleted[cfg].coords
+    assert np.array_equal(ref, ww.build_wheel(genes, cfg, fillet=True,
+                                              layer_profile=None).coords)
+    assert np.array_equal(ref, ww.build_wheel(
+        genes, cfg, fillet=True,
+        layer_profile=(ww.FILLET_LAYER_ENTRY_SLOPE,
+                       ww.FILLET_LAYER_END_OFFSET)).coords)
+    plain_ref = ww.build_wheel(genes, cfg).coords
+    assert np.array_equal(plain_ref,
+                          ww.build_wheel(genes, cfg, layer_profile=(-0.9, 0.5)).coords)
+
+
+def test_the_layer_profile_actually_MOVES_the_filleted_mesh(genes, filleted):
+    """And the pass-through has to bite, or the bit-identity above is vacuous.
+
+    A parameter that changed nothing would pass every equality test in this file and
+    silently make PART 16's whole sweep a measurement of one profile nine times.  The
+    node count must NOT change — the profile moves where the boundary layer's stations
+    sit, not how many there are — so both halves are asserted.
+    """
+    moved = ww.build_wheel(genes, "coarse", fillet=True, layer_profile=(-0.75, 0.70))
+    ref = filleted["coarse"]
+    assert moved.coords.shape == ref.coords.shape
+    assert moved.n_nodes == ref.n_nodes and moved.n_elements == ref.n_elements
+    d = np.abs(moved.coords - ref.coords).max()
+    assert d > 0.1, f"the layer profile moved the mesh by only {d:.2e} mm"
+
+
+# ---------------------------------------------------------------------------
+# THE SECTOR-FIT CLAMP (PLAN §57 measured it, FILLET_PLAN PART 21 adopted it)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("cfg", CFGS)
+def test_the_sector_fit_clamp_is_BIT_IDENTICAL_at_the_shipped_genome(genes, filleted,
+                                                                    cfg):
+    """The clamp may not move the mesh every published fillet number was taken on.
+
+    The shipped genome's hub radius is 0.6636 mm against a sector-fit limit of 3.1297 and
+    its rim junction has no limit at all, so the clamp has nothing to do here — and PLAN
+    §57's whole case for adopting it rests on that being true rather than assumed.  Every
+    number in FILLET_PLAN PARTS 11-20 and PLAN §50-§69 was taken on this mesh.
+
+    Asserted bitwise and three ways, exactly as the layer-profile pass-through above is:
+    the default, the factor passed explicitly, and the clamp disabled.
+    """
+    ref = filleted[cfg].coords
+    assert np.array_equal(ref, ww.build_wheel(
+        genes, cfg, fillet=True, fillet_clamp=ww.SECTOR_FIT_CLAMP).coords)
+    assert np.array_equal(ref, ww.build_wheel(
+        genes, cfg, fillet=True, fillet_clamp=None).coords)
+    assert filleted[cfg].fillet_clamped == {"hub": False, "rim": False}
+    assert filleted[cfg].fillet_radii_mm == (float(genes[12]), float(genes[13]))
+
+
+def test_the_sector_fit_clamp_RESCUES_a_genome_that_has_no_room(genes):
+    """And it has to bite, or the bit-identity above is a test of nothing.
+
+    A radius past its own sector's limit refuses outright — that refusal is six of the
+    sixteen genomes in PLAN §48's scope note and the reason `fillet=` was held to one
+    genome.  Driven here rather than drawn: the shipped genome with `R_hub` moved to
+    3.5 mm is past its measured limit of 3.1297 and is a two-line construction, where a
+    drawn genome would make this test carry a 60-second Latin hypercube.
+    """
+    v = np.array(genes, dtype=float)
+    v[12] = 3.5
+    with pytest.raises(ValueError, match="passed the next sector's corner"):
+        ww.build_wheel(v, "coarse", fillet=True, fillet_clamp=None)
+
+    m = ww.build_wheel(v, "coarse", fillet=True)
+    assert m.fillet_clamped == {"hub": True, "rim": False}
+    R_hub, R_rim = m.fillet_radii_mm
+    assert R_hub < 3.5 and R_rim == float(v[13])
+    # the applied radius IS the limit times the factor, not some other retreat
+    limit = R_hub / ww.SECTOR_FIT_CLAMP
+    assert 3.12 < limit < 3.14, limit
+
+
+def test_the_clamp_is_INSENSITIVE_to_its_own_factor(genes):
+    """0.95 is not a tuned number and this asserts that rather than the value.
+
+    §57 measured every factor in 0.75-0.99 building all sixteen drawn genomes, so what
+    the constant has to be is "inside the room and not at its edge".  Pinning 0.95 would
+    turn a free choice into a golden number; pinning the insensitivity is what the
+    measurement actually supports.  The limit each factor is a fraction OF must be the
+    same, which is the part that would break if the criterion drifted.
+    """
+    v = np.array(genes, dtype=float)
+    v[12] = 3.5
+    limits = []
+    for factor in (0.75, 0.90, 0.95, 0.99):
+        m = ww.build_wheel(v, "coarse", fillet=True, fillet_clamp=factor)
+        assert m.fillet_clamped["hub"], factor
+        limits.append(m.fillet_radii_mm[0] / factor)
+    assert max(limits) - min(limits) < 1e-9, limits
+
+
+def test_an_EXPLICIT_radius_pair_is_never_clamped(genes):
+    """`fillet=(R_hub, R_rim)` is a request for those radii and is refused, not moved.
+
+    Every caller that passes a pair is measuring the radius itself — `make fillet`'s fold
+    table, the study's radius grid, the two controls at `(0, 0)` — so a clamp there would
+    silently retitle their x-axis.  The gene-derived branch is the one where a radius the
+    sector cannot hold is a genome to keep rather than a request to honour.
+    """
+    with pytest.raises(ValueError, match="passed the next sector's corner"):
+        ww.build_wheel(genes, "coarse", fillet=(3.5, float(genes[13])))
+    m = ww.build_wheel(genes, "coarse", fillet=(0.5, 0.5))
+    assert m.fillet_radii_mm == (0.5, 0.5)
+    assert m.fillet_clamped == {"hub": False, "rim": False}
+
+
+def test_the_unfilleted_mesh_reports_no_radii_at_all(genes):
+    """`None` for "there is no fillet" must not read as "nothing was clamped".
+
+    The two are different claims and a consumer pricing `R_hub` against a deflection has
+    to be able to tell them apart — an unfilleted mesh has no radius to report, which is
+    not the same as a filleted one whose radii came through untouched.
+    """
+    m = ww.build_wheel(genes, "coarse")
+    assert m.fillet_radii_mm is None and m.fillet_clamped is None

@@ -1020,6 +1020,13 @@ with a red gate (they are written before the non-zero exit), and `study_gradient
 
 # STEP 3 RECORD, PART 2 — 2026-08-23. THE TRI-BLOCK IS BUILT. BOTH OF STEP 3's CLAUSES ARE RETIRED, IT MESHES AT 77x THE BLOCK IT REPLACES — AND A THIRD OBSTACLE NEITHER §37 NOR §51 NAMED IS WHAT ACTUALLY STOPS IT
 
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
 Step 3 stopped **before building it**, on two checks that needed nothing built, and was
 right to: neither of them was about whether the partition works. §51 re-priced both with a
 scratch probe, said both were wrong, filed the probe **as** a probe — *"no driver, no
@@ -1196,3 +1203,555 @@ pins all of it.
 3. **Then, and only then, the decision to adopt the faithful rim** — which is a model
    change with its own baseline: full `make test`, `make studies`, and the mass /
    hub-share / axle-drop deltas, exactly as Step 4 needed for the flip.
+
+---
+
+# STEP 3 RECORD, PART 3 — 2026-08-23. A FIXED RULE DOES REACH THE CEILING, AND FOR ONE CONFIG IT COSTS THE SHIPPED GENOME NOTHING TO GET THERE
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
+PART 2's item 1 asked whether a FIXED barycentric triple — the one with no free parameter
+left, the one that would actually ship — can be re-derived to reach every genome its own
+`best_w` reaches, rather than the sixteen-genome argmax `sweep` performs at one genome
+alone. `sweep_w_genomes`, new in `studies/study_tri_block.py`, answers it: a joint argmax
+of the worst genome's worst block, over the same sixteen genomes `sweep_genomes` already
+draws PLUS the shipped genome (named and appended, exactly as
+`study_fillet_block.sweep_layer_profile_genomes` does for its own shipped genome), against
+a dedicated 25x25 barycentric grid published in full (`GENOME_ROBUST_X_GRID_N`).
+
+**The objective is `n_clear` first and the worst value second, not the reverse.** A raw
+argmax of the worst genome's worst block chases whichever genome sits closest to folding,
+which turned out to be a DIFFERENT question from how many genomes clear the barrier the
+optimizer actually enforces — at `coarse` the published grid has exactly one cell where
+every fixable genome is simultaneously valid, and it is not the cell a worst-case argmax
+would have picked, nor is it the cell that clears the most genomes. Ranking by
+`(n_clear, worst)` finds the one that does both.
+
+```
+config   n_cells   current w valid/clear   genome-robust w valid/clear   shipped genome
+coarse      16           13 / 12                  15 / 13               0.6262 (UNCHANGED)
+medium      13           11 / 11                  13 / 12               0.4336 (was 0.5816)
+```
+
+`n_cells` is the drawn genomes `sweep_w_genomes` can even ask the question of — the sixteen
+`sweep_genomes` draws, MINUS the one no `w` rescues at that config (`best_w_valid: False`:
+`41.2°` alone at `coarse`; `35.3°, 15.9°, 41.2°, 22.7°` at `medium`) — PLUS the shipped
+genome, appended and counted in. It is not the same denominator as PART 2's "12/16" /
+"10/16" table, which counts against all sixteen drawn genomes without excluding the
+unfixable one; both are reported in the artifact and neither should be read as the other.
+
+**At `coarse` this is free.** The genome-robust cell leaves the shipped genome's own min
+scaled Jacobian at 0.6262 — bit-identical to today's single-genome rule — while lifting two
+more of the drawn genomes off the fold and one more over the barrier. There is no reason
+not to prefer it if this arc is picked up.
+
+**At `medium` it is not free, but it is cheap.** The shipped genome's own number drops from
+0.5816 to 0.4336 — the quoted multiplier over the collapse falls from roughly 70x to
+roughly 52x — while two more drawn genomes stop folding and one more clears the barrier.
+0.4336 still clears `MIN_SJ_TARGET` by more than double, so nothing that reads this file's
+headline table as "does the tri-block clear the barrier" would see a different answer; only
+the specific multiplier would print a smaller number.
+
+**It is measured, not adopted, and the reason is different from every prior use of that
+phrase in this project.** `blend 0.0` and §48/§54's fillet profile were reported-not-shipped
+because adopting them would move a mesh the OPTIMIZER or an already-published FEA result
+depends on. Nothing here does: the tri-block is not wired into `sector_blocks`, so
+`chosen` — the cell `sweep`'s single-genome argmax picks — is read by nothing except this
+file's own printed table and `per["sector"]` in the committed artifact. Adopting the
+genome-robust cell would change a quoted number and nothing else. It is left unshipped
+anyway, so that a single stated rule ("the argmax over the published grid, at the shipped
+genome") keeps meaning one thing, and so that the choice of which number this arc quotes
+going forward is made by whoever next picks it up rather than by this session substituting
+one argmax for another inside a file that already had a settled headline.
+
+**What this retires, and what it does not.** PART 2's item 1 asked whether "a rule alone
+may not be enough" — a FIXED rule reaches full validity on every genome its own `best_w` (a
+free per-genome parameter) reaches at `medium` (13/13), and within one genome of it at
+`coarse` (15/16), which is the strongest form of "a rule holds across the gene box" this
+file can state without inventing a new construction. What it does not do is rescue the
+genome no `w` reaches at either config (41.2°, plus three more that are unreachable at
+`medium` alone) — that is still the curved Y's question, unchanged from PART 2, and the
+ceiling itself says a rule alone cannot close it.
+
+`tests/test_tri_block.py::test_a_genome_robust_w_reaches_more_of_the_box_without_being_adopted`
+pins the comparison at the two named cells (re-derived fresh, not read from the artifact)
+and that `chosen` has not moved.
+
+---
+
+# STEP 3 RECORD, PART 4 — 2026-08-23. THE CURVED Y IS BUILT. IT RESCUES WHAT PART 2 SAID IT WOULD, AND THE ONE GENOME LEFT REFUSES FOR A REASON THE MEASUREMENT DOES NOT NAME
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
+PART 2's Winslow column found that an elliptic interior solve changes the tri-block's
+number by **0.000000**, because the Y's three spokes are BOUNDARIES of two blocks each and
+per-block smoothing holds them by definition. Its conclusion was that the number is set by
+where the spokes GO, and they were straight lines — so a curved Y was the successor and a
+better smoother was not. PART 3 then closed the interior point's half. This closes the
+other one.
+
+## WHAT THE CURVE IS, AND WHY THIS ONE
+
+`_bent_spoke` in `studies/study_tri_block.py`. Each spoke is the opposite edge of two of
+the three quads, and in each of them it faces a piece of the region's own boundary: `sC`
+faces the arc in `rim_tri_t` and the free side in `rim_tri_b`, `sA` faces the cross and the
+free side, `sB` faces the cross and the arc. Those two curves are what the spoke is bent
+TOWARD — the blend `(1-frac)*u + frac*v` at the fraction where the spoke's own foot sits
+between them, which is the curve the region's two sides say should be there. That blend
+does not pass through the spoke's endpoints; two linear terms pin it back to them, which is
+the Coons correction and is why **the endpoints are exact for every bend and the three
+internal seams stay exact by construction rather than by tolerance**.
+
+Three things fall out of the construction rather than being arranged:
+
+  * **It needs no resampling.** `splits` already forces `a1 == b2`, `a2 == c1` and
+    `c2 == b1`, so each spoke and the two curves it blends carry the SAME node count. The
+    blend is node-for-node.
+  * **`bend = 0.0` returns the straight spoke untouched**, not an array equal to it. Every
+    number this file published before the curve existed is reproduced bit for bit —
+    verified by diffing the regenerated artifact against the committed one, where the only
+    non-additive change is the wall clock.
+  * **The bend moves seams and nothing else.** The six boundary edges the region owns are
+    bit-identical across bends (`the_bend_moves_no_boundary`), the tiled area shifts by
+    7e-16 relative — one ULP of three shoelaces whose shared spokes cancel only to rounding
+    — and all 17 seams still close to 7.11e-15 mm at the bend the joint rule picks.
+
+## WHAT IT REACHES
+
+`sweep_bend_genomes` runs the same two-column claim `sweep_genomes` makes — a per-genome
+ceiling and one fixed rule — over the (w, bend) plane instead of the w one: 308 interior
+points x 11 bends x 17 genomes (the sixteen drawn plus the shipped one, named and
+appended), at both configs.
+
+```
+                        per-genome ceiling            one FIXED (w, bend) rule
+config   straight    curved   rescued      straight valid/clear/worst   curved valid/clear/worst
+coarse     16/17     16/17       0            15/16  13  -0.0204          16/16  13  +0.0478
+medium     14/17     16/17       2            13/16  12  -1.0000          13/16  13  -0.4875
+```
+
+**At `coarse` the curve turns a fixed rule that folds into one that does not.** The best
+fixed straight `w` leaves one of the sixteen reachable genomes inverted at -0.0204; the same
+`w` at **bend 0.20** puts every one of them valid, with the joint floor at **+0.0478**. And
+it costs the shipped genome nothing: 0.6262 at the published cell, 0.6262 at the joint
+curved rule, because the bend is inert there.
+
+**At `medium` it does not raise the count, and it raises the ceiling instead.** Two genomes
+that fold at every placement of the interior point become valid once the spokes may follow
+the region — 35.3° reaching **0.3464** and 15.9° **0.1698** — and a third, 22.7°, goes from
+0.0780 to **0.2366**, over `MIN_SJ_TARGET` rather than merely off the fold. The fixed rule's
+count is unchanged at 13/16 but it clears the barrier on one more and lifts the joint floor
+from -1.0000 to -0.4875. The shipped genome pays 0.5816 -> 0.4384 to sit at that joint rule
+— still more than double the barrier, and still a choice nothing is forced into.
+
+**THE BEND IS INERT WHERE THE REGION IS FAT.** This is the finding that says the curve is
+not a knob being tuned. Of seventeen genomes at `coarse`, exactly ONE wants a non-zero bend;
+at `medium`, four do. Every other genome's own optimum is bend 0.0 — the straight Y — and
+at the published cell the shipped genome's number moves across the WHOLE bend range by
+0.000000 at `coarse` and 0.001 at `medium`. A correction to cutting chords does nothing
+where the chords were fine.
+
+## THE MECHANISM, AND THE HALF OF IT THAT IS NOT ONE
+
+PART 2 named the straight Y's failure mode as **the wide weld arc**. That was right about
+the correlation and wrong about the quantity. The arc span is an angle; what a chord cannot
+survive is a side that **bows away from one by a fair fraction of the region's own width**,
+and `bow_over_width` — the arc's greatest departure from its chord, over the cross
+section's length — is now in `region_report` and in every genome row.
+
+It separates cleanly at `coarse`: the genomes the fixed straight rule folds on run
+**0.264-0.498**, the ones it does not run **0.009-0.129**, with nothing between. It is also
+what tells 18.5° (bow 0.149, drawn at `medium` and valid there at bend 0) from 15.9° (bow
+0.264, folded at `medium` at every straight placement) — two genomes the arc-span story
+gets backwards, because 18.5° is a wide arc across a fat 4.24 mm region and 15.9° is a
+narrower one across a 1.77 mm sliver.
+
+**And it does not explain the survivor, which is stated here because it would be easy to
+imply that it does.** The genome with the LARGEST bow in the whole box — 35.3° at 0.498 — is
+one the curve reaches, at both configs. The one that refuses has a bow of 0.491, smaller.
+**[READ "THE WHOLE BOX" AS "THE UNIFORM DRAW" — PART 8.** A draw conditioned on arc span
+reaches bows to 1.25 against this sampler's 0.54, so 0.498 is not the largest bow the design
+space holds. The comparison between the two genomes stands; the superlative does not.**]**
+So the bow says where the bend is NEEDED; it does not say what makes a region impossible,
+and that quantity is still unnamed. `test_what_the_curve_does_NOT_reach_stays_reported`
+asserts the non-separation rather than the separation, so that a future run which does
+separate them is a finding and not a silent pass.
+
+## THE REFUSAL, PRICED AT EVERY FREE COUNT
+
+One drawn genome — 41.2°, sides 34.88 / 29.41 / 6.32 mm — folds at every interior point AND
+every bend, at both configs. Because `B` is held across the gene box for a reason that has
+nothing to do with this question (it sets element counts, and a mesh whose count depends on
+the design cannot be compared across a search), the refusal is re-asked at **every
+admissible free count** rather than at the one that ships:
+
+```
+coarse   B = 8  -0.0134    B = 10 -0.0195    B = 12 -0.0189
+medium   B = 12 -0.0141    B = 14 -0.0194    B = 16 -0.0180    B = 18 -0.0174   B = 20 -0.0202
+```
+
+Valid at none of them. The ceiling is **-0.0134**, a hair below zero rather than a
+collapse, and a hand probe outside the published search box (pushing `w_Bstar` to 0, i.e.
+the interior point onto the P_t-Q chord) only reaches -0.0064 — so it is not the box
+clamping the answer either. `every_refusal_was_re-asked_at_every_free_count` is a
+self-check.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, `UNCAP_DEFAULT` still `(True, 1.0)`, and `sector_blocks` still returns seven
+blocks.** `bend` defaults to 0.0, `chosen` is still `sweep`'s single-genome argmax at the
+straight Y, and `per["sector"]` still reports 0.626233 / 0.581582 and 76.6x / 70.5x.
+`test_nothing_here_is_wired_into_the_mesh_the_tree_BUILDS` and
+`test_the_bend_is_OFF_by_default_and_off_means_untouched` pin both halves.
+
+`make triblock` is now ~290 s rather than ~15 s, and the Makefile's help says so.
+
+## THE SUCCESSORS THIS PART LEAVES
+
+1. **What makes a region impossible.** The bow explains the straight Y's folds and does not
+   explain the one refusal that survives the curve. Sixteen genomes with their bows, arc
+   spans, side lengths, three wedge angles and per-`B` ceilings are in the artifact, and
+   the refusal's ceiling is -0.013 rather than -0.9 — a hair, not a collapse. Whatever
+   separates it from the 0.498-bow genome the curve reaches is one quantity and it is not
+   yet measured.
+2. **A bend that is a FUNCTION of the genome rather than a constant.** The per-genome
+   ceiling at `medium` reaches 16 of 17; one fixed (w, bend) reaches 13 of 16. The gap is
+   larger than the straight Y's was, because the curve enlarged what is reachable without
+   making a constant rule better at reaching it. `bow_over_width` is the obvious argument
+   for such a function and the per-genome optima are in the artifact to fit against —
+   though note that they are argmaxes over a plateau and their scatter is partly that.
+3. **Then, and only then, the decision to adopt the faithful rim** — unchanged from PART 2.
+   A model change with its own baseline: full `make test`, `make studies`, and the mass /
+   hub-share / axle-drop deltas.
+
+---
+
+# STEP 3 RECORD, PART 5 — 2026-08-23. THE FOLD MARGIN IS RULED OUT AS THE THING THAT MAKES A REGION IMPOSSIBLE, WHICH IS ONE CANDIDATE OFF PART 4's OWN LIST
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
+PART 4 left "what makes a region impossible" as its first successor and said the
+separating quantity is *"one quantity and it is not yet measured"*.  Nothing here measures
+it.  What this does is remove a candidate that was about to be reached for, and remove it
+with a number rather than an argument.
+
+`study_fillet_block`'s PART 15 built a fold gate: `wheel_geometry.self_intersection_margin`,
+the closed-form clearance before a spoke's offset band turns inside out, which classifies
+that study's one inverted block exactly and catches a class of drawn genome whose part does
+not exist.  **Both blocking studies draw from the same seed and the same stream, and draw
+the same sixteen genomes** — verified rather than assumed — so those genomes are in this
+box too, and the fold margin is now carried on every row here as `fold`.
+
+It explains nothing about this construction:
+
+```
+  coarse   2/16 fold.  They sit at fixed-rule +0.5337 and +0.2104 — both above the barrier,
+           and one of them is the best cell in its whole orientation group.
+           The WORST cell in the box, -0.9597, has margin +0.1299 mm and folds nothing.
+  medium   1/16 folds, at +0.4756.
+           The WORST cell, -1.0000, has margin +2.7720 mm and folds nothing.
+```
+
+This is the expected answer and that is exactly why it is written down.  The tri-block
+partitions the rim JUNCTION region; the fold margin is a statement about the spoke's OFFSET
+BAND, which no block in this partition touches.  Two boxes drawn from the same sixteen
+genomes, two different constructions, and the feasibility number that classifies one of
+them 16/16 is anti-informative on the other — the hardest cell here is fold-clean at both
+configs.
+
+`the_fold_margin_does_not_explain_the_tri_block` gates it, and
+`test_the_fold_margin_is_NOT_what_makes_a_region_impossible` pins it per genome.  Both are
+written so that a future run in which the fold margin DOES start explaining refusals here
+fails rather than passing quietly, because that would be a finding: it would mean the two
+regions are coupled in a way nothing in this file currently believes.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, `UNCAP_DEFAULT` still `(True, 1.0)`, `bend` still defaults to 0.0, and no draw
+filter changed** — the margin is reported on each row, not applied to the draw.
+`study_tri_block.json` was diffed field-by-field against the committed one and is **purely
+additive**: sixteen `fold` blocks per config and one self-check, 33 fields in all, with
+every previously-committed field reproducing exactly.  `make triblock` is unchanged at
+~290 s.
+
+## WHAT PART 5 LEAVES
+
+Unchanged from PART 4, minus one candidate.  The separating quantity is still unnamed; the
+bow does not explain the surviving refusal, and now neither does the fold margin.  What is
+known about it is narrow and worth restating: the refusal's ceiling over every admissible
+free count is **-0.013**, a hair rather than a collapse, and it sits at bow 0.491 while the
+box's largest bow, 0.498, is a genome the curve reaches.
+
+---
+
+# STEP 3 RECORD, PART 6 — 2026-08-23. THE REFUSAL IS EXTREMAL ON THE REGION'S INTERIOR-ANGLE SUM, BY MORE THAN HALF THE SPREAD OF EVERYTHING ELSE — AND WITH ONE NEGATIVE EXAMPLE THAT IS A CANDIDATE, NOT A MECHANISM
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
+PART 4 left "what makes a region impossible" as its first successor: one drawn genome folds
+at every interior point, every bend and every admissible free count, at both configs, and
+neither the bow (PART 4) nor the fold margin (PART 5) explains it.  This asks the artifact's
+remaining shape numbers.
+
+**Three of them separate the refusal from all fifteen reached genomes, at both configs:**
+
+```
+  quantity              refusal   others min   others max      gap   gap/spread
+  coarse
+    wedge sum deg       156.371      170.330      194.703   13.960        0.573
+    |wedge sum - 180|    23.629        0.174       14.703    8.927        0.614
+    arc_span_deg         41.209        3.714       35.312    5.897        0.187
+  medium
+    wedge sum deg       156.667      170.489      194.906   13.822        0.566
+    |wedge sum - 180|    23.333        0.308       14.906    8.427        0.577
+    arc_span_deg         41.217        3.714       35.324    5.893        0.186
+```
+
+**The interior-angle sum is the widest: the refusal sits 14 degrees below the minimum of the
+other fifteen, a gap that is 57% of their entire spread.**  Arc span separates too but only
+by 19% of its spread, and it is the quantity PART 4's print already uses for the STRAIGHT
+Y's folds — where the ranges genuinely do separate — so its appearance here is partly that
+same effect.  `bow_over_width`, `turn_at_far_end_deg`, the smallest wedge and the A/C side
+ratio all fail to separate, which is PART 4's negative reconfirmed and extended.
+
+## AND WITH ONE NEGATIVE EXAMPLE THIS IS NOT YET A MECHANISM
+
+Stated plainly because it would be easy to write this up as an answer: **any quantity on
+which the single refusal happens to be extremal will "separate" a set of one from a set of
+fifteen.**  What makes the angle sum more interesting than that is the size of the gap
+relative to the spread, and that it is stable across configs — not that it is derived.
+
+A derivation was attempted and does not hold.  In the plane, Gauss-Bonnet gives
+`interior angle sum = 180 deg + total boundary turning`, which would have made the sum a
+statement about how concave the region is.  Measured, the three sides' turnings correlate
+with `sum - 180` at only **0.355** across the box — because the sides are not consistently
+oriented between flank orientations, so the signed total is not comparable genome to genome.
+The identity is presumably recoverable with the orientations reconciled; it is not
+recovered here, and the interpretation is therefore withheld rather than asserted.
+
+## WHAT WOULD SETTLE IT
+
+**A second refusal.**  The box has one because sixteen genomes is a small draw, and every
+statistic above is a set of one against a set of fifteen.  Drawing further until a second
+region refuses the curve at every bend and every free count would turn all four candidates
+into testable claims at once, and would cost about one more `make triblock` — the curved-Y
+sweep is the expensive part at roughly 290 s for sixteen genomes, so thirty-two is ten
+minutes.  Until then the honest statement is the one this part opens with: the refusal is
+extremal on the interior-angle sum by more than half the spread, and that is where to look.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no code changed, no artifact regenerated** — every number above is read
+from the committed `study_tri_block.json` or computed from the genes it carries.
+
+---
+
+# STEP 3 RECORD, PART 7 — 2026-08-24. THE EXPERIMENT PART 6 NAMED, RUN: NO SECOND REFUSAL AT SIXTY-FOUR GENOMES, AND THE CANDIDATE IT WAS BUILT TO CONFIRM COLLAPSED FROM 57% OF THE SPREAD TO 4%
+
+> **SCOPE — THE BOX HERE IS THE UNIFORM DRAW, NOT THE DESIGN SPACE (PART 8, PLAN §76).**
+> Every genome-box figure in this part comes from `study_mesh_quality.latin_hypercube`
+> over the full gene box at `GENOME_SWEEP_SEED`. That sampler puts about **one genome
+> above 35 degrees of arc span in sixty-four**, and a draw conditioned on arc span
+> reaches bows to 1.25 against its maximum of 0.54. The numbers below are correct about
+> what was drawn; read "the box" as "this draw" throughout.
+
+PART 6 ranked the region's interior-angle sum first among three separators and said plainly
+that with one negative example it was arithmetic rather than evidence, naming the fix: draw
+deeper until a second region refuses the curve.  `sweep_refusal_search` is that, at 16, 32
+and 64 genomes.  The draw is a SUPERSET — `sweep_genomes` fills each orientation from the
+same Latin-hypercube stream in the same order, so the first four of each are exactly the
+published sixteen and nothing above moves.
+
+**No second refusal appeared.  The curve reaches 63 of 64.**  So the experiment did not
+produce what it was designed to produce — and it produced something better:
+
+```
+  gap / reached-set spread          16 genomes   32 genomes   64 genomes
+    interior-angle sum                  0.573        0.257        0.041
+    |angle sum - 180|                   0.614        0.502        0.070
+    arc_span_deg                        0.187        0.187        0.176
+```
+
+Each larger draw finds a reached genome closer to the refusal in angle sum — 170.3, then
+164.2, then 157.9, against the refusal's 156.4 — so **the quantity PART 6 ranked first
+decays by a factor of fourteen as the box grows, and the one it ranked third and discounted
+is the one that holds.**  At 64 genomes `arc_span_deg` is the only separator with a gap
+worth more than a tenth of its spread, and no drawn genome has ever exceeded arc span
+35.312 while the refusal sits at 41.209.
+
+`bow_over_width` is now decisively out rather than merely unhelpful: a reached genome has
+bow 0.540 against the refusal's 0.491, so the refusal is not even extremal on it.
+`turn_at_far_end_deg`, the smallest wedge and the A/C ratio stay out.
+
+## WHAT THIS IS AND IS NOT
+
+**It is a demotion, not a promotion.**  Arc span survives a fourfold box; it is still one
+refusal against sixty-three, and "the largest arc span in the draw refuses" remains a set of
+one.  What has changed is that two of the three candidates are now known to be small-sample
+artefacts and were caught being so — a separation that decays as the box grows and one that
+holds are different kinds of claim, and only running the box out distinguishes them.
+
+**And the reason a second refusal is hard to find is itself a result:** the LHC draw
+produces almost nothing above 35 degrees of arc span.  Sixty-four genomes yielded exactly
+one above that, and it is the refusal.  So the next experiment is not "draw more" — it is
+**draw CONDITIONED on large arc span**, populating 35-45 degrees deliberately, and see
+whether refusals cluster there.  That is a different sampler, not a bigger one, and it is
+the first version of this question that could return a mechanism rather than a candidate.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no threshold moved, `bend` still defaults to 0.0, and every previously
+committed field in `study_tri_block.json` reproduces exactly** — the artifact gains the
+`refusal_search` section, a `num_points` key inside each row's `fold` block, and two
+self-checks.  `make triblock` is ~445 s rather than ~290 s and the search is the difference.
+
+---
+
+# STEP 3 RECORD, PART 8 — 2026-08-24. CONDITION THE DRAW ON ARC SPAN AND 22 OF 40 REGIONS REFUSE THE CURVE, AGAINST 1 OF 64 UNIFORM. IT IS A RISK FACTOR WITH A RATE — AND STILL NOT A GATE
+
+PART 7 ran the box out to 64 genomes, found no second refusal, and identified why: the
+uniform Latin hypercube puts about one genome above 35 degrees of arc span in sixty-four,
+so the band where the refusal lives is essentially unsampled.  It named the fix — a
+different sampler, not a bigger one — and this is that.
+
+Screening the stream on `arc_span_deg` before meshing costs nothing (the region and its
+report are cheap; the control mesh is not), so the band is reachable directly:
+
+```
+  29582 drawn -> 67 above 30 degrees -> 40 of those mesh clean
+  22 of the 40 REFUSE the curve at every bend and every admissible free count       55.0%
+  the uniform box, for comparison                                          1 of 64   1.6%
+```
+
+**A 35x enrichment.**  So the arc span is not a coincidence of one draw: regions with a wide
+arc really are far more often impossible, and PART 6's third-ranked candidate — the one it
+discounted, and the only one PART 7's fourfold box did not decay — is a real risk factor
+with a measured rate.
+
+## AND IT IS STILL NOT A GATE, WHICH IS THE HALF THAT KEEPS THIS HONEST
+
+Inside the band the two classes **overlap**:
+
+```
+  refusals   arc span 30.27 - 44.41
+  reached    arc span 30.08 - 36.14
+```
+
+So the arc span predicts HOW OFTEN a region is impossible and not WHICH one is.  Neither
+does anything else here: the refusals' interior-angle sums run 151.8 to 187.5 and their
+bows 0.25 to 1.25, both straight across the reached ranges.  Whatever picks the individual
+out of the band is still unnamed, and the band is now the right place to look for it —
+forty genomes with a 55% failure rate is a far better testbed than sixteen with one.
+
+The conditioned draw also reaches regions the uniform one never produced: bows up to 1.25
+against a uniform-box maximum of 0.54.  That is worth knowing on its own — every "the box
+spans X" statement in PARTS 1-7 is a statement about what the UNIFORM sampler reaches.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no threshold moved, `bend` still defaults to 0.0, and the draw the
+published numbers rest on is untouched** — the band is its own stream (seed offset +1000)
+so it shares no genome with the box, which is exactly what makes the two rates comparable.
+`study_tri_block.json` gains the `arc_span_band` section and two self-checks; every
+previously committed field reproduces exactly.  `make triblock` is ~670 s and the Makefile
+says so.
+
+## WHAT PART 8 LEAVES
+
+1. **What picks the refusal out of the band.**  Forty genomes, 55% failing, all shape
+   numbers overlapping — the first genuinely well-conditioned version of §56's question.
+2. **Every "the box spans X" claim in PARTS 1-7 is about the uniform sampler**, and the
+   band shows it reaches less than was assumed.  Worth a pass over those statements.
+
+---
+
+# STEP 3 RECORD, PART 9 — 2026-08-24. WHAT PICKS THE REFUSAL OUT OF THE BAND IS THE SMALLEST CORNER ANGLE, AT AUC 0.043 — AND A HELD-OUT DRAW CUTS THE FITTED RULE FROM 1.000 TO 0.833 AND FALSIFIES HALF OF IT
+
+PART 8 left forty band genomes at a 55% failure rate as "the first well-conditioned version
+of §56's question".  With twenty-two refusals against eighteen reached this is a
+classification problem rather than a set of one, so it can be scored properly.
+
+## THE ANSWER IS THE SMALLEST WEDGE, AND IT IS NOT CLOSE
+
+Concordance (AUC) of each shape quantity between the 22 refusals and 18 reached:
+
+```
+  min_wedge_deg          0.043      <- a random refusal has a SMALLER minimum corner
+  wedge_sum_deg          0.227         angle than a random reached region 95.7% of the time
+  wedge_sum_minus_180    0.679
+  arc_span_deg           0.667
+  turn_at_far_end_deg    0.366
+  A_over_C               0.429
+  bow_over_width         0.472      <- no signal at all
+```
+
+**The smallest interior angle of the curvilinear triangle.**  Which is mechanically the
+right shape: a transfinite blend on a region with a very sharp corner has to squeeze a
+structured grid into it, and that is what folds.
+
+**And it is a quantity PART 6 tested and dismissed** — in the uniform box the refusal's
+19.284 sat inside the reached range [10.053, 36.971].  The reason is now visible: ten of
+the sixty-three uniform reached genomes have a minimum wedge under 17 degrees and **none of
+them has an arc span above 30**.  A sharp corner is harmless in a narrow region; it is only
+in the wide-arc regime that it decides anything.  PART 6 could not have seen that, because
+its sampler never put the two together.
+
+## AND THEN A HOLD-OUT, WHICH IS THE PART WORTH KEEPING
+
+A conjunctive rule fits the 104 genomes measured so far **perfectly** — `arc > 36.16 OR
+(arc > 30 AND min_wedge < 17.12)`, 23 of 23 refusals caught, zero false positives, accuracy
+1.000.  Both thresholds are fitted on the same observations they are scored on, and one of
+them lands 0.02 degrees from the nearest counterexample, so that number is not evidence.
+
+Scored on a fresh band drawn from a disjoint stream (seed offset +7000), thresholds frozen:
+
+```
+  30 held-out band genomes, 12 refuse (40% base rate)
+    accuracy 0.833   precision 0.733   recall 0.917
+    11 caught, 1 missed, 4 false positives, 14 cleared
+```
+
+Above the majority-class baseline of 0.600, and a long way below 1.000.  **And the hold-out
+falsifies half the rule outright**: a region with arc span **39.97** and min wedge 20.27
+was REACHED, so "a wide enough arc always refuses" — which looked like six for six — is
+simply false.  The other three errors are all the corner branch firing too early
+(min wedge 16.59, 16.69, 17.08 at arcs 31-32, all reached), so 17.12 is too aggressive.
+
+## WHAT IS ESTABLISHED AND WHAT IS NOT
+
+**Established:** the minimum wedge angle is the dominant separator inside the difficult
+regime (AUC 0.043 over 40 genomes); the arc span sets how often a region is in that regime
+at all (35x enrichment, PART 8); and the two are conjunctive — neither works alone, which
+is why six sections of single-quantity searching found nothing.
+
+**Not established:** any threshold.  The fitted pair scores 1.000 in sample and 0.833 out,
+and its wide-arc branch has a counterexample.  What §56 asked for was a mechanism, and a
+mechanism with an unvalidated threshold is where this stands.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, no code changed, no artifact regenerated.**  Every number above is
+computed from `study_tri_block.json`'s committed `arc_span_band` and `refusal_search`
+sections except the hold-out, whose stream is named here so it can be re-run.
