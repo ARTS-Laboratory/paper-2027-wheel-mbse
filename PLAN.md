@@ -8887,3 +8887,61 @@ audit with its own baseline rather than a line in another arc's unit.
    as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
    §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
    element-validity check** (§44).
+
+---
+
+## §63 — 2026-08-23. THE NEAREST-NODE SNAP MOVES THE VALUE BY UP TO 1.1% AND THE GRADIENT BY 4-7%, AND THE GRADIENT ERROR GROWS WITH STEP LENGTH — SO §62 IS A GATING DEFECT FIRST AND A STEERING ONE SECOND
+
+§62's item 3, which was filed as the measurement that decides whether §62 is a reporting
+defect or an optimizer one.  Central differences of the 8-phase mean drop under both
+readings, at `coarse`, same solves feeding both so the reading is the only difference.
+
+**At the shipped genome the two gradients are the same vector:**
+
+```
+  |grad_node| 1.22142   |grad_interp| 1.22296   cosine 0.999994   |difference|/|grad| 0.0038
+```
+
+Twelve of the fourteen components agree to four or five digits; gene 7 differs by 14% of a
+small component and gene 11 by 0.5% of a large one.  **The descent that produced the
+shipped design was not being misled**, which is the reassuring half and it is worth having
+explicitly rather than assuming.
+
+**Away from it, it is not the same vector, and it gets worse with the step:**
+
+```
+  genome with the largest value bias (-1.133%)
+    FD step 1e-3 of the gene range   cosine 0.999195   |difference|/|grad| 0.0414
+    FD step 1e-2 of the gene range   cosine 0.997677   |difference|/|grad| 0.0727
+    worst component (gene 11)        -0.03710 vs -0.04053   ->   -0.03522 vs -0.04240
+```
+
+Ten to twenty times the shipped genome's disagreement, and **it grows with step length**,
+which is the signature of the mechanism: a longer step is more likely to cross a
+node-switch, and the objective jumps by ~0.005 mm when it does.  Cosine 0.9977 is still
+under 4 degrees, so the direction survives; individual components move by up to 17%.
+
+**So the ranking of §62's consequences is now measured rather than guessed.**  The value and
+the gate carry up to 1.1% — four times the ±0.3% band — everywhere except near the shipped
+genome.  The gradient carries 4-7% away from the shipped genome and 0.4% at it, with the
+direction intact.  A defect in what the project REPORTS and gates on, and a mild one in
+what it steers by.  **Still not claimed: that any past optimization outcome was wrong.**
+A 4-degree rotation with intact descent directions is not evidence of that, and nothing
+here re-runs a descent.
+
+#### The successors, ranked — REVISED 2026-08-23 AFTER §63
+
+1. **Make `axle_drop_interp_mm` the axle drop.**  Unchanged as the top item and now
+   correctly motivated: the case is the reported value and the ±0.3% gate, not a rescue of
+   the optimizer.  The work is the audit — `test_promotion.py`'s checklist, every committed
+   artifact re-derived and re-dated, and the band re-stated.
+2. **Re-derive the ±0.3% band on the corrected reading**, wherever quoted.
+3. **Adopt `(-0.85, 1.00)`** as the layer profile (§61), after items 1-2, because its own
+   trade was measured on the uncorrected reading.
+4. **`(-0.95, 0.85)`, the best floor on either grid, refuses one genome** (§60) — which
+   genome, and why, is unasked.
+5. **Apply the fold gate to the draw and re-derive the box** (§58); **what makes a region
+   impossible** (§56); **a bend that is a FUNCTION of the genome** (§56); **`R_hub`/`R_rim`
+   as live FEA genes**; **`modelled_area_reference` fillet-aware** (§50); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
