@@ -13,13 +13,16 @@ twelve PARTs:
   gone and the fillet's surface peak is a number; **the HEADLINE is not delivered**, because
   the wheel's peak is on `rim:P_c`, which needs the rim tri-block and not a fillet. The
   filleted wheel also deflects 37.97% less than the unfilleted mesh said it would.
-- **Step 3** — what it unlocks. Its ACCEPTANCE TEST PASSES (STEP 3 RECORD PART 1, PLAN §75).
-  Of the two things that blocked it, **the refusal half is closed and the barrier half is
-  not**: PART 21's sector-fit clamp builds 16 of 16 in sample and **32 of 32 on a held-out
-  draw** (PART 22, PLAN §78), so §48's first clause is retired — but **half of each box
-  still sits under `MIN_SJ_TARGET`** (8/16 and 16/32), which is §48's surviving clause and
-  is why `fillet=` is still a MEASUREMENT INSTRUMENT and not a path the optimizer may take.
-  The rim tri-block is the other blocker and is not this arc's.
+- **Step 3** — what it unlocks. Its ACCEPTANCE TEST PASSES (STEP 3 RECORD PART 1, PLAN §75)
+  and **the filleted mesh is DIFFERENTIABLE** since PART 2 / PLAN §79: `mesh_coords` no
+  longer refuses it, and `R_hub`/`R_rim` go from an identically zero gradient to the two
+  largest of fourteen. Of the two things that blocked Step 3, **the refusal half is closed
+  and the barrier half is not**: PART 21's sector-fit clamp builds 16 of 16 in sample and
+  **32 of 32 on a held-out draw** (PART 22, PLAN §78), so §48's first clause is retired —
+  but **half of each box still sits under `MIN_SJ_TARGET`** (8/16 and 16/32), which is
+  §48's surviving clause and is now the ONLY reason `fillet=` is still a MEASUREMENT
+  INSTRUMENT rather than a path the optimizer may take. The rim tri-block is the other
+  blocker and is not this arc's.
 
 **NOT CHEAP — read the cost section first.**
 
@@ -152,6 +155,11 @@ That test failing is the success condition, not a regression. Update it delibera
 > blocked on genome robustness: `R_hub`/`R_rim` now have mechanical feedback (38% of axle
 > drop, monotone in `R`), but feedback on a mesh the optimizer may not build is not
 > feedback. See PLAN §52's ranking.
+>
+> **NARROWED 2026-08-24 (PART 2, PLAN §79).** Item 1 is no longer blocked on a missing
+> derivative — the filleted mesh is differentiable and the two genes are the largest movers
+> of the fourteen. It is blocked on genome robustness and on that alone, which is §48's
+> surviving clause: half of each drawn genome box sits under `MIN_SJ_TARGET`.
 
 Only after Step 2 confirms the singularity is gone:
 
@@ -159,6 +167,11 @@ Only after Step 2 confirms the singularity is gone:
    `studies/study_reds_hub_share.py --sweep`; it should stop being bit-identical. **That
    sweep is the cleanest possible acceptance test for this whole arc** — it currently returns
    the same 17 significant figures at every point in the box, and it should not.
+   **DONE, IN TWO HALVES.** The sweep stopped being bit-identical at STEP 3 RECORD PART 1
+   (PLAN §75) — that is the SENSITIVITY half — and the two genes acquired a GRADIENT at
+   PART 2 (PLAN §79), where they go from identically zero to the two largest of fourteen.
+   "Live FEA genes" in the sense the optimizer needs is still gated by §48's surviving
+   clause and by nothing else.
 2. **The absolute deflection band** (§29) can be reconsidered. Note this is a *plan-level*
    gate; re-instating it is a separate decision with its own record.
 3. **The stress constraint** can be revisited — M8b-i.6 rebuilt it around a divergent max, and
@@ -2875,9 +2888,12 @@ statement than either half alone: it is 12.49% of deflection for 1.67% of area, 
 7.5 points of deflection per point of mass, and the optimizer has never been shown the
 exchange.
 
-**WHAT THIS IS NOT.**  It is SENSITIVITY, not a gradient.  `mesh_coords` and `coord_fn` still
-refuse a filleted mesh — the tangency and crossing solves are bracketed root-finds and are
-numpy-only — so nothing here reaches the optimizer and the census tests that pin
+**WHAT THIS IS NOT.**  [**FIRST SENTENCE SUPERSEDED 2026-08-24 — SEE STEP 3 RECORD PART 2
+AND PLAN §79.  `mesh_coords` no longer refuses a filleted mesh, and the derivative below
+exists: -0.1270583265 mm/mm at `coarse` linear, -0.1428630400 under SVK.  The rest of this
+paragraph still holds.**]  It is SENSITIVITY, not a gradient.  `mesh_coords` and `coord_fn`
+still refuse a filleted mesh — the tangency and crossing solves are bracketed root-finds and
+are numpy-only — so nothing here reaches the optimizer and the census tests that pin
 `R_hub`/`R_rim` as the insensitive pair are all still correct and all still green.  Step 3
 item 1 is answered as a MEASUREMENT; the differentiable path it would take to act on the
 answer is a separate arc, and this is the first time it can be ranked with a number.
@@ -2937,3 +2953,129 @@ measurement; three genomes handled that way inverted the finding. See PLAN §78.
 
 **Nothing adopted.** No module constant moved, the committed box is not re-drawn, and the
 artifact is purely additive. `make filletblock` goes 301 s -> 462 s.
+
+---
+
+# STEP 3 RECORD, PART 2 — 2026-08-24. THE FILLETED MESH IS DIFFERENTIABLE. PART 1's SENSITIVITY IS A GRADIENT, AND THE BLOCKER THIS ARC HAS NAMED SINCE §48 WAS THE WRONG HALF OF THE PROBLEM
+
+PART 1 answered Step 3 item 1 as a MEASUREMENT and said so in as many words: *"It is
+SENSITIVITY, not a gradient.  `mesh_coords` and `coord_fn` still refuse a filleted mesh --
+the tangency and crossing solves are bracketed root-finds and are numpy-only -- so nothing
+here reaches the optimizer."*  The first clause of that is now false and the last is still
+true, and the two halves came apart for a reason worth recording.
+
+**THE PREMISE WAS RE-CHECKED BEFORE ANYTHING WAS BUILT.**  At `8277697` both entry points
+refuse, and `wheel_adjoint.value_and_grad(shipped, "coarse", "axle_drop")` returns `-0.0`
+in genes 12 and 13 against a value of 1.4637943597 mm.  Plan files in this repo go stale
+across arcs; this one had not.
+
+## IT IS DIFFERENTIABLE
+
+`studies/study_gradient.py` gains **G11** -- M7's own G3 identity and G8 census, taken on
+`build_wheel(fillet=True)`:
+
+```
+  coarse                                  unfilleted            FILLETED
+  mesh_coords vs build_wheel             4.26e-14 mm          4.97e-14 mm  [gate 1e-9]
+  genes with dcoords/dgene == 0           R_hub, R_rim          NONE
+  largest |dcoords/dgene|, mm/mm          t3    45.15         R_rim  165.61
+  second                                  t0    43.20         R_hub  142.30
+  third                                   cy1   22.54         cy4     39.14
+```
+
+and the mesh jacobian against a central difference of `build_wheel(fillet=True)` itself --
+which re-scans, re-brackets and re-bisects at every perturbed genome, so it cannot be
+self-consistent with the traced path -- agrees to **1.3e-10** (`R_hub`) and **3.4e-10**
+(`R_rim`) at `h/range` = 1e-5, against a gate of 1e-6.
+
+**AND THE AXLE DROP, WHICH IS WHAT PART 1 PRICED.**  At `coarse`:
+
+```
+                        drop (mm)       d/dR_hub        d/dR_rim      fd residual
+  linear  FILLETED     0.8638515928   -0.1270583265   -0.1056336734    3.03e-07
+  SVK     FILLETED     0.9942561792   -0.1428630400   -0.1502833900    2.33e-06
+  either  unfilleted   1.4637943597    -0.0            -0.0             n/a
+```
+
+The residual column is the worse of the two genes.  All four are central differences of
+the WHOLE load-controlled solve on filleted meshes at the reference tolerance G9 uses, and
+all four clear G9's 1e-5 gate -- three by two decades, and `R_rim` under SVK by four times.
+The linear row is the committed ladder's minimum over `h/range` = 1e-4..1e-6; the SVK row
+is a single rung at 1e-5 and is NOT in `study_gradient.json`, which is a linear artifact.
+It is here because this arc's cost section forbids Step 3 taking the kernel default
+silently, so the gradient is measured under SVK rather than assumed to follow.
+
+**AND IT IS NOT PART 1's NUMBER MEASURED AGAIN.**  PART 1's 12.49% is a sensitivity of
+`solve_wheel`'s drop across a sweep; these are the derivative of the contact secant's drop
+at a point, which is the quantity Stage 3 would descend on.  Same finding, right
+instrument -- not the same number, and the record should not read as though it were.
+
+## THE BLOCKER THIS ARC KEPT NAMING WAS THE WRONG HALF
+
+Since §48 the sentence has been *"bracketed root-finds with data-dependent refusals"*.
+Two obstacles, and only the second was one.
+
+**THE ROOT-FINDS.**  A converged root needs no tracing: seed it from the eager build, take
+ONE Newton step, and because the residual is zero at the seed the value does not move
+while the derivative becomes `-(df/dp)/(df/ds)` exactly -- the implicit function theorem,
+which is what `wheel_adjoint` is built on, one level lower.  Two roots per junction
+(`_fillet_tangency`'s station, `_fillet_curves`' ring crossing), four in a mesh.
+
+**THE REFUSALS.**  `_fillet_curves` can refuse in four ways and none of them has a
+derivative -- they are `sign` tests, and a genome that refuses at the linearisation point
+has no mesh whose nodes could move.  They are FROZEN, with the void side and the three
+angle unwraps, in a `_roots` record the eager build harvests.  **That is the decision
+`mesh_coords` has always made** about the flank orientation and the seam ownership, and
+its docstring already had the words for it.
+
+**AND `wheel_adjoint`'s "adding a `custom_vjp` later is mechanical" HAS NOW BEEN TESTED.**
+The separation claim held completely: **`wheel_adjoint.py` needed no code change at all**,
+because `adjoint_grads` already takes `mesh=` and already routes through
+`jax.vjp(mesh_coords)`.  The `custom_vjp` claim is answered differently -- **there was
+nothing to wrap.**  A `custom_vjp` repairs a function whose derivative is computed badly;
+a bisection has no derivative to repair.  What was needed was the equation the bisection
+solved and discarded.
+
+## THE ONE DESIGN DECISION THAT IS NOT OBVIOUS
+
+The frozen roots depend on the GENOME, so closing over them re-traces the jaxpr on every
+call -- the same defect `coord_fn`'s docstring already describes for a cache keyed on the
+mesh object, and one that passes every correctness check and fails only in cost.  They are
+a traced ARGUMENT instead.  Measured at `coarse`, second genome onward: **2.78 s to trace
+once, 0.0095 s per call**, one cache entry, against 2.29 s / 0.0012 s / one entry for the
+unfilleted mesh.  Pinned on the cache size and on the identity holding at a second genome.
+
+## WHAT IS STILL REFUSED
+
+**A mesh the sector-fit clamp moved** (PART 21, §57): the built radius is
+`factor * limit(genome)`, does not follow `R_hub`, and freezing the record there would
+return a plausible gradient of the wrong length.  It raises.  The scope is measured and
+empty where this arc works -- the clamp does not bite at the shipped genome until `R_hub`
+= **2.9732 mm** (0.95 x §48's 3.1297) and PART 1's feasibility edge is ~1.9 mm.
+
+**`fillet_blocking="spoke"`**, PART 3's construction, which re-spreads its station vector
+by ROUNDING a node count.
+
+## WHAT THIS DOES AND DOES NOT DO TO STEP 3
+
+**Step 3's remaining blocker is now exactly one, and it is neither of the two the header
+listed.**  The refusal half closed at PARTs 21 and 22; the DERIVATIVE was never on that
+list at all -- it was the reason the acceptance test could only ever be read as a
+measurement.  What is left is **§48's surviving clause**: half of each drawn genome box
+sits under `MIN_SJ_TARGET` (8/16 in sample, 16/32 held out).  That is PLAN's ranking item
+1 now, and it is a decision rather than a construction.
+
+**`fillet=` IS STILL A MEASUREMENT INSTRUMENT.**  Nothing wires it into the objective,
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective` is
+green without being touched, and G8's census of the mesh Stage 3 actually builds is
+unchanged and still names `R_hub`/`R_rim` as the dead pair.
+
+## WHAT IS UNCHANGED
+
+Both meshes BIT-IDENTICAL, `fillet=None` and `fillet=True` alike, at `smoke` and `coarse`,
+checked against saved arrays rather than assumed.  `best_solution.json` untouched.  No
+threshold moved, no module constant moved, nothing promoted, the committed genome box not
+re-drawn.  `study_gradient.json` is additive to the leaf -- it gains `filleted` and changes
+twenty-four other leaves, all of them G10 timings plus `elapsed_s`, checked field by field
+against the committed artifact.  `make studies`' gradient leg goes 1029 s -> 1374 s.  See
+PLAN §79.

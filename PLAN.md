@@ -9735,11 +9735,14 @@ models no fillets, so the mass term cannot see `R_hub` any more than the stiffne
 **Both sides of the trade are unpriced**, which is the sharper claim: 12.49% of deflection
 for 1.67% of area, and the optimizer has never been shown the exchange rate.
 
-**WHAT THIS IS NOT.**  Sensitivity, not a gradient.  `mesh_coords` and `coord_fn` still
-refuse a filleted mesh, nothing here reaches the optimizer, and every census test pinning
-`R_hub`/`R_rim` as the insensitive pair is still correct and still green.  What changed is
-that the differentiable filleted path can now be ranked with a number instead of an
-intuition — which is exactly what §48 and §50 said was missing when they shelved it.
+**WHAT THIS IS NOT.**  [**FIRST TWO CLAUSES SUPERSEDED 2026-08-24 — SEE §79.  The filleted
+mesh is differentiable and `mesh_coords` no longer refuses it; nothing here reaching the
+optimizer, and the census tests, both still hold.**]  Sensitivity, not a gradient.
+`mesh_coords` and `coord_fn` still refuse a filleted mesh, nothing here reaches the
+optimizer, and every census test pinning `R_hub`/`R_rim` as the insensitive pair is still
+correct and still green.  What changed is that the differentiable filleted path can now be
+ranked with a number instead of an intuition — which is exactly what §48 and §50 said was
+missing when they shelved it.
 
 **Nothing promoted, no threshold moved, `best_solution.json` untouched.**  The unfilleted
 sweep is kept under its own artifact key, because it is the control that makes "it stopped
@@ -10032,3 +10035,190 @@ checked rather than assumed; the artifact gains keys and loses none. `make fille
 **Two items left this list by being done rather than by being re-ranked**: §72's "box spans
 X" audit and §68's cliff column landed as §76 and §77, and the ranking revised after §75 was
 still carrying both.
+
+---
+
+## §79 — 2026-08-24. THE FILLETED MESH IS DIFFERENTIABLE. `R_hub` AND `R_rim` GO FROM AN IDENTICALLY ZERO GRADIENT TO THE TWO LARGEST OF FOURTEEN — AND THE BLOCKER WAS NOT THE ROOT-FINDS, IT WAS THE FOUR REFUSALS AROUND THEM
+
+Ranking item 1.  §75 gave it a consumer and a price — 12.49% of axle drop for 1.67% of
+area, over a span where the objective's own `Kt` surrogate is exactly flat — and §78 gave
+it an instrument that builds on a disjoint draw at 32 of 32.  What it did not have was a
+derivative.  `wheel_wheel.mesh_coords` raised `NotImplementedError` for any mesh built
+with `fillet=`, and `wheel_adjoint`'s header recorded the consequence: genes 12 and 13
+have an **identically zero** gradient, so *"a gradient-based Stage 3 would optimise 12 of
+14 genes and never notice"*.
+
+**THE PREMISE WAS RE-CHECKED FIRST, AND IT HELD.**  At `8277697` both `mesh_coords` and
+`coord_fn` refuse a filleted mesh, and `value_and_grad(shipped, "coarse", "axle_drop")`
+returns `-0.0` in slots 12 and 13 against a value of 1.4637943597 mm.  Two minutes, and
+this project has re-taken more than one section for skipping them.
+
+### IT IS DIFFERENTIABLE, AND THE CHECK IS THE ONE G3 AND G8 ALREADY MAKE
+
+`studies/study_gradient.py` gains **G11**, which is G3's identity and G8's census taken on
+`build_wheel(fillet=True)` instead of on the mesh Stage 3 builds:
+
+```
+  coarse                                  unfilleted            FILLETED
+  mesh_coords vs build_wheel             4.26e-14 mm          4.97e-14 mm   [< 1e-9]
+  genes with dcoords/dgene == 0           R_hub, R_rim          NONE
+  largest |dcoords/dgene|, mm/mm          t3    45.15         R_rim  165.61
+  second                                  t0    43.20         R_hub  142.30
+  third                                   cy1   22.54         cy4     39.14
+```
+
+**THE TWO DEAD GENES ARE NOW THE TWO LARGEST MOVERS OF ALL FOURTEEN**, by a factor of 3.6
+over the next one.  That is G8's census, run on the other mesh, inverted.
+
+**And the reference is the EAGER BUILD, not the traced path's own arithmetic**, because
+the risk that matters here is a derivative that is self-consistent and wrong.
+Central-differencing `build_wheel(fillet=True)` re-scans, re-brackets and re-bisects at
+every perturbed genome, and compares the whole coordinate array rather than a scalar that
+could cancel:
+
+```
+  d(coords)/d(gene) vs a central difference of build_wheel(fillet=True), coarse
+              max |dc/dg|   h/range = 1e-4     1e-5        1e-6
+    t0           0.5212           2.2e-08    2.60e-10    2.2e-09
+    R_hub        2.0051           3.3e-04    1.31e-10    1.6e-09
+    R_rim        2.3808           1.7e-04    3.37e-10    4.2e-09     [gate 1e-6]
+```
+
+And at the end of the chain, the quantity Stage 3 optimises, at `coarse`:
+
+```
+                        drop (mm)       d/dR_hub        d/dR_rim     worst fd resid
+  linear  FILLETED     0.8638515928   -0.1270583265   -0.1056336734    3.03e-07
+  SVK     FILLETED     0.9942561792   -0.1428630400   -0.1502833900    2.33e-06
+  either  unfilleted   1.4637943597    -0.0            -0.0             n/a
+```
+
+Every residual is against a central difference of the WHOLE load-controlled solve on
+filleted meshes, at the tightened reference secant G9 uses and for G9's reason, and all
+four clear G9's 1e-5 gate — three of them by two decades and the fourth, `R_rim` under
+SVK, by four times.  The linear rows are the committed ladder's minimum over `h/range` =
+1e-4..1e-6; the SVK row is a single rung at 1e-5 and is not in the artifact, because
+`study_gradient.json` is a LINEAR artifact and re-baselining it was not on the table.
+`R_hub`'s linear ladder reads 3.63e-5 -> **2.41e-07** -> 1.54e-6, with a rung wider at
+1e-3 measured separately at 3.16e-3 — truncation on one side, the reference's own floor on
+the other, and a clean minimum between them.
+
+### THE BLOCKER WAS NAMED WRONG, AND THAT IS THE FINDING
+
+Every ranking of this item since §48 has said the same thing: `_fillet_tangency` and
+`_fillet_curves` *"are bracketed root-finds with data-dependent refusals, and are
+numpy-only"*.  Those are two obstacles, not one, and **only the second was real**.
+
+**THE ROOT-FINDS WERE NEVER THE OBSTACLE.**  A converged root needs no tracing.  Seed it
+from the eager build and take **one Newton step**,
+
+```
+    s* = s_A - f(s_A, p) / (df/ds)(s_A, p)
+```
+
+and because `f(s_A, p0) = 0` the value is `s_A` to the bisection's own tolerance while
+`ds*/dp = -(df/dp)/(df/ds)` is the implicit-function answer, exactly.  That is the same
+argument `wheel_adjoint`'s header makes about `r(c, u) = 0`, one level lower down, and it
+is why the traced path reproduces the eager mesh to 5e-14 mm rather than to a tolerance.
+Differentiating the bisection instead puts 200 halvings and their `sign` comparisons on
+the tape and returns zero.
+
+**THE REFUSALS WERE THE OBSTACLE, AND THE ANSWER WAS TO STOP ASKING.**  `_fillet_curves`
+can refuse in four ways and none of them has a derivative: they are `sign` tests, and a
+genome that refuses at the linearisation point has no mesh whose nodes could move.  So
+they are **frozen** — along with the void side and the three angle unwraps — in a `_roots`
+record the eager build harvests and the traced path consumes.  **This is not a new kind of
+decision**: it is exactly what `mesh_coords` has always done with the flank orientation
+and the seam ownership, and its docstring already had the words for it — *"a step that
+flips one is a genuine discontinuity of the design space, not a defect in this module"*.
+
+**AND A `custom_vjp` WOULD HAVE BEEN THE WRONG INSTRUMENT.**  `wheel_adjoint`'s header
+says the pieces are separated so that adding one later is mechanical, and testing that
+claim was half the job.  **The separation half held completely** — `wheel_adjoint.py`
+needed no code change at all, because `adjoint_grads` already takes `mesh=` and already
+routes through `jax.vjp(mesh_coords)`, so a filleted mesh flows through the entire adjoint
+untouched.  The `custom_vjp` half is answered differently: **there was nothing to wrap.**
+A wrapper supplies a derivative for a function that has one and computes it badly; a
+bracketed bisection does not have one at all.  What was needed was the root's own
+equation, which the bisection had already solved and thrown away.
+
+### THE ONE DESIGN DECISION THAT IS NOT OBVIOUS, AND WHAT IT COSTS
+
+The frozen roots **depend on the genome** — a different design has a different tangency
+station — so the obvious implementation closes over them, and that is wrong for the exact
+reason `coord_fn`'s own docstring gives about keying its cache on the mesh object: every
+finite difference and every optimizer step builds a NEW mesh, so a jaxpr with one genome's
+roots baked in re-traces on every call while looking like it works.  Passed instead as a
+**traced argument**, the recipe is genome-independent and the cache is a cache again:
+
+```
+  coarse, second genome onward     trace       per call     cache entries
+    unfilleted                     2.29 s       0.0012 s        1
+    FILLETED                       2.78 s       0.0095 s        1
+```
+
+Pinned on the cache SIZE and on the identity holding at a SECOND genome, because a
+closed-over record passes every correctness test in the file and fails only in cost.
+
+### WHAT IS STILL REFUSED, AND BECAUSE THE ANSWER WOULD BE WRONG
+
+**A mesh whose radius the sector-fit clamp moved.**  There the built radius is
+`factor * limit(genome)` and does not follow `R_hub` at all, so freezing the record would
+report the gene as live where its true derivative is zero, and would miss the centreline
+genes' path through the limit's own bisection — a gradient with the right direction and
+the wrong length, which is `wheel_adjoint`'s named hardest-to-see failure.  It raises
+instead.  **The scope that costs is measured and it is empty where this arc works**: at
+the shipped genome the clamp does not bite until `R_hub` = **2.9732 mm** (0.95 x §48's
+3.1297), and §75's feasibility edge is at ~1.9 mm, so the whole span §75 priced is
+unclamped.
+
+**`fillet_blocking="spoke"`**, PART 3's retired construction, which re-spreads its station
+vector by ROUNDING a node count.  Nothing but `make fillet` builds it.
+
+### WHAT IS UNCHANGED
+
+**Nothing is wired into the objective**, and
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective` is
+green without being touched — none of the five modules it parses passes `fillet=`, because
+`mesh_coords` reads it off the mesh it is handed rather than taking a keyword.  `wheel_objective` still prices `R_hub` through the
+`Kt` surrogate §75 measured exactly flat above the cap; §48's surviving clause — half of
+each drawn genome box sits under `MIN_SJ_TARGET`, 8/16 and 16/32 (§78) — still stands
+against letting the optimizer take this path, and it is ranking item 1 below.  **G8's
+census on the unfilleted mesh is still correct and still green**, and so is every other
+census test in the tree: `R_hub` and `R_rim` are still the dead pair of the mesh Stage 3
+actually builds.
+
+**Both meshes are BIT-IDENTICAL**: `fillet=None` and `fillet=True` alike reproduce their
+pre-change coordinates exactly at `smoke` and `coarse`, checked against saved arrays rather
+than assumed.  **`best_solution.json` untouched, no threshold moved, no module constant
+moved** — `FILLET_LAYER_ENTRY_SLOPE`, `FILLET_LAYER_END_OFFSET` and `SECTOR_FIT_CLAMP` are
+as they were.  `studies/study_gradient.py` goes 1029 s -> **1374 s**.
+
+**AND `study_gradient.json` IS ADDITIVE TO THE LEAF**, which was checked rather than
+assumed: against the committed artifact it gains `filleted` and changes twenty-four other
+leaves, every one of them a G10 TIMING plus `elapsed_s`.  Not one measured gradient, ratio
+or residual in G1-G9 moved a bit.
+
+#### The successors, ranked — REVISED 2026-08-24 AFTER §79
+
+1. **The barrier half of the filleted blocking** (§48's surviving clause) — up from 2, and
+   it is now the ONLY thing between the filleted mesh and an optimizer that could take it.
+   §78 priced a repair that clears 31 of 32 at 3.6-6.4x the cliff margin of the global pair
+   §68 declined; it is measured and not adopted, and adopting it is a decision with §68's
+   second reason still standing against it.
+2. **Wire the fillet into `modelled_area_reference`** (§50) — promoted from item 7,
+   because §79 changes what it is worth.  §75's price has TWO sides and the mass one is
+   still unpriced and now conspicuously so: the stiffness term has a gradient in `R_hub`
+   and the area term has neither a gradient nor a reference, so the exchange rate the
+   optimizer would need is half-built rather than absent.  `area_report` still withholds
+   the reference for a filleted mesh.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged.
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Re-run the hub-share ladder on a filleted mesh** (§75) — one rung is not a ladder.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+**And one item leaves this list by being done**: the differentiable filleted mesh was item
+1 in the §75 and §78 rankings and is §79.

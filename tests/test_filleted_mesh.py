@@ -219,23 +219,133 @@ def test_both_filleted_constructions_are_reachable_and_they_are_different(genes)
         ww.sector_blocks(genes, "coarse", fillet=True, fillet_blocking="winslow")
 
 
-def test_the_differentiable_path_REFUSES_a_filleted_mesh(genes, filleted):
-    """It would otherwise return coordinates that are neither this mesh's nor an error.
+def test_the_differentiable_path_REPRODUCES_a_filleted_mesh(genes, filleted):
+    """PLAN §79 — this test asserted the REFUSAL until 2026-08-24, and now asserts the path.
 
-    `mesh_coords` rebuilds the sector WITHOUT `fillet` and indexes it with `mesh.owners`.
-    A filleted mesh has more raw nodes and a different ownership, so the silent answer is
-    a different mesh's coordinates gathered through this one's index — which is worse
-    than either a wrong number or a crash, because it is a plausible one.
+    The refusal's reason was never "hard": `mesh_coords` rebuilt the sector WITHOUT
+    `fillet` and indexed it with `mesh.owners`, and a filleted mesh has more raw nodes and
+    a different ownership, so the silent answer would have been a different mesh's
+    coordinates gathered through this one's index. That is still exactly what may not
+    happen, so the check is the same one gate 3 makes of the unfilleted path — the traced
+    coordinates ARE the solved mesh's — rather than an exception type.
     """
-    m = filleted["coarse"]
-    with pytest.raises(NotImplementedError):
-        ww.mesh_coords(genes, m, xp=np)
-    with pytest.raises(NotImplementedError):
-        ww.coord_fn(m)
+    for cfg, m in filleted.items():
+        got = np.asarray(ww.mesh_coords(genes, m, xp=np))
+        assert got.shape == np.asarray(m.coords).shape
+        assert np.abs(got - np.asarray(m.coords)).max() == 0.0, cfg
+        traced = np.asarray(ww.coord_fn(m)(genes))
+        assert np.abs(traced - np.asarray(m.coords)).max() < 1e-9, cfg
     # and the unfilleted path is untouched
     plain_mesh = ww.build_wheel(genes, "coarse")
     got = np.asarray(ww.mesh_coords(genes, plain_mesh, xp=np))
     assert np.abs(got - np.asarray(plain_mesh.coords)).max() < 1e-12
+
+
+def test_the_filleted_gradient_is_the_derivative_of_build_wheel(genes, filleted):
+    """The two genes that had no gradient have one, and it is the mesh's own.
+
+    Central-differencing `build_wheel(fillet=True)` itself is the reference that cannot be
+    fooled by the traced path sharing a bug with the eager one: it re-runs both bracketed
+    root-finds from scratch at each perturbed genome and compares the WHOLE coordinate
+    array. `R_hub` and `R_rim` are the point, and one live gene is carried as a control so
+    a pass cannot come from the fillet drowning everything else out.
+    """
+    import jax
+    import jax.numpy as jnp
+    m = filleted["coarse"]
+    J = np.asarray(jax.jacfwd(lambda v: ww.mesh_coords(v, m))(jnp.asarray(genes)))
+
+    def eager(v):
+        return np.asarray(ww.build_wheel(np.asarray(v, float), "coarse",
+                                         fillet=True).coords)
+
+    for gid, h in ((12, 1e-5), (13, 1e-5), (8, 1e-5)):
+        gp, gm = genes.copy(), genes.copy()
+        gp[gid] += h
+        gm[gid] -= h
+        fd = (eager(gp) - eager(gm)) / (2.0 * h)
+        rel = np.abs(fd - J[:, :, gid]).max() / max(np.abs(fd).max(), 1e-300)
+        assert rel < 1e-7, (wg.GENE_NAMES[gid], rel)
+        assert np.abs(J[:, :, gid]).max() > 1e-3, wg.GENE_NAMES[gid]
+
+
+def test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh(genes, filleted,
+                                                                    plain):
+    """The census `tests/test_gradient.py` runs on the unfilleted mesh, inverted.
+
+    There `R_hub` and `R_rim` are exactly the dead pair. Here they must be alive, and the
+    stronger statement is worth pinning because it is what makes §75's price a gradient:
+    on the filleted mesh they move MORE of the mesh per mm than any of the twelve genes
+    that were already live.
+    """
+    import wheel_adjoint as wa
+    dead, _ = wa.insensitive_genes(genes, plain["coarse"])
+    assert set(dead) == {"R_hub", "R_rim"}
+    dead_f, col = wa.insensitive_genes(genes, filleted["coarse"])
+    assert dead_f == [], dead_f
+    live = [col[i] for i, n in enumerate(wg.GENE_NAMES)
+            if n not in ("R_hub", "R_rim")]
+    for n in ("R_hub", "R_rim"):
+        assert col[wg.GENE_NAMES.index(n)] > max(live), n
+
+
+def test_the_filleted_trace_is_SHARED_across_genomes(genes):
+    """The frozen roots are a traced ARGUMENT, and this is the test that says so.
+
+    They depend on the genome — a different design has a different tangency station — so
+    the obvious implementation closes over them, and `coord_fn`'s docstring already
+    explains why that is wrong for mesh objects: every finite difference and every
+    optimizer step builds a NEW mesh, so a jaxpr with one genome's roots baked in
+    re-traces on every call. Closing over them passes the identity test above and fails
+    only in cost, which is exactly the kind of defect that survives a test suite — so the
+    check is on the CACHE SIZE and on the identity holding at a SECOND genome, both of
+    which a closed-over record breaks.
+    """
+    ww._COORD_FN_CACHE.clear()
+    m0 = ww.build_wheel(genes, "coarse", fillet=True)
+    np.asarray(ww.coord_fn(m0)(genes))
+    assert len(ww._COORD_FN_CACHE) == 1
+
+    other = np.array(genes, dtype=float)
+    other[12] += 0.2
+    other[3] += 0.05
+    m1 = ww.build_wheel(other, "coarse", fillet=True)
+    assert (m1.fillet_recipe["roots"]["hub"]["s_A"]
+            != m0.fillet_recipe["roots"]["hub"]["s_A"])
+    got = np.asarray(ww.coord_fn(m1)(other))
+    assert len(ww._COORD_FN_CACHE) == 1, "the filleted trace is not being shared"
+    assert np.abs(got - np.asarray(m1.coords)).max() < 1e-9
+
+
+def test_the_differentiable_path_REFUSES_what_it_would_get_WRONG(genes):
+    """Two filleted meshes still have no gradient, and the reason is not difficulty.
+
+    The clamp case is the one that matters: a radius the sector-fit clamp moved is
+    `factor * limit(genome)` and does not follow `R_hub`, so freezing the record would
+    return a plausible gradient of the wrong length — `wheel_adjoint`'s named
+    hardest-to-see failure. `fillet_blocking="spoke"` re-spreads its station vector by
+    ROUNDING a node count, which has no derivative to return.
+    """
+    import study_fillet_block as fb                                  # noqa: E402
+    # 0.10 mm rather than the genome's radii, which fold PART 3's construction outright —
+    # `test_both_filleted_constructions_are_reachable_and_they_are_different` is where
+    # that is pinned. This one needs a mesh that BUILDS and still has no gradient.
+    spoke = ww.build_wheel(genes, "coarse", fillet=(0.10, 0.10),
+                           fillet_blocking="spoke")
+    with pytest.raises(NotImplementedError, match="root record"):
+        ww.mesh_coords(genes, spoke, xp=np)
+
+    # A genome whose own radius has no room in its sector — §57's case, and the clamp's.
+    clamped_genes = np.array(genes, dtype=float)
+    limit = fb.sector_fit_limit(genes, "coarse", "hub")
+    assert limit["limited"], limit
+    clamped_genes[12] = float(limit["radius_mm"]) * 1.05
+    m = ww.build_wheel(clamped_genes, "coarse", fillet=True)
+    assert m.fillet_clamped["hub"] is True
+    with pytest.raises(NotImplementedError, match="clamp"):
+        ww.mesh_coords(clamped_genes, m, xp=np)
+    with pytest.raises(NotImplementedError, match="clamp"):
+        ww.coord_fn(m)
 
 
 def test_the_area_reference_is_WITHHELD_for_a_filleted_mesh(genes, filleted, plain):

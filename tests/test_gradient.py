@@ -17,6 +17,13 @@ The third is the two structural facts M7 measured: `mass` has no adjoint term at
 (its right-hand side is exactly zero), and two genes have no gradient at all (the mesh
 models no fillets).  Both are asserted in BOTH directions, because each would otherwise
 be indistinguishable from a bug that produced zeros for a different reason.
+
+THE SECOND OF THOSE IS A FACT ABOUT THE MESH AND NOT ABOUT THE WHEEL, and since
+2026-08-24 (PLAN.md §79) there is a mesh where it is false: `build_wheel(fillet=True)`
+models the fillets and `mesh_coords` no longer refuses it.  Every census here is still
+taken on the UNFILLETED mesh, which is the one Stage 3 builds, and is still correct.
+`study_gradient.run_filleted` is the same census on the other mesh, and
+`tests/test_filleted_mesh.py` holds the pins for it.
 """
 
 import json
@@ -395,3 +402,32 @@ def test_the_axle_drop_gradient_is_not_the_secants_derivative(genes):
     rep = sg.run_axle_drop(genes, CFG, gene_ids=(6,))
     assert rep["d_force_d_indentation"] > 0.0, "the wheel got softer under more load"
     assert rep["pass"], rep["rows"]
+
+
+# ---------------------------------------------------------------------------
+# §79 — THE SAME GATE ON THE MESH THAT MODELS THE FILLETS
+# ---------------------------------------------------------------------------
+
+def test_the_filleted_gate_runs_and_inverts_the_census(genes):
+    """`study_gradient.run_filleted`, reduced — the gate that certifies §79's path.
+
+    Reduced the way every other section of this file reduces its gate: `smoke` only, two
+    steps instead of three, one gene through the axle drop. What is NOT reduced is any
+    tolerance — the identity is still 1e-9 mm and the jacobian still 1e-6 relative
+    against a central difference of `build_wheel(fillet=True)` itself.
+    """
+    rep = sg.run_filleted(genes, CFG, configs=("smoke",), gene_ids=(8, 12),
+                          jac_steps=(1e-4, 1e-6), drop_gene_ids=(12,),
+                          drop_steps=(1e-4, 1e-6))
+    assert rep["census"]["unfilleted_dead"] == list(sg.INSENSITIVE_EXPECTED)
+    assert rep["census"]["filleted_dead"] == [], rep["census"]["filleted_dead"]
+    assert rep["census"]["fillet_genes_rank_first"], rep["census"]["ranked"]
+    assert rep["worst_identity_mm"] < sg.GATE_FILLET_MESH_MM, rep["identity"]
+    assert rep["jacobian"]["worst_rel"] < sg.GATE_FILLET_JAC_REL, rep["jacobian"]
+    assert rep["axle_drop"]["worst_rel"] < sg.GATE_SECANT_REL, rep["axle_drop"]["rows"]
+    # the two the fillet is worth something for are the two that were dead
+    for r in rep["axle_drop"]["rows"]:
+        assert r["unfilleted_adjoint"] == 0.0, r
+        assert abs(r["adjoint"]) > 1e-3, r
+    assert rep["refusals"]["ok"], rep["refusals"]
+    assert rep["pass"], rep

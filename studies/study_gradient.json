@@ -4604,43 +4604,345 @@
   "kinematics": "linear",
   "cold": [
    {
-    "forward_s": 8.964398384094238,
-    "gradient_s": 0.6040956974029541,
-    "gradient_over_forward": 0.06738831447683277
+    "forward_s": 8.87162184715271,
+    "gradient_s": 0.3972296714782715,
+    "gradient_over_forward": 0.04477531598190919
    },
    {
-    "forward_s": 8.93751311302185,
-    "gradient_s": 0.40905022621154785,
-    "gradient_over_forward": 0.045767790328113366
+    "forward_s": 8.813669204711914,
+    "gradient_s": 0.4157435894012451,
+    "gradient_over_forward": 0.04717031916502864
    },
    {
-    "forward_s": 8.928093433380127,
-    "gradient_s": 0.4078056812286377,
-    "gradient_over_forward": 0.04567668161983434
+    "forward_s": 8.856844186782837,
+    "gradient_s": 0.41002440452575684,
+    "gradient_over_forward": 0.04629463902477145
    }
   ],
   "warm": [
    {
-    "forward_s": 0.1517021656036377,
-    "gradient_s": 0.4375498294830322,
-    "gradient_over_forward": 2.884268841792593
+    "forward_s": 0.1684584617614746,
+    "gradient_s": 0.40528106689453125,
+    "gradient_over_forward": 2.405821961430355
    },
    {
-    "forward_s": 0.14966320991516113,
-    "gradient_s": 0.41730570793151855,
-    "gradient_over_forward": 2.788298528195905
+    "forward_s": 0.14913201332092285,
+    "gradient_s": 0.5815274715423584,
+    "gradient_over_forward": 3.8994140734286695
    },
    {
-    "forward_s": 0.15048456192016602,
-    "gradient_s": 0.4072530269622803,
-    "gradient_over_forward": 2.706277785347398
+    "forward_s": 0.1438748836517334,
+    "gradient_s": 0.40626049041748047,
+    "gradient_over_forward": 2.82370682155256
    }
   ],
-  "cold_forward_s": 8.93751311302185,
-  "warm_forward_s": 0.15048456192016602,
-  "gradient_s": 0.41730570793151855,
-  "gradient_over_cold_forward": 0.045767790328113366,
-  "gradient_over_warm_forward": 2.788298528195905
+  "cold_forward_s": 8.856844186782837,
+  "warm_forward_s": 0.14913201332092285,
+  "gradient_s": 0.40626049041748047,
+  "gradient_over_cold_forward": 0.04629463902477145,
+  "gradient_over_warm_forward": 2.82370682155256
+ },
+ "filleted": {
+  "configs": [
+   "smoke",
+   "coarse"
+  ],
+  "identity": [
+   {
+    "config": "smoke",
+    "phase_deg": 0.0,
+    "n_nodes": 5508,
+    "max_abs_mm": 4.973799150320701e-14,
+    "numpy_path_max_abs_mm": 0.0,
+    "radii_mm": [
+     0.6636060402965218,
+     3.0
+    ],
+    "clamped": {
+     "hub": false,
+     "rim": false
+    }
+   },
+   {
+    "config": "smoke",
+    "phase_deg": 7.5,
+    "n_nodes": 5508,
+    "max_abs_mm": 4.263256414560601e-14,
+    "numpy_path_max_abs_mm": 0.0,
+    "radii_mm": [
+     0.6636060402965218,
+     3.0
+    ],
+    "clamped": {
+     "hub": false,
+     "rim": false
+    }
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 0.0,
+    "n_nodes": 26196,
+    "max_abs_mm": 4.263256414560601e-14,
+    "numpy_path_max_abs_mm": 0.0,
+    "radii_mm": [
+     0.6636060402965218,
+     3.0
+    ],
+    "clamped": {
+     "hub": false,
+     "rim": false
+    }
+   },
+   {
+    "config": "coarse",
+    "phase_deg": 7.5,
+    "n_nodes": 26196,
+    "max_abs_mm": 4.618527782440651e-14,
+    "numpy_path_max_abs_mm": 0.0,
+    "radii_mm": [
+     0.6636060402965218,
+     3.0
+    ],
+    "clamped": {
+     "hub": false,
+     "rim": false
+    }
+   }
+  ],
+  "gate_mm": 1e-09,
+  "census": {
+   "unfilleted_dead": [
+    "R_hub",
+    "R_rim"
+   ],
+   "filleted_dead": [],
+   "expected_unfilleted": [
+    "R_hub",
+    "R_rim"
+   ],
+   "expected_filleted": [],
+   "coord_sensitivity_unfilleted": {
+    "cx1": 14.544609385698386,
+    "cy1": 22.53965020454026,
+    "cx2": 6.214379332171161,
+    "cy2": 21.4842217834993,
+    "cx3": 6.763209215757679,
+    "cy3": 20.74577237146675,
+    "cx4": 14.54911701123365,
+    "cy4": 21.45710038575791,
+    "t0": 43.19665126494966,
+    "t1": 16.284504476426402,
+    "t2": 16.159919041499474,
+    "t3": 45.15340591835279,
+    "R_hub": 0.0,
+    "R_rim": 0.0
+   },
+   "coord_sensitivity_filleted": {
+    "cx1": 19.68148801609138,
+    "cy1": 26.80750861823866,
+    "cx2": 7.306364260061811,
+    "cy2": 24.834022251063402,
+    "cx3": 12.780014720902878,
+    "cy3": 29.751728392709072,
+    "cx4": 22.865880060970785,
+    "cy4": 39.140813876102186,
+    "t0": 31.242295902581308,
+    "t1": 18.807016502240394,
+    "t2": 28.504392585392555,
+    "t3": 26.856137262046126,
+    "R_hub": 142.30061382071267,
+    "R_rim": 165.61026581345342
+   },
+   "ranked": [
+    "R_rim",
+    "R_hub",
+    "cy4",
+    "t0",
+    "cy3",
+    "t2",
+    "t3",
+    "cy1",
+    "cy2",
+    "cx4",
+    "cx1",
+    "t1",
+    "cx3",
+    "cx2"
+   ],
+   "fillet_genes_rank_first": true,
+   "ok": true
+  },
+  "jacobian": {
+   "config": "coarse",
+   "rows": [
+    {
+     "gene": "t0",
+     "max_abs_dcoord_dgene_mm": 0.5212077202020584,
+     "steps": [
+      0.0001,
+      1e-05,
+      1e-06
+     ],
+     "h_mm": [
+      0.0008800000000000001,
+      8.800000000000001e-05,
+      8.8e-06
+     ],
+     "rel_ladder": [
+      2.2076093032959635e-08,
+      2.601169603886613e-10,
+      2.2185602947190498e-09
+     ],
+     "rel": 2.601169603886613e-10,
+     "best_step": 1e-05
+    },
+    {
+     "gene": "R_hub",
+     "max_abs_dcoord_dgene_mm": 2.0050803441474834,
+     "steps": [
+      0.0001,
+      1e-05,
+      1e-06
+     ],
+     "h_mm": [
+      0.00036,
+      3.6e-05,
+      3.6e-06
+     ],
+     "rel_ladder": [
+      0.00033228373084612836,
+      1.3146886338065374e-10,
+      1.5680641239292976e-09
+     ],
+     "rel": 1.3146886338065374e-10,
+     "best_step": 1e-05
+    },
+    {
+     "gene": "R_rim",
+     "max_abs_dcoord_dgene_mm": 2.3808136164640348,
+     "steps": [
+      0.0001,
+      1e-05,
+      1e-06
+     ],
+     "h_mm": [
+      0.00025,
+      2.5e-05,
+      2.4999999999999998e-06
+     ],
+     "rel_ladder": [
+      0.00016650652018275114,
+      3.3678810816931555e-10,
+      4.227798916710289e-09
+     ],
+     "rel": 3.3678810816931555e-10,
+     "best_step": 1e-05
+    }
+   ],
+   "worst_rel": 3.3678810816931555e-10,
+   "gate_rel": 1e-06
+  },
+  "axle_drop": {
+   "config": "coarse",
+   "kinematics": "linear",
+   "fd_tol_rel": 1e-09,
+   "filleted_mm": 0.8638515928168303,
+   "unfilleted_mm": 1.4637943596880436,
+   "grad_filleted": [
+    0.024931070692598215,
+    0.02141265163540314,
+    -0.0011800014987231164,
+    0.058330742385306895,
+    -0.011989315326731672,
+    0.03254177791513572,
+    -0.0172988379276598,
+    -0.011505598053865296,
+    -0.32342820329726785,
+    -0.4062403163788509,
+    -0.3497461341192151,
+    -0.11699566010961267,
+    -0.12705832647168727,
+    -0.1056336733670535
+   ],
+   "grad_unfilleted": [
+    0.03232280029054074,
+    0.03598355430051959,
+    0.005187340887249407,
+    0.09530190499399806,
+    0.004729023338908067,
+    0.08804094760585157,
+    -0.018949428129817987,
+    0.024447130028293528,
+    -0.6736812262497781,
+    -0.6309364962611661,
+    -0.6152556523347117,
+    -0.5277050897397905,
+    -0.0,
+    -0.0
+   ],
+   "rows": [
+    {
+     "gene": "R_hub",
+     "adjoint": -0.12705832647168727,
+     "unfilleted_adjoint": -0.0,
+     "steps": [
+      0.0001,
+      1e-05,
+      1e-06
+     ],
+     "fd_ladder": [
+      -0.1270537127953972,
+      -0.12705829580128558,
+      -0.12705813126931728
+     ],
+     "rel_ladder": [
+      3.631148322337006e-05,
+      2.4138836503103536e-07,
+      1.5363209591286685e-06
+     ],
+     "fd": -0.12705829580128558,
+     "rel": 2.4138836503103536e-07,
+     "best_step": 1e-05
+    },
+    {
+     "gene": "R_rim",
+     "adjoint": -0.1056336733670535,
+     "unfilleted_adjoint": -0.0,
+     "steps": [
+      0.0001,
+      1e-05,
+      1e-06
+     ],
+     "fd_ladder": [
+      -0.10563651439832178,
+      -0.10563370541616379,
+      -0.10563584100786728
+     ],
+     "rel_ladder": [
+      2.6895128965278953e-05,
+      3.033986159397443e-07,
+      2.052035818404436e-05
+     ],
+     "fd": -0.10563370541616379,
+     "rel": 3.033986159397443e-07,
+     "best_step": 1e-05
+    }
+   ],
+   "worst_rel": 3.033986159397443e-07,
+   "gate_rel": 1e-05
+  },
+  "refusals": {
+   "spoke_blocking": "mesh_coords: this mesh was built with `fillet=` and `fillet_blocking='spoke'`, which carries no root record.  Only the eleven-block sector blocking has a differentiable path; see `_filleted_gradient_recipe` and PLAN.md section 79.",
+   "sector_fit_clamped": "mesh_coords: the sector-fit clamp moved this mesh's fillet radius, so the radii it was built at (2.9732148870021957, 3.0) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md section 79.",
+   "clamped_radii_mm": [
+    2.9732148870021957,
+    3.0
+   ],
+   "ok": true
+  },
+  "worst_identity_mm": 4.973799150320701e-14,
+  "worst_numpy_identity_mm": 0.0,
+  "pass": true
  },
  "pass": true,
  "settings": {
@@ -4650,6 +4952,6 @@
   "kinematics": "linear",
   "service_force_n": 66.7233,
   "indentation_mm": 1.4637943596880436,
-  "elapsed_s": 1029.1
+  "elapsed_s": 1373.5
  }
 }
