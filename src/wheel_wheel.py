@@ -1033,6 +1033,12 @@ FILLET_LAYER_END_OFFSET = 1.60
 FILLET_LAYER_CLIFF_FACTOR = 0.45
 FILLET_LAYER_CLIFF_END = 0.70
 
+# AND SINCE §85 IT IS WHAT A FILLETED BUILD TAKES WHEN NOBODY ASKS.  `layer_profile=None`
+# on a filleted mesh now means `per_genome_layer_profile`; `"shipped"` is the two constants
+# above, kept reachable under a name because `study_fillet_block` re-derives against them
+# and a default that cannot be asked for by name is a default nobody can measure.
+FILLET_LAYER_SHIPPED = "shipped"
+
 # The bracket the cliff is searched in, and the step count.  Wide enough to hold every
 # cliff in the held-out draw with room to spare: the three steepest sit at -2.51, -2.30
 # and -2.12, and `study_fillet_block.CLIFF_BRACKET` stops at -2.0 and reports all three
@@ -1469,10 +1475,9 @@ def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET,
 def _layer_profile(layer_profile):
     """`(entry, end)`, defaulting to the two measured constants.
 
-    `None` means "the shipped profile" and returns exactly `FILLET_LAYER_ENTRY_SLOPE`
-    and `FILLET_LAYER_END_OFFSET`, so every caller that does not pass one takes the
-    same path it took before this parameter existed -- which is the property
-    `test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default` pins.
+    `None` and `FILLET_LAYER_SHIPPED` both return exactly `FILLET_LAYER_ENTRY_SLOPE` and
+    `FILLET_LAYER_END_OFFSET` -- the pair the module shipped before §85 moved the filleted
+    default onto the per-genome rule.
 
     Why the pass-through exists at all.  `filleted_sector` already exposed these two so
     `study_fillet_block` could re-derive them against the BLOCKING rather than assert
@@ -1480,11 +1485,60 @@ def _layer_profile(layer_profile):
     candidate pair costs the SOLVE, which is the one reason PART 13's decision still
     rests on -- and that needs a full `build_wheel`, not a sector.  Same reason, one
     level up: the study must not keep a second copy of the assembly.
+
+    IT IS A PASS-THROUGH AND NOT THE PLACE THE DEFAULT LIVES (§85).  It has no `genes`, so
+    it cannot answer the per-genome rule -- and that is deliberate rather than a gap:
+    `_resolve_layer_profile` settles the profile where the genes ARE, before the record
+    that feeds the jax cache key is written, so by the time anything asks this function it
+    is holding a concrete pair.  The two remaining callers that pass `None` are the
+    unfilleted path, which has no layer at all, and the cache key reading a record whose
+    pair was already resolved.
     """
-    if layer_profile is None:
+    if layer_profile is None or layer_profile == FILLET_LAYER_SHIPPED:
         return FILLET_LAYER_ENTRY_SLOPE, FILLET_LAYER_END_OFFSET
     entry, end = layer_profile
     return float(entry), float(end)
+
+
+def _resolve_layer_profile(layer_profile, genes, cfg, fillet, span_mm=HUB_RIM_SPAN_MM,
+                           orientation=None, rim_outer=RIM_OUTER_RADIUS_MM, uncap=None,
+                           clamp=SECTOR_FIT_CLAMP, fillet_blocking="sector"):
+    """The concrete `(entry, end)` this build will use, settled BEFORE anything caches it.
+
+    RESOLVING EAGERLY IS THE WHOLE DESIGN, and the reason is the jax cache key.  It is
+    built from `repr(_layer_profile(rec["layer_profile"]))`, and if `None` were left in the
+    record to be resolved per genome further down, **two genomes with different profiles
+    would share one key** and the second would be handed the first's traced geometry --
+    the exact failure the `repr(uncap)` comment beside that key warns about.  Storing the
+    resolved pair makes the key correct with no change to the key itself.
+
+    It also keeps the traced path free of a root-find: the profile arrives as a constant,
+    exactly as the clamped radii do, so nothing here is differentiated through.  What that
+    costs is a gradient `mesh_coords` refuses rather than returns -- see there, and §79.
+
+    `None` is the per-genome rule (§82, §85) on exactly one path -- `fillet=True` with the
+    eleven-block sector blocking.  `FILLET_LAYER_SHIPPED` is the pair the module shipped
+    before it; a tuple is itself.  Everywhere else `None` is still the two constants:
+
+      AN EXPLICIT `(R_hub, R_rim)` PAIR DOES NOT GET THE RULE, for the same reason
+      `SECTOR_FIT_CLAMP` does not touch one: a caller passing radii is measuring THOSE
+      radii, and a profile derived from the genome's own room is not what was asked for.
+      `study_fillet_fold` sweeps `fillet=(R, 0.0)` down to a zero rim, where a per-genome
+      cliff cannot even be computed.
+
+      `fillet_blocking="spoke"` DOES NOT GET IT EITHER.  §47's construction has no layer
+      to profile -- the arc goes onto the spoke block's own flank edge -- so resolving one
+      would build an eleven-block sector nobody asked for, purely to answer a question
+      that construction does not pose.
+
+      AND THE UNFILLETED PATH NEVER REACHES A LAYER AT ALL.
+    """
+    if (fillet is not True or layer_profile is not None
+            or fillet_blocking != "sector"):
+        return _layer_profile(layer_profile)
+    return per_genome_layer_profile(genes, cfg, fillet=fillet, span_mm=span_mm,
+                                    orientation=orientation, rim_outer=rim_outer,
+                                    uncap=uncap, clamp=clamp)
 
 
 def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
@@ -2052,10 +2106,18 @@ def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
                 "concretely.  Pass `fillet_roots=` — the `_roots` record an eager build "
                 "returns — which is what `mesh_coords` does for a filleted mesh; see "
                 "`_fillet_curves` and PLAN.md §79.")
+        # `build_wheel` has already resolved this and passes a concrete pair; a caller
+        # reaching `sector_blocks` directly gets the same default here (§85).  Resolving
+        # twice is not possible: a pair is returned unchanged.
         return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation,
                                        rim_inner, rim_outer, genes, fillet, uncap,
-                                       *_layer_profile(layer_profile), fillet_clamp,
-                                       xp, fillet_roots)
+                                       *_resolve_layer_profile(
+                                           layer_profile, genes, cfg, fillet,
+                                           span_mm=span_mm, orientation=orientation,
+                                           rim_outer=rim_outer, uncap=uncap,
+                                           clamp=fillet_clamp,
+                                           fillet_blocking=fillet_blocking),
+                                       fillet_clamp, xp, fillet_roots)
     if fillet is None:
         s_grid = xp.linspace(s_hub, s_rim, n_sp)
         spoke = sample(s_grid[:, None], eta_grid[None, :])
@@ -2492,6 +2554,15 @@ def _filleted_gradient_recipe(mesh):
             "and do not follow them.  The differentiable path would return a gradient "
             "that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md "
             "§79.")
+    if rec.get("layer_profile_per_genome"):
+        raise NotImplementedError(
+            "mesh_coords: this mesh's layer profile is the PER-GENOME rule, so its entry "
+            f"{rec['layer_profile'][0]:.6f} is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)` "
+            "and does not follow the genes on the frozen path.  The differentiable path "
+            "would return a gradient that is plausible and wrong, exactly as it would "
+            "through the sector-fit clamp above.  Pass `layer_profile=` explicitly -- "
+            "`wheel_wheel.FILLET_LAYER_SHIPPED` is the pair the module used before §85 -- "
+            "or see PLAN.md §82 and §85 for what making the cliff differentiable needs.")
     return {"fillet": mesh.fillet, "fillet_blocking": rec["blocking"],
             "layer_profile": rec["layer_profile"], "fillet_clamp": rec["clamp"],
             "fillet_roots": rec["roots"]}
@@ -2619,6 +2690,16 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
     cfg = get_config(cfg)
     if orientation is None:
         orientation = flank_orientation(genes, cfg, span_mm=span_mm)
+    # THE PROFILE IS SETTLED HERE, ONCE, AND WHAT GOES INTO `fillet_recipe` BELOW IS THE
+    # RESOLVED PAIR (§85).  Leaving `None` in that record would leave the jax cache key --
+    # which reads it -- identical for two genomes the per-genome rule gives different
+    # profiles to.  See `_resolve_layer_profile`.
+    per_genome = (fillet is True and layer_profile is None
+                  and fillet_blocking == "sector")
+    layer_profile = _resolve_layer_profile(
+        layer_profile, genes, cfg, fillet, span_mm=span_mm, orientation=orientation,
+        rim_outer=rim_outer, uncap=uncap, clamp=fillet_clamp,
+        fillet_blocking=fillet_blocking)
     coords_all, shapes, offsets, thetas, dirn, applied, fillet_roots = _sector_coords(
         genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer, phase_deg,
         fillet, uncap, fillet_blocking, layer_profile, fillet_clamp)
@@ -2686,6 +2767,9 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
                      uncap=uncap, fillet=fillet, applied=applied,
                      fillet_recipe=None if fillet is None else {
                          "blocking": fillet_blocking, "layer_profile": layer_profile,
+                         # Whether that pair came from the RULE or was asked for, which
+                         # the pair itself cannot say and `mesh_coords` has to know (§85).
+                         "layer_profile_per_genome": bool(per_genome),
                          "clamp": fillet_clamp, "roots": fillet_roots})
 
 

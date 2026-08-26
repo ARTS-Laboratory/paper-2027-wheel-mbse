@@ -3316,3 +3316,53 @@ Measured before the branch was deleted rather than found after.
 
 `study_corner_singularity_fillet.json`: 43 shared rows, ZERO field differences, the only
 change the corrected `shipped_cliff.why`.  All 23 self-checks pass.
+
+# STEP 1 RECORD, PART 27 — 2026-08-26. THE DEFAULT IS FLIPPED: `fillet=True` TAKES THE PER-GENOME LAYER PROFILE. THE PROFILE IS RESOLVED WHERE THE GENES ARE SO THE TRACE CACHE STAYS CORRECT, AND THE GRADIENT IS REFUSED RATHER THAN QUIETLY WRONG
+
+PART 24 adopted the mechanism; PARTS 25 and 26 fixed the two defects in the axis it was
+measured on.  This makes it the default.  Full record in **PLAN.md §85**.
+
+## WHAT CHANGED, AND THE THREE PATHS THAT KEPT THE OLD CONSTANTS
+
+`layer_profile=None` on `fillet=True` with the sector blocking is now
+`per_genome_layer_profile`.  `FILLET_LAYER_SHIPPED` names the old pair, kept reachable
+because this study re-derives against it.
+
+An explicit `(R_hub, R_rim)` pair does NOT get the rule -- the same scoping PART 14's clamp
+uses, and `study_fillet_fold` sweeps `fillet=(R, 0.0)` to a zero rim where no cliff exists.
+`fillet_blocking="spoke"` does not either: PART 3's construction has no layer to profile.
+And `fillet=None` is untouched, still bit-identical, still what the tree ships.  Both of the
+first two were found by the suite, not by reading -- six `test_fillet_fold` failures off a
+first cut that resolved the rule for any `fillet` at all.
+
+## THE TRACE CACHE IS WHY IT RESOLVES EAGERLY
+
+`coord_fn`'s key is `repr(_layer_profile(rec["layer_profile"]))`.  Left as `None` and
+resolved per genome downstream, two genomes with different profiles would share one key and
+the second would be handed the first's traced geometry.  So the profile is settled in
+`build_wheel` before the record is written.  Measured, two genomes: `(-0.362881, 0.7)` and
+`(-0.421871, 0.7)`, where both would previously have keyed as `(-0.45, 1.6)`.
+
+## AND THE GRADIENT IS REFUSED
+
+The rule's entry is `factor * cliff(genes)`: it depends on the genes and the frozen path
+holds it constant, which is word for word why PART 21's clamp is refused.  `mesh_coords`
+raises the analogous error and G11e's census carries it as a THIRD refused case, measured so
+that the day it stops refusing is the day the cliff became differentiable.  §79's own numbers
+are unmoved because `study_gradient` now NAMES the shipped pair rather than inheriting a
+default.
+
+## THE AUDIT
+
+`study_corner_singularity_fillet.json` and `study_reds_hub_share.json` moved;
+`study_gradient.json` gains two keys; `study_fillet_block.json` and `study_fillet_fold.json`
+did not move at all, because every sweep in them passes an explicit profile or an explicit
+pair.  The corner artifact moved in exactly FOUR numbers -- `hub:A`, `hub:B`, `rim:A`,
+`rim:B`, the four corners the layer profile can move -- with `P_t`, `P_c`, `arc` and `N`
+bit-identical and the element count unchanged at 37632.
+
+**Step 3's acceptance test still passes on the new default**: the hub-share ladder goes
+exactly flat above the cap, four rows at 0.888507 against the old 0.889754, 11 distinct
+values of 14.  That was worth checking rather than assuming -- `R_hub` is gene 12 and enters
+the cliff, so under the rule it moves the profile too.  The plateau holds because above the
+cap the clamp pins the built radius, so the cliff stops moving with it.

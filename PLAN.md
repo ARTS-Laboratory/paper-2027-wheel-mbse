@@ -10874,3 +10874,154 @@ differences**, the only change being the corrected `shipped_cliff.why`.  All 23 
 8. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+## §85 — 2026-08-26. THE DEFAULT IS FLIPPED. `fillet=True` NOW TAKES THE PER-GENOME LAYER PROFILE, THE PROFILE IS RESOLVED WHERE THE GENES ARE SO THE JAX CACHE KEY STAYS CORRECT, AND §79's GRADIENT IS REFUSED RATHER THAN QUIETLY WRONG
+
+§82 adopted the mechanism and left the default alone; §83 and §84 fixed the two defects in
+the axis it was measured on.  This makes it what `fillet=True` takes.
+
+### WHAT CHANGED, AND WHERE IT DELIBERATELY DID NOT
+
+`layer_profile=None` on `fillet=True` with the eleven-block sector blocking is now
+`per_genome_layer_profile`.  `FILLET_LAYER_SHIPPED` is the pair the module took before, kept
+reachable **under a name**, because `study_fillet_block` re-derives against it and a default
+nobody can ask for by name is a default nobody can measure.
+
+Three paths keep the old constants, and each for a reason that already existed:
+
+- **An explicit `(R_hub, R_rim)` pair does not get the rule**, exactly as `SECTOR_FIT_CLAMP`
+  does not touch one: a caller passing radii is measuring *those* radii.  `study_fillet_fold`
+  sweeps `fillet=(R, 0.0)` to a zero rim, where a per-genome cliff cannot be computed at all.
+- **`fillet_blocking="spoke"` does not get it.**  §47's construction has no layer to profile,
+  and resolving one would build an eleven-block sector purely to answer a question that
+  construction does not pose.
+- **The unfilleted path never reaches a layer.**  `build_wheel`'s default is still
+  `fillet=None`, still bit-identical, and still what the tree ships.
+
+Both of the first two were found by the suite rather than by reading: six `test_fillet_fold`
+failures, from a first cut that resolved the rule for any `fillet` at all.
+
+### THE CACHE KEY IS WHY THE PROFILE IS RESOLVED EAGERLY
+
+`coord_fn`'s key is built from `repr(_layer_profile(rec["layer_profile"]))`.  Left as `None`
+in the record and resolved per genome further down, **two genomes with different profiles
+would share one key** and the second would be handed the first's traced geometry — the exact
+failure the `repr(uncap)` comment three lines below that key warns about.  So
+`_resolve_layer_profile` settles it in `build_wheel`, before the record is written, and
+`_layer_profile` stays a pure pass-through with no access to the genes *by design*.
+
+Measured, two genomes, same call: `(-0.362881, 0.7)` and `(-0.421871, 0.7)`.  Under the old
+arrangement both would have keyed as `(-0.45, 1.6)`.
+
+### AND THE GRADIENT IS REFUSED, WHICH IS §79's OWN PRECEDENT
+
+The rule's entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`.  It **does** depend on the
+genes and the frozen path holds it constant, so a derivative taken through it is wrong in
+the way nothing downstream could see — which is word for word why §79 refuses a mesh whose
+radius the clamp moved.  `mesh_coords` now raises the analogous `NotImplementedError`, and
+`study_gradient`'s G11e census carries it as a **third** refused case, measured rather than
+asserted, so the day it stops refusing is the day someone made the cliff differentiable.
+
+**§79's own numbers are unmoved**, because `study_gradient` now names
+`FILLET_LAYER_SHIPPED` rather than inheriting a default: silently re-measuring §79's gate on
+§85's geometry would leave that file reporting one section's threshold against another
+section's mesh.  G11 passes.
+
+### THE ARTIFACT AUDIT
+
+```
+  artifact                              moved?   why
+  study_corner_singularity_fillet.json  YES      `--fillet genome` is `fillet=True`
+  study_reds_hub_share.json             YES      `--fillet` is `fillet=True`
+  study_gradient.json                   keys     pinned to the shipped pair; gains the
+                                                 third refusal and its pair
+  study_fillet_block.json               no       every sweep passes an explicit profile
+  study_fillet_fold.json                no       explicit pairs, never the rule
+  everything else                       no       unfilleted
+```
+
+**The corner artifact moved in exactly four numbers**, and they are the four that can:
+
+```
+   corner        before      after      moves with the layer profile?
+   hub:A        183.012     183.314     yes — the fillet's tangency
+   hub:B        183.972     183.670     yes
+   rim:A        184.544     185.221     yes
+   rim:B        183.439     182.762     yes
+   hub/rim:P_t  360.000     360.000     no  — bit-identical
+   hub:P_c      268.209     268.209     no
+   rim:P_c      270.853     270.853     no
+   hub/rim:arc  188.100 / 188.305       no
+   hub/rim:N    360.000     360.000     no
+```
+
+Element and node counts are unchanged (37632 at the finest rung) — the profile moves where
+the boundary layer's stations sit, not how many there are — and the 43-row `--profiles`
+sweep is untouched, because it passes explicit pairs.
+
+**§75's finding survives the flip.**  The hub-share ladder re-run on the rule still goes
+*exactly* flat above the cap — four rows at 0.888507 against the old four at 0.889754 — with
+11 distinct values of 14 as before, every row shifted about 0.1% by the gentler profile.
+Worth stating because the opposite was plausible: `R_hub` is gene 12 and enters the cliff, so
+under the rule it moves the layer profile as well as the radius.  It does not break the
+plateau, and the reason is that above the cap the clamp pins the built radius, so the cliff —
+computed at the radii the mesh is built at — stops moving too.
+
+### ONE TEST NEEDED A NEW LINE, AND IT DID NOT GET A LOOSENED ONE
+
+`test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom` asserts §65's
+correction is not inert on a filleted mesh, at 3x the unfilleted offset and gap.  The rule's
+profile is gentler than the shipped pair — `(-0.3629, 0.70)` against `(-0.45, 1.60)`, a
+shallower entry and a much shorter layer — so it perturbs the rim less: offset -0.1029 deg
+against -0.1635, gap 3.76e-03 against 5.81e-03.  The claim holds at **2.3x and 2.1x**.
+
+The 3x line is **left exactly where §65 put it**, now naming `FILLET_LAYER_SHIPPED`, and the
+new default is asserted on its own line at its own level.  A threshold moved in the same
+change that reddened it cannot be told apart from one fitted to the run that breached it.
+
+### AND THREE MORE PLACES WHERE A TEST PINNED A SYMPTOM RATHER THAN THE FINDING
+
+All three went red, none of them because the finding failed.  They are worth recording
+together, because the same mistake made all three: the property was real and what got
+written down was one of its shapes on one mesh.
+
+**§65's node-reading artefact changed shape and got WORSE.**  The test asserted
+`node["monotone"] is False` — the artefact's signature on the shipped profile, an
+oscillation with increments +0.001359 then -0.001236 and ratio -0.909.  Under the rule the
+ladder is **monotone and diverging**: -0.000651 then -0.001175, ratio 1.804, each rung
+moving it further than the last.  Asserting non-monotonicity would have gone GREEN here
+while the reading it guards got worse.  What §65 actually found is that the nearest-node
+reading does not settle, and `node["settling"] is False` says so on both meshes; that is
+what is pinned now, with `interp["settling"] is True` beside it.
+
+**§50's `N` / `P_t` separation is a function of the layer's `end`.**  `N` is where the
+layer's inner edge crosses the ring circle, so a shorter layer brings it in: the hub's goes
+0.4719 mm -> 0.0997 under the rule's `end` of 0.70 against the shipped 1.60.  The 0.4 floor
+stays on the profile it was derived from and the current default is checked at 0.05 — two
+orders above the seam tolerance the mesh closes to and an order under the measurement, so
+it still fails on `N` and `P_t` becoming one point rather than on the profile moving them.
+
+**§29's convergence contrast narrowed, exactly as §82 priced it.**  Filleted tail 0.031% ->
+0.131%, contrast 11.9x -> 2.8x.  Both band claims are untouched and both still hold — the
+filleted ladder inside +-0.3%, the unfilleted outside — and the contrast factor is now
+anchored to §82's published increment ratio for factor 0.45 (0.466, measured; the ladder
+reads 0.4661) rather than to this run, so the test and that table cannot drift apart
+without one of them saying so.
+
+#### The successors, ranked — REVISED 2026-08-26 AFTER §85
+
+1. **Wire the fillet into `modelled_area_reference`** (§50).  `area_report` still refuses a
+   filleted mesh outright, and it is now the last thing between the fillet and being usable
+   for something other than measurement.
+2. **Make the layer cliff differentiable.**  §82's closed form makes the implicit function
+   theorem applicable to `min_u H = 1e-6`, and §85 has just made the refusal it removes a
+   thing the default path hits rather than a corner case.  It reopens G11e's third row.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and now the
+   oldest thing on the list.
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Re-run the hub-share ladder on a filleted mesh** (§75) — DONE as a side effect of §85's
+   audit, and the finding held; what remains is the ladder at more than one rung.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).

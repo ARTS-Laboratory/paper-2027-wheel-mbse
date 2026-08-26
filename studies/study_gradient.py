@@ -137,6 +137,20 @@ GATE_FACET_MUST_FALL = True       # G7  see `run_phase_smoothness` — the crite
 GATE_SECANT_REL = 1.0e-5          # G9  looser: the secant's own 1e-8 enters the value
 INSENSITIVE_EXPECTED = ("R_hub", "R_rim")   # G8  the census, not a tolerance
 GATE_FILLET_MESH_MM = 1.0e-9      # G11 the same identity as G3, on the FILLETED mesh
+
+# WHICH LAYER PROFILE G11 IS MEASURED AT, NAMED RATHER THAN INHERITED (PLAN §85).
+#
+# §79 measured the filleted mesh's differentiability at what was then `fillet=True`'s
+# default -- the shipped pair -- and §85 moved that default onto the per-genome rule.  Two
+# things follow and neither is optional.  The rule's entry is `FILLET_LAYER_CLIFF_FACTOR *
+# cliff(genes)`, which does NOT follow the genes on the frozen path, so `mesh_coords`
+# refuses those meshes outright: G11 would not run at all.  And even if it did, silently
+# re-measuring §79's numbers on a different mesh would leave this file reporting one
+# section's gate against another section's geometry.
+#
+# So the pair is named.  When the cliff becomes differentiable (§85's successor 3) this is
+# the line to revisit, and G11e's refusal census is where the new case belongs.
+G11_LAYER_PROFILE = WW.FILLET_LAYER_SHIPPED
 GATE_FILLET_JAC_REL = 1.0e-6      # G11 the mesh jacobian against a central difference of
                                   #     `build_wheel(fillet=True)` — which re-runs both
                                   #     bracketed root-finds, so it cannot share a bug
@@ -878,7 +892,8 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
     # --- G11a  the differentiable filleted mesh IS the solved filleted mesh ----
     for name in configs:
         for phase in (0.0, 7.5):
-            m = WW.build_wheel(genes, name, phase_deg=phase, fillet=True)
+            m = WW.build_wheel(genes, name, phase_deg=phase, fillet=True,
+                               layer_profile=G11_LAYER_PROFILE)
             traced = np.asarray(WW.mesh_coords(jnp.asarray(genes), m))
             eager_np = np.asarray(WW.mesh_coords(genes, m, xp=np))
             out["identity"].append(
@@ -889,7 +904,8 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
                  "radii_mm": [float(r) for r in m.fillet_radii_mm],
                  "clamped": {k: bool(v) for k, v in m.fillet_clamped.items()}})
 
-    mesh_f = WW.build_wheel(genes, cfg, fillet=True)
+    mesh_f = WW.build_wheel(genes, cfg, fillet=True,
+                            layer_profile=G11_LAYER_PROFILE)
     mesh_u = WW.build_wheel(genes, cfg)
 
     # --- G11b  the census, both ways round ------------------------------------
@@ -912,8 +928,8 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
 
     # --- G11c  the mesh jacobian against a central difference of `build_wheel` --
     def eager_coords(v):
-        return np.asarray(WW.build_wheel(np.asarray(v, float), cfg,
-                                         fillet=True).coords)
+        return np.asarray(WW.build_wheel(np.asarray(v, float), cfg, fillet=True,
+                                         layer_profile=G11_LAYER_PROFILE).coords)
 
     def column(gid):
         e = np.zeros(len(genes))
@@ -953,7 +969,8 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
 
     def drop(v):
         return fem.solve_wheel_contact(
-            WW.build_wheel(np.asarray(v, float), cfg, fillet=True),
+            WW.build_wheel(np.asarray(v, float), cfg, fillet=True,
+                           layer_profile=G11_LAYER_PROFILE),
             force=SERVICE_FORCE_N, tol_rel=fd_tol_rel, max_iter=fd_max_iter,
             kinematics=kinematics)["axle_drop_mm"]
 
@@ -994,15 +1011,30 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
         refusals["spoke_blocking"] = str(exc)
     clamped = genes.copy()
     clamped[12] = 8.0                      # far past any sector's room; §57's case
-    mc = WW.build_wheel(clamped, cfg, fillet=True)
+    mc = WW.build_wheel(clamped, cfg, fillet=True,
+                        layer_profile=G11_LAYER_PROFILE)
     try:
         WW.mesh_coords(clamped, mc, xp=np)
         refusals["sector_fit_clamped"] = None
     except NotImplementedError as exc:
         refusals["sector_fit_clamped"] = str(exc)
     refusals["clamped_radii_mm"] = [float(r) for r in mc.fillet_radii_mm]
+    # AND THE THIRD REFUSED CASE, WHICH §85 ADDED (PLAN §85).  `fillet=True` with no
+    # `layer_profile` is now the per-genome rule, whose entry is a function of the genes
+    # that the frozen path holds constant -- the same defect as the clamp above and refused
+    # the same way.  Measured here rather than asserted, so the day it stops refusing is
+    # the day someone made the cliff differentiable and this census says so.
+    mp = WW.build_wheel(genes, cfg, fillet=True)
+    try:
+        WW.mesh_coords(genes, mp, xp=np)
+        refusals["per_genome_layer_profile"] = None
+    except NotImplementedError as exc:
+        refusals["per_genome_layer_profile"] = str(exc)
+    refusals["per_genome_pair"] = [float(v)
+                                   for v in mp.fillet_recipe["layer_profile"]]
     refusals["ok"] = bool(refusals["spoke_blocking"]
-                          and refusals["sector_fit_clamped"])
+                          and refusals["sector_fit_clamped"]
+                          and refusals["per_genome_layer_profile"])
     out["refusals"] = refusals
 
     out["worst_identity_mm"] = max(r["max_abs_mm"] for r in out["identity"])
@@ -1301,13 +1333,16 @@ def _print(rep):
               f"G9's tightened reference secant at {a['fd_tol_rel']:.0e}]")
         print()
         print(f"    STILL REFUSED, because the derivative would be WRONG and not because")
-        print(f"    it would be hard — both raise:")
-        for k in ("spoke_blocking", "sector_fit_clamped"):
+        print(f"    it would be hard — all three raise:")
+        for k in ("spoke_blocking", "sector_fit_clamped", "per_genome_layer_profile"):
             msg = q["refusals"][k]
-            print(f"      {k:20s} {'refused' if msg else '*** DID NOT REFUSE ***'}")
+            print(f"      {k:24s} {'refused' if msg else '*** DID NOT REFUSE ***'}")
         print(f"      the clamped mesh was built at radii "
               f"{q['refusals']['clamped_radii_mm']} against a requested 8.0 mm at the "
               f"hub")
+        print(f"      the per-genome mesh was built at layer profile "
+              f"{tuple(round(v, 6) for v in q['refusals']['per_genome_pair'])}, whose "
+              f"entry is a function of the genes (PLAN §85)")
         print(f"    -> {'PASS' if q['pass'] else 'FAIL'}")
         print()
         print(f"    *** WHAT THIS DOES AND DOES NOT CHANGE.  Nothing wires the fillet "

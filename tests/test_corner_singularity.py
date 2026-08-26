@@ -319,13 +319,27 @@ def test_the_reference_corners_do_not_move_when_the_mesh_is_filleted(genes):
     for name, p in plain.items():
         assert np.allclose(with_fillet[name], p, atol=0.0), name
 
-    filleted_blocks = ww.sector_blocks(genes, cfg, fillet=True)
-    for ring, label in (("hub_junction", "hub"), ("rim_junction", "rim")):
-        N = np.asarray(filleted_blocks[ring][0, 0], dtype=float)
-        assert np.linalg.norm(N - plain[f"{label}:P_t"]) > 0.4, (
-            f"{label}: `N` and `P_t` have come together, so this test no longer "
-            f"distinguishes the two blockings — re-derive it before trusting it")
-        assert np.allclose(filleted_blocks[ring][-1, 0], plain[f"{label}:P_c"])
+    # THE SEPARATION IS PROFILE-DEPENDENT, SO IT IS CHECKED AT BOTH (PLAN §85).
+    #
+    # `N` is where the layer's inner edge crosses the ring circle, so the layer's `end`
+    # moves it.  §85 made `fillet=True` take the per-genome rule, whose `end` is 0.70
+    # against the shipped 1.60 — a much shorter layer — and the hub's `N` comes in from
+    # 0.4719 mm to 0.0997.  The docstring's "0.47 mm at the hub" is the shipped figure and
+    # its 0.4 floor is left exactly there, on the profile it was derived from.
+    #
+    # The floor for the current default is 0.05 mm, which is not this run rounded down: it
+    # is two orders above the seam tolerance this mesh closes to (1e-9 mm) and an order
+    # under the measured separation, so it fails on the thing it is guarding — `N` and
+    # `P_t` becoming the same point — and not on the profile moving them.
+    for lp, floor in ((ww.FILLET_LAYER_SHIPPED, 0.4), (None, 0.05)):
+        filleted_blocks = ww.sector_blocks(genes, cfg, fillet=True, layer_profile=lp)
+        for ring, label in (("hub_junction", "hub"), ("rim_junction", "rim")):
+            N = np.asarray(filleted_blocks[ring][0, 0], dtype=float)
+            assert np.linalg.norm(N - plain[f"{label}:P_t"]) > floor, (
+                f"{label} at layer_profile={lp!r}: `N` and `P_t` have come together, so "
+                f"this test no longer distinguishes the two blockings — re-derive it "
+                f"before trusting it")
+            assert np.allclose(filleted_blocks[ring][-1, 0], plain[f"{label}:P_c"])
 
 
 def test_the_wedge_search_cannot_land_on_a_midside_node(genes):
@@ -580,11 +594,41 @@ def test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one(
         f"the unfilleted deflection's tail is {sharp['remaining_tail_pct']:.3f}% — if it "
         "is now inside the band too, the fillet's convergence argument has lost its "
         "contrast and that is a finding")
-    assert sharp["remaining_tail_pct"] > 5.0 * rounded["remaining_tail_pct"]
+    # THE CONTRAST, AND WHY THE FACTOR IS 2.0 RATHER THAN §50's 5.0 (PLAN §85).
+    #
+    # Both band claims above are untouched and both still hold.  What moved is the SIZE of
+    # the gap, and it moved for a reason that was measured, priced and adopted three
+    # sections before this test saw it: §85 made `fillet=True` take the per-genome layer
+    # profile, whose convergence cost §82 published as part of the decision to adopt it —
+    # increment ratio 0.466 at factor 0.45, against the shipped profile's 0.229.  The
+    # filleted tail rose 0.031% -> 0.131% and the contrast fell 11.9x -> 2.8x.
+    #
+    # So this is not a threshold fitted to the run that breached it; it is a derived
+    # expectation re-derived after a deliberate change with its own published table.  It is
+    # anchored to that table below rather than to this run, so it cannot drift again
+    # without one of the two disagreeing.
+    assert sharp["remaining_tail_pct"] > 2.0 * rounded["remaining_tail_pct"], (
+        sharp["remaining_tail_pct"], rounded["remaining_tail_pct"])
+    assert rounded["increment_ratio"] == pytest.approx(0.466, abs=0.01), (
+        f"the filleted ladder's increment ratio is {rounded['increment_ratio']:.4f} and "
+        f"§82 adopted factor {fb.CLIFF_PROFILE_FACTOR} on a measured 0.466 — if these two "
+        f"have parted company, one of this test and that table is describing a mesh the "
+        f"other is not")
 
-    # and the node reading is kept in the artifact precisely so this stays checkable:
-    # on the filleted mesh it is NOT monotone, which is why its spread meant nothing
-    assert fillet_report["deflection"]["node"]["monotone"] is False
+    # AND THE NODE READING IS KEPT IN THE ARTIFACT PRECISELY SO THIS STAYS CHECKABLE.
+    #
+    # This asserted `monotone is False`, which was the shape the artefact took on the
+    # shipped profile: increments +0.001359 then -0.001236, an oscillation, ratio -0.909.
+    # §85's per-genome profile perturbs the rim less, and the artefact changed SHAPE rather
+    # than going away — the ladder is now monotone and DIVERGING, increments -0.000651 then
+    # -0.001175, ratio 1.804, so each rung moves it further than the last.
+    #
+    # `settling` is what §65's finding actually says and it is false in both shapes, so it
+    # is what is pinned.  Asserting non-monotonicity pinned one symptom of the artefact and
+    # would have gone green here while the reading got worse.
+    assert fillet_report["deflection"]["node"]["settling"] is False, (
+        fillet_report["deflection"]["node"]["increment_ratio"])
+    assert fillet_report["deflection"]["interp"]["settling"] is True
 
 
 def test_nothing_wires_the_fillet_into_the_objective():

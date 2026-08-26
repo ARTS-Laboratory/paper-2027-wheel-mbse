@@ -49,7 +49,22 @@ def genes():
 
 @pytest.fixture(scope="module")
 def filleted(genes):
+    """`fillet=True` as it comes, which since §85 is the PER-GENOME layer profile."""
     return {cfg: ww.build_wheel(genes, cfg, fillet=True) for cfg in CFGS}
+
+
+@pytest.fixture(scope="module")
+def filleted_shipped(genes):
+    """The same mesh at the pair `fillet=True` took BEFORE §85, named rather than assumed.
+
+    §79's differentiability results are measured here and nowhere else.  The per-genome
+    rule's entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`, which does not follow the
+    genes on the frozen path, so `mesh_coords` refuses those meshes outright -- see
+    `test_the_differentiable_path_REFUSES_what_it_would_get_WRONG`, which pins that refusal
+    as a property rather than working around it here.
+    """
+    return {cfg: ww.build_wheel(genes, cfg, fillet=True,
+                                layer_profile=ww.FILLET_LAYER_SHIPPED) for cfg in CFGS}
 
 
 @pytest.fixture(scope="module")
@@ -219,7 +234,7 @@ def test_both_filleted_constructions_are_reachable_and_they_are_different(genes)
         ww.sector_blocks(genes, "coarse", fillet=True, fillet_blocking="winslow")
 
 
-def test_the_differentiable_path_REPRODUCES_a_filleted_mesh(genes, filleted):
+def test_the_differentiable_path_REPRODUCES_a_filleted_mesh(genes, filleted_shipped):
     """PLAN §79 — this test asserted the REFUSAL until 2026-08-24, and now asserts the path.
 
     The refusal's reason was never "hard": `mesh_coords` rebuilt the sector WITHOUT
@@ -229,7 +244,7 @@ def test_the_differentiable_path_REPRODUCES_a_filleted_mesh(genes, filleted):
     happen, so the check is the same one gate 3 makes of the unfilleted path — the traced
     coordinates ARE the solved mesh's — rather than an exception type.
     """
-    for cfg, m in filleted.items():
+    for cfg, m in filleted_shipped.items():
         got = np.asarray(ww.mesh_coords(genes, m, xp=np))
         assert got.shape == np.asarray(m.coords).shape
         assert np.abs(got - np.asarray(m.coords)).max() == 0.0, cfg
@@ -241,7 +256,7 @@ def test_the_differentiable_path_REPRODUCES_a_filleted_mesh(genes, filleted):
     assert np.abs(got - np.asarray(plain_mesh.coords)).max() < 1e-12
 
 
-def test_the_filleted_gradient_is_the_derivative_of_build_wheel(genes, filleted):
+def test_the_filleted_gradient_is_the_derivative_of_build_wheel(genes, filleted_shipped):
     """The two genes that had no gradient have one, and it is the mesh's own.
 
     Central-differencing `build_wheel(fillet=True)` itself is the reference that cannot be
@@ -252,12 +267,13 @@ def test_the_filleted_gradient_is_the_derivative_of_build_wheel(genes, filleted)
     """
     import jax
     import jax.numpy as jnp
-    m = filleted["coarse"]
+    m = filleted_shipped["coarse"]
     J = np.asarray(jax.jacfwd(lambda v: ww.mesh_coords(v, m))(jnp.asarray(genes)))
 
     def eager(v):
-        return np.asarray(ww.build_wheel(np.asarray(v, float), "coarse",
-                                         fillet=True).coords)
+        return np.asarray(ww.build_wheel(
+            np.asarray(v, float), "coarse", fillet=True,
+            layer_profile=ww.FILLET_LAYER_SHIPPED).coords)
 
     for gid, h in ((12, 1e-5), (13, 1e-5), (8, 1e-5)):
         gp, gm = genes.copy(), genes.copy()
@@ -269,7 +285,7 @@ def test_the_filleted_gradient_is_the_derivative_of_build_wheel(genes, filleted)
         assert np.abs(J[:, :, gid]).max() > 1e-3, wg.GENE_NAMES[gid]
 
 
-def test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh(genes, filleted,
+def test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh(genes, filleted_shipped,
                                                                     plain):
     """The census `tests/test_gradient.py` runs on the unfilleted mesh, inverted.
 
@@ -281,7 +297,7 @@ def test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh(genes, fille
     import wheel_adjoint as wa
     dead, _ = wa.insensitive_genes(genes, plain["coarse"])
     assert set(dead) == {"R_hub", "R_rim"}
-    dead_f, col = wa.insensitive_genes(genes, filleted["coarse"])
+    dead_f, col = wa.insensitive_genes(genes, filleted_shipped["coarse"])
     assert dead_f == [], dead_f
     live = [col[i] for i, n in enumerate(wg.GENE_NAMES)
             if n not in ("R_hub", "R_rim")]
@@ -302,14 +318,16 @@ def test_the_filleted_trace_is_SHARED_across_genomes(genes):
     which a closed-over record breaks.
     """
     ww._COORD_FN_CACHE.clear()
-    m0 = ww.build_wheel(genes, "coarse", fillet=True)
+    m0 = ww.build_wheel(genes, "coarse", fillet=True,
+                        layer_profile=ww.FILLET_LAYER_SHIPPED)
     np.asarray(ww.coord_fn(m0)(genes))
     assert len(ww._COORD_FN_CACHE) == 1
 
     other = np.array(genes, dtype=float)
     other[12] += 0.2
     other[3] += 0.05
-    m1 = ww.build_wheel(other, "coarse", fillet=True)
+    m1 = ww.build_wheel(other, "coarse", fillet=True,
+                        layer_profile=ww.FILLET_LAYER_SHIPPED)
     assert (m1.fillet_recipe["roots"]["hub"]["s_A"]
             != m0.fillet_recipe["roots"]["hub"]["s_A"])
     got = np.asarray(ww.coord_fn(m1)(other))
@@ -389,17 +407,25 @@ def test_the_filleted_blocking_refuses_a_switched_off_end(genes, R):
 
 @pytest.mark.parametrize("cfg", CFGS)
 def test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default(genes, filleted,
+                                                                       filleted_shipped,
                                                                        cfg):
-    """`layer_profile=None` must be the mesh that shipped before the parameter existed.
+    """What `layer_profile=None` MEANS, pinned on both sides of §85's change of default.
 
     `build_wheel`, `_sector_coords` and `sector_blocks` grew a `layer_profile` keyword so
-    PART 16 could price what a candidate `(entry, end)` costs the SOLVE — the one reason
-    PART 13's declined call still rests on.  A pass-through added to shipped geometry is
-    only safe if its default path is the old path exactly, so this asserts bitwise
-    equality rather than closeness, three ways: omitted, `None`, and the two module
-    constants passed explicitly.
+    PART 16 could price what a candidate `(entry, end)` costs the SOLVE.  While the default
+    was the shipped pair this test asserted the pass-through was bit-identical to the mesh
+    that shipped before the parameter existed.  §85 moved the filleted default onto the
+    per-genome rule, so the property splits in two and BOTH halves are pinned, because a
+    default that silently means something else is the whole hazard here:
 
-    The unfilleted path is asserted too.  It never reaches `_layer_profile` at all, and
+      omitted == `None` == `per_genome_layer_profile(genes, cfg)` passed explicitly
+      `FILLET_LAYER_SHIPPED` == the two module constants passed explicitly
+
+    Bitwise rather than close, and the resolved pair is checked on the RECORD too — that
+    pair is what the jax cache is keyed on, so a mesh built by the rule that recorded
+    `None` would collide with every other genome's.
+
+    The unfilleted path is asserted last.  It never reaches `_layer_profile` at all, and
     the way that could stop being true is a future edit moving the call up a level.
     """
     ref = filleted[cfg].coords
@@ -407,8 +433,20 @@ def test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default(genes, f
                                               layer_profile=None).coords)
     assert np.array_equal(ref, ww.build_wheel(
         genes, cfg, fillet=True,
+        layer_profile=ww.per_genome_layer_profile(genes, cfg)).coords)
+    assert (tuple(filleted[cfg].fillet_recipe["layer_profile"])
+            == ww.per_genome_layer_profile(genes, cfg))
+    assert filleted[cfg].fillet_recipe["layer_profile_per_genome"] is True
+
+    shipped_ref = filleted_shipped[cfg].coords
+    assert np.array_equal(shipped_ref, ww.build_wheel(
+        genes, cfg, fillet=True,
         layer_profile=(ww.FILLET_LAYER_ENTRY_SLOPE,
                        ww.FILLET_LAYER_END_OFFSET)).coords)
+    assert filleted_shipped[cfg].fillet_recipe["layer_profile_per_genome"] is False
+    # and the two defaults really are different meshes, or this pins nothing
+    assert not np.array_equal(ref, shipped_ref)
+
     plain_ref = ww.build_wheel(genes, cfg).coords
     assert np.array_equal(plain_ref,
                           ww.build_wheel(genes, cfg, layer_profile=(-0.9, 0.5)).coords)
