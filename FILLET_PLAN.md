@@ -3212,3 +3212,61 @@ still defaults to `fillet=None`.  What is adopted is the mechanism and its opera
 point, in the shape PART 14 -> PART 21 already used for the clamp.  Flipping the default
 to the rule is the next step and is deliberately separate: it re-dates every artifact
 carrying a filleted mesh, which is exactly how the corner artifact went stale unnoticed.
+
+# STEP 1 RECORD, PART 25 — 2026-08-26. PART 24's SECOND SENTINEL, FIXED: THE SECTOR-FIT LIMIT WAS NEVER PROFILE-DEPENDENT, AND SEPARATING THE TWO REFUSALS PUTS ALL 34 PRICED CORNER PAIRS BACK TO THEIR PRE-PART-21 VALUES FIELD FOR FIELD
+
+PART 24 recorded `_sector_fit_span` counting a layer-width refusal as "no room" and did
+not fix it, because the fix moves the clamp at every steep profile.  This is that step.
+Full record in **PLAN.md §83**.
+
+## ONE HOIST
+
+`free_span_deg` is a function of `Q` and `B` and of nothing else — neither `entry` nor
+`end` reaches it — but it was computed below two profile-dependent refusals, so at the
+radii where those fire it was never reached.  It moves up to just after the tangency
+solve; `th_N` stays, because it needs the offset root-find, which does move with the
+profile.  Every refusal now carries the span, and `_sector_fit_span` returns `-1.0` only
+when the TANGENCY failed — the one refusal that is genuinely about the radius.
+
+`sector_fit_limit` here delegates its root-find to the module (PART 21) and follows
+automatically, which is what that delegation was for.
+
+## THE LIMIT STOPS COLLAPSING
+
+At `end` = 0.70 the hub limit read 3.1297 / 1.6285 / 0.7594 / 0.2506 / 0.0500 as the entry
+steepened from -0.45 to -2.60, and the rim 6.1797 down to 0.0500.  It now reads **3.129700
+at every entry, with the rim unlimited at every entry** — constant in the profile, which is
+what PART 14 and PART 21 both said it was.  The old numbers were the layer's cliff wearing
+the sector fit's name: at entry -1.40 the reported 1.6285 sits at a radius with 8.15 deg of
+free ring left, against the zero the limit is defined as.
+
+## NOTHING PUBLISHED MOVED, PRE-REGISTERED
+
+Stated before the change and measured: across the full radius bracket at the shipped
+profile no layer refusal fires, for the shipped genome or any of the 32 held-out ones —
+**0 of 64 junction-pairs**.  So no shipped-profile number can move, and none did: the hub
+limit shifts 3.5e-12 (the 40-vs-80 bisection difference PART 21 already records), the rim
+stays unlimited, PART 21's 16 of 16 and PART 22's 32 of 32 stand, and PART 24's cliff
+(-0.806402517), margin (0.4435) and 31 of 32 are unchanged.  All 23 self-checks pass.
+
+## AND THE SIX MOVED CORNER ROWS GO BACK EXACTLY
+
+`study_corner_singularity_fillet.json`, diffed field by field against the pre-clamp
+committed artifact: **34 shared rows, ZERO differences, none removed, nine added** — the
+nine being PART 24's per-genome factors.  Joined on `(entry, end)` and compared field by
+field, not by list length, which is how PART 24 got this wrong the first time.
+
+So the clamp, correctly implemented, is inert on all 34 priced corner pairs — the same
+thing it is at the shipped genome, and the reason PART 21 believed it was inert
+everywhere.  `test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet` passes on
+its own merits again (ok={31}, bad={29,30}) and PART 24's strict xfail is removed, the
+episode moving into the docstring as a recorded false-positive mode.
+
+## WHAT IT COSTS
+
+At steep profiles some genomes stop building, because the clamp no longer rescues them by
+shrinking the fillet for the wrong reason.  `(-0.90, 0.70)` returns to refused at the
+shipped genome, with the honest reason — the rim's layer reaches zero thickness.  PART
+24's rule is how a genome that wants a steep entry gets one it can hold; nothing about that
+adoption depends on this fix, since its operating point is shallower than the shipped entry
+and the clamp is inert there either way.

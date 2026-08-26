@@ -1244,9 +1244,43 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
     # to bisect the build, which is what this replaces.
     layer = {"layer_wall": float(wall) if not frozen else wall,
              "layer_k": float((R_arc + wall) * sweep) if not frozen else (R_arc + wall) * sweep}
+
+    # AND `free_span_deg`, COMPUTED HERE RATHER THAN AFTER THE TWO REFUSALS BELOW.
+    # PLAN §83.
+    #
+    # It is a function of `Q` -- the ring corner `uncap` chooses -- and of `B`, the
+    # tangency point, and of nothing else: neither `entry` nor `end` reaches it, and the
+    # arithmetic below is the same arithmetic that used to sit ninety lines further down.
+    # Left there, it was unreachable at exactly the radii where the layer-width and
+    # ring-crossing refusals fire, so `_sector_fit_span` saw only `built: False` and read
+    # it as "this radius has no room".  At a steep entry that made the sector-fit LIMIT
+    # the layer's cliff wearing another name -- measured at the shipped genome, entry
+    # -1.40: `R` = 1.60 builds with 8.1465 deg of free ring, bit-identical to the shallow
+    # entry's, `R` = 1.65 refuses on layer width, and the reported "limit" came out 1.6285
+    # where the free span is 8.15 deg rather than the zero the limit is DEFINED as.
+    #
+    # `th_N` stays below because it needs `N`, which is the offset root-find and does
+    # depend on the profile.  Only the half that does not is hoisted.
+    th_q = xp.arctan2(Q[1], Q[0])
+    th_B_raw = xp.arctan2(B[1], B[0])
+    if frozen:
+        th_B = th_B_raw + roots["th_B_turns"] * (2.0 * math.pi)
+        dirn = roots["dirn"]
+    else:
+        th_q, th_B_raw = float(th_q), float(th_B_raw)
+        th_B = _unwrap_to(th_B_raw, th_q)
+        dirn = 1.0 if th_B > th_q else -1.0
+    th_end = th_q + dirn * math.radians(SECTOR_DEG)
+    free_span_deg = (th_end - th_B) * dirn * (180.0 / math.pi)
+    # Every refusal from here down carries both, so a caller measuring the SECTOR FIT can
+    # get its answer at a radius where the LAYER refuses, and vice versa.  The two
+    # constraints have different remedies -- a smaller radius, a shallower entry -- and a
+    # refusal that names only one of them cannot be told apart by the caller.
+    geom = dict(layer, free_span_deg=free_span_deg)
+
     if not frozen and float(_hermite(wall, w1, m0, 0.0,
                                      np.linspace(0.0, 1.0, 401)).min()) <= 1e-6:
-        return dict(layer, built=False,
+        return dict(geom, built=False,
                     why="the layer's width profile reaches zero thickness")
 
     def past(u):
@@ -1256,8 +1290,8 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
         u_N = _newton_from_root(past, roots["u_N"], xp)
     else:
         if past(0.0) < 0.0 or past(1.0) > 0.0:
-            return {"built": False,
-                    "why": "the layer's inner edge does not cross the ring circle once"}
+            return dict(geom, built=False,
+                        why="the layer's inner edge does not cross the ring circle once")
         lo, hi = 0.0, 1.0
         for _ in range(200):
             mid = 0.5 * (lo + hi)
@@ -1269,30 +1303,25 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
     N = offset_at(u_N)[0]
     L = N * (r_far / xp.linalg.norm(N))
 
-    th_q = xp.arctan2(Q[1], Q[0])
-    th_B_raw = xp.arctan2(B[1], B[0])
+    # `th_q`, `th_B`, `dirn`, `th_end` and `free_span_deg` were hoisted above the two
+    # layer-dependent refusals (PLAN §83).  This is the half that could not be: `N` is the
+    # offset root-find and moves with the profile.
     th_N_raw = xp.arctan2(N[1], N[0])
     if frozen:
-        th_B = th_B_raw + roots["th_B_turns"] * (2.0 * math.pi)
         th_N = th_N_raw + roots["th_N_turns"] * (2.0 * math.pi)
-        dirn = roots["dirn"]
     else:
-        th_q, th_B_raw, th_N_raw = float(th_q), float(th_B_raw), float(th_N_raw)
-        th_B = _unwrap_to(th_B_raw, th_q)
+        th_N_raw = float(th_N_raw)
         th_N = _unwrap_to(th_N_raw, th_q)
-        dirn = 1.0 if th_B > th_q else -1.0
-    th_end = th_q + dirn * math.radians(SECTOR_DEG)
-    free_span_deg = (th_end - th_B) * dirn * (180.0 / math.pi)
     if not frozen and free_span_deg <= 0.0:
-        return {"built": False,
-                "why": f"the fillet's tangent point has passed the next sector's corner "
-                       f"({free_span_deg:.3f} deg of free ring left)"}
-    out = {"built": True, **layer,
+        return dict(geom, built=False,
+                    why=f"the fillet's tangent point has passed the next sector's corner "
+                        f"({free_span_deg:.3f} deg of free ring left)")
+    out = {"built": True, **geom,
            "A": A, "B": B, "C": C, "N": N, "L": L, "u_N": u_N, "i0": i0,
            "far_sA": far_sA, "wall_mm": wall, "arc_at": arc_at,
            "offset_at": offset_at, "r_far": float(r_far), "s_A": s_A,
            "th_q": th_q, "th_B": th_B, "th_N": th_N, "th_end": th_end,
-           "dirn": dirn, "free_span_deg": free_span_deg,
+           "dirn": dirn,   # `free_span_deg` arrives in `geom`, with every refusal's copy
            "sweep_deg": sweep * (180.0 / math.pi)}
     if not frozen:
         # THE RECORD THAT MAKES THIS TRACEABLE, harvested where the answers are already
@@ -1323,15 +1352,34 @@ def _fillet_cross_section(sample, s, eta, n_th, first, xp=np):
 
 
 def _sector_fit_span(curves_at, R):
-    """`free_span_deg` at one radius, or a negative number when nothing builds there.
+    """`free_span_deg` at one radius, or a negative number when the RADIUS has no room.
 
-    ANY refusal counts as "no room", which matches `study_fillet_block.sector_fit_limit`
-    exactly and is what makes §57's per-genome margins reproducible from the mesh rather
-    than only from the study.  A tangency that fails and a tangent point that has swept
-    past the corner are different reasons, but both mean this radius has nowhere to go.
+    NOT EVERY REFUSAL MEANS NO ROOM, and reading them all that way is the defect §82
+    measured and §83 fixes.  This function's answer feeds `_sector_fit_limit`, whose
+    output is the radius the clamp pulls back to -- so a refusal counted here is a
+    statement that *this radius* is too big.  Of the four refusals `_fillet_curves` can
+    make, only the tangency one is: no fillet of that radius is tangent to both legs.
+
+    The layer-width and ring-crossing refusals are statements about the layer PROFILE and
+    have a different remedy -- a shallower entry, not a smaller radius.  Counted here they
+    made the limit collapse with the profile: measured at the shipped genome, entry -1.40,
+    the reported hub "limit" was 1.6285, a radius at which 8.15 deg of free ring remains
+    against the ZERO the limit is defined as.  Every one of those refusals now carries
+    `free_span_deg` anyway, so the sector fit is answerable at a radius the layer refuses.
+
+    The fourth refusal -- the tangent point past the corner -- carries a `free_span_deg`
+    that is already <= 0, so it needs no special case and keeps its own sign.
+
+    THIS DIVERGES FROM `study_fillet_block.sector_fit_limit`, which delegates its
+    root-find here (PART 21) and therefore follows automatically.  At the SHIPPED profile
+    the two answers are identical and §57's and §74's published margins are unchanged:
+    across the full bracket no layer refusal fires at the shipped genome, or at any of the
+    32 held-out ones -- 0 of 64 junction-pairs.
     """
     c = curves_at(R)
-    return float(c["free_span_deg"]) if c["built"] else -1.0
+    if "free_span_deg" in c:
+        return float(c["free_span_deg"])
+    return -1.0
 
 
 def _sector_fit_limit(curves_at, bracket=SECTOR_FIT_BRACKET,

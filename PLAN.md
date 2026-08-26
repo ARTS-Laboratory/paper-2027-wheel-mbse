@@ -10661,3 +10661,120 @@ days without anyone noticing.  It is priced as successor 1.
 9. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+## §83 — 2026-08-26. THE SECTOR-FIT LIMIT IS NOT PROFILE-DEPENDENT AND NEVER WAS: `_sector_fit_span` WAS READING A LAYER REFUSAL AS "NO ROOM". SEPARATING THEM PUTS ALL 34 PRICED CORNER PAIRS BACK TO THEIR PRE-§74 VALUES, FIELD FOR FIELD
+
+§82 recorded this defect and did not fix it, because fixing it moves the clamp at every
+steep profile and re-dates every artifact carrying one.  This is that step.
+
+### THE FIX IS ONE HOIST, AND IT IS AVAILABLE BECAUSE THE SPAN NEVER NEEDED THE PROFILE
+
+`free_span_deg = (th_end - th_B) * dirn` is a function of `Q` — the ring corner `uncap`
+chooses — and of `B`, the tangency point.  **Neither `entry` nor `end` reaches it.**  But
+it was computed ninety lines below two refusals that do depend on the profile — the
+layer-width one and the ring-crossing one — so at exactly the radii where those fire, the
+span was never reached and `_sector_fit_span` saw only `built: False`.
+
+So the change is:
+
+- `th_q` / `th_B` / `dirn` / `th_end` / `free_span_deg` move up to just after the tangency
+  solve.  `th_N` stays where it was: it needs `N`, the offset root-find, which *does* move
+  with the profile.  Only the half that does not is hoisted.
+- Every refusal below now carries `free_span_deg` alongside §82's `layer_wall`/`layer_k` —
+  the same pattern, for the same reason.
+- `_sector_fit_span` returns the span whenever it is present, and `-1.0` only when the
+  **tangency** failed, which is the one refusal that genuinely means *this radius* is too
+  big.  The other three are statements about the layer profile, and their remedy is a
+  shallower entry, not a smaller radius.
+
+`study_fillet_block.sector_fit_limit` delegates its root-find to the module (PART 21), so
+it follows automatically — which is exactly why that delegation was done.
+
+### THE LIMIT STOPS COLLAPSING, WHICH IS THE WHOLE CLAIM
+
+```
+                    BEFORE (§82 measured this)          AFTER
+   entry        hub_limit      rim_limit          hub_limit      rim_limit
+   -0.450        3.129700       6.179707           3.129700         None
+   -0.800        3.129700       3.033997           3.129700         None
+   -1.400        1.628505       1.147810           3.129700         None
+   -1.800        0.759410       0.571289           3.129700         None
+   -2.200        0.250591       0.201077           3.129700         None
+   -2.600        0.050000       0.050000           3.129700         None
+```
+
+The limit is now constant in the profile, which is what §57 and §74 both said it was.  The
+left-hand column was never a sector-fit limit: at entry -1.40 the reported 1.6285 sits at
+a radius with **8.15 deg of free ring left**, against the ZERO the limit is defined as.
+
+### NOTHING PUBLISHED MOVED, AND THAT WAS PRE-REGISTERED RATHER THAN FOUND AFTERWARDS
+
+Before touching anything, the claim was stated and measured: across the full
+`SECTOR_FIT_BRACKET` at the shipped profile, no layer refusal fires — for the shipped
+genome, or for any of the 32 held-out ones.  **0 of 64 junction-pairs.**  So the fix
+cannot move a shipped-profile number, and it does not:
+
+```
+  §74's hub limit      3.1296998810584657  ->  3.129699881054943   (3.5e-12, the 40-vs-80
+                                                bisection difference §57 already records)
+  §74's rim limit      None                ->  None
+  §74  clamp on, in sample                 16 of 16 build      (was 10 unclamped)
+  §78  clamp on, held out                  32 of 32 build      (was 26 unclamped)
+  §78  shipped pair, held out              16 of 32 clear
+  §81  genome_robust / margin_robust       31 / 28 of 32 clear
+  §82  shipped cliff                       -0.806402517
+  §82  f = 0.45, held out                  32 built, 31 clear, margin 0.4435
+```
+
+All 23 of `study_fillet_block`'s self-checks pass.
+
+### AND THE SIX MOVED CORNER ROWS GO BACK EXACTLY
+
+`study_corner_singularity_fillet.json` regenerated against the fix, compared **field by
+field** against the pre-§74 committed artifact: **34 shared rows, zero differences, zero
+removed, nine added** — the nine being §82's per-genome factors.  The additivity was
+checked by joining on `(entry, end)` and diffing every field, not by comparing list
+lengths, which is how §82 got this wrong the first time.
+
+So every one of the six rows that moved when the clamp reached this artifact was moved by
+the defect and by nothing else.  **The clamp, correctly implemented, is inert on all 34
+priced corner pairs** — the same thing it is at the shipped genome, and the reason §74
+thought it was inert everywhere.
+
+`test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet` passes again on its own
+merits: `ok={31}` against `bad={29,30}`.  §82's strict xfail is **removed**, and the
+episode moved into the test's docstring instead — it now records that this test has a
+false-positive mode, and that the first thing to check when it reddens is whether the
+artifact is stale against `wheel_wheel` rather than whether the band moved.
+
+### WHAT THIS COSTS, STATED RATHER THAN BURIED
+
+At steep profiles some genomes stop building, because the clamp no longer rescues them by
+shrinking the fillet for the wrong reason.  At the shipped genome, `(-0.90, 0.70)` returns
+to **refused** — and its reason is now the honest one, *"the layer's width profile reaches
+zero thickness at the rim"*, rather than a silently smaller fillet.  That is a mesh the
+construction genuinely cannot build at that profile, and §82's rule is how a genome that
+wants a steep entry gets one it can actually hold.
+
+**Nothing about §82's adoption depends on this.** Its operating point is shallower than
+the shipped entry, and the clamp is inert there before and after.
+
+#### The successors, ranked — REVISED 2026-08-26 AFTER §83
+
+1. **Widen `CLIFF_BRACKET` and retire the `CLIFF_NO_EDGE` fallback** — unchanged from
+   §82's item 4, now the cheapest thing on the list and a prerequisite for reading item 2's
+   diff cleanly.  `cliff_entry` should delegate to `ww._layer_cliff_from_scalars`, which
+   also takes the 30-build bisection out of `make filletblock`.
+2. **Flip the `fillet=True` layer profile to `per_genome_layer_profile`** — the default
+   change, with the artifact audit §83 has now made readable.
+3. **Wire the fillet into `modelled_area_reference`** (§50) — unchanged from §79-§82.
+4. **Make the layer cliff differentiable** — new.  §82's closed form makes the implicit
+   function theorem applicable to `min_u H = 1e-6`; without it, item 2 has to refuse a
+   gradient exactly as §79's clamp does.
+5. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged.
+6. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+7. **Re-run the hub-share ladder on a filleted mesh** (§75) — one rung is not a ladder.
+8. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+9. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).

@@ -9525,7 +9525,7 @@
       }
     }
   },
-  "seconds": 469.72,
+  "seconds": 508.02,
   "sector": {
     "block_order": [
       "spoke",
@@ -13484,7 +13484,11 @@
             0.85,
             0.75,
             0.65,
-            0.55
+            0.55,
+            0.45,
+            0.35,
+            0.25,
+            0.15
           ],
           "per_genome_cliff": [
             {
@@ -13699,6 +13703,90 @@
               "refusals": [],
               "shipped_entry": -0.4435213841032237,
               "shipped_margin": 0.36288113244809206
+            },
+            {
+              "end": 0.7,
+              "factor": 0.45,
+              "margin_range": [
+                0.5322931654285639,
+                1.0228262700606137
+              ],
+              "median_min_scaled_jacobian": 0.29579424297270085,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.5042798553606025
+              ],
+              "n_built": 16,
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.3628811324480921,
+              "shipped_margin": 0.44352138410322367
+            },
+            {
+              "end": 0.7,
+              "factor": 0.35,
+              "margin_range": [
+                0.6290737409610301,
+                1.2087946827989073
+              ],
+              "median_min_scaled_jacobian": 0.290568125091019,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.45362052592931235
+              ],
+              "n_built": 16,
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.2822408807929605,
+              "shipped_margin": 0.5241616357583553
+            },
+            {
+              "end": 0.7,
+              "factor": 0.25,
+              "margin_range": [
+                0.7258543164934963,
+                1.3947630955372006
+              ],
+              "median_min_scaled_jacobian": 0.28399380165254434,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.40602120634042355
+              ],
+              "n_built": 16,
+              "n_clears_target": 13,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.20160062913782895,
+              "shipped_margin": 0.6048018874134868
+            },
+            {
+              "end": 0.7,
+              "factor": 0.15,
+              "margin_range": [
+                0.8226348920259625,
+                1.580731508275494
+              ],
+              "median_min_scaled_jacobian": 0.21413575805603863,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.290568125091019
+              ],
+              "n_built": 16,
+              "n_clears_target": 8,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.12096037748269736,
+              "shipped_margin": 0.6854421390686184
             }
           ],
           "shipped_cliff": {
@@ -13715,7 +13803,11 @@
             0.85,
             0.75,
             0.65,
-            0.55
+            0.55,
+            0.45,
+            0.35,
+            0.25,
+            0.15
           ],
           "per_genome_cliff": [
             {
@@ -14026,6 +14118,90 @@
               "refusals": [],
               "shipped_entry": -0.4435213841032237,
               "shipped_margin": 0.36288113244809206
+            },
+            {
+              "end": 0.7,
+              "factor": 0.45,
+              "margin_range": [
+                0.6566587130073458,
+                1.0972459882963448
+              ],
+              "median_min_scaled_jacobian": 0.346617084686312,
+              "min_scaled_jacobian_range": [
+                0.17207317742598127,
+                0.5340324678211029
+              ],
+              "n_built": 32,
+              "n_clears_target": 31,
+              "n_genomes": 32,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.3628811324480921,
+              "shipped_margin": 0.44352138410322367
+            },
+            {
+              "end": 0.7,
+              "factor": 0.35,
+              "margin_range": [
+                0.7760512062814087,
+                1.2967452588956805
+              ],
+              "median_min_scaled_jacobian": 0.32619467792118784,
+              "min_scaled_jacobian_range": [
+                0.17207317742598127,
+                0.46949041303709094
+              ],
+              "n_built": 32,
+              "n_clears_target": 30,
+              "n_genomes": 32,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.2822408807929605,
+              "shipped_margin": 0.5241616357583553
+            },
+            {
+              "end": 0.7,
+              "factor": 0.25,
+              "margin_range": [
+                0.8954436995554715,
+                1.4962445294950157
+              ],
+              "median_min_scaled_jacobian": 0.2925993640461019,
+              "min_scaled_jacobian_range": [
+                0.06700268314585599,
+                0.42306980530353033
+              ],
+              "n_built": 32,
+              "n_clears_target": 25,
+              "n_genomes": 32,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.20160062913782895,
+              "shipped_margin": 0.6048018874134868
+            },
+            {
+              "end": 0.7,
+              "factor": 0.15,
+              "margin_range": [
+                1.0148361928295344,
+                1.6957438000943512
+              ],
+              "median_min_scaled_jacobian": 0.20059659678069006,
+              "min_scaled_jacobian_range": [
+                -0.07127650205776545,
+                0.42306980530353033
+              ],
+              "n_built": 32,
+              "n_clears_target": 16,
+              "n_genomes": 32,
+              "n_unevaluable": 0,
+              "n_without_cliff": 3,
+              "refusals": [],
+              "shipped_entry": -0.12096037748269736,
+              "shipped_margin": 0.6854421390686184
             }
           ],
           "shipped_cliff": {
@@ -14251,6 +14427,108 @@
               "n_clears_target": 15,
               "n_genomes": 16,
               "profile": "genome_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": null,
+              "median_min_scaled_jacobian": 0.25814295536204823,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.4112969690498221
+              ],
+              "n_built": 10,
+              "n_clamped": {
+                "hub": 0,
+                "rim": 0
+              },
+              "n_clears_target": 9,
+              "n_genomes": 16,
+              "profile": "margin_robust",
+              "refusals": [
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub"
+              ]
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.99,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.470893578196323
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.95,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.470893578196323
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.9,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.470893578196323
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 1
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.75,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.470893578196323
+              ],
+              "n_built": 16,
+              "n_clamped": {
+                "hub": 7,
+                "rim": 3
+              },
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "profile": "margin_robust",
               "refusals": []
             }
           ],
@@ -14480,6 +14758,107 @@
               "n_clears_target": 14,
               "n_genomes": 14,
               "profile": "genome_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": null,
+              "median_min_scaled_jacobian": 0.25814295536204823,
+              "min_scaled_jacobian_range": [
+                0.20607978323100143,
+                0.4112969690498221
+              ],
+              "n_built": 9,
+              "n_clamped": {
+                "hub": 0,
+                "rim": 0
+              },
+              "n_clears_target": 9,
+              "n_genomes": 14,
+              "profile": "margin_robust",
+              "refusals": [
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub"
+              ]
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.99,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                0.20607978323100143,
+                0.470893578196323
+              ],
+              "n_built": 14,
+              "n_clamped": {
+                "hub": 5,
+                "rim": 1
+              },
+              "n_clears_target": 14,
+              "n_genomes": 14,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.95,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                0.20607978323100143,
+                0.470893578196323
+              ],
+              "n_built": 14,
+              "n_clamped": {
+                "hub": 5,
+                "rim": 1
+              },
+              "n_clears_target": 14,
+              "n_genomes": 14,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.9,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                0.20607978323100143,
+                0.470893578196323
+              ],
+              "n_built": 14,
+              "n_clamped": {
+                "hub": 5,
+                "rim": 1
+              },
+              "n_clears_target": 14,
+              "n_genomes": 14,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.75,
+              "median_min_scaled_jacobian": 0.27719088286194066,
+              "min_scaled_jacobian_range": [
+                0.20607978323100143,
+                0.470893578196323
+              ],
+              "n_built": 14,
+              "n_clamped": {
+                "hub": 6,
+                "rim": 3
+              },
+              "n_clears_target": 14,
+              "n_genomes": 14,
+              "profile": "margin_robust",
               "refusals": []
             }
           ],
@@ -14711,6 +15090,108 @@
               "n_clears_target": 31,
               "n_genomes": 32,
               "profile": "genome_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": null,
+              "median_min_scaled_jacobian": 0.3191056875774492,
+              "min_scaled_jacobian_range": [
+                0.15757732956287032,
+                0.5177258620198928
+              ],
+              "n_built": 26,
+              "n_clamped": {
+                "hub": 0,
+                "rim": 0
+              },
+              "n_clears_target": 23,
+              "n_genomes": 32,
+              "profile": "margin_robust",
+              "refusals": [
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the hub",
+                "no filleted blocking exists at the rim",
+                "no filleted blocking exists at the hub"
+              ]
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.99,
+              "median_min_scaled_jacobian": 0.3191056875774492,
+              "min_scaled_jacobian_range": [
+                0.15757732956287032,
+                0.5177258620198928
+              ],
+              "n_built": 32,
+              "n_clamped": {
+                "hub": 5,
+                "rim": 1
+              },
+              "n_clears_target": 28,
+              "n_genomes": 32,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.95,
+              "median_min_scaled_jacobian": 0.3191056875774492,
+              "min_scaled_jacobian_range": [
+                0.15757732956287032,
+                0.5177258620198928
+              ],
+              "n_built": 32,
+              "n_clamped": {
+                "hub": 5,
+                "rim": 1
+              },
+              "n_clears_target": 28,
+              "n_genomes": 32,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.9,
+              "median_min_scaled_jacobian": 0.3191056875774492,
+              "min_scaled_jacobian_range": [
+                0.15757732956287032,
+                0.5179838622295243
+              ],
+              "n_built": 32,
+              "n_clamped": {
+                "hub": 7,
+                "rim": 1
+              },
+              "n_clears_target": 28,
+              "n_genomes": 32,
+              "profile": "margin_robust",
+              "refusals": []
+            },
+            {
+              "end": 0.9,
+              "entry": -0.7,
+              "factor": 0.75,
+              "median_min_scaled_jacobian": 0.3191056875774492,
+              "min_scaled_jacobian_range": [
+                0.15757732956287032,
+                0.5187666022284143
+              ],
+              "n_built": 32,
+              "n_clamped": {
+                "hub": 10,
+                "rim": 1
+              },
+              "n_clears_target": 28,
+              "n_genomes": 32,
+              "profile": "margin_robust",
               "refusals": []
             }
           ],
