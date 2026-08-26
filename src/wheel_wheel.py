@@ -989,6 +989,71 @@ def _filleted_spoke(sample, s_hub, s_rim, orientation, rim_inner, n_sp, n_th,
 FILLET_LAYER_ENTRY_SLOPE = -0.45
 FILLET_LAYER_END_OFFSET = 1.60
 
+# THE BARRIER HALF'S ANSWER, AND IT IS A RULE RATHER THAN A PAIR.  PLAN §82.
+#
+# Every candidate §60-§69 weighed was a GLOBAL `(entry, end)`, and a global pair has to be
+# safe for the tightest genome in the box and pays for that at every other one.  §68
+# declined the best of them (`GENOME_ROBUST_*`, -0.90 / 0.70) on exactly that: it buys 15
+# of 16 by spending the shipped genome's layer-width margin down to ~0.06.  §81 then drew
+# a held-out box and killed the compromise pair `(-0.70, 0.90)` outright -- 28 of 32 where
+# the pair it was meant to replace clears 31.
+#
+# What clears 31 of 32 for FIVE TIMES that margin is a per-genome entry: each genome takes
+# a fixed share of ITS OWN layer-width room, which is the same shape `SECTOR_FIT_CLAMP`
+# above already works in.  `end` is held at `GENOME_ROBUST_END` so the ENTRY rule is the
+# only difference between the two.
+#
+# 0.45 IS THE BOTTOM EDGE OF THE ADMISSIBLE BAND, BRACKETED ON BOTH SIDES BY MEASUREMENT,
+# and it is not a round number anybody picked.  The admissible set is two conditions and
+# neither is invented for this: clear `MIN_SJ_TARGET` on the held-out draw, and settle
+# against `study_corner_singularity.SETTLING_RATIO` at the shipped genome.
+#
+#   factor   held-out clears   settling ratio   settles   cost vs shipped   margin left
+#    0.95        29 of 32          0.800          NO          +0.865%          0.040
+#    0.85        31 of 32          0.796          NO          +0.804%          0.121
+#    0.75        31 of 32          0.684          yes         +0.392%          0.202
+#    0.65        31 of 32          0.634          yes         +0.298%          0.282
+#    0.55        31 of 32          0.591          yes         +0.247%          0.363
+#    0.45        31 of 32          0.466          yes         +0.106%          0.444   <--
+#    0.35        30 of 32          0.552          yes         +0.189%          0.524
+#    0.25        25 of 32          0.519          yes         +0.132%          0.605
+#    0.15        16 of 32          0.483          yes         +0.116%          0.685
+#
+# 0.95 and 0.85 fail the settling condition; 0.35 and below start losing genomes on the
+# barrier.  What is left is 0.75 / 0.65 / 0.55 / 0.45, all clearing the SAME 31 of 32,
+# across which both remaining axes improve monotonically as the factor falls.  Two axes
+# improving across a flat third means the operating point is the band's lower EDGE and
+# not a value inside it -- quoting the interior is the class of choice §81 rejected when
+# it found §78 had quoted 0.75 off a sweep that stopped at 0.55 without locating an edge.
+#
+# THE COST IS NOT MONOTONE BELOW THE BAND (0.35 reads +0.189% against 0.45's +0.106%) and
+# that is not a law being broken: those factors are already excluded on the barrier.  The
+# monotonicity is a claim about the ADMISSIBLE SET, which is where it is used, and the
+# ratio is a three-rung estimate that should not be read finer than that.
+FILLET_LAYER_CLIFF_FACTOR = 0.45
+FILLET_LAYER_CLIFF_END = 0.70
+
+# The bracket the cliff is searched in, and the step count.  Wide enough to hold every
+# cliff in the held-out draw with room to spare: the three steepest sit at -2.51, -2.30
+# and -2.12, and `study_fillet_block.CLIFF_BRACKET` stops at -2.0 and reports all three
+# as "builds across the whole bracket" -- a sentinel that reads as "no edge at all" and
+# is the OPPOSITE of the truth.  See §82; the bracket is the whole of that defect.
+LAYER_CLIFF_BRACKET = (-8.0, 0.0)
+LAYER_CLIFF_BISECTIONS = 90
+
+# The width at which the layer counts as gone.  This is `_fillet_curves`' own refusal
+# threshold and must stay equal to it -- the cliff is DEFINED as the entry at which that
+# refusal fires, so two thresholds would be two different cliffs.
+LAYER_CLIFF_ZERO = 1e-6
+
+# And the sample the refusal is tested on.  `_fillet_curves` takes the minimum of the
+# width profile over 401 points rather than solving the cubic exactly, so the cliff is
+# defined against THAT minimum: solving it exactly would put the rule and the refusal it
+# is measured against 3e-6 of entry apart, in the direction where the rule prescribes an
+# entry the construction then refuses.  Measured, at the shipped genome: the exact
+# minimum gives -1.862136 and the sampled one -1.862143.
+LAYER_CLIFF_SAMPLES = 401
+
 # THE REFUSAL ABOVE, TURNED INTO A BOUND PROJECTION.  PLAN §57 / FILLET_PLAN PART 14.
 #
 # All six of the refusals in the scope note were the same one -- the fillet's tangent point
@@ -1167,10 +1232,22 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
         nrm = nrm / xp.linalg.norm(nrm, axis=1)[:, None]
         return p + w[:, None] * nrm
 
+    # THE TWO SCALARS THE LAYER-WIDTH CLIFF IS A CLOSED FORM IN (PLAN §82).  `wall` and
+    # `layer_k = (R_arc + wall) * sweep` come out of the TANGENCY solve and do not depend
+    # on `entry` or `end` at all, so the width profile is a cubic in `u` whose only
+    # `entry`-dependence is the linear term `m0 = entry * layer_k`.  That makes the entry
+    # at which this junction loses its layer a root-find over arithmetic instead of over
+    # thirty sector builds -- see `_layer_cliff_from_scalars`.
+    #
+    # THEY RIDE ON THE REFUSAL TOO, and that is the point rather than an oversight: the
+    # cliff has to be computable AT an entry that refuses, or the only way to find it is
+    # to bisect the build, which is what this replaces.
+    layer = {"layer_wall": float(wall) if not frozen else wall,
+             "layer_k": float((R_arc + wall) * sweep) if not frozen else (R_arc + wall) * sweep}
     if not frozen and float(_hermite(wall, w1, m0, 0.0,
                                      np.linspace(0.0, 1.0, 401)).min()) <= 1e-6:
-        return {"built": False,
-                "why": "the layer's width profile reaches zero thickness"}
+        return dict(layer, built=False,
+                    why="the layer's width profile reaches zero thickness")
 
     def past(u):
         return (xp.linalg.norm(offset_at(u)[0]) - ring_r) * void_sign
@@ -1210,7 +1287,8 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
         return {"built": False,
                 "why": f"the fillet's tangent point has passed the next sector's corner "
                        f"({free_span_deg:.3f} deg of free ring left)"}
-    out = {"built": True, "A": A, "B": B, "C": C, "N": N, "L": L, "u_N": u_N, "i0": i0,
+    out = {"built": True, **layer,
+           "A": A, "B": B, "C": C, "N": N, "L": L, "u_N": u_N, "i0": i0,
            "far_sA": far_sA, "wall_mm": wall, "arc_at": arc_at,
            "offset_at": offset_at, "r_far": float(r_far), "s_A": s_A,
            "th_q": th_q, "th_B": th_B, "th_N": th_N, "th_end": th_end,
@@ -1300,6 +1378,46 @@ def _clamp_to_sector(curves_at, R, factor):
     return float(factor * limit), True
 
 
+def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET,
+                              steps=LAYER_CLIFF_BISECTIONS):
+    """The `entry` at which THIS junction's layer reaches zero width, from two scalars.
+
+    `wall` and `layer_k` are what `_fillet_curves` harvests out of the TANGENCY solve,
+    and neither depends on the layer profile -- so the width profile
+
+        H(u) = _hermite(wall, end * wall, entry * layer_k, 0, u)
+
+    is a cubic in `u` whose only `entry`-dependence is one linear term.  `min_u H` is
+    therefore a minimum of functions each linear in `entry`, hence concave and monotone
+    decreasing in `|entry|` for `entry < 0`, which is what makes a bisection the right
+    instrument here -- the same argument `_sector_fit_limit` makes about `R`.
+
+    NO MESH IS BUILT.  That is the whole point: `study_fillet_block.cliff_entry` finds
+    this number by bisecting `sector_verdict` thirty times, which is thirty filleted
+    sector builds, and it agrees with this to 9.1e-10 over the held-out draw (§82).  A
+    per-genome layer profile is only adoptable because the cliff costs arithmetic.
+
+    `None` means the layer survives the whole bracket, which for a bracket this wide has
+    not been observed and would be a genuine finding rather than a fallback to take.
+    """
+    u = np.linspace(0.0, 1.0, LAYER_CLIFF_SAMPLES)
+    w1 = end * wall
+
+    def gone(entry):
+        return float(_hermite(wall, w1, entry * layer_k, 0.0, u).min()) <= LAYER_CLIFF_ZERO
+
+    lo, hi = float(bracket[0]), float(bracket[1])
+    if not gone(lo):
+        return None
+    for _ in range(steps):
+        mid = 0.5 * (lo + hi)
+        if gone(mid):
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
 def _layer_profile(layer_profile):
     """`(entry, end)`, defaulting to the two measured constants.
 
@@ -1325,7 +1443,8 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                             rim_outer, genes, fillet, uncap=None,
                             entry=FILLET_LAYER_ENTRY_SLOPE,
                             end=FILLET_LAYER_END_OFFSET,
-                            clamp=SECTOR_FIT_CLAMP, xp=np, roots=None):
+                            clamp=SECTOR_FIT_CLAMP, xp=np, roots=None,
+                            layer_scalars_only=False):
     """The eleven node grids of a filleted sector 0, keyed by `FILLETED_BLOCK_ORDER`.
 
     Raises `ValueError` when the geometry refuses, with the reason, because the caller
@@ -1407,6 +1526,18 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
         applied["clamped"][junction] = was_clamped
         used[junction] = R_used
         c = curves_at(R_used)
+        if layer_scalars_only:
+            # The two tangency scalars the layer-width cliff is a closed form in, at the
+            # radius this genome will actually be BUILT at.  Harvested here rather than
+            # in a second copy of this loop because the clamp, the uncap corner and the
+            # junction stations all have to agree with the build or the cliff describes
+            # a mesh nobody builds -- the exact error §82 caught the study making.
+            # A layer refusal still carries them, which is why no `built` check guards
+            # this: the cliff has to be computable at an entry that refuses.
+            harvest[junction] = {"wall": c.get("layer_wall"), "k": c.get("layer_k"),
+                                 "R_mm": R_used, "clamped": bool(was_clamped),
+                                 "built": bool(c["built"]), "why": c.get("why")}
+            continue
         if not frozen and not c["built"]:
             raise ValueError(
                 f"no filleted blocking exists at the {junction}: {c['why']}.  "
@@ -1418,6 +1549,8 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
         curves[junction] = c
 
     applied["radii_mm"] = tuple(used[j] for j in ("hub", "rim"))
+    if layer_scalars_only:
+        return dict(harvest, _applied=applied)
 
     lo, hi = curves["hub"]["s_A"], curves["rim"]["s_A"]
     if not frozen and not lo < hi:
@@ -1529,6 +1662,86 @@ def filleted_sector(genes, cfg, fillet=True, span_mm=HUB_RIM_SPAN_MM,
     s_hub, s_rim = junction_stations(sample, s_dense, orientation, rim_inner)
     return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                                    rim_outer, genes, fillet, uncap, entry, end, clamp)
+
+
+def layer_cliff_entry(genes, cfg, fillet=True, end=FILLET_LAYER_CLIFF_END,
+                      span_mm=HUB_RIM_SPAN_MM, orientation=None,
+                      rim_outer=RIM_OUTER_RADIUS_MM, uncap=None,
+                      clamp=SECTOR_FIT_CLAMP):
+    """The `entry` at which THIS genome loses its layer, at the radii it is built at.
+
+    Returns `{"entry": float|None, "why": str, "per_junction": {...}}`.  The sector's
+    cliff is the BINDING junction's -- the least negative of the two -- because one
+    `entry` is spent on the whole sector and the first junction to lose its layer is the
+    one that refuses the build.
+
+    THE RADII ARE THE ONES THE MESH WILL USE, resolved through the same clamp, uncap
+    corner and junction stations `_filleted_sector_blocks` resolves them through, because
+    a cliff measured at a radius the genome will never be built at describes a mesh
+    nobody builds.  They are resolved AT THE SHIPPED PROFILE, which is what
+    `study_fillet_block` does and is not arbitrary: `_sector_fit_span` counts a
+    layer-width refusal as "no room" (see §82), so a clamp resolved at a steep entry
+    reports the layer's own cliff under the sector fit's name.  At the shipped profile no
+    layer refusal fires anywhere in the radius bracket, so the limit there is the sector
+    fit and nothing else -- and the operating point this feeds is shallower still.
+
+    `None` means the layer survives `LAYER_CLIFF_BRACKET` entirely, or that a junction
+    refused for a reason that is not the layer -- and the two are KEPT APART in `why`,
+    because folding them together is the defect §78 corrected once and §82 found twice
+    more.  A caller that treats "no cliff" as "the safest case" must check which it got.
+    """
+    cfg = get_config(cfg)
+    if orientation is None:
+        orientation = flank_orientation(genes, cfg, span_mm=span_mm)
+    rim_inner = rim_inner_radius(span_mm)
+    sample, s_dense = global_sampler(genes, cfg, span_mm=span_mm)
+    s_hub, s_rim = junction_stations(sample, s_dense, orientation, rim_inner)
+    sc = _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
+                                 rim_outer, genes, fillet, uncap,
+                                 FILLET_LAYER_ENTRY_SLOPE, FILLET_LAYER_END_OFFSET,
+                                 clamp, layer_scalars_only=True)
+    per, cliffs = {}, []
+    for junction in ("hub", "rim"):
+        h = sc[junction]
+        if h["wall"] is None or h["k"] is None:
+            per[junction] = {"cliff": None, "why": h["why"], "R_mm": h["R_mm"]}
+            continue
+        c = _layer_cliff_from_scalars(float(h["wall"]), float(h["k"]), float(end))
+        per[junction] = {"cliff": c, "R_mm": h["R_mm"], "clamped": h["clamped"],
+                         "why": None if c is not None
+                                else "the layer survives the whole bracket"}
+        if c is not None:
+            cliffs.append(c)
+    if len(cliffs) < 2:
+        bad = [j for j in ("hub", "rim") if per[j]["cliff"] is None]
+        return {"entry": None, "per_junction": per,
+                "why": "; ".join(f"{j}: {per[j]['why']}" for j in bad)}
+    return {"entry": max(cliffs), "per_junction": per, "why": None}
+
+
+def per_genome_layer_profile(genes, cfg, fillet=True,
+                             factor=FILLET_LAYER_CLIFF_FACTOR,
+                             end=FILLET_LAYER_CLIFF_END, **kw):
+    """`(entry, end)` for this genome: a fixed share of its OWN layer-width room.
+
+    THE RULE §82 ADOPTED, and the shape is `SECTOR_FIT_CLAMP`'s rather than a constant's
+    -- each genome takes `factor` of the room it actually has instead of every genome
+    sharing one pair that has to be safe for the tightest of them.  It clears
+    `MIN_SJ_TARGET` on 31 of 32 held-out genomes where the shipped pair clears 16, and it
+    leaves the shipped genome 0.444 of layer-width margin where the best global candidate
+    §68 weighed leaves 0.056.
+
+    Raises when the genome has no cliff, rather than falling back to a constant: a
+    fallback is where the caller stops being able to tell the rule's answer from a
+    default, and the study's version of this fallback was firing on three of thirty-two
+    genomes that turned out to HAVE cliffs, just outside its bracket (§82).
+    """
+    c = layer_cliff_entry(genes, cfg, fillet=fillet, end=end, **kw)
+    if c["entry"] is None:
+        raise ValueError(
+            f"no per-genome layer profile exists for this genome: {c['why']}.  "
+            f"See PLAN.md §82.")
+    return (float(factor) * float(c["entry"]), float(end))
 
 
 def _seam_table_filleted(orientation, dirn):

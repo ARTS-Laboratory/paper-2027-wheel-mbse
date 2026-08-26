@@ -792,6 +792,82 @@ def test_the_clamp_re_prices_the_layer_profile_PART_13_declined(report):
     assert fb.GENOME_ROBUST_ENTRY != fb.LAYER_ENTRY_SLOPE
 
 
+def test_the_margin_robust_pair_loses_its_parity_OUT_OF_SAMPLE(report):
+    """PLAN §81, pinned because the in-sample reading is the one that would come back.
+
+    `MARGIN_ROBUST_*` was §69's answer to §68's cliff-margin objection and it ties
+    `GENOME_ROBUST_*` on the box it was fitted to — 15 of 16, 14 of 14 fold-clean. On
+    §78's held-out thirty-two it clears 28 against 31. The tie is the in-sample half and
+    the rejection rests on exactly that, so a run in which the two tie out of sample would
+    reverse §81's call and has to register as a failure rather than pass quietly.
+
+    The other direction is asserted too: the pair is REJECTED, not bad. It still clears
+    twelve more held-out genomes than the pair that ships, and if that stopped being true
+    the reason for keeping it in the study at all would be gone.
+    """
+    per = report["sector"]["per_config"]["coarse"]
+    fc, ho = per["fit_clamp"], per["fit_clamp_held_out"]
+    k = fb.SECTOR_FIT_CLAMP
+
+    def clears(table, profile):
+        return next(r for r in table["rows"]
+                    if r["profile"] == profile and r["factor"] == k)
+
+    assert (clears(fc, "margin_robust")["n_clears_target"]
+            == clears(fc, "genome_robust")["n_clears_target"]), (
+        "the two pairs no longer tie IN SAMPLE — §81's finding is that the tie does not "
+        "survive the hold-out, and it needs the tie to exist")
+    assert (clears(ho, "margin_robust")["n_clears_target"]
+            < clears(ho, "genome_robust")["n_clears_target"]), (
+        "the in-sample tie now HOLDS out of sample — that reverses §81's rejection of "
+        "`(-0.70, 0.90)` and is a finding, not a broken test")
+    assert (clears(ho, "margin_robust")["n_clears_target"]
+            > clears(ho, "shipped")["n_clears_target"])
+
+    # and the clamp still builds the whole held-out box at the new profile: the refusal
+    # half and the barrier half are separate items and a coupling would merge them
+    row = clears(ho, "margin_robust")
+    assert row["n_built"] == row["n_genomes"]
+
+    # measured, not adopted, same as the pair above it
+    assert ww.FILLET_LAYER_ENTRY_SLOPE == fb.LAYER_ENTRY_SLOPE
+    assert (fb.MARGIN_ROBUST_ENTRY, fb.MARGIN_ROBUST_END) != (fb.LAYER_ENTRY_SLOPE,
+                                                              fb.LAYER_END_OFFSET)
+
+
+def test_the_per_genome_factor_is_the_BAND_EDGE_and_is_re_derived_from_the_rows(report):
+    """PLAN §82. `CLIFF_PROFILE_FACTOR` is a constant and the surface is a measurement;
+    this re-derives one from the other every run so the constant cannot go stale silently
+    — the same guard `the_candidate_constant_matches_the_measured_surface` gives the
+    `(entry, end)` sets.
+
+    The rule is stated once, here and in the constant's comment: the lowest swept factor
+    that still clears `MIN_SJ_TARGET` on as many HELD-OUT genomes as the best factor does.
+    Below it the barrier degrades; above it the shipped genome pays margin and convergence
+    for nothing. If the sweep ever ends at its own edge the bracket has stopped containing
+    the answer, and that fails here rather than being read off a table nobody re-derives.
+    """
+    cp = report["sector"]["per_config"]["coarse"]["cliff_profile_held_out"]
+    rows = sorted(cp["rows"], key=lambda r: -r["factor"])
+    best = max(r["n_clears_target"] for r in rows)
+    edge = min(r["factor"] for r in rows if r["n_clears_target"] == best)
+
+    assert edge == pytest.approx(fb.CLIFF_PROFILE_FACTOR), (
+        f"the band edge measured on the held-out draw is {edge}, and "
+        f"CLIFF_PROFILE_FACTOR says {fb.CLIFF_PROFILE_FACTOR}")
+    assert edge > min(cp["factors"]), (
+        "the flat band reaches the bottom of the swept range — the bracket no longer "
+        "contains the edge and the factors have to be extended further")
+    # and the band is a band: the factor below the edge must actually be worse, or the
+    # edge is an artefact of where the sweep happened to put its rungs
+    below = max((r for r in rows if r["factor"] < edge), key=lambda r: r["factor"])
+    assert below["n_clears_target"] < best
+
+    # measured, not adopted — the per-genome rule is not wired into the mesh
+    assert ww.FILLET_LAYER_ENTRY_SLOPE == fb.LAYER_ENTRY_SLOPE
+    assert ww.FILLET_LAYER_END_OFFSET == fb.LAYER_END_OFFSET
+
+
 def test_the_fold_margin_is_the_SAMPLED_flank_and_not_a_proxy_for_it(report):
     """The closed form checked against the thing it stands in for, on this box.
 
@@ -1232,8 +1308,29 @@ def test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined(report):
         margins = [rows[f]["shipped_margin"] for f in sorted(rows, reverse=True)]
         assert all(b > a for a, b in zip(margins, margins[1:])), margins
 
-        # and not one of them reaches the shipped pair's clearance
-        assert max(margins) < 0.5520, (key, max(margins))
+        # AND NOT ONE OF THE ADMISSIBLE ONES REACHES THE SHIPPED PAIR'S CLEARANCE.
+        #
+        # Scoped to the admissible set rather than to the sweep, and the scope is the
+        # finding rather than a convenience.  §81 extended the factors down to 0.15 to
+        # locate the band's lower edge, and 0.35 / 0.25 / 0.15 DO leave more than the
+        # shipped pair's 0.5520 -- by giving up 2, 7 and 15 genomes of the held-out box
+        # on the barrier, which is the trade this rule exists to avoid making.  A margin
+        # bought that way is not the same claim, so it is not tallied under the same
+        # assertion; the barrier is what separates the two and it is asserted directly.
+        adm = [f for f in rows if f >= fb.CLIFF_PROFILE_FACTOR]
+        assert max(rows[f]["shipped_margin"] for f in adm) < 0.5520, (
+            key, {f: rows[f]["shipped_margin"] for f in adm})
+        # THE EDGE ITSELF IS A HELD-OUT CLAIM AND IS CHECKED ONLY THERE.  In sample 0.35
+        # ties the edge at 15 of 16 rather than falling below it, which is not a
+        # contradiction: 16 genomes cannot resolve a one-genome step, and §81's whole
+        # correction was that this band has to be located out of sample.
+        if key == "cliff_profile_held_out":
+            edge_clears = rows[fb.CLIFF_PROFILE_FACTOR]["n_clears_target"]
+            for f in [f for f in rows if f < fb.CLIFF_PROFILE_FACTOR]:
+                assert rows[f]["n_clears_target"] < edge_clears, (
+                    f"factor {f} clears {rows[f]['n_clears_target']} against the "
+                    f"adopted edge's {edge_clears} — the band's lower edge has moved "
+                    f"off where §82 put it")
 
         # "no edge to project onto" and "could not be measured" are different claims and
         # must not be tallied together — the first is the SAFEST genome in the box, and
@@ -1262,6 +1359,82 @@ def test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined(report):
     for r in wins:
         assert r["n_built"] == r["n_genomes"], r
 
-    # measured, not adopted — no module constant moved for any of this
+    # ADOPTED AT §82 AS A RULE, AND THE SHIPPED DEFAULT STILL DID NOT MOVE.  The two are
+    # not in tension: `per_genome_layer_profile` is the adopted mechanism and
+    # `FILLET_LAYER_CLIFF_FACTOR` its operating point, while the pair below is what
+    # `fillet=True` still takes when nobody asks for the rule.  Flipping that default is
+    # a separate step with its own artifact audit — see §82's "what is unchanged".
     assert ww.FILLET_LAYER_ENTRY_SLOPE == fb.LAYER_ENTRY_SLOPE
     assert ww.FILLET_LAYER_END_OFFSET == fb.LAYER_END_OFFSET
+    assert ww.FILLET_LAYER_CLIFF_FACTOR == fb.CLIFF_PROFILE_FACTOR
+    assert ww.FILLET_LAYER_CLIFF_END == fb.CLIFF_PROFILE_END
+
+
+def test_the_layer_cliff_has_a_CLOSED_FORM_that_reproduces_the_bisection(genes):
+    """§82's adoption rests on this and nothing else: the cliff costs arithmetic.
+
+    `cliff_entry` finds the layer-width cliff by bisecting `sector_verdict` thirty times,
+    which is thirty filleted sector builds — far too expensive to sit inside a mesh
+    default.  `wheel_wheel._layer_cliff_from_scalars` finds the same number from the two
+    scalars the TANGENCY solve already produces, because the width profile is a cubic in
+    `u` whose only `entry`-dependence is one linear term.
+
+    If these two ever disagree by more than the bisection's own resolution, the module
+    and the study are measuring different cliffs and every number in §78-§82 is about to
+    mean two things.
+    """
+    cfg = fb.CONVERGENCE_LADDER[0] if hasattr(fb, "CONVERGENCE_LADDER") else "coarse"
+    module = ww.layer_cliff_entry(genes, cfg, end=fb.CLIFF_PROFILE_END)
+    study = fb.cliff_entry(genes, cfg, fb.CLIFF_PROFILE_END)
+    assert module["entry"] is not None and study["entry"] is not None
+    # 30 halvings of `CLIFF_BRACKET`'s 2.0 is 1.9e-9, which is the floor here
+    assert abs(module["entry"] - study["entry"]) < 5e-9, (module["entry"],
+                                                          study["entry"])
+
+    # THE SECTOR'S CLIFF IS THE BINDING JUNCTION'S, and the two really are different —
+    # if they were equal this test would pass while asserting nothing about `max`.
+    per = {j: module["per_junction"][j]["cliff"] for j in ("hub", "rim")}
+    assert all(v is not None for v in per.values()), per
+    assert per["hub"] != per["rim"], per
+    assert module["entry"] == max(per.values()), (module["entry"], per)
+
+
+def test_the_per_genome_profile_is_the_ADOPTED_operating_point(genes):
+    """The rule, its factor, and the margin it leaves the genome every number is at."""
+    cfg = "coarse"
+    entry, end = ww.per_genome_layer_profile(genes, cfg)
+    cliff = ww.layer_cliff_entry(genes, cfg, end=ww.FILLET_LAYER_CLIFF_END)["entry"]
+    assert end == ww.FILLET_LAYER_CLIFF_END
+    assert entry == pytest.approx(ww.FILLET_LAYER_CLIFF_FACTOR * cliff)
+
+    # what §68's first reason asked for: the rule leaves the shipped genome several
+    # times what the global pair it declined would have left it
+    margin = entry - cliff
+    assert margin == pytest.approx(0.4435, abs=5e-4), margin
+    assert margin > 5.0 * (fb.GENOME_ROBUST_ENTRY - cliff)
+
+    # AND THE OPERATING POINT IS SHALLOWER THAN THE SHIPPED ENTRY, which is the whole
+    # reason §82's rule is safe against the `_sector_fit_span` defect it also records:
+    # the clamp only misreads a layer refusal as "no room" at a STEEP entry, and this
+    # rule never asks for one.
+    assert entry > ww.FILLET_LAYER_ENTRY_SLOPE, (entry, ww.FILLET_LAYER_ENTRY_SLOPE)
+    per = ww.layer_cliff_entry(genes, cfg)["per_junction"]
+    assert not any(per[j].get("clamped") for j in ("hub", "rim")), per
+
+
+def test_the_cliff_bracket_the_study_uses_is_TOO_NARROW_and_the_module_says_so(genes):
+    """§82's third sentinel: "builds across the whole bracket" is not "has no edge".
+
+    `study_fillet_block.CLIFF_BRACKET` stops at -2.0 and reports three of the thirty-two
+    held-out genomes as having no layer-width edge at all — the SAFEST case, which
+    `sweep_cliff_clamped_profile` handles by falling back to a global constant.  All
+    three have edges, at -2.51, -2.30 and -2.12.  The module's bracket holds them.
+
+    Pinned as a RELATION between the two constants rather than against those three
+    genomes, so it keeps meaning something if the draw changes.
+    """
+    assert ww.LAYER_CLIFF_BRACKET[0] < fb.CLIFF_BRACKET[0], (
+        ww.LAYER_CLIFF_BRACKET, fb.CLIFF_BRACKET)
+    # and the module's own refusal threshold is the one the cliff is defined against
+    assert ww.LAYER_CLIFF_ZERO == 1e-6
+    assert ww.LAYER_CLIFF_SAMPLES == 401

@@ -3079,3 +3079,136 @@ re-drawn.  `study_gradient.json` is additive to the leaf -- it gains `filleted` 
 twenty-four other leaves, all of them G10 timings plus `elapsed_s`, checked field by field
 against the committed artifact.  `make studies`' gradient leg goes 1029 s -> 1374 s.  See
 PLAN §79.
+
+---
+
+# STEP 1 RECORD, PART 23 — 2026-08-25. PART 22's SECOND REASON WAS ANSWERABLE BY INVENTORY, AND THE PAIR IT UNBLOCKED FAILS THE HOLD-OUT: 28 OF 32 AGAINST 31, AFTER TYING AT 15 OF 16
+
+PART 22 closed with *"PART 20's FIRST REASON IS ANSWERED AND ITS SECOND IS NOT — the floor
+is still measured on a box built from unadopted mechanisms"*, and PLAN §79 ranked the
+barrier half behind that same sentence.  Two things happened to it.
+
+## THE SECOND REASON WAS AUDITED BEFORE ANYTHING WAS RUN, AND IT DID NOT SURVIVE THE AUDIT
+
+The box is built from two mechanisms and PLAN §80 has the full inventory.  §57's clamp went
+into `wheel_wheel` at PART 21 and held out at 32 of 32 at PART 22 — it is the mesh builder's
+own default for `fillet=True`, reported back through `mesh.fillet_radii_mm`, with the study's
+duplicate root-find deleted.  §58's fold gate was never an unadopted mechanism at all: it is
+`wheel_objective`'s live `soft_barrier`, calibrated over 2001 genomes, and the tables PART 20
+quoted were computed with `fold_gate=True`, i.e. against the shipped barrier's own verdict on
+each genome.  What §58 declined was the DRAW filter, which is a sampling choice and is still
+open as its own item.
+
+What survives of the sentence is *"neither consumed by anything"* — true, and a circle: the
+repair waits on a consumer, the consumer waits on the barrier, and the barrier is what the
+repair clears.  PLAN §80 withdrew it as a blocker on that ground.
+
+## AND THE PAIR IT UNBLOCKED WAS THEN MEASURED ON GENOMES IT WAS NOT FITTED TO
+
+`MARGIN_ROBUST_ENTRY/END = (-0.70, 0.90)` — §69's argmax with the cliff margin as a
+constraint — now rides `sweep_sector_fit_clamp` beside the other two profiles, so all three
+are scored by one function on one set of genomes at one set of factors:
+
+```
+  profile                        in-sample (16)   fold-clean (14)   held-out (32)   worst J
+  shipped        (-0.45, 1.60)      8/16 clear        7/14 clear      16/32 clear     0.0319
+  genome_robust  (-0.75, 0.70)     15/16 clear       14/14 clear      31/32 clear     0.1721
+  margin_robust  (-0.70, 0.90)     15/16 clear       14/14 clear      28/32 clear     0.1576
+```
+
+All three build 32 of 32 under the clamp; the whole difference is the barrier.  **The two
+candidates are indistinguishable on the box `(-0.70, 0.90)` was selected on and three genomes
+apart on the box it was not.**  The cliff margin it was chosen for is real and unchanged at
+0.1577; the PARITY it was chosen against is in-sample.
+
+**Not adopted, and not because it is bad** — it clears twelve more held-out genomes than the
+pair that ships and it settles at ratio 0.437 where `GENOME_ROBUST_*` does not settle at all.
+It is not adopted because the argument for preferring it was the tie.
+
+## SO THE BARRIER HALF'S ANSWER IS PART 22's PER-GENOME RULE, AND ONE NUMBER IS LEFT
+
+The same run re-confirms it: 32 of 32 built and **31 of 32 clear at every factor from 0.85
+down to 0.55**, flat across a 1.5x range of its only free parameter.  That is the property
+that made §57's clamp adoptable rather than fitted, and it is exactly what `(-0.70, 0.90)`
+turned out not to have.
+
+What it costs the shipped genome is one pair on a ladder that already runs.  At factor `f`
+the shipped genome is built at `f x cliff_entry = f x -0.806403`, so the rule at 0.75 makes
+its pair `(-0.6048, 0.70)` — bracketed by `(-0.60, 0.70)` at ratio 0.680 / +0.379% and
+`(-0.70, 0.70)` at 0.890 / +1.763%, and that bracket is too steep to read off.  Measuring it
+is the last quantity between this arc and a decision it can defend.  See PLAN §81.
+
+## WHAT IS UNCHANGED
+
+**Nothing adopted, no module constant moved, nothing wired into anything.**  `MARGIN_ROBUST_*`
+joins `GENOME_ROBUST_*` as measured-not-adopted in the study.  The artifact is **purely
+additive and was diffed rather than assumed**: three tables gain five rows each, one `seconds`
+field moves, no existing measurement changed.  All twenty-one self-checks pass, and none
+gates what the new profile clears — that number was the question.  `make filletblock` goes
+462 s -> 486 s.
+
+# STEP 1 RECORD, PART 24 — 2026-08-25. THE BARRIER HALF IS DECIDED: A PER-GENOME LAYER PROFILE AT THE BAND'S LOWER EDGE, ADOPTED. THE CLIFF IT NEEDS COSTS ARITHMETIC, NOT THIRTY BUILDS — AND THE AXIS IT WAS MEASURED ON HAD TWO SENTINELS IN IT
+
+PART 23 left one number between this arc and a decision: what the per-genome rule costs
+the shipped genome on the convergence ladder.  It is measured, the decision is taken, and
+two defects turned up in the axis on the way.  Full record in **PLAN.md §82**.
+
+## THE DECISION
+
+`wheel_wheel.per_genome_layer_profile` and `FILLET_LAYER_CLIFF_FACTOR = 0.45` are in the
+module.  Each genome takes 0.45 of its own layer-width room instead of every genome
+sharing one global pair.
+
+The admissible set is *clears `MIN_SJ_TARGET` held out* and *settles against
+`SETTLING_RATIO`*: 0.95 and 0.85 fail the second at ratios 0.800 and 0.796, and 0.35 and
+below fail the first at 30, 25 and 16 of 32.  What is left is 0.75 / 0.65 / 0.55 / 0.45,
+all clearing the same **31 of 32**, across which margin and convergence cost both improve
+monotonically as the factor falls — so the operating point is the band's lower **edge**,
+which is what PART 23 said quoting 0.75 was not.
+
+It clears 31 of 32 where the shipped pair clears 16, and leaves the shipped genome
+**0.4435** of margin where `GENOME_ROBUST_*` leaves 0.056 — 7.9x for the same barrier
+count.  That answers PART 22's first reason on its own terms.
+
+## THE BLOCKER WAS NOT REAL: THE CLIFF IS A CLOSED FORM
+
+`cliff_entry` bisects `sector_verdict` thirty times, which is thirty sector builds and
+cannot sit in a mesh default.  But the width profile is a cubic in `u` whose only
+`entry`-dependence is one linear term, and its three scalars come out of the **tangency**
+solve, which does not depend on the layer profile at all.  `_fillet_curves` now hands back
+`layer_wall` and `layer_k` — on the layer refusal as well as on the build, since the cliff
+has to be computable at an entry that refuses — and `_layer_cliff_from_scalars` roots it.
+
+**Agreement with the instrument it replaces: 9.1e-10 across the held-out draw**, the
+bisection's own resolution, at 27x the speed with no mesh built.
+
+## AND TWO SENTINELS, BOTH THE SHAPE PART 20 ALREADY CORRECTED ONCE
+
+**`CLIFF_BRACKET` stops at -2.0**, so three held-out genomes come back as *"builds across
+the whole bracket"* and are read as *the safest case*.  All three have cliffs — -2.51,
+-2.30, -2.12.  The finding survives it (31 of 32 either way, worst J 0.1721 on both), so
+it is a defect in what the sentinel means rather than in a number.
+
+**`_sector_fit_span` counts a layer-width refusal as "no room"**, so at a steep entry
+`_sector_fit_limit` reports the layer's cliff under the sector fit's name.  At the shipped
+genome, entry -1.40: `R` = 1.60 builds with `free_span_deg` = 8.1465, bit-identical to the
+shallow entry's, and `R` = 1.65 refuses on layer width — yet the reported "limit" is
+1.6285, where the free span is 8.15 deg rather than the zero it is defined as.  The
+sector-fit limit is not profile-dependent; its instrument is.  This is why regenerating
+`study_corner_singularity_fillet.json` (stale since before §74) moved 6 of 34 priced
+pairs, and it makes §74's "the rim has no limit at all" a shipped-profile statement.
+
+**The adoption does not rest on either.**  The operating point is *shallower* than the
+shipped entry (-0.363 against -0.45), the defect only fires at a steep one, and the clamp
+bites at **0 of 29** held-out genomes at the prescribed entry.  The quoted margin is
+conservative, not wrong: the mesh's own refusal boundary is at -2.4223, so the true
+clearance is 2.06 against the 0.4435 published.
+
+## WHAT IS UNCHANGED
+
+The shipped mesh does not move and the `fillet=True` default does not either —
+`FILLET_LAYER_ENTRY_SLOPE` and `FILLET_LAYER_END_OFFSET` are untouched, and `build_wheel`
+still defaults to `fillet=None`.  What is adopted is the mechanism and its operating
+point, in the shape PART 14 -> PART 21 already used for the clamp.  Flipping the default
+to the rule is the next step and is deliberately separate: it re-dates every artifact
+carrying a filleted mesh, which is exactly how the corner artifact went stale unnoticed.

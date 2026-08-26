@@ -1153,6 +1153,20 @@ GENOME_PROFILE_ENDS = (0.50, 0.60, 0.70, 0.80, 1.00, 1.30, 1.60)
 GENOME_ROBUST_ENTRY = -0.75
 GENOME_ROBUST_END = 0.70
 
+# AND THE CELL THAT SURVIVES WHEN THE CLIFF MARGIN IS A CONSTRAINT (PLAN §69, §80).
+# MEASURED, NOT ADOPTED, exactly as the pair above is.  §68 declined `GENOME_ROBUST_*`
+# for standing 0.056 from a hard refusal of the shipped genome; §69 rebuilt the candidate
+# set with that distance as a constraint rather than as an afterthought and this is what
+# came out -- box floor 0.2061 over fifteen genomes with none refused, cliff margin
+# 0.1577 against `GENOME_ROBUST_*`'s 0.0564, and an increment ratio of 0.437 against
+# `study_corner_singularity.SETTLING_RATIO` = 0.75, so it settles where §54's argmax does
+# not.  Every one of those numbers is IN-SAMPLE on the sixteen-genome draw, which is what
+# §80 ranked first: `sweep_sector_fit_clamp` carries it onto the held-out thirty-two so
+# the pair is judged on genomes it was not fitted to.  See PLAN §80 for why the objection
+# that stood against adopting it was withdrawn by inventory rather than by measurement.
+MARGIN_ROBUST_ENTRY = -0.70
+MARGIN_ROBUST_END = 0.90
+
 
 def sweep_layer_profile_genomes(genes, cfg, genome_rows, entries=GENOME_PROFILE_ENTRIES,
                                 ends=GENOME_PROFILE_ENDS, clamp=None, fold_gate=False):
@@ -1323,6 +1337,24 @@ CLIFF_REASON = "width profile reaches zero"
 # `None` that means a measurement failed.
 CLIFF_NO_EDGE = "builds across the whole bracket"
 
+# AND IT IS NOT THE SAFEST CASE.  IT IS THIS BRACKET BEING TOO NARROW (PLAN §82).
+#
+# The name above says what the bisection OBSERVED and `sweep_cliff_clamped_profile` reads
+# it as "this genome has no layer-width edge to project onto", falls back to a global
+# constant, and counts the genome as one the rule does not harm.  Measured against
+# `wheel_wheel.layer_cliff_entry`, whose bracket runs to -8.0: all three held-out genomes
+# reported this way have edges, at -2.51, -2.30 and -2.12, just past the -2.0 below.
+#
+# THE FINDING SURVIVES IT, which is why the bracket is left where it is rather than
+# widened in the same commit that adopts the rule: at the adopted factor the three
+# genomes clear the barrier on the rule's own answer exactly as they do on the fallback
+# -- 31 of 32 either way, worst J 0.1721 and median 0.3466 to four figures on both.  So
+# this is a defect in what the sentinel MEANS and not in any number published off it,
+# and widening the bracket is a change to re-date artifacts for on its own.
+#
+# It is the third sentinel in this arc to carry two meanings under one name -- see §78's
+# `n_without_cliff` split, and `wheel_wheel._sector_fit_span`, which §82 records.
+
 # PART 20's four hand bisections, at the precision they were published to.  Kept so the
 # automated column is checked against the RECORD rather than against itself -- if the two
 # disagree, one of them is wrong and this file should say so before anyone quotes either.
@@ -1347,7 +1379,39 @@ CLIFF_PUBLISHED = ((0.85, -0.845458), (1.00, -0.881143),
 # any `f` near 1 -- so the margin each factor leaves is REPORTED next to what it buys rather
 # than assumed acceptable, and the band is swept because §68's objection was about margin
 # and this is the number that has to answer it.
-CLIFF_PROFILE_FACTORS = (0.95, 0.85, 0.75, 0.65, 0.55)
+#
+# AND THE BAND IS SWEPT TO ITS FLOOR, NOT TO A ROUND NUMBER (PLAN §81).  The first sweep
+# stopped at 0.55 and §78 quoted the rule at 0.75, which is the INTERIOR of a band whose
+# edge was never located: 0.85 down to 0.55 all clear the same 31 of 32 held out, while
+# the margin the factor leaves and what it costs the shipped genome's convergence BOTH
+# improve monotonically as it falls.  Two axes improving across a flat third means the
+# operating point is the flat band's lower EDGE, and quoting any interior value is the
+# same class of choice §81 rejected.  These four continue to where the entry is too
+# shallow to buy anything, so the edge is bracketed by measurement rather than assumed.
+CLIFF_PROFILE_FACTORS = (0.95, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15)
+
+# AND THE OPERATING POINT THE SWEEP LOCATES.  ADOPTED AT PLAN §82, and the value now
+# lives in `wheel_wheel` as `FILLET_LAYER_CLIFF_FACTOR` -- this name is kept so every
+# reference in this file and its tests still reads, exactly as `SECTOR_FIT_CLAMP` above
+# was kept when PART 21 moved that one.  The rule it parameterises is
+# `wheel_wheel.per_genome_layer_profile`, and the cliff it multiplies is a CLOSED FORM
+# there rather than the thirty sector builds `cliff_entry` below spends: the two agree to
+# 9.1e-10 over the held-out draw, which is the bisection's own resolution.
+#
+# The admissible set is two conditions and neither is invented here: clear `MIN_SJ_TARGET`
+# on the held-out draw, and settle against `study_corner_singularity.SETTLING_RATIO` at
+# the shipped genome.  0.95 and 0.85 fail the second (ratios 0.800 and 0.796); 0.35 and
+# below fail the first (30, 25 and 16 of 32).  What is left is 0.75 / 0.65 / 0.55 / 0.45,
+# all clearing the same 31 of 32, across which BOTH remaining axes improve monotonically
+# as the factor falls -- margin 0.202 -> 0.444, cost +0.392% -> +0.106%.  So the operating
+# point is the bottom of that band and not a value inside it, which is the whole of what
+# §81 rejected about quoting 0.75.
+#
+# THE COST IS NOT MONOTONE BELOW THE BAND and that is not a law being broken: 0.35 / 0.25 /
+# 0.15 read +0.189% / +0.132% / +0.116%, and every one of them is already excluded on the
+# barrier.  The monotonicity is a statement about the admissible set, which is where it is
+# used, and the ratio is a three-rung estimate that should not be read finer than that.
+CLIFF_PROFILE_FACTOR = WW.FILLET_LAYER_CLIFF_FACTOR
 
 # ONE `end`, AND THE REASON.  The cliff moves with `end`, so a per-genome entry rule has to
 # name one.  `GENOME_ROBUST_END` is the choice because the whole point of the measurement is
@@ -1837,14 +1901,22 @@ def sweep_sector_fit_clamp(genes, cfg, genome_rows, factors=SECTOR_FIT_FACTORS):
     untouched by it, so "six of sixteen still refuse outright regardless" and nothing
     would collect what the profile bought.  This measures the other half of that sentence.
 
-    Two profiles are crossed with the clamp on purpose.  The clamp's own worth is the
+    Three profiles are crossed with the clamp on purpose.  The clamp's own worth is the
     `built` column at the SHIPPED profile -- that is the refusal half of PLAN.md's item 2,
     on its own.  Crossing it with the genome-robust profile is what re-prices PART 13's
     decision, which was taken against a box where six genomes could not benefit from any
     profile at all.
+
+    THE THIRD IS `MARGIN_ROBUST_*` AND IT IS HERE TO BE HELD OUT (PLAN §80).  §69 picked
+    that pair as the argmax of a candidate set built with the cliff margin as a
+    constraint, and picked it on THIS study's sixteen-genome draw.  An in-sample argmax
+    adopted on its in-sample number is the error UNCAP_PLAN PART 9 and §78 both exist to
+    prevent, and this table already runs on the held-out thirty-two, so carrying the pair
+    through it is the whole of the missing check.  It costs one more row per factor.
     """
     profiles = (("shipped", LAYER_ENTRY_SLOPE, LAYER_END_OFFSET),
-                ("genome_robust", GENOME_ROBUST_ENTRY, GENOME_ROBUST_END))
+                ("genome_robust", GENOME_ROBUST_ENTRY, GENOME_ROBUST_END),
+                ("margin_robust", MARGIN_ROBUST_ENTRY, MARGIN_ROBUST_END))
     cells = [(np.asarray(r["genes"], float), r["fit"]) for r in genome_rows
              if "fit" in r]
     shipped_fit = sector_fit_margin(np.asarray(genes, float), cfg)
@@ -2264,6 +2336,12 @@ def self_checks(rec):
             # this file is measured at alone.
             checks["the_clamp_is_inert_on_the_shipped_genome"] = (
                 not fc["shipped_is_clamped"])
+        # AND NOTHING HERE GATES WHAT THE MARGIN-ROBUST PAIR CLEARS OUT OF SAMPLE (§80).
+        # That number is the answer §80 asked for, and a gate on it would be a gate on the
+        # answer.  Nor is "the profile does not change WHICH genomes fit" gated, however
+        # much it looks like a law: §68's own cliff is a profile causing a hard refusal,
+        # so a difference in the `built` column across profiles is a layer-width refusal
+        # and the row's `refusals` field already names it.
         # THE HELD-OUT BOX (PLAN §78), SPLIT THE WAY EVERYTHING ELSE HERE IS.
         #
         # The MECHANISM gates and the RATE does not.  "The hub margin predicts every
@@ -2783,7 +2861,7 @@ def _print(rec):
 
             print(f"      {'profile':14s} {'clamp':>6s} {'in-sample':>18s} "
                   f"{'held-out':>18s}")
-            for profile in ("shipped", "genome_robust"):
+            for profile in ("shipped", "genome_robust", "margin_robust"):
                 for factor in (None, SECTOR_FIT_CLAMP):
                     a, b = _row(fc, profile, factor), _row(ho, profile, factor)
                     if not a or not b:
