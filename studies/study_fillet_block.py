@@ -1327,9 +1327,22 @@ def profile_candidates(table, target=None):
 # The bracket is wide on the safe side and stops short of -2.0, which is far past any entry
 # either grid visits.  Bisection for the same reason `sector_fit_limit` uses one: the
 # refusal comes out of `_hermite`'s minimum over a sampled profile and has no closed form.
-CLIFF_BRACKET = (-2.0, 0.0)
-CLIFF_BISECTIONS = 30
+# THE BRACKET IS THE MODULE'S NOW, AND THE -2.0 IT USED TO BE WAS A DEFECT (PLAN §84).
+#
+# At -2.0 three of the thirty-two held-out genomes reported "builds across the whole
+# bracket" and were read as having no layer-width edge AT ALL -- the safest case.  All
+# three have edges, at -2.51, -2.30 and -2.12, and the sentinel was reporting the bracket's
+# width rather than anything about the genome.  Bound to the module's constant rather than
+# re-stated, so the two cannot drift the way §57's clamp factor nearly did before PART 21.
+CLIFF_BRACKET = WW.LAYER_CLIFF_BRACKET
+CLIFF_BISECTIONS = WW.LAYER_CLIFF_BISECTIONS
 CLIFF_REASON = "width profile reaches zero"
+
+# How far either side of the closed-form cliff the two confirming verdicts are taken.
+# Large enough to clear the root-find's own resolution by many orders, small enough that
+# nothing else can bind in between: the tightest cliff-to-next-refusal gap measured over
+# the held-out draw is ~0.05 of entry, and this is a fiftieth of that.
+CLIFF_PROBE = 1e-3
 
 # `cliff_entry`'s OTHER `None`, and it is the opposite of a problem: the genome builds at
 # every entry in the bracket, so it has no layer-width edge to stand back from.  Named as a
@@ -1425,14 +1438,27 @@ def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS,
                 R_hub=None, R_rim=None):
     """The `entry` at which THIS genome loses its rim layer, at a fixed `end`.
 
-    Returns `{"entry": float|None, "why": str}`.  `None` means the genome does not lose the
-    layer anywhere in the bracket, which is not the same as a margin of zero and must not be
-    read as one.
+    Returns `{"entry": float|None, "why": str}`.  `None` means the layer-width cliff is not
+    the build's edge for this genome, which is not the same as a margin of zero and must
+    not be read as one.  `why` says which of the ways that happened.
 
-    THE REASON IS CHECKED, NOT ASSUMED.  A steeper entry is not the only way the blocking
-    can refuse, and a bisection that accepted any refusal would happily report a sector-fit
-    or tangency limit under this name -- the exact class of error PART 6 caught this file
-    making once already.  `why` carries whatever actually bounded it.
+    IT DELEGATES TO THE MODULE'S CLOSED FORM NOW (PLAN §84), and the thirty sector builds
+    are gone.  The width profile is a cubic in `u` whose only `entry`-dependence is one
+    linear term, so `wheel_wheel._layer_cliff_from_scalars` roots it on two scalars the
+    tangency solve already produced.  Measured against the bisection this replaces: 9.1e-10
+    over the held-out draw, which was that bisection's own resolution.
+
+    THE REASON IS STILL CHECKED, NOT ASSUMED.  A steeper entry is not the only way the
+    blocking can refuse, and a cliff reported without checking would happily name a
+    sector-fit or tangency limit under this one -- the exact class of error PART 6 caught
+    this file making once already.  The closed form cannot make that mistake about the
+    LAYER, but it can be right about the layer and wrong about the BUILD, if something else
+    binds at a shallower entry.  So two verdicts either side of it are still taken.
+
+    THE OLD BRACKET WAS THE BUG, NOT THE INSTRUMENT.  At `CLIFF_BRACKET = (-2.0, 0.0)` this
+    returned "builds across the whole bracket" for three of thirty-two held-out genomes and
+    `sweep_cliff_clamped_profile` read that as "no edge to project onto -- the safest case".
+    All three have edges, at -2.51, -2.30 and -2.12.  The bracket is the module's now.
 
     `R_hub`/`R_rim` DEFAULT TO THE GENOME'S OWN GENES, WHICH IS NOT ALWAYS WHAT IT BUILDS AT.
     Six of the sixteen drawn genomes are pulled back by the sector-fit clamp (§74), and a
@@ -1440,29 +1466,34 @@ def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS,
     builds.  Every caller that quotes a published cliff -- `CLIFF_PUBLISHED`, the candidate
     table -- passes neither and is unaffected; the clamped box passes both.
     """
-    lo, hi = float(bracket[0]), float(bracket[1])   # lo refuses, hi builds
     R_h = float(genes[12]) if R_hub is None else float(R_hub)
     R_r = float(genes[13]) if R_rim is None else float(R_rim)
 
-    def refuses(entry):
-        v = sector_verdict(genes, cfg, R_h, R_r, entry=entry, end=float(end))
-        return (not v["built"]), v.get("why", "")
+    c = WW.layer_cliff_entry(genes, cfg, fillet=(R_h, R_r), end=float(end))
+    if c["entry"] is None:
+        return {"entry": None, "why": c["why"]}
+    cliff = float(c["entry"])
 
-    ref_hi, why_hi = refuses(hi)
-    if ref_hi:
-        return {"entry": None, "why": f"refuses across the whole bracket: {why_hi}"}
-    ref_lo, why_lo = refuses(lo)
-    if not ref_lo:
-        return {"entry": None, "why": "builds across the whole bracket"}
-    if CLIFF_REASON not in why_lo:
-        return {"entry": None, "why": f"bounded by something else: {why_lo}"}
-    for _ in range(steps):
-        mid = 0.5 * (lo + hi)
-        if refuses(mid)[0]:
-            lo = mid
-        else:
-            hi = mid
-    return {"entry": 0.5 * (lo + hi), "why": why_lo}
+    # THE REASON IS STILL CHECKED, AND IT COSTS TWO BUILDS INSTEAD OF THIRTY.  The closed
+    # form answers "where does the LAYER go to zero", which is the right question by
+    # construction -- but not necessarily the question the BUILD answers, because a
+    # sector-fit or tangency refusal can bind at a shallower entry and would then be the
+    # real edge.  So the two verdicts either side of the closed-form cliff are still taken:
+    # just inside it the sector must build, just outside it must refuse for exactly this
+    # reason.  That is PART 6's lesson kept, at 1/15th of its old price.
+    inside = sector_verdict(genes, cfg, R_h, R_r, entry=cliff + CLIFF_PROBE,
+                            end=float(end))
+    if not inside["built"]:
+        return {"entry": None,
+                "why": f"bounded by something else: {inside.get('why', '')}"}
+    outside = sector_verdict(genes, cfg, R_h, R_r, entry=cliff - CLIFF_PROBE,
+                             end=float(end))
+    why = outside.get("why", "")
+    if outside["built"] or CLIFF_REASON not in why:
+        return {"entry": None,
+                "why": f"the closed-form cliff at {cliff:.6f} is not the build's edge: "
+                       f"{'builds past it' if outside['built'] else why}"}
+    return {"entry": cliff, "why": why}
 
 
 def profile_candidate_rows(table, genes, cfg, target=None):
@@ -1979,14 +2010,20 @@ def sweep_cliff_clamped_profile(genes, cfg, genome_rows,
     leaves the one genome every published number in this file is measured at -- and it is
     the number that faces §68's 0.5520.
 
-    A GENOME WITH NO CLIFF FALLS BACK TO THE GLOBAL ENTRY, exactly as `_clamp_to_sector`
-    honours the requested radius when the junction has no limit.  `cliff_entry` returns
-    `None` in two very different cases and only one is a problem: *"builds across the whole
-    bracket"* means the genome has no layer-width edge to project onto at all -- the SAFEST
-    case, not a failure -- while *"bounded by something else"* means the bisection ran into a
-    different refusal and the rule genuinely cannot be evaluated there.  Counting the first
-    as a loss understates the rule by three genomes of sixteen, so the two are tallied
-    separately and neither can be read as the other.
+    THE FALLBACK IS GONE, AND SO IS THE CASE IT EXISTED FOR (PLAN §84).  §78 split
+    `cliff_entry`'s `None` in two and had genomes reporting *"builds across the whole
+    bracket"* take the global entry instead, on the reading that such a genome has no
+    layer-width edge to project onto -- the safest case rather than a failure.  That
+    reading was wrong: the three genomes it fired on have edges at -2.51, -2.30 and -2.12,
+    outside a bracket that stopped at -2.0, and the sentinel was describing the bracket.
+    With the module's bracket every genome in both draws has a cliff, the rule answers for
+    all of them, and `n_without_cliff` is kept in the row schema reporting zero rather than
+    deleted -- a counter that silently stops existing is how a regression hides.
+
+    Measured before the branch was removed: at the adopted factor the three genomes clear
+    the barrier on the rule's own answer exactly as they did on the fallback -- 31 of 32
+    either way, worst J 0.1721 and median 0.3466 to four figures on both.  So this changes
+    what the rule SAYS for three genomes and changes no number it is quoted on.
     """
     cells = []
     for r in genome_rows:
@@ -2009,18 +2046,15 @@ def sweep_cliff_clamped_profile(genes, cfg, genome_rows,
         no_edge, unevaluable, refusals = 0, 0, []
         for c in cells:
             if c["cliff"] is None:
-                if CLIFF_NO_EDGE in c["why"]:
-                    # No edge to project onto: the rule has no opinion, so the genome
-                    # takes the global entry and still COUNTS -- it is a genome the rule
-                    # does not harm, not a genome it fails.
-                    no_edge += 1
-                    entry = float(GENOME_ROBUST_ENTRY)
-                else:
-                    unevaluable += 1
-                    continue
-            else:
-                entry = float(factor) * float(c["cliff"])
-                margins.append(entry - float(c["cliff"]))
+                # The only `None` left is a genuine one: something other than the layer
+                # bounds this genome, so the rule cannot be evaluated on it.  The old
+                # `CLIFF_NO_EDGE` branch is retired with its bracket (§84); `no_edge` is
+                # kept and reported as zero rather than deleted, so the day it stops being
+                # zero is visible instead of silent.
+                unevaluable += 1
+                continue
+            entry = float(factor) * float(c["cliff"])
+            margins.append(entry - float(c["cliff"]))
             try:
                 v = sector_verdict(c["genes"], cfg, c["R_hub"], c["R_rim"], entry, end)
             except Exception as exc:      # a drawn genome must not kill the driver

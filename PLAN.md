@@ -10778,3 +10778,99 @@ the shipped entry, and the clamp is inert there before and after.
 9. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+## §84 — 2026-08-26. THE OTHER SENTINEL: "BUILDS ACROSS THE WHOLE BRACKET" WAS DESCRIBING THE BRACKET. ALL 32 HELD-OUT GENOMES HAVE A CLIFF, THE FALLBACK BRANCH IS GONE, AND THE THIRTY-BUILD BISECTION GOES WITH IT
+
+§82 found this and left it, because the finding survived it and widening a bracket
+re-dates artifacts on its own.  §83 cleared the way; this is the cheap half.
+
+### THE BRACKET IS THE MODULE'S NOW, AND THE FALLBACK IT FED IS RETIRED
+
+`CLIFF_BRACKET` stopped at -2.0, so three of the thirty-two held-out genomes came back as
+*"builds across the whole bracket"*.  §78 read that as **the safest case** — a genome with
+no layer-width edge to project onto — and had those genomes fall back to
+`GENOME_ROBUST_ENTRY`, tallying them as genomes the rule does not harm.  All three have
+edges, at **-2.51, -2.30 and -2.12**.  The sentinel was reporting the bracket's width.
+
+`CLIFF_BRACKET` and `CLIFF_BISECTIONS` are now bound to `wheel_wheel.LAYER_CLIFF_*` rather
+than re-stated, so the two cannot drift — which is the property that made this possible,
+and the same fix PART 21 applied to the clamp factor.  With the module's bracket **32 of 32
+have a cliff**, the rule answers for all of them, and the `CLIFF_NO_EDGE` branch is dead
+code and deleted.  `n_without_cliff` is **kept in the row schema, pinned at zero**: a
+counter that silently stops existing is how the next regression hides.
+
+### AND `cliff_entry` DELEGATES TO THE CLOSED FORM, SO THE THIRTY BUILDS ARE GONE
+
+§82 showed the layer cliff is a root-find over arithmetic on two scalars the tangency
+solve already produces.  The study kept its own thirty-build bisection anyway, because the
+adoption commit was not the place to change the instrument every number in it was measured
+with.  It is now `wheel_wheel.layer_cliff_entry`, and the four hand bisections PART 20
+published still land:
+
+```
+   end      published      delegated      |difference|
+  0.85     -0.845458      -0.845458          1.65e-07
+  1.00     -0.881143      -0.881143          3.70e-07
+  1.10     -0.903400      -0.903437          3.70e-05
+  1.60     -1.001967      -1.001967          3.25e-07
+```
+
+all inside the 1e-4 the record was published to.  **`make filletblock` goes 508 s -> 401 s.**
+
+**THE REASON IS STILL CHECKED, AT TWO BUILDS INSTEAD OF THIRTY.**  The closed form cannot
+be wrong about the LAYER, but it can be right about the layer and wrong about the BUILD if
+a sector-fit or tangency refusal binds at a shallower entry — which is PART 6's error, and
+dropping the check to buy speed would re-introduce it.  So `cliff_entry` still takes the
+two verdicts either side of the closed-form cliff: just inside it the sector must build,
+just outside it must refuse for exactly this reason, or it returns `None` saying so.
+
+**A bonus correction fell out of that.**  The old bisection reported `why` from the
+bracket's LOW end, where both junctions have already refused and the hub is simply checked
+first — so every published cliff said *"no filleted blocking exists at the hub"*.  The
+binding junction at the shipped genome is the **rim** (-0.806 against the hub's -1.862),
+and the two verdicts now name it correctly.  No number moves; the label was wrong.
+
+### WHAT MOVED AND WHAT DID NOT
+
+The three ex-fallback genomes now take `factor * their own cliff` instead of a constant, so
+the tails of the factor sweep move — and the admissible band does not:
+
+```
+                  held out, clears MIN_SJ_TARGET of 32
+   factor     before (fallback)     after (the rule's own answer)
+    0.95            29                      29
+    0.85            31                      31
+    0.75            31                      31
+    0.65            31                      31
+    0.55            31                      31
+    0.45            31                      31      <-- ADOPTED
+    0.35            30                      30
+    0.25            25                      24
+    0.15            16                      13
+```
+
+**At the adopted factor nothing moves at all**: 31 of 32, worst J 0.1721, median 0.3466,
+shipped margin 0.4435, shipped cliff -0.806402517 — every one identical to §82.  The band
+edge is still bracketed on both sides, 0.85-0.45 flat at 31 and 0.35 dropping to 30.  This
+was measured before the branch was deleted, not discovered afterwards.
+
+`study_corner_singularity_fillet.json` regenerated: **43 shared rows, zero field
+differences**, the only change being the corrected `shipped_cliff.why`.  All 23 of
+`study_fillet_block`'s self-checks pass.
+
+#### The successors, ranked — REVISED 2026-08-26 AFTER §84
+
+1. **Flip the `fillet=True` layer profile to `per_genome_layer_profile`** — the default
+   change.  The mechanism is adopted, the axis it is measured on is fixed, and the rule now
+   answers for every genome in both draws with no fallback in it.
+2. **Wire the fillet into `modelled_area_reference`** (§50) — unchanged from §79-§83.
+3. **Make the layer cliff differentiable** — §82's closed form makes the implicit function
+   theorem applicable to `min_u H = 1e-6`; without it, item 1 has to refuse a gradient
+   exactly as §79's clamp does.
+4. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged.
+5. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+6. **Re-run the hub-share ladder on a filleted mesh** (§75) — one rung is not a ladder.
+7. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+8. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).

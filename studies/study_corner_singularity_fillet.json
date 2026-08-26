@@ -3621,8 +3621,8 @@
     ],
     "per_genome_rule": {
       "shipped_cliff": {
-        "entry": -0.8064025165513158,
-        "why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness."
+        "entry": -0.8064025165645317,
+        "why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness."
       },
       "cliff_config": "coarse",
       "end": 0.7,
@@ -3631,55 +3631,55 @@
           "factor": 0.95,
           "entry": -0.766082,
           "end": 0.7,
-          "shipped_margin": 0.040320516551315744
+          "shipped_margin": 0.04032051656453162
         },
         {
           "factor": 0.85,
           "entry": -0.685442,
           "end": 0.7,
-          "shipped_margin": 0.12096051655131579
+          "shipped_margin": 0.12096051656453166
         },
         {
           "factor": 0.75,
           "entry": -0.604802,
           "end": 0.7,
-          "shipped_margin": 0.20160051655131583
+          "shipped_margin": 0.2016005165645317
         },
         {
           "factor": 0.65,
           "entry": -0.524162,
           "end": 0.7,
-          "shipped_margin": 0.28224051655131577
+          "shipped_margin": 0.28224051656453164
         },
         {
           "factor": 0.55,
           "entry": -0.443521,
           "end": 0.7,
-          "shipped_margin": 0.3628815165513158
+          "shipped_margin": 0.36288151656453166
         },
         {
           "factor": 0.45,
           "entry": -0.362881,
           "end": 0.7,
-          "shipped_margin": 0.4435215165513158
+          "shipped_margin": 0.44352151656453165
         },
         {
           "factor": 0.35,
           "entry": -0.282241,
           "end": 0.7,
-          "shipped_margin": 0.5241615165513158
+          "shipped_margin": 0.5241615165645317
         },
         {
           "factor": 0.25,
           "entry": -0.201601,
           "end": 0.7,
-          "shipped_margin": 0.6048015165513158
+          "shipped_margin": 0.6048015165645316
         },
         {
           "factor": 0.15,
           "entry": -0.12096,
           "end": 0.7,
-          "shipped_margin": 0.6854425165513158
+          "shipped_margin": 0.6854425165645317
         }
       ]
     }

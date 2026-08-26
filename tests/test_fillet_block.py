@@ -1336,11 +1336,18 @@ def test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined(report):
         # must not be tallied together — the first is the SAFEST genome in the box, and
         # folding it into the second understated this rule by three of sixteen once
         # already (§78).
+        # THIS ASSERTION INVERTED AT §84, AND ITS OLD MESSAGE IS WHY.  It used to require
+        # `n_without_cliff > 0` and to say that if it ever hit zero, the fallback branch
+        # was dead code and §78's correction should be re-read.  It hit zero, the branch
+        # was dead, and the re-reading found §78's "safest case" was a bracket that
+        # stopped at -2.0 rather than a genome with no edge — all three had cliffs, at
+        # -2.51, -2.30 and -2.12.  The counter is kept and pinned at zero so the day a
+        # genome stops having a cliff is visible instead of silent.
         for r in cp["rows"]:
             assert r["n_built"] + r["n_unevaluable"] == r["n_genomes"], r
-            assert r["n_without_cliff"] > 0, (
-                "no genome builds across the whole bracket any more — the fallback "
-                "branch is now dead code and §78's correction should be re-read")
+            assert r["n_without_cliff"] == 0, (
+                "a genome has no layer-width cliff inside `LAYER_CLIFF_BRACKET` — either "
+                "the bracket is too narrow again (§84) or the draw has changed", r)
 
     # THE DOMINANCE ITSELF, on the held-out box: at least one factor matches the global
     # pair's barrier clearance while leaving several times its margin.
@@ -1387,9 +1394,12 @@ def test_the_layer_cliff_has_a_CLOSED_FORM_that_reproduces_the_bisection(genes):
     module = ww.layer_cliff_entry(genes, cfg, end=fb.CLIFF_PROFILE_END)
     study = fb.cliff_entry(genes, cfg, fb.CLIFF_PROFILE_END)
     assert module["entry"] is not None and study["entry"] is not None
-    # 30 halvings of `CLIFF_BRACKET`'s 2.0 is 1.9e-9, which is the floor here
-    assert abs(module["entry"] - study["entry"]) < 5e-9, (module["entry"],
-                                                          study["entry"])
+    # §84 made `cliff_entry` delegate here, so these are now the SAME root-find and the
+    # tolerance is round-off rather than a bisection floor.  Kept as a test because the
+    # delegation is what has to hold: the study wraps the module's answer in two verdict
+    # checks and can still return `None` where the module returns a number.
+    assert abs(module["entry"] - study["entry"]) < 1e-12, (module["entry"],
+                                                           study["entry"])
 
     # THE SECTOR'S CLIFF IS THE BINDING JUNCTION'S, and the two really are different —
     # if they were equal this test would pass while asserting nothing about `max`.
@@ -1425,16 +1435,21 @@ def test_the_per_genome_profile_is_the_ADOPTED_operating_point(genes):
 def test_the_cliff_bracket_the_study_uses_is_TOO_NARROW_and_the_module_says_so(genes):
     """§82's third sentinel: "builds across the whole bracket" is not "has no edge".
 
-    `study_fillet_block.CLIFF_BRACKET` stops at -2.0 and reports three of the thirty-two
-    held-out genomes as having no layer-width edge at all — the SAFEST case, which
-    `sweep_cliff_clamped_profile` handles by falling back to a global constant.  All
-    three have edges, at -2.51, -2.30 and -2.12.  The module's bracket holds them.
+    `study_fillet_block.CLIFF_BRACKET` used to stop at -2.0 and report three of the
+    thirty-two held-out genomes as having no layer-width edge at all — the SAFEST case,
+    which `sweep_cliff_clamped_profile` handled by falling back to a global constant.  All
+    three have edges, at -2.51, -2.30 and -2.12.
 
-    Pinned as a RELATION between the two constants rather than against those three
-    genomes, so it keeps meaning something if the draw changes.
+    §84 CLOSED IT BY BINDING THE STUDY'S BRACKET TO THE MODULE'S, so this test inverts:
+    it now pins that the two cannot drift apart again, which is the property that made the
+    defect possible.  Bound rather than re-stated, for the same reason `SECTOR_FIT_CLAMP`
+    and `CLIFF_PROFILE_FACTOR` are bound — two copies of one criterion is the failure this
+    file's own docstrings are about.
     """
-    assert ww.LAYER_CLIFF_BRACKET[0] < fb.CLIFF_BRACKET[0], (
-        ww.LAYER_CLIFF_BRACKET, fb.CLIFF_BRACKET)
+    assert fb.CLIFF_BRACKET == ww.LAYER_CLIFF_BRACKET
+    assert fb.CLIFF_BISECTIONS == ww.LAYER_CLIFF_BISECTIONS
+    # and it really does reach past where the three genomes' edges are
+    assert fb.CLIFF_BRACKET[0] <= -2.60, fb.CLIFF_BRACKET
     # and the module's own refusal threshold is the one the cliff is defined against
     assert ww.LAYER_CLIFF_ZERO == 1e-6
     assert ww.LAYER_CLIFF_SAMPLES == 401

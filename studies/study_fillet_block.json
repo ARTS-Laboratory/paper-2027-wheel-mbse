@@ -9525,7 +9525,7 @@
       }
     }
   },
-  "seconds": 508.02,
+  "seconds": 400.41,
   "sector": {
     "block_order": [
       "spoke",
@@ -12350,22 +12350,22 @@
         "_cliff_audit": [
           {
             "end": 0.85,
-            "got": -0.8454581657424569,
+            "got": -0.8454581653224671,
             "published": -0.845458
           },
           {
             "end": 1.0,
-            "got": -0.8811426302418113,
+            "got": -0.8811426299084,
             "published": -0.881143
           },
           {
             "end": 1.1,
-            "got": -0.9034370379522443,
+            "got": -0.903437037671518,
             "published": -0.9034
           },
           {
             "end": 1.6,
-            "got": -1.0019673248752952,
+            "got": -1.001967325493887,
             "published": -1.001967
           }
         ],
@@ -13494,98 +13494,98 @@
             {
               "R_hub_mm": 0.7277530563973396,
               "R_rim_mm": 2.950315107608208,
-              "cliff": -1.774094800464809,
+              "cliff": -1.7740948006660795,
               "why": null
             },
             {
               "R_hub_mm": 0.6020622237610639,
               "R_rim_mm": 2.085778174741535,
-              "cliff": null,
-              "why": "builds across the whole bracket"
+              "cliff": -2.1452338392118158,
+              "why": null
             },
             {
               "R_hub_mm": 0.6858978222159465,
               "R_rim_mm": 2.040798851720207,
-              "cliff": -1.8012295113876462,
+              "cliff": -1.8012295114368824,
               "why": null
             },
             {
               "R_hub_mm": 0.9001968183990416,
               "R_rim_mm": 2.8927163486329652,
-              "cliff": -0.9678057553246617,
+              "cliff": -0.9678057557324047,
               "why": null
             },
             {
               "R_hub_mm": 0.802905306190049,
               "R_rim_mm": 2.8627221289967135,
-              "cliff": -1.6325555490329862,
+              "cliff": -1.6325555487549215,
               "why": null
             },
             {
               "R_hub_mm": 1.6539481751052936,
               "R_rim_mm": 0.9266393828010802,
-              "cliff": -1.859684127382934,
+              "cliff": -1.8596841278205076,
               "why": null
             },
             {
               "R_hub_mm": 0.9790109838322899,
               "R_rim_mm": 1.5510087101624983,
-              "cliff": -1.7814804324880242,
+              "cliff": -1.781480432562328,
               "why": null
             },
             {
               "R_hub_mm": 0.44107032051384076,
               "R_rim_mm": 2.322724606069681,
-              "cliff": null,
-              "why": "builds across the whole bracket"
+              "cliff": -2.086675198141707,
+              "why": null
             },
             {
               "R_hub_mm": 1.5106137945608509,
               "R_rim_mm": 1.1260233910556952,
-              "cliff": -1.752912956289947,
+              "cliff": -1.7529129567157433,
               "why": null
             },
             {
               "R_hub_mm": 0.7736648197553488,
               "R_rim_mm": 1.5747733570186677,
-              "cliff": -1.8398195868358016,
+              "cliff": -1.8398195865182152,
               "why": null
             },
             {
               "R_hub_mm": 0.7064832698219017,
               "R_rim_mm": 2.275669362038914,
-              "cliff": -1.3611920373514295,
+              "cliff": -1.3611920366779957,
               "why": null
             },
             {
               "R_hub_mm": 0.5635189870813017,
               "R_rim_mm": 2.6695810127189628,
-              "cliff": -1.104438335634768,
+              "cliff": -1.1044383364645443,
               "why": null
             },
             {
               "R_hub_mm": 0.9270751409982528,
               "R_rim_mm": 2.5772036644707788,
-              "cliff": -1.2974421875551343,
+              "cliff": -1.2974421869875692,
               "why": null
             },
             {
               "R_hub_mm": 1.100758387754178,
               "R_rim_mm": 2.7020526760169643,
-              "cliff": -1.7242588317021728,
+              "cliff": -1.7242588316676972,
               "why": null
             },
             {
               "R_hub_mm": 1.5975351635562502,
               "R_rim_mm": 1.2463704599127885,
-              "cliff": -1.3745569894090295,
+              "cliff": -1.374556988960224,
               "why": null
             },
             {
               "R_hub_mm": 0.06642495451968781,
               "R_rim_mm": 0.825791670286095,
-              "cliff": null,
-              "why": "builds across the whole bracket"
+              "cliff": -2.1347382168019724,
+              "why": null
             }
           ],
           "reference": {
@@ -13603,195 +13603,195 @@
               "end": 0.7,
               "factor": 0.95,
               "margin_range": [
-                0.04839028776623311,
-                0.09298420636914684
+                0.048390287786620245,
+                0.10726169196059088
               ],
-              "median_min_scaled_jacobian": 0.290568125091019,
+              "median_min_scaled_jacobian": 0.2774169020465525,
               "min_scaled_jacobian_range": [
                 -0.05082317154824384,
-                0.3377351365916678
-              ],
-              "n_built": 16,
-              "n_clears_target": 14,
-              "n_genomes": 16,
-              "n_unevaluable": 0,
-              "n_without_cliff": 3,
-              "refusals": [],
-              "shipped_entry": -0.76608239072375,
-              "shipped_margin": 0.040320125827565834
-            },
-            {
-              "end": 0.7,
-              "factor": 0.85,
-              "margin_range": [
-                0.14517086329869933,
-                0.27895261910744007
-              ],
-              "median_min_scaled_jacobian": 0.290568125091019,
-              "min_scaled_jacobian_range": [
-                -0.05082317154824384,
-                0.3583468429071045
-              ],
-              "n_built": 16,
-              "n_clears_target": 14,
-              "n_genomes": 16,
-              "n_unevaluable": 0,
-              "n_without_cliff": 3,
-              "refusals": [],
-              "shipped_entry": -0.6854421390686184,
-              "shipped_margin": 0.12096037748269739
-            },
-            {
-              "end": 0.7,
-              "factor": 0.75,
-              "margin_range": [
-                0.24195143883116543,
-                0.4649210318457335
-              ],
-              "median_min_scaled_jacobian": 0.3061447966226597,
-              "min_scaled_jacobian_range": [
-                -0.05082317154824384,
-                0.3881743767386071
-              ],
-              "n_built": 16,
-              "n_clears_target": 15,
-              "n_genomes": 16,
-              "n_unevaluable": 0,
-              "n_without_cliff": 3,
-              "refusals": [],
-              "shipped_entry": -0.6048018874134868,
-              "shipped_margin": 0.20160062913782895
-            },
-            {
-              "end": 0.7,
-              "factor": 0.65,
-              "margin_range": [
-                0.33873201436363154,
-                0.650889444584027
-              ],
-              "median_min_scaled_jacobian": 0.32746287500196336,
-              "min_scaled_jacobian_range": [
-                -0.05082317154824384,
-                0.4276361495675873
-              ],
-              "n_built": 16,
-              "n_clears_target": 15,
-              "n_genomes": 16,
-              "n_unevaluable": 0,
-              "n_without_cliff": 3,
-              "refusals": [],
-              "shipped_entry": -0.5241616357583553,
-              "shipped_margin": 0.2822408807929605
-            },
-            {
-              "end": 0.7,
-              "factor": 0.55,
-              "margin_range": [
-                0.43551258989609776,
-                0.8368578573223202
-              ],
-              "median_min_scaled_jacobian": 0.32462782970883897,
-              "min_scaled_jacobian_range": [
-                -0.05082317154824384,
-                0.46547489336439246
-              ],
-              "n_built": 16,
-              "n_clears_target": 15,
-              "n_genomes": 16,
-              "n_unevaluable": 0,
-              "n_without_cliff": 3,
-              "refusals": [],
-              "shipped_entry": -0.4435213841032237,
-              "shipped_margin": 0.36288113244809206
-            },
-            {
-              "end": 0.7,
-              "factor": 0.45,
-              "margin_range": [
-                0.5322931654285639,
-                1.0228262700606137
-              ],
-              "median_min_scaled_jacobian": 0.29579424297270085,
-              "min_scaled_jacobian_range": [
-                -0.05082317154824384,
-                0.5042798553606025
-              ],
-              "n_built": 16,
-              "n_clears_target": 15,
-              "n_genomes": 16,
-              "n_unevaluable": 0,
-              "n_without_cliff": 3,
-              "refusals": [],
-              "shipped_entry": -0.3628811324480921,
-              "shipped_margin": 0.44352138410322367
-            },
-            {
-              "end": 0.7,
-              "factor": 0.35,
-              "margin_range": [
-                0.6290737409610301,
-                1.2087946827989073
-              ],
-              "median_min_scaled_jacobian": 0.290568125091019,
-              "min_scaled_jacobian_range": [
-                -0.05082317154824384,
-                0.45362052592931235
-              ],
-              "n_built": 16,
-              "n_clears_target": 15,
-              "n_genomes": 16,
-              "n_unevaluable": 0,
-              "n_without_cliff": 3,
-              "refusals": [],
-              "shipped_entry": -0.2822408807929605,
-              "shipped_margin": 0.5241616357583553
-            },
-            {
-              "end": 0.7,
-              "factor": 0.25,
-              "margin_range": [
-                0.7258543164934963,
-                1.3947630955372006
-              ],
-              "median_min_scaled_jacobian": 0.28399380165254434,
-              "min_scaled_jacobian_range": [
-                -0.05082317154824384,
-                0.40602120634042355
+                0.3377351365357424
               ],
               "n_built": 16,
               "n_clears_target": 13,
               "n_genomes": 16,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.20160062913782895,
-              "shipped_margin": 0.6048018874134868
+              "shipped_entry": -0.766082390736305,
+              "shipped_margin": 0.04032012582822664
+            },
+            {
+              "end": 0.7,
+              "factor": 0.85,
+              "margin_range": [
+                0.14517086335986074,
+                0.3217850758817724
+              ],
+              "median_min_scaled_jacobian": 0.30617309423609873,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.35834684291191643
+              ],
+              "n_built": 16,
+              "n_clears_target": 13,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 0,
+              "refusals": [],
+              "shipped_entry": -0.6854421390798519,
+              "shipped_margin": 0.1209603774846798
+            },
+            {
+              "end": 0.7,
+              "factor": 0.75,
+              "margin_range": [
+                0.24195143893310123,
+                0.5363084598029539
+              ],
+              "median_min_scaled_jacobian": 0.3556310010846966,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.3881743767892739
+              ],
+              "n_built": 16,
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 0,
+              "refusals": [],
+              "shipped_entry": -0.6048018874233987,
+              "shipped_margin": 0.20160062914113297
+            },
+            {
+              "end": 0.7,
+              "factor": 0.65,
+              "margin_range": [
+                0.3387320145063416,
+                0.7508318437241355
+              ],
+              "median_min_scaled_jacobian": 0.35374314243102245,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.44338646128301396
+              ],
+              "n_built": 16,
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 0,
+              "refusals": [],
+              "shipped_entry": -0.5241616357669456,
+              "shipped_margin": 0.282240880797586
+            },
+            {
+              "end": 0.7,
+              "factor": 0.55,
+              "margin_range": [
+                0.4355125900795821,
+                0.965355227645317
+              ],
+              "median_min_scaled_jacobian": 0.330506922086153,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.46547489335848147
+              ],
+              "n_built": 16,
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 0,
+              "refusals": [],
+              "shipped_entry": -0.44352138411049247,
+              "shipped_margin": 0.3628811324540392
+            },
+            {
+              "end": 0.7,
+              "factor": 0.45,
+              "margin_range": [
+                0.5322931656528226,
+                1.1798786115664988
+              ],
+              "median_min_scaled_jacobian": 0.3360646158844007,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.5042798553559018
+              ],
+              "n_built": 16,
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 0,
+              "refusals": [],
+              "shipped_entry": -0.36288113245403925,
+              "shipped_margin": 0.4435213841104924
+            },
+            {
+              "end": 0.7,
+              "factor": 0.35,
+              "margin_range": [
+                0.6290737412260631,
+                1.3944019954876803
+              ],
+              "median_min_scaled_jacobian": 0.28999931130562084,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.45362052594211005
+              ],
+              "n_built": 16,
+              "n_clears_target": 15,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 0,
+              "refusals": [],
+              "shipped_entry": -0.2822408807975861,
+              "shipped_margin": 0.5241616357669456
+            },
+            {
+              "end": 0.7,
+              "factor": 0.25,
+              "margin_range": [
+                0.7258543167993035,
+                1.6089253794088618
+              ],
+              "median_min_scaled_jacobian": 0.25314136876463,
+              "min_scaled_jacobian_range": [
+                -0.05082317154824384,
+                0.40602120634379935
+              ],
+              "n_built": 16,
+              "n_clears_target": 13,
+              "n_genomes": 16,
+              "n_unevaluable": 0,
+              "n_without_cliff": 0,
+              "refusals": [],
+              "shipped_entry": -0.20160062914113291,
+              "shipped_margin": 0.6048018874233987
             },
             {
               "end": 0.7,
               "factor": 0.15,
               "margin_range": [
-                0.8226348920259625,
-                1.580731508275494
+                0.822634892372544,
+                1.8234487633300434
               ],
-              "median_min_scaled_jacobian": 0.21413575805603863,
+              "median_min_scaled_jacobian": 0.17531968670380907,
               "min_scaled_jacobian_range": [
                 -0.05082317154824384,
-                0.290568125091019
+                0.27055933973691704
               ],
               "n_built": 16,
-              "n_clears_target": 8,
+              "n_clears_target": 7,
               "n_genomes": 16,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.12096037748269736,
-              "shipped_margin": 0.6854421390686184
+              "shipped_entry": -0.12096037748467975,
+              "shipped_margin": 0.685442139079852
             }
           ],
           "shipped_cliff": {
-            "entry": -0.8064025165513158,
-            "why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness."
+            "entry": -0.8064025165645317,
+            "why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness."
           }
         },
         "cliff_profile_held_out": {
@@ -13813,193 +13813,193 @@
             {
               "R_hub_mm": 0.840059328690337,
               "R_rim_mm": 2.077319935210926,
-              "cliff": -1.8899101177230477,
+              "cliff": -1.8899101179583155,
               "why": null
             },
             {
               "R_hub_mm": 0.761264979950355,
               "R_rim_mm": 1.6707244826942362,
-              "cliff": -1.8362588165327907,
+              "cliff": -1.836258815626513,
               "why": null
             },
             {
               "R_hub_mm": 1.3026946463348787,
               "R_rim_mm": 1.5504163957851624,
-              "cliff": -1.673446032218635,
+              "cliff": -1.6734460317082966,
               "why": null
             },
             {
               "R_hub_mm": 0.4909246429192591,
               "R_rim_mm": 1.7773468669888788,
-              "cliff": -1.9316629217937589,
+              "cliff": -1.9316629214956604,
               "why": null
             },
             {
               "R_hub_mm": 0.8572773579593641,
               "R_rim_mm": 1.9146986660847085,
-              "cliff": -1.960814501158893,
+              "cliff": -1.9608145011821683,
               "why": null
             },
             {
               "R_hub_mm": 0.8878784853905527,
               "R_rim_mm": 1.5752938999183808,
-              "cliff": -1.7588047748431563,
+              "cliff": -1.7588047751273264,
               "why": null
             },
             {
               "R_hub_mm": 1.5334829525270055,
               "R_rim_mm": 1.1934001702907895,
-              "cliff": -1.8940466390922666,
+              "cliff": -1.8940466389881179,
               "why": null
             },
             {
               "R_hub_mm": 0.7505123436849462,
               "R_rim_mm": 1.9992711143667812,
-              "cliff": null,
-              "why": "builds across the whole bracket"
+              "cliff": -2.512244044163441,
+              "why": null
             },
             {
               "R_hub_mm": 2.172091528840179,
               "R_rim_mm": 2.0419579641673096,
-              "cliff": -1.7845692252740264,
+              "cliff": -1.7845692261636295,
               "why": null
             },
             {
               "R_hub_mm": 1.3249631451222932,
               "R_rim_mm": 1.161147734630916,
-              "cliff": -1.5842175325378776,
+              "cliff": -1.5842175323797223,
               "why": null
             },
             {
               "R_hub_mm": 1.1346515625101619,
               "R_rim_mm": 1.1649643388569548,
-              "cliff": -1.8693839302286506,
+              "cliff": -1.869383930979006,
               "why": null
             },
             {
               "R_hub_mm": 0.769377264760963,
               "R_rim_mm": 1.4677480522321549,
-              "cliff": null,
-              "why": "builds across the whole bracket"
+              "cliff": -2.120547889767125,
+              "why": null
             },
             {
               "R_hub_mm": 0.7910312594079091,
               "R_rim_mm": 0.8330139004526927,
-              "cliff": -1.784126735292375,
+              "cliff": -1.7841267360491893,
               "why": null
             },
             {
               "R_hub_mm": 0.8628490941484318,
               "R_rim_mm": 0.6614281985633084,
-              "cliff": -1.7981974808499217,
+              "cliff": -1.798197481316259,
               "why": null
             },
             {
               "R_hub_mm": 1.5023577508726875,
               "R_rim_mm": 1.4645428677210686,
-              "cliff": -1.5537731992080808,
+              "cliff": -1.553773199892944,
               "why": null
             },
             {
               "R_hub_mm": 0.6158866605022094,
               "R_rim_mm": 2.499741247379381,
-              "cliff": -1.442086168564856,
+              "cliff": -1.4420861680005728,
               "why": null
             },
             {
               "R_hub_mm": 1.859164944800162,
               "R_rim_mm": 0.9371050374215908,
-              "cliff": -1.6012814743444324,
+              "cliff": -1.6012814737790295,
               "why": null
             },
             {
               "R_hub_mm": 1.8039990999077236,
               "R_rim_mm": 2.483064944756464,
-              "cliff": -1.9398898733779788,
+              "cliff": -1.9398898725401539,
               "why": null
             },
             {
               "R_hub_mm": 1.2704885424540748,
               "R_rim_mm": 1.5802417596984057,
-              "cliff": -1.7632324090227485,
+              "cliff": -1.7632324086426592,
               "why": null
             },
             {
               "R_hub_mm": 0.9107077463720867,
               "R_rim_mm": 2.212187999559781,
-              "cliff": -1.599967180751264,
+              "cliff": -1.5999671806880165,
               "why": null
             },
             {
               "R_hub_mm": 0.9428672695591667,
               "R_rim_mm": 1.6878464310629941,
-              "cliff": -1.8482594145461917,
+              "cliff": -1.8482594151051717,
               "why": null
             },
             {
               "R_hub_mm": 0.8094844827150767,
               "R_rim_mm": 1.2734910698686814,
-              "cliff": -1.7450743643566966,
+              "cliff": -1.7450743651260474,
               "why": null
             },
             {
               "R_hub_mm": 1.1517884688077298,
               "R_rim_mm": 2.572984777374241,
-              "cliff": -1.9454561760649085,
+              "cliff": -1.9454561762935292,
               "why": null
             },
             {
               "R_hub_mm": 0.4692148060757537,
               "R_rim_mm": 1.4285891373825792,
-              "cliff": null,
-              "why": "builds across the whole bracket"
+              "cliff": -2.2992890313699608,
+              "why": null
             },
             {
               "R_hub_mm": 1.5192969739062483,
               "R_rim_mm": 1.2420184855213208,
-              "cliff": -1.9029388083145022,
+              "cliff": -1.902938808061402,
               "why": null
             },
             {
               "R_hub_mm": 0.6473255869740128,
               "R_rim_mm": 2.2929936393718107,
-              "cliff": -1.5680013531818986,
+              "cliff": -1.568001353493448,
               "why": null
             },
             {
               "R_hub_mm": 0.47899901416130625,
               "R_rim_mm": 1.565519333768357,
-              "cliff": -1.1939249327406287,
+              "cliff": -1.1939249326314112,
               "why": null
             },
             {
               "R_hub_mm": 0.6011942891017871,
               "R_rim_mm": 0.8114919989948781,
-              "cliff": -1.9949927059933543,
+              "cliff": -1.9949927051105756,
               "why": null
             },
             {
               "R_hub_mm": 1.0383896470555563,
               "R_rim_mm": 2.2769222861030287,
-              "cliff": -1.4215704845264554,
+              "cliff": -1.4215704841698784,
               "why": null
             },
             {
               "R_hub_mm": 0.4073749154571283,
               "R_rim_mm": 2.832843171941285,
-              "cliff": -1.7435870179906487,
+              "cliff": -1.7435870174853698,
               "why": null
             },
             {
               "R_hub_mm": 1.7992374218610099,
               "R_rim_mm": 0.518906452388111,
-              "cliff": -1.8661138461902738,
+              "cliff": -1.8661138457131168,
               "why": null
             },
             {
               "R_hub_mm": 1.5398602364335792,
               "R_rim_mm": 2.6910415954069524,
-              "cliff": -1.7671657493337989,
+              "cliff": -1.7671657494925075,
               "why": null
             }
           ],
@@ -14018,195 +14018,195 @@
               "end": 0.7,
               "factor": 0.95,
               "margin_range": [
-                0.059696246637031436,
-                0.09974963529966785
+                0.05969624663157069,
+                0.12561220220817226
               ],
-              "median_min_scaled_jacobian": 0.28811530471281005,
+              "median_min_scaled_jacobian": 0.2835028855107312,
               "min_scaled_jacobian_range": [
                 0.17207317742598127,
-                0.505475555890299
+                0.5054755559164923
               ],
               "n_built": 32,
               "n_clears_target": 29,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.76608239072375,
-              "shipped_margin": 0.040320125827565834
+              "shipped_entry": -0.766082390736305,
+              "shipped_margin": 0.04032012582822664
             },
             {
               "end": 0.7,
               "factor": 0.85,
               "margin_range": [
-                0.1790887399110943,
-                0.2992489058990031
+                0.17908873989471163,
+                0.37683660662451635
               ],
-              "median_min_scaled_jacobian": 0.3111154856718819,
+              "median_min_scaled_jacobian": 0.3022940355455746,
               "min_scaled_jacobian_range": [
                 0.17207317742598127,
-                0.5350686937284459
+                0.5350686937510204
               ],
               "n_built": 32,
               "n_clears_target": 31,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.6854421390686184,
-              "shipped_margin": 0.12096037748269739
+              "shipped_entry": -0.6854421390798519,
+              "shipped_margin": 0.1209603774846798
             },
             {
               "end": 0.7,
               "factor": 0.75,
               "margin_range": [
-                0.2984812331851572,
-                0.4987481764983386
+                0.2984812331578528,
+                0.6280610110408602
               ],
-              "median_min_scaled_jacobian": 0.32643258114122664,
+              "median_min_scaled_jacobian": 0.3264325811123811,
               "min_scaled_jacobian_range": [
                 0.17207317742598127,
-                0.5635225828378708
+                0.563522582856991
               ],
               "n_built": 32,
               "n_clears_target": 31,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.6048018874134868,
-              "shipped_margin": 0.20160062913782895
+              "shipped_entry": -0.6048018874233987,
+              "shipped_margin": 0.20160062914113297
             },
             {
               "end": 0.7,
               "factor": 0.65,
               "margin_range": [
-                0.41787372645922005,
-                0.6982474470976741
+                0.41787372642099385,
+                0.8792854154572043
               ],
-              "median_min_scaled_jacobian": 0.34987582472380013,
+              "median_min_scaled_jacobian": 0.3584594725723643,
               "min_scaled_jacobian_range": [
                 0.17207317742598127,
-                0.5667556663113188
+                0.5667556662746044
               ],
               "n_built": 32,
               "n_clears_target": 31,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.5241616357583553,
-              "shipped_margin": 0.2822408807929605
+              "shipped_entry": -0.5241616357669456,
+              "shipped_margin": 0.282240880797586
             },
             {
               "end": 0.7,
               "factor": 0.55,
               "margin_range": [
-                0.5372662197332829,
-                0.8977467176970093
+                0.537266219684135,
+                1.1305098198735481
               ],
-              "median_min_scaled_jacobian": 0.35733462004052297,
+              "median_min_scaled_jacobian": 0.35733462006953887,
               "min_scaled_jacobian_range": [
                 0.17207317742598127,
-                0.5002626709497578
+                0.5002626709138638
               ],
               "n_built": 32,
               "n_clears_target": 31,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.4435213841032237,
-              "shipped_margin": 0.36288113244809206
+              "shipped_entry": -0.44352138411049247,
+              "shipped_margin": 0.3628811324540392
             },
             {
               "end": 0.7,
               "factor": 0.45,
               "margin_range": [
-                0.6566587130073458,
-                1.0972459882963448
+                0.6566587129472762,
+                1.3817342242898925
               ],
-              "median_min_scaled_jacobian": 0.346617084686312,
+              "median_min_scaled_jacobian": 0.34661708461669194,
               "min_scaled_jacobian_range": [
                 0.17207317742598127,
-                0.5340324678211029
+                0.5340324679290848
               ],
               "n_built": 32,
               "n_clears_target": 31,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.3628811324480921,
-              "shipped_margin": 0.44352138410322367
+              "shipped_entry": -0.36288113245403925,
+              "shipped_margin": 0.4435213841104924
             },
             {
               "end": 0.7,
               "factor": 0.35,
               "margin_range": [
-                0.7760512062814087,
-                1.2967452588956805
+                0.7760512062104172,
+                1.6329586287062368
               ],
-              "median_min_scaled_jacobian": 0.32619467792118784,
+              "median_min_scaled_jacobian": 0.3261946779226373,
               "min_scaled_jacobian_range": [
                 0.17207317742598127,
-                0.46949041303709094
+                0.4694904130895383
               ],
               "n_built": 32,
               "n_clears_target": 30,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.2822408807929605,
-              "shipped_margin": 0.5241616357583553
+              "shipped_entry": -0.2822408807975861,
+              "shipped_margin": 0.5241616357669456
             },
             {
               "end": 0.7,
               "factor": 0.25,
               "margin_range": [
-                0.8954436995554715,
-                1.4962445294950157
+                0.8954436994735584,
+                1.8841830331225806
               ],
-              "median_min_scaled_jacobian": 0.2925993640461019,
+              "median_min_scaled_jacobian": 0.29259936404704984,
               "min_scaled_jacobian_range": [
-                0.06700268314585599,
-                0.42306980530353033
+                0.06700268311341817,
+                0.3867466536591082
               ],
               "n_built": 32,
-              "n_clears_target": 25,
+              "n_clears_target": 24,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.20160062913782895,
-              "shipped_margin": 0.6048018874134868
+              "shipped_entry": -0.20160062914113291,
+              "shipped_margin": 0.6048018874233987
             },
             {
               "end": 0.7,
               "factor": 0.15,
               "margin_range": [
-                1.0148361928295344,
-                1.6957438000943512
+                1.0148361927366996,
+                2.135407437538925
               ],
-              "median_min_scaled_jacobian": 0.20059659678069006,
+              "median_min_scaled_jacobian": 0.18381758388998487,
               "min_scaled_jacobian_range": [
-                -0.07127650205776545,
-                0.42306980530353033
+                -0.07127650217720627,
+                0.33274171953016174
               ],
               "n_built": 32,
-              "n_clears_target": 16,
+              "n_clears_target": 13,
               "n_genomes": 32,
               "n_unevaluable": 0,
-              "n_without_cliff": 3,
+              "n_without_cliff": 0,
               "refusals": [],
-              "shipped_entry": -0.12096037748269736,
-              "shipped_margin": 0.6854421390686184
+              "shipped_entry": -0.12096037748467975,
+              "shipped_margin": 0.685442139079852
             }
           ],
           "shipped_cliff": {
-            "entry": -0.8064025165513158,
-            "why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness."
+            "entry": -0.8064025165645317,
+            "why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness."
           }
         },
         "control": {
@@ -15635,26 +15635,26 @@
         },
         "profile_candidate_rows": [
           {
-            "cliff_entry": -0.8064025165513158,
-            "cliff_margin": 0.00640251655131574,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8064025165645317,
+            "cliff_margin": 0.006402516564531613,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.7,
             "entry": -0.8,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.23943348333713735
           },
           {
-            "cliff_entry": -0.8328615771606565,
-            "cliff_margin": 0.03286157716065641,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8328615766653287,
+            "cliff_margin": 0.03286157666532863,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.8,
             "entry": -0.8,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.23473237605814037
           },
           {
-            "cliff_entry": -0.8811426302418113,
-            "cliff_margin": 0.08114263024181123,
+            "cliff_entry": -0.8811426299084,
+            "cliff_margin": 0.08114262990839993,
             "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 1.0,
             "entry": -0.8,
@@ -15662,99 +15662,99 @@
             "worst_min_scaled_jacobian": 0.206138497588094
           },
           {
-            "cliff_entry": -0.7779302848502994,
-            "cliff_margin": 0.02793028485029936,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.7779302850121319,
+            "cliff_margin": 0.027930285012131906,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.6,
             "entry": -0.75,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.22854174958261766
           },
           {
-            "cliff_entry": -0.8064025165513158,
-            "cliff_margin": 0.056402516551315784,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8064025165645317,
+            "cliff_margin": 0.05640251656453166,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.7,
             "entry": -0.75,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.24302680524455858
           },
           {
-            "cliff_entry": -0.8328615771606565,
-            "cliff_margin": 0.08286157716065645,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8328615766653287,
+            "cliff_margin": 0.08286157666532867,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.8,
             "entry": -0.75,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.22738372641732865
           },
           {
-            "cliff_entry": -0.7469183383509517,
-            "cliff_margin": 0.046918338350951716,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.7469183388409064,
+            "cliff_margin": 0.04691833884090646,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.5,
             "entry": -0.7,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.2165178648566225
           },
           {
-            "cliff_entry": -0.7779302848502994,
-            "cliff_margin": 0.0779302848502994,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.7779302850121319,
+            "cliff_margin": 0.07793028501213195,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.6,
             "entry": -0.7,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.23398623520502493
           },
           {
-            "cliff_entry": -0.8064025165513158,
-            "cliff_margin": 0.10640251655131583,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8064025165645317,
+            "cliff_margin": 0.1064025165645317,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.7,
             "entry": -0.7,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.23470306160405402
           },
           {
-            "cliff_entry": -0.8328615771606565,
-            "cliff_margin": 0.1328615771606565,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8328615766653287,
+            "cliff_margin": 0.13286157666532872,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.8,
             "entry": -0.7,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.22014306691787267
           },
           {
-            "cliff_entry": -0.7469183383509517,
-            "cliff_margin": 0.1469183383509517,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.7469183388409064,
+            "cliff_margin": 0.14691833884090644,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.5,
             "entry": -0.6,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.22789593068691072
           },
           {
-            "cliff_entry": -0.7779302848502994,
-            "cliff_margin": 0.17793028485029938,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.7779302850121319,
+            "cliff_margin": 0.17793028501213193,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.6,
             "entry": -0.6,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.23099095776821324
           },
           {
-            "cliff_entry": -0.8064025165513158,
-            "cliff_margin": 0.2064025165513158,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8064025165645317,
+            "cliff_margin": 0.20640251656453168,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.7,
             "entry": -0.6,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.21896480478059752
           },
           {
-            "cliff_entry": -0.8328615771606565,
-            "cliff_margin": 0.23286157716065647,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8328615766653287,
+            "cliff_margin": 0.2328615766653287,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.8,
             "entry": -0.6,
             "n_genomes": 15,
@@ -15763,8 +15763,8 @@
         ],
         "profile_candidate_rows_fine": [
           {
-            "cliff_entry": -0.9034370379522443,
-            "cliff_margin": 0.0034370379522442596,
+            "cliff_entry": -0.903437037671518,
+            "cliff_margin": 0.0034370376715179285,
             "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 1.1,
             "entry": -0.9,
@@ -15772,17 +15772,17 @@
             "worst_min_scaled_jacobian": 0.20619203004616196
           },
           {
-            "cliff_entry": -0.8576905829831958,
-            "cliff_margin": 0.007690582983195804,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8576905826691026,
+            "cliff_margin": 0.007690582669102608,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.9,
             "entry": -0.85,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.22632934403590482
           },
           {
-            "cliff_entry": -0.8811426302418113,
-            "cliff_margin": 0.031142630241811298,
+            "cliff_entry": -0.8811426299084,
+            "cliff_margin": 0.0311426299084,
             "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 1.0,
             "entry": -0.85,
@@ -15790,8 +15790,8 @@
             "worst_min_scaled_jacobian": 0.21247920514744661
           },
           {
-            "cliff_entry": -0.9034370379522443,
-            "cliff_margin": 0.053437037952244304,
+            "cliff_entry": -0.903437037671518,
+            "cliff_margin": 0.05343703767151797,
             "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 1.1,
             "entry": -0.85,
@@ -15799,26 +15799,26 @@
             "worst_min_scaled_jacobian": 0.2002032805228762
           },
           {
-            "cliff_entry": -0.8454581657424569,
-            "cliff_margin": 0.04545816574245687,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8454581653224671,
+            "cliff_margin": 0.04545816532246705,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.85,
             "entry": -0.8,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.2268415297689311
           },
           {
-            "cliff_entry": -0.8576905829831958,
-            "cliff_margin": 0.05769058298319574,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8576905826691026,
+            "cliff_margin": 0.05769058266910254,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.9,
             "entry": -0.8,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.21948694792764575
           },
           {
-            "cliff_entry": -0.8811426302418113,
-            "cliff_margin": 0.08114263024181123,
+            "cliff_entry": -0.8811426299084,
+            "cliff_margin": 0.08114262990839993,
             "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 1.0,
             "entry": -0.8,
@@ -15826,36 +15826,36 @@
             "worst_min_scaled_jacobian": 0.206138497588094
           },
           {
-            "cliff_entry": -0.8454581657424569,
-            "cliff_margin": 0.09545816574245691,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8454581653224671,
+            "cliff_margin": 0.09545816532246709,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.85,
             "entry": -0.75,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.2198060706962201
           },
           {
-            "cliff_entry": -0.8576905829831958,
-            "cliff_margin": 0.10769058298319578,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8576905826691026,
+            "cliff_margin": 0.10769058266910259,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.9,
             "entry": -0.75,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.21273496495648989
           },
           {
-            "cliff_entry": -0.8454581657424569,
-            "cliff_margin": 0.14545816574245696,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8454581653224671,
+            "cliff_margin": 0.14545816532246714,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.85,
             "entry": -0.7,
             "n_genomes": 15,
             "worst_min_scaled_jacobian": 0.21287280809058506
           },
           {
-            "cliff_entry": -0.8576905829831958,
-            "cliff_margin": 0.15769058298319583,
-            "cliff_why": "no filleted blocking exists at the hub: the layer's width profile reaches zero thickness.",
+            "cliff_entry": -0.8576905826691026,
+            "cliff_margin": 0.15769058266910263,
+            "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
             "end": 0.9,
             "entry": -0.7,
             "n_genomes": 15,
@@ -17836,8 +17836,8 @@
           }
         },
         "shipped_profile_cliff": {
-          "cliff_entry": -1.0019673248752952,
-          "cliff_margin": 0.5519673248752952,
+          "cliff_entry": -1.001967325493887,
+          "cliff_margin": 0.551967325493887,
           "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
           "end": 1.6,
           "entry": -0.45
@@ -19363,8 +19363,8 @@
           }
         },
         "shipped_profile_cliff": {
-          "cliff_entry": -1.0019673304632306,
-          "cliff_margin": 0.5519673304632307,
+          "cliff_entry": -1.001967331339892,
+          "cliff_margin": 0.5519673313398921,
           "cliff_why": "no filleted blocking exists at the rim: the layer's width profile reaches zero thickness.",
           "end": 1.6,
           "entry": -0.45

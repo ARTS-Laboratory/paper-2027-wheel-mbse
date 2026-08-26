@@ -3270,3 +3270,49 @@ shipped genome, with the honest reason — the rim's layer reaches zero thicknes
 24's rule is how a genome that wants a steep entry gets one it can hold; nothing about that
 adoption depends on this fix, since its operating point is shallower than the shipped entry
 and the clamp is inert there either way.
+
+# STEP 1 RECORD, PART 26 — 2026-08-26. PART 24's FIRST SENTINEL, FIXED: "BUILDS ACROSS THE WHOLE BRACKET" WAS DESCRIBING THE BRACKET. ALL 32 HELD-OUT GENOMES HAVE A CLIFF, THE FALLBACK IS DELETED, AND THE THIRTY-BUILD BISECTION GOES WITH IT
+
+The cheap half of what PART 24 recorded and left.  Full record in **PLAN.md §84**.
+
+## THE BRACKET, AND THE BRANCH IT FED
+
+`CLIFF_BRACKET` stopped at -2.0, so three held-out genomes reported "builds across the
+whole bracket" and PART 22 read that as the SAFEST case — a genome with no layer-width edge
+— and had them fall back to `GENOME_ROBUST_ENTRY`.  All three have edges, at -2.51, -2.30
+and -2.12; the sentinel was reporting the bracket's width and nothing about the genome.
+
+`CLIFF_BRACKET` and `CLIFF_BISECTIONS` are now BOUND to `wheel_wheel.LAYER_CLIFF_*` rather
+than re-stated, the same fix PART 21 applied to the clamp factor, so they cannot drift
+apart again — which is the property that allowed the defect.  With the module's bracket 32
+of 32 have a cliff, the `CLIFF_NO_EDGE` branch is dead and deleted, and `n_without_cliff`
+stays in the row schema pinned at zero, because a counter that silently stops existing is
+how the next one hides.
+
+## AND THE BISECTION IS GONE
+
+`cliff_entry` delegates to `wheel_wheel.layer_cliff_entry`.  PART 20's four hand bisections
+still land inside the 1e-4 they were published to (worst 3.7e-5), and **`make filletblock`
+goes 508 s -> 401 s**.
+
+THE REASON IS STILL CHECKED, at two builds instead of thirty.  The closed form cannot be
+wrong about the LAYER but can be right about the layer and wrong about the BUILD, if
+something else binds at a shallower entry — PART 6's error exactly.  So the two verdicts
+either side of the cliff are still taken.
+
+A bonus correction fell out: the old bisection reported `why` from the bracket's LOW end,
+where both junctions have refused and the hub is checked first, so every published cliff
+said "at the hub".  The binding junction at the shipped genome is the RIM (-0.806 against
+the hub's -1.862).  No number moves; the label was wrong.
+
+## WHAT MOVED AND WHAT DID NOT
+
+The three ex-fallback genomes take their own answer now, so the tails of the factor sweep
+move — held out, 0.25 goes 25 -> 24 and 0.15 goes 16 -> 13.  **The admissible band does
+not, and at the adopted factor nothing moves at all**: 31 of 32, worst J 0.1721, median
+0.3466, margin 0.4435, cliff -0.806402517 — identical to PART 24.  0.85 through 0.45 stay
+flat at 31 and 0.35 still drops to 30, so the edge is bracketed on both sides as before.
+Measured before the branch was deleted rather than found after.
+
+`study_corner_singularity_fillet.json`: 43 shared rows, ZERO field differences, the only
+change the corrected `shipped_cliff.why`.  All 23 self-checks pass.
