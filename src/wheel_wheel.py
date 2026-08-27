@@ -41,38 +41,84 @@ WHAT IS AND IS NOT MODELLED
 The material region is `hub_disk | rim_band | 12 spoke bands clipped to the annulus`.
 Two deliberate differences from the shipped STEP, both measured rather than assumed:
 
-  FILLETS ARE NOT MODELLED, and since the hub fillet milestone they are worth about 1%
-  of area rather than nothing.  The unfilleted planar profile is 2644.3509 mm2 and the
-  filleted solid's cross-section is 2668.63 (59777.4 mm3 / 22.4 mm) — 24.28 mm2, 0.92%.
-  It used to be 0.29 mm2, 0.01%, because only twelve of the forty-eight corners were
-  ever built; all forty-eight are now.  They still matter for STRESS, which is why
-  `wheel_fea.stress_concentration_kt` is retained as a post-multiplier here rather than
-  deleted (the plan deletes it only once a meshed fillet exists).
+  FILLETS ARE NOT MODELLED BY THE DEFAULT MESH, and they are a FIRST-ORDER term, not a
+  rounding.  Read from `export/wheel_step_manifest.json`, which is the shipped genome's
+  own OCC export (`09e8188`, 2026-08-14) and the only number here that is not transcribed:
+
+        solid 39224.5 mm3   nofillet 36145.8   fillets 3078.77   =  7.85% of the solid
+
+  At `SPOKE_WIDTH_MM = 22.4` that is an unfilleted profile of 1613.6518 mm2 and
+  **137.4451 mm2 of fillet, 8.52% of it**.  THIS PARAGRAPH USED TO SAY 24.28 mm2, 0.92%,
+  AND THAT HAS BEEN KNOWN WRONG SINCE §14 — which corrected it in
+  `test_total_mass_matches_the_step_manifest_within_the_embed_difference` and in PLAN.md
+  and never here, so the docstring went on claiming a fillet two orders too small for
+  three arcs.  The 0.92% belongs to the era when only twelve of the forty-eight corners
+  were built; all forty-eight are now, and the manifest publishes the subtraction OCC
+  does exactly.  A PERCENTAGE HERE MOVES WITH THE GENOME — 6.18% at §14's, 8.77% at
+  §24's, 7.85% at this one — so read the manifest rather than this sentence, and
+  `test_the_fillet_reference_agrees_with_the_STEP_MANIFEST` is what stops it re-staling.
+
+  They still matter for STRESS, which is why `wheel_fea.stress_concentration_kt` is
+  retained as a post-multiplier here rather than deleted (the plan deletes it only once a
+  meshed fillet exists).
+
+  `fillet=` DOES MODEL THEM, AND SINCE PLAN.md §86 THE REFERENCE FOLLOWS IT.
+  `modelled_area_reference(..., fillet=(R_hub, R_rim))` adds the sector blocking's two
+  wedges per spoke — 139.1602 mm2 at the shipped genome, 8.64% of the region — so
+  `error_vs_modelled` is a discretisation residual on a filleted mesh the same way it is
+  on this one.
+
+  AND THAT IS 1.25% FROM THE EXPORTER'S 137.4451, WHICH IS THE CROSS-CHECK RATHER THAN A
+  COINCIDENCE (§87).  The two are genuinely different constructions — OCC's edge fillet on
+  the EMBEDDED solid against a tangent arc on the un-embedded band, one kernel each — and
+  they are not expected to agree exactly: `_embed` moves the corner the exporter rounds.
+  Agreement to 1.7 mm2 on 137 says the mesh's fillet is the PART's fillet and not a
+  construction of its own.
 
   `reference_shipped_step_mm2` below is the UNFILLETED cross-section — `_embed`'s
   allowance and nothing else — so an AREA comparison and a MASS comparison against the
-  shipped solid are different questions and land in different places.  RE-MEASURED
+  shipped solid are different questions and land in different places.  It is also why
+  `area_report` WITHHOLDS that half for a filleted mesh: the anchor and the allowance
+  were both measured against the unfilleted profile, so there is nothing like-for-like
+  to report.  RE-MEASURED
   2026-08-18 on the shipped genome at `medium`, because the numbers this paragraph used
   to quote ("~1.4% low" and "~2.3% low") predate both the hub fillet milestone and the
   uncap default and were stale by more than the effects they described:
 
-        area vs unfilleted cross-section     -2.2205%  capped   ->  -2.0490%  default
-        mass vs the FULL solid               -8.2241%  capped   ->  -8.0632%  default
-        mass vs the NOFILLET solid           -0.4039%  capped   ->  -0.2292%  default
+        area vs `reference_shipped_step_mm2`  -2.2205%  capped   ->  -2.0490%  default
+        mass vs the FULL solid                -8.2241%  capped   ->  -8.0632%  default
+        mass vs the NOFILLET solid            -0.4039%  capped   ->  -0.2292%  default
 
-  The full-solid column carries the fillet material, which is 6.18% of the solid and
-  which this mesh does not model at all; the nofillet column does not, which is why it is
-  the small one.  Neither is a discrepancy in either kernel.  A percentage here moves with
-  every genome — see `test_the_embed_difference_from_the_shipped_step_is_the_known_amount`
-  on why the pinned invariant is an absolute mm2 and not one of these fractions.
+  ROW 1's LABEL USED TO READ "area vs unfilleted cross-section" AND THAT NAMED THE WRONG
+  ANCHOR (§87).  All six values still reproduce exactly; what row 1 is measured against is
+  the DERIVED anchor `reference_capped_mm2 + 12 x EMBED_ALLOWANCE_PER_SPOKE_MM2`, not the
+  STEP's own unfilleted cross-section.  Against THAT the answer is row 3 — identical,
+  because mass and area are the same ratio for a uniform extrusion — so the mesh is
+  **-0.2292% from the shipped solid's unfilleted profile, not -2.05%**.
+
+  THE ~1.8% BETWEEN THE TWO ROWS IS `EMBED_ALLOWANCE_PER_SPOKE_MM2` BEING STALE, which is
+  §14's OPEN ITEM 6 and not a new finding: the same computation that produced 3.03 gives
+  **0.5317 mm2 per spoke** on the shipped genome (1613.6518 - 1607.2718 = 6.3800, / 12).
+  It is deliberately NOT replaced — §14: *"Do not guess a new number. Replacing 3.03 with
+  0.98 would only re-stale it on the next genome; what is needed is the scaling law."*
+
+  The full-solid column carries the fillet material, which is 7.85% of the solid (see
+  above; this line used to say 6.18%, which was §14's genome) and which the default mesh
+  does not model at all; the nofillet column does not, which is why it is the small one.
+  Neither is a discrepancy in either kernel.  A percentage here moves with every genome —
+  see `test_the_embed_difference_from_the_shipped_step_is_the_known_amount` on why the
+  pinned invariant is an absolute mm2 and not one of these fractions.
 
   `wheel_step_export._embed` IS PARTIALLY REPRODUCED SINCE 2026-08-18, and the part that
-  is not still matters.  `_embed` adds 3.03 mm2 per spoke inside the annulus
-  (`EMBED_ALLOWANCE_PER_SPOKE_MM2`); `UNCAP_DEFAULT` now models 0.2342 of that per spoke
-  by continuing each junction's far flank to its ring circle instead of closing it with a
-  half end cap, so the mesh-vs-STEP area gap narrows from -2.2205% to -2.0490% and
-  `area_report` reports the modelled share as `gusset_modelled_per_spoke_mm2`.  The
-  remaining ~2.05% is a real modelling difference and it is deliberate.
+  is not still matters — but it is SMALL, and this paragraph used to say otherwise.
+  `EMBED_ALLOWANCE_PER_SPOKE_MM2` says `_embed` adds 3.03 mm2 per spoke inside the
+  annulus; the shipped genome's STEP says 0.5317 (above), of which `UNCAP_DEFAULT` models
+  0.2342 by continuing each junction's far flank to its ring circle instead of closing it
+  with a half end cap.  `area_report` reports the modelled share as
+  `gusset_modelled_per_spoke_mm2`.  So the gap against the DERIVED anchor narrows
+  -2.2205% -> -2.0490%, and the gap against the SHIPPED SOLID narrows -0.4039% ->
+  **-0.2292%** — 0.2975 mm2 per spoke left over.  That remainder is the real modelling
+  difference and it is deliberate; the ~2.05% is the stale constant and is not.
 
   WHAT STILL IS NOT REPRODUCED IS `_embed`'s ARGMAX, and that was always the part with
   the M7 problem.  It picks its length by a search over 20001 candidates, and at the RIM
@@ -3068,6 +3114,143 @@ def _uncap_reference_poly(poly, curve, hub_radius, rim_inner, uncap):
     return poly
 
 
+def _fillet_reference_wedge(flank, mid, ring_r, void_sign, R):
+    """Area ONE junction's fillet ADDS to the region `modelled_area_reference` describes.
+
+    THE REGION, WHICH IS THE WHOLE OF WHY THIS IS NOT A WEDGE FORMULA.  Unfilleted, the
+    material's boundary turns a corner where the STRADDLING flank crosses its ring
+    circle: flank on one side, circle on the other, void between them.  The sector
+    blocking replaces that corner with an arc tangent to both legs, so the material gains
+    exactly the curvilinear triangle
+
+        A -> F   along the flank      (`A` the tangency point, `F` the ring crossing)
+        F -> B   along the ring circle
+        B -> A   along the fillet arc
+
+    and nothing else -- every other boundary the filleted blocking builds (the far flank,
+    the cut to the ring's far radius, the radial dive) is a CUT BETWEEN BLOCKS and lies
+    strictly inside the region either way.  Verified against the mesh rather than
+    asserted: at the shipped genome the residual against `area_report`'s measured total
+    falls 0.4412% -> 0.1309% -> 0.0602% -> 0.0362% down the config ladder, and holding
+    `fine` while sweeping `n_thick` 8 -> 64 -- the direction that resolves the arcs --
+    drives it to -0.0024%, against the UNFILLETED mesh's own -0.0025% at that config.
+    A region that was wrong would converge to that error instead of to zero.  See
+    PLAN.md §86, which is §50's ranked item, and FILLET_PLAN.md STEP 1 RECORD PART 28.
+
+    `flank` and `mid` are the straddling flank and the centreline, both ordered FROM the
+    ring end INTO the spoke, and both from `thicken_3taper_curve`'s own samples -- so the
+    tangency is re-solved here on the EXPORTER's finite-difference offset normals rather
+    than read off the mesh's analytic hodograph, which is what keeps this an independent
+    cross-check instead of the same computation twice.  Measured, the two paths put the
+    twelve spokes' fillets at 139.16025 and 139.16031 mm2.
+
+    THE OFFSET DIRECTION IS THE CENTRELINE'S NORMAL, NOT THE FLANK'S, and that is a
+    faithful copy of `_fillet_centre` rather than an approximation of it: `C` is the flank
+    point pushed `R` along `flank - mid`, exactly as the mesh's tangency solve pushes it,
+    so a band of varying width gives the same not-quite-perpendicular circle on both
+    paths.  Copying the construction is the point; "improving" it here would measure the
+    difference between two fillets instead of between two integrations of one.
+
+    Returns `(area_mm2, i)`, `i` being the flank index the tangency landed in -- the
+    caller needs it to tell the two junctions' fillets from a spoke they have eaten.
+    """
+    r = np.hypot(flank[:, 0], flank[:, 1])
+    # `void_sign` is +1 where the spoke is OUTSIDE its ring (the hub) and -1 where it is
+    # inside (the rim), so this one expression is "how far into the spoke" at both ends.
+    side = (r - ring_r) * void_sign
+    cross = np.nonzero(side[:-1] * side[1:] <= 0.0)[0]
+    if cross.size == 0:
+        raise ValueError(
+            f"the straddling flank never crosses r={ring_r:.4f} mm, so this junction has "
+            f"no corner for a fillet to round")
+    j = int(cross[0])
+    F = _circle_crossing(flank[j], flank[j + 1], ring_r)
+
+    d = flank - mid
+    centres = flank + R * (d / np.linalg.norm(d, axis=1)[:, None])
+    target = ring_r + void_sign * R
+    resid = np.hypot(centres[:, 0], centres[:, 1]) - target
+    # Bracketed from the ring crossing INTO the spoke, which is the same bracket
+    # `_fillet_tangency` scans (`s_end` is that crossing's station).  Starting at the end
+    # of the band instead would admit a root on the stub that lies inside the ring.
+    tail = resid[j:]
+    hit = np.nonzero(np.sign(tail[:-1]) * np.sign(tail[1:]) <= 0.0)[0]
+    if hit.size == 0:
+        raise ValueError(
+            f"no fillet of radius {R:.4f} mm is tangent to both the ring at "
+            f"r={ring_r:.4f} and the flank anywhere along the spoke: the tangency "
+            f"residual stays {tail.min():+.4f}..{tail.max():+.4f} mm.  The fillet is "
+            f"larger than the notch can hold.")
+    i = j + int(hit[0])
+
+    def at(t):
+        p = flank[i] + t * (flank[i + 1] - flank[i])
+        e = p - (mid[i] + t * (mid[i + 1] - mid[i]))
+        return p, p + R * e / np.linalg.norm(e)
+
+    lo, hi, sign_lo = 0.0, 1.0, np.sign(resid[i])
+    for _ in range(60):
+        t = 0.5 * (lo + hi)
+        if np.sign(np.hypot(*at(t)[1]) - target) == sign_lo:
+            lo = t
+        else:
+            hi = t
+    A, C = at(0.5 * (lo + hi))
+    B = C * (ring_r / np.hypot(C[0], C[1]))
+
+    # Green's theorem, one term per boundary piece and both arcs EXACT -- the same
+    # integration `_clip_polygon_to_disk` does, for a loop it cannot be handed because
+    # two of its three sides are circles of different centres.
+    loop = np.concatenate([[A], flank[i:j:-1], [F]])
+    acc = float(np.sum(loop[:-1, 0] * loop[1:, 1] - loop[1:, 0] * loop[:-1, 1]))
+    dth = math.atan2(B[1], B[0]) - math.atan2(F[1], F[0])
+    acc += ring_r ** 2 * ((dth + math.pi) % (2.0 * math.pi) - math.pi)
+    a0 = math.atan2(B[1] - C[1], B[0] - C[0])
+    a1 = math.atan2(A[1] - C[1], A[0] - C[0])
+    dphi = (a1 - a0 + math.pi) % (2.0 * math.pi) - math.pi
+    R_arc = 0.5 * (np.linalg.norm(A - C) + np.linalg.norm(B - C))
+    acc += R_arc ** 2 * dphi + C[0] * (A[1] - B[1]) - C[1] * (A[0] - B[0])
+    return abs(0.5 * acc), i
+
+
+def _fillet_reference_areas(flanks, mid, hub_radius, rim_inner, radii):
+    """Both junctions' fillet areas for ONE spoke, on the reference's own polygon.
+
+    `flanks` is `(top, bottom)`, each indexed by CURVE index -- so the caller has to
+    un-reverse `thicken_3taper_curve`'s second half and hand them over before the winding
+    normalisation, which reverses the whole loop and swaps them.
+
+    WHICH FLANK STRADDLES IS READ OFF THE RADII, not off `flank_orientation`, for the
+    reason `_uncap_reference_poly` reads its far flank the same way: the two ends are
+    independent, and deciding it here from the exporter's own points keeps this path
+    from inheriting the mesh's decision.  `flank_orientation` answers the identical
+    question -- the flank that starts inside the hub circle, the flank that ends outside
+    the rim's -- and the two agree by construction, not by being the same call.
+    """
+    top, bot = flanks
+    ends = (("hub", radii[0], hub_radius, 1.0,
+             float(np.hypot(*top[0])) < float(np.hypot(*bot[0])), False),
+            ("rim", radii[1], rim_inner, -1.0,
+             float(np.hypot(*top[-1])) > float(np.hypot(*bot[-1])), True))
+    out, reach = {}, {}
+    for junction, R, ring_r, void_sign, straddling_is_top, from_rim in ends:
+        if not R > 0.0:
+            raise ValueError(
+                f"the filleted region needs a positive radius at both junctions; "
+                f"{junction} got {float(R):.4f}.  Use `fillet=None` for the unfilleted "
+                f"region.")
+        flank = top if straddling_is_top else bot
+        flank, line = (flank[::-1], mid[::-1]) if from_rim else (flank, mid)
+        area, i = _fillet_reference_wedge(flank, line, ring_r, void_sign, float(R))
+        out[junction] = area
+        reach[junction] = (len(mid) - 1 - i) if from_rim else i
+    if reach["hub"] >= reach["rim"]:
+        raise ValueError(
+            f"the two fillets are longer than the spoke: their tangent points meet at "
+            f"curve samples {reach['hub']} and {reach['rim']}.")
+    return out["hub"], out["rim"]
+
+
 # `modelled_area_reference` is pure and costs ~50 ms (a 20001-point centreline, a 40002-
 # point offset band, and two exact disk clips).  `area_report` needs it TWICE whenever
 # `uncap` is active -- once for the region the mesh builds and once for the capped region
@@ -3090,10 +3273,11 @@ _AREA_REF_CACHE_MAX = 64
 def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
                             span_mm=HUB_RIM_SPAN_MM, hub_radius=HUB_RADIUS_MM,
                             n_spokes=NUMBER_OF_SPOKES, n_curve=20001,
-                            uncap=UNCAP_DEFAULT):
+                            uncap=UNCAP_DEFAULT, fillet=None):
     """The area of the region this module models, DERIVED rather than transcribed.
 
         hub disk + rim band + n_spokes * (spoke band clipped to the annulus)
+                            + n_spokes * (two junction fillets, when `fillet` is given)
 
     Everything follows from the frame constants and the genome, so changing
     `RIM_RADIUS_MM` or re-optimising the genome moves the reference with them instead of
@@ -3110,20 +3294,61 @@ def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
 
     The SHIPPED STEP is a different region again: `wheel_step_export._embed` adds
     material at each junction that this deliberately does not model, quantified in the
-    module docstring.  Use `shipped=True` to fold that measured allowance in.
+    module docstring.  `area_report` folds that measured allowance in and reports it as
+    `reference_shipped_step_mm2`; this function never does.  (That sentence used to say
+    "use `shipped=True`", which has not been a parameter of anything here.)
+
+    `fillet=(R_hub, R_rim)` ADDS THE SECTOR BLOCKING'S TWO FILLETS PER SPOKE (PLAN.md
+    §50), so that `error_vs_modelled` is a discretisation residual for a filleted mesh
+    the same way it is for the default one.  Three things about that argument:
+
+      IT TAKES RADII, NEVER `fillet=True`.  In `sector_blocks` and `build_wheel` that
+      flag means "this genome's radii, MOVED BY `SECTOR_FIT_CLAMP` if they have no room",
+      and resolving the clamp needs a config, an `uncap` and a layer profile — none of
+      which a pure area reference has or should have.  Accepting `True` here would
+      therefore make one spelling mean two regions, so it is refused; `area_report`
+      passes `mesh.fillet_radii_mm`, which is what was BUILT rather than what was asked
+      for.
+
+      IT IS THE `"sector"` BLOCKING'S REGION.  `fillet_blocking="spoke"` is §47's retired
+      construction and rounds the flank a different way; `area_report` withholds rather
+      than comparing against this.
+
+      IT IS NOT THE EXPORTER'S FILLET.  `wheel_step_export` rounds the SOLID's edges, and
+      the module docstring's `reference_shipped_step_mm2` is anchored on the UNFILLETED
+      cross-section for that reason.  This term describes the mesh's region and only
+      that.
+
+    The two fillets are added, never blended into `spokes_mm2`: at the hub the wedge sits
+    outside the ring circle and at the rim inside it, so both fall in the annulus and
+    would vanish into the band's own figure — and the mesh tags them `spoke` while part
+    of `*_fillet_b` sits inside the ring, so per-REGION agreement is a different (and
+    still open) question from the total.
     """
     import wheel_fea as _fea
 
+    if fillet is True or fillet is False:
+        raise ValueError(
+            "`modelled_area_reference` takes fillet=(R_hub, R_rim) or None, not "
+            f"{fillet!r}: `fillet=True` means the CLAMPED radii in `sector_blocks` and "
+            "this function cannot resolve the clamp.  Pass `mesh.fillet_radii_mm`.")
+    fillet = None if fillet is None else (float(fillet[0]), float(fillet[1]))
     g = np.asarray(genes, dtype=float)
     key = (g.tobytes(), float(rim_outer), float(span_mm), float(hub_radius),
-           int(n_spokes), int(n_curve), repr(uncap))
+           int(n_spokes), int(n_curve), repr(uncap), repr(fillet))
     hit = _AREA_REF_CACHE.get(key)
     if hit is not None:
         return dict(hit)
     curve, _ = _fea.generate_bezier_centerline(*g[:8], span_mm=span_mm,
                                                num_points=n_curve)
     poly = np.asarray(_fea.thicken_3taper_curve(curve, *g[8:12]), dtype=float)
-    poly = poly + np.array([hub_radius, 0.0])
+    shift = np.array([hub_radius, 0.0])
+    poly = poly + shift
+    # The two flanks, each by CURVE index, taken BEFORE the winding normalisation below
+    # reverses the loop and swaps them.  `_fillet_reference_areas` needs them this way
+    # round and the clipper does not care.
+    half = len(poly) // 2
+    flanks = (poly[:half], poly[half:][::-1])
     # `thicken_3taper_curve` returns [top; reversed bottom], whose winding depends on
     # which way the offset normals point — so it is clockwise for some genomes and
     # counter-clockwise for others.  Normalise here rather than taking abs() at the end:
@@ -3145,6 +3370,20 @@ def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
                            + np.pi * (rim_outer ** 2 - rim_inner ** 2)
                            + n_spokes * spoke),
     }
+    if fillet is not None:
+        # The fillet does not touch `uncap`'s corner -- one rounds the STRADDLING flank,
+        # the other continues the FAR one -- so `area_report`'s two calls differ by the
+        # gusset and by nothing else, exactly as they did before this term existed.
+        f_hub, f_rim = _fillet_reference_areas(flanks, curve + shift, hub_radius,
+                                               rim_inner, fillet)
+        out.update({
+            "fillet_radii_mm": [fillet[0], fillet[1]],
+            "fillet_hub_each_mm2": float(f_hub),
+            "fillet_rim_each_mm2": float(f_rim),
+            "fillet_each_mm2": float(f_hub + f_rim),
+            "fillets_mm2": float(n_spokes * (f_hub + f_rim)),
+        })
+        out["total_mm2"] += out["fillets_mm2"]
     if len(_AREA_REF_CACHE) >= _AREA_REF_CACHE_MAX:
         _AREA_REF_CACHE.pop(next(iter(_AREA_REF_CACHE)))
     _AREA_REF_CACHE[key] = dict(out)
@@ -3162,6 +3401,23 @@ def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
 # (STEP cross-section - this region's reference) / 12, both from the same genome in one
 # process: 2644.3509 - 2607.9634 = 36.3875, i.e. 3.032 per spoke, against 4.356 the same way
 # before the change.  The gap it explains narrows from ~1.93% to ~1.38%.
+#
+# THAT PAIR IS THE PRE-§13 GENOME'S AND THE CONSTANT IS STALE WITH IT.  Its DIFFERENCE is
+# the invariant -- see `test_the_embed_difference_from_the_shipped_step_is_the_known_amount`
+# -- but the two absolute numbers describe a wheel that was promoted away from on
+# 2026-08-06.  The identical computation on the SHIPPED genome, from
+# `export/wheel_step_manifest.json` and this module in one process (§87):
+#
+#     36145.8 mm3 / 22.4 mm = 1613.6518,  capped reference 1607.2718
+#     1613.6518 - 1607.2718 = 6.3800, i.e. 0.5317 per spoke
+#
+# 5.7x smaller, and `reference_shipped_step_mm2` is high by the difference -- 29.6 mm2,
+# 1.8% of the wheel.  DELIBERATELY NOT REPLACED.  §14's open item 6 is explicit: "Do not
+# guess a new number.  Replacing 3.03 with 0.98 would only re-stale it on the next genome;
+# what is needed is the scaling law, derived from `wheel_step_export._embed` the way
+# `wheel_geometry.junction_bite` was derived."  0.5317 is a third measurement of a quantity
+# that has now read 4.356, 3.032, 0.98 and 0.5317 on four genomes, which is the evidence FOR
+# that item rather than a candidate to close it with.
 EMBED_ALLOWANCE_PER_SPOKE_MM2 = 3.03
 
 
@@ -3189,6 +3445,17 @@ def area_report(mesh):
     Both were hardcoded constants until the rim band was thickened, at which point they
     silently became references to a wheel that no longer exists.  Deriving them is the
     fix; `mesh.genes` is carried for exactly this.
+
+    A FILLETED MESH GETS THE FIRST AND NOT THE SECOND (PLAN.md §86).
+    `reference_modelled_mm2` follows the fillet, because it is the region this mesh
+    builds and `error_vs_modelled` means nothing unless both sides describe it; the
+    fillets' own share is reported as `fillet_modelled_mm2` so the two halves can be read
+    apart.  The STEP half is WITHHELD instead, and not out of caution: both numbers
+    behind it — the 2644.3509 mm2 profile and `EMBED_ALLOWANCE_PER_SPOKE_MM2` — were
+    measured against the UNFILLETED cross-section (see the module docstring), so
+    `reference_shipped_step_mm2` describes an unfilleted region and there is no
+    like-for-like comparison to report.  The exporter's fillet is a different
+    construction from this one and pricing one against the other is its own work.
     """
     xy = np.asarray(mesh.coords)
     area = _signed_area(xy, mesh.conn)
@@ -3205,22 +3472,22 @@ def area_report(mesh):
     }
     if mesh.genes is None:
         return out
-    if getattr(mesh, "fillet", None) is not None:
-        # THE REFERENCE DOES NOT DESCRIBE THIS MESH, so it is withheld rather than
-        # reported wrong.  `modelled_area_reference` derives its region from the
-        # EXPORTER's geometry, which has no fillet: a filleted mesh adds the material
-        # between each corner and its arc, and `error_vs_modelled` would book that as a
-        # discretisation residual.  The measured half above is still the mesh's own and
-        # is returned.  Making the reference fillet-aware is real work and is not a
-        # closed form -- the fillet's legs are a spline and a circle, not two straight
-        # lines, so the wedge formula does not apply -- and it is ranked, not done.
+    fillet = getattr(mesh, "fillet_radii_mm", None)
+    if getattr(mesh, "fillet", None) is not None and fillet is None:
+        # THE OTHER FILLETED CONSTRUCTION, and this one still has no reference.
+        # `fillet_blocking="spoke"` is §47's retired blocking -- the arc on the spoke
+        # block's own flank edge -- which rounds the flank a different way and leaves no
+        # `_applied` record to read the built radii out of.  `make fillet` still measures
+        # it and it must not be compared against the SECTOR blocking's region, so the
+        # withholding this branch used to do for every filleted mesh survives here.
         out["reference_unavailable_because"] = (
-            "this mesh is filleted and `modelled_area_reference` models the unfilleted "
-            "region; see PLAN.md §50")
+            "this mesh is filleted by the `spoke` blocking and "
+            "`modelled_area_reference` models the `sector` blocking's region; see "
+            "PLAN.md §86")
         return out
     uncap = getattr(mesh, "uncap", UNCAP_DEFAULT)
     kw = dict(rim_outer=mesh.rim_outer, span_mm=mesh.span_mm, n_spokes=mesh.n_spokes)
-    ref = modelled_area_reference(mesh.genes, uncap=uncap, **kw)
+    ref = modelled_area_reference(mesh.genes, uncap=uncap, fillet=fillet, **kw)
     # TWO references, and only one of them may follow `uncap`.
     #
     # `reference_modelled_mm2` MUST follow it: it is the region this mesh builds, and
@@ -3230,20 +3497,35 @@ def area_report(mesh):
     # change this pair of numbers exists to expose.  So the STEP reference stays anchored
     # on the CAPPED region plus the full measured allowance, and the part of `_embed`'s
     # gusset the mesh has started to model is reported separately rather than netted off.
+    #
+    # THE FILLET IS THE CASE THAT RULE DOES NOT COVER, so the STEP half is withheld
+    # instead of anchored -- see the docstring.  It rides on BOTH calls below, which is
+    # what keeps `gusset_modelled_mm2` exactly the difference it always was: the fillet
+    # rounds the STRADDLING flank and `uncap` continues the FAR one, so the term cancels.
     capped = (_uncap_blend(uncap, True) is None and _uncap_blend(uncap, False) is None)
-    ref0 = ref if capped else modelled_area_reference(mesh.genes, uncap=False, **kw)
+    ref0 = ref if capped else modelled_area_reference(mesh.genes, uncap=False,
+                                                      fillet=fillet, **kw)
     gusset = ref["total_mm2"] - ref0["total_mm2"]
-    ref_shipped = ref0["total_mm2"] + mesh.n_spokes * EMBED_ALLOWANCE_PER_SPOKE_MM2
     out.update({
         "reference_breakdown_mm2": ref,
         "reference_modelled_mm2": ref["total_mm2"],
         "reference_capped_mm2": ref0["total_mm2"],
         "gusset_modelled_mm2": float(gusset),
         "gusset_modelled_per_spoke_mm2": float(gusset / mesh.n_spokes),
-        "reference_shipped_step_mm2": ref_shipped,
-        "error_vs_modelled": total / ref["total_mm2"] - 1.0,
-        "error_vs_shipped_step": total / ref_shipped - 1.0,
     })
+    if fillet is None:
+        ref_shipped = ref0["total_mm2"] + mesh.n_spokes * EMBED_ALLOWANCE_PER_SPOKE_MM2
+        out["reference_shipped_step_mm2"] = ref_shipped
+    out["error_vs_modelled"] = total / ref["total_mm2"] - 1.0
+    if fillet is None:
+        out["error_vs_shipped_step"] = total / ref_shipped - 1.0
+    else:
+        out["fillet_modelled_mm2"] = float(ref["fillets_mm2"])
+        out["fillet_modelled_per_spoke_mm2"] = float(ref["fillets_mm2"] / mesh.n_spokes)
+        out["step_reference_unavailable_because"] = (
+            "`reference_shipped_step_mm2` is anchored on the UNFILLETED cross-section "
+            "and `EMBED_ALLOWANCE_PER_SPOKE_MM2` was measured against it, so neither "
+            "describes a filleted region; see PLAN.md §86")
     return out
 
 

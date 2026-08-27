@@ -7775,6 +7775,9 @@ differentiable path even by accident.
 the fillets' 8.76% as a discretisation residual against a reference that is otherwise good
 to 2e-4. Making that reference fillet-aware is not a closed form — the fillet's legs are a
 spline and a circle, not two straight lines — and it is ranked below.
+[DONE — §86 (2026-08-27). The wedge formula indeed does not apply and nothing needed it:
+the added region is one curvilinear triangle per junction, integrated exactly by Green's
+theorem. Only the STEP half is withheld now.]
 
 #### AND PART 3's CONSTRUCTION IS KEPT ON PURPOSE
 
@@ -11021,6 +11024,331 @@ without one of them saying so.
 4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
 5. **Re-run the hub-share ladder on a filleted mesh** (§75) — DONE as a side effect of §85's
    audit, and the finding held; what remains is the ladder at more than one rung.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+---
+
+## §86 — 2026-08-27. THE FILLET IS WIRED INTO `modelled_area_reference`. THE ADDED REGION IS ONE CURVILINEAR TRIANGLE PER JUNCTION, THE TWO PATHS AGREE TO 4.7e-7, AND THE HALF THAT STAYS WITHHELD IS THE STEP ONE
+
+§85's ranking item 1, and the oldest thing on that list — named by §50 on 2026-08-23,
+carried through eleven rankings, promoted to item 2 by §79 and to item 1 by §85.
+`area_report` withheld its reference for every filleted mesh; it does not any more.
+
+### PART 11 SAID "NOT A CLOSED FORM", AND THE HALF OF THAT WHICH WAS TRUE IS THE HALF ABOUT THE WEDGE FORMULA
+
+The sentence that had stood since §50 read: *"Making the reference fillet-aware is real
+work and is not a closed form — the fillet's legs are a spline and a circle, not two
+straight lines, so the inscribed-wedge formula does not apply."*
+
+Both clauses are correct and the conclusion drawn from them was not. The inscribed-wedge
+formula does not apply, and nothing needed it to. **The region the fillet adds is one
+curvilinear triangle per junction**, and it has three sides:
+
+```
+  A -> F   along the STRADDLING flank    A the tangency point, F the ring crossing
+  F -> B   along the ring circle         B the arc's tangency on that circle
+  B -> A   along the fillet arc
+```
+
+and Green's theorem integrates exactly that: polyline shoelace down the flank, one
+`r^2 dtheta` for the ring circle, one `R^2 dphi + C x (A - B)` for the arc. Two exact arc
+terms of different centres, which is the only reason `_clip_polygon_to_disk` could not be
+handed the loop — it knows one circle, about the origin.
+
+**Everything else the eleven-block sector builds is a CUT BETWEEN BLOCKS**, not a
+boundary: `cut_N`, `cut_B`, the radial dive to the ring's far radius, the far flank the
+junction block still ends on. Each lies strictly inside the region whether the fillet is
+there or not. That is the whole finding, and it is why the answer is three lines of
+arithmetic rather than a new construction.
+
+### VERIFIED AGAINST THE MESH, NOT ASSERTED — AND THE DECISIVE RUN IS THE SECOND ONE
+
+At the shipped genome, `error_vs_modelled` down the config ladder:
+
+```
+  config   n_thick   filleted     unfilleted
+  smoke      2       +0.441218%   -0.171071%
+  coarse     4       +0.130919%   -0.022841%
+  medium     6       +0.060229%   -0.007948%
+  fine       8       +0.036161%   -0.002478%
+```
+
+Converging, and an order slower than the unfilleted mesh's — which on its own does not
+distinguish "the right region, coarsely resolved" from "a slightly wrong region". So hold
+`fine` and sweep `n_thick` ALONE, which is the direction that resolves the two arcs:
+
+```
+  n_thick    8        16        32        64
+  error   +0.036161  +0.006791  -0.000566  -0.002405
+```
+
+**-0.0024% against the unfilleted `fine` mesh's -0.0025%.** The residual does not
+converge to a floor; it converges to the residual the unfilleted mesh already has, which
+is what a region that is exactly right and merely under-resolved does.
+
+### THE INDEPENDENCE IS THE POINT AND IT SURVIVED
+
+`modelled_area_reference` is a cross-check only while it is a DIFFERENT computation. The
+tangency is therefore re-solved here on `thicken_3taper_curve`'s own samples — the
+exporter's finite-difference offset normals — and not read off the mesh's analytic
+hodograph. `_uncap_reference_poly`'s precedent is followed exactly: the DECISION rule is
+shared (which flank straddles, read off the radii; the offset direction is the
+centreline's normal, copied from `_fillet_centre` because a not-quite-perpendicular circle
+on one path and a perpendicular one on the other would measure two different fillets), the
+GEOMETRY is not.
+
+Measured, twelve spokes' fillets: **139.16025 mm2 on the reference's polygon against
+139.16031 mm2 through the mesh's own sampler and `_fillet_tangency`** — 6.5e-5 mm2, a
+relative 4.7e-7. Per spoke the hub wedge is 0.50551 and the rim wedge 11.09118 mm2; the
+term is **8.643% of the region**, against the mesh's measured +8.7625% (coarse) /
++8.6965% (medium) from FILLET_PLAN PART 11.
+
+### AND ACROSS THE GENOME BOX, WHICH IS WHERE §50-ERA FILLET WORK USUALLY BREAKS
+
+The 48 genomes `study_fillet_block.json` carries — 16 in-sample, §78's 32 held out, all
+four flank orientations — every one of them at `fillet=True`:
+
+```
+  config   mesh built   reference available   clamped   worst |error_vs_modelled|
+  coarse     48/48            48/48             12            0.1571%
+  medium     48/48            48/48             12            0.0409%
+```
+
+Zero refusals, and every genome's residual falls with refinement. The reference has the
+same reach as the mesh it describes.
+
+### `fillet=True` IS REFUSED, AND THAT IS THE CLAMP
+
+`sector_blocks` reads `fillet=True` as *"this genome's radii, MOVED BY `SECTOR_FIT_CLAMP`
+if they have no room"*. Resolving that needs a config, an `uncap` and a layer profile,
+none of which a pure area reference has. Accepting the flag would make one spelling name
+two regions — §84's sentinel wearing different clothes — so `modelled_area_reference`
+takes `(R_hub, R_rim)` or `None` and raises on `True`; `area_report` passes
+`mesh.fillet_radii_mm`, which is what was BUILT.
+
+**Priced rather than argued.** On the §57 genome whose hub radius the clamp moves
+(3.28618 requested, 2.97321 built), the reference at the requested radius is **8.008 mm2**
+above the one at the built radius — thirty times the residual the comparison exists to
+see, and it would have read as a mesh defect. A test pins it.
+
+### WHAT STAYS WITHHELD, AND IT IS NOT CAUTION
+
+**`reference_shipped_step_mm2` and `error_vs_shipped_step` are withheld for a filleted
+mesh**, with a named reason, exactly as the whole report used to be. Both numbers behind
+them were measured against the UNFILLETED cross-section — the 2644.3509 mm2 profile and
+`EMBED_ALLOWANCE_PER_SPOKE_MM2 = 3.03` — so the STEP reference describes an unfilleted
+region and there is no like-for-like comparison to report. Anchoring it on the mesh's own
+fillet instead would be inventing the number, since the exporter's fillet is OCC's
+edge-fillet on the embedded solid and this one is a tangent arc on the un-embedded band.
+
+`gusset_modelled_mm2` is **exactly unchanged**, to the bit, and by construction rather than
+by luck: the fillet rounds the STRADDLING flank and `uncap` continues the FAR one, so the
+term rides on both of `area_report`'s calls and cancels in their difference.
+
+**`fillet_blocking="spoke"` still withholds everything.** §47's retired construction rounds
+the flank a different way and leaves no `_applied` record to read a built radius out of;
+`make fillet` still measures it, so it stays reachable and it must not be compared against
+the sector blocking's region. The branch that used to withhold for every filleted mesh
+survives, narrowed to exactly that case.
+
+### A STALE PARAGRAPH THIS NOTICED  [CORRECTED IN PLACE BY §87 — SEE BELOW]
+
+`wheel_wheel.py`'s module docstring says the exporter's fillets are worth **24.28 mm2,
+0.92%** of the cross-section ("the filleted solid's cross-section is 2668.63, 59777.4 mm3
+/ 22.4 mm"). Every current measurement disagrees by an order of magnitude:
+
+```
+  source                                     fillets, as cross-section
+  module docstring                            24.28 mm2     0.92%
+  §24, on genome e126cc3, by mass             (3553.19 mm3)  8.77%
+  export/defect5_step100 manifest             160.14 mm2    9.67%   (3587.19 / 22.4 mm)
+  this section, the MESH's own fillet         139.16 mm2    8.64%
+```
+
+The docstring's pair is internally consistent — 2644.3509 x 22.4 = 59233.5, and
+59777.4 - 59233.5 = 543.9 mm3 = 24.28 x 22.4 — and describes a genome and a corner count
+that no longer exist. **It is a stale paragraph, not a contradiction between kernels.**
+
+**AND §86 SHOULD NOT HAVE CALLED IT A FINDING.** §14 found it, said so in as many words
+— *"6.18% of the solid, not the 0.92% the old docstring claimed"* — and corrected it in
+`tests/test_wheel_fea.py` and in this file. What was true is only that the correction
+never reached `wheel_wheel.py`. §86 also said re-measuring "needs a fresh CAD export off
+the shipped genome"; `export/wheel_step_manifest.json` has been committed since
+2026-08-15 and is that export. Both errors are the same one — a claim made without
+grepping the tree for what it already knows — and §87 is the correction.
+
+### WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched and still 2026-08-14, no threshold
+moved, no artifact regenerated.** The unfilleted path is **bit-identical**: coordinates
+hashed at `smoke`, `coarse` and `medium`, and `area_report`'s full JSON compared key for
+key AND in key ORDER against the previous commit — identical, so `studies/study_wheel_mesh.json`
+does not move. The new breakdown keys appear only when `fillet=` is passed, which is why.
+
+`tests/test_filleted_mesh.py`'s `test_the_area_reference_is_WITHHELD_for_a_filleted_mesh`
+is gone and four tests stand where it did: the reference DESCRIBES the region and its
+residual shrinks under refinement; it takes the radii that were BUILT and `fillet=True`
+raises; the fillet term is ADDED and the band's own figures are untouched; and the spoke
+blocking still withholds.
+
+#### The successors, ranked — REVISED 2026-08-27 AFTER §86
+
+1. **Make the layer cliff differentiable.** §82's closed form makes the implicit function
+   theorem applicable to `min_u H = 1e-6`, and §85 made the refusal it removes a thing the
+   default path hits rather than a corner case. It reopens G11e's third row. Up from 2 by
+   item 1 being done.
+2. **Price the mesh's fillet against the EXPORTER's**, and re-measure the module
+   docstring's stale 0.92% while the CAD env is open — NEW, and §86 is what makes it worth
+   doing: the mesh now has an exact fillet area per genome, so the comparison is one export
+   away instead of being unbuildable. It is also what would let the STEP half stop being
+   withheld.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still
+   the oldest thing on the list now that §50's item is closed.
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Per-REGION agreement on a filleted mesh** — NEW and small, and §86 names its obstacle:
+   `FILLETED_BLOCK_REGION` tags both fillet blocks `spoke`, but `*_fillet_b` straddles the
+   ring circle, so the mesh's `hub`/`rim` regions are no longer the full ring annuli.
+   `test_region_areas_are_individually_right` is unfilleted-only for that reason.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+---
+
+## §87 — 2026-08-27. THE EXPORTER'S FILLET, RE-MEASURED: 137.4451 mm2 AGAINST THE MESH'S 139.1602, 1.25% APART ON TWO KERNELS — AND THE STALE DOCSTRING WAS §14's FINDING, NOT §86's, WITH THE EXPORT IT SAID IT NEEDED ALREADY COMMITTED
+
+§86's ranking item 2, and it begins by retracting two things §86 said about it.
+
+### THE TWO CORRECTIONS, FIRST
+
+**§86 called the 0.92% "an inconsistency this found". §14 found it**, on 2026-08-15,
+and wrote it down twice — in
+`test_total_mass_matches_the_step_manifest_within_the_embed_difference` (*"It is 2372.53
+mm^3 — 6.18% of the solid, not the 0.92% the old docstring claimed"*) and in this file's
+§14 item 2. What was actually true is narrower and duller: **the correction never reached
+`wheel_wheel.py`'s module docstring**, which went on claiming 0.92% for three arcs while
+two other files said otherwise.
+
+**And §86 said re-measuring "needs a fresh CAD export off the shipped genome".** It does
+not. `export/wheel_step_manifest.json` has been committed since 2026-08-15, describes
+`best_solution.json` (`09e8188`, 2026-08-14), and `test_golden.py::test_genome_hash_matches_manifest`
+guarantees it still does. I nearly ran a 56 s export to produce a file already on disk —
+an `ls | head -20` truncated before `wheel_*` and I read the truncation as the directory.
+
+Both errors are one error: **a claim made without grepping the tree for what it already
+knows.** No new measurement was needed for either half of this section.
+
+### WHAT THE SHIPPED MANIFEST SAYS
+
+```
+  solid 39224.5 mm3    nofillet 36145.8    fillets 3078.77    mass 48.64 g
+```
+
+At `SPOKE_WIDTH_MM = 22.4`, the same conversion `test_wheel_fea.py` already uses on the
+gusset:
+
+```
+  unfilleted profile      1613.6518 mm2
+  filleted profile        1751.0938 mm2
+  fillets                  137.4451 mm2     7.85% of the solid, 8.52% of the unfilleted
+```
+
+**7.85%, not 0.92%.** And the percentage has read 6.18 (§14's genome), 8.77 (§24's
+`e126cc3`) and 7.85 (this one), which is the point: it moves with the genome, so the
+docstring now points at the manifest instead of transcribing a number.
+
+### THE COMPARISON §86 RANKED, AND IT IS THE STRONGEST EVIDENCE THE FILLET REGION HAS
+
+```
+  the exporter   OCC edge fillet on the EMBEDDED solid, CadQuery      137.4451 mm2
+  the mesh       tangent arc on the un-embedded band, §86             139.1602 mm2
+                                                       ratio 1.012479, +1.7152 mm2
+```
+
+**1.25% apart, on two kernels that share no code.** §86 verified the wedge against the
+MESH — refine `n_thick` and the residual falls to the unfilleted mesh's own — which proves
+the reference and the mesh agree about a region they were both derived from. It could not
+answer whether that region is the PART's. This does: the difference is the size of
+`_embed` moving the corner OCC rounds, which is the difference the two constructions are
+known to have.
+
+`tests/test_filleted_mesh.py::test_the_fillet_reference_agrees_with_the_STEP_MANIFEST`
+pins it at a 5% band, checks both built radii against the genes first, and asserts the
+term is first-order on both sides. The band is deliberately loose: tightening it to fail
+on the `_embed` difference would pin that difference instead of the agreement, and what a
+5% band catches is a fillet off by a FACTOR or by a count of corners — which is exactly
+what 0.92% was.
+
+### AND THE TABLE'S FIRST ROW NAMES THE WRONG ANCHOR
+
+The module docstring's mesh-vs-solid table, measured 2026-08-18:
+
+```
+        area vs unfilleted cross-section     -2.2205%  capped   ->  -2.0490%  default
+        mass vs the FULL solid               -8.2241%  capped   ->  -8.0632%  default
+        mass vs the NOFILLET solid           -0.4039%  capped   ->  -0.2292%  default
+```
+
+**All six values reproduce exactly at today's commit.** But row 1 is `error_vs_shipped_step`,
+which is measured against the DERIVED anchor `reference_capped_mm2 + 12 x
+EMBED_ALLOWANCE_PER_SPOKE_MM2` — not against the STEP's own unfilleted cross-section, which
+is what its label says. Against the STEP's actual profile the answer is **row 3**: identical
+to the mass row, because mass and area are the same ratio for a uniform extrusion.
+
+**So the mesh is -0.2292% from the shipped solid's unfilleted profile, not -2.05%**, and
+the docstring's sentence *"the remaining ~2.05% is a real modelling difference and it is
+deliberate"* was wrong by an order of magnitude. The real unmodelled remainder is 3.5701
+mm2, **0.2975 mm2 per spoke**. The label is corrected in place and the values are left
+alone.
+
+### THE ~1.8% BETWEEN THE TWO ROWS IS §14's OPEN ITEM 6, RE-MEASURED AND NOT CLOSED
+
+The identical computation that produced 3.03 — `(STEP cross-section - this region's
+capped reference) / 12` — on the shipped genome:
+
+```
+  1613.6518 - 1607.2718 = 6.3800  ->  0.5317 mm2 per spoke      against the constant's 3.03
+```
+
+**5.7x smaller**, so `reference_shipped_step_mm2` is high by 29.6 mm2, 1.8% of the wheel.
+That quantity has now read **4.356, 3.032, 0.98 and 0.5317** on four genomes.
+
+**The constant is NOT changed**, and that is §14's instruction rather than my caution:
+*"Do not guess a new number. Replacing 3.03 with 0.98 would only re-stale it on the next
+genome; what is needed is the scaling law, derived from `wheel_step_export._embed` the way
+`wheel_geometry.junction_bite` was derived."* 0.5317 is a fourth reading of a quantity that
+is not a constant — evidence FOR that item, not a candidate to close it with. It is written
+into the constant's comment where the next person to reach for it will see it.
+
+**And this is why the STEP half stays withheld for a filleted mesh** (§86). The anchor is
+1.8% high before the fillet is even considered; adding a filleted region to a reference
+built on it would report a number whose error is dominated by a constant everyone already
+knows is stale.
+
+### WHAT IS UNCHANGED
+
+**No code path changed. No constant moved. No artifact regenerated, no export run,
+`best_solution.json` untouched and still 2026-08-14.** This section is comments, one new
+test, and two retractions. `make test` at §86 was 728 passed / 3 xfailed; the added test
+brings `tests/test_filleted_mesh.py` to 36.
+
+#### The successors, ranked — REVISED 2026-08-27 AFTER §87
+
+1. **Make the layer cliff differentiable.** Unchanged from §86, and now the only item on
+   this list with code in it.
+2. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, promoted from
+   the tail because §87 gives it a fourth datapoint and a measured consequence (1.8% of the
+   wheel, on the number `error_vs_shipped_step` publishes). It is also the only thing
+   between a filleted mesh and a STEP comparison.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged.
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Per-REGION agreement on a filleted mesh** (§86) — `FILLETED_BLOCK_REGION` tags both
+   fillet blocks `spoke` while `*_fillet_b` straddles the ring circle, so the mesh's
+   `hub`/`rim` regions are no longer the full ring annuli.
 6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
 7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity

@@ -366,22 +366,168 @@ def test_the_differentiable_path_REFUSES_what_it_would_get_WRONG(genes):
         ww.coord_fn(m)
 
 
-def test_the_area_reference_is_WITHHELD_for_a_filleted_mesh(genes, filleted, plain):
-    """`modelled_area_reference` models the unfilleted region, so it may not be compared.
+def test_the_area_reference_DESCRIBES_the_filleted_region(genes, filleted, plain):
+    """`modelled_area_reference` follows the fillet, so the mesh can be checked against it.
 
-    The fillets are not a rounding: they add 8.0-8.1% of the modelled area at the shipped
-    radii, which `error_vs_modelled` would book as a discretisation residual against a
-    reference that is 2e-4.  Withheld with a reason rather than reported wrong, and the
-    measured half is still returned.
+    THIS TEST USED TO ASSERT THE OPPOSITE.  Until §50's ranking item was done the
+    reference described the UNFILLETED region only, so `area_report` withheld it rather
+    than booking the fillets' ~8.6% as a discretisation residual.  It now adds the sector
+    blocking's two wedges per spoke and the comparison is a real one again.
+
+    Pinned as a PROPERTY and not as a number: the fillets are a large share of the region
+    (5-12%), and the residual against the whole region is small AND SHRINKS under
+    refinement.  A reference that had the wedge subtly wrong would still be small at one
+    config; only the second clause catches it.
     """
     a = ww.area_report(filleted["coarse"])
-    assert "reference_unavailable_because" in a
-    assert "error_vs_modelled" not in a
+    assert "reference_unavailable_because" not in a
     assert a["meshed_mm2"] > 0.0
+
+    # The fillets are the large term, which is why this could not be waved through.
     a0 = ww.area_report(plain["coarse"])
-    assert abs(a0["error_vs_modelled"]) < 1e-2
     added = a["total_modelled_mm2"] / a0["total_modelled_mm2"] - 1.0
     assert 0.05 < added < 0.12, added
+    share = a["fillet_modelled_mm2"] / a["reference_modelled_mm2"]
+    assert 0.05 < share < 0.12, share
+    assert a["fillet_modelled_per_spoke_mm2"] == pytest.approx(
+        a["fillet_modelled_mm2"] / ww.NUMBER_OF_SPOKES)
+
+    # The residual is a discretisation residual: small, and smaller at `medium`.
+    errs = [abs(ww.area_report(filleted[c])["error_vs_modelled"]) for c in CFGS]
+    assert errs[0] < 5e-3, errs
+    assert errs[1] < errs[0], f"not converging: {errs}"
+
+    # THE STEP HALF IS STILL WITHHELD, and that is not an oversight.  Both numbers behind
+    # it -- the 2644.3509 mm2 profile and `EMBED_ALLOWANCE_PER_SPOKE_MM2` -- were measured
+    # against the UNFILLETED cross-section, so there is no like-for-like comparison to
+    # report and the exporter's own fillet is a different construction.
+    assert "reference_shipped_step_mm2" not in a
+    assert "error_vs_shipped_step" not in a
+    assert "step_reference_unavailable_because" in a
+    assert "error_vs_shipped_step" in a0 and "reference_shipped_step_mm2" in a0
+
+
+def test_the_area_reference_takes_the_radii_that_were_BUILT(genes):
+    """The clamp is why `fillet=True` is REFUSED by the reference rather than resolved.
+
+    `fillet=True` means "this genome's radii, moved by `SECTOR_FIT_CLAMP` if they have no
+    room" in `sector_blocks`, and resolving that needs a config, an `uncap` and a layer
+    profile.  A reference that took the flag would quietly describe the radius that was
+    ASKED FOR — measured here at 8 mm2 of region on a genome whose hub radius is clamped,
+    which is thirty times the residual the comparison is trying to see.
+    """
+    import study_fillet_block as fb                                  # noqa: E402
+
+    clamped = np.array(genes, dtype=float)
+    limit = fb.sector_fit_limit(genes, "coarse", "hub")
+    assert limit["limited"], limit
+    clamped[12] = float(limit["radius_mm"]) * 1.05
+    mesh = ww.build_wheel(clamped, "coarse", fillet=True)
+    assert mesh.fillet_clamped["hub"] is True
+    assert mesh.fillet_radii_mm[0] < clamped[12]
+
+    asked = ww.modelled_area_reference(clamped, fillet=(clamped[12], clamped[13]))
+    built = ww.modelled_area_reference(clamped, fillet=mesh.fillet_radii_mm)
+    rep = ww.area_report(mesh)
+    assert rep["reference_modelled_mm2"] == built["total_mm2"]
+    gap = asked["total_mm2"] - built["total_mm2"]
+    assert gap > 1.0, gap
+    assert abs(rep["error_vs_modelled"]) < 5e-3
+    assert abs(rep["total_modelled_mm2"] / asked["total_mm2"] - 1.0) > 2e-3, (
+        "the clamp has stopped moving the region, so this test no longer bites")
+
+    with pytest.raises(ValueError, match="CLAMPED"):
+        ww.modelled_area_reference(clamped, fillet=True)
+
+
+def test_the_fillet_term_is_ADDED_and_changes_nothing_else(genes):
+    """The wedges are a separate term, so the band's own figures cannot drift under them.
+
+    `spoke_each_mm2` is the band clipped to the annulus and both wedges fall inside that
+    annulus too, so folding them in would hide them in a number four other checks read.
+    """
+    plain = ww.modelled_area_reference(genes)
+    filleted = ww.modelled_area_reference(genes, fillet=(genes[12], genes[13]))
+    for k in ("hub_disk_mm2", "rim_band_mm2", "spoke_each_mm2", "spokes_mm2"):
+        assert filleted[k] == plain[k], k
+    assert filleted["total_mm2"] - plain["total_mm2"] == pytest.approx(
+        filleted["fillets_mm2"], rel=0, abs=1e-9)
+    assert "fillets_mm2" not in plain, "the unfilleted breakdown must not grow keys"
+    # DERIVED, not transcribed, and PER JUNCTION: a bigger rim radius is more material at
+    # the rim and leaves the hub wedge alone.
+    bigger = ww.modelled_area_reference(genes, fillet=(genes[12], genes[13] * 1.1))
+    assert bigger["fillet_rim_each_mm2"] > filleted["fillet_rim_each_mm2"]
+    assert bigger["fillet_hub_each_mm2"] == filleted["fillet_hub_each_mm2"]
+
+
+def test_the_fillet_reference_agrees_with_the_STEP_MANIFEST(genes):
+    """The mesh's fillet against OCC's, two kernels, on the genome that ships.
+
+    THIS IS THE ONLY CHECK ON THE FILLET REGION THAT LEAVES THIS REPOSITORY'S OWN
+    GEOMETRY.  §86 verified the wedge against the MESH — refine `n_thick` and the residual
+    goes to the unfilleted mesh's own — which proves the reference and the mesh agree
+    about a region they were both derived from.  This is the other question: is that
+    region the PART's?  `wheel_step_export` builds `wheel_nofillet.step` as its fallback
+    anyway, so `fillets.volume_mm3` is a subtraction OCC does exactly, on a solid built by
+    CadQuery from the same genes through a completely separate path.
+
+    Measured (§87): 139.1602 mm2 here against 137.4451 from the manifest, **1.25% apart**.
+
+    THE BAND IS 5% AND IS NOT SLACK.  The two are not the same construction and are not
+    expected to agree exactly — OCC rounds an edge of the EMBEDDED solid, where `_embed`
+    has already pushed the spoke further into its ring, and this rounds the un-embedded
+    band — so a tolerance tight enough to fail on that difference would be pinning the
+    difference rather than the agreement.  What 5% catches is the thing worth catching:
+    the fillet term off by a factor, or by a count of corners, which is exactly how the
+    module docstring came to claim 0.92% for three arcs.
+
+    The manifest is guaranteed to describe the shipped genome by
+    `test_golden.py::test_genome_hash_matches_manifest`; this reads it and does not
+    re-check that.
+    """
+    import wheel_fea as wf                                            # noqa: E402
+
+    man_path = os.path.join(REPO, "export", "wheel_step_manifest.json")
+    if not os.path.exists(man_path):
+        pytest.skip("no export/wheel_step_manifest.json in this tree")
+    with open(man_path) as fh:
+        man = json.load(fh)
+
+    # The exporter's fillets, as a CROSS-SECTION: the solid is a uniform extrusion of
+    # `SPOKE_WIDTH_MM`, which is the same conversion `test_wheel_fea.py` uses on the
+    # gusset. Both radii must match, or the two are filleting different wheels.
+    built = {d["junction"]: d["r_built_mm"] for d in man["fillets"]["detail"]}
+    assert built["hub"] == pytest.approx(genes[12], rel=1e-9), built
+    assert built["rim"] == pytest.approx(genes[13], rel=1e-9), built
+    step_mm2 = man["fillets"]["volume_mm3"] / wf.SPOKE_WIDTH_MM
+
+    ref = ww.modelled_area_reference(genes, fillet=(genes[12], genes[13]))
+    assert ref["fillets_mm2"] == pytest.approx(step_mm2, rel=0.05), (
+        f"the meshed fillet is {ref['fillets_mm2']:.4f} mm2 against the STEP manifest's "
+        f"{step_mm2:.4f} ({ref['fillets_mm2'] / step_mm2 - 1:+.2%}) — one of the two is "
+        f"not describing this part's forty-eight corners")
+
+    # And it is a FIRST-ORDER term on both sides, which is the claim the docstring got
+    # wrong: 0.92% would pass a ratio test against itself and fail this one.
+    assert 0.05 < step_mm2 / (man["solid"]["volume_nofillet_mm3"]
+                              / wf.SPOKE_WIDTH_MM) < 0.15
+
+
+def test_the_area_reference_is_WITHHELD_for_the_SPOKE_blocking(genes):
+    """§47's retired construction rounds the flank a different way and has no reference.
+
+    `make fillet` still measures it — PART 6's fold window is a statement about THAT
+    geometry — so it stays reachable, and the withholding `area_report` used to do for
+    every filleted mesh survives exactly here.  0.10 mm rather than the genome's radii
+    because PART 3's construction folds outright at those.
+    """
+    mesh = ww.build_wheel(genes, "coarse", fillet=(0.10, 0.10),
+                          fillet_blocking="spoke")
+    assert mesh.fillet_radii_mm is None
+    rep = ww.area_report(mesh)
+    assert "spoke" in rep["reference_unavailable_because"]
+    assert "error_vs_modelled" not in rep
+    assert rep["meshed_mm2"] > 0.0
 
 
 @pytest.mark.parametrize("R", [(0.0, 3.0), (0.6636, 0.0)])

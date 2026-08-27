@@ -1469,6 +1469,10 @@ reference that is otherwise good to 2e-4. Withheld with a reason; the measured h
 still returned. Making the reference fillet-aware is real work and is **not** a closed
 form — the fillet's legs are a spline and a circle, not two straight lines, so the
 inscribed-wedge formula does not apply — and it is ranked, not done.
+[DONE — PART 28 / §86 (2026-08-27). The inscribed-wedge formula indeed does not apply and
+nothing needed it: the added region is the curvilinear triangle `A -> F` (flank),
+`F -> B` (ring circle), `B -> A` (arc), integrated exactly by Green's theorem. Only
+`reference_shipped_step_mm2` is withheld now, and the `spoke` blocking.]
 
 ## THE STUDY NO LONGER KEEPS A COPY
 
@@ -3366,3 +3370,103 @@ exactly flat above the cap, four rows at 0.888507 against the old 0.889754, 11 d
 values of 14.  That was worth checking rather than assuming -- `R_hub` is gene 12 and enters
 the cliff, so under the rule it moves the profile too.  The plateau holds because above the
 cap the clamp pins the built radius, so the cliff stops moving with it.
+
+---
+
+# STEP 1 RECORD, PART 28 — 2026-08-27. PART 11's LAST WITHHELD NUMBER IS DELIVERED: `modelled_area_reference` TAKES THE FILLET, AND THE REGION TURNS OUT TO BE ONE CURVILINEAR TRIANGLE PER JUNCTION
+
+PART 11 shipped `build_wheel(fillet=True)` and left one thing behind it: *"`area_report`
+withholds its reference for a filleted mesh ... Making the reference fillet-aware is real
+work and is not a closed form — the fillet's legs are a spline and a circle, not two
+straight lines, so the inscribed-wedge formula does not apply — and it is ranked, not
+done."* PLAN.md §86 is that item. Both clauses of the sentence are true; the conclusion
+was not.
+
+## THE REGION
+
+```
+  A -> F   along the STRADDLING flank    A the tangency point, F the ring crossing
+  F -> B   along the ring circle         B the arc's tangency on that circle
+  B -> A   along the fillet arc
+```
+
+Three sides, integrated by Green's theorem — polyline shoelace, one `r^2 dtheta`, one
+`R^2 dphi + C x (A - B)`. No wedge formula is involved and none is needed. Every other
+boundary the eleven blocks build (`cut_N`, `cut_B`, the radial dive to `r_far`, the far
+flank the junction block ends on) is a CUT BETWEEN BLOCKS and lies inside the region
+either way, which is why this is arithmetic rather than a construction.
+
+## THE TWO CHECKS THAT MAKE IT A MEASUREMENT
+
+**Refinement.** `error_vs_modelled` at the shipped genome runs +0.4412 / +0.1309 / +0.0602
+/ +0.0362 % down the ladder — converging, but an order slower than the unfilleted mesh, so
+that alone does not separate "right region, coarsely resolved" from "slightly wrong
+region". Holding `fine` and sweeping `n_thick` alone, which is the direction that resolves
+the two arcs: +0.036161 -> +0.006791 -> -0.000566 -> **-0.002405%** at `n_thick = 64`,
+against the unfilleted `fine` mesh's **-0.002478%**. It converges to the unfilleted mesh's
+own residual, not to a floor of its own.
+
+**Independence.** The tangency is re-solved on `thicken_3taper_curve`'s samples rather than
+read off `_fillet_tangency`, for the reason `_uncap_reference_poly` re-derives its far
+flank: 139.16025 mm2 this way against 139.16031 through the mesh's sampler, a relative
+4.7e-7. The offset direction is copied from `_fillet_centre` deliberately — it is the
+CENTRELINE's normal, not the flank's, and "improving" it on this path would compare two
+different fillets instead of two integrations of one.
+
+## THE BOX
+
+All 48 genomes this file already carries — PART 13's 16 and PART 22's held-out 32 — build
+at `fillet=True` and get a reference, at `coarse` and at `medium`, 12 of them clamped.
+Worst `|error_vs_modelled|` 0.1571% -> 0.0409% across the two configs.
+
+## AND `fillet=True` IS REFUSED BY THE REFERENCE
+
+Because in `sector_blocks` it means the CLAMPED radii, and `area_report` therefore passes
+`mesh.fillet_radii_mm`. On the §57 genome the clamp moves the hub radius 3.28618 -> 2.97321
+and the two references differ by **8.008 mm2** — thirty times the residual the comparison
+exists to see. `fillet_blocking="spoke"` keeps withholding: PART 3's construction rounds
+the flank differently and has no `_applied` record.
+
+## WHAT DID NOT MOVE
+
+The unfilleted path is bit-identical, `area_report`'s JSON matches key for key and in key
+ORDER, and no artifact was regenerated. The STEP half — `reference_shipped_step_mm2` and
+`error_vs_shipped_step` — is now the only thing withheld for a filleted mesh, because both
+numbers behind it were measured against the UNFILLETED cross-section. §86 ranks pricing the
+mesh's fillet against the exporter's, which is what would lift that.
+
+---
+
+# STEP 1 RECORD, PART 29 — 2026-08-27. THE FILLET REGION MEETS A SECOND KERNEL: 139.1602 mm2 AGAINST THE STEP MANIFEST'S 137.4451, 1.25% APART
+
+PART 28 verified the wedge against the MESH — refine `n_thick` and the residual falls to
+the unfilleted mesh's own — which proves the reference and the mesh agree about a region
+they were both derived from. It could not answer the other question: **is that region the
+PART's?**
+
+`export/wheel_step_manifest.json` answers it, and it has been committed since 2026-08-15.
+`wheel_step_export` builds `wheel_nofillet.step` as its fallback anyway, so
+`fillets.volume_mm3` is a subtraction OCC does exactly, on a solid CadQuery built from the
+same genes down a path that shares no code with this arc.
+
+```
+  the exporter   OCC edge fillet on the EMBEDDED solid    3078.77 mm3 / 22.4 = 137.4451 mm2
+  the mesh       tangent arc on the un-embedded band                            139.1602 mm2
+                                                            ratio 1.012479, +1.7152 mm2
+```
+
+The two are NOT the same construction and are not expected to agree exactly: `_embed`
+pushes each spoke further into its ring before OCC rounds the corner, and this rounds the
+band as the band is. **Agreement to 1.7 mm2 on 137 is the evidence that the fillet this
+arc built is the fillet the part has**, and it is the first such evidence the arc has
+produced.
+
+`tests/test_filleted_mesh.py::test_the_fillet_reference_agrees_with_the_STEP_MANIFEST`
+pins it at a 5% band — checking both built radii against the genes first, and that the
+term is first-order on both sides. Loose on purpose: a band tight enough to fail on the
+`_embed` difference would be pinning that difference rather than the agreement. What 5%
+catches is the fillet off by a FACTOR or by a count of corners, which is exactly the error
+the module docstring carried for three arcs (see PLAN.md §87).
+
+**Nothing else moved.** No export was run, no constant changed, the manifest was read
+rather than regenerated, and PART 28's numbers are all unaltered.
