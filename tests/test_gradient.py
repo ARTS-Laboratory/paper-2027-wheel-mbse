@@ -415,8 +415,12 @@ def test_the_filleted_gate_runs_and_inverts_the_census(genes):
     steps instead of three, one gene through the axle drop. What is NOT reduced is any
     tolerance — the identity is still 1e-9 mm and the jacobian still 1e-6 relative
     against a central difference of `build_wheel(fillet=True)` itself.
+
+    G11f RIDES ALONG SINCE §88, and `R_rim` is in `gene_ids` for it rather than for the
+    rows above: it is the gene the shipped genome's cliff hangs on, so it is the one where
+    a frozen layer profile gets a visibly wrong answer.
     """
-    rep = sg.run_filleted(genes, CFG, configs=("smoke",), gene_ids=(8, 12),
+    rep = sg.run_filleted(genes, CFG, configs=("smoke",), gene_ids=(8, 12, 13),
                           jac_steps=(1e-4, 1e-6), drop_gene_ids=(12,),
                           drop_steps=(1e-4, 1e-6))
     assert rep["census"]["unfilleted_dead"] == list(sg.INSENSITIVE_EXPECTED)
@@ -430,4 +434,25 @@ def test_the_filleted_gate_runs_and_inverts_the_census(genes):
         assert r["unfilleted_adjoint"] == 0.0, r
         assert abs(r["adjoint"]) > 1e-3, r
     assert rep["refusals"]["ok"], rep["refusals"]
+    # TWO refusals now, not three: §88 made the per-genome layer profile differentiable
+    # and G11f measures it instead. The key stays, pinned at `None`, so an old artifact
+    # and a new one cannot be read as saying the same thing.
+    assert rep["refusals"]["per_genome_layer_profile"] is None
+    assert rep["refusals"]["spoke_blocking"] and rep["refusals"]["sector_fit_clamped"]
+
+    pg = rep["per_genome"]
+    assert pg["ok"], pg
+    assert pg["numpy_path_max_abs_mm"] == 0.0, pg["numpy_path_max_abs_mm"]
+    assert pg["identity_max_abs_mm"] < sg.GATE_FILLET_MESH_MM, pg
+    assert pg["worst_rel_rule"] < sg.GATE_FILLET_JAC_REL, pg["rows"]
+    assert pg["pair"][0] == pytest.approx(
+        WW.FILLET_LAYER_CLIFF_FACTOR * pg["cliff_entry"])
+    # AND THE POINT OF THE SECTION: a frozen layer profile is not a small approximation of
+    # the rule. `R_rim` is the gene the shipped genome's cliff hangs on — the rim binds —
+    # so the gradient §85 refused to return is wrong there by four orders more than the
+    # gate the honest one clears.
+    rim = next(r for r in pg["rows"] if r["gene"] == "R_rim")
+    assert rim["rel_frozen"] > 1e-2, rim
+    assert rim["rel_frozen"] > 1e4 * rim["rel_rule"], rim
+    assert pg["binding_junction"] == "rim", pg["cliff_per_junction"]
     assert rep["pass"], rep

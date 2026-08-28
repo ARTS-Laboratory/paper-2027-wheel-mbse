@@ -3339,7 +3339,14 @@ And `fillet=None` is untouched, still bit-identical, still what the tree ships. 
 first two were found by the suite, not by reading -- six `test_fillet_fold` failures off a
 first cut that resolved the rule for any `fillet` at all.
 
-## THE TRACE CACHE IS WHY IT RESOLVES EAGERLY
+## THE TRACE CACHE IS WHY IT RESOLVES EAGERLY [HALF-SUPERSEDED BY PART 30 — 2026-08-28]
+
+**The eager resolution stands; the KEY does not.** Putting the resolved pair in the key made
+it a function of the genome, so the jaxpr would have re-traced on every genome — the failure
+`coord_fn`'s own docstring describes for the frozen roots. Nothing caught it because
+`mesh_coords` refused these meshes and the key was never reached. §88 resolves the entry
+inside the trace and the record holds `None` again. The rest of this paragraph is the reason
+the resolution is eager, and that is unchanged.
 
 `coord_fn`'s key is `repr(_layer_profile(rec["layer_profile"]))`.  Left as `None` and
 resolved per genome downstream, two genomes with different profiles would share one key and
@@ -3347,7 +3354,13 @@ the second would be handed the first's traced geometry.  So the profile is settl
 `build_wheel` before the record is written.  Measured, two genomes: `(-0.362881, 0.7)` and
 `(-0.421871, 0.7)`, where both would previously have keyed as `(-0.45, 1.6)`.
 
-## AND THE GRADIENT IS REFUSED
+## AND THE GRADIENT IS REFUSED [SUPERSEDED BY PART 30 — 2026-08-28]
+
+**It is not refused any more.** The last sentence below was written as a tripwire and it
+fired: the cliff is a closed form — `max_u (Z - a(u))/b(u)` over the sampled width profile —
+so it is differentiated rather than frozen, and the gradient this paragraph declined to return
+is wrong by 3.0% to 24.4% at every unclamped genome in the box. G11e counts two refusals now
+and G11f measures this case. Read PART 30 before quoting anything below.
 
 The rule's entry is `factor * cliff(genes)`: it depends on the genes and the frozen path
 holds it constant, which is word for word why PART 21's clamp is refused.  `mesh_coords`
@@ -3470,3 +3483,73 @@ the module docstring carried for three arcs (see PLAN.md §87).
 
 **Nothing else moved.** No export was run, no constant changed, the manifest was read
 rather than regenerated, and PART 28's numbers are all unaltered.
+
+---
+
+# STEP 1 RECORD, PART 30 — 2026-08-28. PART 27's REFUSAL IS GONE: THE LAYER CLIFF WAS NEVER A SEARCH. `max_u (Z - a(u))/b(u)` IS THE SAME ROOT TO 2 ulp, AND THE FROZEN GRADIENT IT REPLACES IS WRONG BY 3.0% TO 24.4% AT EVERY UNCLAMPED GENOME IN THE BOX
+
+PART 27 wrote *"measured so that the day it stops refusing is the day the cliff became
+differentiable."* PLAN.md §88 is that day, and the paragraph above — **AND THE GRADIENT IS
+REFUSED** — is superseded by it. So is **THE TRACE CACHE IS WHY IT RESOLVES EAGERLY**: the key
+no longer carries the resolved pair, for a reason PART 27 could not have had.
+
+## THE CLOSED FORM
+
+PART 24 found the half that matters and stopped one step short of it. `wall` and `layer_k`
+come out of the tangency solve and do not depend on `entry`, so the width profile is **affine
+in `entry`**: `H(u) = a(u) + entry b(u)` with `b(u) = u (1-u)^2 layer_k > 0` strictly inside
+`(0, 1)`. Then `H(u) <= Z` exactly when `entry <= (Z - a(u))/b(u)`, and the sampled minimum
+is at or below `Z` exactly when one sample is:
+
+```
+    cliff = max_u (LAYER_CLIFF_ZERO - a(u)) / b(u)
+```
+
+over the same 401-point grid `_fillet_curves` takes its minimum on. Not a bisection of
+arithmetic — no root-find at all. `LAYER_CLIFF_BISECTIONS = 90` is deleted and this file's
+`CLIFF_BISECTIONS` with it; the comment claiming the refusal *"has no closed form"* is
+corrected in place.
+
+**Against the bisection it replaces: 2 ulp, worst relative 3.999e-16**, over all 98
+junction-pairs of the shipped genome and the 48-genome box. PART 24's -0.806402517 and every
+published cliff since are the same numbers.
+
+## WHAT THE REFUSAL WAS WORTH
+
+The control is the same mesh built at the pair the rule produced, HELD FIXED — bit-identical
+geometry, and exactly the gradient PART 27 declined to return. Against a central difference of
+`build_wheel(fillet=True)`, which re-derives the cliff at every perturbed genome, over the
+shipped genome and the 36 unclamped members of the 48-genome box, at `coarse`:
+
+```
+                            worst     median      min    above 1%
+  frozen layer profile     24.41%      6.95%    2.96%    37 of 37
+  the rule                2.4e-06%       --       --      0 of 37
+```
+
+At the shipped genome the RIM binds the cliff, so the term lands on `R_rim` — 5.500e-02
+frozen against 1.05e-09 — and `R_hub` is unaffected to 4.4e-10. At `in:[-1.0, 1.0]:0` the HUB
+binds and the two swap over. The rim binds 28 of 37 and the hub 9, which is why the binding
+junction is `xp.maximum` rather than a frozen choice.
+
+## AND THE CACHE DEFECT PART 27 INTRODUCED
+
+Putting the resolved pair in the key was right for the reason PART 27 gives and wrong for one
+it did not consider: the pair is a function of the genome, so the key became genome-dependent
+and the 2.78 s jaxpr would re-trace on every finite difference. Nothing caught it because
+`mesh_coords` refused these meshes, so the key was never reached. The record holds `None`
+again — meaning THE RULE, resolved inside the trace — and 37 genomes across four flank
+orientations now produce four traces, one per orientation.
+
+## WHAT DID NOT MOVE
+
+The eager cliff moves by at most 2 ulp, and what that costs a built mesh was measured rather
+than assumed: eighteen builds over `smoke`/`coarse`/`medium` against meshes built at the old
+bisection's pair passed explicitly — **worst 3.553e-14 mm, 11 of 18 bit-identical**. So
+`study_fillet_block.json`, `study_corner_singularity_fillet.json` and
+`study_reds_hub_share.json` are unmoved at every digit they print and none is regenerated.
+Only `study_gradient.json` changed, and only because G11e's shape did.
+
+Both remaining refusals stand: `fillet_blocking="spoke"` and a clamped radius. The 12 clamped
+genomes of the 48 are refused exactly as before — the clamp's refusal is about the RADIUS, and
+nothing here touches it.

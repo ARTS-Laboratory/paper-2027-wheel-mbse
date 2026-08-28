@@ -10904,7 +10904,14 @@ Three paths keep the old constants, and each for a reason that already existed:
 Both of the first two were found by the suite rather than by reading: six `test_fillet_fold`
 failures, from a first cut that resolved the rule for any `fillet` at all.
 
-### THE CACHE KEY IS WHY THE PROFILE IS RESOLVED EAGERLY
+### THE CACHE KEY IS WHY THE PROFILE IS RESOLVED EAGERLY [HALF-SUPERSEDED BY §88]
+
+**The eager resolution stands; the KEY does not.** The resolved pair is a function of the
+genome, so putting it in the key made the key genome-dependent and the 2.78 s jaxpr would
+re-trace on every finite difference — `coord_fn`'s own named failure, arriving by a second
+route. Nothing caught it because `mesh_coords` refused these meshes and the key was never
+reached. §88 resolves the entry inside the trace, the record holds `None` again, and the key
+reads it raw. What follows is the reason the resolution is eager, and that is unchanged.
 
 `coord_fn`'s key is built from `repr(_layer_profile(rec["layer_profile"]))`.  Left as `None`
 in the record and resolved per genome further down, **two genomes with different profiles
@@ -10916,7 +10923,14 @@ failure the `repr(uncap)` comment three lines below that key warns about.  So
 Measured, two genomes, same call: `(-0.362881, 0.7)` and `(-0.421871, 0.7)`.  Under the old
 arrangement both would have keyed as `(-0.45, 1.6)`.
 
-### AND THE GRADIENT IS REFUSED, WHICH IS §79's OWN PRECEDENT
+### AND THE GRADIENT IS REFUSED, WHICH IS §79's OWN PRECEDENT [SUPERSEDED BY §88]
+
+**It is not refused any more, and the tripwire this paragraph ends with is what fired.** The
+cliff is a closed form — `max_u (Z - a(u))/b(u)` over the sampled width profile, the same root
+to 2 ulp — so it is differentiated rather than held constant. The gradient refused here is
+wrong by 3.0% to 24.4% at the shipped genome and every one of the 36 unclamped genomes
+of the 48-genome box. G11e counts two
+refusals now; G11f measures this case. Read §88 before quoting anything below.
 
 The rule's entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`.  It **does** depend on the
 genes and the frozen path holds it constant, so a derivative taken through it is wrong in
@@ -11345,6 +11359,211 @@ brings `tests/test_filleted_mesh.py` to 36.
    wheel, on the number `error_vs_shipped_step` publishes). It is also the only thing
    between a filleted mesh and a STEP comparison.
 3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged.
+4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
+5. **Per-REGION agreement on a filleted mesh** (§86) — `FILLETED_BLOCK_REGION` tags both
+   fillet blocks `spoke` while `*_fillet_b` straddles the ring circle, so the mesh's
+   `hub`/`rim` regions are no longer the full ring annuli.
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+---
+
+## §88 — 2026-08-28. THE LAYER CLIFF IS DIFFERENTIABLE. IT WAS NEVER A SEARCH — `max_u (Z - a(u))/b(u)` IS THE SAME ROOT TO 2 ulp — AND THE GRADIENT §85 REFUSED IS WRONG BY 3.0% TO 24.4% ON ALL 37 UNCLAMPED GENOMES
+
+§87's ranking item 1, named by §85 and carried through three rankings. `fillet=True` with no
+`layer_profile` is the per-genome rule, whose entry is
+`FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`; §85 made `mesh_coords` refuse those meshes because
+the frozen path held that entry constant, and wrote *"the day it stops refusing is the day
+someone made the cliff differentiable"*. This is that day.
+
+### THE CLIFF WAS NEVER A SEARCH, AND THAT IS THE WHOLE SECTION
+
+The layer's width profile is `H(u) = _hermite(wall, end*wall, entry*layer_k, 0, u)`, and §82
+already found the half that matters: `wall` and `layer_k` come out of the TANGENCY solve and
+do not depend on `entry` at all, so `H` is **affine in `entry`**:
+
+```
+    H(u) = a(u) + entry * b(u),    a(u) = h00(u) wall + h01(u) end wall
+                                   b(u) = h10(u) layer_k = u (1-u)^2 layer_k
+```
+
+`b(u) > 0` strictly inside `(0, 1)`, so `H(u) <= Z` exactly when `entry <= (Z - a(u))/b(u)`,
+and the sampled minimum is at or below `Z` exactly when one sample is. Therefore
+
+```
+    cliff = max_u (LAYER_CLIFF_ZERO - a(u)) / b(u)
+```
+
+over the same `LAYER_CLIFF_SAMPLES = 401` grid `_fillet_curves` takes its minimum on. The two
+endpoints drop out because `b` vanishes there and `H` is `wall` and `end*wall`, both orders
+above `Z` — neither can ever be the minimum this solves for.
+
+§82 called the cliff "a root-find over arithmetic instead of over thirty sector builds", which
+is what made a per-genome profile affordable at all. It is not a root-find at all.
+`_layer_cliff_from_scalars`
+bisected `LAYER_CLIFF_BRACKET` ninety times; it now evaluates two Hermite bases and takes a
+max, and `LAYER_CLIFF_BISECTIONS = 90` is deleted along with `study_fillet_block`'s
+`CLIFF_BISECTIONS` that bound to it.
+
+**MEASURED AGAINST THE BISECTION IT REPLACES: 2 ulp, worst relative 3.999e-16**, over the 98
+junction-pairs of the shipped genome and all 48 genomes of `studies/study_fillet_block.json`.
+Every published cliff from §68 to §85 is the same number.
+
+### WHY THAT MAKES IT DIFFERENTIABLE, AND WHY A `custom_vjp` WOULD NOT HAVE
+
+A bisection's derivative is ninety `sign` comparisons and a zero. §79 met that once already —
+the tangency and ring-crossing solves — and the instrument there was `_newton_from_root`: the
+answer is a root of an equation the traced path can re-evaluate, so freeze the root and take
+one Newton step for the implicit-function-theorem derivative. **That instrument does not
+apply here.** The cliff is not the root of an equation the mesh evaluates; it is the OUTPUT
+of the search, consumed as a profile parameter. There is nothing to re-evaluate and nothing
+for a wrapper to fix.
+
+What removed the refusal was noticing the search was unnecessary. `wheel_adjoint.py`'s header
+now carries the ordering that generalises: **is the search unnecessary, is its answer a root
+worth freezing, and only then is it a discrete decision to be classified.** Two of this
+project's three searches ended at the second question and one at the first; none needed a
+`custom_vjp`.
+
+### THE BINDING JUNCTION IS NOT FROZEN, AND THE DISTINCTION IS NOT COSMETIC
+
+The sector's cliff is `max(cliff_hub, cliff_rim)`. `max()` compares and needs a concrete
+bool, so it is `xp.maximum`, which carries the subgradient of whichever binds. That is the
+OPPOSITE of the treatment `_fillet_curves`' four refusals get, and for the opposite reason:
+this is a kink in a continuous function, not a change of construction. Freezing it would have
+worked at almost every genome and been quietly wrong at the crossing.
+
+It is also not academic. Over the 37 genomes measured — the shipped one and the 36 unclamped
+members of the 48-genome box — **the rim binds 28 and the
+hub binds 9** — so a frozen choice would have had to be per-genome anyway, and a hard-coded
+one would have been wrong at a quarter of them.
+
+### WHAT THE REFUSAL WAS WORTH: THE FROZEN GRADIENT IS WRONG BY 3.0% TO 24.4%
+
+The control is the same mesh built at the pair the rule produced, HELD FIXED — bit-identical
+geometry, and exactly the gradient §85 would have returned. The reference is a central
+difference of `build_wheel(fillet=True)` itself, which re-derives the cliff from scratch at
+every perturbed genome. At `coarse`, over the shipped genome and all 36 unclamped members of
+the 48-genome box, on
+`R_hub` and `R_rim`:
+
+```
+                                   worst      median       min     above 1%
+  frozen layer profile             24.41%      6.95%     2.96%     37 of 37
+  the rule, differentiated       2.39e-06%       --        --       0 of 37
+```
+
+The rule's row is **2.392e-08 relative**, worst over the 74 (genome, gene) rows and over a
+three-step ladder `h/range in {1e-4, 1e-5, 1e-6}` — the ladder matters, because a single fixed
+`h = 1e-5` reads 3.656e-04 at one genome and that is the reference secant's noise, not the
+jacobian's. G11's gate is 1e-6.
+
+At the shipped genome the rim binds, so the term lands on `R_rim`: **5.500e-02 frozen against
+1.05e-09 for the honest one**, seven orders apart. `R_hub` is unaffected there to 4.4e-10,
+which is the check that the term is the cliff's and not a general disagreement — and at
+`in:[-1.0, 1.0]:0`, where the HUB binds, the two swap over exactly.
+
+Not one of the 37 is below 1%. The refusal was not conservatism about a small term.
+
+### AND IT REPAIRS A CACHE DEFECT §85 INTRODUCED THAT NOTHING COULD SEE
+
+§85 put the RESOLVED pair into `coord_fn`'s cache key, correctly at the time: leaving `None`
+there meant two genomes with different profiles sharing one key and the second being handed
+the first's traced geometry. But the resolved pair is a function of the genome, so **the key
+became genome-dependent** — and `coord_fn`'s own docstring is about exactly that failure for
+the frozen roots: *"a jaxpr with one genome's roots baked in re-traces on every call"*, 2.78 s
+each, against a 128-entry cache sized for an 8x8 phase lattice.
+
+Nothing caught it because `mesh_coords` refused these meshes, so the key was never reached.
+Now the record holds `None` again — meaning THE RULE, resolved inside the trace — the key
+reads it raw rather than through `_layer_profile`, and the jaxpr is genome-independent.
+Measured: two genomes at profiles `-0.362881` and `-0.362776` share **one** cache entry, and
+37 genomes across four flank orientations produce **four** traces, one per orientation, not
+one per genome. A SHIPPED-pair mesh still keys apart, which is the other half and is asserted
+beside it.
+
+### THE BRACKET IS A VALIDITY CHECK NOW, AND ITS UPPER END WAS NEVER CHECKED
+
+`LAYER_CLIFF_BRACKET = (-8.0, 0.0)` survives, because the two sentinels it separates are still
+separate: a cliff outside it is a genome this rule has never seen and must not quietly serve.
+What changed is that it is applied to the answer rather than searched.
+
+**And the closed form found a latent defect at the other end.** The bisection checked
+`gone(lo)` and returned `None` for a cliff below -8; it never checked `hi`. A junction with no
+layer at ANY negative entry — the cliff is positive — converged to the bracket's own zero and
+reported it as a cliff. It fires at none of the 98 pairs, so this is a guard and not a change
+of answer, but it is the same shape as §84's sentinel-with-two-meanings: a value the search
+could only produce by running off its own end.
+
+The check is SKIPPED under a trace, deliberately. A mesh being differentiated has already been
+built, and its eager pass is what made that check.
+
+### WHAT IS STILL REFUSED, AND IT IS TWO RATHER THAN THREE
+
+`fillet_blocking="spoke"` (§47's construction re-spreads its station vector by ROUNDING a node
+count) and a mesh whose radius the sector-fit clamp MOVED. Both unchanged, both still measured
+in G11e rather than asserted. `refusals["per_genome_layer_profile"]` is KEPT as a key, pinned
+at `None`, so an old artifact and a new one cannot be read as saying the same thing, and the
+case moves to a new **G11f** that measures it: identity, the jacobian against the rule's own
+central difference, the frozen control beside it, and the cache-sharing count.
+
+The 12 clamped genomes of the 48 are refused exactly as before — the clamp's refusal is about
+the RADIUS, not the profile, and this changes nothing about it.
+
+### WHAT MOVED, AND WHAT THE 2 ulp COST THE MESH
+
+Only `studies/study_gradient.json`, and only because G11e's shape changed. The eager cliff
+moves by at most 2 ulp, and what that costs a built mesh was measured directly rather than
+assumed: eighteen builds over `smoke`/`coarse`/`medium`, each compared against a mesh built at
+the OLD bisection's pair passed explicitly — **worst coordinate difference 3.553e-14 mm, and
+11 of 18 bit-identical.** Twelve orders below the tightest tolerance in the tree, so
+`study_corner_singularity_fillet.json`, `study_reds_hub_share.json` and
+`study_fillet_block.json` are all unmoved at every digit they print, and none is regenerated.
+
+`fillet=None` is untouched: the unfilleted path never reaches a layer.
+
+### AND `study_gradient.json`'s DIFF IS LARGE IN LINES AND SMALL IN MEANING — IT DOES NOT REPRODUCE TO THE BIT
+
+Worth stating, because a 1586-line diff on an artifact invites the reading that something
+moved. **It does not reproduce run to run, and that is not this change.** Two runs of the SAME
+tree in the SAME pinned environment minutes apart differ in **127 non-timing floats**, worst
+4.910e-07 relative — on `directional.rows[5].rel = 3.53e-10`, i.e. 1.7e-16 absolute. Against
+the committed 2026-08-26 artifact the same comparison is 1476 floats, worst 9.096e-03 relative
+on `unrolled.warm[3].worst_rel = 6.32e-11`, i.e. 5.8e-13 absolute. Every one of them is the
+last digits of a quantity that is already a machine-precision residual, plus wall-clock
+timings. **Structurally, the only differences are the four this section intended.**
+
+`wheel_pool.PINNED_ENV`'s comment is not contradicted: its measurement is *"two plain serial
+runs of one `coarse` adjoint"* agreeing exactly, and that is a narrower claim than "this whole
+artifact is reproducible". Not chased further, because every difference is orders below every
+gate the file carries — but recorded here rather than left for the next reader to rediscover
+from a diff.
+
+### A STALE CLAIM CORRECTED IN PASSING
+
+`studies/study_reds_hub_share.py`'s `sweep` docstring said *"`mesh_coords` still refuses a
+filleted mesh outright, so nothing here reaches the optimizer"*. False since §79 and doubly so
+now. What is still true is the part that carries the sentence's point: nothing in
+`wheel_objective` builds a filleted mesh, so the optimizer sees neither — **a fact about the
+objective, not about `mesh_coords`.** Corrected in place; no artifact depends on it.
+
+#### The successors, ranked — REVISED 2026-08-28 AFTER §88
+
+1. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, up from 2 now that
+   §88 is done, and the only thing between a filleted mesh and a STEP comparison. §87 gave it
+   a fourth datapoint (4.356, 3.032, 0.98, 0.5317 mm^2/spoke) and a measured consequence:
+   `reference_shipped_step_mm2` is 1.8% high. Derive the law from `_embed` the way
+   `junction_bite` was derived.
+2. **WIRE THE FILLET INTO THE OBJECTIVE — NEW, and §88 is what makes it askable.** Every
+   piece now exists: a filleted mesh that builds across the box, an area reference that
+   describes it (§86), and a gradient through the DEFAULT filleted path rather than through a
+   named pair. What is missing is a decision, not a mechanism: `wheel_objective` still prices
+   `R_hub` through a `Kt` surrogate that is exactly flat over half its feasible range (§75),
+   and the filleted mesh is 2-3x the cost of the unfilleted one. Price it before adopting it.
+3. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still the
+   oldest thing on the list.
 4. **Apply the fold gate to the draw and re-derive the box** (§58) — one word, priced.
 5. **Per-REGION agreement on a filleted mesh** (§86) — `FILLETED_BLOCK_REGION` tags both
    fillet blocks `spoke` while `*_fillet_b` straddles the ring circle, so the mesh's

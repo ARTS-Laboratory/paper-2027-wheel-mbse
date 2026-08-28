@@ -57,11 +57,16 @@ def filleted(genes):
 def filleted_shipped(genes):
     """The same mesh at the pair `fillet=True` took BEFORE §85, named rather than assumed.
 
-    §79's differentiability results are measured here and nowhere else.  The per-genome
-    rule's entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`, which does not follow the
-    genes on the frozen path, so `mesh_coords` refuses those meshes outright -- see
-    `test_the_differentiable_path_REFUSES_what_it_would_get_WRONG`, which pins that refusal
-    as a property rather than working around it here.
+    §79's differentiability results are measured here and nowhere else, and they stay on
+    this pair: they are §79's numbers, and re-measuring them on §85's geometry would leave
+    this file reporting one section's result against another section's mesh.
+
+    IT IS NO LONGER A WORKAROUND (§88).  From §85 to §88 the per-genome rule's entry --
+    `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)` -- did not follow the genes on the frozen
+    path and `mesh_coords` refused those meshes outright, so this fixture was also the
+    only filleted mesh that HAD a gradient.  The cliff is differentiable now and
+    `test_the_PER_GENOME_layer_profile_is_differentiable_too` measures the default path on
+    its own terms.
     """
     return {cfg: ww.build_wheel(genes, cfg, fillet=True,
                                 layer_profile=ww.FILLET_LAYER_SHIPPED) for cfg in CFGS}
@@ -333,6 +338,170 @@ def test_the_filleted_trace_is_SHARED_across_genomes(genes):
     got = np.asarray(ww.coord_fn(m1)(other))
     assert len(ww._COORD_FN_CACHE) == 1, "the filleted trace is not being shared"
     assert np.abs(got - np.asarray(m1.coords)).max() < 1e-9
+
+
+def test_the_PER_GENOME_layer_profile_is_differentiable_too(genes, filleted):
+    """PLAN §88 — the default filleted mesh, which §85 refused and §88 differentiates.
+
+    `fillet=True` bare takes the per-genome layer profile, whose entry is
+    `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`.  §85 refused a gradient through it on
+    exactly the argument the sector-fit clamp gets: the frozen path held that entry
+    constant, so the derivative would have been plausible and wrong.  §82's own finding is
+    what removed it — the cliff is `max_u (Z - a(u)) / b(u)` over the sampled width
+    profile, a closed form in two scalars the tangency solve already produces, and a
+    closed form has a derivative where a bisection has ninety `sign` comparisons.
+
+    THE REFERENCE IS THE RULE'S OWN CENTRAL DIFFERENCE, which re-bisects nothing and
+    re-derives the cliff from scratch at every perturbed genome, and the CONTROL is the
+    same mesh built at the pair the rule produced, HELD FIXED.  That control is the
+    gradient §85 declined to return, and the gap between the two is what the refusal was
+    worth: at the shipped genome the rim junction binds the cliff, so `R_rim` is where a
+    frozen profile is wrong — by 5.5%, against 1e-9 for the honest one.
+    """
+    import jax
+    import jax.numpy as jnp
+    m = filleted["coarse"]
+    assert m.fillet_recipe["layer_profile_per_genome"] is True
+    pair = tuple(float(v) for v in m.fillet_recipe["layer_profile"])
+    assert pair[0] == pytest.approx(
+        ww.FILLET_LAYER_CLIFF_FACTOR * ww.layer_cliff_entry(genes, "coarse")["entry"])
+
+    # the identity first: the traced mesh IS the solved mesh, and the numpy path is
+    # bit-identical because the rule re-runs there through the same closed form
+    assert np.abs(np.asarray(ww.mesh_coords(genes, m, xp=np))
+                  - np.asarray(m.coords)).max() == 0.0
+    assert np.abs(np.asarray(ww.coord_fn(m)(genes))
+                  - np.asarray(m.coords)).max() < 1e-9
+
+    frozen = ww.build_wheel(genes, "coarse", fillet=True, layer_profile=pair)
+    assert np.abs(np.asarray(frozen.coords) - np.asarray(m.coords)).max() == 0.0
+
+    J = np.asarray(jax.jacfwd(lambda v: ww.mesh_coords(v, m))(jnp.asarray(genes)))
+    Jf = np.asarray(jax.jacfwd(lambda v: ww.mesh_coords(v, frozen))(jnp.asarray(genes)))
+
+    def eager(v):
+        return np.asarray(ww.build_wheel(np.asarray(v, float), "coarse",
+                                         fillet=True).coords)
+
+    seen = {}
+    for gid, h in ((13, 1e-5), (12, 1e-5), (8, 1e-5)):
+        gp, gm = genes.copy(), genes.copy()
+        gp[gid] += h
+        gm[gid] -= h
+        fd = (eager(gp) - eager(gm)) / (2.0 * h)
+        scale = max(np.abs(fd).max(), 1e-300)
+        seen[wg.GENE_NAMES[gid]] = (np.abs(fd - J[:, :, gid]).max() / scale,
+                                    np.abs(fd - Jf[:, :, gid]).max() / scale)
+        assert seen[wg.GENE_NAMES[gid]][0] < 1e-7, (wg.GENE_NAMES[gid], seen)
+        assert np.abs(J[:, :, gid]).max() > 1e-3, wg.GENE_NAMES[gid]
+
+    # THE RIM BINDS THIS GENOME'S CLIFF, so `R_rim` carries the term and `R_hub` does not.
+    # Both halves are asserted: without the second this would pass on a mesh where the
+    # cliff contributed nothing anywhere and the refusal had been about nothing.
+    per = ww.layer_cliff_entry(genes, "coarse")["per_junction"]
+    assert per["rim"]["cliff"] > per["hub"]["cliff"], per
+    assert seen["R_rim"][1] > 1e-2, seen
+    assert seen["R_rim"][1] > 1e4 * seen["R_rim"][0], seen
+    assert seen["R_hub"][1] < 1e-6, seen
+
+
+def test_the_per_genome_trace_is_SHARED_across_genomes(genes):
+    """§85 put the resolved pair in `coord_fn`'s cache key; §88 takes it back out.
+
+    Two genomes get two different per-genome profiles, so a key carrying the resolved pair
+    keys them apart and re-traces the 2.8 s jaxpr on every finite difference and every
+    optimizer step — the exact failure `coord_fn`'s docstring describes for the frozen
+    roots, arriving by a second route. Nothing caught it because `mesh_coords` refused
+    these meshes outright, so the key was never reached.
+
+    The entry is resolved INSIDE the trace now and the record holds `None`, so the key is
+    genome-independent again. The second assertion is the other half and matters just as
+    much: a SHIPPED-pair mesh must still key apart from a per-genome one, or the second
+    would be handed the first's geometry.
+    """
+    ww._COORD_FN_CACHE.clear()
+    m0 = ww.build_wheel(genes, "coarse", fillet=True)
+    np.asarray(ww.coord_fn(m0)(genes))
+    assert len(ww._COORD_FN_CACHE) == 1
+
+    other = np.array(genes, dtype=float)
+    other[12] += 0.2
+    other[3] += 0.05
+    m1 = ww.build_wheel(other, "coarse", fillet=True)
+    assert (m1.fillet_recipe["layer_profile"][0]
+            != m0.fillet_recipe["layer_profile"][0])
+    got = np.asarray(ww.coord_fn(m1)(other))
+    assert len(ww._COORD_FN_CACHE) == 1, "the per-genome trace is not being shared"
+    assert np.abs(got - np.asarray(m1.coords)).max() < 1e-9
+
+    shipped = ww.build_wheel(genes, "coarse", fillet=True,
+                             layer_profile=ww.FILLET_LAYER_SHIPPED)
+    gs = np.asarray(ww.coord_fn(shipped)(genes))
+    assert len(ww._COORD_FN_CACHE) == 2, "a shipped-pair mesh shares the rule's jaxpr"
+    assert np.abs(gs - np.asarray(shipped.coords)).max() < 1e-9
+
+
+def test_the_cliff_CLOSED_FORM_is_the_bisection_it_replaced(genes):
+    """The instrument swap, pinned on both sides: same number, and now a derivative.
+
+    `_layer_cliff_from_scalars` bisected `LAYER_CLIFF_BRACKET` 90 times until §88 and is
+    `max_u (Z - a(u)) / b(u)` over the same sampled grid now. The two agree to 2 ulp over
+    all 98 junction-pairs of the 48-genome box, so §78-§85's published cliffs are the same
+    numbers — which is the claim that has to hold before any of them can be re-quoted.
+
+    Here it is checked against an INDEPENDENT bisection written out in the test, rather
+    than against the deleted one, so the check survives the deletion.
+    """
+    import jax
+    import jax.numpy as jnp
+    end = ww.FILLET_LAYER_CLIFF_END
+    per = ww.layer_cliff_entry(genes, "coarse")["per_junction"]
+
+    def sampled_min(wall, k, entry):
+        u = np.linspace(0.0, 1.0, ww.LAYER_CLIFF_SAMPLES)
+        return float(ww._hermite(wall, end * wall, entry * k, 0.0, u).min())
+
+    for junction in ("hub", "rim"):
+        cliff = per[junction]["cliff"]
+        assert cliff is not None
+        # the DEFINING property, and it needs no second implementation: the sampled
+        # minimum is the zero threshold AT the cliff, above it just inside, below just out
+        wall, k = _tangency_scalars(genes, "coarse", junction)
+        assert sampled_min(wall, k, cliff) == pytest.approx(ww.LAYER_CLIFF_ZERO,
+                                                            rel=1e-9)
+        assert sampled_min(wall, k, cliff + 1e-6) > ww.LAYER_CLIFF_ZERO
+        assert sampled_min(wall, k, cliff - 1e-6) < ww.LAYER_CLIFF_ZERO
+        # and a plain bisection of that same predicate lands in the same place
+        lo, hi = ww.LAYER_CLIFF_BRACKET
+        for _ in range(90):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (mid, hi) if sampled_min(wall, k, mid) <= ww.LAYER_CLIFF_ZERO \
+                else (lo, mid)
+        assert abs(0.5 * (lo + hi) - cliff) < 1e-14, (junction, cliff, 0.5 * (lo + hi))
+        # AND IT HAS A DERIVATIVE, which is the whole reason for the swap. Against a
+        # central difference in `wall`, the scalar the tangency solve moves.
+        g = float(jax.grad(lambda w: ww._layer_cliff_from_scalars(
+            w, k, end, xp=jnp))(jnp.asarray(wall)))
+        h = 1e-7 * wall
+        fd = ((ww._layer_cliff_from_scalars(wall + h, k, end)
+               - ww._layer_cliff_from_scalars(wall - h, k, end)) / (2.0 * h))
+        assert g == pytest.approx(fd, rel=1e-6), (junction, g, fd)
+        assert abs(g) > 1e-3, junction
+
+
+def _tangency_scalars(genes, cfg, junction):
+    """`(wall, layer_k)` at the radii this genome is BUILT at — `layer_cliff_entry`'s own
+    harvest, reached the way that function reaches it."""
+    cfg = ww.get_config(cfg)
+    orientation = ww.flank_orientation(genes, cfg)
+    rim_inner = ww.rim_inner_radius(ww.HUB_RIM_SPAN_MM)
+    sample, s_dense = ww.global_sampler(genes, cfg)
+    s_hub, s_rim = ww.junction_stations(sample, s_dense, orientation, rim_inner)
+    sc = ww._filleted_sector_blocks(
+        sample, cfg, s_hub, s_rim, orientation, rim_inner, ww.RIM_OUTER_RADIUS_MM,
+        genes, True, None, ww.FILLET_LAYER_ENTRY_SLOPE, ww.FILLET_LAYER_END_OFFSET,
+        ww.SECTOR_FIT_CLAMP, layer_scalars_only=True)
+    return float(sc[junction]["wall"]), float(sc[junction]["k"])
 
 
 def test_the_differentiable_path_REFUSES_what_it_would_get_WRONG(genes):

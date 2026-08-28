@@ -1325,8 +1325,7 @@ def profile_candidates(table, target=None):
 # exists to retire: *"the distance to that edge was never a column in any table."*
 #
 # The bracket is wide on the safe side and stops short of -2.0, which is far past any entry
-# either grid visits.  Bisection for the same reason `sector_fit_limit` uses one: the
-# refusal comes out of `_hermite`'s minimum over a sampled profile and has no closed form.
+# either grid visits.
 # THE BRACKET IS THE MODULE'S NOW, AND THE -2.0 IT USED TO BE WAS A DEFECT (PLAN §84).
 #
 # At -2.0 three of the thirty-two held-out genomes reported "builds across the whole
@@ -1334,8 +1333,14 @@ def profile_candidates(table, target=None):
 # three have edges, at -2.51, -2.30 and -2.12, and the sentinel was reporting the bracket's
 # width rather than anything about the genome.  Bound to the module's constant rather than
 # re-stated, so the two cannot drift the way §57's clamp factor nearly did before PART 21.
+#
+# AND IT IS NOT A SEARCH BRACKET ANY MORE (PLAN §88).  The line here used to read *"Bisection
+# for the same reason `sector_fit_limit` uses one: the refusal comes out of `_hermite`'s
+# minimum over a sampled profile and has no closed form."*  It has one -- the width profile
+# is affine in `entry`, so the cliff is a max over the same sampled grid -- and
+# `CLIFF_BISECTIONS = WW.LAYER_CLIFF_BISECTIONS` went with the bisection it counted.  The
+# interval survives as the range a cliff has to land in to be believed.
 CLIFF_BRACKET = WW.LAYER_CLIFF_BRACKET
-CLIFF_BISECTIONS = WW.LAYER_CLIFF_BISECTIONS
 CLIFF_REASON = "width profile reaches zero"
 
 # How far either side of the closed-form cliff the two confirming verdicts are taken.
@@ -1434,8 +1439,7 @@ CLIFF_PROFILE_FACTOR = WW.FILLET_LAYER_CLIFF_FACTOR
 CLIFF_PROFILE_END = GENOME_ROBUST_END
 
 
-def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS,
-                R_hub=None, R_rim=None):
+def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, R_hub=None, R_rim=None):
     """The `entry` at which THIS genome loses its rim layer, at a fixed `end`.
 
     Returns `{"entry": float|None, "why": str}`.  `None` means the layer-width cliff is not
@@ -1444,9 +1448,11 @@ def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS,
 
     IT DELEGATES TO THE MODULE'S CLOSED FORM NOW (PLAN §84), and the thirty sector builds
     are gone.  The width profile is a cubic in `u` whose only `entry`-dependence is one
-    linear term, so `wheel_wheel._layer_cliff_from_scalars` roots it on two scalars the
+    linear term, so `wheel_wheel._layer_cliff_from_scalars` solves it on two scalars the
     tangency solve already produced.  Measured against the bisection this replaces: 9.1e-10
-    over the held-out draw, which was that bisection's own resolution.
+    over the held-out draw, which was that bisection's own resolution.  §88 then found the
+    module's own root-find was not one either -- `max_u (Z - a(u))/b(u)` in closed form,
+    the same answer to 2 ulp -- so no bisection is left anywhere on this path.
 
     THE REASON IS STILL CHECKED, NOT ASSUMED.  A steeper entry is not the only way the
     blocking can refuse, and a cliff reported without checking would happily name a

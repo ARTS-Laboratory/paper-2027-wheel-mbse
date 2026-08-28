@@ -1085,13 +1085,18 @@ FILLET_LAYER_CLIFF_END = 0.70
 # and a default that cannot be asked for by name is a default nobody can measure.
 FILLET_LAYER_SHIPPED = "shipped"
 
-# The bracket the cliff is searched in, and the step count.  Wide enough to hold every
-# cliff in the held-out draw with room to spare: the three steepest sit at -2.51, -2.30
-# and -2.12, and `study_fillet_block.CLIFF_BRACKET` stops at -2.0 and reports all three
-# as "builds across the whole bracket" -- a sentinel that reads as "no edge at all" and
-# is the OPPOSITE of the truth.  See §82; the bracket is the whole of that defect.
+# The range a cliff has to land in to be believed.  Wide enough to hold every cliff in the
+# held-out draw with room to spare: the three steepest sit at -2.51, -2.30 and -2.12, and
+# `study_fillet_block.CLIFF_BRACKET` stops at -2.0 and reports all three as "builds across
+# the whole bracket" -- a sentinel that reads as "no edge at all" and is the OPPOSITE of
+# the truth.  See §82; the bracket is the whole of that defect.
+#
+# IT IS A VALIDITY CHECK SINCE §88 AND WAS A SEARCH BRACKET BEFORE IT.  The cliff is a
+# closed form now (`_layer_cliff_from_scalars`), so nothing is bisected and
+# `LAYER_CLIFF_BISECTIONS = 90` is gone with the search that used it.  The interval is kept
+# because the two sentinels it separates are still separate: a cliff outside it is a
+# genome this rule has never seen and must not quietly serve.
 LAYER_CLIFF_BRACKET = (-8.0, 0.0)
-LAYER_CLIFF_BISECTIONS = 90
 
 # The width at which the layer counts as gone.  This is `_fillet_curves`' own refusal
 # threshold and must stay equal to it -- the cliff is DEFINED as the entry at which that
@@ -1198,7 +1203,7 @@ def ring_far_radius(is_hub, rim_outer=RIM_OUTER_RADIUS_MM):
 
 def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
                    entry=FILLET_LAYER_ENTRY_SLOPE, end=FILLET_LAYER_END_OFFSET,
-                   xp=np, roots=None):
+                   xp=np, roots=None, layer_only=False):
     """Every curve the filleted blocking needs at one junction, or `None` if it refuses.
 
     Returns a dict; `built` says whether it is a curve set or a refusal.  Refusals are
@@ -1287,9 +1292,12 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
     # THE TWO SCALARS THE LAYER-WIDTH CLIFF IS A CLOSED FORM IN (PLAN §82).  `wall` and
     # `layer_k = (R_arc + wall) * sweep` come out of the TANGENCY solve and do not depend
     # on `entry` or `end` at all, so the width profile is a cubic in `u` whose only
-    # `entry`-dependence is the linear term `m0 = entry * layer_k`.  That makes the entry
+    # `entry`-dependence is the linear term `m0 = entry * layer_k`.  That made the entry
     # at which this junction loses its layer a root-find over arithmetic instead of over
-    # thirty sector builds -- see `_layer_cliff_from_scalars`.
+    # thirty sector builds -- and §88 found it is not a root-find at all but a closed form,
+    # which is what makes the per-genome profile DIFFERENTIABLE and not merely cheap.  See
+    # `_layer_cliff_from_scalars`.  These two scalars are the whole input to it, which is
+    # why they are traced values on the frozen path.
     #
     # THEY RIDE ON THE REFUSAL TOO, and that is the point rather than an oversight: the
     # cliff has to be computable AT an entry that refuses, or the only way to find it is
@@ -1329,6 +1337,18 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
     # constraints have different remedies -- a smaller radius, a shallower entry -- and a
     # refusal that names only one of them cannot be told apart by the caller.
     geom = dict(layer, free_span_deg=free_span_deg)
+
+    # AND THIS IS EVERYTHING THE LAYER-WIDTH CLIFF NEEDS, SO THE HARVEST STOPS HERE (§88).
+    #
+    # Not an optimisation.  Everything below depends on `entry`, and the caller that asks
+    # for `layer_only` is `layer_cliff_entry` -- which is COMPUTING the entry and can only
+    # have passed a placeholder.  Running on would refine `u_N` by a Newton step from a
+    # seed found at a different entry, making it the root of nothing; it is discarded
+    # either way, and on the traced path only dead-code elimination keeps that harmless.
+    # `built` is `None` rather than `False`: no refusal was tested, which is not the same
+    # as none firing, and §84 is what that distinction cost last time.
+    if layer_only:
+        return dict(geom, built=None, why=None)
 
     if not frozen and float(_hermite(wall, w1, m0, 0.0,
                                      np.linspace(0.0, 1.0, 401)).min()) <= 1e-6:
@@ -1478,44 +1498,62 @@ def _clamp_to_sector(curves_at, R, factor):
     return float(factor * limit), True
 
 
-def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET,
-                              steps=LAYER_CLIFF_BISECTIONS):
+def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET, xp=np):
     """The `entry` at which THIS junction's layer reaches zero width, from two scalars.
 
     `wall` and `layer_k` are what `_fillet_curves` harvests out of the TANGENCY solve,
     and neither depends on the layer profile -- so the width profile
 
         H(u) = _hermite(wall, end * wall, entry * layer_k, 0, u)
+             = a(u) + entry * b(u),   a(u) = h00(u) wall + h01(u) end wall
+                                      b(u) = h10(u) layer_k
 
-    is a cubic in `u` whose only `entry`-dependence is one linear term.  `min_u H` is
-    therefore a minimum of functions each linear in `entry`, hence concave and monotone
-    decreasing in `|entry|` for `entry < 0`, which is what makes a bisection the right
-    instrument here -- the same argument `_sector_fit_limit` makes about `R`.
+    is a cubic in `u` whose only `entry`-dependence is ONE LINEAR TERM.
 
-    NO MESH IS BUILT.  That is the whole point: `study_fillet_block.cliff_entry` finds
-    this number by bisecting `sector_verdict` thirty times, which is thirty filleted
-    sector builds, and it agrees with this to 9.1e-10 over the held-out draw (§82).  A
-    per-genome layer profile is only adoptable because the cliff costs arithmetic.
+    THAT MAKES THE CLIFF A CLOSED FORM AND NOT A SEARCH (§88).  `b(u) = u (1 - u)^2
+    layer_k > 0` strictly inside `(0, 1)`, so for each sample `H(u) <= Z` exactly when
+    `entry <= (Z - a(u)) / b(u)`, and the sampled minimum is at or below `Z` exactly when
+    ONE of them is:
 
-    `None` means the layer survives the whole bracket, which for a bracket this wide has
-    not been observed and would be a genuine finding rather than a fallback to take.
+        cliff = max_u (LAYER_CLIFF_ZERO - a(u)) / b(u)
+
+    over the same `LAYER_CLIFF_SAMPLES` grid `_fillet_curves` takes its minimum on -- the
+    two endpoints excluded because `b` vanishes there and `H` is `wall` and `end * wall`,
+    both orders above `Z`, so neither can ever be the minimum this is solving for.
+
+    UNTIL §88 THIS BISECTED, 90 halvings of `LAYER_CLIFF_BRACKET`, on the argument that
+    `min_u H` is a minimum of functions linear in `entry` and therefore monotone.  That
+    argument was right and the closed form is the same root exactly: measured over the
+    98 junction-pairs of the shipped genome and all 48 genomes of
+    `studies/study_fillet_block.json`, the two agree to **2 ulp, worst relative
+    3.999e-16**.  What the closed form buys is a DERIVATIVE -- the bisection's is 90
+    `sign` comparisons and a zero, which is the shape of error `_newton_from_root`'s
+    docstring is about -- so the per-genome layer profile can now be differentiated
+    through instead of frozen.  `xp = jax.numpy` traces it.
+
+    NO MESH IS BUILT.  That is the whole point: `study_fillet_block.cliff_entry` USED TO
+    find this number by bisecting `sector_verdict` thirty times, which is thirty filleted
+    sector builds, and it agreed with this to 9.1e-10 over the held-out draw (§82) before
+    §84 made it delegate here.  A per-genome layer profile is only adoptable because the
+    cliff costs arithmetic.
+
+    `None` means the cliff is outside `LAYER_CLIFF_BRACKET` -- the layer survives the
+    whole bracket, which for a bracket this wide has not been observed and would be a
+    genuine finding rather than a fallback to take.  The upper end is checked too and the
+    bisection never checked it: a junction with no layer at ANY negative entry converged
+    to the bracket's own zero and reported it as a cliff.  It fires at none of the 98
+    pairs, so this is a guard and not a change of answer.  THE CHECK IS SKIPPED UNDER A
+    TRACE, because a mesh being differentiated has already been built and its eager pass
+    is what made that check.
     """
-    u = np.linspace(0.0, 1.0, LAYER_CLIFF_SAMPLES)
-    w1 = end * wall
-
-    def gone(entry):
-        return float(_hermite(wall, w1, entry * layer_k, 0.0, u).min()) <= LAYER_CLIFF_ZERO
-
-    lo, hi = float(bracket[0]), float(bracket[1])
-    if not gone(lo):
-        return None
-    for _ in range(steps):
-        mid = 0.5 * (lo + hi)
-        if gone(mid):
-            lo = mid
-        else:
-            hi = mid
-    return 0.5 * (lo + hi)
+    u = xp.linspace(0.0, 1.0, LAYER_CLIFF_SAMPLES)[1:-1]
+    a = _hermite(wall, end * wall, 0.0, 0.0, u, xp)
+    b = _hermite(0.0, 0.0, layer_k, 0.0, u, xp)
+    c = xp.max((LAYER_CLIFF_ZERO - a) / b)
+    if xp is not np:
+        return c
+    c = float(c)
+    return c if float(bracket[0]) <= c <= float(bracket[1]) else None
 
 
 def _layer_profile(layer_profile):
@@ -1534,11 +1572,10 @@ def _layer_profile(layer_profile):
 
     IT IS A PASS-THROUGH AND NOT THE PLACE THE DEFAULT LIVES (§85).  It has no `genes`, so
     it cannot answer the per-genome rule -- and that is deliberate rather than a gap:
-    `_resolve_layer_profile` settles the profile where the genes ARE, before the record
-    that feeds the jax cache key is written, so by the time anything asks this function it
-    is holding a concrete pair.  The two remaining callers that pass `None` are the
-    unfilleted path, which has no layer at all, and the cache key reading a record whose
-    pair was already resolved.
+    `_resolve_layer_profile` settles the profile where the genes ARE, and is now this
+    function's only caller.  §88 took the cache key off it: the key reads its record raw,
+    because a record holding `None` means the RULE there and this function would map it
+    onto the shipped constants.
     """
     if layer_profile is None or layer_profile == FILLET_LAYER_SHIPPED:
         return FILLET_LAYER_ENTRY_SLOPE, FILLET_LAYER_END_OFFSET
@@ -1548,19 +1585,30 @@ def _layer_profile(layer_profile):
 
 def _resolve_layer_profile(layer_profile, genes, cfg, fillet, span_mm=HUB_RIM_SPAN_MM,
                            orientation=None, rim_outer=RIM_OUTER_RADIUS_MM, uncap=None,
-                           clamp=SECTOR_FIT_CLAMP, fillet_blocking="sector"):
+                           clamp=SECTOR_FIT_CLAMP, fillet_blocking="sector",
+                           xp=np, sector=None, roots=None):
     """The concrete `(entry, end)` this build will use, settled BEFORE anything caches it.
 
-    RESOLVING EAGERLY IS THE WHOLE DESIGN, and the reason is the jax cache key.  It is
-    built from `repr(_layer_profile(rec["layer_profile"]))`, and if `None` were left in the
-    record to be resolved per genome further down, **two genomes with different profiles
-    would share one key** and the second would be handed the first's traced geometry --
-    the exact failure the `repr(uncap)` comment beside that key warns about.  Storing the
-    resolved pair makes the key correct with no change to the key itself.
+    RESOLVING EAGERLY WAS THE WHOLE DESIGN, and the reason was the jax cache key.  §85
+    built it from `repr(_layer_profile(rec["layer_profile"]))`, and leaving `None` in the
+    record to be resolved per genome further down meant **two genomes with different
+    profiles sharing one key**, the second handed the first's traced geometry -- the exact
+    failure the `repr(uncap)` comment beside that key warns about.  Storing the resolved
+    pair made the key correct with no change to the key itself.
 
-    It also keeps the traced path free of a root-find: the profile arrives as a constant,
-    exactly as the clamped radii do, so nothing here is differentiated through.  What that
-    costs is a gradient `mesh_coords` refuses rather than returns -- see there, and §79.
+    §88 INVERTED THAT, AND THE KEY IS CORRECT THE OTHER WAY NOW.  What §85 could not see is
+    that a resolved pair is a function of the GENOME, so the key it made correct also became
+    genome-dependent -- one jaxpr per design, which is the failure `coord_fn`'s docstring
+    describes for the frozen roots.  The cliff is a closed form in two tangency scalars now,
+    so `xp`, `sector` and `roots` carry this whole resolution THROUGH the trace: the record
+    holds `None` for a per-genome mesh again, the key reads it RAW rather than through
+    `_layer_profile`, the two genomes above legitimately share one key, and the gradient
+    `mesh_coords` used to REFUSE is returned.
+
+    The eager resolution below is unchanged and is still what `build_wheel` records and
+    reports.  What is still frozen is what was always frozen: the flank orientation, the
+    seam ownership, the four geometric refusals and the clamp's decision -- discrete
+    choices, every one.
 
     `None` is the per-genome rule (§82, §85) on exactly one path -- `fillet=True` with the
     eleven-block sector blocking.  `FILLET_LAYER_SHIPPED` is the pair the module shipped
@@ -1584,7 +1632,8 @@ def _resolve_layer_profile(layer_profile, genes, cfg, fillet, span_mm=HUB_RIM_SP
         return _layer_profile(layer_profile)
     return per_genome_layer_profile(genes, cfg, fillet=fillet, span_mm=span_mm,
                                     orientation=orientation, rim_outer=rim_outer,
-                                    uncap=uncap, clamp=clamp)
+                                    uncap=uncap, clamp=clamp,
+                                    xp=xp, sector=sector, roots=roots)
 
 
 def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
@@ -1660,7 +1709,11 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
             return _fillet_curves(sample, s_e, s_f, et, rr,
                                   ring_far_radius(hub_j, rim_outer), R_try, n_th, q,
                                   entry, end, xp,
-                                  roots[name] if frozen else None)
+                                  roots[name] if frozen else None,
+                                  # ONLY ON THE FROZEN PATH.  The eager harvest is what
+                                  # `layer_cliff_entry` reads its refusal REASONS from,
+                                  # and a short-circuit tests none of them (§88).
+                                  layer_only=layer_scalars_only and frozen)
 
         if frozen:
             # THE CLAMP'S DECISION IS FROZEN LIKE EVERY OTHER ONE, and the case it does
@@ -1682,9 +1735,16 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
             # a mesh nobody builds -- the exact error §82 caught the study making.
             # A layer refusal still carries them, which is why no `built` check guards
             # this: the cliff has to be computable at an entry that refuses.
+            #
+            # `built` STAYS `None` ON THE FROZEN PATH, where `layer_only` short-circuited
+            # before any refusal was tested.  `bool(None)` would say `False` -- "it
+            # refused" -- of a mesh that was built, which is the two-meanings-in-one-value
+            # error §84 spent a section on.
             harvest[junction] = {"wall": c.get("layer_wall"), "k": c.get("layer_k"),
                                  "R_mm": R_used, "clamped": bool(was_clamped),
-                                 "built": bool(c["built"]), "why": c.get("why")}
+                                 "built": None if c["built"] is None
+                                          else bool(c["built"]),
+                                 "why": c.get("why")}
             continue
         if not frozen and not c["built"]:
             raise ValueError(
@@ -1815,7 +1875,7 @@ def filleted_sector(genes, cfg, fillet=True, span_mm=HUB_RIM_SPAN_MM,
 def layer_cliff_entry(genes, cfg, fillet=True, end=FILLET_LAYER_CLIFF_END,
                       span_mm=HUB_RIM_SPAN_MM, orientation=None,
                       rim_outer=RIM_OUTER_RADIUS_MM, uncap=None,
-                      clamp=SECTOR_FIT_CLAMP):
+                      clamp=SECTOR_FIT_CLAMP, xp=np, sector=None, roots=None):
     """The `entry` at which THIS genome loses its layer, at the radii it is built at.
 
     Returns `{"entry": float|None, "why": str, "per_junction": {...}}`.  The sector's
@@ -1837,24 +1897,41 @@ def layer_cliff_entry(genes, cfg, fillet=True, end=FILLET_LAYER_CLIFF_END,
     refused for a reason that is not the layer -- and the two are KEPT APART in `why`,
     because folding them together is the defect §78 corrected once and §82 found twice
     more.  A caller that treats "no cliff" as "the safest case" must check which it got.
+
+    IT TRACES SINCE §88, and that is what makes the per-genome layer profile
+    differentiable rather than frozen.  `xp = jax.numpy` with `roots` — the frozen record
+    an eager build returned — takes the same two tangency scalars out of the same harvest
+    and hands them to the same closed form, so the traced entry is not a re-derivation of
+    the rule but the rule itself.  `sector` is `(sample, s_hub, s_rim, rim_inner)` from a
+    caller that has already built them (`sector_blocks` has), so the trace pays for one
+    sampler and one pair of junction stations rather than two.
+
+    THE BINDING JUNCTION IS NOT FROZEN.  `xp.maximum` of the two cliffs carries the
+    subgradient of whichever binds, so a genome sitting on the crossing gets a one-sided
+    derivative rather than a discrete choice baked into the jaxpr — the opposite of the
+    treatment `_fillet_curves`' refusals get, and for the opposite reason: this one is a
+    kink in a continuous function, not a change of construction.
     """
     cfg = get_config(cfg)
     if orientation is None:
         orientation = flank_orientation(genes, cfg, span_mm=span_mm)
-    rim_inner = rim_inner_radius(span_mm)
-    sample, s_dense = global_sampler(genes, cfg, span_mm=span_mm)
-    s_hub, s_rim = junction_stations(sample, s_dense, orientation, rim_inner)
+    if sector is None:
+        rim_inner = rim_inner_radius(span_mm)
+        sample, s_dense = global_sampler(genes, cfg, span_mm=span_mm, xp=xp)
+        s_hub, s_rim = junction_stations(sample, s_dense, orientation, rim_inner, xp=xp)
+    else:
+        sample, s_hub, s_rim, rim_inner = sector
     sc = _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                                  rim_outer, genes, fillet, uncap,
                                  FILLET_LAYER_ENTRY_SLOPE, FILLET_LAYER_END_OFFSET,
-                                 clamp, layer_scalars_only=True)
+                                 clamp, xp, roots, layer_scalars_only=True)
     per, cliffs = {}, []
     for junction in ("hub", "rim"):
         h = sc[junction]
         if h["wall"] is None or h["k"] is None:
             per[junction] = {"cliff": None, "why": h["why"], "R_mm": h["R_mm"]}
             continue
-        c = _layer_cliff_from_scalars(float(h["wall"]), float(h["k"]), float(end))
+        c = _layer_cliff_from_scalars(h["wall"], h["k"], float(end), xp=xp)
         per[junction] = {"cliff": c, "R_mm": h["R_mm"], "clamped": h["clamped"],
                          "why": None if c is not None
                                 else "the layer survives the whole bracket"}
@@ -1864,7 +1941,13 @@ def layer_cliff_entry(genes, cfg, fillet=True, end=FILLET_LAYER_CLIFF_END,
         bad = [j for j in ("hub", "rim") if per[j]["cliff"] is None]
         return {"entry": None, "per_junction": per,
                 "why": "; ".join(f"{j}: {per[j]['why']}" for j in bad)}
-    return {"entry": max(cliffs), "per_junction": per, "why": None}
+    # NOT `max`, WHICH COMPARES AND WOULD NEED A CONCRETE BOOL.  Same answer eagerly, and
+    # the only form that survives a trace.  The eager answer is narrowed back to a Python
+    # float because it is written into `studies/*.json` and `np.float64` is not
+    # serialisable.
+    entry = xp.maximum(cliffs[0], cliffs[1])
+    return {"entry": float(entry) if xp is np else entry,
+            "per_junction": per, "why": None}
 
 
 def per_genome_layer_profile(genes, cfg, fillet=True,
@@ -1883,13 +1966,21 @@ def per_genome_layer_profile(genes, cfg, fillet=True,
     fallback is where the caller stops being able to tell the rule's answer from a
     default, and the study's version of this fallback was firing on three of thirty-two
     genomes that turned out to HAVE cliffs, just outside its bracket (§82).
+
+    AND SINCE §88 THE PAIR IS TRACED WHEN `xp` IS, so `entry` arrives at
+    `_filleted_sector_blocks` as a function of the genes instead of as a constant the
+    frozen path held still.  `end` stays a module constant on both paths -- it is the
+    rule's operating point and not a function of the genome.
     """
     c = layer_cliff_entry(genes, cfg, fillet=fillet, end=end, **kw)
     if c["entry"] is None:
         raise ValueError(
             f"no per-genome layer profile exists for this genome: {c['why']}.  "
             f"See PLAN.md §82.")
-    return (float(factor) * float(c["entry"]), float(end))
+    # ONE EXPRESSION FOR BOTH PATHS: `layer_cliff_entry` has already narrowed its eager
+    # answer to a Python float, so no `float()` is needed here and none may be used -- it
+    # is what a traced entry would die on.
+    return (float(factor) * c["entry"], float(end))
 
 
 def _seam_table_filleted(orientation, dirn):
@@ -2155,6 +2246,12 @@ def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
         # `build_wheel` has already resolved this and passes a concrete pair; a caller
         # reaching `sector_blocks` directly gets the same default here (§85).  Resolving
         # twice is not possible: a pair is returned unchanged.
+        #
+        # AND ON THE TRACED PATH `layer_profile` IS `None` AGAIN, DELIBERATELY (§88).
+        # `_filleted_gradient_recipe` hands the rule back rather than the pair it produced,
+        # so the entry is re-resolved HERE, under `xp`, from this genome's own tangency
+        # scalars.  `sector=` passes the sampler and stations already built four lines up,
+        # so the trace pays for one of each and not two.
         return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation,
                                        rim_inner, rim_outer, genes, fillet, uncap,
                                        *_resolve_layer_profile(
@@ -2162,7 +2259,9 @@ def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
                                            span_mm=span_mm, orientation=orientation,
                                            rim_outer=rim_outer, uncap=uncap,
                                            clamp=fillet_clamp,
-                                           fillet_blocking=fillet_blocking),
+                                           fillet_blocking=fillet_blocking,
+                                           xp=xp, roots=fillet_roots,
+                                           sector=(sample, s_hub, s_rim, rim_inner)),
                                        fillet_clamp, xp, fillet_roots)
     if fillet is None:
         s_grid = xp.linspace(s_hub, s_rim, n_sp)
@@ -2525,6 +2624,13 @@ def mesh_coords(genes, mesh, xp=None):
     geometric refusals `_fillet_curves` can make are not re-tested.  Same argument as the
     flank orientation above; `_filleted_gradient_recipe` says what is still refused.
 
+    AND SINCE §88 THAT INCLUDES THE DEFAULT ONE.  `fillet=True` with no `layer_profile` is
+    the per-genome rule, whose entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`; §85
+    refused it because the frozen path held that entry constant.  The cliff is a closed
+    form in two scalars the tangency solve already produces, so it is re-resolved inside
+    the trace and the entry follows the genes — one more root-find NOT frozen, rather than
+    one more thing frozen.
+
     The default path goes through `coord_fn` and is JITTED, which is not an optimisation
     detail: see that function for the measurement.
     """
@@ -2583,6 +2689,15 @@ def _filleted_gradient_recipe(mesh):
       runs through the limit's own bisection.  Neither is what freezing the record gives,
       and a plausible wrong length is the failure `wheel_adjoint`'s header is about.  The
       clamp is inert at the shipped genome and over the whole span §75 priced.
+
+    A THIRD CASE WAS REFUSED HERE FROM §85 TO §88 AND IS NOT ANY MORE: the PER-GENOME
+    layer profile, whose entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`.  The cliff
+    turned out to be a closed form in two scalars the tangency solve already produces
+    (`_layer_cliff_from_scalars`), so it is differentiated rather than held constant.
+    THE RULE IS HANDED BACK, NOT THE PAIR IT PRODUCED — `layer_profile: None` — because
+    passing the resolved pair is exactly the frozen constant this stopped being.  A
+    non-per-genome mesh still passes its pair, and `coord_fn`'s cache key tells the two
+    apart by that `None`.
     """
     if getattr(mesh, "fillet", None) is None:
         return {}
@@ -2600,18 +2715,10 @@ def _filleted_gradient_recipe(mesh):
             "and do not follow them.  The differentiable path would return a gradient "
             "that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md "
             "§79.")
-    if rec.get("layer_profile_per_genome"):
-        raise NotImplementedError(
-            "mesh_coords: this mesh's layer profile is the PER-GENOME rule, so its entry "
-            f"{rec['layer_profile'][0]:.6f} is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)` "
-            "and does not follow the genes on the frozen path.  The differentiable path "
-            "would return a gradient that is plausible and wrong, exactly as it would "
-            "through the sector-fit clamp above.  Pass `layer_profile=` explicitly -- "
-            "`wheel_wheel.FILLET_LAYER_SHIPPED` is the pair the module used before §85 -- "
-            "or see PLAN.md §82 and §85 for what making the cliff differentiable needs.")
     return {"fillet": mesh.fillet, "fillet_blocking": rec["blocking"],
-            "layer_profile": rec["layer_profile"], "fillet_clamp": rec["clamp"],
-            "fillet_roots": rec["roots"]}
+            "layer_profile": None if rec.get("layer_profile_per_genome")
+                             else rec["layer_profile"],
+            "fillet_clamp": rec["clamp"], "fillet_roots": rec["roots"]}
 
 
 _COORD_FN_CACHE = {}
@@ -2666,9 +2773,15 @@ def coord_fn(mesh):
     orientation, rim_outer, phase = mesh.orientation, mesh.rim_outer, mesh.phase_deg
     uncap = getattr(mesh, "uncap", UNCAP_DEFAULT)
     owners_np = np.asarray(mesh.owners)
+    # `repr(rec["layer_profile"])` RAW, NOT THROUGH `_layer_profile` (§88).  That helper
+    # maps `None` onto the shipped constants, and since §88 `None` in this record means
+    # THE PER-GENOME RULE, resolved inside the trace: mapping it would key a per-genome
+    # mesh identically to a shipped-pair one and hand the second the first's geometry.
+    # The raw `None` also makes the key genome-INDEPENDENT again, which is the whole
+    # point of the paragraph above -- a resolved pair in the key re-traces per genome.
     fillet_key = () if not rec else (
         repr(rec["fillet"] if rec["fillet"] is True else tuple(rec["fillet"])),
-        rec["fillet_blocking"], repr(_layer_profile(rec["layer_profile"])))
+        rec["fillet_blocking"], repr(rec["layer_profile"]))
     # `repr(uncap)` IS IN THE KEY, and leaving it out is not a cache miss but a WRONG
     # ANSWER: two meshes can share every entry above and differ only in `uncap`, and the
     # second would then be handed the first's traced geometry.  See `WheelMesh.__init__`.

@@ -142,14 +142,16 @@ GATE_FILLET_MESH_MM = 1.0e-9      # G11 the same identity as G3, on the FILLETED
 #
 # §79 measured the filleted mesh's differentiability at what was then `fillet=True`'s
 # default -- the shipped pair -- and §85 moved that default onto the per-genome rule.  Two
-# things follow and neither is optional.  The rule's entry is `FILLET_LAYER_CLIFF_FACTOR *
-# cliff(genes)`, which does NOT follow the genes on the frozen path, so `mesh_coords`
-# refuses those meshes outright: G11 would not run at all.  And even if it did, silently
-# re-measuring §79's numbers on a different mesh would leave this file reporting one
-# section's gate against another section's geometry.
+# things followed and neither was optional.  The rule's entry is `FILLET_LAYER_CLIFF_FACTOR
+# * cliff(genes)`, which did NOT follow the genes on the frozen path, so `mesh_coords`
+# refused those meshes outright: G11 would not have run at all.  And even if it had,
+# silently re-measuring §79's numbers on a different mesh would leave this file reporting
+# one section's gate against another section's geometry.
 #
-# So the pair is named.  When the cliff becomes differentiable (§85's successor 3) this is
-# the line to revisit, and G11e's refusal census is where the new case belongs.
+# THE FIRST REASON IS GONE AND THE SECOND IS NOT (§88).  The cliff is differentiable now
+# and the rule is measured, in G11f, on its own rows.  G11a-e stay on the named pair: the
+# gate they carry is §79's, and moving it onto a different geometry in the same change that
+# made that geometry available is how a threshold stops being comparable to itself.
 G11_LAYER_PROFILE = WW.FILLET_LAYER_SHIPPED
 GATE_FILLET_JAC_REL = 1.0e-6      # G11 the mesh jacobian against a central difference of
                                   #     `build_wheel(fillet=True)` — which re-runs both
@@ -877,6 +879,13 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
     and re-bisects at every perturbed genome, and it compares the WHOLE coordinate array
     rather than a scalar that could cancel.
 
+    G11f IS THE ONE MEASURED AT THE RULE RATHER THAN AT THE NAMED PAIR (PLAN §88).
+    `fillet=True` bare takes the per-genome layer profile, whose entry is a function of the
+    genes; §85 refused a gradient through it and §88 made the cliff a closed form and
+    differentiated it.  The row that says whether that was worth doing is not `rel_rule` —
+    which only says the new path is right — but `rel_frozen`, the jacobian §85 would have
+    returned had it not refused, measured against the same central difference.
+
     AND THE END OF THE CHAIN IS THE AXLE DROP, for the same reason G9 exists: a mesh
     derivative that is right and a solve that never sees it is not a gradient.  Section 75
     priced this arm at 12.49% of axle drop over `R_hub`'s feasible range, measured as a
@@ -1019,23 +1028,121 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
     except NotImplementedError as exc:
         refusals["sector_fit_clamped"] = str(exc)
     refusals["clamped_radii_mm"] = [float(r) for r in mc.fillet_radii_mm]
-    # AND THE THIRD REFUSED CASE, WHICH §85 ADDED (PLAN §85).  `fillet=True` with no
-    # `layer_profile` is now the per-genome rule, whose entry is a function of the genes
-    # that the frozen path holds constant -- the same defect as the clamp above and refused
-    # the same way.  Measured here rather than asserted, so the day it stops refusing is
-    # the day someone made the cliff differentiable and this census says so.
-    mp = WW.build_wheel(genes, cfg, fillet=True)
-    try:
-        WW.mesh_coords(genes, mp, xp=np)
-        refusals["per_genome_layer_profile"] = None
-    except NotImplementedError as exc:
-        refusals["per_genome_layer_profile"] = str(exc)
-    refusals["per_genome_pair"] = [float(v)
-                                   for v in mp.fillet_recipe["layer_profile"]]
+    # A THIRD CASE WAS REFUSED HERE FROM §85 TO §88 AND IS NOT ANY MORE.  `fillet=True`
+    # with no `layer_profile` is the per-genome rule, whose entry the frozen path held
+    # constant; §85 wrote *"the day it stops refusing is the day someone made the cliff
+    # differentiable and this census says so"*.  §88 made it, so the case moved OUT of this
+    # dict and into G11f below, where it is measured rather than counted.  It is not
+    # dropped silently: `per_genome_layer_profile` is kept as a key, pinned at `None`, so a
+    # reader of the old artifact sees the same name change meaning in one place.
+    refusals["per_genome_layer_profile"] = None
+    refusals["per_genome_no_longer_refused_since"] = "PLAN.md §88"
     refusals["ok"] = bool(refusals["spoke_blocking"]
-                          and refusals["sector_fit_clamped"]
-                          and refusals["per_genome_layer_profile"])
+                          and refusals["sector_fit_clamped"])
     out["refusals"] = refusals
+
+    # --- G11f  THE PER-GENOME RULE, WHICH G11e USED TO COUNT AS A REFUSAL ------
+    #
+    # `fillet=True` bare is the default a filleted build takes (§85), and its entry is
+    # `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`.  Two questions, and the second is the one
+    # that says whether §88 was worth doing:
+    #
+    #   does the traced path reproduce and differentiate the mesh the rule builds?
+    #   -- `rel_rule`, the same jvp-against-eager-central-difference G11c makes.
+    #
+    #   HOW BIG IS THE TERM THE FROZEN PATH WOULD HAVE MISSED?  -- `rel_frozen`, the
+    #   jacobian of the mesh built at the rule's pair HELD FIXED, against the central
+    #   difference of the rule itself.  That is exactly the gradient §85 refused to return,
+    #   and its error is the cliff's own contribution.  A small number here would mean the
+    #   refusal was never worth much; it is not small.
+    mp = WW.build_wheel(genes, cfg, fillet=True)
+    pair = tuple(float(v) for v in mp.fillet_recipe["layer_profile"])
+    mfz = WW.build_wheel(genes, cfg, fillet=True, layer_profile=pair)
+    cliff = WW.layer_cliff_entry(genes, cfg)
+
+    def rule_coords(v):
+        return np.asarray(WW.build_wheel(np.asarray(v, float), cfg, fillet=True).coords)
+
+    def col(mesh, gid):
+        e = np.zeros(len(genes))
+        e[gid] = 1.0
+        _, d = jax.jvp(lambda v: WW.mesh_coords(v, mesh),
+                       (jnp.asarray(genes),), (jnp.asarray(e),))
+        return np.asarray(d)
+
+    pg_rows = []
+    for gi in gene_ids:
+        a_rule, a_frozen = col(mp, gi), col(mfz, gi)
+        rels_r, rels_f = [], []
+        for h_rel in jac_steps:
+            h = h_rel * rng[gi]
+            vp, vm = genes.copy(), genes.copy()
+            vp[gi] += h
+            vm[gi] -= h
+            fd = (rule_coords(vp) - rule_coords(vm)) / (2.0 * h)
+            scale = max(float(np.abs(fd).max()), 1e-300)
+            rels_r.append(float(np.abs(fd - a_rule).max() / scale))
+            rels_f.append(float(np.abs(fd - a_frozen).max() / scale))
+        k = int(np.argmin(rels_r))
+        pg_rows.append({"gene": wg.GENE_NAMES[gi],
+                        "max_abs_dcoord_dgene_mm": float(np.abs(a_rule).max()),
+                        "steps": [float(s) for s in jac_steps],
+                        "rel_ladder": rels_r, "rel_rule": rels_r[k],
+                        "rel_frozen": rels_f[k], "best_step": float(jac_steps[k]),
+                        "cliff_term_rel": float(np.abs(a_rule - a_frozen).max()
+                                                / max(float(np.abs(a_frozen).max()),
+                                                      1e-300))})
+    # AND THE TRACE IS SHARED ACROSS GENOMES AGAIN, which the resolved pair in `coord_fn`'s
+    # cache key made impossible: two per-genome meshes have different pairs and would have
+    # keyed apart, re-tracing the 2.8 s jaxpr on every finite difference and every optimizer
+    # step.  The record holds `None` now and the entry is resolved inside the trace, so the
+    # key is genome-independent -- and a SHIPPED-pair mesh must still key apart from it.
+    # A FRESH MESH, because `mp` already carries a `_coord_fn` from the rows above and
+    # would short-circuit the cache entirely -- the count would read 0 and say nothing.
+    WW._COORD_FN_CACHE.clear()
+    m_first = WW.build_wheel(genes, cfg, fillet=True)
+    np.asarray(WW.coord_fn(m_first)(genes))
+    n_after_first = len(WW._COORD_FN_CACHE)
+    other = genes.copy()
+    other[12] += 0.2
+    other[3] += 0.05
+    m_other = WW.build_wheel(other, cfg, fillet=True)
+    got = np.asarray(WW.coord_fn(m_other)(other))
+    n_after_second = len(WW._COORD_FN_CACHE)
+    np.asarray(WW.coord_fn(WW.build_wheel(genes, cfg, fillet=True,
+                                          layer_profile=G11_LAYER_PROFILE))(genes))
+    out["per_genome"] = {
+        "config": cfg, "pair": list(pair),
+        "cliff_entry": float(cliff["entry"]),
+        "cliff_per_junction": {j: float(cliff["per_junction"][j]["cliff"])
+                               for j in ("hub", "rim")},
+        "binding_junction": max(("hub", "rim"),
+                                key=lambda j: cliff["per_junction"][j]["cliff"]),
+        "factor": float(WW.FILLET_LAYER_CLIFF_FACTOR),
+        "identity_max_abs_mm": float(np.abs(
+            np.asarray(WW.mesh_coords(jnp.asarray(genes), mp))
+            - np.asarray(mp.coords)).max()),
+        "numpy_path_max_abs_mm": float(np.abs(
+            np.asarray(WW.mesh_coords(genes, mp, xp=np))
+            - np.asarray(mp.coords)).max()),
+        "rows": pg_rows,
+        "worst_rel_rule": max(r["rel_rule"] for r in pg_rows),
+        "worst_rel_frozen": max(r["rel_frozen"] for r in pg_rows),
+        "trace_shared": {
+            "after_one_genome": n_after_first,
+            "after_two_genomes": n_after_second,
+            "second_genome_pair": [float(v) for v in
+                                   m_other.fillet_recipe["layer_profile"]],
+            "second_genome_identity_mm": float(
+                np.abs(got - np.asarray(m_other.coords)).max()),
+            "after_a_shipped_pair_mesh": len(WW._COORD_FN_CACHE)},
+        "gate_rel": GATE_FILLET_JAC_REL, "gate_mm": GATE_FILLET_MESH_MM}
+    out["per_genome"]["ok"] = bool(
+        out["per_genome"]["worst_rel_rule"] < GATE_FILLET_JAC_REL
+        and out["per_genome"]["identity_max_abs_mm"] < GATE_FILLET_MESH_MM
+        and out["per_genome"]["numpy_path_max_abs_mm"] == 0.0
+        and n_after_first == 1 and n_after_second == 1
+        and out["per_genome"]["trace_shared"]["after_a_shipped_pair_mesh"] == 2)
 
     out["worst_identity_mm"] = max(r["max_abs_mm"] for r in out["identity"])
     out["worst_numpy_identity_mm"] = max(r["numpy_path_max_abs_mm"]
@@ -1044,7 +1151,8 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
                        and out["census"]["ok"]
                        and out["jacobian"]["worst_rel"] < GATE_FILLET_JAC_REL
                        and out["axle_drop"]["worst_rel"] < GATE_SECANT_REL
-                       and refusals["ok"])
+                       and refusals["ok"]
+                       and out["per_genome"]["ok"])
     return out
 
 
@@ -1333,16 +1441,37 @@ def _print(rep):
               f"G9's tightened reference secant at {a['fd_tol_rel']:.0e}]")
         print()
         print(f"    STILL REFUSED, because the derivative would be WRONG and not because")
-        print(f"    it would be hard — all three raise:")
-        for k in ("spoke_blocking", "sector_fit_clamped", "per_genome_layer_profile"):
+        print(f"    it would be hard — both raise:")
+        for k in ("spoke_blocking", "sector_fit_clamped"):
             msg = q["refusals"][k]
             print(f"      {k:24s} {'refused' if msg else '*** DID NOT REFUSE ***'}")
         print(f"      the clamped mesh was built at radii "
               f"{q['refusals']['clamped_radii_mm']} against a requested 8.0 mm at the "
               f"hub")
-        print(f"      the per-genome mesh was built at layer profile "
-              f"{tuple(round(v, 6) for v in q['refusals']['per_genome_pair'])}, whose "
-              f"entry is a function of the genes (PLAN §85)")
+        print()
+        pg = q["per_genome"]
+        print(f"    AND THE PER-GENOME LAYER PROFILE, WHICH WAS THE THIRD REFUSAL FROM "
+              f"§85 TO §88:")
+        print(f"      cliff {pg['cliff_entry']:+.9f} (hub "
+              f"{pg['cliff_per_junction']['hub']:+.6f}, rim "
+              f"{pg['cliff_per_junction']['rim']:+.6f} — the {pg['binding_junction']} "
+              f"binds), x {pg['factor']} -> entry {pg['pair'][0]:+.9f}")
+        print(f"      identity {pg['identity_max_abs_mm']:.3e} mm traced, "
+              f"{pg['numpy_path_max_abs_mm']:.3e} mm on the numpy path "
+              f"[< {pg['gate_mm']:.0e} mm]")
+        print(f"      {'gene':>6s}  {'rel vs the RULE':>16s}  "
+              f"{'rel if the pair were FROZEN':>28s}   cliff term")
+        for r in pg["rows"]:
+            print(f"      {r['gene']:>6s}  {r['rel_rule']:>16.2e}  "
+                  f"{r['rel_frozen']:>28.2e}   {r['cliff_term_rel']:.2e}")
+        print(f"      worst {pg['worst_rel_rule']:.2e} [< {pg['gate_rel']:.0e}] against "
+              f"{pg['worst_rel_frozen']:.2e} for the gradient §85 refused to return")
+        ts = pg["trace_shared"]
+        print(f"      one traced jaxpr across genomes: {ts['after_one_genome']} entry "
+              f"after one genome, {ts['after_two_genomes']} after a second at pair "
+              f"{tuple(round(v, 6) for v in ts['second_genome_pair'])} "
+              f"(identity {ts['second_genome_identity_mm']:.3e} mm), "
+              f"{ts['after_a_shipped_pair_mesh']} once a SHIPPED-pair mesh is added")
         print(f"    -> {'PASS' if q['pass'] else 'FAIL'}")
         print()
         print(f"    *** WHAT THIS DOES AND DOES NOT CHANGE.  Nothing wires the fillet "

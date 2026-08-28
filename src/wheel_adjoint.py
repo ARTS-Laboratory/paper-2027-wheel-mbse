@@ -100,6 +100,22 @@ carrying, is that the bracketed searches had to be replaced by a frozen-root New
 rather than traced -- a `custom_vjp` around the bisection would have been the wrong
 instrument, because there is nothing wrong with the bisection's derivative that a wrapper
 could fix.  There is no derivative in a `sign` comparison to wrap.
+
+AND THE THIRD SEARCH TOOK A THIRD INSTRUMENT, WHICH IS THE PART WORTH GENERALISING
+(section 88).  When section 85 made `fillet=True` take a PER-GENOME layer profile, its
+entry became `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)` -- another bracketed search, and
+the frozen-root step above does not apply to it, because the answer is not a root of an
+equation the traced path re-evaluates but the OUTPUT of ninety halvings.  So section 85
+refused the gradient outright, on the same argument the sector-fit clamp still gets.
+
+What removed the refusal was neither a wrapper nor a frozen root: the cliff had a closed
+form and nobody had looked for one.  The layer's width profile is affine in `entry`, so
+the entry at which its sampled minimum reaches zero is `max_u (Z - a(u)) / b(u)` over the
+same grid -- exact where the bisection was approximate, and differentiable where the
+bisection had ninety `sign` comparisons.  THE ORDER TO TRY THINGS IN IS THEREFORE: is the
+search unnecessary, is its answer a root worth freezing, and only then is it a discrete
+decision to be classified.  Two of this project's three searches ended at the second
+question and one of them at the first; none of them needed a `custom_vjp`.
 =============================================================================
 """
 

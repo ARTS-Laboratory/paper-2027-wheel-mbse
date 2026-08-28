@@ -1380,8 +1380,8 @@ def test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined(report):
 def test_the_layer_cliff_has_a_CLOSED_FORM_that_reproduces_the_bisection(genes):
     """§82's adoption rests on this and nothing else: the cliff costs arithmetic.
 
-    `cliff_entry` finds the layer-width cliff by bisecting `sector_verdict` thirty times,
-    which is thirty filleted sector builds — far too expensive to sit inside a mesh
+    `cliff_entry` USED TO find the layer-width cliff by bisecting `sector_verdict` thirty
+    times, which is thirty filleted sector builds — far too expensive to sit inside a mesh
     default.  `wheel_wheel._layer_cliff_from_scalars` finds the same number from the two
     scalars the TANGENCY solve already produces, because the width profile is a cubic in
     `u` whose only `entry`-dependence is one linear term.
@@ -1447,9 +1447,26 @@ def test_the_cliff_bracket_the_study_uses_is_TOO_NARROW_and_the_module_says_so(g
     file's own docstrings are about.
     """
     assert fb.CLIFF_BRACKET == ww.LAYER_CLIFF_BRACKET
-    assert fb.CLIFF_BISECTIONS == ww.LAYER_CLIFF_BISECTIONS
     # and it really does reach past where the three genomes' edges are
     assert fb.CLIFF_BRACKET[0] <= -2.60, fb.CLIFF_BRACKET
+
+    # SINCE §88 IT IS A VALIDITY RANGE AND NOT A SEARCH BRACKET, and the pair of constants
+    # that counted the search's halvings is gone with it — `CLIFF_BISECTIONS` here and
+    # `LAYER_CLIFF_BISECTIONS` in the module.  What the interval still decides is which
+    # answers are believed, so that is what is pinned: a cliff outside it is `None`, in
+    # both directions, and the upper direction is one the bisection never checked.
+    assert not hasattr(fb, "CLIFF_BISECTIONS")
+    assert not hasattr(ww, "LAYER_CLIFF_BISECTIONS")
+    # the cliff is `-6.177 * wall / layer_k` for this `end`, so both ends are reachable
+    wall, k, end = 2.0, 10.0, ww.FILLET_LAYER_CLIFF_END
+    inside = ww._layer_cliff_from_scalars(wall, k, end)
+    assert inside == pytest.approx(-1.2354957678767202), inside
+    assert ww.LAYER_CLIFF_BRACKET[0] < inside < 0.0, inside
+    # a `layer_k` a tenth as big drives the same cliff tenfold steeper, past -8
+    assert ww._layer_cliff_from_scalars(wall, k * 0.1, end) is None
+    # and a wall already below the zero-width threshold has no NEGATIVE entry at all:
+    # +0.104, which the bisection would have reported as a cliff at the bracket's zero
+    assert ww._layer_cliff_from_scalars(0.5 * ww.LAYER_CLIFF_ZERO, k, end) is None
     # and the module's own refusal threshold is the one the cliff is defined against
     assert ww.LAYER_CLIFF_ZERO == 1e-6
     assert ww.LAYER_CLIFF_SAMPLES == 401
