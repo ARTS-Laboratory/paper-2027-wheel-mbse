@@ -319,13 +319,27 @@ def test_the_reference_corners_do_not_move_when_the_mesh_is_filleted(genes):
     for name, p in plain.items():
         assert np.allclose(with_fillet[name], p, atol=0.0), name
 
-    filleted_blocks = ww.sector_blocks(genes, cfg, fillet=True)
-    for ring, label in (("hub_junction", "hub"), ("rim_junction", "rim")):
-        N = np.asarray(filleted_blocks[ring][0, 0], dtype=float)
-        assert np.linalg.norm(N - plain[f"{label}:P_t"]) > 0.4, (
-            f"{label}: `N` and `P_t` have come together, so this test no longer "
-            f"distinguishes the two blockings — re-derive it before trusting it")
-        assert np.allclose(filleted_blocks[ring][-1, 0], plain[f"{label}:P_c"])
+    # THE SEPARATION IS PROFILE-DEPENDENT, SO IT IS CHECKED AT BOTH (PLAN §85).
+    #
+    # `N` is where the layer's inner edge crosses the ring circle, so the layer's `end`
+    # moves it.  §85 made `fillet=True` take the per-genome rule, whose `end` is 0.70
+    # against the shipped 1.60 — a much shorter layer — and the hub's `N` comes in from
+    # 0.4719 mm to 0.0997.  The docstring's "0.47 mm at the hub" is the shipped figure and
+    # its 0.4 floor is left exactly there, on the profile it was derived from.
+    #
+    # The floor for the current default is 0.05 mm, which is not this run rounded down: it
+    # is two orders above the seam tolerance this mesh closes to (1e-9 mm) and an order
+    # under the measured separation, so it fails on the thing it is guarding — `N` and
+    # `P_t` becoming the same point — and not on the profile moving them.
+    for lp, floor in ((ww.FILLET_LAYER_SHIPPED, 0.4), (None, 0.05)):
+        filleted_blocks = ww.sector_blocks(genes, cfg, fillet=True, layer_profile=lp)
+        for ring, label in (("hub_junction", "hub"), ("rim_junction", "rim")):
+            N = np.asarray(filleted_blocks[ring][0, 0], dtype=float)
+            assert np.linalg.norm(N - plain[f"{label}:P_t"]) > floor, (
+                f"{label} at layer_profile={lp!r}: `N` and `P_t` have come together, so "
+                f"this test no longer distinguishes the two blockings — re-derive it "
+                f"before trusting it")
+            assert np.allclose(filleted_blocks[ring][-1, 0], plain[f"{label}:P_c"])
 
 
 def test_the_wedge_search_cannot_land_on_a_midside_node(genes):
@@ -580,18 +594,60 @@ def test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one(
         f"the unfilleted deflection's tail is {sharp['remaining_tail_pct']:.3f}% — if it "
         "is now inside the band too, the fillet's convergence argument has lost its "
         "contrast and that is a finding")
-    assert sharp["remaining_tail_pct"] > 5.0 * rounded["remaining_tail_pct"]
+    # THE CONTRAST, AND WHY THE FACTOR IS 2.0 RATHER THAN §50's 5.0 (PLAN §85).
+    #
+    # Both band claims above are untouched and both still hold.  What moved is the SIZE of
+    # the gap, and it moved for a reason that was measured, priced and adopted three
+    # sections before this test saw it: §85 made `fillet=True` take the per-genome layer
+    # profile, whose convergence cost §82 published as part of the decision to adopt it —
+    # increment ratio 0.466 at factor 0.45, against the shipped profile's 0.229.  The
+    # filleted tail rose 0.031% -> 0.131% and the contrast fell 11.9x -> 2.8x.
+    #
+    # So this is not a threshold fitted to the run that breached it; it is a derived
+    # expectation re-derived after a deliberate change with its own published table.  It is
+    # anchored to that table below rather than to this run, so it cannot drift again
+    # without one of the two disagreeing.
+    assert sharp["remaining_tail_pct"] > 2.0 * rounded["remaining_tail_pct"], (
+        sharp["remaining_tail_pct"], rounded["remaining_tail_pct"])
+    assert rounded["increment_ratio"] == pytest.approx(0.466, abs=0.01), (
+        f"the filleted ladder's increment ratio is {rounded['increment_ratio']:.4f} and "
+        f"§82 adopted factor {fb.CLIFF_PROFILE_FACTOR} on a measured 0.466 — if these two "
+        f"have parted company, one of this test and that table is describing a mesh the "
+        f"other is not")
 
-    # and the node reading is kept in the artifact precisely so this stays checkable:
-    # on the filleted mesh it is NOT monotone, which is why its spread meant nothing
-    assert fillet_report["deflection"]["node"]["monotone"] is False
+    # AND THE NODE READING IS KEPT IN THE ARTIFACT PRECISELY SO THIS STAYS CHECKABLE.
+    #
+    # This asserted `monotone is False`, which was the shape the artefact took on the
+    # shipped profile: increments +0.001359 then -0.001236, an oscillation, ratio -0.909.
+    # §85's per-genome profile perturbs the rim less, and the artefact changed SHAPE rather
+    # than going away — the ladder is now monotone and DIVERGING, increments -0.000651 then
+    # -0.001175, ratio 1.804, so each rung moves it further than the last.
+    #
+    # `settling` is what §65's finding actually says and it is false in both shapes, so it
+    # is what is pinned.  Asserting non-monotonicity pinned one symptom of the artefact and
+    # would have gone green here while the reading got worse.
+    assert fillet_report["deflection"]["node"]["settling"] is False, (
+        fillet_report["deflection"]["node"]["increment_ratio"])
+    assert fillet_report["deflection"]["interp"]["settling"] is True
 
 
 def test_nothing_wires_the_fillet_into_the_objective():
-    """PART 10's scope, as a check rather than a note. `fillet=` is a measurement
-    instrument for ONE genome — 6 of 16 feasible genomes refuse it at their own radii and
-    6 of the 10 that build sit under `MIN_SJ_TARGET` — so it must not reach the optimizer
-    on the strength of Step 2. Step 2 measured corners; it did not measure genomes."""
+    """PART 10's scope, as a check rather than a note.
+
+    THE GATE STANDS AND ITS REASON HAS CHANGED (PLAN §89). What stood here read *"`fillet=`
+    is a measurement instrument for ONE genome — 6 of 16 feasible genomes refuse it at
+    their own radii and 6 of the 10 that build sit under `MIN_SJ_TARGET`"*. Neither half
+    survives: the refusals were closed by the sector-fit clamp (§74, §78), and the barrier
+    half was a count taken on the SHIPPED GLOBAL PAIR, which stopped being what
+    `fillet=True` builds at §85. On the assembled mesh at the objective's own config the
+    default clears 16 of 16 and 31 of 32 — and so does `fillet=None`, on the same genomes,
+    failing on the same one and failing harder.
+
+    So this is no longer a mesh-validity gate. It is the SCOPE gate: wiring the fillet into
+    the objective is a decision about cost and about the `Kt` surrogate (§75, §88 ranking
+    item 2), and it must be taken deliberately rather than arrived at because a keyword
+    leaked into a call. The day that decision is taken, this test is the thing to update —
+    with the record that took it named here."""
     # PARSED, NOT GREPPED, and the two failures a grep gives here are both real. A pattern
     # loose enough to catch `fillet=True` also catches `wheel_objective`'s local
     # `fillet = jnp.sum(...)` — the fillet-MARGIN barrier, which has nothing to do with the
@@ -609,9 +665,10 @@ def test_nothing_wires_the_fillet_into_the_objective():
                 if kw.arg not in ("fillet", "fillet_blocking"):
                     continue
                 assert isinstance(kw.value, ast.Constant) and kw.value.value is None, (
-                    f"{mod}:{node.lineno} passes {kw.arg}= to a call — `fillet=` is a "
-                    f"measurement instrument for one genome and must not reach the "
-                    f"optimizer (PLAN §48, §52)")
+                    f"{mod}:{node.lineno} passes {kw.arg}= to a call — wiring the "
+                    f"fillet into the objective is a DECISION about cost and about the "
+                    f"`Kt` surrogate, not a keyword (PLAN §89; §48's mesh-validity "
+                    f"clause is retired)")
 
 
 def test_parse_fillet_refuses_what_it_cannot_mean():
@@ -767,6 +824,22 @@ def test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet(fillet_repo
 
     If that stops being true, the band has started measuring the fillet again and the
     promotion can be settled without `make gci` — so this fails rather than passing.
+
+    IT DID STOP BEING TRUE, FOR TWO DAYS, AND IT WAS THIS TEST THAT SAID SO (§82, §83).
+    §74 put the sector-fit clamp in the mesh; this artifact was not regenerated until §82,
+    and when it was, `(-0.90, 1.10)` flipped `inside_band_patch` and began holding the
+    spread band WITHOUT the patch band at the highest patch count in the table — ok={31}
+    against bad={29,30,32}.  The cause was not the band and not the clamp's intent:
+    `_sector_fit_span` counted a layer-width refusal as "no room", so at a steep entry the
+    clamp pulled a radius back on the strength of the LAYER's cliff wearing the sector
+    fit's name.  §83 separated the two, and all 34 shared rows of this artifact went back
+    to their pre-§74 values field for field — so the clamp, correctly implemented, is
+    inert on every priced corner pair and this finding was never really about the fillet.
+
+    Kept as an ordinary assertion rather than left as an xfail, because it passes again on
+    its own merits.  The episode is recorded here rather than in a marker so that the next
+    person to see it go red knows it has a false-positive mode: check whether the artifact
+    is stale against `wheel_wheel` before believing the band moved.
     """
     pr = fillet_report["profiles"]
     cand = {tuple(p) for p in pr["candidates"]}

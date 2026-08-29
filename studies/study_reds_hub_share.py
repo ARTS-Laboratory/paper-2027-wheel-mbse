@@ -98,11 +98,17 @@ def sweep(name, cfg, points, fillet=None, kinematics="linear"):
     and 13 and `dcoords/dgene` is identically zero for both (`wheel_adjoint`'s header).
     Meshing the fillet is the only thing that gives either of them mechanical feedback.
 
-    THIS IS SENSITIVITY, NOT A GRADIENT, and the difference is not cosmetic.
-    `mesh_coords` still refuses a filleted mesh outright, so nothing here reaches the
-    optimizer; what a moving row buys is a MEASURED answer to "what does the fillet do to
-    the wheel", against which the `Kt` correlation the objective actually prices these two
-    genes through can be checked for the first time.
+    THIS IS SENSITIVITY, NOT A GRADIENT, and the difference is not cosmetic.  A moving row
+    buys a MEASURED answer to "what does the fillet do to the wheel", against which the
+    `Kt` correlation the objective actually prices these two genes through can be checked
+    for the first time.
+
+    THE SENTENCE THAT USED TO CARRY THAT DISTINCTION WAS *"`mesh_coords` still refuses a
+    filleted mesh outright, so nothing here reaches the optimizer"*, AND IT IS FALSE TWICE
+    OVER.  §79 gave the filleted mesh a gradient on 2026-08-24 and §88 gave one to the
+    per-genome default this sweep builds.  What is still true is the part that matters
+    here: nothing in `wheel_objective` builds a filleted mesh, so the optimizer does not
+    see either of them -- and that is a fact about the objective, not about `mesh_coords`.
     """
     base = load(name)
     lo, hi = W.GENE_SPACE[R_HUB_GENE]["low"], W.GENE_SPACE[R_HUB_GENE]["high"]

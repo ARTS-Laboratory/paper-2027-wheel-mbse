@@ -41,38 +41,84 @@ WHAT IS AND IS NOT MODELLED
 The material region is `hub_disk | rim_band | 12 spoke bands clipped to the annulus`.
 Two deliberate differences from the shipped STEP, both measured rather than assumed:
 
-  FILLETS ARE NOT MODELLED, and since the hub fillet milestone they are worth about 1%
-  of area rather than nothing.  The unfilleted planar profile is 2644.3509 mm2 and the
-  filleted solid's cross-section is 2668.63 (59777.4 mm3 / 22.4 mm) — 24.28 mm2, 0.92%.
-  It used to be 0.29 mm2, 0.01%, because only twelve of the forty-eight corners were
-  ever built; all forty-eight are now.  They still matter for STRESS, which is why
-  `wheel_fea.stress_concentration_kt` is retained as a post-multiplier here rather than
-  deleted (the plan deletes it only once a meshed fillet exists).
+  FILLETS ARE NOT MODELLED BY THE DEFAULT MESH, and they are a FIRST-ORDER term, not a
+  rounding.  Read from `export/wheel_step_manifest.json`, which is the shipped genome's
+  own OCC export (`09e8188`, 2026-08-14) and the only number here that is not transcribed:
+
+        solid 39224.5 mm3   nofillet 36145.8   fillets 3078.77   =  7.85% of the solid
+
+  At `SPOKE_WIDTH_MM = 22.4` that is an unfilleted profile of 1613.6518 mm2 and
+  **137.4451 mm2 of fillet, 8.52% of it**.  THIS PARAGRAPH USED TO SAY 24.28 mm2, 0.92%,
+  AND THAT HAS BEEN KNOWN WRONG SINCE §14 — which corrected it in
+  `test_total_mass_matches_the_step_manifest_within_the_embed_difference` and in PLAN.md
+  and never here, so the docstring went on claiming a fillet two orders too small for
+  three arcs.  The 0.92% belongs to the era when only twelve of the forty-eight corners
+  were built; all forty-eight are now, and the manifest publishes the subtraction OCC
+  does exactly.  A PERCENTAGE HERE MOVES WITH THE GENOME — 6.18% at §14's, 8.77% at
+  §24's, 7.85% at this one — so read the manifest rather than this sentence, and
+  `test_the_fillet_reference_agrees_with_the_STEP_MANIFEST` is what stops it re-staling.
+
+  They still matter for STRESS, which is why `wheel_fea.stress_concentration_kt` is
+  retained as a post-multiplier here rather than deleted (the plan deletes it only once a
+  meshed fillet exists).
+
+  `fillet=` DOES MODEL THEM, AND SINCE PLAN.md §86 THE REFERENCE FOLLOWS IT.
+  `modelled_area_reference(..., fillet=(R_hub, R_rim))` adds the sector blocking's two
+  wedges per spoke — 139.1602 mm2 at the shipped genome, 8.64% of the region — so
+  `error_vs_modelled` is a discretisation residual on a filleted mesh the same way it is
+  on this one.
+
+  AND THAT IS 1.25% FROM THE EXPORTER'S 137.4451, WHICH IS THE CROSS-CHECK RATHER THAN A
+  COINCIDENCE (§87).  The two are genuinely different constructions — OCC's edge fillet on
+  the EMBEDDED solid against a tangent arc on the un-embedded band, one kernel each — and
+  they are not expected to agree exactly: `_embed` moves the corner the exporter rounds.
+  Agreement to 1.7 mm2 on 137 says the mesh's fillet is the PART's fillet and not a
+  construction of its own.
 
   `reference_shipped_step_mm2` below is the UNFILLETED cross-section — `_embed`'s
   allowance and nothing else — so an AREA comparison and a MASS comparison against the
-  shipped solid are different questions and land in different places.  RE-MEASURED
+  shipped solid are different questions and land in different places.  It is also why
+  `area_report` WITHHOLDS that half for a filleted mesh: the anchor and the allowance
+  were both measured against the unfilleted profile, so there is nothing like-for-like
+  to report.  RE-MEASURED
   2026-08-18 on the shipped genome at `medium`, because the numbers this paragraph used
   to quote ("~1.4% low" and "~2.3% low") predate both the hub fillet milestone and the
   uncap default and were stale by more than the effects they described:
 
-        area vs unfilleted cross-section     -2.2205%  capped   ->  -2.0490%  default
-        mass vs the FULL solid               -8.2241%  capped   ->  -8.0632%  default
-        mass vs the NOFILLET solid           -0.4039%  capped   ->  -0.2292%  default
+        area vs `reference_shipped_step_mm2`  -2.2205%  capped   ->  -2.0490%  default
+        mass vs the FULL solid                -8.2241%  capped   ->  -8.0632%  default
+        mass vs the NOFILLET solid            -0.4039%  capped   ->  -0.2292%  default
 
-  The full-solid column carries the fillet material, which is 6.18% of the solid and
-  which this mesh does not model at all; the nofillet column does not, which is why it is
-  the small one.  Neither is a discrepancy in either kernel.  A percentage here moves with
-  every genome — see `test_the_embed_difference_from_the_shipped_step_is_the_known_amount`
-  on why the pinned invariant is an absolute mm2 and not one of these fractions.
+  ROW 1's LABEL USED TO READ "area vs unfilleted cross-section" AND THAT NAMED THE WRONG
+  ANCHOR (§87).  All six values still reproduce exactly; what row 1 is measured against is
+  the DERIVED anchor `reference_capped_mm2 + 12 x EMBED_ALLOWANCE_PER_SPOKE_MM2`, not the
+  STEP's own unfilleted cross-section.  Against THAT the answer is row 3 — identical,
+  because mass and area are the same ratio for a uniform extrusion — so the mesh is
+  **-0.2292% from the shipped solid's unfilleted profile, not -2.05%**.
+
+  THE ~1.8% BETWEEN THE TWO ROWS IS `EMBED_ALLOWANCE_PER_SPOKE_MM2` BEING STALE, which is
+  §14's OPEN ITEM 6 and not a new finding: the same computation that produced 3.03 gives
+  **0.5317 mm2 per spoke** on the shipped genome (1613.6518 - 1607.2718 = 6.3800, / 12).
+  It is deliberately NOT replaced — §14: *"Do not guess a new number. Replacing 3.03 with
+  0.98 would only re-stale it on the next genome; what is needed is the scaling law."*
+
+  The full-solid column carries the fillet material, which is 7.85% of the solid (see
+  above; this line used to say 6.18%, which was §14's genome) and which the default mesh
+  does not model at all; the nofillet column does not, which is why it is the small one.
+  Neither is a discrepancy in either kernel.  A percentage here moves with every genome —
+  see `test_the_embed_difference_from_the_shipped_step_is_the_known_amount` on why the
+  pinned invariant is an absolute mm2 and not one of these fractions.
 
   `wheel_step_export._embed` IS PARTIALLY REPRODUCED SINCE 2026-08-18, and the part that
-  is not still matters.  `_embed` adds 3.03 mm2 per spoke inside the annulus
-  (`EMBED_ALLOWANCE_PER_SPOKE_MM2`); `UNCAP_DEFAULT` now models 0.2342 of that per spoke
-  by continuing each junction's far flank to its ring circle instead of closing it with a
-  half end cap, so the mesh-vs-STEP area gap narrows from -2.2205% to -2.0490% and
-  `area_report` reports the modelled share as `gusset_modelled_per_spoke_mm2`.  The
-  remaining ~2.05% is a real modelling difference and it is deliberate.
+  is not still matters — but it is SMALL, and this paragraph used to say otherwise.
+  `EMBED_ALLOWANCE_PER_SPOKE_MM2` says `_embed` adds 3.03 mm2 per spoke inside the
+  annulus; the shipped genome's STEP says 0.5317 (above), of which `UNCAP_DEFAULT` models
+  0.2342 by continuing each junction's far flank to its ring circle instead of closing it
+  with a half end cap.  `area_report` reports the modelled share as
+  `gusset_modelled_per_spoke_mm2`.  So the gap against the DERIVED anchor narrows
+  -2.2205% -> -2.0490%, and the gap against the SHIPPED SOLID narrows -0.4039% ->
+  **-0.2292%** — 0.2975 mm2 per spoke left over.  That remainder is the real modelling
+  difference and it is deliberate; the ~2.05% is the stale constant and is not.
 
   WHAT STILL IS NOT REPRODUCED IS `_embed`'s ARGMAX, and that was always the part with
   the M7 problem.  It picks its length by a search over 20001 candidates, and at the RIM
@@ -110,6 +156,7 @@ precision.  That number is the whole safety net for this module.
 =============================================================================
 """
 
+import functools
 import math
 
 import numpy as np
@@ -760,7 +807,43 @@ def _lerp_points(a, b, n, xp):
 # spoke really is the Coons patch of its own boundary curves.
 
 
-def _fillet_tangency(sample, s_end, s_far, eta_s, ring_r, R, void_sign, xp=np):
+def _newton_from_root(f, x0, xp):
+    """One Newton step from an ALREADY-CONVERGED root: same value, the IFT derivative.
+
+    This is the whole trick that makes the filleted geometry differentiable, and it is
+    the same argument `wheel_adjoint` makes one level up — differentiate the equation,
+    not the iteration that solved it.  `x0` is a root of `f(., p0)` found eagerly by
+    bisection; under a trace at `p` near `p0` the step
+
+        x* = x0 - f(x0, p) / (df/dx)(x0, p)
+
+    has `f(x0, p0) = 0`, so its VALUE is `x0` to the bisection's own tolerance, and its
+    derivative is `dx*/dp = -(df/dp)/(df/dx)` — the implicit-function-theorem answer,
+    exactly.  Differentiating the bisection instead would put 200 halvings and their
+    `sign` comparisons into the tape and return a zero gradient, which is the shape of
+    error that "right direction, wrong length" is made of.
+
+    On the numpy path there is nothing to refine: `x0` IS the answer and the step would
+    only add rounding, so it is skipped and the eager mesh stays bit-identical.
+    """
+    if xp is np:
+        return x0
+    import jax
+    r, dr = jax.value_and_grad(f)(xp.asarray(x0))
+    return xp.asarray(x0) - r / dr
+
+
+def _fillet_centre(sample, s, eta_s, R, xp=np):
+    """The flank point at station `s` and the fillet centre `R` off it, into the void."""
+    p = sample(xp.asarray(s), xp.asarray(eta_s))
+    mid = sample(xp.asarray(s), xp.asarray(0.0))
+    d = p - mid
+    n = xp.linalg.norm(d)
+    return p, p + R * (d / xp.where(n > 0.0, n, 1.0))
+
+
+def _fillet_tangency(sample, s_end, s_far, eta_s, ring_r, R, void_sign, xp=np,
+                     s_seed=None):
     """Solve for the fillet tangent to the ring circle and to the straddling flank.
 
     The fillet disk sits in the VOID, so its centre C is at |C| = ring_r + void_sign*R
@@ -771,41 +854,45 @@ def _fillet_tangency(sample, s_end, s_far, eta_s, ring_r, R, void_sign, xp=np):
     Returns (s_A, A, B, C).  A is the tangent point on the flank, B the tangent point on
     the ring circle (B = C scaled onto the circle, exact because C is radially offset
     from it by exactly R).
+
+    `s_seed` is a root of this same equation found on a previous EAGER pass, and passing
+    one turns the bracketed search off: the scan and the 200 halvings are replaced by
+    `_newton_from_root`, which is what makes this function traceable.  The refusal below
+    is a property of the bracket and so cannot be raised on that path — see
+    `_fillet_curves` on why freezing it is the same decision `mesh_coords` already makes
+    about the flank orientation.
     """
     target = ring_r + void_sign * R
 
-    def centre(s):
-        p = np.asarray(sample(np.asarray(float(s)), np.asarray(float(eta_s))), float)
-        mid = np.asarray(sample(np.asarray(float(s)), np.asarray(0.0)), float)
-        n_hat = (p - mid) / (np.linalg.norm(p - mid) or 1.0)
-        return p, p + R * n_hat
-
     def f(s):
-        return float(np.linalg.norm(centre(s)[1])) - target
+        return xp.linalg.norm(_fillet_centre(sample, s, eta_s, R, xp)[1]) - target
 
-    # Scan from the ring end into the spoke for a sign change.  `f` is negative at the
-    # ring end at the hub (the centre is inside radius+R) and positive at the rim; a
-    # single monotone crossing is what a fillet that fits looks like.
-    ss = np.linspace(float(s_end), float(s_far), 400)
-    vals = np.array([f(s) for s in ss])
-    hit = np.nonzero(np.sign(vals[:-1]) * np.sign(vals[1:]) <= 0)[0]
-    if hit.size == 0:
-        raise ValueError(
-            f"no fillet of radius {R:.4f} mm is tangent to both the ring at r="
-            f"{ring_r:.4f} and the flank anywhere along the spoke: the tangency "
-            f"residual stays {vals.min():+.4f}..{vals.max():+.4f} mm.  The fillet is "
-            f"larger than the notch can hold.")
-    lo, hi = ss[hit[0]], ss[hit[0] + 1]
-    for _ in range(200):
-        mid = 0.5 * (lo + hi)
-        if np.sign(f(lo)) == np.sign(f(mid)):
-            lo = mid
-        else:
-            hi = mid
-    s_A = 0.5 * (lo + hi)
-    A, C = centre(s_A)
-    B = C * (ring_r / float(np.linalg.norm(C)))
-    return float(s_A), A, B, C
+    if s_seed is not None:
+        s_A = _newton_from_root(f, s_seed, xp)
+    else:
+        # Scan from the ring end into the spoke for a sign change.  `f` is negative at
+        # the ring end at the hub (the centre is inside radius+R) and positive at the
+        # rim; a single monotone crossing is what a fillet that fits looks like.
+        ss = np.linspace(float(s_end), float(s_far), 400)
+        vals = np.array([float(f(s)) for s in ss])
+        hit = np.nonzero(np.sign(vals[:-1]) * np.sign(vals[1:]) <= 0)[0]
+        if hit.size == 0:
+            raise ValueError(
+                f"no fillet of radius {R:.4f} mm is tangent to both the ring at r="
+                f"{ring_r:.4f} and the flank anywhere along the spoke: the tangency "
+                f"residual stays {vals.min():+.4f}..{vals.max():+.4f} mm.  The fillet is "
+                f"larger than the notch can hold.")
+        lo, hi = ss[hit[0]], ss[hit[0] + 1]
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if np.sign(float(f(lo))) == np.sign(float(f(mid))):
+                lo = mid
+            else:
+                hi = mid
+        s_A = float(0.5 * (lo + hi))
+    A, C = _fillet_centre(sample, s_A, eta_s, R, xp)
+    B = C * (ring_r / xp.linalg.norm(C))
+    return s_A, A, B, C
 
 
 def _arc_between(C, P, Q, n, xp=np):
@@ -936,9 +1023,129 @@ def _filleted_spoke(sample, s_hub, s_rim, orientation, rim_inner, n_sp, n_th,
 # GENOMES it is not -- 6 of 16 feasible ones refuse the fillet at their own radii and
 # only 4 of the 10 that build clear `MIN_SJ_TARGET`.  This is a measurement instrument
 # for one design, not a path the optimizer may take.  See PLAN §48.
+#
+# NARROWED TWICE SINCE, AND ONE HALF OF IT IS GONE.  The REFUSALS are closed by the
+# sector-fit clamp below -- 16 of 16 in sample and 32 of 32 on a held-out draw (§74, §78)
+# -- and this construction is DIFFERENTIABLE since §79, so "a path the optimizer may take"
+# is no longer blocked on either the geometry refusing or on there being no derivative.
+#
+# AND THE OTHER HALF IS GONE TOO, ON A MEASUREMENT AND NOT ON A CONCESSION (§89).  What
+# stood here read *"What still blocks it is the BARRIER half and only that: half of each
+# drawn genome box sits under `MIN_SJ_TARGET` (8/16 and 16/32)."*  Both numbers are the
+# SHIPPED GLOBAL PAIR's, which stopped being what `fillet=True` builds at §85.  Re-taken
+# on the assembled mesh at `coarse` -- the config `wheel_objective.objective` defaults to
+# -- with `wheel_mesh.scaled_jacobian`, which is the instrument the barrier itself reads:
+#
+#                        in sample     held out     median J    worst barrier
+#     fillet=True         16 of 16     31 of 32       0.3382          18.2047
+#     fillet=None         16 of 16     31 of 32       0.7447         327.1699
+#
+# `coarse` AND NOT EVERY CONFIG, WHICH IS A SCOPE AND NOT A HEDGE.  The held-out draw reads
+# the same 31 of 32 both ways at `medium` too, but `medium` IN SAMPLE has the filleted mesh
+# at 15 of 16 against 16 of 16 -- on one genome, whose part self-intersects, where BOTH
+# meshes fold an element and the corner-quad metric surfaces the filleted mesh's fold while
+# missing the unfilleted one's, which is deeper.  See §89's last section; it is a defect in
+# the metric rather than in this construction, and §58's fold gate rejects that genome
+# either way.
+#
+# THE CONTROL IS THE ROW THAT RETIRES THE CLAUSE.  `fillet=None` is the mesh the optimizer
+# builds TODAY and it scores the same count; the one held-out genome under the barrier is
+# under it either way, and it is under it HARDER unfilleted -- 0.1298 against 0.1775, and
+# the barrier TERM `t2_vector` sums is 327.17 against 18.20 on 72 marginal elements
+# against 12.  A criterion that does not separate the two meshes cannot be the reason to
+# refuse one of them.
+#
+# WHAT THE FILLET DOES COST IS HEADROOM, NOT CROSSINGS, and that is the honest other half:
+# min scaled Jacobian is lower on 31 of the 32 held-out genomes, median 0.338 against
+# 0.745.  It spends about half the room above the barrier and crosses it no more often.
+#
+# SO NOTHING HERE IS A MESH-VALIDITY BLOCKER ANY MORE.  What is left between `fillet=` and
+# the objective is a DECISION, and its two terms are COST and the surrogate: §88 puts the
+# filleted mesh at "2-3x the cost of the unfilleted one" and `wheel_objective` prices
+# `R_hub` through a `Kt` surrogate that is exactly flat over half its feasible range
+# (§75).  §89 did not re-measure either -- the cost figure is §88's and carries no
+# measurement behind it in this tree, which is worth knowing before it is quoted a third
+# time.  Until that decision is taken nothing wires `fillet=` into the objective, with
+# `tests/test_corner_singularity.py` holding that as a check.
 
 FILLET_LAYER_ENTRY_SLOPE = -0.45
 FILLET_LAYER_END_OFFSET = 1.60
+
+# THE BARRIER HALF'S ANSWER, AND IT IS A RULE RATHER THAN A PAIR.  PLAN §82.
+#
+# Every candidate §60-§69 weighed was a GLOBAL `(entry, end)`, and a global pair has to be
+# safe for the tightest genome in the box and pays for that at every other one.  §68
+# declined the best of them (`GENOME_ROBUST_*`, -0.90 / 0.70) on exactly that: it buys 15
+# of 16 by spending the shipped genome's layer-width margin down to ~0.06.  §81 then drew
+# a held-out box and killed the compromise pair `(-0.70, 0.90)` outright -- 28 of 32 where
+# the pair it was meant to replace clears 31.
+#
+# What clears 31 of 32 for FIVE TIMES that margin is a per-genome entry: each genome takes
+# a fixed share of ITS OWN layer-width room, which is the same shape `SECTOR_FIT_CLAMP`
+# above already works in.  `end` is held at `GENOME_ROBUST_END` so the ENTRY rule is the
+# only difference between the two.
+#
+# 0.45 IS THE BOTTOM EDGE OF THE ADMISSIBLE BAND, BRACKETED ON BOTH SIDES BY MEASUREMENT,
+# and it is not a round number anybody picked.  The admissible set is two conditions and
+# neither is invented for this: clear `MIN_SJ_TARGET` on the held-out draw, and settle
+# against `study_corner_singularity.SETTLING_RATIO` at the shipped genome.
+#
+#   factor   held-out clears   settling ratio   settles   cost vs shipped   margin left
+#    0.95        29 of 32          0.800          NO          +0.865%          0.040
+#    0.85        31 of 32          0.796          NO          +0.804%          0.121
+#    0.75        31 of 32          0.684          yes         +0.392%          0.202
+#    0.65        31 of 32          0.634          yes         +0.298%          0.282
+#    0.55        31 of 32          0.591          yes         +0.247%          0.363
+#    0.45        31 of 32          0.466          yes         +0.106%          0.444   <--
+#    0.35        30 of 32          0.552          yes         +0.189%          0.524
+#    0.25        25 of 32          0.519          yes         +0.132%          0.605
+#    0.15        16 of 32          0.483          yes         +0.116%          0.685
+#
+# 0.95 and 0.85 fail the settling condition; 0.35 and below start losing genomes on the
+# barrier.  What is left is 0.75 / 0.65 / 0.55 / 0.45, all clearing the SAME 31 of 32,
+# across which both remaining axes improve monotonically as the factor falls.  Two axes
+# improving across a flat third means the operating point is the band's lower EDGE and
+# not a value inside it -- quoting the interior is the class of choice §81 rejected when
+# it found §78 had quoted 0.75 off a sweep that stopped at 0.55 without locating an edge.
+#
+# THE COST IS NOT MONOTONE BELOW THE BAND (0.35 reads +0.189% against 0.45's +0.106%) and
+# that is not a law being broken: those factors are already excluded on the barrier.  The
+# monotonicity is a claim about the ADMISSIBLE SET, which is where it is used, and the
+# ratio is a three-rung estimate that should not be read finer than that.
+FILLET_LAYER_CLIFF_FACTOR = 0.45
+FILLET_LAYER_CLIFF_END = 0.70
+
+# AND SINCE §85 IT IS WHAT A FILLETED BUILD TAKES WHEN NOBODY ASKS.  `layer_profile=None`
+# on a filleted mesh now means `per_genome_layer_profile`; `"shipped"` is the two constants
+# above, kept reachable under a name because `study_fillet_block` re-derives against them
+# and a default that cannot be asked for by name is a default nobody can measure.
+FILLET_LAYER_SHIPPED = "shipped"
+
+# The range a cliff has to land in to be believed.  Wide enough to hold every cliff in the
+# held-out draw with room to spare: the three steepest sit at -2.51, -2.30 and -2.12, and
+# `study_fillet_block.CLIFF_BRACKET` stops at -2.0 and reports all three as "builds across
+# the whole bracket" -- a sentinel that reads as "no edge at all" and is the OPPOSITE of
+# the truth.  See §82; the bracket is the whole of that defect.
+#
+# IT IS A VALIDITY CHECK SINCE §88 AND WAS A SEARCH BRACKET BEFORE IT.  The cliff is a
+# closed form now (`_layer_cliff_from_scalars`), so nothing is bisected and
+# `LAYER_CLIFF_BISECTIONS = 90` is gone with the search that used it.  The interval is kept
+# because the two sentinels it separates are still separate: a cliff outside it is a
+# genome this rule has never seen and must not quietly serve.
+LAYER_CLIFF_BRACKET = (-8.0, 0.0)
+
+# The width at which the layer counts as gone.  This is `_fillet_curves`' own refusal
+# threshold and must stay equal to it -- the cliff is DEFINED as the entry at which that
+# refusal fires, so two thresholds would be two different cliffs.
+LAYER_CLIFF_ZERO = 1e-6
+
+# And the sample the refusal is tested on.  `_fillet_curves` takes the minimum of the
+# width profile over 401 points rather than solving the cubic exactly, so the cliff is
+# defined against THAT minimum: solving it exactly would put the rule and the refusal it
+# is measured against 3e-6 of entry apart, in the direction where the rule prescribes an
+# entry the construction then refuses.  Measured, at the shipped genome: the exact
+# minimum gives -1.862136 and the sampled one -1.862143.
+LAYER_CLIFF_SAMPLES = 401
 
 # THE REFUSAL ABOVE, TURNED INTO A BOUND PROJECTION.  PLAN §57 / FILLET_PLAN PART 14.
 #
@@ -986,8 +1193,8 @@ FILLETED_BLOCK_REGION = {
     "rim_ring_weld": "rim", "rim_ring_free": "rim"}
 
 
-def _hermite(y0, y1, m0, m1, u):
-    u = np.asarray(u, float)
+def _hermite(y0, y1, m0, m1, u, xp=np):
+    u = xp.asarray(u)
     u2, u3 = u * u, u * u * u
     return ((2.0 * u3 - 3.0 * u2 + 1.0) * y0 + (u3 - 2.0 * u2 + u) * m0
             + (-2.0 * u3 + 3.0 * u2) * y1 + (u3 - u2) * m1)
@@ -995,6 +1202,29 @@ def _hermite(y0, y1, m0, m1, u):
 
 def _unwrap_to(theta, ref):
     return theta + 2.0 * math.pi * round((ref - theta) / (2.0 * math.pi))
+
+
+def _with_ends(arr, first=None, last=None, xp=np):
+    """`arr` with its first and/or last row overwritten, in whichever array flavour.
+
+    Several of the filleted blocking's edges are sampled by one construction and pinned
+    at their ends by another — the arc's own endpoints, the tangent point, the corner a
+    neighbouring block owns — so that the Coons corner check is met to the bit.  numpy
+    does that by assignment and jax cannot; this is the two-line difference, in one
+    place, so the construction below reads the same on both paths.
+    """
+    if xp is np:
+        arr = np.array(arr, dtype=float, copy=True)
+        if first is not None:
+            arr[0] = first
+        if last is not None:
+            arr[-1] = last
+        return arr
+    if first is not None:
+        arr = arr.at[0].set(first)
+    if last is not None:
+        arr = arr.at[-1].set(last)
+    return arr
 
 
 def ring_far_radius(is_hub, rim_outer=RIM_OUTER_RADIUS_MM):
@@ -1008,7 +1238,8 @@ def ring_far_radius(is_hub, rim_outer=RIM_OUTER_RADIUS_MM):
 
 
 def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
-                   entry=FILLET_LAYER_ENTRY_SLOPE, end=FILLET_LAYER_END_OFFSET):
+                   entry=FILLET_LAYER_ENTRY_SLOPE, end=FILLET_LAYER_END_OFFSET,
+                   xp=np, roots=None, layer_only=False):
     """Every curve the filleted blocking needs at one junction, or `None` if it refuses.
 
     Returns a dict; `built` says whether it is a curve set or a refusal.  Refusals are
@@ -1038,101 +1269,225 @@ def _fillet_curves(sample, s_end, s_far, eta, ring_r, r_far, R, n_th, Q,
     coarse..fine spread widens from 0.14% to 0.51%, crossing back over the +-0.3% band
     that PART 12 checked itself against -- and nothing yet consumes the genome-diverse
     path to be worth that trade.  `studies/study_fillet_block.py` prints both surfaces.
-    """
-    far_pt = np.asarray(sample(np.asarray(float(s_end)), np.asarray(-eta)), float)
-    void_sign = 1.0 if float(np.linalg.norm(far_pt)) > ring_r else -1.0
-    try:
-        s_A, A, B, C = _fillet_tangency(sample, s_end, s_far, eta, ring_r, R, void_sign)
-    except ValueError as exc:
-        return {"built": False, "why": f"no fillet of R = {R:.4f} mm is tangent to both "
-                                       f"legs ({str(exc).split(':')[0]})"}
-    i0 = _fillet_cross_section(sample, s_A, eta, n_th, A)
-    far_sA = i0[-1]
-    wall = float(np.linalg.norm(far_sA - A))
 
-    a0 = math.atan2(A[1] - C[1], A[0] - C[0])
-    a1 = math.atan2(B[1] - C[1], B[0] - C[0])
-    dd = (a1 - a0 + math.pi) % (2.0 * math.pi) - math.pi
-    R_arc = 0.5 * (float(np.linalg.norm(A - C)) + float(np.linalg.norm(B - C)))
-    sweep = abs(dd)
+    EVERY REFUSAL ABOVE IS A DECISION, AND `roots` IS WHAT FREEZES THEM.  Pass the
+    `roots` record a previous EAGER call returned and this function takes no branch on a
+    computed value at all: the two bracketed root-finds become `_newton_from_root` steps
+    from the seeds in that record, the angle unwraps and the void side become the frozen
+    integers and signs it carries, and the four refusals are not re-tested.  That is what
+    makes the construction traceable under `xp = jax.numpy`, and it is the SAME decision
+    `mesh_coords` already makes about the flank orientation and the seam ownership: a
+    step that changes one of them is a genuine discontinuity of the design space, and the
+    derivative that means anything is the one of a fixed construction whose nodes move.
+    PLAN.md §79.
+    """
+    frozen = roots is not None
+    if frozen:
+        void_sign = roots["void_sign"]
+        s_A, A, B, C = _fillet_tangency(sample, s_end, s_far, eta, ring_r, R, void_sign,
+                                        xp=xp, s_seed=roots["s_A"])
+    else:
+        far_pt = np.asarray(sample(np.asarray(float(s_end)), np.asarray(-eta)), float)
+        void_sign = 1.0 if float(np.linalg.norm(far_pt)) > ring_r else -1.0
+        try:
+            s_A, A, B, C = _fillet_tangency(sample, s_end, s_far, eta, ring_r, R,
+                                            void_sign)
+        except ValueError as exc:
+            return {"built": False, "why": f"no fillet of R = {R:.4f} mm is tangent to "
+                                           f"both legs ({str(exc).split(':')[0]})"}
+    i0 = _fillet_cross_section(sample, s_A, eta, n_th, A, xp)
+    far_sA = i0[-1]
+    wall = xp.linalg.norm(far_sA - A)
+
+    a0 = xp.arctan2(A[1] - C[1], A[0] - C[0])
+    a1 = xp.arctan2(B[1] - C[1], B[0] - C[0])
+    if frozen:
+        dd = (a1 - a0) + roots["dd_turns"] * (2.0 * math.pi)
+        sweep = roots["sweep_sign"] * dd
+    else:
+        dd = (a1 - a0 + math.pi) % (2.0 * math.pi) - math.pi
+        sweep = abs(dd)
+    R_arc = 0.5 * (xp.linalg.norm(A - C) + xp.linalg.norm(B - C))
 
     def arc_at(u):
-        u = np.atleast_1d(np.asarray(u, float))
+        u = xp.atleast_1d(xp.asarray(u))
         t = a0 + dd * u
-        return np.stack([C[0] + R_arc * np.cos(t), C[1] + R_arc * np.sin(t)], axis=1)
+        return xp.stack([C[0] + R_arc * xp.cos(t), C[1] + R_arc * xp.sin(t)], axis=1)
 
     m0 = entry * (R_arc + wall) * sweep
     w1 = end * wall
 
     def offset_at(u):
-        u = np.atleast_1d(np.asarray(u, float))
-        w = _hermite(wall, w1, m0, 0.0, u)
+        u = xp.atleast_1d(xp.asarray(u))
+        w = _hermite(wall, w1, m0, 0.0, u, xp)
         p = arc_at(u)
-        nrm = p - np.asarray(C, float)[None, :]
-        nrm = nrm / np.linalg.norm(nrm, axis=1)[:, None]
+        nrm = p - xp.asarray(C)[None, :]
+        nrm = nrm / xp.linalg.norm(nrm, axis=1)[:, None]
         return p + w[:, None] * nrm
 
-    if float(_hermite(wall, w1, m0, 0.0, np.linspace(0.0, 1.0, 401)).min()) <= 1e-6:
-        return {"built": False,
-                "why": "the layer's width profile reaches zero thickness"}
+    # THE TWO SCALARS THE LAYER-WIDTH CLIFF IS A CLOSED FORM IN (PLAN §82).  `wall` and
+    # `layer_k = (R_arc + wall) * sweep` come out of the TANGENCY solve and do not depend
+    # on `entry` or `end` at all, so the width profile is a cubic in `u` whose only
+    # `entry`-dependence is the linear term `m0 = entry * layer_k`.  That made the entry
+    # at which this junction loses its layer a root-find over arithmetic instead of over
+    # thirty sector builds -- and §88 found it is not a root-find at all but a closed form,
+    # which is what makes the per-genome profile DIFFERENTIABLE and not merely cheap.  See
+    # `_layer_cliff_from_scalars`.  These two scalars are the whole input to it, which is
+    # why they are traced values on the frozen path.
+    #
+    # THEY RIDE ON THE REFUSAL TOO, and that is the point rather than an oversight: the
+    # cliff has to be computable AT an entry that refuses, or the only way to find it is
+    # to bisect the build, which is what this replaces.
+    layer = {"layer_wall": float(wall) if not frozen else wall,
+             "layer_k": float((R_arc + wall) * sweep) if not frozen else (R_arc + wall) * sweep}
+
+    # AND `free_span_deg`, COMPUTED HERE RATHER THAN AFTER THE TWO REFUSALS BELOW.
+    # PLAN §83.
+    #
+    # It is a function of `Q` -- the ring corner `uncap` chooses -- and of `B`, the
+    # tangency point, and of nothing else: neither `entry` nor `end` reaches it, and the
+    # arithmetic below is the same arithmetic that used to sit ninety lines further down.
+    # Left there, it was unreachable at exactly the radii where the layer-width and
+    # ring-crossing refusals fire, so `_sector_fit_span` saw only `built: False` and read
+    # it as "this radius has no room".  At a steep entry that made the sector-fit LIMIT
+    # the layer's cliff wearing another name -- measured at the shipped genome, entry
+    # -1.40: `R` = 1.60 builds with 8.1465 deg of free ring, bit-identical to the shallow
+    # entry's, `R` = 1.65 refuses on layer width, and the reported "limit" came out 1.6285
+    # where the free span is 8.15 deg rather than the zero the limit is DEFINED as.
+    #
+    # `th_N` stays below because it needs `N`, which is the offset root-find and does
+    # depend on the profile.  Only the half that does not is hoisted.
+    th_q = xp.arctan2(Q[1], Q[0])
+    th_B_raw = xp.arctan2(B[1], B[0])
+    if frozen:
+        th_B = th_B_raw + roots["th_B_turns"] * (2.0 * math.pi)
+        dirn = roots["dirn"]
+    else:
+        th_q, th_B_raw = float(th_q), float(th_B_raw)
+        th_B = _unwrap_to(th_B_raw, th_q)
+        dirn = 1.0 if th_B > th_q else -1.0
+    th_end = th_q + dirn * math.radians(SECTOR_DEG)
+    free_span_deg = (th_end - th_B) * dirn * (180.0 / math.pi)
+    # Every refusal from here down carries both, so a caller measuring the SECTOR FIT can
+    # get its answer at a radius where the LAYER refuses, and vice versa.  The two
+    # constraints have different remedies -- a smaller radius, a shallower entry -- and a
+    # refusal that names only one of them cannot be told apart by the caller.
+    geom = dict(layer, free_span_deg=free_span_deg)
+
+    # AND THIS IS EVERYTHING THE LAYER-WIDTH CLIFF NEEDS, SO THE HARVEST STOPS HERE (§88).
+    #
+    # Not an optimisation.  Everything below depends on `entry`, and the caller that asks
+    # for `layer_only` is `layer_cliff_entry` -- which is COMPUTING the entry and can only
+    # have passed a placeholder.  Running on would refine `u_N` by a Newton step from a
+    # seed found at a different entry, making it the root of nothing; it is discarded
+    # either way, and on the traced path only dead-code elimination keeps that harmless.
+    # `built` is `None` rather than `False`: no refusal was tested, which is not the same
+    # as none firing, and §84 is what that distinction cost last time.
+    if layer_only:
+        return dict(geom, built=None, why=None)
+
+    if not frozen and float(_hermite(wall, w1, m0, 0.0,
+                                     np.linspace(0.0, 1.0, 401)).min()) <= 1e-6:
+        return dict(geom, built=False,
+                    why="the layer's width profile reaches zero thickness")
 
     def past(u):
-        return (float(np.linalg.norm(offset_at(u)[0])) - ring_r) * void_sign
+        return (xp.linalg.norm(offset_at(u)[0]) - ring_r) * void_sign
 
-    if past(0.0) < 0.0 or past(1.0) > 0.0:
-        return {"built": False,
-                "why": "the layer's inner edge does not cross the ring circle once"}
-    lo, hi = 0.0, 1.0
-    for _ in range(200):
-        mid = 0.5 * (lo + hi)
-        if past(mid) > 0.0:
-            lo = mid
-        else:
-            hi = mid
-    u_N = 0.5 * (lo + hi)
+    if frozen:
+        u_N = _newton_from_root(past, roots["u_N"], xp)
+    else:
+        if past(0.0) < 0.0 or past(1.0) > 0.0:
+            return dict(geom, built=False,
+                        why="the layer's inner edge does not cross the ring circle once")
+        lo, hi = 0.0, 1.0
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if past(mid) > 0.0:
+                lo = mid
+            else:
+                hi = mid
+        u_N = float(0.5 * (lo + hi))
     N = offset_at(u_N)[0]
-    L = N * (r_far / float(np.linalg.norm(N)))
+    L = N * (r_far / xp.linalg.norm(N))
 
-    th_q = math.atan2(Q[1], Q[0])
-    th_B = _unwrap_to(math.atan2(B[1], B[0]), th_q)
-    th_N = _unwrap_to(math.atan2(N[1], N[0]), th_q)
-    dirn = 1.0 if th_B > th_q else -1.0
-    th_end = th_q + dirn * math.radians(SECTOR_DEG)
-    free_span_deg = math.degrees((th_end - th_B) * dirn)
-    if free_span_deg <= 0.0:
-        return {"built": False,
-                "why": f"the fillet's tangent point has passed the next sector's corner "
-                       f"({free_span_deg:.3f} deg of free ring left)"}
-    return {"built": True, "A": A, "B": B, "C": C, "N": N, "L": L, "u_N": float(u_N), "i0": i0,
-            "far_sA": far_sA, "wall_mm": wall, "arc_at": arc_at,
-            "offset_at": offset_at, "r_far": float(r_far), "s_A": float(s_A),
-            "th_q": th_q, "th_B": th_B, "th_N": th_N, "th_end": th_end,
-            "dirn": dirn, "free_span_deg": free_span_deg,
-            "sweep_deg": math.degrees(sweep)}
+    # `th_q`, `th_B`, `dirn`, `th_end` and `free_span_deg` were hoisted above the two
+    # layer-dependent refusals (PLAN §83).  This is the half that could not be: `N` is the
+    # offset root-find and moves with the profile.
+    th_N_raw = xp.arctan2(N[1], N[0])
+    if frozen:
+        th_N = th_N_raw + roots["th_N_turns"] * (2.0 * math.pi)
+    else:
+        th_N_raw = float(th_N_raw)
+        th_N = _unwrap_to(th_N_raw, th_q)
+    if not frozen and free_span_deg <= 0.0:
+        return dict(geom, built=False,
+                    why=f"the fillet's tangent point has passed the next sector's corner "
+                        f"({free_span_deg:.3f} deg of free ring left)")
+    out = {"built": True, **geom,
+           "A": A, "B": B, "C": C, "N": N, "L": L, "u_N": u_N, "i0": i0,
+           "far_sA": far_sA, "wall_mm": wall, "arc_at": arc_at,
+           "offset_at": offset_at, "r_far": float(r_far), "s_A": s_A,
+           "th_q": th_q, "th_B": th_B, "th_N": th_N, "th_end": th_end,
+           "dirn": dirn,   # `free_span_deg` arrives in `geom`, with every refusal's copy
+           "sweep_deg": sweep * (180.0 / math.pi)}
+    if not frozen:
+        # THE RECORD THAT MAKES THIS TRACEABLE, harvested where the answers are already
+        # concrete: the two roots, and the four choices the branches above made on a
+        # computed value -- which side of the ring circle the void is on, and the three
+        # angle unwraps.  Floats, not integers, because they are consumed as ARITHMETIC
+        # on the traced path and `coord_fn` passes them in as an argument rather than
+        # closing over them (see there: closing over them would retrace per genome).
+        out["roots"] = {
+            "s_A": float(s_A), "u_N": float(u_N), "void_sign": float(void_sign),
+            "dd_turns": float(round((float(dd) - float(a1 - a0)) / (2.0 * math.pi))),
+            "sweep_sign": 1.0 if float(dd) >= 0.0 else -1.0,
+            "th_B_turns": float(round((th_B - th_B_raw) / (2.0 * math.pi))),
+            "th_N_turns": float(round((th_N - th_N_raw) / (2.0 * math.pi))),
+            "dirn": float(dirn)}
+    return out
 
 
-def _fillet_cross_section(sample, s, eta, n_th, first):
+def _fillet_cross_section(sample, s, eta, n_th, first, xp=np):
     """The spoke's end cross-section at `s`, straddling flank -> far flank.
 
     Its first node is replaced by the exact tangent point so the Coons corner check is
     met to the bit rather than to the sampler's round-off; at `s = s_A` the two agree to
     ~1e-13 mm, and the seam error `build_wheel` reports is that and nothing else.
     """
-    row = np.asarray(sample(np.full(n_th, float(s)),
-                            np.linspace(eta, -eta, n_th)), float)
-    return np.concatenate([np.asarray(first, float)[None, :], row[1:]], axis=0)
+    row = xp.asarray(sample(xp.full(n_th, s), xp.linspace(eta, -eta, n_th)))
+    return xp.concatenate([xp.asarray(first)[None, :], row[1:]], axis=0)
 
 
 def _sector_fit_span(curves_at, R):
-    """`free_span_deg` at one radius, or a negative number when nothing builds there.
+    """`free_span_deg` at one radius, or a negative number when the RADIUS has no room.
 
-    ANY refusal counts as "no room", which matches `study_fillet_block.sector_fit_limit`
-    exactly and is what makes §57's per-genome margins reproducible from the mesh rather
-    than only from the study.  A tangency that fails and a tangent point that has swept
-    past the corner are different reasons, but both mean this radius has nowhere to go.
+    NOT EVERY REFUSAL MEANS NO ROOM, and reading them all that way is the defect §82
+    measured and §83 fixes.  This function's answer feeds `_sector_fit_limit`, whose
+    output is the radius the clamp pulls back to -- so a refusal counted here is a
+    statement that *this radius* is too big.  Of the four refusals `_fillet_curves` can
+    make, only the tangency one is: no fillet of that radius is tangent to both legs.
+
+    The layer-width and ring-crossing refusals are statements about the layer PROFILE and
+    have a different remedy -- a shallower entry, not a smaller radius.  Counted here they
+    made the limit collapse with the profile: measured at the shipped genome, entry -1.40,
+    the reported hub "limit" was 1.6285, a radius at which 8.15 deg of free ring remains
+    against the ZERO the limit is defined as.  Every one of those refusals now carries
+    `free_span_deg` anyway, so the sector fit is answerable at a radius the layer refuses.
+
+    The fourth refusal -- the tangent point past the corner -- carries a `free_span_deg`
+    that is already <= 0, so it needs no special case and keeps its own sign.
+
+    THIS DIVERGES FROM `study_fillet_block.sector_fit_limit`, which delegates its
+    root-find here (PART 21) and therefore follows automatically.  At the SHIPPED profile
+    the two answers are identical and §57's and §74's published margins are unchanged:
+    across the full bracket no layer refusal fires at the shipped genome, or at any of the
+    32 held-out ones -- 0 of 64 junction-pairs.
     """
     c = curves_at(R)
-    return float(c["free_span_deg"]) if c["built"] else -1.0
+    if "free_span_deg" in c:
+        return float(c["free_span_deg"])
+    return -1.0
 
 
 def _sector_fit_limit(curves_at, bracket=SECTOR_FIT_BRACKET,
@@ -1179,13 +1534,70 @@ def _clamp_to_sector(curves_at, R, factor):
     return float(factor * limit), True
 
 
+def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET, xp=np):
+    """The `entry` at which THIS junction's layer reaches zero width, from two scalars.
+
+    `wall` and `layer_k` are what `_fillet_curves` harvests out of the TANGENCY solve,
+    and neither depends on the layer profile -- so the width profile
+
+        H(u) = _hermite(wall, end * wall, entry * layer_k, 0, u)
+             = a(u) + entry * b(u),   a(u) = h00(u) wall + h01(u) end wall
+                                      b(u) = h10(u) layer_k
+
+    is a cubic in `u` whose only `entry`-dependence is ONE LINEAR TERM.
+
+    THAT MAKES THE CLIFF A CLOSED FORM AND NOT A SEARCH (§88).  `b(u) = u (1 - u)^2
+    layer_k > 0` strictly inside `(0, 1)`, so for each sample `H(u) <= Z` exactly when
+    `entry <= (Z - a(u)) / b(u)`, and the sampled minimum is at or below `Z` exactly when
+    ONE of them is:
+
+        cliff = max_u (LAYER_CLIFF_ZERO - a(u)) / b(u)
+
+    over the same `LAYER_CLIFF_SAMPLES` grid `_fillet_curves` takes its minimum on -- the
+    two endpoints excluded because `b` vanishes there and `H` is `wall` and `end * wall`,
+    both orders above `Z`, so neither can ever be the minimum this is solving for.
+
+    UNTIL §88 THIS BISECTED, 90 halvings of `LAYER_CLIFF_BRACKET`, on the argument that
+    `min_u H` is a minimum of functions linear in `entry` and therefore monotone.  That
+    argument was right and the closed form is the same root exactly: measured over the
+    98 junction-pairs of the shipped genome and all 48 genomes of
+    `studies/study_fillet_block.json`, the two agree to **2 ulp, worst relative
+    3.999e-16**.  What the closed form buys is a DERIVATIVE -- the bisection's is 90
+    `sign` comparisons and a zero, which is the shape of error `_newton_from_root`'s
+    docstring is about -- so the per-genome layer profile can now be differentiated
+    through instead of frozen.  `xp = jax.numpy` traces it.
+
+    NO MESH IS BUILT.  That is the whole point: `study_fillet_block.cliff_entry` USED TO
+    find this number by bisecting `sector_verdict` thirty times, which is thirty filleted
+    sector builds, and it agreed with this to 9.1e-10 over the held-out draw (§82) before
+    §84 made it delegate here.  A per-genome layer profile is only adoptable because the
+    cliff costs arithmetic.
+
+    `None` means the cliff is outside `LAYER_CLIFF_BRACKET` -- the layer survives the
+    whole bracket, which for a bracket this wide has not been observed and would be a
+    genuine finding rather than a fallback to take.  The upper end is checked too and the
+    bisection never checked it: a junction with no layer at ANY negative entry converged
+    to the bracket's own zero and reported it as a cliff.  It fires at none of the 98
+    pairs, so this is a guard and not a change of answer.  THE CHECK IS SKIPPED UNDER A
+    TRACE, because a mesh being differentiated has already been built and its eager pass
+    is what made that check.
+    """
+    u = xp.linspace(0.0, 1.0, LAYER_CLIFF_SAMPLES)[1:-1]
+    a = _hermite(wall, end * wall, 0.0, 0.0, u, xp)
+    b = _hermite(0.0, 0.0, layer_k, 0.0, u, xp)
+    c = xp.max((LAYER_CLIFF_ZERO - a) / b)
+    if xp is not np:
+        return c
+    c = float(c)
+    return c if float(bracket[0]) <= c <= float(bracket[1]) else None
+
+
 def _layer_profile(layer_profile):
     """`(entry, end)`, defaulting to the two measured constants.
 
-    `None` means "the shipped profile" and returns exactly `FILLET_LAYER_ENTRY_SLOPE`
-    and `FILLET_LAYER_END_OFFSET`, so every caller that does not pass one takes the
-    same path it took before this parameter existed -- which is the property
-    `test_the_layer_profile_pass_through_is_BIT_IDENTICAL_at_its_default` pins.
+    `None` and `FILLET_LAYER_SHIPPED` both return exactly `FILLET_LAYER_ENTRY_SLOPE` and
+    `FILLET_LAYER_END_OFFSET` -- the pair the module shipped before §85 moved the filleted
+    default onto the per-genome rule.
 
     Why the pass-through exists at all.  `filleted_sector` already exposed these two so
     `study_fillet_block` could re-derive them against the BLOCKING rather than assert
@@ -1193,18 +1605,79 @@ def _layer_profile(layer_profile):
     candidate pair costs the SOLVE, which is the one reason PART 13's decision still
     rests on -- and that needs a full `build_wheel`, not a sector.  Same reason, one
     level up: the study must not keep a second copy of the assembly.
+
+    IT IS A PASS-THROUGH AND NOT THE PLACE THE DEFAULT LIVES (§85).  It has no `genes`, so
+    it cannot answer the per-genome rule -- and that is deliberate rather than a gap:
+    `_resolve_layer_profile` settles the profile where the genes ARE, and is now this
+    function's only caller.  §88 took the cache key off it: the key reads its record raw,
+    because a record holding `None` means the RULE there and this function would map it
+    onto the shipped constants.
     """
-    if layer_profile is None:
+    if layer_profile is None or layer_profile == FILLET_LAYER_SHIPPED:
         return FILLET_LAYER_ENTRY_SLOPE, FILLET_LAYER_END_OFFSET
     entry, end = layer_profile
     return float(entry), float(end)
+
+
+def _resolve_layer_profile(layer_profile, genes, cfg, fillet, span_mm=HUB_RIM_SPAN_MM,
+                           orientation=None, rim_outer=RIM_OUTER_RADIUS_MM, uncap=None,
+                           clamp=SECTOR_FIT_CLAMP, fillet_blocking="sector",
+                           xp=np, sector=None, roots=None):
+    """The concrete `(entry, end)` this build will use, settled BEFORE anything caches it.
+
+    RESOLVING EAGERLY WAS THE WHOLE DESIGN, and the reason was the jax cache key.  §85
+    built it from `repr(_layer_profile(rec["layer_profile"]))`, and leaving `None` in the
+    record to be resolved per genome further down meant **two genomes with different
+    profiles sharing one key**, the second handed the first's traced geometry -- the exact
+    failure the `repr(uncap)` comment beside that key warns about.  Storing the resolved
+    pair made the key correct with no change to the key itself.
+
+    §88 INVERTED THAT, AND THE KEY IS CORRECT THE OTHER WAY NOW.  What §85 could not see is
+    that a resolved pair is a function of the GENOME, so the key it made correct also became
+    genome-dependent -- one jaxpr per design, which is the failure `coord_fn`'s docstring
+    describes for the frozen roots.  The cliff is a closed form in two tangency scalars now,
+    so `xp`, `sector` and `roots` carry this whole resolution THROUGH the trace: the record
+    holds `None` for a per-genome mesh again, the key reads it RAW rather than through
+    `_layer_profile`, the two genomes above legitimately share one key, and the gradient
+    `mesh_coords` used to REFUSE is returned.
+
+    The eager resolution below is unchanged and is still what `build_wheel` records and
+    reports.  What is still frozen is what was always frozen: the flank orientation, the
+    seam ownership, the four geometric refusals and the clamp's decision -- discrete
+    choices, every one.
+
+    `None` is the per-genome rule (§82, §85) on exactly one path -- `fillet=True` with the
+    eleven-block sector blocking.  `FILLET_LAYER_SHIPPED` is the pair the module shipped
+    before it; a tuple is itself.  Everywhere else `None` is still the two constants:
+
+      AN EXPLICIT `(R_hub, R_rim)` PAIR DOES NOT GET THE RULE, for the same reason
+      `SECTOR_FIT_CLAMP` does not touch one: a caller passing radii is measuring THOSE
+      radii, and a profile derived from the genome's own room is not what was asked for.
+      `study_fillet_fold` sweeps `fillet=(R, 0.0)` down to a zero rim, where a per-genome
+      cliff cannot even be computed.
+
+      `fillet_blocking="spoke"` DOES NOT GET IT EITHER.  §47's construction has no layer
+      to profile -- the arc goes onto the spoke block's own flank edge -- so resolving one
+      would build an eleven-block sector nobody asked for, purely to answer a question
+      that construction does not pose.
+
+      AND THE UNFILLETED PATH NEVER REACHES A LAYER AT ALL.
+    """
+    if (fillet is not True or layer_profile is not None
+            or fillet_blocking != "sector"):
+        return _layer_profile(layer_profile)
+    return per_genome_layer_profile(genes, cfg, fillet=fillet, span_mm=span_mm,
+                                    orientation=orientation, rim_outer=rim_outer,
+                                    uncap=uncap, clamp=clamp,
+                                    xp=xp, sector=sector, roots=roots)
 
 
 def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                             rim_outer, genes, fillet, uncap=None,
                             entry=FILLET_LAYER_ENTRY_SLOPE,
                             end=FILLET_LAYER_END_OFFSET,
-                            clamp=SECTOR_FIT_CLAMP):
+                            clamp=SECTOR_FIT_CLAMP, xp=np, roots=None,
+                            layer_scalars_only=False):
     """The eleven node grids of a filleted sector 0, keyed by `FILLETED_BLOCK_ORDER`.
 
     Raises `ValueError` when the geometry refuses, with the reason, because the caller
@@ -1217,6 +1690,11 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
     caller already spreads this dict by `FILLETED_BLOCK_ORDER` and would have to grow a
     tuple unpack otherwise.  It is there because a clamp the caller cannot see is exactly
     the defect §57 warns about.
+
+    `_roots` rides there too, and is the third of the same kind: the frozen record that
+    lets this construction be re-run under `xp = jax.numpy` with no bracketed search and
+    no branch on a computed value.  Pass it back in as `roots` and every discrete choice
+    is taken from it instead of being re-made -- see `_fillet_curves` and `mesh_coords`.
     """
     # `UNCAP_DEFAULT` is defined below `sector_blocks`, so it cannot be a default
     # ARGUMENT here without a forward reference; `None` is not a legal `uncap` value and
@@ -1229,8 +1707,11 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
     # genome's fillets", and a genome whose radius has no room is the case §57 measured;
     # an explicit pair is a request for those exact radii -- every caller that passes one
     # is measuring the radius itself -- so it is honoured or refused, never quietly moved.
+    frozen = roots is not None
     if fillet is True:
-        radii, clamp_factor = (float(genes[12]), float(genes[13])), clamp
+        radii, clamp_factor = (genes[12], genes[13]), clamp
+        if not frozen:
+            radii = (float(radii[0]), float(radii[1]))
     else:
         radii, clamp_factor = tuple(float(v) for v in fillet), None
 
@@ -1239,10 +1720,11 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                "clamp_factor": clamp_factor}
     used = {}
     curves = {}
+    harvest = {}
     for junction, R, s_end, s_far, ring_r, k_eta in (
             ("hub", radii[0], s_hub, s_rim, HUB_RADIUS_MM, 0),
             ("rim", radii[1], s_rim, s_hub, rim_inner, 1)):
-        if R <= 0.0:
+        if not frozen and R <= 0.0:
             raise ValueError(
                 f"the filleted blocking needs a positive radius at both junctions; "
                 f"{junction} got {R:.4f}.  Use `fillet=None` for the unfilleted mesh.")
@@ -1255,39 +1737,74 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
         # and moves the sector-fit limit with it -- measured, 3.130 -> 3.484 mm.
         is_hub_j = junction == "hub"
         blend = _uncap_blend(uncap, is_hub_j)
-        Q = (np.asarray(sample(np.asarray(s_ring), np.asarray(0.0)), float)
+        Q = (xp.asarray(sample(xp.asarray(s_ring), xp.asarray(0.0)))
              if blend is None else
-             np.asarray(_uncap_corner(sample, s_ring, eta, ring_r, is_hub_j, blend, np),
-                        float))
-        def curves_at(R_try, _a=(s_end, s_far, eta, ring_r, is_hub_j, Q)):
-            s_e, s_f, et, rr, hub_j, q = _a
+             xp.asarray(_uncap_corner(sample, s_ring, eta, ring_r, is_hub_j, blend, xp)))
+        def curves_at(R_try, _a=(s_end, s_far, eta, ring_r, is_hub_j, Q, junction)):
+            s_e, s_f, et, rr, hub_j, q, name = _a
             return _fillet_curves(sample, s_e, s_f, et, rr,
                                   ring_far_radius(hub_j, rim_outer), R_try, n_th, q,
-                                  entry, end)
+                                  entry, end, xp,
+                                  roots[name] if frozen else None,
+                                  # ONLY ON THE FROZEN PATH.  The eager harvest is what
+                                  # `layer_cliff_entry` reads its refusal REASONS from,
+                                  # and a short-circuit tests none of them (§88).
+                                  layer_only=layer_scalars_only and frozen)
 
-        R_used, was_clamped = _clamp_to_sector(curves_at, R, clamp_factor)
+        if frozen:
+            # THE CLAMP'S DECISION IS FROZEN LIKE EVERY OTHER ONE, and the case it does
+            # not cover is refused rather than approximated: a clamped radius is
+            # `factor * limit(genome)` and does not follow `R` at all, so treating the
+            # eager radius as if it did would return a gradient that is wrong in a way
+            # nothing downstream could see.  `mesh_coords` refuses that mesh up front.
+            R_used, was_clamped = R, roots[junction]["clamped"]
+        else:
+            R_used, was_clamped = _clamp_to_sector(curves_at, R, clamp_factor)
         applied["clamped"][junction] = was_clamped
         used[junction] = R_used
         c = curves_at(R_used)
-        if not c["built"]:
+        if layer_scalars_only:
+            # The two tangency scalars the layer-width cliff is a closed form in, at the
+            # radius this genome will actually be BUILT at.  Harvested here rather than
+            # in a second copy of this loop because the clamp, the uncap corner and the
+            # junction stations all have to agree with the build or the cliff describes
+            # a mesh nobody builds -- the exact error §82 caught the study making.
+            # A layer refusal still carries them, which is why no `built` check guards
+            # this: the cliff has to be computable at an entry that refuses.
+            #
+            # `built` STAYS `None` ON THE FROZEN PATH, where `layer_only` short-circuited
+            # before any refusal was tested.  `bool(None)` would say `False` -- "it
+            # refused" -- of a mesh that was built, which is the two-meanings-in-one-value
+            # error §84 spent a section on.
+            harvest[junction] = {"wall": c.get("layer_wall"), "k": c.get("layer_k"),
+                                 "R_mm": R_used, "clamped": bool(was_clamped),
+                                 "built": None if c["built"] is None
+                                          else bool(c["built"]),
+                                 "why": c.get("why")}
+            continue
+        if not frozen and not c["built"]:
             raise ValueError(
                 f"no filleted blocking exists at the {junction}: {c['why']}.  "
                 f"See FILLET_PLAN.md PART 10.")
+        if not frozen:
+            harvest[junction] = dict(c.pop("roots"), clamped=bool(was_clamped))
         c.update({"eta": eta, "s_ring": s_ring, "ring_r": float(ring_r), "Q": Q,
-                  "R_mm": R_used, "R_requested_mm": float(R)})
+                  "R_mm": R_used, "R_requested_mm": R})
         curves[junction] = c
 
-    applied["radii_mm"] = (used["hub"], used["rim"])
+    applied["radii_mm"] = tuple(used[j] for j in ("hub", "rim"))
+    if layer_scalars_only:
+        return dict(harvest, _applied=applied)
 
     lo, hi = curves["hub"]["s_A"], curves["rim"]["s_A"]
-    if not lo < hi:
+    if not frozen and not lo < hi:
         raise ValueError(
             f"the two fillets are longer than the spoke: tangent stations {lo:.4f} and "
             f"{hi:.4f} cross.")
 
-    eta_grid = np.linspace(-1.0, 1.0, n_th)
-    s_grid = np.linspace(lo, hi, n_sp)
-    blocks = {"spoke": np.asarray(sample(s_grid[:, None], eta_grid[None, :]), float)}
+    eta_grid = xp.linspace(-1.0, 1.0, n_th)
+    s_grid = xp.linspace(lo, hi, n_sp)
+    blocks = {"spoke": xp.asarray(sample(s_grid[:, None], eta_grid[None, :]))}
     thetas, dirn = {}, {}
 
     for junction in ("hub", "rim"):
@@ -1298,29 +1815,28 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
 
         u_N = c["u_N"]
         P_split = c["arc_at"](u_N)[0]
-        cut_N = _lerp_points(P_split, c["N"], n_th, np)
-        ua, ub = np.linspace(0.0, u_N, n_th), np.linspace(u_N, 1.0, n_th)
-        arc_a = c["arc_at"](ua).copy(); arc_a[0], arc_a[-1] = c["A"], P_split
-        arc_b = c["arc_at"](ub).copy(); arc_b[0], arc_b[-1] = P_split, c["B"]
-        inner_a = c["offset_at"](ua).copy()
-        inner_a[0], inner_a[-1] = c["far_sA"], c["N"]
-        inner_b = _lerp_points(c["N"], c["L"], n_th, np)      # the radial dive
-        cut_B = _lerp_points(c["B"], c["L"], n_th, np)
+        cut_N = _lerp_points(P_split, c["N"], n_th, xp)
+        ua, ub = xp.linspace(0.0, u_N, n_th), xp.linspace(u_N, 1.0, n_th)
+        arc_a = _with_ends(c["arc_at"](ua), c["A"], P_split, xp)
+        arc_b = _with_ends(c["arc_at"](ub), P_split, c["B"], xp)
+        inner_a = _with_ends(c["offset_at"](ua), c["far_sA"], c["N"], xp)
+        inner_b = _lerp_points(c["N"], c["L"], n_th, xp)      # the radial dive
+        cut_B = _lerp_points(c["B"], c["L"], n_th, xp)
         blocks[f"{junction}_fillet_a"] = coons_patch(
-            bottom=arc_a, top=inner_a, left=c["i0"], right=cut_N, xp=np)
-        fb = coons_patch(bottom=arc_b, top=inner_b, left=cut_N, right=cut_B, xp=np)
+            bottom=arc_a, top=inner_a, left=c["i0"], right=cut_N, xp=xp)
+        fb = coons_patch(bottom=arc_b, top=inner_b, left=cut_N, right=cut_B, xp=xp)
         blocks[f"{junction}_fillet_b"] = fb
 
-        s_flank = np.linspace(c["s_A"], c["s_ring"], n_weld)
-        top = np.asarray(sample(s_flank, np.zeros(n_weld) - eta), float)
-        far_end = np.asarray(sample(np.asarray(c["s_ring"]), np.asarray(-eta)), float)
+        s_flank = xp.linspace(c["s_A"], c["s_ring"], n_weld)
+        top = xp.asarray(sample(s_flank, xp.zeros(n_weld) - eta))
+        far_end = xp.asarray(sample(xp.asarray(c["s_ring"]), xp.asarray(-eta)))
         Q = c["Q"]
-        bottom = np.asarray(arc_points(ring_r, c["th_N"], c["th_q"], n_weld), float)
-        bottom[0], bottom[-1] = c["N"], Q
-        top[0], top[-1] = c["far_sA"], far_end
+        bottom = _with_ends(arc_points(ring_r, c["th_N"], c["th_q"], n_weld, xp),
+                            c["N"], Q, xp)
+        top = _with_ends(top, c["far_sA"], far_end, xp)
         blocks[f"{junction}_junction"] = coons_patch(
             bottom=bottom, top=top, left=blocks[f"{junction}_fillet_a"][:, -1, :][::-1],
-            right=_lerp_points(Q, far_end, n_th, np), xp=np)
+            right=_lerp_points(Q, far_end, n_th, xp), xp=xp)
 
         # The ring keeps the SHIPPED radial order -- bore -> ring at the hub, ring ->
         # tyre surface at the rim -- so `_edge_sets` and `_node_sets` keep naming the
@@ -1337,13 +1853,14 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
             corner_j0, corner_j1 = c["B"], c["L"]
             cut = fb[-1, :, :]                                # B -> L
         blocks[f"{junction}_ring_weld"] = polar_block(
-            r_j0, r_j1, c["th_q"], c["th_N"], n_weld, n_th)
-        e_j0 = np.asarray(arc_points(r_j0, th_j0, c["th_end"], n_free), float)
-        e_j1 = np.asarray(arc_points(r_j1, th_j1, c["th_end"], n_free), float)
-        e_j0[0], e_j1[0] = corner_j0, corner_j1
+            r_j0, r_j1, c["th_q"], c["th_N"], n_weld, n_th, xp)
+        e_j0 = _with_ends(arc_points(r_j0, th_j0, c["th_end"], n_free, xp), corner_j0,
+                          xp=xp)
+        e_j1 = _with_ends(arc_points(r_j1, th_j1, c["th_end"], n_free, xp), corner_j1,
+                          xp=xp)
         blocks[f"{junction}_ring_free"] = coons_patch(
             bottom=e_j0, top=e_j1, left=cut,
-            right=_lerp_points(e_j0[-1], e_j1[-1], n_th, np), xp=np)
+            right=_lerp_points(e_j0[-1], e_j1[-1], n_th, xp), xp=xp)
 
         thetas[f"{junction}_junction"] = (c["th_N"], c["th_q"])
         dirn[junction] = c["dirn"]
@@ -1356,6 +1873,7 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
     out["_thetas"] = thetas
     out["_dirn"] = dirn
     out["_applied"] = applied
+    out["_roots"] = roots if frozen else harvest
     return out
 
 
@@ -1388,6 +1906,117 @@ def filleted_sector(genes, cfg, fillet=True, span_mm=HUB_RIM_SPAN_MM,
     s_hub, s_rim = junction_stations(sample, s_dense, orientation, rim_inner)
     return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                                    rim_outer, genes, fillet, uncap, entry, end, clamp)
+
+
+def layer_cliff_entry(genes, cfg, fillet=True, end=FILLET_LAYER_CLIFF_END,
+                      span_mm=HUB_RIM_SPAN_MM, orientation=None,
+                      rim_outer=RIM_OUTER_RADIUS_MM, uncap=None,
+                      clamp=SECTOR_FIT_CLAMP, xp=np, sector=None, roots=None):
+    """The `entry` at which THIS genome loses its layer, at the radii it is built at.
+
+    Returns `{"entry": float|None, "why": str, "per_junction": {...}}`.  The sector's
+    cliff is the BINDING junction's -- the least negative of the two -- because one
+    `entry` is spent on the whole sector and the first junction to lose its layer is the
+    one that refuses the build.
+
+    THE RADII ARE THE ONES THE MESH WILL USE, resolved through the same clamp, uncap
+    corner and junction stations `_filleted_sector_blocks` resolves them through, because
+    a cliff measured at a radius the genome will never be built at describes a mesh
+    nobody builds.  They are resolved AT THE SHIPPED PROFILE, which is what
+    `study_fillet_block` does and is not arbitrary: `_sector_fit_span` counts a
+    layer-width refusal as "no room" (see §82), so a clamp resolved at a steep entry
+    reports the layer's own cliff under the sector fit's name.  At the shipped profile no
+    layer refusal fires anywhere in the radius bracket, so the limit there is the sector
+    fit and nothing else -- and the operating point this feeds is shallower still.
+
+    `None` means the layer survives `LAYER_CLIFF_BRACKET` entirely, or that a junction
+    refused for a reason that is not the layer -- and the two are KEPT APART in `why`,
+    because folding them together is the defect §78 corrected once and §82 found twice
+    more.  A caller that treats "no cliff" as "the safest case" must check which it got.
+
+    IT TRACES SINCE §88, and that is what makes the per-genome layer profile
+    differentiable rather than frozen.  `xp = jax.numpy` with `roots` — the frozen record
+    an eager build returned — takes the same two tangency scalars out of the same harvest
+    and hands them to the same closed form, so the traced entry is not a re-derivation of
+    the rule but the rule itself.  `sector` is `(sample, s_hub, s_rim, rim_inner)` from a
+    caller that has already built them (`sector_blocks` has), so the trace pays for one
+    sampler and one pair of junction stations rather than two.
+
+    THE BINDING JUNCTION IS NOT FROZEN.  `xp.maximum` of the two cliffs carries the
+    subgradient of whichever binds, so a genome sitting on the crossing gets a one-sided
+    derivative rather than a discrete choice baked into the jaxpr — the opposite of the
+    treatment `_fillet_curves`' refusals get, and for the opposite reason: this one is a
+    kink in a continuous function, not a change of construction.
+    """
+    cfg = get_config(cfg)
+    if orientation is None:
+        orientation = flank_orientation(genes, cfg, span_mm=span_mm)
+    if sector is None:
+        rim_inner = rim_inner_radius(span_mm)
+        sample, s_dense = global_sampler(genes, cfg, span_mm=span_mm, xp=xp)
+        s_hub, s_rim = junction_stations(sample, s_dense, orientation, rim_inner, xp=xp)
+    else:
+        sample, s_hub, s_rim, rim_inner = sector
+    sc = _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
+                                 rim_outer, genes, fillet, uncap,
+                                 FILLET_LAYER_ENTRY_SLOPE, FILLET_LAYER_END_OFFSET,
+                                 clamp, xp, roots, layer_scalars_only=True)
+    per, cliffs = {}, []
+    for junction in ("hub", "rim"):
+        h = sc[junction]
+        if h["wall"] is None or h["k"] is None:
+            per[junction] = {"cliff": None, "why": h["why"], "R_mm": h["R_mm"]}
+            continue
+        c = _layer_cliff_from_scalars(h["wall"], h["k"], float(end), xp=xp)
+        per[junction] = {"cliff": c, "R_mm": h["R_mm"], "clamped": h["clamped"],
+                         "why": None if c is not None
+                                else "the layer survives the whole bracket"}
+        if c is not None:
+            cliffs.append(c)
+    if len(cliffs) < 2:
+        bad = [j for j in ("hub", "rim") if per[j]["cliff"] is None]
+        return {"entry": None, "per_junction": per,
+                "why": "; ".join(f"{j}: {per[j]['why']}" for j in bad)}
+    # NOT `max`, WHICH COMPARES AND WOULD NEED A CONCRETE BOOL.  Same answer eagerly, and
+    # the only form that survives a trace.  The eager answer is narrowed back to a Python
+    # float because it is written into `studies/*.json` and `np.float64` is not
+    # serialisable.
+    entry = xp.maximum(cliffs[0], cliffs[1])
+    return {"entry": float(entry) if xp is np else entry,
+            "per_junction": per, "why": None}
+
+
+def per_genome_layer_profile(genes, cfg, fillet=True,
+                             factor=FILLET_LAYER_CLIFF_FACTOR,
+                             end=FILLET_LAYER_CLIFF_END, **kw):
+    """`(entry, end)` for this genome: a fixed share of its OWN layer-width room.
+
+    THE RULE §82 ADOPTED, and the shape is `SECTOR_FIT_CLAMP`'s rather than a constant's
+    -- each genome takes `factor` of the room it actually has instead of every genome
+    sharing one pair that has to be safe for the tightest of them.  It clears
+    `MIN_SJ_TARGET` on 31 of 32 held-out genomes where the shipped pair clears 16, and it
+    leaves the shipped genome 0.444 of layer-width margin where the best global candidate
+    §68 weighed leaves 0.056.
+
+    Raises when the genome has no cliff, rather than falling back to a constant: a
+    fallback is where the caller stops being able to tell the rule's answer from a
+    default, and the study's version of this fallback was firing on three of thirty-two
+    genomes that turned out to HAVE cliffs, just outside its bracket (§82).
+
+    AND SINCE §88 THE PAIR IS TRACED WHEN `xp` IS, so `entry` arrives at
+    `_filleted_sector_blocks` as a function of the genes instead of as a constant the
+    frozen path held still.  `end` stays a module constant on both paths -- it is the
+    rule's operating point and not a function of the genome.
+    """
+    c = layer_cliff_entry(genes, cfg, fillet=fillet, end=end, **kw)
+    if c["entry"] is None:
+        raise ValueError(
+            f"no per-genome layer profile exists for this genome: {c['why']}.  "
+            f"See PLAN.md §82.")
+    # ONE EXPRESSION FOR BOTH PATHS: `layer_cliff_entry` has already narrowed its eager
+    # answer to a Python float, so no `float()` is needed here and none may be used -- it
+    # is what a traced entry would die on.
+    return (float(factor) * c["entry"], float(end))
 
 
 def _seam_table_filleted(orientation, dirn):
@@ -1580,7 +2209,7 @@ UNCAP_DEFAULT = (True, 1.0)
 def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
                   rim_outer=RIM_OUTER_RADIUS_MM, fillet=None, uncap=UNCAP_DEFAULT,
                   fillet_blocking="sector", layer_profile=None,
-                  fillet_clamp=SECTOR_FIT_CLAMP):
+                  fillet_clamp=SECTOR_FIT_CLAMP, fillet_roots=None):
     """The seven node grids of sector 0 — eleven when the fillet is blocked — as a dict.
 
     Ordering matters: `build_wheel` gives ownership of a shared node to the block that
@@ -1643,15 +2272,33 @@ def sector_blocks(genes, cfg, xp=np, span_mm=HUB_RIM_SPAN_MM, orientation=None,
     n_sp = cfg.nn(cfg.n_span)
     eta_grid = xp.linspace(-1.0, 1.0, cfg.nn(cfg.n_thick))
     if fillet is not None and fillet_blocking == "sector":
-        if xp is not np:
+        if xp is not np and fillet_roots is None:
             raise NotImplementedError(
-                "the filleted blocking needs concrete tangency and crossing solves, so "
-                "it is numpy-only.  `mesh_coords` — the differentiable path — refuses a "
-                "filleted mesh outright rather than silently returning the unfilleted "
-                "coordinates; see its guard.")
+                "the filleted blocking's tangency and crossing solves are BRACKETED, so "
+                "there is nothing to trace until their roots have been found once "
+                "concretely.  Pass `fillet_roots=` — the `_roots` record an eager build "
+                "returns — which is what `mesh_coords` does for a filleted mesh; see "
+                "`_fillet_curves` and PLAN.md §79.")
+        # `build_wheel` has already resolved this and passes a concrete pair; a caller
+        # reaching `sector_blocks` directly gets the same default here (§85).  Resolving
+        # twice is not possible: a pair is returned unchanged.
+        #
+        # AND ON THE TRACED PATH `layer_profile` IS `None` AGAIN, DELIBERATELY (§88).
+        # `_filleted_gradient_recipe` hands the rule back rather than the pair it produced,
+        # so the entry is re-resolved HERE, under `xp`, from this genome's own tangency
+        # scalars.  `sector=` passes the sampler and stations already built four lines up,
+        # so the trace pays for one of each and not two.
         return _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation,
                                        rim_inner, rim_outer, genes, fillet, uncap,
-                                       *_layer_profile(layer_profile), fillet_clamp)
+                                       *_resolve_layer_profile(
+                                           layer_profile, genes, cfg, fillet,
+                                           span_mm=span_mm, orientation=orientation,
+                                           rim_outer=rim_outer, uncap=uncap,
+                                           clamp=fillet_clamp,
+                                           fillet_blocking=fillet_blocking,
+                                           xp=xp, roots=fillet_roots,
+                                           sector=(sample, s_hub, s_rim, rim_inner)),
+                                       fillet_clamp, xp, fillet_roots)
     if fillet is None:
         s_grid = xp.linspace(s_hub, s_rim, n_sp)
         spoke = sample(s_grid[:, None], eta_grid[None, :])
@@ -1837,14 +2484,16 @@ class WheelMesh:
     __slots__ = ("coords", "conn", "cfg", "element_block", "element_region",
                  "node_sets", "edge_sets", "seam_error_mm", "n_merged", "rim_outer",
                  "genes", "span_mm", "n_spokes", "owners", "orientation", "phase_deg",
-                 "uncap", "fillet", "fillet_radii_mm", "fillet_clamped", "_coord_fn")
+                 "uncap", "fillet", "fillet_radii_mm", "fillet_clamped",
+                 "fillet_recipe", "_coord_fn")
 
     def __init__(self, coords, conn, cfg, element_block, element_region,
                  node_sets, edge_sets, seam_error_mm, n_merged,
                  rim_outer=RIM_OUTER_RADIUS_MM, genes=None,
                  span_mm=HUB_RIM_SPAN_MM, n_spokes=NUMBER_OF_SPOKES,
                  owners=None, orientation=None, phase_deg=0.0,
-                 uncap=UNCAP_DEFAULT, fillet=None, applied=None):
+                 uncap=UNCAP_DEFAULT, fillet=None, applied=None,
+                 fillet_recipe=None):
         # Carried so `area_report` can ask `modelled_area_reference` for the region this
         # mesh ACTUALLY builds.  A mesh that does not remember how its junctions were
         # closed cannot be area-checked against anything.
@@ -1859,6 +2508,12 @@ class WheelMesh:
         # `None` off the filleted path, which is not the same as "nothing was clamped".
         self.fillet_radii_mm = None if applied is None else applied["radii_mm"]
         self.fillet_clamped = None if applied is None else applied["clamped"]
+        # EVERYTHING PAST `fillet=` THAT MOVES A NODE, so that `mesh_coords` can re-derive
+        # THIS mesh rather than the module default's -- the blocking, the layer profile,
+        # the clamp factor, and the frozen root record `_fillet_curves` needs to run
+        # without a bracketed search.  Same argument as `uncap` below, which was missing
+        # from that list once and cost 0.448 mm before anything noticed.
+        self.fillet_recipe = fillet_recipe
         self.coords = coords
         self.conn = conn
         self.cfg = cfg
@@ -1928,7 +2583,7 @@ def _rotate(grid, angle_rad, xp):
 def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
                    phase_deg, fillet=None, uncap=UNCAP_DEFAULT,
                    fillet_blocking="sector", layer_profile=None,
-                   fillet_clamp=SECTOR_FIT_CLAMP):
+                   fillet_clamp=SECTOR_FIT_CLAMP, fillet_roots=None):
     """The raw node coordinates of all twelve sectors, before the seams are merged.
 
     THE ENTIRE TRACED HALF OF `build_wheel`, factored out so that `mesh_coords` can run
@@ -1936,21 +2591,23 @@ def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
     makes a discrete decision: the orientation is an argument, the block shapes come out
     of `sector_blocks`, and every arithmetic operation goes through `xp`.
 
-    Returns (coords_all [n_raw, 2], shapes, offsets, thetas, dirn, applied), where `dirn`
-    is `None` for the unfilleted blocking and the per-junction sweep direction for the
-    filleted one — `build_wheel` needs it to pick the seam table AND to set that table's
-    `dk`, which follows the genome (see `_seam_table_filleted`) — and `applied` is the
-    sector-fit clamp's record, `None` off the filleted path.
+    Returns (coords_all [n_raw, 2], shapes, offsets, thetas, dirn, applied, roots), where
+    `dirn` is `None` for the unfilleted blocking and the per-junction sweep direction for
+    the filleted one — `build_wheel` needs it to pick the seam table AND to set that
+    table's `dk`, which follows the genome (see `_seam_table_filleted`) — `applied` is the
+    sector-fit clamp's record and `roots` the frozen root record, both `None` off the
+    filleted path.
     """
     sector0 = sector_blocks(genes, cfg, xp=xp, span_mm=span_mm,
                             orientation=orientation, rim_outer=rim_outer,
                             fillet=fillet, uncap=uncap,
                             fillet_blocking=fillet_blocking,
                             layer_profile=layer_profile,
-                            fillet_clamp=fillet_clamp)
+                            fillet_clamp=fillet_clamp, fillet_roots=fillet_roots)
     thetas = sector0.pop("_thetas")
     dirn = sector0.pop("_dirn", None)
     applied = sector0.pop("_applied", None)
+    roots = sector0.pop("_roots", None)
     order = FILLETED_BLOCK_ORDER if dirn is not None else BLOCK_ORDER
 
     parts, offsets, shapes = [], {}, {}
@@ -1970,7 +2627,7 @@ def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
             cursor += shapes[(k, name)][0] * shapes[(k, name)][1]
             parts.append(g.reshape(-1, 2))
 
-    return xp.concatenate(parts, axis=0), shapes, offsets, thetas, dirn, applied
+    return xp.concatenate(parts, axis=0), shapes, offsets, thetas, dirn, applied, roots
 
 
 def mesh_coords(genes, mesh, xp=None):
@@ -1997,35 +2654,107 @@ def mesh_coords(genes, mesh, xp=None):
     true (`tests/test_import_hygiene.py` records what it costs).  Passing `xp=np`
     explicitly is what `tests/test_gradient.py` uses to compare the two paths.
 
+    A FILLETED MESH IS DIFFERENTIABLE SINCE 2026-08-24 (PLAN.md §79) and freezes
+    two more decisions than an unfilleted one does — the tangency and ring-crossing roots
+    are seeded from the eager build and refined by one Newton step, and the four
+    geometric refusals `_fillet_curves` can make are not re-tested.  Same argument as the
+    flank orientation above; `_filleted_gradient_recipe` says what is still refused.
+
+    AND SINCE §88 THAT INCLUDES THE DEFAULT ONE.  `fillet=True` with no `layer_profile` is
+    the per-genome rule, whose entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`; §85
+    refused it because the frozen path held that entry constant.  The cliff is a closed
+    form in two scalars the tangency solve already produces, so it is re-resolved inside
+    the trace and the entry follows the genes — one more root-find NOT frozen, rather than
+    one more thing frozen.
+
     The default path goes through `coord_fn` and is JITTED, which is not an optimisation
     detail: see that function for the measurement.
     """
     if xp is None:
         return coord_fn(mesh)(genes)
 
-    _refuse_filleted_gradient(mesh)
-    coords_all, _, _, _, _, _ = _sector_coords(
+    rec = _filleted_gradient_recipe(mesh)
+    coords_all, *_ = _sector_coords(
         genes, mesh.cfg, xp, mesh.span_mm, mesh.n_spokes, mesh.orientation,
-        mesh.rim_outer, mesh.phase_deg, uncap=getattr(mesh, "uncap", UNCAP_DEFAULT))
+        mesh.rim_outer, mesh.phase_deg, uncap=getattr(mesh, "uncap", UNCAP_DEFAULT),
+        **rec)
     return coords_all[xp.asarray(mesh.owners)]
 
 
-def _refuse_filleted_gradient(mesh):
-    """A filleted mesh has no differentiable path, and silence here would be worse.
+# The frozen record's field order, and the two junctions'.  It is a FLAT VECTOR on the
+# traced path -- see `coord_fn` on why closing over these numbers instead would retrace
+# the jaxpr at every genome.
+_FILLET_ROOT_JUNCTIONS = ("hub", "rim")
+_FILLET_ROOT_FIELDS = ("s_A", "u_N", "void_sign", "dd_turns", "sweep_sign",
+                       "th_B_turns", "th_N_turns", "dirn")
 
-    `_sector_coords` is called below WITHOUT `fillet`, so for a filleted mesh it would
-    happily rebuild the UNFILLETED sector, take `mesh.owners` — which index a different
-    and longer node list — and return coordinates that are neither the mesh's nor an
-    error.  Both the filleted spoke and the filleted blocking need concrete solves and
-    are numpy-only; the honest answer is that this mesh is a measurement instrument and
-    not a design variable.  PLAN §48.
+
+def _fillet_roots_vector(roots):
+    return np.array([float(roots[j][f]) for j in _FILLET_ROOT_JUNCTIONS
+                     for f in _FILLET_ROOT_FIELDS], dtype=float)
+
+
+def _fillet_roots_from_vector(vec, clamped):
+    n = len(_FILLET_ROOT_FIELDS)
+    return {j: dict({f: vec[i * n + k] for k, f in enumerate(_FILLET_ROOT_FIELDS)},
+                    clamped=bool(clamped[i]))
+            for i, j in enumerate(_FILLET_ROOT_JUNCTIONS)}
+
+
+def _filleted_gradient_recipe(mesh):
+    """What `_sector_coords` needs to re-derive THIS mesh, or a refusal saying why not.
+
+    `_sector_coords` would otherwise be called WITHOUT `fillet`, so for a filleted mesh
+    it would happily rebuild the UNFILLETED sector, take `mesh.owners` — which index a
+    different and longer node list — and return coordinates that are neither the mesh's
+    nor an error.  Everything past `fillet=` matters for the same reason `uncap` does
+    (see `WheelMesh.__init__`): the layer profile and the clamp factor both move nodes,
+    and a traced path taking the module default would describe a different mesh.
+
+    TWO FILLETED MESHES ARE STILL REFUSED, both because the derivative would be wrong
+    rather than because it would be hard:
+
+      `fillet_blocking="spoke"` is PART 3's retired construction, and its
+      `_filleted_spoke` re-spreads the station vector by ROUNDING a node count — a step
+      function of the radius, whose derivative is zero almost everywhere and undefined
+      at the jumps.  Nothing but `make fillet` builds it.
+
+      A mesh whose radius the sector-fit clamp MOVED (`SECTOR_FIT_CLAMP`).  There the
+      built radius is `factor * limit(genome)` and does not follow `R_hub` at all, so the
+      honest gradient in that gene is zero and the honest one in the centreline genes
+      runs through the limit's own bisection.  Neither is what freezing the record gives,
+      and a plausible wrong length is the failure `wheel_adjoint`'s header is about.  The
+      clamp is inert at the shipped genome and over the whole span §75 priced.
+
+    A THIRD CASE WAS REFUSED HERE FROM §85 TO §88 AND IS NOT ANY MORE: the PER-GENOME
+    layer profile, whose entry is `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`.  The cliff
+    turned out to be a closed form in two scalars the tangency solve already produces
+    (`_layer_cliff_from_scalars`), so it is differentiated rather than held constant.
+    THE RULE IS HANDED BACK, NOT THE PAIR IT PRODUCED — `layer_profile: None` — because
+    passing the resolved pair is exactly the frozen constant this stopped being.  A
+    non-per-genome mesh still passes its pair, and `coord_fn`'s cache key tells the two
+    apart by that `None`.
     """
-    if getattr(mesh, "fillet", None) is not None:
+    if getattr(mesh, "fillet", None) is None:
+        return {}
+    rec = getattr(mesh, "fillet_recipe", None) or {}
+    if rec.get("roots") is None:
         raise NotImplementedError(
-            "mesh_coords: this mesh was built with `fillet=`, whose construction needs "
-            "concrete tangency and crossing solves and is numpy-only.  There is no "
-            "differentiable path for a filleted mesh — see PLAN.md §48, which measures "
-            "why it is not one the optimizer may take.")
+            "mesh_coords: this mesh was built with `fillet=` and "
+            f"`fillet_blocking={rec.get('blocking')!r}`, which carries no root record.  "
+            "Only the eleven-block sector blocking has a differentiable path; see "
+            "`_filleted_gradient_recipe` and PLAN.md §79.")
+    if any(rec["roots"][j]["clamped"] for j in _FILLET_ROOT_JUNCTIONS):
+        raise NotImplementedError(
+            "mesh_coords: the sector-fit clamp moved this mesh's fillet radius, so the "
+            f"radii it was built at {mesh.fillet_radii_mm} are not the genes' "
+            "and do not follow them.  The differentiable path would return a gradient "
+            "that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md "
+            "§79.")
+    return {"fillet": mesh.fillet, "fillet_blocking": rec["blocking"],
+            "layer_profile": None if rec.get("layer_profile_per_genome")
+                             else rec["layer_profile"],
+            "fillet_clamp": rec["clamp"], "fillet_roots": rec["roots"]}
 
 
 _COORD_FN_CACHE = {}
@@ -2059,8 +2788,19 @@ def coord_fn(mesh):
 
     A design at fixed genes is not in the key and must not be: the genes are the traced
     ARGUMENT.  Phase is, because `_sector_coords` branches on it.
+
+    A FILLETED MESH'S FROZEN ROOTS ARE A TRACED ARGUMENT TOO, and that is the whole
+    reason this function still has a cache to speak of.  They depend on the genome — a
+    different design has a different tangency station — so closing over them would put a
+    design at fixed genes into the jaxpr and re-trace on every finite difference and
+    every optimizer step, which is the exact failure the paragraph above describes.
+    Passed in as an array instead, the traced recipe is genome-independent again and the
+    key stays what it was, plus the blocking and layer profile, which are static and do
+    change the geometry.  Measured on the `coarse` filleted mesh, second genome onward:
+    2.78 s to trace once, 0.0095 s per call after -- against 2.29 s and 0.0012 s for the
+    unfilleted mesh, and against 2.78 s EVERY call if the roots are closed over.
     """
-    _refuse_filleted_gradient(mesh)
+    rec = _filleted_gradient_recipe(mesh)
     import jax_config  # noqa: F401  — x64 must be set before the first trace
     import jax
     import jax.numpy as jnp
@@ -2069,30 +2809,59 @@ def coord_fn(mesh):
     orientation, rim_outer, phase = mesh.orientation, mesh.rim_outer, mesh.phase_deg
     uncap = getattr(mesh, "uncap", UNCAP_DEFAULT)
     owners_np = np.asarray(mesh.owners)
+    # `repr(rec["layer_profile"])` RAW, NOT THROUGH `_layer_profile` (§88).  That helper
+    # maps `None` onto the shipped constants, and since §88 `None` in this record means
+    # THE PER-GENOME RULE, resolved inside the trace: mapping it would key a per-genome
+    # mesh identically to a shipped-pair one and hand the second the first's geometry.
+    # The raw `None` also makes the key genome-INDEPENDENT again, which is the whole
+    # point of the paragraph above -- a resolved pair in the key re-traces per genome.
+    fillet_key = () if not rec else (
+        repr(rec["fillet"] if rec["fillet"] is True else tuple(rec["fillet"])),
+        rec["fillet_blocking"], repr(rec["layer_profile"]))
     # `repr(uncap)` IS IN THE KEY, and leaving it out is not a cache miss but a WRONG
     # ANSWER: two meshes can share every entry above and differ only in `uncap`, and the
     # second would then be handed the first's traced geometry.  See `WheelMesh.__init__`.
     key = (cfg.name, cfg.order, cfg.n_curve, cfg.n_span, cfg.n_thick, cfg.n_weld,
            cfg.n_collar_r, cfg.n_collar_free, cfg.n_rim_r, cfg.n_rim_free,
            float(span), int(n_spokes), float(rim_outer), float(phase),
-           repr(uncap), np.asarray(orientation).tobytes(), owners_np.tobytes())
+           repr(uncap), np.asarray(orientation).tobytes(), owners_np.tobytes(),
+           fillet_key)
 
     if mesh._coord_fn is not None:
         return mesh._coord_fn
-    f = _COORD_FN_CACHE.get(key)
-    if f is None:
+    traced = _COORD_FN_CACHE.get(key)
+    if traced is None:
         owners = jnp.asarray(owners_np)
 
-        @jax.jit
-        def f(v):                                   # noqa: F811
-            coords_all, _, _, _, _, _ = _sector_coords(v, cfg, jnp, span, n_spokes,
-                                                       orientation, rim_outer, phase,
-                                                       uncap=uncap)
-            return coords_all[owners]
+        if not rec:
+            @jax.jit
+            def traced(v):                          # noqa: F811
+                coords_all, *_ = _sector_coords(v, cfg, jnp, span, n_spokes,
+                                                orientation, rim_outer, phase,
+                                                uncap=uncap)
+                return coords_all[owners]
+        else:
+            static = dict(rec)
+            static.pop("fillet_roots")
+            clamped = tuple(False for _ in _FILLET_ROOT_JUNCTIONS)
+
+            @jax.jit
+            def traced(v, root_vec):                # noqa: F811
+                coords_all, *_ = _sector_coords(
+                    v, cfg, jnp, span, n_spokes, orientation, rim_outer, phase,
+                    uncap=uncap,
+                    fillet_roots=_fillet_roots_from_vector(root_vec, clamped),
+                    **static)
+                return coords_all[owners]
 
         if len(_COORD_FN_CACHE) >= _COORD_FN_CACHE_MAX:
             _COORD_FN_CACHE.pop(next(iter(_COORD_FN_CACHE)))
-        _COORD_FN_CACHE[key] = f
+        _COORD_FN_CACHE[key] = traced
+    if rec:
+        root_vec = jnp.asarray(_fillet_roots_vector(rec["fillet_roots"]))
+        f = functools.partial(traced, root_vec=root_vec)
+    else:
+        f = traced
     mesh._coord_fn = f
     return f
 
@@ -2116,7 +2885,17 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
     cfg = get_config(cfg)
     if orientation is None:
         orientation = flank_orientation(genes, cfg, span_mm=span_mm)
-    coords_all, shapes, offsets, thetas, dirn, applied = _sector_coords(
+    # THE PROFILE IS SETTLED HERE, ONCE, AND WHAT GOES INTO `fillet_recipe` BELOW IS THE
+    # RESOLVED PAIR (§85).  Leaving `None` in that record would leave the jax cache key --
+    # which reads it -- identical for two genomes the per-genome rule gives different
+    # profiles to.  See `_resolve_layer_profile`.
+    per_genome = (fillet is True and layer_profile is None
+                  and fillet_blocking == "sector")
+    layer_profile = _resolve_layer_profile(
+        layer_profile, genes, cfg, fillet, span_mm=span_mm, orientation=orientation,
+        rim_outer=rim_outer, uncap=uncap, clamp=fillet_clamp,
+        fillet_blocking=fillet_blocking)
+    coords_all, shapes, offsets, thetas, dirn, applied, fillet_roots = _sector_coords(
         genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer, phase_deg,
         fillet, uncap, fillet_blocking, layer_profile, fillet_clamp)
     filleted = dirn is not None
@@ -2180,7 +2959,13 @@ def build_wheel(genes, cfg="coarse", xp=np, span_mm=HUB_RIM_SPAN_MM,
                      int(n_raw - owners.size), rim_outer=rim_outer,
                      genes=genes, span_mm=span_mm, n_spokes=n_spokes,
                      owners=owners, orientation=orientation, phase_deg=phase_deg,
-                     uncap=uncap, fillet=fillet, applied=applied)
+                     uncap=uncap, fillet=fillet, applied=applied,
+                     fillet_recipe=None if fillet is None else {
+                         "blocking": fillet_blocking, "layer_profile": layer_profile,
+                         # Whether that pair came from the RULE or was asked for, which
+                         # the pair itself cannot say and `mesh_coords` has to know (§85).
+                         "layer_profile_per_genome": bool(per_genome),
+                         "clamp": fillet_clamp, "roots": fillet_roots})
 
 
 def _orient_elements(xy, conn, elem_block):
@@ -2478,6 +3263,143 @@ def _uncap_reference_poly(poly, curve, hub_radius, rim_inner, uncap):
     return poly
 
 
+def _fillet_reference_wedge(flank, mid, ring_r, void_sign, R):
+    """Area ONE junction's fillet ADDS to the region `modelled_area_reference` describes.
+
+    THE REGION, WHICH IS THE WHOLE OF WHY THIS IS NOT A WEDGE FORMULA.  Unfilleted, the
+    material's boundary turns a corner where the STRADDLING flank crosses its ring
+    circle: flank on one side, circle on the other, void between them.  The sector
+    blocking replaces that corner with an arc tangent to both legs, so the material gains
+    exactly the curvilinear triangle
+
+        A -> F   along the flank      (`A` the tangency point, `F` the ring crossing)
+        F -> B   along the ring circle
+        B -> A   along the fillet arc
+
+    and nothing else -- every other boundary the filleted blocking builds (the far flank,
+    the cut to the ring's far radius, the radial dive) is a CUT BETWEEN BLOCKS and lies
+    strictly inside the region either way.  Verified against the mesh rather than
+    asserted: at the shipped genome the residual against `area_report`'s measured total
+    falls 0.4412% -> 0.1309% -> 0.0602% -> 0.0362% down the config ladder, and holding
+    `fine` while sweeping `n_thick` 8 -> 64 -- the direction that resolves the arcs --
+    drives it to -0.0024%, against the UNFILLETED mesh's own -0.0025% at that config.
+    A region that was wrong would converge to that error instead of to zero.  See
+    PLAN.md §86, which is §50's ranked item, and FILLET_PLAN.md STEP 1 RECORD PART 28.
+
+    `flank` and `mid` are the straddling flank and the centreline, both ordered FROM the
+    ring end INTO the spoke, and both from `thicken_3taper_curve`'s own samples -- so the
+    tangency is re-solved here on the EXPORTER's finite-difference offset normals rather
+    than read off the mesh's analytic hodograph, which is what keeps this an independent
+    cross-check instead of the same computation twice.  Measured, the two paths put the
+    twelve spokes' fillets at 139.16025 and 139.16031 mm2.
+
+    THE OFFSET DIRECTION IS THE CENTRELINE'S NORMAL, NOT THE FLANK'S, and that is a
+    faithful copy of `_fillet_centre` rather than an approximation of it: `C` is the flank
+    point pushed `R` along `flank - mid`, exactly as the mesh's tangency solve pushes it,
+    so a band of varying width gives the same not-quite-perpendicular circle on both
+    paths.  Copying the construction is the point; "improving" it here would measure the
+    difference between two fillets instead of between two integrations of one.
+
+    Returns `(area_mm2, i)`, `i` being the flank index the tangency landed in -- the
+    caller needs it to tell the two junctions' fillets from a spoke they have eaten.
+    """
+    r = np.hypot(flank[:, 0], flank[:, 1])
+    # `void_sign` is +1 where the spoke is OUTSIDE its ring (the hub) and -1 where it is
+    # inside (the rim), so this one expression is "how far into the spoke" at both ends.
+    side = (r - ring_r) * void_sign
+    cross = np.nonzero(side[:-1] * side[1:] <= 0.0)[0]
+    if cross.size == 0:
+        raise ValueError(
+            f"the straddling flank never crosses r={ring_r:.4f} mm, so this junction has "
+            f"no corner for a fillet to round")
+    j = int(cross[0])
+    F = _circle_crossing(flank[j], flank[j + 1], ring_r)
+
+    d = flank - mid
+    centres = flank + R * (d / np.linalg.norm(d, axis=1)[:, None])
+    target = ring_r + void_sign * R
+    resid = np.hypot(centres[:, 0], centres[:, 1]) - target
+    # Bracketed from the ring crossing INTO the spoke, which is the same bracket
+    # `_fillet_tangency` scans (`s_end` is that crossing's station).  Starting at the end
+    # of the band instead would admit a root on the stub that lies inside the ring.
+    tail = resid[j:]
+    hit = np.nonzero(np.sign(tail[:-1]) * np.sign(tail[1:]) <= 0.0)[0]
+    if hit.size == 0:
+        raise ValueError(
+            f"no fillet of radius {R:.4f} mm is tangent to both the ring at "
+            f"r={ring_r:.4f} and the flank anywhere along the spoke: the tangency "
+            f"residual stays {tail.min():+.4f}..{tail.max():+.4f} mm.  The fillet is "
+            f"larger than the notch can hold.")
+    i = j + int(hit[0])
+
+    def at(t):
+        p = flank[i] + t * (flank[i + 1] - flank[i])
+        e = p - (mid[i] + t * (mid[i + 1] - mid[i]))
+        return p, p + R * e / np.linalg.norm(e)
+
+    lo, hi, sign_lo = 0.0, 1.0, np.sign(resid[i])
+    for _ in range(60):
+        t = 0.5 * (lo + hi)
+        if np.sign(np.hypot(*at(t)[1]) - target) == sign_lo:
+            lo = t
+        else:
+            hi = t
+    A, C = at(0.5 * (lo + hi))
+    B = C * (ring_r / np.hypot(C[0], C[1]))
+
+    # Green's theorem, one term per boundary piece and both arcs EXACT -- the same
+    # integration `_clip_polygon_to_disk` does, for a loop it cannot be handed because
+    # two of its three sides are circles of different centres.
+    loop = np.concatenate([[A], flank[i:j:-1], [F]])
+    acc = float(np.sum(loop[:-1, 0] * loop[1:, 1] - loop[1:, 0] * loop[:-1, 1]))
+    dth = math.atan2(B[1], B[0]) - math.atan2(F[1], F[0])
+    acc += ring_r ** 2 * ((dth + math.pi) % (2.0 * math.pi) - math.pi)
+    a0 = math.atan2(B[1] - C[1], B[0] - C[0])
+    a1 = math.atan2(A[1] - C[1], A[0] - C[0])
+    dphi = (a1 - a0 + math.pi) % (2.0 * math.pi) - math.pi
+    R_arc = 0.5 * (np.linalg.norm(A - C) + np.linalg.norm(B - C))
+    acc += R_arc ** 2 * dphi + C[0] * (A[1] - B[1]) - C[1] * (A[0] - B[0])
+    return abs(0.5 * acc), i
+
+
+def _fillet_reference_areas(flanks, mid, hub_radius, rim_inner, radii):
+    """Both junctions' fillet areas for ONE spoke, on the reference's own polygon.
+
+    `flanks` is `(top, bottom)`, each indexed by CURVE index -- so the caller has to
+    un-reverse `thicken_3taper_curve`'s second half and hand them over before the winding
+    normalisation, which reverses the whole loop and swaps them.
+
+    WHICH FLANK STRADDLES IS READ OFF THE RADII, not off `flank_orientation`, for the
+    reason `_uncap_reference_poly` reads its far flank the same way: the two ends are
+    independent, and deciding it here from the exporter's own points keeps this path
+    from inheriting the mesh's decision.  `flank_orientation` answers the identical
+    question -- the flank that starts inside the hub circle, the flank that ends outside
+    the rim's -- and the two agree by construction, not by being the same call.
+    """
+    top, bot = flanks
+    ends = (("hub", radii[0], hub_radius, 1.0,
+             float(np.hypot(*top[0])) < float(np.hypot(*bot[0])), False),
+            ("rim", radii[1], rim_inner, -1.0,
+             float(np.hypot(*top[-1])) > float(np.hypot(*bot[-1])), True))
+    out, reach = {}, {}
+    for junction, R, ring_r, void_sign, straddling_is_top, from_rim in ends:
+        if not R > 0.0:
+            raise ValueError(
+                f"the filleted region needs a positive radius at both junctions; "
+                f"{junction} got {float(R):.4f}.  Use `fillet=None` for the unfilleted "
+                f"region.")
+        flank = top if straddling_is_top else bot
+        flank, line = (flank[::-1], mid[::-1]) if from_rim else (flank, mid)
+        area, i = _fillet_reference_wedge(flank, line, ring_r, void_sign, float(R))
+        out[junction] = area
+        reach[junction] = (len(mid) - 1 - i) if from_rim else i
+    if reach["hub"] >= reach["rim"]:
+        raise ValueError(
+            f"the two fillets are longer than the spoke: their tangent points meet at "
+            f"curve samples {reach['hub']} and {reach['rim']}.")
+    return out["hub"], out["rim"]
+
+
 # `modelled_area_reference` is pure and costs ~50 ms (a 20001-point centreline, a 40002-
 # point offset band, and two exact disk clips).  `area_report` needs it TWICE whenever
 # `uncap` is active -- once for the region the mesh builds and once for the capped region
@@ -2500,10 +3422,11 @@ _AREA_REF_CACHE_MAX = 64
 def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
                             span_mm=HUB_RIM_SPAN_MM, hub_radius=HUB_RADIUS_MM,
                             n_spokes=NUMBER_OF_SPOKES, n_curve=20001,
-                            uncap=UNCAP_DEFAULT):
+                            uncap=UNCAP_DEFAULT, fillet=None):
     """The area of the region this module models, DERIVED rather than transcribed.
 
         hub disk + rim band + n_spokes * (spoke band clipped to the annulus)
+                            + n_spokes * (two junction fillets, when `fillet` is given)
 
     Everything follows from the frame constants and the genome, so changing
     `RIM_RADIUS_MM` or re-optimising the genome moves the reference with them instead of
@@ -2520,20 +3443,61 @@ def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
 
     The SHIPPED STEP is a different region again: `wheel_step_export._embed` adds
     material at each junction that this deliberately does not model, quantified in the
-    module docstring.  Use `shipped=True` to fold that measured allowance in.
+    module docstring.  `area_report` folds that measured allowance in and reports it as
+    `reference_shipped_step_mm2`; this function never does.  (That sentence used to say
+    "use `shipped=True`", which has not been a parameter of anything here.)
+
+    `fillet=(R_hub, R_rim)` ADDS THE SECTOR BLOCKING'S TWO FILLETS PER SPOKE (PLAN.md
+    §50), so that `error_vs_modelled` is a discretisation residual for a filleted mesh
+    the same way it is for the default one.  Three things about that argument:
+
+      IT TAKES RADII, NEVER `fillet=True`.  In `sector_blocks` and `build_wheel` that
+      flag means "this genome's radii, MOVED BY `SECTOR_FIT_CLAMP` if they have no room",
+      and resolving the clamp needs a config, an `uncap` and a layer profile — none of
+      which a pure area reference has or should have.  Accepting `True` here would
+      therefore make one spelling mean two regions, so it is refused; `area_report`
+      passes `mesh.fillet_radii_mm`, which is what was BUILT rather than what was asked
+      for.
+
+      IT IS THE `"sector"` BLOCKING'S REGION.  `fillet_blocking="spoke"` is §47's retired
+      construction and rounds the flank a different way; `area_report` withholds rather
+      than comparing against this.
+
+      IT IS NOT THE EXPORTER'S FILLET.  `wheel_step_export` rounds the SOLID's edges, and
+      the module docstring's `reference_shipped_step_mm2` is anchored on the UNFILLETED
+      cross-section for that reason.  This term describes the mesh's region and only
+      that.
+
+    The two fillets are added, never blended into `spokes_mm2`: at the hub the wedge sits
+    outside the ring circle and at the rim inside it, so both fall in the annulus and
+    would vanish into the band's own figure — and the mesh tags them `spoke` while part
+    of `*_fillet_b` sits inside the ring, so per-REGION agreement is a different (and
+    still open) question from the total.
     """
     import wheel_fea as _fea
 
+    if fillet is True or fillet is False:
+        raise ValueError(
+            "`modelled_area_reference` takes fillet=(R_hub, R_rim) or None, not "
+            f"{fillet!r}: `fillet=True` means the CLAMPED radii in `sector_blocks` and "
+            "this function cannot resolve the clamp.  Pass `mesh.fillet_radii_mm`.")
+    fillet = None if fillet is None else (float(fillet[0]), float(fillet[1]))
     g = np.asarray(genes, dtype=float)
     key = (g.tobytes(), float(rim_outer), float(span_mm), float(hub_radius),
-           int(n_spokes), int(n_curve), repr(uncap))
+           int(n_spokes), int(n_curve), repr(uncap), repr(fillet))
     hit = _AREA_REF_CACHE.get(key)
     if hit is not None:
         return dict(hit)
     curve, _ = _fea.generate_bezier_centerline(*g[:8], span_mm=span_mm,
                                                num_points=n_curve)
     poly = np.asarray(_fea.thicken_3taper_curve(curve, *g[8:12]), dtype=float)
-    poly = poly + np.array([hub_radius, 0.0])
+    shift = np.array([hub_radius, 0.0])
+    poly = poly + shift
+    # The two flanks, each by CURVE index, taken BEFORE the winding normalisation below
+    # reverses the loop and swaps them.  `_fillet_reference_areas` needs them this way
+    # round and the clipper does not care.
+    half = len(poly) // 2
+    flanks = (poly[:half], poly[half:][::-1])
     # `thicken_3taper_curve` returns [top; reversed bottom], whose winding depends on
     # which way the offset normals point — so it is clockwise for some genomes and
     # counter-clockwise for others.  Normalise here rather than taking abs() at the end:
@@ -2555,6 +3519,20 @@ def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
                            + np.pi * (rim_outer ** 2 - rim_inner ** 2)
                            + n_spokes * spoke),
     }
+    if fillet is not None:
+        # The fillet does not touch `uncap`'s corner -- one rounds the STRADDLING flank,
+        # the other continues the FAR one -- so `area_report`'s two calls differ by the
+        # gusset and by nothing else, exactly as they did before this term existed.
+        f_hub, f_rim = _fillet_reference_areas(flanks, curve + shift, hub_radius,
+                                               rim_inner, fillet)
+        out.update({
+            "fillet_radii_mm": [fillet[0], fillet[1]],
+            "fillet_hub_each_mm2": float(f_hub),
+            "fillet_rim_each_mm2": float(f_rim),
+            "fillet_each_mm2": float(f_hub + f_rim),
+            "fillets_mm2": float(n_spokes * (f_hub + f_rim)),
+        })
+        out["total_mm2"] += out["fillets_mm2"]
     if len(_AREA_REF_CACHE) >= _AREA_REF_CACHE_MAX:
         _AREA_REF_CACHE.pop(next(iter(_AREA_REF_CACHE)))
     _AREA_REF_CACHE[key] = dict(out)
@@ -2572,6 +3550,23 @@ def modelled_area_reference(genes, rim_outer=RIM_OUTER_RADIUS_MM,
 # (STEP cross-section - this region's reference) / 12, both from the same genome in one
 # process: 2644.3509 - 2607.9634 = 36.3875, i.e. 3.032 per spoke, against 4.356 the same way
 # before the change.  The gap it explains narrows from ~1.93% to ~1.38%.
+#
+# THAT PAIR IS THE PRE-§13 GENOME'S AND THE CONSTANT IS STALE WITH IT.  Its DIFFERENCE is
+# the invariant -- see `test_the_embed_difference_from_the_shipped_step_is_the_known_amount`
+# -- but the two absolute numbers describe a wheel that was promoted away from on
+# 2026-08-06.  The identical computation on the SHIPPED genome, from
+# `export/wheel_step_manifest.json` and this module in one process (§87):
+#
+#     36145.8 mm3 / 22.4 mm = 1613.6518,  capped reference 1607.2718
+#     1613.6518 - 1607.2718 = 6.3800, i.e. 0.5317 per spoke
+#
+# 5.7x smaller, and `reference_shipped_step_mm2` is high by the difference -- 29.6 mm2,
+# 1.8% of the wheel.  DELIBERATELY NOT REPLACED.  §14's open item 6 is explicit: "Do not
+# guess a new number.  Replacing 3.03 with 0.98 would only re-stale it on the next genome;
+# what is needed is the scaling law, derived from `wheel_step_export._embed` the way
+# `wheel_geometry.junction_bite` was derived."  0.5317 is a third measurement of a quantity
+# that has now read 4.356, 3.032, 0.98 and 0.5317 on four genomes, which is the evidence FOR
+# that item rather than a candidate to close it with.
 EMBED_ALLOWANCE_PER_SPOKE_MM2 = 3.03
 
 
@@ -2599,6 +3594,17 @@ def area_report(mesh):
     Both were hardcoded constants until the rim band was thickened, at which point they
     silently became references to a wheel that no longer exists.  Deriving them is the
     fix; `mesh.genes` is carried for exactly this.
+
+    A FILLETED MESH GETS THE FIRST AND NOT THE SECOND (PLAN.md §86).
+    `reference_modelled_mm2` follows the fillet, because it is the region this mesh
+    builds and `error_vs_modelled` means nothing unless both sides describe it; the
+    fillets' own share is reported as `fillet_modelled_mm2` so the two halves can be read
+    apart.  The STEP half is WITHHELD instead, and not out of caution: both numbers
+    behind it — the 2644.3509 mm2 profile and `EMBED_ALLOWANCE_PER_SPOKE_MM2` — were
+    measured against the UNFILLETED cross-section (see the module docstring), so
+    `reference_shipped_step_mm2` describes an unfilleted region and there is no
+    like-for-like comparison to report.  The exporter's fillet is a different
+    construction from this one and pricing one against the other is its own work.
     """
     xy = np.asarray(mesh.coords)
     area = _signed_area(xy, mesh.conn)
@@ -2615,22 +3621,22 @@ def area_report(mesh):
     }
     if mesh.genes is None:
         return out
-    if getattr(mesh, "fillet", None) is not None:
-        # THE REFERENCE DOES NOT DESCRIBE THIS MESH, so it is withheld rather than
-        # reported wrong.  `modelled_area_reference` derives its region from the
-        # EXPORTER's geometry, which has no fillet: a filleted mesh adds the material
-        # between each corner and its arc, and `error_vs_modelled` would book that as a
-        # discretisation residual.  The measured half above is still the mesh's own and
-        # is returned.  Making the reference fillet-aware is real work and is not a
-        # closed form -- the fillet's legs are a spline and a circle, not two straight
-        # lines, so the wedge formula does not apply -- and it is ranked, not done.
+    fillet = getattr(mesh, "fillet_radii_mm", None)
+    if getattr(mesh, "fillet", None) is not None and fillet is None:
+        # THE OTHER FILLETED CONSTRUCTION, and this one still has no reference.
+        # `fillet_blocking="spoke"` is §47's retired blocking -- the arc on the spoke
+        # block's own flank edge -- which rounds the flank a different way and leaves no
+        # `_applied` record to read the built radii out of.  `make fillet` still measures
+        # it and it must not be compared against the SECTOR blocking's region, so the
+        # withholding this branch used to do for every filleted mesh survives here.
         out["reference_unavailable_because"] = (
-            "this mesh is filleted and `modelled_area_reference` models the unfilleted "
-            "region; see PLAN.md §50")
+            "this mesh is filleted by the `spoke` blocking and "
+            "`modelled_area_reference` models the `sector` blocking's region; see "
+            "PLAN.md §86")
         return out
     uncap = getattr(mesh, "uncap", UNCAP_DEFAULT)
     kw = dict(rim_outer=mesh.rim_outer, span_mm=mesh.span_mm, n_spokes=mesh.n_spokes)
-    ref = modelled_area_reference(mesh.genes, uncap=uncap, **kw)
+    ref = modelled_area_reference(mesh.genes, uncap=uncap, fillet=fillet, **kw)
     # TWO references, and only one of them may follow `uncap`.
     #
     # `reference_modelled_mm2` MUST follow it: it is the region this mesh builds, and
@@ -2640,20 +3646,35 @@ def area_report(mesh):
     # change this pair of numbers exists to expose.  So the STEP reference stays anchored
     # on the CAPPED region plus the full measured allowance, and the part of `_embed`'s
     # gusset the mesh has started to model is reported separately rather than netted off.
+    #
+    # THE FILLET IS THE CASE THAT RULE DOES NOT COVER, so the STEP half is withheld
+    # instead of anchored -- see the docstring.  It rides on BOTH calls below, which is
+    # what keeps `gusset_modelled_mm2` exactly the difference it always was: the fillet
+    # rounds the STRADDLING flank and `uncap` continues the FAR one, so the term cancels.
     capped = (_uncap_blend(uncap, True) is None and _uncap_blend(uncap, False) is None)
-    ref0 = ref if capped else modelled_area_reference(mesh.genes, uncap=False, **kw)
+    ref0 = ref if capped else modelled_area_reference(mesh.genes, uncap=False,
+                                                      fillet=fillet, **kw)
     gusset = ref["total_mm2"] - ref0["total_mm2"]
-    ref_shipped = ref0["total_mm2"] + mesh.n_spokes * EMBED_ALLOWANCE_PER_SPOKE_MM2
     out.update({
         "reference_breakdown_mm2": ref,
         "reference_modelled_mm2": ref["total_mm2"],
         "reference_capped_mm2": ref0["total_mm2"],
         "gusset_modelled_mm2": float(gusset),
         "gusset_modelled_per_spoke_mm2": float(gusset / mesh.n_spokes),
-        "reference_shipped_step_mm2": ref_shipped,
-        "error_vs_modelled": total / ref["total_mm2"] - 1.0,
-        "error_vs_shipped_step": total / ref_shipped - 1.0,
     })
+    if fillet is None:
+        ref_shipped = ref0["total_mm2"] + mesh.n_spokes * EMBED_ALLOWANCE_PER_SPOKE_MM2
+        out["reference_shipped_step_mm2"] = ref_shipped
+    out["error_vs_modelled"] = total / ref["total_mm2"] - 1.0
+    if fillet is None:
+        out["error_vs_shipped_step"] = total / ref_shipped - 1.0
+    else:
+        out["fillet_modelled_mm2"] = float(ref["fillets_mm2"])
+        out["fillet_modelled_per_spoke_mm2"] = float(ref["fillets_mm2"] / mesh.n_spokes)
+        out["step_reference_unavailable_because"] = (
+            "`reference_shipped_step_mm2` is anchored on the UNFILLETED cross-section "
+            "and `EMBED_ALLOWANCE_PER_SPOKE_MM2` was measured against it, so neither "
+            "describes a filleted region; see PLAN.md §86")
     return out
 
 

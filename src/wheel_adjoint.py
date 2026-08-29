@@ -73,10 +73,49 @@ appears in `dcoords/dgenes` before any solver is involved.  M6 found this throug
 solve; it is sharper than that.  A gradient-based Stage 3 would optimise 12 of 14 genes
 and never notice, so it is classified and gated on rather than left to be discovered.
 
+THAT ZERO IS A FACT ABOUT THE MESH, AND SINCE 2026-08-24 THERE IS A MESH WHERE IT IS
+FALSE.  `build_wheel(fillet=True)` models the fillets and `mesh_coords` no longer refuses
+it (PLAN.md section 79): both of the filleted construction's bracketed root-finds are
+seeded from the eager build and refined by one Newton step, which is the same implicit
+differentiation this module's own derivation is, one level lower.  On that mesh nothing
+is dead and the two are the LARGEST movers of all fourteen -- and everything above about
+this module is unchanged, because nothing hands it a filleted mesh.  Stage 3 still builds
+the unfilleted one, `wheel_objective` still prices `R_hub` through a `Kt` surrogate that
+is exactly flat over half its feasible range (section 75), and the census gates in
+`study_gradient.py` and `tests/test_gradient.py` are still correct and still green.  What
+changed is that the gap is now a wiring decision with a measured price rather than a
+missing derivative.
+
 numpy in, numpy out.  Stage 3's optimizer (projected Adam, `scipy.optimize.minimize`)
 never traces the outer loop, so there is no `custom_vjp` wrapper here — a code path with
 no consumer is exactly what this project's rules reject.  The pieces are separated so
 that adding one later is mechanical.
+
+THAT LAST SENTENCE HAS NOW BEEN TESTED, AND IT HELD -- IN `wheel_wheel`, NOT HERE.  The
+fillet work above needed no change to this file at all: `adjoint_grads` takes `mesh=` and
+calls `jax.vjp(mesh_coords)`, so a filleted mesh flows through the whole adjoint with the
+separation doing exactly the job the sentence claimed for it.  The mechanical part was the
+threading of `xp` through the geometry; what was NOT mechanical, and is the finding worth
+carrying, is that the bracketed searches had to be replaced by a frozen-root Newton step
+rather than traced -- a `custom_vjp` around the bisection would have been the wrong
+instrument, because there is nothing wrong with the bisection's derivative that a wrapper
+could fix.  There is no derivative in a `sign` comparison to wrap.
+
+AND THE THIRD SEARCH TOOK A THIRD INSTRUMENT, WHICH IS THE PART WORTH GENERALISING
+(section 88).  When section 85 made `fillet=True` take a PER-GENOME layer profile, its
+entry became `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)` -- another bracketed search, and
+the frozen-root step above does not apply to it, because the answer is not a root of an
+equation the traced path re-evaluates but the OUTPUT of ninety halvings.  So section 85
+refused the gradient outright, on the same argument the sector-fit clamp still gets.
+
+What removed the refusal was neither a wrapper nor a frozen root: the cliff had a closed
+form and nobody had looked for one.  The layer's width profile is affine in `entry`, so
+the entry at which its sampled minimum reaches zero is `max_u (Z - a(u)) / b(u)` over the
+same grid -- exact where the bisection was approximate, and differentiable where the
+bisection had ninety `sign` comparisons.  THE ORDER TO TRY THINGS IN IS THEREFORE: is the
+search unnecessary, is its answer a root worth freezing, and only then is it a discrete
+decision to be classified.  Two of this project's three searches ended at the second
+question and one of them at the first; none of them needed a `custom_vjp`.
 =============================================================================
 """
 

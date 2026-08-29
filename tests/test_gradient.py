@@ -17,6 +17,13 @@ The third is the two structural facts M7 measured: `mass` has no adjoint term at
 (its right-hand side is exactly zero), and two genes have no gradient at all (the mesh
 models no fillets).  Both are asserted in BOTH directions, because each would otherwise
 be indistinguishable from a bug that produced zeros for a different reason.
+
+THE SECOND OF THOSE IS A FACT ABOUT THE MESH AND NOT ABOUT THE WHEEL, and since
+2026-08-24 (PLAN.md §79) there is a mesh where it is false: `build_wheel(fillet=True)`
+models the fillets and `mesh_coords` no longer refuses it.  Every census here is still
+taken on the UNFILLETED mesh, which is the one Stage 3 builds, and is still correct.
+`study_gradient.run_filleted` is the same census on the other mesh, and
+`tests/test_filleted_mesh.py` holds the pins for it.
 """
 
 import json
@@ -395,3 +402,57 @@ def test_the_axle_drop_gradient_is_not_the_secants_derivative(genes):
     rep = sg.run_axle_drop(genes, CFG, gene_ids=(6,))
     assert rep["d_force_d_indentation"] > 0.0, "the wheel got softer under more load"
     assert rep["pass"], rep["rows"]
+
+
+# ---------------------------------------------------------------------------
+# §79 — THE SAME GATE ON THE MESH THAT MODELS THE FILLETS
+# ---------------------------------------------------------------------------
+
+def test_the_filleted_gate_runs_and_inverts_the_census(genes):
+    """`study_gradient.run_filleted`, reduced — the gate that certifies §79's path.
+
+    Reduced the way every other section of this file reduces its gate: `smoke` only, two
+    steps instead of three, one gene through the axle drop. What is NOT reduced is any
+    tolerance — the identity is still 1e-9 mm and the jacobian still 1e-6 relative
+    against a central difference of `build_wheel(fillet=True)` itself.
+
+    G11f RIDES ALONG SINCE §88, and `R_rim` is in `gene_ids` for it rather than for the
+    rows above: it is the gene the shipped genome's cliff hangs on, so it is the one where
+    a frozen layer profile gets a visibly wrong answer.
+    """
+    rep = sg.run_filleted(genes, CFG, configs=("smoke",), gene_ids=(8, 12, 13),
+                          jac_steps=(1e-4, 1e-6), drop_gene_ids=(12,),
+                          drop_steps=(1e-4, 1e-6))
+    assert rep["census"]["unfilleted_dead"] == list(sg.INSENSITIVE_EXPECTED)
+    assert rep["census"]["filleted_dead"] == [], rep["census"]["filleted_dead"]
+    assert rep["census"]["fillet_genes_rank_first"], rep["census"]["ranked"]
+    assert rep["worst_identity_mm"] < sg.GATE_FILLET_MESH_MM, rep["identity"]
+    assert rep["jacobian"]["worst_rel"] < sg.GATE_FILLET_JAC_REL, rep["jacobian"]
+    assert rep["axle_drop"]["worst_rel"] < sg.GATE_SECANT_REL, rep["axle_drop"]["rows"]
+    # the two the fillet is worth something for are the two that were dead
+    for r in rep["axle_drop"]["rows"]:
+        assert r["unfilleted_adjoint"] == 0.0, r
+        assert abs(r["adjoint"]) > 1e-3, r
+    assert rep["refusals"]["ok"], rep["refusals"]
+    # TWO refusals now, not three: §88 made the per-genome layer profile differentiable
+    # and G11f measures it instead. The key stays, pinned at `None`, so an old artifact
+    # and a new one cannot be read as saying the same thing.
+    assert rep["refusals"]["per_genome_layer_profile"] is None
+    assert rep["refusals"]["spoke_blocking"] and rep["refusals"]["sector_fit_clamped"]
+
+    pg = rep["per_genome"]
+    assert pg["ok"], pg
+    assert pg["numpy_path_max_abs_mm"] == 0.0, pg["numpy_path_max_abs_mm"]
+    assert pg["identity_max_abs_mm"] < sg.GATE_FILLET_MESH_MM, pg
+    assert pg["worst_rel_rule"] < sg.GATE_FILLET_JAC_REL, pg["rows"]
+    assert pg["pair"][0] == pytest.approx(
+        WW.FILLET_LAYER_CLIFF_FACTOR * pg["cliff_entry"])
+    # AND THE POINT OF THE SECTION: a frozen layer profile is not a small approximation of
+    # the rule. `R_rim` is the gene the shipped genome's cliff hangs on — the rim binds —
+    # so the gradient §85 refused to return is wrong there by four orders more than the
+    # gate the honest one clears.
+    rim = next(r for r in pg["rows"] if r["gene"] == "R_rim")
+    assert rim["rel_frozen"] > 1e-2, rim
+    assert rim["rel_frozen"] > 1e4 * rim["rel_rule"], rim
+    assert pg["binding_junction"] == "rim", pg["cliff_per_junction"]
+    assert rep["pass"], rep

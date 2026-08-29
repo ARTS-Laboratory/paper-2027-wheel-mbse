@@ -489,9 +489,31 @@ def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom()
     assert abs(off) < 0.10, off          # unfilleted: a node sits essentially at the bottom
     assert abs(gap) < 0.01 * res["axle_drop_interp_mm"]
 
-    # and on the FILLETED mesh, where the re-cut rim moves the phase, it does not
-    fres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True))
+    # and on the FILLETED mesh, where the re-cut rim moves the phase, it does not.
+    # Measured at the pair this was written against — §85 moved `fillet=True`'s default
+    # and the factor below is NOT re-fitted to that, it is left exactly where §65 put it.
+    fres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True,
+                                          layer_profile=ww.FILLET_LAYER_SHIPPED))
     assert abs(fres["patch_centre_offset_deg"]) > 3.0 * abs(off), (
         off, fres["patch_centre_offset_deg"])
     fgap = fres["axle_drop_mm"] - fres["axle_drop_interp_mm"]
     assert abs(fgap) > 3.0 * abs(gap), (gap, fgap)
+
+    # AND ON THE MESH THE TREE BUILDS TODAY, WHICH REACHES IT LESS FAR (PLAN §85).
+    #
+    # The per-genome rule gives this genome `(-0.3629, 0.70)` against the shipped
+    # `(-0.45, 1.60)` — a shallower entry and a much shorter layer — so it perturbs the
+    # rim less and the phase moves less with it: offset -0.1029 deg against -0.1635, gap
+    # 3.76e-03 against 5.81e-03.  The CLAIM still holds — the correction is not inert on a
+    # filleted mesh — and it holds at 2.3x and 2.1x rather than 3.6x and 3.2x.
+    #
+    # Asserted as its own line at its own level rather than by loosening the one above,
+    # because a threshold moved in the same change that reddened it cannot be told apart
+    # from a threshold fitted to the run that breached it.
+    pres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True))
+    assert abs(pres["patch_centre_offset_deg"]) > 2.0 * abs(off), (
+        off, pres["patch_centre_offset_deg"])
+    pgap = pres["axle_drop_mm"] - pres["axle_drop_interp_mm"]
+    assert abs(pgap) > 2.0 * abs(gap), (gap, pgap)
+    # and the rule really is the gentler of the two, which is why it needs its own line
+    assert abs(pres["patch_centre_offset_deg"]) < abs(fres["patch_centre_offset_deg"])

@@ -128,6 +128,7 @@ import project_paths as PP  # noqa: F401  (puts src/ on the path)
 import _gate_guard
 import wheel_genome as wg
 import wheel_geometry as WG
+import wheel_mesh as WM
 import wheel_wheel as WW
 import study_fillet_fold as ff
 
@@ -140,6 +141,7 @@ try:
     import wheel_objective as WO
     MIN_SJ_TARGET = float(WO.MIN_SJ_TARGET)
 except Exception:                                    # pragma: no cover - import guard
+    WO = None
     MIN_SJ_TARGET = 0.2
 
 DEFAULT_CONFIGS = ("coarse", "medium")
@@ -1153,6 +1155,20 @@ GENOME_PROFILE_ENDS = (0.50, 0.60, 0.70, 0.80, 1.00, 1.30, 1.60)
 GENOME_ROBUST_ENTRY = -0.75
 GENOME_ROBUST_END = 0.70
 
+# AND THE CELL THAT SURVIVES WHEN THE CLIFF MARGIN IS A CONSTRAINT (PLAN §69, §80).
+# MEASURED, NOT ADOPTED, exactly as the pair above is.  §68 declined `GENOME_ROBUST_*`
+# for standing 0.056 from a hard refusal of the shipped genome; §69 rebuilt the candidate
+# set with that distance as a constraint rather than as an afterthought and this is what
+# came out -- box floor 0.2061 over fifteen genomes with none refused, cliff margin
+# 0.1577 against `GENOME_ROBUST_*`'s 0.0564, and an increment ratio of 0.437 against
+# `study_corner_singularity.SETTLING_RATIO` = 0.75, so it settles where §54's argmax does
+# not.  Every one of those numbers is IN-SAMPLE on the sixteen-genome draw, which is what
+# §80 ranked first: `sweep_sector_fit_clamp` carries it onto the held-out thirty-two so
+# the pair is judged on genomes it was not fitted to.  See PLAN §80 for why the objection
+# that stood against adopting it was withdrawn by inventory rather than by measurement.
+MARGIN_ROBUST_ENTRY = -0.70
+MARGIN_ROBUST_END = 0.90
+
 
 def sweep_layer_profile_genomes(genes, cfg, genome_rows, entries=GENOME_PROFILE_ENTRIES,
                                 ends=GENOME_PROFILE_ENDS, clamp=None, fold_gate=False):
@@ -1311,17 +1327,53 @@ def profile_candidates(table, target=None):
 # exists to retire: *"the distance to that edge was never a column in any table."*
 #
 # The bracket is wide on the safe side and stops short of -2.0, which is far past any entry
-# either grid visits.  Bisection for the same reason `sector_fit_limit` uses one: the
-# refusal comes out of `_hermite`'s minimum over a sampled profile and has no closed form.
-CLIFF_BRACKET = (-2.0, 0.0)
-CLIFF_BISECTIONS = 30
+# either grid visits.
+# THE BRACKET IS THE MODULE'S NOW, AND THE -2.0 IT USED TO BE WAS A DEFECT (PLAN §84).
+#
+# At -2.0 three of the thirty-two held-out genomes reported "builds across the whole
+# bracket" and were read as having no layer-width edge AT ALL -- the safest case.  All
+# three have edges, at -2.51, -2.30 and -2.12, and the sentinel was reporting the bracket's
+# width rather than anything about the genome.  Bound to the module's constant rather than
+# re-stated, so the two cannot drift the way §57's clamp factor nearly did before PART 21.
+#
+# AND IT IS NOT A SEARCH BRACKET ANY MORE (PLAN §88).  The line here used to read *"Bisection
+# for the same reason `sector_fit_limit` uses one: the refusal comes out of `_hermite`'s
+# minimum over a sampled profile and has no closed form."*  It has one -- the width profile
+# is affine in `entry`, so the cliff is a max over the same sampled grid -- and
+# `CLIFF_BISECTIONS = WW.LAYER_CLIFF_BISECTIONS` went with the bisection it counted.  The
+# interval survives as the range a cliff has to land in to be believed.
+CLIFF_BRACKET = WW.LAYER_CLIFF_BRACKET
 CLIFF_REASON = "width profile reaches zero"
+
+# How far either side of the closed-form cliff the two confirming verdicts are taken.
+# Large enough to clear the root-find's own resolution by many orders, small enough that
+# nothing else can bind in between: the tightest cliff-to-next-refusal gap measured over
+# the held-out draw is ~0.05 of entry, and this is a fiftieth of that.
+CLIFF_PROBE = 1e-3
 
 # `cliff_entry`'s OTHER `None`, and it is the opposite of a problem: the genome builds at
 # every entry in the bracket, so it has no layer-width edge to stand back from.  Named as a
 # constant because §78 needs to tell it apart from "bounded by something else", which is the
 # `None` that means a measurement failed.
 CLIFF_NO_EDGE = "builds across the whole bracket"
+
+# AND IT IS NOT THE SAFEST CASE.  IT IS THIS BRACKET BEING TOO NARROW (PLAN §82).
+#
+# The name above says what the bisection OBSERVED and `sweep_cliff_clamped_profile` reads
+# it as "this genome has no layer-width edge to project onto", falls back to a global
+# constant, and counts the genome as one the rule does not harm.  Measured against
+# `wheel_wheel.layer_cliff_entry`, whose bracket runs to -8.0: all three held-out genomes
+# reported this way have edges, at -2.51, -2.30 and -2.12, just past the -2.0 below.
+#
+# THE FINDING SURVIVES IT, which is why the bracket is left where it is rather than
+# widened in the same commit that adopts the rule: at the adopted factor the three
+# genomes clear the barrier on the rule's own answer exactly as they do on the fallback
+# -- 31 of 32 either way, worst J 0.1721 and median 0.3466 to four figures on both.  So
+# this is a defect in what the sentinel MEANS and not in any number published off it,
+# and widening the bracket is a change to re-date artifacts for on its own.
+#
+# It is the third sentinel in this arc to carry two meanings under one name -- see §78's
+# `n_without_cliff` split, and `wheel_wheel._sector_fit_span`, which §82 records.
 
 # PART 20's four hand bisections, at the precision they were published to.  Kept so the
 # automated column is checked against the RECORD rather than against itself -- if the two
@@ -1347,7 +1399,39 @@ CLIFF_PUBLISHED = ((0.85, -0.845458), (1.00, -0.881143),
 # any `f` near 1 -- so the margin each factor leaves is REPORTED next to what it buys rather
 # than assumed acceptable, and the band is swept because §68's objection was about margin
 # and this is the number that has to answer it.
-CLIFF_PROFILE_FACTORS = (0.95, 0.85, 0.75, 0.65, 0.55)
+#
+# AND THE BAND IS SWEPT TO ITS FLOOR, NOT TO A ROUND NUMBER (PLAN §81).  The first sweep
+# stopped at 0.55 and §78 quoted the rule at 0.75, which is the INTERIOR of a band whose
+# edge was never located: 0.85 down to 0.55 all clear the same 31 of 32 held out, while
+# the margin the factor leaves and what it costs the shipped genome's convergence BOTH
+# improve monotonically as it falls.  Two axes improving across a flat third means the
+# operating point is the flat band's lower EDGE, and quoting any interior value is the
+# same class of choice §81 rejected.  These four continue to where the entry is too
+# shallow to buy anything, so the edge is bracketed by measurement rather than assumed.
+CLIFF_PROFILE_FACTORS = (0.95, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15)
+
+# AND THE OPERATING POINT THE SWEEP LOCATES.  ADOPTED AT PLAN §82, and the value now
+# lives in `wheel_wheel` as `FILLET_LAYER_CLIFF_FACTOR` -- this name is kept so every
+# reference in this file and its tests still reads, exactly as `SECTOR_FIT_CLAMP` above
+# was kept when PART 21 moved that one.  The rule it parameterises is
+# `wheel_wheel.per_genome_layer_profile`, and the cliff it multiplies is a CLOSED FORM
+# there rather than the thirty sector builds `cliff_entry` below spends: the two agree to
+# 9.1e-10 over the held-out draw, which is the bisection's own resolution.
+#
+# The admissible set is two conditions and neither is invented here: clear `MIN_SJ_TARGET`
+# on the held-out draw, and settle against `study_corner_singularity.SETTLING_RATIO` at
+# the shipped genome.  0.95 and 0.85 fail the second (ratios 0.800 and 0.796); 0.35 and
+# below fail the first (30, 25 and 16 of 32).  What is left is 0.75 / 0.65 / 0.55 / 0.45,
+# all clearing the same 31 of 32, across which BOTH remaining axes improve monotonically
+# as the factor falls -- margin 0.202 -> 0.444, cost +0.392% -> +0.106%.  So the operating
+# point is the bottom of that band and not a value inside it, which is the whole of what
+# §81 rejected about quoting 0.75.
+#
+# THE COST IS NOT MONOTONE BELOW THE BAND and that is not a law being broken: 0.35 / 0.25 /
+# 0.15 read +0.189% / +0.132% / +0.116%, and every one of them is already excluded on the
+# barrier.  The monotonicity is a statement about the admissible set, which is where it is
+# used, and the ratio is a three-rung estimate that should not be read finer than that.
+CLIFF_PROFILE_FACTOR = WW.FILLET_LAYER_CLIFF_FACTOR
 
 # ONE `end`, AND THE REASON.  The cliff moves with `end`, so a per-genome entry rule has to
 # name one.  `GENOME_ROBUST_END` is the choice because the whole point of the measurement is
@@ -1357,18 +1441,32 @@ CLIFF_PROFILE_FACTORS = (0.95, 0.85, 0.75, 0.65, 0.55)
 CLIFF_PROFILE_END = GENOME_ROBUST_END
 
 
-def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS,
-                R_hub=None, R_rim=None):
+def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, R_hub=None, R_rim=None):
     """The `entry` at which THIS genome loses its rim layer, at a fixed `end`.
 
-    Returns `{"entry": float|None, "why": str}`.  `None` means the genome does not lose the
-    layer anywhere in the bracket, which is not the same as a margin of zero and must not be
-    read as one.
+    Returns `{"entry": float|None, "why": str}`.  `None` means the layer-width cliff is not
+    the build's edge for this genome, which is not the same as a margin of zero and must
+    not be read as one.  `why` says which of the ways that happened.
 
-    THE REASON IS CHECKED, NOT ASSUMED.  A steeper entry is not the only way the blocking
-    can refuse, and a bisection that accepted any refusal would happily report a sector-fit
-    or tangency limit under this name -- the exact class of error PART 6 caught this file
-    making once already.  `why` carries whatever actually bounded it.
+    IT DELEGATES TO THE MODULE'S CLOSED FORM NOW (PLAN §84), and the thirty sector builds
+    are gone.  The width profile is a cubic in `u` whose only `entry`-dependence is one
+    linear term, so `wheel_wheel._layer_cliff_from_scalars` solves it on two scalars the
+    tangency solve already produced.  Measured against the bisection this replaces: 9.1e-10
+    over the held-out draw, which was that bisection's own resolution.  §88 then found the
+    module's own root-find was not one either -- `max_u (Z - a(u))/b(u)` in closed form,
+    the same answer to 2 ulp -- so no bisection is left anywhere on this path.
+
+    THE REASON IS STILL CHECKED, NOT ASSUMED.  A steeper entry is not the only way the
+    blocking can refuse, and a cliff reported without checking would happily name a
+    sector-fit or tangency limit under this one -- the exact class of error PART 6 caught
+    this file making once already.  The closed form cannot make that mistake about the
+    LAYER, but it can be right about the layer and wrong about the BUILD, if something else
+    binds at a shallower entry.  So two verdicts either side of it are still taken.
+
+    THE OLD BRACKET WAS THE BUG, NOT THE INSTRUMENT.  At `CLIFF_BRACKET = (-2.0, 0.0)` this
+    returned "builds across the whole bracket" for three of thirty-two held-out genomes and
+    `sweep_cliff_clamped_profile` read that as "no edge to project onto -- the safest case".
+    All three have edges, at -2.51, -2.30 and -2.12.  The bracket is the module's now.
 
     `R_hub`/`R_rim` DEFAULT TO THE GENOME'S OWN GENES, WHICH IS NOT ALWAYS WHAT IT BUILDS AT.
     Six of the sixteen drawn genomes are pulled back by the sector-fit clamp (§74), and a
@@ -1376,29 +1474,34 @@ def cliff_entry(genes, cfg, end, bracket=CLIFF_BRACKET, steps=CLIFF_BISECTIONS,
     builds.  Every caller that quotes a published cliff -- `CLIFF_PUBLISHED`, the candidate
     table -- passes neither and is unaffected; the clamped box passes both.
     """
-    lo, hi = float(bracket[0]), float(bracket[1])   # lo refuses, hi builds
     R_h = float(genes[12]) if R_hub is None else float(R_hub)
     R_r = float(genes[13]) if R_rim is None else float(R_rim)
 
-    def refuses(entry):
-        v = sector_verdict(genes, cfg, R_h, R_r, entry=entry, end=float(end))
-        return (not v["built"]), v.get("why", "")
+    c = WW.layer_cliff_entry(genes, cfg, fillet=(R_h, R_r), end=float(end))
+    if c["entry"] is None:
+        return {"entry": None, "why": c["why"]}
+    cliff = float(c["entry"])
 
-    ref_hi, why_hi = refuses(hi)
-    if ref_hi:
-        return {"entry": None, "why": f"refuses across the whole bracket: {why_hi}"}
-    ref_lo, why_lo = refuses(lo)
-    if not ref_lo:
-        return {"entry": None, "why": "builds across the whole bracket"}
-    if CLIFF_REASON not in why_lo:
-        return {"entry": None, "why": f"bounded by something else: {why_lo}"}
-    for _ in range(steps):
-        mid = 0.5 * (lo + hi)
-        if refuses(mid)[0]:
-            lo = mid
-        else:
-            hi = mid
-    return {"entry": 0.5 * (lo + hi), "why": why_lo}
+    # THE REASON IS STILL CHECKED, AND IT COSTS TWO BUILDS INSTEAD OF THIRTY.  The closed
+    # form answers "where does the LAYER go to zero", which is the right question by
+    # construction -- but not necessarily the question the BUILD answers, because a
+    # sector-fit or tangency refusal can bind at a shallower entry and would then be the
+    # real edge.  So the two verdicts either side of the closed-form cliff are still taken:
+    # just inside it the sector must build, just outside it must refuse for exactly this
+    # reason.  That is PART 6's lesson kept, at 1/15th of its old price.
+    inside = sector_verdict(genes, cfg, R_h, R_r, entry=cliff + CLIFF_PROBE,
+                            end=float(end))
+    if not inside["built"]:
+        return {"entry": None,
+                "why": f"bounded by something else: {inside.get('why', '')}"}
+    outside = sector_verdict(genes, cfg, R_h, R_r, entry=cliff - CLIFF_PROBE,
+                             end=float(end))
+    why = outside.get("why", "")
+    if outside["built"] or CLIFF_REASON not in why:
+        return {"entry": None,
+                "why": f"the closed-form cliff at {cliff:.6f} is not the build's edge: "
+                       f"{'builds past it' if outside['built'] else why}"}
+    return {"entry": cliff, "why": why}
 
 
 def profile_candidate_rows(table, genes, cfg, target=None):
@@ -1837,14 +1940,22 @@ def sweep_sector_fit_clamp(genes, cfg, genome_rows, factors=SECTOR_FIT_FACTORS):
     untouched by it, so "six of sixteen still refuse outright regardless" and nothing
     would collect what the profile bought.  This measures the other half of that sentence.
 
-    Two profiles are crossed with the clamp on purpose.  The clamp's own worth is the
+    Three profiles are crossed with the clamp on purpose.  The clamp's own worth is the
     `built` column at the SHIPPED profile -- that is the refusal half of PLAN.md's item 2,
     on its own.  Crossing it with the genome-robust profile is what re-prices PART 13's
     decision, which was taken against a box where six genomes could not benefit from any
     profile at all.
+
+    THE THIRD IS `MARGIN_ROBUST_*` AND IT IS HERE TO BE HELD OUT (PLAN §80).  §69 picked
+    that pair as the argmax of a candidate set built with the cliff margin as a
+    constraint, and picked it on THIS study's sixteen-genome draw.  An in-sample argmax
+    adopted on its in-sample number is the error UNCAP_PLAN PART 9 and §78 both exist to
+    prevent, and this table already runs on the held-out thirty-two, so carrying the pair
+    through it is the whole of the missing check.  It costs one more row per factor.
     """
     profiles = (("shipped", LAYER_ENTRY_SLOPE, LAYER_END_OFFSET),
-                ("genome_robust", GENOME_ROBUST_ENTRY, GENOME_ROBUST_END))
+                ("genome_robust", GENOME_ROBUST_ENTRY, GENOME_ROBUST_END),
+                ("margin_robust", MARGIN_ROBUST_ENTRY, MARGIN_ROBUST_END))
     cells = [(np.asarray(r["genes"], float), r["fit"]) for r in genome_rows
              if "fit" in r]
     shipped_fit = sector_fit_margin(np.asarray(genes, float), cfg)
@@ -1907,14 +2018,20 @@ def sweep_cliff_clamped_profile(genes, cfg, genome_rows,
     leaves the one genome every published number in this file is measured at -- and it is
     the number that faces §68's 0.5520.
 
-    A GENOME WITH NO CLIFF FALLS BACK TO THE GLOBAL ENTRY, exactly as `_clamp_to_sector`
-    honours the requested radius when the junction has no limit.  `cliff_entry` returns
-    `None` in two very different cases and only one is a problem: *"builds across the whole
-    bracket"* means the genome has no layer-width edge to project onto at all -- the SAFEST
-    case, not a failure -- while *"bounded by something else"* means the bisection ran into a
-    different refusal and the rule genuinely cannot be evaluated there.  Counting the first
-    as a loss understates the rule by three genomes of sixteen, so the two are tallied
-    separately and neither can be read as the other.
+    THE FALLBACK IS GONE, AND SO IS THE CASE IT EXISTED FOR (PLAN §84).  §78 split
+    `cliff_entry`'s `None` in two and had genomes reporting *"builds across the whole
+    bracket"* take the global entry instead, on the reading that such a genome has no
+    layer-width edge to project onto -- the safest case rather than a failure.  That
+    reading was wrong: the three genomes it fired on have edges at -2.51, -2.30 and -2.12,
+    outside a bracket that stopped at -2.0, and the sentinel was describing the bracket.
+    With the module's bracket every genome in both draws has a cliff, the rule answers for
+    all of them, and `n_without_cliff` is kept in the row schema reporting zero rather than
+    deleted -- a counter that silently stops existing is how a regression hides.
+
+    Measured before the branch was removed: at the adopted factor the three genomes clear
+    the barrier on the rule's own answer exactly as they did on the fallback -- 31 of 32
+    either way, worst J 0.1721 and median 0.3466 to four figures on both.  So this changes
+    what the rule SAYS for three genomes and changes no number it is quoted on.
     """
     cells = []
     for r in genome_rows:
@@ -1937,18 +2054,15 @@ def sweep_cliff_clamped_profile(genes, cfg, genome_rows,
         no_edge, unevaluable, refusals = 0, 0, []
         for c in cells:
             if c["cliff"] is None:
-                if CLIFF_NO_EDGE in c["why"]:
-                    # No edge to project onto: the rule has no opinion, so the genome
-                    # takes the global entry and still COUNTS -- it is a genome the rule
-                    # does not harm, not a genome it fails.
-                    no_edge += 1
-                    entry = float(GENOME_ROBUST_ENTRY)
-                else:
-                    unevaluable += 1
-                    continue
-            else:
-                entry = float(factor) * float(c["cliff"])
-                margins.append(entry - float(c["cliff"]))
+                # The only `None` left is a genuine one: something other than the layer
+                # bounds this genome, so the rule cannot be evaluated on it.  The old
+                # `CLIFF_NO_EDGE` branch is retired with its bracket (§84); `no_edge` is
+                # kept and reported as zero rather than deleted, so the day it stops being
+                # zero is visible instead of silent.
+                unevaluable += 1
+                continue
+            entry = float(factor) * float(c["cliff"])
+            margins.append(entry - float(c["cliff"]))
             try:
                 v = sector_verdict(c["genes"], cfg, c["R_hub"], c["R_rim"], entry, end)
             except Exception as exc:      # a drawn genome must not kill the driver
@@ -1991,6 +2105,171 @@ def sweep_cliff_clamped_profile(genes, cfg, genome_rows,
                 {"cliff": c["cliff"], "why": (None if c["cliff"] is not None
                                               else c["why"]),
                  "R_hub_mm": c["R_hub"], "R_rim_mm": c["R_rim"]} for c in cells],
+            "rows": rows}
+
+
+# ---------------------------------------------------------------------------
+# THE CONTROL §48's BARRIER CLAUSE NEVER HAD (PLAN.md §89)
+# ---------------------------------------------------------------------------
+#
+# EVERY BARRIER COUNT THIS FILE HAS EVER PUBLISHED WAS TAKEN ON A SECTOR, WITH AN
+# INSTRUMENT THAT IS NOT THE BARRIER'S.  `block_quality` scores every 1x1 sub-cell of a
+# block's NODE GRID.  The mesh's elements are Q9 and span 2x2 of those, and
+# `wheel_objective.t2_vector` reads `wheel_mesh.scaled_jacobian`, which slices
+# `conn[:, :4]` -- the element's four CORNER nodes.  So the two are not the same
+# measurement of the same thing, and on the in-sample draw at `coarse` they disagree on
+# 11 of 16 genomes and disagree IN SIGN on one.
+#
+# PROVED RATHER THAN INFERRED: `block_quality` on the SUBSAMPLED grid `[::2, ::2]` -- the
+# Q9 element's four corners and nothing else -- reproduces the assembled mesh's number to
+# every digit, including the sign flip.  In-sample genome 0: sub-cells 0.259141038,
+# corners 0.253191857, assembled 0.253191857.  Genome 10: sub-cells -0.050823172 on
+# `spoke`, corners +0.410527770 on `rim_ring_free`, assembled +0.410527770.
+#
+# AND THE CLAUSE WAS NEVER MEASURED AGAINST ITS OWN CONTROL.  "Half of each drawn genome
+# box sits under `MIN_SJ_TARGET`" is a statement about a FILLETED mesh with nothing said
+# about the mesh the optimizer already builds.  This builds both, on the same genomes, at
+# the config `wheel_objective.objective` actually defaults to.
+#
+# FOUR INSTRUMENTS, AND THE FOURTH IS NEW HERE.  `scaled_jacobian` and `element_areas`
+# both read the corner quad; `ff.mesh_gauss_verdict` reads `det J` at the 3x3 Gauss points
+# the assembly integrates on.  None of them samples `det J` INSIDE an element, which is
+# the quantity the other three are proxies for -- so `interior_det_j_min` does, on a
+# tensor grid of the reference square.  It is here because it is what explains the
+# disagreement above rather than because the arc asked for it.
+
+BARRIER_FOLD_SAMPLES = 21
+
+
+def _q9_reference_derivatives(samples):
+    """d(shape)/d(xi), d(shape)/d(eta) at a `samples` x `samples` grid of [-1, 1]^2.
+
+    In `wheel_mesh`'s Q9 node order -- 4 corners, then 4 midsides (bottom, right, top,
+    left), then the centre -- so the same `conn` row indexes both.
+    """
+    t = np.linspace(-1.0, 1.0, int(samples))
+    xi, eta = np.meshgrid(t, t, indexing="ij")
+    shp = lambda a: np.stack([0.5 * a * (a - 1.0), 1.0 - a * a, 0.5 * a * (a + 1.0)], -1)
+    dsh = lambda a: np.stack([a - 0.5, -2.0 * a, a + 0.5], -1)
+    Nx, Ne, dNx, dNe = shp(xi), shp(eta), dsh(xi), dsh(eta)
+    order = [(0, 0), (2, 0), (2, 2), (0, 2), (1, 0), (2, 1), (1, 2), (0, 1), (1, 1)]
+    dxi = np.stack([dNx[..., i] * Ne[..., j] for i, j in order], -1).reshape(-1, 9)
+    det = np.stack([Nx[..., i] * dNe[..., j] for i, j in order], -1).reshape(-1, 9)
+    return dxi, det
+
+
+def interior_det_j_min(mesh, samples=BARRIER_FOLD_SAMPLES, chunk=2000):
+    """Per element, the smallest `det J` of the Q9 map over the whole reference square.
+
+    THE THREE INSTRUMENTS THE TREE ALREADY HAS CAN ALL MISS A FOLD, and this is the
+    worked example: at `medium`, in-sample genome 10's worst spoke element has `det J`
+    negative on 166 of 14641 sampled points (min -6.393e-04), while the 3x3 Gauss rule
+    reads every point positive (min 4.035e-04) and the corner-quad signed area is
+    +3.130e-02.  The quadrature the assembly uses does not sample the folded corner.
+
+    Sign-normalised per element by the median rather than globally: `build_wheel` has
+    already flipped whole left-handed blocks by the time a mesh exists, but an element
+    whose own map reverses is what is being looked for and a global sign would hide it.
+
+    Q9 ONLY.  Every config in the tree is `order=2` (`get_config`), and a Q4 mesh has no
+    interior to sample that its corners do not already describe.
+    """
+    xy = np.asarray(mesh.coords, float)
+    conn = np.asarray(mesh.conn)
+    if conn.shape[1] < 9:                            # pragma: no cover - Q4 has no midsides
+        raise NotImplementedError("interior_det_j_min needs a Q9 mesh; got "
+                                  f"{conn.shape[1]} nodes per element")
+    dxi, det = _q9_reference_derivatives(samples)
+    out = np.empty(len(conn))
+    for a in range(0, len(conn), chunk):
+        P = xy[conn[a:a + chunk, :9]]
+        Jx = np.einsum("pk,mkd->mpd", dxi, P)
+        Je = np.einsum("pk,mkd->mpd", det, P)
+        d = Jx[..., 0] * Je[..., 1] - Jx[..., 1] * Je[..., 0]
+        s = np.sign(np.median(d, axis=1))[:, None]
+        s[s == 0] = 1.0
+        out[a:a + chunk] = (s * d).min(axis=1)
+    return out
+
+
+def barrier_verdict(mesh, samples=BARRIER_FOLD_SAMPLES):
+    """One assembled mesh, through all four instruments plus the barrier's own VALUE.
+
+    `barrier` is `t2_vector`'s `min_sj` term itself -- a SUM of soft barriers over every
+    element, which is what the optimizer sees -- rather than the min-crossing count the
+    plan files have been quoting as a proxy for it.  A count says how many genomes are
+    marginal; the term says by how much, and the two rank the same box differently.
+    """
+    xy = np.asarray(mesh.coords, float)
+    conn = np.asarray(mesh.conn)
+    sj = np.asarray(WM.scaled_jacobian(xy, conn))
+    area = WM.element_areas(xy, conn)
+    gauss = ff.mesh_gauss_verdict(mesh)
+    interior = interior_det_j_min(mesh, samples)
+    barrier = None
+    if WO is not None:
+        w = float(WO.DEFAULT_WEIGHTS["min_sj"])
+        barrier = float(np.sum(np.asarray(
+            WO.soft_barrier(MIN_SJ_TARGET - sj, w))))
+    return {"min_scaled_jacobian": float(sj.min()),
+            "clears_target": bool(sj.min() > MIN_SJ_TARGET),
+            "n_under_target": int((sj <= MIN_SJ_TARGET).sum()),
+            "barrier": barrier,
+            "n_inverted": int((area <= 0).sum()),
+            "gauss_non_positive_elements": gauss["non_positive_elements"],
+            "min_det_j_gauss": gauss["min_det_j"],
+            "n_folded_elements": int((interior <= 0.0).sum()),
+            "min_det_j_interior": float(interior.min()),
+            "n_elements": int(len(conn))}
+
+
+def sweep_barrier_control(cfg, genome_rows, samples=BARRIER_FOLD_SAMPLES):
+    """The filleted mesh and the unfilleted one, same genomes, same instrument.
+
+    `fillet=True` takes `per_genome_layer_profile` since §85, so this is the DEFAULT
+    filleted path and not a named pair -- which is the whole point.  Every earlier table
+    in this file reaches the geometry through `sector_verdict`, i.e. through a sector at
+    radii this file clamped itself; this one calls `build_wheel`, so the clamp, the cliff
+    and the profile are all the module's and a disagreement is a real one.
+
+    `folds` rides on every row so the tally can be taken over the genomes whose PART
+    exists.  §58's gate is one word here and the draw filter still does not ask it.
+    """
+    rows = []
+    for r in genome_rows:
+        g = np.asarray(r["genes"], float)
+        row = {"genes": [float(x) for x in g], "orientation": r.get("orientation"),
+               "R_hub_mm": float(g[12]), "R_rim_mm": float(g[13]),
+               "folds": bool(r.get("fold", {}).get("folds", False))}
+        for tag, kw in (("filleted", {"fillet": True}), ("unfilleted", {"fillet": None})):
+            try:
+                row[tag] = barrier_verdict(WW.build_wheel(g, cfg, **kw), samples)
+            except Exception as exc:                 # a drawn genome must not kill the driver
+                row[tag] = {"why": f"{type(exc).__name__}: {str(exc).split('  See ')[0]}"}
+        rows.append(row)
+
+    def tally(rows_, tag):
+        ok = [x for x in rows_ if "why" not in x[tag]]
+        if not ok:
+            return None
+        v = sorted(x[tag]["min_scaled_jacobian"] for x in ok)
+        return {"n_genomes": len(rows_), "n_built": len(ok),
+                "n_clears_target": sum(1 for x in ok if x[tag]["clears_target"]),
+                "n_barrier_nonzero": sum(1 for x in ok
+                                         if (x[tag]["barrier"] or 0.0) > 0.0),
+                "n_inverted_meshes": sum(1 for x in ok if x[tag]["n_inverted"] > 0),
+                "n_gauss_flagged": sum(1 for x in ok
+                                       if x[tag]["gauss_non_positive_elements"] > 0),
+                "n_folded_meshes": sum(1 for x in ok if x[tag]["n_folded_elements"] > 0),
+                "min_scaled_jacobian_range": [v[0], v[-1]],
+                "median_min_scaled_jacobian": float(v[len(v) // 2]),
+                "worst_barrier": max((x[tag]["barrier"] or 0.0) for x in ok)}
+
+    clean = [x for x in rows if not x["folds"]]
+    return {"config": cfg, "samples": int(samples),
+            "min_sj_target": float(MIN_SJ_TARGET),
+            "all": {t: tally(rows, t) for t in ("filleted", "unfilleted")},
+            "fold_clean": {t: tally(clean, t) for t in ("filleted", "unfilleted")},
             "rows": rows}
 
 
@@ -2126,6 +2405,16 @@ def build_sector_section(genes, configs, junctions):
                 [r for rows in out["genomes_held_out"]["groups"].values()
                  for r in rows])
                 if cfg == configs[0] else None),
+            # AND THE SAME QUESTION ASKED OF THE MESH THE OPTIMIZER WOULD BUILD, against
+            # the mesh it builds today.  Every table above reaches the geometry through
+            # `sector_verdict` and scores it with `block_quality`; this one calls
+            # `build_wheel` and scores it with the barrier's own instrument.  Both draws,
+            # because §48's clause is a claim about both.  See `sweep_barrier_control`.
+            "barrier_control": sweep_barrier_control(
+                cfg, [r for rows in out["genomes"]["groups"].values() for r in rows]),
+            "barrier_control_held_out": sweep_barrier_control(
+                cfg, [r for rows in out["genomes_held_out"]["groups"].values()
+                      for r in rows]),
         }
         per = out["per_config"][cfg]
         # The ranking rule, applied to both grids and stated rather than left to whoever
@@ -2264,6 +2553,12 @@ def self_checks(rec):
             # this file is measured at alone.
             checks["the_clamp_is_inert_on_the_shipped_genome"] = (
                 not fc["shipped_is_clamped"])
+        # AND NOTHING HERE GATES WHAT THE MARGIN-ROBUST PAIR CLEARS OUT OF SAMPLE (§80).
+        # That number is the answer §80 asked for, and a gate on it would be a gate on the
+        # answer.  Nor is "the profile does not change WHICH genomes fit" gated, however
+        # much it looks like a law: §68's own cliff is a profile causing a hard refusal,
+        # so a difference in the `built` column across profiles is a layer-width refusal
+        # and the row's `refusals` field already names it.
         # THE HELD-OUT BOX (PLAN §78), SPLIT THE WAY EVERYTHING ELSE HERE IS.
         #
         # The MECHANISM gates and the RATE does not.  "The hub margin predicts every
@@ -2678,6 +2973,43 @@ def _print(rec):
                           + ("" if best is None else
                              f" — {sh['cliff_margin'] / best:.1f}x the best candidate's "
                              f"{best:.4f}"))
+        print("\n  AND THE CONTROL §48's BARRIER CLAUSE NEVER HAD (PLAN §89) — THE "
+              "ASSEMBLED MESH,")
+        print("  BOTH WAYS, THROUGH `wheel_objective`'s OWN INSTRUMENT RATHER THAN "
+              "THROUGH `block_quality`")
+        print(f"    {'config':7s} {'draw':10s} {'mesh':11s} {'clears':>9s} "
+              f"{'median J':>9s} {'worst J':>9s} {'barrier>0':>10s} {'worst barrier':>13s} "
+              f"{'folded':>7s}")
+        for cfg, per in sec["per_config"].items():
+            for key, draw in (("barrier_control", "in-sample"),
+                              ("barrier_control_held_out", "held-out")):
+                bc = per.get(key)
+                if not bc:
+                    continue
+                for tag in ("filleted", "unfilleted"):
+                    t = bc["all"][tag]
+                    if not t:
+                        continue
+                    print(f"    {cfg:7s} {draw:10s} {tag:11s} "
+                          f"{t['n_clears_target']:4d}/{t['n_genomes']:<4d} "
+                          f"{t['median_min_scaled_jacobian']:9.4f} "
+                          f"{t['min_scaled_jacobian_range'][0]:9.4f} "
+                          f"{t['n_barrier_nonzero']:5d}/{t['n_genomes']:<4d} "
+                          f"{t['worst_barrier']:13.4f} "
+                          f"{t['n_folded_meshes']:4d}/{t['n_genomes']:<3d}")
+        print("    the clause reads `half of each box`.  At `coarse` -- the config the "
+              "objective runs at -- the two")
+        print("    meshes score the SAME count on both draws, and on the one genome "
+              "either of them misses, the")
+        print("    FILLETED mesh is the better of the two.  What the fillet costs is "
+              "headroom, not crossings.")
+        print("    THE ONE ROW THAT GOES THE OTHER WAY is `medium` in-sample, and it is "
+              "the fold's own example:")
+        print("    both meshes fold on that genome and only the filleted one's corner "
+              "quad shows it -- the")
+        print("    unfilleted fold is DEEPER.  Its part self-intersects, so §58's gate "
+              "rejects it either way.")
+
         print("\n  AND AGAINST THE RIM'S UNCAP BLEND, WHICH IS THE TRI-BLOCK'S QUESTION")
         print(f"    {'config':7s} {'rim blend':>9s} {'unfilleted worst':>17s} "
               f"{'filleted worst':>15s} {'worst block':>14s}")
@@ -2783,7 +3115,7 @@ def _print(rec):
 
             print(f"      {'profile':14s} {'clamp':>6s} {'in-sample':>18s} "
                   f"{'held-out':>18s}")
-            for profile in ("shipped", "genome_robust"):
+            for profile in ("shipped", "genome_robust", "margin_robust"):
                 for factor in (None, SECTOR_FIT_CLAMP):
                     a, b = _row(fc, profile, factor), _row(ho, profile, factor)
                     if not a or not b:

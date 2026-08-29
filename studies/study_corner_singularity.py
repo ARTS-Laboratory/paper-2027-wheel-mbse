@@ -750,11 +750,44 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=Fal
         # The ridge, plus BOTH published pairs as controls -- the shipped one because it
         # is what 0.141% was measured at, and the genome-robust one because 0.513% is the
         # number this whole sweep exists to put in context.  De-duplicated, order kept.
+        # AND THE PER-GENOME RULE'S OWN PAIRS, ONE PER FACTOR (PLAN §81).
+        #
+        # §78's rule gives each genome `f * cliff_entry(genome)`, so at the SHIPPED genome
+        # it is a global pair like any other and can be priced on this ladder like any
+        # other.  What the barrier table sweeps is `f`, so this sweeps `f` too: the two
+        # tables then share an x-axis and the trade can be read across them instead of
+        # interpolated between neighbouring grid points, which §81 found is not safe here
+        # (the ratio runs 0.680 -> 0.890 over 0.10 of entry).
+        #
+        # DERIVED, NOT PINNED.  The entry is a measured bisection and a constant here
+        # would be a second copy of a number that moves -- the mistake PART 7 was about,
+        # and the one §74 removed from `sector_fit_limit`.
+        #
+        # AT `CONVERGENCE_LADDER`'s FIRST RUNG AND NOT THE CORNER LADDER'S.  Those are
+        # different: `--ladder` starts at `smoke` and the rows below are measured over
+        # `coarse..fine`, so taking the cliff off `ladder[0]` would price a pair derived
+        # at one discretisation on another.  It happens not to matter -- the cliff is
+        # -0.8064025 at `smoke`, `coarse` and `medium` alike, so the pairs are identical
+        # at the rounding used -- and the code should still say which one it means.
+        rule_pairs, rule_rows = [], []
+        cliff = fbk.cliff_entry(np.asarray(genes, float), CONVERGENCE_LADDER[0],
+                                fbk.CLIFF_PROFILE_END)
+        if cliff["entry"] is not None:
+            for f in fbk.CLIFF_PROFILE_FACTORS:
+                pair = (round(float(f) * cliff["entry"], 6),
+                        float(fbk.CLIFF_PROFILE_END))
+                rule_pairs.append(pair)
+                rule_rows.append({"factor": float(f), "entry": pair[0],
+                                  "end": pair[1],
+                                  "shipped_margin": abs(cliff["entry"]) - abs(pair[0])})
+
         pairs, seen = [], set()
         for p in (tuple(fbk.LAYER_PROFILE_CANDIDATES)
                   + tuple(fbk.LAYER_PROFILE_FINE_CANDIDATES)
                   + ((fbk.GENOME_ROBUST_ENTRY, fbk.GENOME_ROBUST_END),
-                     (fbk.LAYER_ENTRY_SLOPE, fbk.LAYER_END_OFFSET))
+                     (fbk.LAYER_ENTRY_SLOPE, fbk.LAYER_END_OFFSET),
+                     (fbk.MARGIN_ROBUST_ENTRY, fbk.MARGIN_ROBUST_END))
+                  + tuple(rule_pairs)
                   + tuple(fbk.LAYER_PROFILE_FRONTIER)):
             if p not in seen:
                 seen.add(p)
@@ -770,6 +803,13 @@ def run(genome=GENOME, ladder=LADDER, fillet=None, continuity=None, profiles=Fal
         out["profiles"]["candidates"] = [
             list(p) for p in dict.fromkeys(tuple(fbk.LAYER_PROFILE_CANDIDATES)
                                            + tuple(fbk.LAYER_PROFILE_FINE_CANDIDATES))]
+        out["profiles"]["margin_robust_pair"] = [float(fbk.MARGIN_ROBUST_ENTRY),
+                                                 float(fbk.MARGIN_ROBUST_END)]
+        # The factor -> pair map, so the rows above can be joined to the BARRIER table in
+        # `study_fillet_block` on `factor` rather than on a remembered arithmetic.
+        out["profiles"]["per_genome_rule"] = {
+            "shipped_cliff": cliff, "cliff_config": CONVERGENCE_LADDER[0],
+            "end": float(fbk.CLIFF_PROFILE_END), "rows": rule_rows}
     return out
 
 
@@ -972,6 +1012,40 @@ def _print(rep):
         else:
             print("    and no candidate holds both bands: the two-objective profile "
                   "does not exist on this grid.")
+
+        rule = pr.get("per_genome_rule")
+        if rule and rule["rows"]:
+            print(f"\n    AND WHAT §78's PER-GENOME RULE COSTS THIS GENOME, ONE ROW PER "
+                  f"FACTOR (PLAN §81)")
+            print(f"    each genome is built at `factor * cliff_entry`; this genome's "
+                  f"cliff at end {rule['end']:.2f} is "
+                  f"{rule['shipped_cliff']['entry']:+.6f} ({rule['cliff_config']})")
+            print(f"      {'factor':>6s} {'entry':>7s} {'margin':>7s} "
+                  f"{'ratio':>7s} {'settling':>9s} {'settled est':>12s} "
+                  f"{'vs shipped':>11s}")
+            srow = next((r for r in pr["rows"]
+                         if (r["entry"], r["end"]) == ship), None)
+            base = srow["interp_settled_estimate_mm"] if srow else None
+            for rr in rule["rows"]:
+                row = next((r for r in pr["rows"]
+                            if (r["entry"], r["end"]) == (rr["entry"], rr["end"])), None)
+                if row is None or row["interp_increment_ratio"] is None:
+                    print(f"      {rr['factor']:6.2f} {rr['entry']:+7.4f} "
+                          f"{rr['shipped_margin']:7.4f}   not priced")
+                    continue
+                est = row["interp_settled_estimate_mm"]
+                rel = ("-" if (est is None or not base)
+                       else f"{100.0 * (est - base) / base:+.3f}%")
+                print(f"      {rr['factor']:6.2f} {rr['entry']:+7.4f} "
+                      f"{rr['shipped_margin']:7.4f} "
+                      f"{row['interp_increment_ratio']:7.3f} "
+                      f"{'yes' if row['interp_settling'] else 'NO':>9s} "
+                      + (f"{est:12.6f}" if est is not None else f"{'-':>12s}")
+                      + f" {rel:>11s}")
+            print("    the BARRIER side of these same factors is "
+                  "`study_fillet_block`'s cliff table, joined on `factor`;")
+            print("    this file prices what the rule costs and does not read that "
+                  "study's artifact to say so.")
     print("=" * 78 + "\n")
 
 

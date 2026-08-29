@@ -136,6 +136,28 @@ GATE_FACET_MUST_FALL = True       # G7  see `run_phase_smoothness` — the crite
                                   #     the data said so; both are recorded there
 GATE_SECANT_REL = 1.0e-5          # G9  looser: the secant's own 1e-8 enters the value
 INSENSITIVE_EXPECTED = ("R_hub", "R_rim")   # G8  the census, not a tolerance
+GATE_FILLET_MESH_MM = 1.0e-9      # G11 the same identity as G3, on the FILLETED mesh
+
+# WHICH LAYER PROFILE G11 IS MEASURED AT, NAMED RATHER THAN INHERITED (PLAN §85).
+#
+# §79 measured the filleted mesh's differentiability at what was then `fillet=True`'s
+# default -- the shipped pair -- and §85 moved that default onto the per-genome rule.  Two
+# things followed and neither was optional.  The rule's entry is `FILLET_LAYER_CLIFF_FACTOR
+# * cliff(genes)`, which did NOT follow the genes on the frozen path, so `mesh_coords`
+# refused those meshes outright: G11 would not have run at all.  And even if it had,
+# silently re-measuring §79's numbers on a different mesh would leave this file reporting
+# one section's gate against another section's geometry.
+#
+# THE FIRST REASON IS GONE AND THE SECOND IS NOT (§88).  The cliff is differentiable now
+# and the rule is measured, in G11f, on its own rows.  G11a-e stay on the named pair: the
+# gate they carry is §79's, and moving it onto a different geometry in the same change that
+# made that geometry available is how a threshold stops being comparable to itself.
+G11_LAYER_PROFILE = WW.FILLET_LAYER_SHIPPED
+GATE_FILLET_JAC_REL = 1.0e-6      # G11 the mesh jacobian against a central difference of
+                                  #     `build_wheel(fillet=True)` — which re-runs both
+                                  #     bracketed root-finds, so it cannot share a bug
+                                  #     with the traced path
+FILLET_LIVE_EXPECTED = ()         # G11 the census, INVERTED: nothing is dead here
 
 # THE GATES ABOVE ARE NOT PER-KINEMATICS, AND THAT IS THE POINT OF `--kinematics`.
 # M7 has only ever been run under linear kinematics, because `wheel_contact_problem`
@@ -831,6 +853,309 @@ def run_axle_drop(genes, cfg=DEFAULT_CONFIG, gene_ids=(6, 8, 12),
     }
 
 
+# ---------------------------------------------------------------------------
+# G11 — THE FILLETED MESH, WHICH HAD NO DERIVATIVE AT ALL UNTIL 2026-08-24
+# ---------------------------------------------------------------------------
+
+def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
+                 gene_ids=(8, 12, 13), jac_steps=(1e-4, 1e-5, 1e-6),
+                 drop_gene_ids=(12, 13), drop_steps=(1e-4, 1e-5, 1e-6),
+                 kinematics=DEFAULT_KINEMATICS, fd_tol_rel=1e-9, fd_max_iter=40):
+    """G8's census, INVERTED — and the two genes it names now have a gradient.
+
+    G8 reports that `R_hub` and `R_rim` have an identically zero derivative because the
+    mesh models no fillets, and calls that "sharper than M6's version" because the zero
+    is in `dcoords/dgenes` before any solver runs.  It is still true of the mesh Stage 3
+    builds.  What changed on 2026-08-24 (PLAN.md §79) is that the FILLETED mesh —
+    `build_wheel(fillet=True)`, the eleven-block sector blocking — is no longer refused by
+    `mesh_coords`, so the same census can be taken on a mesh where those two genes move
+    material, and the answer is that NOTHING is dead.
+
+    THE REFERENCE IS THE EAGER BUILD, NOT THE TRACED PATH'S OWN ARITHMETIC.  Both of the
+    filleted construction's root-finds are bracketed and are replaced under trace by one
+    Newton step from a frozen seed (`wheel_wheel._newton_from_root`), so the risk that
+    matters is a derivative that is self-consistent and wrong.  Central-differencing
+    `build_wheel(fillet=True)` cannot be self-consistent with it: it re-scans, re-brackets
+    and re-bisects at every perturbed genome, and it compares the WHOLE coordinate array
+    rather than a scalar that could cancel.
+
+    G11f IS THE ONE MEASURED AT THE RULE RATHER THAN AT THE NAMED PAIR (PLAN §88).
+    `fillet=True` bare takes the per-genome layer profile, whose entry is a function of the
+    genes; §85 refused a gradient through it and §88 made the cliff a closed form and
+    differentiated it.  The row that says whether that was worth doing is not `rel_rule` —
+    which only says the new path is right — but `rel_frozen`, the jacobian §85 would have
+    returned had it not refused, measured against the same central difference.
+
+    AND THE END OF THE CHAIN IS THE AXLE DROP, for the same reason G9 exists: a mesh
+    derivative that is right and a solve that never sees it is not a gradient.  Section 75
+    priced this arm at 12.49% of axle drop over `R_hub`'s feasible range, measured as a
+    SENSITIVITY — a sweep of separate solves.  These rows are the derivative of the same
+    quantity at a point, against a finite difference of the whole load-controlled solve on
+    filleted meshes, and the reference secant runs at the same tightened `fd_tol_rel` G9
+    uses and for the same reason.
+    """
+    genes = np.asarray(genes, dtype=float)
+    rng = _ranges()
+    out = {"configs": list(configs), "identity": [], "gate_mm": GATE_FILLET_MESH_MM}
+
+    # --- G11a  the differentiable filleted mesh IS the solved filleted mesh ----
+    for name in configs:
+        for phase in (0.0, 7.5):
+            m = WW.build_wheel(genes, name, phase_deg=phase, fillet=True,
+                               layer_profile=G11_LAYER_PROFILE)
+            traced = np.asarray(WW.mesh_coords(jnp.asarray(genes), m))
+            eager_np = np.asarray(WW.mesh_coords(genes, m, xp=np))
+            out["identity"].append(
+                {"config": name, "phase_deg": phase, "n_nodes": int(m.n_nodes),
+                 "max_abs_mm": float(np.abs(traced - np.asarray(m.coords)).max()),
+                 "numpy_path_max_abs_mm":
+                     float(np.abs(eager_np - np.asarray(m.coords)).max()),
+                 "radii_mm": [float(r) for r in m.fillet_radii_mm],
+                 "clamped": {k: bool(v) for k, v in m.fillet_clamped.items()}})
+
+    mesh_f = WW.build_wheel(genes, cfg, fillet=True,
+                            layer_profile=G11_LAYER_PROFILE)
+    mesh_u = WW.build_wheel(genes, cfg)
+
+    # --- G11b  the census, both ways round ------------------------------------
+    dead_u, col_u = WA.insensitive_genes(genes, mesh_u)
+    dead_f, col_f = WA.insensitive_genes(genes, mesh_f)
+    rank = sorted(range(len(col_f)), key=lambda i: -col_f[i])
+    out["census"] = {
+        "unfilleted_dead": list(dead_u), "filleted_dead": list(dead_f),
+        "expected_unfilleted": list(INSENSITIVE_EXPECTED),
+        "expected_filleted": list(FILLET_LIVE_EXPECTED),
+        "coord_sensitivity_unfilleted": {wg.GENE_NAMES[i]: float(col_u[i])
+                                         for i in range(len(col_u))},
+        "coord_sensitivity_filleted": {wg.GENE_NAMES[i]: float(col_f[i])
+                                       for i in range(len(col_f))},
+        "ranked": [wg.GENE_NAMES[i] for i in rank],
+        "fillet_genes_rank_first": bool(
+            {wg.GENE_NAMES[rank[0]], wg.GENE_NAMES[rank[1]]} == {"R_hub", "R_rim"}),
+        "ok": bool(sorted(dead_u) == sorted(INSENSITIVE_EXPECTED)
+                   and sorted(dead_f) == sorted(FILLET_LIVE_EXPECTED))}
+
+    # --- G11c  the mesh jacobian against a central difference of `build_wheel` --
+    def eager_coords(v):
+        return np.asarray(WW.build_wheel(np.asarray(v, float), cfg, fillet=True,
+                                         layer_profile=G11_LAYER_PROFILE).coords)
+
+    def column(gid):
+        e = np.zeros(len(genes))
+        e[gid] = 1.0
+        _, d = jax.jvp(lambda v: WW.mesh_coords(v, mesh_f),
+                       (jnp.asarray(genes),), (jnp.asarray(e),))
+        return np.asarray(d)
+
+    jac_rows = []
+    for gi in gene_ids:
+        ad = column(gi)
+        rels, hs = [], []
+        for h_rel in jac_steps:
+            h = h_rel * rng[gi]
+            vp, vm = genes.copy(), genes.copy()
+            vp[gi] += h
+            vm[gi] -= h
+            fd = (eager_coords(vp) - eager_coords(vm)) / (2.0 * h)
+            hs.append(float(h))
+            rels.append(float(np.abs(fd - ad).max()
+                              / max(float(np.abs(fd).max()), 1e-300)))
+        k = int(np.argmin(rels))
+        jac_rows.append({"gene": wg.GENE_NAMES[gi],
+                         "max_abs_dcoord_dgene_mm": float(np.abs(ad).max()),
+                         "steps": [float(s) for s in jac_steps], "h_mm": hs,
+                         "rel_ladder": rels, "rel": rels[k],
+                         "best_step": float(jac_steps[k])})
+    out["jacobian"] = {"config": cfg, "rows": jac_rows,
+                       "worst_rel": max(r["rel"] for r in jac_rows),
+                       "gate_rel": GATE_FILLET_JAC_REL}
+
+    # --- G11d  the axle drop, filleted, against the whole load-controlled solve -
+    ad_f = WA.axle_drop_value_and_grad(genes, cfg, force=SERVICE_FORCE_N,
+                                       mesh=mesh_f, kinematics=kinematics)
+    ad_u = WA.axle_drop_value_and_grad(genes, cfg, force=SERVICE_FORCE_N,
+                                       mesh=mesh_u, kinematics=kinematics)
+
+    def drop(v):
+        return fem.solve_wheel_contact(
+            WW.build_wheel(np.asarray(v, float), cfg, fillet=True,
+                           layer_profile=G11_LAYER_PROFILE),
+            force=SERVICE_FORCE_N, tol_rel=fd_tol_rel, max_iter=fd_max_iter,
+            kinematics=kinematics)["axle_drop_mm"]
+
+    drop_rows = []
+    for gi in drop_gene_ids:
+        a = float(ad_f["grad"][gi])
+        rels, fds = [], []
+        for h_rel in drop_steps:
+            h = h_rel * rng[gi]
+            vp, vm = genes.copy(), genes.copy()
+            vp[gi] += h
+            vm[gi] -= h
+            fd = (drop(vp) - drop(vm)) / (2.0 * h)
+            fds.append(float(fd))
+            rels.append(float(abs(fd - a) / max(abs(a), 1e-300)))
+        k = int(np.argmin(rels))
+        drop_rows.append({"gene": wg.GENE_NAMES[gi], "adjoint": a,
+                          "unfilleted_adjoint": float(ad_u["grad"][gi]),
+                          "steps": [float(s) for s in drop_steps],
+                          "fd_ladder": fds, "rel_ladder": rels,
+                          "fd": fds[k], "rel": rels[k],
+                          "best_step": float(drop_steps[k])})
+    out["axle_drop"] = {
+        "config": cfg, "kinematics": kinematics, "fd_tol_rel": float(fd_tol_rel),
+        "filleted_mm": float(ad_f["value"]), "unfilleted_mm": float(ad_u["value"]),
+        "grad_filleted": [float(x) for x in ad_f["grad"]],
+        "grad_unfilleted": [float(x) for x in ad_u["grad"]],
+        "rows": drop_rows, "worst_rel": max(r["rel"] for r in drop_rows),
+        "gate_rel": GATE_SECANT_REL}
+
+    # --- G11e  what is still refused, and that it still refuses ----------------
+    refusals = {}
+    spoke = WW.build_wheel(genes, cfg, fillet=(0.10, 0.10), fillet_blocking="spoke")
+    try:
+        WW.mesh_coords(genes, spoke, xp=np)
+        refusals["spoke_blocking"] = None
+    except NotImplementedError as exc:
+        refusals["spoke_blocking"] = str(exc)
+    clamped = genes.copy()
+    clamped[12] = 8.0                      # far past any sector's room; §57's case
+    mc = WW.build_wheel(clamped, cfg, fillet=True,
+                        layer_profile=G11_LAYER_PROFILE)
+    try:
+        WW.mesh_coords(clamped, mc, xp=np)
+        refusals["sector_fit_clamped"] = None
+    except NotImplementedError as exc:
+        refusals["sector_fit_clamped"] = str(exc)
+    refusals["clamped_radii_mm"] = [float(r) for r in mc.fillet_radii_mm]
+    # A THIRD CASE WAS REFUSED HERE FROM §85 TO §88 AND IS NOT ANY MORE.  `fillet=True`
+    # with no `layer_profile` is the per-genome rule, whose entry the frozen path held
+    # constant; §85 wrote *"the day it stops refusing is the day someone made the cliff
+    # differentiable and this census says so"*.  §88 made it, so the case moved OUT of this
+    # dict and into G11f below, where it is measured rather than counted.  It is not
+    # dropped silently: `per_genome_layer_profile` is kept as a key, pinned at `None`, so a
+    # reader of the old artifact sees the same name change meaning in one place.
+    refusals["per_genome_layer_profile"] = None
+    refusals["per_genome_no_longer_refused_since"] = "PLAN.md §88"
+    refusals["ok"] = bool(refusals["spoke_blocking"]
+                          and refusals["sector_fit_clamped"])
+    out["refusals"] = refusals
+
+    # --- G11f  THE PER-GENOME RULE, WHICH G11e USED TO COUNT AS A REFUSAL ------
+    #
+    # `fillet=True` bare is the default a filleted build takes (§85), and its entry is
+    # `FILLET_LAYER_CLIFF_FACTOR * cliff(genes)`.  Two questions, and the second is the one
+    # that says whether §88 was worth doing:
+    #
+    #   does the traced path reproduce and differentiate the mesh the rule builds?
+    #   -- `rel_rule`, the same jvp-against-eager-central-difference G11c makes.
+    #
+    #   HOW BIG IS THE TERM THE FROZEN PATH WOULD HAVE MISSED?  -- `rel_frozen`, the
+    #   jacobian of the mesh built at the rule's pair HELD FIXED, against the central
+    #   difference of the rule itself.  That is exactly the gradient §85 refused to return,
+    #   and its error is the cliff's own contribution.  A small number here would mean the
+    #   refusal was never worth much; it is not small.
+    mp = WW.build_wheel(genes, cfg, fillet=True)
+    pair = tuple(float(v) for v in mp.fillet_recipe["layer_profile"])
+    mfz = WW.build_wheel(genes, cfg, fillet=True, layer_profile=pair)
+    cliff = WW.layer_cliff_entry(genes, cfg)
+
+    def rule_coords(v):
+        return np.asarray(WW.build_wheel(np.asarray(v, float), cfg, fillet=True).coords)
+
+    def col(mesh, gid):
+        e = np.zeros(len(genes))
+        e[gid] = 1.0
+        _, d = jax.jvp(lambda v: WW.mesh_coords(v, mesh),
+                       (jnp.asarray(genes),), (jnp.asarray(e),))
+        return np.asarray(d)
+
+    pg_rows = []
+    for gi in gene_ids:
+        a_rule, a_frozen = col(mp, gi), col(mfz, gi)
+        rels_r, rels_f = [], []
+        for h_rel in jac_steps:
+            h = h_rel * rng[gi]
+            vp, vm = genes.copy(), genes.copy()
+            vp[gi] += h
+            vm[gi] -= h
+            fd = (rule_coords(vp) - rule_coords(vm)) / (2.0 * h)
+            scale = max(float(np.abs(fd).max()), 1e-300)
+            rels_r.append(float(np.abs(fd - a_rule).max() / scale))
+            rels_f.append(float(np.abs(fd - a_frozen).max() / scale))
+        k = int(np.argmin(rels_r))
+        pg_rows.append({"gene": wg.GENE_NAMES[gi],
+                        "max_abs_dcoord_dgene_mm": float(np.abs(a_rule).max()),
+                        "steps": [float(s) for s in jac_steps],
+                        "rel_ladder": rels_r, "rel_rule": rels_r[k],
+                        "rel_frozen": rels_f[k], "best_step": float(jac_steps[k]),
+                        "cliff_term_rel": float(np.abs(a_rule - a_frozen).max()
+                                                / max(float(np.abs(a_frozen).max()),
+                                                      1e-300))})
+    # AND THE TRACE IS SHARED ACROSS GENOMES AGAIN, which the resolved pair in `coord_fn`'s
+    # cache key made impossible: two per-genome meshes have different pairs and would have
+    # keyed apart, re-tracing the 2.8 s jaxpr on every finite difference and every optimizer
+    # step.  The record holds `None` now and the entry is resolved inside the trace, so the
+    # key is genome-independent -- and a SHIPPED-pair mesh must still key apart from it.
+    # A FRESH MESH, because `mp` already carries a `_coord_fn` from the rows above and
+    # would short-circuit the cache entirely -- the count would read 0 and say nothing.
+    WW._COORD_FN_CACHE.clear()
+    m_first = WW.build_wheel(genes, cfg, fillet=True)
+    np.asarray(WW.coord_fn(m_first)(genes))
+    n_after_first = len(WW._COORD_FN_CACHE)
+    other = genes.copy()
+    other[12] += 0.2
+    other[3] += 0.05
+    m_other = WW.build_wheel(other, cfg, fillet=True)
+    got = np.asarray(WW.coord_fn(m_other)(other))
+    n_after_second = len(WW._COORD_FN_CACHE)
+    np.asarray(WW.coord_fn(WW.build_wheel(genes, cfg, fillet=True,
+                                          layer_profile=G11_LAYER_PROFILE))(genes))
+    out["per_genome"] = {
+        "config": cfg, "pair": list(pair),
+        "cliff_entry": float(cliff["entry"]),
+        "cliff_per_junction": {j: float(cliff["per_junction"][j]["cliff"])
+                               for j in ("hub", "rim")},
+        "binding_junction": max(("hub", "rim"),
+                                key=lambda j: cliff["per_junction"][j]["cliff"]),
+        "factor": float(WW.FILLET_LAYER_CLIFF_FACTOR),
+        "identity_max_abs_mm": float(np.abs(
+            np.asarray(WW.mesh_coords(jnp.asarray(genes), mp))
+            - np.asarray(mp.coords)).max()),
+        "numpy_path_max_abs_mm": float(np.abs(
+            np.asarray(WW.mesh_coords(genes, mp, xp=np))
+            - np.asarray(mp.coords)).max()),
+        "rows": pg_rows,
+        "worst_rel_rule": max(r["rel_rule"] for r in pg_rows),
+        "worst_rel_frozen": max(r["rel_frozen"] for r in pg_rows),
+        "trace_shared": {
+            "after_one_genome": n_after_first,
+            "after_two_genomes": n_after_second,
+            "second_genome_pair": [float(v) for v in
+                                   m_other.fillet_recipe["layer_profile"]],
+            "second_genome_identity_mm": float(
+                np.abs(got - np.asarray(m_other.coords)).max()),
+            "after_a_shipped_pair_mesh": len(WW._COORD_FN_CACHE)},
+        "gate_rel": GATE_FILLET_JAC_REL, "gate_mm": GATE_FILLET_MESH_MM}
+    out["per_genome"]["ok"] = bool(
+        out["per_genome"]["worst_rel_rule"] < GATE_FILLET_JAC_REL
+        and out["per_genome"]["identity_max_abs_mm"] < GATE_FILLET_MESH_MM
+        and out["per_genome"]["numpy_path_max_abs_mm"] == 0.0
+        and n_after_first == 1 and n_after_second == 1
+        and out["per_genome"]["trace_shared"]["after_a_shipped_pair_mesh"] == 2)
+
+    out["worst_identity_mm"] = max(r["max_abs_mm"] for r in out["identity"])
+    out["worst_numpy_identity_mm"] = max(r["numpy_path_max_abs_mm"]
+                                         for r in out["identity"])
+    out["pass"] = bool(out["worst_identity_mm"] < GATE_FILLET_MESH_MM
+                       and out["census"]["ok"]
+                       and out["jacobian"]["worst_rel"] < GATE_FILLET_JAC_REL
+                       and out["axle_drop"]["worst_rel"] < GATE_SECANT_REL
+                       and refusals["ok"]
+                       and out["per_genome"]["ok"])
+    return out
+
+
 def run_cost(genes, cfg=DEFAULT_CONFIG, indentation_mm=None, repeats=3,
              kinematics=DEFAULT_KINEMATICS):
     """What the gradient costs, and against WHICH forward solve — the ratio is not one
@@ -1065,6 +1390,102 @@ def _print(rep):
     print(f"    iterations, while the gradient still needs a full tangent assembly and")
     print(f"    factorisation however good the starting guess was.")
 
+    q = rep.get("filleted")
+    if q is not None:
+        head("G11  *** G8's CENSUS, INVERTED *** THE FILLETED MESH HAS A DERIVATIVE")
+        for r in q["identity"]:
+            print(f"    mesh_coords vs build_wheel(fillet=True)  {r['config']:>7s} "
+                  f"phase {r['phase_deg']:4.1f}  {r['n_nodes']:6d} nodes  "
+                  f"{r['max_abs_mm']:.3e} mm   (numpy path "
+                  f"{r['numpy_path_max_abs_mm']:.3e})")
+        print(f"    [< {GATE_FILLET_MESH_MM:.0e} mm, the same identity G3 makes of the "
+              f"unfilleted mesh]")
+        c = q["census"]
+        print()
+        print(f"    census, unfilleted mesh:  dead = "
+              f"{', '.join(c['unfilleted_dead']) or '(none)'}")
+        print(f"    census, FILLETED mesh:    dead = "
+              f"{', '.join(c['filleted_dead']) or '(NONE — all 14 genes move nodes)'}")
+        print(f"    {'gene':>6s} {'|dcoords/dgene| unfilleted':>27s} "
+              f"{'filleted':>14s}")
+        for name in wg.GENE_NAMES:
+            print(f"    {name:>6s} {c['coord_sensitivity_unfilleted'][name]:27.6e} "
+                  f"{c['coord_sensitivity_filleted'][name]:14.6e}")
+        print(f"    the two that were dead now rank FIRST and SECOND of fourteen: "
+              f"{'YES' if c['fillet_genes_rank_first'] else 'NO'}")
+        j = q["jacobian"]
+        print()
+        print(f"    the mesh jacobian against a central difference of "
+              f"`build_wheel(fillet=True)` itself")
+        print(f"    ({j['config']} mesh; the reference re-brackets and re-bisects at "
+              f"every perturbed genome)")
+        print(f"    {'gene':>6s} {'max |dc/dg| mm/mm':>18s} {'rel':>10s} "
+              f"{'at h':>10s}   ladder")
+        for r in j["rows"]:
+            print(f"    {r['gene']:>6s} {r['max_abs_dcoord_dgene_mm']:18.6e} "
+                  f"{r['rel']:10.2e} {r['best_step']:10.0e}   "
+                  + "  ".join(f"{x:.1e}" for x in r["rel_ladder"]))
+        print(f"    worst {j['worst_rel']:.2e}  [< {GATE_FILLET_JAC_REL:.0e}]")
+        a = q["axle_drop"]
+        print()
+        print(f"    and the end of the chain: the axle drop at service force")
+        print(f"    filleted {a['filleted_mm']:.6f} mm against unfilleted "
+              f"{a['unfilleted_mm']:.6f} mm")
+        for r in a["rows"]:
+            print(f"    {r['gene']:>6s}  adjoint {r['adjoint']:+.9e}  fd "
+                  f"{r['fd']:+.9e}  rel {r['rel']:.2e}  at h {r['best_step']:.0e}   "
+                  + "  ".join(f"{x:.1e}" for x in r["rel_ladder"]))
+            print(f"    {'':>6s}  the same gene on the UNFILLETED mesh: "
+                  f"{r['unfilleted_adjoint']:+.9e}")
+        print(f"    worst {a['worst_rel']:.2e}  [< {GATE_SECANT_REL:.0e}, G9's gate and "
+              f"G9's tightened reference secant at {a['fd_tol_rel']:.0e}]")
+        print()
+        print(f"    STILL REFUSED, because the derivative would be WRONG and not because")
+        print(f"    it would be hard — both raise:")
+        for k in ("spoke_blocking", "sector_fit_clamped"):
+            msg = q["refusals"][k]
+            print(f"      {k:24s} {'refused' if msg else '*** DID NOT REFUSE ***'}")
+        print(f"      the clamped mesh was built at radii "
+              f"{q['refusals']['clamped_radii_mm']} against a requested 8.0 mm at the "
+              f"hub")
+        print()
+        pg = q["per_genome"]
+        print(f"    AND THE PER-GENOME LAYER PROFILE, WHICH WAS THE THIRD REFUSAL FROM "
+              f"§85 TO §88:")
+        print(f"      cliff {pg['cliff_entry']:+.9f} (hub "
+              f"{pg['cliff_per_junction']['hub']:+.6f}, rim "
+              f"{pg['cliff_per_junction']['rim']:+.6f} — the {pg['binding_junction']} "
+              f"binds), x {pg['factor']} -> entry {pg['pair'][0]:+.9f}")
+        print(f"      identity {pg['identity_max_abs_mm']:.3e} mm traced, "
+              f"{pg['numpy_path_max_abs_mm']:.3e} mm on the numpy path "
+              f"[< {pg['gate_mm']:.0e} mm]")
+        print(f"      {'gene':>6s}  {'rel vs the RULE':>16s}  "
+              f"{'rel if the pair were FROZEN':>28s}   cliff term")
+        for r in pg["rows"]:
+            print(f"      {r['gene']:>6s}  {r['rel_rule']:>16.2e}  "
+                  f"{r['rel_frozen']:>28.2e}   {r['cliff_term_rel']:.2e}")
+        print(f"      worst {pg['worst_rel_rule']:.2e} [< {pg['gate_rel']:.0e}] against "
+              f"{pg['worst_rel_frozen']:.2e} for the gradient §85 refused to return")
+        ts = pg["trace_shared"]
+        print(f"      one traced jaxpr across genomes: {ts['after_one_genome']} entry "
+              f"after one genome, {ts['after_two_genomes']} after a second at pair "
+              f"{tuple(round(v, 6) for v in ts['second_genome_pair'])} "
+              f"(identity {ts['second_genome_identity_mm']:.3e} mm), "
+              f"{ts['after_a_shipped_pair_mesh']} once a SHIPPED-pair mesh is added")
+        print(f"    -> {'PASS' if q['pass'] else 'FAIL'}")
+        print()
+        print(f"    *** WHAT THIS DOES AND DOES NOT CHANGE.  Nothing wires the fillet "
+              f"into the")
+        print(f"        objective: `wheel_objective` still prices `R_hub` through a "
+              f"`Kt` surrogate")
+        print(f"        that section 75 measured EXACTLY FLAT above the cap, and section "
+              f"48's")
+        print(f"        surviving clause — half of a drawn genome box sits under "
+              f"`MIN_SJ_TARGET` —")
+        print(f"        still stands against letting the optimizer take this path.  G8 "
+              f"above is")
+        print(f"        still the census of the mesh Stage 3 actually builds.")
+
     head("VERDICT")
     print(f"    the adjoint reproduces brute-force differentiation of the same solve "
           f"to {u['cold']['worst_rel']:.1e}")
@@ -1075,6 +1496,12 @@ def _print(rep):
           f"({100*f['rows'][0]['facet_fraction']:.0f}% of the slope at "
           f"{f['rows'][0]['config']}), and it refines away — an M8 mesh requirement, "
           f"not a gradient defect")
+    if q is not None:
+        print(f"    the two genes with no gradient have one on a FILLETED mesh, where "
+              f"they rank first")
+        print(f"    and second of fourteen — the mesh Stage 3 builds is still the "
+              f"unfilleted one, and")
+        print(f"    is still blind to them")
     print(f"\n  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}")
     print(f"\n  NOT DONE: the loss terms.  M7 differentiates SOLVE OUTPUTS; the seven")
     print(f"            objective terms and the p-norm stress are M8's, and")
@@ -1149,11 +1576,20 @@ def main():
         steps=(1e-4, 1e-6) if args.quick else (1e-4, 1e-5, 1e-6), kinematics=kin)
     rep["cost"] = run_cost(genes, cfg, indentation_mm=delta,
                            repeats=1 if args.quick else 3, kinematics=kin)
+    # G11 last: it is the only section that builds a mesh the shipped path never builds,
+    # so a failure here must not be able to shorten the report the other ten produce.
+    rep["filleted"] = run_filleted(
+        genes, cfg, configs=("smoke",) if args.quick else ("smoke", "coarse"),
+        gene_ids=(8, 12) if args.quick else (8, 12, 13),
+        jac_steps=(1e-4, 1e-6) if args.quick else (1e-4, 1e-5, 1e-6),
+        drop_gene_ids=(12,) if args.quick else (12, 13),
+        drop_steps=(1e-4, 1e-6) if args.quick else (1e-4, 1e-5, 1e-6),
+        kinematics=kin)
 
     rep["pass"] = bool(rep["unrolled"]["pass"] and rep["identities"]["pass"]
                        and rep["plateau"]["pass"] and rep["directional"]["pass"]
                        and rep["sweep"]["pass"] and rep["phase"]["pass"]
-                       and rep["axle_drop"]["pass"])
+                       and rep["axle_drop"]["pass"] and rep["filleted"]["pass"])
     rep["settings"] = {"config": cfg, "genome": args.genome, "quick": args.quick,
                        "kinematics": kin,
                        "service_force_n": float(SERVICE_FORCE_N),
