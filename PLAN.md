@@ -11874,3 +11874,191 @@ it retires one of the two terms §89 left on the decision.
 8. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+## §91 — 2026-08-29. THE 17x IS `deflection`, NOT THE BARRIER. §90's HYPOTHESIS IS WRONG AND IT WAS THE BENIGN HALF OF ITS OWN SENTENCE: EVERY BARRIER TERM IS EXACTLY ZERO ON BOTH MESHES, AND THE TWO MESHES DISAGREE ABOUT THE WHEEL BY 47.85% OF AXLE DROP
+
+§90's ranked successor 2. §90 measured the filleted objective's cost, recorded a 17x loss
+difference on the way past, and deliberately stopped at two summary fields:
+
+> if the barrier is most of it, wiring the fillet in re-weights the whole loss and every
+> committed loss number becomes incomparable across the switch. That is a
+> promotion-shaped consequence and it should be known BEFORE item 1's answer arrives.
+
+**The barrier is 0.00% of it.** `make filletterms`, 2010 s,
+`studies/study_fillet_terms.py` and its artifact.
+
+### THE DECOMPOSITION, SVK, SHIPPED GENOME, `coarse`, EIGHT PHASES
+
+Fourteen terms. Eleven are bit-identical between the two meshes; two of the remaining
+three move, and one of those two is 99.5% of the difference.
+
+```
+  term             fillet=None    fillet=True        delta    share of gap
+  deflection            6.1131       635.8102     +629.6972       0.99498
+  mass                 32.5051        35.6822       +3.1771       0.00502
+  min_sj                0.0000         0.0000        0.0000       0.00000
+  stress                0.0000         0.0000        0.0000       0.00000
+  stress_margin         0.0000         0.0000        0.0000       0.00000
+  smoothness            0.1678         0.1678        0.0000       0.00000
+  phase_ripple          0.0000         0.0000        0.0000       0.00000
+  x_order, hub_overlap, fold, arrival, fillet, fillet_cap, buckling — all 0.0000 both
+  ----------------------------------------------------------------------------
+  TOTAL                38.7859       671.6603     +632.8743       1.00000
+  |grad|              212.4906      1179.5258        5.551x
+```
+
+The totals and the gradient norms are §90's published pair to every digit it printed, so
+this is a decomposition OF that number and not of a different one. The linear row
+reproduces §90's other pair as well — 122.3565 → 834.6508, gap 712.2944, `deflection`
+99.554% of it — and the shares agree across the two kernels to half a percentage point.
+
+### THE BARRIER ROW IS EXACTLY ZERO, AND THAT IS NOT A ROUNDING STATEMENT
+
+`soft_barrier` is `scale * max(0, violation)^2` — identically zero below the knee — and
+`min_sj` sums it over every element. So `min_sj == 0.0` on both meshes says **every
+element of both meshes clears `MIN_SJ_TARGET`**, which is the same proposition as
+`min(sj) > MIN_SJ_TARGET`, which is the quantity **§89 already swept over 16 in-sample and
+32 held-out genomes on both meshes**. The barrier's inertness therefore does not need a
+box sweep of its own: §89's 16-of-16 and 31-of-32 carry it, exactly.
+
+The same applies to the other eight barriers. `BARRIER_TERMS` and `OBJECTIVE_TERMS` are
+`wheel_objective`'s own classification (a barrier is a term whose only admissible value is
+zero, so it answers *may this design ship*), and the split falls out clean:
+
+```
+  BARRIER_TERMS     stress, buckling, x_order, hub_overlap, fold, arrival,
+                    fillet, fillet_cap, min_sj          ALL EXACTLY 0.0 ON BOTH MESHES
+  OBJECTIVE_TERMS   deflection, mass, stress_margin, smoothness, phase_ripple
+                                                        632.8743 of 632.8743
+```
+
+**The switch does not change whether the shipped design may ship. It changes, by 17x, how
+good the objective says it is.** That is the sharper form of §90's sentence and it is the
+half §90 did not consider.
+
+### THE MECHANISM IS AXLE DROP AGAINST A FIXED TARGET
+
+`deflection` is `2500 * ((mean_drop - 2.0) / 2.0)^2`, two-sided, and the shipped genome
+already sits below the 2.0 mm target on the unfilleted mesh:
+
+```
+                 mean axle drop     error vs 2.0 mm    deflection term
+  fillet=None       1.9011 mm           -4.945%             6.1131
+  fillet=True       0.9914 mm          -50.43%            635.8102
+                   -47.85%                                 104.0x
+```
+
+The term is quadratic in an error that goes from one twentieth to one half, so a 47.85%
+change in a millimetre number becomes a 104x change in a loss term. The linear row says
+the same thing at -46.37% (1.6212 → 0.8695 mm).
+
+**AND BOTH MESHES ARE CONVERGED AT `coarse`, SO THIS IS THE WHEEL AND NOT THE
+DISCRETISATION.** FILLET_PLAN PART 12 ran both meshes up a four-rung ladder and measured
+`coarse..fine` spreads of **1.216%** unfilleted and **0.141%** filleted. The disagreement
+measured here is two orders above either spread. The two meshes are not two resolutions of
+one answer; they are two different answers.
+
+### THE CLAUSE OF §90 THAT THIS RETIRES
+
+§90 wrote, of the same pair:
+
+> the min scaled Jacobian falls to 0.2877, which is §89's *"what the fillet costs is
+> headroom"* arriving in the objective's own units **through the `t2` barrier**.
+
+**The last five words are wrong and are withdrawn.** The min scaled Jacobian does fall to
+0.2877 and that is still headroom spent — but 0.2877 is above `MIN_SJ_TARGET`'s 0.2, so
+the `t2` barrier is exactly 0.0 and the fall reaches the objective's units **not at all**.
+§90 named the one term that provably contributes nothing. The rest of §90 is unaffected:
+the cost measurement is independent of this and the 1.12x stands.
+
+### TWO THINGS THIS FOUND THAT NOBODY ASKED FOR
+
+**1. `kt_hub` and `kt_rim` come back IDENTICAL on both meshes — 2.0963 and 1.3939, under
+both kernels, to every digit — and so do `r_hub_effective_mm` (0.6397) and
+`hub_fillet_cap_mm` (0.6657).** That is §75's flat `Kt` surrogate, seen from inside the
+objective: the stress path cannot see the fillet AT ALL except through the nominal p-norm
+(9.2873 → 6.9204 MPa), because the surrogate is a closed form in the genes and the mesh
+does not enter it. **This bears directly on the one term the decision has left** — ranked
+successor 1 is exactly the measurement of that surrogate — and it says the two halves of
+§89's item 1 are not independent: whatever `R_hub` does through the filleted mesh, it does
+not currently reach `stress` or `stress_margin`.
+
+**2. `phase_ripple`'s weight is 0.0 — off by default, "gate 10 reports what turning it on
+costs" — and the underlying quantity moves the most of anything measured here in relative
+terms**: `phase_ripple_std_over_mean` goes **0.1142 → 0.1912, +67.4%** at svk (0.1311 →
+0.2032 at linear). The objective is blind to it by construction. It is recorded because it
+is a number gate 10 will want and because it means the gap measured above is a LOWER bound
+on what the switch would do to a loss with that term enabled.
+
+### AT THIS GENOME, AND THE STRESS TERMS ARE NEARER THE KNEE THAN THEIR ZEROS SUGGEST
+
+`stress` and `stress_margin` are exactly zero on both meshes, but the unfilleted row is
+not comfortably zero: `stress_utilisation_hub` is **0.7788 against `MARGIN_KNEE_UTIL`'s
+0.80**, i.e. 0.0212 of utilisation from firing, while the filleted row is at 0.5803. So
+"the gap is `deflection`" is a statement AT THE SHIPPED GENOME. A genome a few percent of
+utilisation higher would put `stress_margin` into the gap on the unfilleted mesh only, and
+in the same direction as everything else here — the unfilleted mesh scoring worse. The
+utilisations are in the artifact so that margin is readable rather than assumed.
+
+### ONE DISCREPANCY, FILED OPEN
+
+PART 12 quotes the fillet's deflection effect as **-37.97%**; this section measures
+**-47.85%** at svk and **-46.37%** at linear. These are different instruments — PART 12's
+is a ladder rung at one sampling, this is the mean over the objective's eight-phase
+uniform stencil, and PART 12's absolute unfilleted `coarse` row (1.5516 mm) sits nearest
+this section's LINEAR row (1.6212 mm) rather than its svk one. **No reconciliation is
+claimed and none was measured.** The direction and the order of magnitude agree; the
+figure does not, and it is ranked below rather than explained.
+
+### WHAT MOVED
+
+`studies/study_fillet_terms.py` is new, with `make filletterms` and its artifact. Like
+§90's driver it touches **no `src/` module** — the meshes are built in the driver and
+handed to `objective(meshes=)`, the parameter `wheel_stage3.Evaluator` already uses — so
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and the scope gate stands.
+**The fillet is still not wired into the objective and this section does not wire it.**
+
+The driver carries its own internal control: the eight gene-space terms are functions of
+the genes and the config alone, so they MUST come back bit-identical from the two calls,
+and `t1_identical` is that check as a fact in the artifact rather than as an assumption.
+It is `true` on both kernels. If it were ever false the two rows would not be one
+objective on two meshes and none of the table above would mean anything.
+
+**SCOPE, STATED.** One genome (the shipped one), `coarse`, eight uniform phases, both
+kernels. The shipped genome is the right and sufficient scope for the consequence §90
+named — every committed loss number in this tree is quoted at it — and it is not a
+statement about the gene box. What generalises without further work is the barrier row,
+for the exact reason given above.
+
+#### The successors, ranked — REVISED 2026-08-29 AFTER §91
+
+1. **`R_hub` THROUGH THE FILLETED MESH AGAINST THE FLAT `Kt` SURROGATE (§75), via
+   `make reds-hub-fillet`.** Unchanged from §90's item 1 and now literally the last term
+   of the decision — and §91 sharpens what it is measuring: the surrogate is a closed form
+   in the genes, `kt_hub`/`kt_rim`/`r_hub_effective_mm` are identical on the two meshes to
+   every digit, so `R_hub`'s route to `stress` does not pass through the mesh at all.
+2. **WHAT THE SWITCH DOES TO THE OPTIMUM, NOT TO THE SCORE — NEW, AND IT IS THE
+   PROMOTION.** §91 says the filleted objective puts the shipped genome **50.43% under**
+   its deflection target where the unfilleted one puts it 4.945% under. A design that far
+   off a two-sided quadratic target is not near the filleted objective's optimum, so
+   wiring the fillet in is a RE-OPTIMISATION and not a re-score: the shipped genome would
+   move toward more compliance, and `mass`, which is the term it trades against, is 0.502%
+   of this gap. This is where FILLET_PLAN Step 3 item 2 (§29's absolute deflection band)
+   lands, and it should be priced before any promotion follows the switch, not after.
+3. **RECONCILE PART 12's -37.97% WITH §91's -47.85%/-46.37%** — filed open above. Two
+   instruments on the same physical effect that do not agree to ten points; one of them is
+   quoted in FILLET_PLAN's header block.
+4. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged, and
+   still the only thing between a filleted mesh and a STEP comparison.
+5. **The sub-element fold, as its own unit** (§89's item 3) — four instruments, one fold,
+   and the one the tree calls ground truth misses it. Then apply §58's gate to the draw
+   and re-derive the box.
+6. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still
+   the oldest thing on the list.
+7. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**,
+   which §91 gives a second reason to run (the quantity moves +67.4% across the switch
+   while the term is weighted 0.0).
+8. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67);
+   **a bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).

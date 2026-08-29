@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -128,6 +128,12 @@ help:
 	@echo "              on; one 8-phase objective evaluation) at both kinematics,"
 	@echo "              all post-trace with the trace priced separately. the SVK"
 	@echo "              evaluation row is the one the decision reads. exits 0"
+	@echo "make filletterms  WHERE the filleted objective's 17x loss difference"
+	@echo "              lives — §90 recorded 671.66 against 38.79 at the shipped"
+	@echo "              genome and did not attribute it. breakdown['terms'] on"
+	@echo "              both meshes, same genome: T1+T2 (no solve, no kinematics)"
+	@echo "              then the whole 8-phase evaluation at both kinematics."
+	@echo "              tests §90's own \"if the barrier is most of it\". exits 0"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
@@ -843,6 +849,40 @@ FILLETCOST_OUT ?= study_fillet_cost.json
 
 filletcost:
 	$(PY_OPT) -u studies/study_fillet_cost.py --out $(FILLETCOST_OUT)
+
+# ---------------------------------------------------------------------------
+# WHERE THE 17x LIVES (PLAN.md §90 ranked successor 2)
+# ---------------------------------------------------------------------------
+# THE DIFFERENCE §90 MEASURED AND DELIBERATELY DID NOT ATTRIBUTE.  The filleted objective
+# returns 671.66 against 38.79 at the shipped genome under svk, with |grad| 1179.53
+# against 212.49, and §90 stopped at those two summary fields.  The attribution is not
+# curiosity: if the mesh-validity barrier is most of the gap, the switch prices the
+# INSTRUMENT and every committed loss number survives it; if the gap is in the T3 terms,
+# the two meshes disagree about the WHEEL and every committed loss number is incomparable
+# across the switch.  That is a promotion-shaped consequence and it wants knowing before
+# the decision's last term (§75's flat `Kt` surrogate) arrives, not after.
+#
+# Two altitudes.  `tiers=("t1","t2")` is seconds and needs no solve and no kinematics --
+# T1 reads the genes, T2 reads `mesh_coords`, and `min_sj` (§90's suspect) lives there.
+# Then the whole eight-phase evaluation at BOTH kinematics, where the four solve-space
+# terms appear and where the svk row reproduces §90's published pair.
+#
+# NOTHING IS TIMED HERE, SO NOTHING IS WARMED UP.  `filletcost` pays a warm-up call before
+# every timed one; this driver reads VALUES, which a jit trace does not change, so the
+# same four evaluations cost about half.  The trace is still paid (§90: 271.7 s
+# unfilleted, 1122.0 s filleted) and `linear` runs first so it is the row that pays it.
+#
+# It touches no `src/` module -- the meshes are built in the driver and handed to
+# `objective(meshes=)`, so the scope gate
+# `test_nothing_wires_the_fillet_into_the_objective` still holds.
+#
+# EXITS 0 ALWAYS.  An attribution has no threshold to meet.  The one thing that WOULD be a
+# failure -- `t1_identical` false, i.e. the two rows not being one objective on two
+# meshes -- is printed and filed rather than raised.
+FILLETTERMS_OUT ?= study_fillet_terms.json
+
+filletterms:
+	$(PY_OPT) -u studies/study_fillet_terms.py --out $(FILLETTERMS_OUT)
 
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)

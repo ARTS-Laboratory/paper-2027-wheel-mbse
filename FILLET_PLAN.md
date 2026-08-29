@@ -3,8 +3,9 @@
 **Open arc #2. Created 2026-08-16. STEPS 0, 1, 1b AND 2 ARE DONE — 2026-08-23, PART 12.
 STEP 3 IS NOT DONE AND IS NO LONGER BLOCKED — 2026-08-29, STEP 3 RECORD PART 3. ONE OF THE
 DECISION'S TWO TERMS IS NOW MEASURED — PART 4, 2026-08-29: the filleted objective costs
-1.12x, not §88's 2-3x.** The state, in four lines, so nobody re-derives it from thirty
-PARTs:
+1.12x, not §88's 2-3x. AND PART 4's 17x IS ATTRIBUTED — PART 5, 2026-08-29: it is
+`deflection`, 99.5% of it, and every BARRIER term is exactly zero on both meshes.** The
+state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -29,9 +30,12 @@ PARTs:
   filleted against unfilleted (183.58 s against 163.26 s, eight phases, post-trace), where
   §88 had claimed 2-3x with nothing behind it. The mesh build is 20x and is 1.2% of an
   evaluation. What is left is ONE term: the `Kt` surrogate that is flat over half of
-  `R_hub`'s range (§75). PART 4 also found, and did not decompose, a 17x loss difference
-  between the two meshes at the shipped genome. The rim tri-block is the other blocker and
-  is not this arc's.
+  `R_hub`'s range (§75). PART 4's undecomposed 17x is decomposed at **PART 5 / PLAN §91**:
+  **99.5% of it is `deflection`** and every BARRIER term is exactly 0.0 on both meshes, so
+  the switch does not change whether the design may ship — it changes, by 17x, how good the
+  objective says it is, through a mean axle drop of 0.9914 mm against 1.9011 mm on a fixed
+  2.0 mm target. PART 4's "arriving through the `t2` barrier" is withdrawn there. The rim
+  tri-block is the other blocker and is not this arc's.
 
 **NOT CHEAP — read the cost section first.**
 
@@ -3700,3 +3704,79 @@ One term. `R_hub` through the filleted mesh against the flat `Kt` surrogate (§7
 scope gate still stands and this PART does not touch it: nothing in `src/` changed, the
 meshes are built in the driver and handed to `objective(meshes=)`, and
 `test_nothing_wires_the_fillet_into_the_objective` is green.
+
+---
+
+# STEP 3 RECORD PART 5 — 2026-08-29. THE 17x IS `deflection`. PART 4's "THROUGH THE `t2` BARRIER" IS WITHDRAWN — EVERY BARRIER TERM IS EXACTLY ZERO ON BOTH MESHES
+
+PLAN §91. `make filletterms`, 2010 s, `studies/study_fillet_terms.py` and its artifact.
+
+PART 4 recorded 671.66 against 38.79 and declined to attribute it, and PLAN §90 ranked the
+attribution second with a reason: *"if the barrier is most of it, wiring the fillet in
+re-weights the whole loss and every committed loss number becomes incomparable across the
+switch."* **The barrier is 0.00% of it.** `deflection` is 99.498%.
+
+```
+  svk, shipped genome, coarse, 8 phases
+  term             fillet=None    fillet=True        delta    share of gap
+  deflection            6.1131       635.8102     +629.6972       0.99498
+  mass                 32.5051        35.6822       +3.1771       0.00502
+  every other term — identical, and every BARRIER term exactly 0.0 on BOTH meshes
+  TOTAL                38.7859       671.6603     +632.8743       1.00000
+```
+
+`min_sj == 0.0` is exact, not rounded: `soft_barrier` is `scale * max(0, v)^2`, so the sum
+over elements is zero precisely when every element clears `MIN_SJ_TARGET` — the same
+proposition PART 3 swept over 16 in-sample and 32 held-out genomes on both meshes. **The
+barrier's inertness therefore needs no box sweep of its own; PART 3 already carries it.**
+
+**THE SENTENCE PART 4 ENDS ON IS WRONG AND IS WITHDRAWN.** PART 4 wrote that min scaled J
+falling to 0.2877 is *"PART 3's 'what the fillet costs is headroom' arriving through the
+`t2` barrier."* It arrives through nothing: 0.2877 is above `MIN_SJ_TARGET`'s 0.2, the
+barrier is exactly 0.0, and PART 4 named the one term that provably contributes zero. The
+headroom is still spent — that half stands — but it is not in the loss.
+
+## THE MECHANISM, AND IT IS ABOUT THE WHEEL
+
+`deflection` is `2500 * ((drop - 2.0)/2.0)^2`, two-sided about a fixed target, and the
+shipped genome is already under it unfilleted:
+
+```
+                 mean axle drop     error vs 2.0 mm    deflection term
+  fillet=None       1.9011 mm           -4.945%             6.1131
+  fillet=True       0.9914 mm          -50.43%            635.8102   (104.0x)
+```
+
+**PART 12's ladder says both meshes are converged at `coarse`** — `coarse..fine` spreads of
+1.216% and 0.141% — so a 47.85% disagreement is two orders above either spread and is not
+the discretisation. The two meshes are two different answers about the same wheel, and the
+one this project has been quoting is the one without the fillets.
+
+**PART 12's -37.97% and this PART's -47.85% do not reconcile and no reconciliation is
+claimed.** Different instruments (a ladder rung against the objective's eight-phase mean),
+and PART 12's unfilleted `coarse` row sits nearest this PART's LINEAR row. Filed open;
+PLAN §91 ranks it third. **The -37.97% in this file's header block is PART 12's number and
+is left as PART 12's** — it is not this PART's quantity and overwriting it would be the
+substitution this arc's header warns about.
+
+## WHAT THIS MEANS FOR THE DECISION, WHICH IS STILL ONE TERM AWAY
+
+The cost term is not an objection (PART 4) and the barrier is not one (PART 3). The last
+term is `R_hub` through the filleted mesh against the flat `Kt` surrogate (§75),
+`make reds-hub-fillet` — and this PART sharpens it: `kt_hub`, `kt_rim`,
+`r_hub_effective_mm` and `hub_fillet_cap_mm` come back **identical on both meshes to every
+digit**, under both kernels. The surrogate is a closed form in the genes; the mesh does not
+enter it. Whatever `R_hub` does through the filleted mesh, it does not currently reach
+`stress` or `stress_margin`.
+
+**AND THE SWITCH IS A RE-OPTIMISATION, NOT A RE-SCORE.** A design 50.43% under a two-sided
+quadratic target is not near the filleted objective's optimum. Wiring the fillet in moves
+where the optimum IS, toward more compliance, against a `mass` term that is 0.502% of this
+gap. That is Step 3 item 2 (§29's absolute deflection band) arriving with a number, and it
+should be priced before a promotion follows the switch rather than after. PLAN §91 ranks it
+second.
+
+The scope gate still stands and this PART does not touch it: nothing in `src/` changed, the
+meshes are built in the driver and handed to `objective(meshes=)`, and
+`test_nothing_wires_the_fillet_into_the_objective` is green. Scope of the measurement: one
+genome (the shipped one), `coarse`, eight uniform phases, both kernels.
