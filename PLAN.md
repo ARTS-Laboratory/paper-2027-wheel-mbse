@@ -11734,3 +11734,143 @@ behind it.
 7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+## §90 — 2026-08-29. THE FILLETED OBJECTIVE'S COST, MEASURED: 1.12x AND NOT 2-3x. THE MESH IS NOT WHAT THE EVALUATION SPENDS ITS TIME ON — AND THE ONE-TIME JIT TRACE, WHICH NOBODY WAS COUNTING, IS 4.13x AND NINETEEN MINUTES
+
+§89's ranked successor 1 asked for two numbers and called them the whole of what is left
+of arc 2: the filleted objective's COST, and `R_hub` read through the filleted mesh
+against the flat `Kt` surrogate. **This is the first of the two.** §88's ranking item 2
+said the filleted mesh is *"2-3x the cost of the unfilleted one"*; §89 found that nothing
+in the tree measures that and flagged it as *"a number with no measurement behind it"*.
+
+**It is measured now, and it is 1.12x.** `make filletcost`, 2896 s,
+`studies/study_fillet_cost.py` and its artifact.
+
+### THE MEASUREMENT, AND WHY IT IS THREE ALTITUDES
+
+"Cost" is three quantities and quoting one as another is how an unmeasured 2-3x got
+written down in the first place. All at `coarse` — the config `wheel_objective.objective`
+defaults to and the one §89's barrier control was taken at — on the shipped genome.
+
+```
+                                   unfilleted     filleted      ratio
+  A  mesh build                      0.013 s      0.264 s      20.16
+     elements                          4704         5952        1.27   (§89's number)
+
+  B  one solve + one adjoint, svk
+     force-controlled secant         20.80 s      21.58 s       1.04
+     cold forward                    10.99 s      13.07 s       1.19
+     warm forward                     0.14 s       0.19 s       1.34
+     gradient (adjoint)               0.44 s       0.59 s       1.35
+
+  C  ONE OBJECTIVE EVALUATION, svk, 8 phases
+     T1 + T2                          0.29 s       0.34 s       1.15
+     T3                             162.83 s     181.05 s       1.11
+     build 8 phase meshes             0.13 s       2.19 s      16.38
+     TOTAL                          163.26 s     183.58 s       1.12
+```
+
+Under the LINEAR kernel — what `objective` takes when called bare (§32) — the same
+evaluation reads 123.27 s against 143.76 s, **1.17x**. The verdict is adjudicated on the
+SVK row because that is what an optimizer step pays: `wheel_stage3.py --kinematics`
+defaults to `svk`, and this arc's own header warns that a study driver taking the linear
+default measures the wrong thing silently.
+
+**§88's "2-3x" DOES NOT HOLD.** It is not off by a little: the claim's floor is 1.8x the
+measured ratio. And the quantity nearest to it — the element count, 1.27x — is one §89
+already had and explicitly declined to treat as a cost.
+
+### WHY THE MESH BEING BIGGER DOES NOT COST WHAT IT LOOKS LIKE IT SHOULD
+
+The mesh build IS 20x, and it is 2.19 s against an evaluation of 183.58 s — **1.2% of the
+thing it is 20x of**. An objective evaluation is eight force-controlled secants and eight
+adjoints; the geometry that feeds them is rounding error, and a ratio taken on the build
+alone would have been twenty times wrong in the expensive direction.
+
+**The two altitudes corroborate rather than repeat.** B is medians over three timed calls
+and C is one call per setting; B's per-solve ratios (1.19-1.35) bracket C's evaluation
+ratio (1.11-1.15) from above, which is what should happen — C's denominator includes T1,
+T2 and the secant's cheaper iterations. Two instruments at two altitudes agreeing is
+better evidence than repeats of either.
+
+### THE COST NOBODY WAS COUNTING, AND IT IS THE LARGEST RATIO IN THE TABLE
+
+Everything above is POST-TRACE. The first evaluation at each setting pays a jit compile
+that Stage 3 pays once and amortises over a run, and it was measured rather than
+discarded — `first_call_s - eval_s`, the two calls being the same arithmetic on the same
+meshes:
+
+```
+  trace overhead, linear    unfilleted  271.7 s      filleted  1122.0 s     4.13x
+```
+
+**Nineteen minutes**, and 7.7 evaluations' worth of compile before the first answer. It is
+kept out of the ratio the verdict reads — it is a per-RUN cost, not a per-evaluation one —
+but it is a real price of switching the default and it is the one number in this section
+that is anywhere near §88's bracket.
+
+**AND THE TRACE BELONGS TO THE MESH, NOT TO THE KERNEL**, which is why only one of the two
+kinematics rows can report it. The driver runs the evaluation section first and `linear`
+before `svk`, and the SVK row's trace overhead is **0.6 s and 2.1 s** — nothing left to
+trace, on meshes the linear rows had already compiled. That is recorded as the finding it
+is rather than left looking like a glitch, and it means a Stage 3 run that switches
+kinematics pays this once, not twice.
+
+### WHAT THE ARTIFACT ALSO SHOWS, WHICH IS NOT ABOUT COST AND MATTERS MORE
+
+The two rows are the same objective, at the same genome, on two meshes — and they do not
+return the same number:
+
+```
+                       loss        |grad|      min scaled J     mesh mass
+  fillet=None       38.7859       212.49         0.7822         39.548 g
+  fillet=True      671.6603      1179.53         0.2877         43.413 g
+```
+
+**Seventeen times the loss, on the design this project ships.** The artifact records two
+fields that point at both halves of it and this section does not go further: the mesh is
+**9.8% heavier** — the fillet is material the unfilleted mesh omits, which is a physical
+consequence of modelling it rather than an artefact — and the min scaled Jacobian falls to
+0.2877, which is §89's *"what the fillet costs is headroom"* arriving in the objective's
+own units through the `t2` barrier.
+
+**This is stated, not decomposed.** §89 asked for a cost and this driver measures a cost;
+the per-TERM attribution of a 17x loss change is a different measurement, and inventing it
+from two summary fields would be exactly the kind of unmeasured number this section exists
+to retire. It is ranked below.
+
+### WHAT MOVED
+
+`studies/study_fillet_cost.py` is new, with `make filletcost` and its artifact. It touches
+no `src/` module: the meshes are built in the driver and handed to `objective(meshes=)`,
+which is the parameter `wheel_stage3.Evaluator` already uses, so
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and the scope gate stands.
+**The fillet is still not wired into the objective, and this section does not wire it** —
+it retires one of the two terms §89 left on the decision.
+
+#### The successors, ranked — REVISED 2026-08-29 AFTER §90
+
+1. **THE OTHER HALF OF §89's ITEM 1, WHICH IS NOW THE WHOLE OF THE DECISION.** `R_hub`
+   read through the filleted mesh against the flat `Kt` surrogate (§75), via
+   `make reds-hub-fillet`. The cost term is answered — 1.12x is not a reason to refuse
+   anything — so the surrogate is the only term left standing between the fillet and the
+   objective. When it is measured, the decision is takeable in one record.
+2. **DECOMPOSE THE 17x — NEW.** The filleted objective returns 671.66 against 38.79 at the
+   shipped genome, and this section deliberately did not attribute it past two summary
+   fields. Per-term `breakdown["terms"]`, both meshes, same genome: if the barrier is
+   most of it, wiring the fillet in re-weights the whole loss and every committed loss
+   number becomes incomparable across the switch (§32's own rule about kinematics,
+   applied to the mesh). That is a promotion-shaped consequence and it should be known
+   BEFORE item 1's answer arrives, not after.
+3. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged from
+   §89's item 2 and still the only thing between a filleted mesh and a STEP comparison.
+4. **The sub-element fold, as its own unit** (§89's item 3) — four instruments, one fold,
+   and the one the tree calls ground truth misses it. Then apply §58's gate to the draw
+   and re-derive the box.
+5. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still
+   the oldest thing on the list.
+6. **Per-REGION agreement on a filleted mesh** (§86).
+7. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+8. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).

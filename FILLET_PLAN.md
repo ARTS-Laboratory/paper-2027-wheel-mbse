@@ -1,8 +1,10 @@
 # FILLET_PLAN.md — mesh the junction fillets
 
 **Open arc #2. Created 2026-08-16. STEPS 0, 1, 1b AND 2 ARE DONE — 2026-08-23, PART 12.
-STEP 3 IS NOT DONE AND IS NO LONGER BLOCKED — 2026-08-29, STEP 3 RECORD PART 3.** The
-state, in four lines, so nobody re-derives it from thirty PARTs:
+STEP 3 IS NOT DONE AND IS NO LONGER BLOCKED — 2026-08-29, STEP 3 RECORD PART 3. ONE OF THE
+DECISION'S TWO TERMS IS NOW MEASURED — PART 4, 2026-08-29: the filleted objective costs
+1.12x, not §88's 2-3x.** The state, in four lines, so nobody re-derives it from thirty
+PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -22,9 +24,14 @@ state, in four lines, so nobody re-derives it from thirty PARTs:
   global pair's, which stopped being the default at PART 27, and its criterion puts
   `fillet=None` on the same side of `MIN_SJ_TARGET` — 16 of 16 and 31 of 32 on BOTH meshes,
   with the one failing genome further under it UNFILLETED. What is left is not a blocker
-  but a DECISION with two terms, both unmeasured: the filleted mesh's cost, and the `Kt`
-  surrogate that is flat over half of `R_hub`'s range (§75). The rim tri-block is the other
-  blocker and is not this arc's.
+  but a DECISION with two terms — and as of **PART 4 / PLAN §90 one of them is measured
+  and is not an objection**: one objective evaluation at `coarse` under SVK costs **1.12x**
+  filleted against unfilleted (183.58 s against 163.26 s, eight phases, post-trace), where
+  §88 had claimed 2-3x with nothing behind it. The mesh build is 20x and is 1.2% of an
+  evaluation. What is left is ONE term: the `Kt` surrogate that is flat over half of
+  `R_hub`'s range (§75). PART 4 also found, and did not decompose, a 17x loss difference
+  between the two meshes at the shipped genome. The rim tri-block is the other blocker and
+  is not this arc's.
 
 **NOT CHEAP — read the cost section first.**
 
@@ -3635,3 +3642,61 @@ clean. `fillet=None` folds on the same genome and DEEPER. It is one genome of 48
 self-intersects (fold margin -0.0131 mm against a 0.1 mm limit), and the held-out draw folds
 nothing at either config. PLAN §89 has the table and the ranking item; changing a validity
 gate the whole tree reads is its own unit of work.
+
+---
+
+# STEP 3 RECORD PART 4 — 2026-08-29. THE COST TERM, MEASURED: 1.12x, NOT 2-3x
+
+PLAN §90. PART 3 left the decision with two unmeasured terms and named them as this arc's
+next work. **This is the first one, and it does not survive contact with a stopwatch.**
+
+`make filletcost`, 2896 s, `studies/study_fillet_cost.py`. One
+`wheel_objective.objective` evaluation at `coarse` on the shipped genome, eight phases,
+post-trace, SVK — which is what `wheel_stage3.py` passes and therefore what an optimizer
+step actually pays:
+
+```
+                        unfilleted    filleted    ratio
+  T1 + T2                  0.29 s      0.34 s     1.15
+  T3                     162.83 s    181.05 s     1.11
+  8 phase mesh builds      0.13 s      2.19 s    16.38
+  TOTAL                  163.26 s    183.58 s     1.12
+```
+
+**§88's "2-3x" does not hold** — the claim's floor is 1.8x the measured number. Under the
+linear kernel (what `objective` takes bare) it reads 1.17x.
+
+**THE MESH BUILD IS 20x AND IT DOES NOT MATTER**: 2.19 s inside a 183.58 s evaluation,
+1.2% of the thing it is 20x of. An evaluation is eight secants and eight adjoints; the
+geometry feeding them is rounding error. A cost ratio taken on the build — or on the
+element count, 1.27x — would have been wrong in both directions at once.
+
+Two altitudes corroborate: `study_gradient`'s G10 method, run on the mesh G10 never ran
+on, gives per-solve ratios of 1.19x (cold forward), 1.34x (warm forward) and 1.35x (the
+adjoint), which bracket the evaluation ratio from above exactly as they should.
+
+**THE ONE-TIME TRACE IS THE LARGEST RATIO ANYWHERE IN THIS MEASUREMENT** — 1122.0 s
+filleted against 271.7 s unfilleted, 4.13x and nineteen minutes of jit before the first
+answer. It is a per-RUN cost that Stage 3 amortises, so it stays out of the verdict, but
+it is the only number here near §88's bracket. And it belongs to the MESH and not the
+kernel: the SVK rows pay 0.6 s and 2.1 s on meshes the linear rows already compiled.
+
+## THE THING THE COST MEASUREMENT FOUND THAT IS NOT ABOUT COST
+
+The two rows return different numbers, and by a lot: **671.66 against 38.79**, |grad| 1179.53
+against 212.49, on the design this project ships. Two recorded fields point at it — the mesh
+is **9.8% heavier** (39.548 g against 43.413 g; the fillet is material the unfilleted mesh
+omits) and min scaled J falls to **0.2877** from 0.7822, which is PART 3's "what the fillet
+costs is headroom" arriving through the `t2` barrier. **Not decomposed here**, deliberately:
+attributing a 17x loss change from two summary fields is the same species of unmeasured
+number this PART exists to retire. PLAN §90 ranks it second, ahead of everything but the
+`Kt` half, because re-weighting the loss is a promotion-shaped consequence.
+
+## WHAT IS LEFT OF THE DECISION
+
+One term. `R_hub` through the filleted mesh against the flat `Kt` surrogate (§75),
+`make reds-hub-fillet`. **The cost is not a reason to refuse the fillet** — 1.12x is not
+2-3x, and it is not a number anybody would decline a differentiable junction over. The
+scope gate still stands and this PART does not touch it: nothing in `src/` changed, the
+meshes are built in the driver and handed to `objective(meshes=)`, and
+`test_nothing_wires_the_fillet_into_the_objective` is green.

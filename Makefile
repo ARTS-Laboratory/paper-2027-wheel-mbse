@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -122,6 +122,12 @@ help:
 	@echo "              the FOLD gate — the closed-form margin that catches the"
 	@echo "              one genome whose spoke does not exist, and how often the"
 	@echo "              mesh-based filter it replaces leaks. ~230 s, geometry only"
+	@echo "make filletcost  what the FILLETED objective costs — §88's unmeasured"
+	@echo "              \"2-3x\", measured. three altitudes (mesh build; one solve"
+	@echo "              and one adjoint, G10's method on the mesh G10 never ran"
+	@echo "              on; one 8-phase objective evaluation) at both kinematics,"
+	@echo "              all post-trace with the trace priced separately. the SVK"
+	@echo "              evaluation row is the one the decision reads. exits 0"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
@@ -806,6 +812,37 @@ FILLETBLOCK_OUT ?= study_fillet_block.json
 
 filletblock:
 	$(PY_OPT) -u studies/study_fillet_block.py --out $(FILLETBLOCK_OUT)
+
+# ---------------------------------------------------------------------------
+# WHAT THE FILLETED OBJECTIVE COSTS (PLAN.md §89 ranked successor 1)
+# ---------------------------------------------------------------------------
+# THE NUMBER §88 QUOTED AND NOBODY MEASURED.  §88's ranking item 2 said the filleted mesh
+# is "2-3x the cost of the unfilleted one", and §89 found that nothing in this tree
+# measures it -- the only adjacent number being the element counts at `coarse`, 5952
+# against 4704, which is 1.27x and is not solve time.  With §48's mesh-validity clause
+# retired at §89, that cost and the flat `Kt` surrogate (§75) are the whole of what stands
+# between the fillet and the objective, so the cost half is measured here.
+#
+# Three altitudes, because "cost" is three quantities: the mesh build; one solve and one
+# adjoint (`study_gradient`'s G10 method, extended to the mesh G10 never ran on); and ONE
+# `wheel_objective.objective` evaluation at the optimizer's eight-phase stencil, which is
+# the quantity the decision is about.  BOTH KINEMATICS -- `objective` called bare takes
+# `wheel_fem`'s linear default while Stage 3 passes svk (§32), and the verdict reads the
+# SVK row because that is what an optimizer step pays.
+#
+# Everything timed is POST-TRACE, and the trace is reported rather than discarded: the
+# first evaluation at each setting pays a jit that Stage 3 pays once and amortises, and on
+# the probe that sized this driver it was 117.7 s against a 19.8 s evaluation.
+#
+# It touches no `src/` module.  The meshes are built in the driver and handed to
+# `objective(meshes=)`, which is the parameter `wheel_stage3.Evaluator` already uses, so
+# `test_nothing_wires_the_fillet_into_the_objective` still holds and the scope gate stands.
+#
+# EXITS 0 ALWAYS.  A cost has no threshold to meet; §89 asked for the number.
+FILLETCOST_OUT ?= study_fillet_cost.json
+
+filletcost:
+	$(PY_OPT) -u studies/study_fillet_cost.py --out $(FILLETCOST_OUT)
 
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)
