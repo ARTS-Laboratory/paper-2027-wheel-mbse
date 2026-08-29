@@ -632,10 +632,22 @@ def test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one(
 
 
 def test_nothing_wires_the_fillet_into_the_objective():
-    """PART 10's scope, as a check rather than a note. `fillet=` is a measurement
-    instrument for ONE genome — 6 of 16 feasible genomes refuse it at their own radii and
-    6 of the 10 that build sit under `MIN_SJ_TARGET` — so it must not reach the optimizer
-    on the strength of Step 2. Step 2 measured corners; it did not measure genomes."""
+    """PART 10's scope, as a check rather than a note.
+
+    THE GATE STANDS AND ITS REASON HAS CHANGED (PLAN §89). What stood here read *"`fillet=`
+    is a measurement instrument for ONE genome — 6 of 16 feasible genomes refuse it at
+    their own radii and 6 of the 10 that build sit under `MIN_SJ_TARGET`"*. Neither half
+    survives: the refusals were closed by the sector-fit clamp (§74, §78), and the barrier
+    half was a count taken on the SHIPPED GLOBAL PAIR, which stopped being what
+    `fillet=True` builds at §85. On the assembled mesh at the objective's own config the
+    default clears 16 of 16 and 31 of 32 — and so does `fillet=None`, on the same genomes,
+    failing on the same one and failing harder.
+
+    So this is no longer a mesh-validity gate. It is the SCOPE gate: wiring the fillet into
+    the objective is a decision about cost and about the `Kt` surrogate (§75, §88 ranking
+    item 2), and it must be taken deliberately rather than arrived at because a keyword
+    leaked into a call. The day that decision is taken, this test is the thing to update —
+    with the record that took it named here."""
     # PARSED, NOT GREPPED, and the two failures a grep gives here are both real. A pattern
     # loose enough to catch `fillet=True` also catches `wheel_objective`'s local
     # `fillet = jnp.sum(...)` — the fillet-MARGIN barrier, which has nothing to do with the
@@ -653,9 +665,10 @@ def test_nothing_wires_the_fillet_into_the_objective():
                 if kw.arg not in ("fillet", "fillet_blocking"):
                     continue
                 assert isinstance(kw.value, ast.Constant) and kw.value.value is None, (
-                    f"{mod}:{node.lineno} passes {kw.arg}= to a call — `fillet=` is a "
-                    f"measurement instrument for one genome and must not reach the "
-                    f"optimizer (PLAN §48, §52)")
+                    f"{mod}:{node.lineno} passes {kw.arg}= to a call — wiring the "
+                    f"fillet into the objective is a DECISION about cost and about the "
+                    f"`Kt` surrogate, not a keyword (PLAN §89; §48's mesh-validity "
+                    f"clause is retired)")
 
 
 def test_parse_fillet_refuses_what_it_cannot_mean():

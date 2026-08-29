@@ -53,6 +53,18 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OFF_GRID_RADII = (0.07, 0.33, 0.91, 2.37)
 
 
+# THE ONE HELD-OUT GENOME UNDER `MIN_SJ_TARGET`, WRITTEN DOWN RATHER THAN READ (PLAN §89).
+# It is a DRAW — `study_fillet_block.json` is the only record of it, and a test that reads
+# the artifact for the genome AND for the verdict cannot catch the artifact going stale.
+# So the genome is transcribed here and every number below is re-measured.  Its part does
+# not self-intersect (closed-form fold margin +0.5207 mm), which is what makes it the
+# honest case rather than one §58's gate would throw out.
+BARRIER_GENOME = (9.873785312523, 2.13391328004, 18.405623946407, 19.992061122027,
+                  23.204889036529, -25.120609231208, 30.50042904786, -6.384709356557,
+                  3.23380338442, 4.83896800753, 6.79002618692, 5.206762440074,
+                  1.151788468808, 2.572984777374)
+
+
 @pytest.fixture(scope="module")
 def genes():
     with open(os.path.join(REPO, "best_solution.json")) as fh:
@@ -1470,3 +1482,54 @@ def test_the_cliff_bracket_the_study_uses_is_TOO_NARROW_and_the_module_says_so(g
     # and the module's own refusal threshold is the one the cliff is defined against
     assert ww.LAYER_CLIFF_ZERO == 1e-6
     assert ww.LAYER_CLIFF_SAMPLES == 401
+
+
+def test_the_barrier_does_not_separate_the_filleted_mesh_from_the_unfilleted_one():
+    """§48's surviving clause, re-derived — and it does not survive (PLAN §89).
+
+    THE CLAUSE.  `wheel_wheel`'s scope comment said, from §48 until §89, that what still
+    kept `fillet=` out of the objective was the BARRIER half and only that: *"half of each
+    drawn genome box sits under `MIN_SJ_TARGET` (8/16 and 16/32)"*.  Both numbers were the
+    SHIPPED GLOBAL PAIR's, and §85 made `fillet=True` take `per_genome_layer_profile`
+    instead — so the clause had been describing a mesh the tree had stopped building.
+
+    WHAT IT NEVER HAD IS THE CONTROL, which is what this pins.  The barrier is a property
+    of a mesh, and `fillet=None` is a mesh: on this genome the SHIPPED unfilleted mesh is
+    under the target too, and further under it.  A criterion that puts both meshes on the
+    same side cannot be the reason to refuse one of them.
+
+    Measured through `wheel_mesh.scaled_jacobian` at `coarse`, which is the instrument
+    `wheel_objective.t2_vector` reads and the config `wheel_objective.objective` defaults
+    to — not through `study_fillet_block.block_quality`, which scores the node grid's 1x1
+    sub-cells and is where every earlier barrier count in this arc came from.
+
+    PINNED AS AN ORDERING, NOT AS TWO LEVELS.  The finding is that the fillet does not make
+    the barrier worse; asserting 0.1775 and 0.1298 to four figures would go green the day
+    both degrade together, which is the failure this file's own docstrings are about.
+    """
+    import wheel_mesh as wm
+
+    g = np.asarray(BARRIER_GENOME, float)
+    sj = {}
+    for tag, kw in (("filleted", {"fillet": True}), ("unfilleted", {"fillet": None})):
+        mesh = ww.build_wheel(g, "coarse", **kw)
+        sj[tag] = np.asarray(wm.scaled_jacobian(np.asarray(mesh.coords), mesh.conn))
+
+    # BOTH are under the target — that is the whole point, and it is the half that is
+    # asserted first because it is the half the clause left out.
+    assert sj["unfilleted"].min() <= wo.MIN_SJ_TARGET, sj["unfilleted"].min()
+    assert sj["filleted"].min() <= wo.MIN_SJ_TARGET, sj["filleted"].min()
+
+    # and the filleted mesh is the BETTER of the two, on the worst element and on the
+    # count of marginal ones alike
+    assert sj["filleted"].min() > sj["unfilleted"].min(), sj
+    n_marginal = {t: int((v <= wo.MIN_SJ_TARGET).sum()) for t, v in sj.items()}
+    assert n_marginal["filleted"] < n_marginal["unfilleted"], n_marginal
+
+    # AND ON THE BARRIER'S OWN VALUE, which is what the optimizer actually sees: a SUM of
+    # soft barriers over every element rather than the min-crossing count the plan files
+    # were quoting as a proxy for it.  The two do not have to agree and here they do.
+    w = wo.DEFAULT_WEIGHTS["min_sj"]
+    term = {t: float(np.sum(np.asarray(wo.soft_barrier(wo.MIN_SJ_TARGET - v, w))))
+            for t, v in sj.items()}
+    assert term["unfilleted"] > term["filleted"] > 0.0, term

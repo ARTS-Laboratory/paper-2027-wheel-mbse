@@ -11572,3 +11572,165 @@ objective, not about `mesh_coords`.** Corrected in place; no artifact depends on
 7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+## §89 — 2026-08-29. §48's SURVIVING CLAUSE IS RETIRED, AND NOT BY CONCESSION: THE BARRIER PUTS THE FILLETED MESH AND THE UNFILLETED ONE ON THE SAME SIDE OF ITS OWN TARGET, ON THE SAME GENOME, WITH THE UNFILLETED ONE FURTHER UNDER
+
+`FILLET_PLAN.md`'s header has said since §74 that ONE thing keeps `fillet=` a measurement
+instrument rather than a path the optimizer may take: *"half of each drawn genome box sits
+under `MIN_SJ_TARGET` (8/16 and 16/32), which is §48's surviving clause and is now the ONLY
+reason."* `wheel_wheel.py` carried the same sentence and
+`test_nothing_wires_the_fillet_into_the_objective` carried it as a check.
+
+**It is wrong twice, and the second way is the one that matters.** Its numbers describe a
+profile the tree stopped building at §85, and its criterion does not separate the filleted
+mesh from the mesh the optimizer builds today.
+
+### THE NUMBERS WERE THE SHIPPED GLOBAL PAIR'S
+
+8 of 16 and 16 of 32 are `fit_clamp` / `fit_clamp_held_out` at `profile="shipped"` — the
+two constants `FILLET_LAYER_ENTRY_SLOPE` / `FILLET_LAYER_END_OFFSET`. §82 adopted
+`per_genome_layer_profile` and §85 made it what `fillet=True` takes when nobody asks. The
+same tables at the adopted rule read **15 of 16 and 31 of 32** — quoted in §82's own text,
+and in the committed artifact since §84 extended the factor grid past 0.55. Nothing restated
+the clause, so a 16x claim about the barrier stood for four sections describing a mesh
+nobody was building.
+
+### AND THE COUNT WAS TAKEN WITH AN INSTRUMENT THE BARRIER DOES NOT USE
+
+Every barrier count this arc has published came from `study_fillet_block.block_quality`,
+which scores every **1x1 sub-cell of a block's node grid**. The mesh's elements are Q9 and
+span **2x2** of those, and `wheel_objective.t2_vector` reads `wheel_mesh.scaled_jacobian`,
+which slices `conn[:, :4]` — the element's four CORNER nodes. Two different measurements of
+two different cells.
+
+**Proved rather than inferred.** `block_quality` on the subsampled grid `[::2, ::2]`, which
+is the Q9 element's corners and nothing else, reproduces the assembled mesh's number to
+every digit:
+
+```
+                       sub-cells                     Q9 corners                  assembled
+  in-sample  0     rim_ring_free   0.259141038   rim_ring_free  0.253191857     0.253191857
+  in-sample  3     hub_junction    0.365802399   rim_ring_free  0.371207040     0.371207040
+  in-sample 10     spoke          -0.050823172   rim_ring_free  0.410527770     0.410527770
+```
+
+The two disagree on **11 of the 16** in-sample genomes at the adopted factor, and on genome
+10 they disagree in SIGN.
+
+### THE CONTROL THE CLAUSE NEVER HAD, WHICH IS WHAT RETIRES IT
+
+The barrier is a property of A MESH, and `fillet=None` is a mesh. Built assembled, both
+ways, on the same genomes, at `coarse` — the config `wheel_objective.objective` defaults to
+— through the barrier's own instrument:
+
+```
+                   clears MIN_SJ_TARGET        held-out    held-out    meshes that
+                   in sample    held out       median J     worst      fold inside
+                                                            barrier    an element
+  fillet=True      16 of 16     31 of 32        0.3382       18.2047    1 of 48
+  fillet=None      16 of 16     31 of 32        0.7447      327.1699    1 of 48
+```
+
+(the in-sample worst barrier is 0.0000 on both rows — nothing in that draw is marginal at
+all; the folding mesh is the same genome on both rows and is the subject of the last
+section below.)
+
+**The one held-out genome under the target is under it either way, and further under it
+unfilleted**: 0.129843 against the filleted 0.177513, 72 marginal elements of 4704 against
+12 of 5952, and the barrier TERM `t2_vector` actually sums — a sum of soft barriers over
+every element, not a min-crossing count — **327.17 against 18.20**. Its part does not
+self-intersect (closed-form fold margin +0.5207 mm), so §58's gate does not dispose of it.
+
+At `medium` the held-out rows read 31 of 32 and 31 of 32 and the same genome stays the one:
+0.173321 filleted against 0.125099 unfilleted.
+
+**AND ONE ROW GOES THE OTHER WAY, WHICH IS STATED HERE RATHER THAN LEFT IN THE ARTIFACT.**
+At `medium` IN SAMPLE the filleted mesh is worse — **15 of 16 against 16 of 16**, barrier
+term 2275.54 against 0.0000. It is worse on exactly one genome, and that genome is the
+subject of the last section below: its part self-intersects, BOTH meshes fold an element on
+it, and the corner-quad metric surfaces the filleted mesh's fold while missing the
+unfilleted one's, which is DEEPER. So the row is the fold finding's worked example rather
+than a counterexample to this one — but it is the reason the claim above is made at
+`coarse`, where the objective runs, and not at every config in the tree.
+
+**A criterion that puts both meshes on the same side of its own target cannot be the reason
+to refuse one of them.** §48's surviving clause is retired — on `coarse`, on both draws, and
+on the held-out draw at `medium` as well.
+
+### THE HONEST OTHER HALF: WHAT THE FILLET COSTS IS HEADROOM, NOT CROSSINGS
+
+Min scaled Jacobian is LOWER on **31 of the 32** held-out genomes, median 0.3382 against
+0.7447 — the filleted mesh spends about half the room above the barrier. It simply does not
+spend it in the place the clause was pointing at. Anyone reinstating a barrier-shaped
+objection has to make it about the margin, and then say what margin, and then measure it.
+
+### A FOLD ALL FOUR VALIDITY INSTRUMENTS MISS, AND IT IS IN THE SHIPPED MESH
+
+Chasing the sign disagreement above found something that is not about the fillet and is
+recorded because nothing in the tree records it. In-sample genome 10 at `medium`, the worst
+spoke element:
+
+```
+  wheel_mesh.scaled_jacobian   corner quad          -0.051415    catches it
+  wheel_mesh.element_areas     corner quad          +3.130e-02   MISSES it
+  ff.mesh_gauss_verdict        3x3 Gauss, order 2   +4.035e-04   MISSES it
+  block_quality                1x1 sub-cells        -0.051415    catches it (at `coarse`)
+  det J over the reference square, 121x121          -6.393e-04   166 of 14641 points
+```
+
+**The quadrature the assembly integrates on does not sample the folded corner**, so criterion
+C — PART 6's own criterion, and the one this arc has treated as the ground truth — reads the
+element clean. Two things follow and both are worth having written down:
+
+- **It is not the fillet's.** `fillet=None` on the same genome folds too, and DEEPER: 24
+  elements at min `det J` -1.241e-02 at `coarse` against the filleted mesh's 12 at
+  -2.893e-03. At `medium` both fold on 24 elements and the unfilleted one is again deeper
+  (-2.061e-03 against -6.393e-04) — while the corner-quad metric flags only the FILLETED
+  one. The proxy is not tracking the fold it is a proxy for.
+- **It is one genome of 48, and that genome's PART self-intersects.** Its closed-form fold
+  margin is -0.0131 mm against a 0.1 mm limit, i.e. it is exactly what §58's gate exists to
+  reject and what this study's draw filter still does not ask. Two of the sixteen in-sample
+  genomes self-intersect (8 and 10) and only 10 also folds an element; the held-out draw has
+  no self-intersecting genome and folds nothing, filleted or not, at either config.
+
+So this is filed, not acted on. Acting on it means changing a validity gate the whole tree
+reads, which is its own unit of work and not this arc's.
+
+### WHAT MOVED
+
+`studies/study_fillet_block.py` gains `sweep_barrier_control` and the two instruments it
+needs, wired into both configs and both draws, and the artifact is regenerated with it.
+`wheel_wheel.py`'s scope comment and
+`test_nothing_wires_the_fillet_into_the_objective` are corrected in place — **the gate
+stays**. Nothing wires `fillet=` into the objective, because the reason not to has changed
+rather than gone: it is a DECISION about cost and about the surrogate, and a decision is
+taken in a record, not by a keyword reaching a call.
+
+**And one number this section did NOT re-measure, flagged because it is about to carry the
+decision.** §88's ranking item 2 says the filleted mesh is *"2-3x the cost of the unfilleted
+one"*. Nothing in this tree measures that. The element counts at `coarse` are 5952 against
+4704 — 1.27x — which is not the same quantity as solve time and does not refute it, but it
+does mean the cost half of the remaining blocker is currently a number with no measurement
+behind it.
+
+#### The successors, ranked — REVISED 2026-08-29 AFTER §89
+
+1. **PRICE THE FILLETED OBJECTIVE, which is now the whole of what is left.** §88's item 2
+   said *"what is missing is a decision, not a mechanism"* and named two terms; §89 removes
+   the third (mesh validity) and finds one of the two unmeasured. So: measure the cost —
+   one `wheel_objective.objective` evaluation filleted against unfilleted, at `coarse`,
+   forward and adjoint — and read `R_hub` through the filleted mesh against the flat `Kt`
+   surrogate (§75). Those two numbers ARE the decision.
+2. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged from
+   §88's item 1 and still the only thing between a filleted mesh and a STEP comparison.
+3. **The sub-element fold, as its own unit** — NEW. Four instruments, one fold, and the one
+   the tree calls ground truth misses it. Decide whether `scaled_jacobian` gets a Q9 path
+   or whether `gauss_verdict` gets a denser rule, then apply §58's gate to the draw (which
+   was item 4 and is now the same question) and re-derive the box.
+4. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still
+   the oldest thing on the list.
+5. **Per-REGION agreement on a filleted mesh** (§86).
+6. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).

@@ -1,8 +1,8 @@
 # FILLET_PLAN.md — mesh the junction fillets
 
 **Open arc #2. Created 2026-08-16. STEPS 0, 1, 1b AND 2 ARE DONE — 2026-08-23, PART 12.
-STEP 3 IS NOT, AND IS BLOCKED.** The state, in four lines, so nobody re-derives it from
-twelve PARTs:
+STEP 3 IS NOT DONE AND IS NO LONGER BLOCKED — 2026-08-29, STEP 3 RECORD PART 3.** The
+state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -16,12 +16,14 @@ twelve PARTs:
 - **Step 3** — what it unlocks. Its ACCEPTANCE TEST PASSES (STEP 3 RECORD PART 1, PLAN §75)
   and **the filleted mesh is DIFFERENTIABLE** since PART 2 / PLAN §79: `mesh_coords` no
   longer refuses it, and `R_hub`/`R_rim` go from an identically zero gradient to the two
-  largest of fourteen. Of the two things that blocked Step 3, **the refusal half is closed
-  and the barrier half is not**: PART 21's sector-fit clamp builds 16 of 16 in sample and
-  **32 of 32 on a held-out draw** (PART 22, PLAN §78), so §48's first clause is retired —
-  but **half of each box still sits under `MIN_SJ_TARGET`** (8/16 and 16/32), which is
-  §48's surviving clause and is now the ONLY reason `fillet=` is still a MEASUREMENT
-  INSTRUMENT rather than a path the optimizer may take. The rim tri-block is the other
+  largest of fourteen. **BOTH of §48's clauses are now retired.** The refusal half went at
+  PART 21/22 (PLAN §74, §78) — the sector-fit clamp builds 16 of 16 in sample and 32 of 32
+  held out. The BARRIER half went at **STEP 3 RECORD PART 3 / PLAN §89**: its numbers were the shipped
+  global pair's, which stopped being the default at PART 27, and its criterion puts
+  `fillet=None` on the same side of `MIN_SJ_TARGET` — 16 of 16 and 31 of 32 on BOTH meshes,
+  with the one failing genome further under it UNFILLETED. What is left is not a blocker
+  but a DECISION with two terms, both unmeasured: the filleted mesh's cost, and the `Kt`
+  surrogate that is flat over half of `R_hub`'s range (§75). The rim tri-block is the other
   blocker and is not this arc's.
 
 **NOT CHEAP — read the cost section first.**
@@ -148,7 +150,8 @@ That test failing is the success condition, not a regression. Update it delibera
 
 ### Step 3 — what it unlocks, priced one at a time
 
-> **BLOCKED AS OF PART 12, AND THE BLOCKER IS NOT "Step 2 failed".** The precondition below
+> **BLOCKED AS OF STEP 1 RECORD PART 12 AND UNBLOCKED AT STEP 3 RECORD PART 3 / §89 — read the 2026-08-29 note below
+> before acting on anything in this block. THE BLOCKER WAS NOT "Step 2 failed".** The precondition below
 > reads *"only after Step 2 confirms the singularity is gone"*, and Step 2 confirms it is
 > gone AT `P_t` and present at `P_c` — so the precondition is half met and the half that is
 > missing needs the RIM TRI-BLOCK rather than more fillet work. Item 1 below is separately
@@ -160,6 +163,15 @@ That test failing is the success condition, not a regression. Update it delibera
 > derivative — the filleted mesh is differentiable and the two genes are the largest movers
 > of the fourteen. It is blocked on genome robustness and on that alone, which is §48's
 > surviving clause: half of each drawn genome box sits under `MIN_SJ_TARGET`.
+>
+> **UNBLOCKED 2026-08-29 (STEP 3 RECORD PART 3, PLAN §89), AND THE SENTENCE ABOVE IS THE
+> ONE THAT GOES.** "Half of each drawn genome box" was the SHIPPED GLOBAL PAIR's count,
+> which stopped being what `fillet=True` builds at PART 27, and it was taken with
+> `block_quality`'s sub-cells rather than with the instrument the barrier reads. Re-taken on
+> the assembled mesh at the objective's own config, `fillet=True` clears 16 of 16 and 31 of
+> 32 — and so does `fillet=None`, failing on the same genome and failing harder. Item 1 is
+> now blocked on a DECISION rather than on a measurement, and the decision's two terms are
+> §89's ranking item 1.
 
 Only after Step 2 confirms the singularity is gone:
 
@@ -3553,3 +3565,73 @@ Only `study_gradient.json` changed, and only because G11e's shape did.
 Both remaining refusals stand: `fillet_blocking="spoke"` and a clamped radius. The 12 clamped
 genomes of the 48 are refused exactly as before — the clamp's refusal is about the RADIUS, and
 nothing here touches it.
+
+# STEP 3 RECORD, PART 3 — 2026-08-29. §48's SURVIVING CLAUSE — THIS ARC'S LAST STATED BLOCKER — IS RETIRED. ITS NUMBERS WERE THE SHIPPED PAIR'S, ITS INSTRUMENT WAS NOT THE BARRIER'S, AND ITS CRITERION PUTS `fillet=None` ON THE SAME SIDE OF THE TARGET, FURTHER UNDER
+
+The header of this file has said since §74 that ONE thing stands between `fillet=` and the
+optimizer, and named it: *"half of each drawn genome box sits under `MIN_SJ_TARGET` (8/16
+and 16/32), which is §48's surviving clause and is now the ONLY reason."* Full record in
+**PLAN.md §89**; the three findings, in the order they were made:
+
+## THE CLAUSE'S NUMBERS DESCRIBE A MESH THE TREE STOPPED BUILDING AT PART 27
+
+8 of 16 and 16 of 32 are the SHIPPED GLOBAL PAIR's. PART 24 adopted
+`per_genome_layer_profile` and PART 27 made it the default. At the adopted rule the same
+tables read **15 of 16 and 31 of 32**, and have since PART 24 — the clause simply was not
+restated, and a 16x claim about the barrier stood through four PARTs.
+
+## AND ITS INSTRUMENT IS NOT THE ONE THE BARRIER READS
+
+Every barrier count this arc has published came from `study_fillet_block.block_quality`,
+which scores every 1x1 sub-cell of a block's node grid. The mesh's elements are Q9 and span
+2x2 of those; `wheel_objective.t2_vector` reads `wheel_mesh.scaled_jacobian`, which slices
+`conn[:, :4]`. Subsampling the grid `[::2, ::2]` reproduces the assembled mesh's number to
+every digit, sign flip included, so this is proved rather than inferred. The two disagree on
+11 of the 16 in-sample genomes and disagree in SIGN on one.
+
+## AND THE CONTROL RETIRES IT
+
+Assembled, both ways, same genomes, at the config `wheel_objective.objective` defaults to:
+
+```
+                  clears MIN_SJ_TARGET    held-out    held-out worst
+                  in sample   held out    median J    barrier term
+    fillet=True   16 of 16    31 of 32     0.3382          18.2047
+    fillet=None   16 of 16    31 of 32     0.7447         327.1699
+```
+
+`coarse` is the scope on purpose. The held-out draw reads the same 31 of 32 both ways at
+`medium`; `medium` IN SAMPLE has the filleted mesh at 15 of 16 against 16 of 16, on the one
+genome the last section below is about, and PLAN §89 states that row rather than leaving it
+in the artifact.
+
+The one held-out genome under the target is under it EITHER WAY and further under it
+unfilleted — 0.129843 against 0.177513, 72 marginal elements against 12 — and its part does
+not self-intersect, so §58's gate does not dispose of it. A criterion that cannot separate
+the two meshes cannot be the reason to refuse one of them.
+
+**The honest other half**: the filleted mesh's min scaled Jacobian is lower on 31 of the 32
+held-out genomes, median 0.3382 against 0.7447. What the fillet costs is HEADROOM, not
+crossings.
+
+## WHAT THIS DOES AND DOES NOT UNBLOCK
+
+Step 3 item 1's *"live FEA genes in the sense the optimizer needs"* was gated by §48's
+surviving clause "and by nothing else". That gate is gone. What is left is a DECISION with
+two terms, and this PART measured neither: the filleted mesh's COST (§88 says 2-3x and nothing
+in this tree measures it — the `coarse` element counts are 5952 against 4704) and the `Kt`
+surrogate that is exactly flat over half of `R_hub`'s feasible range (§75). Those two
+numbers are PLAN §89's ranking item 1 and they are the next thing this arc does.
+
+**The rim tri-block is still the other blocker and is still not this arc's** — Step 2's
+headline needs it, and nothing here touches it.
+
+## AND A FOLD ALL FOUR VALIDITY INSTRUMENTS MISS, FILED RATHER THAN ACTED ON
+
+Found chasing the sign disagreement, and it is not the fillet's: in-sample genome 10 has a
+spoke element whose `det J` is negative inside, and the 3x3 Gauss rule the assembly
+integrates on — PART 6's criterion C, which this arc has treated as ground truth — reads it
+clean. `fillet=None` folds on the same genome and DEEPER. It is one genome of 48, its part
+self-intersects (fold margin -0.0131 mm against a 0.1 mm limit), and the held-out draw folds
+nothing at either config. PLAN §89 has the table and the ranking item; changing a validity
+gate the whole tree reads is its own unit of work.

@@ -128,6 +128,7 @@ import project_paths as PP  # noqa: F401  (puts src/ on the path)
 import _gate_guard
 import wheel_genome as wg
 import wheel_geometry as WG
+import wheel_mesh as WM
 import wheel_wheel as WW
 import study_fillet_fold as ff
 
@@ -140,6 +141,7 @@ try:
     import wheel_objective as WO
     MIN_SJ_TARGET = float(WO.MIN_SJ_TARGET)
 except Exception:                                    # pragma: no cover - import guard
+    WO = None
     MIN_SJ_TARGET = 0.2
 
 DEFAULT_CONFIGS = ("coarse", "medium")
@@ -2106,6 +2108,171 @@ def sweep_cliff_clamped_profile(genes, cfg, genome_rows,
             "rows": rows}
 
 
+# ---------------------------------------------------------------------------
+# THE CONTROL §48's BARRIER CLAUSE NEVER HAD (PLAN.md §89)
+# ---------------------------------------------------------------------------
+#
+# EVERY BARRIER COUNT THIS FILE HAS EVER PUBLISHED WAS TAKEN ON A SECTOR, WITH AN
+# INSTRUMENT THAT IS NOT THE BARRIER'S.  `block_quality` scores every 1x1 sub-cell of a
+# block's NODE GRID.  The mesh's elements are Q9 and span 2x2 of those, and
+# `wheel_objective.t2_vector` reads `wheel_mesh.scaled_jacobian`, which slices
+# `conn[:, :4]` -- the element's four CORNER nodes.  So the two are not the same
+# measurement of the same thing, and on the in-sample draw at `coarse` they disagree on
+# 11 of 16 genomes and disagree IN SIGN on one.
+#
+# PROVED RATHER THAN INFERRED: `block_quality` on the SUBSAMPLED grid `[::2, ::2]` -- the
+# Q9 element's four corners and nothing else -- reproduces the assembled mesh's number to
+# every digit, including the sign flip.  In-sample genome 0: sub-cells 0.259141038,
+# corners 0.253191857, assembled 0.253191857.  Genome 10: sub-cells -0.050823172 on
+# `spoke`, corners +0.410527770 on `rim_ring_free`, assembled +0.410527770.
+#
+# AND THE CLAUSE WAS NEVER MEASURED AGAINST ITS OWN CONTROL.  "Half of each drawn genome
+# box sits under `MIN_SJ_TARGET`" is a statement about a FILLETED mesh with nothing said
+# about the mesh the optimizer already builds.  This builds both, on the same genomes, at
+# the config `wheel_objective.objective` actually defaults to.
+#
+# FOUR INSTRUMENTS, AND THE FOURTH IS NEW HERE.  `scaled_jacobian` and `element_areas`
+# both read the corner quad; `ff.mesh_gauss_verdict` reads `det J` at the 3x3 Gauss points
+# the assembly integrates on.  None of them samples `det J` INSIDE an element, which is
+# the quantity the other three are proxies for -- so `interior_det_j_min` does, on a
+# tensor grid of the reference square.  It is here because it is what explains the
+# disagreement above rather than because the arc asked for it.
+
+BARRIER_FOLD_SAMPLES = 21
+
+
+def _q9_reference_derivatives(samples):
+    """d(shape)/d(xi), d(shape)/d(eta) at a `samples` x `samples` grid of [-1, 1]^2.
+
+    In `wheel_mesh`'s Q9 node order -- 4 corners, then 4 midsides (bottom, right, top,
+    left), then the centre -- so the same `conn` row indexes both.
+    """
+    t = np.linspace(-1.0, 1.0, int(samples))
+    xi, eta = np.meshgrid(t, t, indexing="ij")
+    shp = lambda a: np.stack([0.5 * a * (a - 1.0), 1.0 - a * a, 0.5 * a * (a + 1.0)], -1)
+    dsh = lambda a: np.stack([a - 0.5, -2.0 * a, a + 0.5], -1)
+    Nx, Ne, dNx, dNe = shp(xi), shp(eta), dsh(xi), dsh(eta)
+    order = [(0, 0), (2, 0), (2, 2), (0, 2), (1, 0), (2, 1), (1, 2), (0, 1), (1, 1)]
+    dxi = np.stack([dNx[..., i] * Ne[..., j] for i, j in order], -1).reshape(-1, 9)
+    det = np.stack([Nx[..., i] * dNe[..., j] for i, j in order], -1).reshape(-1, 9)
+    return dxi, det
+
+
+def interior_det_j_min(mesh, samples=BARRIER_FOLD_SAMPLES, chunk=2000):
+    """Per element, the smallest `det J` of the Q9 map over the whole reference square.
+
+    THE THREE INSTRUMENTS THE TREE ALREADY HAS CAN ALL MISS A FOLD, and this is the
+    worked example: at `medium`, in-sample genome 10's worst spoke element has `det J`
+    negative on 166 of 14641 sampled points (min -6.393e-04), while the 3x3 Gauss rule
+    reads every point positive (min 4.035e-04) and the corner-quad signed area is
+    +3.130e-02.  The quadrature the assembly uses does not sample the folded corner.
+
+    Sign-normalised per element by the median rather than globally: `build_wheel` has
+    already flipped whole left-handed blocks by the time a mesh exists, but an element
+    whose own map reverses is what is being looked for and a global sign would hide it.
+
+    Q9 ONLY.  Every config in the tree is `order=2` (`get_config`), and a Q4 mesh has no
+    interior to sample that its corners do not already describe.
+    """
+    xy = np.asarray(mesh.coords, float)
+    conn = np.asarray(mesh.conn)
+    if conn.shape[1] < 9:                            # pragma: no cover - Q4 has no midsides
+        raise NotImplementedError("interior_det_j_min needs a Q9 mesh; got "
+                                  f"{conn.shape[1]} nodes per element")
+    dxi, det = _q9_reference_derivatives(samples)
+    out = np.empty(len(conn))
+    for a in range(0, len(conn), chunk):
+        P = xy[conn[a:a + chunk, :9]]
+        Jx = np.einsum("pk,mkd->mpd", dxi, P)
+        Je = np.einsum("pk,mkd->mpd", det, P)
+        d = Jx[..., 0] * Je[..., 1] - Jx[..., 1] * Je[..., 0]
+        s = np.sign(np.median(d, axis=1))[:, None]
+        s[s == 0] = 1.0
+        out[a:a + chunk] = (s * d).min(axis=1)
+    return out
+
+
+def barrier_verdict(mesh, samples=BARRIER_FOLD_SAMPLES):
+    """One assembled mesh, through all four instruments plus the barrier's own VALUE.
+
+    `barrier` is `t2_vector`'s `min_sj` term itself -- a SUM of soft barriers over every
+    element, which is what the optimizer sees -- rather than the min-crossing count the
+    plan files have been quoting as a proxy for it.  A count says how many genomes are
+    marginal; the term says by how much, and the two rank the same box differently.
+    """
+    xy = np.asarray(mesh.coords, float)
+    conn = np.asarray(mesh.conn)
+    sj = np.asarray(WM.scaled_jacobian(xy, conn))
+    area = WM.element_areas(xy, conn)
+    gauss = ff.mesh_gauss_verdict(mesh)
+    interior = interior_det_j_min(mesh, samples)
+    barrier = None
+    if WO is not None:
+        w = float(WO.DEFAULT_WEIGHTS["min_sj"])
+        barrier = float(np.sum(np.asarray(
+            WO.soft_barrier(MIN_SJ_TARGET - sj, w))))
+    return {"min_scaled_jacobian": float(sj.min()),
+            "clears_target": bool(sj.min() > MIN_SJ_TARGET),
+            "n_under_target": int((sj <= MIN_SJ_TARGET).sum()),
+            "barrier": barrier,
+            "n_inverted": int((area <= 0).sum()),
+            "gauss_non_positive_elements": gauss["non_positive_elements"],
+            "min_det_j_gauss": gauss["min_det_j"],
+            "n_folded_elements": int((interior <= 0.0).sum()),
+            "min_det_j_interior": float(interior.min()),
+            "n_elements": int(len(conn))}
+
+
+def sweep_barrier_control(cfg, genome_rows, samples=BARRIER_FOLD_SAMPLES):
+    """The filleted mesh and the unfilleted one, same genomes, same instrument.
+
+    `fillet=True` takes `per_genome_layer_profile` since §85, so this is the DEFAULT
+    filleted path and not a named pair -- which is the whole point.  Every earlier table
+    in this file reaches the geometry through `sector_verdict`, i.e. through a sector at
+    radii this file clamped itself; this one calls `build_wheel`, so the clamp, the cliff
+    and the profile are all the module's and a disagreement is a real one.
+
+    `folds` rides on every row so the tally can be taken over the genomes whose PART
+    exists.  §58's gate is one word here and the draw filter still does not ask it.
+    """
+    rows = []
+    for r in genome_rows:
+        g = np.asarray(r["genes"], float)
+        row = {"genes": [float(x) for x in g], "orientation": r.get("orientation"),
+               "R_hub_mm": float(g[12]), "R_rim_mm": float(g[13]),
+               "folds": bool(r.get("fold", {}).get("folds", False))}
+        for tag, kw in (("filleted", {"fillet": True}), ("unfilleted", {"fillet": None})):
+            try:
+                row[tag] = barrier_verdict(WW.build_wheel(g, cfg, **kw), samples)
+            except Exception as exc:                 # a drawn genome must not kill the driver
+                row[tag] = {"why": f"{type(exc).__name__}: {str(exc).split('  See ')[0]}"}
+        rows.append(row)
+
+    def tally(rows_, tag):
+        ok = [x for x in rows_ if "why" not in x[tag]]
+        if not ok:
+            return None
+        v = sorted(x[tag]["min_scaled_jacobian"] for x in ok)
+        return {"n_genomes": len(rows_), "n_built": len(ok),
+                "n_clears_target": sum(1 for x in ok if x[tag]["clears_target"]),
+                "n_barrier_nonzero": sum(1 for x in ok
+                                         if (x[tag]["barrier"] or 0.0) > 0.0),
+                "n_inverted_meshes": sum(1 for x in ok if x[tag]["n_inverted"] > 0),
+                "n_gauss_flagged": sum(1 for x in ok
+                                       if x[tag]["gauss_non_positive_elements"] > 0),
+                "n_folded_meshes": sum(1 for x in ok if x[tag]["n_folded_elements"] > 0),
+                "min_scaled_jacobian_range": [v[0], v[-1]],
+                "median_min_scaled_jacobian": float(v[len(v) // 2]),
+                "worst_barrier": max((x[tag]["barrier"] or 0.0) for x in ok)}
+
+    clean = [x for x in rows if not x["folds"]]
+    return {"config": cfg, "samples": int(samples),
+            "min_sj_target": float(MIN_SJ_TARGET),
+            "all": {t: tally(rows, t) for t in ("filleted", "unfilleted")},
+            "fold_clean": {t: tally(clean, t) for t in ("filleted", "unfilleted")},
+            "rows": rows}
+
+
 def build_sector_section(genes, configs, junctions):
     """The whole-sector measurement, per config."""
     box_h = tuple(sorted({0.40, 0.60, float(genes[12]), 1.00, 1.50, 2.00, 2.50, 3.00}))
@@ -2238,6 +2405,16 @@ def build_sector_section(genes, configs, junctions):
                 [r for rows in out["genomes_held_out"]["groups"].values()
                  for r in rows])
                 if cfg == configs[0] else None),
+            # AND THE SAME QUESTION ASKED OF THE MESH THE OPTIMIZER WOULD BUILD, against
+            # the mesh it builds today.  Every table above reaches the geometry through
+            # `sector_verdict` and scores it with `block_quality`; this one calls
+            # `build_wheel` and scores it with the barrier's own instrument.  Both draws,
+            # because §48's clause is a claim about both.  See `sweep_barrier_control`.
+            "barrier_control": sweep_barrier_control(
+                cfg, [r for rows in out["genomes"]["groups"].values() for r in rows]),
+            "barrier_control_held_out": sweep_barrier_control(
+                cfg, [r for rows in out["genomes_held_out"]["groups"].values()
+                      for r in rows]),
         }
         per = out["per_config"][cfg]
         # The ranking rule, applied to both grids and stated rather than left to whoever
@@ -2796,6 +2973,43 @@ def _print(rec):
                           + ("" if best is None else
                              f" — {sh['cliff_margin'] / best:.1f}x the best candidate's "
                              f"{best:.4f}"))
+        print("\n  AND THE CONTROL §48's BARRIER CLAUSE NEVER HAD (PLAN §89) — THE "
+              "ASSEMBLED MESH,")
+        print("  BOTH WAYS, THROUGH `wheel_objective`'s OWN INSTRUMENT RATHER THAN "
+              "THROUGH `block_quality`")
+        print(f"    {'config':7s} {'draw':10s} {'mesh':11s} {'clears':>9s} "
+              f"{'median J':>9s} {'worst J':>9s} {'barrier>0':>10s} {'worst barrier':>13s} "
+              f"{'folded':>7s}")
+        for cfg, per in sec["per_config"].items():
+            for key, draw in (("barrier_control", "in-sample"),
+                              ("barrier_control_held_out", "held-out")):
+                bc = per.get(key)
+                if not bc:
+                    continue
+                for tag in ("filleted", "unfilleted"):
+                    t = bc["all"][tag]
+                    if not t:
+                        continue
+                    print(f"    {cfg:7s} {draw:10s} {tag:11s} "
+                          f"{t['n_clears_target']:4d}/{t['n_genomes']:<4d} "
+                          f"{t['median_min_scaled_jacobian']:9.4f} "
+                          f"{t['min_scaled_jacobian_range'][0]:9.4f} "
+                          f"{t['n_barrier_nonzero']:5d}/{t['n_genomes']:<4d} "
+                          f"{t['worst_barrier']:13.4f} "
+                          f"{t['n_folded_meshes']:4d}/{t['n_genomes']:<3d}")
+        print("    the clause reads `half of each box`.  At `coarse` -- the config the "
+              "objective runs at -- the two")
+        print("    meshes score the SAME count on both draws, and on the one genome "
+              "either of them misses, the")
+        print("    FILLETED mesh is the better of the two.  What the fillet costs is "
+              "headroom, not crossings.")
+        print("    THE ONE ROW THAT GOES THE OTHER WAY is `medium` in-sample, and it is "
+              "the fold's own example:")
+        print("    both meshes fold on that genome and only the filleted one's corner "
+              "quad shows it -- the")
+        print("    unfilleted fold is DEEPER.  Its part self-intersects, so §58's gate "
+              "rejects it either way.")
+
         print("\n  AND AGAINST THE RIM'S UNCAP BLEND, WHICH IS THE TRI-BLOCK'S QUESTION")
         print(f"    {'config':7s} {'rim blend':>9s} {'unfilleted worst':>17s} "
               f"{'filleted worst':>15s} {'worst block':>14s}")

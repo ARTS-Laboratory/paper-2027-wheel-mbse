@@ -1028,9 +1028,45 @@ def _filleted_spoke(sample, s_hub, s_rim, orientation, rim_inner, n_sp, n_th,
 # sector-fit clamp below -- 16 of 16 in sample and 32 of 32 on a held-out draw (§74, §78)
 # -- and this construction is DIFFERENTIABLE since §79, so "a path the optimizer may take"
 # is no longer blocked on either the geometry refusing or on there being no derivative.
-# What still blocks it is the BARRIER half and only that: half of each drawn genome box
-# sits under `MIN_SJ_TARGET` (8/16 and 16/32).  Nothing wires `fillet=` into the
-# objective, and `tests/test_corner_singularity.py` holds that as a check.
+#
+# AND THE OTHER HALF IS GONE TOO, ON A MEASUREMENT AND NOT ON A CONCESSION (§89).  What
+# stood here read *"What still blocks it is the BARRIER half and only that: half of each
+# drawn genome box sits under `MIN_SJ_TARGET` (8/16 and 16/32)."*  Both numbers are the
+# SHIPPED GLOBAL PAIR's, which stopped being what `fillet=True` builds at §85.  Re-taken
+# on the assembled mesh at `coarse` -- the config `wheel_objective.objective` defaults to
+# -- with `wheel_mesh.scaled_jacobian`, which is the instrument the barrier itself reads:
+#
+#                        in sample     held out     median J    worst barrier
+#     fillet=True         16 of 16     31 of 32       0.3382          18.2047
+#     fillet=None         16 of 16     31 of 32       0.7447         327.1699
+#
+# `coarse` AND NOT EVERY CONFIG, WHICH IS A SCOPE AND NOT A HEDGE.  The held-out draw reads
+# the same 31 of 32 both ways at `medium` too, but `medium` IN SAMPLE has the filleted mesh
+# at 15 of 16 against 16 of 16 -- on one genome, whose part self-intersects, where BOTH
+# meshes fold an element and the corner-quad metric surfaces the filleted mesh's fold while
+# missing the unfilleted one's, which is deeper.  See §89's last section; it is a defect in
+# the metric rather than in this construction, and §58's fold gate rejects that genome
+# either way.
+#
+# THE CONTROL IS THE ROW THAT RETIRES THE CLAUSE.  `fillet=None` is the mesh the optimizer
+# builds TODAY and it scores the same count; the one held-out genome under the barrier is
+# under it either way, and it is under it HARDER unfilleted -- 0.1298 against 0.1775, and
+# the barrier TERM `t2_vector` sums is 327.17 against 18.20 on 72 marginal elements
+# against 12.  A criterion that does not separate the two meshes cannot be the reason to
+# refuse one of them.
+#
+# WHAT THE FILLET DOES COST IS HEADROOM, NOT CROSSINGS, and that is the honest other half:
+# min scaled Jacobian is lower on 31 of the 32 held-out genomes, median 0.338 against
+# 0.745.  It spends about half the room above the barrier and crosses it no more often.
+#
+# SO NOTHING HERE IS A MESH-VALIDITY BLOCKER ANY MORE.  What is left between `fillet=` and
+# the objective is a DECISION, and its two terms are COST and the surrogate: §88 puts the
+# filleted mesh at "2-3x the cost of the unfilleted one" and `wheel_objective` prices
+# `R_hub` through a `Kt` surrogate that is exactly flat over half its feasible range
+# (§75).  §89 did not re-measure either -- the cost figure is §88's and carries no
+# measurement behind it in this tree, which is worth knowing before it is quoted a third
+# time.  Until that decision is taken nothing wires `fillet=` into the objective, with
+# `tests/test_corner_singularity.py` holding that as a check.
 
 FILLET_LAYER_ENTRY_SLOPE = -0.45
 FILLET_LAYER_END_OFFSET = 1.60
