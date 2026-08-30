@@ -1,11 +1,17 @@
 # FILLET_PLAN.md — mesh the junction fillets
 
 **Open arc #2. Created 2026-08-16. STEPS 0, 1, 1b AND 2 ARE DONE — 2026-08-23, PART 12.
-STEP 3 IS NOT DONE AND IS NO LONGER BLOCKED — 2026-08-29, STEP 3 RECORD PART 3. ONE OF THE
-DECISION'S TWO TERMS IS NOW MEASURED — PART 4, 2026-08-29: the filleted objective costs
-1.12x, not §88's 2-3x. AND PART 4's 17x IS ATTRIBUTED — PART 5, 2026-08-29: it is
-`deflection`, 99.5% of it, and every BARRIER term is exactly zero on both meshes.** The
-state, in four lines, so nobody re-derives it from thirty PARTs:
+STEP 3 IS NOT DONE AND IS NO LONGER BLOCKED — 2026-08-29, STEP 3 RECORD PART 3. THE
+DECISION'S TWO TERMS ARE BOTH MEASURED: the cost is 1.12x and not §88's 2-3x (PART 4), and
+the `Kt` surrogate was measured at PART 1 / §75 on 2026-08-24 — PART 4 and PART 5 both
+asked for it again and should not have (PART 6). PART 4's 17x IS ATTRIBUTED — PART 5: it is
+`deflection`, 99.5% of it, and every BARRIER term is exactly zero on both meshes. AND THE
+SWITCH IS A RE-OPTIMISATION AND NOT A RE-SCORE — PART 6, 2026-08-29: the two objectives
+REVERSE on the decisive pair, each mesh's optimum is the other's catastrophe by 29.93x and
+18.05x, and the filleted answer is over the stress allowable by the unfilleted objective's
+reckoning. STEP 3 HAS NO UNMEASURED TERM LEFT; WHAT REMAINS IS THE RECORD THAT TAKES THE
+DECISION AND THE RE-PROMOTION THAT FOLLOWS IT.** The state, in four lines, so nobody
+re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -34,8 +40,14 @@ state, in four lines, so nobody re-derives it from thirty PARTs:
   **99.5% of it is `deflection`** and every BARRIER term is exactly 0.0 on both meshes, so
   the switch does not change whether the design may ship — it changes, by 17x, how good the
   objective says it is, through a mean axle drop of 0.9914 mm against 1.9011 mm on a fixed
-  2.0 mm target. PART 4's "arriving through the `t2` barrier" is withdrawn there. The rim
-  tri-block is the other blocker and is not this arc's.
+  2.0 mm target. PART 4's "arriving through the `t2` barrier" is withdrawn there. **AND
+  PART 5's "may ship" clause holds only AT the shipped genome (PART 6 / §92): one step off
+  it the two meshes disagree about admissibility, because the design the filleted objective
+  calls optimal runs the unfilleted objective's `stress` BARRIER at utilisation 1.0112.**
+  What is left is not a measurement. It is the record that takes the decision, and the
+  Stage 3 re-run and re-promotion that follow it — `test_promotion.py` carries what that
+  costs, and it is never a one-file change. The rim tri-block is the other blocker and is
+  not this arc's.
 
 **NOT CHEAP — read the cost section first.**
 
@@ -3780,3 +3792,89 @@ The scope gate still stands and this PART does not touch it: nothing in `src/` c
 meshes are built in the driver and handed to `objective(meshes=)`, and
 `test_nothing_wires_the_fillet_into_the_objective` is green. Scope of the measurement: one
 genome (the shipped one), `coarse`, eight uniform phases, both kernels.
+
+
+---
+
+# STEP 3 RECORD PART 6 — 2026-08-29. THE DECISION HAS NO UNMEASURED TERM AND HAS NOT HAD ONE SINCE PART 4. THE SWITCH IS A RE-OPTIMISATION, PROVED BY A PREFERENCE REVERSAL, AND EACH MESH'S OPTIMUM IS THE OTHER MESH'S CATASTROPHE
+
+PLAN.md §92.  `make filletoptimum`, 13320.8 s, `studies/study_fillet_optimum.json`.
+
+## THE ITEM THIS ARC HAS BEEN WAITING ON WAS DONE TWENTY DAYS AGO
+
+PART 4 and PART 5 both closed by naming ONE remaining term — *"the `Kt` surrogate that is
+flat over half of `R_hub`'s range (§75)"* — and PLAN §90 and §91 both ranked it first,
+*"via `make reds-hub-fillet`"*.  **That command was run on 2026-08-24.  It is STEP 3 RECORD
+PART 1 and PLAN §75**, filed as `sweep_filleted_svk` in `studies/study_reds_hub_share.json`
+— fourteen rows, `coarse`, SVK, eleven distinct hub-share values against the unfilleted
+control's one — and regenerated at §85.  The header block of this file has been citing §75
+for that finding and asking for it in the same breath.
+
+**So Step 3's blocker has been a decision with ZERO unmeasured terms since PART 4.**
+
+## WHAT WAS ACTUALLY UNMEASURED, AND IT IS THE PROMOTION-SHAPED HALF
+
+Two `wheel_stage3.descend` runs from the shipped genome, identical but for the mesh — same
+30-step schedule, lr, clip, 8-phase uniform stencil, SVK kernel, pinned orientation and box.
+Control is `wheel_stage3.Evaluator`; treatment is a `studies/` subclass adding `fillet=True`
+to the mesh build.  Then each endpoint read by the OTHER objective:
+
+```
+  design                          unfilleted obj    filleted obj
+  shipped            09e8188            38.7859        671.6603
+  control endpoint   ebd9103            32.0853  <--   519.1149
+  treatment endpoint b029622          1160.7092         37.2206  <--
+```
+
+The unfilleted objective prefers the shipped genome and rates the filleted arm's answer
+**29.93x worse**; the filleted objective prefers the filleted arm's answer and rates the
+shipped genome **18.05x worse**.  **The pair REVERSES**, and a re-score — a monotone
+re-labelling of one ranking — cannot reverse a pair.  The control's pair does not reverse
+(both objectives prefer `ebd9103` to `09e8188`), so the reversal is the MESH's and not the
+schedule's.
+
+## AND THE TWO MESHES DISAGREE ABOUT WHETHER THE DESIGN MAY SHIP
+
+`b029622` — the design the filleted objective calls optimal — read by the unfilleted one:
+axle drop **3.3335 mm** against a 2.0 mm target (66.7% OVER), stress utilisation **1.0112**,
+max stress 127.44 MPa, and `stress` firing at 0.4979.  `stress` is a `BARRIER_TERM`.
+
+PART 5 wrote that the switch *"does not change whether the shipped design may ship"*, and
+scoped that to the shipped genome, where all nine barriers are exactly 0.0 on both meshes.
+**One step off that genome it stops holding.**  The disagreement is not only about how good
+the wheel is; it is about whether the wheel is admissible.
+
+## THE PRICE, AND THE THING NOBODY PREDICTED
+
+The treatment arm takes the loss 671.66 -> 37.22 (94.458% of it), the axle drop 0.9914 ->
+1.9902 mm (50.431% under target -> 0.489%), and `deflection` 635.8102 -> 0.0597.  **It does
+NOT pay in mass**: 43.4133 -> 43.1247 g, 0.29 g LIGHTER, because the compliance is bought
+by SHAPE — `cy2` +4.4189 mm, `cy1` +3.9368 mm, a less flat spoke, which is §31's mechanism
+arriving from the other direction.  PART 5 named `mass` as the term the switch trades
+against because it is the only other term with any share of the gap (0.502%); the trade did
+not go there.  **No barrier fires on the treatment arm at any of its thirty steps**, though
+its minimum scaled Jacobian runs 0.2877 -> 0.2380 against a `MIN_SJ_TARGET` of 0.2 and that
+is the number a longer run wants watching on.
+
+Two by-products.  **The UNFILLETED objective walks the design into `fillet_cap`** — the
+control's barrier sum is nonzero on twelve of thirty steps, ending 4.139e-04, as it takes
+`R_hub` 0.6636 -> 0.5759 and `t0` 1.4738 -> 1.3082; §75 recorded the shipped genome parked
+at 99.7% of that cap and the control walks straight through it, which is what an objective
+pricing `R_hub` through nothing but a barrier and a flat surrogate has no reason not to do.
+**And the filleted optimum pins all four thickness genes against `MIN_WALL_MM` = 1.2** (t0
+1.2089, t1 1.2068, t2 1.2063, t3 1.2133), which gives open arc 4 (`WALLPIN_PLAN.md`) a
+consumer it has not had since 2026-08-16.
+
+## SCOPE, AND WHAT IS NOT ESTABLISHED
+
+One start, `coarse`, eight uniform phases, SVK, 30 steps, one seed; `uniform` rather than
+production `rqmc` so the arms differ by the mesh and not by two draws of an offset.  **The
+PRICE is a lower bound** — 30 steps is half of `wheel_stage3.DEFAULT_STEPS`.  **The
+CRITERION is not**: a reversal inside a short budget is still a reversal.  `b029622` is not
+established as the filleted optimum, is not a promotion candidate, is not evaluated at
+`medium` or `fine`, and its 0.2380 minimum scaled Jacobian has not been swept.
+
+The scope gate still stands and this PART does not touch it: nothing in `src/` changed, the
+filleted arm is a `studies/` subclass overriding one call, and
+`test_nothing_wires_the_fillet_into_the_objective` is green.  Nothing is promoted and
+`best_solution.json` is untouched.

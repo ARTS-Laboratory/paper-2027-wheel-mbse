@@ -1,0 +1,2441 @@
+% REPO_EXPLAINED.tex — a technical explanation of the compliant-wheel repository.
+% Compiles with pdflatex (twice, for the table of contents and cross-references):
+%     pdflatex REPO_EXPLAINED.tex && pdflatex REPO_EXPLAINED.tex
+% or simply:  latexmk -pdf REPO_EXPLAINED.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+
+% ---------------------------------------------------------------------------
+% Conventions
+% ---------------------------------------------------------------------------
+
+% Inline code.  Underscores are escaped explicitly throughout (\_), and \_ is
+% locally redefined so that a long identifier may break across lines after an
+% underscore -- the same courtesy \url grants a long URL.  Without this the
+% glossary's narrow middle column overflows on names like
+% \code{wheel\_step\_export.\_embed}.
+\DeclareRobustCommand{\code}[1]{%
+  \texttt{\small\def\_{\textunderscore\discretionary{}{}{}}#1}}
+
+% A file-and-line citation, e.g. \at{wheel\_wheel.py}{2209}
+\newcommand{\at}[2]{\code{#1:#2}}
+
+\definecolor{codebg}{gray}{0.96}
+\definecolor{codeframe}{gray}{0.80}
+\definecolor{codecmt}{rgb}{0.25,0.45,0.25}
+\definecolor{codekw}{rgb}{0.20,0.20,0.60}
+
+\lstdefinestyle{plain}{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  framesep=5pt,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+  keepspaces=true,
+  columns=fullflexible,
+  breaklines=false,
+  showstringspaces=false,
+  captionpos=b,
+  aboveskip=1.0em,
+  belowskip=1.0em,
+}
+
+\lstdefinestyle{py}{
+  style=plain,
+  language=Python,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecmt}\itshape,
+  stringstyle=\color{codecmt},
+}
+
+\lstset{style=plain}
+
+% Long unbreakable identifiers in narrow columns: let TeX stretch the line rather
+% than run it off the page.
+\setlength{\emergencystretch}{2.5em}
+
+% Tighter lists.
+\setlist[itemize]{itemsep=0.25em,topsep=0.4em}
+\setlist[enumerate]{itemsep=0.25em,topsep=0.4em}
+
+% Glossary tables: three columns, the middle one doing the work.
+\newenvironment{termtable}[1]
+  {\small\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.19\linewidth}
+                             >{\raggedright\arraybackslash}p{0.54\linewidth}
+                             >{\raggedright\arraybackslash}p{0.21\linewidth}@{}}
+   \caption{#1}\\
+   \toprule
+   \textbf{Term} & \textbf{Meaning} & \textbf{Where} \\
+   \midrule
+   \endfirsthead
+   \toprule
+   \textbf{Term} & \textbf{Meaning} & \textbf{Where} \\
+   \midrule
+   \endhead
+   \midrule
+   \multicolumn{3}{r@{}}{\emph{continued on the next page}}\\
+   \endfoot
+   \bottomrule
+   \endlastfoot}
+  {\end{longtable}}
+
+\title{\textbf{The Compliant Wheel Repository}\\[0.35em]
+       \large What it does, and the mathematics it runs on}
+\author{A guided tour of \code{github/wheel}}
+\date{Written 2026-08-29 against the \code{feature} branch}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+A tour of this repository for a reader who is technically fluent but new both to the
+tree and to structural-optimization mathematics. It explains what the software
+designs, the specific mathematics each stage implements, the project's private
+vocabulary, the module architecture, an end-to-end trace of one optimizer step, and
+the reasoning behind the algorithmically interesting choices. Every claim is traceable
+to a file and a line; where the code and the plan files disagree, the code is followed.
+Line references are against the \code{feature} branch as of 2026-08-29, with
+\code{PLAN.md} sections referenced up to \S92.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+
+% ===========================================================================
+\section{Overview}
+\label{sec:overview}
+% ===========================================================================
+
+\subsection{The thing being designed}
+
+This repository designs \emph{one physical object}: a compliant (deliberately springy)
+wheel for a small UAV, printed in PLA on a fused-filament (FFF) printer. It is a flat,
+planar part extruded to a constant face width---you could cut it out of a 22.4\,mm
+thick plate. Its geometry is fixed by a handful of hard requirements
+(\at{src/wheel\_fea.py}{107--165}):
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Quantity} & \textbf{Value} & \textbf{Where} \\
+\midrule
+outer diameter    & $\varnothing$100\,mm (\code{RIM\_OUTER\_RADIUS\_MM = 50.0}) & \at{wheel\_wheel.py}{173} \\
+hub bore radius   & 12.7\,mm (a $\tfrac12''$ shaft)                             & \at{wheel\_fea.py}{110} \\
+spokes            & 12, twelve-fold rotationally symmetric                      & \at{wheel\_fea.py}{109} \\
+face width        & 22.4\,mm                                                    & \at{wheel\_fea.py}{145} \\
+material          & PLA, $E = 2300$\,MPa, $\nu = 0.35$                          & \at{wheel\_fea.py}{148} \\
+service load      & 15\,lbf $=$ 66.72\,N                                        & \at{wheel\_fea.py}{152--153} \\
+\textbf{target axle drop} & \textbf{2.0\,mm}                                    & \at{wheel\_fea.py}{158} \\
+allowable stress  & 25\,MPa (50 ult.\ $\times$ 0.80 FFF $\div$ 1.6 SF)          & \at{wheel\_fea.py}{149--151} \\
+\bottomrule
+\end{tabular}
+\caption{The fixed requirements. Everything else is optimized.}
+\end{table}
+
+The interesting entry is the target deflection. This is not a stiff wheel that must not
+bend; it is a \emph{compliant mechanism}---the 2.0\,mm of travel under load \textbf{is
+the feature}, a suspension made of geometry instead of springs. That is why the
+deflection objective is two-sided: being too stiff is penalised exactly as hard as
+being too soft (\at{wheel\_fea.py}{748--752}, \at{wheel\_objective.py}{1152--1158}).
+
+Between the hub and the rim run twelve identical curved spokes. Their shape is what
+gets optimized.
+
+\subsection{What the software actually does}
+
+The repository is a \emph{design-optimization pipeline with a verification apparatus
+bolted to every joint}. It has three stages plus an exporter.
+
+\begin{lstlisting}
+   Stage 1/2  GENETIC ALGORITHM over an analytical beam model
+              wheel_fea.py + pygad          ~minutes         14-gene genome
+                    |
+                    |   best_solution.json / stage2_elites.json
+                    v
+   Stage 3    GRADIENT DESCENT over a full finite-element contact model
+              wheel_stage3.py -> wheel_objective.py -> wheel_adjoint.py
+              -> wheel_fem.py -> wheel_wheel.py                ~hours
+                    |
+                    |   best_solution.json (promoted)
+                    v
+   EXPORT     watertight B-rep solid, filleted, in STEP
+              wheel_step_export.py (CadQuery/OpenCascade)      ~minutes
+                    |
+                    v
+              export/wheel.step + wheel_step_manifest.json
+\end{lstlisting}
+
+The two search stages exist because they answer different questions at different
+prices. The beam model in \code{wheel\_fea.py} scores one design in about 0.25\,ms,
+which is what makes a 300-population $\times$ 300-generation genetic search possible.
+The finite-element model in \code{wheel\_fem.py} scores one design in roughly 18
+seconds per load phase, eight phases per evaluation---but it can see things the beam
+model is structurally blind to.
+
+The single most important measured finding in the tree is that \textbf{the beam model
+is an accurate spoke model and a blind wheel model}: four GA winners whose losses agree
+to 1.2\% and whose beam deflections agree to 0.5\% have real axle drops of 0.71, 1.67,
+1.86 and 2.69\,mm---a factor of 3.8 (\at{wheel\_wheel.py}{522--548}). The mechanism is
+named there too: the beam model integrates the spoke over its whole hub-to-rim span,
+but the built part is welded into its rings over two arcs, so only the middle 67--87\%
+of the spoke is a flexure at all.
+
+\subsection{Why the repository looks the way it does}
+
+Three structural oddities will hit you immediately, and all three are deliberate.
+
+\paragraph{Two virtual environments.}
+\code{.venv-opt} (numpy/scipy/JAX/pygad) runs the optimizer and the FEA;
+\code{.venv-cad} (CadQuery/OpenCascade) runs the STEP exporter. CadQuery pins an
+incompatible OCC stack and cannot coexist with the rest (\code{requirements-cad.txt}).
+The two interpreters share \textbf{only source files and JSON}. This forces a hard
+constraint enforced by \code{tests/test\_import\_hygiene.py}: \code{wheel\_fea.py},
+\code{wheel\_geometry.py} and \code{project\_paths.py} must import with numpy
+alone---no JAX at module scope---because the CAD environment imports them across the
+interpreter boundary (\at{wheel\_step\_export.py}{71--84}). \code{wheel\_geometry.py}
+solves this by taking its array module as an argument (\code{xp=np} or
+\code{xp=jax.numpy}) rather than importing one.
+
+\paragraph{Extraordinary comment density.}
+A docstring in this tree is not documentation, it is \emph{evidence}.
+\at{wheel\_objective.py}{165--297} is 130 lines of comment justifying three
+floating-point constants, including the measurement that falsified the previous values.
+\code{CLAUDE.md} explicitly carves out an exception to its own simplicity rule for
+exactly this reason: ``a docstring here carries the measurement that justifies a
+constant, and deleting it loses evidence, not verbosity.''
+
+\paragraph{The plan files.}
+\code{PLAN.md} is 778\,KB and is the project record, organised into numbered sections
+(\S1\,\ldots\,\S92). Eight sibling \code{*\_PLAN.md} files are open work arcs. Comments
+across the tree cite these by number. Six closed arc files were deleted on 2026-08-16
+and about seventy citations to them remain dangling on purpose---\at{PLAN.md}{53--77}
+is the redirect table.
+
+% ===========================================================================
+\section{Mathematical foundations}
+\label{sec:math}
+% ===========================================================================
+
+This section teaches the specific mathematics the code implements, in the order the
+data flows. Notation is introduced as it appears.
+
+\subsection{The genome: what a design \emph{is}}
+\label{sec:genome}
+
+A design is a point in $\mathbb{R}^{14}$. The gene names, in a fixed order that is a
+hard contract (\at{wheel\_genome.py}{29--36}):
+
+\begin{lstlisting}
+cx1 cy1 cx2 cy2 cx3 cy3 cx4 cy4     four interior Bezier control points (mm)
+t0  t1  t2  t3                       four thickness nodes (mm)
+R_hub  R_rim                         two fillet radii (mm)
+\end{lstlisting}
+
+Each gene has a box constraint (\at{wheel\_fea.py}{261--310}). Stage 3 works in a
+\emph{normalised unit box} $z \in [0,1]^{14}$ rather than in millimetres, because
+\code{cy*} spans 64\,mm while \code{R\_rim} spans 2.5\,mm and one gradient step length
+cannot mean anything in raw units. The map is affine (\at{wheel\_genome.py}{76--88}):
+%
+\begin{align}
+  z &= \frac{g - \ell}{h - \ell} && \text{(\code{normalize})} \\
+  g &= \ell + z\,(h - \ell)      && \text{(\code{denormalize})}
+\end{align}
+%
+with $\ell$ and $h$ the per-gene bounds, and the chain rule
+$\partial L/\partial z = (\partial L/\partial g) \odot (h - \ell)$ lives in exactly one
+place, \code{wheel\_objective.objective} (\at{wheel\_objective.py}{1376--1379}).
+
+Provenance is enforced structurally. \code{genome\_hash} (\at{wheel\_genome.py}{118})
+is
+%
+\begin{equation*}
+  \mathrm{sha256}\bigl(\texttt{json.dumps(sorted(genes.items()))}\bigr)[{:}7],
+\end{equation*}
+%
+so \textbf{adding one key inside \code{genes} changes the hash of every genome ever
+recorded}. \code{save\_record} raises if \code{genes} is not exactly the 14 canonical
+keys; everything else goes into top-level blocks. The shipped genome's hash is
+\code{09e8188}.
+
+\subsection{B\'ezier centerlines}
+\label{sec:bezier}
+
+Each spoke's centerline is a \emph{degree-5 B\'ezier curve} in the spoke's own local
+frame, running from the hub at $(0,0)$ to the rim at $(S,0)$, with
+$S = 48.5 - 12.7 = 35.8$\,mm.
+
+A B\'ezier curve of degree $n$ over control points $P_0,\dots,P_n$ is
+%
+\begin{equation}
+  C(u) \;=\; \sum_{k=0}^{n} B_{n,k}(u)\,P_k,
+  \qquad
+  B_{n,k}(u) \;=\; \binom{n}{k}\,(1-u)^{\,n-k}\,u^{k},
+\end{equation}
+%
+where the $B_{n,k}$ are the \emph{Bernstein basis polynomials}. Two facts matter here.
+
+\begin{enumerate}
+\item \textbf{Linearity in the control points.} For a fixed sample grid
+  $u = \mathrm{linspace}(0,1,N)$ the curve is $\mathrm{curve} = B\,P$ with $B$ a
+  constant $(N,6)$ matrix. That is why the gradient path from genes to node positions
+  is cheap---the map is a matrix multiply. The basis is \code{lru\_cache}d because it
+  depends only on $N$, which removed a measured 21\% of a fitness evaluation
+  (\at{wheel\_geometry.py}{83--97}).
+
+\item \textbf{Endpoint tangency.} The derivative curve (the \emph{hodograph}) of a
+  degree-$n$ B\'ezier is a degree-$(n-1)$ B\'ezier over the scaled forward differences
+  $n\,\Delta P_k$. At $u = 0$ this gives $C'(0) = n\,(P_1 - P_0)$, so \textbf{the
+  endpoint tangent is exactly the first control-polygon edge}. Since $P_0$ is locked at
+  the origin, the hub tangent direction is exactly $(\code{cx1}, \code{cy1})$.
+  \code{wheel\_geometry.forward\_difference\_matrix} (\code{:117}) builds the difference
+  operator and \code{bezier\_tangent} (\code{:148}) applies it. This closed form is what
+  makes the \code{arrival} barrier free to evaluate (\S\ref{sec:arrival}) and is what
+  \code{studies/study\_arrival\_cap.py} exploits to sweep one angle while moving no
+  other gene.
+\end{enumerate}
+
+\code{bezier\_curvature} (\at{wheel\_geometry.py}{164}) gives the signed curvature
+analytically,
+%
+\begin{equation}
+  \kappa(u) \;=\; \frac{x'y'' - y'x''}{\bigl(x'^2 + y'^2\bigr)^{3/2}},
+  \label{eq:curvature}
+\end{equation}
+%
+from the first and second hodographs. This is needed for the fold constraint below.
+
+\subsection{The offset band: turning a curve into a part}
+\label{sec:band}
+
+The spoke is the centerline \emph{thickened along its normal by a variable amount}.
+Define normalised arc length $s \in [0,1]$ and a transverse coordinate
+$\eta \in [-1,+1]$. Then
+%
+\begin{equation}
+  x(s,\eta) \;=\; C(s) \;+\; \eta\,\frac{t(s)}{2}\,\hat{N}(s),
+  \label{eq:offsetband}
+\end{equation}
+%
+where $\hat N$ is the unit normal (the tangent rotated $+90^\circ$) and $t(s)$ is the
+local thickness. This one formula is \code{wheel\_geometry.offset\_band}
+(\code{:290}), and it does double duty:
+
+\begin{itemize}
+\item at \code{n\_across = 1} it returns the two flanks---the outline the STEP exporter
+  builds from;
+\item at \code{n\_across = 6} it returns a structured quadrilateral mesh block.
+\end{itemize}
+
+\textbf{The meshed part and the exported part are therefore the same surface by
+construction}, not by two pipelines agreeing (\at{wheel\_mesh.py}{14--21}).
+
+\paragraph{Thickness} is piecewise-linear over three equal arc-length zones with nodes
+$t_0 \ldots t_3$ at $s = 0, \tfrac13, \tfrac23, 1$. The original numpy implementation
+used boolean masks; JAX has no equivalent, because \code{s[mask]} has a data-dependent
+shape. \code{thickness\_at\_arc\_length} (\at{wheel\_geometry.py}{217}) rewrites it
+branch-free as a base value plus three clipped ramps:
+%
+\begin{equation}
+  t(s) \;=\; t_0 \;+\; \sum_{i=0}^{2} \bigl(t_{i+1} - t_i\bigr)\,
+             \operatorname{clip}\!\left(\frac{s - b_i}{b_{i+1} - b_i},\,0,\,1\right).
+  \label{eq:taper}
+\end{equation}
+%
+The equivalence argument is in the docstring: inside zone $i$, ramps $j < i$ are
+saturated at 1 and telescope to $t_i - t_0$, ramp $i$ contributes the interpolation
+fraction, and ramps $j > i$ clip to 0. This is exactly \code{np.interp}, and the
+docstring records that dropping the original's spurious $+10^{-12}$ made the function
+hit its own interpolation nodes exactly.
+
+\subsection{The fold constraint: where an offset curve destroys itself}
+\label{sec:fold}
+
+This is the first piece of genuinely non-obvious geometry.
+
+If you offset a curve outward by a distance $d$, and the curve's local \emph{radius of
+curvature} $\rho = 1/|\kappa|$ drops below $d$, the offset passes \emph{through the
+centre of curvature} and turns inside out. The flank crosses itself; the region has
+negative area; the corresponding mesh element is inverted; the STEP wire
+self-intersects. The part described by such a genome \textbf{does not exist}, and yet
+the Castigliano beam model will happily return a deflection for it.
+
+The signed clearance is (\code{wheel\_geometry.self\_intersection\_margin},
+\code{:421}):
+%
+\begin{equation}
+  \mathrm{margin} \;=\; \min_{s}\;\left(\frac{1}{|\kappa(s)|} \;-\; \frac{t(s)}{2}\right).
+  \label{eq:foldmargin}
+\end{equation}
+%
+Negative means folded. This is exposed as a \emph{smooth signed scalar} precisely so it
+can serve as a barrier term rather than be discovered as a crash.
+
+The threshold is not zero, and the reason is measured
+(\at{wheel\_geometry.py}{355--374}). Over 2001 feasible genomes sampled by
+\code{studies/study\_mesh\_quality.py}:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+$\mathrm{margin} >$ & missed bad meshes & false alarms & designs kept \\
+\midrule
+0.00 & 6 & 87 & 1187 \\
+0.05 & 2 & 116 & 1154 \\
+\textbf{0.10} & \textbf{0} & 140 & 1128 \\
+0.20 & 0 & 196 & 1072 \\
+\bottomrule
+\end{tabular}
+\caption{Why \code{MIN\_FOLD\_MARGIN\_MM} is 0.1 and not 0.}
+\end{table}
+
+\code{MIN\_FOLD\_MARGIN\_MM = 0.1} is the smallest threshold with zero misses, and it
+keeps 95\% of the designs a zero threshold would. Roughly \textbf{40\% of the genomes
+the other constraints admit} have a folded region (\at{wheel\_fea.py}{653--671})---this
+is not an exotic failure.
+
+\subsection{The arrival angle, and why its sense is backwards}
+\label{sec:arrival}
+
+The centerline endpoints are \emph{locked} on the hub and rim circles, and the end
+cross-section is normal to the centerline. Define the \emph{arrival angle} as the angle
+between the centerline and the ring's \emph{tangent} at that endpoint: $0^\circ$
+tangential, $90^\circ$ radial. Closed form
+(\code{wheel\_wheel.arrival\_angles}, \code{:380}), using the hodograph endpoint fact
+from \S\ref{sec:bezier} and the fact that the endpoint's own unit vector \emph{is} the
+local radial direction:
+%
+\begin{equation}
+  \mathrm{arrival} \;=\; \arcsin\bigl|\,\hat d \cdot \hat r\,\bigr|.
+\end{equation}
+
+The intuition is that a near-\emph{tangent} arrival is the hard case---and for the CAD
+fillets it is. For the \emph{mesh} it is exactly backwards. Because the end
+cross-section is normal to the centerline, a near-tangent arrival makes the
+cross-section nearly \emph{radial}, so it meets the ring arc at about $80^\circ$ and
+the junction block is beautifully shaped. A near-\emph{radial} arrival lays the
+cross-section \emph{along} the arc and the corner collapses. Measured over 58 feasible
+genomes, the correlation between arrival angle and junction minimum scaled Jacobian is
+$-0.93$ at the hub and $-0.91$ at the rim:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+arrival (deg) & 4.9 & 7.2 & 64.8 & 82.2 \\
+min.\ scaled Jacobian & 0.806 & 0.804 & 0.415 & 0.043 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Past about $80^\circ$ both flanks lie \emph{outside} the ring circle and the spoke
+touches its ring at a single point. That is a \textbf{hinge, not a weld}---and since
+the beam model assumes a moment connection at both ends
+(\code{BOUNDARY\_CONDITION = "fixed\_guided"}), it would be solving a structure the part
+does not have. The threshold sweep over 200 genomes is sharp: the worst genome failing
+$\mathrm{minSJ} > 0.2$ arrives at $70.6^\circ$, and every threshold at or below
+$70^\circ$ gives zero misses. \code{MAX\_ARRIVAL\_DEG = 65.0} takes $5.6^\circ$ of
+margin (\at{wheel\_wheel.py}{355--377}).
+
+\subsection{Barriers: how constraints become part of a smooth objective}
+\label{sec:barriers}
+
+Every constraint in this tree is a \emph{quadratic soft barrier}
+(\at{wheel\_fea.py}{579}; the \code{jnp} version at \at{wheel\_objective.py}{414}):
+%
+\begin{equation}
+  \mathrm{soft\_barrier}(v, w) \;=\; w \cdot \max(0, v)^2 .
+  \label{eq:softbarrier}
+\end{equation}
+%
+Zero when satisfied, rising quadratically when violated. Quadratic rather than linear
+so that it is $C^1$ at the knee---which is exactly what a finite-difference plateau
+needs, and what a gradient-based line search needs in order to avoid a kink. This
+replaced a hard $-500$ cliff that a gradient-free search could not descend.
+
+The repository is careful about one distinction that is \emph{not} derivable from the
+weight table (\at{wheel\_objective.py}{394--407}):
+
+\begin{itemize}
+\item a \textbf{barrier term} answers ``may this design ship?''---its only admissible
+  value is 0, and it never trades against mass;
+\item an \textbf{objective term} answers ``how good is it?''
+\end{itemize}
+
+Conflating them caused a real defect: a run reported its lowest-\emph{loss} iterate,
+which was one that violated the hub fillet cap slightly and bought a lot of mass for
+it. Fifty-five of its 101 iterates were feasible and it promoted an infeasible one. The
+fix is \code{wheel\_stage3.selection\_key} (\code{:195}), a three-tier lexicographic
+sort described in \S\ref{sec:selectionkey}.
+
+\subsection{The beam model: the force method (Castigliano)}
+\label{sec:castigliano}
+
+Stage 1/2's physics is \code{wheel\_fea.generalized\_spoke\_mechanics} (\code{:398}).
+It solves one curved spoke as a \emph{statically indeterminate} beam by the force
+method.
+
+Set the local frame with the hub root at $(0,0)$ and the rim tip at $(S,0)$. The radial
+service load $F$ acts at the tip along $-x$. If the tip were free, the internal moment
+and axial force at a station would be determined by statics alone. It is not free: the
+spoke is fused into a stiff rim ring, which restrains tip rotation and tangential
+motion. So two \emph{redundants} are carried at the tip:
+
+\begin{itemize}
+\item $M_0$ --- an end moment, restraining tip rotation;
+\item $H$ --- a tangential force, restraining tip motion along $+y$.
+\end{itemize}
+
+Cutting a free body from station $s$ to the tip gives the internal actions
+%
+\begin{align}
+  M(s) &= M_0 + H\,(S - x) - F\,y, \\
+  N(s) &= -F\cos\theta + H\sin\theta,
+  \qquad (\cos\theta, \sin\theta) = \left(\tfrac{dx}{ds}, \tfrac{dy}{ds}\right),
+\end{align}
+%
+with $N$ \textbf{negative in compression} (v2.0 had this backwards, which is why its
+buckling check never fired). Write these as linear combinations of unit-load fields:
+%
+\begin{align}
+  M &= M_0\,m_{M_0} + H\,m_H + F\,m_F, &
+      m_{M_0} &= 1, & m_H &= S - x, & m_F &= -y,\\
+  N &= M_0\,n_{M_0} + H\,n_H + F\,n_F, &
+      n_{M_0} &= 0, & n_H &= \sin\theta, & n_F &= -\cos\theta.
+\end{align}
+
+The \emph{complementary strain energy} of a beam carrying moment and axial force is
+%
+\begin{equation}
+  U \;=\; \int \frac{M^2}{2EI}\,ds \;+\; \int \frac{N^2}{2EA}\,ds .
+\end{equation}
+%
+\textbf{Castigliano's second theorem} says $\partial U/\partial X = 0$ for any redundant
+$X$ whose corresponding displacement is restrained to zero. Applying it to $M_0$ and
+$H$ gives a $2\times2$ linear system in the \emph{flexibility coefficients}
+%
+\begin{equation}
+  a_{ij} = \int \frac{m_i m_j}{EI}\,ds + \int \frac{n_i n_j}{EA}\,ds,
+  \qquad
+  b_{i}  = \int \frac{m_i m_F}{EI}\,ds + \int \frac{n_i n_F}{EA}\,ds,
+\end{equation}
+%
+\begin{equation}
+  \begin{bmatrix} a_{11} & a_{12} \\ a_{12} & a_{22} \end{bmatrix}
+  \begin{bmatrix} M_0 \\ H \end{bmatrix}
+  \;=\; -F \begin{bmatrix} b_1 \\ b_2 \end{bmatrix},
+  \label{eq:flexibility}
+\end{equation}
+%
+which the code assembles as segment sums over the 600-point discretization
+(\at{wheel\_fea.py}{495--520}). A tiny relative ridge $+10^{-12}(1 + |a_{ii}|)$ is added
+to the diagonal, because a near-straight, very thin spoke makes the system
+ill-conditioned and a genetic algorithm will propose exactly that.
+
+The tip deflection along the load direction is then Castigliano's \emph{first}
+application, $\partial U/\partial F$:
+%
+\begin{equation}
+  \delta \;=\; \left|\; \sum \frac{M\,m_F}{EI}\,\Delta s
+                 \;+\; \sum \frac{N\,n_F}{EA}\,\Delta s \;\right|.
+\end{equation}
+%
+The comment at \at{wheel\_fea.py}{522--525} makes an argument worth understanding: by
+the \emph{envelope theorem}, the redundants sit at stationary values of $U$, so
+differentiating with respect to $F$ while \emph{holding them fixed} is exact---the
+chain terms through $dM_0/dF$ and $dH/dF$ vanish. No extra work is needed.
+
+The legacy \code{bc="cantilever"} sets $M_0 = H = 0$, which collapses algebraically to
+$M = -Fy$ and $N = -F\cos\theta$---term for term the v2.0 integrands. That equivalence
+is the regression test. The physical consequence of the change: for a straight beam,
+cantilever gives $FL^3/3EI$ and fixed-guided gives $FL^3/12EI$, so \textbf{v2.0
+over-predicted compliance by a factor of four}.
+
+Three corrections ride on top.
+
+\begin{itemize}
+\item \textbf{Peterson stress concentration} (\at{wheel\_fea.py}{360}). At a fillet in a
+  stepped beam in bending,
+  $K_t \approx 1 + C\,(t/2R)^{0.65}$, clamped to $[1.0, 3.5]$. The peak bending stress
+  at each end is multiplied by its local $K_t$. This same formula reappears---%
+  differentiated rather than frozen---as the FEA-era stress constraint
+  (\S\ref{sec:stress}).
+
+\item \textbf{Winkler--Bach curved-beam correction} (\at{wheel\_fea.py}{376}). On a
+  curved member the neutral axis shifts toward the centre of curvature and inner-fibre
+  stress is higher than straight-beam theory says. Simplified: $k_b = 1 + h/(4R)$,
+  clipped to $[1.0, 2.5]$, significant only when $R < 4h$.
+
+\item \textbf{Euler buckling as an equivalent column} (\at{wheel\_fea.py}{543--556}):
+  %
+  \begin{equation}
+    P_e \;=\; \frac{\pi^2\,EI_{\text{eff}}}{(K_e L)^2},
+    \qquad
+    EI_{\text{eff}} \;=\; \frac{L}{\sum \Delta s / EI},
+  \end{equation}
+  %
+  where $EI_{\text{eff}}$ is the \emph{compliance-weighted (harmonic) mean} rigidity---%
+  the standard equivalent-column treatment for a tapered member. v2.0 applied this per
+  discretization segment, where $L \approx 0.06$\,mm made $1/L^2$ astronomical and the
+  check could never fire. The docstring is honest that for an in-plane-curved member
+  Euler is a proxy: the genuinely competing modes are snap-through and
+  lateral-torsional buckling.
+\end{itemize}
+
+\subsection{The genetic algorithm}
+
+\code{wheel\_fea.evaluate\_design} (\code{:699}) sums nine weighted terms into a scalar
+loss; \code{pygad\_fitness} returns its negation because PyGAD maximises. The GA itself
+(\at{wheel\_fea.py}{1310}\,ff.) is population 300 (at least $20\times$ the gene count),
+tournament selection with $k=5$, uniform crossover, elitism 5, and an \emph{adaptive
+Gaussian mutation} whose $\sigma$ starts at 0.25 of the gene range and halves halfway
+through the run (\code{adaptive\_gaussian\_mutation}, \code{:881}).
+
+Two of the loss terms are worth naming, because they are the \emph{mesh's} constraints
+imported into a search that predates the mesh: \code{fold} (\S\ref{sec:fold}) and
+\code{arrival} (\S\ref{sec:arrival}), both closed-form and therefore free next to the
+Castigliano solve, and both fixing cases where \textbf{the model itself is invalid}
+rather than merely where the design is poor.
+
+\subsection{Finite elements: write the energy, derive everything else}
+\label{sec:fem}
+
+\code{wheel\_fem.py} is the FEA kernel, and its organizing principle is stated in the
+first paragraph of its docstring: \textbf{\code{element\_energy} is the only physics in
+the file.} Internal force and tangent stiffness are its gradient and Hessian, obtained
+by \code{jax.grad} and \code{jax.hessian} and \code{vmap}ped over elements
+(\at{wheel\_fem.py}{258--278}):
+%
+\begin{equation}
+  f_e \;=\; \nabla_{u}\,\Pi_e,
+  \qquad
+  K_e \;=\; \nabla^2_{u}\,\Pi_e .
+\end{equation}
+%
+There is no B-matrix, no hand-differentiated stress recovery, and no separately coded
+tangent that can drift out of step with the residual. That entire class of bug is
+absent by construction, and the rigid-body test becomes exact rather than a
+cancellation: if the energy is frame-indifferent, so is everything derived from it.
+
+\paragraph{Elements.}
+Isoparametric quadrilaterals: Q4 (bilinear, 4 nodes) or Q9 (biquadratic, 9 nodes). Q9
+is the production choice because \textbf{a Q4 mesh shear-locks in bending}---it reports
+the structure as stiffer and safer than it is, which is catastrophic for a 2\,mm
+flexure. Full Gauss integration ($2\times2$ for Q4, $3\times3$ for Q9); reduced
+integration is the usual dodge for Q4 locking but buys hourglass modes
+(\at{wheel\_fem.py}{144--160}).
+
+\paragraph{The Jacobian, and one index that matters.}
+In \code{element\_energy} (\code{:235}):
+
+\begin{lstlisting}[style=py]
+J      = jnp.einsum("gnk,ni->gki", dN, Xe)      # J[g,k,i] = dx_i/dxi_k
+detJ   = J[:,0,0]*J[:,1,1] - J[:,0,1]*J[:,1,0]
+dNdx   = jnp.einsum("gnk,gik->gni", dN, jnp.linalg.inv(J))
+grad_u = jnp.einsum("ni,gnj->gij", ue, dNdx)
+\end{lstlisting}
+
+\code{J} here is the \emph{transpose} of the usual Jacobian matrix, so
+$\partial \xi_k/\partial x_i$ is \code{inv(J)[i,k]}, not \code{inv(J)[k,i]}. Getting it
+backwards is invisible on an axis-aligned rectangle ($J$ is diagonal) and silently
+wrong on every curved element---which is exactly the geometry this project meshes. The
+distorted-mesh patch test is what catches it.
+
+\paragraph{Constitutive law.}
+St.\ Venant--Kirchhoff strain energy density
+(\code{wheel\_fem.\_energy\_density}, \code{:221}):
+%
+\begin{equation}
+  W(\varepsilon) \;=\; \frac{\lambda}{2}\,\bigl(\operatorname{tr}\varepsilon\bigr)^2
+                  \;+\; \mu\,\bigl(\varepsilon : \varepsilon\bigr),
+  \label{eq:svk}
+\end{equation}
+%
+with Lam\'e constants from \code{lame()} (\code{:190}). \emph{Plane stress} uses the
+reduced $\lambda = E\nu/(1-\nu^2)$; plane strain uses
+$\lambda = E\nu/\bigl((1+\nu)(1-2\nu)\bigr)$. The choice is deliberate and recorded in
+the result dictionary: plane stress makes a uniaxial state give $\sigma = E\varepsilon$
+exactly, so beam bending gives $EI = E w t^3/12$ with \emph{plain} $E$---apples to
+apples with the Castigliano model, which is what makes the beam-versus-FE comparison a
+check rather than an argument. The real 22.4\,mm-wide part is closer to plane
+\emph{strain} (effective modulus $E/(1-\nu^2) = 1.14E$), and that 14\% is larger than
+most effects the project chases, so \code{plane="strain"} exists and is never picked
+silently (\at{wheel\_fem.py}{49--61}).
+
+\subsection{Two kinematics, five lines apart}
+\label{sec:kinematics}
+
+\code{\_strain} (\at{wheel\_fem.py}{207}) returns either
+%
+\begin{align}
+  \text{linear:}\quad \varepsilon &= \tfrac12\bigl(\nabla u + \nabla u^{\mathsf T}\bigr),
+  \\
+  \text{svk:}\quad E &= \tfrac12\bigl(F^{\mathsf T}F - I\bigr),
+  \qquad F = \nabla u + I .
+\end{align}
+
+\textbf{Green--Lagrange is exactly frame-indifferent.} Under a rigid rotation
+$u = (R - I)x$ we have $F = R$, so $E = \tfrac12(R^{\mathsf T}R - I) = 0$ identically:
+a rigid rotation of \emph{any} magnitude stores zero energy. The linear strain does not
+have this property, and that is the entire content of the finite-rotation test. Because
+the two share the same \code{\_energy\_density}, they cannot disagree about the
+material.
+
+There is a trap the file names explicitly (\at{wheel\_fem.py}{980--1010}): at $u = 0$
+the SVK Hessian \emph{equals} the linear one exactly. So routing an \code{svk} problem
+through \code{solve\_linear} returns a linear answer silently. The fix is
+\code{solve()} (\code{:1260}), which dispatches on \code{prob.nonlinear}.
+
+How much does it matter? \code{studies/study\_gnl.py} measures it: at service load the
+wheel is \textbf{23.16\%} softer under SVK than under linear kinematics for the shipped
+genome---and, more decisively, that correction is \emph{not} a property of the wheel
+that can be applied once. Held at a fixed axle drop by scaling the load per genome, it
+still ranges over roughly an order of magnitude across feasible designs. So the
+nonlinear solve has to be in the loop. \code{wheel\_stage3.py --kinematics} defaults to
+\code{svk} since \code{PLAN} \S32; \code{wheel\_fem}'s own kernel defaults stay
+\code{linear} on purpose so M4's committed reports stay reproducible.
+
+\subsection{Contact: the ground is not a pressure you assume}
+\label{sec:contact}
+
+Early full-wheel work applied the ground load as an assumed elliptical pressure over an
+assumed $3^\circ$ patch (\code{\_ground\_traction}, \at{wheel\_fem.py}{1462}). Two
+choices there are worth noting: the traction is \textbf{vertical, not radial} (for
+frictionless contact against a rigid \emph{flat} ground the bodies share a tangent
+plane, so the traction is along the ground's normal---using the rim's radial normal
+produces a spurious horizontal resultant), and it is \textbf{elliptical, not uniform}
+(a uniform patch has a pressure step at its edges, and a step puts a stress singularity
+into a model whose peak stress is a reported number).
+
+But the patch half-angle was a free parameter, and sweeping it moved the axle drop by
+9.7\% over a $12\times$ range---larger than the entire geometric-nonlinearity
+correction. So M6 replaced it with \emph{penalty contact} against a rigid frictionless
+ground.
+
+\code{RigidGroundContact} (\at{wheel\_fem.py}{652}) adds a potential to the total
+energy. For a boundary segment with gap $g = (x_y + u_y) - y_{\text{ground}}$, the
+penalty potential density is $\varepsilon_n\,\varphi(-g)$ where $\varphi$ is a smoothed
+positive part (\code{\_penalty\_phi}, \code{:592}). The sharp branch is
+$\varphi(z) = \tfrac12\langle z\rangle^2$, which is $C^1$; the smoothed branch is a
+cubic matching value, slope \emph{and} curvature at both $z = 0$ and $z = d$, so
+$\varphi''$ is continuous everywhere:
+%
+\begin{equation}
+  \varphi(z) \;=\;
+  \begin{cases}
+    0, & z \le 0,\\[2pt]
+    \dfrac{z^3}{6d}, & 0 < z < d,\\[6pt]
+    \dfrac{z^2}{2} - \dfrac{dz}{2} + \dfrac{d^2}{6}, & z \ge d .
+  \end{cases}
+  \label{eq:penalty}
+\end{equation}
+%
+The same \code{grad}/\code{hessian} machinery produces the contact force and contact
+stiffness, so they cannot disagree with the potential.
+
+\paragraph{The problem is displacement-driven, and that is not a convenience.}
+With a rigid flat ground indenting by $\delta$, the rise of the wheel's lowest point
+\emph{is} $\delta$, so the axle drop is an \textbf{input} and the wheel load is the
+\textbf{output} (\at{wheel\_fem.py}{1735--1751}). A force-driven contact problem is
+singular at its own starting point---before contact establishes there is no pressure at
+all. \code{solve\_wheel\_contact} (\code{:1867}) then inverts this with a \emph{secant
+iteration} to answer the design question (``what is the drop at 66.72\,N?''), each
+solve warm-starting from the previous.
+
+The measured payoff: the real patch is a half-angle of about \textbf{$0.47^\circ$}, not
+$3.0^\circ$---the assumed patch was six times too wide---and yet the axle drop moves
+only 1.3\%, because the drop is dominated by spoke and rim bending rather than by how
+the last few newtons are spread (\at{studies/study\_contact.py}{14--30}).
+
+\subsection{Constraints by master--slave elimination}
+\label{sec:dofmap}
+
+\code{DofMap} (\at{wheel\_fem.py}{828}) expresses every boundary condition as one
+sparse matrix,
+%
+\begin{equation}
+  u_{\text{full}} \;=\; T\,u_{\text{reduced}} \;+\; u_{\text{prescribed}},
+\end{equation}
+%
+and the reduced system $T^{\mathsf T} K T$ is symmetric positive definite whenever the
+full one is. This single mechanism handles homogeneous and inhomogeneous Dirichlet
+conditions, \emph{skew} constraints (\code{constrain\_direction}: enforce
+$u \cdot \hat d = 0$, leaving the perpendicular free---this is how ``plane sections
+remain plane but may stretch laterally'' is expressed without rotating the system into
+a local frame), and \textbf{rigid ties}:
+%
+\begin{align}
+  u_x &= U_x - \Theta\,(y - y_c), \\
+  u_y &= U_y + \Theta\,(x - x_c),
+\end{align}
+%
+which tie a whole cross-section to a 3-DOF rigid body. That is how the spoke's tip
+boundary condition is made to mean exactly what beam theory assumes: plane sections
+remain plane \emph{and normal}. The two redundants of \S\ref{sec:castigliano} reappear
+here as reactions---$M_0$ is the reaction of $\Theta = 0$, and $H$ the reaction of the
+transverse constraint.
+
+\code{finalize()} asserts that \textbf{every DOF is claimed exactly once}: an unclaimed
+DOF is a free floating node (singular matrix), and a doubly-claimed one silently drops
+the first constraint.
+
+\subsection{Newton with an energy line search}
+\label{sec:newton}
+
+\code{solve\_nonlinear} (\at{wheel\_fem.py}{1116}) is a Newton--Raphson loop with load
+continuation and Armijo backtracking. One detail is genuinely instructive:
+
+\begin{lstlisting}[style=py]
+slope = float(r @ du)
+if slope >= 0.0:
+    raise NewtonDivergedError("...the tangent is not positive definite,
+                               i.e. this equilibrium is unstable")
+\end{lstlisting}
+
+Because \code{r} really \emph{is} $\nabla\Pi$ rather than an approximation of it,
+\code{slope} is exact. So a non-negative value is not line-search noise---it says the
+tangent lost positive definiteness, i.e.\ \textbf{this equilibrium is unstable}. Saying
+that is far more useful than letting the backtrack loop grind $\alpha$ down to nothing.
+This is also, as \at{wheel\_stage3.py}{76--85} notes, the only buckling signal the
+repository owns until the Euler proxy is replaced.
+
+Convergence fires on \emph{either} the relative reduced residual
+$\lVert r \rVert / \lVert f_{\text{ref}} \rVert \le \mathrm{tol}$ \emph{or} the energy
+increment $|du \cdot r|$ falling to $\mathrm{tol}_{\text{energy}}$ of the first step's
+--- the second because at low load it is the only criterion attainable.
+
+\subsection{Stress: why the maximum is not a number}
+\label{sec:stress}
+
+The peak von Mises stress in this wheel \textbf{diverges under mesh refinement}:
+$31.02 \to 41.54 \to 48.47$\,MPa over coarse/medium/fine. That is not a solver defect.
+The spoke/ring junction is a \emph{re-entrant corner}, and the elastic field at a
+traction-free wedge of material angle $\omega$ behaves as $\sigma \sim r^{\lambda - 1}$
+where $\lambda$ is the smallest root in $(0,1)$ of the \emph{Williams eigenvalue
+equation} (mode I):
+%
+\begin{equation}
+  \sin(\lambda\omega) \;+\; \lambda\,\sin(\omega) \;=\; 0 .
+  \label{eq:williams}
+\end{equation}
+%
+\at{studies/study\_corner\_singularity.py}{132} solves this by bisection and verifies it
+against the two cases with known answers: $\omega = 360^\circ$ (a crack) gives exactly
+$0.5$, and $\omega = 270^\circ$ gives the textbook $0.5445$. The measured junction
+wedges here are $295^\circ$--$356^\circ$, all re-entrant, so $\lambda - 1 < 0$ and the
+stress is unbounded at the corner. \textbf{The maximum is a property of the mesh, not
+of the wheel.}
+
+This has three consequences the code carries.
+
+\paragraph{(a) The optimizer cannot use \texttt{max}.}
+Its derivative is a delta on whichever Gauss point happens to be highest, so it jumps
+discontinuously the moment the argmax moves---which, on a rolling wheel with a contact
+patch sweeping the rim, is every few steps. The smooth surrogate is a
+\emph{volume-weighted $p$-norm} (\code{wheel\_adjoint.\_qoi\_pnorm\_stress},
+\code{:313}):
+%
+\begin{equation}
+  \sigma_{pn} \;=\;
+  \left(\frac{\sum_g V_g\,\mathrm{vm}_g^{\,p}}{\sum_g V_g}\right)^{\!1/p},
+  \qquad
+  V_g \;=\; w_g\,\det J_g\,\cdot\,\mathrm{width}.
+  \label{eq:pnorm}
+\end{equation}
+%
+Volume weighting is essential: an unweighted $p$-norm scores the \emph{mesh}, because
+refining the rim adds Gauss points in a lightly stressed region and drags the average
+down---the optimizer could reduce the objective by changing \code{cfg}. With volume
+weights the sum is a quadrature of an integral and is mesh-convergent.
+
+\paragraph{(b) Rescaling a $p$-norm to the maximum cannot work.}
+The constraint used to be $c\,\sigma_{pn} \le \mathrm{allowable}$ with
+$c = \max/\sigma_{pn}$ measured and frozen within a step. The freeze was mathematically
+sound---the $p$-norm is positively homogeneous of degree 1, so
+$d(c\,\sigma_{pn}) = c\,d(\sigma_{pn})$ \emph{if and only if} $c$ did not move---but the
+quantity was not. \code{make m8bi6} swept ten exponents off one set of solves and found
+the two factors converge in \textbf{disjoint ranges of $p$}: the $p$-norm for
+$p \le 6$, the ratio $c$ only for $p \ge 24$, and their product at \emph{no} exponent at
+either design. Here $c$ is anchored to a divergent quantity, and a frozen divergent
+number is still a divergent number.
+
+\paragraph{(c) So the peak is modelled, not measured.}
+The shipped constraint (\at{wheel\_objective.py}{1160--1200}) is
+%
+\begin{equation}
+  K_t(R, t)\;\cdot\;\sigma_{\text{nominal}}(p{=}4)
+  \;\;\le\;\; \sigma_{\text{allow}} \;=\; 25.0\ \mathrm{MPa},
+  \label{eq:stressconstraint}
+\end{equation}
+%
+where $\sigma_{\text{allow}}$ is \code{ALLOWABLE\_STRESS\_MPA}. It is
+one \code{soft\_barrier} per junction, summed---the hub priced on
+$(\code{R\_hub}, t_0)$, the rim on $(\code{R\_rim}, t_3)$. Here
+$\sigma_{\text{nominal}}$ at $p = 4$ is mesh-convergent (GCI 0.45\% / 0.20\%, observed
+order 1.76 / 2.18, comparable to the axle drop's 2.44 / 0.14\%), and
+$K_t = 1 + C(t/2R)^{0.65}$ is the same Peterson factor from \S\ref{sec:castigliano},
+now \textbf{differentiated by \code{jax.grad} rather than frozen}. Two junctions get two
+barriers rather than one aggregated $K_t$, because a hard \code{max} over the two would
+zero the gradient of whichever is not currently worst and reintroduce exactly the
+argmax kink the $p$-norm exists to blur.
+
+Note the consequence: \code{STRESS\_NOMINAL\_P = 4.0} (\at{wheel\_objective.py}{147}) is
+the constraint's exponent, while \code{wheel\_adjoint.STRESS\_PNORM\_P = 30.0}
+(\code{:283}) stays the adjoint's documented default so historical records keep their
+meaning. Two exponents, two meanings, both pinned by tests.
+
+\subsection{Mesh convergence: Richardson and the GCI}
+\label{sec:gci}
+
+Because several key quantities are only meaningful in the limit, the tree does formal
+mesh-convergence analysis. Given three solutions $\phi_1$ (coarse) to $\phi_3$ (fine)
+at cell sizes $h_1 > h_2 > h_3$, Roache's \emph{observed order of convergence} solves
+%
+\begin{equation}
+  p \;=\; \frac{\bigl|\,\ln|e_{32}/e_{21}| + q(p)\,\bigr|}{\ln r_{21}},
+  \qquad
+  q(p) \;=\; \ln\!\left(\frac{r_{21}^{\,p} - s}{r_{32}^{\,p} - s}\right),
+  \label{eq:roache}
+\end{equation}
+%
+by fixed-point iteration from $q = 0$ (\at{studies/study\_deflection\_gci.py}{128}). The
+\emph{Richardson extrapolation} to $h \to 0$ and the \emph{Grid Convergence Index} (a
+conservative uncertainty band on the extrapolated value) follow at \code{:166}. The
+docstring records a real bug: the first draft used the coarse-pair ratio as the
+denominator, because Roache indexes 1 as the \emph{finest} grid while \code{phi} here
+runs coarse to fine.
+
+A caution the tree learned the hard way: \textbf{look at the increment ratios before
+quoting a ladder.} \code{studies/study\_knee\_rungs.py} shows a five-rung ladder whose
+ratio \emph{climbs toward 1} instead of decaying, so every extrapolation lands above
+the knee while every measurement lands below it. A rising ratio means the top rung is a
+lower bound, not an estimate.
+
+\subsection{The adjoint method}
+\label{sec:adjoint}
+
+This is the mathematical centrepiece of Stage 3, and \code{wheel\_adjoint.py}'s module
+docstring is the derivation. The setup is a converged contact equilibrium with
+%
+\begin{align}
+  \Pi(c, u_f, y) &= U_{\text{bulk}}(c, u_f) + \Pi_{\text{contact}}(c, u_f, y), \\
+  u_f            &= T u_r + u_{\text{pre}}
+                    &&\text{($T$ static: topology frozen)}, \\
+  r(c, u_r)      &= T^{\mathsf T}\nabla_{u_f}\Pi \;=\; \nabla_{u_r}\Pi \;=\; 0
+                    &&\text{at the solution}, \\
+  K_r            &= \nabla^2_{u_r}\Pi
+                    &&\text{what Newton already assembled},
+\end{align}
+%
+where $c$ is the node coordinates and $y$ the ground position. For a quantity of
+interest $Q(c, u_f, y)$, differentiate the equilibrium condition $r = 0$ implicitly.
+The result is
+%
+\begin{align}
+  K_r\,\mathrm{adj}_r &= -T^{\mathsf T}\,\frac{\partial Q}{\partial u_f}
+     &&\text{one sparse solve; $K_r$ is symmetric},
+     \label{eq:adjsolve}\\
+  \mathrm{adj}_f &= T\,\mathrm{adj}_r, \\
+  \frac{dQ}{dc} &= \left.\frac{\partial Q}{\partial c}\right|_{u}
+     + \nabla_c\Bigl[\,\mathrm{adj}_f \cdot \nabla_{u_f}\Pi(c, u_f, y)\,\Bigr],
+     \label{eq:adjcore}\\
+  \frac{dQ}{d\,\mathrm{genes}} &=
+     \mathrm{vjp}_{\code{mesh\_coords}}\!\left(\frac{dQ}{dc}\right).
+\end{align}
+
+\textbf{Equation~\eqref{eq:adjcore} is the whole adjoint: one \code{jax.grad} of one
+scalar.} There is no separately coded sensitivity operator, for the same reason there
+is no separately coded contact stiffness. The cost is one sparse back-solve per
+quantity, sharing one factorisation (\code{adjoint\_grads},
+\at{wheel\_adjoint.py}{516}, uses \code{scipy.sparse.linalg.factorized} and reuses the
+\code{jax.vjp} closure across quantities).
+
+Two things \emph{fall out} rather than being coded:
+
+\begin{itemize}
+\item The total contact force is \textbf{exactly} $+\partial\Pi/\partial y_{\text{ground}}$
+  --- the penalty potential's derivative with respect to the ground's position \emph{is}
+  the resultant it presses with. So \code{\_qoi\_contact\_force} is not a
+  reimplementation of the pressure quadrature, and the two agreeing is a free
+  correctness check.
+\item $d(\text{force})/d(\text{indentation})$ is the same adjoint with the same
+  multiplier, differentiated with respect to $y_{\text{ground}}$ instead of $c$.
+\end{itemize}
+
+\paragraph{Load control, done as an implicit function.}
+Stage 3 loads to a \emph{force}, not an indentation, so every quantity is evaluated at
+$\delta^*(p)$ solving $F(\delta^*, p) = F_{\text{service}}$. The naive move---%
+differentiate the secant iteration---would put the secant's \emph{stopping tolerance}
+into the answer, which is a property of the stopping rule and not of the wheel. Instead
+the quotient rule for implicit functions is used directly
+(\code{service\_qoi\_value\_and\_grad}, \at{wheel\_adjoint.py}{645}):
+%
+\begin{align}
+  \frac{d\delta^*}{dp}
+    &= -\,\frac{\bigl(\partial F/\partial p\bigr)\big|_{\delta}}
+               {\bigl(\partial F/\partial \delta\bigr)\big|_{p}},
+  \label{eq:implicit}\\[4pt]
+  \left.\frac{dQ}{dp}\right|_{\text{total}}
+    &= \left.\frac{\partial Q}{\partial p}\right|_{\delta}
+       \;+\; \frac{\partial Q}{\partial \delta}\cdot\frac{d\delta^*}{dp}.
+  \label{eq:coupling}
+\end{align}
+%
+Numerator and denominator both come from the single \code{contact\_force} adjoint at
+the converged state. The coupling term is \textbf{not a correction}: measured at the
+shipped genome, dropping it does not lengthen the stress gradient, it \emph{reverses}
+it ($+11.22$ against a true $-2.59$). Keeping only the frozen term leaves a gradient
+with the right direction and the wrong length---and no line search reports that as an
+error; it reports it as a hard problem.
+
+There is also a guard worth quoting, because it encodes physics as a sanity check:
+
+\begin{lstlisting}[style=py]
+if not np.isfinite(dF_ddelta) or dF_ddelta <= 0.0:
+    raise RuntimeError("a wheel that gets softer the harder it is pressed
+                        is not a load case, it is a solver failure")
+\end{lstlisting}
+
+\subsection{Structured multi-block meshing}
+\label{sec:meshing}
+
+The mesh is not produced by an external mesher, and that is a load-bearing decision:
+running \code{gmsh} would put a combinatorial, non-differentiable step in the middle of
+the gradient path, and remeshing between optimizer iterations would make the objective
+discontinuous (\at{wheel\_mesh.py}{22--27}). Instead:
+
+\begin{quote}
+\textbf{Node positions are a closed-form differentiable function of the 14 genes;
+element connectivity is a compile-time constant.}
+\end{quote}
+
+\paragraph{Why a clean partition exists at all.}
+The spoke is a spiral sweeping about $45^\circ$ of angle inside a $30^\circ$ sector, so
+the first guess is that adjacent spokes must overlap. Three measured facts save it
+(\at{wheel\_wheel.py}{14--38}):
+
+\begin{enumerate}
+\item \textbf{Radius is strictly monotone} along the centerline
+  ($12.700 \to 48.900$ in the docstring's own numbers, which predate the rim band being
+  thickened inward to \code{RIM\_RADIUS\_MM = 48.5}; the argument is unchanged) while
+  $\theta$ rises to $45.16^\circ$ and returns. So each spoke is a single-valued curve
+  $\theta(r)$, and twelve rotated copies of a single-valued $\theta(r)$ can never
+  intersect. Minimum clearance outside the hub circle: 0.891\,mm.
+\item The \textbf{weld footprint} on each ring circle is smaller than the
+  sector---$15.85^\circ$ at the hub and $13.18^\circ$ at the rim, of 30
+  available---so the twelve junctions tile each ring with a genuine gap.
+\item The centerline endpoints are \textbf{locked} on the ring circles, and the end
+  cross-section is symmetric about the centerline, so it crosses its ring circle
+  exactly at its own midpoint. That corner is available in closed form with \emph{no
+  root-find at all}.
+\end{enumerate}
+
+Fact 1 makes a structured mesh possible; facts 2 and 3 make the junction blocks
+well-shaped instead of slivers.
+
+\paragraph{Seven blocks per sector, twelve sectors}
+(\code{BLOCK\_ORDER}, \at{wheel\_wheel.py}{2394}): \code{spoke},
+\code{hub\_junction}, \code{rim\_junction}, \code{hub\_collar\_weld},
+\code{hub\_collar\_free}, \code{rim\_band\_weld}, \code{rim\_band\_free}. The two ring
+blocks per ring are \emph{split at the weld footprint} rather than graded---because
+splitting makes the weld arc's two ends into block \emph{corners}, so a contiguous run
+of ring nodes coincides with the junction's arc nodes by construction rather than by
+arranging a distribution to land on them.
+
+\paragraph{Coons patches.}
+The junction blocks are four-sided curvilinear regions, filled by a \emph{bilinearly
+blended Coons patch} (\code{coons\_patch}, \at{wheel\_wheel.py}{611}). Given the four
+boundary curves,
+%
+\begin{align}
+  X(u,v) \;=\;& \bigl[(1-v)\,\mathrm{bottom}(u) + v\,\mathrm{top}(u)\bigr]
+                && \text{ruled in } v \nonumber\\
+              &+ \bigl[(1-u)\,\mathrm{left}(v) + u\,\mathrm{right}(v)\bigr]
+                && \text{ruled in } u \nonumber\\
+              &- \bigl[\text{bilinear interpolation of the four corners}\bigr].
+  \label{eq:coons}
+\end{align}
+%
+The subtraction removes the double-counting of the corners; the result interpolates all
+four boundaries exactly. This is the classic transfinite interpolation construction.
+The code checks corner agreement to $10^{-9}$\,mm on the numpy path, because a swapped
+or unreversed edge produces a patch that is \emph{folded} rather than merely ugly, and
+the fold surfaces as a negative Jacobian a long way downstream.
+
+\paragraph{Ring stations, and a two-stage root find}
+(\code{ring\_station}, \at{wheel\_wheel.py}{296}). Where a flank crosses its ring circle
+must be exact, because that point is a corner shared by three blocks. Stage 1 brackets
+by finding an actual \emph{sign change} of $r(s) - \mathrm{radius}$ on a dense
+grid---deliberately \emph{not} by globally inverting $r(s)$, because an S-shaped
+centerline can cross the circle three times and a global \code{interp} lands on the
+wrong branch (measured: it left the Coons corner $5\times10^{-3}$ to
+$2\times10^{-2}$\,mm out on 2 of 60 feasible genomes). Stage 2 is a \emph{fixed count of
+Newton refinements} against the sampler itself, bringing $|x| = \mathrm{radius}$ to
+$10^{-15}$. The fixed count is what keeps it traceable \emph{and} differentiable:
+unrolled Newton's derivative converges to the implicit-function derivative, so no
+custom JVP rule is needed.
+
+\paragraph{Seams and single ownership.}
+This is the safety net of the whole module:
+
+\begin{quote}
+A seam mismatch produces a mesh that plots correctly, has positive Jacobian everywhere,
+and quietly models a wheel with twelve cracks in it. Nothing about the solve complains.
+\end{quote}
+
+So every block writes its own coordinates independently, a \emph{union-find} structure
+(\code{\_UnionFind}, \code{:2456}, with path compression and lowest-id-wins so ownership
+is deterministic) merges the node ids declared equal, and \code{check\_seams} reports
+the largest distance between what an owner and a non-owner \emph{independently
+computed} for the same node. That number must be at machine precision---measured
+$3\times10^{-14}$\,mm for the filleted sector, $7.1\times10^{-15}$ for the tri-block.
+
+\paragraph{Element orientation.}
+A polar block indexed $(\theta, r)$ is left-handed, because
+$\hat r \times \hat\theta = +\hat z$. Its elements come out with negative Jacobian,
+which in an FE assembly is not merely cosmetic---it contributes \emph{negative
+stiffness}, which looks to an optimizer like free compliance.
+\code{\_orient\_elements} (\code{:2971}) flips whole blocks rather than trusting each
+one.
+
+\paragraph{Mesh quality: the scaled Jacobian.}
+\code{wheel\_mesh.scaled\_jacobian} (\code{:323}) computes, at each of the four corners
+of an element, the cross product of the two edges meeting there normalised by their
+lengths---i.e.\ \textbf{the sine of the corner angle}---and takes the worst. A value of
+1.0 is a perfect rectangle; near 0 is a collapsed sliver; \textbf{negative is
+inverted}. It deliberately measures \emph{shape}, not aspect ratio (a long thin
+rectangle scores 1.0), which is the right property for validity. Its
+\code{xp=jax.numpy} path is what makes the mesh-validity barrier differentiable.
+
+\subsection{Phase averaging and randomized quasi-Monte Carlo}
+\label{sec:phase}
+
+A rolling wheel presents a different spoke pattern to the ground at every angle. The
+pattern period is \code{SECTOR\_DEG} $= 30^\circ$. Measured, the axle drop varies
+\textbf{7.0\% std/mean and 19.7\% peak-to-peak} over that period---so phase is a design
+variable, not a quadrature nuisance, and \code{phase\_ripple} is a real objective term.
+
+\code{phase\_stencil} (\at{wheel\_objective.py}{966}) offers three schemes. The default
+is \code{rqmc}: an 8-point uniform stencil shifted by a random offset \emph{drawn from
+an 8-point sub-lattice}. This is a quantized randomized-QMC design, and the
+quantization is a performance fact rather than statistical taste.
+
+\begin{itemize}
+\item \emph{Randomizing at all} matters because the rim's contact faceting lives at
+  $0.25^\circ$ while the stencil samples at $3.75^\circ$, so the artefact
+  \textbf{aliases}. Under a fixed stencil the aliased artefact is a deterministic
+  function of the genes with a nonzero gradient---precisely what an optimizer chases. A
+  random shift makes it zero-mean noise instead.
+\item \emph{Quantizing} matters because \code{wheel\_wheel.coord\_fn} keys its JIT
+  cache on \code{float(phase)}. A \emph{continuously} random offset misses on every
+  phase of every step and pays a measured 0.774\,s re-trace eight times per
+  step---roughly doubling the actual solving. The union of all reachable phases is a
+  fixed $8\times8 = 64$-point lattice, and \code{\_COORD\_FN\_CACHE\_MAX = 128} is sized
+  to hold it.
+\end{itemize}
+
+\subsection{Projected Adam}
+\label{sec:adam}
+
+Stage 3's optimizer is Adam with a cosine learning-rate schedule, global gradient-norm
+clipping, and \emph{projection} onto the unit box,
+$z \leftarrow \operatorname{clip}(z - \mathrm{step},\,0,\,1)$
+(\code{wheel\_stage3.adam\_update}, \code{:248}; \code{project}, \code{:262}).
+
+Projection rather than a sigmoid reparameterisation, for a concrete reason:
+\textbf{six of the fourteen genes sit exactly on a bound at the shipped genome}
+(\code{cy2} high, \code{t1}/\code{t2}/\code{t3} at \code{MIN\_WALL\_MM}, \code{R\_rim}
+high). A squashing reparameterisation has vanishing gradient there, so the run would
+begin with six genes frozen. Projection has no such pathology---a gene on a bound whose
+gradient points inward moves immediately.
+
+% ===========================================================================
+\section{Glossary of repository-specific terminology}
+\label{sec:glossary}
+% ===========================================================================
+
+\subsection{Structural and process vocabulary}
+
+\begin{termtable}{Structural and process vocabulary.}
+\S$N$ / ``section $N$'' &
+  A numbered section of \code{PLAN.md}, the project record. Cited constantly in
+  comments and commit messages. \S92 is the highest as of 2026-08-29. &
+  \code{PLAN.md} \\
+\addlinespace
+arc &
+  An open unit of work with its own plan file (\code{FILLET\_PLAN.md},
+  \code{HUBSHARE\_PLAN.md}, \ldots). A ``closed arc'' is finished, its file deleted and
+  its record folded into a \code{PLAN.md} section. &
+  \at{PLAN.md}{79--115} \\
+\addlinespace
+M0\ldots M9 &
+  Milestones of the original master plan. M2 = mesh validity, M3 = beam agreement,
+  M4 = full-wheel linear FEA, M5 = geometric nonlinearity, M6 = real contact,
+  M7 = the adjoint, M8a = the objective, M8b = the optimizer, M9 = buckling
+  eigenvalue. Sub-milestones such as \code{M8b-i.6} are refinements. &
+  \code{PLAN.md}, every study docstring \\
+\addlinespace
+gate &
+  A study driver that \emph{exits nonzero on failure}. Nine of them make up
+  \code{make studies}. Distinguished from a \emph{calibration} (measures a constant)
+  and a \emph{machine description} (times, not physics). &
+  \at{PLAN.md}{1625}\,ff. \\
+\addlinespace
+G1\ldots G10, S1\ldots S13, A1\ldots A4 &
+  Individually numbered checks \emph{inside} a gate. G-numbers are
+  \code{study\_gradient}'s, S-numbers \code{study\_stage3}'s, A-numbers
+  \code{study\_beam\_agreement}'s. &
+  study docstrings \\
+\addlinespace
+driver &
+  A script in \code{studies/} that runs a measurement and writes
+  \code{studies/study\_x.json} (and \code{.jpg}). Committed \emph{with} its artifacts,
+  by house rule. &
+  \code{PLAN.md} header \\
+\addlinespace
+REDS &
+  A closed arc: ``the five inherited reds''---five long-standing failing tests, cleared
+  in \S31. &
+  \at{PLAN.md}{5095} \\
+\addlinespace
+red &
+  A failing test. \code{make test} reads \code{0 failed} since \S31;
+  \code{xfail\_strict = true} means an \code{xfail} that \emph{starts passing} is also a
+  failure. &
+  \at{pyproject.toml}{31--46} \\
+\addlinespace
+the shipped genome &
+  \code{best\_solution.json}, hash \code{09e8188}, promoted 2026-08-14. Distinct from
+  the \emph{GA/beam optimum} \code{36aed36}, which is pinned forever in
+  \code{best\_solution\_ga\_beam.json}. &
+  \at{PLAN.md}{257--263} \\
+\addlinespace
+promotion &
+  Moving a candidate into \code{best\_solution.json}. Never a one-file change: the
+  banner, drivers with measured constants, and \code{make svk} move too;
+  \code{tests/test\_promotion.py} carries the checklist. &
+  \code{PLAN.md} header \\
+\addlinespace
+env-opt / env-cad &
+  The two virtualenvs. &
+  \code{requirements-*.txt} \\
+\addlinespace
+the hand-off &
+  \code{wheel\_fea.py} spawning \code{.venv-cad/bin/python src/wheel\_step\_export.py}
+  as a subprocess at the end of a GA run. Deliberately non-fatal. &
+  \code{wheel\_fea.py} tail \\
+\end{termtable}
+
+\subsection{Geometry vocabulary}
+
+\begin{termtable}{Geometry vocabulary.}
+sector &
+  One twelfth of the wheel, $30^\circ$. \code{SECTOR\_DEG = 360/12}. The mesh builds
+  sector 0 and rotates it eleven times. &
+  \at{wheel\_wheel.py}{174} \\
+\addlinespace
+block &
+  One structured quadrilateral grid. Seven per sector unfilleted, eleven filleted,
+  twelve for the rim tri-block. &
+  \code{BLOCK\_ORDER}, \code{:2394} \\
+\addlinespace
+seam &
+  A shared edge between two blocks, declared as
+  \code{(block\_a, side\_a, block\_b, side\_b, dk, reverse)}. \code{dk} is the sector
+  offset. &
+  \code{\_seam\_table}, \code{:2420} \\
+\addlinespace
+whole-edge seam &
+  A seam where an entire block edge matches an entire other block edge. The
+  alternative---a \emph{partial-edge seam}---is avoided by splitting blocks, because
+  whole-edge single ownership is ``the whole safety net''. &
+  \code{:2404--2419} \\
+\addlinespace
+span / thick / weld &
+  The three element-count directions: \code{n\_span} along the centerline,
+  \code{n\_thick} through the thickness, \code{n\_weld} along the weld arc. Three counts
+  are \emph{not free} because they sit on shared seams. &
+  \code{WheelConfig}, \code{:198} \\
+\addlinespace
+smoke / coarse / medium / fine &
+  Mesh refinement rungs. \textbf{Warning:} \code{wheel\_mesh} and \code{wheel\_wheel}
+  both define these names and they are different meshes---a name passed between them
+  once resolved silently against the wrong mesh and inflated a convergence order by
+  25\%. &
+  \code{CONFIGS}, \code{:252}; \at{wheel\_mesh.py}{123} \\
+\addlinespace
+collar &
+  The meshed annulus of the hub, \code{COLLAR\_DEPTH\_MM = 5.0} deep. Inside it the hub
+  is treated as a rigid body, because a full disk cannot be one structured quad block
+  (a polar grid degenerates at $r = 0$). &
+  \code{:195} \\
+\addlinespace
+rim band &
+  The annulus from \code{rim\_inner\_radius()} (48.5) to
+  \code{RIM\_OUTER\_RADIUS\_MM} (50.0). 1.5\,mm thick, and it holds about 32\% of the
+  wheel's compliance. &
+  \code{:177} \\
+\addlinespace
+junction / weld &
+  Where a spoke meets a ring. Two per spoke, 24 in total. &
+  \code{sector\_blocks}, \code{:2209} \\
+\addlinespace
+weld footprint &
+  The arc, in degrees, that one junction occupies on its ring circle. &
+  \code{weld\_footprints\_deg}, \code{:422} \\
+\addlinespace
+void / slot &
+  \code{SECTOR\_DEG} minus the arc a spoke's material occupies at the hub---the empty
+  arc between adjacent spoke roots, into which two fillets must grow from either side.
+  Negative means adjacent spokes overlap. &
+  \code{hub\_void\_deg}, \code{:467} \\
+\addlinespace
+arrival angle &
+  Angle between centerline and ring \emph{tangent}: $0^\circ$ tangential, $90^\circ$
+  radial. See \S\ref{sec:arrival}. &
+  \code{arrival\_angles}, \code{:380} \\
+\addlinespace
+flank &
+  One of the two offset curves bounding the spoke. $\eta = +1$ is ``top'', $-1$ is
+  ``bottom''. &
+  \code{offset\_band} \\
+\addlinespace
+flank orientation &
+  $(\eta_{\text{hub}}, \eta_{\text{rim}})$, each $\pm1$: which flank straddles each
+  ring. A \textbf{discrete topological decision}, not a smooth parameter. Only 16 of 60
+  feasible genomes share the shipped genome's $(+1, +1)$. Pinned for a whole Stage-3
+  run. &
+  \code{flank\_orientation}, \code{:559} \\
+\addlinespace
+straddling flank &
+  The one that crosses its ring circle. The other never crosses, which is what makes
+  each junction four-sided. &
+  \code{junction\_stations}, \code{:594} \\
+\addlinespace
+ring station &
+  The arc-length fraction $s$ at which a flank crosses a ring circle. &
+  \code{ring\_station}, \code{:296} \\
+\addlinespace
+free arc fraction &
+  $s_{\text{rim}} - s_{\text{hub}}$: the fraction of centerline that actually flexes
+  (67--87\%). \textbf{The wheel's dominant stiffness variable, and the beam model has no
+  term for it.} &
+  \code{:522} \\
+\addlinespace
+$P_t$ / $P_c$ &
+  The two re-entrant corners of an unfilleted junction. $P_t$ is where the straddling
+  flank crosses the ring---\textbf{the corner the real part has}, reproduced to
+  0.073\,$\mu$m of arc. $P_c$ is where the mesh's half end cap meets the circle---an
+  artefact of the meshing, not a corner of the part. &
+  \code{:1013--1030} \\
+\addlinespace
+uncap &
+  Replacing the junction's half end cap with the far flank's own continuation to the
+  ring circle---the geometry the exporter's \code{\_embed} actually builds.
+  \code{UNCAP\_DEFAULT = (True, 1.0)}; the hub and rim entries do \emph{not} mean the
+  same thing. &
+  \code{:2115--2206} \\
+\addlinespace
+embed &
+  The exporter's straight tangent extensions burying each spoke end inside its ring, so
+  the blunt end caps are absorbed by the boolean union. Its \emph{argmax search} over
+  20001 candidates is the piece the mesh deliberately does not reproduce (it would be
+  non-differentiable). &
+  \code{wheel\_step\_export.\_embed}, \code{:248} \\
+\addlinespace
+bite &
+  Weld penetration in \textbf{root thicknesses}:
+  $\mathrm{overlap}/(t^2 \cdot \mathrm{width})$. Derived rather than fitted: a spoke
+  burying itself to depth $d$ contributes $t\,d\,W$, so the ratio is exactly $d/t$.
+  Replaced a raw mm$^3$ floor that was really a proxy for $t$ and nothing else. Floor
+  0.25, honestly labelled a geometric floor, not a calibrated one. &
+  \code{wheel\_geometry.junction\_bite}, \code{:395} \\
+\addlinespace
+fold / fold margin &
+  See \S\ref{sec:fold}. &
+  \code{self\_intersection\_margin}, \code{:421} \\
+\addlinespace
+fillet\_a / fillet\_b &
+  The two blocks per junction of the eleven-block filleted sector. \code{a} is the
+  boundary layer along the fillet arc; \code{b} is the wedge crossing the ring circle.
+  They are split at $N$ because one edge with two partners would be a partial-edge
+  seam. &
+  \code{:986--1010} \\
+\addlinespace
+layer profile &
+  The pair \code{(entry, end)} controlling the filleted boundary layer's width
+  profile---a Hermite cubic. Since \S85 the default is a \emph{per-genome rule}, not a
+  global pair. &
+  \code{:1071--1140} \\
+\addlinespace
+cliff &
+  The value of \code{entry} at which a junction's layer reaches zero width. \S88 found
+  it has a \textbf{closed form}, $\max_u (Z - a(u))/b(u)$, agreeing with the 90-halving
+  bisection it replaced to 2\,ulp. &
+  \code{\_layer\_cliff\_from\_scalars}, \code{:1537} \\
+\addlinespace
+sector-fit clamp &
+  Pulls a gene-derived fillet radius back inside the room its own sector has, at 95\% of
+  the limit. Took a drawn genome box from 10/16 building to 16/16. A clamp is \emph{not}
+  a gate: it keeps the genome and models a \emph{smaller} fillet, which is honest only
+  because \code{mesh.fillet\_radii\_mm} and \code{mesh.fillet\_clamped} report what was
+  actually built. &
+  \code{SECTOR\_FIT\_CLAMP}, \code{:1171} \\
+\addlinespace
+tri-block &
+  The three-quad Y-partition of the rim junction at the faithful (\code{uncap} blend
+  0.0) rim, where the region becomes a curvilinear \emph{triangle}. Built and measured
+  (\S53), not adopted. &
+  \code{studies/study\_tri\_block.py} \\
+\end{termtable}
+
+\subsection{Optimization and physics vocabulary}
+
+\begin{termtable}{Optimization and physics vocabulary.}
+T1 / T2 / T3 &
+  The three cost tiers of the objective. \textbf{T1} is gene-space
+  (microseconds, no mesh), \textbf{T2} mesh-space (milliseconds,
+  \code{mesh\_coords} only), \textbf{T3} solve-space ($\sim0.7$\,s per phase). The
+  tiering is economics, not organisation: a line search can re-evaluate T1 alone. &
+  \at{wheel\_objective.py}{30--42} \\
+\addlinespace
+barrier vs.\ objective term &
+  See \S\ref{sec:barriers}. \code{BARRIER\_TERMS} / \code{OBJECTIVE\_TERMS}, with an
+  assert that every term is classified. &
+  \code{:394--407} \\
+\addlinespace
+QoI &
+  Quantity of Interest---a scalar
+  $Q(\code{coords}, \code{u\_full}, \code{y\_ground})$ the adjoint differentiates. The
+  \code{QOI} registry holds \code{contact\_force}, \code{strain\_energy}, \code{mass},
+  \code{pnorm\_stress}. &
+  \at{wheel\_adjoint.py}{450} \\
+\addlinespace
+axle drop &
+  The wheel's deflection under load, in mm. Target 2.0. Measured as the prescribed
+  ground indentation at which the contact force equals the service load. &
+  \code{solve\_wheel\_contact}, \at{wheel\_fem.py}{1867} \\
+\addlinespace
+phase / \code{phase\_deg} &
+  The rolling angle of the wheel under a stationary ground. Lives on
+  \code{build\_wheel(phase\_deg=...)}, \emph{not} on the load---the ground does not
+  move. Putting phase in the load pushes the wheel sideways, a different load case, and
+  silently breaks the 12-fold periodicity check. &
+  \code{\_sector\_coords}, \code{:2583} \\
+\addlinespace
+stencil &
+  The set of phases one objective evaluation averages over. See \S\ref{sec:phase}. &
+  \code{phase\_stencil}, \code{:966} \\
+\addlinespace
+utilisation (\code{util}) &
+  $K_t\,\sigma_{\text{nominal}} / \mathrm{allowable}$. 1.0 is the wall. Shipped genome:
+  0.8201 (hub), 0.5454 (rim). &
+  \code{t3\_terms}, \code{:1045} \\
+\addlinespace
+the knee &
+  \code{MARGIN\_KNEE\_UTIL = 0.80}. \code{stress\_margin} is
+  $\mathrm{soft\_barrier}(\code{util} - 0.80)$---the same function as the \code{stress}
+  wall with the knee moved in. Encodes the policy ``margin below 0.8 is close to
+  worthless, above 0.95 close to priceless''. Explicitly labelled a judgement, not a
+  measurement. &
+  \code{:343} \\
+\addlinespace
+\code{min\_sj} &
+  The mesh-validity barrier, summed over \emph{every} element rather than applied to
+  the worst---because \code{min} is a max-like kink whose gradient is a delta on
+  whichever element is currently worst, and because summing also tells the optimizer
+  \emph{how many} elements are marginal. Target 0.2. &
+  \code{t2\_vector}, \code{:931} \\
+\addlinespace
+coupling term &
+  The $(\partial Q/\partial\delta)(d\delta^*/dp)$ half of the total gradient at constant
+  force. See \S\ref{sec:adjoint}. &
+  \code{service\_qoi\_value\_and\_grad} \\
+\addlinespace
+frozen / freezing &
+  Holding a discrete decision fixed so a derivative exists: flank orientation, seam
+  ownership, fillet roots, the clamp's decision. Always \emph{named}, never hidden. &
+  \code{mesh\_coords} docstring \\
+\addlinespace
+inert term &
+  A term with a large loss value and a tiny gradient---dominates the table, contributes
+  nothing to descent. \code{400*n\_inflections} was this in pure form. Gate 8 exists to
+  detect it. &
+  \code{studies/study\_objective.py} \\
+\addlinespace
+event &
+  A structured record in a run log of something the optimizer decided:
+  \code{t1\_reject}, \code{orientation\_flip}, \code{fidelity\_check\_failed},
+  abandonment. &
+  \code{descend}, \code{:410} \\
+\addlinespace
+selection key &
+  The three-tier promotion sort. See \S\ref{sec:selectionkey}. &
+  \code{:195} \\
+\addlinespace
+\code{make <target>} &
+  Every measurement in this tree has a Makefile target: \code{make fillet},
+  \code{filletblock}, \code{corner}, \code{hubcap}, \code{gci}, \code{triblock},
+  \code{svk}, \code{studies}, \code{test}. &
+  \code{Makefile} \\
+\end{termtable}
+
+% ===========================================================================
+\section{Architecture and module breakdown}
+\label{sec:arch}
+% ===========================================================================
+
+\begin{lstlisting}
+src/
+  project_paths.py     35 lines   ROOT/SRC/STUDIES/EXPORT.  STDLIB ONLY -- imported by
+                                  wheel_fea, which the CAD env imports.
+  jax_config.py        36        `jax.config.update("jax_enable_x64", True)`, and raises
+                                  loudly if something traced first.  float64 is mandatory:
+                                  at float32 a Newton solve cannot reach 1e-10, an FD check
+                                  has no plateau, and the patch test's 1e-12 is below eps.
+  wheel_genome.py     183        names, bounds, normalisation, genome_hash, record I/O.
+                                  numpy+stdlib only.
+  wheel_geometry.py   436        THE GEOMETRY KERNEL.  Bezier, taper, offset band,
+                                  curvature, fold margin, junction bite.  Dual-backend via
+                                  `xp=`; never imports jax.
+  wheel_mesh.py       391        One spoke block: sampler, grid connectivity (Q4/Q9),
+                                  boundary node sets, quality metrics (scaled Jacobian,
+                                  aspect ratio, areas).
+  wheel_fea.py       1713        STAGE 1/2.  Constants, GENE_SPACE, Castigliano beam model,
+                                  the nine loss terms, the pygad driver, the fillet-arc
+                                  plotting helpers, and the CAD hand-off.  numpy only.
+  wheel_wheel.py     3709        THE FULL 360 DEGREE MESH.  Ring geometry, block builders,
+                                  Coons patches, the filleted eleven-block sector, seam
+                                  tables, union-find assembly, WheelMesh, the differentiable
+                                  `mesh_coords` + jitted `coord_fn`, area and quality
+                                  reports.  Largest and most intricate file in the tree.
+  wheel_fem.py       1914        THE FE KERNEL.  Shape functions, energy, autodiff'd force
+                                  and tangent, DofMap, penalty contact, linear and Newton
+                                  solvers, stress recovery, spoke/wheel/contact problems.
+  wheel_adjoint.py    759        THE GRADIENT.  QoIs, the adjoint solve, load-controlled
+                                  total derivatives, LOBPCG buckling eigenpair.
+  wheel_objective.py 1461        THE STAGE-3 SCALAR.  Fourteen terms in three tiers, the Kt
+                                  stress constraint, the hub fillet cap model, phase
+                                  stencils, jit caches, loss breakdown reporting.
+  wheel_stage3.py    1093        THE DRIVER.  Projected Adam (and an L-BFGS-B alternative),
+                                  step-reject policy, selection key, run records, CLI.
+  wheel_pool.py       408        Parent half of the phase worker pool.  stdlib+numpy, NO jax.
+  wheel_pool_worker.py 103       Child.  Pins threads BEFORE its first import.
+  wheel_step_export.py 1248      THE EXPORTER (CadQuery env).  Profile construction,
+                                  embedding, boolean union, fillet ladder, health checks,
+                                  STEP write, manifest.
+studies/              ~19 drivers + their committed .json/.jpg artifacts
+tests/                25 files, 503 test functions
+\end{lstlisting}
+
+\subsection{The import graph, and the constraint that shapes it}
+
+\begin{lstlisting}
+                 project_paths  (stdlib)
+                       |
+      wheel_geometry --+-- wheel_fea ------> wheel_step_export   [CAD ENV]
+       (xp-generic)         (numpy)              (cadquery/OCP)
+            |                 |
+        wheel_mesh            |
+            |                 |
+            +---> wheel_wheel + jax_config
+                       |
+                  wheel_fem
+                       |
+                 wheel_adjoint
+                       |
+                wheel_objective
+                       |
+                 wheel_stage3 ---- wheel_pool ---- wheel_pool_worker
+\end{lstlisting}
+
+The horizontal line matters more than the vertical one. Everything to the left of and
+including \code{wheel\_fea} must import \textbf{with numpy alone}, because
+\code{wheel\_step\_export.py} runs in the CadQuery interpreter and imports
+\code{wheel\_fea} and \code{wheel\_geometry} from it. A single top-level
+\code{import jax} anywhere in that half breaks the exporter, and
+\code{tests/test\_import\_hygiene.py} runs \code{import wheel\_fea} in a jax-free
+subprocess to prove it has not happened.
+
+This is also why \code{wheel\_wheel.mesh\_coords} imports \code{jax.numpy}
+\emph{lazily}, inside the function, and why \code{wheel\_geometry} takes \code{xp} as a
+parameter instead of importing an array module. Note also that
+\code{MAX\_ARRIVAL\_DEG}, \code{MIN\_FOLD\_MARGIN\_MM} and \code{MIN\_JUNCTION\_BITE}
+live in \code{wheel\_geometry} rather than where they are used, because their
+\emph{producer} and \emph{consumer} are on opposite sides of the interpreter boundary
+and this is the only module both can import.
+
+\code{src/} reaches the interpreter three ways---\code{pyproject.toml}'s
+\code{pythonpath} for pytest, \code{export PYTHONPATH} in the Makefile, and the root
+\code{conftest.py} (which also seeds \code{os.environ} so the three subprocess-spawning
+tests behave identically under bare \code{pytest} and under \code{make test}). A package
+with \code{\_\_init\_\_.py} was rejected precisely because an \code{\_\_init\_\_}
+importing jax-dependent siblings would break the CAD environment.
+
+\subsection{Caches, and why they are keyed the way they are}
+\label{sec:caches}
+
+There are three JIT caches in this tree, all following the same idiom and all with the
+same failure mode documented.
+
+\paragraph{\code{wheel\_wheel.\_COORD\_FN\_CACHE}} (\code{:2760}), the jitted
+$\mathrm{genes} \to \mathrm{coords}$ map. The JIT is load-bearing, not tuning:
+\code{sector\_blocks} unrolls a fixed-count Newton over \code{n\_curve} stations for
+every ring crossing, so tracing is expensive, and \code{jax.vjp} on an \emph{untraced}
+closure re-traces on \textbf{every call}---measured at 0.774\,s against 0.05\,s for the
+entire rest of the adjoint. Without the cache, 97\% of a Stage-3 gradient is re-deriving
+a jaxpr that never changes.
+
+The cache \textbf{cannot be keyed on the mesh object}---the obvious thing, and wrong.
+Every finite difference, every sweep point and every optimizer step builds a \emph{new}
+mesh at new genes, so a per-object cache misses on literally every call it exists to
+serve while looking like it works. The key is the \emph{static recipe} instead: element
+counts, orientation, ownership bytes, phase, \code{repr(uncap)}, and the fillet recipe.
+Genes are the traced \emph{argument} and must never be in the key. Correspondingly, the
+filleted mesh's frozen roots are passed as a \emph{traced array argument} rather than
+closed over---because they depend on the genome, and closing over them would put a
+design into the jaxpr and re-trace on every step (2.78\,s to trace once, 0.0095\,s per
+call after; 2.78\,s \emph{every} call if closed over).
+
+\code{repr(uncap)} in the key is a correctness entry, not a performance one. Its absence
+was invisible while \code{UNCAP\_DEFAULT} was \code{False}; when \S38 flipped the
+default, a mesh built with an explicit \code{uncap=False} got traced coordinates from
+the \emph{other} geometry---\textbf{0.448\,mm of error} against the $10^{-9}$\,mm the
+path is documented to hold to.
+
+\paragraph{\code{wheel\_objective.\_T1\_CACHE}} (\code{:872}) and
+\textbf{\code{\_KT\_CACHE}} (\code{:521}) follow the same pattern for the T1 term vector
+and the $K_t$ value-and-gradient. T1's jit took a full evaluation's \code{t1\_vector}
+from about 1.06\,s to 0.0054\,s---a roughly $195\times$ improvement that mattered
+disproportionately, because once the phase loop was parallel, T1 and T2 (which run in
+the parent on every path) became the whole of Amdahl's serial fraction.
+
+\subsection{The phase pool}
+\label{sec:pool}
+
+\code{wheel\_pool.py} runs the eight per-phase solves of one evaluation in eight
+processes. It is deliberately \emph{not} \code{multiprocessing.Pool}, for three
+load-bearing reasons.
+
+\begin{enumerate}
+\item \textbf{Thread settings must be in place before numpy and JAX are imported.}
+  \code{OMP\_NUM\_THREADS} and its siblings are read by OpenBLAS/MKL at import and
+  \code{XLA\_FLAGS} by XLA at its first trace; \code{spawn}'s \code{initializer=} fires
+  \emph{after} the unpickling that already imported everything. \code{fork} would be
+  early enough and is unusable on two counts (forking an initialised JAX process is a
+  documented hazard; \code{fork} does not exist on Windows). So the pool uses an
+  explicit \code{Popen(env=...)}.
+\item \textbf{Phase slots must pin to workers}, so slot $i$ always goes to worker
+  $i \bmod n_{\text{workers}}$ and each worker only ever traces its own phases' jaxprs.
+\item \textbf{Results must combine in slot order.} Floating-point addition is not
+  associative, so an as-completed reduction would make the aggregate depend on the
+  scheduler. In slot order the arithmetic is identical, which is what lets S13 gate
+  \emph{pooled $=$ serial exactly} rather than to a tolerance.
+\end{enumerate}
+
+\code{XLA\_FLAGS} deserves its own note, because it is a \textbf{correctness} setting
+here. Measured: two plain serial runs of one \code{coarse} adjoint, in two separate
+interpreters with no pool anywhere, agree on every forward value to the bit and
+disagree on the \emph{gradient} by $3.33\times10^{-16}$---XLA's CPU intra-op thread pool
+is sized from the machine and its parallel reductions do not associate the same way
+twice. Pinned to one thread, the same comparison is exactly zero, and it costs 19.84\,s
+against 20.43\,s. Nothing in OMP/MKL/OPENBLAS/NUMEXPR touches that pool.
+
+Nothing unpicklable crosses the boundary: \code{WheelMesh.\_\_slots\_\_} holds
+\code{\_coord\_fn}, a jitted \code{PjitFunction} after the first \code{mesh\_coords}
+call. So the worker builds its own mesh from the genes and returns only the leaves
+\code{t3\_terms} reads---three floats and three 14-vectors. The reply is shaped
+\emph{exactly like} the serial adjoint dictionary, so the loop body in
+\code{t3\_terms} is literally the same lines on both paths.
+
+Measured: $3.95\times$ at 8 workers on 16 cores; a production run projects 46.46\,h down
+to 11.77\,h.
+
+% ===========================================================================
+\section{Full workflow walkthrough}
+\label{sec:workflow}
+% ===========================================================================
+
+Let me trace one concrete path end to end: \textbf{Stage 3 takes one Adam step} on the
+shipped genome. This is the deepest path in the system and touches almost everything.
+
+\subsection*{Step 0 --- the CLI}
+
+\begin{lstlisting}[language=bash]
+.venv-opt/bin/python src/wheel_stage3.py --start best --steps 100 \
+    --config medium --kinematics svk --min-wall 1.2 --workers -1
+\end{lstlisting}
+
+\code{main()} (\at{wheel\_stage3.py}{932}) loads \code{best\_solution.json} via
+\code{load\_genes} (\code{:844}), converts the 14-key dictionary to an ordered vector
+with \code{wheel\_genome.genes\_to\_vector}, and normalises it into the unit box.
+\code{--min-wall 1.2} calls \code{wheel\_fea.set\_min\_wall}, which rebuilds
+\code{GENE\_SPACE}'s thickness bounds---this is \emph{not} cosmetic: \code{descend}
+projects its start into the box before it steps, so loading the shipped 1.2\,mm genome
+without this flag would silently lift all four thicknesses to 2.0 and optimise a
+different, heavier wheel without a word of complaint
+(\at{wheel\_fea.py}{216--236}).
+
+\subsection*{Step 1 --- pinning the topology}
+
+\code{descend} (\code{:410}) computes the \textbf{flank orientation} once, from the
+starting genes:
+
+\begin{lstlisting}[style=py]
+orientation = WW.flank_orientation(wg.denormalize(z, low, high), wcfg, span_mm=span_mm)
+\end{lstlisting}
+
+\code{flank\_orientation} (\at{wheel\_wheel.py}{559}) samples the two flanks at the
+endpoints and asks which one is inside its ring circle. The answer is a pair of $\pm1$.
+It is \textbf{pinned for the whole run} and threaded through every \code{build\_wheel}
+call thereafter, because it is a discrete topological decision: a step that flips it
+changes which block owns which node, and the gradient of that step does not exist. It is
+\emph{also} re-derived every step for reporting, and a disagreement is logged as an
+\code{orientation\_flip} event---the run keeps going on the pinned topology, and the
+event says the trajectory has walked somewhere the frozen answer is stale.
+
+Then the pool is created (\code{WP.PhasePool(n\_workers)}), owned by \code{descend}
+rather than by the \code{Evaluator}, so the \code{finally} that closes it sits next to
+the loop a Ctrl-C can interrupt.
+
+\subsection*{Step 2 --- drawing the phase stencil}
+
+\begin{lstlisting}[style=py]
+phases = WO.phase_stencil(n_phase=8, n_sub=8, scheme="rqmc", rng=rng)
+\end{lstlisting}
+
+Eight angles in $[0^\circ, 30^\circ)$, on the fixed 64-point lattice
+(\S\ref{sec:phase}).
+
+\subsection*{Step 3 --- building eight meshes}
+
+\code{Evaluator.\_\_call\_\_} (\code{:377}) calls
+\code{WO.phase\_meshes(genes, cfg, phases, orientation=orientation)}, which is
+twelve-fold \code{build\_wheel(genes, cfg, phase\_deg=p, orientation=orientation)}.
+(Pooled, the parent builds only mesh 0---T2 reads \code{meshes[0]}---and each worker
+builds its own.)
+
+Inside \code{build\_wheel} (\at{wheel\_wheel.py}{2869}):
+
+\begin{enumerate}
+\item \code{\_sector\_coords} (\code{:2583}) calls \code{sector\_blocks} (\code{:2209}),
+  which builds sector 0's seven node grids.
+  \begin{itemize}
+  \item \code{global\_sampler} (\code{:275}) wraps \code{wheel\_mesh.band\_sampler} and
+    shifts it into the global frame, so \emph{every} block that touches the band goes
+    through the same closure and shared nodes agree bitwise rather than to $O(h^2)$.
+  \item \code{junction\_stations} then \code{ring\_station} (\S\ref{sec:meshing}) finds
+    $s_{\text{hub}}$ and $s_{\text{rim}}$ to $10^{-15}$.
+  \item the \textbf{spoke} block is \code{sample(s\_grid[:,None], eta\_grid[None,:])}
+    --- the offset band of Equation~\eqref{eq:offsetband}, sampled uniformly in arc
+    length $\times$ $\eta$.
+  \item each \textbf{junction} is a Coons patch whose four sides are: the spoke's own
+    end cross-section (the same array, so the seam is exact by construction), an arc
+    along the ring circle, the far flank sampled at $-\eta$, and a straight segment to
+    the far end. Corner angles come out $79.5 / 90 / 90 / 79.5$ degrees rather than the
+    10.5 the near-tangent arrival suggests---that is the \S\ref{sec:arrival} inversion
+    paying off.
+  \item each \textbf{ring} is split into a \code{\_weld} polar block (spanning exactly
+    the weld arc) and a \code{\_free} polar block (the rest of the sector), both laid
+    out in increasing $\theta$ so that
+    \code{weld.i1} $\to$ \code{free.i0} $\to$ next \code{weld.i0} holds for every genome
+    and the tiling closes.
+  \end{itemize}
+\item The seven grids are rotated into twelve sectors by \code{\_rotate} and
+  concatenated. \textbf{Phase is applied here}, not to the load.
+\item The \textbf{seam table} is walked; a \code{\_UnionFind} merges declared-equal
+  nodes; the seam error is measured \emph{before} the non-owners' coordinates are
+  discarded.
+\item Nodes are relabelled to a compact global numbering; \code{owners} (the raw index
+  of each merged node) is saved on the mesh---this is what \code{mesh\_coords} will
+  index with.
+\item Connectivity is emitted per block by \code{wheel\_mesh.grid\_connectivity} and
+  passed through \code{\_orient\_elements} to flip left-handed polar blocks.
+\item \code{\_node\_sets} / \code{\_edge\_sets} build \code{hub\_tie},
+  \code{rim\_outer} and friends. Edge \emph{segments}, not just node sets, because a
+  distributed load needs consistent nodal forces and the correct weights on a quadratic
+  edge are $1/6, 4/6, 1/6$---not equal thirds.
+\end{enumerate}
+
+Out comes a \code{WheelMesh} carrying coordinates, connectivity, config, per-element
+block and region tags, node and edge sets, \code{seam\_error\_mm}, \code{owners},
+\code{orientation}, \code{phase\_deg}, \code{uncap}, and (if filleted) the applied radii
+and the frozen root record. At \code{medium} this is about 104k degrees of freedom.
+
+\subsection*{Step 4 --- the objective}
+
+\code{WO.objective(z, cfg, normalized=True, ...)} (\at{wheel\_objective.py}{1308})
+denormalises, then runs three tiers.
+
+\paragraph{T1} (\code{t1\_vector}, \code{:774})---genes only, no mesh, microseconds via
+the jitted cache. Seven terms, returned as a \emph{vector} so \code{jax.jacrev} gives
+every term's gradient in one backward pass (which is what the per-term inertness census
+needs):
+
+\begin{itemize}
+\item \code{x\_order}---control points must stay ordered with a 2\,mm gap, plus a
+  fold-back barrier on $-\min(\mathrm{diff}(x))$;
+\item \code{hub\_overlap}---root thickness plus two fillet radii plus clearances must
+  fit the chord $2 R_{\text{hub}}\sin(\pi/12) \approx 6.57$\,mm available to one sector;
+\item \code{smoothness}---\textbf{rewritten} for differentiability. The old
+  \code{400*n\_inflections} was an integer from \code{count\_nonzero} behind a
+  data-dependent mask with \emph{exactly zero gradient} while being 20.6\% of the GA's
+  loss. It is replaced by a curvature-rate integral $\int (d\kappa/ds)^2\,ds$ plus a
+  smooth sign-reversal product
+  $\sum \max\bigl(0, -\kappa_i \kappa_{i+1}/\kappa_{\text{ref}}^2\bigr)\,\Delta s$;
+\item \code{fold}---\S\ref{sec:fold};
+\item \code{arrival}---\S\ref{sec:arrival};
+\item \code{fillet}---a closed-form geometric feasibility margin for each of four fillet
+  corners, barriered individually so one infeasible fillet cannot be averaged away by
+  three comfortable ones. \textbf{This is what gives \code{R\_hub}/\code{R\_rim} a live
+  gradient} even though the default mesh models no fillets;
+\item \code{fillet\_cap}---\code{R\_hub} may not exceed \code{hub\_fillet\_cap\_mm}, the
+  largest hub fillet the part can actually build (\S\ref{sec:hubcap}). A separate term
+  from \code{fillet}, deliberately: \code{fillet} asks whether a circle fits in one
+  re-entrant \emph{corner}, this asks whether it fits in the \emph{slot} two spokes
+  leave between them. Different mechanism, different gradient, and every census in the
+  tree reads at term granularity---folding them together would make ``is the cap
+  binding?'' unanswerable from the loss table.
+\end{itemize}
+
+Plus \code{buckling}, computed from the numpy beam surrogate with an explicitly
+asserted \emph{zero gradient}---currently exactly 0.0 (ratio 0.139 against a threshold
+of 1.0), and the gate asserts it \emph{stays} zero, so the day it starts to bite the
+census fails and says so.
+
+\paragraph{T2} (\code{t2\_vector}, \code{:931})---mesh-space, via \code{mesh\_coords}
+alone:
+
+\begin{lstlisting}[style=py]
+coords = WW.mesh_coords(genes, mesh)          # differentiable, jitted
+mass_g = sum(element areas) * width * density
+min_sj = sum_e soft_barrier(0.2 - sj_e)
+\end{lstlisting}
+
+\paragraph{T3} (\code{t3\_terms}, \code{:1045})---one
+\code{service\_qoi\_value\_and\_grad} per phase (\S\ref{sec:adjoint}), each of which is
+a secant to service force, a re-solve at the found indentation, one stiffness assembly,
+one factorisation, and back-solves for \code{contact\_force}, \code{pnorm\_stress} and
+whatever else was requested, all sharing one mesh vjp. Then:
+
+\begin{itemize}
+\item $\code{deflection} = 2500 \left(\frac{\overline{\mathrm{drop}} - 2.0}{2.0}\right)^2$,
+  the mean over the stencil;
+\item \code{stress}---a smoothed maximum over the \emph{phase} samples ($p$-norm at
+  $p = 8$, replacing CVaR, which at 8 samples is ``the worst one or two'' and whose
+  gradient jumps as the set switches) fed into the
+  $K_t\,\sigma_{\text{nom}} \le \mathrm{allowable}$ barriers, one per junction
+  (\S\ref{sec:stress});
+\item \code{stress\_margin}---the same two utilisations, priced instead of walled, with
+  the knee at 0.80;
+\item \code{phase\_ripple}---std/mean of the drops over the stencil.
+\end{itemize}
+
+Note that the two exponents in T3 are \textbf{not the same quantity}:
+\code{stress\_phase\_p = 8.0} aggregates the eight phase samples;
+\code{stress\_gauss\_p = 4.0} is the volume-weighted $p$-norm exponent over the Gauss
+points inside one solve.
+
+\code{objective} sums the fourteen values, sums the fourteen gradients, applies the
+unit-box chain rule if \code{normalized}, and returns \code{(value, grad, breakdown)}
+where the breakdown carries per-term value, share, gradient norm and gradient share.
+
+\subsection*{Step 5 --- the step}
+
+Back in \code{descend}:
+
+\begin{lstlisting}[style=py]
+lr_t             = cosine_lr(lr, i-1, steps)
+g_clipped, g_norm = clip_global_norm(grad, 1.0)
+delta, m, v      = adam_update(g_clipped, m, v, i, lr_t)
+z_trial          = project(z - scale*delta)
+\end{lstlisting}
+
+Then the \textbf{T1 pre-check}: \code{t1\_barrier\_sum(z\_trial, ...)}---microseconds,
+no mesh, no solve---and if the trial's barrier sum exceeds
+$\max(\code{T1\_REJECT}, b_{\text{here}})$ it is refused \emph{before any mesh is
+built}.
+
+\code{T1\_REJECT = 1.0e4}, and the number is the whole lesson
+(\at{wheel\_stage3.py}{143--167}). It was 1.0, with the rule ``never step further into
+the wall''. That \textbf{deadlocked} a probe: the shipped design carries
+$\code{hub\_overlap} = 52.13$, the stress-reducing direction raises it to 55.41, and
+halving only walks it back to 52.54, so every trial at every scale was refused---194
+events, zero accepted steps, thirty-five minutes standing still. The error was
+conceptual: every barrier is \emph{already} a term in the objective with a weight
+chosen to price it, so a pre-check that also forbids increasing it duplicates and
+overrides that job---and what it overrides is exactly the constrained trade the run
+exists to make. The screen now keeps only the job the objective cannot do: refusing to
+spend a solve on geometry that will not mesh. Healthy barriers are tens; an analytically
+infeasible fillet scored 112{,}000.
+
+If the objective \emph{raises}---\code{NewtonDivergedError}, or the
+$dF/d\delta \le 0$ guard---the step is halved and retried up to \code{--max-rejects}. On
+exhaustion the iterate is restored and the learning rate decays.
+\code{wheel\_objective.py} contains \textbf{no \code{try}/\code{except} anywhere},
+deliberately: the caller owns the policy, and the policy is in \code{wheel\_stage3}.
+This matters beyond robustness, because $\mathrm{slope} \ge 0$ in the Newton loop is the
+tangent losing positive definiteness, and swallowing it as a large loss would let the
+optimizer walk into a buckled design and score it.
+
+If accepted, the \textbf{warm vector} for the next step is the per-phase indentations,
+read straight off \code{breakdown["report"]["rows"]}---because
+\code{service\_qoi\_value\_and\_grad}'s \code{delta0} \emph{is} the number reported as
+\code{axle\_drop\_mm}. Between two Adam steps the design barely moves, so the previous
+answer is a far better guess than a cold linear solve.
+
+Every $N$ steps, an optional \textbf{fidelity check} forward-evaluates the just-accepted
+iterate at a second config (\code{medium}), T3 tier only, and \emph{discards the
+gradient}---proven by a test that runs the same seed with the feature on and off and
+asserts \code{z}, \code{grad} and \code{loss} are bit-identical at every step. Pure
+observation: it can report on the trajectory, never redirect it.
+
+\subsection*{Step 6 --- selection and persistence}
+
+Every step is scored by \code{selection\_key} (\S\ref{sec:selectionkey}) and the best is
+tracked. The run record (\code{\_record}, \code{:665}) is written incrementally, so a
+killed run leaves a readable partial. At the end, \code{--best-out} writes a genome
+record through \code{wheel\_genome.save\_record}---genes plus top-level \code{search},
+\code{loss\_terms} and \code{metrics} blocks.
+
+\subsection*{Step 7 --- promotion and export}
+
+A promotion moves the candidate to \code{best\_solution.json}, and by house rule that is
+\textbf{one atomic commit that is never one file}: the banner, the drivers carrying
+measured constants, and \code{make svk} move with it, and
+\code{tests/test\_promotion.py} carries the checklist.
+
+Then \code{make export} runs \code{wheel\_step\_export.py} in the CAD environment:
+
+\begin{enumerate}
+\item \code{load\_genome} reads \code{best\_solution.json}; \code{warn\_if\_stale}
+  compares mtimes.
+\item \code{spoke\_edges\_global} re-derives the two flanks from
+  \code{wheel\_fea.thicken\_3taper\_curve}---the \emph{same} geometry kernel the mesh
+  uses.
+\item \code{\_embed} (\code{:248}) appends \textbf{straight tangent segments} to each
+  flank end, burying the spoke root 0.5\,mm inside the hub disk and running the tip
+  0.25\,mm past $\varnothing$100. Straight, because the previous approach---moving the
+  last point and interpolating a spline through it---put a \emph{self-intersecting loop}
+  in every spoke: the first span jumped 3\,mm while its clamped tangent pointed
+  $40.7^\circ$ against a local curve direction of $76.1^\circ$. The union trimmed the
+  loops away but left a 0.041--0.067\,mm near-cusp running the full 22.4\,mm as a knife
+  edge. OCC calls that valid (\code{BRepCheck\_Analyzer} does not test for cusps) and
+  Parasolid refuses to build a face across it, drops the face, and \textbf{the spoke
+  imports open}. A straight line adds no curvature, cannot cusp, and continues the
+  flank's own end tangent so the join is $G^1$.
+\item \code{build\_profile} unions hub disk $+$ 12 spokes $+$ rim band into one planar
+  face, extrudes it, and clips to $\varnothing$100.
+\item \code{\_junction\_edges} finds the full-height vertical edges and measures each
+  one's \emph{material wedge angle} by classifying sample points against the solid. A
+  corner is worth filleting when its wedge exceeds $180^\circ$ (re-entrant). The five
+  families separate with a wide margin: $354^\circ$ (the spoke-to-spoke notch at the
+  hub, fillet), $152^\circ$ (convex, skip), $180^\circ$ (straight through, no corner),
+  $194$--$356^\circ$ (the rim junctions, fillet), $178^\circ$ (the OD trim seam, skip).
+\item \code{fillet\_junctions} walks a \emph{ladder}: request the genome's radius; if
+  OCC refuses, retry at $0.85\times$ (\code{FILLET\_LADDER\_DECAY}), down to
+  \code{MIN\_CURVATURE\_RADIUS\_MM = 0.25}. All 48 corners (24 hub $+$ 24 rim) are
+  filleted on the shipped genome, at the requested radii, with \code{kt\_error} 0.0\% at
+  both junctions.
+\item \code{step\_health} runs a surface census, a minimum-curvature scan (a fault
+  detector: 0.25\,mm is well under any fillet requested, so a violation always means a
+  construction fault), and \code{despecialize} (converting swept and offset surfaces to
+  canonical ones, which is what some importers need).
+\item \code{\_export\_with\_settings} writes AP214 STEP; \code{report} writes
+  \code{export/wheel\_step\_manifest.json} with the genome hash, junction overlaps
+  \emph{and bites}, the fillet radii OCC actually managed versus what the optimizer
+  priced, and the solid volume with and without fillets.
+\end{enumerate}
+
+For the shipped genome: 39224.5\,mm$^3$ solid, 36145.8\,mm$^3$ unfilleted,
+\textbf{3078.77\,mm$^3$ of fillet $=$ 7.85\% of the solid}, 48.64\,g of PLA.
+
+% ===========================================================================
+\section{Key algorithms, in detail}
+\label{sec:algorithms}
+% ===========================================================================
+
+\subsection{\texttt{mesh\_coords} --- the differentiable mesh}
+\label{sec:meshcoords}
+
+\code{wheel\_wheel.mesh\_coords(genes, mesh)} (\code{:2633}) returns the mesh's node
+coordinates as a differentiable function of the genes. The trick is what it
+\emph{freezes}:
+
+\begin{itemize}
+\item the \textbf{flank orientation}---taken from \code{mesh}, not recomputed;
+\item the \textbf{seam ownership}---\code{coords\_all[mesh.owners]};
+\item on a filleted mesh, the tangency and ring-crossing \textbf{roots}, seeded from
+  the eager build and refined by one Newton step;
+\item the four geometric refusals \code{\_fillet\_curves} can make.
+\end{itemize}
+
+So this is \textbf{the derivative of a fixed mesh whose nodes move}, which the docstring
+argues is the only derivative that means anything: a step that flips the orientation has
+no finite-difference plateau, and \emph{should not}---it is a real discontinuity of the
+design space, not a defect in the gradient.
+
+Crucially, \code{build\_wheel} itself is deliberately \emph{not} made traceable. Its
+seam check, element orientation pass and validity guards all need concrete coordinates,
+and they are the reason the mesh can be trusted; wrapping them in a ``skip when
+tracing'' branch is exactly how guards stop running. Instead the traced half is factored
+out (\code{\_sector\_coords}) and shared, and \code{mesh\_coords} \emph{reproduces} the
+eager result---checked to $10^{-9}$\,mm by \code{study\_gradient.py} gate 3 and
+\code{tests/test\_gradient.py}.
+
+\subsection{The \texorpdfstring{$p$}{p}-norm family, and why \texttt{max} never appears in a gradient}
+\label{sec:pnormfamily}
+
+Three separate places replace a \code{max} or \code{min} with a smooth aggregate, and
+each records the same argument in its own terms.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.22\linewidth}
+                               >{\raggedright\arraybackslash}p{0.10\linewidth}
+                               >{\raggedright\arraybackslash}p{0.24\linewidth}
+                               X@{}}
+\toprule
+\textbf{Quantity} & \textbf{Naive} & \textbf{Used instead} & \textbf{Why} \\
+\midrule
+peak stress over Gauss points & \code{max} & volume-weighted $p$-norm, $p = 4$ &
+  argmax jumps as the contact patch sweeps; also \code{max} diverges under refinement \\
+\addlinespace
+peak over phase samples & CVaR & $p$-norm, $p = 8$ &
+  at 8 samples CVaR is ``the worst one or two'' and its gradient jumps as the set
+  switches \\
+\addlinespace
+worst element quality & \code{min sj} &
+  $\sum_e \mathrm{soft\_barrier}(0.2 - sj_e)$ &
+  the gradient of \code{min} is a delta on whichever element is worst; and the sum tells
+  you \emph{how many} are marginal \\
+\addlinespace
+effective fillet radius & $\min(R, \mathrm{cap})$ &
+  \code{smooth\_min(R, cap, k)} &
+  needs $C^1$ at the tie, but \textbf{exact} outside a blend of width $k$ \\
+\bottomrule
+\end{tabularx}
+\caption{Four places a hard extremum was replaced, and the reason in each case.}
+\end{table}
+
+\code{smooth\_min} (\at{wheel\_objective.py}{424}) is worth a close read. The blend
+width is $k = (1 - 0.85)\cdot\max(\mathrm{cap}, 0.25)$, i.e.\ \textbf{one rung of the
+exporter's fillet ladder} (the \code{max} only keeps $k$ positive when adjacent spokes
+have closed the slot entirely)---narrower would model a distinction the exporter cannot
+make, wider would bias the effective radius below a cap the exporter builds \emph{at}.
+Exactness outside the blend is the property it exists for, and it is a claim a test
+asserts. Two obvious alternatives fail it: the hyperbolic smooth-min
+$\tfrac12\bigl(a + b - \sqrt{(a-b)^2 + \epsilon^2}\bigr)$ is $C^\infty$ but never exact
+(measured 1.3\% below the cap at the shipped genome---inventing a fillet reduction
+nothing measured), and log-sum-exp is scale-coupled and needs overflow guarding.
+
+The docstring also records a subtle autodiff bug \emph{at exactly $a = b$}. Two
+primitives are non-differentiable at the tie and autodiff picks a subgradient for each:
+\code{jnp.abs} returns 0 at 0 (killing the blend term) and \code{jnp.minimum} hands the
+full 1.0 to its first argument. The sum was 1.0 against a true two-sided derivative of
+0.5---the function is perfectly smooth \emph{through} the tie, so this was an artifact
+of the spelling, not of the mathematics. Writing the minimum symmetrically as
+$\bigl(a + b - |a - b|\bigr)/2$ fixes it, confined to the blend by a \code{where}
+because the symmetric form is not bit-exact. Measure-zero and never observed to bite---%
+and worth fixing because the margin term drives \code{R\_hub} toward its cap on purpose,
+which makes the tie an \emph{attractor} rather than an accident.
+
+\subsection{\texttt{adjoint\_grads} --- one factorisation, \texorpdfstring{$N$}{N} solves}
+\label{sec:adjointgrads}
+
+\begin{lstlisting}[style=py]
+K   = assemble_stiffness(coords, conn, u_full, ...) + contact.stiffness(coords, u_full)
+Kr  = (T.T @ K @ T).tocsc()
+back_solve = spla.factorized(Kr)                             # ONE LU
+_, vjp = jax.vjp(lambda v: WW.mesh_coords(v, mesh), genes)   # ONE trace
+
+for each QoI Q:
+    value  = Q(c, u, y)
+    dQ_dc, dQ_du, dQ_dy = jax.grad(Q, argnums=(0,1,2))(c, u, y)
+    adj_r  = back_solve(-(T.T @ dQ_du))                # ONE back-substitution
+    adj_f  = T @ adj_r
+    d_dc, d_dy = mixed(c, u, y, adj_f, *static)        # grad_c and d/dy of adj . grad_u Pi
+    grad   = vjp(dQ_dc + d_dc)[0]                      # chain to the 14 genes
+\end{lstlisting}
+
+What is shared is what is expensive: the reduced tangent $K_r$ is identical for every
+quantity evaluated at the same converged state---only the right-hand side changes---and
+the mesh vjp is the bigger saving at 0.774\,s versus 0.05\,s for everything else. Since
+the load-control coupling needs both \code{pnorm\_stress} and \code{contact\_force} at
+the same state, this is the difference between one gradient's cost and two.
+
+There is also a guard on the adjoint solve itself: a non-finite multiplier means the
+tangent at the converged state is singular, ``which means the forward solve stopped at a
+state Newton could not have converged to.''
+
+\subsection{The three searches, and the order to attack them in}
+\label{sec:searches}
+
+\code{wheel\_adjoint.py}'s docstring generalises a lesson the fillet arc paid for three
+times, and it is the single most transferable idea in the repository. Three bracketed
+searches appeared inside the geometry, each blocking a gradient. Each took a
+\emph{different} instrument.
+
+\begin{enumerate}
+\item \textbf{\code{ring\_station}'s crossing solve}---replaced by a \emph{frozen root
+  plus one Newton step}. Unrolled Newton's derivative converges to the
+  implicit-function derivative, so the derivative is right without any wrapper.
+\item \textbf{\code{\_fillet\_tangency}'s tangency solve}---the same treatment. A
+  \code{custom\_vjp} around the bisection would have been the \emph{wrong} instrument,
+  ``because there is nothing wrong with the bisection's derivative that a wrapper could
+  fix. There is no derivative in a \code{sign} comparison to wrap.''
+\item \textbf{The layer cliff}---90 halvings of a bracket, and the frozen-root step does
+  not apply, because the answer is not a root of an equation the traced path
+  re-evaluates but the \emph{output} of ninety halvings. \S85 refused the gradient
+  outright. What removed the refusal was neither a wrapper nor a frozen root:
+  \textbf{the cliff had a closed form and nobody had looked for one.}
+\end{enumerate}
+
+The layer width profile is a Hermite cubic that is \emph{affine in} \code{entry}:
+%
+\begin{equation}
+  H(u) \;=\; h_{00}(u)\,w \;+\; h_{01}(u)\,(e\,w) \;+\; h_{10}(u)\,(\mathrm{entry}\cdot k)
+       \;=\; a(u) \;+\; \mathrm{entry}\cdot b(u),
+\end{equation}
+%
+writing $w$ for \code{wall}, $e$ for \code{end} and $k$ for \code{layer\_k}, with
+$b(u) = u(1-u)^2 k > 0$ strictly inside $(0,1)$. So $H(u) \le Z$ exactly when
+$\mathrm{entry} \le (Z - a(u))/b(u)$, and the sampled minimum reaches zero exactly when
+one of them does:
+%
+\begin{equation}
+  \mathrm{cliff} \;=\; \max_{u}\;\frac{\code{LAYER\_CLIFF\_ZERO} - a(u)}{b(u)}.
+  \label{eq:cliff}
+\end{equation}
+%
+Exact where the bisection was approximate (the two agree to \textbf{2\,ulp}, worst
+relative $4\times10^{-16}$, over 98 junction pairs and 48 genomes), and differentiable
+where the bisection had ninety \code{sign} comparisons. It also costs arithmetic instead
+of thirty filleted sector builds, which is what makes a per-genome layer profile
+adoptable at all.
+
+\begin{quote}
+\textbf{The order to try things in is therefore: is the search unnecessary; is its
+answer a root worth freezing; and only then is it a discrete decision to be
+classified.} Two of this project's three searches ended at the second question and one
+at the first; none needed a \code{custom\_vjp}.
+\end{quote}
+
+\subsection{\texttt{hub\_fillet\_cap\_mm} --- a model built from a falsification}
+\label{sec:hubcap}
+
+The largest hub fillet the part can actually build is the \textbf{minimum of two
+limits} (\at{wheel\_objective.py}{165--300}, \code{:704}), and the structure of that
+\code{min} is the result of a measurement campaign (\code{make hubcap}) that overturned
+the original single-term model.
+
+\begin{itemize}
+\item \textbf{The slot limit.} Two fillets grow into the gap adjacent spoke roots leave
+  on the hub circle, so each may claim a share of \code{hub\_void\_deg}.
+\item \textbf{The root-thickness limit.} A fillet in the re-entrant corner where a spoke
+  of thickness $t_0$ meets the hub circle cannot grow past roughly half that thickness.
+\end{itemize}
+
+The 24 hub corners are \textbf{two families of twelve}, named by wedge angle rather than
+by rank: a \emph{square-on} family at $266$--$270^\circ$ (the thickness mechanism) and a
+\emph{near-cusp} family at $294$--$332^\circ$ (the slot mechanism). Which one binds is
+\emph{observed}, not assumed---and it is not the same family on every design. At
+$t_0 = 1.2$ (where everything ships) the square-on family binds; on the $t_0 = 2.55$
+Stage-2 elites the near-cusp family binds.
+
+That last fact is why the original calibration was wrong in a way its own error bars
+could not show: \code{HUB\_CAP\_THICKNESS\_SHARE = 0.52} had been fitted to five ratios
+inside a 0.9\% band---\textbf{all from designs where that family does not bind}. The
+constant was calibrated tightly against a family that was never the limit. The result
+was a cap that over-promised on all five designs by $1.07\times$ to $1.62\times$, while
+the driver's own gate read green because it compared against the \emph{larger} of the
+two families.
+
+The re-fit added an arrival dependence:
+%
+\begin{align}
+  \frac{\text{square-on threshold}}{t_0}
+    &= S_{\text{thick}} \;-\; S_{\text{arr}}\,\bigl(1 - \cos\theta_{\text{hub}}\bigr)
+     \nonumber\\
+    &= 0.505 \;-\; 0.48\,\bigl(1 - \cos\theta_{\text{hub}}\bigr),
+  \label{eq:hubcap}
+\end{align}
+%
+writing $S_{\text{thick}}$ for \code{HUB\_CAP\_THICKNESS\_SHARE} and $S_{\text{arr}}$
+for \code{HUB\_CAP\_ARRIVAL\_SLOPE}.
+%
+The $(1 - \cos)$ form was chosen over a marginally better quadratic \textbf{because it
+stays positive across the whole physically reachable $[0^\circ, 90^\circ]$}---a
+quadratic crosses zero at $87.4^\circ$ and would assert that a near-radial spoke admits
+no fillet at all, which is a claim nothing measured. Out of sample on two designs in
+neither fit, the law is under by 3.1--3.3\%, the same margin it carries in sample. And
+the two families run in \emph{opposite} directions in arrival angle, which is why the
+buildable radius is a \emph{peaked} function of it and why five designs disagreed about
+the sign of the effect until a controlled sweep separated them.
+
+The re-fit brings the five caps from $1.067 / 1.615 / 1.199 / 1.463 / 1.479$ of the
+worst measured corner down to $0.979 / 0.969 / 0.827 / 0.967 / 0.969$. Note also that
+\code{fillet\_cap} carries \textbf{no safety factor}, deliberately, and the comment says
+why: a factor stacked on top would be a threshold with no measurement behind it. The
+conservatism lives in the fit, where it is measurable.
+
+\subsection{\texttt{t3\_terms} and the two-junction stress constraint}
+\label{sec:t3}
+
+Already covered mathematically in \S\ref{sec:stress}; two implementation notes remain.
+
+\paragraph{The \code{(name, factory)} form is load-bearing.}
+To reach \code{\_qoi\_pnorm\_stress} at $p = 4$ rather than the module default of 30, T3
+passes \code{("pnorm\_stress", lambda prob: WA.\_qoi\_pnorm\_stress(prob, p=stress\_gauss\_p))}.
+The bare string would take the module default and no argument could change it. The
+\emph{name} stays \code{"pnorm\_stress"} so every downstream key is unchanged.
+
+\paragraph{Probes cost nothing.}
+The $p$-norm is a pure function of the converged displacement field, so any number of
+exponents can be read off the field the adjoint already ran on. Each probe is pushed
+through the \emph{same} \code{\_stress\_aggregate} the constraint uses, so
+\code{pnorm\_by\_p[stress\_gauss\_p]} reproduces the report's own
+\code{stress\_utilisation} exactly---the probe is checkable against the thing it probes.
+\textbf{No gradient is taken at a probe $p$}: a convergence study reads values, and one
+adjoint per exponent per phase would turn a 14-minute ladder into an hour for numbers
+nothing reads.
+
+\subsection{\texttt{selection\_key} --- which iterate of a run is promotable}
+\label{sec:selectionkey}
+
+\begin{lstlisting}[style=py]
+violation = sum over BARRIER_TERMS of term value
+if violation > 0:              return (2, violation, loss)
+slack = hub_fillet_cap_mm - R_hub
+if slack < MIN_CAP_SLACK_MM:   return (1, -slack, loss)
+                               return (0, 0.0, loss)
+\end{lstlisting}
+
+Three tiers, most shippable first, sorted lexicographically. Tier 2 always ranks last
+\textbf{but is still ranked}, so a run in which nothing is feasible reports its
+least-violating step rather than nothing at all.
+
+\code{MIN\_CAP\_SLACK\_MM = 1e-3} is not zero, and the reason is worth internalising:
+\textbf{feasibility is fidelity-dependent.} On 2026-08-11, step 82 of a re-descent
+cleared the cap at \code{medium} by 53\,nm and violated it at \code{coarse} by 93\,nm. A
+barrier reading exactly 0.0 therefore certifies nothing on its own; it certifies that
+\emph{this mesh} saw no violation. $10^{-3}$\,mm is four orders above that crossover and
+four below what the step actually promoted was holding.
+
+Ranking tier 1 by \emph{slack} before \emph{loss} is also deliberate: inside a
+1\,$\mu$m band the loss differences are numerical noise against a feasibility question
+the mesh cannot resolve, so the tiebreak that means something is distance from the knee.
+
+\subsection{The filleted eleven-block sector}
+\label{sec:filletblock}
+
+This is the most intricate construction in the tree and it is worth understanding as a
+case study in structured meshing, even though it is not yet wired into the optimizer.
+
+\paragraph{The problem.}
+Rounding the $P_t$ corner \emph{inside} the spoke block (the original approach, retired
+by \S47) does not remove the fold---it moves it into whichever block carries the arc,
+where it becomes a cusp. The fix re-cuts the whole sector.
+
+\paragraph{The construction.}
+Per junction, two new blocks:
+
+\begin{itemize}
+\item \code{<j>\_fillet\_a}---a boundary layer along the fillet arc, above the ring
+  circle;
+\item \code{<j>\_fillet\_b}---the wedge that crosses the ring circle, out to the ring's
+  \emph{far} side.
+\end{itemize}
+
+Plus the junction block (unchanged in shape, but its end cross-section is replaced by
+\code{fillet\_a}'s inner edge) and the two ring blocks, re-cut. Seven blocks becomes
+eleven, fourteen whole-edge seams, closing at $3\times10^{-14}$\,mm.
+
+\paragraph{Why two fillet blocks and not one.}
+$N$ is where the fillet block's inner edge crosses the ring circle. Above $N$ that
+edge's partner is the junction block; below it, the ring. \textbf{One edge with two
+partners is a partial-edge seam}, and whole-edge single ownership is the module's whole
+safety net---so the block is split instead.
+
+\paragraph{Why the cut must reach the ring's far boundary.}
+This is a nice piece of reasoning. A cut stopping partway gives the ring free block's
+left edge two partners. Splitting \emph{that} block gives its own right edge two
+partners, so the split propagates round the ring. And the block it propagates into is a
+\textbf{triangle}, because the inner edge is a concentric offset of an arc tangent to
+the ring circle, and is therefore tangent to every concentric circle ($12.86^\circ$ at
+the hub, $4.38^\circ$ at the rim, measured). Carrying the cut all the way through splits
+the ring into two quadrilaterals and \emph{terminates}. The price: the ring's radial
+node count becomes \code{n\_thick}, so \code{n\_collar\_r} and \code{n\_rim\_r} are
+unused by this blocking.
+
+\paragraph{The \code{entry} slope is negative on purpose.}
+At $\code{entry} = 0$ the inner edge leaves the end cross-section \emph{tangent} to the
+far flank---which is the junction block's own top edge---and three blocks meet at that
+node with $180^\circ$ to share between two of them. Measured, the junction block's
+minimum scaled Jacobian is 0.0400 there against 0.4272 at the chosen slope.
+
+\paragraph{Where it stands.}
+As of \S89--\S92, no \emph{mesh-validity} objection to wiring it in survives: the
+filleted and unfilleted meshes score the same 31-of-32 on a held-out draw against
+\code{MIN\_SJ\_TARGET}, and the one genome under the barrier is under it \emph{harder}
+unfilleted (0.1298 versus 0.1775; barrier term 327.17 versus 18.20). What the fillet
+costs is \textbf{headroom, not crossings}---median minimum scaled Jacobian 0.338 against
+0.745. Measured costs: $1.12\times$ per objective evaluation (not the long-quoted
+2--3$\times$), with the one-time JIT trace at $4.13\times$ and nineteen minutes. The two
+meshes disagree about the solved wheel by 37.97\% of axle drop (linear, one phase) and
+47.85\% (SVK, eight phases).
+\code{tests/test\_corner\_singularity.py::}\allowbreak
+\code{test\_nothing\_wires\_the\_fillet\_into\_the\_objective}
+holds the scope gate as a \emph{check}, so it is a deliberate decision rather than an
+accident.
+
+% ===========================================================================
+\section{How it all fits together}
+\label{sec:synthesis}
+% ===========================================================================
+
+\subsection{One idea, applied at every level: write the thing once, derive the rest}
+
+The repository has a single organizing principle and applies it recursively.
+
+\begin{itemize}
+\item \textbf{In the element:} write the strain energy. The internal force is its
+  gradient and the tangent is its Hessian, both by \code{jax.grad}/\code{jax.hessian}.
+  No hand-derived tangent can drift.
+\item \textbf{In the contact law:} write the penalty potential. The contact force, the
+  contact stiffness, \emph{and the total ground reaction} are all derivatives of it. The
+  reaction agreeing with an independent pressure quadrature is then evidence, not a
+  tautology.
+\item \textbf{In the sensitivity:} the residual is already $\nabla\Pi$, so the adjoint
+  is one \code{jax.grad} of one scalar. No separately coded sensitivity operator.
+\item \textbf{In the geometry:} \code{offset\_band} is written once and serves both the
+  exported outline ($\code{n\_across} = 1$) and the mesh block
+  ($\code{n\_across} = 6$), so the meshed part and the exported part are the same
+  surface by construction.
+\item \textbf{In the constants:} \code{MAX\_ARRIVAL\_DEG}, \code{MIN\_FOLD\_MARGIN\_MM},
+  \code{TAPER\_BREAKPOINTS} and \code{MIN\_JUNCTION\_BITE} each live in exactly one
+  module, chosen so that both sides of the interpreter boundary can import it.
+\end{itemize}
+
+The consequences compound. Because the energy is written once, the linear and SVK
+kinematics share a material law and cannot disagree about it. Because the residual
+\emph{is} a gradient, the Newton line search's slope is exact and a non-negative value
+diagnoses instability rather than noise. Because the geometry is closed-form and the
+connectivity is a compile-time constant, the whole pipeline from 14 genes to an axle
+drop is differentiable---which is what makes Stage 3 possible at all.
+
+\subsection{The second idea: name what is not differentiable}
+
+The tree is unusually disciplined about the boundary between smooth and discrete. Four
+things are frozen, and every one is \emph{named} rather than tolerated:
+
+\begin{enumerate}
+\item \textbf{Flank orientation}---a topological fact about the genome; a step that
+  flips it is a real discontinuity of the design space.
+\item \textbf{Seam ownership}---a labelling, verified by \code{check\_seams} to have
+  made no difference.
+\item \textbf{Fillet roots and refusals}---frozen from the eager build, refined by one
+  Newton step.
+\item \textbf{\code{buckling}}---the legacy Euler proxy, with an \emph{asserted} zero
+  gradient and a gate that fails the day it stops being zero.
+\end{enumerate}
+
+And two things are named as \emph{absent}: \code{R\_hub} and \code{R\_rim} have
+identically zero FEA gradient on the unfilleted mesh, because no fillet is meshed---so
+$\partial\,\mathrm{coords}/\partial\,\mathrm{gene}$ is zero before any solver is
+involved. This is not left to be discovered; \code{insensitive\_genes}
+(\at{wheel\_adjoint.py}{744}) measures it on the Jacobian with $\mathrm{tol} = 0.0$
+(``these columns are not small, they are absent, and a tolerance would invite them to
+become small''), and the census is gated. Those two genes still carry a live gradient
+through the closed-form \code{fillet} and \code{fillet\_cap} terms, which is the whole
+reason those terms exist.
+
+\subsection{The third idea: a measurement is not a number, it is a number plus its scope}
+
+Almost every constant in this tree carries the measurement that produced it, the sample
+it was measured on, and---repeatedly---the \emph{previous} value and why it was wrong.
+The pattern that recurs:
+
+\begin{itemize}
+\item \code{HUB\_CAP\_THICKNESS\_SHARE} was fitted tightly to a corner family that never
+  binds.
+\item \code{MIN\_FOLD\_MARGIN\_MM} is 0.1 and not 0 because zero admits six inverted
+  meshes.
+\item \code{T1\_REJECT} is $10^4$ and not 1.0 because 1.0 deadlocked a probe for
+  thirty-five minutes.
+\item \code{EMBED\_ALLOWANCE\_PER\_SPOKE\_MM2 = 3.03} is \textbf{deliberately not
+  updated}, because the same computation has read 4.356, 3.032, 0.98 and 0.5317 on four
+  genomes---``what is needed is the scaling law'', and replacing the constant would only
+  re-stale it on the next genome.
+\item \code{FILLET\_LAYER\_CLIFF\_FACTOR = 0.45} is the \emph{bottom edge} of an
+  admissible band, because two axes improve monotonically across a flat third---and
+  quoting the interior of a band is exactly the error a previous section made.
+\end{itemize}
+
+The \code{xfail\_strict = true} setting in \code{pyproject.toml} is the same idea
+mechanised: an accepted finding is recorded as a strict \code{xfail} naming the section
+that decided it, so \textbf{the day the wheel changes enough for it to pass, the suite
+reopens the question by itself}.
+
+\subsection{Reading the tree}
+
+If you want to work in this repository, here is the order I would read in.
+
+\begin{enumerate}
+\item \code{CLAUDE.md}, then \code{PLAN.md}'s header block and the ``Open arcs''
+  table---that is the ranking and the rules.
+\item \code{src/wheel\_geometry.py} end to end. It is 436 lines and it is the vocabulary
+  for everything else: B\'ezier, taper, offset band, fold margin, arrival.
+\item \code{src/wheel\_wheel.py}'s module docstring (lines 1--170). It explains why a
+  structured partition of this wheel exists at all, what is and is not modelled, and
+  what a seam mismatch would silently do.
+\item \code{src/wheel\_fem.py}'s module docstring, then \code{element\_energy} and
+  \code{\_strain}. Sixty lines gets you the whole physics.
+\item \code{src/wheel\_adjoint.py}'s module docstring---the adjoint derivation and the
+  ``unnecessary / freezable / discrete'' ordering for searches.
+\item \code{src/wheel\_objective.py}'s module docstring for the T1/T2/T3 economics, then
+  jump to the term you care about.
+\item Whichever \code{studies/study\_*.py} docstring names the number you are about to
+  quote. Every one of them says what it measured, on what, and what it does \emph{not}
+  establish.
+\end{enumerate}
+
+And one habit the tree will reward: \textbf{before quoting any per-design number, check
+which genome it was measured on.} The provenance chain is \code{36aed36} (the GA/beam
+optimum, pinned forever) $\to$ \code{350f4c7} $\to$ \code{e4219f3} $\to$ \code{e126cc3}
+$\to$ \code{09e8188} (shipped). Several docstrings were written under earlier links and
+say so at the top. The banner in \code{PLAN.md} went stale for two promotions, and that
+fact is itself recorded as the warning.
+
+\vfill
+\begin{center}\rule{0.45\linewidth}{0.4pt}\end{center}
+\begin{center}\small\itshape
+Written from the source. Line references are against the \code{feature} branch as of
+2026-08-29; \code{PLAN.md} sections referenced up to \S92.
+\end{center}
+
+\end{document}

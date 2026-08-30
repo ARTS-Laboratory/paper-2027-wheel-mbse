@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -134,6 +134,13 @@ help:
 	@echo "              both meshes, same genome: T1+T2 (no solve, no kinematics)"
 	@echo "              then the whole 8-phase evaluation at both kinematics."
 	@echo "              tests §90's own \"if the barrier is most of it\". exits 0"
+	@echo "make filletoptimum  what the switch does to the OPTIMUM, not to the"
+	@echo "              score. §91 found the shipped genome sits 50.43% under"
+	@echo "              its deflection target on the filleted mesh against"
+	@echo "              4.945% on the unfilleted one, so the question is"
+	@echo "              whether wiring the fillet in is a re-score or a"
+	@echo "              RE-OPTIMISATION. two 30-step descents from the shipped"
+	@echo "              genome, identical but for the mesh. ~3.5 h. exits 0"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
@@ -883,6 +890,54 @@ FILLETTERMS_OUT ?= study_fillet_terms.json
 
 filletterms:
 	$(PY_OPT) -u studies/study_fillet_terms.py --out $(FILLETTERMS_OUT)
+
+# ---------------------------------------------------------------------------
+# WHAT THE SWITCH DOES TO THE OPTIMUM (PLAN.md §91 ranked successor 2)
+# ---------------------------------------------------------------------------
+# §91 attributed §90's 17x and it is NOT the barrier: all nine barrier terms are exactly
+# 0.0 on both meshes, and 99.498% of the gap is `deflection` -- mean axle drop 1.9011 mm
+# unfilleted against 0.9914 mm filleted, read against a FIXED 2.0 mm two-sided target.
+# So the shipped genome is 4.945% under target on one mesh and 50.43% under on the other,
+# and a design that far off a quadratic target is not sitting at that objective's minimum.
+#
+# THE QUESTION THIS ANSWERS IS THE PROMOTION-SHAPED ONE.  "The filleted objective scores
+# the shipped genome at 671.66" is a fact about a number.  "The filleted objective's
+# optimum is NOT the shipped genome" is a fact about the part, and it is what says whether
+# the switch is followed by a Stage 3 re-run and a re-promotion or by nothing.
+#
+# TWO DESCENTS, ONE MESH APART.  Both from the shipped genome, both 30 cosine steps, both
+# eight uniform phases under SVK at `coarse`, both with the same pinned flank orientation
+# and the same box.  The CONTROL is `wheel_stage3.Evaluator` unchanged -- the objective as
+# it ships, the one that promoted this genome -- so whatever IT moves in 30 steps is what
+# "already converged, merely re-scored" looks like under this schedule.  That is why there
+# is no threshold anywhere in the verdict: the criterion is the treatment arm measured
+# against the control arm on two axes, distance walked and fraction of start loss removed.
+#
+# IT IS A LOWER BOUND AND SAYS SO.  30 steps is half of `wheel_stage3.DEFAULT_STEPS`, so
+# what the filleted arm recovers bounds what re-optimising would recover from below.  The
+# decision needs to know whether the optimum MOVES, not where it lands.
+#
+# THEN A 3x2 TABLE: the shipped genome and both endpoints, each read by BOTH objectives.
+# Four cells are free (the arms' own first and last steps) and the two off-diagonal ones
+# are separate evaluations at the same stencil, kernel and pinned orientation.  That is
+# what prices the disagreement in both directions rather than only in the one the switch
+# would take.
+#
+# ~3.6 h: §90 priced one filleted 8-phase svk evaluation at 183.6 s against 163.3 s, plus
+# the one-time jit trace per mesh topology (271.7 s and 1122.0 s), plus the two
+# cross-evaluations.  The control runs first so the filleted trace is paid by the second
+# arm.
+#
+# It touches no `src/` module -- the filleted arm is a `studies/` subclass overriding one
+# call -- so `test_nothing_wires_the_fillet_into_the_objective` still holds.  It writes no
+# `best_solution.json` and neither endpoint is a candidate for anything.
+#
+# EXITS 0 ALWAYS.  Either answer is the answer; a driver that exited nonzero on
+# `re_optimisation_not_re_score` would be asserting which one the decision wants to hear.
+FILLETOPTIMUM_OUT ?= study_fillet_optimum.json
+
+filletoptimum:
+	$(PY_OPT) -u studies/study_fillet_optimum.py --out $(FILLETOPTIMUM_OUT)
 
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)
