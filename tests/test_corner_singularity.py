@@ -647,7 +647,29 @@ def test_nothing_wires_the_fillet_into_the_objective():
     the objective is a decision about cost and about the `Kt` surrogate (§75, §88 ranking
     item 2), and it must be taken deliberately rather than arrived at because a keyword
     leaked into a call. The day that decision is taken, this test is the thing to update —
-    with the record that took it named here."""
+    with the record that took it named here.
+
+    **THE DECISION IS TAKEN — PLAN §93, 2026-08-30 — AND THIS GATE STILL STANDS, WHICH IS
+    NOT A CONTRADICTION.** §93 decides the fillet IS to be wired in: every objection was
+    measured and every one failed (§74/§78 build, §89 barrier, §90 cost 1.12x, §75 the
+    surrogate, §91 the attribution, §92 the preference reversal). What holds EXECUTION is
+    two named conditions, and until both are met a `fillet=` keyword reaching a call in
+    `src/` would still be the accident this gate exists to catch:
+
+      A. WHICH MESH IS RIGHT, at the design and kernel where they disagree. The switch
+         rests on the filleted mesh being the converged one and the only evidence is PART
+         12's ladder at ONE genome, under LINEAR, at ONE phase — while §92's disagreement
+         is at `b029622` under SVK over eight phases and is about ADMISSIBILITY.
+      B. THE STRESS TERM COUNTS THE FILLET TWICE on a filleted mesh. `wheel_objective.py`'s
+         `util_j = kt * agg / ALLOWABLE_STRESS_MPA` multiplies the mesh's own p-norm by a
+         closed-form surrogate for a fillet the mesh does not model — which, on a filleted
+         mesh, it does. Conservative (Kt > 1) and therefore invisible, but it means the
+         switch as specified is incomplete rather than merely unexecuted.
+
+    WHEN BOTH ARE MET, this test is REPLACED — not deleted — by its mirror image: a check
+    that the objective builds the filleted mesh, naming §93 and the section that executes
+    it. A scope gate deleted rather than inverted leaves the tree unable to say which way
+    round it is supposed to be."""
     # PARSED, NOT GREPPED, and the two failures a grep gives here are both real. A pattern
     # loose enough to catch `fillet=True` also catches `wheel_objective`'s local
     # `fillet = jnp.sum(...)` — the fillet-MARGIN barrier, which has nothing to do with the

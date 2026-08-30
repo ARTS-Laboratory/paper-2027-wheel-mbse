@@ -12287,3 +12287,143 @@ is the scope gate, which is a decision).
    **a bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+---
+
+## §93 — 2026-08-30. THE DECISION IS TAKEN: THE FILLET IS TO BE WIRED INTO THE OBJECTIVE. IT IS NOT WIRED TODAY, AND THE TWO CONDITIONS ARE NAMED — ONE OF WHICH THIS SECTION FOUND WHILE WRITING IT: ON A FILLETED MESH THE STRESS TERM COUNTS THE FILLET TWICE
+
+§92's ranked successor 1.  No measurement; this is the record §89 said was missing.
+
+### WHAT IS DECIDED
+
+**The fillet is to be wired into `wheel_objective`.  The unfilleted mesh is not the model
+this tree should be optimising against, and every objection raised against replacing it has
+been measured and has failed.**
+
+```
+  the objection                       where it died                    what it was worth
+  the mesh does not build in the box  §74, §78                   16 of 16, 32 of 32 held out
+  the mesh does not clear the barrier §89          31 of 32 — and `fillet=None` fails HARDER
+  it costs 2-3x per evaluation        §90                        1.12x (183.58 s / 163.26 s)
+  the `Kt` surrogate is unmeasured    §75, 2026-08-24        14 rows, flat above the 0.6657 cap
+  the barrier re-weights the loss     §91           every BARRIER_TERM exactly 0.0 on both
+  it is only a re-score               §92        preference reversal, 29.93x and 18.05x
+```
+
+Six sections passed this decision forward and §92 established it has had **no unmeasured
+term since §90**.  §89 wrote *"what is missing is a decision, not a mechanism"* and it was
+right.  This section stops passing it forward.
+
+**The affirmative case, not merely the absence of objections.**  The unfilleted mesh reads
+the shipped wheel at 1.9011 mm of axle drop where the filleted one reads 0.9914 (§91), and
+the two meshes' own optima are each other's catastrophes (§92).  They cannot both be right,
+and the tree already knows which one is not: `wheel_wheel.py:44` — *"FILLETS ARE NOT
+MODELLED"* — names the unfilleted mesh as the approximation, and the exported solid has
+filleted junctions.  **The mesh that models the part is the one the objective should read.**
+
+### WHAT IS *NOT* DECIDED, AND WHY EXECUTION IS SEQUENCED BEHIND IT
+
+**CONDITION A — WHICH MESH IS RIGHT, AT THE DESIGN AND KERNEL WHERE THEY DISAGREE (§92's
+item 2).**  The switch rests on the filleted mesh being the converged one.  The evidence for
+that is PART 12's `coarse..fine` axle-drop spread — 0.141% filleted against 1.216%
+unfilleted — taken at **ONE genome, under LINEAR, at ONE phase**.  §92's disagreement is at a
+different design (`b029622`), in a different kernel (SVK), over eight phases, and it is about
+**admissibility** rather than score.  A premise measured three ways away from where it is now
+load-bearing is not a premise this tree gets to spend on a promotion.  §32 is the precedent
+and it is exact: *"a loss is not comparable across kinematics"*, and the reason that rule
+exists is that a Stage-3 headline computed under linear survived to promotion with nothing in
+the record saying so.
+
+**CONDITION B — THE STRESS TERM COUNTS THE FILLET TWICE, AND NOTHING IN THIS TREE RECORDS
+IT.**  Found while drafting this section, by reading the code rather than the plan files.
+`wheel_objective.py:1234`:
+
+```
+  util_j = kt * agg / ALLOWABLE_STRESS_MPA
+```
+
+`agg` is the p-norm aggregate **of the mesh's own stress field**.  `kt` is
+`stress_concentration_kt(...)`, a closed-form surrogate in the genes whose entire purpose is
+to stand in for **a fillet the mesh does not model**.  On a filleted mesh the mesh models it.
+So the correction is applied on top of the geometry it was correcting for, and both junctions
+are affected: `kt_hub` = 2.0963 and `kt_rim` = 1.3939 at the shipped genome, **bit-identical
+on both meshes** — which is exactly what §91 measured and read only as "§75's flat surrogate
+seen from inside the objective".  It is that, and it is also a double count.
+
+The direction is conservative — `Kt > 1` always, so the filleted objective OVERSTATES stress
+— which is why nothing has gone visibly wrong and why §92's finding survives it intact (a
+smaller filleted utilisation only widens the gap to the unfilleted mesh's 1.0112).  **But it
+means the switch as specified is incomplete rather than merely unexecuted.**
+
+**And the fix is not "set `kt = 1` on the filleted path".**  The whole p-norm x `Kt`
+construction exists because the unfilleted peak stress DIVERGES under refinement — M4,
+pinned since §14 by `test_peak_stress_diverges_but_the_field_converges` — so a convergent
+proxy had to be built for a quantity that is not a number.  On a filleted mesh the peak is
+finite and convergent (§52: the `P_t` singularity is gone and the fillet surface settles to
+36.8 / 16.1 MPa where the sharp corner ran to 85.9 / 60.7 and was still climbing).  That
+changes the construction's PREMISE, and what should replace it is a question this tree has
+not asked.  **Re-deriving the stress term is part of the switch, not follow-up work.**
+
+One thing Condition B does NOT reach: `rim:P_c`, the END CAP's artefact corner, which carries
+the wheel's global peak (§52) and which the fillet does not touch.  That is the tri-block's,
+it is not this arc's, and no `Kt` was ever meant to model it.
+
+### THE SEQUENCE, EACH STEP WITH ITS CHECK
+
+1. **The convergence ladder at `b029622`, SVK, eight phases, `coarse`/`medium`/`fine`, both
+   meshes.**  CHECK: the filleted mesh's axle-drop spread is materially smaller than the
+   unfilleted mesh's on the SAME design — PART 12's ordering reproduced where it is
+   load-bearing.  AND the admissibility disagreement resolves: at the finest rung, does the
+   design read 1.0112 utilisation or 0.7954?  If the filleted mesh is not the converged one,
+   **this decision is reopened and nothing below happens.**
+2. **Re-derive the stress term for a filleted mesh** (Condition B).  CHECK: a written
+   derivation of what replaces `kt * agg` when the fillet is meshed, and a measurement of
+   what the current double count is worth at the shipped genome and at `b029622`.
+3. **Wire `fillet=True` into `wheel_objective`/`wheel_stage3`.**  CHECK: `make test` green
+   with `test_nothing_wires_the_fillet_into_the_objective` REPLACED — not deleted — by a
+   check that the objective builds the filleted mesh, naming this section.
+4. **Re-run Stage 3 and re-promote.**  CHECK: `tests/test_promotion.py`'s six-item checklist
+   walked in one atomic commit — banner, `make export`, genome-specific constants pinned to
+   files, `make svk`, the outgoing genome preserved under its own name, `test_golden.py` left
+   reading its own file.
+5. **Re-date every committed loss number.**  CHECK: §32's rule applied to the mesh — a loss
+   is not comparable across meshes any more than across kinematics, so every quoted loss in
+   PLAN.md predating the switch is scoped to the unfilleted objective in place, not silently
+   left to read as current.
+
+### WHAT WOULD REVERSE THIS DECISION
+
+Step 1 finding the filleted mesh is not the converged one, or that its `coarse` rung is not
+where the two meshes' disagreement resolves.  That is a live outcome: the filleted mesh's
+minimum scaled Jacobian is 0.2877 at the shipped genome against the unfilleted 0.7822 (§89,
+§91), it is a worse-conditioned mesh, and "models more geometry" and "converges better" are
+different properties.  **A decision with no stated falsifier is a preference.**
+
+### WHAT MOVED
+
+No `src/` module changed and nothing is promoted.
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective` keeps
+its assertion and gains this section's number in its docstring — that test asked, in terms,
+to be updated *"the day that decision is taken, with the record that took it named here"*.
+The gate now records that the decision IS taken and that what holds execution is Conditions A
+and B, so the next person to read it learns the state rather than re-deriving it.
+
+#### The successors, ranked — REVISED 2026-08-30 AFTER §93
+
+1. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — Condition A, and now the
+   gating item for the whole arc.  §92's item 2 with a design and a kernel attached.
+2. **RE-DERIVE THE STRESS TERM FOR A FILLETED MESH** — Condition B, NEW at §93.  What
+   replaces `kt * agg` when the fillet is meshed, and what the double count is worth.
+3. **EXECUTE THE SWITCH** — steps 3-5 above, behind 1 and 2.
+4. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged, and
+   still the only thing between a filleted mesh and a STEP comparison.
+5. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4) — §92 gives it a consumer: the
+   filleted optimum pins all four thickness genes against `MIN_WALL_MM`.
+6. **The sub-element fold, as its own unit** (§89's item 3), then §58's gate applied to the
+   draw and the box re-derived.
+7. **Calibrate §73's two thresholds on a proper hold-out protocol** — still the oldest thing
+   on the list.
+8. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**
+   (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
+   FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).

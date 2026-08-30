@@ -9,9 +9,13 @@ asked for it again and should not have (PART 6). PART 4's 17x IS ATTRIBUTED — 
 SWITCH IS A RE-OPTIMISATION AND NOT A RE-SCORE — PART 6, 2026-08-29: the two objectives
 REVERSE on the decisive pair, each mesh's optimum is the other's catastrophe by 29.93x and
 18.05x, and the filleted answer is over the stress allowable by the unfilleted objective's
-reckoning. STEP 3 HAS NO UNMEASURED TERM LEFT; WHAT REMAINS IS THE RECORD THAT TAKES THE
-DECISION AND THE RE-PROMOTION THAT FOLLOWS IT.** The state, in four lines, so nobody
-re-derives it from thirty PARTs:
+reckoning. THE DECISION IS TAKEN — 2026-08-30, PLAN §93: THE FILLET IS TO BE WIRED IN. It
+is NOT executed, and there are two conditions: (A) the convergence ladder at `b029622` under
+SVK, because the switch rests on the filleted mesh being the converged one and the only
+evidence is PART 12 at one genome under linear at one phase; and (B) ON A FILLETED MESH THE
+STRESS TERM COUNTS THE FILLET TWICE — `util_j = kt * agg / ALLOWABLE` multiplies the mesh's
+own p-norm by a surrogate for a fillet the mesh now models. B is new at §93 and nothing in
+the tree recorded it.** The state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -3878,3 +3882,66 @@ The scope gate still stands and this PART does not touch it: nothing in `src/` c
 filleted arm is a `studies/` subclass overriding one call, and
 `test_nothing_wires_the_fillet_into_the_objective` is green.  Nothing is promoted and
 `best_solution.json` is untouched.
+
+
+---
+
+# STEP 3 — THE DECISION, TAKEN. 2026-08-30, PLAN §93
+
+**THE FILLET IS TO BE WIRED INTO THE OBJECTIVE.**  Every objection raised in this arc has
+been measured and every one has failed: the mesh builds across the box (PART 21/22, §74/§78
+— 16 of 16, 32 of 32 held out), it clears the barrier and `fillet=None` fails harder (PART
+3, §89), it costs 1.12x and not 2-3x (PART 4, §90), the `Kt` surrogate was measured on
+2026-08-24 (PART 1, §75), the 17x is `deflection` and no barrier moves (PART 5, §91), and the
+switch is a re-optimisation rather than a re-score, proved by a preference reversal (PART 6,
+§92).  §89 said *"what is missing is a decision, not a mechanism"*.  This is that decision.
+
+The affirmative half, which matters more than the absence of objections: `wheel_wheel.py:44`
+names the unfilleted mesh as the approximation — *"FILLETS ARE NOT MODELLED"* — and the
+exported solid has filleted junctions.  **The mesh that models the part is the one the
+objective should read.**
+
+## IT IS NOT EXECUTED TODAY, AND THERE ARE TWO CONDITIONS
+
+**A — WHICH MESH IS RIGHT, WHERE THEY DISAGREE.**  The switch rests on the filleted mesh
+being the converged one.  All that stands behind that is PART 12's `coarse..fine` axle-drop
+spread, 0.141% against 1.216%, at ONE genome under LINEAR at ONE phase.  PART 6's
+disagreement is at `b029622`, under SVK, over eight phases, and is about ADMISSIBILITY.  The
+ladder has to be run where it is load-bearing before a promotion is spent on it.  §32 is the
+precedent: a loss is not comparable across kinematics, and that rule exists because a linear
+Stage-3 headline once survived to promotion with nothing in the record saying so.
+
+**B — ON A FILLETED MESH THE STRESS TERM COUNTS THE FILLET TWICE.  NEW AT §93, AND NOTHING
+IN THIS TREE RECORDED IT.**  `wheel_objective.py:1234` computes
+`util_j = kt * agg / ALLOWABLE_STRESS_MPA`, where `agg` is the p-norm of the MESH's own
+stress field and `kt` is a closed-form surrogate standing in for a fillet the mesh does not
+model — which, on a filleted mesh, it does.  `kt_hub` 2.0963 and `kt_rim` 1.3939 at the
+shipped genome, bit-identical on both meshes, which is what PART 5 measured and read only as
+"§75's flat surrogate seen from inside the objective".  It is that AND a double count.
+
+The direction is conservative (`Kt > 1`), which is why nothing has visibly broken and why
+PART 6's finding survives intact — a smaller filleted utilisation only widens the gap to the
+unfilleted mesh's 1.0112.  **But the switch as specified is incomplete, not merely
+unexecuted.**  And the fix is not `kt = 1`: the p-norm x `Kt` construction exists because the
+unfilleted peak stress DIVERGES under refinement (M4, pinned since §14), and on a filleted
+mesh the peak is finite and convergent (PART 12 / §52: 36.8 / 16.1 MPa against 85.9 / 60.7
+and still climbing).  The construction's premise changes, and **re-deriving the stress term
+is part of the switch.**
+
+Condition B does not reach `rim:P_c`, the end cap's artefact corner that carries the wheel's
+global peak.  That is the rim tri-block's and is not this arc's.
+
+## THE SEQUENCE
+
+1. The convergence ladder at `b029622`, SVK, eight phases, `coarse`/`medium`/`fine`, both
+   meshes.  **If the filleted mesh is not the converged one, the decision is reopened.**
+2. Re-derive the stress term for a filleted mesh (Condition B).
+3. Wire `fillet=True` in; `test_nothing_wires_the_fillet_into_the_objective` is REPLACED by
+   its mirror image, not deleted.
+4. Re-run Stage 3 and re-promote, walking `tests/test_promotion.py`'s six-item checklist in
+   one atomic commit.
+5. Scope every committed loss number predating the switch to the unfilleted objective, in
+   place — §32's rule applied to the mesh.
+
+Nothing in `src/` changed at §93 and nothing is promoted.  The scope gate keeps its assertion
+and now records that the decision is taken and what holds execution.
