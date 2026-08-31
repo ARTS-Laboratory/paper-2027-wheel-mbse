@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletwiring triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -155,6 +155,13 @@ help:
 	@echo "              measures what an indicator region weight costs at a"
 	@echo "              gene value where a Gauss point crosses the boundary."
 	@echo "              ~4 min, eight solves. exits 0"
+	@echo "make filletwiring the last two things in front of the switch — §94's"
+	@echo "              items 3 and 4. the \`P_c\` exclusion argued rather than"
+	@echo "              assumed (its stated reason names a feature the mesh has"
+	@echo "              not had since 2026-08-18, and the hub corner IS the"
+	@echo "              part's, to 0.008 deg), and stress_margin's exchange"
+	@echo "              rate re-derived — the weight is invariant, the"
+	@echo "              REFERENCE POINT is not. ~3 s, no solve. exits 0"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
@@ -1027,6 +1034,48 @@ FILLETPNORM_OUT ?= study_fillet_pnorm.json
 
 filletpnorm:
 	$(PY_OPT) -u studies/study_fillet_pnorm.py --out $(FILLETPNORM_OUT)
+
+# ---------------------------------------------------------------------------
+# THE LAST TWO THINGS IN FRONT OF THE SWITCH  (PLAN.md §94, items 3 and 4)
+# ---------------------------------------------------------------------------
+# ~3 s, AND IT SOLVES NOTHING.  Seven committed artifacts in, two arguments out.  The one
+# thing it computes is a sector's BLOCKING, to count the fillet arcs the mesh actually
+# makes rather than infer twelve from the spoke count.
+#
+# ITEM 3 asked for the `P_c` exclusion to be ARGUED rather than assumed, and offered a
+# justification: "they are the END CAP's corners and the exported solid has no end cap".
+# THAT IS THE PRE-2026-08-18 MESH.  `UNCAP_DEFAULT = (True, 1.0)` removed the cap from the
+# mesh too (§38), and `wheel_wheel.py` says so at the paragraph that explains why it
+# fillets only `P_t`.  Measured against `study_junction_agreement`'s numpy reconstruction
+# of `_embed` — verified by its own crossing count, 24 and 24, against the manifest:
+#
+#   hub:P_c   0.008 deg of wedge from the part's second flank crossing   IS the part's
+#   rim:P_c  50.612 deg from it                                          is NOT
+#
+# So both exclusions survive and NEITHER for §94's reason.  The rim's is fidelity.  The
+# hub's is C1 — the peak diverges, which is the argument that made `Kt` necessary in the
+# first place — and it leaves a real, singular corner of the real part unpriced, one the
+# part FILLETS (24 of 24 edges at the full radius) where the mesh builds twelve arcs at
+# `P_t` only.
+#
+# ITEM 4 asked for `stress_margin`'s exchange rate to be re-derived at the new scale.
+# `w = mass_term / (2 (u - knee) u)` reproduces §23's published 328.49, and NOTHING IN IT
+# KNOWS HOW `util` WAS COMPUTED: at a fixed reference the weight moves only with the mass
+# term.  What cannot be done is take the reference from a design — under the replacement
+# the shipped genome reads 1.1415 and `b029622` 1.6760, both outside the admissible
+# [knee, wall] band §18 derived inside.  The whole curve is reported so the policy choice
+# is visible; at the wall the weight is 89.21.
+#
+# AND THE KNEE, WHICH §94 DID NOT MENTION.  `MARGIN_KNEE_UTIL = 0.80`'s only stated
+# evidence is "the shipped genome sits at 0.77952, essentially AT this knee".  Under the
+# replacement it sits at 1.1415.
+#
+# EXITS 0 ALWAYS, for `filletkt`'s reason: §94 asked for an argument and a re-derivation,
+# and neither has a threshold to meet.
+FILLETWIRING_OUT ?= study_fillet_wiring.json
+
+filletwiring:
+	$(PY_OPT) -u studies/study_fillet_wiring.py --out $(FILLETWIRING_OUT)
 
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)

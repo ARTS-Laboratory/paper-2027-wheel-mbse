@@ -27,7 +27,15 @@ the hub's REGION does not converge), and the smooth region weight is settled by 
 — an indicator steps at every exponent (0.068% at the recommended `p`, 1.08% at the
 objective's current one) 0.0592 mm from the shipped genome, and the bump does not step at
 all. Under the replacement the hub reads 1.14 and 1.68 against an
-objective that reads 0.58 and 0.80 today. ITEMS 3 AND 4 ARE OPEN.** The state, in four lines, so nobody re-derives it from thirty PARTs:
+objective that reads 0.58 and 0.80 today. ITEMS 3 AND 4 ARE NOW MEASURED TOO — PART 9,
+2026-08-31, PLAN §96 — AND BOTH OF §94's STATED REASONS WERE WRONG: the END CAP `P_c` was
+excluded as has not existed since §38 deleted it on 2026-08-18, `hub:P_c` IS the part's own
+corner to 0.008 deg (and the part fillets it, 24 edges to the mesh's 12), and
+`stress_margin`'s weight is invariant to the substitution while its REFERENCE POINT is not
+— neither design this arc has measured can calibrate it, and MARGIN_KNEE_UTIL's own
+evidence is gone. Both
+exclusions survive on corrected reasons. What is left is a SEQUENCE and not a blocker:
+state the knee and the reference point, then the switch.** The state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -4185,3 +4193,82 @@ are the same experiment.  **Two genomes is not a design space**: they already di
 about the hub's largest `p` by 50% (24 against 16), and §82's thirty-two held-out genomes
 are the instrument for bounding that.  Items 3 and 4 are open.  Nothing in `src/` changed,
 nothing is promoted, the scope gate is untouched and green.
+
+---
+
+# STEP 3 RECORD — PART 9. ITEMS 3 AND 4. 2026-08-31, PLAN §96
+
+PART 8 / §95 settled the replacement term's quantity. This PART is the last two things §94
+put in front of it, and **both of §94's stated reasons turn out to be wrong in the same
+way: each names a fact about a configuration that has since moved.** The conclusions
+survive; the arguments do not, and the corrected arguments say different things about what
+happens next. `make filletwiring` (`studies/study_fillet_wiring.py`, ~3 s): seven committed
+artifacts in, no solve.
+
+## ITEM 3 — THE END CAP WAS DELETED ON 2026-08-18
+
+§94 excluded both `P_c` because *"they are the END CAP's corners and the exported solid has
+no end cap"*. That is the pre-uncap mesh. **PLAN §38's `UNCAP_DEFAULT = (True, 1.0)` removed
+the cap from the MESH too**, and `wheel_wheel.py` says so at the paragraph explaining why
+this module fillets only `P_t`. PART 12 / §52 was written five days after the flip and
+still used the phrase; §94 inherited it.
+
+Measured against `study_junction_agreement`'s numpy reconstruction of `_embed` — verified by
+its own crossing count, 24 and 24, against the shipped manifest:
+
+```
+  ring  corner                     theta       wedge      lambda    vs the part
+  hub   part 2nd flank crossing  -1.52673   268.4733   0.546991      —
+  hub   mesh P_c AS BUILT        -1.51873   268.4813   0.546978    0.0080 deg
+  hub   mesh P_c end cap (pre-38) 0.00000   297.1786   0.514114   28.7053 deg
+  rim   part 2nd flank crossing  -1.31586   219.9018   0.697652      —
+  rim   mesh P_c AS BUILT        -0.51383   270.5138   0.543662   50.6120 deg
+```
+
+**`hub:P_c` IS the part's corner** and **`rim:P_c` is not.** And the part FILLETS the one
+the mesh does not: 24 edges found and 24 filleted per ring at the full radius,
+`kt_error_pct` 0.0, against the twelve arcs `sector_blocks(fillet=True)` actually makes
+(counted, not inferred — one `_fillet_a`/`_fillet_b` pair per junction per sector).
+
+**Both exclusions survive, neither for §94's reason, and not for the same reason as each
+other.** The rim's is FIDELITY — a corner 50.61 deg from the part's, carrying the wheel's
+global maximum at every rung. The hub's is C1, the argument that made `Kt` necessary: the
+peak diverges (9.96 / 15.01 / 18.46 / 22.20 MPa, increment ratios 0.684 then 1.083), and a
+divergent quantity cannot be a constraint whatever it is a corner of. **So the exclusion is
+forced and it leaves a real, singular, filleted corner of the real part unpriced** — 22.20
+MPa at `fine`, util 0.888 and climbing. Unpriced today too, so not an objection to the
+switch; what changes is that the omission becomes structural. Closing it is a MESH change:
+the rim tri-block, or the mesh's second junction fillet, which PART 8 / §46 priced as
+admissible at the hub by 2% and short at the rim by a factor of five.
+
+## ITEM 4 — THE WEIGHT IS INVARIANT; THE REFERENCE POINT AND THE KNEE ARE NOT
+
+`w = mass_term / (2 (u - MARGIN_KNEE_UTIL) u)` reproduces §23's published 328.49 at
+u = 0.855 from a mass term of 30.8945 against §18's quoted 30.88 — 0.047%, which is what
+identifies the formula. **Nothing in it knows how `util` was computed.** Held at 0.855 the
+re-derivation runs 328.49 -> 379.40, of which +9.8% is the filleted mesh weighing 43.41 g
+against 39.55 and the rest is the genome having moved since §23. A mass measurement and a
+promotion, not a consequence of replacing `Kt * agg`.
+
+**What the substitution does reach is the reference point.** §18's 0.855 was where the
+design sat, inside `[knee, wall]`. Under the replacement both rims are BELOW the knee
+(0.5067, 0.7845) where the term is inert and no finite weight makes the rate anything, and
+both hubs are OVER the wall (1.1415, 1.6760) where the barrier already dominates. **Neither
+of the two designs this arc has measured can calibrate it**, so the reference has to become
+a policy; the whole curve is filed, and at the wall the weight is 89.21 — a 3.6x cut from
+today's 325.0. §82's thirty-two held-out genomes have never been read under the
+replacement, so this is scoped to two designs and not to the space.
+
+**And the knee, which §94 did not mention.** `MARGIN_KNEE_UTIL = 0.80`'s only stated
+evidence is *"the shipped genome sits at 0.77952, i.e. essentially AT this knee"*. Under the
+replacement it sits at 1.1415, 0.34 past it. The weight sets a rate; the knee decides at
+what utilisation margin starts costing anything at all. That is the larger half.
+
+## WHAT THIS LEAVES
+
+Not a blocker — a SEQUENCE, and not §93's steps 3-5. (1) The knee and the reference point
+are policy and must be STATED, because the derivation needs a `util_ref` and no design
+supplies one. (2) A weight derived at a policy reference is a weight nobody has descended
+under. (3) The `hub:P_c` hole is named, not closed, and closing it is a mesh change.
+
+Nothing in `src/` changed, nothing is promoted, the scope gate is untouched and green.
