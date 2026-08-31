@@ -1,0 +1,34 @@
+{
+ "genes": {
+  "cx1": 5.048764913544321,
+  "cy1": 12.657955738254294,
+  "cx2": 14.477853063213512,
+  "cy2": 16.227713238969372,
+  "cx3": 22.810142434427046,
+  "cy3": 10.60279168687186,
+  "cx4": 30.242548305163275,
+  "cy4": 5.0503892018235135,
+  "t0": 1.2089351539668496,
+  "t1": 1.20676526213164,
+  "t2": 1.2062615501849732,
+  "t3": 1.2132886084992247,
+  "R_hub": 0.4861967297804856,
+  "R_rim": 2.8215958728056165
+ },
+ "source": "studies/study_fillet_optimum.py (PLAN.md \u00a792, treatment arm endpoint)",
+ "search": {
+  "optimizer": "adam",
+  "config": "coarse",
+  "steps": 30,
+  "phase_scheme": "uniform",
+  "n_phase": 8,
+  "seed": 0,
+  "kinematics": "svk",
+  "start": "best_solution.json",
+  "mesh": "FILLETED \u2014 build_wheel(..., fillet=True)",
+  "label": "fillet_optimum"
+ },
+ "loss": 37.22055471191825,
+ "genome_hash": "b029622",
+ "note": "NOT A SHIPPING GENOME AND NOT A PROMOTION CANDIDATE.  This is the design the FILLETED objective descends to from the shipped genome (PLAN.md \u00a792): 30 Adam steps, SVK, eight uniform phases, `coarse`.  It is recorded as a file so \u00a793's Condition B can be measured at it by name.  Read by the UNFILLETED objective it is INADMISSIBLE \u2014 utilisation 1.0112, the `stress` barrier firing at 0.4979, axle drop 3.3335 mm against a 2.0 mm target \u2014 which is \u00a792's finding, not an oversight.  The two meshes disagree about whether this design ships, and that disagreement is Condition A."
+}

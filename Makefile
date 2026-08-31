@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletwiring triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -122,6 +122,46 @@ help:
 	@echo "              the FOLD gate — the closed-form margin that catches the"
 	@echo "              one genome whose spoke does not exist, and how often the"
 	@echo "              mesh-based filter it replaces leaks. ~230 s, geometry only"
+	@echo "make filletcost  what the FILLETED objective costs — §88's unmeasured"
+	@echo "              \"2-3x\", measured. three altitudes (mesh build; one solve"
+	@echo "              and one adjoint, G10's method on the mesh G10 never ran"
+	@echo "              on; one 8-phase objective evaluation) at both kinematics,"
+	@echo "              all post-trace with the trace priced separately. the SVK"
+	@echo "              evaluation row is the one the decision reads. exits 0"
+	@echo "make filletterms  WHERE the filleted objective's 17x loss difference"
+	@echo "              lives — §90 recorded 671.66 against 38.79 at the shipped"
+	@echo "              genome and did not attribute it. breakdown['terms'] on"
+	@echo "              both meshes, same genome: T1+T2 (no solve, no kinematics)"
+	@echo "              then the whole 8-phase evaluation at both kinematics."
+	@echo "              tests §90's own \"if the barrier is most of it\". exits 0"
+	@echo "make filletoptimum  what the switch does to the OPTIMUM, not to the"
+	@echo "              score. §91 found the shipped genome sits 50.43% under"
+	@echo "              its deflection target on the filleted mesh against"
+	@echo "              4.945% on the unfilleted one, so the question is"
+	@echo "              whether wiring the fillet in is a re-score or a"
+	@echo "              RE-OPTIMISATION. two 30-step descents from the shipped"
+	@echo "              genome, identical but for the mesh. ~3.5 h. exits 0"
+	@echo "make filletkt what \`Kt * agg\` is worth on a FILLETED mesh — §93's"
+	@echo "              Condition B. reads six committed artifacts and solves"
+	@echo "              nothing: the corner census (which singularity does the"
+	@echo "              fillet actually remove), the divergence ladders, and the"
+	@echo "              objective's modelled peak against the fillet surface's"
+	@echo "              own converged one — the comparison an unfilleted mesh"
+	@echo "              cannot host, because it has no measured side. exits 0"
+	@echo "make filletpnorm the region-restricted p-norm over the fillet arc —"
+	@echo "              §94 items 1 and 2. sweeps the exponent AND the tube"
+	@echo "              radius, because the region's own quadrature is what"
+	@echo "              decides whether an exponent means anything, and"
+	@echo "              measures what an indicator region weight costs at a"
+	@echo "              gene value where a Gauss point crosses the boundary."
+	@echo "              ~4 min, eight solves. exits 0"
+	@echo "make filletwiring the last two things in front of the switch — §94's"
+	@echo "              items 3 and 4. the \`P_c\` exclusion argued rather than"
+	@echo "              assumed (its stated reason names a feature the mesh has"
+	@echo "              not had since 2026-08-18, and the hub corner IS the"
+	@echo "              part's, to 0.008 deg), and stress_margin's exchange"
+	@echo "              rate re-derived — the weight is invariant, the"
+	@echo "              REFERENCE POINT is not. ~3 s, no solve. exits 0"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
@@ -806,6 +846,236 @@ FILLETBLOCK_OUT ?= study_fillet_block.json
 
 filletblock:
 	$(PY_OPT) -u studies/study_fillet_block.py --out $(FILLETBLOCK_OUT)
+
+# ---------------------------------------------------------------------------
+# WHAT THE FILLETED OBJECTIVE COSTS (PLAN.md §89 ranked successor 1)
+# ---------------------------------------------------------------------------
+# THE NUMBER §88 QUOTED AND NOBODY MEASURED.  §88's ranking item 2 said the filleted mesh
+# is "2-3x the cost of the unfilleted one", and §89 found that nothing in this tree
+# measures it -- the only adjacent number being the element counts at `coarse`, 5952
+# against 4704, which is 1.27x and is not solve time.  With §48's mesh-validity clause
+# retired at §89, that cost and the flat `Kt` surrogate (§75) are the whole of what stands
+# between the fillet and the objective, so the cost half is measured here.
+#
+# Three altitudes, because "cost" is three quantities: the mesh build; one solve and one
+# adjoint (`study_gradient`'s G10 method, extended to the mesh G10 never ran on); and ONE
+# `wheel_objective.objective` evaluation at the optimizer's eight-phase stencil, which is
+# the quantity the decision is about.  BOTH KINEMATICS -- `objective` called bare takes
+# `wheel_fem`'s linear default while Stage 3 passes svk (§32), and the verdict reads the
+# SVK row because that is what an optimizer step pays.
+#
+# Everything timed is POST-TRACE, and the trace is reported rather than discarded: the
+# first evaluation at each setting pays a jit that Stage 3 pays once and amortises, and on
+# the probe that sized this driver it was 117.7 s against a 19.8 s evaluation.
+#
+# It touches no `src/` module.  The meshes are built in the driver and handed to
+# `objective(meshes=)`, which is the parameter `wheel_stage3.Evaluator` already uses, so
+# `test_nothing_wires_the_fillet_into_the_objective` still holds and the scope gate stands.
+#
+# EXITS 0 ALWAYS.  A cost has no threshold to meet; §89 asked for the number.
+FILLETCOST_OUT ?= study_fillet_cost.json
+
+filletcost:
+	$(PY_OPT) -u studies/study_fillet_cost.py --out $(FILLETCOST_OUT)
+
+# ---------------------------------------------------------------------------
+# WHERE THE 17x LIVES (PLAN.md §90 ranked successor 2)
+# ---------------------------------------------------------------------------
+# THE DIFFERENCE §90 MEASURED AND DELIBERATELY DID NOT ATTRIBUTE.  The filleted objective
+# returns 671.66 against 38.79 at the shipped genome under svk, with |grad| 1179.53
+# against 212.49, and §90 stopped at those two summary fields.  The attribution is not
+# curiosity: if the mesh-validity barrier is most of the gap, the switch prices the
+# INSTRUMENT and every committed loss number survives it; if the gap is in the T3 terms,
+# the two meshes disagree about the WHEEL and every committed loss number is incomparable
+# across the switch.  That is a promotion-shaped consequence and it wants knowing before
+# the decision's last term (§75's flat `Kt` surrogate) arrives, not after.
+#
+# Two altitudes.  `tiers=("t1","t2")` is seconds and needs no solve and no kinematics --
+# T1 reads the genes, T2 reads `mesh_coords`, and `min_sj` (§90's suspect) lives there.
+# Then the whole eight-phase evaluation at BOTH kinematics, where the four solve-space
+# terms appear and where the svk row reproduces §90's published pair.
+#
+# NOTHING IS TIMED HERE, SO NOTHING IS WARMED UP.  `filletcost` pays a warm-up call before
+# every timed one; this driver reads VALUES, which a jit trace does not change, so the
+# same four evaluations cost about half.  The trace is still paid (§90: 271.7 s
+# unfilleted, 1122.0 s filleted) and `linear` runs first so it is the row that pays it.
+#
+# It touches no `src/` module -- the meshes are built in the driver and handed to
+# `objective(meshes=)`, so the scope gate
+# `test_nothing_wires_the_fillet_into_the_objective` still holds.
+#
+# EXITS 0 ALWAYS.  An attribution has no threshold to meet.  The one thing that WOULD be a
+# failure -- `t1_identical` false, i.e. the two rows not being one objective on two
+# meshes -- is printed and filed rather than raised.
+FILLETTERMS_OUT ?= study_fillet_terms.json
+
+filletterms:
+	$(PY_OPT) -u studies/study_fillet_terms.py --out $(FILLETTERMS_OUT)
+
+# ---------------------------------------------------------------------------
+# WHAT THE SWITCH DOES TO THE OPTIMUM (PLAN.md §91 ranked successor 2)
+# ---------------------------------------------------------------------------
+# §91 attributed §90's 17x and it is NOT the barrier: all nine barrier terms are exactly
+# 0.0 on both meshes, and 99.498% of the gap is `deflection` -- mean axle drop 1.9011 mm
+# unfilleted against 0.9914 mm filleted, read against a FIXED 2.0 mm two-sided target.
+# So the shipped genome is 4.945% under target on one mesh and 50.43% under on the other,
+# and a design that far off a quadratic target is not sitting at that objective's minimum.
+#
+# THE QUESTION THIS ANSWERS IS THE PROMOTION-SHAPED ONE.  "The filleted objective scores
+# the shipped genome at 671.66" is a fact about a number.  "The filleted objective's
+# optimum is NOT the shipped genome" is a fact about the part, and it is what says whether
+# the switch is followed by a Stage 3 re-run and a re-promotion or by nothing.
+#
+# TWO DESCENTS, ONE MESH APART.  Both from the shipped genome, both 30 cosine steps, both
+# eight uniform phases under SVK at `coarse`, both with the same pinned flank orientation
+# and the same box.  The CONTROL is `wheel_stage3.Evaluator` unchanged -- the objective as
+# it ships, the one that promoted this genome -- so whatever IT moves in 30 steps is what
+# "already converged, merely re-scored" looks like under this schedule.  That is why there
+# is no threshold anywhere in the verdict: the criterion is the treatment arm measured
+# against the control arm on two axes, distance walked and fraction of start loss removed.
+#
+# IT IS A LOWER BOUND AND SAYS SO.  30 steps is half of `wheel_stage3.DEFAULT_STEPS`, so
+# what the filleted arm recovers bounds what re-optimising would recover from below.  The
+# decision needs to know whether the optimum MOVES, not where it lands.
+#
+# THEN A 3x2 TABLE: the shipped genome and both endpoints, each read by BOTH objectives.
+# Four cells are free (the arms' own first and last steps) and the two off-diagonal ones
+# are separate evaluations at the same stencil, kernel and pinned orientation.  That is
+# what prices the disagreement in both directions rather than only in the one the switch
+# would take.
+#
+# ~3.6 h: §90 priced one filleted 8-phase svk evaluation at 183.6 s against 163.3 s, plus
+# the one-time jit trace per mesh topology (271.7 s and 1122.0 s), plus the two
+# cross-evaluations.  The control runs first so the filleted trace is paid by the second
+# arm.
+#
+# It touches no `src/` module -- the filleted arm is a `studies/` subclass overriding one
+# call -- so `test_nothing_wires_the_fillet_into_the_objective` still holds.  It writes no
+# `best_solution.json` and neither endpoint is a candidate for anything.
+#
+# EXITS 0 ALWAYS.  Either answer is the answer; a driver that exited nonzero on
+# `re_optimisation_not_re_score` would be asserting which one the decision wants to hear.
+FILLETOPTIMUM_OUT ?= study_fillet_optimum.json
+
+filletoptimum:
+	$(PY_OPT) -u studies/study_fillet_optimum.py --out $(FILLETOPTIMUM_OUT)
+
+# ---------------------------------------------------------------------------
+# WHAT `Kt * agg` IS WORTH ON A FILLETED MESH  (PLAN.md §93's Condition B)
+# ---------------------------------------------------------------------------
+# ~10 s, AND IT SOLVES NOTHING.  Six committed artifacts in, one table out.  That is the
+# point rather than a shortcut: the two sides of this comparison were measured by two
+# different instruments on two different ladders, and re-measuring either one here would
+# make it a third.
+#
+# §93 found, by reading `wheel_objective.py:1234` rather than the plan files, that
+# `util_j = kt * agg / ALLOWABLE` applies a surrogate for a fillet on a mesh that has one.
+# It also asserted two things about that finding from inspection, and this recipe checks
+# both:
+#
+#   "on a filleted mesh the peak is finite and convergent"  — IT IS NOT.  §93 cited §52's
+#   fillet-SURFACE numbers for a claim about the WHEEL, and §52's own headline says the
+#   global maximum still sits on `rim:P_c` and still diverges.  Both `P_c` corners survive
+#   the fillet at both genomes; both `P_t` corners do not.
+#
+#   "the direction is conservative, because Kt > 1"  — THAT IS ONE FACTOR OF A PRODUCT.
+#   The other is a whole-wheel p=4 p-norm standing in for a local peak, and it errs
+#   further the other way.  Measured against the fillet surface's own converged peak the
+#   modelled peak is LOW, not high.
+#
+# The `--*-terms` inputs are `make filletterms` at the two genomes; the four `--*-corner-*`
+# inputs are `make corner` and `make corner-fillet` at the two genomes.  `b029622` is the
+# design the FILLETED objective descends to from the shipped genome (§92), filed at the
+# repository root as `fillet_optimum_b029622.json` — NOT a promotion candidate, and its own
+# `note` says so.
+#
+# EXITS 0 ALWAYS, for `filletterms`' reason: §93 asked what the term is worth, and a
+# valuation has no threshold to meet.
+FILLETKT_OUT ?= study_fillet_kt.json
+
+filletkt:
+	$(PY_OPT) -u studies/study_fillet_kt.py --out $(FILLETKT_OUT)
+
+# ---------------------------------------------------------------------------
+# THE REGION-RESTRICTED P-NORM OVER THE FILLET ARC  (PLAN.md §94, items 1 and 2)
+# ---------------------------------------------------------------------------
+# ~4 min, and every cell of a 5x9 sweep comes off eight solves — M8b-i.6 step 1's
+# property, for its reason: the p-norm is a pure function of the converged displacement
+# field, so re-solving per exponent would buy nothing.
+#
+# §94 proposed replacing `kt * agg` with the mesh's own reading of the fillet surface and
+# put four things in front of it.  This recipe measures the first two, and the answer to
+# the first one is not the shape §94 expected:
+#
+#   ITEM 1 — "sweep the exponent ... CHECK: the largest `p` whose observed order is still
+#   ~2".  `p` IS NOT WHAT LIMITS THIS QUANTITY.  The region's own mass — a quadrature of
+#   an integral over an analytically fixed region, with no displacement field in it at all
+#   — already fails to converge at the tube radius §52's `arc_peak` uses, so no exponent
+#   built on it can be quoted.  The sweep therefore runs over the RADIUS as well, because
+#   that is the axis that decides whether the exponent means anything.
+#
+#   ITEM 2 — "needs a smooth weight in distance-to-arc, not an indicator".  MEASURED, and
+#   the indicator's step is real: section C locates a gene value at which one Gauss point
+#   crosses the tube boundary and samples across it at two step sizes a decade apart.
+#
+# `h` IS THE FILLET BLOCK'S, and the wheel's is carried beside it.  This measure is local
+# to a block that refines 4 -> 8 -> 12 -> 16 elements a side while the wheel refines
+# 1.617x then 1.556x by element count; those are different ladders and they give different
+# orders off the same numbers.  `study_deflection_gci`'s H_DEFS block is the precedent and
+# its warning is why: it drew `h` from the wrong mesh once and inflated every `p` by 1.25x.
+#
+# SCOPE: LINEAR, ONE PHASE — `study_corner_singularity`'s ladder, which is the one
+# `arc_peak`'s numbers were taken on.  Nothing here touches `wheel_objective`.
+#
+# EXITS 0 ALWAYS, for `filletkt`'s reason: §94 asked what `p` the region measure supports,
+# and "none at this junction, and here is the quantity that is actually limiting" is an
+# answer rather than a failure.
+FILLETPNORM_OUT ?= study_fillet_pnorm.json
+
+filletpnorm:
+	$(PY_OPT) -u studies/study_fillet_pnorm.py --out $(FILLETPNORM_OUT)
+
+# ---------------------------------------------------------------------------
+# THE LAST TWO THINGS IN FRONT OF THE SWITCH  (PLAN.md §94, items 3 and 4)
+# ---------------------------------------------------------------------------
+# ~3 s, AND IT SOLVES NOTHING.  Seven committed artifacts in, two arguments out.  The one
+# thing it computes is a sector's BLOCKING, to count the fillet arcs the mesh actually
+# makes rather than infer twelve from the spoke count.
+#
+# ITEM 3 asked for the `P_c` exclusion to be ARGUED rather than assumed, and offered a
+# justification: "they are the END CAP's corners and the exported solid has no end cap".
+# THAT IS THE PRE-2026-08-18 MESH.  `UNCAP_DEFAULT = (True, 1.0)` removed the cap from the
+# mesh too (§38), and `wheel_wheel.py` says so at the paragraph that explains why it
+# fillets only `P_t`.  Measured against `study_junction_agreement`'s numpy reconstruction
+# of `_embed` — verified by its own crossing count, 24 and 24, against the manifest:
+#
+#   hub:P_c   0.008 deg of wedge from the part's second flank crossing   IS the part's
+#   rim:P_c  50.612 deg from it                                          is NOT
+#
+# So both exclusions survive and NEITHER for §94's reason.  The rim's is fidelity.  The
+# hub's is C1 — the peak diverges, which is the argument that made `Kt` necessary in the
+# first place — and it leaves a real, singular corner of the real part unpriced, one the
+# part FILLETS (24 of 24 edges at the full radius) where the mesh builds twelve arcs at
+# `P_t` only.
+#
+# ITEM 4 asked for `stress_margin`'s exchange rate to be re-derived at the new scale.
+# `w = mass_term / (2 (u - knee) u)` reproduces §23's published 328.49, and NOTHING IN IT
+# KNOWS HOW `util` WAS COMPUTED: at a fixed reference the weight moves only with the mass
+# term.  What cannot be done is take the reference from a design — under the replacement
+# the shipped genome reads 1.1415 and `b029622` 1.6760, both outside the admissible
+# [knee, wall] band §18 derived inside.  The whole curve is reported so the policy choice
+# is visible; at the wall the weight is 89.21.
+#
+# AND THE KNEE, WHICH §94 DID NOT MENTION.  `MARGIN_KNEE_UTIL = 0.80`'s only stated
+# evidence is "the shipped genome sits at 0.77952, essentially AT this knee".  Under the
+# replacement it sits at 1.1415.
+#
+# EXITS 0 ALWAYS, for `filletkt`'s reason: §94 asked for an argument and a re-derivation,
+# and neither has a threshold to meet.
+FILLETWIRING_OUT ?= study_fillet_wiring.json
+
+filletwiring:
+	$(PY_OPT) -u studies/study_fillet_wiring.py --out $(FILLETWIRING_OUT)
 
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)

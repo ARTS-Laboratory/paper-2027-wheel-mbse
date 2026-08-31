@@ -1,0 +1,426 @@
+{
+  "inputs": {
+    "junction": "study_junction_agreement.json",
+    "manifest": "../export/wheel_step_manifest.json",
+    "corner_shipped": "study_corner_singularity_fillet.json",
+    "corner_b029622": "study_corner_singularity_fillet_b029622.json",
+    "terms_shipped": "study_fillet_terms.json",
+    "terms_b029622": "study_fillet_terms_b029622.json",
+    "pnorm": "study_fillet_pnorm.json"
+  },
+  "solves": 0,
+  "wedge_agreement_gate_deg": 0.5,
+  "agreement": {
+    "hub": {
+      "ring_r_mm": 12.7,
+      "part_second_crossing": {
+        "theta_deg": -1.5267347137206628,
+        "wedge_deg": 268.47326528627934,
+        "lambda_W": 0.5469910072945032
+      },
+      "mesh_P_c_as_built": {
+        "theta_deg": -1.5187317073967834,
+        "wedge_deg": 268.4812682926032,
+        "lambda_W": 0.5469776007718323
+      },
+      "mesh_P_c_end_cap": {
+        "theta_deg": 0.0,
+        "wedge_deg": 297.1786128636843,
+        "lambda_W": 0.5141143756676385
+      },
+      "wedge_err_as_built_deg": 0.008003006323860973,
+      "wedge_err_end_cap_deg": 28.70534757740495,
+      "lambda_err_as_built": 1.3406522670900145e-05,
+      "P_t_wedge_err_deg": 0.8788166240138366,
+      "P_c_is_the_parts_corner": true
+    },
+    "rim": {
+      "ring_r_mm": 48.5,
+      "part_second_crossing": {
+        "theta_deg": -1.3158567750193202,
+        "wedge_deg": 219.90181101015764,
+        "lambda_W": 0.697652101121965
+      },
+      "mesh_P_c_as_built": {
+        "theta_deg": -0.5138297395817583,
+        "wedge_deg": 270.51382973958175,
+        "lambda_W": 0.5436623718389806
+      },
+      "mesh_P_c_end_cap": {
+        "theta_deg": 0.0,
+        "wedge_deg": 307.4278393329029,
+        "lambda_W": 0.5080978937495011
+      },
+      "wedge_err_as_built_deg": 50.61201872942411,
+      "wedge_err_end_cap_deg": 87.52602832274528,
+      "lambda_err_as_built": 0.15398972928298438,
+      "P_t_wedge_err_deg": 0.5200274539463976,
+      "P_c_is_the_parts_corner": false
+    }
+  },
+  "mesh_fillet_arcs": {
+    "hub": {
+      "blocks": [
+        "hub_fillet_a",
+        "hub_fillet_b"
+      ],
+      "arcs_per_sector": 1,
+      "arcs_per_wheel": 12
+    },
+    "rim": {
+      "blocks": [
+        "rim_fillet_a",
+        "rim_fillet_b"
+      ],
+      "arcs_per_sector": 1,
+      "arcs_per_wheel": 12
+    }
+  },
+  "what_the_exporter_filleted": {
+    "n_spokes": 12,
+    "crossings_per_spoke": {
+      "hub": 2,
+      "rim": 2
+    },
+    "crossings_per_wheel": {
+      "hub": 24,
+      "rim": 24
+    },
+    "rings": {
+      "hub": {
+        "part_edges_found": 24,
+        "part_edges_filleted": 24,
+        "r_requested_mm": 0.6636060402965218,
+        "r_built_mm": 0.6636060402965218,
+        "kt_error_pct": 0.0,
+        "worst_wedge_deg": 322.0,
+        "mesh_fillet_arcs": 12,
+        "mesh_fillet_blocks_per_sector": [
+          "hub_fillet_a",
+          "hub_fillet_b"
+        ],
+        "reconstruction_matches_manifest": true
+      },
+      "rim": {
+        "part_edges_found": 24,
+        "part_edges_filleted": 24,
+        "r_requested_mm": 3.0,
+        "r_built_mm": 3.0,
+        "kt_error_pct": 0.0,
+        "worst_wedge_deg": 320.0,
+        "mesh_fillet_arcs": 12,
+        "mesh_fillet_blocks_per_sector": [
+          "rim_fillet_a",
+          "rim_fillet_b"
+        ],
+        "reconstruction_matches_manifest": true
+      }
+    }
+  },
+  "excluded": {
+    "shipped": {
+      "hub:P_c": {
+        "peak_mpa": [
+          9.95664887648691,
+          15.005264576432989,
+          18.45694449045355,
+          22.194787658934267
+        ],
+        "wedge_deg": 268.209154273554,
+        "kind": "re_entrant",
+        "lambda": 0.5474350178333569,
+        "util_at_fine": 0.8877915063573707,
+        "is_the_parts_corner": true,
+        "wedge_err_vs_part_deg": 0.008003006323860973,
+        "increments": [
+          5.04861569994608,
+          3.4516799140205627,
+          3.7378431684807154
+        ],
+        "increment_ratios": [
+          0.6836883849284523,
+          1.0829055015494835
+        ],
+        "diverges": true,
+        "excluded_because": "C1 \u2014 the peak diverges, so it cannot be a constraint; and this IS the part's corner, so the exclusion leaves a real riser unpriced",
+        "carries_global_max": false
+      },
+      "rim:P_c": {
+        "peak_mpa": [
+          22.2075499713721,
+          35.23214474342214,
+          44.4585378090836,
+          55.86645096109661
+        ],
+        "wedge_deg": 270.85291105970776,
+        "kind": "re_entrant",
+        "lambda": 0.5431264547074095,
+        "util_at_fine": 2.2346580384438646,
+        "is_the_parts_corner": false,
+        "wedge_err_vs_part_deg": 50.61201872942411,
+        "increments": [
+          13.02459477205004,
+          9.226393065661462,
+          11.407913152013009
+        ],
+        "increment_ratios": [
+          0.708382351016457,
+          1.236443436869243
+        ],
+        "diverges": true,
+        "excluded_because": "FIDELITY \u2014 the mesh's corner is 50.6 deg of wedge from the part's, so the field here is the mesh's and not the wheel's",
+        "carries_global_max": true
+      }
+    },
+    "b029622": {
+      "hub:P_c": {
+        "peak_mpa": [
+          9.88007371999325,
+          15.286677383619388,
+          18.93419748721523,
+          23.00655297956263
+        ],
+        "wedge_deg": 268.7041131655327,
+        "kind": "re_entrant",
+        "lambda": 0.54660541864697,
+        "util_at_fine": 0.9202621191825052,
+        "is_the_parts_corner": true,
+        "wedge_err_vs_part_deg": 0.008003006323860973,
+        "increments": [
+          5.406603663626138,
+          3.6475201035958413,
+          4.072355492347402
+        ],
+        "increment_ratios": [
+          0.6746416661045759,
+          1.11647239129203
+        ],
+        "diverges": true,
+        "excluded_because": "C1 \u2014 the peak diverges, so it cannot be a constraint; and this IS the part's corner, so the exclusion leaves a real riser unpriced",
+        "carries_global_max": false
+      },
+      "rim:P_c": {
+        "peak_mpa": [
+          30.368322834745808,
+          48.059866539125416,
+          60.18336837862819,
+          76.2235005740698
+        ],
+        "wedge_deg": 270.8921336468649,
+        "kind": "re_entrant",
+        "lambda": 0.5430647753013043,
+        "util_at_fine": 3.048940022962792,
+        "is_the_parts_corner": false,
+        "wedge_err_vs_part_deg": 50.61201872942411,
+        "increments": [
+          17.691543704379608,
+          12.123501839502772,
+          16.040132195441615
+        ],
+        "increment_ratios": [
+          0.6852709996415719,
+          1.3230609775780326
+        ],
+        "diverges": true,
+        "excluded_because": "FIDELITY \u2014 the mesh's corner is 50.6 deg of wedge from the part's, so the field here is the mesh's and not the wheel's",
+        "carries_global_max": true
+      }
+    }
+  },
+  "exchange": {
+    "knee": 0.8,
+    "wall": 1.0,
+    "weight_today": 325.0,
+    "stress_weight": 4000.0,
+    "allowable_stress_mpa": 25.0,
+    "recommended": {
+      "radius_mm": 0.45,
+      "exponent": 16.0
+    },
+    "defect8_reproduction": {
+      "published_weight": 328.49,
+      "ref_util": 0.855,
+      "implied_mass_term": 30.894484499999965,
+      "mass_term_quoted_by_18": 30.88,
+      "disagreement_pct": 0.04690576424859483,
+      "weight_from_the_quoted_mass_term": 328.3359914938866,
+      "weight_from_the_finite_1pct_step": 304.79881906368394
+    },
+    "genomes": {
+      "shipped": {
+        "mass_term": {
+          "unfilleted": 32.50505239907359,
+          "filleted": 35.682201742764995
+        },
+        "mass_g": {
+          "unfilleted": 39.5478137522062,
+          "filleted": 43.41334545369742
+        },
+        "util_today": {
+          "unfilleted": {
+            "hub": 0.7787643908902908,
+            "rim": 0.5178337893670999
+          },
+          "filleted": {
+            "hub": 0.5802949211123243,
+            "rim": 0.38586294065981497
+          }
+        },
+        "util_replacement": {
+          "hub": 1.141538154985518,
+          "rim": 0.5067130268573102
+        },
+        "weight_at_ref": {
+          "0.506713": {
+            "util_ref": 0.506713,
+            "weight_filleted_mass": null,
+            "weight_unfilleted_mass": null,
+            "admissible_reference": false,
+            "is_a_design": true
+          },
+          "0.855": {
+            "util_ref": 0.855,
+            "weight_filleted_mass": 379.3960844525788,
+            "weight_unfilleted_mass": 345.6145922283214,
+            "admissible_reference": true,
+            "is_a_design": false
+          },
+          "0.9": {
+            "util_ref": 0.9,
+            "weight_filleted_mass": 198.23445412647223,
+            "weight_unfilleted_mass": 180.58362443929775,
+            "admissible_reference": true,
+            "is_a_design": false
+          },
+          "1": {
+            "util_ref": 1.0,
+            "weight_filleted_mass": 89.20550435691251,
+            "weight_unfilleted_mass": 81.262630997684,
+            "admissible_reference": true,
+            "is_a_design": false
+          },
+          "1.14154": {
+            "util_ref": 1.141538,
+            "weight_filleted_mass": 45.76065632292075,
+            "weight_unfilleted_mass": 41.68611966031879,
+            "admissible_reference": false,
+            "is_a_design": true
+          }
+        },
+        "barrier_at_replacement_util": {
+          "hub": {
+            "util": 1.141538154985518,
+            "stress": 80.13219726681795,
+            "stress_margin_today": 37.910701176046274
+          },
+          "rim": {
+            "util": 0.5067130268573102,
+            "stress": 0.0,
+            "stress_margin_today": 0.0
+          }
+        },
+        "mass_term_change_pct": 9.774324633243637,
+        "any_design_admissible": false
+      },
+      "b029622": {
+        "mass_term": {
+          "unfilleted": 32.5952945133122,
+          "filleted": 35.4449209302519
+        },
+        "mass_g": {
+          "unfilleted": 39.657608324529846,
+          "filleted": 43.12465379847315
+        },
+        "util_today": {
+          "unfilleted": {
+            "hub": 1.0111569086603922,
+            "rim": 0.6428564846935606
+          },
+          "filleted": {
+            "hub": 0.7953641277979535,
+            "rim": 0.5056633474669553
+          }
+        },
+        "util_replacement": {
+          "hub": 1.6759955966587774,
+          "rim": 0.784460052659671
+        },
+        "weight_at_ref": {
+          "0.78446": {
+            "util_ref": 0.78446,
+            "weight_filleted_mass": null,
+            "weight_unfilleted_mass": null,
+            "admissible_reference": false,
+            "is_a_design": true
+          },
+          "0.855": {
+            "util_ref": 0.855,
+            "weight_filleted_mass": 376.87316246945176,
+            "weight_unfilleted_mass": 346.5741043414379,
+            "admissible_reference": true,
+            "is_a_design": false
+          },
+          "0.9": {
+            "util_ref": 0.9,
+            "weight_filleted_mass": 196.91622739028836,
+            "weight_unfilleted_mass": 181.08496951840112,
+            "admissible_reference": true,
+            "is_a_design": false
+          },
+          "1": {
+            "util_ref": 1.0,
+            "weight_filleted_mass": 88.61230232562976,
+            "weight_unfilleted_mass": 81.48823628328051,
+            "admissible_reference": true,
+            "is_a_design": false
+          },
+          "1.676": {
+            "util_ref": 1.675996,
+            "weight_filleted_mass": 12.071157468388154,
+            "weight_unfilleted_mass": 11.1006858661903,
+            "admissible_reference": false,
+            "is_a_design": true
+          }
+        },
+        "barrier_at_replacement_util": {
+          "hub": {
+            "util": 1.6759955966587774,
+            "stress": 1827.8801868082257,
+            "stress_margin_today": 249.39469274380937
+          },
+          "rim": {
+            "util": 0.784460052659671,
+            "stress": 0.0,
+            "stress_margin_today": 0.0
+          }
+        },
+        "mass_term_change_pct": 8.7424472135875,
+        "any_design_admissible": false
+      }
+    }
+  },
+  "knee": {
+    "knee": 0.8,
+    "documented_evidence": "the shipped genome sits at 0.77952, essentially AT this knee (wheel_objective.MARGIN_KNEE_UTIL's comment)",
+    "shipped_hub_util_today_unfilleted": 0.7787643908902908,
+    "shipped_hub_util_today_filleted": 0.5802949211123243,
+    "shipped_hub_util_replacement": 1.141538154985518,
+    "distance_from_knee_today": -0.02123560910970923,
+    "distance_from_knee_replacement": 0.34153815498551787,
+    "evidence_survives": false
+  },
+  "verdict": {
+    "end_cap_justification_is_stale": true,
+    "hub_P_c_is_the_parts_corner": true,
+    "rim_P_c_is_the_parts_corner": false,
+    "hub_wedge_err_as_built_deg": 0.008003006323860973,
+    "hub_wedge_err_end_cap_deg": 28.70534757740495,
+    "rim_wedge_err_as_built_deg": 50.61201872942411,
+    "both_P_c_diverge_on_the_filleted_mesh": true,
+    "the_part_fillets_what_the_mesh_does_not": true,
+    "weight_is_invariant_to_how_util_is_computed": true,
+    "mass_term_change_pct": 9.774324633243637,
+    "neither_measured_design_is_an_admissible_reference": true,
+    "knee_evidence_survives": false
+  }
+}

@@ -140,7 +140,7 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 | # | file | the question | cost |
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
-| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52).** `R_hub`/`R_rim` move the solved wheel by 38% on the filleted mesh and are still invisible to the OPTIMIZER, which may not take that mesh. What is left is Step 3, behind genome-robustness — **and the rim tri-block is no longer part of that queue: §53 BUILT it, and it has the same genome problem** | Steps 0-2 spent; Step 3 not cheap |
+| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52); Step 3 IS THE ONLY THING LEFT AND IT IS A DECISION, NOT A MECHANISM — REWRITTEN 2026-08-29 AFTER §92.** The two meshes disagree about the solved wheel by 37.97% (§52, linear, one phase) and by 47.85% (§91, svk, eight phases), and §91 files that spread open. `R_hub`/`R_rim` are no longer invisible to the optimizer — §79 made the filleted mesh differentiable and §88 removed the last refusal — so what keeps the optimizer off that mesh is now the SCOPE GATE, which is a decision this tree has taken deliberately rather than a thing it cannot do. Genome-robustness, which this cell used to name as the blocker, was settled at §74/§78/§89. **And the rim tri-block is no longer part of that queue: §53 BUILT it, and it has the same genome problem** | Steps 0-2 spent; Step 3's measurements are all spent too — what remains is a record |
 | 3 | `HUBSHARE_PLAN.md` | Should hub compliance be an objective term? `cy4` alone moves it by 102% of the gap (§31) | medium |
 | 4 | `WALLPIN_PLAN.md` | Re-derive Gate 1 at the 1.2 mm floor and drop the beam test's 2.0 mm pin (§14's reserved judgement, measured by §31) | small |
 | 5 | `RIMCAP_PLAN.md` | A rim cap model — the boundary as a function of `t3` and rim arrival angle, not at one design (§22, §24) | medium |
@@ -11734,3 +11734,1602 @@ behind it.
 7. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
    (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
    check** (§44).
+
+## §90 — 2026-08-29. THE FILLETED OBJECTIVE'S COST, MEASURED: 1.12x AND NOT 2-3x. THE MESH IS NOT WHAT THE EVALUATION SPENDS ITS TIME ON — AND THE ONE-TIME JIT TRACE, WHICH NOBODY WAS COUNTING, IS 4.13x AND NINETEEN MINUTES
+
+§89's ranked successor 1 asked for two numbers and called them the whole of what is left
+of arc 2: the filleted objective's COST, and `R_hub` read through the filleted mesh
+against the flat `Kt` surrogate. **This is the first of the two.** §88's ranking item 2
+said the filleted mesh is *"2-3x the cost of the unfilleted one"*; §89 found that nothing
+in the tree measures that and flagged it as *"a number with no measurement behind it"*.
+
+**It is measured now, and it is 1.12x.** `make filletcost`, 2896 s,
+`studies/study_fillet_cost.py` and its artifact.
+
+### THE MEASUREMENT, AND WHY IT IS THREE ALTITUDES
+
+"Cost" is three quantities and quoting one as another is how an unmeasured 2-3x got
+written down in the first place. All at `coarse` — the config `wheel_objective.objective`
+defaults to and the one §89's barrier control was taken at — on the shipped genome.
+
+```
+                                   unfilleted     filleted      ratio
+  A  mesh build                      0.013 s      0.264 s      20.16
+     elements                          4704         5952        1.27   (§89's number)
+
+  B  one solve + one adjoint, svk
+     force-controlled secant         20.80 s      21.58 s       1.04
+     cold forward                    10.99 s      13.07 s       1.19
+     warm forward                     0.14 s       0.19 s       1.34
+     gradient (adjoint)               0.44 s       0.59 s       1.35
+
+  C  ONE OBJECTIVE EVALUATION, svk, 8 phases
+     T1 + T2                          0.29 s       0.34 s       1.15
+     T3                             162.83 s     181.05 s       1.11
+     build 8 phase meshes             0.13 s       2.19 s      16.38
+     TOTAL                          163.26 s     183.58 s       1.12
+```
+
+Under the LINEAR kernel — what `objective` takes when called bare (§32) — the same
+evaluation reads 123.27 s against 143.76 s, **1.17x**. The verdict is adjudicated on the
+SVK row because that is what an optimizer step pays: `wheel_stage3.py --kinematics`
+defaults to `svk`, and this arc's own header warns that a study driver taking the linear
+default measures the wrong thing silently.
+
+**§88's "2-3x" DOES NOT HOLD.** It is not off by a little: the claim's floor is 1.8x the
+measured ratio. And the quantity nearest to it — the element count, 1.27x — is one §89
+already had and explicitly declined to treat as a cost.
+
+### WHY THE MESH BEING BIGGER DOES NOT COST WHAT IT LOOKS LIKE IT SHOULD
+
+The mesh build IS 20x, and it is 2.19 s against an evaluation of 183.58 s — **1.2% of the
+thing it is 20x of**. An objective evaluation is eight force-controlled secants and eight
+adjoints; the geometry that feeds them is rounding error, and a ratio taken on the build
+alone would have been twenty times wrong in the expensive direction.
+
+**The two altitudes corroborate rather than repeat.** B is medians over three timed calls
+and C is one call per setting; B's per-solve ratios (1.19-1.35) bracket C's evaluation
+ratio (1.11-1.15) from above, which is what should happen — C's denominator includes T1,
+T2 and the secant's cheaper iterations. Two instruments at two altitudes agreeing is
+better evidence than repeats of either.
+
+### THE COST NOBODY WAS COUNTING, AND IT IS THE LARGEST RATIO IN THE TABLE
+
+Everything above is POST-TRACE. The first evaluation at each setting pays a jit compile
+that Stage 3 pays once and amortises over a run, and it was measured rather than
+discarded — `first_call_s - eval_s`, the two calls being the same arithmetic on the same
+meshes:
+
+```
+  trace overhead, linear    unfilleted  271.7 s      filleted  1122.0 s     4.13x
+```
+
+**Nineteen minutes**, and 7.7 evaluations' worth of compile before the first answer. It is
+kept out of the ratio the verdict reads — it is a per-RUN cost, not a per-evaluation one —
+but it is a real price of switching the default and it is the one number in this section
+that is anywhere near §88's bracket.
+
+**AND THE TRACE BELONGS TO THE MESH, NOT TO THE KERNEL**, which is why only one of the two
+kinematics rows can report it. The driver runs the evaluation section first and `linear`
+before `svk`, and the SVK row's trace overhead is **0.6 s and 2.1 s** — nothing left to
+trace, on meshes the linear rows had already compiled. That is recorded as the finding it
+is rather than left looking like a glitch, and it means a Stage 3 run that switches
+kinematics pays this once, not twice.
+
+### WHAT THE ARTIFACT ALSO SHOWS, WHICH IS NOT ABOUT COST AND MATTERS MORE
+
+The two rows are the same objective, at the same genome, on two meshes — and they do not
+return the same number:
+
+```
+                       loss        |grad|      min scaled J     mesh mass
+  fillet=None       38.7859       212.49         0.7822         39.548 g
+  fillet=True      671.6603      1179.53         0.2877         43.413 g
+```
+
+**Seventeen times the loss, on the design this project ships.** The artifact records two
+fields that point at both halves of it and this section does not go further: the mesh is
+**9.8% heavier** — the fillet is material the unfilleted mesh omits, which is a physical
+consequence of modelling it rather than an artefact — and the min scaled Jacobian falls to
+0.2877, which is §89's *"what the fillet costs is headroom"* arriving in the objective's
+own units through the `t2` barrier.
+
+**This is stated, not decomposed.** §89 asked for a cost and this driver measures a cost;
+the per-TERM attribution of a 17x loss change is a different measurement, and inventing it
+from two summary fields would be exactly the kind of unmeasured number this section exists
+to retire. It is ranked below.
+
+### WHAT MOVED
+
+`studies/study_fillet_cost.py` is new, with `make filletcost` and its artifact. It touches
+no `src/` module: the meshes are built in the driver and handed to `objective(meshes=)`,
+which is the parameter `wheel_stage3.Evaluator` already uses, so
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and the scope gate stands.
+**The fillet is still not wired into the objective, and this section does not wire it** —
+it retires one of the two terms §89 left on the decision.
+
+#### The successors, ranked — REVISED 2026-08-29 AFTER §90
+
+1. **[STRUCK 2026-08-29 — SEE §92. THIS ASKS FOR A MEASUREMENT THAT ALREADY EXISTED:
+   `make reds-hub-fillet` WAS RUN ON 2026-08-24 AND IS §75, filed under
+   `sweep_filleted_svk` in `studies/study_reds_hub_share.json`. The decision had no
+   unmeasured term left at this point and this item should not have been ranked.]**
+   THE OTHER HALF OF §89's ITEM 1, WHICH IS NOW THE WHOLE OF THE DECISION. `R_hub`
+   read through the filleted mesh against the flat `Kt` surrogate (§75), via
+   `make reds-hub-fillet`. The cost term is answered — 1.12x is not a reason to refuse
+   anything — so the surrogate is the only term left standing between the fillet and the
+   objective. When it is measured, the decision is takeable in one record.
+2. **DECOMPOSE THE 17x — NEW.** The filleted objective returns 671.66 against 38.79 at the
+   shipped genome, and this section deliberately did not attribute it past two summary
+   fields. Per-term `breakdown["terms"]`, both meshes, same genome: if the barrier is
+   most of it, wiring the fillet in re-weights the whole loss and every committed loss
+   number becomes incomparable across the switch (§32's own rule about kinematics,
+   applied to the mesh). That is a promotion-shaped consequence and it should be known
+   BEFORE item 1's answer arrives, not after.
+3. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged from
+   §89's item 2 and still the only thing between a filleted mesh and a STEP comparison.
+4. **The sub-element fold, as its own unit** (§89's item 3) — four instruments, one fold,
+   and the one the tree calls ground truth misses it. Then apply §58's gate to the draw
+   and re-derive the box.
+5. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still
+   the oldest thing on the list.
+6. **Per-REGION agreement on a filleted mesh** (§86).
+7. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67).
+8. **A bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+## §91 — 2026-08-29. THE 17x IS `deflection`, NOT THE BARRIER. §90's HYPOTHESIS IS WRONG AND IT WAS THE BENIGN HALF OF ITS OWN SENTENCE: EVERY BARRIER TERM IS EXACTLY ZERO ON BOTH MESHES, AND THE TWO MESHES DISAGREE ABOUT THE WHEEL BY 47.85% OF AXLE DROP
+
+§90's ranked successor 2. §90 measured the filleted objective's cost, recorded a 17x loss
+difference on the way past, and deliberately stopped at two summary fields:
+
+> if the barrier is most of it, wiring the fillet in re-weights the whole loss and every
+> committed loss number becomes incomparable across the switch. That is a
+> promotion-shaped consequence and it should be known BEFORE item 1's answer arrives.
+
+**The barrier is 0.00% of it.** `make filletterms`, 2010 s,
+`studies/study_fillet_terms.py` and its artifact.
+
+### THE DECOMPOSITION, SVK, SHIPPED GENOME, `coarse`, EIGHT PHASES
+
+Fourteen terms. Eleven are bit-identical between the two meshes; two of the remaining
+three move, and one of those two is 99.5% of the difference.
+
+```
+  term             fillet=None    fillet=True        delta    share of gap
+  deflection            6.1131       635.8102     +629.6972       0.99498
+  mass                 32.5051        35.6822       +3.1771       0.00502
+  min_sj                0.0000         0.0000        0.0000       0.00000
+  stress                0.0000         0.0000        0.0000       0.00000
+  stress_margin         0.0000         0.0000        0.0000       0.00000
+  smoothness            0.1678         0.1678        0.0000       0.00000
+  phase_ripple          0.0000         0.0000        0.0000       0.00000
+  x_order, hub_overlap, fold, arrival, fillet, fillet_cap, buckling — all 0.0000 both
+  ----------------------------------------------------------------------------
+  TOTAL                38.7859       671.6603     +632.8743       1.00000
+  |grad|              212.4906      1179.5258        5.551x
+```
+
+The totals and the gradient norms are §90's published pair to every digit it printed, so
+this is a decomposition OF that number and not of a different one. The linear row
+reproduces §90's other pair as well — 122.3565 → 834.6508, gap 712.2944, `deflection`
+99.554% of it — and the shares agree across the two kernels to half a percentage point.
+
+### THE BARRIER ROW IS EXACTLY ZERO, AND THAT IS NOT A ROUNDING STATEMENT
+
+`soft_barrier` is `scale * max(0, violation)^2` — identically zero below the knee — and
+`min_sj` sums it over every element. So `min_sj == 0.0` on both meshes says **every
+element of both meshes clears `MIN_SJ_TARGET`**, which is the same proposition as
+`min(sj) > MIN_SJ_TARGET`, which is the quantity **§89 already swept over 16 in-sample and
+32 held-out genomes on both meshes**. The barrier's inertness therefore does not need a
+box sweep of its own: §89's 16-of-16 and 31-of-32 carry it, exactly.
+
+The same applies to the other eight barriers. `BARRIER_TERMS` and `OBJECTIVE_TERMS` are
+`wheel_objective`'s own classification (a barrier is a term whose only admissible value is
+zero, so it answers *may this design ship*), and the split falls out clean:
+
+```
+  BARRIER_TERMS     stress, buckling, x_order, hub_overlap, fold, arrival,
+                    fillet, fillet_cap, min_sj          ALL EXACTLY 0.0 ON BOTH MESHES
+  OBJECTIVE_TERMS   deflection, mass, stress_margin, smoothness, phase_ripple
+                                                        632.8743 of 632.8743
+```
+
+**The switch does not change whether the shipped design may ship. It changes, by 17x, how
+good the objective says it is.** That is the sharper form of §90's sentence and it is the
+half §90 did not consider.
+
+### THE MECHANISM IS AXLE DROP AGAINST A FIXED TARGET
+
+`deflection` is `2500 * ((mean_drop - 2.0) / 2.0)^2`, two-sided, and the shipped genome
+already sits below the 2.0 mm target on the unfilleted mesh:
+
+```
+                 mean axle drop     error vs 2.0 mm    deflection term
+  fillet=None       1.9011 mm           -4.945%             6.1131
+  fillet=True       0.9914 mm          -50.43%            635.8102
+                   -47.85%                                 104.0x
+```
+
+The term is quadratic in an error that goes from one twentieth to one half, so a 47.85%
+change in a millimetre number becomes a 104x change in a loss term. The linear row says
+the same thing at -46.37% (1.6212 → 0.8695 mm).
+
+**AND BOTH MESHES ARE CONVERGED AT `coarse`, SO THIS IS THE WHEEL AND NOT THE
+DISCRETISATION.** FILLET_PLAN PART 12 ran both meshes up a four-rung ladder and measured
+`coarse..fine` spreads of **1.216%** unfilleted and **0.141%** filleted. The disagreement
+measured here is two orders above either spread. The two meshes are not two resolutions of
+one answer; they are two different answers.
+
+### THE CLAUSE OF §90 THAT THIS RETIRES
+
+§90 wrote, of the same pair:
+
+> the min scaled Jacobian falls to 0.2877, which is §89's *"what the fillet costs is
+> headroom"* arriving in the objective's own units **through the `t2` barrier**.
+
+**The last five words are wrong and are withdrawn.** The min scaled Jacobian does fall to
+0.2877 and that is still headroom spent — but 0.2877 is above `MIN_SJ_TARGET`'s 0.2, so
+the `t2` barrier is exactly 0.0 and the fall reaches the objective's units **not at all**.
+§90 named the one term that provably contributes nothing. The rest of §90 is unaffected:
+the cost measurement is independent of this and the 1.12x stands.
+
+### TWO THINGS THIS FOUND THAT NOBODY ASKED FOR
+
+**1. `kt_hub` and `kt_rim` come back IDENTICAL on both meshes — 2.0963 and 1.3939, under
+both kernels, to every digit — and so do `r_hub_effective_mm` (0.6397) and
+`hub_fillet_cap_mm` (0.6657).** That is §75's flat `Kt` surrogate, seen from inside the
+objective: the stress path cannot see the fillet AT ALL except through the nominal p-norm
+(9.2873 → 6.9204 MPa), because the surrogate is a closed form in the genes and the mesh
+does not enter it. **This bears directly on the one term the decision has left** — ranked
+successor 1 is exactly the measurement of that surrogate — and it says the two halves of
+§89's item 1 are not independent: whatever `R_hub` does through the filleted mesh, it does
+not currently reach `stress` or `stress_margin`.
+
+**2. `phase_ripple`'s weight is 0.0 — off by default, "gate 10 reports what turning it on
+costs" — and the underlying quantity moves the most of anything measured here in relative
+terms**: `phase_ripple_std_over_mean` goes **0.1142 → 0.1912, +67.4%** at svk (0.1311 →
+0.2032 at linear). The objective is blind to it by construction. It is recorded because it
+is a number gate 10 will want and because it means the gap measured above is a LOWER bound
+on what the switch would do to a loss with that term enabled.
+
+### AT THIS GENOME, AND THE STRESS TERMS ARE NEARER THE KNEE THAN THEIR ZEROS SUGGEST
+
+`stress` and `stress_margin` are exactly zero on both meshes, but the unfilleted row is
+not comfortably zero: `stress_utilisation_hub` is **0.7788 against `MARGIN_KNEE_UTIL`'s
+0.80**, i.e. 0.0212 of utilisation from firing, while the filleted row is at 0.5803. So
+"the gap is `deflection`" is a statement AT THE SHIPPED GENOME. A genome a few percent of
+utilisation higher would put `stress_margin` into the gap on the unfilleted mesh only, and
+in the same direction as everything else here — the unfilleted mesh scoring worse. The
+utilisations are in the artifact so that margin is readable rather than assumed.
+
+### ONE DISCREPANCY, FILED OPEN
+
+PART 12 quotes the fillet's deflection effect as **-37.97%**; this section measures
+**-47.85%** at svk and **-46.37%** at linear. These are different instruments — PART 12's
+is a ladder rung at one sampling, this is the mean over the objective's eight-phase
+uniform stencil, and PART 12's absolute unfilleted `coarse` row (1.5516 mm) sits nearest
+this section's LINEAR row (1.6212 mm) rather than its svk one. **No reconciliation is
+claimed and none was measured.** The direction and the order of magnitude agree; the
+figure does not, and it is ranked below rather than explained.
+
+### WHAT MOVED
+
+`studies/study_fillet_terms.py` is new, with `make filletterms` and its artifact. Like
+§90's driver it touches **no `src/` module** — the meshes are built in the driver and
+handed to `objective(meshes=)`, the parameter `wheel_stage3.Evaluator` already uses — so
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and the scope gate stands.
+**The fillet is still not wired into the objective and this section does not wire it.**
+
+The driver carries its own internal control: the eight gene-space terms are functions of
+the genes and the config alone, so they MUST come back bit-identical from the two calls,
+and `t1_identical` is that check as a fact in the artifact rather than as an assumption.
+It is `true` on both kernels. If it were ever false the two rows would not be one
+objective on two meshes and none of the table above would mean anything.
+
+**SCOPE, STATED.** One genome (the shipped one), `coarse`, eight uniform phases, both
+kernels. The shipped genome is the right and sufficient scope for the consequence §90
+named — every committed loss number in this tree is quoted at it — and it is not a
+statement about the gene box. What generalises without further work is the barrier row,
+for the exact reason given above.
+
+#### The successors, ranked — REVISED 2026-08-29 AFTER §91
+
+1. **[STRUCK 2026-08-29 — SEE §92. SAME DEFECT AS §90's ITEM 1, COPIED FORWARD: the
+   sweep this asks for was run on 2026-08-24 and is §75, and the paragraph two above
+   quotes its numbers.]** `R_hub` THROUGH THE FILLETED MESH AGAINST THE FLAT `Kt`
+   SURROGATE (§75), via
+   `make reds-hub-fillet`. Unchanged from §90's item 1 and now literally the last term
+   of the decision — and §91 sharpens what it is measuring: the surrogate is a closed form
+   in the genes, `kt_hub`/`kt_rim`/`r_hub_effective_mm` are identical on the two meshes to
+   every digit, so `R_hub`'s route to `stress` does not pass through the mesh at all.
+2. **WHAT THE SWITCH DOES TO THE OPTIMUM, NOT TO THE SCORE — NEW, AND IT IS THE
+   PROMOTION.** §91 says the filleted objective puts the shipped genome **50.43% under**
+   its deflection target where the unfilleted one puts it 4.945% under. A design that far
+   off a two-sided quadratic target is not near the filleted objective's optimum, so
+   wiring the fillet in is a RE-OPTIMISATION and not a re-score: the shipped genome would
+   move toward more compliance, and `mass`, which is the term it trades against, is 0.502%
+   of this gap. This is where FILLET_PLAN Step 3 item 2 (§29's absolute deflection band)
+   lands, and it should be priced before any promotion follows the switch, not after.
+3. **RECONCILE PART 12's -37.97% WITH §91's -47.85%/-46.37%** — filed open above. Two
+   instruments on the same physical effect that do not agree to ten points; one of them is
+   quoted in FILLET_PLAN's header block.
+4. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged, and
+   still the only thing between a filleted mesh and a STEP comparison.
+5. **The sub-element fold, as its own unit** (§89's item 3) — four instruments, one fold,
+   and the one the tree calls ground truth misses it. Then apply §58's gate to the draw
+   and re-derive the box.
+6. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still
+   the oldest thing on the list.
+7. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**,
+   which §91 gives a second reason to run (the quantity moves +67.4% across the switch
+   while the term is weighted 0.0).
+8. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67);
+   **a bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+---
+
+## §92 — 2026-08-29. THE SWITCH IS A RE-OPTIMISATION AND NOT A RE-SCORE, PROVED BY A PREFERENCE REVERSAL: EACH MESH'S OPTIMUM IS THE OTHER MESH'S CATASTROPHE, AND THE FILLETED ONE'S ANSWER IS OVER THE STRESS ALLOWABLE BY THE UNFILLETED OBJECTIVE'S OWN RECKONING
+
+§91's ranked successor 2, run.  `make filletoptimum`, 13320.8 s, `studies/study_fillet_optimum.json`.
+
+### FIRST: §91's RANKED ITEM 1 WAS ASKING FOR A MEASUREMENT THAT ALREADY EXISTED
+
+Both §90 and §91 put *"`R_hub` through the filleted mesh against the flat `Kt` surrogate
+(§75), **via `make reds-hub-fillet`**"* at rank 1 and called it the last term of the
+decision.  **It was run on 2026-08-24 and it IS §75.**  `studies/study_reds_hub_share.json`
+carries `sweep_filleted_svk` — fourteen rows, `--sweep --fillet`, `coarse`, SVK, eleven
+distinct hub-share values against the unfilleted control's one — and it was regenerated at
+§85.  §91 quotes its numbers (`hub_fillet_cap_mm` 0.6657, the shipped `R_hub` at 99.7% of
+it) three paragraphs above the ranking that asks for it, and
+`tests/test_wheel_fea.py:206`'s docstring has carried the finding since §75.
+
+So the fillet arc did not have one term left.  It had none.  §89 said *"those two numbers
+ARE the decision"* — the cost and the surrogate — and both have existed since §90 and §75
+respectively.  What was left was the decision, and the thing genuinely unmeasured was
+§91's own item 2.  **This is the second ranking item found to be already done** — §85's
+item 5 caught the first, marking the filleted hub-share re-run *"DONE as a side effect of
+§85's audit"* — and both have the same shape: an item copied forward across sections
+without re-reading the artifact it names.  The cheap guard is the one that caught this
+one, which is to open the artifact before ranking the work.
+
+### THE MEASUREMENT, AND WHY THE OBVIOUS CRITERIA ARE ALL WRONG
+
+Two `wheel_stage3.descend` runs from the shipped genome, identical in every argument
+except which mesh the evaluator builds — same 30-step cosine schedule, same lr, same
+clip, same 8-phase **uniform** stencil, same SVK kernel, same pinned flank orientation,
+same box.  The control is `wheel_stage3.Evaluator` unchanged; the treatment is a
+`studies/` subclass that adds `fillet=True` to the mesh build and nothing else.
+
+Three criteria were written into the driver and taken back out before it ran, and they are
+recorded because each is the obvious one:
+
+- **"the filleted arm walks further in gene space."**  No.  `adam_update` is
+  `lr * m_hat / (sqrt(v_hat) + eps)`, which is SCALE FREE in the gradient: the arm whose
+  gradient is 5.6x the other's (§90) takes about the same step, not 5.6x it.  Distance
+  under Adam measures gradient-DIRECTION consistency, not distance from a minimum.
+- **"it removes a larger fraction of its own start loss."**  No — that is settled before
+  the run by arithmetic.  6.11 of the unfilleted 38.79 is `deflection` and 635.81 of the
+  filleted 671.66 is, so the test would measure the size of the error term §91 already
+  published and call it a result.
+- **"it closes more of its own distance to the 2.0 mm target."**  No, and this one is
+  WRONG-SIGNED: a design that must travel further closes a SMALLER fraction in a fixed
+  budget, so the more thoroughly the optimum has moved, the more the test says it has not.
+  The smoke probe that caught it had the control closing 87.7% of a 0.262 mm gap and the
+  treatment 18.6% of a 1.040 mm one, moving +0.294 mm and +0.193 mm — comparable rates,
+  opposite verdicts.
+
+**THE CRITERION IS A PREFERENCE REVERSAL**, pre-registered in the driver's docstring: the
+switch is a re-optimisation rather than a re-score if the two objectives DISAGREE about
+which design is better.  It needs no threshold and nothing in it can be tuned afterwards;
+it is invariant to the 17x, because a re-score is a monotone re-labelling of one ranking
+and **a monotone re-labelling cannot reverse a pair**; and it is the question a promotion
+asks — not "what does this design score" but "which design do we ship".
+
+### THE TABLE.  THREE DESIGNS, BOTH OBJECTIVES, `coarse`, SVK, EIGHT UNIFORM PHASES
+
+```
+  design                          unfilleted obj    filleted obj
+  shipped            09e8188            38.7859        671.6603
+  control endpoint   ebd9103            32.0853  <--   519.1149
+  treatment endpoint b029622          1160.7092         37.2206  <--
+```
+
+Each COLUMN is one objective ranking three designs.  The four diagonal cells are the arms'
+own first and last steps; the two off-diagonal ones are separate evaluations at the same
+stencil, kernel and pinned orientation.
+
+**THE DECISIVE PAIR REVERSES.**  The unfilleted objective prefers the shipped genome to
+the filleted arm's endpoint — 38.7859 against 1160.7092, which it rates **29.93x worse**.
+The filleted objective prefers them the other way round — 37.2206 against 671.6603, the
+shipped genome **18.05x worse**.  Each mesh's answer is the other mesh's catastrophe.
+
+**AND THE CONTROL'S PAIR DOES NOT REVERSE**, which is what makes the reversal the MESH's
+rather than the schedule's: both objectives prefer the control's endpoint to the shipped
+genome (32.0853 < 38.7859 and 519.1149 < 671.6603).  Thirty steps at `coarse` under an
+8-phase uniform stencil is not by itself enough to flip a pair.  It took the mesh.
+
+### THE SHARPEST NUMBER IS NOT IN THE TABLE, AND IT IS A BARRIER
+
+The filleted objective's answer, read by the unfilleted objective:
+
+```
+  axle drop            3.3335 mm     against a 2.0 mm target — 66.7% OVER
+  stress utilisation   1.0112        OVER the allowable
+  max stress         127.4407 MPa
+  stress_margin       14.4909        FIRES
+  stress               0.4979        FIRES — and `stress` is a BARRIER_TERM
+```
+
+**§91's sentence does not survive being extended past the shipped genome, and §91 said so.**
+That section wrote that the switch *"does not change whether the shipped design may ship;
+it changes, by 17x, how good the objective says it is"* — true, and carefully scoped to the
+shipped genome, where all nine barriers are exactly 0.0 on both meshes.  One step off that
+genome it stops being true: the design the filleted objective calls optimal is one the
+unfilleted objective refuses on a **barrier**, not on a trade.  The two meshes do not merely
+disagree about how good the wheel is.  **They disagree about whether it may ship.**
+
+### THE PRICE, AND WHAT IT IS NOT
+
+```
+                                    control          treatment
+  loss                       38.79 -> 32.09    671.66 -> 37.22
+  fraction of start removed        17.276%           94.458%
+  axle drop (mm)            1.9011 -> 1.9998   0.9914 -> 1.9902
+  percent under target        4.945 -> 0.009    50.431 -> 0.489
+  `deflection` term          6.1131 -> 0.0000  635.8102 -> 0.0597
+  `mass` term              32.5051 -> 31.7796   35.6822 -> 35.4449
+  mesh mass (g)            39.5478 -> 38.6652   43.4133 -> 43.1247
+  min scaled Jacobian       0.7822 -> 0.7020    0.2877 -> 0.2380
+  a barrier fired anywhere      True (fillet_cap)      False
+  ||dz||_2 in the unit box         0.064918           0.195319   (ratio 3.009)
+```
+
+**THE RE-OPTIMISATION IS NOT PAID FOR IN MASS, WHICH IS THE RESULT NOBODY PREDICTED.**
+§91 named `mass` as the term the switch trades against — it is the only other term with
+any share of the gap (0.502%) — and the natural reading was that a more compliant wheel
+buys its compliance with material.  It does not.  The treatment arm takes 635.75 out of
+`deflection` and comes out **0.29 g LIGHTER** (43.4133 -> 43.1247), because the compliance
+is bought by SHAPE: `cy2` +4.4189 mm and `cy1` +3.9368 mm — a less flat spoke, which is
+§31's mechanism arriving from the other direction — while `cx3` and `cx4` come in.  The
+`mass` term falls on both arms.
+
+**AND NO BARRIER FIRES ON THE TREATMENT ARM AT ANY STEP.**  The filleted optimum is
+reachable without crossing anything, which is not a small statement about a mesh whose
+minimum scaled Jacobian starts at 0.2877 against a `MIN_SJ_TARGET` of 0.2.  It ends at
+0.2380 — still clear, and 19% of the way from its start to the knee, which is the one
+number here that a longer run should be watched on.
+
+### TWO THINGS THIS FOUND THAT NOBODY ASKED FOR
+
+**1.  THE UNFILLETED OBJECTIVE WALKS THE DESIGN INTO `fillet_cap`.**  The control arm's
+barrier sum is nonzero on twelve of its thirty steps and ends at 4.139e-04, and the term
+is `fillet_cap`: it takes `R_hub` 0.6636 -> 0.5759 and `t0` 1.4738 -> 1.3082, and the hub
+fillet it nominally requests stops fitting.  §75 recorded the shipped genome parked at
+99.7% of that cap and read it as an attractor; the control walks it straight through.  The
+treatment arm takes `R_hub` FURTHER down (0.4862) and never fires the barrier at all.  An
+objective that prices `R_hub` through nothing but a barrier and a surrogate that is flat
+above the cap (§75) has no reason not to.
+
+**2.  THE FILLETED OPTIMUM IS PINNED AGAINST THE PRINTABLE WALL FLOOR.**  All four
+thickness genes end within 0.014 mm of `MIN_WALL_MM` = 1.2: `t0` 1.4738 -> 1.2089, `t1`
+1.2068, `t2` 1.2063, `t3` 1.4313 -> 1.2133.  **That gives open arc 4 (`WALLPIN_PLAN.md`) a
+consumer it did not have.**  It has been ranked "small" and unstarted since 2026-08-16 on
+the grounds that nothing bound against the floor; on the filleted mesh the optimum sits on
+it in all four genes, so what the 1.2 mm floor costs stops being a hypothetical.
+
+### WHAT THIS RETIRES
+
+**§90's ranked item 1 and §91's ranked item 1, both struck** — see the bracketed notes
+added in place at each.  They asked for `make reds-hub-fillet`; §75 ran it.
+
+### AT THIS GENOME, AND THE SCOPE, STATED
+
+One start (the shipped genome), `coarse`, eight uniform phases, SVK, 30 steps, one seed,
+`uniform` rather than the production `rqmc` so the two trajectories differ by the MESH and
+not by two draws of a random offset.  **The PRICE is a lower bound**: 30 steps is half of
+`wheel_stage3.DEFAULT_STEPS` and a small fraction of a promotion run, so what the treatment
+arm recovered bounds from below what re-optimising would recover.  **The CRITERION is not a
+lower bound** — a reversal found inside a short budget is still a reversal, and a longer run
+cannot un-reverse it except by finding a better design, which would only sharpen it.
+
+What is NOT established: that `b029622` is the filleted optimum, or a promotion candidate,
+or anything but the endpoint of a 30-step instrument.  It is not evaluated at `medium` or
+`fine`, it is one seed, and its 0.2380 minimum scaled Jacobian has not been swept.
+
+### WHAT MOVED
+
+`studies/study_fillet_optimum.py` is new, with `make filletoptimum` and its artifact.  Like
+§90's and §91's drivers it touches **no `src/` module** — the filleted arm is a `studies/`
+subclass overriding one call — so `test_nothing_wires_the_fillet_into_the_objective` is
+untouched and the scope gate stands.  **The fillet is still not wired into the objective and
+this section does not wire it.**  Nothing is promoted and `best_solution.json` is untouched.
+
+The *Open arcs* table's row 2 is rewritten in place: it had said Step 3 was "behind
+genome-robustness" (settled at §74/§78/§89), quoted the 38% bare (it is §52's 37.97% at
+linear/one phase and §91's 47.85% at SVK/eight, a spread §91 files open), and called
+`R_hub`/`R_rim` invisible to the optimizer (§79 and §88 removed the mechanism; what remains
+is the scope gate, which is a decision).
+
+#### The successors, ranked — REVISED 2026-08-29 AFTER §92
+
+1. **TAKE THE DECISION.**  It has no unmeasured term left and has not had one since §90.
+   Cost 1.12x (§90); surrogate flat above the cap (§75); barrier identical at the shipped
+   genome (§89, §91); the switch is a re-optimisation with a measured price (§92).  What
+   the record has to settle is not whether to wire `fillet=True` into `wheel_objective` but
+   what follows it — a Stage 3 re-run and a re-promotion, which `test_promotion.py` says is
+   never a one-file change — and whether the tree is willing to spend that.  **The evidence
+   is one-directional across five sections and further measurement is not what is missing.**
+2. **WHICH MESH IS RIGHT, AS ITS OWN UNIT — NEW, AND IT IS NOW LOAD-BEARING.**  §92 makes
+   the two objectives disagree about FEASIBILITY, not just about score, so "the filleted
+   mesh is the converged one" stops being a convenience and becomes the premise the whole
+   switch rests on.  What exists: PART 12's `coarse..fine` spreads, 0.141% filleted against
+   1.216% unfilleted, at ONE genome under LINEAR at ONE phase.  What does not: the same
+   ladder at `b029622`, under SVK, at eight phases — i.e. at the design and in the kernel
+   where the disagreement is 29.93x.  This is also where §91's open item 3 lands (PART 12's
+   -37.97% against §91's -47.85%).
+3. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged, and
+   still the only thing between a filleted mesh and a STEP comparison.
+4. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4, `WALLPIN_PLAN.md`) — promoted from
+   "small and unstarted" because §92 gives it a consumer: the filleted optimum pins all four
+   thickness genes against `MIN_WALL_MM`.
+5. **The sub-element fold, as its own unit** (§89's item 3) — four instruments, one fold,
+   and the one the tree calls ground truth misses it.  Then apply §58's gate to the draw and
+   re-derive the box.
+6. **Calibrate §73's two thresholds on a proper hold-out protocol** — unchanged, and still
+   the oldest thing on the list.
+7. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**
+   (§91).
+8. **Carry `axle_drop_interp_mm` into `study_contact`** next time it runs anyway (§67);
+   **a bend that is a FUNCTION of the genome** (§56); **the REST of §45's audit list**
+   (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the element-validity
+   check** (§44).
+
+---
+
+## §93 — 2026-08-30. THE DECISION IS TAKEN: THE FILLET IS TO BE WIRED INTO THE OBJECTIVE. IT IS NOT WIRED TODAY, AND THE TWO CONDITIONS ARE NAMED — ONE OF WHICH THIS SECTION FOUND WHILE WRITING IT: ON A FILLETED MESH THE STRESS TERM COUNTS THE FILLET TWICE
+
+§92's ranked successor 1.  No measurement; this is the record §89 said was missing.
+
+### WHAT IS DECIDED
+
+**The fillet is to be wired into `wheel_objective`.  The unfilleted mesh is not the model
+this tree should be optimising against, and every objection raised against replacing it has
+been measured and has failed.**
+
+```
+  the objection                       where it died                    what it was worth
+  the mesh does not build in the box  §74, §78                   16 of 16, 32 of 32 held out
+  the mesh does not clear the barrier §89          31 of 32 — and `fillet=None` fails HARDER
+  it costs 2-3x per evaluation        §90                        1.12x (183.58 s / 163.26 s)
+  the `Kt` surrogate is unmeasured    §75, 2026-08-24        14 rows, flat above the 0.6657 cap
+  the barrier re-weights the loss     §91           every BARRIER_TERM exactly 0.0 on both
+  it is only a re-score               §92        preference reversal, 29.93x and 18.05x
+```
+
+Six sections passed this decision forward and §92 established it has had **no unmeasured
+term since §90**.  §89 wrote *"what is missing is a decision, not a mechanism"* and it was
+right.  This section stops passing it forward.
+
+**The affirmative case, not merely the absence of objections.**  The unfilleted mesh reads
+the shipped wheel at 1.9011 mm of axle drop where the filleted one reads 0.9914 (§91), and
+the two meshes' own optima are each other's catastrophes (§92).  They cannot both be right,
+and the tree already knows which one is not: `wheel_wheel.py:44` — *"FILLETS ARE NOT
+MODELLED"* — names the unfilleted mesh as the approximation, and the exported solid has
+filleted junctions.  **The mesh that models the part is the one the objective should read.**
+
+### WHAT IS *NOT* DECIDED, AND WHY EXECUTION IS SEQUENCED BEHIND IT
+
+**CONDITION A — WHICH MESH IS RIGHT, AT THE DESIGN AND KERNEL WHERE THEY DISAGREE (§92's
+item 2).**  The switch rests on the filleted mesh being the converged one.  The evidence for
+that is PART 12's `coarse..fine` axle-drop spread — 0.141% filleted against 1.216%
+unfilleted — taken at **ONE genome, under LINEAR, at ONE phase**.  §92's disagreement is at a
+different design (`b029622`), in a different kernel (SVK), over eight phases, and it is about
+**admissibility** rather than score.  A premise measured three ways away from where it is now
+load-bearing is not a premise this tree gets to spend on a promotion.  §32 is the precedent
+and it is exact: *"a loss is not comparable across kinematics"*, and the reason that rule
+exists is that a Stage-3 headline computed under linear survived to promotion with nothing in
+the record saying so.
+
+**CONDITION B — THE STRESS TERM COUNTS THE FILLET TWICE, AND NOTHING IN THIS TREE RECORDS
+IT.**  Found while drafting this section, by reading the code rather than the plan files.
+`wheel_objective.py:1234`:
+
+```
+  util_j = kt * agg / ALLOWABLE_STRESS_MPA
+```
+
+`agg` is the p-norm aggregate **of the mesh's own stress field**.  `kt` is
+`stress_concentration_kt(...)`, a closed-form surrogate in the genes whose entire purpose is
+to stand in for **a fillet the mesh does not model**.  On a filleted mesh the mesh models it.
+So the correction is applied on top of the geometry it was correcting for, and both junctions
+are affected: `kt_hub` = 2.0963 and `kt_rim` = 1.3939 at the shipped genome, **bit-identical
+on both meshes** — which is exactly what §91 measured and read only as "§75's flat surrogate
+seen from inside the objective".  It is that, and it is also a double count.
+
+The direction is conservative — `Kt > 1` always, so the filleted objective OVERSTATES stress
+— which is why nothing has gone visibly wrong and why §92's finding survives it intact (a
+smaller filleted utilisation only widens the gap to the unfilleted mesh's 1.0112).  **But it
+means the switch as specified is incomplete rather than merely unexecuted.**
+
+**[CORRECTED 2026-08-30 — SEE §94.  "THE DIRECTION IS CONSERVATIVE" IS AN ARGUMENT ABOUT ONE
+FACTOR OF A PRODUCT.  The other is a whole-wheel p=4 p-norm standing in for a local peak, and
+it errs further the other way: measured against the fillet surface's own converged peak on the
+same mesh, `Kt * agg` is 1.68x to 2.76x BELOW it at both genomes.  And the double count is
+worth exactly 0.0000 in loss and in gradient, at both genomes on the filleted mesh, because
+every utilisation there sits under `MARGIN_KNEE_UTIL`.]**
+
+**And the fix is not "set `kt = 1` on the filleted path".**  The whole p-norm x `Kt`
+construction exists because the unfilleted peak stress DIVERGES under refinement — M4,
+pinned since §14 by `test_peak_stress_diverges_but_the_field_converges` — so a convergent
+proxy had to be built for a quantity that is not a number.  On a filleted mesh the peak is
+finite and convergent (§52: the `P_t` singularity is gone and the fillet surface settles to
+36.8 / 16.1 MPa where the sharp corner ran to 85.9 / 60.7 and was still climbing).  That
+changes the construction's PREMISE, and what should replace it is a question this tree has
+not asked.  **Re-deriving the stress term is part of the switch, not follow-up work.**
+
+**[CORRECTED 2026-08-30 — SEE §94.  "ON A FILLETED MESH THE PEAK IS FINITE AND CONVERGENT"
+IS FALSE, AND THE SENTENCE MIS-CITES ITS OWN SOURCE.  36.8 / 16.1 MPa are §52's fillet-
+SURFACE probe, a local tube about the arc; §52's headline is that the WHEEL's peak is still
+on `rim:P_c` and still diverging, and
+`tests/test_corner_singularity.py::test_step_2s_HEADLINE_is_not_delivered_and_the_reason_is_measured`
+has asserted exactly that since §52 with a docstring saying it exists so nobody makes this
+error.  Measured at §94, the filleted global max diverges at both genomes.  So the
+construction's premise does NOT change: `Kt * nominal` still exists because the peak still
+diverges.  The last sentence survives — re-deriving the term IS part of the switch — for the
+reason §94 measures instead: the term is inert on a filleted mesh while the fillet surface
+reads 1.46x and 2.20x the allowable.]**
+
+One thing Condition B does NOT reach: `rim:P_c`, the END CAP's artefact corner, which carries
+the wheel's global peak (§52) and which the fillet does not touch.  That is the tri-block's,
+it is not this arc's, and no `Kt` was ever meant to model it.
+
+**[CORRECTED 2026-08-30 — SEE §94.  RIGHT, AND INCOMPLETE: `hub:P_c` survives the fillet too
+— 268.21 deg re-entrant at the shipped genome, 268.70 at `b029622`, lambda within 0.0002 of
+the unfilleted mesh's — and it diverges as well.  The fillet removes exactly the two `P_t`
+corners, which are the two `Kt` models.]**
+
+### THE SEQUENCE, EACH STEP WITH ITS CHECK
+
+1. **The convergence ladder at `b029622`, SVK, eight phases, `coarse`/`medium`/`fine`, both
+   meshes.**  CHECK: the filleted mesh's axle-drop spread is materially smaller than the
+   unfilleted mesh's on the SAME design — PART 12's ordering reproduced where it is
+   load-bearing.  AND the admissibility disagreement resolves: at the finest rung, does the
+   design read 1.0112 utilisation or 0.7954?  If the filleted mesh is not the converged one,
+   **this decision is reopened and nothing below happens.**
+2. **Re-derive the stress term for a filleted mesh** (Condition B).  CHECK: a written
+   derivation of what replaces `kt * agg` when the fillet is meshed, and a measurement of
+   what the current double count is worth at the shipped genome and at `b029622`.
+3. **Wire `fillet=True` into `wheel_objective`/`wheel_stage3`.**  CHECK: `make test` green
+   with `test_nothing_wires_the_fillet_into_the_objective` REPLACED — not deleted — by a
+   check that the objective builds the filleted mesh, naming this section.
+4. **Re-run Stage 3 and re-promote.**  CHECK: `tests/test_promotion.py`'s six-item checklist
+   walked in one atomic commit — banner, `make export`, genome-specific constants pinned to
+   files, `make svk`, the outgoing genome preserved under its own name, `test_golden.py` left
+   reading its own file.
+5. **Re-date every committed loss number.**  CHECK: §32's rule applied to the mesh — a loss
+   is not comparable across meshes any more than across kinematics, so every quoted loss in
+   PLAN.md predating the switch is scoped to the unfilleted objective in place, not silently
+   left to read as current.
+
+### WHAT WOULD REVERSE THIS DECISION
+
+Step 1 finding the filleted mesh is not the converged one, or that its `coarse` rung is not
+where the two meshes' disagreement resolves.  That is a live outcome: the filleted mesh's
+minimum scaled Jacobian is 0.2877 at the shipped genome against the unfilleted 0.7822 (§89,
+§91), it is a worse-conditioned mesh, and "models more geometry" and "converges better" are
+different properties.  **A decision with no stated falsifier is a preference.**
+
+### WHAT MOVED
+
+No `src/` module changed and nothing is promoted.
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective` keeps
+its assertion and gains this section's number in its docstring — that test asked, in terms,
+to be updated *"the day that decision is taken, with the record that took it named here"*.
+The gate now records that the decision IS taken and that what holds execution is Conditions A
+and B, so the next person to read it learns the state rather than re-deriving it.
+
+#### The successors, ranked — REVISED 2026-08-30 AFTER §93
+
+**[RE-RANKED 2026-08-30 — SEE §94.  Items 1 and 2 swap: Condition B is measured, and half of
+Condition A's own check reads a utilisation that B shows to be 2.5x low.  The list below is
+left as written; §94's is the current one.]**
+
+1. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — Condition A, and now the
+   gating item for the whole arc.  §92's item 2 with a design and a kernel attached.
+2. **RE-DERIVE THE STRESS TERM FOR A FILLETED MESH** — Condition B, NEW at §93.  What
+   replaces `kt * agg` when the fillet is meshed, and what the double count is worth.
+3. **EXECUTE THE SWITCH** — steps 3-5 above, behind 1 and 2.
+4. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged, and
+   still the only thing between a filleted mesh and a STEP comparison.
+5. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4) — §92 gives it a consumer: the
+   filleted optimum pins all four thickness genes against `MIN_WALL_MM`.
+6. **The sub-element fold, as its own unit** (§89's item 3), then §58's gate applied to the
+   draw and the box re-derived.
+7. **Calibrate §73's two thresholds on a proper hold-out protocol** — still the oldest thing
+   on the list.
+8. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**
+   (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
+   FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §94 — 2026-08-30. CONDITION B, MEASURED — AND ITS PREMISE WAS WRONG, WITH A GREEN TEST SAYING SO SINCE §52. THE DOUBLE COUNT IS WORTH EXACTLY ZERO, BECAUSE THE STRESS TERM IS INERT ON A FILLETED MESH — WHILE THE FILLET SURFACE IT EXISTS TO PRICE SITS AT 1.46x AND 2.20x THE ALLOWABLE
+
+§93's ranked successor 2, and §93's own check for it:
+
+> a written derivation of what replaces `kt * agg` when the fillet is meshed, and a
+> measurement of what the current double count is worth at the shipped genome and at
+> `b029622`.
+
+`studies/study_fillet_kt.py` (`make filletkt`, ~10 s) is the measurement.  **It reads six
+committed artifacts and solves nothing**, which is the design rather than a shortcut: the
+two sides of this comparison were measured by two different instruments on two different
+ladders, and re-measuring either here would make it a third.  Three of the six are new —
+`study_fillet_terms_b029622.json` (2253 s) and the two corner ladders at `b029622` — and the
+genome they run on is filed at the root as `fillet_optimum_b029622.json`, §92's treatment
+endpoint, whose own `note` says it is not a promotion candidate.
+
+### §93's PREMISE IS WRONG AND THE TREE ALREADY KNEW
+
+§93's Condition B rests on one sentence: *"on a filleted mesh the peak is finite and
+convergent (§52: the `P_t` singularity is gone and the fillet surface settles to 36.8 /
+16.1 MPa where the sharp corner ran to 85.9 / 60.7 and was still climbing)"*.  The numbers
+are §52's and they are quoted correctly.  **They are §52's fillet-SURFACE probe** — a local
+tube about the arc — and §52's headline is *"STEP 2 IS RUN ... ITS HEADLINE IS STILL BLOCKED
+ON `rim:P_c`"*.  The wheel's peak diverges on the filleted mesh, at both genomes:
+
+```
+  genome    mesh          peak MPa up the ladder            increment ratios   verdict
+  shipped   unfilleted     48.208   73.728   91.152  108.566    0.683  0.999   diverges
+  shipped   FILLETED       29.222   35.232   44.459   55.866    1.535  1.236   DIVERGES
+  b029622   unfilleted     68.720  105.022  129.646  154.699    0.678  1.017   diverges
+  b029622   FILLETED       43.081   49.083   60.183   76.224    1.849  1.445   DIVERGES
+```
+
+and `tests/test_corner_singularity.py::test_step_2s_HEADLINE_is_not_delivered_and_the_reason_is_measured`
+has asserted `divergence["global_max_vm"]["diverges"]` since §52, with a docstring that
+names the failure mode in advance: *"this test exists so that nobody reads the surface
+result above as though it had"* delivered the headline.  **§93 did exactly that, seven days
+later, citing the same section.**
+
+So C1 — the peak diverges under refinement, therefore the peak must be MODELLED and not
+measured — **survives the fillet unchanged**, and §93's *"that changes the construction's
+PREMISE, and what should replace it is a question this tree has not asked"* is withdrawn.
+The premise holds.  The question still needs asking, for a different reason, below.
+
+**THE GENERALISABLE PART, AND IT IS NOT "RE-CHECK THE PLAN FILE".**  §52 has two results
+pointing opposite ways — a local probe that settled and a global one that did not — and I
+took the surviving half's numbers and wrote the failing half's conclusion.  This tree's
+standing habit is to check that a number is being quoted at the config it was measured on;
+that would not have caught this, because the config was right and the QUANTITY was wrong,
+and both quantities are in the same section under the same heading.  **When a section reports a local probe and a global functional, the
+global is the one a claim about the WHEEL has to cite** — and the cheap check is not
+re-reading the section, it is grepping `tests/` for the quantity, which would have found
+§52's assertion in one command.
+
+### THE DOUBLE COUNT IS REAL, AND IT IS EXACTLY ONE CORNER PER JUNCTION
+
+`stress_concentration_kt` is Peterson's stepped-beam factor for a filleted step, and what
+it models is `P_t`, the part's own junction corner.  That identification is in the code and
+not inferred: `wheel_step_export.kt_report` pairs the same function with the corners the
+exporter actually rounds, and the shipped manifest reports them at `worst_wedge_deg` 322.0
+and 320.0, 24 of 24 edges each, `kt_error_pct` 0.0.  The mesh reads the same corners at
+321.13 / 321.32 deg unfilleted.
+
+```
+  genome    corner      unfilleted wedge / lambda      filleted wedge / lambda    resolved
+  shipped   hub:P_t      321.132  re_entrant  0.5032    360.000  interior   -       YES
+  shipped   hub:P_c      268.082  re_entrant  0.5477    268.209  re_entrant 0.5474   no
+  shipped   rim:P_t      321.325  re_entrant  0.5032    360.000  interior   -       YES
+  shipped   rim:P_c      271.016  re_entrant  0.5429    270.853  re_entrant 0.5431   no
+  b029622   hub:P_t      329.068  re_entrant  0.5016    360.000  interior   -       YES
+  b029622   hub:P_c      268.583  re_entrant  0.5468    268.704  re_entrant 0.5466   no
+  b029622   rim:P_t      313.265  re_entrant  0.5056    360.000  interior   -       YES
+  b029622   rim:P_c      271.039  re_entrant  0.5428    270.892  re_entrant 0.5431   no
+```
+
+The fillet removes exactly the two corners `Kt` models and leaves the two it does not.
+Both `P_c` keep their exponent to within 0.0003.  §93's *"one thing Condition B does not
+reach: `rim:P_c`"* is right and incomplete — `hub:P_c` survives too, and it diverges as
+well (9.96 / 15.01 / 18.46 / 22.19 MPa at the shipped genome).
+
+### WHAT THE DOUBLE COUNT IS WORTH: EXACTLY ZERO, AND THAT IS THE FINDING
+
+On the filleted mesh, at both genomes and under both kernels, every utilisation is below
+`MARGIN_KNEE_UTIL` = 0.80.  `soft_barrier` is exactly zero and exactly flat there — not
+small, zero — so `stress` and `stress_margin` are both `0.0000`, in value and in gradient,
+and removing `Kt` changes the loss by `0.0000`.
+
+The unfilleted rows are the control, and they are what makes the zero legible:
+
+```
+  genome   kin  mesh          agg     Kt_hub  util_hub  util(Kt=1)  stress+margin  Kt worth
+  shipped  svk  unfilleted   9.2873   2.0963   0.7788     0.3715       0.0000       +0.0000
+  shipped  svk  FILLETED     6.9204   2.0963   0.5803     0.2768       0.0000       +0.0000
+  b029622  svk  unfilleted  11.7464   2.1521   1.0112     0.4699      14.9888      +14.9888
+  b029622  svk  FILLETED     9.2396   2.1521   0.7954     0.3696       0.0000       +0.0000
+```
+
+Two things fall out of that table and neither was in §93.
+
+**`Kt` is the only thing that makes the stress term non-zero anywhere.**  `agg / ALLOWABLE`
+peaks at 0.4699 across all eight genome/kernel/mesh combinations measured; strip the factor and `stress` and
+`stress_margin` are zero everywhere, on both meshes, at both designs.  So "the fix is not
+`kt = 1`" is right, and for a sharper reason than §93 gave: `kt = 1` does not degrade the
+term, it deletes it.
+
+**Switching to the filleted mesh switches the stress term OFF.**  At `b029622` under SVK it
+goes 14.9888 to 0.0000, and the hub utilisation 1.0112 to 0.7954 — from breached to
+comfortably inside.  §92 measured that as an admissibility disagreement between two meshes;
+read through this table it is also the stress side of the objective going quiet exactly
+where a design is getting thinner.  §92's treatment arm walked the filleted utilisation
+0.5803 -> 0.7954 in 30 steps and stopped **0.0046 short of the knee**, with 30 steps being
+half of `wheel_stage3.DEFAULT_STEPS`.
+
+### AND THE ERROR THAT IS NOT ZERO RUNS THE OTHER WAY FROM §93's
+
+§52 built an instrument this comparison needs, and outside its own ladder and the test
+that pins it nothing has used it since: `arc_peak`
+takes the peak von Mises inside a tube of fixed radius about the ANALYTIC arc, so the
+region does not move with the mesh, and on the filleted mesh it converges where the global
+max does not — 36.60 / 16.20 MPa at the shipped genome, 54.95 / 25.50 at `b029622`.  That
+is a measured value for the quantity `Kt * agg` is a model OF, and it exists only on a
+filleted mesh, which is why the comparison has never been made:
+
+```
+  genome   kin  junction  modelled Kt*agg   measured surface   ratio   util_mod  util_meas
+  shipped  svk  hub            14.5074           36.6046      2.523x    0.5803    1.4642
+  shipped  svk  rim             9.6466           16.2035      1.680x    0.3859    0.6481
+  b029622  svk  hub            19.8841           54.9469      2.763x    0.7954    2.1979
+  b029622  svk  rim            12.6416           25.4993      2.017x    0.5057    1.0200
+```
+
+§93's *"the direction is conservative — `Kt > 1` always, so the filleted objective
+OVERSTATES stress"* is **withdrawn**.  That is an argument about one factor of a product.
+The other factor is a volume-weighted p-norm at p = 4 over the WHOLE wheel — hub, rim and
+thick spoke roots, most of the volume and almost none of the stress — standing in for a
+local peak, and it errs further the other way.  The two errors do not cancel to
+conservative; the dilution wins by 1.68x to 2.76x.
+
+The objective calls all four cells admissible.  The mesh's own converged measurement of the
+feature the term exists to price calls the hub breached at both genomes and the rim breached
+at `b029622`.
+
+### WHAT REPLACES `Kt * agg`
+
+Keep the shape — a modelled-or-measured peak per junction, two `soft_barrier`s, summed
+rather than `max`ed for the reason `wheel_objective.py:1181` gives — and replace the
+modelled factor with the measured field:
+
+```
+  util_j  =  sigma_fillet_j(mesh)  /  ALLOWABLE_STRESS_MPA          no Kt
+```
+
+The alternatives fail for stated reasons.  `kt = 1` deletes the term (above).  The mesh's
+global max diverges and sits on an end-cap corner the exported solid does not have.  A
+recalibrated `Kt` fitted to the surface peak would keep the analytic gene dependence but
+would be a fitted constant standing where a measurement is now available, which is the move
+M8b-i.6 spent a sweep undoing.
+
+**Four things must be settled before it can be wired, each with a check.**
+
+1. **It must be differentiable, and `arc_peak` is an argmax** — the kink the p-norm exists
+   to blur (`_qoi_pnorm_stress`: *"its derivative is a delta on whichever point happens to
+   be highest"*).  Replace with a volume-weighted p-norm over the tube and sweep the
+   exponent on filleted solves the way M8b-i.6 swept the global one.  CHECK: the largest
+   `p` whose observed order is still ~2.  The region is small and far more uniform than the
+   whole wheel, so it should tolerate a higher `p` than the global 4.0 — that is a
+   measurement and not an assumption.
+
+   **[MEASURED 2026-08-31 — SEE §95.  THE EXPECTATION HOLDS: 30 at the rim, which is the
+   top of the sweep, and 24 / 16 at the hub, against the global 4.0.  BUT THE CHECK AS
+   WRITTEN NAMES ONE PARAMETER AND THE QUANTITY HAS TWO.  At the tube radius this item
+   implicitly assumes — §52's 0.30 mm, because `arc_peak` is where the numbers came from —
+   the hub's REGION does not converge (mass drift 3.04% and 2.85%) and the answer at order
+   floor 1.50 is `none`.  Sweep the radius too and it is `p` = 16 at `r` = 0.45 mm, at
+   every cell.]**
+2. **The region moves with the genes.**  The tube is fixed in mesh terms but its membership
+   flips as the arc moves with `R_hub`/`R_rim`/`t0`/`t3`, and a flipping membership is a
+   step in the loss.  Needs a smooth weight in distance-to-arc, not an indicator.  CHECK:
+   the FD test the assembled gradient already has, at a genome with an element near the
+   boundary.
+
+   **[MEASURED 2026-08-31 — SEE §95.  Right, and the step is real at every exponent: at
+   §52's 0.30 mm tube it is 4.30% of the region mass and 1.08% / 0.27% of the measure at
+   `p` = 4 / 16, at `R_hub` = 0.7227791 — 0.0592 mm from the shipped genome, 1.64% of that
+   gene's box.  At the RECOMMENDED 0.45 mm it is 1.08% / 0.26% / 0.068%, 0.1356 mm away.
+   It is a discontinuity and not a slope: refine the sampling tenfold and every other
+   difference divides by ten while the step does not.  The smooth weight sits at the
+   sampling floor at every radius and exponent.  The CHECK was substituted: an FD test on
+   the assembled gradient needs the term wired in, which the scope gate forbids, so §95
+   measures the step in the MEASURE directly — which says by how much and exactly where,
+   and an FD disagreement would not have.]**
+3. **`P_c` is excluded by construction and the exclusion must be argued, not assumed.**
+   Both `P_c` are still re-entrant and divergent, and `rim:P_c` carries the global max from
+   `coarse` up.  Excluding them is defensible because they are the END CAP's corners and the
+   exported solid has no end cap — §52, and `wheel_wheel.py`'s module docstring prices the
+   cap under WHAT IS AND IS NOT MODELLED — so the constraint would be read on a region the
+   part has and would ignore a riser the part does not.  It also makes the rim tri-block a
+   prerequisite for ever quoting a global peak, which is where that arc already sits.
+
+   **[ARGUED 2026-08-31 — SEE §96, AND THE STATED REASON IS WRONG.  The END CAP was deleted
+   from the MESH by §38's `UNCAP_DEFAULT` on 2026-08-18; `P_c` has been the far flank's own
+   ring crossing since.  Measured against `study_junction_agreement`'s reconstruction of
+   `_embed`, `hub:P_c` IS the part's second flank crossing to 0.008 deg of wedge — the part
+   fillets it, 24 of 24 edges, where the mesh builds 12 arcs at `P_t` only — while
+   `rim:P_c` is 50.61 deg out.  Both exclusions survive: the rim's on FIDELITY, the hub's on
+   C1 (its peak diverges, 9.96 -> 22.20 MPa), which leaves a real filleted singular corner
+   of the real part unpriced.  Unpriced today too, so not an objection — but structural
+   rather than incidental, and closing it is a MESH change.]**
+4. **The exchange rate does not carry over.**  `stress_margin`'s weight was derived at
+   `util` = 0.855 under the current construction, so 1% of utilisation traded against 1% of
+   mass right where the design sat.  A measured nominal is a different number.  CHECK:
+   re-derive the weight at the new scale before any Stage 3 run, exactly as §15 DEFECT 8
+   did.
+
+   **[RE-DERIVED 2026-08-31 — SEE §96.  `w = mass_term / (2 (u - knee) u)` reproduces §23's
+   328.49, and NOTHING IN IT KNOWS HOW `util` WAS COMPUTED: at a fixed reference the weight
+   moves only with the mass term (328.49 -> 379.40 at u = 0.855, of which +9.8% is the
+   fillet's own mass and the rest is the genome having moved since §23).  The scale change
+   this item names does not reach the weight.  What it does reach is the REFERENCE POINT —
+   both rims are below the knee where the term is inert and both hubs are over the wall, so
+   NEITHER DESIGN THIS ARC HAS MEASURED can calibrate it and the reference has to become a policy (89.21 at
+   the wall).  And the knee: `MARGIN_KNEE_UTIL = 0.80`'s only stated evidence is that the
+   shipped genome sits essentially on it, and under the replacement it sits 0.34 past it.
+   §94 did not mention the knee and it is the larger half.]**
+
+   And note what the raw substitution does on the way past: it puts the shipped
+   genome's hub at 1.4642, which is 0.4642 OVER the `stress` knee, firing
+   `soft_barrier(0.4642, 4000)` = 862.1.  That is not a weight question — it is a statement
+   about the wheel, it belongs to the switch's re-promotion step, and it is the reason
+   item 4 is a check rather than a formality.
+
+**And the thing that does NOT need re-deriving.**  Dropping `Kt` does not re-create §15
+DEFECT 1's dead genes.  That defect is an UNFILLETED-mesh property — `stress` and the fillet
+barriers are the only paths from `R_hub`/`R_rim` into the loss when the mesh does not build
+them.  On a filleted mesh the radii move the geometry: §52's radius ladder runs the axle
+drop 1.567 -> 0.765 mm monotonically, §79 made `mesh_coords` accept the filleted mesh, and
+§88 made the layer cliff differentiable.  A cheap confirmation — `dL/dR_hub != 0` on a
+filleted mesh with `Kt` removed — belongs to the wiring step, not here.
+
+### WHAT THIS DOES TO THE DECISION
+
+**The decision stands.**  Nothing measured here is an objection to wiring the fillet in, and
+the affirmative half is untouched: the exported solid has filleted junctions and the mesh
+that models the part is the one the objective should read.
+
+What changes is Condition B's content and its weight.  It is no longer *"the construction's
+premise changed"* — the premise holds.  It is now: **the stress term is inert on a filleted
+mesh at both designs, and the mesh's own converged measurement of the feature says both are
+breached at the hub.**  That is a larger blocker than §93 wrote, not a smaller one, and it
+is promotion-shaped — a Stage 3 re-run under the current stress term would descend with the
+stress side switched off, in exactly the direction (thinner walls, tighter hub radius) that
+the term exists to resist.  §92 already measured that arm pinning all four thickness genes
+at `MIN_WALL_MM` and taking `R_hub` to 0.4862.
+
+**So Condition B now ranks AHEAD of Condition A**, reversing §93's order.  A is a premise
+check on which mesh converges; B is a defect in the switch as specified, it is cheaper, and
+half of A's own check — *"at the finest rung, does the design read 1.0112 or 0.7954?"* —
+reads a utilisation that B has just shown to be 2.8x low against the filleted mesh's own
+measurement of the same surface.
+
+### SCOPE, AND WHAT IS NOT ESTABLISHED
+
+**The two sides of section D are not the same experiment and the record says so.**  The
+objective rows are `coarse`, eight uniform phases, both kernels.  The surface probes are the
+`smoke..fine` ladder under LINEAR at ONE phase.  Both gaps run the same way — SVK and eight
+phases each raise the measured side and leave the model where it is (filleted `max_stress`
+is 34.68 linear against 38.37 SVK at the shipped genome) — so **the 1.68x-2.76x is a lower
+bound on the discrepancy, not an estimate of it.**
+
+**The utilisations are against `ALLOWABLE_STRESS_MPA` = 25 MPa = 40 / 1.6, and that is the
+safety factor, not the material.**  36.60 MPa at the shipped hub fillet is a safety factor
+of 1.09 against the 40 MPa effective ultimate rather than the designed 1.6; 54.95 at
+`b029622` is 0.73, i.e. over it.  Under linear, at one phase.  **This section is a statement
+about what the objective's stress term does and does not see.  It is NOT a fitness verdict
+on the shipped wheel**, which would need the measurement re-run under SVK over the phase
+stencil, at a mesh convergence this arc has not established, and against an allowable whose
+own derivation (`FFF_KNOCKDOWN`, `SAFETY_FACTOR`) nothing in this arc has re-opened.
+
+**And it is not established that the region-restricted measure is the right replacement** —
+only that the current one is 1.7x to 2.8x below the mesh's own reading of the same surface,
+and that
+the instrument for a better one already exists and converges.  Items 1 and 2 above are
+unmeasured.
+
+### WHAT MOVED
+
+`studies/study_fillet_kt.py` and `studies/study_fillet_kt.json`, `make filletkt`.
+`studies/study_fillet_terms_b029622.json`, `studies/study_corner_singularity_b029622.json`
+and `studies/study_corner_singularity_fillet_b029622.json`, from existing drivers at a new
+genome.  `fillet_optimum_b029622.json` at the root, which round-trips to `b029622` through
+`wheel_genome.genome_hash`.  §93 keeps every word it had: its three corrected sentences and
+its successor list carry a bracket beneath them, in place.
+
+**No `src/` module changed and nothing is promoted.**
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective` is
+untouched and green; the driver solves nothing and builds no mesh.
+
+#### The successors, ranked — REVISED 2026-08-30 AFTER §94
+
+**[RE-RANKED 2026-08-31 — SEE §95.  Item 1 is done: items 1 and 2 are measured, and items
+3 and 4 take its place at the head with item 4's input now in hand.  Item 2 — the ladder
+at `b029622` under SVK, §94's Condition A — falls behind a new item, `(r, p)` across §82's
+thirty-two held-out genomes, because two genomes already disagree about the hub's largest
+`p` by 50%.  This list is left as written; §95's is the current one.]**
+
+1. **THE REPLACEMENT STRESS TERM, ITEMS 1 AND 2** — a volume-weighted p-norm over the fillet
+   arc with a smooth region weight, and the exponent sweep that sets its `p`.  Condition B's
+   remaining half, and now the gating item for the whole arc.
+2. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — Condition A, demoted behind
+   B for the reason above.  Its axle-drop half already reproduces at `b029622` under linear
+   at one phase: the filleted mesh spans 0.516% over `coarse..fine` against the unfilleted
+   mesh's 1.061%, which is §52's ordering at the design where it is load-bearing but not at
+   the kernel or the stencil where it is.
+3. **EXECUTE THE SWITCH** — §93's steps 3-5, behind 1 and 2.
+4. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged.
+5. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4) — §92 gives it a consumer.
+6. **The rim tri-block** — promoted out of the tail by item 3 above: it is what would let a
+   filleted mesh quote a global peak at all, and until it exists the replacement term is
+   defined by an exclusion.
+7. **The sub-element fold, as its own unit** (§89's item 3), then §58's gate applied to the
+   draw and the box re-derived.
+8. **Calibrate §73's two thresholds on a proper hold-out protocol** — still the oldest thing
+   on the list.
+9. **Per-REGION agreement on a filleted mesh** (§86) — item 1 gives it a consumer;
+   **gate 10's `phase_ripple` cost** (§91); **carry `axle_drop_interp_mm` into
+   `study_contact`** (§67); **a bend that is a FUNCTION of the genome** (§56); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
+
+---
+
+## §95 — 2026-08-31. THE REPLACEMENT STRESS TERM'S FIRST TWO ITEMS, MEASURED. §94's EXPONENT EXISTS AND IS 16 — BUT THE QUANTITY HAS TWO PARAMETERS AND THE SWEEP OF ONE CANNOT SET IT, BECAUSE AT §52's OWN TUBE RADIUS THE HUB'S REGION IS NOT RESOLVED. THE SMOOTH WEIGHT IS SETTLED: AN INDICATOR STEPS AT EVERY EXPONENT, 0.0592 mm FROM THE SHIPPED GENOME
+
+§94's ranked successor 1, and its two checks:
+
+> 1. Replace with a volume-weighted p-norm over the tube and sweep the exponent on
+>    filleted solves the way M8b-i.6 swept the global one.  CHECK: the largest `p` whose
+>    observed order is still ~2.
+> 2. Needs a smooth weight in distance-to-arc, not an indicator.  CHECK: the FD test the
+>    assembled gradient already has, at a genome with an element near the boundary.
+
+`studies/study_fillet_pnorm.py` (`make filletpnorm`, 231 s) is the measurement.  Two
+genomes, four rungs, eight filleted linear single-phase solves, and every cell of a
+5 x 9 x 2 sweep read off those eight — M8b-i.6 step 1's property, for its reason: the
+p-norm is a pure function of the converged displacement field.
+
+**Item 2's check is not the one performed here and the substitution is deliberate.**  "The
+FD test the assembled gradient already has" needs the term wired into `wheel_objective`,
+which is the wiring step and which
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective`
+forbids.  The defect item 2 names is a step in the MEASURE, and a step in the measure can
+be measured directly, at the same genome, without a loss anywhere near it.  That is
+section C, and it is a stronger result than an FD check would have been: an FD test says a
+derivative disagrees, this says by how much and exactly where.
+
+### THE QUANTITY
+
+    util_j  =  sigma_fillet_j / ALLOWABLE_STRESS_MPA,        no Kt        (§94)
+
+    sigma_fillet_j(p, r) = ( SUM_g W_g V_g vm_g^p / SUM_g W_g V_g )^(1/p)     [MPa]
+        W_g = max(0, 1 - d_g^2 / r^2)^3
+        d_g = distance from Gauss point g to junction j's ANALYTIC fillet arc
+
+on the loaded rotational copy, which is `arc_peak`'s rule and is kept for `arc_peak`'s
+reason.  The kernel is a cubic in `d^2`, so the expression never forms `sqrt(d^2)` and
+never meets the kink `|x|` has at zero — which sits exactly on the arc, where the weight
+peaks.  It is C2 at its own support boundary, which is item 2's requirement.  Its support
+is compact, which a Gaussian's is not: an unbounded tail puts the whole wheel back into
+the measure at low `p`, and whole-wheel dilution is what §94 measured `Kt * agg` losing
+1.68x to 2.76x to.
+
+`_distance_to_arc` is smooth where this uses it, and that is checked rather than assumed.
+Inside the sweep it is `|r - R|` and the absolute value never activates — the fillet is
+concave, its centre of curvature is in the void, and the nearest Gauss point to either
+centre sits at `r/R` = 1.085 (hub) and 1.011 (rim).
+
+### `h` IS THE FILLET BLOCK'S, AND THE WHEEL'S IS CARRIED BESIDE IT
+
+The measure is local to a block whose grid runs 5x5 / 9x9 / 13x13 / 17x17 nodes — LINEAR
+refinement 2.0 / 1.5 / 1.333 — while the wheel refines 1.617x then 1.556x by element
+count.  Those are different ladders and they give different orders off the same numbers.
+`study_deflection_gci`'s H_DEFS block is the precedent and its warning is why it matters:
+it drew `h` from the wrong mesh once and inflated every reported `p` by 1.25x.  Both are
+in the artifact, `h_fillet` is primary, and no verdict below is stated except where the
+two agree.
+
+### A — THE GATE §94 DID NOT ANTICIPATE, AND IT IS NOT ABOUT `p`
+
+`SUM_g W_g V_g` — the measure's own denominator — is a quadrature of `INTEGRAL W dV` over
+a region fixed ANALYTICALLY.  **No displacement field enters it at all**, so its ladder is
+pure quadrature error and it bounds every claim the numerator can make.  It is read on
+copy 0 rather than on the loaded copy, so the field is absent from its provenance as well
+as from its value — the loaded copy's own denominator agrees to 1.2e-14, which is what says
+the distinction was immaterial and not that it was unnecessary to make.  At the tube radius
+§52's `arc_peak` uses:
+
+```
+  genome   junc  r=0.30 mm     region mass, coarse/medium/fine        finest pair
+  shipped  hub               0.285708  0.275945  0.267563               3.037%
+  shipped  rim               1.026456  1.015291  1.015208               0.008%
+  b029622  hub               0.241930  0.233388  0.226729               2.853%
+  b029622  rim               0.996984  0.986820  0.984294               0.256%
+```
+
+The hub's region does not converge and the rim's does, by two and a half orders of
+magnitude, and the diagnostic that explains it is reported beside every cell.  A junction's
+fillet is meshed as two blocks, both starting ON the arc; the `b` half — welded to the ring
+— carries the coarser first element layer:
+
+```
+  first element layer touching the arc, mm, coarse/medium/fine
+  shipped  hub   a 0.1438 0.0956 0.0716    b 0.3576 0.2374 0.1776
+  shipped  rim   a 0.1019 0.0670 0.0499    b 0.1555 0.1030 0.0770
+```
+
+So a 0.30 mm tube is **1.7 cells deep at the hub and 3.9 at the rim** at the finest rung —
+0.8 and 1.9 at `coarse` — and a quadrature rule cannot resolve a weight function it samples
+fewer than about twice across.  **Widening the tube fixes it**: the hub resolves at
+`r` = 0.45 mm (0.095% and 0.205%) and stays resolved at 0.90 (0.016% and 0.017%).
+
+### B — THE EXPONENT SWEEP.  §94's EXPECTATION HOLDS
+
+§94: *"the region is small and far more uniform than the whole wheel, so it should tolerate
+a higher `p` than the global 4.0 — that is a measurement and not an assumption."*
+**Measured, it does, everywhere the region is resolved, and by four to seven times.**  The
+largest `p` whose observed order clears 1.50 on BOTH `h` definitions:
+
+```
+  genome   junction   largest p   at r_sup    arc_peak's own order (h_fil / h_glob)
+  shipped  hub            24        0.45           1.28 / 1.53
+  shipped  rim            30        0.30           2.17 / 2.21
+  b029622  hub            16        0.45           1.08 / 1.38
+  b029622  rim            30        0.30           2.42 / 2.40
+```
+
+30 is the top of the sweep at the rim and it never breaks.  `ORDER_FLOORS` is
+`(1.25, 1.5, 1.75)` and the verdict is reported at all three, because 1.50 is a gate
+invented from one precedent — M8b-i.6 step 1 accepted 1.76 / 2.18 and rejected 0.99 / 1.12
+without writing a number down, and 1.50 is the midpoint of that gap.
+
+**THE TWO JUNCTIONS' ORDERS TREND IN OPPOSITE DIRECTIONS, AND BOTH ARE THE SAME
+MECHANISM.**  At the rim the order RISES with `p` (2.2 to 3.1 at `r` = 0.30), so the floor
+never binds.  At the hub it FALLS (8.0 down to 1.5 at `r` = 0.45), so the floor binds from
+above, which is M8b-i.6 step 1's shape.  As `p` grows the p-norm tracks the local peak, so
+its order approaches `arc_peak`'s own — and `arc_peak`'s own is 1.28 at the hub against
+2.17 at the rim.  **The hub's limit on `p` is the hub's peak being the thing this ladder
+resolves worst, not anything about the exponent.**  The hub's low-`p` orders of 6 to 11
+come with GCI of 0.01% and are the opposite artefact: three points a hair apart give
+Roache an error ratio near zero and he answers with a large `p`, which is not a
+measurement of anything.
+
+### THE CROSS-CELL ANSWER: `r` = 0.45 mm, `p` = 16
+
+`p` and `r` are constants of the objective and not per-design choices, so whatever is
+picked has to hold at every junction of every genome the optimizer can reach.  Two radii
+of five are resolved in all four cells, and the smaller is taken because the term exists to
+be LOCAL to the fillet surface:
+
+```
+  r_sup  resolved everywhere  worst mass drift   largest p at floor 1.25 / 1.50 / 1.75
+  0.20         NO                 1.473%              none  /  none  /  none
+  0.30         NO                 3.037%                16  /  none  /  none
+  0.45        yes                 0.288%                24  /    16  /    16
+  0.60         NO                 0.569%                24  /    16  /    12
+  0.90        yes                 0.023%                16  /    16  /    12
+```
+
+At that cell, priced through `ALLOWABLE_STRESS_MPA` = 25.0 and the objective's own
+`DEFAULT_WEIGHTS` — no fitting and no choice, the division is the one §94 wrote down:
+
+```
+  cell           sigma_fillet  util    arc_peak  its util  frac   order  GCI     what the
+                                                                                objective
+                                                                                reads today
+  shipped/hub      28.5385   1.1415    35.8789   1.4352   0.795   2.33  1.11%      0.5803
+  shipped/rim      12.6678   0.5067    16.0566   0.6423   0.789   2.71  0.70%      0.3859
+  b029622/hub      41.8999   1.6760    53.5631   2.1425   0.782   1.77  2.09%      0.7954
+  b029622/rim      19.6115   0.7845    25.2775   1.0111   0.776   3.95  0.37%      0.5057
+```
+
+**§94's finding survives the move from `arc_peak` to a differentiable proxy.**  The hub is
+over the allowable at both designs; the objective reads 0.5803 and 0.7954 and is exactly
+zero at both.  The raw substitution fires `stress` 80.13 and `stress_margin` 37.91 at the
+shipped genome, 1827.88 and 249.39 at `b029622`, against `0.0000` for all four today.
+Those numbers are §94 item 4's INPUT and not its answer.
+
+**AND THE PROXY STILL UNDERSTATES.**  A p-norm is a smooth lower bound approaching the max
+from below — `_qoi_pnorm_stress` says so — and at `p` = 16 it sits at 77.6% to 79.5% of
+`arc_peak`, i.e. the surface peak is 1.26x to 1.29x the replacement's reading.  Against the
+1.68x to 2.76x §94 measured for `Kt * agg`, that is most of the gap closed and none of it
+denied.  "Conservative" is the wrong word for either: both err in the direction of calling
+a breached fillet safe, and the replacement errs less.  **`p` cannot be raised past 16 to
+close the rest**, because 16 is where the order floor binds — which is the whole content of
+section B.
+
+### C — ITEM 2, MEASURED.  THE INDICATOR STEPS, AND THE STEP IS A DISCONTINUITY
+
+`R_hub` because it is the gene the replacement exists to give a live gradient to (§15
+DEFECT 1); the hub because §94 measured it breached.  The driver scans +-0.25 mm for a gene
+value at which a Gauss point crosses the tube boundary, bisects to 1e-9 mm, then samples a
+window CENTRED on the crossing at two step sizes a decade apart.  **At both radii** —
+§52's 0.30 mm, where the defect is largest, and the recommended 0.45 mm, which is what a
+wired term would actually use:
+
+```
+  r_sup  crossing at R_hub   away      of box   tube      quantity     step %   max/median
+                                                                                2.5e-4 -> 2.5e-5
+  0.30      0.7227791      0.0592 mm   1.64%   64 -> 65   region mass  4.2986%   252.4 ->  2514.9
+                                                          p-norm p=4   1.0781%   214.8 ->  2139.2
+                                                          p-norm p=16  0.2699%    42.0 ->   410.6
+                                                          bump3, any p 0.0007%     1.0 ->     1.0
+  0.45      0.7992276      0.1356 mm   3.77%   94 -> 95   region mass  1.0776%    80.6 ->   796.7
+                                                          p-norm p=4   0.2618%    64.3 ->   633.7
+                                                          p-norm p=16  0.0679%    13.0 ->   121.1
+                                                          bump3, any p 0.0006%     1.0 ->     1.0
+```
+
+**Read the two step sizes against each other and it is a discontinuity, not a steep slope.**
+Refining the sampling tenfold divides every median difference by exactly ten and leaves the
+indicator's largest difference where it was — 3.174e-02 to 3.163e-02 in the mass at 0.30 mm
+— so its max/median ratio GROWS by ten.  The bump's largest difference divides by ten with
+everything else and its ratio is 1.0 at every step size, every radius and every exponent,
+sitting at the sampling floor.  Four crossings fall within +-0.25 mm of the shipped genome
+at each radius.
+
+**THE STEP SHRINKS WITH `p`, AND THE FIRST DRAFT OF THIS SECTION QUOTED ONLY `p` = 4.**  A
+crossing admits a point at the tube's EDGE, where the stress is lowest, so a peak-weighted
+exponent feels it least.  At `r` = 0.30 the indicator's step runs 2.14% / 1.08% / 0.54% /
+0.27% / 0.14% at `p` = 2 / 4 / 8 / 16 / 30; at 0.45, 0.39% / 0.26% / 0.14% / 0.068% /
+0.037%.  Quoting one exponent prices the defect either at a `p` nobody proposes or at a `p`
+the objective does not have, and **the honest number for the recommended configuration is
+0.068%, not 1.08%** — still a step, sixteen times smaller, and still growing its ratio 10x
+under refinement.  For scale: `stress_margin` prices 1% of utilisation against 1% of mass,
+so a 0.068% jump in `util` is a discontinuity worth ~0.07% of the wheel's mass appearing in
+the loss between two adjacent Adam steps.
+
+**THE SCAN HAD TO BE WIDE, AND THAT IS THE SECOND HALF OF THE RESULT.**  A first attempt
+swept +-0.04 mm about the shipped `R_hub` and found the indicator perfectly smooth, because
+the fillet block is regenerated with the arc and its Gauss points travel WITH the boundary,
+so crossings are rare rather than dense.  A second at +-0.10 mm found two crossings at
+`r` = 0.30 and NONE at 0.45 — which would have left the defect unpriced at the very radius
+the recommendation names.  **A blind sweep reports a clean pass on a defect that is
+certainly there**, and §94's own check said as much: "at a genome with an element near the
+boundary."  The driver locates one instead of hoping to land on it.
+
+A second-difference test was tried first and abandoned, and the reason is worth keeping.
+`max|d2|/delta^2` is the textbook curvature estimator and at the step sizes a gene sweep
+can afford it is dominated by round-off amplified through the mesh build: it grew at the
+same rate for the region measures AND for the total mesh volume, which has no region weight
+in it at all.  **A statistic that moves identically for the quantity under test and for a
+control that cannot exhibit the defect is measuring the instrument.**
+
+### WHAT THIS DOES TO §94's ITEM 1, AND THE GENERALISABLE PART
+
+§94's item 1 names ONE parameter and the quantity has TWO.  Its check — "the largest `p`
+whose observed order is still ~2" — is answerable only after the region radius is set, and
+at the radius §94 implicitly assumed (§52's, because `arc_peak` is where the numbers came
+from) the hub does not resolve and the answer at floor 1.50 is `none`.  Sweep the second
+parameter and the same check returns 16 at every cell.
+
+**The generalisable part is not "sweep more parameters".**  It is that a convergence
+criterion for a REGION-RESTRICTED functional has two error sources — how well the mesh
+resolves the field, and how well it resolves the region — and only the first is what a
+convergence order normally means.  The second is measurable on its own, for free, with the
+field deleted: the region's own mass is a quadrature of a fixed integral, and where it
+drifts 3% nothing above it can claim better.  M8b-i.6 never needed this because the global
+p-norm's region is the whole mesh, where the weight is 1 everywhere and there is no region
+error to have.
+
+### SCOPE, AND WHAT IS NOT ESTABLISHED
+
+LINEAR kinematics, ONE phase, `smoke..fine` — `study_corner_singularity`'s ladder, which is
+the one `arc_peak`'s numbers were taken on, so the two sides of every comparison here are
+the same experiment.  §94's scope note applies unchanged: SVK and the eight-phase stencil
+both raise the measured side.
+
+**TWO GENOMES IS NOT A DESIGN SPACE.**  `r` = 0.45 and `p` = 16 hold at the shipped genome
+and at `b029622` and the two disagree about the hub's largest `p` by 50% (24 against 16),
+which is the visible edge of a spread nothing here has bounded.  §82's thirty-two held-out
+genomes are the instrument for that and this does not use them.
+
+**THE `P_c` EXCLUSION IS NOT ARGUED HERE, BUT THE FACT IT RESTS ON IS NOW MEASURED.**  The
+arcs sit 2.75 mm (hub) and 6.50 mm (rim) from their `P_c` corners at the shipped genome,
+2.71 and 5.66 at `b029622` — nine to twenty-two tube radii clear at `r` = 0.30, six to
+fourteen at 0.45.  So the exclusion is a geometric fact about this region and not a
+modelling choice, and §94 item 3's remaining question is the one it stated: whether a
+constraint that ignores a divergent corner the exported solid does not have is the right
+constraint.  Unchanged, and still upstream of the rim tri-block.
+
+**[CORRECTED 2026-08-31 — SEE §96.  "A DIVERGENT CORNER THE EXPORTED SOLID DOES NOT HAVE"
+IS §94's PHRASE AND IT IS WRONG, AND REPEATING IT HERE WITHOUT CHECKING IT IS THIS
+SECTION'S OWN ERROR.  The solid HAS both corners; §38 deleted the end cap from the mesh on
+2026-08-18 and `P_c` has been the far flank's own ring crossing since.  `hub:P_c` matches
+the part's second flank crossing to 0.008 deg of wedge and the part fillets it.  The
+clearance measurement above is untouched and still says what it says — the tube does not
+contain `P_c` — but the sentence about what `P_c` IS was inherited rather than measured.]**
+
+**NOTHING IS WIRED AND NOTHING IS PROMOTED.**  No `src/` module changed.
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and green.  Items 3 and 4
+are open, and the differentiability of `sigma_fillet_j` with respect to the genes is
+measured here only as the ABSENCE of a step — an assembled-gradient FD check belongs to the
+wiring step, where the term has a loss to be a derivative of.
+
+### WHAT MOVED
+
+`studies/study_fillet_pnorm.py` and `studies/study_fillet_pnorm.json`, `make filletpnorm`.
+`tests/test_fillet_pnorm.py` — three tests on synthetic arrays, no mesh and no solve, which
+pin the CONSTRUCTION (compactly supported C2 bump; the aggregation is a p-norm; the
+indicator's membership is a step) rather than any measured number, so none of them can go
+green because a measurement got worse.
+
+#### The successors, ranked — REVISED 2026-08-31 AFTER §95
+
+**[RE-RANKED 2026-08-31 — SEE §96.  Item 1 is done, and it splits: what replaces it at the
+head is STATING the knee and the reference point, which §96 shows cannot be derived from a
+design at all.  The rim tri-block and a SECOND junction fillet both move up, being the two
+ways to close the `P_c` hole item 3 names.  This list is left as written; §96's is the
+current one.]**
+
+1. **THE REPLACEMENT STRESS TERM, ITEMS 3 AND 4** — the `P_c` exclusion argued rather than
+   asserted, and the exchange rate re-derived at the new scale.  Item 4 now has its input:
+   the raw substitution fires 80.13 / 37.91 at the shipped genome where the objective reads
+   0.0000 / 0.0000, and `stress_margin`'s 325.0 was derived at `util` = 0.855 under a
+   construction this replaces.
+2. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — the spread two genomes cannot
+   bound.  Cheap: eight solves per genome at the `coarse..fine` ladder, and every cell of
+   the sweep comes off them.  It is the difference between "16 holds at two designs" and
+   "16 is a constant of the objective".
+3. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A,
+   unchanged and still behind B.
+4. **EXECUTE THE SWITCH** — §93's steps 3-5, behind 1, 2 and 3.
+5. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged.
+6. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4) — §92 gives it a consumer.
+7. **The rim tri-block** — §94's item 3 is still what would let a filleted mesh quote a
+   global peak at all.
+8. **The sub-element fold, as its own unit** (§89's item 3), then §58's gate applied to the
+   draw and the box re-derived.
+9. **Calibrate §73's two thresholds on a proper hold-out protocol** — still the oldest thing
+   on the list.
+10. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**
+    (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
+    FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
+    revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §96 — 2026-08-31. ITEMS 3 AND 4, AND BOTH OF §94's STATED REASONS ARE WRONG. `hub:P_c` IS THE PART'S OWN CORNER TO 0.008 DEG — THE END CAP IT WAS EXCLUDED AS HAS NOT EXISTED SINCE 2026-08-18 — AND `stress_margin`'s WEIGHT IS INVARIANT TO THE SUBSTITUTION WHILE ITS REFERENCE POINT AND ITS KNEE ARE NOT
+
+§95's ranked successor 1, and §94's own two checks:
+
+> 3. **`P_c` is excluded by construction and the exclusion must be argued, not assumed.**
+>    ...  Excluding them is defensible because they are the END CAP's corners and the
+>    exported solid has no end cap — §52 ...
+> 4. **The exchange rate does not carry over.**  ...  CHECK: re-derive the weight at the
+>    new scale before any Stage 3 run, exactly as §15 DEFECT 8 did.
+
+`studies/study_fillet_wiring.py` (`make filletwiring`, ~3 s) is the measurement.  **It
+reads seven committed artifacts and solves nothing**; the one thing it computes is a
+sector's blocking, to COUNT the fillet arcs the mesh makes rather than infer twelve from
+the spoke count, because that number is half of item 3's answer.
+
+**Both items' stated reasons are wrong, and in the same way: each names a fact about a
+configuration that has since moved.**  Item 3 names an end cap deleted on 2026-08-18.
+Item 4 names a scale change that does not reach the quantity it claims to change.  The
+conclusions survive in both cases; the arguments do not, and the corrected arguments say
+different things about what happens next.
+
+### ITEM 3 — THE END CAP HAS NOT EXISTED SINCE §38, AND AT THE HUB THE JUSTIFICATION IS BACKWARDS
+
+§94: *"they are the END CAP's corners and the exported solid has no end cap"*.  That is
+the pre-uncap mesh.  `UNCAP_DEFAULT = (True, 1.0)` (§38, 2026-08-18) **removed the cap from
+the MESH too**, and `wheel_wheel.py` states it at the paragraph that explains why the
+module fillets only `P_t`: *"`P_c` existed because the mesh USED TO close the spoke with a
+half END CAP ... SINCE 2026-08-18 `UNCAP_DEFAULT` removes the cap here too, and the second
+corner is the far flank's own ring crossing."*  §52 was written five days after the flip
+and still called `rim:P_c` "the END CAP's artefact corner"; §94 took the phrase from §52
+and I took it into §95's scope note without checking it.
+
+Measured against `study_junction_agreement`'s numpy reconstruction of
+`wheel_step_export._embed` — which is verified before it is believed, by its own crossing
+count of 24 and 24 against the shipped manifest's `hub_edges` / `rim_edges`:
+
+```
+  ring  corner                       theta       wedge      lambda    vs the part
+  hub   part 2nd flank crossing    -1.52673   268.4733   0.546991      —
+  hub   mesh P_c AS BUILT          -1.51873   268.4813   0.546978    0.0080 deg
+  hub   mesh P_c end cap (pre-38)   0.00000   297.1786   0.514114   28.7053 deg
+  rim   part 2nd flank crossing    -1.31586   219.9018   0.697652      —
+  rim   mesh P_c AS BUILT          -0.51383   270.5138   0.543662   50.6120 deg
+  rim   mesh P_c end cap (pre-38)   0.00000   307.4278   0.508098   87.5260 deg
+```
+
+**`hub:P_c` IS the part's second flank crossing** — 0.008 deg of wedge, 1.3e-5 of Williams
+exponent — where the end-cap corner it replaced was 28.71 deg out.  It is a real re-entrant
+corner of the shipped part at 268.5 deg.  **`rim:P_c` is not**: 50.61 deg out, because
+`uncap=(True, 1.0)` takes the ring's radial at the rim rather than `_embed`'s own blend —
+a deliberate refusal to trade mesh validity for fidelity, since the faithful blend is
+accurate to 1.06 deg and collapses `min_scaled_jacobian` to 0.0072 against a 0.2 barrier.
+
+**AND THE PART FILLETS THE CORNER THE MESH DOES NOT.**  The manifest reports 24 edges found
+and 24 filleted at each junction, at the full requested radius, `kt_error_pct` 0.0 — and 24
+is two crossings per spoke times twelve spokes.  `sector_blocks(fillet=True)` yields one
+`_fillet_a`/`_fillet_b` pair per junction per sector, counted: **twelve arcs per ring
+against the part's twenty-four filleted edges**, and the twelve are at `P_t`.
+
+#### What the excluded corners do, on the filleted mesh
+
+```
+  genome   corner     wedge   lambda   peak MPa, smoke..fine            ratios   util@fine  global max
+  shipped  hub:P_c  268.209   0.5474    9.957  15.005  18.457  22.195  0.684 1.083   0.8878   no
+  shipped  rim:P_c  270.853   0.5431   22.208  35.232  44.459  55.866  0.708 1.236   2.2347   YES
+  b029622  hub:P_c  268.704   0.5466    9.880  15.287  18.934  23.007  0.675 1.116   0.9203   no
+  b029622  rim:P_c  270.892   0.5431   30.368  48.060  60.183  76.224  0.685 1.323   3.0489   YES
+```
+
+**BOTH EXCLUSIONS SURVIVE.  NEITHER FOR §94's REASON, AND NOT FOR THE SAME REASON AS EACH
+OTHER.**
+
+**The rim's is FIDELITY.**  The mesh has a corner there the part does not have, 50.61 deg
+away in wedge, and it carries the wheel's global maximum at every rung at both genomes.
+Constraining on it would constrain the mesh.  That is the right argument and it is the one
+the rim tri-block exists to remove.
+
+**The hub's is C1 — the same argument that made `Kt` necessary in the first place.**
+`hub:P_c` is re-entrant at 268.5 deg with lambda 0.547, and its peak diverges: increment
+ratios 0.684 then 1.083 at the shipped genome, 0.675 then 1.116 at `b029622`.  A divergent
+quantity cannot be a constraint whatever it is a corner of.  **So the exclusion is forced,
+and it leaves a real, singular, FILLETED corner of the real part unpriced** — reading 22.20
+MPa at `fine`, util 0.888 and climbing, against an `arc_peak` of 35.88 at the corner the
+term does read.
+
+**It is unpriced today too**, and that is what keeps this from being an objection to the
+switch: `Kt` models `P_t` by construction, and `agg` is a whole-wheel p=4 p-norm that
+dilutes everything.  What changes is that the omission becomes STRUCTURAL — a region-
+restricted term is defined by what its region excludes — where today it is incidental.
+**Naming it is item 3's answer.  Closing it is the mesh's job**, and the two ways to close
+it are the rim tri-block (§95 successor 7) and building the mesh's second junction fillet,
+which §46 already priced as geometrically admissible at the hub by 2% and not at the rim by
+a factor of five.
+
+### ITEM 4 — THE WEIGHT IS INVARIANT TO THE SUBSTITUTION.  THE REFERENCE POINT IS NOT
+
+§15 DEFECT 8 / §23 set `stress_margin`'s weight as an exchange rate — 1% of utilisation
+costs 1% of mass at a reference design.  With `stress_margin = w (util - knee)^2`:
+
+```
+  w  =  mass_term / ( 2 (util_ref - MARGIN_KNEE_UTIL) * util_ref )
+```
+
+**The self-check first, because otherwise nothing below is a re-derivation of anything.**
+At §18's `util_ref` = 0.855, §23's published 328.49 implies a mass term of 30.8945 against
+§18's quoted 30.88 — 0.047% apart.  That is the formula that produced it.  (The FINITE 1%
+step, which §18 used on the OLD `w * util^2` term, gives **304.80** from the same inputs,
+7.2% away; the two forms are not interchangeable, and reproducing 328.49 is what identifies
+which was meant.)
+
+**NOTHING IN THAT EXPRESSION KNOWS HOW `util` WAS COMPUTED.**  §94's *"a measured nominal
+is a different number"* is true of the NUMBER and false of the WEIGHT: the term's shape is
+unchanged, `util` is still a utilisation, and at a fixed reference point the only input
+that moves is `mass_term`.  Held at 0.855 the re-derivation runs **328.49 -> 379.40**, and
+none of that comes from the stress construction: +9.8% is the filleted mesh weighing
+43.41 g against 39.55, and the rest is the shipped genome having moved since §23 (its mass
+term is 32.51 today against the 30.894 that 328.49 implies).  **A mass measurement and a
+promotion, not a consequence of replacing `Kt * agg`.**
+
+**WHAT CANNOT BE DONE IS TAKE THE REFERENCE POINT FROM A DESIGN, AND THAT IS ITEM 4's REAL
+CONTENT.**  §18's 0.855 was *where the design sat*, inside `[MARGIN_KNEE_UTIL, 1.0]` — above
+the knee, so the term is live, and at or below the wall, so `stress` is zero.  Under the
+replacement:
+
+```
+  u_ref     w    admissible reference   is a design      (w on the SHIPPED genome's
+                                                          filleted mass term, 35.68;
+                                                          b029622's differs by <1%)
+  0.5067    inert          NO           shipped rim
+  0.7845    inert          NO           b029622 rim
+  0.8550   379.40         yes
+  0.9000   198.23         yes
+  1.0000    89.21         yes           <- the wall
+  1.1415    45.76          NO           shipped hub
+  1.6760    12.07          NO           b029622 hub
+```
+
+**Neither of the two designs this arc has measured can calibrate the term.**  Both rims are
+below the knee, where it is inert and no finite weight makes the rate anything; both hubs
+are over the wall, where a rate derived there is a rate for a place the optimizer must
+leave.  §82's thirty-two held-out genomes have never been read under the replacement — that
+is §95's successor 2 — so what is established is that the SHIPPED genome and §92's endpoint
+cannot supply a reference, **not** that nothing can.  Breaking it needs a POLICY reference
+rather than an observed one — §18's own comment says the weight "is
+an EXCHANGE RATE AND IT IS A POLICY, SO IT IS STATED" — and the whole curve is filed so the
+choice is visible rather than buried.  At the wall it is 89.21, a 3.6x cut from today's
+325.0.
+
+#### And the knee, which §94 did not mention and which is the larger question
+
+`MARGIN_KNEE_UTIL = 0.80` is documented as *"a JUDGEMENT about a printed PLA part, not a
+measurement, and it is the number to argue with"*, and the one piece of evidence
+`wheel_objective` offers for it is: *"The shipped genome sits at 0.77952, i.e. essentially
+AT this knee ... which is why this restates why that wheel is right rather than condemning
+it."*
+
+```
+  shipped hub util today, unfilleted mesh   0.7788   (-0.0212 from the knee)
+  shipped hub util today, filleted mesh     0.5803
+  shipped hub util under the replacement    1.1415   (+0.3415 from the knee)
+```
+
+**That evidence is gone.**  The weight sets a RATE; the knee decides at what utilisation
+margin starts costing anything at all, and 0.80 was chosen to land where the design was.
+Under the replacement the design is 0.34 past it and over the wall as well.  §94's item 4
+asked for the weight and the weight is the easy half.
+
+### WHAT THIS DOES TO THE DECISION
+
+**The decision still stands and both conditions in front of it are now measured.**  Nothing
+here is an objection to wiring the fillet in.  What items 3 and 4 leave is not a blocker
+but a SEQUENCE, and it is not the one §93's steps 3-5 assume:
+
+1. The knee and the reference point are POLICY and have to be stated before a weight can
+   be derived, because the derivation needs a `util_ref` and no design supplies one.
+2. A weight derived at a policy reference is a weight nobody has descended under.  §94's
+   own warning applies to its own remedy: the exchange rate is being set for a design that
+   does not exist yet.
+3. The `hub:P_c` hole is named and not closed, and closing it is a MESH change — either
+   the rim tri-block or the second junction fillet — not an objective change.
+
+### SCOPE, AND WHAT IS NOT ESTABLISHED
+
+Three different experiments, and the tables say which is which.  The corner agreement is
+GEOMETRY at `coarse`, no kinematics.  The filleted corner ladders are LINEAR at one phase,
+`study_corner_singularity`'s own.  The mass terms and today's utilisations are `coarse`,
+eight phases, SVK, from `study_fillet_terms`; the replacement's utilisations are §95's,
+LINEAR at one phase.
+
+**The weight numbers are arithmetic on a stated policy, not measurements of an optimum.**
+379.40 and 89.21 are what the formula returns at two reference points; neither has been
+descended under, and §23's own history is that the objective moving is what makes a design
+stop being its optimum.
+
+**`ALLOWABLE_STRESS_MPA` and its `FFF_KNOCKDOWN` / `SAFETY_FACTOR` derivation are not
+re-opened**, and every utilisation above inherits them.  **Nothing in `src/` changed and
+nothing is promoted.**  `test_nothing_wires_the_fillet_into_the_objective` is untouched.
+
+### WHAT MOVED
+
+`studies/study_fillet_wiring.py` and `studies/study_fillet_wiring.json`,
+`make filletwiring`.  §94's items 3 and 4 carry a bracket beneath them, in place, and §94
+keeps every word it had.
+
+#### The successors, ranked — REVISED 2026-08-31 AFTER §96
+
+1. **STATE THE KNEE AND THE REFERENCE POINT** — the two policies §96 shows cannot be
+   derived from a design, and the gate on everything downstream.  Cheap in machine time and
+   expensive in judgement, which is why it is first and why it is not a measurement.
+2. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — §95's item 2, unchanged: two
+   genomes disagree about the hub's largest `p` by 50%.
+3. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A.
+4. **EXECUTE THE SWITCH** — §93's steps 3-5, behind 1-3.
+5. **The rim tri-block** — promoted: §96 makes it one of the only two ways to close the
+   `hub:P_c`/`rim:P_c` hole, and the rim half is a fidelity defect the tri-block removes
+   outright.
+6. **The mesh's SECOND junction fillet** — new at §96.  The part fillets 24 edges per ring
+   and the mesh builds 12.  §46 priced the hub's as admissible by 2% and the rim's as short
+   by a factor of five, so this is the hub half of the same hole.
+7. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged.
+8. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4) — §92 gives it a consumer.
+9. **The sub-element fold, as its own unit** (§89's item 3), then §58's gate applied to the
+   draw and the box re-derived.
+10. **Calibrate §73's two thresholds on a proper hold-out protocol** — still the oldest
+    thing on the list.
+11. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**
+    (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
+    FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
+    revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
