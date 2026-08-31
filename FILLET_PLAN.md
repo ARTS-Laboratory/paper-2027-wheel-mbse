@@ -20,7 +20,14 @@ FOR IT WAS WRONG: the filleted peak still diverges (a green test has said so sin
 the double count is worth EXACTLY ZERO because the stress term is inert on a filleted mesh,
 and the error that is not zero runs the other way — the modelled peak is 1.68x-2.76x BELOW
 the fillet surface's own converged one, which calls the hub breached at both genomes. B now
-ranks ahead of A.** The state, in four lines, so nobody re-derives it from thirty PARTs:
+ranks ahead of A. THE REPLACEMENT TERM'S FIRST TWO ITEMS ARE MEASURED — PART 8, 2026-08-31,
+PLAN §95: the region-restricted p-norm converges, its exponent is 16 at a tube radius of
+0.45 mm (§94's check named one parameter and the quantity has two — at §52's own 0.30 mm
+the hub's REGION does not converge), and the smooth region weight is settled by measurement
+— an indicator steps at every exponent (0.068% at the recommended `p`, 1.08% at the
+objective's current one) 0.0592 mm from the shipped genome, and the bump does not step at
+all. Under the replacement the hub reads 1.14 and 1.68 against an
+objective that reads 0.58 and 0.80 today. ITEMS 3 AND 4 ARE OPEN.** The state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -4080,3 +4087,101 @@ Stage 3 re-run under the current stress term would descend with the stress side 
 off.  Condition B now ranks ahead of Condition A.
 
 Nothing in `src/` changed.  Nothing is promoted.  The scope gate is untouched.
+
+---
+
+# STEP 3 RECORD — PART 8. THE REPLACEMENT TERM, ITEMS 1 AND 2. 2026-08-31, PLAN §95
+
+PART 7 / §94 proposed replacing `util_j = kt * agg / ALLOWABLE` with the mesh's own reading
+of the fillet surface and put four things in front of it.  This PART measures the first
+two.  `make filletpnorm` (`studies/study_fillet_pnorm.py`, 231 s): two genomes, four rungs,
+**eight filleted linear single-phase solves**, and every cell of a 5 x 9 x 2 sweep read off
+those eight — M8b-i.6 step 1's property, because the p-norm is a pure function of the
+converged displacement field.
+
+## THE QUANTITY, AND WHY THE KERNEL IS WHAT IT IS
+
+    sigma_fillet_j(p, r) = ( SUM_g W_g V_g vm_g^p / SUM_g W_g V_g )^(1/p)     [MPa]
+        W_g = max(0, 1 - d_g^2 / r^2)^3
+        d_g = distance from Gauss point g to junction j's ANALYTIC fillet arc
+
+on the loaded rotational copy — `arc_peak`'s rule, kept for `arc_peak`'s reason.  A cubic
+in `d^2`, so `sqrt(d^2)` is never formed and the kink `|x|` has at zero — which sits on the
+arc, where the weight peaks — never exists.  C2 at its own support boundary, which is
+item 2's requirement.  Compact support, which a Gaussian's is not: an unbounded tail puts
+the whole wheel back in at low `p`, and whole-wheel dilution is what PART 7 measured
+`Kt * agg` losing 1.68x to 2.76x to.
+
+## THE ANSWER: `r` = 0.45 mm, `p` = 16
+
+§94's expectation was that the region should tolerate a higher `p` than the global 4.0.
+**It does — 30 at the rim, the top of the sweep and never broken, 24 / 16 at the hub.**
+But the check as written names one parameter and the quantity has two, and at §52's own
+tube radius (0.30 mm, where `arc_peak`'s numbers come from) the hub's REGION does not
+converge: the region mass — a quadrature of a fixed integral with **no displacement field
+in it at all** — drifts 3.04% and 2.85% between `medium` and `fine`, against the rim's
+0.008% and 0.256%.  The fillet's `b` half, welded to the ring, carries a first element
+layer 0.3576 / 0.2374 / 0.1776 mm at the hub against 0.1555 / 0.1030 / 0.0770 at the rim,
+so a 0.30 mm tube is 1.7 cells deep at the hub and 3.9 at the rim at `fine`.
+
+Two radii of five are resolved at all four cells (0.45 and 0.90) and the smaller is taken,
+because the term exists to be LOCAL.  At `r` = 0.45, `p` = 16:
+
+```
+  cell           sigma_fillet   util   arc_peak  its util  order  GCI    objective today
+  shipped/hub      28.5385    1.1415   35.8789   1.4352   2.33  1.11%        0.5803
+  shipped/rim      12.6678    0.5067   16.0566   0.6423   2.71  0.70%        0.3859
+  b029622/hub      41.8999    1.6760   53.5631   2.1425   1.77  2.09%        0.7954
+  b029622/rim      19.6115    0.7845   25.2775   1.0111   3.95  0.37%        0.5057
+```
+
+PART 7's finding survives the move to a differentiable proxy: the hub is over the allowable
+at both designs where the objective reads 0.58 and 0.80 and both barriers are exactly zero.
+The raw substitution fires `stress` 80.13 / `stress_margin` 37.91 at the shipped genome and
+1827.88 / 249.39 at `b029622` — item 4's INPUT, not its answer.  And the proxy still
+understates: at 77.6%-79.5% of `arc_peak` the surface peak is 1.26x-1.29x its reading,
+against `Kt * agg`'s 1.68x-2.76x.  `p` cannot be raised to close the rest, because 16 is
+where the order floor binds.
+
+## ITEM 2: THE INDICATOR STEPS AT EVERY EXPONENT, AND IT IS A DISCONTINUITY
+
+The crossing is located (scan +-0.25 mm, bisect to 1e-9 mm) rather than sampled for, and
+then straddled at two step sizes a decade apart, at BOTH radii — §52's 0.30 mm where the
+defect is largest, and the recommended 0.45 mm which is what a wired term would use.
+
+```
+  r_sup  crossing at R_hub   away     tube      quantity     step %    max/median
+                                                                       2.5e-4 -> 2.5e-5
+  0.30      0.7227791     0.0592 mm  64 -> 65   region mass  4.2986%   252.4 -> 2514.9
+                                                p-norm p=4   1.0781%   214.8 -> 2139.2
+                                                p-norm p=16  0.2699%    42.0 ->  410.6
+                                                bump3        0.0007%     1.0 ->    1.0
+  0.45      0.7992276     0.1356 mm  94 -> 95   region mass  1.0776%    80.6 ->  796.7
+                                                p-norm p=4   0.2618%    64.3 ->  633.7
+                                                p-norm p=16  0.0679%    13.0 ->  121.1
+                                                bump3        0.0006%     1.0 ->    1.0
+```
+
+Refining the sampling tenfold divides every median difference by ten and **leaves the
+indicator's largest difference where it was** — 3.174e-02 to 3.163e-02 in the region mass —
+which is a discontinuity and not a steep slope.  The smooth weight's max/median ratio is
+1.0 everywhere, at the sampling floor.  Four crossings fall within +-0.25 mm at each radius.
+
+**The step shrinks with `p`** — a crossing admits a point at the tube's EDGE, where the
+stress is lowest — so the honest number for the recommended configuration is **0.068%, not
+1.08%**: sixteen times smaller, still a step, still growing its ratio 10x under refinement.
+
+**The scan had to be wide and that is half the result.**  A first attempt swept +-0.04 mm
+and found the indicator perfectly smooth — the fillet block is regenerated with the arc, so
+its Gauss points travel WITH the boundary and crossings are rare.  A second at +-0.10 mm
+found two at `r` = 0.30 and NONE at 0.45, which would have left the defect unpriced at the
+radius the recommendation names.  A blind sweep reports a clean pass on a defect that is
+certainly there.
+
+## SCOPE
+
+LINEAR, ONE phase, `smoke..fine` — PART 12's ladder, so both sides of every comparison here
+are the same experiment.  **Two genomes is not a design space**: they already disagree
+about the hub's largest `p` by 50% (24 against 16), and §82's thirty-two held-out genomes
+are the instrument for bounding that.  Items 3 and 4 are open.  Nothing in `src/` changed,
+nothing is promoted, the scope gate is untouched and green.

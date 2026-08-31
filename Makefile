@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -148,6 +148,13 @@ help:
 	@echo "              objective's modelled peak against the fillet surface's"
 	@echo "              own converged one — the comparison an unfilleted mesh"
 	@echo "              cannot host, because it has no measured side. exits 0"
+	@echo "make filletpnorm the region-restricted p-norm over the fillet arc —"
+	@echo "              §94 items 1 and 2. sweeps the exponent AND the tube"
+	@echo "              radius, because the region's own quadrature is what"
+	@echo "              decides whether an exponent means anything, and"
+	@echo "              measures what an indicator region weight costs at a"
+	@echo "              gene value where a Gauss point crosses the boundary."
+	@echo "              ~4 min, eight solves. exits 0"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
@@ -981,6 +988,45 @@ FILLETKT_OUT ?= study_fillet_kt.json
 
 filletkt:
 	$(PY_OPT) -u studies/study_fillet_kt.py --out $(FILLETKT_OUT)
+
+# ---------------------------------------------------------------------------
+# THE REGION-RESTRICTED P-NORM OVER THE FILLET ARC  (PLAN.md §94, items 1 and 2)
+# ---------------------------------------------------------------------------
+# ~4 min, and every cell of a 5x9 sweep comes off eight solves — M8b-i.6 step 1's
+# property, for its reason: the p-norm is a pure function of the converged displacement
+# field, so re-solving per exponent would buy nothing.
+#
+# §94 proposed replacing `kt * agg` with the mesh's own reading of the fillet surface and
+# put four things in front of it.  This recipe measures the first two, and the answer to
+# the first one is not the shape §94 expected:
+#
+#   ITEM 1 — "sweep the exponent ... CHECK: the largest `p` whose observed order is still
+#   ~2".  `p` IS NOT WHAT LIMITS THIS QUANTITY.  The region's own mass — a quadrature of
+#   an integral over an analytically fixed region, with no displacement field in it at all
+#   — already fails to converge at the tube radius §52's `arc_peak` uses, so no exponent
+#   built on it can be quoted.  The sweep therefore runs over the RADIUS as well, because
+#   that is the axis that decides whether the exponent means anything.
+#
+#   ITEM 2 — "needs a smooth weight in distance-to-arc, not an indicator".  MEASURED, and
+#   the indicator's step is real: section C locates a gene value at which one Gauss point
+#   crosses the tube boundary and samples across it at two step sizes a decade apart.
+#
+# `h` IS THE FILLET BLOCK'S, and the wheel's is carried beside it.  This measure is local
+# to a block that refines 4 -> 8 -> 12 -> 16 elements a side while the wheel refines
+# 1.617x then 1.556x by element count; those are different ladders and they give different
+# orders off the same numbers.  `study_deflection_gci`'s H_DEFS block is the precedent and
+# its warning is why: it drew `h` from the wrong mesh once and inflated every `p` by 1.25x.
+#
+# SCOPE: LINEAR, ONE PHASE — `study_corner_singularity`'s ladder, which is the one
+# `arc_peak`'s numbers were taken on.  Nothing here touches `wheel_objective`.
+#
+# EXITS 0 ALWAYS, for `filletkt`'s reason: §94 asked what `p` the region measure supports,
+# and "none at this junction, and here is the quantity that is actually limiting" is an
+# answer rather than a failure.
+FILLETPNORM_OUT ?= study_fillet_pnorm.json
+
+filletpnorm:
+	$(PY_OPT) -u studies/study_fillet_pnorm.py --out $(FILLETPNORM_OUT)
 
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)

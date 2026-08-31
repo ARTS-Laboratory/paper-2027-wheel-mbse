@@ -12625,11 +12625,30 @@ M8b-i.6 spent a sweep undoing.
    `p` whose observed order is still ~2.  The region is small and far more uniform than the
    whole wheel, so it should tolerate a higher `p` than the global 4.0 — that is a
    measurement and not an assumption.
+
+   **[MEASURED 2026-08-31 — SEE §95.  THE EXPECTATION HOLDS: 30 at the rim, which is the
+   top of the sweep, and 24 / 16 at the hub, against the global 4.0.  BUT THE CHECK AS
+   WRITTEN NAMES ONE PARAMETER AND THE QUANTITY HAS TWO.  At the tube radius this item
+   implicitly assumes — §52's 0.30 mm, because `arc_peak` is where the numbers came from —
+   the hub's REGION does not converge (mass drift 3.04% and 2.85%) and the answer at order
+   floor 1.50 is `none`.  Sweep the radius too and it is `p` = 16 at `r` = 0.45 mm, at
+   every cell.]**
 2. **The region moves with the genes.**  The tube is fixed in mesh terms but its membership
    flips as the arc moves with `R_hub`/`R_rim`/`t0`/`t3`, and a flipping membership is a
    step in the loss.  Needs a smooth weight in distance-to-arc, not an indicator.  CHECK:
    the FD test the assembled gradient already has, at a genome with an element near the
    boundary.
+
+   **[MEASURED 2026-08-31 — SEE §95.  Right, and the step is real at every exponent: at
+   §52's 0.30 mm tube it is 4.30% of the region mass and 1.08% / 0.27% of the measure at
+   `p` = 4 / 16, at `R_hub` = 0.7227791 — 0.0592 mm from the shipped genome, 1.64% of that
+   gene's box.  At the RECOMMENDED 0.45 mm it is 1.08% / 0.26% / 0.068%, 0.1356 mm away.
+   It is a discontinuity and not a slope: refine the sampling tenfold and every other
+   difference divides by ten while the step does not.  The smooth weight sits at the
+   sampling floor at every radius and exponent.  The CHECK was substituted: an FD test on
+   the assembled gradient needs the term wired in, which the scope gate forbids, so §95
+   measures the step in the MEASURE directly — which says by how much and exactly where,
+   and an FD disagreement would not have.]**
 3. **`P_c` is excluded by construction and the exclusion must be argued, not assumed.**
    Both `P_c` are still re-entrant and divergent, and `rim:P_c` carries the global max from
    `coarse` up.  Excluding them is defensible because they are the END CAP's corners and the
@@ -12715,6 +12734,12 @@ untouched and green; the driver solves nothing and builds no mesh.
 
 #### The successors, ranked — REVISED 2026-08-30 AFTER §94
 
+**[RE-RANKED 2026-08-31 — SEE §95.  Item 1 is done: items 1 and 2 are measured, and items
+3 and 4 take its place at the head with item 4's input now in hand.  Item 2 — the ladder
+at `b029622` under SVK, §94's Condition A — falls behind a new item, `(r, p)` across §82's
+thirty-two held-out genomes, because two genomes already disagree about the hub's largest
+`p` by 50%.  This list is left as written; §95's is the current one.]**
+
 1. **THE REPLACEMENT STRESS TERM, ITEMS 1 AND 2** — a volume-weighted p-norm over the fillet
    arc with a smooth region weight, and the exponent sweep that sets its `p`.  Condition B's
    remaining half, and now the gating item for the whole arc.
@@ -12738,3 +12763,304 @@ untouched and green; the driver solves nothing and builds no mesh.
    `study_contact`** (§67); **a bend that is a FUNCTION of the genome** (§56); **the REST of
    §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
    element-validity check** (§44).
+
+---
+
+## §95 — 2026-08-31. THE REPLACEMENT STRESS TERM'S FIRST TWO ITEMS, MEASURED. §94's EXPONENT EXISTS AND IS 16 — BUT THE QUANTITY HAS TWO PARAMETERS AND THE SWEEP OF ONE CANNOT SET IT, BECAUSE AT §52's OWN TUBE RADIUS THE HUB'S REGION IS NOT RESOLVED. THE SMOOTH WEIGHT IS SETTLED: AN INDICATOR STEPS AT EVERY EXPONENT, 0.0592 mm FROM THE SHIPPED GENOME
+
+§94's ranked successor 1, and its two checks:
+
+> 1. Replace with a volume-weighted p-norm over the tube and sweep the exponent on
+>    filleted solves the way M8b-i.6 swept the global one.  CHECK: the largest `p` whose
+>    observed order is still ~2.
+> 2. Needs a smooth weight in distance-to-arc, not an indicator.  CHECK: the FD test the
+>    assembled gradient already has, at a genome with an element near the boundary.
+
+`studies/study_fillet_pnorm.py` (`make filletpnorm`, 231 s) is the measurement.  Two
+genomes, four rungs, eight filleted linear single-phase solves, and every cell of a
+5 x 9 x 2 sweep read off those eight — M8b-i.6 step 1's property, for its reason: the
+p-norm is a pure function of the converged displacement field.
+
+**Item 2's check is not the one performed here and the substitution is deliberate.**  "The
+FD test the assembled gradient already has" needs the term wired into `wheel_objective`,
+which is the wiring step and which
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective`
+forbids.  The defect item 2 names is a step in the MEASURE, and a step in the measure can
+be measured directly, at the same genome, without a loss anywhere near it.  That is
+section C, and it is a stronger result than an FD check would have been: an FD test says a
+derivative disagrees, this says by how much and exactly where.
+
+### THE QUANTITY
+
+    util_j  =  sigma_fillet_j / ALLOWABLE_STRESS_MPA,        no Kt        (§94)
+
+    sigma_fillet_j(p, r) = ( SUM_g W_g V_g vm_g^p / SUM_g W_g V_g )^(1/p)     [MPa]
+        W_g = max(0, 1 - d_g^2 / r^2)^3
+        d_g = distance from Gauss point g to junction j's ANALYTIC fillet arc
+
+on the loaded rotational copy, which is `arc_peak`'s rule and is kept for `arc_peak`'s
+reason.  The kernel is a cubic in `d^2`, so the expression never forms `sqrt(d^2)` and
+never meets the kink `|x|` has at zero — which sits exactly on the arc, where the weight
+peaks.  It is C2 at its own support boundary, which is item 2's requirement.  Its support
+is compact, which a Gaussian's is not: an unbounded tail puts the whole wheel back into
+the measure at low `p`, and whole-wheel dilution is what §94 measured `Kt * agg` losing
+1.68x to 2.76x to.
+
+`_distance_to_arc` is smooth where this uses it, and that is checked rather than assumed.
+Inside the sweep it is `|r - R|` and the absolute value never activates — the fillet is
+concave, its centre of curvature is in the void, and the nearest Gauss point to either
+centre sits at `r/R` = 1.085 (hub) and 1.011 (rim).
+
+### `h` IS THE FILLET BLOCK'S, AND THE WHEEL'S IS CARRIED BESIDE IT
+
+The measure is local to a block whose grid runs 5x5 / 9x9 / 13x13 / 17x17 nodes — LINEAR
+refinement 2.0 / 1.5 / 1.333 — while the wheel refines 1.617x then 1.556x by element
+count.  Those are different ladders and they give different orders off the same numbers.
+`study_deflection_gci`'s H_DEFS block is the precedent and its warning is why it matters:
+it drew `h` from the wrong mesh once and inflated every reported `p` by 1.25x.  Both are
+in the artifact, `h_fillet` is primary, and no verdict below is stated except where the
+two agree.
+
+### A — THE GATE §94 DID NOT ANTICIPATE, AND IT IS NOT ABOUT `p`
+
+`SUM_g W_g V_g` — the measure's own denominator — is a quadrature of `INTEGRAL W dV` over
+a region fixed ANALYTICALLY.  **No displacement field enters it at all**, so its ladder is
+pure quadrature error and it bounds every claim the numerator can make.  It is read on
+copy 0 rather than on the loaded copy, so the field is absent from its provenance as well
+as from its value — the loaded copy's own denominator agrees to 1.2e-14, which is what says
+the distinction was immaterial and not that it was unnecessary to make.  At the tube radius
+§52's `arc_peak` uses:
+
+```
+  genome   junc  r=0.30 mm     region mass, coarse/medium/fine        finest pair
+  shipped  hub               0.285708  0.275945  0.267563               3.037%
+  shipped  rim               1.026456  1.015291  1.015208               0.008%
+  b029622  hub               0.241930  0.233388  0.226729               2.853%
+  b029622  rim               0.996984  0.986820  0.984294               0.256%
+```
+
+The hub's region does not converge and the rim's does, by two and a half orders of
+magnitude, and the diagnostic that explains it is reported beside every cell.  A junction's
+fillet is meshed as two blocks, both starting ON the arc; the `b` half — welded to the ring
+— carries the coarser first element layer:
+
+```
+  first element layer touching the arc, mm, coarse/medium/fine
+  shipped  hub   a 0.1438 0.0956 0.0716    b 0.3576 0.2374 0.1776
+  shipped  rim   a 0.1019 0.0670 0.0499    b 0.1555 0.1030 0.0770
+```
+
+So a 0.30 mm tube is **1.7 cells deep at the hub and 3.9 at the rim** at the finest rung —
+0.8 and 1.9 at `coarse` — and a quadrature rule cannot resolve a weight function it samples
+fewer than about twice across.  **Widening the tube fixes it**: the hub resolves at
+`r` = 0.45 mm (0.095% and 0.205%) and stays resolved at 0.90 (0.016% and 0.017%).
+
+### B — THE EXPONENT SWEEP.  §94's EXPECTATION HOLDS
+
+§94: *"the region is small and far more uniform than the whole wheel, so it should tolerate
+a higher `p` than the global 4.0 — that is a measurement and not an assumption."*
+**Measured, it does, everywhere the region is resolved, and by four to seven times.**  The
+largest `p` whose observed order clears 1.50 on BOTH `h` definitions:
+
+```
+  genome   junction   largest p   at r_sup    arc_peak's own order (h_fil / h_glob)
+  shipped  hub            24        0.45           1.28 / 1.53
+  shipped  rim            30        0.30           2.17 / 2.21
+  b029622  hub            16        0.45           1.08 / 1.38
+  b029622  rim            30        0.30           2.42 / 2.40
+```
+
+30 is the top of the sweep at the rim and it never breaks.  `ORDER_FLOORS` is
+`(1.25, 1.5, 1.75)` and the verdict is reported at all three, because 1.50 is a gate
+invented from one precedent — M8b-i.6 step 1 accepted 1.76 / 2.18 and rejected 0.99 / 1.12
+without writing a number down, and 1.50 is the midpoint of that gap.
+
+**THE TWO JUNCTIONS' ORDERS TREND IN OPPOSITE DIRECTIONS, AND BOTH ARE THE SAME
+MECHANISM.**  At the rim the order RISES with `p` (2.2 to 3.1 at `r` = 0.30), so the floor
+never binds.  At the hub it FALLS (8.0 down to 1.5 at `r` = 0.45), so the floor binds from
+above, which is M8b-i.6 step 1's shape.  As `p` grows the p-norm tracks the local peak, so
+its order approaches `arc_peak`'s own — and `arc_peak`'s own is 1.28 at the hub against
+2.17 at the rim.  **The hub's limit on `p` is the hub's peak being the thing this ladder
+resolves worst, not anything about the exponent.**  The hub's low-`p` orders of 6 to 11
+come with GCI of 0.01% and are the opposite artefact: three points a hair apart give
+Roache an error ratio near zero and he answers with a large `p`, which is not a
+measurement of anything.
+
+### THE CROSS-CELL ANSWER: `r` = 0.45 mm, `p` = 16
+
+`p` and `r` are constants of the objective and not per-design choices, so whatever is
+picked has to hold at every junction of every genome the optimizer can reach.  Two radii
+of five are resolved in all four cells, and the smaller is taken because the term exists to
+be LOCAL to the fillet surface:
+
+```
+  r_sup  resolved everywhere  worst mass drift   largest p at floor 1.25 / 1.50 / 1.75
+  0.20         NO                 1.473%              none  /  none  /  none
+  0.30         NO                 3.037%                16  /  none  /  none
+  0.45        yes                 0.288%                24  /    16  /    16
+  0.60         NO                 0.569%                24  /    16  /    12
+  0.90        yes                 0.023%                16  /    16  /    12
+```
+
+At that cell, priced through `ALLOWABLE_STRESS_MPA` = 25.0 and the objective's own
+`DEFAULT_WEIGHTS` — no fitting and no choice, the division is the one §94 wrote down:
+
+```
+  cell           sigma_fillet  util    arc_peak  its util  frac   order  GCI     what the
+                                                                                objective
+                                                                                reads today
+  shipped/hub      28.5385   1.1415    35.8789   1.4352   0.795   2.33  1.11%      0.5803
+  shipped/rim      12.6678   0.5067    16.0566   0.6423   0.789   2.71  0.70%      0.3859
+  b029622/hub      41.8999   1.6760    53.5631   2.1425   0.782   1.77  2.09%      0.7954
+  b029622/rim      19.6115   0.7845    25.2775   1.0111   0.776   3.95  0.37%      0.5057
+```
+
+**§94's finding survives the move from `arc_peak` to a differentiable proxy.**  The hub is
+over the allowable at both designs; the objective reads 0.5803 and 0.7954 and is exactly
+zero at both.  The raw substitution fires `stress` 80.13 and `stress_margin` 37.91 at the
+shipped genome, 1827.88 and 249.39 at `b029622`, against `0.0000` for all four today.
+Those numbers are §94 item 4's INPUT and not its answer.
+
+**AND THE PROXY STILL UNDERSTATES.**  A p-norm is a smooth lower bound approaching the max
+from below — `_qoi_pnorm_stress` says so — and at `p` = 16 it sits at 77.6% to 79.5% of
+`arc_peak`, i.e. the surface peak is 1.26x to 1.29x the replacement's reading.  Against the
+1.68x to 2.76x §94 measured for `Kt * agg`, that is most of the gap closed and none of it
+denied.  "Conservative" is the wrong word for either: both err in the direction of calling
+a breached fillet safe, and the replacement errs less.  **`p` cannot be raised past 16 to
+close the rest**, because 16 is where the order floor binds — which is the whole content of
+section B.
+
+### C — ITEM 2, MEASURED.  THE INDICATOR STEPS, AND THE STEP IS A DISCONTINUITY
+
+`R_hub` because it is the gene the replacement exists to give a live gradient to (§15
+DEFECT 1); the hub because §94 measured it breached.  The driver scans +-0.25 mm for a gene
+value at which a Gauss point crosses the tube boundary, bisects to 1e-9 mm, then samples a
+window CENTRED on the crossing at two step sizes a decade apart.  **At both radii** —
+§52's 0.30 mm, where the defect is largest, and the recommended 0.45 mm, which is what a
+wired term would actually use:
+
+```
+  r_sup  crossing at R_hub   away      of box   tube      quantity     step %   max/median
+                                                                                2.5e-4 -> 2.5e-5
+  0.30      0.7227791      0.0592 mm   1.64%   64 -> 65   region mass  4.2986%   252.4 ->  2514.9
+                                                          p-norm p=4   1.0781%   214.8 ->  2139.2
+                                                          p-norm p=16  0.2699%    42.0 ->   410.6
+                                                          bump3, any p 0.0007%     1.0 ->     1.0
+  0.45      0.7992276      0.1356 mm   3.77%   94 -> 95   region mass  1.0776%    80.6 ->   796.7
+                                                          p-norm p=4   0.2618%    64.3 ->   633.7
+                                                          p-norm p=16  0.0679%    13.0 ->   121.1
+                                                          bump3, any p 0.0006%     1.0 ->     1.0
+```
+
+**Read the two step sizes against each other and it is a discontinuity, not a steep slope.**
+Refining the sampling tenfold divides every median difference by exactly ten and leaves the
+indicator's largest difference where it was — 3.174e-02 to 3.163e-02 in the mass at 0.30 mm
+— so its max/median ratio GROWS by ten.  The bump's largest difference divides by ten with
+everything else and its ratio is 1.0 at every step size, every radius and every exponent,
+sitting at the sampling floor.  Four crossings fall within +-0.25 mm of the shipped genome
+at each radius.
+
+**THE STEP SHRINKS WITH `p`, AND THE FIRST DRAFT OF THIS SECTION QUOTED ONLY `p` = 4.**  A
+crossing admits a point at the tube's EDGE, where the stress is lowest, so a peak-weighted
+exponent feels it least.  At `r` = 0.30 the indicator's step runs 2.14% / 1.08% / 0.54% /
+0.27% / 0.14% at `p` = 2 / 4 / 8 / 16 / 30; at 0.45, 0.39% / 0.26% / 0.14% / 0.068% /
+0.037%.  Quoting one exponent prices the defect either at a `p` nobody proposes or at a `p`
+the objective does not have, and **the honest number for the recommended configuration is
+0.068%, not 1.08%** — still a step, sixteen times smaller, and still growing its ratio 10x
+under refinement.  For scale: `stress_margin` prices 1% of utilisation against 1% of mass,
+so a 0.068% jump in `util` is a discontinuity worth ~0.07% of the wheel's mass appearing in
+the loss between two adjacent Adam steps.
+
+**THE SCAN HAD TO BE WIDE, AND THAT IS THE SECOND HALF OF THE RESULT.**  A first attempt
+swept +-0.04 mm about the shipped `R_hub` and found the indicator perfectly smooth, because
+the fillet block is regenerated with the arc and its Gauss points travel WITH the boundary,
+so crossings are rare rather than dense.  A second at +-0.10 mm found two crossings at
+`r` = 0.30 and NONE at 0.45 — which would have left the defect unpriced at the very radius
+the recommendation names.  **A blind sweep reports a clean pass on a defect that is
+certainly there**, and §94's own check said as much: "at a genome with an element near the
+boundary."  The driver locates one instead of hoping to land on it.
+
+A second-difference test was tried first and abandoned, and the reason is worth keeping.
+`max|d2|/delta^2` is the textbook curvature estimator and at the step sizes a gene sweep
+can afford it is dominated by round-off amplified through the mesh build: it grew at the
+same rate for the region measures AND for the total mesh volume, which has no region weight
+in it at all.  **A statistic that moves identically for the quantity under test and for a
+control that cannot exhibit the defect is measuring the instrument.**
+
+### WHAT THIS DOES TO §94's ITEM 1, AND THE GENERALISABLE PART
+
+§94's item 1 names ONE parameter and the quantity has TWO.  Its check — "the largest `p`
+whose observed order is still ~2" — is answerable only after the region radius is set, and
+at the radius §94 implicitly assumed (§52's, because `arc_peak` is where the numbers came
+from) the hub does not resolve and the answer at floor 1.50 is `none`.  Sweep the second
+parameter and the same check returns 16 at every cell.
+
+**The generalisable part is not "sweep more parameters".**  It is that a convergence
+criterion for a REGION-RESTRICTED functional has two error sources — how well the mesh
+resolves the field, and how well it resolves the region — and only the first is what a
+convergence order normally means.  The second is measurable on its own, for free, with the
+field deleted: the region's own mass is a quadrature of a fixed integral, and where it
+drifts 3% nothing above it can claim better.  M8b-i.6 never needed this because the global
+p-norm's region is the whole mesh, where the weight is 1 everywhere and there is no region
+error to have.
+
+### SCOPE, AND WHAT IS NOT ESTABLISHED
+
+LINEAR kinematics, ONE phase, `smoke..fine` — `study_corner_singularity`'s ladder, which is
+the one `arc_peak`'s numbers were taken on, so the two sides of every comparison here are
+the same experiment.  §94's scope note applies unchanged: SVK and the eight-phase stencil
+both raise the measured side.
+
+**TWO GENOMES IS NOT A DESIGN SPACE.**  `r` = 0.45 and `p` = 16 hold at the shipped genome
+and at `b029622` and the two disagree about the hub's largest `p` by 50% (24 against 16),
+which is the visible edge of a spread nothing here has bounded.  §82's thirty-two held-out
+genomes are the instrument for that and this does not use them.
+
+**THE `P_c` EXCLUSION IS NOT ARGUED HERE, BUT THE FACT IT RESTS ON IS NOW MEASURED.**  The
+arcs sit 2.75 mm (hub) and 6.50 mm (rim) from their `P_c` corners at the shipped genome,
+2.71 and 5.66 at `b029622` — nine to twenty-two tube radii clear at `r` = 0.30, six to
+fourteen at 0.45.  So the exclusion is a geometric fact about this region and not a
+modelling choice, and §94 item 3's remaining question is the one it stated: whether a
+constraint that ignores a divergent corner the exported solid does not have is the right
+constraint.  Unchanged, and still upstream of the rim tri-block.
+
+**NOTHING IS WIRED AND NOTHING IS PROMOTED.**  No `src/` module changed.
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and green.  Items 3 and 4
+are open, and the differentiability of `sigma_fillet_j` with respect to the genes is
+measured here only as the ABSENCE of a step — an assembled-gradient FD check belongs to the
+wiring step, where the term has a loss to be a derivative of.
+
+### WHAT MOVED
+
+`studies/study_fillet_pnorm.py` and `studies/study_fillet_pnorm.json`, `make filletpnorm`.
+`tests/test_fillet_pnorm.py` — three tests on synthetic arrays, no mesh and no solve, which
+pin the CONSTRUCTION (compactly supported C2 bump; the aggregation is a p-norm; the
+indicator's membership is a step) rather than any measured number, so none of them can go
+green because a measurement got worse.
+
+#### The successors, ranked — REVISED 2026-08-31 AFTER §95
+
+1. **THE REPLACEMENT STRESS TERM, ITEMS 3 AND 4** — the `P_c` exclusion argued rather than
+   asserted, and the exchange rate re-derived at the new scale.  Item 4 now has its input:
+   the raw substitution fires 80.13 / 37.91 at the shipped genome where the objective reads
+   0.0000 / 0.0000, and `stress_margin`'s 325.0 was derived at `util` = 0.855 under a
+   construction this replaces.
+2. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — the spread two genomes cannot
+   bound.  Cheap: eight solves per genome at the `coarse..fine` ladder, and every cell of
+   the sweep comes off them.  It is the difference between "16 holds at two designs" and
+   "16 is a constant of the objective".
+3. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A,
+   unchanged and still behind B.
+4. **EXECUTE THE SWITCH** — §93's steps 3-5, behind 1, 2 and 3.
+5. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged.
+6. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4) — §92 gives it a consumer.
+7. **The rim tri-block** — §94's item 3 is still what would let a filleted mesh quote a
+   global peak at all.
+8. **The sub-element fold, as its own unit** (§89's item 3), then §58's gate applied to the
+   draw and the box re-derived.
+9. **Calibrate §73's two thresholds on a proper hold-out protocol** — still the oldest thing
+   on the list.
+10. **Per-REGION agreement on a filleted mesh** (§86); **gate 10's `phase_ripple` cost**
+    (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
+    FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
+    revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
