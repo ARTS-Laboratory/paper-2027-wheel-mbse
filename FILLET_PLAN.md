@@ -15,7 +15,12 @@ SVK, because the switch rests on the filleted mesh being the converged one and t
 evidence is PART 12 at one genome under linear at one phase; and (B) ON A FILLETED MESH THE
 STRESS TERM COUNTS THE FILLET TWICE — `util_j = kt * agg / ALLOWABLE` multiplies the mesh's
 own p-norm by a surrogate for a fillet the mesh now models. B is new at §93 and nothing in
-the tree recorded it.** The state, in four lines, so nobody re-derives it from thirty PARTs:
+the tree recorded it. B IS NOW MEASURED — PART 7, 2026-08-30, PLAN §94 — AND §93's PREMISE
+FOR IT WAS WRONG: the filleted peak still diverges (a green test has said so since PART 12),
+the double count is worth EXACTLY ZERO because the stress term is inert on a filleted mesh,
+and the error that is not zero runs the other way — the modelled peak is 1.68x-2.76x BELOW
+the fillet surface's own converged one, which calls the hub breached at both genomes. B now
+ranks ahead of A.** The state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -3945,3 +3950,133 @@ global peak.  That is the rim tri-block's and is not this arc's.
 
 Nothing in `src/` changed at §93 and nothing is promoted.  The scope gate keeps its assertion
 and now records that the decision is taken and what holds execution.
+
+---
+
+# STEP 3 RECORD — PART 7. CONDITION B, MEASURED. 2026-08-30, PLAN §94
+
+§93 put two conditions in front of the switch and this is the second of them, answered.
+Its check, quoted from §93: *"a written derivation of what replaces `kt * agg` when the
+fillet is meshed, and a measurement of what the current double count is worth at the
+shipped genome and at `b029622`."*  `make filletkt` is the measurement; it reads six
+committed artifacts and solves nothing.
+
+## §93's PREMISE FOR CONDITION B IS WRONG, AND A GREEN TEST HAS SAID SO SINCE PART 12
+
+§93 wrote *"on a filleted mesh the peak is finite and convergent"* and cited PART 12's
+36.8 / 16.1 MPa.  **Those are PART 12's fillet-SURFACE numbers** — a local tube probe —
+and PART 12's own headline is *"THE HEADLINE IS STILL BLOCKED ON `rim:P_c`"*.  The wheel's
+global maximum still diverges on the filleted mesh, at both genomes:
+
+```
+  genome    mesh          peak MPa up the ladder            increment ratios   verdict
+  shipped   unfilleted     48.208   73.728   91.152  108.566    0.683  0.999   diverges
+  shipped   FILLETED       29.222   35.232   44.459   55.866    1.535  1.236   DIVERGES
+  b029622   unfilleted     68.720  105.022  129.646  154.699    0.678  1.017   diverges
+  b029622   FILLETED       43.081   49.083   60.183   76.224    1.849  1.445   DIVERGES
+```
+
+`tests/test_corner_singularity.py::test_step_2s_HEADLINE_is_not_delivered_and_the_reason_is_measured`
+asserts `divergence["global_max_vm"]["diverges"]` and an increment ratio above 0.9, and its
+docstring says in terms why it exists: *"so that nobody reads the surface result above as
+though it had"* delivered the headline.  §93 did exactly that.  **The lesson is not
+"re-check the plan file" — it is that a section's two results can point opposite ways and
+the surviving one is not the conclusion.**
+
+So C1 — the peak diverges, therefore a modelled peak is needed — **survives the fillet**,
+and §93's *"that changes the construction's PREMISE"* is withdrawn.
+
+## THE DOUBLE COUNT IS REAL AND IT IS EXACTLY ONE CORNER PER JUNCTION
+
+`stress_concentration_kt` models the raiser at `P_t`, the part's own junction corner: the
+exporter pairs the same function with the corners it actually rounds (`worst_wedge_deg`
+322.0 / 320.0, 24 of 24 edges, `kt_error_pct` 0.0), and unfilleted the mesh reads those at
+321.13 / 321.32 deg.  On the filleted mesh both go to **360.00 deg, interior**.  Both `P_c`
+survive — 268.70 / 270.89 at `b029622`, with lambda within 0.0002 of the unfilleted mesh's
+— and no `Kt` was ever meant to model them.  So §93's "does not reach `rim:P_c`" is right
+and incomplete: `hub:P_c` survives too.
+
+## WHAT IT IS WORTH: EXACTLY ZERO, AND THAT IS THE FINDING
+
+On the FILLETED mesh, at both genomes and under both kernels, every utilisation sits below
+`MARGIN_KNEE_UTIL` = 0.80, `soft_barrier` is exactly zero and exactly flat there, and
+`stress` + `stress_margin` = **0.0000**.  Removing `Kt` changes the loss by 0.0000.
+
+The unfilleted rows are the control and they are why this matters:
+
+```
+  genome   kin  mesh         util_hub  util_hub(Kt=1)   stress+margin   what Kt is worth
+  b029622  svk  unfilleted    1.0112       0.4699           14.9888        +14.9888
+  b029622  svk  FILLETED      0.7954       0.3696            0.0000         +0.0000
+```
+
+**Without `Kt` the stress side of the objective is zero in all eight rows** — `agg /
+ALLOWABLE` never exceeds 0.4699 anywhere measured — so `Kt` is the only thing that makes
+the term non-zero at all.  And **switching to the filleted mesh switches the term off**:
+14.9888 to 0.0000 at `b029622`.
+
+## AND THE ERROR THAT IS NOT ZERO POINTS THE OTHER WAY FROM §93's
+
+PART 12's `arc_peak` measures the peak inside a fixed analytic tube about the fillet arc,
+and on the filleted mesh it CONVERGES where the global max does not.  That is the measured
+side of a comparison an unfilleted mesh cannot host, and it has never been made:
+
+```
+  genome   kin  junction  modelled Kt*agg   measured surface   ratio   util_mod  util_meas
+  shipped  svk  hub            14.5074           36.6046      2.523x    0.5803    1.4642
+  shipped  svk  rim             9.6466           16.2035      1.680x    0.3859    0.6481
+  b029622  svk  hub            19.8841           54.9469      2.763x    0.7954    2.1979
+  b029622  svk  rim            12.6416           25.4993      2.017x    0.5057    1.0200
+```
+
+§93 argued the direction is conservative because `Kt > 1`.  **That is one factor of a
+product.**  The other is a whole-wheel volume-weighted p-norm at p = 4 standing in for a
+local peak, and it errs further the other way.  Both scope gaps run against the model —
+the surface probe is one phase under linear, `agg` is eight phases aggregated — so
+1.68x-2.76x is a LOWER bound on the gap.
+
+The objective calls all four cells admissible.  The mesh's own converged measurement of the
+feature the term exists to price calls the hub breached at both genomes.
+
+## WHAT REPLACES `Kt * agg`
+
+Not `kt = 1`: that leaves 0.2768 at the shipped genome and a term more inert still.  Not
+the mesh's global max: it diverges, and it sits on an end-cap corner the exported solid
+does not have.  **A region-restricted peak over the fillet arc** — PART 12's own
+instrument, converging to 36.60 / 16.20 at the shipped genome and 54.95 / 25.50 at
+`b029622` — keeping the two-junction, two-barrier shape and dropping `Kt` entirely.
+
+Four things must be settled first, each with a check:
+
+1. **Differentiability.**  `arc_peak` is an argmax, which is the kink the p-norm exists to
+   blur.  Replace with a volume-weighted p-norm over the tube and sweep the exponent on
+   filleted solves the way M8b-i.6 swept the global one.  CHECK: the largest `p` whose
+   observed order is still ~2.
+2. **The region moves with the genes.**  A hard tube's membership flips as the arc moves
+   with `R_hub`/`R_rim`/`t0`/`t3`, and a flipping membership is a step in the loss.  Needs
+   a smooth weight in distance-to-arc.  CHECK: the FD test the assembled gradient already
+   has, at a genome with an element near the boundary.
+3. **`P_c` is excluded by construction and the exclusion has to be argued.**  It is
+   defensible — the end cap is a mesh artefact and `_embed` drives the flanks through the
+   ring — but it means the rim tri-block is a prerequisite for ever quoting a global peak.
+4. **The exchange rate does not carry over.**  `stress_margin`'s weight was derived at
+   `util` = 0.855 under the current construction.  CHECK: re-derive at the new scale before
+   any Stage 3 run, as §15 DEFECT 8 did.
+
+**What does NOT need re-deriving: dropping `Kt` does not re-create §15 DEFECT 1's dead
+genes.**  That defect was an UNFILLETED-mesh property — `stress` and the fillet barriers
+were the only paths from `R_hub`/`R_rim` into the loss.  On a filleted mesh the radii move
+the geometry (PART 12: the radius ladder runs the axle drop 1.567 to 0.765 mm,
+monotonically) and PART 2 / §79 and §88 made that path differentiable.
+
+## WHAT THIS DOES TO THE DECISION
+
+The decision stands.  Nothing here is an objection to wiring the fillet in — the affirmative
+half is unchanged.  What changes is Condition B's content and its WEIGHT: it is not "the
+premise moved", it is **"the stress term is inert on a filleted mesh at both designs, while
+the mesh's own converged measurement of the feature says both are breached at the hub."**
+That is a bigger blocker than §93 wrote, not a smaller one, and it is promotion-shaped: a
+Stage 3 re-run under the current stress term would descend with the stress side switched
+off.  Condition B now ranks ahead of Condition A.
+
+Nothing in `src/` changed.  Nothing is promoted.  The scope gate is untouched.

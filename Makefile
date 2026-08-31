@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt triblock reds reds-ratio reds-hub studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -141,6 +141,13 @@ help:
 	@echo "              whether wiring the fillet in is a re-score or a"
 	@echo "              RE-OPTIMISATION. two 30-step descents from the shipped"
 	@echo "              genome, identical but for the mesh. ~3.5 h. exits 0"
+	@echo "make filletkt what \`Kt * agg\` is worth on a FILLETED mesh — §93's"
+	@echo "              Condition B. reads six committed artifacts and solves"
+	@echo "              nothing: the corner census (which singularity does the"
+	@echo "              fillet actually remove), the divergence ladders, and the"
+	@echo "              objective's modelled peak against the fillet surface's"
+	@echo "              own converged one — the comparison an unfilleted mesh"
+	@echo "              cannot host, because it has no measured side. exits 0"
 	@echo "make triblock the rim tri-block, BUILT — §51's probe measured. the"
 	@echo "              faithful rim's junction is a TRIANGLE; the three-quad"
 	@echo "              Y-partition meshes at 0.626 against the quad's 0.0082,"
@@ -938,6 +945,42 @@ FILLETOPTIMUM_OUT ?= study_fillet_optimum.json
 
 filletoptimum:
 	$(PY_OPT) -u studies/study_fillet_optimum.py --out $(FILLETOPTIMUM_OUT)
+
+# ---------------------------------------------------------------------------
+# WHAT `Kt * agg` IS WORTH ON A FILLETED MESH  (PLAN.md §93's Condition B)
+# ---------------------------------------------------------------------------
+# ~10 s, AND IT SOLVES NOTHING.  Six committed artifacts in, one table out.  That is the
+# point rather than a shortcut: the two sides of this comparison were measured by two
+# different instruments on two different ladders, and re-measuring either one here would
+# make it a third.
+#
+# §93 found, by reading `wheel_objective.py:1234` rather than the plan files, that
+# `util_j = kt * agg / ALLOWABLE` applies a surrogate for a fillet on a mesh that has one.
+# It also asserted two things about that finding from inspection, and this recipe checks
+# both:
+#
+#   "on a filleted mesh the peak is finite and convergent"  — IT IS NOT.  §93 cited §52's
+#   fillet-SURFACE numbers for a claim about the WHEEL, and §52's own headline says the
+#   global maximum still sits on `rim:P_c` and still diverges.  Both `P_c` corners survive
+#   the fillet at both genomes; both `P_t` corners do not.
+#
+#   "the direction is conservative, because Kt > 1"  — THAT IS ONE FACTOR OF A PRODUCT.
+#   The other is a whole-wheel p=4 p-norm standing in for a local peak, and it errs
+#   further the other way.  Measured against the fillet surface's own converged peak the
+#   modelled peak is LOW, not high.
+#
+# The `--*-terms` inputs are `make filletterms` at the two genomes; the four `--*-corner-*`
+# inputs are `make corner` and `make corner-fillet` at the two genomes.  `b029622` is the
+# design the FILLETED objective descends to from the shipped genome (§92), filed at the
+# repository root as `fillet_optimum_b029622.json` — NOT a promotion candidate, and its own
+# `note` says so.
+#
+# EXITS 0 ALWAYS, for `filletterms`' reason: §93 asked what the term is worth, and a
+# valuation has no threshold to meet.
+FILLETKT_OUT ?= study_fillet_kt.json
+
+filletkt:
+	$(PY_OPT) -u studies/study_fillet_kt.py --out $(FILLETKT_OUT)
 
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)

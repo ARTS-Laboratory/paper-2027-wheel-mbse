@@ -1,0 +1,1007 @@
+{
+  "genome": "fillet_optimum_b029622.json",
+  "config": "coarse",
+  "kinematics": [
+    "linear",
+    "svk"
+  ],
+  "service_force_n": 66.7233,
+  "min_sj_target": 0.2,
+  "weights": {
+    "deflection": 2500.0,
+    "mass": 0.821917808219178,
+    "stress": 4000.0,
+    "stress_margin": 325.0,
+    "buckling": 2000.0,
+    "x_order": 80.0,
+    "hub_overlap": 500.0,
+    "smoothness": 1.0,
+    "fold": 3000.0,
+    "arrival": 3000.0,
+    "fillet": 3000.0,
+    "fillet_cap": 500.0,
+    "min_sj": 3000.0,
+    "phase_ripple": 0.0
+  },
+  "mesh_space": {
+    "unfilleted": {
+      "total": 34.31119570184669,
+      "grad_norm": 6.45780946258503,
+      "terms": {
+        "x_order": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "hub_overlap": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "smoothness": {
+          "value": 1.7159011885344961,
+          "grad_norm": 0.8268257770335607,
+          "share": 0.05000995020532447,
+          "grad_share": 0.11439515788536644
+        },
+        "fold": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "arrival": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "fillet": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "fillet_cap": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "buckling": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "mass": {
+          "value": 32.5952945133122,
+          "grad_norm": 6.400978199268563,
+          "share": 0.9499900497946756,
+          "grad_share": 0.8856048421146336
+        },
+        "min_sj": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        }
+      },
+      "report": {
+        "mesh_mass_g": 39.657608324529846,
+        "min_scaled_jacobian": 0.6724412633659189
+      }
+    },
+    "filleted": {
+      "total": 37.16082211878639,
+      "grad_norm": 6.866459544357959,
+      "terms": {
+        "x_order": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "hub_overlap": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "smoothness": {
+          "value": 1.7159011885344961,
+          "grad_norm": 0.8268257770335607,
+          "share": 0.04617500611395339,
+          "grad_share": 0.10794049028209315
+        },
+        "fold": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "arrival": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "fillet": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "fillet_cap": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "buckling": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        },
+        "mass": {
+          "value": 35.4449209302519,
+          "grad_norm": 6.833189244880115,
+          "share": 0.9538249938860466,
+          "grad_share": 0.8920595097179068
+        },
+        "min_sj": {
+          "value": 0.0,
+          "grad_norm": 0.0,
+          "share": 0.0,
+          "grad_share": 0.0
+        }
+      },
+      "report": {
+        "mesh_mass_g": 43.12465379847315,
+        "min_scaled_jacobian": 0.23803608521865427
+      }
+    },
+    "comparison": {
+      "gap": 2.8496264169396994,
+      "rows": {
+        "x_order": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        },
+        "hub_overlap": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        },
+        "smoothness": {
+          "unfilleted": 1.7159011885344961,
+          "filleted": 1.7159011885344961,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.8268257770335607,
+          "grad_norm_filleted": 0.8268257770335607,
+          "grad_norm_delta": 0.0
+        },
+        "fold": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        },
+        "arrival": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        },
+        "fillet": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        },
+        "fillet_cap": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        },
+        "buckling": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        },
+        "mass": {
+          "unfilleted": 32.5952945133122,
+          "filleted": 35.4449209302519,
+          "delta": 2.8496264169396994,
+          "share_of_gap": 1.0,
+          "grad_norm_unfilleted": 6.400978199268563,
+          "grad_norm_filleted": 6.833189244880115,
+          "grad_norm_delta": 0.43221104561155244
+        },
+        "min_sj": {
+          "unfilleted": 0.0,
+          "filleted": 0.0,
+          "delta": 0.0,
+          "share_of_gap": 0.0,
+          "grad_norm_unfilleted": 0.0,
+          "grad_norm_filleted": 0.0,
+          "grad_norm_delta": 0.0
+        }
+      }
+    }
+  },
+  "evaluation": {
+    "linear": {
+      "n_phase": 8,
+      "phases_deg": [
+        0.0,
+        3.75,
+        7.5,
+        11.25,
+        15.0,
+        18.75,
+        22.5,
+        26.25
+      ],
+      "unfilleted": {
+        "total": 463.57845628643787,
+        "grad_norm": 2642.640424968734,
+        "seconds": 388.4363007545471,
+        "terms": {
+          "x_order": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "hub_overlap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "smoothness": {
+            "value": 1.7159011885344961,
+            "grad_norm": 0.8268257770335607,
+            "share": 0.003701425649241706,
+            "grad_share": 0.00030726339632430524
+          },
+          "fold": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "arrival": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet_cap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "buckling": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "mass": {
+            "value": 32.5952945133122,
+            "grad_norm": 6.400978199268563,
+            "share": 0.07031235828865195,
+            "grad_share": 0.0023787191400362726
+          },
+          "min_sj": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "deflection": {
+            "value": 424.1002561957615,
+            "grad_norm": 2621.525632879864,
+            "share": 0.9148403046877498,
+            "grad_share": 0.9742062861172697
+          },
+          "stress": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "stress_margin": {
+            "value": 5.167004388829657,
+            "grad_norm": 62.18139926364396,
+            "share": 0.011145911374356547,
+            "grad_share": 0.023107731346369703
+          },
+          "phase_ripple": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          }
+        },
+        "report": {
+          "axle_drop_mean_mm": 2.823747782948894,
+          "phase_ripple_std_over_mean": 0.05745614794783703,
+          "pnorm_stress_agg_mpa": 10.7581654881295,
+          "max_stress_mpa": 107.65664506449875,
+          "kt_hub": 2.1520610464591385,
+          "kt_rim": 1.3682015000080654,
+          "r_hub_effective_mm": 0.48617803048793146,
+          "hub_fillet_cap_mm": 0.5690235667763515,
+          "stress_utilisation_hub": 0.9260891551345825,
+          "stress_utilisation_rim": 0.5887735263277513,
+          "mesh_mass_g": 39.657608324529846,
+          "min_scaled_jacobian": 0.6724412633659189
+        }
+      },
+      "filleted": {
+        "total": 80.25617388841472,
+        "grad_norm": 556.9845441203964,
+        "seconds": 1239.8479280471802,
+        "terms": {
+          "x_order": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "hub_overlap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "smoothness": {
+            "value": 1.7159011885344961,
+            "grad_norm": 0.8268257770335607,
+            "share": 0.021380301419803828,
+            "grad_share": 0.0014814459000273498
+          },
+          "fold": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "arrival": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet_cap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "buckling": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "mass": {
+            "value": 35.4449209302519,
+            "grad_norm": 6.833189244880115,
+            "share": 0.4416472803641653,
+            "grad_share": 0.012243208269651876
+          },
+          "min_sj": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "deflection": {
+            "value": 43.09535176962833,
+            "grad_norm": 550.4607891318501,
+            "share": 0.5369724182160309,
+            "grad_share": 0.9862753458303208
+          },
+          "stress": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "stress_margin": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "phase_ripple": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          }
+        },
+        "report": {
+          "axle_drop_mean_mm": 1.7374117999006709,
+          "phase_ripple_std_over_mean": 0.09753904280540346,
+          "pnorm_stress_agg_mpa": 8.562694812622436,
+          "max_stress_mpa": 50.58168302170377,
+          "kt_hub": 2.1520610464591385,
+          "kt_rim": 1.3682015000080654,
+          "r_hub_effective_mm": 0.48617803048793146,
+          "hub_fillet_cap_mm": 0.5690235667763515,
+          "stress_utilisation_hub": 0.737097678358499,
+          "stress_utilisation_rim": 0.4686196754696519,
+          "mesh_mass_g": 43.12465379847315,
+          "min_scaled_jacobian": 0.23803608521865427
+        }
+      },
+      "comparison": {
+        "gap": -383.32228239802316,
+        "rows": {
+          "x_order": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "hub_overlap": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "smoothness": {
+            "unfilleted": 1.7159011885344961,
+            "filleted": 1.7159011885344961,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.8268257770335607,
+            "grad_norm_filleted": 0.8268257770335607,
+            "grad_norm_delta": 0.0
+          },
+          "fold": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "arrival": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "fillet": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "fillet_cap": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "buckling": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "mass": {
+            "unfilleted": 32.5952945133122,
+            "filleted": 35.4449209302519,
+            "delta": 2.8496264169396994,
+            "share_of_gap": -0.007434022356103959,
+            "grad_norm_unfilleted": 6.400978199268563,
+            "grad_norm_filleted": 6.833189244880115,
+            "grad_norm_delta": 0.43221104561155244
+          },
+          "min_sj": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "deflection": {
+            "unfilleted": 424.1002561957615,
+            "filleted": 43.09535176962833,
+            "delta": -381.0049044261332,
+            "share_of_gap": 0.9939544918771935,
+            "grad_norm_unfilleted": 2621.525632879864,
+            "grad_norm_filleted": 550.4607891318501,
+            "grad_norm_delta": -2071.064843748014
+          },
+          "stress": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "stress_margin": {
+            "unfilleted": 5.167004388829657,
+            "filleted": 0.0,
+            "delta": -5.167004388829657,
+            "share_of_gap": 0.013479530478910411,
+            "grad_norm_unfilleted": 62.18139926364396,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": -62.18139926364396
+          },
+          "phase_ripple": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          }
+        }
+      },
+      "t1_identical": true,
+      "t1_disagreements": []
+    },
+    "svk": {
+      "n_phase": 8,
+      "phases_deg": [
+        0.0,
+        3.75,
+        7.5,
+        11.25,
+        15.0,
+        18.75,
+        22.5,
+        26.25
+      ],
+      "unfilleted": {
+        "total": 1160.7091626308882,
+        "grad_norm": 5733.186999949035,
+        "seconds": 209.94741129875183,
+        "terms": {
+          "x_order": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "hub_overlap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "smoothness": {
+            "value": 1.7159011885344961,
+            "grad_norm": 0.8268257770335607,
+            "share": 0.0014783213950385278,
+            "grad_share": 0.00014145426956810095
+          },
+          "fold": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "arrival": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet_cap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "buckling": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "mass": {
+            "value": 32.5952945133122,
+            "grad_norm": 6.400978199268563,
+            "share": 0.028082223835841018,
+            "grad_share": 0.0010950864388231583
+          },
+          "min_sj": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "deflection": {
+            "value": 1111.4092074612367,
+            "grad_norm": 5643.093687275614,
+            "share": 0.9575260050003335,
+            "grad_share": 0.9654267172242901
+          },
+          "stress": {
+            "value": 0.49790644342533846,
+            "grad_norm": 76.78437264140791,
+            "share": 0.00042896744460668604,
+            "grad_share": 0.013136355503094534
+          },
+          "stress_margin": {
+            "value": 14.49085302437929,
+            "grad_norm": 118.07491119454563,
+            "share": 0.01248448232418017,
+            "grad_share": 0.020200386564224036
+          },
+          "phase_ripple": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          }
+        },
+        "report": {
+          "axle_drop_mean_mm": 3.333512179148724,
+          "phase_ripple_std_over_mean": 0.046092906326995677,
+          "pnorm_stress_agg_mpa": 11.746378086301085,
+          "max_stress_mpa": 127.44072621246204,
+          "kt_hub": 2.1520610464591385,
+          "kt_rim": 1.3682015000080654,
+          "r_hub_effective_mm": 0.48617803048793146,
+          "hub_fillet_cap_mm": 0.5690235667763515,
+          "stress_utilisation_hub": 1.0111569086603922,
+          "stress_utilisation_rim": 0.6428564846935606,
+          "mesh_mass_g": 39.657608324529846,
+          "min_scaled_jacobian": 0.6724412633659189
+        }
+      },
+      "filleted": {
+        "total": 37.22055467466421,
+        "grad_norm": 32.92393571733418,
+        "seconds": 244.9621217250824,
+        "terms": {
+          "x_order": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "hub_overlap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "smoothness": {
+            "value": 1.7159011885344961,
+            "grad_norm": 0.8268257770335607,
+            "share": 0.04610090321148543,
+            "grad_share": 0.02436388092949604
+          },
+          "fold": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "arrival": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "fillet_cap": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "buckling": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "mass": {
+            "value": 35.4449209302519,
+            "grad_norm": 6.833189244880115,
+            "share": 0.9522942696600657,
+            "grad_share": 0.20135198218936823
+          },
+          "min_sj": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "deflection": {
+            "value": 0.05973255587781114,
+            "grad_norm": 26.276523226086347,
+            "share": 0.0016048271284487524,
+            "grad_share": 0.7742841368811356
+          },
+          "stress": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "stress_margin": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          },
+          "phase_ripple": {
+            "value": 0.0,
+            "grad_norm": 0.0,
+            "share": 0.0,
+            "grad_share": 0.0
+          }
+        },
+        "report": {
+          "axle_drop_mean_mm": 1.9902239021381485,
+          "phase_ripple_std_over_mean": 0.09248445990781592,
+          "pnorm_stress_agg_mpa": 9.239562803139275,
+          "max_stress_mpa": 52.38485298858964,
+          "kt_hub": 2.1520610464591385,
+          "kt_rim": 1.3682015000080654,
+          "r_hub_effective_mm": 0.48617803048793146,
+          "hub_fillet_cap_mm": 0.5690235667763515,
+          "stress_utilisation_hub": 0.7953641277979535,
+          "stress_utilisation_rim": 0.5056633474669553,
+          "mesh_mass_g": 43.12465379847315,
+          "min_scaled_jacobian": 0.23803608521865427
+        }
+      },
+      "comparison": {
+        "gap": -1123.4886079562239,
+        "rows": {
+          "x_order": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "hub_overlap": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "smoothness": {
+            "unfilleted": 1.7159011885344961,
+            "filleted": 1.7159011885344961,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.8268257770335607,
+            "grad_norm_filleted": 0.8268257770335607,
+            "grad_norm_delta": 0.0
+          },
+          "fold": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "arrival": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "fillet": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "fillet_cap": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "buckling": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "mass": {
+            "unfilleted": 32.5952945133122,
+            "filleted": 35.4449209302519,
+            "delta": 2.8496264169396994,
+            "share_of_gap": -0.002536408822269726,
+            "grad_norm_unfilleted": 6.400978199268563,
+            "grad_norm_filleted": 6.833189244880115,
+            "grad_norm_delta": 0.43221104561155244
+          },
+          "min_sj": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          },
+          "deflection": {
+            "unfilleted": 1111.4092074612367,
+            "filleted": 0.05973255587781114,
+            "delta": -1111.3494749053589,
+            "share_of_gap": 0.9891951436223748,
+            "grad_norm_unfilleted": 5643.093687275614,
+            "grad_norm_filleted": 26.276523226086347,
+            "grad_norm_delta": -5616.8171640495275
+          },
+          "stress": {
+            "unfilleted": 0.49790644342533846,
+            "filleted": 0.0,
+            "delta": -0.49790644342533846,
+            "share_of_gap": 0.00044317889820983314,
+            "grad_norm_unfilleted": 76.78437264140791,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": -76.78437264140791
+          },
+          "stress_margin": {
+            "unfilleted": 14.49085302437929,
+            "filleted": 0.0,
+            "delta": -14.49085302437929,
+            "share_of_gap": 0.012898086301684972,
+            "grad_norm_unfilleted": 118.07491119454563,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": -118.07491119454563
+          },
+          "phase_ripple": {
+            "unfilleted": 0.0,
+            "filleted": 0.0,
+            "delta": 0.0,
+            "share_of_gap": -0.0,
+            "grad_norm_unfilleted": 0.0,
+            "grad_norm_filleted": 0.0,
+            "grad_norm_delta": 0.0
+          }
+        }
+      },
+      "t1_identical": true,
+      "t1_disagreements": []
+    }
+  },
+  "verdict": {
+    "kinematics": "svk",
+    "total_unfilleted": 1160.7091626308882,
+    "total_filleted": 37.22055467466421,
+    "gap": -1123.4886079562239,
+    "ratio": 0.03206708094756425,
+    "largest_term": "deflection",
+    "largest_term_delta": -1111.3494749053589,
+    "largest_term_share_of_gap": 0.9891951436223748,
+    "barrier_delta": 0.0,
+    "barrier_share_of_gap": -0.0,
+    "barrier_is_most_of_it": false,
+    "barrier_is_exactly_zero_on_both_meshes": true,
+    "gene_space": {
+      "delta": 0.0,
+      "share_of_gap": -0.0
+    },
+    "mesh_space": {
+      "delta": 2.8496264169396994,
+      "share_of_gap": -0.002536408822269726
+    },
+    "solve_space": {
+      "delta": -1126.3382343731635,
+      "share_of_gap": 1.0025364088222697
+    },
+    "t1_identical": true,
+    "grad_norm_unfilleted": 5733.186999949035,
+    "grad_norm_filleted": 32.92393571733418
+  },
+  "wall_s": 2253.0908963680267
+}

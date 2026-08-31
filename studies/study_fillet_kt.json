@@ -1,0 +1,629 @@
+{
+  "allowable_stress_mpa": 25.0,
+  "margin_knee_util": 0.8,
+  "stress_nominal_p": 4.0,
+  "inputs": {
+    "shipped/corner_unfilleted": "study_corner_singularity.json",
+    "shipped/corner_filleted": "study_corner_singularity_fillet.json",
+    "shipped/terms": "study_fillet_terms.json",
+    "b029622/corner_unfilleted": "study_corner_singularity_b029622.json",
+    "b029622/corner_filleted": "study_corner_singularity_fillet_b029622.json",
+    "b029622/terms": "study_fillet_terms_b029622.json"
+  },
+  "genomes": {
+    "shipped": {
+      "genome_file": "best_solution.json",
+      "corner_census": {
+        "hub:P_t": {
+          "unfilleted": {
+            "wedge_deg": 321.1320505418498,
+            "kind": "re_entrant",
+            "lambda": 0.5031970288826322
+          },
+          "filleted": {
+            "wedge_deg": 360.00000000000006,
+            "kind": "interior",
+            "lambda": null
+          },
+          "resolved_by_the_fillet": true
+        },
+        "hub:P_c": {
+          "unfilleted": {
+            "wedge_deg": 268.08192230639156,
+            "kind": "re_entrant",
+            "lambda": 0.5476500081318947
+          },
+          "filleted": {
+            "wedge_deg": 268.209154273554,
+            "kind": "re_entrant",
+            "lambda": 0.5474350178333569
+          },
+          "resolved_by_the_fillet": false
+        },
+        "rim:P_t": {
+          "unfilleted": {
+            "wedge_deg": 321.3245154644778,
+            "kind": "re_entrant",
+            "lambda": 0.5031488799745367
+          },
+          "filleted": {
+            "wedge_deg": 360.00000000000006,
+            "kind": "interior",
+            "lambda": null
+          },
+          "resolved_by_the_fillet": true
+        },
+        "rim:P_c": {
+          "unfilleted": {
+            "wedge_deg": 271.0160686370091,
+            "kind": "re_entrant",
+            "lambda": 0.5428703051810333
+          },
+          "filleted": {
+            "wedge_deg": 270.85291105970776,
+            "kind": "re_entrant",
+            "lambda": 0.5431264547074095
+          },
+          "resolved_by_the_fillet": false
+        }
+      },
+      "global_max_vm": {
+        "unfilleted": {
+          "peak_mpa": [
+            48.20800003211852,
+            73.72816712766468,
+            91.15213388871358,
+            108.56572107954148
+          ],
+          "increment_ratios": [
+            0.6827528478091265,
+            0.9994042935019706
+          ],
+          "diverges": true,
+          "settled_estimate_mpa": null
+        },
+        "filleted": {
+          "peak_mpa": [
+            29.2224552826479,
+            35.23214474342214,
+            44.4585378090836,
+            55.86645096109661
+          ],
+          "increment_ratios": [
+            1.535252882180173,
+            1.236443436869243
+          ],
+          "diverges": true,
+          "settled_estimate_mpa": null
+        }
+      },
+      "fillet_surface": {
+        "hub": {
+          "peak_mpa": [
+            29.2224552826479,
+            33.05827815418452,
+            35.00036210074709,
+            35.87888418249068
+          ],
+          "increment_ratios": [
+            0.5063017797233622,
+            0.4523605085653213
+          ],
+          "diverges": false,
+          "settled_estimate_mpa": 36.60455992702525
+        },
+        "rim": {
+          "peak_mpa": [
+            12.888816250379985,
+            14.847668739007315,
+            15.75724707438403,
+            16.05660834264466
+          ],
+          "increment_ratios": [
+            0.4643424355113661,
+            0.3291209306745943
+          ],
+          "diverges": false,
+          "settled_estimate_mpa": 16.203469474140295
+        }
+      },
+      "objective": {
+        "linear": {
+          "unfilleted": {
+            "pnorm_stress_agg_mpa": 8.504907183499611,
+            "max_stress_mpa": 74.09977348931392,
+            "junctions": {
+              "hub": {
+                "kt": 2.096324561276308,
+                "util_as_computed": 0.7131618328058218,
+                "util_with_kt_1": 0.34019628733998447,
+                "util_overstated_by": 0.3729655454658373,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3939359631839685,
+                "util_as_computed": 0.47421183946487133,
+                "util_with_kt_1": 0.34019628733998447,
+                "util_overstated_by": 0.13401555212488686,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 0.0,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 0.0
+          },
+          "filleted": {
+            "pnorm_stress_agg_mpa": 6.412731251804891,
+            "max_stress_mpa": 34.67863438773128,
+            "junctions": {
+              "hub": {
+                "kt": 2.096324561276308,
+                "util_as_computed": 0.5377266411209103,
+                "util_with_kt_1": 0.2565092500721956,
+                "util_overstated_by": 0.2812173910487147,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3939359631839685,
+                "util_as_computed": 0.3575574685649835,
+                "util_with_kt_1": 0.2565092500721956,
+                "util_overstated_by": 0.10104821849278789,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 0.0,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 0.0
+          }
+        },
+        "svk": {
+          "unfilleted": {
+            "pnorm_stress_agg_mpa": 9.287259297483908,
+            "max_stress_mpa": 87.11191843598914,
+            "junctions": {
+              "hub": {
+                "kt": 2.096324561276308,
+                "util_as_computed": 0.7787643908902908,
+                "util_with_kt_1": 0.37149037189935635,
+                "util_overstated_by": 0.40727401899093446,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3939359631839685,
+                "util_as_computed": 0.5178337893670999,
+                "util_with_kt_1": 0.37149037189935635,
+                "util_overstated_by": 0.14634341746774354,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 0.0,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 0.0
+          },
+          "filleted": {
+            "pnorm_stress_agg_mpa": 6.9203849898965855,
+            "max_stress_mpa": 38.370900096152816,
+            "junctions": {
+              "hub": {
+                "kt": 2.096324561276308,
+                "util_as_computed": 0.5802949211123243,
+                "util_with_kt_1": 0.27681539959586343,
+                "util_overstated_by": 0.30347952151646085,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3939359631839685,
+                "util_as_computed": 0.38586294065981497,
+                "util_with_kt_1": 0.27681539959586343,
+                "util_overstated_by": 0.10904754106395154,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 0.0,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 0.0
+          }
+        }
+      },
+      "modelled_against_measured": {
+        "linear": {
+          "hub": {
+            "modelled_peak_mpa": 13.443166028022757,
+            "measured_surface_peak_mpa": 36.60455992702525,
+            "measured_over_modelled": 2.722912136227563,
+            "util_modelled": 0.5377266411209103,
+            "util_measured": 1.46418239708101,
+            "model_understates": true
+          },
+          "rim": {
+            "modelled_peak_mpa": 8.938936714124587,
+            "measured_surface_peak_mpa": 16.203469474140295,
+            "measured_over_modelled": 1.8126842142798572,
+            "util_modelled": 0.3575574685649835,
+            "util_measured": 0.6481387789656118,
+            "model_understates": true
+          }
+        },
+        "svk": {
+          "hub": {
+            "modelled_peak_mpa": 14.507373027808107,
+            "measured_surface_peak_mpa": 36.60455992702525,
+            "measured_over_modelled": 2.523169415776425,
+            "util_modelled": 0.5802949211123243,
+            "util_measured": 1.46418239708101,
+            "model_understates": true
+          },
+          "rim": {
+            "modelled_peak_mpa": 9.646573516495375,
+            "measured_surface_peak_mpa": 16.203469474140295,
+            "measured_over_modelled": 1.6797124332731004,
+            "util_modelled": 0.38586294065981497,
+            "util_measured": 0.6481387789656118,
+            "model_understates": true
+          }
+        }
+      }
+    },
+    "b029622": {
+      "genome_file": "fillet_optimum_b029622.json",
+      "corner_census": {
+        "hub:P_t": {
+          "unfilleted": {
+            "wedge_deg": 329.06796823811044,
+            "kind": "re_entrant",
+            "lambda": 0.5015944258261049
+          },
+          "filleted": {
+            "wedge_deg": 360.0,
+            "kind": "interior",
+            "lambda": null
+          },
+          "resolved_by_the_fillet": true
+        },
+        "hub:P_c": {
+          "unfilleted": {
+            "wedge_deg": 268.58303487336445,
+            "kind": "re_entrant",
+            "lambda": 0.546807367187458
+          },
+          "filleted": {
+            "wedge_deg": 268.7041131655327,
+            "kind": "re_entrant",
+            "lambda": 0.54660541864697
+          },
+          "resolved_by_the_fillet": false
+        },
+        "rim:P_t": {
+          "unfilleted": {
+            "wedge_deg": 313.2645101920041,
+            "kind": "re_entrant",
+            "lambda": 0.5056286347127552
+          },
+          "filleted": {
+            "wedge_deg": 360.0,
+            "kind": "interior",
+            "lambda": null
+          },
+          "resolved_by_the_fillet": true
+        },
+        "rim:P_c": {
+          "unfilleted": {
+            "wedge_deg": 271.0392569691482,
+            "kind": "re_entrant",
+            "lambda": 0.5428339910614577
+          },
+          "filleted": {
+            "wedge_deg": 270.8921336468649,
+            "kind": "re_entrant",
+            "lambda": 0.5430647753013043
+          },
+          "resolved_by_the_fillet": false
+        }
+      },
+      "global_max_vm": {
+        "unfilleted": {
+          "peak_mpa": [
+            68.7197877769342,
+            105.02214607806673,
+            129.6463839144386,
+            154.69948468488155
+          ],
+          "increment_ratios": [
+            0.678309591683019,
+            1.0174162927161807
+          ],
+          "diverges": true,
+          "settled_estimate_mpa": null
+        },
+        "filleted": {
+          "peak_mpa": [
+            43.081214269256435,
+            49.0831356833051,
+            60.18336837862819,
+            76.2235005740698
+          ],
+          "increment_ratios": [
+            1.8494465237983337,
+            1.4450266616662801
+          ],
+          "diverges": true,
+          "settled_estimate_mpa": null
+        }
+      },
+      "fillet_surface": {
+        "hub": {
+          "peak_mpa": [
+            43.081214269256435,
+            49.0831356833051,
+            52.098314667304685,
+            53.563081923071366
+          ],
+          "increment_ratios": [
+            0.5023689542055597,
+            0.48579777968062526
+          ],
+          "diverges": false,
+          "settled_estimate_mpa": 54.94693569203869
+        },
+        "rim": {
+          "peak_mpa": [
+            20.4085959853131,
+            23.053525776917084,
+            24.76273977125011,
+            25.277488683046926
+          ],
+          "increment_ratios": [
+            0.6462228221553263,
+            0.301161184909255
+          ],
+          "diverges": false,
+          "settled_estimate_mpa": 25.4993172204148
+        }
+      },
+      "objective": {
+        "linear": {
+          "unfilleted": {
+            "pnorm_stress_agg_mpa": 10.7581654881295,
+            "max_stress_mpa": 107.65664506449875,
+            "junctions": {
+              "hub": {
+                "kt": 2.1520610464591385,
+                "util_as_computed": 0.9260891551345825,
+                "util_with_kt_1": 0.43032661952518,
+                "util_overstated_by": 0.4957625356094025,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 5.167004388829657,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3682015000080654,
+                "util_as_computed": 0.5887735263277513,
+                "util_with_kt_1": 0.43032661952518,
+                "util_overstated_by": 0.15844690680257129,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 5.167004388829657,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 5.167004388829657
+          },
+          "filleted": {
+            "pnorm_stress_agg_mpa": 8.562694812622436,
+            "max_stress_mpa": 50.58168302170377,
+            "junctions": {
+              "hub": {
+                "kt": 2.1520610464591385,
+                "util_as_computed": 0.737097678358499,
+                "util_with_kt_1": 0.34250779250489743,
+                "util_overstated_by": 0.3945898858536016,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3682015000080654,
+                "util_as_computed": 0.4686196754696519,
+                "util_with_kt_1": 0.34250779250489743,
+                "util_overstated_by": 0.12611188296475445,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 0.0,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 0.0
+          }
+        },
+        "svk": {
+          "unfilleted": {
+            "pnorm_stress_agg_mpa": 11.746378086301085,
+            "max_stress_mpa": 127.44072621246204,
+            "junctions": {
+              "hub": {
+                "kt": 2.1520610464591385,
+                "util_as_computed": 1.0111569086603922,
+                "util_with_kt_1": 0.4698551234520434,
+                "util_overstated_by": 0.5413017852083488,
+                "stress_as_computed": 0.49790644342533846,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 14.49085302437929,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3682015000080654,
+                "util_as_computed": 0.6428564846935606,
+                "util_with_kt_1": 0.4698551234520434,
+                "util_overstated_by": 0.17300136124151722,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 14.988759467804627,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 14.988759467804627
+          },
+          "filleted": {
+            "pnorm_stress_agg_mpa": 9.239562803139275,
+            "max_stress_mpa": 52.38485298858964,
+            "junctions": {
+              "hub": {
+                "kt": 2.1520610464591385,
+                "util_as_computed": 0.7953641277979535,
+                "util_with_kt_1": 0.369582512125571,
+                "util_overstated_by": 0.4257816156723825,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              },
+              "rim": {
+                "kt": 1.3682015000080654,
+                "util_as_computed": 0.5056633474669553,
+                "util_with_kt_1": 0.369582512125571,
+                "util_overstated_by": 0.13608083534138427,
+                "stress_as_computed": 0.0,
+                "stress_with_kt_1": 0.0,
+                "stress_margin_as_computed": 0.0,
+                "stress_margin_with_kt_1": 0.0
+              }
+            },
+            "stress_loss_as_computed": 0.0,
+            "stress_loss_with_kt_1": 0.0,
+            "kt_worth_in_loss": 0.0
+          }
+        }
+      },
+      "modelled_against_measured": {
+        "linear": {
+          "hub": {
+            "modelled_peak_mpa": 18.427441958962476,
+            "measured_surface_peak_mpa": 54.94693569203869,
+            "measured_over_modelled": 2.9817994171086992,
+            "util_modelled": 0.737097678358499,
+            "util_measured": 2.1978774276815476,
+            "model_understates": true
+          },
+          "rim": {
+            "modelled_peak_mpa": 11.715491886741297,
+            "measured_surface_peak_mpa": 25.4993172204148,
+            "measured_over_modelled": 2.1765468720330032,
+            "util_modelled": 0.4686196754696519,
+            "util_measured": 1.0199726888165919,
+            "model_understates": true
+          }
+        },
+        "svk": {
+          "hub": {
+            "modelled_peak_mpa": 19.88410319494884,
+            "measured_surface_peak_mpa": 54.94693569203869,
+            "measured_over_modelled": 2.7633600144459556,
+            "util_modelled": 0.7953641277979535,
+            "util_measured": 2.1978774276815476,
+            "model_understates": true
+          },
+          "rim": {
+            "modelled_peak_mpa": 12.641583686673883,
+            "measured_surface_peak_mpa": 25.4993172204148,
+            "measured_over_modelled": 2.0170983203073587,
+            "util_modelled": 0.5056633474669553,
+            "util_measured": 1.0199726888165919,
+            "model_understates": true
+          }
+        }
+      }
+    }
+  },
+  "verdict": {
+    "premise_survives": true,
+    "premise_survives_note": "the FILLETED mesh's global max still diverges at 2 of 2 genomes, so C1 \u2014 the reason `Kt * nominal` exists \u2014 is unchanged by the fillet",
+    "corners_resolved_by_the_fillet": {
+      "shipped": [
+        "hub:P_t",
+        "rim:P_t"
+      ],
+      "b029622": [
+        "hub:P_t",
+        "rim:P_t"
+      ]
+    },
+    "kt_prices_a_corner_the_mesh_resolves": true,
+    "corners_still_singular_on_the_filleted_mesh": {
+      "shipped": [
+        "hub:P_c",
+        "rim:P_c"
+      ],
+      "b029622": [
+        "hub:P_c",
+        "rim:P_c"
+      ]
+    },
+    "model_understates_everywhere": true,
+    "measured_over_modelled_min": 1.6797124332731004,
+    "measured_over_modelled_max": 2.9817994171086992,
+    "direction_note": "\u00a793 argued the filleted objective OVERSTATES stress because `Kt > 1`.  Measured against the fillet surface's own converged peak it understates it by 1.68x to 2.98x, because the other factor \u2014 a whole-wheel p=4 p-norm standing in for a local peak \u2014 errs further the other way.  Both scope gaps (one phase vs eight, linear vs SVK) raise the measured side, so these are lower bounds.",
+    "admissibility": {
+      "shipped": {
+        "hub": {
+          "util_modelled": 0.5802949211123243,
+          "util_measured": 1.46418239708101,
+          "modelled_admissible": true,
+          "measured_admissible": false
+        },
+        "rim": {
+          "util_modelled": 0.38586294065981497,
+          "util_measured": 0.6481387789656118,
+          "modelled_admissible": true,
+          "measured_admissible": true
+        }
+      },
+      "b029622": {
+        "hub": {
+          "util_modelled": 0.7953641277979535,
+          "util_measured": 2.1978774276815476,
+          "modelled_admissible": true,
+          "measured_admissible": false
+        },
+        "rim": {
+          "util_modelled": 0.5056633474669553,
+          "util_measured": 1.0199726888165919,
+          "modelled_admissible": true,
+          "measured_admissible": false
+        }
+      }
+    },
+    "they_disagree_about_admissibility": true
+  }
+}

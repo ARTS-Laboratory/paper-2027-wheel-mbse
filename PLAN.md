@@ -12355,6 +12355,13 @@ The direction is conservative — `Kt > 1` always, so the filleted objective OVE
 smaller filleted utilisation only widens the gap to the unfilleted mesh's 1.0112).  **But it
 means the switch as specified is incomplete rather than merely unexecuted.**
 
+**[CORRECTED 2026-08-30 — SEE §94.  "THE DIRECTION IS CONSERVATIVE" IS AN ARGUMENT ABOUT ONE
+FACTOR OF A PRODUCT.  The other is a whole-wheel p=4 p-norm standing in for a local peak, and
+it errs further the other way: measured against the fillet surface's own converged peak on the
+same mesh, `Kt * agg` is 1.68x to 2.76x BELOW it at both genomes.  And the double count is
+worth exactly 0.0000 in loss and in gradient, at both genomes on the filleted mesh, because
+every utilisation there sits under `MARGIN_KNEE_UTIL`.]**
+
 **And the fix is not "set `kt = 1` on the filleted path".**  The whole p-norm x `Kt`
 construction exists because the unfilleted peak stress DIVERGES under refinement — M4,
 pinned since §14 by `test_peak_stress_diverges_but_the_field_converges` — so a convergent
@@ -12364,9 +12371,26 @@ finite and convergent (§52: the `P_t` singularity is gone and the fillet surfac
 changes the construction's PREMISE, and what should replace it is a question this tree has
 not asked.  **Re-deriving the stress term is part of the switch, not follow-up work.**
 
+**[CORRECTED 2026-08-30 — SEE §94.  "ON A FILLETED MESH THE PEAK IS FINITE AND CONVERGENT"
+IS FALSE, AND THE SENTENCE MIS-CITES ITS OWN SOURCE.  36.8 / 16.1 MPa are §52's fillet-
+SURFACE probe, a local tube about the arc; §52's headline is that the WHEEL's peak is still
+on `rim:P_c` and still diverging, and
+`tests/test_corner_singularity.py::test_step_2s_HEADLINE_is_not_delivered_and_the_reason_is_measured`
+has asserted exactly that since §52 with a docstring saying it exists so nobody makes this
+error.  Measured at §94, the filleted global max diverges at both genomes.  So the
+construction's premise does NOT change: `Kt * nominal` still exists because the peak still
+diverges.  The last sentence survives — re-deriving the term IS part of the switch — for the
+reason §94 measures instead: the term is inert on a filleted mesh while the fillet surface
+reads 1.46x and 2.20x the allowable.]**
+
 One thing Condition B does NOT reach: `rim:P_c`, the END CAP's artefact corner, which carries
 the wheel's global peak (§52) and which the fillet does not touch.  That is the tri-block's,
 it is not this arc's, and no `Kt` was ever meant to model it.
+
+**[CORRECTED 2026-08-30 — SEE §94.  RIGHT, AND INCOMPLETE: `hub:P_c` survives the fillet too
+— 268.21 deg re-entrant at the shipped genome, 268.70 at `b029622`, lambda within 0.0002 of
+the unfilleted mesh's — and it diverges as well.  The fillet removes exactly the two `P_t`
+corners, which are the two `Kt` models.]**
 
 ### THE SEQUENCE, EACH STEP WITH ITS CHECK
 
@@ -12410,6 +12434,10 @@ and B, so the next person to read it learns the state rather than re-deriving it
 
 #### The successors, ranked — REVISED 2026-08-30 AFTER §93
 
+**[RE-RANKED 2026-08-30 — SEE §94.  Items 1 and 2 swap: Condition B is measured, and half of
+Condition A's own check reads a utilisation that B shows to be 2.5x low.  The list below is
+left as written; §94's is the current one.]**
+
 1. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — Condition A, and now the
    gating item for the whole arc.  §92's item 2 with a design and a kernel attached.
 2. **RE-DERIVE THE STRESS TERM FOR A FILLETED MESH** — Condition B, NEW at §93.  What
@@ -12427,3 +12455,286 @@ and B, so the next person to read it learns the state rather than re-deriving it
    (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
    FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
    revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §94 — 2026-08-30. CONDITION B, MEASURED — AND ITS PREMISE WAS WRONG, WITH A GREEN TEST SAYING SO SINCE §52. THE DOUBLE COUNT IS WORTH EXACTLY ZERO, BECAUSE THE STRESS TERM IS INERT ON A FILLETED MESH — WHILE THE FILLET SURFACE IT EXISTS TO PRICE SITS AT 1.46x AND 2.20x THE ALLOWABLE
+
+§93's ranked successor 2, and §93's own check for it:
+
+> a written derivation of what replaces `kt * agg` when the fillet is meshed, and a
+> measurement of what the current double count is worth at the shipped genome and at
+> `b029622`.
+
+`studies/study_fillet_kt.py` (`make filletkt`, ~10 s) is the measurement.  **It reads six
+committed artifacts and solves nothing**, which is the design rather than a shortcut: the
+two sides of this comparison were measured by two different instruments on two different
+ladders, and re-measuring either here would make it a third.  Three of the six are new —
+`study_fillet_terms_b029622.json` (2253 s) and the two corner ladders at `b029622` — and the
+genome they run on is filed at the root as `fillet_optimum_b029622.json`, §92's treatment
+endpoint, whose own `note` says it is not a promotion candidate.
+
+### §93's PREMISE IS WRONG AND THE TREE ALREADY KNEW
+
+§93's Condition B rests on one sentence: *"on a filleted mesh the peak is finite and
+convergent (§52: the `P_t` singularity is gone and the fillet surface settles to 36.8 /
+16.1 MPa where the sharp corner ran to 85.9 / 60.7 and was still climbing)"*.  The numbers
+are §52's and they are quoted correctly.  **They are §52's fillet-SURFACE probe** — a local
+tube about the arc — and §52's headline is *"STEP 2 IS RUN ... ITS HEADLINE IS STILL BLOCKED
+ON `rim:P_c`"*.  The wheel's peak diverges on the filleted mesh, at both genomes:
+
+```
+  genome    mesh          peak MPa up the ladder            increment ratios   verdict
+  shipped   unfilleted     48.208   73.728   91.152  108.566    0.683  0.999   diverges
+  shipped   FILLETED       29.222   35.232   44.459   55.866    1.535  1.236   DIVERGES
+  b029622   unfilleted     68.720  105.022  129.646  154.699    0.678  1.017   diverges
+  b029622   FILLETED       43.081   49.083   60.183   76.224    1.849  1.445   DIVERGES
+```
+
+and `tests/test_corner_singularity.py::test_step_2s_HEADLINE_is_not_delivered_and_the_reason_is_measured`
+has asserted `divergence["global_max_vm"]["diverges"]` since §52, with a docstring that
+names the failure mode in advance: *"this test exists so that nobody reads the surface
+result above as though it had"* delivered the headline.  **§93 did exactly that, seven days
+later, citing the same section.**
+
+So C1 — the peak diverges under refinement, therefore the peak must be MODELLED and not
+measured — **survives the fillet unchanged**, and §93's *"that changes the construction's
+PREMISE, and what should replace it is a question this tree has not asked"* is withdrawn.
+The premise holds.  The question still needs asking, for a different reason, below.
+
+**THE GENERALISABLE PART, AND IT IS NOT "RE-CHECK THE PLAN FILE".**  §52 has two results
+pointing opposite ways — a local probe that settled and a global one that did not — and I
+took the surviving half's numbers and wrote the failing half's conclusion.  This tree's
+standing habit is to check that a number is being quoted at the config it was measured on;
+that would not have caught this, because the config was right and the QUANTITY was wrong,
+and both quantities are in the same section under the same heading.  **When a section reports a local probe and a global functional, the
+global is the one a claim about the WHEEL has to cite** — and the cheap check is not
+re-reading the section, it is grepping `tests/` for the quantity, which would have found
+§52's assertion in one command.
+
+### THE DOUBLE COUNT IS REAL, AND IT IS EXACTLY ONE CORNER PER JUNCTION
+
+`stress_concentration_kt` is Peterson's stepped-beam factor for a filleted step, and what
+it models is `P_t`, the part's own junction corner.  That identification is in the code and
+not inferred: `wheel_step_export.kt_report` pairs the same function with the corners the
+exporter actually rounds, and the shipped manifest reports them at `worst_wedge_deg` 322.0
+and 320.0, 24 of 24 edges each, `kt_error_pct` 0.0.  The mesh reads the same corners at
+321.13 / 321.32 deg unfilleted.
+
+```
+  genome    corner      unfilleted wedge / lambda      filleted wedge / lambda    resolved
+  shipped   hub:P_t      321.132  re_entrant  0.5032    360.000  interior   -       YES
+  shipped   hub:P_c      268.082  re_entrant  0.5477    268.209  re_entrant 0.5474   no
+  shipped   rim:P_t      321.325  re_entrant  0.5032    360.000  interior   -       YES
+  shipped   rim:P_c      271.016  re_entrant  0.5429    270.853  re_entrant 0.5431   no
+  b029622   hub:P_t      329.068  re_entrant  0.5016    360.000  interior   -       YES
+  b029622   hub:P_c      268.583  re_entrant  0.5468    268.704  re_entrant 0.5466   no
+  b029622   rim:P_t      313.265  re_entrant  0.5056    360.000  interior   -       YES
+  b029622   rim:P_c      271.039  re_entrant  0.5428    270.892  re_entrant 0.5431   no
+```
+
+The fillet removes exactly the two corners `Kt` models and leaves the two it does not.
+Both `P_c` keep their exponent to within 0.0003.  §93's *"one thing Condition B does not
+reach: `rim:P_c`"* is right and incomplete — `hub:P_c` survives too, and it diverges as
+well (9.96 / 15.01 / 18.46 / 22.19 MPa at the shipped genome).
+
+### WHAT THE DOUBLE COUNT IS WORTH: EXACTLY ZERO, AND THAT IS THE FINDING
+
+On the filleted mesh, at both genomes and under both kernels, every utilisation is below
+`MARGIN_KNEE_UTIL` = 0.80.  `soft_barrier` is exactly zero and exactly flat there — not
+small, zero — so `stress` and `stress_margin` are both `0.0000`, in value and in gradient,
+and removing `Kt` changes the loss by `0.0000`.
+
+The unfilleted rows are the control, and they are what makes the zero legible:
+
+```
+  genome   kin  mesh          agg     Kt_hub  util_hub  util(Kt=1)  stress+margin  Kt worth
+  shipped  svk  unfilleted   9.2873   2.0963   0.7788     0.3715       0.0000       +0.0000
+  shipped  svk  FILLETED     6.9204   2.0963   0.5803     0.2768       0.0000       +0.0000
+  b029622  svk  unfilleted  11.7464   2.1521   1.0112     0.4699      14.9888      +14.9888
+  b029622  svk  FILLETED     9.2396   2.1521   0.7954     0.3696       0.0000       +0.0000
+```
+
+Two things fall out of that table and neither was in §93.
+
+**`Kt` is the only thing that makes the stress term non-zero anywhere.**  `agg / ALLOWABLE`
+peaks at 0.4699 across all eight genome/kernel/mesh combinations measured; strip the factor and `stress` and
+`stress_margin` are zero everywhere, on both meshes, at both designs.  So "the fix is not
+`kt = 1`" is right, and for a sharper reason than §93 gave: `kt = 1` does not degrade the
+term, it deletes it.
+
+**Switching to the filleted mesh switches the stress term OFF.**  At `b029622` under SVK it
+goes 14.9888 to 0.0000, and the hub utilisation 1.0112 to 0.7954 — from breached to
+comfortably inside.  §92 measured that as an admissibility disagreement between two meshes;
+read through this table it is also the stress side of the objective going quiet exactly
+where a design is getting thinner.  §92's treatment arm walked the filleted utilisation
+0.5803 -> 0.7954 in 30 steps and stopped **0.0046 short of the knee**, with 30 steps being
+half of `wheel_stage3.DEFAULT_STEPS`.
+
+### AND THE ERROR THAT IS NOT ZERO RUNS THE OTHER WAY FROM §93's
+
+§52 built an instrument this comparison needs, and outside its own ladder and the test
+that pins it nothing has used it since: `arc_peak`
+takes the peak von Mises inside a tube of fixed radius about the ANALYTIC arc, so the
+region does not move with the mesh, and on the filleted mesh it converges where the global
+max does not — 36.60 / 16.20 MPa at the shipped genome, 54.95 / 25.50 at `b029622`.  That
+is a measured value for the quantity `Kt * agg` is a model OF, and it exists only on a
+filleted mesh, which is why the comparison has never been made:
+
+```
+  genome   kin  junction  modelled Kt*agg   measured surface   ratio   util_mod  util_meas
+  shipped  svk  hub            14.5074           36.6046      2.523x    0.5803    1.4642
+  shipped  svk  rim             9.6466           16.2035      1.680x    0.3859    0.6481
+  b029622  svk  hub            19.8841           54.9469      2.763x    0.7954    2.1979
+  b029622  svk  rim            12.6416           25.4993      2.017x    0.5057    1.0200
+```
+
+§93's *"the direction is conservative — `Kt > 1` always, so the filleted objective
+OVERSTATES stress"* is **withdrawn**.  That is an argument about one factor of a product.
+The other factor is a volume-weighted p-norm at p = 4 over the WHOLE wheel — hub, rim and
+thick spoke roots, most of the volume and almost none of the stress — standing in for a
+local peak, and it errs further the other way.  The two errors do not cancel to
+conservative; the dilution wins by 1.68x to 2.76x.
+
+The objective calls all four cells admissible.  The mesh's own converged measurement of the
+feature the term exists to price calls the hub breached at both genomes and the rim breached
+at `b029622`.
+
+### WHAT REPLACES `Kt * agg`
+
+Keep the shape — a modelled-or-measured peak per junction, two `soft_barrier`s, summed
+rather than `max`ed for the reason `wheel_objective.py:1181` gives — and replace the
+modelled factor with the measured field:
+
+```
+  util_j  =  sigma_fillet_j(mesh)  /  ALLOWABLE_STRESS_MPA          no Kt
+```
+
+The alternatives fail for stated reasons.  `kt = 1` deletes the term (above).  The mesh's
+global max diverges and sits on an end-cap corner the exported solid does not have.  A
+recalibrated `Kt` fitted to the surface peak would keep the analytic gene dependence but
+would be a fitted constant standing where a measurement is now available, which is the move
+M8b-i.6 spent a sweep undoing.
+
+**Four things must be settled before it can be wired, each with a check.**
+
+1. **It must be differentiable, and `arc_peak` is an argmax** — the kink the p-norm exists
+   to blur (`_qoi_pnorm_stress`: *"its derivative is a delta on whichever point happens to
+   be highest"*).  Replace with a volume-weighted p-norm over the tube and sweep the
+   exponent on filleted solves the way M8b-i.6 swept the global one.  CHECK: the largest
+   `p` whose observed order is still ~2.  The region is small and far more uniform than the
+   whole wheel, so it should tolerate a higher `p` than the global 4.0 — that is a
+   measurement and not an assumption.
+2. **The region moves with the genes.**  The tube is fixed in mesh terms but its membership
+   flips as the arc moves with `R_hub`/`R_rim`/`t0`/`t3`, and a flipping membership is a
+   step in the loss.  Needs a smooth weight in distance-to-arc, not an indicator.  CHECK:
+   the FD test the assembled gradient already has, at a genome with an element near the
+   boundary.
+3. **`P_c` is excluded by construction and the exclusion must be argued, not assumed.**
+   Both `P_c` are still re-entrant and divergent, and `rim:P_c` carries the global max from
+   `coarse` up.  Excluding them is defensible because they are the END CAP's corners and the
+   exported solid has no end cap — §52, and `wheel_wheel.py`'s module docstring prices the
+   cap under WHAT IS AND IS NOT MODELLED — so the constraint would be read on a region the
+   part has and would ignore a riser the part does not.  It also makes the rim tri-block a
+   prerequisite for ever quoting a global peak, which is where that arc already sits.
+4. **The exchange rate does not carry over.**  `stress_margin`'s weight was derived at
+   `util` = 0.855 under the current construction, so 1% of utilisation traded against 1% of
+   mass right where the design sat.  A measured nominal is a different number.  CHECK:
+   re-derive the weight at the new scale before any Stage 3 run, exactly as §15 DEFECT 8
+   did.  And note what the raw substitution does on the way past: it puts the shipped
+   genome's hub at 1.4642, which is 0.4642 OVER the `stress` knee, firing
+   `soft_barrier(0.4642, 4000)` = 862.1.  That is not a weight question — it is a statement
+   about the wheel, it belongs to the switch's re-promotion step, and it is the reason
+   item 4 is a check rather than a formality.
+
+**And the thing that does NOT need re-deriving.**  Dropping `Kt` does not re-create §15
+DEFECT 1's dead genes.  That defect is an UNFILLETED-mesh property — `stress` and the fillet
+barriers are the only paths from `R_hub`/`R_rim` into the loss when the mesh does not build
+them.  On a filleted mesh the radii move the geometry: §52's radius ladder runs the axle
+drop 1.567 -> 0.765 mm monotonically, §79 made `mesh_coords` accept the filleted mesh, and
+§88 made the layer cliff differentiable.  A cheap confirmation — `dL/dR_hub != 0` on a
+filleted mesh with `Kt` removed — belongs to the wiring step, not here.
+
+### WHAT THIS DOES TO THE DECISION
+
+**The decision stands.**  Nothing measured here is an objection to wiring the fillet in, and
+the affirmative half is untouched: the exported solid has filleted junctions and the mesh
+that models the part is the one the objective should read.
+
+What changes is Condition B's content and its weight.  It is no longer *"the construction's
+premise changed"* — the premise holds.  It is now: **the stress term is inert on a filleted
+mesh at both designs, and the mesh's own converged measurement of the feature says both are
+breached at the hub.**  That is a larger blocker than §93 wrote, not a smaller one, and it
+is promotion-shaped — a Stage 3 re-run under the current stress term would descend with the
+stress side switched off, in exactly the direction (thinner walls, tighter hub radius) that
+the term exists to resist.  §92 already measured that arm pinning all four thickness genes
+at `MIN_WALL_MM` and taking `R_hub` to 0.4862.
+
+**So Condition B now ranks AHEAD of Condition A**, reversing §93's order.  A is a premise
+check on which mesh converges; B is a defect in the switch as specified, it is cheaper, and
+half of A's own check — *"at the finest rung, does the design read 1.0112 or 0.7954?"* —
+reads a utilisation that B has just shown to be 2.8x low against the filleted mesh's own
+measurement of the same surface.
+
+### SCOPE, AND WHAT IS NOT ESTABLISHED
+
+**The two sides of section D are not the same experiment and the record says so.**  The
+objective rows are `coarse`, eight uniform phases, both kernels.  The surface probes are the
+`smoke..fine` ladder under LINEAR at ONE phase.  Both gaps run the same way — SVK and eight
+phases each raise the measured side and leave the model where it is (filleted `max_stress`
+is 34.68 linear against 38.37 SVK at the shipped genome) — so **the 1.68x-2.76x is a lower
+bound on the discrepancy, not an estimate of it.**
+
+**The utilisations are against `ALLOWABLE_STRESS_MPA` = 25 MPa = 40 / 1.6, and that is the
+safety factor, not the material.**  36.60 MPa at the shipped hub fillet is a safety factor
+of 1.09 against the 40 MPa effective ultimate rather than the designed 1.6; 54.95 at
+`b029622` is 0.73, i.e. over it.  Under linear, at one phase.  **This section is a statement
+about what the objective's stress term does and does not see.  It is NOT a fitness verdict
+on the shipped wheel**, which would need the measurement re-run under SVK over the phase
+stencil, at a mesh convergence this arc has not established, and against an allowable whose
+own derivation (`FFF_KNOCKDOWN`, `SAFETY_FACTOR`) nothing in this arc has re-opened.
+
+**And it is not established that the region-restricted measure is the right replacement** —
+only that the current one is 1.7x to 2.8x below the mesh's own reading of the same surface,
+and that
+the instrument for a better one already exists and converges.  Items 1 and 2 above are
+unmeasured.
+
+### WHAT MOVED
+
+`studies/study_fillet_kt.py` and `studies/study_fillet_kt.json`, `make filletkt`.
+`studies/study_fillet_terms_b029622.json`, `studies/study_corner_singularity_b029622.json`
+and `studies/study_corner_singularity_fillet_b029622.json`, from existing drivers at a new
+genome.  `fillet_optimum_b029622.json` at the root, which round-trips to `b029622` through
+`wheel_genome.genome_hash`.  §93 keeps every word it had: its three corrected sentences and
+its successor list carry a bracket beneath them, in place.
+
+**No `src/` module changed and nothing is promoted.**
+`tests/test_corner_singularity.py::test_nothing_wires_the_fillet_into_the_objective` is
+untouched and green; the driver solves nothing and builds no mesh.
+
+#### The successors, ranked — REVISED 2026-08-30 AFTER §94
+
+1. **THE REPLACEMENT STRESS TERM, ITEMS 1 AND 2** — a volume-weighted p-norm over the fillet
+   arc with a smooth region weight, and the exponent sweep that sets its `p`.  Condition B's
+   remaining half, and now the gating item for the whole arc.
+2. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — Condition A, demoted behind
+   B for the reason above.  Its axle-drop half already reproduces at `b029622` under linear
+   at one phase: the filleted mesh spans 0.516% over `coarse..fine` against the unfilleted
+   mesh's 1.061%, which is §52's ordering at the design where it is load-bearing but not at
+   the kernel or the stencil where it is.
+3. **EXECUTE THE SWITCH** — §93's steps 3-5, behind 1 and 2.
+4. **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** — §14's open item 6, unchanged.
+5. **Re-derive Gate 1 at the 1.2 mm floor** (open arc 4) — §92 gives it a consumer.
+6. **The rim tri-block** — promoted out of the tail by item 3 above: it is what would let a
+   filleted mesh quote a global peak at all, and until it exists the replacement term is
+   defined by an exclusion.
+7. **The sub-element fold, as its own unit** (§89's item 3), then §58's gate applied to the
+   draw and the box re-derived.
+8. **Calibrate §73's two thresholds on a proper hold-out protocol** — still the oldest thing
+   on the list.
+9. **Per-REGION agreement on a filleted mesh** (§86) — item 1 gives it a consumer;
+   **gate 10's `phase_ripple` cost** (§91); **carry `axle_drop_interp_mm` into
+   `study_contact`** (§67); **a bend that is a FUNCTION of the genome** (§56); **the REST of
+   §45's audit list** (§49); **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** (§44).
