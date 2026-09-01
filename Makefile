@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletwiring triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletwiring triblock reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -45,6 +45,20 @@ help:
 	@echo "make smoke    fast GA run (seconds) — proves the pipeline is wired up"
 	@echo "make ga       full GA run (minutes), then hands off to the exporter"
 	@echo "make export   rebuild wheel.step from the existing best_solution.json"
+	@echo "make mbse     MBSE_PLAN Step 7: a mission and a 100-point allocation in,"
+	@echo "              a requirement set, a compliance table and (with --descend)"
+	@echo "              a re-optimised genome out.  Seconds without --descend."
+	@echo "              Override MBSE_ARGS, e.g. MBSE_ARGS='--ambient-c 40'"
+	@echo "make mbsebase MBSE_PLAN Step 0: the derivations run BACKWARDS — what"
+	@echo "              all-up weight, sink rate, ambient and service life the four"
+	@echo "              shipped constants imply.  Solves nothing, ~1 s"
+	@echo "make mbsecal  MBSE_PLAN Step 4: what portfolio DEFAULT_WEIGHTS is already"
+	@echo "              running, in points, with the loss-share reading refuted and"
+	@echo "              the promotion chain as a hold-out.  Solves nothing, ~1 s"
+	@echo "make mbsescore MBSE_PLAN Step 5: the shipped wheel against five named"
+	@echo "              requirement profiles, with a compliance table each.  Gates"
+	@echo "              that req=baseline() is bit-identical to naming nothing AND"
+	@echo "              that at least one profile comes back NON-COMPLIANT"
 	@echo "make studies  the verification gates: spoke-mesh validity (M2a),"
 	@echo "              full-wheel mesh (M2b), beam agreement (M3), full-wheel"
 	@echo "              FEA (M4), geometric nonlinearity (M5), real contact"
@@ -1194,3 +1208,47 @@ reds-hub-fillet:
 	    --config coarse --out $(notdir $(REDS_HUB_OUT))
 
 reds: reds-ratio reds-hub
+
+# ---------------------------------------------------------------------------
+# THE REQUIREMENTS LAYER (PLAN.md §97 — MBSE_PLAN Steps 0, 4, 5, 7)
+# ---------------------------------------------------------------------------
+# The arc that asks what the QUESTION was.  Three drivers and a front end, and only the
+# third of them solves anything.
+#
+# `mbsebase` and `mbsecal` read committed artifacts and do arithmetic, in the idiom
+# `filletkt` established.  They are seconds, they are off the `studies` critical path, and
+# they exit nonzero on their own checks — `mbsebase` on the derivation reproducing the
+# four shipped constants to 1e-12 and on the thermal curve being exactly 1.0 at 20 C,
+# `mbsecal` on the points map being an identity at its own calibration point and on total
+# exchange-rate pressure being invariant under any reallocation summing to 100.
+#
+# `mbsescore` is the only one that solves: seven evaluations with gradients at `coarse`
+# under SVK at 8 phases — the five profiles plus the bit-identity pair.  It gates BOTH directions of the
+# same criterion — the baseline profile compliant AND bit-identical to naming no
+# requirements at all, and at least one other profile NON-COMPLIANT naming a binding
+# requirement.  A verifier that cannot fail is not a verifier.
+#
+# `--kinematics svk` IS NOT OPTIONAL AND IS NOT A DEFAULT BEING RELIED ON.  `wheel_fem`'s
+# kernel default is `linear` (§32) and eleven study drivers never mention it; the shipped
+# genome was descended under SVK, and a loss from one strain measure is not comparable
+# with a loss from the other (§14).  The driver's own default is `svk` and its gate guard
+# refuses filing a `linear` run under the committed name.
+MBSEBASE_OUT  ?= study_mbse_baseline.json
+MBSECAL_OUT   ?= study_mbse_calibration.json
+MBSESCORE_OUT ?= study_mbse_score.json
+# No mission or priority flags: the front end's defaults ARE the shipped wheel's implied
+# mission, and `--points` omitted leaves `DEFAULT_WEIGHTS` untouched rather than
+# re-deriving the calibrated allocation and re-applying it a couple of ulp off.
+MBSE_ARGS     ?=
+
+mbsebase:
+	$(PY_OPT) -u studies/study_mbse_baseline.py --out $(MBSEBASE_OUT)
+
+mbsecal:
+	$(PY_OPT) -u studies/study_mbse_calibration.py --out $(MBSECAL_OUT)
+
+mbsescore:
+	$(PY_OPT) -u studies/study_mbse_score.py --out $(MBSESCORE_OUT)
+
+mbse:
+	$(PY_OPT) -u src/wheel_mbse.py $(MBSE_ARGS)
