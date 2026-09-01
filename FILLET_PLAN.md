@@ -4272,3 +4272,70 @@ supplies one. (2) A weight derived at a policy reference is a weight nobody has 
 under. (3) The `hub:P_c` hole is named, not closed, and closing it is a mesh change.
 
 Nothing in `src/` changed, nothing is promoted, the scope gate is untouched and green.
+
+---
+
+# STEP 3 RECORD — PART 10. ITEM 1: THE KNEE AND THE REFERENCE POINT, STATED. 2026-09-01, PLAN §99
+
+PART 9 / §96 left two policies open and refused to fit either — `study_fillet_wiring.py`'s
+own words: *"It does not pick a weight, a knee or a reference point. Each is a policy this
+repository states rather than fits."* This PART states both. No new solve: the curve PART
+9 already produced (`studies/study_fillet_wiring.json:exchange`) is the whole input.
+
+## THE KNEE STAYS AT 0.80, AND THE REASON IT SURVIVES IS NOT THE REASON PART 9 CHECKED
+
+`MARGIN_KNEE_UTIL`'s comment (`wheel_objective.py:326-334`) gives TWO pieces of evidence
+for 0.80, not one, and PART 9 tested only the weaker: *"the shipped genome sits at 0.77952,
+i.e. essentially AT this knee"* — a coincidence, and `study_fillet_wiring.json`'s own
+`knee.evidence_survives` is `false` once the shipped hub moves to 1.1415 under the
+replacement reading. **That is not the number's derivation, it is a sanity check the
+derivation happened to pass.** The derivation itself is a judgement about the PRINT
+PROCESS, not about where any one design sits: *"layer adhesion, print orientation and
+batch scatter are +/-10-20% effects, so a junction below 0.8 of allowable has more margin
+than those can eat."* Nothing about that argument depends on whether `util` is read off
+`Kt * agg` or off the mesh's own converged surface — both are estimates of the SAME
+physical quantity, a fraction of allowable stress, and the process-variability floor is a
+property of the material and the printer, not of the estimator. **The knee's evidence lost
+a corroboration, not its foundation**, and losing the corroboration is itself the finding
+PART 7-9 already made: the true fillet utilisation runs 1.68x-2.76x higher than the old
+formula reported, so a design that "sat at the knee" under `Kt * agg` was never actually
+there. `MARGIN_KNEE_UTIL = 0.80` is UNCHANGED.
+
+## THE REFERENCE POINT MOVES TO THE WALL, `util_ref = 1.0`, BECAUSE NOTHING ELSE IS LEFT TO ANCHOR IT
+
+§18's 0.855 was never a principled point — it was *"where the design sat"*, an empirical
+anchor that needed no justification of its own as long as some real design supplied it.
+PART 9 closed that door: **both measured designs, at both junctions, now sit outside
+`[0.80, 1.0]`** — shipped rim 0.5067 and b029622 rim 0.7845, both below the knee where the
+term is inert; shipped hub 1.1415 and b029622 hub 1.6760, both above the wall where a rate
+fit there is a rate for a place the optimiser must leave. Of `study_fillet_wiring.py`'s
+three stated candidates — 0.855 (the old, now-unoccupied anchor), 0.90 (the band's
+midpoint, which is arbitrary in exactly the way the old anchor was not: nothing picks the
+middle over any other interior point), and 1.00 (**"the rate is set where the constraint
+binds"**) — the wall is the only one that does not need a design to stand on. It anchors
+the soft term's slope to the point the hard barrier takes over, which is what an exchange
+rate for "how much does approaching the limit cost" should be calibrated against in the
+first place. `util_ref = 1.0` is TAKEN.
+
+## THE WEIGHT THAT FALLS OUT
+
+`w = mass_term / (2 * (util_ref - knee) * util_ref)` at `util_ref = 1.0`, `knee = 0.80`,
+on the shipped genome's FILLETED mass term (35.6822, matching the mesh the replacement
+term would actually read): **`w = 89.21`**, a 3.6x cut from today's 325.0 and the same
+figure PART 9 already printed as the wall candidate. `b029622` gives 88.61 from the same
+formula — 0.665% apart on a different genome entirely, which is the corroboration a wall
+anchor is SUPPOSED to produce: the rate depends on the reference genome's own mass, not on
+where its utilisation happens to sit, so two designs with similar mass agree to three
+figures without either one calibrating the other.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+This is `FILLET_PLAN.md`'s successor 1, taken. It is a POLICY RECORD, not a code change:
+`wheel_objective.MARGIN_KNEE_UTIL` and `DEFAULT_WEIGHTS["stress_margin"]` are untouched,
+because both feed the CURRENT `Kt * agg` construction and the replacement is not wired in
+— Condition A (which mesh is right) and successor 4 (the ladder at `b029622`) still stand
+ahead of execution, and the rim `P_c` hole (item 3) is still open. What this closes is the
+INPUT the switch needs when it runs: `MARGIN_KNEE_UTIL = 0.80` carries forward unchanged
+and `w = 89.21` at `util_ref = 1.0` is the number to write when it does. Nothing in `src/`
+changed, nothing is promoted, `test_nothing_wires_the_fillet_into_the_objective` is
+untouched and green.

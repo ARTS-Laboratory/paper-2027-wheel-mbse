@@ -633,7 +633,7 @@ wrong, and what it deliberately did not do.
    constants as defaults, and `tests/test_requirements.py` gates that the barrier moves
    with the load and with the modulus.
 
-## Two design decisions this file left open, taken here and stated
+## Three design decisions this file left open, taken here and stated
 
 **`Requirements.baseline()` READS THE CONSTANTS; `Mission.implied_baseline()` DERIVES
 THEM.**  Step 1's check wants `baseline()` to give `force_n == 66.72` exactly and Step 0's
@@ -655,6 +655,19 @@ conservation law is exact by construction rather than by algebra, and the identi
 this file asked for falls out as a consequence and is reported: one point of `rolling`
 buys `w = 58.4178`, and at parity with `light` that is exactly the 3000.0 the "same cost
 as one reference mass deviation" rule gives.
+
+**`SHOULD-MASS` REPORTS `NO LIMIT STATED`, ADDED AT PLAN §98.**  This file's own compliance
+table read the shipped wheel against `MASS_REFERENCE_G` and called it a miss every time,
+naming the number a normaliser in the same sentence — a limit stated and disclaimed in one
+breath. The one candidate for a real budget, the ~5% of all-up weight `Mission.
+implied_baseline`'s own docstring cites, is computed from the 48.64 g OCC-solid export and
+`verify()` reads `metrics.mesh_mass_g` instead — 39.55 to 43.41 g across the two designs
+this tree has measured, 11-19% under the solid and never reconciled with it. Moving the
+5% figure onto the mesh convention would be a new measurement dressed as arithmetic, so
+none is stated: `mass` now reports `NO LIMIT STATED`, the same verdict `smoothness` and
+`phase_ripple` already carried for the identical reason. `MASS_REFERENCE_G` did not move —
+it is still the `DEFAULT_WEIGHTS` normaliser and the `REFERENCE_DEVIATION` anchor, neither
+of which is a compliance question.
 
 ## What was NOT done, and why
 

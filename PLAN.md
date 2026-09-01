@@ -13738,3 +13738,149 @@ the line it names still does the same thing.
    `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a FUNCTION of the
    genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth revision**;
    **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+## §98 — 2026-09-01. §97's SUCCESSOR 2, ADDRESSED: NO MASS REQUIREMENT IS STATED, BECAUSE THE ONE PRECEDENT ON DISK IS DENOMINATED IN A MASS `verify()` DOES NOT READ
+
+§97 found the shipped wheel missing `SHOULD-MASS` in every profile *"against a limit that
+is a normaliser"* and ranked stating a real budget, or an explicit refusal, second. This
+section takes the second.
+
+**THE ONE CANDIDATE ON DISK DOES NOT SURVIVE ITS OWN UNITS.**
+`Mission.implied_baseline`'s docstring (`wheel_requirements.py:470-476`) argues the vehicle
+from *"the shipped wheel is 48.64 g as an OCC solid, three of them are 146 g, and a landing
+gear that is ~5% of all-up weight"* — 146/3000 = 4.867%. That is the only mass-fraction
+reasoning this tree has ever stated for a landing wheel. `Requirements.verify`'s
+`SHOULD-MASS` row reads `metrics.mesh_mass_g`, the meshed-area x width x density figure a
+Stage-3 solve produces — **39.5478 g at the shipped genome, 43.4133 g on the filleted mesh
+`FILLET_PLAN.md` PART 7-10 measured** (`study_fillet_wiring.json`, `b029622`'s pair:
+39.6576 / 43.1247). Against the 48.64 g the 5% figure was computed from, those are 10.8% to
+18.7% LOW — three different numbers for approximately the same wheel, and the spread is
+not noise: an OCC solid integrates the exported geometry exactly, a mesh integrates over
+whatever elements the exporter's simplification produced, and nothing in this tree has
+ever reconciled the two. **Re-deriving 4.867% against `mesh_mass_g` instead of the OCC
+figure is not arithmetic** — the fraction was computed from one convention and the
+compliance row checks another, and moving the fraction over means either re-measuring the
+OCC mass at every scored genome (a CAD-kernel call `verify()` cannot make) or accepting a
+budget that is honest about being denominated in the wrong units. Neither is "cheap in
+machine time and expensive in judgement" the way §97 asked for; both are a new
+measurement wearing a policy's clothes.
+
+**SO NONE IS STATED**, and `mass` is moved into the same group as `smoothness` and
+`phase_ripple`: `_should_row`'s `mass` branch (`wheel_requirements.py`) now returns
+`limit: None, verdict: "NO LIMIT STATED"` instead of comparing against
+`W.MASS_REFERENCE_G`, and the comment above `BARRIER_EVIDENCE` is corrected from *"two of
+the five [have no stated reference]"* to three. `MASS_REFERENCE_G` ITSELF DOES NOT MOVE —
+it stays exactly what it always was, the DEFAULT_WEIGHTS mass-term normaliser and the
+`REFERENCE_DEVIATION["mass"]` anchor `wheel_requirements.py:524` uses to calibrate points
+into weights. Those are both about how much the OPTIMISER cares about a gram of mass, not
+about whether a design is COMPLIANT, and §97's own text already named the confusion this
+separates: a "limit" that is actually a normaliser was the thing making `SHOULD-MASS` read
+as a real requirement it never was.
+
+**WHAT THIS COSTS.** `test_a_missed_should_never_makes_a_design_non_compliant`
+(`tests/test_requirements.py`) used the shipped wheel's mass miss as its natural example of
+a `should` that does not block shipping. With `mass` no longer able to MISS, the test now
+verifies the shipped record against `field_class="paved"` instead — the shipped wheel's own
+1.9974 mm axle drop is 99.7% over a 1.0 mm paved-strip target, still ships, and the
+demonstration survives on a `should` that was never in question. A new test,
+`test_mass_has_no_stated_limit`, pins the `NO LIMIT STATED` verdict directly so the next
+person who reaches for a mass budget finds a red test naming why one was not there rather
+than silence.
+
+**AND `studies/study_mbse_score.json` IS REGENERATED**, because its five profile tables
+carry `SHOULD-MASS`'s old `limit: 36.5` / numeric `margin` / `MISSED` verdict verbatim —
+`make mbsescore`'s own artifact-carries-its-commit rule.
+
+### WHAT MOVED
+
+`src/wheel_requirements.py` (`_should_row`'s `mass` branch and the comment above
+`BARRIER_EVIDENCE`), `tests/test_requirements.py` (one test rewritten, one added),
+`studies/study_mbse_score.json` regenerated. `MBSE_PLAN.md`'s record block gains this as a
+third design decision. **`src/wheel_objective.py` did not change — `MASS_REFERENCE_G` and
+`DEFAULT_WEIGHTS["mass"]` are untouched, and no default the optimiser reads moved.**
+
+#### The successors, ranked — REVISED 2026-09-01 AFTER §98
+
+1. **STATE THE KNEE AND THE REFERENCE POINT** — §97's successor 1, unchanged, still open.
+2. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — §97's successor 3, unchanged.
+3. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A.
+4. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+5. **EXECUTE THE FILLET SWITCH** — behind 1 and 3.
+6. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+7. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+8. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
+
+## §99 — 2026-09-01. §97's SUCCESSOR 1, ADDRESSED: THE KNEE STAYS AT 0.80 ON ITS OWN EVIDENCE, THE REFERENCE POINT MOVES TO THE WALL BECAUSE NO DESIGN OCCUPIES THE BAND ANY MORE, AND THE WEIGHT THAT FALLS OUT IS 89.21
+
+`FILLET_PLAN.md` STEP 3 RECORD PART 10 is the full derivation; this is the record.
+`study_fillet_wiring.py` (PART 9 / §96) refused to pick either policy and printed the
+curve instead — *"it does not pick a weight, a knee or a reference point... the input a
+policy needs is the curve, which is here."* This section reads that curve and decides.
+
+**THE KNEE.** `MARGIN_KNEE_UTIL = 0.80`'s comment gives two pieces of evidence: a
+PRINT-PROCESS judgement (layer adhesion, orientation and batch scatter are +/-10-20%
+effects, so margin below 0.8 of allowable is spending mass on nothing) and a
+CORROBORATION (the shipped genome sat at 0.77952 under the old formula, essentially at the
+knee). `study_fillet_wiring.json`'s `knee.evidence_survives` is `false` — under the
+replacement reading the shipped hub sits at 1.1415, nowhere near it. **That kills the
+corroboration, not the derivation**: the process-variability argument is about the
+material and the printer, not about which formula estimated the utilisation, and losing
+the coincidence is the SAME finding PART 7-9 already made from the other side — the true
+fillet stress runs 1.68x-2.76x over what `Kt * agg` reported, so no design was ever really
+sitting at the knee. `MARGIN_KNEE_UTIL` is UNCHANGED at 0.80.
+
+**THE REFERENCE POINT.** §18's 0.855 was an empirical anchor — wherever the design sat —
+and needed no separate justification as long as a real design supplied it. PART 9 removed
+that design: both measured genomes, both junctions, now sit outside `[0.80, 1.0]`. Of the
+three candidates the driver printed, 0.855 is unoccupied and 0.90 is arbitrary in the way
+0.855 was not (nothing argues for the exact midpoint). `util_ref = 1.00`, the wall,
+survives because it needs no design to stand on: it calibrates the soft term's slope to
+the point the hard `stress` barrier takes over, which is what an exchange rate for
+"approaching the limit" should be pinned to. **`util_ref = 1.0` is TAKEN.**
+
+**THE WEIGHT.** `w = mass_term / (2*(util_ref - knee)*util_ref)` at those two settings, on
+the shipped genome's filleted mass term (35.6822 g, the mesh the replacement term would
+actually read): **`w = 89.21`**, a 3.6x cut from today's 325.0. `b029622` gives 88.61 from
+its own filleted mass term — 0.665% apart on an unrelated genome, the corroboration a
+wall-anchored rate is supposed to produce (it depends on the reference genome's own mass,
+not on where that genome's utilisation happens to sit).
+
+**THIS IS A POLICY RECORD, NOT A CODE CHANGE.** `wheel_objective.MARGIN_KNEE_UTIL` and
+`DEFAULT_WEIGHTS["stress_margin"]` are untouched — both feed the CURRENT `Kt * agg`
+construction, and the replacement term is not wired in: Condition A (which mesh is right,
+§94) and the `(r, p)` sweep across §82's held-out genomes still stand ahead of execution,
+and the rim `P_c` hole (§96 item 3) is still open. What closes here is the INPUT the switch
+needs when it runs — `0.80` and `89.21` — not the switch itself.
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and green; nothing in
+`src/` changed; nothing is promoted.
+
+### WHAT MOVED
+
+`FILLET_PLAN.md` (STEP 3 RECORD PART 10). No `src/` file, no test, no study artifact — the
+derivation runs entirely on `studies/study_fillet_wiring.json`, already committed at §96.
+
+#### The successors, ranked — REVISED 2026-09-01 AFTER §99
+
+1. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — §97's successor 3, unchanged.
+2. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A.
+3. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+   Costs a `medium` descent this tree has not yet spent.
+4. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5. The knee (0.80) and reference weight
+   (89.21) are now stated; what stands ahead of it is 1 and 2 above and the rim tri-block.
+5. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+6. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+7. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
