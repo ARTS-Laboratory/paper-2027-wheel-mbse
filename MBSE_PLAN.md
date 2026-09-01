@@ -56,7 +56,7 @@ Four consequences, each of which this arc is meant to end:
 
 3. **`ALLOWABLE_STRESS_MPA`, `TARGET_DEFLECTION_MM` and the weight table cannot be varied
    at all.** `force`, `E` and `nu` already thread as keywords through the whole solve path
-   and even survive the process pool (`wheel_objective.py:1115` ships `problem_kw`). The
+   and even survive the process pool (`wheel_objective.py:1127` ships `problem_kw`). The
    other three are read as module globals inside the loss — `wheel_objective.py:1153`
    (target), `:1234-1235` and `:1272-1273` (allowable). `tests/test_objective.py:1257` has
    to `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move it, which is the tell.
@@ -144,7 +144,7 @@ The calibration below is that paragraph, generalised to all five objective terms
                         rides to pool workers at :1111-1115
   E, nu                 ride **problem_kw -> service_qoi_value_and_grad       nothing
                         (wheel_adjoint.py:646) -> wheel_contact_problem;
-                        survive the pool (wheel_objective.py:1115)
+                        survive the pool (wheel_objective.py:1127)
   min_wall              set_min_wall(wheel_fea.py:852) + --min-wall            route it
   target_deflection     MODULE GLOBAL, read at wheel_objective.py:1153-1155   PLUMB IT
   allowable_stress      MODULE GLOBAL, read at :1234-1235 and :1272-1273      PLUMB IT
@@ -571,3 +571,102 @@ Add the arc to `PLAN.md`'s *Open arcs* table as row 9.
 - **Do not regenerate a committed study artifact as a side effect**, and never commit while
   a driver is mid-write — the drivers rewrite `studies/*.json` and `studies/*.jpg` in place
   over minutes to hours and those files are tracked on purpose.
+
+---
+
+# THE RECORD — 2026-08-31
+
+**Steps 0-7 are DONE.  Step 8 is `PLAN.md` §97 and this block.**  Read §97 for the
+findings; what follows is the arc's own account of what was built, what the plan got
+wrong, and what it deliberately did not do.
+
+## Where each step landed
+
+```
+  step  what                                       where
+  ----  -----------------------------------------  ------------------------------------
+   0    the derivations, run backwards             studies/study_mbse_baseline.py
+                                                   `make mbsebase`, ~1 s, solves nothing
+   1    the module                                 src/wheel_requirements.py
+   2    the temperature model                      MaterialCard + PLA_FFF, in the module
+   3    thread it, and prove nothing moved         wheel_objective.{t3_terms,objective}
+                                                   tests/test_requirements.py
+   4    the calibration                            studies/study_mbse_calibration.py
+                                                   `make mbsecal`, ~1 s, solves nothing
+   5    scoring and verification                   wheel_requirements.{score_record,verify}
+                                                   studies/study_mbse_score.py
+                                                   `make mbsescore` — the only one that solves
+   6    re-optimisation under a requirement set    wheel_stage3.py --requirements
+   7    the front end                              src/wheel_mbse.py, `make mbse`
+   8    the write-up                               PLAN.md §97, and this block
+```
+
+## Four places this plan was wrong, corrected in the build rather than argued with
+
+1. **`FORCE_LBS = 15.0` IS NOT 66.72 N, IT IS 66.7233 N.**  This file's header block and
+   its Step 1 check both say `force_n == 66.72`; `wheel_fea.py:152` says
+   `FORCE_LBS * 4.44822` and its own comment rounds.  The check is implemented against
+   `W.TOTAL_FORCE_NEWTONS` and not against the literal, which is the only version of it
+   that can be true.
+
+2. **THE WRITE-UP IS §97, NOT §95.**  Step 8 says *"a `PLAN.md` section (`## §95`,
+   append-only, never renumbered)"*.  §95 and §96 were both written on 2026-08-31, before
+   this arc started work.  Append-only means append.
+
+3. **`runway_m` IS NOT A MISSION FIELD.**  This file lists it as mission axis 3, reaching
+   `sink_rate` through approach angle — and then says, in the same paragraph and in bold,
+   that a short-field braking case is *"genuinely out of model, and a plan that lets
+   'runway length' imply otherwise is lying about what was verified."*  Nothing in this
+   tree measures the approach-angle correlation, and the only other thing runway could
+   reach is a number the caller already types directly.  A field with no route into the
+   physics that is not already covered by `sink_rate_ms` is a wish with a units label, so
+   it was left out and `field_class` reaches the stroke and nothing else.
+
+4. **THE PLUMBING SURFACE WAS NOT TWO CONSTANTS.**  This file's table says
+   `target_deflection` and `allowable_stress` are the whole job because *"`force`, `E` and
+   `nu` already thread"*.  They thread into T3.  **`_buckling_ratio` (`wheel_objective.py`)
+   read `W.FORCE_PER_SPOKE_NEWTONS` and the 20 C `YOUNGS_MODULUS_PLA_MPA` off the module
+   whatever the caller loaded the wheel with** — so a heavy or hot requirement set would
+   have had its `buckling` BARRIER, a `shall`, evaluated at the shipped mission and
+   silently reported 0.0.  A verifier that reports a barrier at zero for a load it never
+   applied is worse than one that reports nothing.  Both are now arguments with the module
+   constants as defaults, and `tests/test_requirements.py` gates that the barrier moves
+   with the load and with the modulus.
+
+## Two design decisions this file left open, taken here and stated
+
+**`Requirements.baseline()` READS THE CONSTANTS; `Mission.implied_baseline()` DERIVES
+THEM.**  Step 1's check wants `baseline()` to give `force_n == 66.72` exactly and Step 0's
+wants the derivation to reproduce the constants to 1e-12.  Those are two different objects
+and making them one would have meant either a `==` that cannot hold (`0.4 * 3` is
+1.2000000000000002) or a tolerance where "do not move a single default" needs an equality.
+So `baseline()` is the constants themselves — exact by construction, which is what makes
+"nothing moved" checkable — and the derivation is a separate path whose agreement with it
+is a MEASUREMENT.  §97's Step 0 table is that measurement.
+
+**THE POINTS MAP IS STATED AS COST PER POINT, NOT AS `w_default * p / p_cal`.**  Those two
+are the same function wherever `p_cal > 0`, and the second is `0/0` on `phase_ripple` —
+the axis a user is most likely to want to move first, because it is the one this tree has
+never bought any of.  This file's remedy was a separate anchor for that term.  Stated as
+*"`w_T(p)` is whatever weight makes term `T`'s reference deviation cost
+`sum(c_cal)/100 * p_T`"* there is no singularity, no special case in the code, the
+conservation law is exact by construction rather than by algebra, and the identity at
+`p_cal` still returns `DEFAULT_WEIGHTS` **including** `phase_ripple = 0.0`.  The anchor
+this file asked for falls out as a consequence and is reported: one point of `rolling`
+buys `w = 58.4178`, and at parity with `light` that is exactly the 3000.0 the "same cost
+as one reference mass deviation" rule gives.
+
+## What was NOT done, and why
+
+- **No `medium` production descent.**  This file forbids it and this arc has nothing to
+  promote.  `--requirements` is proved at `coarse` and by test, not by spending 6.3 h.
+- **`best_solution.json` did not move**, no committed study artifact was regenerated as a
+  side effect, and no default changed.  The wheel that ships at the baseline requirement
+  set is the wheel that shipped this morning, bit for bit — and that is a gated claim,
+  not a hope: `test_req_baseline_is_bit_identical_to_naming_no_requirements`.
+- **Ø100, `NUMBER_OF_SPOKES = 12` and `SPOKE_WIDTH_MM` were not touched**, and no
+  requirement axis reaches any of them.
+- **`studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25` was not touched.**  It
+  is Roache's GCI factor and is unrelated to `wheel_fea.SAFETY_FACTOR = 1.6`;
+  `wheel_requirements.SAFETY_FACTOR_BASE`'s docstring names the collision so the next
+  person to reach for a global rename is warned in the file that would break.

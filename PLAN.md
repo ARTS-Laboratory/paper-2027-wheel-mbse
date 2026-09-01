@@ -137,6 +137,15 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 > 2.73. The construction is proved; **the rule that places its interior point is not**, and
 > that is a third obstacle neither §37 nor §51 named.
 
+> **ARC 9 IS NEW ON 2026-08-31 AND IT IS ALREADY THROUGH ITS LAST STEP — §97.** It was
+> written and executed in one pass, which is why it appears in this table for the first time
+> with its steps already closed. It changes no default and moves no genome, and the row's
+> claim to that effect is a test rather than a sentence. **It is also the arc that found a
+> `shall` being evaluated at a load it was never given** — `_buckling_ratio` read the module's
+> force and modulus whatever the caller loaded the wheel with, so any heavy or hot requirement
+> set would have had its `buckling` barrier reported PASS at the shipped mission.
+>
+
 | # | file | the question | cost |
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
@@ -147,6 +156,7 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 | 6 | `MESHSTEP_PLAN.md` | The 16.8–30.3× rim-OD element-size step the contact patch sits on (§20) | small, needs G7 first |
 | 7 | `EXPORTPREC_PLAN.md` | Make the exporter write the overlap at 4 dp instead of 2 — §28's better fix, deferred | small, touches a shipped artifact |
 | 8 | `BOUNDARY_PLAN.md` | Defect 5's boundary placement, worth 0.61% of loss (§21) | small, lowest ranked |
+| 9 | `MBSE_PLAN.md` | A requirements layer: do `FORCE_LBS`, `TARGET_DEFLECTION_MM`, `SAFETY_FACTOR` and `MIN_WALL_MM` encode a MISSION, and can the wheel be re-optimised and verified against a different one? **STEPS 0-8 DONE 2026-08-31 — §97.** The four constants decode to 3.0 kg on three wheels at 0.263 m/s and every derivation closes to floating point; the weight table is a 51/43/6/0.3/0 portfolio; `objective(genes, req=baseline())` is bit-identical to `objective(genes)`; two of five named profiles come back NON-COMPLIANT. What is left is not the arc — it is what §97 ranks: a re-optimisation under a failing profile, which costs a `medium` descent this arc was forbidden to spend | steps 0-8 spent: three drivers, one of which solves (25 m 12 s); no descent, no promotion |
 
 **Ranking note — SETTLED.** 1 was put ahead of 2 deliberately, against §30's ranking, on the
 argument that it was cheap and that "if the answer is *linear is not acceptable*, it changes
@@ -13333,3 +13343,398 @@ keeps every word it had.
     (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
     FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
     revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §97 — 2026-08-31. ARC 9, STEPS 0-8. THE FOUR CONSTANTS DECODE TO ONE MISSION AND IT IS A PLACED LANDING — 3.0 kg ON THREE WHEELS AT 0.263 m/s — WHILE THE WEIGHT TABLE IS A 51/43/6/0.3/0 PORTFOLIO AND NOT THE 99/0.01 ITS OWN LOSS SHARE READS. AND A `shall` WAS BEING EVALUATED AT A LOAD IT WAS NEVER GIVEN
+
+`MBSE_PLAN.md` — open arc 9, written to ask whether this tree's design constants are a
+REQUIREMENT SET or four numbers that happen to be in a file, and whether the wheel can be
+re-optimised and verified against a DIFFERENT one. Steps 0-8 are done. Three drivers
+(`make mbsebase`, `make mbsecal`, `make mbsescore`), one new module
+(`src/wheel_requirements.py`), one new front end (`src/wheel_mbse.py`), 43 tests, and a
+`--requirements` flag on `wheel_stage3.py`. **`best_solution.json` did not move and no
+default changed** — that is a gated claim, not a hope, and the gate is the bit-identity
+test in the middle of this section.
+
+Two of the three drivers solve nothing: Step 0 reads the committed record and does
+arithmetic, Step 4 reads four committed records and does arithmetic. Only Step 5 solves,
+25 m 12 s for seven evaluations at `coarse`/SVK/8 phases — the five profiles plus the
+bit-identity pair, each with its gradient.
+
+### STEP 0 — THE CONSTANTS RUN BACKWARDS, AND THEY CLOSE
+
+`FORCE_LBS = 15.0`, `TARGET_DEFLECTION_MM = 2.0`, `SAFETY_FACTOR = 1.6`,
+`MIN_WALL_MM = 1.2`. Read forwards these are inputs nobody has to justify. Read backwards
+they are a vehicle:
+
+```
+  auw_kg 3.0   n_wheels 3   k_asym 1.5   field grass   ambient 20 C
+  landings 1000   nozzle 0.4 mm   perimeters 3        ->  sink rate 0.263346 m/s
+                                                          load factor n_land 4.53592
+```
+
+```
+  constant                 shipped   derived   rel err   from
+  force_n                  66.7233   66.7233   0.0e+00   auw*g/n_wheels * n_land * k_asym
+  target_deflection_mm      2.0       2.0      0.0e+00   max(STROKE_FLOOR, stroke[grass])
+  allowable_stress_mpa     25.0      25.0      0.0e+00   sigma_ult(20C)*sigma_ret(T)*fff/SF
+  min_wall_mm               1.2       1.2      1.9e-16   nozzle_mm * perimeters
+```
+
+**Four constants, four independent derivations, and every one closes to floating point.**
+The 1.9e-16 on `min_wall_mm` is `0.4 * 3`, which is what forced `Requirements.baseline()`
+to READ the constants while `Mission.implied_baseline()` DERIVES them — two objects,
+because Step 1 wanted an exact `==` and Step 0 wanted a measurement, and one function
+cannot be both. `MBSE_PLAN.md`'s record block states that decision.
+
+**The circularity is resolved by ORDER, not by a fixed point.** `n_land = 1 + v_z^2 /
+(2 g s_eff)` needs a stroke and the stroke is what the deflection target sets — but this
+repo loads to a FORCE and not to an indentation, so the field class and the floor set the
+stroke FIRST and the load factor follows. There is no iteration and nothing to converge.
+
+### AND THE ENVELOPE IS A PLACED LANDING, WHICH IS THE STEP THAT IS WORTH KNOWING
+
+`FORCE_LBS = 15.0` is one equation in four unknowns, so what it fixes is a
+three-parameter FAMILY and nothing on disk picks between the members. Over the 30 of them
+the driver sweeps (1, 2, 3, 5 and 8 kg x 3 and 4 wheels x `k_asym` 1.0, 1.5 and 2.0, all
+at the shipped 2.0 mm stroke) the implied touchdown sink rate spans **0.0735 to 0.7171
+m/s** and every one of them is under 1 m/s. What happens at 1 m/s:
+
+```
+  v_z m/s   n_land    force N   x shipped   stroke needed mm   / wheel radius
+  0.2633     4.536      66.72      1.00            2.00           0.041
+  0.5       13.746     202.21      3.03            7.21           0.149
+  1.0       51.986     764.71     11.46           28.84           0.595
+  1.5      115.718    1702.21     25.51           64.89           1.338
+  2.0      204.943    3014.71     45.18          115.36           2.378
+```
+
+**At a 1.0 m/s touchdown the same vehicle needs 11.5x the modelled load, or 28.8 mm of
+stroke — 59.5% of the wheel's own radius.** The shipped wheel is not a shock absorber and
+this table is the reason it does not have to be: the load case it was built for is a
+placed landing, and the honest statement of the envelope is the one written down here
+rather than a claim about what the wheel survives. `runway_m` is NOT a mission field for
+the same reason — see `MBSE_PLAN.md`'s correction 3.
+
+### STEP 2 — THE TEMPERATURE MODEL IS AN INTERPOLATION, AND IT SAYS SO IN ITS OWN OUTPUT
+
+`MaterialCard` carries two anchor tables and refuses to extrapolate off either end:
+
+```
+  T C     -20    0     20    40    50    55    60
+  E ret   1.18  1.09  1.00  0.85  0.68  0.45  0.15
+  sig ret 1.12  1.06  1.00  0.86  0.72  0.55  0.25
+```
+
+```
+  ambient C    E MPa   allowable MPa
+    -20       2714.0      28.00
+      0       2507.0      26.50
+     20       2300.0      25.00      <- the shipped constants
+     30       2127.5      23.25
+     40       1955.0      21.50
+     50       1564.0      18.00
+     55       1035.0      13.75
+     60        345.0       6.25      <- t_max_service_c; above it the card REFUSES
+```
+
+**Held out at every interior anchor and interpolated from its neighbours the worst error
+is 14.2% (`E`, at 50 C) and 11.8% (`sigma`, at 55 C).** So it is published as a piecewise-linear
+INTERPOLATION between asserted engineering anchors and not as a model. The scope note
+prints with every hot profile and is quoted here because it is the sentence the whole
+thermal axis stands on:
+
+> QUASI-STATIC KNOCKDOWN ONLY — no creep, no fatigue, no thermal expansion, no
+> self-heating, no rate dependence. PLA creeps badly above ~45 C, so a static allowable
+> at elevated temperature is OPTIMISTIC.
+
+**And the shipped wheel has essentially no thermal headroom.** It sits at util 0.8201 on
+its own committed record; the allowable at 40 C is 0.860 of the 20 C value, which puts the
+same wheel at **0.9536** on that arithmetic — under 1.0, and 4.6% from it, at an ambient a
+black wheel on tarmac reaches without trying.
+
+Service life is the same shape and is knocked down the same way: 1.0 to 1000 landings,
+1.15 at 1e4, 1.30 at 1e5, applied to `SAFETY_FACTOR` — so the allowable runs 25.0, 25.0,
+21.74, 19.23. **That is a decade slope asserted as a policy, not a fatigue curve
+measured in this tree**, and §97 does not let it be read as one.
+
+### STEP 3 — A `shall` WAS BEING EVALUATED AT A LOAD IT WAS NEVER GIVEN
+
+`MBSE_PLAN.md`'s Step 3 table says the plumbing is two constants, because *"`force`, `E`
+and `nu` already thread"*. They thread into T3. **`_buckling_ratio` read
+`W.FORCE_PER_SPOKE_NEWTONS` and the 20 C `YOUNGS_MODULUS_PLA_MPA` off the module whatever
+the caller loaded the wheel with.** A heavy or a hot requirement set would have had its
+`buckling` BARRIER — a `shall`, admissible value 0.0 — computed at the shipped mission and
+reported PASS.
+
+**A verifier that reports a barrier at zero for a load it never applied is worse than one
+that reports nothing**, because the zero is evidence and the silence is not. Both are
+arguments now, defaulting to the module constants, and the function divides by
+`NUMBER_OF_SPOKES / 3.0` internally so callers speak whole-wheel force. Two tests gate
+that the barrier moves with the load and with the modulus, and a third gates that the bare
+call is unchanged.
+
+#### The bit-identity result, which is what licenses everything above
+
+```
+  objective(genes, req=Requirements.baseline())  vs  objective(genes)
+
+  scalar       38.785946819991601  vs  38.785946819991601   identical
+  gradient     14/14 components identical, worst |diff| 0.000e+00
+  breakdown    14/14 terms identical
+```
+
+Not "agrees to 1e-12" — identical, in the scalar, in every gradient component and in every
+one of the fourteen breakdown terms. It is a driver check AND a test
+(`test_req_baseline_is_bit_identical_to_naming_no_requirements`), and it is joined by three
+cache-audit tests, because `_T1_CACHE` keys on the weights and `_KT_CACHE` does not, and a
+stale jit trace is exactly how a requirement set would leak into a run that never asked for
+one. Pooled == serial under a NON-baseline requirement set is gated too — `problem_kw` is
+pickled to the phase workers, so `force`, `E` and `nu` have to survive the transport.
+
+### STEP 4 — THE WEIGHT TABLE IS A PORTFOLIO, AND LOSS SHARE IS THE WRONG INSTRUMENT
+
+The question a requirements layer has to answer about `DEFAULT_WEIGHTS` is *what does this
+tree care about, in percent*. The obvious reading is each term's share of the loss at the
+shipped genome. **It is wrong, and on one axis it is wrong by a factor of 3400:**
+
+```
+  term            loss at 09e8188    share
+  mass                 32.440977    99.073%
+  smoothness            0.167828     0.513%
+  stress_margin         0.131681     0.402%
+  deflection            0.004146     0.0127%
+  phase_ripple          0.000000     0.0%
+```
+
+**`deflection` is small in the loss because the requirement is MET.** Loss share measures
+SATISFACTION, not priority — a term that is being served perfectly contributes nothing and
+reads as "nobody cares", which is the exact inversion of the truth. The other candidate,
+`dL/dx`, measures where the last descent happened to stop.
+
+What does work is the cost of a stated reference deviation: `c_T = L(d_T)`, the loss that a
+1%-miss costs at the reference genome.
+
+```
+  term            reference deviation d_T                      c_T        p_cal
+  mass            1% of MASS_REFERENCE_G  (0.365 g)         0.300000     51.354
+  deflection      1% relative on the stroke target           0.250000     42.795
+  stress_margin   1% of utilisation above MARGIN_KNEE_UTIL   0.032500      5.563
+  smoothness      1% of the curvature-rate integral          0.001678      0.287
+  phase_ripple    1 point of std/mean axle drop              0.000000      0.000
+                                                             --------
+                                                             0.584178
+```
+
+**The shipped weight table is a 51/43/6/0.3/0 portfolio: 51% on mass, 43% on stroke, 6% on
+durability, 0.3% on print finish and NOTHING AT ALL on rolling.** That is a defensible
+allocation and it is nobody's stated intent, because until today it was never stated.
+
+#### The map, which is cost per point and not `w * p / p_cal`
+
+`w_T(p)` is whatever weight makes term `T`'s reference deviation cost `sum(c_cal)/100 *
+p_T`. Stated that way there is no `0/0` at `phase_ripple` — the axis a user is most likely
+to want to move first, precisely because it is the one this tree has never bought any of —
+no special case in the code, and:
+
+```
+  identity at p_cal        weights_from_priorities(p_cal) == DEFAULT_WEIGHTS
+                           worst relative error 2.70e-16 (on `mass`)
+  conservation             37 reallocations, including all five single-axis extremes:
+                           sum(c_T) is invariant, worst |err| 1.11e-16
+  barriers                 all nine copied through untouched, gated
+```
+
+`sum p = 100` is an exact conservation law rather than an algebraic near-miss, and the nine
+`shall` weights are structurally out of reach of the points — `Priorities`' axis set is
+asserted equal to `OBJECTIVE_TERMS`, which `wheel_objective.py:394` already asserts is
+disjoint from and exhaustive with `BARRIER_TERMS`. **Points move `should`s only, and that
+is the whole shall/should spine in one line of validation.**
+
+#### The ripple anchor, and what it would cost to buy any
+
+One point of `rolling` buys `w_phase_ripple = 58.4178`. Bought at parity with `light`
+(51.354 points) that is `w = 3000.0` — exactly what the "same cost as one reference mass
+deviation" rule gives, arriving from a different direction. And at that weight the SHIPPED
+wheel's own ripple of 0.104429 — **10.4 points of it, not one** — would cost 32.716,
+**1.0085x its entire mass term**. Buying rolling smoothness at parity with mass is not a
+tweak to the table; it is a different wheel.
+
+#### Hold-out, because a calibration on one genome is not a rule
+
+Re-anchored at each of the three genomes that shipped before the current one
+(`350f4c7`, `e4219f3`, `e126cc3`), no share moves by more than **0.289 points** — because
+`smoothness` is the only term whose reference deviation reads a genome at all.
+`best_solution_ga_beam.json` is deliberately excluded: its `loss_terms` come from a
+different objective, and §14's rule about comparing losses across objectives applies to
+calibration inputs too.
+
+### STEP 5 — THE COMPLIANCE TABLE, AND IT CAN COME BACK BOTH WAYS
+
+Five one-field profiles against the shipped genome, `coarse`/SVK/8 phases:
+
+```
+  profile          force N   allow MPa    E MPa   target mm    drop mm   util hub   verdict
+  baseline          66.723     25.0000   2300.0       2.000    1.90110    0.77876   COMPLIANT
+  hot_day           66.723     21.5000   1955.0       2.000    2.27126    0.90299   COMPLIANT
+  heavy_payload    100.085     25.0000   2300.0       2.000    2.95803    1.16309   NON-COMPLIANT
+  rough_field       44.432     25.0000   2300.0       3.500    1.21247    0.50801   COMPLIANT
+  long_life         66.723     19.2308   2300.0       2.000    1.90110    1.01239   NON-COMPLIANT
+```
+
+**The baseline's own stroke `should` is the tightest row in the table**: it MET at a
+relative deviation of **0.049449 against a +/-0.05 band**, which is 1.1% of the tolerance
+to spare. The shipped wheel is not comfortably inside its stroke requirement; it is
+*just* inside it, and the band is a policy this arc states rather than one it found.
+
+**Two of five come back NON-COMPLIANT and both are bound by SHALL-STRESS.** That is what
+makes the three compliant rows worth reading: a verifier that cannot fail is a formatter.
+
+- **`heavy_payload`** — 4.5 kg instead of 3.0. Utilisation 1.163, and the wheel is 16.3%
+  over an allowable it clears by 22% at the baseline. A 50% payload increase is not
+  absorbed anywhere.
+- **`long_life`** — 1e5 landings instead of 1e3. Nothing about the load changes; the
+  fatigue knockdown moves the allowable to 19.23 MPa and the same wheel goes to 1.0124.
+  **It breaches by 1.2%, which means the shipped design is good for 1e4 landings and not
+  for 1e5** — and the number that decides it is the asserted decade slope, so this row is
+  a policy consequence and is labelled as one.
+- **`hot_day`** — 40 C. Compliant at 0.903, and the second-largest thing in this table:
+  the allowable falls 14% and the modulus falls 15%, so the wheel both softens (drop
+  2.271 mm, 13.56% past its target) and loses margin at once.
+- **`rough_field`** — the interesting one, below.
+
+#### COMPLIANCE IS NOT LOSS, AND `rough_field` IS THE PROOF
+
+`rough_field` is COMPLIANT with a loss of **1100.59**, against the baseline's 38.79.
+Its stroke target is 3.5 mm and it drops 1.212, so `SHOULD-DEFLECTION` misses by 65% —
+the term is two-sided about the target because for a compliant mechanism the travel IS the
+feature, and a wheel too stiff misses exactly as a wheel too soft does. **A `should` can
+never change compliance**, which is gated by test in both directions (a missed `should`
+does not fail; a breached `shall` does). A 28x loss and a PASS are answers to two
+different questions and the table is built so they cannot be confused.
+
+#### And the wheel misses one `should` in every single profile
+
+`SHOULD-MASS` reads MISSED at 39.548 g against 36.5 everywhere, because
+`MASS_REFERENCE_G` is a NORMALISER — *"v2.0 cantilever-era best, as a normaliser"* — and
+this tree has no mass budget. The row says so in its own statement field rather than
+inventing one. `smoothness` and `phase_ripple` report **NO LIMIT STATED** for the same
+reason. **Two of the five `should`s in this tree have no stated limit and the
+third is measured against a normaliser, and naming that is more useful than three numbers
+nobody chose.**
+
+### WHAT A RECORD WRITTEN BEFORE TODAY VERIFIES AS
+
+`unstated`. Every committed artifact in this tree predates `req_hash`, so `verify` reports
+its provenance as unstated rather than as matched — and refuses outright if a record
+carries a hash that disagrees with the requirement set it is being checked against.
+**No artifact in this tree currently claims compliance with anything**, and after this arc
+that is a visible fact rather than an absence.
+
+### SCOPE, AND WHAT IS NOT ESTABLISHED
+
+**Two different numbers for the same wheel appear above and neither is wrong.** Step 0's
+util 0.8201 and drop 1.9974 are READ from `best_solution.json`'s committed metrics, which
+are `medium`/SVK/8-phase from §26's descent. Step 5's 0.7788 and 1.9011 are SOLVED at
+`coarse`. Step 0 solves nothing by design, and a `coarse` verdict is a `coarse` verdict.
+
+**The thermal knockdown is not a life model and the fatigue slope is not a fatigue curve.**
+Both are asserted policies with in-file citations, both refuse to extrapolate, and the
+scope note prints with every hot profile. Nothing in this tree has measured PLA at
+temperature.
+
+**`STROKE_EFFICIENCY = 0.5` is an assumption** — the linear-spring figure — and it sits
+directly under the load factor, so every `n_land` above inherits it. `STROKE_BY_FIELD_CLASS`
+is three asserted numbers.
+
+**No `medium` production descent was run and nothing is promoted.** `--requirements` is
+proved at `coarse` and by test. **`ALLOWABLE_STRESS_MPA`'s `FFF_KNOCKDOWN` / `SAFETY_FACTOR`
+derivation is not re-opened**; the card recovers `sigma_ult(20C) = 50.0` from it rather than
+asserting a fourth number. **`studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25`
+is Roache's GCI factor, is unrelated, and was not touched.**
+
+**The 51/43/6/0.3/0 portfolio is arithmetic on the shipped weights, not a measurement of an
+optimum.** It says what the current table buys. It does not say the table is right.
+
+### WHAT MOVED
+
+`src/wheel_requirements.py` and `src/wheel_mbse.py` are new. `studies/study_mbse_baseline.py`,
+`studies/study_mbse_calibration.py` and `studies/study_mbse_score.py` are new with their three
+`.json` artifacts. `tests/test_requirements.py` is new, 43 tests. `wheel_objective.t3_terms`
+and `wheel_objective.objective` take `target_deflection_mm`, `allowable_stress_mpa` and
+`req` as keywords with `None` sentinels resolving to the module constants, and refuse a
+`req` given together with any keyword it would set. `_buckling_ratio` takes `force` and
+`youngs_modulus`. `wheel_stage3.py` takes `--requirements`, refuses it together with
+`--min-wall`, and writes a `requirements` block and a `req_hash` into every record.
+
+**AND THE ARC WROTE TWO DEFECTS OF ITS OWN, BOTH CAUGHT BEFORE THE COMMIT.**
+
+The first is `t3_terms`' two new keywords, written as
+`allowable_stress_mpa=ALLOWABLE_STRESS_MPA`. **A module global in a signature binds once,
+at import.** `tests/test_objective.py`'s product-rule test moves the stress barrier off
+zero by `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` — the only lever it has —
+and a default captured at `def` time does not see it. The test went RED with its own
+message: *"the barrier is still flat even at a 2 MPa allowable, so this test is asserting
+0 == 0 and would pass with any product rule at all"*. It was written to detect exactly the
+thing that happened to it. Both keywords are `None` sentinels resolved in the body now,
+and the binding time is pinned by its own test rather than left to the product-rule test
+to notice again.
+
+The second:
+It detects `--min-wall` by comparing it against `W.MIN_WALL_MM` and sat AFTER
+`set_min_wall`, which makes its own test false by construction — so a user who typed both
+would have had the requirements file silently win a floor that sets four of the fourteen
+genes. The check now runs before either flag moves anything, and the test pins the
+ORDERING rather than the message.
+`studies/study_stage3.py` takes `--requirements` and its gate guard refuses to file such a
+run under the committed name. The `Makefile` gains `mbse`, `mbsebase`, `mbsecal` and
+`mbsescore`. `MBSE_PLAN.md` gains a record block naming four places it was wrong and two
+decisions it left open. **Nothing in `src/` changed behaviour at the shipped requirement
+set, and the bit-identity test is what says so.**
+
+**AND TWO DATED QUOTATIONS OF `wheel_objective` ARE NOW QUOTATIONS OF THE PRE-ARC
+SOURCE, DELIBERATELY LEFT ALONE.** Threading the two requirements moved the deflection
+and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1153`
+is now :1165 and no longer reads a module global, and :1234 is now :1246 and reads
+`allowable_stress_mpa` where §93 and §94 quote it as `ALLOWABLE_STRESS_MPA`
+(`studies/study_fillet_kt.py:14`, `FILLET_PLAN.md`, `MBSE_PLAN.md` Step 3). Those are
+records of what was read on a date and rewriting them would falsify the account, so they
+keep their text and this paragraph is the pointer — the same treatment the six deleted
+arc files' citations get at the top of this file. The one citation that IS updated is the
+pool's `problem_kw` line, :1115 -> :1127, because it is a live pointer in four places and
+the line it names still does the same thing.
+
+#### The successors, ranked — NEW 2026-08-31 AT §97
+
+1. **STATE THE KNEE AND THE REFERENCE POINT** — §96's successor 1, unchanged and still
+   first. §97 sharpens it rather than displacing it: `MARGIN_KNEE_UTIL = 0.80` is now the
+   limit of a published `should` row that the shipped wheel meets by 0.021, and the
+   replacement stress term puts it 0.34 past it. The policy is now visible in a compliance
+   table, which is the right place to argue with it.
+2. **A MASS REQUIREMENT, OR AN EXPLICIT REFUSAL TO HAVE ONE** — new at §97. The wheel
+   misses `SHOULD-MASS` in every profile against a limit that is a normaliser, and `mass`
+   holds 51.4 of the 100 points. The largest single allocation in the table is being made
+   against a number nobody chose as a budget.
+3. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — §96's successor 2, unchanged.
+4. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A.
+5. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — new at §97, and the first thing
+   this arc built the machinery for. Two named profiles fail on `SHALL-STRESS` at the
+   shipped genome; `wheel_stage3.py --requirements` will descend against either, and what
+   comes back answers whether the failures are the wheel's or the load case's. Costs a
+   `medium` descent, which this arc was forbidden to spend.
+6. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5, behind 1, 3 and 4.
+7. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — new at §97. 1.5 is an
+   asserted asymmetry factor sitting directly on the force, multiplying everything
+   downstream of it, and it is the least evidenced number in the Step 0 chain.
+8. **The rim tri-block** (§96's 5); **the mesh's SECOND junction fillet** (§96's 6);
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** (§14's item 6); **re-derive Gate 1 at
+   the 1.2 mm floor** (open arc 4, which §97 gives a second consumer — `min_wall_mm` is
+   now a process requirement with a caller that can move it).
+9. **The sub-element fold, as its own unit** (§89's item 3); **calibrate §73's two
+   thresholds on a proper hold-out protocol**; **per-REGION agreement on a filleted mesh**
+   (§86); **gate 10's `phase_ripple` cost** (§91) — which §97 reprices: buying any rolling
+   smoothness at parity with mass costs 1.0085x the entire mass term; **carry
+   `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a FUNCTION of the
+   genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
