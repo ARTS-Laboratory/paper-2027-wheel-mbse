@@ -119,9 +119,11 @@ import numpy as np
 import scipy.optimize
 
 import wheel_fea as W
+import wheel_fem as WFEM
 import wheel_genome as wg
 import wheel_objective as WO
 import wheel_pool as WP
+import wheel_requirements as WR
 import wheel_wheel as WW
 
 HERE = PP.ROOT          # run outputs and the genome live at the repo root
@@ -313,6 +315,36 @@ def t1_barrier_sum(z, cfg, weights=None, span_mm=W.S):
     return barrier_sum_of(brk), brk
 
 
+def _apply_req(req, problem_kw, weights):
+    """Expand a `Requirements` into the keywords the evaluator path already speaks.
+
+    EXPANDED HERE RATHER THAN PASSED THROUGH AS AN OBJECT, and the reason is `Evaluator`:
+    it splats `weights=self.weights` AND `**self.problem_kw` into one `objective` call, so
+    a `req` riding `problem_kw` would arrive alongside a weight table and hit
+    `objective`'s own refusal to take both.  Expanding once, here, means exactly one place
+    in this file knows what a requirement set contains — and the T1 precheck, which never
+    reaches `objective`'s `req=` path at all, gets the same weight table as the objective
+    instead of silently screening trial steps against `DEFAULT_WEIGHTS`.
+
+    Returns `(problem_kw, weights)`.  Refuses any collision rather than picking a winner.
+    """
+    kw = req.objective_kwargs()
+    w = kw.pop("weights")
+    if weights is not None:
+        raise ValueError(
+            "got both req= and weights=; the requirement set carries the weight table.  "
+            "Refused rather than resolved by precedence — see `wheel_objective."
+            "objective`.")
+    clash = sorted(set(kw) & set(problem_kw))
+    if clash:
+        raise ValueError(
+            f"got req= together with {clash}, which req also sets.  Refused rather than "
+            f"resolved by precedence.")
+    out = dict(problem_kw)
+    out.update(kw)
+    return out, w
+
+
 def _fidelity_check(ev_fc, z, low, high, phases, cfg_label):
     """One extra t3-only evaluation of the CURRENT ACCEPTED iterate at a second mesh
     fidelity.  Value only — the gradient is discarded here, by name, and must never
@@ -352,6 +384,14 @@ class Evaluator:
     It used to also carry a `stress_scale` refreshed between steps; docstring item 1 says
     why that is gone and why nothing replaced it.
 
+    `req`, when given, is a `wheel_requirements.Requirements` and is EXPANDED HERE, in
+    the constructor, into `weights` plus the five keywords `objective` already takes.
+    This is the one place in the file that knows what a requirement set contains, and
+    `self.weights` is then the table BOTH the objective and `descend`'s T1 precheck use —
+    the precheck calls `t1_barrier_sum(weights=...)` and never reaches `objective`'s
+    `req=` path at all, so a run under re-priced priorities would otherwise screen its
+    trial steps against `DEFAULT_WEIGHTS` while descending on something else.
+
     `pool`, when given, is a live `wheel_pool.PhasePool` and is the one exception to
     "holds only what must persist between steps" — a pool rebuilt per call would pay the
     jax import and every jit trace per call and lose to serial outright.  It is owned by
@@ -360,8 +400,11 @@ class Evaluator:
     """
 
     def __init__(self, cfg=DEFAULT_CONFIG, *, weights=None, orientation=None,
-                 span_mm=W.S, pool=None, **problem_kw):
+                 span_mm=W.S, pool=None, req=None, **problem_kw):
         self.cfg = cfg
+        self.req = req
+        if req is not None:
+            problem_kw, weights = _apply_req(req, problem_kw, weights)
         self.weights = weights
         self.span_mm = span_mm
         self.orientation = orientation
@@ -413,7 +456,7 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
             log_every=10, out=None, orientation=None, span_mm=W.S, verbose=True,
             evaluator=None, warm_start=True, t1_precheck=True, workers=0,
             fidelity_check_every=0, fidelity_check_cfg=None, fidelity_evaluator=None,
-            **problem_kw):
+            req=None, **problem_kw):
     """Projected Adam in the unit box.  Returns the run record.
 
     One `objective` evaluation per accepted step, plus one microsecond T1 call per trial.
@@ -431,6 +474,16 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
     The gradient that call returns is discarded — it never reaches `m`/`v`/`delta`/`z` —
     so this cannot change the trajectory, only report on it.  A scheduled step that is
     abandoned instead of accepted is simply skipped, not rescheduled.
+
+    `req` is a `wheel_requirements.Requirements` and is NAMED rather than left to ride
+    `**problem_kw`, for one reason the T1 precheck makes concrete: a requirement set
+    carries a WEIGHT TABLE, and `t1_barrier_sum` is called below with `weights=` and
+    never reaches `objective`'s `req=` path at all.  Left implicit, a run under re-priced
+    priorities would screen its trial steps against the DEFAULT weights and accept or
+    reject them by a rule the objective does not use.  Named, the table is taken off the
+    requirement set once, here, and both paths see the same one.  `req` together with
+    `weights` is refused for the same reason `objective` refuses it: a precedence rule is
+    a rule someone has to remember at the call site.
     """
     if fidelity_check_every and not fidelity_check_cfg:
         raise ValueError(
@@ -459,7 +512,12 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
         # path recovers, and waiting for a real divergence to turn up is not a test.
         ev = evaluator if evaluator is not None else Evaluator(
             cfg, weights=weights, orientation=orientation, span_mm=span_mm, pool=pool,
-            **problem_kw)
+            req=req, **problem_kw)
+        # THE T1 PRECHECK MUST SCREEN AGAINST THE SAME TABLE THE OBJECTIVE DESCENDS ON.
+        # `t1_barrier_sum` below takes `weights=` and never reaches `objective`'s `req=`
+        # path, so this reads the expanded table back off the evaluator rather than
+        # keeping the caller's `None`.  See `Evaluator.__init__`.
+        weights = getattr(ev, "weights", weights)
 
         # A wholly separate object, never the primary's pool: the pool amortizes
         # per-phase dispatch across MANY steps, and this fires once every N — not worth
@@ -472,7 +530,9 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
         if fidelity_check_every:
             ev_fc = fidelity_evaluator if fidelity_evaluator is not None else Evaluator(
                 fidelity_check_cfg, weights=weights, orientation=orientation,
-                span_mm=span_mm, **problem_kw)
+                span_mm=span_mm,
+                **(problem_kw if req is None
+                   else _apply_req(req, problem_kw, None)[0]))
 
         events, step_rows = [], []
         t_start = time.time()
@@ -662,6 +722,27 @@ def _log_step(i, val, grad, lr, brk, wall):
           f"util {rep.get('stress_utilisation', float('nan')):6.3f}  {wall:5.2f} s")
 
 
+def _requirement_settings(ev):
+    """The five requirement quantities the evaluator was built with, plus `req_hash`.
+
+    `getattr(..., {})` because `descend`'s `evaluator=` injection point is real — S5's
+    `_FaultyEvaluator` has no `problem_kw` — and a provenance block is not worth raising
+    over.  A run with no requirement set reports the module defaults, which is what it
+    was descended under.
+    """
+    kw = getattr(ev, "problem_kw", {}) or {}
+    req = getattr(ev, "req", None)
+    return {"service_force_n": float(kw.get("force", W.TOTAL_FORCE_NEWTONS)),
+            "target_deflection_mm": float(kw.get("target_deflection_mm",
+                                                 WO.TARGET_DEFLECTION_MM)),
+            "allowable_stress_mpa": float(kw.get("allowable_stress_mpa",
+                                                 WO.ALLOWABLE_STRESS_MPA)),
+            "e_mpa": float(kw.get("E", W.YOUNGS_MODULUS_PLA_MPA)),
+            "nu": float(kw.get("nu", WFEM.POISSON_RATIO_PLA)),
+            "min_wall_mm_at_descent": float(W.MIN_WALL_MM),
+            "req_hash": None if req is None else req.req_hash()}
+
+
 def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, seed,
             n_phase, steps, fidelity_check_every=0, fidelity_check_cfg=None,
             ev_fc=None):
@@ -671,9 +752,14 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
         "settings": {"config": cfg if isinstance(cfg, str) else cfg.name,
                      "optimizer": "adam", "steps": steps, "n_phase": n_phase,
                      "phase_scheme": scheme, "seed": seed,
-                     "service_force_n": W.TOTAL_FORCE_NEWTONS,
-                     "target_deflection_mm": WO.TARGET_DEFLECTION_MM,
-                     "allowable_stress_mpa": WO.ALLOWABLE_STRESS_MPA,
+                     # THE REQUIREMENTS THIS RUN WAS ACTUALLY DESCENDED UNDER, read off
+                     # the evaluator's own keyword dict rather than off the modules.
+                     # Same argument as `search_block`'s wall floor one screen down: the
+                     # record must describe what REACHED the objective, and since
+                     # MBSE_PLAN Step 3 these five can all be moved per run.  Read from
+                     # the modules they would report the shipped mission for every run,
+                     # which is precisely the failure §14 records for `kinematics`.
+                     **_requirement_settings(ev),
                      "elapsed_s": round(time.time() - t_start, 1),
                      "orientation": [float(o) for o in (ev.orientation or ())],
                      "n_objective_calls": ev.n_calls,
@@ -769,7 +855,7 @@ def _write(out, record):
 
 def descend_lbfgsb(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, weights=None,
                    n_phase=DEFAULT_N_PHASE, scheme="uniform", orientation=None,
-                   span_mm=W.S, out=None, verbose=True, **problem_kw):
+                   span_mm=W.S, out=None, verbose=True, req=None, **problem_kw):
     """`scipy.optimize.minimize(method="L-BFGS-B")` over the same closure.
 
     `scheme` MUST be `uniform`.  A quasi-Newton method builds its curvature model from
@@ -791,7 +877,7 @@ def descend_lbfgsb(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, weights=None,
                                            WW.get_config(cfg), span_mm=span_mm)
     orientation = tuple(float(o) for o in orientation)
 
-    ev = Evaluator(cfg, weights=weights, orientation=orientation, span_mm=span_mm,
+    ev = Evaluator(cfg, req=req, weights=weights, orientation=orientation, span_mm=span_mm,
                    **problem_kw)
     phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
 
@@ -880,7 +966,8 @@ def start_points(spec, genome="best_solution.json", elites="stage2_elites.json")
     raise ValueError(f"unknown --start {spec!r}; expected 'best', 'all' or 'rank:N'")
 
 
-def search_block(args, label, at_step, selection=None):
+def search_block(args, label, at_step, selection=None, req=None,
+                 requirements_file=None):
     """Search provenance for the `--best-out` record: which run produced this genome,
     and inside WHAT BOX.
 
@@ -917,6 +1004,16 @@ def search_block(args, label, at_step, selection=None):
             "min_wall_mm": float(W.MIN_WALL_MM),
             "cy_bound_mm": float(W.CY_BOUND_MM),
             "kinematics": args.kinematics,
+            # THE REQUIREMENT SET, BESIDE THE BOX, for the same reason the box is here.
+            # `min_wall_mm` and `cy_bound_mm` say WHAT SPACE this genome is a boundary
+            # optimum of; `req_hash` says WHAT PROBLEM it is the optimum of, and two
+            # genomes descended under different loads, targets or allowables are optima
+            # of different objectives and are otherwise indistinguishable.  `None` on
+            # every run that named no requirement set, which is every run before
+            # MBSE_PLAN Step 6 — an absent hash means "the shipped mission", never
+            # "unknown".
+            "req_hash": None if req is None else req.req_hash(),
+            "requirements_file": requirements_file,
             # WHY this step and not the lowest-loss one.  Recorded next to the box for the
             # same reason the box is recorded: a promoted file that does not say which
             # rule chose it cannot be re-derived, and this rule replaced one that shipped
@@ -1011,9 +1108,35 @@ def main():
     ap.add_argument("--genome", default="best_solution.json")
     ap.add_argument("--elites", default="stage2_elites.json")
     ap.add_argument("--log-every", type=int, default=10)
+    ap.add_argument("--requirements", default=None, metavar="PATH",
+                    help="a wheel_requirements JSON file (see `make mbse`).  Sets the "
+                         "service force, stroke target, allowable stress, modulus, "
+                         "Poisson ratio, printable wall floor and the whole weight "
+                         "table; the record grows a top-level `requirements` block and "
+                         "`search.req_hash`.  Omitted, the run uses the shipped mission "
+                         "and every number below is unchanged.")
     ap.add_argument("--out", default="stage3_run.json")
     ap.add_argument("--best-out", default="stage3_best.json")
     args = ap.parse_args()
+
+    # `--min-wall` AND `--requirements` TOGETHER ARE REFUSED, not silently ordered.  The
+    # floor sets 4 of the 14 genes at the optimum (`set_min_wall`'s own docstring), so
+    # whichever of the two lost would be a run optimising a different wheel from the one
+    # its record claims — and the record can only carry one floor.
+    #
+    # AND THE TEST HAS TO RUN BEFORE EITHER OF THEM MOVES THE FLOOR: `--min-wall` is
+    # detected by comparing it against `W.MIN_WALL_MM`, so calling `set_min_wall` first
+    # makes that comparison false by construction and the refusal unreachable.
+    req = None
+    if args.requirements:
+        req = WR.load(args.requirements)
+        if args.min_wall != W.MIN_WALL_MM:
+            ap.error(
+                "--min-wall and --requirements both set the printable wall floor "
+                "(%.4f against %.4f).  Refused rather than ordered: the floor sets four "
+                "of the fourteen genes at the optimum, so the loser would silently "
+                "optimise a different wheel.  Put the floor in the requirements file."
+                % (args.min_wall, req.min_wall_mm))
 
     # BEFORE `bounds_arrays`, and before `start_points` normalises anything against them.
     # Every consumer in this tree reads the bounds through `wg.bounds_arrays(W.GENE_SPACE)`
@@ -1023,6 +1146,18 @@ def main():
     # never touch the box (`wheel_pool_worker.run_phase`).
     if args.min_wall != W.MIN_WALL_MM:
         W.set_min_wall(args.min_wall)
+
+    # AND THE REQUIREMENT SET MOVES THE SAME FLOOR, BY THE SAME CALL, IN THE SAME PLACE.
+    # `min_wall_mm` is not a term in the loss — it is the LOW bound on four genes — so
+    # `Requirements.apply_process()` is `set_min_wall`, and it has to land here, before
+    # `bounds_arrays` and before `start_points` normalises anything against them.
+    if req is not None:
+        req.apply_process()
+        print(f"\n  REQUIREMENTS {args.requirements}  req_hash {req.req_hash()}")
+        print(f"    force {req.force_n:.4f} N   target {req.target_deflection_mm:.4f} mm"
+              f"   allowable {req.allowable_stress_mpa:.4f} MPa")
+        print(f"    E {req.e_mpa:.2f} MPa   nu {req.nu:.4f}   "
+              f"min wall {req.min_wall_mm:.4f} mm")
 
     low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
     starts = start_points(args.start, args.genome, args.elites)
@@ -1046,7 +1181,7 @@ def main():
         if args.optimizer == "lbfgsb":
             rec = descend_lbfgsb(z0, args.config, steps=args.steps,
                                  n_phase=args.n_phase, scheme=args.phase_scheme,
-                                 out=out, kinematics=args.kinematics)
+                                 out=out, kinematics=args.kinematics, req=req)
         else:
             rec = descend(z0, args.config, steps=args.steps, lr=args.lr,
                           n_phase=args.n_phase, n_sub=args.n_sub,
@@ -1056,7 +1191,7 @@ def main():
                           log_every=args.log_every, out=out, workers=args.workers,
                           fidelity_check_every=args.fidelity_check_every,
                           fidelity_check_cfg=args.fidelity_check_config,
-                          kinematics=args.kinematics)
+                          kinematics=args.kinematics, req=req)
         rec["label"] = label
         runs.append(rec)
         print(f"\nwrote {out}  ({rec['settings']['elapsed_s']} s, "
@@ -1075,15 +1210,23 @@ def main():
               "`wheel_stage3.selection_key`." % (tier, MIN_CAP_SLACK_MM))
     print(wg.describe(np.array(list(best["best"]["genes"].values())), low, high))
 
+    # THE REQUIREMENTS BLOCK IS TOP-LEVEL, beside `search`, `metrics` and `loss_terms`,
+    # and NEVER inside `genes`: `wheel_genome.save_record` refuses a key there and states
+    # why — it *"changes `genome_hash` for every genome and breaks all staleness
+    # checks"*.  Omitted entirely on a run that named no requirement set, so no existing
+    # record's shape changes and `wheel_requirements.verify` reports `unstated` for it.
+    extra = {} if req is None else {"requirements": req.as_dict()}
     h = wg.save_record(
         os.path.join(HERE, args.best_out), best["best"]["genes"],
         source="wheel_stage3.py",
         search=search_block(args, best["label"], best["best"]["step"],
-                            selection=best["best"]["selection"]),
+                            selection=best["best"]["selection"], req=req,
+                            requirements_file=args.requirements),
         loss_terms=best["best"]["terms"],
         metrics=best["best"]["report"],
         loss=best["best"]["loss"],
         stage2_loss=[r["steps"][0]["loss"] for r in runs if r["label"] == best["label"]][0],
+        **extra,
     )
     print(f"\nwrote {os.path.join(HERE, args.best_out)}  (genome_hash {h})")
     return 0

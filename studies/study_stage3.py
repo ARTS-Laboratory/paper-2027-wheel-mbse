@@ -108,6 +108,7 @@ import wheel_fem as fem
 import wheel_genome as wg
 import wheel_objective as WO
 import wheel_pool as WP
+import wheel_requirements as WR
 import wheel_stage3 as S3
 import wheel_wheel as WW
 
@@ -1211,7 +1212,7 @@ def _worst_rel(a, b):
 
 
 def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_rep=2,
-                   probe_p=(), prod_steps=300, prod_starts=4):
+                   probe_p=(), prod_steps=300, prod_starts=4, req=None):
     """The same evaluation serial and pooled: identical answer, and how much faster.
 
     TWO CLAIMS, AND ONLY ONE OF THEM TRAVELS.  `identical` is a statement about the code
@@ -1234,6 +1235,17 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     touches the phase loop — so including them is what makes the projected hours
     comparable to S10's 48.13 h instead of flattering the result by timing only the part
     that was parallelised.
+
+    `req` IS THE ONE ARGUMENT HERE THAT IS NOT ABOUT TIMING.  A requirement set is
+    expanded by `S3.Evaluator` into `force`, `E`, `nu`, the two stress/stroke keywords and
+    the weight table, and `force`/`E`/`nu` are the three that have to survive being
+    PICKLED INTO A WORKER PROCESS (`wheel_objective.py:1127` ships `problem_kw`).  Run
+    with a NON-BASELINE set, `identical` stops being a statement about the transport alone
+    and becomes the statement MBSE_PLAN Step 3 asks for: the requirements reach the
+    workers and are not silently defaulted there.  Defaulted, the pooled arm would score
+    the shipped mission while the serial arm scored the given one, and the two would
+    disagree — which is exactly what this section already knows how to report.  `None`
+    is the gate's own value and leaves the committed artifact unchanged.
     """
     low, high, _ = _bounds()
     z0 = wg.normalize(genes, low, high)
@@ -1242,7 +1254,8 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     counts = list(_worker_ladder(n_phase) if worker_counts is None else worker_counts)
 
     def evaluate(pool):
-        ev = S3.Evaluator(cfg, orientation=ori, pool=pool, stress_p_probe=tuple(probe_p))
+        ev = S3.Evaluator(cfg, orientation=ori, pool=pool, req=req,
+                          stress_p_probe=tuple(probe_p))
         t0 = time.time()
         out = ev(z0, low, high, phases=phases)
         first = time.time() - t0
@@ -1293,6 +1306,7 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     # `identical` still applies, and it is the claim that matters.
     measurable = best["workers"] > 1
     return {"config": cfg if isinstance(cfg, str) else cfg.name, "n_phase": n_phase,
+            "req_hash": None if req is None else req.req_hash(),
             "cpu_count": os.cpu_count(), "worker_counts": counts, "n_rep": n_rep,
             "serial_s": serial_s, "serial_first_call_s": serial_first,
             "serial_projected_hours": float(prod_steps * prod_starts * serial_s / 3600.0),
@@ -2046,6 +2060,12 @@ def main():
     ap.add_argument("--out", default="study_stage3.json")
     ap.add_argument("--elites", default="stage2_elites.json")
     ap.add_argument("--no-plot", action="store_true")
+    ap.add_argument("--requirements", default=None, metavar="PATH",
+                    help="a wheel_requirements JSON file.  Reaches the `phase_pool` "
+                         "section only, where it turns `identical` into MBSE_PLAN Step "
+                         "3's check: pooled == serial with the requirements picked into "
+                         "the workers rather than silently defaulted there.  May not be "
+                         "filed under the committed artifact's name.")
     ap.add_argument("--quick", action="store_true",
                     help="reduced meshes and step counts; for the test suite")
     ap.add_argument("--sections", default=",".join(DEFAULT_SECTIONS),
@@ -2088,7 +2108,16 @@ def main():
         (args.ladder_configs != ",".join(LADDER_CONFIGS), "--ladder-configs %s" % args.ladder_configs),
         (args.no_plot, "--no-plot, which would refresh the .json and leave the "
                        "committed .jpg stale"),
+        # A run under a requirement set is a DIFFERENT MEASUREMENT, not a weaker one —
+        # every number in it answers a question about another mission — so it may not be
+        # filed under the gate's name any more than a `--quick` run may.
+        (args.requirements is not None,
+         "--requirements %s; every number below then describes a different mission"
+         % args.requirements),
     ])
+
+    # Loaded before any solving, so a bad path costs a startup and not three hours.
+    req = None if args.requirements is None else WR.load(args.requirements)
 
     try:
         sections = parse_sections(args.sections)
@@ -2190,7 +2219,7 @@ def main():
         # thing anyone is waiting for.
         "phase_pool":
             lambda: run_phase_pool(genes, cfg, n_phase=cost_phase,
-                                   worker_counts=pool_workers),
+                                   worker_counts=pool_workers, req=req),
     }
     for name in sections:
         section(name, runners[name])

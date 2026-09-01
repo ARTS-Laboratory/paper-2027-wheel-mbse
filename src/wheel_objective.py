@@ -1043,7 +1043,8 @@ def _probe_values(prob, u, probe_p):
 
 
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
-             force=SERVICE_FORCE_N, stress_phase_p=8.0, warm=None,
+             force=SERVICE_FORCE_N, target_deflection_mm=None,
+             allowable_stress_mpa=None, stress_phase_p=8.0, warm=None,
              stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None,
              orientation=None, span_mm=W.S, flanks=None, **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
@@ -1085,6 +1086,22 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     same floats in the same sequence.  That is what lets S13 gate pooled == serial
     exactly rather than to a tolerance; see `wheel_pool`'s module docstring.
 
+    `target_deflection_mm` AND `allowable_stress_mpa` ARE THE TWO REQUIREMENTS THAT USED
+    TO BE MODULE GLOBALS, and `None` resolves to those globals IN THE BODY, so a call
+    that names neither is the call this file has always made.  The sentinel is not
+    stylistic: written as `allowable_stress_mpa=ALLOWABLE_STRESS_MPA` the default binds
+    at `def` time, and `tests/test_objective.py`'s
+    `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` — the only way that file has
+    to push the stress barrier off zero — stops reaching the term, which is a green test
+    asserting `0 == 0`.  A module global read at call time keeps working; one captured
+    in a signature does not.  They are keywords rather than reads
+    because `force`, `E` and `nu` already thread — `force` here, the other two on
+    `**problem_kw` and through the process pool (`wheel_objective.py:1127`) — and the
+    asymmetry was arbitrary: three of the five quantities a MISSION sets could be varied
+    inside one interpreter and two could not.  `tests/test_objective.py:1257` had to
+    `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move one of them, which is
+    the tell.  See `wheel_requirements.py` and MBSE_PLAN.md Step 3.
+
     `stress_p_probe` MEASURES WITHOUT SOLVING.  The p-norm is a pure function of the
     converged displacement field, so any number of exponents can be read off the field the
     adjoint already ran on — `_meta` hands back both `prob` and `res`.  Each probe `p` is
@@ -1094,6 +1111,11 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     probe `p`: a convergence study reads values, and one adjoint per exponent per phase
     would turn a 14-minute ladder into an hour for numbers nothing reads.
     """
+    # READ AT CALL TIME, NOT BOUND AT `def` TIME — see the two paragraphs above.
+    target_deflection_mm = (TARGET_DEFLECTION_MM if target_deflection_mm is None
+                            else target_deflection_mm)
+    allowable_stress_mpa = (ALLOWABLE_STRESS_MPA if allowable_stress_mpa is None
+                            else allowable_stress_mpa)
     w = dict(DEFAULT_WEIGHTS if weights is None else weights)
     if phases is None:
         phases = phase_stencil(scheme="uniform")
@@ -1150,9 +1172,9 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     # too soft — `wheel_fea`'s reasoning, unchanged.
     mean_drop = drops.mean()
     mean_dgrad = dgrads.mean(axis=0)
-    err = (mean_drop - TARGET_DEFLECTION_MM) / TARGET_DEFLECTION_MM
+    err = (mean_drop - target_deflection_mm) / target_deflection_mm
     deflection = w["deflection"] * err ** 2
-    d_deflection = w["deflection"] * 2.0 * err / TARGET_DEFLECTION_MM * mean_dgrad
+    d_deflection = w["deflection"] * 2.0 * err / target_deflection_mm * mean_dgrad
 
     # -- stress: `Kt(R, t) * sigma_nominal <= ALLOWABLE`, one barrier per junction.
     #
@@ -1231,8 +1253,8 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     stress, d_stress, utils = 0.0, np.zeros_like(dagg), {}
     stress_margin, d_stress_margin = 0.0, np.zeros_like(dagg)
     for name, kt, dkt in (("hub", kt_hub, dkt_hub), ("rim", kt_rim, dkt_rim)):
-        util_j = kt * agg / ALLOWABLE_STRESS_MPA
-        d_util = (dkt * agg + kt * dagg) / ALLOWABLE_STRESS_MPA   # THE PRODUCT RULE
+        util_j = kt * agg / allowable_stress_mpa
+        d_util = (dkt * agg + kt * dagg) / allowable_stress_mpa   # THE PRODUCT RULE
         stress += float(soft_barrier(util_j - 1.0, w["stress"]))
         d_stress = d_stress + 2.0 * w["stress"] * max(0.0, util_j - 1.0) * d_util
         # THE SAME FUNCTION AS THE WALL ABOVE, WITH THE KNEE MOVED IN — see DEFECT 8.
@@ -1269,8 +1291,8 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     for v in probe_p:
         a_v, c_v = _stress_aggregate(probe_pn[v], maxes, q)
         by_p[repr(v)] = {"p": v, "pnorm_agg_mpa": a_v, "stress_scale_measured": c_v,
-                         "stress_utilisation": c_v * a_v / ALLOWABLE_STRESS_MPA,
-                         "stress_utilisation_kt": kt_max * a_v / ALLOWABLE_STRESS_MPA,
+                         "stress_utilisation": c_v * a_v / allowable_stress_mpa,
+                         "stress_utilisation_kt": kt_max * a_v / allowable_stress_mpa,
                          "pnorm_stress_mpa": [float(x) for x in probe_pn[v]]}
 
     return {
@@ -1297,6 +1319,15 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "stress_utilisation_rim": utils["rim"],
                    "stress_utilisation": float(util),
                    "stress_gauss_p": float(stress_gauss_p), "pnorm_by_p": by_p,
+                   # THE TWO REQUIREMENTS THIS EVALUATION WAS SCORED UNDER, reported
+                   # beside the numbers they scaled.  A `stress_utilisation` without the
+                   # allowable it is a fraction OF, or an axle drop without the target it
+                   # is measured against, is exactly the ambiguity §14 records the cost of
+                   # for `kinematics`: two records, indistinguishable, answering different
+                   # questions.  Absent from every record written before MBSE_PLAN Step 3.
+                   "target_deflection_mm": float(target_deflection_mm),
+                   "allowable_stress_mpa": float(allowable_stress_mpa),
+                   "service_force_n": float(force),
                    "n_phase": n, "rows": rows},
     }
 
@@ -1306,8 +1337,9 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 # ---------------------------------------------------------------------------
 
 def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
-              normalized=False, force=SERVICE_FORCE_N, tiers=("t1", "t2", "t3"),
-              span_mm=W.S, pool=None, orientation=None, **problem_kw):
+              normalized=False, force=None, tiers=("t1", "t2", "t3"),
+              span_mm=W.S, pool=None, orientation=None, req=None,
+              target_deflection_mm=None, allowable_stress_mpa=None, **problem_kw):
     """`(value, grad, breakdown)` — the scalar Stage 3 descends, and its gradient.
 
     `normalized=True` takes and returns unit-box `z` instead of physical genes.  The
@@ -1323,7 +1355,52 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     expected to hand `meshes=[mesh0]` — one mesh, built at the first phase — rather than
     let T2 fall back to `build_wheel` at the default phase and quietly stop matching the
     serial path.  `wheel_stage3.Evaluator` does exactly that.
+
+    `req` IS A `wheel_requirements.Requirements`, AND IT IS THE WHOLE REQUIREMENTS ENTRY
+    POINT — MBSE_PLAN.md Step 3.  It supplies `weights`, `force`, `target_deflection_mm`,
+    `allowable_stress_mpa`, `E` and `nu` in one object, and
+    `objective(genes, req=Requirements.baseline())` is bit-identical to
+    `objective(genes)` in the scalar, all 14 gradient components and every one of the 14
+    breakdown terms — which `tests/test_requirements.py` gates, because a default that
+    moved would be a silent re-interpretation of every committed artifact and of the five
+    study drivers that re-alias `SERVICE_FORCE_N`.
+
+    **PASSING `req` TOGETHER WITH ANY OF THE SIX IT SETS IS REFUSED, not resolved by a
+    precedence rule.**  A rule ("the explicit one wins", "the req wins") is a rule someone
+    has to remember at the call site, and getting it wrong scores a design against a
+    requirement nobody chose — the same class of failure as a run whose kinematics is not
+    in its record.  Hence the six `None` sentinels above, which is also why `force`'s
+    default moved from `SERVICE_FORCE_N` to `None`: it still RESOLVES to
+    `SERVICE_FORCE_N`, one line down, and every caller that passes it explicitly is
+    unaffected.
+
+    `min_wall_mm` is deliberately NOT here.  It is not a term in the loss, it is the low
+    bound on four genes, and it reaches a run through `wheel_fea.set_min_wall` —
+    `Requirements.apply_process()` is that call, and it must happen before
+    `bounds_arrays`, exactly as `wheel_stage3.main` already does for `--min-wall`.
     """
+    if req is not None:
+        clash = [n for n, v in (("weights", weights), ("force", force),
+                                ("target_deflection_mm", target_deflection_mm),
+                                ("allowable_stress_mpa", allowable_stress_mpa))
+                 if v is not None]
+        clash += [n for n in ("E", "nu") if n in problem_kw]
+        if clash:
+            raise ValueError(
+                f"objective() got req= together with {sorted(clash)}, which req also "
+                f"sets.  Refused rather than resolved by precedence: pass the "
+                f"requirement set OR the individual keywords, never both.")
+        rkw = req.objective_kwargs()
+        weights = rkw["weights"]
+        force = rkw["force"]
+        target_deflection_mm = rkw["target_deflection_mm"]
+        allowable_stress_mpa = rkw["allowable_stress_mpa"]
+        problem_kw["E"], problem_kw["nu"] = rkw["E"], rkw["nu"]
+    force = SERVICE_FORCE_N if force is None else force
+    target_deflection_mm = (TARGET_DEFLECTION_MM if target_deflection_mm is None
+                            else target_deflection_mm)
+    allowable_stress_mpa = (ALLOWABLE_STRESS_MPA if allowable_stress_mpa is None
+                            else allowable_stress_mpa)
     low, high, rng = wg.bounds_arrays(W.GENE_SPACE)
     genes = wg.denormalize(np.asarray(genes, dtype=float), low, high) if normalized \
         else np.asarray(genes, dtype=float)
@@ -1347,7 +1424,16 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
             values[name], grads[name] = float(v1[k]), j1[k]
         # The one term with no gradient, and it is asserted rather than assumed — see the
         # module docstring.  Computed from the numpy beam surrogate.
-        _, _, _, ratio = _buckling_ratio(genes)
+        #
+        # AND IT IS GIVEN THE MISSION'S LOAD AND MODULUS, not the module's.  `buckling` is
+        # a BARRIER — a `shall` — and until MBSE_PLAN Step 3 it read
+        # `W.FORCE_PER_SPOKE_NEWTONS` and the 20 C `YOUNGS_MODULUS_PLA_MPA` off the module
+        # no matter what the caller loaded the wheel with.  A heavy-payload or hot-day
+        # requirement set would therefore have been checked for buckling AT THE SHIPPED
+        # LOAD, silently, and a verifier that reports a barrier at 0.0 for a load it never
+        # applied is worse than one that reports nothing.
+        _, _, _, ratio = _buckling_ratio(genes, force=force,
+                                         youngs_modulus=problem_kw.get("E"))
         wts = dict(DEFAULT_WEIGHTS if weights is None else weights)
         values["buckling"] = float(soft_barrier(ratio - 1.0, wts["buckling"]))
         grads["buckling"] = np.zeros(14)
@@ -1366,7 +1452,9 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
 
     if "t3" in tiers:
         t3 = t3_terms(genes, cfg, phases=phases, meshes=meshes, weights=weights,
-                      force=force, pool=pool, orientation=orientation,
+                      force=force, target_deflection_mm=target_deflection_mm,
+                      allowable_stress_mpa=allowable_stress_mpa,
+                      pool=pool, orientation=orientation,
                       span_mm=span_mm, flanks=flanks, **problem_kw)
         values.update(t3["values"])
         grads.update(t3["grads"])
@@ -1388,17 +1476,26 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     return total, gsum, breakdown
 
 
-def _buckling_ratio(genes):
+def _buckling_ratio(genes, force=None, youngs_modulus=None):
     """The legacy Euler equivalent-column check.  NO GRADIENT — see the module docstring.
 
     Delegates to `wheel_fea.generalized_spoke_mechanics` rather than reimplementing it:
     the value is the one M0's golden test pins, and a second copy that drifted would be a
     silent change to a committed number.
+
+    `force` is the WHOLE-WHEEL service load and is divided down here by the same
+    `NUMBER_OF_SPOKES / 3.0` that defines `W.FORCE_PER_SPOKE_NEWTONS` (`wheel_fea.py:154`)
+    — *"conservative: 1/3 of spokes are load-bearing at any stance"* — rather than being
+    passed per-spoke, so that every caller in the tree speaks the one unit `force` means
+    everywhere else.  Both arguments default to the module constants, so a bare call is
+    the call this function has always made.
     """
+    f = W.TOTAL_FORCE_NEWTONS if force is None else float(force)
+    e = W.YOUNGS_MODULUS_PLA_MPA if youngs_modulus is None else float(youngs_modulus)
     curve, _ = W.generate_bezier_centerline(*[float(genes[i]) for i in range(8)])
     return W.generalized_spoke_mechanics(
         curve, float(genes[8]), float(genes[9]), float(genes[10]), float(genes[11]),
-        W.SPOKE_WIDTH_MM, W.FORCE_PER_SPOKE_NEWTONS,
+        W.SPOKE_WIDTH_MM, f / (W.NUMBER_OF_SPOKES / 3.0), youngs_modulus=e,
         R_hub_fillet=float(genes[12]), R_rim_fillet=float(genes[13]))
 
 
