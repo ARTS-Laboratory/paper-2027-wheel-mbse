@@ -251,7 +251,7 @@
           "n_phase": 8,
           "phase_scheme": "uniform"
         },
-        "elapsed_s": 162.15
+        "elapsed_s": 163.51
       },
       "table": {
         "rows": [
@@ -388,13 +388,13 @@
             "id": "SHOULD-MASS",
             "kind": "should",
             "term_loss": 32.50505239907359,
-            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "statement": "no mass requirement exists in this tree (PLAN.md \u00a798): the one stated precedent, ~5% of all-up weight, is denominated in OCC-solid mass and this row reads meshed mass instead",
             "method": "analysis \u2014 meshed area x width x density",
             "quantity": "metrics.mesh_mass_g",
             "value": 39.5478137522062,
-            "limit": 36.5,
-            "margin": -3.0478137522062028,
-            "verdict": "MISSED"
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
           },
           {
             "id": "SHOULD-STRESS-MARGIN",
@@ -695,7 +695,7 @@
           "n_phase": 8,
           "phase_scheme": "uniform"
         },
-        "elapsed_s": 197.96
+        "elapsed_s": 199.92
       },
       "table": {
         "rows": [
@@ -832,13 +832,13 @@
             "id": "SHOULD-MASS",
             "kind": "should",
             "term_loss": 32.50505239907359,
-            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "statement": "no mass requirement exists in this tree (PLAN.md \u00a798): the one stated precedent, ~5% of all-up weight, is denominated in OCC-solid mass and this row reads meshed mass instead",
             "method": "analysis \u2014 meshed area x width x density",
             "quantity": "metrics.mesh_mass_g",
             "value": 39.5478137522062,
-            "limit": 36.5,
-            "margin": -3.0478137522062028,
-            "verdict": "MISSED"
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
           },
           {
             "id": "SHOULD-STRESS-MARGIN",
@@ -1139,7 +1139,7 @@
           "n_phase": 8,
           "phase_scheme": "uniform"
         },
-        "elapsed_s": 229.65
+        "elapsed_s": 233.27
       },
       "table": {
         "rows": [
@@ -1276,13 +1276,13 @@
             "id": "SHOULD-MASS",
             "kind": "should",
             "term_loss": 32.50505239907359,
-            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "statement": "no mass requirement exists in this tree (PLAN.md \u00a798): the one stated precedent, ~5% of all-up weight, is denominated in OCC-solid mass and this row reads meshed mass instead",
             "method": "analysis \u2014 meshed area x width x density",
             "quantity": "metrics.mesh_mass_g",
             "value": 39.5478137522062,
-            "limit": 36.5,
-            "margin": -3.0478137522062028,
-            "verdict": "MISSED"
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
           },
           {
             "id": "SHOULD-STRESS-MARGIN",
@@ -1583,7 +1583,7 @@
           "n_phase": 8,
           "phase_scheme": "uniform"
         },
-        "elapsed_s": 163.16
+        "elapsed_s": 164.81
       },
       "table": {
         "rows": [
@@ -1720,13 +1720,13 @@
             "id": "SHOULD-MASS",
             "kind": "should",
             "term_loss": 32.50505239907359,
-            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "statement": "no mass requirement exists in this tree (PLAN.md \u00a798): the one stated precedent, ~5% of all-up weight, is denominated in OCC-solid mass and this row reads meshed mass instead",
             "method": "analysis \u2014 meshed area x width x density",
             "quantity": "metrics.mesh_mass_g",
             "value": 39.5478137522062,
-            "limit": 36.5,
-            "margin": -3.0478137522062028,
-            "verdict": "MISSED"
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
           },
           {
             "id": "SHOULD-STRESS-MARGIN",
@@ -2027,7 +2027,7 @@
           "n_phase": 8,
           "phase_scheme": "uniform"
         },
-        "elapsed_s": 162.61
+        "elapsed_s": 164.93
       },
       "table": {
         "rows": [
@@ -2164,13 +2164,13 @@
             "id": "SHOULD-MASS",
             "kind": "should",
             "term_loss": 32.50505239907359,
-            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "statement": "no mass requirement exists in this tree (PLAN.md \u00a798): the one stated precedent, ~5% of all-up weight, is denominated in OCC-solid mass and this row reads meshed mass instead",
             "method": "analysis \u2014 meshed area x width x density",
             "quantity": "metrics.mesh_mass_g",
             "value": 39.5478137522062,
-            "limit": 36.5,
-            "margin": -3.0478137522062028,
-            "verdict": "MISSED"
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
           },
           {
             "id": "SHOULD-STRESS-MARGIN",

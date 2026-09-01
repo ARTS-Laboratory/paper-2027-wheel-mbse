@@ -415,12 +415,30 @@ def test_the_shall_rows_are_exactly_BARRIER_TERMS_and_the_shoulds_OBJECTIVE_TERM
 
 
 def test_a_missed_should_never_makes_a_design_non_compliant(shipped_record):
-    """THE WHOLE SHALL/SHOULD DISTINCTION.  The shipped wheel misses two `should`s — it
-    is over `MASS_REFERENCE_G` and over the margin knee — and it ships."""
-    t = R.verify(shipped_record, R.Requirements.baseline())
+    """THE WHOLE SHALL/SHOULD DISTINCTION.  Against its OWN baseline the shipped wheel
+    misses nothing (PLAN.md §98 took `mass` out of the running — see the `mass` test
+    below).  A tighter stroke target still finds a natural miss without touching the
+    genome: `field_class="paved"` wants 1.0 mm and the shipped wheel sits at 1.9974 mm,
+    which is 99.7% over — and it still ships, because a `should` cannot fail a `shall`."""
+    tight = R.Requirements.from_mission(replace(R.Mission.implied_baseline(),
+                                                 field_class="paved"))
+    t = R.verify(shipped_record, tight)
     missed = [r["id"] for r in t["rows"] if r["verdict"] == "MISSED"]
     assert missed, "expected the shipped wheel to miss at least one `should`"
     assert t["compliant"]
+
+
+def test_mass_has_no_stated_limit(shipped_record):
+    """PLAN.md §98: the only candidate budget (~5% of all-up weight,
+    `Mission.implied_baseline`'s own citation) is denominated in OCC-solid mass, and
+    `metrics.mesh_mass_g` is a different quantity — so `mass` reports the same
+    `NO LIMIT STATED` verdict as `smoothness` and `phase_ripple` rather than a number
+    nobody chose under these units."""
+    t = R.verify(shipped_record, R.Requirements.baseline())
+    row = next(r for r in t["rows"] if r["id"] == "SHOULD-MASS")
+    assert row["verdict"] == "NO LIMIT STATED"
+    assert row["limit"] is None and row["margin"] is None
+    assert row["value"] == pytest.approx(shipped_record["metrics"]["mesh_mass_g"])
 
 
 def test_a_breached_shall_makes_a_design_non_compliant(shipped_record):

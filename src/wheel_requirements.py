@@ -916,11 +916,18 @@ BARRIER_EVIDENCE = {
     "min_sj": ("min_scaled_jacobian", None, ">="),      # limit read from wheel_objective
 }
 
-# Where a `should` has a stated reference point.  Two of the five do not, and the table
-# says so rather than inventing a budget: `mass` is normalised against
-# `MASS_REFERENCE_G` — *"v2.0 cantilever-era best, as a normaliser"* — and `smoothness`
-# and `phase_ripple` have no not-to-exceed anywhere in this tree.  Reporting
-# "NO LIMIT STATED" is more useful than a number nobody chose, and it names the gap.
+# Where a `should` has a stated reference point.  THREE OF THE FIVE DO NOT, and the table
+# says so rather than inventing a budget.  `smoothness` and `phase_ripple` have no
+# not-to-exceed anywhere in this tree.  `mass` LOOKED like it had one —
+# `MASS_REFERENCE_G` — until PLAN.md §98 checked it: `Mission.implied_baseline`'s own
+# docstring derives "~5% of all-up weight" from the shipped wheel's 48.64 g OCC-SOLID
+# mass, and `verify()` here reads `metrics.mesh_mass_g`, the MESHED-AREA-x-width-x-density
+# figure — 39.55 to 43.41 g across the two designs this tree has measured, 11-19% under
+# the solid.  The only stated precedent for a mass budget is denominated in a mass this
+# function never sees, and reconciling the two conventions is unmeasured work, not
+# arithmetic.  So `mass` joins the other two: reporting "NO LIMIT STATED" is more useful
+# than a number nobody chose under the units this table actually checks, and it names the
+# gap instead of hiding it behind a normaliser that was never a budget.
 DEFLECTION_TOLERANCE = 0.05     # +/-5% of the stroke target, and it is a POLICY: the term
                                 # is two-sided about the target because for a compliant
                                 # mechanism the travel IS the feature, so a wheel that is
@@ -1055,14 +1062,13 @@ def _should_row(term, lt, met, req, WO):
             "quantity": "metrics.stress_utilisation", "value": v, "limit": limit,
             "margin": limit - v, "verdict": "MET" if v <= limit else "MISSED"})
     elif term == "mass":
-        v = float(met["mesh_mass_g"])
-        limit = float(W.MASS_REFERENCE_G)
         base.update({
-            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a "
-                         "budget — no mass requirement exists in this tree)",
+            "statement": "no mass requirement exists in this tree (PLAN.md §98): the "
+                         "one stated precedent, ~5% of all-up weight, is denominated in "
+                         "OCC-solid mass and this row reads meshed mass instead",
             "method": "analysis — meshed area x width x density",
-            "quantity": "metrics.mesh_mass_g", "value": v, "limit": limit,
-            "margin": limit - v, "verdict": "MET" if v <= limit else "MISSED"})
+            "quantity": "metrics.mesh_mass_g", "value": float(met["mesh_mass_g"]),
+            "limit": None, "margin": None, "verdict": "NO LIMIT STATED"})
     elif term == "phase_ripple":
         v = float(met["phase_ripple_std_over_mean"])
         base.update({
