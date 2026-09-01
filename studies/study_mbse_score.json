@@ -1,0 +1,2398 @@
+{
+  "genome_file": "best_solution.json",
+  "genome_hash": "09e8188",
+  "config": "coarse",
+  "kinematics": "svk",
+  "n_phase": 8,
+  "thermal_scope_note": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree.",
+  "profiles": {
+    "baseline": {
+      "changed": {},
+      "requirements": {
+        "force_n": 66.7233,
+        "target_deflection_mm": 2.0,
+        "allowable_stress_mpa": 25.0,
+        "min_wall_mm": 1.2000000000000002,
+        "e_mpa": 2300.0,
+        "nu": 0.35,
+        "weights": {
+          "deflection": 2500.0,
+          "mass": 0.821917808219178,
+          "stress": 4000.0,
+          "stress_margin": 325.0,
+          "buckling": 2000.0,
+          "x_order": 80.0,
+          "hub_overlap": 500.0,
+          "smoothness": 1.0,
+          "fold": 3000.0,
+          "arrival": 3000.0,
+          "fillet": 3000.0,
+          "fillet_cap": 500.0,
+          "min_sj": 3000.0,
+          "phase_ripple": 0.0
+        },
+        "req_hash": "69813b8",
+        "provenance": {
+          "source": "wheel_requirements.Requirements.from_mission",
+          "derived": true,
+          "mission": {
+            "auw_kg": 3.0,
+            "n_wheels": 3,
+            "k_asym": 1.5,
+            "sink_rate_ms": 0.26334597016092726,
+            "field_class": "grass",
+            "ambient_c": 20.0,
+            "landings": 1000,
+            "nozzle_mm": 0.4,
+            "perimeters": 3,
+            "material": "PLA-FFF"
+          },
+          "priorities": null,
+          "weight_n": 29.41995,
+          "static_force_n": 9.80665,
+          "stroke_mm": 2.0,
+          "effective_stroke_m": 0.001,
+          "landing_load_factor": 4.53592205289268,
+          "safety_factor": 1.6,
+          "fatigue_knockdown": 1.0,
+          "e_retention": 1.0,
+          "sigma_retention": 1.0,
+          "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+        }
+      },
+      "score": {
+        "loss": 38.7859468199916,
+        "grad": [
+          -4.1923657616478565,
+          -4.816456572829116,
+          -0.5956393988772628,
+          -12.457065109137904,
+          -0.4499814057889932,
+          -11.278196197742783,
+          3.4513333078346813,
+          -2.1930418476967337,
+          98.93551889350093,
+          106.96440590389273,
+          116.21412961296681,
+          100.38168465452509,
+          0.0,
+          0.0
+        ],
+        "loss_terms": {
+          "deflection": 6.113066139896746,
+          "mass": 32.50505239907359,
+          "stress": 0.0,
+          "stress_margin": 0.0,
+          "buckling": 0.0,
+          "x_order": 0.0,
+          "hub_overlap": 0.0,
+          "smoothness": 0.16782828102126746,
+          "fold": 0.0,
+          "arrival": 0.0,
+          "fillet": 0.0,
+          "fillet_cap": 0.0,
+          "min_sj": 0.0,
+          "phase_ripple": 0.0
+        },
+        "metrics": {
+          "fillet_flanks": [
+            [
+              1.0
+            ],
+            [
+              1.0
+            ]
+          ],
+          "buckling_ratio": 0.13948640992941577,
+          "mesh_mass_g": 39.5478137522062,
+          "min_scaled_jacobian": 0.7822260942854291,
+          "axle_drop_mean_mm": 1.9011015378085443,
+          "axle_drop_min_mm": 1.6383441485405654,
+          "axle_drop_max_mm": 2.247000371170258,
+          "phase_ripple_std_over_mean": 0.1141827791771404,
+          "pnorm_stress_agg_mpa": 9.287259297483908,
+          "max_stress_mpa": 87.11191843598914,
+          "stress_scale_measured": 8.917994350114082,
+          "kt_hub": 2.096324561276308,
+          "kt_rim": 1.3939359631839685,
+          "hub_fillet_cap_mm": 0.6657364009741359,
+          "r_hub_effective_mm": 0.6396947436528141,
+          "stress_utilisation_hub": 0.7787643908902908,
+          "stress_utilisation_rim": 0.5178337893670999,
+          "stress_utilisation": 0.7787643908902908,
+          "stress_gauss_p": 4.0,
+          "pnorm_by_p": {},
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 25.0,
+          "service_force_n": 66.7233,
+          "n_phase": 8,
+          "rows": [
+            {
+              "phase_deg": 0.0,
+              "axle_drop_mm": 1.7935371503168087,
+              "pnorm_stress_mpa": 7.154620565596337,
+              "max_stress_mpa": 87.11191843598914,
+              "contact_force_n": 66.72329997002397,
+              "coupling_frac": 1.6193788046041009
+            },
+            {
+              "phase_deg": 3.75,
+              "axle_drop_mm": 2.0700564995250907,
+              "pnorm_stress_mpa": 7.57217442751986,
+              "max_stress_mpa": 83.13770325130147,
+              "contact_force_n": 66.72330011867024,
+              "coupling_frac": 1.7090663928939913
+            },
+            {
+              "phase_deg": 7.5,
+              "axle_drop_mm": 2.247000371170258,
+              "pnorm_stress_mpa": 7.610405038972944,
+              "max_stress_mpa": 45.360596890339565,
+              "contact_force_n": 66.72329999900846,
+              "coupling_frac": 1.7330087854416518
+            },
+            {
+              "phase_deg": 11.25,
+              "axle_drop_mm": 2.144718185599791,
+              "pnorm_stress_mpa": 7.272547968256533,
+              "max_stress_mpa": 44.07594964482023,
+              "contact_force_n": 66.72330032139362,
+              "coupling_frac": 1.6786879898851153
+            },
+            {
+              "phase_deg": 15.0,
+              "axle_drop_mm": 1.9252118912794647,
+              "pnorm_stress_mpa": 6.878052407106694,
+              "max_stress_mpa": 48.872043963076365,
+              "contact_force_n": 66.72329997860271,
+              "coupling_frac": 1.5572870815567021
+            },
+            {
+              "phase_deg": 18.75,
+              "axle_drop_mm": 1.7353034176429762,
+              "pnorm_stress_mpa": 6.709051792747062,
+              "max_stress_mpa": 55.29700671145333,
+              "contact_force_n": 66.72329994282232,
+              "coupling_frac": 1.5044767376438841
+            },
+            {
+              "phase_deg": 22.5,
+              "axle_drop_mm": 1.6383441485405654,
+              "pnorm_stress_mpa": 6.754163834062281,
+              "max_stress_mpa": 66.05413130793426,
+              "contact_force_n": 66.72329997767832,
+              "coupling_frac": 1.538910890118328
+            },
+            {
+              "phase_deg": 26.25,
+              "axle_drop_mm": 1.6546406383933991,
+              "pnorm_stress_mpa": 6.902218658128787,
+              "max_stress_mpa": 76.20474813427293,
+              "contact_force_n": 66.72329992876897,
+              "coupling_frac": 1.5917781296838014
+            }
+          ]
+        },
+        "requirements": {
+          "force_n": 66.7233,
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 25.0,
+          "min_wall_mm": 1.2000000000000002,
+          "e_mpa": 2300.0,
+          "nu": 0.35,
+          "weights": {
+            "deflection": 2500.0,
+            "mass": 0.821917808219178,
+            "stress": 4000.0,
+            "stress_margin": 325.0,
+            "buckling": 2000.0,
+            "x_order": 80.0,
+            "hub_overlap": 500.0,
+            "smoothness": 1.0,
+            "fold": 3000.0,
+            "arrival": 3000.0,
+            "fillet": 3000.0,
+            "fillet_cap": 500.0,
+            "min_sj": 3000.0,
+            "phase_ripple": 0.0
+          },
+          "req_hash": "69813b8",
+          "provenance": {
+            "source": "wheel_requirements.Requirements.from_mission",
+            "derived": true,
+            "mission": {
+              "auw_kg": 3.0,
+              "n_wheels": 3,
+              "k_asym": 1.5,
+              "sink_rate_ms": 0.26334597016092726,
+              "field_class": "grass",
+              "ambient_c": 20.0,
+              "landings": 1000,
+              "nozzle_mm": 0.4,
+              "perimeters": 3,
+              "material": "PLA-FFF"
+            },
+            "priorities": null,
+            "weight_n": 29.41995,
+            "static_force_n": 9.80665,
+            "stroke_mm": 2.0,
+            "effective_stroke_m": 0.001,
+            "landing_load_factor": 4.53592205289268,
+            "safety_factor": 1.6,
+            "fatigue_knockdown": 1.0,
+            "e_retention": 1.0,
+            "sigma_retention": 1.0,
+            "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+          }
+        },
+        "scored_at": {
+          "config": "coarse",
+          "kinematics": "svk",
+          "n_phase": 8,
+          "phase_scheme": "uniform"
+        },
+        "elapsed_s": 162.15
+      },
+      "table": {
+        "rows": [
+          {
+            "id": "SHALL-STRESS",
+            "kind": "shall",
+            "statement": "the `stress` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.stress",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.stress_utilisation",
+              "value": 0.7787643908902908,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-BUCKLING",
+            "kind": "shall",
+            "statement": "the `buckling` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.buckling",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.buckling_ratio",
+              "value": 0.13948640992941577,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-X-ORDER",
+            "kind": "shall",
+            "statement": "the `x_order` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.x_order",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-HUB-OVERLAP",
+            "kind": "shall",
+            "statement": "the `hub_overlap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.hub_overlap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FOLD",
+            "kind": "shall",
+            "statement": "the `fold` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fold",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-ARRIVAL",
+            "kind": "shall",
+            "statement": "the `arrival` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.arrival",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET",
+            "kind": "shall",
+            "statement": "the `fillet` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET-CAP",
+            "kind": "shall",
+            "statement": "the `fillet_cap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet_cap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-MIN-SJ",
+            "kind": "shall",
+            "statement": "the `min_sj` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.min_sj",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.min_scaled_jacobian",
+              "value": 0.7822260942854291,
+              "limit": 0.2,
+              "sense": ">="
+            }
+          },
+          {
+            "id": "SHOULD-DEFLECTION",
+            "kind": "should",
+            "term_loss": 6.113066139896746,
+            "statement": "mean axle drop is within +/-5% of the stroke target",
+            "method": "analysis \u2014 full-wheel contact FEA, mean over the phase stencil",
+            "quantity": "metrics.axle_drop_mean_mm",
+            "value": 1.9011015378085443,
+            "limit": 2.0,
+            "margin": -0.04944923109572785,
+            "verdict": "MET"
+          },
+          {
+            "id": "SHOULD-MASS",
+            "kind": "should",
+            "term_loss": 32.50505239907359,
+            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "method": "analysis \u2014 meshed area x width x density",
+            "quantity": "metrics.mesh_mass_g",
+            "value": 39.5478137522062,
+            "limit": 36.5,
+            "margin": -3.0478137522062028,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-STRESS-MARGIN",
+            "kind": "should",
+            "term_loss": 0.0,
+            "statement": "worst junction utilisation stays under the margin knee",
+            "method": "analysis \u2014 Kt * p-norm nominal / allowable",
+            "quantity": "metrics.stress_utilisation",
+            "value": 0.7787643908902908,
+            "limit": 0.8,
+            "margin": 0.02123560910970923,
+            "verdict": "MET"
+          },
+          {
+            "id": "SHOULD-SMOOTHNESS",
+            "kind": "should",
+            "term_loss": 0.16782828102126746,
+            "statement": "the centerline is a clean single-curvature spiral",
+            "method": "analysis \u2014 curvature-rate integral plus reversal penalty",
+            "quantity": "loss_terms.smoothness",
+            "value": 0.16782828102126746,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          },
+          {
+            "id": "SHOULD-PHASE-RIPPLE",
+            "kind": "should",
+            "term_loss": 0.0,
+            "statement": "axle drop is uniform through one sector",
+            "method": "analysis \u2014 std/mean over the phase stencil",
+            "quantity": "metrics.phase_ripple_std_over_mean",
+            "value": 0.1141827791771404,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          }
+        ],
+        "compliant": true,
+        "provenance": "matched (69813b8)",
+        "req_hash": "69813b8"
+      },
+      "process": {
+        "min_wall_mm": 1.2000000000000002,
+        "thickness_genes": {
+          "t0": 1.4738307537189006,
+          "t1": 1.2,
+          "t2": 1.2,
+          "t3": 1.4312949633290164
+        },
+        "respects_floor": true
+      }
+    },
+    "hot_day": {
+      "changed": {
+        "ambient_c": 40.0
+      },
+      "requirements": {
+        "force_n": 66.7233,
+        "target_deflection_mm": 2.0,
+        "allowable_stress_mpa": 21.499999999999996,
+        "min_wall_mm": 1.2000000000000002,
+        "e_mpa": 1955.0,
+        "nu": 0.35,
+        "weights": {
+          "deflection": 2500.0,
+          "mass": 0.821917808219178,
+          "stress": 4000.0,
+          "stress_margin": 325.0,
+          "buckling": 2000.0,
+          "x_order": 80.0,
+          "hub_overlap": 500.0,
+          "smoothness": 1.0,
+          "fold": 3000.0,
+          "arrival": 3000.0,
+          "fillet": 3000.0,
+          "fillet_cap": 500.0,
+          "min_sj": 3000.0,
+          "phase_ripple": 0.0
+        },
+        "req_hash": "0849c11",
+        "provenance": {
+          "source": "wheel_requirements.Requirements.from_mission",
+          "derived": true,
+          "mission": {
+            "auw_kg": 3.0,
+            "n_wheels": 3,
+            "k_asym": 1.5,
+            "sink_rate_ms": 0.26334597016092726,
+            "field_class": "grass",
+            "ambient_c": 40.0,
+            "landings": 1000,
+            "nozzle_mm": 0.4,
+            "perimeters": 3,
+            "material": "PLA-FFF"
+          },
+          "priorities": null,
+          "weight_n": 29.41995,
+          "static_force_n": 9.80665,
+          "stroke_mm": 2.0,
+          "effective_stroke_m": 0.001,
+          "landing_load_factor": 4.53592205289268,
+          "safety_factor": 1.6,
+          "fatigue_knockdown": 1.0,
+          "e_retention": 0.85,
+          "sigma_retention": 0.86,
+          "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+        }
+      },
+      "score": {
+        "loss": 82.11055586009682,
+        "grad": [
+          13.292194431010207,
+          16.619748334786117,
+          1.8279839492202188,
+          41.602510334589084,
+          1.3654448463087479,
+          37.32490947116413,
+          -10.96636140992308,
+          7.534140618563844,
+          -324.90565604874354,
+          -357.40272602802816,
+          -386.6698492022305,
+          -344.86216120017195,
+          -16.404838861003654,
+          0.0
+        ],
+        "loss_terms": {
+          "deflection": 45.990107715215856,
+          "mass": 32.50505239907359,
+          "stress": 0.0,
+          "stress_margin": 3.447567464786103,
+          "buckling": 0.0,
+          "x_order": 0.0,
+          "hub_overlap": 0.0,
+          "smoothness": 0.16782828102126746,
+          "fold": 0.0,
+          "arrival": 0.0,
+          "fillet": 0.0,
+          "fillet_cap": 0.0,
+          "min_sj": 0.0,
+          "phase_ripple": 0.0
+        },
+        "metrics": {
+          "fillet_flanks": [
+            [
+              1.0
+            ],
+            [
+              1.0
+            ]
+          ],
+          "buckling_ratio": 0.16410165874036703,
+          "mesh_mass_g": 39.5478137522062,
+          "min_scaled_jacobian": 0.7822260942854291,
+          "axle_drop_mean_mm": 2.2712640270001634,
+          "axle_drop_min_mm": 1.9898534079545622,
+          "axle_drop_max_mm": 2.6288840791606805,
+          "phase_ripple_std_over_mean": 0.0998559953228686,
+          "pnorm_stress_agg_mpa": 9.261154278548156,
+          "max_stress_mpa": 88.43128171932466,
+          "stress_scale_measured": 9.085947927752112,
+          "kt_hub": 2.096324561276308,
+          "kt_rim": 1.3939359631839685,
+          "hub_fillet_cap_mm": 0.6657364009741359,
+          "r_hub_effective_mm": 0.6396947436528141,
+          "stress_utilisation_hub": 0.9029946595297521,
+          "stress_utilisation_rim": 0.6004398143936445,
+          "stress_utilisation": 0.9029946595297521,
+          "stress_gauss_p": 4.0,
+          "pnorm_by_p": {},
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 21.499999999999996,
+          "service_force_n": 66.7233,
+          "n_phase": 8,
+          "rows": [
+            {
+              "phase_deg": 0.0,
+              "axle_drop_mm": 2.172907597749506,
+              "pnorm_stress_mpa": 7.277015744263999,
+              "max_stress_mpa": 88.43128171932466,
+              "contact_force_n": 66.7232999958779,
+              "coupling_frac": 1.6241042672784538
+            },
+            {
+              "phase_deg": 3.75,
+              "axle_drop_mm": 2.4536785429357995,
+              "pnorm_stress_mpa": 7.532482341054214,
+              "max_stress_mpa": 87.15670864486944,
+              "contact_force_n": 66.72329999807515,
+              "coupling_frac": 1.7483509937050465
+            },
+            {
+              "phase_deg": 7.5,
+              "axle_drop_mm": 2.6288840791606805,
+              "pnorm_stress_mpa": 7.365774753144522,
+              "max_stress_mpa": 44.84737364566063,
+              "contact_force_n": 66.7233000005389,
+              "coupling_frac": 1.7158507193951547
+            },
+            {
+              "phase_deg": 11.25,
+              "axle_drop_mm": 2.5218290592353676,
+              "pnorm_stress_mpa": 7.098071319586368,
+              "max_stress_mpa": 44.49509538772939,
+              "contact_force_n": 66.72329994447028,
+              "coupling_frac": 1.5914912032825819
+            },
+            {
+              "phase_deg": 15.0,
+              "axle_drop_mm": 2.2969168251986987,
+              "pnorm_stress_mpa": 6.912543973424059,
+              "max_stress_mpa": 49.342700652184064,
+              "contact_force_n": 66.72330000007466,
+              "coupling_frac": 1.5327497229161615
+            },
+            {
+              "phase_deg": 18.75,
+              "axle_drop_mm": 2.090235435093012,
+              "pnorm_stress_mpa": 6.805486351834791,
+              "max_stress_mpa": 57.478181954397066,
+              "contact_force_n": 66.72329999809754,
+              "coupling_frac": 1.4954040916778397
+            },
+            {
+              "phase_deg": 22.5,
+              "axle_drop_mm": 1.9898534079545622,
+              "pnorm_stress_mpa": 6.87316438333162,
+              "max_stress_mpa": 68.15812780269245,
+              "contact_force_n": 66.72329998731702,
+              "coupling_frac": 1.5296943749194496
+            },
+            {
+              "phase_deg": 26.25,
+              "axle_drop_mm": 2.0158072686736794,
+              "pnorm_stress_mpa": 7.032945572232676,
+              "max_stress_mpa": 78.11405905802356,
+              "contact_force_n": 66.7232999766842,
+              "coupling_frac": 1.5792556550820318
+            }
+          ]
+        },
+        "requirements": {
+          "force_n": 66.7233,
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 21.499999999999996,
+          "min_wall_mm": 1.2000000000000002,
+          "e_mpa": 1955.0,
+          "nu": 0.35,
+          "weights": {
+            "deflection": 2500.0,
+            "mass": 0.821917808219178,
+            "stress": 4000.0,
+            "stress_margin": 325.0,
+            "buckling": 2000.0,
+            "x_order": 80.0,
+            "hub_overlap": 500.0,
+            "smoothness": 1.0,
+            "fold": 3000.0,
+            "arrival": 3000.0,
+            "fillet": 3000.0,
+            "fillet_cap": 500.0,
+            "min_sj": 3000.0,
+            "phase_ripple": 0.0
+          },
+          "req_hash": "0849c11",
+          "provenance": {
+            "source": "wheel_requirements.Requirements.from_mission",
+            "derived": true,
+            "mission": {
+              "auw_kg": 3.0,
+              "n_wheels": 3,
+              "k_asym": 1.5,
+              "sink_rate_ms": 0.26334597016092726,
+              "field_class": "grass",
+              "ambient_c": 40.0,
+              "landings": 1000,
+              "nozzle_mm": 0.4,
+              "perimeters": 3,
+              "material": "PLA-FFF"
+            },
+            "priorities": null,
+            "weight_n": 29.41995,
+            "static_force_n": 9.80665,
+            "stroke_mm": 2.0,
+            "effective_stroke_m": 0.001,
+            "landing_load_factor": 4.53592205289268,
+            "safety_factor": 1.6,
+            "fatigue_knockdown": 1.0,
+            "e_retention": 0.85,
+            "sigma_retention": 0.86,
+            "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+          }
+        },
+        "scored_at": {
+          "config": "coarse",
+          "kinematics": "svk",
+          "n_phase": 8,
+          "phase_scheme": "uniform"
+        },
+        "elapsed_s": 197.96
+      },
+      "table": {
+        "rows": [
+          {
+            "id": "SHALL-STRESS",
+            "kind": "shall",
+            "statement": "the `stress` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.stress",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.stress_utilisation",
+              "value": 0.9029946595297521,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-BUCKLING",
+            "kind": "shall",
+            "statement": "the `buckling` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.buckling",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.buckling_ratio",
+              "value": 0.16410165874036703,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-X-ORDER",
+            "kind": "shall",
+            "statement": "the `x_order` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.x_order",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-HUB-OVERLAP",
+            "kind": "shall",
+            "statement": "the `hub_overlap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.hub_overlap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FOLD",
+            "kind": "shall",
+            "statement": "the `fold` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fold",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-ARRIVAL",
+            "kind": "shall",
+            "statement": "the `arrival` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.arrival",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET",
+            "kind": "shall",
+            "statement": "the `fillet` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET-CAP",
+            "kind": "shall",
+            "statement": "the `fillet_cap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet_cap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-MIN-SJ",
+            "kind": "shall",
+            "statement": "the `min_sj` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.min_sj",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.min_scaled_jacobian",
+              "value": 0.7822260942854291,
+              "limit": 0.2,
+              "sense": ">="
+            }
+          },
+          {
+            "id": "SHOULD-DEFLECTION",
+            "kind": "should",
+            "term_loss": 45.990107715215856,
+            "statement": "mean axle drop is within +/-5% of the stroke target",
+            "method": "analysis \u2014 full-wheel contact FEA, mean over the phase stencil",
+            "quantity": "metrics.axle_drop_mean_mm",
+            "value": 2.2712640270001634,
+            "limit": 2.0,
+            "margin": 0.1356320135000817,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-MASS",
+            "kind": "should",
+            "term_loss": 32.50505239907359,
+            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "method": "analysis \u2014 meshed area x width x density",
+            "quantity": "metrics.mesh_mass_g",
+            "value": 39.5478137522062,
+            "limit": 36.5,
+            "margin": -3.0478137522062028,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-STRESS-MARGIN",
+            "kind": "should",
+            "term_loss": 3.447567464786103,
+            "statement": "worst junction utilisation stays under the margin knee",
+            "method": "analysis \u2014 Kt * p-norm nominal / allowable",
+            "quantity": "metrics.stress_utilisation",
+            "value": 0.9029946595297521,
+            "limit": 0.8,
+            "margin": -0.10299465952975206,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-SMOOTHNESS",
+            "kind": "should",
+            "term_loss": 0.16782828102126746,
+            "statement": "the centerline is a clean single-curvature spiral",
+            "method": "analysis \u2014 curvature-rate integral plus reversal penalty",
+            "quantity": "loss_terms.smoothness",
+            "value": 0.16782828102126746,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          },
+          {
+            "id": "SHOULD-PHASE-RIPPLE",
+            "kind": "should",
+            "term_loss": 0.0,
+            "statement": "axle drop is uniform through one sector",
+            "method": "analysis \u2014 std/mean over the phase stencil",
+            "quantity": "metrics.phase_ripple_std_over_mean",
+            "value": 0.0998559953228686,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          }
+        ],
+        "compliant": true,
+        "provenance": "matched (0849c11)",
+        "req_hash": "0849c11"
+      },
+      "process": {
+        "min_wall_mm": 1.2000000000000002,
+        "thickness_genes": {
+          "t0": 1.4738307537189006,
+          "t1": 1.2,
+          "t2": 1.2,
+          "t3": 1.4312949633290164
+        },
+        "respects_floor": true
+      }
+    },
+    "heavy_payload": {
+      "changed": {
+        "auw_kg": 4.5
+      },
+      "requirements": {
+        "force_n": 100.08494999999999,
+        "target_deflection_mm": 2.0,
+        "allowable_stress_mpa": 25.0,
+        "min_wall_mm": 1.2000000000000002,
+        "e_mpa": 2300.0,
+        "nu": 0.35,
+        "weights": {
+          "deflection": 2500.0,
+          "mass": 0.821917808219178,
+          "stress": 4000.0,
+          "stress_margin": 325.0,
+          "buckling": 2000.0,
+          "x_order": 80.0,
+          "hub_overlap": 500.0,
+          "smoothness": 1.0,
+          "fold": 3000.0,
+          "arrival": 3000.0,
+          "fillet": 3000.0,
+          "fillet_cap": 500.0,
+          "min_sj": 3000.0,
+          "phase_ripple": 0.0
+        },
+        "req_hash": "5c33e27",
+        "provenance": {
+          "source": "wheel_requirements.Requirements.from_mission",
+          "derived": true,
+          "mission": {
+            "auw_kg": 4.5,
+            "n_wheels": 3,
+            "k_asym": 1.5,
+            "sink_rate_ms": 0.26334597016092726,
+            "field_class": "grass",
+            "ambient_c": 20.0,
+            "landings": 1000,
+            "nozzle_mm": 0.4,
+            "perimeters": 3,
+            "material": "PLA-FFF"
+          },
+          "priorities": null,
+          "weight_n": 44.129925,
+          "static_force_n": 14.709975,
+          "stroke_mm": 2.0,
+          "effective_stroke_m": 0.001,
+          "landing_load_factor": 4.53592205289268,
+          "safety_factor": 1.6,
+          "fatigue_knockdown": 1.0,
+          "e_retention": 1.0,
+          "sigma_retention": 1.0,
+          "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+        }
+      },
+      "score": {
+        "loss": 755.5573261360651,
+        "grad": [
+          79.06786822678764,
+          81.48925988790054,
+          8.86818140672786,
+          215.37635400396732,
+          6.103442455945293,
+          191.77748787726688,
+          -61.00278605674576,
+          34.278250416087594,
+          -1708.5245806824748,
+          -2128.6717505733277,
+          -2292.7953575051874,
+          -2098.399348302997,
+          -486.30848269484613,
+          0.0
+        ],
+        "loss_terms": {
+          "deflection": 573.6373915936674,
+          "mass": 32.50505239907359,
+          "stress": 106.39974214505649,
+          "stress_margin": 42.8473117172463,
+          "buckling": 0.0,
+          "x_order": 0.0,
+          "hub_overlap": 0.0,
+          "smoothness": 0.16782828102126746,
+          "fold": 0.0,
+          "arrival": 0.0,
+          "fillet": 0.0,
+          "fillet_cap": 0.0,
+          "min_sj": 0.0,
+          "phase_ripple": 0.0
+        },
+        "metrics": {
+          "fillet_flanks": [
+            [
+              1.0
+            ],
+            [
+              1.0
+            ]
+          ],
+          "buckling_ratio": 0.20922961489412362,
+          "mesh_mass_g": 39.5478137522062,
+          "min_scaled_jacobian": 0.7822260942854291,
+          "axle_drop_mean_mm": 2.9580291365871227,
+          "axle_drop_min_mm": 2.6953234891002693,
+          "axle_drop_max_mm": 3.2267370060476552,
+          "phase_ripple_std_over_mean": 0.06466104614905495,
+          "pnorm_stress_agg_mpa": 13.870643985210124,
+          "max_stress_mpa": 137.471013912854,
+          "stress_scale_measured": 9.39031434793948,
+          "kt_hub": 2.096324561276308,
+          "kt_rim": 1.3939359631839685,
+          "hub_fillet_cap_mm": 0.6657364009741359,
+          "r_hub_effective_mm": 0.6396947436528141,
+          "stress_utilisation_hub": 1.163094866676619,
+          "stress_utilisation_rim": 0.7733915793402317,
+          "stress_utilisation": 1.163094866676619,
+          "stress_gauss_p": 4.0,
+          "pnorm_by_p": {},
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 25.0,
+          "service_force_n": 100.08494999999999,
+          "n_phase": 8,
+          "rows": [
+            {
+              "phase_deg": 0.0,
+              "axle_drop_mm": 2.9353536605372166,
+              "pnorm_stress_mpa": 11.279587960648708,
+              "max_stress_mpa": 137.471013912854,
+              "contact_force_n": 100.08494999927622,
+              "coupling_frac": 1.6049281176368024
+            },
+            {
+              "phase_deg": 3.75,
+              "axle_drop_mm": 3.1594073916301704,
+              "pnorm_stress_mpa": 11.129560236536495,
+              "max_stress_mpa": 128.58425130996469,
+              "contact_force_n": 100.08495001034757,
+              "coupling_frac": 1.872795341491355
+            },
+            {
+              "phase_deg": 7.5,
+              "axle_drop_mm": 3.2267370060476552,
+              "pnorm_stress_mpa": 10.306252578110751,
+              "max_stress_mpa": 75.6275311460389,
+              "contact_force_n": 100.08495000172113,
+              "coupling_frac": 1.753175798552443
+            },
+            {
+              "phase_deg": 11.25,
+              "axle_drop_mm": 3.147987069000708,
+              "pnorm_stress_mpa": 10.082716987315463,
+              "max_stress_mpa": 66.75960707893108,
+              "contact_force_n": 100.08494999707389,
+              "coupling_frac": 1.5388829964592041
+            },
+            {
+              "phase_deg": 15.0,
+              "axle_drop_mm": 2.9656291649270083,
+              "pnorm_stress_mpa": 10.264430445436526,
+              "max_stress_mpa": 74.332654999503,
+              "contact_force_n": 100.08494999957796,
+              "coupling_frac": 1.4924282578809231
+            },
+            {
+              "phase_deg": 18.75,
+              "axle_drop_mm": 2.7912042020894576,
+              "pnorm_stress_mpa": 10.489651739887702,
+              "max_stress_mpa": 92.16926336706972,
+              "contact_force_n": 100.08494999741202,
+              "coupling_frac": 1.4851331006807498
+            },
+            {
+              "phase_deg": 22.5,
+              "axle_drop_mm": 2.6953234891002693,
+              "pnorm_stress_mpa": 10.657647194952114,
+              "max_stress_mpa": 108.13080816400874,
+              "contact_force_n": 100.08494994889863,
+              "coupling_frac": 1.5116577951946717
+            },
+            {
+              "phase_deg": 26.25,
+              "axle_drop_mm": 2.7425911093644983,
+              "pnorm_stress_mpa": 10.921124941078817,
+              "max_stress_mpa": 122.84091462070332,
+              "contact_force_n": 100.08494992076842,
+              "coupling_frac": 1.5607574304988103
+            }
+          ]
+        },
+        "requirements": {
+          "force_n": 100.08494999999999,
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 25.0,
+          "min_wall_mm": 1.2000000000000002,
+          "e_mpa": 2300.0,
+          "nu": 0.35,
+          "weights": {
+            "deflection": 2500.0,
+            "mass": 0.821917808219178,
+            "stress": 4000.0,
+            "stress_margin": 325.0,
+            "buckling": 2000.0,
+            "x_order": 80.0,
+            "hub_overlap": 500.0,
+            "smoothness": 1.0,
+            "fold": 3000.0,
+            "arrival": 3000.0,
+            "fillet": 3000.0,
+            "fillet_cap": 500.0,
+            "min_sj": 3000.0,
+            "phase_ripple": 0.0
+          },
+          "req_hash": "5c33e27",
+          "provenance": {
+            "source": "wheel_requirements.Requirements.from_mission",
+            "derived": true,
+            "mission": {
+              "auw_kg": 4.5,
+              "n_wheels": 3,
+              "k_asym": 1.5,
+              "sink_rate_ms": 0.26334597016092726,
+              "field_class": "grass",
+              "ambient_c": 20.0,
+              "landings": 1000,
+              "nozzle_mm": 0.4,
+              "perimeters": 3,
+              "material": "PLA-FFF"
+            },
+            "priorities": null,
+            "weight_n": 44.129925,
+            "static_force_n": 14.709975,
+            "stroke_mm": 2.0,
+            "effective_stroke_m": 0.001,
+            "landing_load_factor": 4.53592205289268,
+            "safety_factor": 1.6,
+            "fatigue_knockdown": 1.0,
+            "e_retention": 1.0,
+            "sigma_retention": 1.0,
+            "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+          }
+        },
+        "scored_at": {
+          "config": "coarse",
+          "kinematics": "svk",
+          "n_phase": 8,
+          "phase_scheme": "uniform"
+        },
+        "elapsed_s": 229.65
+      },
+      "table": {
+        "rows": [
+          {
+            "id": "SHALL-STRESS",
+            "kind": "shall",
+            "statement": "the `stress` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.stress",
+            "value": 106.39974214505649,
+            "limit": 0.0,
+            "margin": -106.39974214505649,
+            "verdict": "FAIL",
+            "evidence": {
+              "quantity": "metrics.stress_utilisation",
+              "value": 1.163094866676619,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-BUCKLING",
+            "kind": "shall",
+            "statement": "the `buckling` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.buckling",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.buckling_ratio",
+              "value": 0.20922961489412362,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-X-ORDER",
+            "kind": "shall",
+            "statement": "the `x_order` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.x_order",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-HUB-OVERLAP",
+            "kind": "shall",
+            "statement": "the `hub_overlap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.hub_overlap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FOLD",
+            "kind": "shall",
+            "statement": "the `fold` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fold",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-ARRIVAL",
+            "kind": "shall",
+            "statement": "the `arrival` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.arrival",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET",
+            "kind": "shall",
+            "statement": "the `fillet` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET-CAP",
+            "kind": "shall",
+            "statement": "the `fillet_cap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet_cap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-MIN-SJ",
+            "kind": "shall",
+            "statement": "the `min_sj` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.min_sj",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.min_scaled_jacobian",
+              "value": 0.7822260942854291,
+              "limit": 0.2,
+              "sense": ">="
+            }
+          },
+          {
+            "id": "SHOULD-DEFLECTION",
+            "kind": "should",
+            "term_loss": 573.6373915936674,
+            "statement": "mean axle drop is within +/-5% of the stroke target",
+            "method": "analysis \u2014 full-wheel contact FEA, mean over the phase stencil",
+            "quantity": "metrics.axle_drop_mean_mm",
+            "value": 2.9580291365871227,
+            "limit": 2.0,
+            "margin": 0.47901456829356137,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-MASS",
+            "kind": "should",
+            "term_loss": 32.50505239907359,
+            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "method": "analysis \u2014 meshed area x width x density",
+            "quantity": "metrics.mesh_mass_g",
+            "value": 39.5478137522062,
+            "limit": 36.5,
+            "margin": -3.0478137522062028,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-STRESS-MARGIN",
+            "kind": "should",
+            "term_loss": 42.8473117172463,
+            "statement": "worst junction utilisation stays under the margin knee",
+            "method": "analysis \u2014 Kt * p-norm nominal / allowable",
+            "quantity": "metrics.stress_utilisation",
+            "value": 1.163094866676619,
+            "limit": 0.8,
+            "margin": -0.36309486667661894,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-SMOOTHNESS",
+            "kind": "should",
+            "term_loss": 0.16782828102126746,
+            "statement": "the centerline is a clean single-curvature spiral",
+            "method": "analysis \u2014 curvature-rate integral plus reversal penalty",
+            "quantity": "loss_terms.smoothness",
+            "value": 0.16782828102126746,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          },
+          {
+            "id": "SHOULD-PHASE-RIPPLE",
+            "kind": "should",
+            "term_loss": 0.0,
+            "statement": "axle drop is uniform through one sector",
+            "method": "analysis \u2014 std/mean over the phase stencil",
+            "quantity": "metrics.phase_ripple_std_over_mean",
+            "value": 0.06466104614905495,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          }
+        ],
+        "compliant": false,
+        "provenance": "matched (5c33e27)",
+        "req_hash": "5c33e27"
+      },
+      "process": {
+        "min_wall_mm": 1.2000000000000002,
+        "thickness_genes": {
+          "t0": 1.4738307537189006,
+          "t1": 1.2,
+          "t2": 1.2,
+          "t3": 1.4312949633290164
+        },
+        "respects_floor": true
+      }
+    },
+    "rough_field": {
+      "changed": {
+        "field_class": "rough"
+      },
+      "requirements": {
+        "force_n": 44.43187499999999,
+        "target_deflection_mm": 3.5,
+        "allowable_stress_mpa": 25.0,
+        "min_wall_mm": 1.2000000000000002,
+        "e_mpa": 2300.0,
+        "nu": 0.35,
+        "weights": {
+          "deflection": 2500.0,
+          "mass": 0.821917808219178,
+          "stress": 4000.0,
+          "stress_margin": 325.0,
+          "buckling": 2000.0,
+          "x_order": 80.0,
+          "hub_overlap": 500.0,
+          "smoothness": 1.0,
+          "fold": 3000.0,
+          "arrival": 3000.0,
+          "fillet": 3000.0,
+          "fillet_cap": 500.0,
+          "min_sj": 3000.0,
+          "phase_ripple": 0.0
+        },
+        "req_hash": "235d9c9",
+        "provenance": {
+          "source": "wheel_requirements.Requirements.from_mission",
+          "derived": true,
+          "mission": {
+            "auw_kg": 3.0,
+            "n_wheels": 3,
+            "k_asym": 1.5,
+            "sink_rate_ms": 0.26334597016092726,
+            "field_class": "rough",
+            "ambient_c": 20.0,
+            "landings": 1000,
+            "nozzle_mm": 0.4,
+            "perimeters": 3,
+            "material": "PLA-FFF"
+          },
+          "priorities": null,
+          "weight_n": 29.41995,
+          "static_force_n": 9.80665,
+          "stroke_mm": 3.5,
+          "effective_stroke_m": 0.00175,
+          "landing_load_factor": 3.0205268873672453,
+          "safety_factor": 1.6,
+          "fatigue_knockdown": 1.0,
+          "e_retention": 1.0,
+          "sigma_retention": 1.0,
+          "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+        }
+      },
+      "score": {
+        "loss": 1100.5924420152237,
+        "grad": [
+          -19.619228928524873,
+          -23.445762852322726,
+          -3.0215572152934493,
+          -60.158811440182696,
+          -2.6364571221260666,
+          -55.04480806368805,
+          15.436521094954408,
+          -12.22890115645355,
+          457.9686228897402,
+          469.77401145128067,
+          514.3697726812032,
+          445.68392464392764,
+          0.0,
+          0.0
+        ],
+        "loss_terms": {
+          "deflection": 1067.919561335129,
+          "mass": 32.50505239907359,
+          "stress": 0.0,
+          "stress_margin": 0.0,
+          "buckling": 0.0,
+          "x_order": 0.0,
+          "hub_overlap": 0.0,
+          "smoothness": 0.16782828102126746,
+          "fold": 0.0,
+          "arrival": 0.0,
+          "fillet": 0.0,
+          "fillet_cap": 0.0,
+          "min_sj": 0.0,
+          "phase_ripple": 0.0
+        },
+        "metrics": {
+          "fillet_flanks": [
+            [
+              1.0
+            ],
+            [
+              1.0
+            ]
+          ],
+          "buckling_ratio": 0.09288573452126257,
+          "mesh_mass_g": 39.5478137522062,
+          "min_scaled_jacobian": 0.7822260942854291,
+          "axle_drop_mean_mm": 1.2124673006616644,
+          "axle_drop_min_mm": 1.0296501441610724,
+          "axle_drop_max_mm": 1.435194372781313,
+          "phase_ripple_std_over_mean": 0.12253122725724376,
+          "pnorm_stress_agg_mpa": 6.05834705817506,
+          "max_stress_mpa": 56.33101381604099,
+          "stress_scale_measured": 8.600226896898027,
+          "kt_hub": 2.096324561276308,
+          "kt_rim": 1.3939359631839685,
+          "hub_fillet_cap_mm": 0.6657364009741359,
+          "r_hub_effective_mm": 0.6396947436528141,
+          "stress_utilisation_hub": 0.5080104695515378,
+          "stress_utilisation_rim": 0.33779791367360057,
+          "stress_utilisation": 0.5080104695515378,
+          "stress_gauss_p": 4.0,
+          "pnorm_by_p": {},
+          "target_deflection_mm": 3.5,
+          "allowable_stress_mpa": 25.0,
+          "service_force_n": 44.43187499999999,
+          "n_phase": 8,
+          "rows": [
+            {
+              "phase_deg": 0.0,
+              "axle_drop_mm": 1.131298734962466,
+              "pnorm_stress_mpa": 4.611479403940301,
+              "max_stress_mpa": 56.33101381604099,
+              "contact_force_n": 44.4318749963772,
+              "coupling_frac": 1.6480599142562378
+            },
+            {
+              "phase_deg": 3.75,
+              "axle_drop_mm": 1.3301199629161375,
+              "pnorm_stress_mpa": 4.932371291710518,
+              "max_stress_mpa": 46.02141919667207,
+              "contact_force_n": 44.43187500065385,
+              "coupling_frac": 1.7091756010003927
+            },
+            {
+              "phase_deg": 7.5,
+              "axle_drop_mm": 1.435194372781313,
+              "pnorm_stress_mpa": 5.005566379380962,
+              "max_stress_mpa": 30.230296040804543,
+              "contact_force_n": 44.431875419608154,
+              "coupling_frac": 1.7660858996181519
+            },
+            {
+              "phase_deg": 11.25,
+              "axle_drop_mm": 1.3838514013278442,
+              "pnorm_stress_mpa": 4.797635116301142,
+              "max_stress_mpa": 28.42357898256721,
+              "contact_force_n": 44.431874987388305,
+              "coupling_frac": 1.7861817891628824
+            },
+            {
+              "phase_deg": 15.0,
+              "axle_drop_mm": 1.2459135964609362,
+              "pnorm_stress_mpa": 4.515548670388025,
+              "max_stress_mpa": 31.89819139922074,
+              "contact_force_n": 44.43187499740073,
+              "coupling_frac": 1.614297599525372
+            },
+            {
+              "phase_deg": 18.75,
+              "axle_drop_mm": 1.1110853881460276,
+              "pnorm_stress_mpa": 4.365481652806458,
+              "max_stress_mpa": 34.02938377000749,
+              "contact_force_n": 44.43187499024095,
+              "coupling_frac": 1.524062635909082
+            },
+            {
+              "phase_deg": 22.5,
+              "axle_drop_mm": 1.0296501441610724,
+              "pnorm_stress_mpa": 4.357541153991937,
+              "max_stress_mpa": 41.36310482937178,
+              "contact_force_n": 44.431874996422955,
+              "coupling_frac": 1.5540372058851055
+            },
+            {
+              "phase_deg": 26.25,
+              "axle_drop_mm": 1.0326248045375177,
+              "pnorm_stress_mpa": 4.437835391452124,
+              "max_stress_mpa": 48.552672810210375,
+              "contact_force_n": 44.431874998854546,
+              "coupling_frac": 1.6154380956978767
+            }
+          ]
+        },
+        "requirements": {
+          "force_n": 44.43187499999999,
+          "target_deflection_mm": 3.5,
+          "allowable_stress_mpa": 25.0,
+          "min_wall_mm": 1.2000000000000002,
+          "e_mpa": 2300.0,
+          "nu": 0.35,
+          "weights": {
+            "deflection": 2500.0,
+            "mass": 0.821917808219178,
+            "stress": 4000.0,
+            "stress_margin": 325.0,
+            "buckling": 2000.0,
+            "x_order": 80.0,
+            "hub_overlap": 500.0,
+            "smoothness": 1.0,
+            "fold": 3000.0,
+            "arrival": 3000.0,
+            "fillet": 3000.0,
+            "fillet_cap": 500.0,
+            "min_sj": 3000.0,
+            "phase_ripple": 0.0
+          },
+          "req_hash": "235d9c9",
+          "provenance": {
+            "source": "wheel_requirements.Requirements.from_mission",
+            "derived": true,
+            "mission": {
+              "auw_kg": 3.0,
+              "n_wheels": 3,
+              "k_asym": 1.5,
+              "sink_rate_ms": 0.26334597016092726,
+              "field_class": "rough",
+              "ambient_c": 20.0,
+              "landings": 1000,
+              "nozzle_mm": 0.4,
+              "perimeters": 3,
+              "material": "PLA-FFF"
+            },
+            "priorities": null,
+            "weight_n": 29.41995,
+            "static_force_n": 9.80665,
+            "stroke_mm": 3.5,
+            "effective_stroke_m": 0.00175,
+            "landing_load_factor": 3.0205268873672453,
+            "safety_factor": 1.6,
+            "fatigue_knockdown": 1.0,
+            "e_retention": 1.0,
+            "sigma_retention": 1.0,
+            "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+          }
+        },
+        "scored_at": {
+          "config": "coarse",
+          "kinematics": "svk",
+          "n_phase": 8,
+          "phase_scheme": "uniform"
+        },
+        "elapsed_s": 163.16
+      },
+      "table": {
+        "rows": [
+          {
+            "id": "SHALL-STRESS",
+            "kind": "shall",
+            "statement": "the `stress` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.stress",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.stress_utilisation",
+              "value": 0.5080104695515378,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-BUCKLING",
+            "kind": "shall",
+            "statement": "the `buckling` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.buckling",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.buckling_ratio",
+              "value": 0.09288573452126257,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-X-ORDER",
+            "kind": "shall",
+            "statement": "the `x_order` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.x_order",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-HUB-OVERLAP",
+            "kind": "shall",
+            "statement": "the `hub_overlap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.hub_overlap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FOLD",
+            "kind": "shall",
+            "statement": "the `fold` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fold",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-ARRIVAL",
+            "kind": "shall",
+            "statement": "the `arrival` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.arrival",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET",
+            "kind": "shall",
+            "statement": "the `fillet` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET-CAP",
+            "kind": "shall",
+            "statement": "the `fillet_cap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet_cap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-MIN-SJ",
+            "kind": "shall",
+            "statement": "the `min_sj` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.min_sj",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.min_scaled_jacobian",
+              "value": 0.7822260942854291,
+              "limit": 0.2,
+              "sense": ">="
+            }
+          },
+          {
+            "id": "SHOULD-DEFLECTION",
+            "kind": "should",
+            "term_loss": 1067.919561335129,
+            "statement": "mean axle drop is within +/-5% of the stroke target",
+            "method": "analysis \u2014 full-wheel contact FEA, mean over the phase stencil",
+            "quantity": "metrics.axle_drop_mean_mm",
+            "value": 1.2124673006616644,
+            "limit": 3.5,
+            "margin": -0.6535807712395244,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-MASS",
+            "kind": "should",
+            "term_loss": 32.50505239907359,
+            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "method": "analysis \u2014 meshed area x width x density",
+            "quantity": "metrics.mesh_mass_g",
+            "value": 39.5478137522062,
+            "limit": 36.5,
+            "margin": -3.0478137522062028,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-STRESS-MARGIN",
+            "kind": "should",
+            "term_loss": 0.0,
+            "statement": "worst junction utilisation stays under the margin knee",
+            "method": "analysis \u2014 Kt * p-norm nominal / allowable",
+            "quantity": "metrics.stress_utilisation",
+            "value": 0.5080104695515378,
+            "limit": 0.8,
+            "margin": 0.2919895304484622,
+            "verdict": "MET"
+          },
+          {
+            "id": "SHOULD-SMOOTHNESS",
+            "kind": "should",
+            "term_loss": 0.16782828102126746,
+            "statement": "the centerline is a clean single-curvature spiral",
+            "method": "analysis \u2014 curvature-rate integral plus reversal penalty",
+            "quantity": "loss_terms.smoothness",
+            "value": 0.16782828102126746,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          },
+          {
+            "id": "SHOULD-PHASE-RIPPLE",
+            "kind": "should",
+            "term_loss": 0.0,
+            "statement": "axle drop is uniform through one sector",
+            "method": "analysis \u2014 std/mean over the phase stencil",
+            "quantity": "metrics.phase_ripple_std_over_mean",
+            "value": 0.12253122725724376,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          }
+        ],
+        "compliant": true,
+        "provenance": "matched (235d9c9)",
+        "req_hash": "235d9c9"
+      },
+      "process": {
+        "min_wall_mm": 1.2000000000000002,
+        "thickness_genes": {
+          "t0": 1.4738307537189006,
+          "t1": 1.2,
+          "t2": 1.2,
+          "t3": 1.4312949633290164
+        },
+        "respects_floor": true
+      }
+    },
+    "long_life": {
+      "changed": {
+        "landings": 100000
+      },
+      "requirements": {
+        "force_n": 66.7233,
+        "target_deflection_mm": 2.0,
+        "allowable_stress_mpa": 19.23076923076923,
+        "min_wall_mm": 1.2000000000000002,
+        "e_mpa": 2300.0,
+        "nu": 0.35,
+        "weights": {
+          "deflection": 2500.0,
+          "mass": 0.821917808219178,
+          "stress": 4000.0,
+          "stress_margin": 325.0,
+          "buckling": 2000.0,
+          "x_order": 80.0,
+          "hub_overlap": 500.0,
+          "smoothness": 1.0,
+          "fold": 3000.0,
+          "arrival": 3000.0,
+          "fillet": 3000.0,
+          "fillet_cap": 500.0,
+          "min_sj": 3000.0,
+          "phase_ripple": 0.0
+        },
+        "req_hash": "994f0b8",
+        "provenance": {
+          "source": "wheel_requirements.Requirements.from_mission",
+          "derived": true,
+          "mission": {
+            "auw_kg": 3.0,
+            "n_wheels": 3,
+            "k_asym": 1.5,
+            "sink_rate_ms": 0.26334597016092726,
+            "field_class": "grass",
+            "ambient_c": 20.0,
+            "landings": 100000,
+            "nozzle_mm": 0.4,
+            "perimeters": 3,
+            "material": "PLA-FFF"
+          },
+          "priorities": null,
+          "weight_n": 29.41995,
+          "static_force_n": 9.80665,
+          "stroke_mm": 2.0,
+          "effective_stroke_m": 0.001,
+          "landing_load_factor": 4.53592205289268,
+          "safety_factor": 2.08,
+          "fatigue_knockdown": 1.3,
+          "e_retention": 1.0,
+          "sigma_retention": 1.0,
+          "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+        }
+      },
+      "score": {
+        "loss": 54.06146618862609,
+        "grad": [
+          -1.1254836271814674,
+          -4.04217699968526,
+          -0.3973664162292047,
+          -8.28052297595254,
+          -0.2840752478419239,
+          -7.473669190449104,
+          1.9888287286010682,
+          -1.6716036591432886,
+          72.86359568223884,
+          52.177644647761554,
+          54.59277992340938,
+          41.36942587302303,
+          -65.16779918765214,
+          0.0
+        ],
+        "loss_terms": {
+          "deflection": 6.113066139896746,
+          "mass": 32.50505239907359,
+          "stress": 0.6144160075610267,
+          "stress_margin": 14.66110336107346,
+          "buckling": 0.0,
+          "x_order": 0.0,
+          "hub_overlap": 0.0,
+          "smoothness": 0.16782828102126746,
+          "fold": 0.0,
+          "arrival": 0.0,
+          "fillet": 0.0,
+          "fillet_cap": 0.0,
+          "min_sj": 0.0,
+          "phase_ripple": 0.0
+        },
+        "metrics": {
+          "fillet_flanks": [
+            [
+              1.0
+            ],
+            [
+              1.0
+            ]
+          ],
+          "buckling_ratio": 0.13948640992941577,
+          "mesh_mass_g": 39.5478137522062,
+          "min_scaled_jacobian": 0.7822260942854291,
+          "axle_drop_mean_mm": 1.9011015378085443,
+          "axle_drop_min_mm": 1.6383441485405654,
+          "axle_drop_max_mm": 2.247000371170258,
+          "phase_ripple_std_over_mean": 0.1141827791771404,
+          "pnorm_stress_agg_mpa": 9.287259297483908,
+          "max_stress_mpa": 87.11191843598914,
+          "stress_scale_measured": 8.917994350114082,
+          "kt_hub": 2.096324561276308,
+          "kt_rim": 1.3939359631839685,
+          "hub_fillet_cap_mm": 0.6657364009741359,
+          "r_hub_effective_mm": 0.6396947436528141,
+          "stress_utilisation_hub": 1.012393708157378,
+          "stress_utilisation_rim": 0.67318392617723,
+          "stress_utilisation": 1.012393708157378,
+          "stress_gauss_p": 4.0,
+          "pnorm_by_p": {},
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 19.23076923076923,
+          "service_force_n": 66.7233,
+          "n_phase": 8,
+          "rows": [
+            {
+              "phase_deg": 0.0,
+              "axle_drop_mm": 1.7935371503168087,
+              "pnorm_stress_mpa": 7.154620565596337,
+              "max_stress_mpa": 87.11191843598914,
+              "contact_force_n": 66.72329997002397,
+              "coupling_frac": 1.6193788046041009
+            },
+            {
+              "phase_deg": 3.75,
+              "axle_drop_mm": 2.0700564995250907,
+              "pnorm_stress_mpa": 7.57217442751986,
+              "max_stress_mpa": 83.13770325130147,
+              "contact_force_n": 66.72330011867024,
+              "coupling_frac": 1.7090663928939913
+            },
+            {
+              "phase_deg": 7.5,
+              "axle_drop_mm": 2.247000371170258,
+              "pnorm_stress_mpa": 7.610405038972944,
+              "max_stress_mpa": 45.360596890339565,
+              "contact_force_n": 66.72329999900846,
+              "coupling_frac": 1.7330087854416518
+            },
+            {
+              "phase_deg": 11.25,
+              "axle_drop_mm": 2.144718185599791,
+              "pnorm_stress_mpa": 7.272547968256533,
+              "max_stress_mpa": 44.07594964482023,
+              "contact_force_n": 66.72330032139362,
+              "coupling_frac": 1.6786879898851153
+            },
+            {
+              "phase_deg": 15.0,
+              "axle_drop_mm": 1.9252118912794647,
+              "pnorm_stress_mpa": 6.878052407106694,
+              "max_stress_mpa": 48.872043963076365,
+              "contact_force_n": 66.72329997860271,
+              "coupling_frac": 1.5572870815567021
+            },
+            {
+              "phase_deg": 18.75,
+              "axle_drop_mm": 1.7353034176429762,
+              "pnorm_stress_mpa": 6.709051792747062,
+              "max_stress_mpa": 55.29700671145333,
+              "contact_force_n": 66.72329994282232,
+              "coupling_frac": 1.5044767376438841
+            },
+            {
+              "phase_deg": 22.5,
+              "axle_drop_mm": 1.6383441485405654,
+              "pnorm_stress_mpa": 6.754163834062281,
+              "max_stress_mpa": 66.05413130793426,
+              "contact_force_n": 66.72329997767832,
+              "coupling_frac": 1.538910890118328
+            },
+            {
+              "phase_deg": 26.25,
+              "axle_drop_mm": 1.6546406383933991,
+              "pnorm_stress_mpa": 6.902218658128787,
+              "max_stress_mpa": 76.20474813427293,
+              "contact_force_n": 66.72329992876897,
+              "coupling_frac": 1.5917781296838014
+            }
+          ]
+        },
+        "requirements": {
+          "force_n": 66.7233,
+          "target_deflection_mm": 2.0,
+          "allowable_stress_mpa": 19.23076923076923,
+          "min_wall_mm": 1.2000000000000002,
+          "e_mpa": 2300.0,
+          "nu": 0.35,
+          "weights": {
+            "deflection": 2500.0,
+            "mass": 0.821917808219178,
+            "stress": 4000.0,
+            "stress_margin": 325.0,
+            "buckling": 2000.0,
+            "x_order": 80.0,
+            "hub_overlap": 500.0,
+            "smoothness": 1.0,
+            "fold": 3000.0,
+            "arrival": 3000.0,
+            "fillet": 3000.0,
+            "fillet_cap": 500.0,
+            "min_sj": 3000.0,
+            "phase_ripple": 0.0
+          },
+          "req_hash": "994f0b8",
+          "provenance": {
+            "source": "wheel_requirements.Requirements.from_mission",
+            "derived": true,
+            "mission": {
+              "auw_kg": 3.0,
+              "n_wheels": 3,
+              "k_asym": 1.5,
+              "sink_rate_ms": 0.26334597016092726,
+              "field_class": "grass",
+              "ambient_c": 20.0,
+              "landings": 100000,
+              "nozzle_mm": 0.4,
+              "perimeters": 3,
+              "material": "PLA-FFF"
+            },
+            "priorities": null,
+            "weight_n": 29.41995,
+            "static_force_n": 9.80665,
+            "stroke_mm": 2.0,
+            "effective_stroke_m": 0.001,
+            "landing_load_factor": 4.53592205289268,
+            "safety_factor": 2.08,
+            "fatigue_knockdown": 1.3,
+            "e_retention": 1.0,
+            "sigma_retention": 1.0,
+            "thermal_scope": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+          }
+        },
+        "scored_at": {
+          "config": "coarse",
+          "kinematics": "svk",
+          "n_phase": 8,
+          "phase_scheme": "uniform"
+        },
+        "elapsed_s": 162.61
+      },
+      "table": {
+        "rows": [
+          {
+            "id": "SHALL-STRESS",
+            "kind": "shall",
+            "statement": "the `stress` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.stress",
+            "value": 0.6144160075610267,
+            "limit": 0.0,
+            "margin": -0.6144160075610267,
+            "verdict": "FAIL",
+            "evidence": {
+              "quantity": "metrics.stress_utilisation",
+              "value": 1.012393708157378,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-BUCKLING",
+            "kind": "shall",
+            "statement": "the `buckling` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.buckling",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.buckling_ratio",
+              "value": 0.13948640992941577,
+              "limit": 1.0,
+              "sense": "<="
+            }
+          },
+          {
+            "id": "SHALL-X-ORDER",
+            "kind": "shall",
+            "statement": "the `x_order` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.x_order",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-HUB-OVERLAP",
+            "kind": "shall",
+            "statement": "the `hub_overlap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.hub_overlap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FOLD",
+            "kind": "shall",
+            "statement": "the `fold` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fold",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-ARRIVAL",
+            "kind": "shall",
+            "statement": "the `arrival` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.arrival",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET",
+            "kind": "shall",
+            "statement": "the `fillet` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-FILLET-CAP",
+            "kind": "shall",
+            "statement": "the `fillet_cap` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.fillet_cap",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS"
+          },
+          {
+            "id": "SHALL-MIN-SJ",
+            "kind": "shall",
+            "statement": "the `min_sj` barrier is not breached",
+            "method": "analysis \u2014 Stage-3 objective barrier",
+            "quantity": "loss_terms.min_sj",
+            "value": 0.0,
+            "limit": 0.0,
+            "margin": -0.0,
+            "verdict": "PASS",
+            "evidence": {
+              "quantity": "metrics.min_scaled_jacobian",
+              "value": 0.7822260942854291,
+              "limit": 0.2,
+              "sense": ">="
+            }
+          },
+          {
+            "id": "SHOULD-DEFLECTION",
+            "kind": "should",
+            "term_loss": 6.113066139896746,
+            "statement": "mean axle drop is within +/-5% of the stroke target",
+            "method": "analysis \u2014 full-wheel contact FEA, mean over the phase stencil",
+            "quantity": "metrics.axle_drop_mean_mm",
+            "value": 1.9011015378085443,
+            "limit": 2.0,
+            "margin": -0.04944923109572785,
+            "verdict": "MET"
+          },
+          {
+            "id": "SHOULD-MASS",
+            "kind": "should",
+            "term_loss": 32.50505239907359,
+            "statement": "mesh mass stays under MASS_REFERENCE_G (a NORMALISER, not a budget \u2014 no mass requirement exists in this tree)",
+            "method": "analysis \u2014 meshed area x width x density",
+            "quantity": "metrics.mesh_mass_g",
+            "value": 39.5478137522062,
+            "limit": 36.5,
+            "margin": -3.0478137522062028,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-STRESS-MARGIN",
+            "kind": "should",
+            "term_loss": 14.66110336107346,
+            "statement": "worst junction utilisation stays under the margin knee",
+            "method": "analysis \u2014 Kt * p-norm nominal / allowable",
+            "quantity": "metrics.stress_utilisation",
+            "value": 1.012393708157378,
+            "limit": 0.8,
+            "margin": -0.2123937081573779,
+            "verdict": "MISSED"
+          },
+          {
+            "id": "SHOULD-SMOOTHNESS",
+            "kind": "should",
+            "term_loss": 0.16782828102126746,
+            "statement": "the centerline is a clean single-curvature spiral",
+            "method": "analysis \u2014 curvature-rate integral plus reversal penalty",
+            "quantity": "loss_terms.smoothness",
+            "value": 0.16782828102126746,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          },
+          {
+            "id": "SHOULD-PHASE-RIPPLE",
+            "kind": "should",
+            "term_loss": 0.0,
+            "statement": "axle drop is uniform through one sector",
+            "method": "analysis \u2014 std/mean over the phase stencil",
+            "quantity": "metrics.phase_ripple_std_over_mean",
+            "value": 0.1141827791771404,
+            "limit": null,
+            "margin": null,
+            "verdict": "NO LIMIT STATED"
+          }
+        ],
+        "compliant": false,
+        "provenance": "matched (994f0b8)",
+        "req_hash": "994f0b8"
+      },
+      "process": {
+        "min_wall_mm": 1.2000000000000002,
+        "thickness_genes": {
+          "t0": 1.4738307537189006,
+          "t1": 1.2,
+          "t2": 1.2,
+          "t3": 1.4312949633290164
+        },
+        "respects_floor": true
+      }
+    }
+  },
+  "bit_identity": {
+    "value": {
+      "plain": 38.7859468199916,
+      "with_req": 38.7859468199916,
+      "identical": true
+    },
+    "grad_components_identical": 14,
+    "grad_n": 14,
+    "grad_max_abs_diff": 0.0,
+    "terms": {
+      "deflection": {
+        "plain": 6.113066139896746,
+        "with_req": 6.113066139896746,
+        "identical": true
+      },
+      "mass": {
+        "plain": 32.50505239907359,
+        "with_req": 32.50505239907359,
+        "identical": true
+      },
+      "stress": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "stress_margin": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "buckling": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "x_order": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "hub_overlap": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "smoothness": {
+        "plain": 0.16782828102126746,
+        "with_req": 0.16782828102126746,
+        "identical": true
+      },
+      "fold": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "arrival": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "fillet": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "fillet_cap": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "min_sj": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      },
+      "phase_ripple": {
+        "plain": 0.0,
+        "with_req": 0.0,
+        "identical": true
+      }
+    },
+    "all_identical": true
+  },
+  "checks": {
+    "baseline_is_compliant": true,
+    "baseline_barriers_all_zero": true,
+    "baseline_bit_identical_to_no_requirements": true,
+    "some_profile_is_non_compliant": true,
+    "non_compliant_profiles": {
+      "heavy_payload": [
+        "SHALL-STRESS"
+      ],
+      "long_life": [
+        "SHALL-STRESS"
+      ]
+    },
+    "shall_rows_are_exactly_barrier_terms": true,
+    "should_rows_are_exactly_objective_terms": true,
+    "all_ok": true
+  },
+  "verdict": {
+    "bit_identity_note": "objective(genes, req=Requirements.baseline()) equals objective(genes) in the scalar, in 14 of 14 gradient components (worst |diff| 0.000e+00) and in all 14 breakdown terms.",
+    "non_compliant": {
+      "heavy_payload": [
+        "SHALL-STRESS"
+      ],
+      "long_life": [
+        "SHALL-STRESS"
+      ]
+    },
+    "verifier_can_fail": true,
+    "binding_note": "2 of 5 profiles come back NON-COMPLIANT; heavy_payload is bound by SHALL-STRESS.  The verifier can return both ways, which is what makes the compliant rows worth reading.",
+    "summary": {
+      "baseline": {
+        "loss": 38.7859468199916,
+        "force_n": 66.7233,
+        "e_mpa": 2300.0,
+        "allowable_stress_mpa": 25.0,
+        "target_deflection_mm": 2.0,
+        "axle_drop_mean_mm": 1.9011015378085443,
+        "stress_utilisation_hub": 0.7787643908902908,
+        "mesh_mass_g": 39.5478137522062,
+        "compliant": true
+      },
+      "hot_day": {
+        "loss": 82.11055586009682,
+        "force_n": 66.7233,
+        "e_mpa": 1955.0,
+        "allowable_stress_mpa": 21.499999999999996,
+        "target_deflection_mm": 2.0,
+        "axle_drop_mean_mm": 2.2712640270001634,
+        "stress_utilisation_hub": 0.9029946595297521,
+        "mesh_mass_g": 39.5478137522062,
+        "compliant": true
+      },
+      "heavy_payload": {
+        "loss": 755.5573261360651,
+        "force_n": 100.08494999999999,
+        "e_mpa": 2300.0,
+        "allowable_stress_mpa": 25.0,
+        "target_deflection_mm": 2.0,
+        "axle_drop_mean_mm": 2.9580291365871227,
+        "stress_utilisation_hub": 1.163094866676619,
+        "mesh_mass_g": 39.5478137522062,
+        "compliant": false
+      },
+      "rough_field": {
+        "loss": 1100.5924420152237,
+        "force_n": 44.43187499999999,
+        "e_mpa": 2300.0,
+        "allowable_stress_mpa": 25.0,
+        "target_deflection_mm": 3.5,
+        "axle_drop_mean_mm": 1.2124673006616644,
+        "stress_utilisation_hub": 0.5080104695515378,
+        "mesh_mass_g": 39.5478137522062,
+        "compliant": true
+      },
+      "long_life": {
+        "loss": 54.06146618862609,
+        "force_n": 66.7233,
+        "e_mpa": 2300.0,
+        "allowable_stress_mpa": 19.23076923076923,
+        "target_deflection_mm": 2.0,
+        "axle_drop_mean_mm": 1.9011015378085443,
+        "stress_utilisation_hub": 1.012393708157378,
+        "mesh_mass_g": 39.5478137522062,
+        "compliant": false
+      }
+    }
+  }
+}
