@@ -348,6 +348,167 @@ def _qoi_pnorm_stress(prob, p=STRESS_PNORM_P):
     return Q
 
 
+# ---------------------------------------------------------------------------
+# THE REGION-RESTRICTED P-NORM OVER A FILLET ARC  (PLAN.md §102, FILLET_PLAN STEP 3)
+# ---------------------------------------------------------------------------
+# §94's replacement for `Kt * agg`, as a QoI.  The term it replaces multiplies the whole
+# wheel's p-norm by a closed-form surrogate for a fillet the mesh does not model; on a
+# filleted mesh the mesh models it, and §94 measured what that costs: the stress term is
+# INERT at both measured designs — every utilisation under `MARGIN_KNEE_UTIL`, both
+# barriers exactly zero in value and gradient — while the fillet surface it exists to
+# price sits at 1.46x and 2.20x the allowable.  This is the quantity that reads the
+# feature instead of modelling it:
+#
+#     sigma_fillet_j = ( SUM_g W_g V_g vm_g^p / m_j )^(1/p)        [MPa]
+#
+#         W_g = SUM_k  max(0, 1 - d_k(g)^2 / r^2)^3     the smooth region weight
+#         d_k = distance from Gauss point g to junction j's arc, copy k
+#         m_j = SUM_g W_g V_g / n_spokes                ONE fillet's region mass
+#
+# `r` = 0.45 mm and `p` = 16 are §95's answer and §100's validation — convergent at every
+# cell of §82's held-out box that reads over the allowable, and silent everywhere it is
+# not.  `bump3` rather than an indicator is §95's item 2 and it is not a refinement: the
+# indicator STEPS 0.068% at the recommended radius, 0.0592 mm from the shipped `R_hub`,
+# and refining the sampling tenfold leaves that step where it is while dividing every
+# smooth difference by ten.  A step in the loss is a step in the gradient.
+FILLET_REGION_R_SUP_MM = 0.45
+FILLET_REGION_P = 16.0
+
+
+def _arc_from_nodes(pts):
+    """`(centre, radius, a0, a1, A, B)` by least-squares circle fit — jnp, traceable.
+
+    THE SAME FIT `study_corner_singularity.fillet_arcs` DOES, ON COORDINATES RATHER THAN
+    GENES, and that difference is the whole reason this exists.  The study rebuilds the
+    sector eagerly to get its arc, so nothing downstream carries a derivative; given the
+    arc's node ids (`wheel_wheel.fillet_arc_nodes`) the identical fit runs on the traced
+    `coords`, and the arc becomes a function of the mesh the adjoint already
+    differentiates.  Measured at the shipped genome on `coarse`: this reproduces
+    `fillet_arcs`' centre to 2.3e-14 mm and its radius to twelve digits, and
+    `d(radius)/d(R_hub)` comes back 1.000000000 against a central difference's
+    0.999999889 — with every other gene's entry identically zero, which is the check that
+    the fit is reading the arc and not the mesh around it.
+
+    A fit and not a re-solve, for `fillet_arcs`' own reason: the nodes ARE on a circle by
+    construction (7e-14 mm residual), and a second tangency solve here would be the
+    duplicated-geometry drift `study_fillet_block.py` exists to warn about.
+    """
+    M = jnp.stack([2.0 * pts[:, 0], 2.0 * pts[:, 1], jnp.ones(pts.shape[0])], axis=1)
+    sol = jnp.linalg.lstsq(M, (pts ** 2).sum(axis=1), rcond=None)[0]
+    C = sol[:2]
+    R = jnp.sqrt(sol[2] + C @ C)
+    A, B = pts[0], pts[-1]
+    a0 = jnp.arctan2(A[1] - C[1], A[0] - C[0])
+    a1 = jnp.arctan2(B[1] - C[1], B[0] - C[0])
+    a1 = a0 + ((a1 - a0 + jnp.pi) % (2.0 * jnp.pi) - jnp.pi)
+    return C, R, a0, a1, A, B
+
+
+def _distance_to_arc(pts, arc):
+    """Perpendicular distance to the arc, folding to the endpoints outside the sweep.
+
+    `study_corner_singularity._distance_to_arc` in jnp, unchanged in form so the two
+    cannot drift — `study_fillet_pnorm` measured its whole `(r, p)` recommendation
+    through the numpy one, and a second definition here would make §95's answer a
+    different question's answer.
+
+    SMOOTH WHERE THIS USES IT, which §95 argues rather than assumes.  The fold is C1 (both
+    branches give `|r - R|` with zero angular derivative at the tangent point); the one
+    genuine kink, `min(dA, dB)` on the chord's perpendicular bisector, sits about `2R` away
+    on the far side of the circle where the weight is identically zero; and inside the
+    sweep the absolute value never activates, because the fillet is concave, its centre of
+    curvature is in the VOID, and the closest Gauss point to either centre measures
+    `r / R` = 1.085 at the hub and 1.011 at the rim.
+    """
+    C, R, a0, a1, A, B = arc
+    d = pts - C[None, :]
+    r = jnp.linalg.norm(d, axis=1)
+    ang = jnp.arctan2(d[:, 1], d[:, 0])
+    lo = jnp.minimum(a0, a1)
+    hi = jnp.maximum(a0, a1)
+    ang = lo + ((ang - lo) % (2.0 * jnp.pi))
+    ends = jnp.minimum(jnp.linalg.norm(pts - A[None, :], axis=1),
+                       jnp.linalg.norm(pts - B[None, :], axis=1))
+    return jnp.where(ang <= hi, jnp.abs(r - R), ends)
+
+
+def _region_weight(d2, r_sup):
+    """`max(0, 1 - d^2/r^2)^3` from the SQUARED distance — §95's kernel, and its reasons.
+
+    Three properties, all of them load-bearing.  It is a POLYNOMIAL IN `d^2`, so the square
+    root is never formed and the kink `|x|` has at zero — which sits exactly on the arc,
+    where the weight peaks — never exists.  It is C2 AT ITS OWN SUPPORT BOUNDARY, so a
+    Gauss point entering or leaving the tube does so with zero weight and zero slope, which
+    is what §94's item 2 asks for.  And its SUPPORT IS COMPACT and is exactly `arc_peak`'s
+    tube: a Gaussian has the first two properties and an unbounded tail, which puts the
+    whole wheel back into the measure at low `p` — the dilution §94 measured `Kt * agg`
+    losing 1.68x to 2.76x to.
+    """
+    return jnp.maximum(0.0, 1.0 - d2 / (r_sup * r_sup)) ** 3
+
+
+def _qoi_region_pnorm(prob, arc_ids, n_spokes, r_sup=FILLET_REGION_R_SUP_MM,
+                      p=FILLET_REGION_P):
+    """`prob -> Q(coords, u_full, y_ground)` for one junction's fillet stress [MPa].
+
+    Not in `QOI`: every entry there is `prob -> Q` and this needs the arc's node ids and
+    the spoke count, so it goes through `adjoint_grads`' `(name, factory)` form — the same
+    door `_qoi_buckling_eig` uses, for the same reason.
+
+    ALL TWELVE COPIES, SUMMED, AND THE NORMALISATION IS THE POLICY THIS STATES.
+    `study_fillet_pnorm.region_pnorm` reads ONE rotational copy, picked as the one carrying
+    the largest p-norm.  That is right for an instrument measuring whether a quantity
+    converges and wrong for an objective: picking a copy by `max` is an argmax over twelve
+    candidates, it flips as the contact patch sweeps, and it reintroduces exactly the kink
+    the p-norm exists to blur.  So every copy is in the measure and the choice disappears.
+
+    What replaces it is a choice about the DENOMINATOR, which is where the twelve copies
+    would otherwise dilute the answer.  Normalising by the whole region's mass would
+    average twelve fillets, eleven of which are unloaded, and under-read the loaded one by
+    up to `n^(-1/p)` = 0.847.  Normalising by ONE fillet's mass — which is the region mass
+    divided by `n_spokes`, exactly, because the copies are rotations of each other and
+    carry identical mass — gives
+
+        sigma_j = ( SUM_k sigma_k^p )^(1/p)   >=   max_k sigma_k
+
+    i.e. the l_p norm OVER the copies' own values.  It is smooth, it needs no argmax, it is
+    never below the loaded copy's own reading, and it converges to it as one copy comes to
+    dominate.  Conservative in the direction a stress term should be conservative in.
+
+    `width` is left out of the volume weight deliberately: it is a constant and cancels
+    between numerator and denominator, and carrying it would imply this knows which width
+    the objective will use.  `study_fillet_pnorm` leaves it out for the same reason, which
+    is what makes the two comparable at all.
+    """
+    kern = _vm_kernel(prob.order, prob.nonlinear, True)
+    conn = jnp.asarray(prob.conn)
+    N = jnp.asarray(fem._TABLES[prob.order][0])
+    lam, mu = prob.lam, prob.mu
+    ids = jnp.asarray(arc_ids)
+    ang = -2.0 * np.pi * np.arange(n_spokes) / n_spokes
+    ca, sa = jnp.asarray(np.cos(ang)), jnp.asarray(np.sin(ang))
+
+    def Q(coords, u_full, y_ground):
+        Xe = coords[conn]
+        vm, vol = kern(Xe, u_full.reshape(-1, 2)[conn], lam, mu)
+        # `N @ Xe`, which is what `fem.gauss_stresses` reports as `xy` — the same map,
+        # off the same element coordinates the stress above was just computed from.
+        xy = jnp.einsum("gn,eni->egi", N, Xe).reshape(-1, 2)
+        vm, vol = vm.reshape(-1), vol.reshape(-1)
+        arc = _arc_from_nodes(coords[ids])
+
+        def one_copy(c, s):
+            rot = jnp.stack([c * xy[:, 0] - s * xy[:, 1],
+                             s * xy[:, 0] + c * xy[:, 1]], axis=1)
+            d = _distance_to_arc(rot, arc)
+            return _region_weight(d * d, r_sup)
+
+        W = jax.vmap(one_copy)(ca, sa).sum(axis=0)
+        wgt = W * vol
+        return (jnp.sum(wgt * vm ** p) / (jnp.sum(wgt) / n_spokes)) ** (1.0 / p)
+    return Q
+
+
 def max_stress(prob, coords, u_full):
     """True max von Mises [MPa] — the number to quote, and the one to report the p-norm
     against.  Not differentiable and not a QoI; `_qoi_pnorm_stress` is its smooth proxy."""

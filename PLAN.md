@@ -14121,3 +14121,155 @@ because nothing about it is wrong, it is just the wrong shape for this box.
    that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
    revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
    successor 9, unchanged.
+
+## §102 — 2026-09-02. THE REPLACEMENT STRESS TERM EXISTS, IT IS DIFFERENTIABLE, AND `R_hub`/`R_rim` ARE NOT DEAD ANY MORE — PLUS ONE ARGMAX §94's FOUR-ITEM LIST DID NOT NAME
+
+§101's ranked successor 1, first half.  §93's step 3 is *"wire `fillet=True` into
+`wheel_objective`/`wheel_stage3`"*, and the thing that has to exist before anything can be
+wired is the quantity itself: §94 specified a region-restricted peak over the fillet arc
+to replace `Kt * agg`, §95 gave it `(r, p) = (0.45, 16)` and a smooth kernel, §96 argued
+the `P_c` exclusion and §99 stated the knee and the reference point — but no line of
+`src/` computes it.  This section is that quantity, as a QoI, measured against the
+instrument that recommended it.  **Nothing reads it yet**: `wheel_objective` is untouched,
+`test_nothing_wires_the_fillet_into_the_objective` is green, and the scope gate is clean
+because no `fillet=` keyword reaches any of the five modules it scans.
+
+### THE ARC HAD TO BECOME A FUNCTION OF THE COORDINATES, AND IT ALREADY WAS ONE
+
+The obstacle looked structural and was not.  The region weight is a function of distance
+to the fillet arc; the arc moves with `R_hub`/`R_rim`/`t0`/`t3`; and `adjoint_grads`
+differentiates `Q` with respect to `(coords, u_full, y_ground)` only — so an arc computed
+from the GENES inside a QoI would be frozen, and the region would sit still while the
+geometry moved under it.  That is a missing gradient path, and it would have meant
+extending the adjoint's QoI contract.
+
+It is not missing.  `study_corner_singularity.fillet_arcs` already recovers the arc **by a
+least-squares circle fit through the arc's own mesh nodes** (`:226`), reporting a 7e-14 mm
+residual because the nodes are on a circle by construction.  Given the node IDS the
+identical fit runs on the traced `coords`, and the arc becomes a function of the mesh that
+`adjoint_grads` already differentiates and already chains to the genes through one shared
+vjp.  So the whole term needs one new topology query (`wheel_wheel.fillet_arc_nodes`) and
+no change to the adjoint at all.
+
+```
+                                   measured, shipped genome
+  arc points matched to mesh nodes       0.0 mm EXACTLY, both junctions, 17 ids, distinct
+  jnp fit vs `fillet_arcs` centre        2.3e-14 mm (hub), 8.5e-14 mm (rim)
+  jnp fit vs `fillet_arcs` radius        twelve digits
+  d(radius)/d(R_hub)   adjoint / FD      1.000000000 / 0.999999889
+  the other twelve genes' entries        <= 3.4e-13, i.e. the lstsq's own round-off
+```
+
+The zeroes are half of that check.  A fit contaminated by the mesh AROUND the arc would
+still give `dR/dR_hub` near 1 while smearing gradient onto `t0` and the rest; that the
+other twelve sit at round-off is what says the fit is reading the arc.
+
+### AN ARGMAX OVER TWELVE COPIES, WHICH IS NOT IN §94's LIST OF FOUR
+
+§94 put four things in front of the replacement term — differentiability, the moving
+region, the `P_c` exclusion, the exchange rate.  There is a fifth, and it comes from the
+instrument rather than from the quantity.  `study_fillet_pnorm.region_pnorm` reads ONE
+rotational copy, **picked as the one carrying the largest p-norm**, and it is right to:
+the wheel is loaded at one contact patch and the twelve images of a fillet see twelve
+loads, so an instrument measuring whether a quantity converges must not pool them.
+
+Wired into an objective unchanged, that is an argmax over twelve candidates.  It flips as
+the contact patch sweeps, and it reintroduces exactly the kink the p-norm exists to blur —
+the same class of defect as §95's indicator step, arrived at from the other direction.
+**It is a policy this tree had not stated, and it is stated here.**
+
+Every copy goes into the measure, so the choice disappears; what replaces it is a choice
+about the DENOMINATOR, which is where twelve copies would otherwise dilute the answer.
+Normalising by the whole region's mass averages twelve fillets, eleven of them unloaded.
+Normalising by ONE fillet's mass — the region mass over `n_spokes`, exactly, because the
+copies are rotations of each other and carry identical mass by construction — gives
+
+```
+    sigma_j  =  ( SUM_k sigma_k^p )^(1/p)   >=   max_k sigma_k
+```
+
+the `l_p` norm OVER the copies' own values: smooth, argmax-free, never below the loaded
+copy's own reading, and converging to it as one copy comes to dominate.  Conservative in
+the direction a stress term should be conservative in.  **Measured against the study's own
+loaded-copy instrument** at the shipped genome, `coarse`, linear, `r` = 0.45, `p` = 16:
+
+```
+  junction   study loaded copy   this QoI, all 12   ratio     whole-region normalisation
+  hub             27.520053          27.520053     1.00000            23.561365
+  rim             12.274936          12.283466     1.00069            10.509219
+```
+
+The construction reproduces the instrument to five and six figures with no argmax in it,
+and the third column is why the denominator is what it is: normalising by the whole region
+would have read **14.4% low** at both junctions, which against a 25 MPa allowable is a
+breach reported as clearance.
+
+### THE GRADIENT, AND §15 DEFECT 1 RUNNING BACKWARDS
+
+`smoke`, shipped genome, contact at 1.65 mm indentation, central differences scaled by
+each gene's own range:
+
+```
+  junction   adjoint          FD (best rung)    rel        sign
+  hub       -3.03772422e+00  -3.03772422e+00   1.745e-09   negative
+  rim       -3.24660263e+00  -3.24660261e+00   4.718e-09   negative
+```
+
+The sign is the sanity check and it is the right one: opening the fillet radius lowers the
+stress in the fillet.  A term that came back positive would be pricing margin backwards
+and no FD agreement would rescue it.
+
+**And all fourteen genes carry a nonzero entry, at both junctions.**  §15 DEFECT 1 is that
+`R_hub` and `R_rim` are DEAD — *"the only paths from a fillet radius into the loss are
+`stress` and the fillet barriers, and all of them are flat unless breached"*, measured at
+the shipped genome on 2026-08-12 as **exactly 0.0** for both, a nominally 14-dimensional
+search running in 8.  Read through a filleted mesh the radius moves the geometry the field
+is computed on rather than only a closed-form surrogate that is flat above its cap, and
+the two genes wake up.  That is the affirmative case for the switch stated as a
+derivative, and it is the first time this arc has been able to state it that way.
+
+### WHAT MOVED
+
+`wheel_wheel.fillet_arc_nodes` (+ `ARC_NODE_MATCH_TOL_MM`), and in `wheel_adjoint`:
+`FILLET_REGION_R_SUP_MM` = 0.45, `FILLET_REGION_P` = 16.0, `_arc_from_nodes`,
+`_distance_to_arc`, `_region_weight`, `_qoi_region_pnorm`.  The QoI is NOT in `QOI` — it
+needs the arc's node ids and the spoke count, so it goes through `adjoint_grads`'
+`(name, factory)` door, the one `_qoi_buckling_eig` already uses.
+
+TWO DEFINITIONS OF ONE KERNEL, AND THE TEST THAT KEEPS THEM ONE.  `_distance_to_arc` and
+`_region_weight` are jnp copies of the study's numpy originals, because the study's cannot
+be differentiated by the adjoint.  Two copies of a definition is the drift a shared kernel
+exists to prevent and here it cannot be prevented, so it is measured instead:
+`tests/test_fillet_pnorm.py` now checks both against the study's on synthetic inputs and
+finds them one ulp apart (1.11e-16, XLA's associativity, thirteen orders under the 0.068%
+step the kernel exists to remove) with identical support.  Without those two tests §95's
+`(r, p)` recommendation would be a measurement of a function the objective does not
+compute.
+
+Nothing is promoted.  No loss number moves, because no loss reads this yet.
+
+#### The successors, ranked — REVISED 2026-09-02 AFTER §102
+
+1. **WIRE IT IN** — §93's step 3, now the whole of it: `phase_meshes` builds
+   `fillet=True`, `util_j` reads this QoI instead of `kt * agg`, `DEFAULT_WEIGHTS
+   ["stress_margin"]` goes 325.0 -> 89.21 at `util_ref` = 1.0 (§99),
+   `MARGIN_KNEE_UTIL` stays 0.80, and
+   `test_nothing_wires_the_fillet_into_the_objective` is REPLACED by its mirror image.
+2. **THEN §93's STEPS 4 AND 5** — re-run Stage 3, re-promote on
+   `tests/test_promotion.py`'s six-item checklist, re-date every committed loss number.
+   **Cost this first**: §101 measured a filleted `coarse` cell at 41.6 GB peak RSS in a
+   ONE-CELL process, and a Stage-3 descent is long-lived, which is the configuration
+   §101 found does not survive.
+3. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, and it is
+   downstream of 1 and 2: §32's rule applies to meshes, so a descent run now is a descent
+   against the objective the switch is about to replace.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+5. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+6. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.

@@ -44,7 +44,12 @@ constant of the objective over a 28-genome box, but convergent at every cell tha
 over the allowable and silent everywhere it is not. CONDITION A HOLDS — PART 12,
 2026-09-02, PLAN §101: the ladder at `b029622` under SVK reproduces this PART's spread
 ordering and the admissibility disagreement §94 found at `coarse` survives refinement to
-`fine`. **BOTH OF §93's CONDITIONS ARE NOW ADDRESSED AND THE SWITCH IS UNBLOCKED.** The
+`fine`. **BOTH OF §93's CONDITIONS ARE NOW ADDRESSED AND THE SWITCH IS UNBLOCKED.** THE
+REPLACEMENT TERM NOW EXISTS AND IS DIFFERENTIABLE — PART 13, 2026-09-02, PLAN §102:
+`wheel_adjoint._qoi_region_pnorm`, reproducing the study's loaded-copy instrument to five
+figures with its argmax removed, its gradient agreeing with a central difference to
+1.7e-09, and `R_hub`/`R_rim` — §15 DEFECT 1's two dead genes — carrying a nonzero entry
+for the first time. **NOTHING READS IT YET; the wiring is successor 1.** The
 state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
@@ -4444,3 +4449,86 @@ The whole-ladder driver that could not finish it three times is unchanged and st
 what is new is `--rung`/`--mesh`/`--finalise`, one process per cell, which is what let it
 finish at all (PLAN §101's memory-law table). With both of §93's conditions now addressed,
 **successor 1 is EXECUTE THE FILLET SWITCH** — PLAN §101's revised ranking.
+
+# STEP 3 RECORD — PART 13. THE REPLACEMENT TERM EXISTS AS A QoI, AND IT IS DIFFERENTIABLE. 2026-09-02, PLAN §102
+
+PART 12 closed Condition A and left `EXECUTE THE FILLET SWITCH` as successor 1.  §93's
+step 3 is *"wire `fillet=True` into `wheel_objective`/`wheel_stage3`"* — and the quantity
+that step wires in did not exist in `src/`.  PART 8 gave it `(r, p) = (0.45, 16)` and a
+smooth kernel, PART 9 argued the `P_c` exclusion, PART 10 stated the knee and the
+reference point, PART 11 validated `(r, p)` where it binds.  This PART builds it.
+
+## THE OBSTACLE WAS NOT THERE
+
+The region weight is a function of distance to the fillet arc and the arc moves with the
+genes, while `adjoint_grads` differentiates `Q` in `(coords, u_full, y_ground)` only — so
+an arc computed from the GENES inside a QoI would be frozen and the region would sit still
+while the geometry moved under it.  That reads like a missing gradient path and it is not
+one: `study_corner_singularity.fillet_arcs` recovers the arc **by a circle fit through the
+arc's own mesh nodes**, so given the node ids the same fit runs on the traced `coords` and
+the arc rides the chain the adjoint already has.
+
+```
+                                   measured, shipped genome
+  arc points matched to mesh nodes       0.0 mm EXACTLY, both junctions, 17 ids, distinct
+  jnp fit vs `fillet_arcs`               centre 2.3e-14 mm, radius to twelve digits
+  d(radius)/d(R_hub)   adjoint / FD      1.000000000 / 0.999999889
+  the other twelve genes' entries        <= 3.4e-13 — the lstsq's own round-off
+```
+
+## A FIFTH ITEM, WHICH PART 7's LIST OF FOUR DID NOT HAVE
+
+`study_fillet_pnorm.region_pnorm` picks ONE rotational copy, by largest p-norm.  Correct
+for an instrument — the wheel is loaded at one contact patch and twelve images of a fillet
+see twelve loads — and an **argmax over twelve candidates** if it is wired into an
+objective unchanged, flipping as the patch sweeps, reintroducing the kink the p-norm
+exists to blur.  Same class of defect as PART 8's indicator step, from the other side.
+
+Every copy is in the measure, and the denominator is ONE fillet's region mass (the total
+over `n_spokes`, exactly, the copies being rotations carrying identical mass), which makes
+the result the `l_p` norm over the copies' own values: `>= max_k sigma_k`, smooth, no
+argmax, converging to the loaded copy as it comes to dominate.  Against the study's own
+instrument at the shipped genome, `coarse`, linear:
+
+```
+  junction   study loaded copy   this QoI, all 12   ratio     whole-region normalisation
+  hub             27.520053          27.520053     1.00000            23.561365
+  rim             12.274936          12.283466     1.00069            10.509219
+```
+
+Five and six figures with the argmax removed — and the third column is the reason the
+denominator is what it is: the obvious normalisation reads 14.4% low, which against a
+25 MPa allowable is a breach reported as clearance.
+
+## THE GRADIENT, AND §15 DEFECT 1 RUNNING BACKWARDS
+
+`smoke`, contact at 1.65 mm, central differences scaled by each gene's own range:
+
+```
+  junction   adjoint          FD (best rung)    rel        sign
+  hub       -3.03772422e+00  -3.03772422e+00   1.745e-09   negative
+  rim       -3.24660263e+00  -3.24660261e+00   4.718e-09   negative
+```
+
+Negative is the sanity check: opening the fillet lowers the stress in it.  **And all
+fourteen genes carry a nonzero entry at both junctions** — §15 DEFECT 1 measured `R_hub`
+and `R_rim` at exactly 0.0 on 2026-08-12, a 14-dimensional search running in 8, and read
+through a filleted mesh they wake up.  That is this arc's affirmative case stated as a
+derivative for the first time.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+`wheel_wheel.fillet_arc_nodes`; `wheel_adjoint`'s `FILLET_REGION_R_SUP_MM`,
+`FILLET_REGION_P`, `_arc_from_nodes`, `_distance_to_arc`, `_region_weight`,
+`_qoi_region_pnorm`.  **Nothing reads it.**  `wheel_objective` is untouched, no loss number
+moves, nothing is promoted, and `test_nothing_wires_the_fillet_into_the_objective` is green
+— the scope gate scans five modules and no `fillet=` keyword reaches any of them.
+
+The jnp kernels are a SECOND copy of the study's numpy ones, which is the drift a shared
+kernel prevents and here cannot; `tests/test_fillet_pnorm.py` measures it instead and finds
+one ulp (1.11e-16) with identical support.  Without those two tests, PART 8's `(r, p)`
+would be a measurement of a function the objective does not compute.
+
+**Successor 1 is now the wiring itself** — `phase_meshes` at `fillet=True`, `util_j` off
+this QoI, `stress_margin` 325.0 -> 89.21 at `util_ref` = 1.0 (PART 10), the knee at 0.80,
+and the scope gate REPLACED by its mirror image.

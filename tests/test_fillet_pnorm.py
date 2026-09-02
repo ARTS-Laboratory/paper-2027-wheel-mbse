@@ -122,3 +122,78 @@ def test_the_indicator_steps_where_the_bump_does_not():
         else:
             assert abs(w_in - w_out) < tol, \
                 "the bump must cross its own support boundary continuously"
+
+
+# ---------------------------------------------------------------------------
+# THE OBJECTIVE'S COPY OF THE KERNEL  (PLAN.md §102)
+# ---------------------------------------------------------------------------
+# The wiring puts a SECOND definition of both kernels in `src/wheel_adjoint.py`, in jnp,
+# because the study's numpy ones cannot be differentiated by the adjoint.  Two copies of
+# one definition is the drift this tree keeps a shared kernel to prevent, and here it
+# cannot be prevented — so it is measured instead.  These two tests are the only thing
+# standing between §95's `(r, p)` recommendation and the possibility that the objective is
+# quietly computing a different quantity from the one that recommendation was measured on.
+
+def test_the_objectives_region_weight_is_the_studys():
+    """`wheel_adjoint._region_weight` against `study_fillet_pnorm.region_weight`.
+
+    §95's `(r, p) = (0.45, 16)` was measured entirely through the study's kernel.  If the
+    objective's copy differs anywhere — including outside the support, where a stray
+    negative base under an odd power would be silent — then the exponent that was
+    validated is not the exponent that runs.
+
+    NOT BITWISE, AND THE ONE ULP IS THE WHOLE REASON THIS IS A TOLERANCE.  Measured over
+    the sample below, the largest difference is 1.11e-16 — one ulp at 1.0 — because XLA
+    does not associate `u * u * u` the way numpy's `u ** 3` does.  That is the same
+    class of difference `conftest.py` pins `XLA_FLAGS` for, it is 13 orders under the
+    0.068% step this kernel exists to remove, and asserting `array_equal` here would make
+    this test a report on XLA's constant folding rather than on the kernel.
+    """
+    import wheel_adjoint as WA
+
+    rng = np.random.default_rng(0)
+    # Spans the support and well past it, and lands exactly ON the boundary.
+    d2 = np.concatenate([rng.uniform(0.0, 4.0 * R * R, 512), [R * R, 0.0]])
+    ours = np.asarray(WA._region_weight(d2, R))
+    theirs = FP.region_weight(d2, R, "bump3")
+    assert np.allclose(ours, theirs, rtol=0.0, atol=1e-15), (
+        "the objective's region weight has drifted from the one §95 measured (max "
+        f"difference {np.abs(ours - theirs).max():.3e})")
+    # The support itself is a discrete fact and IS exact: a point weighted by one kernel
+    # and not the other is a different region, not a rounding difference.
+    assert np.array_equal(ours > 0.0, theirs > 0.0), \
+        "the two kernels disagree about which points are in the region at all"
+
+
+def test_the_objectives_distance_to_arc_is_the_studys():
+    """`wheel_adjoint._distance_to_arc` against `study_corner_singularity`'s.
+
+    THE FOLD IS THE PART THAT MATTERS.  Inside the sweep both are `|r - R|` and agreeing
+    there proves little; the branch that has to match is the one outside it, where the
+    distance folds to whichever endpoint is nearer.  A copy that got the unwrap or the
+    containment test wrong would agree on most of the wheel and disagree exactly in the
+    ring of points just past the arc's ends — which is inside the support, and is
+    therefore weighted.
+    """
+    import wheel_adjoint as WA
+
+    arc = {"centre": np.array([1.0, -0.5]), "radius": 2.0, "a0": 0.3, "a1": 1.9,
+           "A": np.array([1.0, -0.5]) + 2.0 * np.array([math.cos(0.3), math.sin(0.3)]),
+           "B": np.array([1.0, -0.5]) + 2.0 * np.array([math.cos(1.9), math.sin(1.9)])}
+    rng = np.random.default_rng(1)
+    pts = rng.uniform(-4.0, 4.0, (4096, 2))
+
+    theirs = CS._distance_to_arc(pts, arc)
+    ours = np.asarray(WA._distance_to_arc(
+        pts, (arc["centre"], arc["radius"], arc["a0"], arc["a1"], arc["A"], arc["B"])))
+
+    # Both branches are reached — otherwise this test proves only that one of them works.
+    d = pts - arc["centre"][None, :]
+    ang = np.arctan2(d[:, 1], d[:, 0])
+    inside = (arc["a0"] + ((ang - arc["a0"]) % (2.0 * math.pi))) <= arc["a1"]
+    assert inside.sum() > 100 and (~inside).sum() > 100, "the sample missed a branch"
+
+    assert np.allclose(ours, theirs, rtol=0.0, atol=1e-12), (
+        "the objective's distance-to-arc has drifted from the study's (max difference "
+        f"{np.abs(ours - theirs).max():.3e}; folded points "
+        f"{np.abs(ours - theirs)[~inside].max():.3e})")

@@ -1178,6 +1178,16 @@ SECTOR_FIT_CLAMP = 0.95
 SECTOR_FIT_BRACKET = (0.05, 8.0)
 SECTOR_FIT_BISECTIONS = 40
 
+# `fillet_arc_nodes` looks its arc points up in `mesh.coords` and this is how close a hit
+# has to be to count.  The arc points ARE mesh nodes, so the honest tolerance is zero and
+# the measurement says so: at the shipped genome on `coarse`, both junctions, the largest
+# lookup distance is 0.0 mm EXACTLY — the two arrays are the same floats, arrived at by
+# the same arithmetic in the same order.  1e-9 mm is kept rather than `== 0.0` only
+# because a future construction could reorder that arithmetic; it is nine orders under the
+# 0.144 mm first element layer the arc's own tube is resolved across (PLAN.md §95), so
+# nothing can slip through it and land on a neighbouring node.
+ARC_NODE_MATCH_TOL_MM = 1e-9
+
 FILLETED_BLOCK_ORDER = (
     "spoke",
     "hub_fillet_a", "hub_fillet_b", "rim_fillet_a", "rim_fillet_b",
@@ -3092,6 +3102,69 @@ def _node_sets(shapes, offsets, global_id, n_spokes, filleted=False):
         # the rim band is bending (M4's compliance_split).
         "rim_inner_free": gather([(rim_f, "j0")]),
     }
+
+
+def fillet_arc_nodes(mesh, label):
+    """Global node ids along junction `label`'s fillet arc, sector 0, hub end first.
+
+    THE TOPOLOGY FACT THE REGION-RESTRICTED STRESS TERM IS BUILT ON (PLAN.md §102).
+    `wheel_adjoint._qoi_region_pnorm` needs the fillet arc as a DIFFERENTIABLE function of
+    the genes, and the arc it needs is the one the mesh actually built.  Both halves of
+    that are supplied here and neither is a new derivation:
+
+      *  `study_corner_singularity.fillet_arcs` already recovers the arc by a circle fit
+         through these same nodes, and reports a 7e-14 mm residual because the nodes ARE
+         on a circle by construction.  What it cannot do is hand that fit to an adjoint:
+         it takes `genes` and rebuilds the sector eagerly, so nothing downstream of it
+         carries a derivative.
+      *  Given the node IDS, the same fit runs on `mesh_coords(genes, mesh)` instead, and
+         the arc becomes a function of the coordinates — which `adjoint_grads` already
+         differentiates and already chains back to the genes through one shared vjp.
+
+    So this returns IDS and nothing else.  It is the same kind of object as `_node_sets`'
+    `hub_tie` and `rim_outer` — a frozen consequence of the block layout — and it is
+    frozen for the same reason `mesh_coords` freezes the seam table: which node sits on
+    the arc is a discrete decision, and a step that changes it is a real discontinuity of
+    the design space rather than a defect in the gradient.
+
+    MATCHED BY COORDINATE, AND THE MATCH IS EXACT.  `build_wheel`'s block offsets and its
+    `global_id` remap are local to that function and are not carried on the mesh, so the
+    ids are recovered by looking each arc point up in `mesh.coords`.  That is not an
+    approximation: the arc points ARE mesh nodes, and measured at the shipped genome on
+    `coarse` the largest lookup distance is 0.0 mm exactly, at both junctions, with all 17
+    ids distinct.  Both of those are asserted below rather than assumed — a silent
+    near-miss here would put the region weight on the wrong nodes and price a fillet that
+    is not there.
+
+    `fillet_blocking="sector"` only, which is the construction that meshes and the default;
+    the arc is the `j0` column of the junction's two boundary-layer blocks, `a` then `b`,
+    sharing one node at the join (dropped from `b`, hence the `[1:]`).
+    """
+    if not mesh.fillet:
+        raise ValueError(
+            "fillet_arc_nodes wants a filleted mesh — an unfilleted one has no arc, and "
+            "the corner it has instead is the P_t singularity the fillet exists to remove "
+            "(PLAN.md §52, §94)")
+    blocks = sector_blocks(mesh.genes, mesh.cfg, span_mm=mesh.span_mm,
+                           orientation=mesh.orientation, rim_outer=mesh.rim_outer,
+                           uncap=mesh.uncap, fillet=mesh.fillet)
+    a = np.asarray(blocks["%s_fillet_a" % label])
+    b = np.asarray(blocks["%s_fillet_b" % label])
+    arc = np.concatenate([a[:, 0, :], b[1:, 0, :]])
+
+    coords = np.asarray(mesh.coords)
+    gap = np.linalg.norm(coords[:, None, :] - arc[None, :, :], axis=2)
+    ids = gap.argmin(axis=0)
+    worst = float(gap[ids, np.arange(len(arc))].max())
+    if worst > ARC_NODE_MATCH_TOL_MM:
+        raise RuntimeError(
+            "junction %r's arc point missed every mesh node by %.3e mm — the arc this "
+            "returns ids for is not the arc the mesh built" % (label, worst))
+    if len(set(ids.tolist())) != len(ids):
+        raise RuntimeError(
+            "junction %r's arc matched the same node twice — two arc points cannot share "
+            "a node on a mesh whose seams have already been merged" % label)
+    return ids
 
 
 # ---------------------------------------------------------------------------
