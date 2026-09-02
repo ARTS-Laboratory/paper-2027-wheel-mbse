@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletwiring triblock reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -173,6 +173,12 @@ help:
 	@echo "              genomes, not just the two named ones — is 16 a constant"
 	@echo "              of the objective or a property of two designs. ~13 min,"
 	@echo "              84 solves. exits 0"
+	@echo "make filletconda Condition A — the convergence ladder at \`b029622\`,"
+	@echo "              SVK, eight phases, coarse/medium/fine, both meshes: does"
+	@echo "              the filleted mesh stay the converged one and does the"
+	@echo "              admissibility disagreement (1.0112 / 0.7954) survive"
+	@echo "              refinement. slow — hours, dominated by the filleted"
+	@echo "              mesh's own JIT trace at each rung. exits 0"
 	@echo "make filletwiring the last two things in front of the switch — §94's"
 	@echo "              items 3 and 4. the \`P_c\` exclusion argued rather than"
 	@echo "              assumed (its stated reason names a feature the mesh has"
@@ -1075,6 +1081,56 @@ FILLETPNORMBOX_OUT ?= study_fillet_pnorm_box.json
 
 filletpnormbox:
 	$(PY_OPT) -u studies/study_fillet_pnorm_box.py --out $(FILLETPNORMBOX_OUT)
+
+# ---------------------------------------------------------------------------
+# CONDITION A — THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES
+# (PLAN.md §93's sequence step 1 / §99's ranked successor 2)
+# ---------------------------------------------------------------------------
+# SLOW, AND ONE PROCESS PER CELL.  The whole-ladder, one-process form of this driver was
+# killed three times short of `fine`, the last time ~1h25m in with a background-process
+# memory cap reported as the cause — JAX does not release compiled executables between
+# cells, so a long-lived process's baseline climbs across the ladder even though no
+# single cell needs that much.  Six single-cell processes, each returning its memory to
+# the OS on exit, is the one configuration this repo has observed to survive; `--finalise`
+# then runs the analysis over the six merged cells and writes the verdict.  No cell needs
+# `--workers`-style parallelism of its own, so this is six short recipe lines, not a loop.
+#
+# COST, MEASURED — RUN 2026-09-02, one cell per process:
+#
+#   cell                elem    wall       peak RSS
+#   coarse  unfilleted   4704    503 s        9.1 GB
+#   coarse  filleted     5952   1417 s       41.6 GB
+#   medium  unfilleted  12288   1049 s       10.6 GB
+#   medium  filleted    15552   2891 s       43.7 GB
+#   fine    unfilleted  31200   2689 s       11.2 GB
+#   fine    filleted    37632   3619 s       41.9 GB
+#
+# ~3h23m serial total.  The filleted arm's memory is dominated by a large, largely
+# size-independent JIT-compile cost (41.6 GB at `coarse`, 41.9 GB at `fine` — 6.3x the
+# elements for +0.7%), not a per-element one; the unfilleted arm stays under 12 GB
+# throughout.  Both fit the 61 GB box with room to spare once run one cell at a time.
+#
+# §93's own check: does the filleted mesh's axle-drop spread stay materially smaller than
+# the unfilleted mesh's (FILLET_PLAN STEP 1 PART 12's ordering, reproduced at this design
+# and kernel), AND does the admissibility disagreement §94 measured at `coarse` alone
+# (1.0112 unfilleted / 0.7954 filleted) survive refinement to `fine`.  If not, §93 says
+# what happens: "this decision is reopened and nothing below happens."
+#
+# SCOPE: SVK, eight phases only — Condition A is not stated under linear.  Nothing here
+# touches `wheel_objective`.
+#
+# EXITS 0 ALWAYS: Condition A failing is a live, meaningful outcome this arc already
+# named, not a bug to signal nonzero about.
+FILLETCONDA_OUT ?= study_fillet_condition_a.json
+
+filletconda:
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung coarse --mesh unfilleted --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung coarse --mesh filleted   --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung medium --mesh unfilleted --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung medium --mesh filleted   --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung fine   --mesh unfilleted --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung fine   --mesh filleted   --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --finalise --out $(FILLETCONDA_OUT)
 
 # ---------------------------------------------------------------------------
 # THE LAST TWO THINGS IN FRONT OF THE SWITCH  (PLAN.md §94, items 3 and 4)
