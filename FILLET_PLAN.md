@@ -34,8 +34,18 @@ corner to 0.008 deg (and the part fillets it, 24 edges to the mesh's 12), and
 `stress_margin`'s weight is invariant to the substitution while its REFERENCE POINT is not
 — neither design this arc has measured can calibrate it, and MARGIN_KNEE_UTIL's own
 evidence is gone. Both
-exclusions survive on corrected reasons. What is left is a SEQUENCE and not a blocker:
-state the knee and the reference point, then the switch.** The state, in four lines, so nobody re-derives it from thirty PARTs:
+exclusions survive on corrected reasons. What was left was a SEQUENCE and not a blocker:
+state the knee and the reference point, validate `(r, p)` where it binds, confirm the
+filleted mesh is the converged one — THE KNEE STAYS AT 0.80 AND THE WALL IS TAKEN — PART
+10, 2026-09-01, PLAN §99: `util_ref = 1.0` because both measured designs now sit outside
+`[0.80, 1.0]`, and `w = 89.21` falls out, corroborated to 0.665% at `b029622`. `(r, p) =
+(0.45, 16)` IS VALIDATED WHERE IT BINDS — PART 11, 2026-09-01, PLAN §100: not a universal
+constant of the objective over a 28-genome box, but convergent at every cell that reads
+over the allowable and silent everywhere it is not. CONDITION A HOLDS — PART 12,
+2026-09-02, PLAN §101: the ladder at `b029622` under SVK reproduces this PART's spread
+ordering and the admissibility disagreement §94 found at `coarse` survives refinement to
+`fine`. **BOTH OF §93's CONDITIONS ARE NOW ADDRESSED AND THE SWITCH IS UNBLOCKED.** The
+state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -4371,3 +4381,66 @@ reference genome's own mass term, none of which this measurement touches.
 untouched; nothing in `src/` changed; `test_nothing_wires_the_fillet_into_the_objective`
 is untouched and green; nothing is promoted.  Condition A (§93, §94, PLAN §100's
 successor 1) is still the item ahead of execution.
+
+# STEP 3 RECORD — PART 12. CONDITION A, MEASURED: THE FILLETED MESH IS THE CONVERGED ONE. 2026-09-02, PLAN §101
+
+§93's own check, quoted in full at PLAN §101: does the filleted mesh's axle-drop spread
+stay materially smaller than the unfilleted mesh's on the SAME design, and does the
+admissibility disagreement §94 measured at `coarse` alone (1.0112 unfilleted / 0.7954
+filleted) survive refinement to `fine`.  `studies/study_fillet_condition_a.py`
+(`make filletconda`) is the ladder — `b029622`, SVK, eight phases, `coarse/medium/fine`,
+both mesh constructions — and it is a crossing this arc had not yet run: PART 12's own
+spread ordering was measured at the shipped genome under LINEAR at one phase; §94's
+admissibility disagreement was measured at `coarse` alone, no ladder. Neither number had
+been read at the place the other is stated.
+
+## BOTH HALVES OF §93's CHECK PASS
+
+```
+  axle drop mm      coarse      medium        fine     spread%
+  unfilleted       3.333512    3.353573    3.367621     1.023%
+  FILLETED         1.990224    1.999019    2.001406     0.562%
+```
+
+The ordering this PART found at the shipped genome, LINEAR, one phase — 0.141% against
+1.216% — reproduces here at `b029622`, SVK, eight phases: filleted 0.562% < unfilleted
+1.023%. The margin is narrower (1.8x here against 8.6x there) but the direction is the one
+the switch rests on.
+
+```
+  stress util       coarse      medium        fine
+  unfilleted         1.0112      1.0180      1.0230     BREACHED at every rung
+  FILLETED           0.7954      0.7994      0.8007     clears at every rung
+```
+
+§94's disagreement does not close under refinement, it widens: unfilleted moves further
+over the allowable (1.0112 -> 1.0230) while filleted's margin below it holds
+(0.1858 -> 0.1993 clear at `fine`). Richardson gives the filleted axle drop an observed
+order of 2.63 (near quadratic elements' ceiling, GCI(fine) 0.068%); the unfilleted order
+is 0.69 — the same signature PART 12 and §94 already named for a field singular at a
+corner the fillet removes, showing up here in a volume-integral QoI rather than a local
+peak.
+
+**CONDITION A HOLDS.** The filleted mesh is the converged one, at the design and kernel
+where the two meshes disagree. Condition B closed at PART 7 / §94. Both of §93's
+conditions this arc's own decision named are now addressed.
+
+## ONE NUMBER CROSSES A THRESHOLD THAT MATTERS ELSEWHERE IN THIS ARC
+
+`b029622`'s filleted utilisation is monotone up the ladder and at `fine` sits **0.0007
+above `MARGIN_KNEE_UTIL` = 0.80** (PART 10). PART 7 called the double count *"worth
+exactly `0.0000`"* at this cell, correctly, at `coarse`. It is not exactly zero at `fine`:
+`soft_barrier(0.8007 - 0.80) = 4.9e-7`, which moves the loss by `4.4e-5` against `w =
+89.21` — six orders of magnitude below anything a line search would see, so PART 7's
+conclusion that the double count is inert here is UNCHANGED. What moves is the word
+"exactly": that zero was measured at one mesh density, and a quantity 0.0007 above a knee
+is one a different mesh can read on either side of it.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+Nothing in `src/` changed; `test_nothing_wires_the_fillet_into_the_objective` is untouched
+and green; nothing is promoted — this is Condition A's own measurement, not the switch.
+The whole-ladder driver that could not finish it three times is unchanged and still there;
+what is new is `--rung`/`--mesh`/`--finalise`, one process per cell, which is what let it
+finish at all (PLAN §101's memory-law table). With both of §93's conditions now addressed,
+**successor 1 is EXECUTE THE FILLET SWITCH** — PLAN §101's revised ranking.

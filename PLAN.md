@@ -13986,3 +13986,138 @@ reused, not modified, and its own two-genome artifact still stands as written.
    that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
    revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
    successor 9, unchanged.
+
+## §101 — 2026-09-02. CONDITION A, MEASURED: THE FILLETED MESH IS THE CONVERGED ONE, THE ADMISSIBILITY DISAGREEMENT SURVIVES TO `fine`, AND `b029622`'s HUB CROSSES THE KNEE UNDER REFINEMENT BY 0.0007 — §94's "EXACTLY ZERO" WAS A `coarse`-ONLY READING
+
+§94's ranked successor 1 / §93's own stated sequence step 1, and §93 gave its check in
+full: does the filleted mesh's axle-drop spread stay materially smaller than the
+unfilleted mesh's on the SAME design, and does the admissibility disagreement §94 measured
+at `coarse` alone (1.0112 unfilleted / 0.7954 filleted) survive refinement to `fine`.
+`studies/study_fillet_condition_a.py` (`make filletconda`) is that ladder — `b029622`,
+SVK, eight phases, `coarse/medium/fine`, both mesh constructions, `wheel_objective
+.objective` read on whichever mesh built it, `study_deflection_gci.richardson` for the
+extrapolation.  Nothing new was derived: every quantity and every piece of machinery is
+FILLET_PLAN STEP 1 PART 12's and §94's own, run at the place neither one was.
+
+### THE LADDER
+
+```
+  axle drop mm      coarse      medium        fine     spread%
+  unfilleted       3.333512    3.353573    3.367621     1.023%
+  FILLETED         1.990224    1.999019    2.001406     0.562%
+
+  stress util       coarse      medium        fine
+  unfilleted         1.0112      1.0180      1.0230     BREACHED at every rung
+  FILLETED           0.7954      0.7994      0.8007     clears at every rung
+```
+
+**The spread ordering reproduces PART 12's**, at a different design, a different kernel
+and eight phases instead of one: filleted 0.562% < unfilleted 1.023%.  The margin is
+narrower than PART 12's own 0.141% against 1.216% — the ratio is 1.8x here against 8.6x
+there — but the direction is the same and it is the direction the switch rests on.
+
+**The admissibility disagreement survives.**  Unfilleted reads over the allowable at
+`coarse`, stays over it at `medium`, and is further over it at `fine` (1.0230); filleted
+reads under the allowable at all three and is not closing the gap it would need to close
+to reverse the finding — it is 0.1993 below 1.0 at `fine`, against 0.1858 at `coarse`.
+§94's coarse-only reading is not an artefact of stopping early: refining the mesh makes
+the two answers MORE different, not less.
+
+### RICHARDSON, AND WHY THE TWO ORDERS DISAGREE
+
+```
+              observed order   extrapolated mm   GCI(fine)
+  unfilleted        0.69          3.404726          1.377%
+  FILLETED          2.63          2.002496          0.068%
+```
+
+The filleted axle drop converges at an order close to the quadratic elements' theoretical
+ceiling and a GCI two orders of magnitude tighter than the unfilleted one.  The unfilleted
+order — 0.69, well under first order — is the same signature §94 already named for the
+unfilleted mesh's PEAK stress (C1: the field is singular at a corner the fillet removes)
+showing up in a QoI that is a volume integral rather than a local max: axle drop is not a
+pointwise probe, but a mesh that never resolves the corner still drags the global field
+enough to blunt the observed order on the quantity that averages over it. This is the
+FILLET_PLAN STEP 1 PART 12 finding again, now measured on the load-bearing kernel: *"the
+unfilleted axle drop is still climbing at `fine`... that is the singular field polluting a
+global functional."*
+
+### AND ONE NUMBER MOVES PAST A THRESHOLD THAT MATTERS ELSEWHERE IN THIS ARC
+
+`b029622`'s filleted-mesh utilisation is monotone up the ladder — 0.7954, 0.7994,
+0.8007 — and at `fine` it is **0.0007 above `MARGIN_KNEE_UTIL` = 0.80** (§99).  §94's
+table reported this exact cell at `coarse` and called the double count *"worth exactly
+`0.0000`"*, correctly, because `soft_barrier` is exactly zero below the knee.  It is not
+exactly zero at `fine`: `soft_barrier(0.8007 - 0.80) = 4.9e-7`.  That is six orders of
+magnitude below anything this objective's weight table would register — §99's own
+`w = 89.21` on a term this small moves the loss by `4.4e-5`, nothing a line search would
+see over `wheel_stage3`'s own step tolerance — so it changes NOTHING about §94's
+conclusion that the double count is inert at this design.  What it changes is the word
+"exactly": §94's zero was measured at one mesh density, and a quantity sitting 0.0007
+above a knee is a quantity a coarser or finer mesh can read on either side of it. This is
+recorded here rather than left for the next person to find by grepping `MARGIN_KNEE_UTIL`
+next to `0.8007` — the same habit §94 itself named after making the opposite mistake once.
+
+### THE MEMORY LAW, MEASURED, BECAUSE THE ONE-PROCESS FORM OF THIS DRIVER COULD NOT FINISH
+
+Not part of §93's check, but the reason this section exists at all rather than three more
+killed runs: the whole-ladder driver was killed three times short of `fine`, the last time
+~1h25m in, with a background-process memory cap reported as the cause and nothing in
+`dmesg`/`journalctl` to explain it.  Splitting the driver into one process per cell (below)
+and measuring `ru_maxrss` directly — exact for a one-cell process, since nothing else has
+run in it — found why:
+
+```
+  mesh          coarse elem   peak RSS      fine elem   peak RSS    ratio (elem / RSS)
+  unfilleted        4704        9.06 GB       31200       11.19 GB     6.6x / 1.24x
+  FILLETED          5952       41.60 GB       37632       41.88 GB     6.3x / 1.007x
+```
+
+The filleted arm's memory is a near-fixed JIT-compile cost, not a per-element one — 6.3x
+the elements buys 0.7% more RSS.  The unfilleted arm stays under 12 GB throughout.
+Neither was knowable from `make gci`'s 20.6 GB whole-ladder figure (Makefile:727) or
+`study_m9`'s 3.1 GB `fine` figure — both solve `fine` outside the Stage-3 objective, and
+`study_stage3.py:2079` has flagged contact-plus-secant-plus-adjoint at `fine` as never
+attempted in this repo for exactly this reason. It has now been attempted, at both mesh
+constructions, and it fits the 61 GB box with room to spare when run one cell at a time.
+
+### WHAT THIS DOES AND DOES NOT DO
+
+**CONDITION A HOLDS.** Both halves of §93's check pass at the design and kernel where the
+disagreement lives: the filleted mesh's axle-drop spread stays materially smaller under
+refinement, and the admissibility disagreement §94 found at `coarse` survives to `fine`
+undiminished. **The filleted mesh is the converged one**, on this evidence, at `b029622`,
+SVK, eight phases. Condition B closed at §94. Both of §93's conditions are now addressed.
+
+Nothing in `src/` changed. `test_nothing_wires_the_fillet_into_the_objective` is untouched
+and green. Nothing is promoted — this is Condition A's own measurement, not the switch.
+
+### WHAT MOVED
+
+`studies/study_fillet_condition_a.py`, `studies/study_fillet_condition_a.json`,
+`make filletconda`. The driver runs one `(rung, mesh)` cell per process (`--rung`,
+`--mesh`) and merges into the committed artifact; `--finalise` runs the analysis and
+writes the verdict once all six cells are in. The whole-ladder, one-process entry point
+(no flags) is unchanged and still works — it is what killed three runs, and is kept only
+because nothing about it is wrong, it is just the wrong shape for this box.
+
+#### The successors, ranked — REVISED 2026-09-02 AFTER §101
+
+1. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5. Both of §93's conditions are now
+   addressed: Condition B closed at §94 (double count worth `0.0000` at `coarse`, and
+   `4.9e-7` at `fine` where `b029622`'s hub sits 0.0007 above the knee — still inert
+   against §99's weight table); Condition A holds as of this section. The knee (0.80),
+   reference weight (89.21, §99) and the `(r, p)` pair (0.45, 16, validated where it
+   binds, §100) are all stated.
+2. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+   Costs a `medium` descent this tree has not yet spent.
+3. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+4. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+5. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
