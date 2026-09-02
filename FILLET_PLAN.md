@@ -4339,3 +4339,35 @@ INPUT the switch needs when it runs: `MARGIN_KNEE_UTIL = 0.80` carries forward u
 and `w = 89.21` at `util_ref = 1.0` is the number to write when it does. Nothing in `src/`
 changed, nothing is promoted, `test_nothing_wires_the_fillet_into_the_objective` is
 untouched and green.
+
+# STEP 3 RECORD — PART 11. `(r, p)` ACROSS §82's HELD-OUT BOX. 2026-09-01, PLAN §100
+
+PART 8 / §95 swept `(r, p)` at two genomes and said itself that two genomes is not a
+design space.  This runs the same sweep — `study_fillet_pnorm`'s own `build`/`verdict`,
+unmodified — across 26 more genomes drawn from §82's held-out box (`study_fillet_pnorm_
+box.py`, `make filletpnormbox`), plus the two named ones, 28 in all.
+
+## `(0.45, 16)` HOLDS WHERE IT HAS TO, NOT EVERYWHERE
+
+25 of 56 `(genome, junction)` cells clear both gates at the taken cell; the two that read
+over the allowable — `b029622/hub` (1.6760) and `shipped/hub` (1.1415), the same pair
+PART 8 already flagged breached — both converge cleanly there (order 1.77/1.91 and
+2.33/2.33).  The highest-utilisation MISS is 0.6936, already below `MARGIN_KNEE_UTIL`.
+No radius in the sweep resolves every cell, not even `r_sup = 0.90 mm`, which is
+mass-resolved at all 28 genomes: seven cells there have no exponent in `{2..30}`
+clearing order 1.25, and every one of the seven reads under 0.42 utilisation at
+`(0.90, 16)` — well under the knee, where `soft_barrier` is exactly zero regardless of
+how precisely the field is measured there.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+§95's phrase "16 is a constant of the objective" is withdrawn in its literal, universal
+form.  What survives is narrower and is what the switch actually needs: convergence at
+every cell close enough to the knee to matter, including both cells currently reading
+breached.  Nothing here changes PART 10's numbers — the knee (0.80), the reference point
+(the wall, 1.0) and the weight (89.21) are functions of `util_ref`, the knee and a
+reference genome's own mass term, none of which this measurement touches.
+`MARGIN_KNEE_UTIL`, `DEFAULT_WEIGHTS["stress_margin"]` and `study_fillet_pnorm.py` are all
+untouched; nothing in `src/` changed; `test_nothing_wires_the_fillet_into_the_objective`
+is untouched and green; nothing is promoted.  Condition A (§93, §94, PLAN §100's
+successor 1) is still the item ahead of execution.

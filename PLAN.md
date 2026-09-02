@@ -13884,3 +13884,105 @@ derivation runs entirely on `studies/study_fillet_wiring.json`, already committe
    that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
    revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
    successor 9, unchanged.
+
+## §100 — 2026-09-01. §99's SUCCESSOR 1, MEASURED: `(r, p) = (0.45, 16)` IS NOT A CONSTANT OF THE OBJECTIVE UNDER THE ORDER FLOOR — AND NEITHER IS ANY OTHER PAIR IN THE SWEPT GRID — BUT EVERY CELL THAT WOULD BIND THE BARRIER CONVERGES, INCLUDING BOTH CELLS THAT BREACH
+
+`studies/study_fillet_pnorm_box.py` (`make filletpnormbox`).  §95's own scope note named
+this the open half of its finding: *"TWO GENOMES IS NOT A DESIGN SPACE... `r` = 0.45 and
+`p` = 16 hold at the shipped genome and at `b029622` and the two disagree about the hub's
+largest `p` by 50%... §82's thirty-two held-out genomes are the instrument for that and
+this does not use them."*  This is that measurement, reusing `study_fillet_pnorm`'s
+quantity, kernel and Richardson machinery UNCHANGED and widening `genomes` from two named
+paths to the held-out draw's own gene vectors — `verdict()`'s cross-cell answer already
+aggregates over every `(genome, junction)` cell it is handed, so nothing new had to be
+written to ask the box the same question §95 asked at two points.
+
+### THE BOX
+
+28 genomes: the two named ones plus 26 of `study_fillet_block.json`'s 32 held-out
+genomes (seed 20267823, 8 per flank orientation) — the 6 excluded are the ones §82
+already knows refuse their own filleted sector at their own radii (three at the hub's
+tangent point passing the next sector's corner, one more at the hub, two at the rim; the
+reasons are on record in `study_fillet_block.json` and are not re-derived here).  Of the
+26 attempted, **zero refused the ladder solve** — every one built and converged three
+mesh densities under LINEAR, one phase, both kernels, both junctions.  84 solves,
+713.1 s.
+
+### AT THE ALREADY-TAKEN CELL, `r_sup = 0.45 mm`, `p = 16`: 25 OF 56 CLEAR, NOT 4 OF 4
+
+```
+  gates cleared (region resolved AND order >= 1.50 on both h)     25 of 56 cells
+  read over the allowable (util > 1.0) at the finest rung          2 of 56 cells
+```
+
+The two that breach are `b029622/hub` (util 1.6760) and `shipped/hub` (util 1.1415) —
+the same two §95 already reported over the allowable at two designs — and **both clear
+the order floor at this exact cell**: 1.77/1.91 and 2.33/2.33.  The highest-utilisation
+cell that MISSES the floor is `ho12/rim` at util 0.6936 (order 1.19/1.46) — comfortably
+under the knee.  Every cell at or above util 0.72 converges; every miss sits below it.
+
+### AND NO `(r, p)` IN THE GRID RESOLVES EVERYWHERE — NOT EVEN THE MOST GENEROUS RADIUS
+
+`r_sup = 0.90 mm` is mass-resolved at all 28 genomes (worst quadrature drift 0.066%, the
+smallest of any radius swept) — the MASS gate, section A's own instrument, passes
+everywhere.  But at that radius **7 of 56 cells have no exponent in `{2..30}` clearing
+order 1.25 on both `h`**: `ho03/rim`, `ho08/hub`, `ho09/rim`, `ho16/rim`, `ho18/hub`,
+`ho22/rim`, `ho26/hub`.  So `verdict()`'s cross-cell answer over the box is `NONE` at
+every radius — the same function that returned "r=0.45, p=16" at two genomes returns
+nothing at 28, and that is the honest reading of a stronger question, not a contradiction
+of the earlier one.
+
+**Every one of the seven is a low-utilisation cell.**  Read at `(0.90, 16)`, their
+utilisations are 0.1648, 0.1143, 0.4125, 0.2258, 0.2593, 0.0850, 0.2103 — all well under
+`MARGIN_KNEE_UTIL` = 0.80 (§99), where `soft_barrier` is exactly zero and exactly flat.
+Whatever is failing to converge there is failing on a quantity the loss does not read
+above noise regardless of how precisely it is measured.  Nothing here says the field is
+actually non-convergent at those cells (`ho14/hub` at `(0.45, 16)` reads order 12.79 —
+the opposite artefact §95 already named, three points a hair apart giving Roache's
+formula a large answer that measures nothing) — only that this ladder, at this radius,
+does not certify it, and it does not need to for the loss to be unaffected.
+
+### THE READING
+
+`(r, p) = (0.45, 16)` is **not** a mathematically universal constant of the objective
+under the order-floor criterion §95 stated — and neither is any other pair this grid
+tried, so the failure is not a defect specific to 16.  It **is** validated exactly where
+the term has anything to say: both cells currently reading over the allowable converge
+cleanly at the taken cell and stay clean at the most conservative radius swept, and the
+highest-utilisation miss at the taken cell sits at 0.69, already below the knee.  §99's
+weight derivation (`w = 89.21`) does not change — it is a function of `util_ref`, the
+knee and the reference genome's mass term, none of which this measurement touches — and
+neither does `MARGIN_KNEE_UTIL` or `DEFAULT_WEIGHTS["stress_margin"]`.  What moves is the
+CLAIM: "16 is a constant of the objective" (§95's own phrase) is withdrawn in its literal
+form and replaced with the narrower one this section actually supports — convergent
+where it binds, unresolved only where the term is already silent.
+
+**NOTHING IS WIRED AND NOTHING IS PROMOTED.**  No `src/` module changed.
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and green.
+
+### WHAT MOVED
+
+`studies/study_fillet_pnorm_box.py`, `studies/study_fillet_pnorm_box.json`,
+`make filletpnormbox`.  `study_fillet_pnorm.py` itself is untouched — every function this
+driver calls (`run_ladder`, `converge`, `verdict`, `price_recommendation`, `_print`) is
+reused, not modified, and its own two-genome artifact still stands as written.
+
+#### The successors, ranked — REVISED 2026-09-01 AFTER §100
+
+1. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A,
+   unchanged.  The gating item for the whole arc.
+2. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+   Costs a `medium` descent this tree has not yet spent.
+3. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5, behind 1.  The knee (0.80), reference
+   weight (89.21, §99) and the `(r, p)` pair (0.45, 16, validated where it binds, §100)
+   are all now stated.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+5. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+6. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
