@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletwiring triblock reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletwiring triblock reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -169,6 +169,10 @@ help:
 	@echo "              measures what an indicator region weight costs at a"
 	@echo "              gene value where a Gauss point crosses the boundary."
 	@echo "              ~4 min, eight solves. exits 0"
+	@echo "make filletpnormbox the same (r, p) sweep across §82's 32 held-out"
+	@echo "              genomes, not just the two named ones — is 16 a constant"
+	@echo "              of the objective or a property of two designs. ~13 min,"
+	@echo "              84 solves. exits 0"
 	@echo "make filletwiring the last two things in front of the switch — §94's"
 	@echo "              items 3 and 4. the \`P_c\` exclusion argued rather than"
 	@echo "              assumed (its stated reason names a feature the mesh has"
@@ -1048,6 +1052,29 @@ FILLETPNORM_OUT ?= study_fillet_pnorm.json
 
 filletpnorm:
 	$(PY_OPT) -u studies/study_fillet_pnorm.py --out $(FILLETPNORM_OUT)
+
+# ---------------------------------------------------------------------------
+# (r, p) ACROSS §82's THIRTY-TWO HELD-OUT GENOMES  (PLAN.md §95/§99's successor 1)
+# ---------------------------------------------------------------------------
+# ~13 min, 84 solves (28 genomes x coarse/medium/fine — `smoke` dropped, it is
+# excluded from every Richardson anyway).  §95 found r=0.45mm, p=16 the cross-cell
+# answer at the shipped genome and at `b029622`, and said itself that two genomes
+# is not a design space.  This reuses `study_fillet_pnorm`'s `build`/`verdict`
+# UNCHANGED over the wider `genomes` list `studies/study_fillet_block.json`'s own
+# held-out draw supplies, so the same function that answered "16, at two designs"
+# now answers whether 16 survives the box.  26 of 32 held-out genomes build their
+# own filleted sector at their own radii; the other 6 are excluded for §82's own
+# stated reason, not this driver's.
+#
+# SCOPE: the same as `filletpnorm` — LINEAR, ONE PHASE.  Nothing here touches
+# `wheel_objective`.
+#
+# EXITS 0 ALWAYS, for `filletpnorm`'s reason: whether 16 is a constant of the
+# objective or a property of two designs is a measurement, not a threshold.
+FILLETPNORMBOX_OUT ?= study_fillet_pnorm_box.json
+
+filletpnormbox:
+	$(PY_OPT) -u studies/study_fillet_pnorm_box.py --out $(FILLETPNORMBOX_OUT)
 
 # ---------------------------------------------------------------------------
 # THE LAST TWO THINGS IN FRONT OF THE SWITCH  (PLAN.md §94, items 3 and 4)
