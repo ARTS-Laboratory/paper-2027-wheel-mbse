@@ -1,0 +1,279 @@
+{
+  "min_sj_target": 0.2,
+  "per_config": {
+    "coarse": {
+      "B": 10,
+      "bow_over_width_shipped": 0.00970937793586214,
+      "forward": {
+        "constant": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 13,
+            "worst_min_scaled_jacobian": -0.9950322674768729
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 14,
+            "n_valid": 16,
+            "worst_min_scaled_jacobian": 0.1346981448732475
+          },
+          "param": 0.0,
+          "shipped": {
+            "bend": 0.0,
+            "clears_target": true,
+            "min_scaled_jacobian": 0.626232991881191
+          }
+        },
+        "linear": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 13,
+            "worst_min_scaled_jacobian": -0.9950322674768729
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 14,
+            "n_valid": 16,
+            "worst_min_scaled_jacobian": 0.1346981448732475
+          },
+          "param": 0.0,
+          "shipped": {
+            "bend": 0.0,
+            "clears_target": true,
+            "min_scaled_jacobian": 0.626232991881191
+          }
+        }
+      },
+      "seeds": {
+        "fit": 20268100,
+        "holdout": 20268200
+      },
+      "streams": {
+        "fit": {
+          "n": 16,
+          "orientations_complete": true
+        },
+        "holdout": {
+          "n": 16,
+          "orientations_complete": true
+        }
+      },
+      "swapped": {
+        "constant": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 14,
+            "n_valid": 16,
+            "worst_min_scaled_jacobian": 0.1346981448732475
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 13,
+            "worst_min_scaled_jacobian": -0.9950322674768729
+          },
+          "param": 0.0
+        },
+        "linear": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 14,
+            "n_valid": 16,
+            "worst_min_scaled_jacobian": 0.1346981448732475
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 13,
+            "worst_min_scaled_jacobian": -0.9950322674768729
+          },
+          "param": 0.0
+        }
+      },
+      "w": [
+        0.12444444444444444,
+        0.7511111111111111,
+        0.12444444444444447
+      ]
+    },
+    "medium": {
+      "B": 18,
+      "bow_over_width_shipped": 0.009715050740410533,
+      "forward": {
+        "constant": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 12,
+            "worst_min_scaled_jacobian": -0.1929759567293227
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 10,
+            "worst_min_scaled_jacobian": -0.9996316918278115
+          },
+          "param": 0.4,
+          "shipped": {
+            "bend": 0.4,
+            "clears_target": true,
+            "min_scaled_jacobian": 0.5820050790581293
+          }
+        },
+        "linear": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 12,
+            "worst_min_scaled_jacobian": -0.1911715291131744
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 10,
+            "worst_min_scaled_jacobian": -0.9995229246119193
+          },
+          "param": 3.0,
+          "shipped": {
+            "bend": 0.029145152221231596,
+            "clears_target": true,
+            "min_scaled_jacobian": 0.5816131881974893
+          }
+        }
+      },
+      "seeds": {
+        "fit": 20268300,
+        "holdout": 20268400
+      },
+      "streams": {
+        "fit": {
+          "n": 16,
+          "orientations_complete": true
+        },
+        "holdout": {
+          "n": 16,
+          "orientations_complete": true
+        }
+      },
+      "swapped": {
+        "constant": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 10,
+            "worst_min_scaled_jacobian": -0.9999999756014001
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 12,
+            "worst_min_scaled_jacobian": -0.16420045298843722
+          },
+          "param": 0.0
+        },
+        "linear": {
+          "holdout_scored_once": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 10,
+            "worst_min_scaled_jacobian": -0.9999999756014001
+          },
+          "in_sample": {
+            "dropped": 0,
+            "n": 16,
+            "n_clear": 9,
+            "n_valid": 12,
+            "worst_min_scaled_jacobian": -0.16420045298843722
+          },
+          "param": 0.0
+        }
+      },
+      "w": [
+        0.07222222222222222,
+        0.8033333333333333,
+        0.12444444444444447
+      ]
+    }
+  },
+  "protocol": {
+    "constant_grid": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "families": {
+      "constant": "bend(bow) = b, b in BEND_GRID",
+      "linear": "bend(bow) = clip(k * bow, 0, 1), k in K_GRID"
+    },
+    "k_grid": [
+      0.0,
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      6.0,
+      8.0,
+      10.0,
+      15.0,
+      20.0,
+      30.0
+    ],
+    "order": "fit -> freeze -> score holdout once -> swap",
+    "seeds": {
+      "coarse": {
+        "fit": 20268100,
+        "holdout": 20268200
+      },
+      "medium": {
+        "fit": 20268300,
+        "holdout": 20268400
+      }
+    },
+    "selection": "max n_clear, then n_valid, then worst_min_sj; ties: smaller parameter",
+    "w_held_fixed_to": "the tri-block's own published cell (PLAN \u00a755)"
+  },
+  "seconds": 23.86,
+  "self_checks": {
+    "duplicate_gene_vectors": null,
+    "every_config_produced_finite_parameters": true,
+    "fit_streams_nonempty": true,
+    "linear_beats_constant_on_holdout": {
+      "coarse": [
+        9,
+        9
+      ],
+      "medium": [
+        9,
+        9
+      ]
+    },
+    "orientations_complete_everywhere": true,
+    "pass": true,
+    "streams_pairwise_disjoint": true
+  }
+}

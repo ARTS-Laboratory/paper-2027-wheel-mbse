@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -200,6 +200,10 @@ help:
 	@echo "              subject, curved-Y refusal on the arc-span band. no"
 	@echo "              threshold published in-sample; a held-out score,"
 	@echo "              including an embarrassing one, is a finding. ~15 min"
+	@echo "make tribend  a bend that is a FUNCTION of the genome, fit against"
+	@echo "              a constant under the same discipline, at w held"
+	@echo "              fixed to the tri-block's own cell. whether genome-"
+	@echo "              dependence helps at all is reported either way. ~1 min"
 	@echo "make reds-hub-fillet  FILLET_PLAN Step 3's ACCEPTANCE TEST, and the one"
 	@echo "              the whole fillet arc was aimed at: the R_hub sweep on a"
 	@echo "              FILLETED mesh under SVK. It stops being bit-identical —"
@@ -1241,6 +1245,20 @@ TRIRULE_OUT ?= study_tri_rule.json
 
 trirule:
 	$(PY_OPT) -u studies/study_tri_rule.py --out $(TRIRULE_OUT)
+
+# ---------------------------------------------------------------------------
+# A BEND THAT IS A FUNCTION OF THE GENOME (PLAN.md §56 successor 2)
+# ---------------------------------------------------------------------------
+# Two one-parameter families -- a constant bend and bend = clip(k * bow_over_width, 0, 1)
+# -- fit and scored under the same fit-freeze-score-swap discipline as `trirule`, at `w`
+# held fixed to the tri-block's own published cell.  Answers whether genome-dependence
+# helps at all; a "no" is reported in `self_checks["linear_beats_constant_on_holdout"]`
+# rather than hidden.  Draws are the cheap uniform 16-genome box, not the band -- seconds,
+# not minutes, per stream.
+TRIBEND_OUT ?= study_tri_bend.json
+
+tribend:
+	$(PY_OPT) -u studies/study_tri_bend.py --out $(TRIBEND_OUT)
 
 # ---------------------------------------------------------------------------
 # THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds
