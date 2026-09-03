@@ -1080,24 +1080,32 @@ ARC_BAND_MAX_BATCHES = 400
 
 def sweep_arc_span_band(cfg_name, B, w_fixed, shipped_genes, current_w,
                         lo=ARC_BAND_MIN_DEG, target=ARC_BAND_TARGET,
-                        max_batches=ARC_BAND_MAX_BATCHES):
+                        max_batches=ARC_BAND_MAX_BATCHES, seed_base=None):
     """Draw CONDITIONED on a large arc span, and report the refusal rate in the band.
 
     The seed offset keeps this stream disjoint from `sweep_genomes`' so the band is not
     the published box with the easy genomes filtered out -- it is its own sample, and the
     rate it reports is comparable with the box's precisely because the two do not share
     genomes.
+
+    `seed_base=None` is this file's own committed stream (GENOME_SWEEP_SEED + 1000).
+    A caller may pass its own base to draw an independent band -- which is what any
+    hold-out protocol needs, and why PART 9's "+7000" stream is named rather than
+    re-runnable.  Bases must be >= `max_batches` apart, because batch `b` draws from
+    `seed + b`: nearby bases share candidate batches verbatim.
     """
     from study_mesh_quality import latin_hypercube
     import wheel_fea as WFEA
 
+    if seed_base is None:
+        seed_base = GENOME_SWEEP_SEED + 1000
     low, high, _ = wg.bounds_arrays(WFEA.GENE_SPACE)
     rows, screened, drawn = [], 0, 0
     for batch in range(max_batches):
         if len(rows) >= target:
             break
         for vec in latin_hypercube(512, low, high,
-                                   seed=GENOME_SWEEP_SEED + 1000 + batch):
+                                   seed=seed_base + batch):
             drawn += 1
             _, loss = WFEA.evaluate_design(vec)
             if loss["x_order"] != 0.0 or loss["hub_overlap"] != 0.0:
@@ -1151,7 +1159,11 @@ def sweep_arc_span_band(cfg_name, B, w_fixed, shipped_genes, current_w,
         "separation": {k: _separation([_shape(r) for r in bad],
                                       [_shape(r) for r in good], k)
                        for k in ("arc_span_deg", "wedge_sum_deg", "bow_over_width")},
-        "genomes": [{"curved_valid": bool(g["curved_valid"]), **_shape(r)}
+        "genomes": [{"curved_valid": bool(g["curved_valid"]),
+                     # Carried so a hold-out protocol can assert its two streams do not
+                     # share a genome -- the same reason `sweep_genomes` carries genes.
+                     "genes": [float(x) for x in r["genes"]],
+                     **_shape(r)}
                     for g, r in zip(per, rows)]}
 
 

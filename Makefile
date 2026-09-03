@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -195,6 +195,11 @@ help:
 	@echo "              the box drawn out to 64 genomes, and a draw CONDITIONED on"
 	@echo "              arc span — 22 of 40 in the band refuse, against 1 of 64"
 	@echo "              uniform. ~670 s"
+	@echo "make trirule  the tri-block's fold rule, CALIBRATED — a fit-freeze-"
+	@echo "              score-swap hold-out protocol on section 73's own"
+	@echo "              subject, curved-Y refusal on the arc-span band. no"
+	@echo "              threshold published in-sample; a held-out score,"
+	@echo "              including an embarrassing one, is a finding. ~15 min"
 	@echo "make reds-hub-fillet  FILLET_PLAN Step 3's ACCEPTANCE TEST, and the one"
 	@echo "              the whole fillet arc was aimed at: the R_hub sweep on a"
 	@echo "              FILLETED mesh under SVK. It stops being bit-identical —"
@@ -1222,6 +1227,20 @@ TRIBLOCK_OUT ?= study_tri_block.json
 
 triblock:
 	$(PY_OPT) -u studies/study_tri_block.py --out $(TRIBLOCK_OUT)
+
+# ---------------------------------------------------------------------------
+# THE TRI-BLOCK'S FOLD RULE, CALIBRATED (PLAN.md §73 successor 1)
+# ---------------------------------------------------------------------------
+# A fit-freeze-score-swap hold-out calibration of the conjunctive fold family
+# `arc > t_wide OR (arc > t_conj AND min_wedge < t_wedge)` against section 73's own
+# subject, curved-Y refusal (`curved_valid`) on `sweep_arc_span_band`'s draw -- four fresh
+# band streams, ~200 s each.  Nonzero exit only on a self-check (stream disjointness, a
+# band that missed its 40-genome target); a held-out accuracy, including an embarrassing
+# one, is a finding and exits zero.  ~15 min.
+TRIRULE_OUT ?= study_tri_rule.json
+
+trirule:
+	$(PY_OPT) -u studies/study_tri_rule.py --out $(TRIRULE_OUT)
 
 # ---------------------------------------------------------------------------
 # THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds
