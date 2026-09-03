@@ -964,6 +964,8 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
                     "pnorm_stress_agg_mpa": float(rep["pnorm_stress_agg_mpa"]),
                     "stress_scale_measured": float(rep["stress_scale_measured"]),
                     "kt_hub": float(rep["kt_hub"]), "kt_rim": float(rep["kt_rim"]),
+                    "hub_region_pnorm_mpa": float(rep["hub_region_pnorm_mpa"]),
+                    "rim_region_pnorm_mpa": float(rep["rim_region_pnorm_mpa"]),
                     "stress_utilisation": float(rep["stress_utilisation"]),
                     "stress_utilisation_hub": float(rep["stress_utilisation_hub"]),
                     "stress_utilisation_rim": float(rep["stress_utilisation_rim"]),

@@ -275,10 +275,15 @@ reference genome under `DEFAULT_WEIGHTS`:
   --------------  -----------------------------------------------  ---------   --------
   mass            1% of MASS_REFERENCE_G (0.365 g)                  linear      0.300000
   deflection      1% relative error on TARGET_DEFLECTION_MM         quadratic   0.250000
-  stress_margin   1% of utilisation above MARGIN_KNEE_UTIL (0.80)   quadratic   0.032500
+  stress_margin   1% of utilisation above MARGIN_KNEE_UTIL (0.80)   quadratic   0.008921
   smoothness      1% of the curvature-rate integral                 STEP 4      0.001678
   phase_ripple    1% of std/mean axle drop                          STEP 4      0.000000
 ```
+
+`stress_margin`'s `c_T` RE-MEASURED AT PLAN.md §103: it was 0.032500 against
+`DEFAULT_WEIGHTS["stress_margin"] = 325.0`; the fillet switch re-derived that weight to
+89.21 (§99's formula, wired in at §103), and `c_T` moved with it since it is read from the
+weight table, not asserted independently.
 
 `c_T = L(d_T)` — the cost of a full 1% miss measured from that term's own satisfied point —
 and **not** `dL/dx` at the current iterate. The marginal rate is the wrong instrument here
@@ -293,14 +298,18 @@ descent happened to stop. `L(d_T)` is a property of the weight, not of the itera
 
   term             c_T        p_cal
   --------------  --------   ------
-  mass            0.300000    51.35
-  deflection      0.250000    42.80
-  stress_margin   0.032500     5.56
-  smoothness      0.001678     0.29
+  mass            0.300000    53.51
+  deflection      0.250000    44.60
+  stress_margin   0.008921     1.59
+  smoothness      0.001678     0.30
   phase_ripple    0.000000     0.00
   --------------------------------
-  sum c = 0.584178             100
+  sum c = 0.560599             100
 ```
+
+RE-MEASURED AT PLAN.md §103, same reason as the table above: `stress_margin`'s point share
+fell 5.56 -> 1.59 and the freed points landed on `mass`/`deflection`, which is the same
+100-point budget redistributing under one weight change, not a second finding.
 
 **THIS IS THE ARC'S FIRST REAL FINDING AND IT IS AVAILABLE BEFORE ANY CODE IS WRITTEN.**
 The shipped weight table is a **51/43/6/0.3/0** portfolio — roughly half on mass, roughly
@@ -475,8 +484,9 @@ derive `p^cal`, implement `weights_from_priorities`, and anchor `phase_ripple` f
   point. The map must be an identity at its own calibration point or it is not a
   re-parameterisation, it is a change.
 - **CHECK — the table above is reproduced from `src/`**, not copied from this file. If
-  `p_cal` does not come back as 51.35 / 42.80 / 5.56 / 0.29 / 0.00, this file is wrong and
-  the driver is right.
+  `p_cal` does not come back as 53.51 / 44.60 / 1.59 / 0.30 / 0.00 (RE-MEASURED AT PLAN.md
+  §103, after the fillet switch re-derived `DEFAULT_WEIGHTS["stress_margin"]`; it was
+  51.35 / 42.80 / 5.56 / 0.29 / 0.00 before), this file is wrong and the driver is right.
 - **CHECK — conservation:** total exchange-rate pressure is invariant under any
   reallocation summing to 100, to floating point.
 - **CHECK — ripple:** its anchor is a measured number filed beside the shipped

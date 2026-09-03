@@ -12,8 +12,9 @@ interpreter with no make and no pytest, behave the same as one the pool started.
 disagrees with the parent's in the last bits, while every forward value agrees exactly.
 
 WHAT THIS PROCESS IS FOR.  It receives `(genes, cfg, phase, orientation, force, delta0)`,
-builds its own mesh, runs one `service_qoi_value_and_grad`, and returns the leaves
-`wheel_objective.t3_terms` reads — three floats and three 14-vectors.  It does NOT return
+builds its own FILLETED mesh (PLAN.md §103), runs one `service_qoi_value_and_grad` over
+four QoIs — `axle_drop`, `pnorm_stress`, and the two junction region-p-norms — and returns
+the leaves `wheel_objective.t3_terms` reads.  It does NOT return
 the mesh, the sparse problem or the displacement field: `WheelMesh._coord_fn` holds a
 jitted function after the first `mesh_coords` call and cannot be pickled at all, and the
 field is megabytes for a number the parent never looks at.  Anything the parent needs off
@@ -56,14 +57,17 @@ def run_phase(task):
     genes = np.asarray(task["genes"], dtype=float)
     cfg = task["cfg"]
     orientation = task["orientation"]
+    # `fillet=True` — PLAN.md §93/§103.  Must match `wheel_objective.phase_meshes`
+    # exactly, or `test_pool.py`'s bit-identity gate compares two different meshes.
     mesh = WW.build_wheel(genes, cfg, phase_deg=float(task["phase"]),
-                          orientation=orientation)
+                          orientation=orientation, fillet=True)
 
     qoi = ("pnorm_stress",
            lambda prob: WA._qoi_pnorm_stress(prob, p=task["stress_gauss_p"]))
+    hub_qoi, rim_qoi = WO._region_qois(mesh)
     o = WA.service_qoi_value_and_grad(
-        genes, cfg, (qoi,), force=task["force"], mesh=mesh, delta0=task["delta0"],
-        **task["problem_kw"])
+        genes, cfg, (qoi, hub_qoi, rim_qoi), force=task["force"], mesh=mesh,
+        delta0=task["delta0"], **task["problem_kw"])
 
     meta = o["_meta"]
     probe = WO._probe_values(meta["prob"], meta["res"]["u"], task["probe_p"])
@@ -72,6 +76,10 @@ def run_phase(task):
         "pnorm_stress": {"value": o["pnorm_stress"]["value"],
                          "grad": o["pnorm_stress"]["grad"],
                          "coupling_grad": o["pnorm_stress"]["coupling_grad"]},
+        "hub_region_pnorm": {"value": o["hub_region_pnorm"]["value"],
+                             "grad": o["hub_region_pnorm"]["grad"]},
+        "rim_region_pnorm": {"value": o["rim_region_pnorm"]["value"],
+                             "grad": o["rim_region_pnorm"]["grad"]},
         "_meta": {"max_stress_mpa": meta["max_stress_mpa"],
                   "contact_force_n": meta["contact_force_n"]},
         "_probe": probe,

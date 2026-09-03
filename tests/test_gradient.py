@@ -472,6 +472,27 @@ def filleted(genes):
     return WW.build_wheel(genes, CFG, fillet=True)
 
 
+def test_the_arc_node_ids_do_not_move_with_phase(genes):
+    """`phase_deg` rolls the whole wheel under the ground (`_sector_coords`'s own
+    comment); it does not touch sector 0's block layout, so the SAME node ids must come
+    back at every phase. Caught the hard way: `fillet_arc_nodes` originally matched
+    `sector_blocks`' UNROTATED arc points against `mesh.coords`, which IS rolled, and at
+    `phase_deg` = 13.7 the nearest node was 0.513 mm away — not a near-miss, a
+    comparison between two different frames.  `phase_stencil` is nonzero at 7 of its 8
+    points, so an unfixed version of this would raise
+    `fillet_arc_nodes`' own frame-mismatch error on most of what `phase_meshes` builds,
+    the first time §102's term ran inside `t3_terms` rather than at the `phase_deg=0.0`
+    default every fixture in this module happens to use.
+    """
+    ref = {lab: WW.fillet_arc_nodes(WW.build_wheel(genes, CFG, fillet=True), lab)
+           for lab in ("hub", "rim")}
+    for phase in (3.75, 13.7, -7.5, 359.9):
+        m = WW.build_wheel(genes, CFG, fillet=True, phase_deg=phase)
+        for lab in ("hub", "rim"):
+            assert np.array_equal(WW.fillet_arc_nodes(m, lab), ref[lab]), (
+                f"{lab}: arc node ids at phase_deg={phase} differ from phase_deg=0.0")
+
+
 def test_the_arc_node_ids_are_the_arcs_own_nodes(genes, filleted):
     """`fillet_arc_nodes` matches by coordinate, and the match has to be EXACT.
 

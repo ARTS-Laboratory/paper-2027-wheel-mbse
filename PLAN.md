@@ -14273,3 +14273,228 @@ Nothing is promoted.  No loss number moves, because no loss reads this yet.
    that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
    revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
    successor 9, unchanged.
+
+## §103 — 2026-09-03. THE FILLET SWITCH IS WIRED: `util_j` READS THE REGION-P-NORM TERM, AND THE SHIPPED GENOME BREACHES THE WALL IT WAS NEVER MEASURED AGAINST
+
+§102's ranked successor 1, in full — §93's step 3. §102 built the quantity and wired
+nothing; this section wires it. `phase_meshes` now builds every mesh `fillet=True`,
+`t3_terms`'s `util_j` reads the junction's own region-p-norm QoI instead of
+`Kt_j * agg`, `DEFAULT_WEIGHTS["stress_margin"]` moves 325.0 -> 89.21 at §99's formula,
+and the scope gate that certified nothing was wired now certifies the opposite. **Six
+tests went red, one xfail reopened itself, one real bug surfaced in a study driver, and
+one separate arc's calibration moved underneath it** — all four are downstream
+consequences of the same one-line truth: the mesh everything solves on has fillets now,
+and the stress term reads them.
+
+### A PREREQUISITE THAT WOULD HAVE MADE THE WHOLE STENCIL WRONG: `fillet_arc_nodes` HAD NO `phase_deg`
+
+`WW.fillet_arc_nodes` recovers the fillet arc's own node ids by matching `sector_blocks`'
+query points — always sector 0, in its own unrotated frame — against `mesh.coords`, which
+is sector 0 **rolled by `mesh.phase_deg`** (`_sector_coords`'s own convention). Comparing
+an unrotated query against a rotated coordinate array is comparing two frames, and at any
+nonzero phase the match silently picks the nearest node in the WRONG place rather than
+raising. Measured at the shipped genome, `coarse`, `phase_deg` = 13.7: **0.513 mm off**,
+not a near-miss — and `phase_stencil`'s own 8-point grid is nonzero at 7 of 8 points, so
+this was not an edge case, it was most of what `phase_meshes` was about to build. Fixed by
+rolling the query points by `phase_deg` before the match (`src/wheel_wheel.py:3139`, node
+ids unaffected — the roll is a rigid rotation, so it reorders nothing, only fixes which
+coordinate each id is compared against). Caught and confirmed by
+`tests/test_gradient.py -k fillet` before any of the wiring below was written; without it
+every phase but the first would have aggregated a region QoI read off nodes near, but not
+on, the actual arc.
+
+### WHAT MOVED, MECHANICALLY
+
+`phase_meshes` (`wheel_objective.py:1000`) passes `fillet=True` to every
+`WW.build_wheel` call, unconditionally — the mesh the objective solves on and the mesh the
+report describes are now the same mesh. `t3_terms`'s per-phase loop builds
+`_region_qois(meshes[i])` (`:1055`) — `(hub_qoi, rim_qoi)` as `(name, factory)` pairs from
+`fillet_arc_nodes(mesh, "hub"/"rim")` and `W.NUMBER_OF_SPOKES`, going through
+`adjoint_grads`'s `(name, factory)` door the way `_qoi_buckling_eig` already does, because
+the QoI needs the arc's node ids and is not in the static `QOI` table. Each phase's two
+values and gradients accumulate into `pn_hub`/`pn_rim` lists exactly as the whole-wheel
+p-norm already did, and `_pnorm_and_grad` (`:1074`) — the phase-aggregation arithmetic
+`_stress_aggregate` computes for `agg`, factored out WITHOUT its `c = mean(max/pnorm)`
+diagnostic, which is measured against the WHOLE-WHEEL true max and means nothing for a
+per-junction region quantity — turns those into `agg_hub`/`agg_rim` and their gradients.
+`util_j` is now `agg_j / allowable_stress_mpa`, full stop; `Kt` does not appear in it.
+`junction_kt`'s two gradients are discarded (`(kt_hub, _), (kt_rim, _) = junction_kt(...)`)
+because `kt_hub`/`kt_rim` are RETAINED but demoted to reporting only — `wheel_stage3`'s
+`REPORT_KEYS`/`selection_key` still read them for the geometric-feasibility story
+(`hub_fillet_cap_mm`, `r_hub_effective_mm`), which the switch does not touch. Two new
+report keys, `hub_region_pnorm_mpa`/`rim_region_pnorm_mpa`, carry the raw junction
+aggregate in MPa — what `util_j` is now actually built on, visible in every run record.
+
+ONE DEFINITION, TWO CALLERS, same discipline as `_probe_values`: `wheel_pool_worker
+.run_phase` builds `_region_qois` from its OWN independently-built mesh and extends its
+returned tuple identically, because `tests/test_pool.py`'s bit-identity gate (pooled ==
+serial, to the bit) cannot hold if the two processes construct the QoI two different ways.
+It does not — confirmed below.
+
+### THE FINDING: THE WALL WAS NEVER MEASURED AGAINST THE MESH THAT NOW STANDS FOR IT
+
+```
+                                  Kt*agg (old)     region-p-norm (new)     settings
+  shipped genome, hub util              --              1.0557           smoke, 2 phase
+  genes_over_knee, hub util          0.85506             1.68672          coarse, 8 phase
+  genes_over_knee, rim util             --              1.21257          coarse, 8 phase
+```
+
+`genes_over_knee`'s hub reads **1.973x** its old capped-mesh reading — almost double, and
+landing at the LOW end of §99's own forecast that *"the true fillet stress runs
+1.68x-2.76x over what Kt*agg reported."* The shipped genome's 1.0557 clears not the 0.80
+knee this arc has tracked since §22 but the hard `stress` WALL at 1.0 — `stress` no longer
+reads 0.0 on it, and `selection_key` no longer calls it tier 0. Nothing about this is a
+threshold to move: `MARGIN_KNEE_UTIL` and the wall are policy, calibrated at §99 against
+what a design MEANS by 80%/100% of allowable, not fitted to whichever genome happens to be
+on disk today. What broke is narrower and stated precisely below — the shipped genome, and
+`genes_over_knee`, stopped being FIXTURES for "a design below the knee" and "a design whose
+rim is dead," because the more faithful term reads both of them somewhere else on the
+curve than the surrogate did.
+
+### SIX TESTS, TWO DIFFERENT KINDS OF BREAKAGE, TWO DIFFERENT FIXES
+
+Three tests asserted a GENOME'S POSITION relative to a threshold, and the position moved
+— the tests were never wrong, their fixture's premise expired. Marked
+`xfail(strict=True)`, following the one precedent already on file
+(`test_but_above_the_knee_the_fillet_radii_are_live`'s §38 marking): a new paragraph
+stating what broke and why the claim did not, then the ORIGINAL docstring unedited below
+it, because it still records what the test was for.
+
+  - `test_the_fillet_radii_are_not_dead_genes` — shipped genome hub 1.0557, above the wall.
+  - `test_below_the_knee_the_rim_fillet_radius_is_dead` — `genes_over_knee` rim 1.21257,
+    above the wall, not merely above the 0.80 knee the fixture was named for the HUB
+    crossing.
+  - `test_the_margin_term_prices_and_never_gates` — the shipped genome breaching `stress`
+    itself (12.391 != 0.0) is a fact about THIS genome, not about the split the test names
+    between an OBJECTIVE that prices margin and a BARRIER that gates; that split is
+    untested by this failure and still holds.
+
+One test's xfail (§38, `test_but_above_the_knee_the_fillet_radii_are_live`) REOPENED:
+`genes_over_knee`'s hub was reachable again the moment §102's replacement went live, and
+`strict=True` turned the resulting XPASS into a failure demanding the marker come off. The
+docstring now states the measured number rather than the estimate an earlier draft of this
+work carried — 1.68672, 1.973x, corroborated above.
+
+Two more tests and one sibling in `test_stage3.py` asserted a FORMULA that the switch
+changed on purpose, not a genome's position — fixed by correction, not `xfail`:
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be` (`u_ref` 0.855 -> 1.0, §99's
+own reference-point move, stated in its docstring already), `test_the_report_carries_
+both_junctions_and_the_headline_is_their_max` and `test_stage3.py::test_the_ladder_costs_
+one_evaluation_per_rung_and_repins_per_design` (both asserted `kt_j * agg / allow`; both
+now assert `{j}_region_pnorm_mpa / allow`), and `test_stage3.py::test_the_probe_
+reproduces_the_constraint_at_the_exponent_it_was_built_with` (dropped its cross-check
+against `stress_utilisation_kt`, a retained diagnostic of the abandoned construction that
+is now a genuinely different physical quantity from the live constraint, not the same one
+at a different exponent).
+
+### A REAL BUG THE WIRING SURFACED, NOT A FIXTURE PROBLEM: `study_stage3.run_mesh_convergence` NEVER LEARNED THE NEW REPORT KEYS
+
+The `test_stage3.py` fix above assumed `hub_region_pnorm_mpa`/`rim_region_pnorm_mpa` reach
+every caller that builds a per-rung row from `rep`, the way `wheel_stage3._row`'s
+`REPORT_KEYS` whitelist does. `studies/study_stage3.py:910`'s `run_mesh_convergence` does
+not go through `_row` — it hand-builds its own row dict from named `rep[...]` pulls, a
+second, independent construction `wheel_objective`'s new keys never reached. Running the
+full corrected test file found this as a `KeyError: 'hub_region_pnorm_mpa'`, not as a
+number mismatch — the row the test needed simply did not have the field. Fixed by adding
+the same two pulls beside the existing `kt_hub`/`kt_rim` ones (`:966`). **Left alone,
+deliberately**: `run_multistart`'s own hand-built row (`:1052`), fifty lines below in the
+same file — nothing reads `hub_region_pnorm_mpa` off it, and adding fields no test and no
+caller uses would be exactly the speculative completeness this project's house style
+argues against.
+
+### THE SCOPE GATE INVERTED
+
+`tests/test_corner_singularity.py`'s AST scan used to assert every `fillet=`/
+`fillet_blocking=` keyword found across five modules was the literal `None` — proof
+nothing was wired. It now asserts the opposite over SIX modules (`wheel_pool_worker.py`
+added to the scan): every such keyword found in `wheel_objective.py`, `wheel_stage3.py`,
+`wheel_fea.py`, `wheel_adjoint.py`, `wheel_pool.py` and `wheel_pool_worker.py` is the
+literal `True`, and at least one keyword must appear in BOTH `wheel_objective.py` and
+`wheel_pool_worker.py` — a gate that would fail silently-vacuous (zero keywords found,
+trivially "all `True`") if either module stopped building filleted meshes.
+
+### THE CASCADE INTO A SEPARATE ARC'S CALIBRATION
+
+`MBSE_PLAN.md`'s `calibrated_priorities`/`weights_from_priorities` (Open arc #9, Step 4)
+derive their 100-point portfolio FROM `DEFAULT_WEIGHTS` live, not from a copied table —
+the file's own Step 4 check says so: *"If `p_cal` does not come back as [the stated
+numbers], this file is wrong and the driver is right."* `stress_margin`'s weight move
+(325.0 -> 89.21) is exactly such a change, and it moved the portfolio with it:
+
+```
+  term             c_T (old -> new)        p_cal (old -> new)
+  --------------  --------------------    --------------------
+  mass             0.300000 -> 0.300000    51.35 -> 53.51
+  deflection       0.250000 -> 0.250000    42.80 -> 44.60
+  stress_margin    0.032500 -> 0.008921     5.56 ->  1.59
+  smoothness       0.001678 -> 0.001678     0.29 ->  0.30
+  phase_ripple     0.000000 -> 0.000000     0.00 ->  0.00
+  sum c            0.584178 -> 0.560599    100    -> 100
+```
+
+`stress_margin`'s freed points landed on `mass`/`deflection` — the same 100-point budget
+redistributing under one upstream weight change, not a second finding. `MBSE_PLAN.md`'s
+two tables and its Step 4 check are updated in this commit to the new numbers, with the
+old ones kept alongside as the "before" row; `tests/test_requirements.py::test_the_
+calibration_reproduces_the_portfolio_the_plan_states` is updated to match and passes;
+`studies/study_mbse_calibration.json` is regenerated (`make mbsecal`, all five checks
+`ok`, exit 0) rather than left describing a weight table `src/` no longer has — PLAN.md's
+own rule that a study's committed artifact must describe its script's current output.
+
+### COST, RECONFIRMED AT SUITE SCALE, NOT JUST ONE CELL
+
+§101 measured ~41.6 GB peak RSS for a single filleted `coarse` JIT compile in a
+one-cell process. This section's own verification runs reconfirm it at the scale the
+switch actually operates at — every `t3`-tier evaluation in the repository, not one study
+cell:
+
+```
+  file                          result                        wall time
+  test_objective.py             125 tests, exit 0              ~943 s   (0:15-17)
+  test_stage3.py                55 tests, 1 real bug found      1514 s   (0:25:14)
+  test_pool.py                  23 tests, exit 0                 739 s   (0:12:19)
+  test_corner_singularity.py    28 tests, exit 0                   3 s
+  test_gradient.py              24 tests, exit 0                 401 s   (0:06:40)
+```
+
+Peak RSS during the `genes_over_knee` re-measurement above reached 39-40 GB in a single
+process with 17-25 GB still free on this box — consistent with §101's fixed-per-process
+reading rather than a per-element one, and confirming a Stage-3 descent (successor 2
+below) still needs the one-process-per-cell discipline §101 already established, not a
+new one.
+
+### WHAT DID NOT MOVE
+
+`best_solution.json` is untouched. No Stage 3 descent ran. No loss number is re-dated.
+§93's steps 4 and 5 — re-run Stage 3 under the new term, re-promote against `tests/test_
+promotion.py`'s six-item checklist — are §102 successor 2, explicitly deferred, and remain
+so: this section is the wiring alone, and the shipped genome now reading over the wall is
+the reason that successor is not this commit's job. `stress`'s own wall (1.0) and
+`MARGIN_KNEE_UTIL` (0.80) are unchanged; only what feeds them changed.
+
+#### The successors, ranked — REVISED 2026-09-03 AFTER §103
+
+1. **RE-RUN STAGE 3 AND RE-PROMOTE** — §93's steps 4-5 / §102's successor 2, now the only
+   thing standing between this switch and a shipped design that is actually feasible under
+   it. One process per cell, per §101's own finding, reconfirmed above at suite scale.
+   `test_the_fillet_radii_are_not_dead_genes`'s xfail is this successor's own regression
+   test: it reopens itself the day a design comes back faithfully below the knee.
+2. **FIND OR DESCEND A GENUINELY BELOW-THE-KNEE WITNESS** — every fixture this arc has
+   used to exercise the below-knee branch (`genes_over_knee`, the shipped genome) now
+   reads above the wall under the faithful term; the branch itself is untested by anything
+   on disk until successor 1 produces one, or a design is constructed for the purpose.
+3. **THEN §97's SUCCESSOR 5** — re-optimise under `heavy_payload` and `long_life`,
+   downstream of 1: a descent run before re-promotion is a descent against the objective
+   the switch just replaced.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7,
+   unchanged.
+5. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+6. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.

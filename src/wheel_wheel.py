@@ -3139,6 +3139,18 @@ def fillet_arc_nodes(mesh, label):
     `fillet_blocking="sector"` only, which is the construction that meshes and the default;
     the arc is the `j0` column of the junction's two boundary-layer blocks, `a` then `b`,
     sharing one node at the join (dropped from `b`, hence the `[1:]`).
+
+    `sector_blocks` HAS NO `phase_deg` -- it always returns sector 0 in ITS OWN,
+    UNROTATED frame, while `mesh.coords` is sector 0 rolled by `mesh.phase_deg` (see
+    `_sector_coords`: "`phase_deg` rolls the whole wheel under the ground").  Node IDS
+    are unaffected -- the roll is a rigid rotation applied uniformly, so it moves every
+    node's coordinate and reorders none of them -- but a coordinate lookup has to roll
+    the query points by the SAME angle first, or it is comparing two different frames and
+    every match at a nonzero phase fails.  Measured: at the shipped genome, `coarse`,
+    `phase_deg` = 13.7, an unrolled lookup misses its nearest node by 0.513 mm at the hub
+    -- not a near-miss, a wrong-frame comparison -- and `phase_stencil`'s own 8-phase
+    grid is nonzero at 7 of 8 points, so this is not an edge case: it is most of what
+    `phase_meshes` builds.
     """
     if not mesh.fillet:
         raise ValueError(
@@ -3151,6 +3163,13 @@ def fillet_arc_nodes(mesh, label):
     a = np.asarray(blocks["%s_fillet_a" % label])
     b = np.asarray(blocks["%s_fillet_b" % label])
     arc = np.concatenate([a[:, 0, :], b[1:, 0, :]])
+
+    # Roll the query points into `mesh.coords`' own frame -- `_rotate`'s convention,
+    # reproduced rather than imported because `_rotate` is jnp/xp-generic and this path
+    # is eager numpy only.
+    theta = np.radians(mesh.phase_deg)
+    c, s = np.cos(theta), np.sin(theta)
+    arc = arc @ np.array([[c, -s], [s, c]]).T
 
     coords = np.asarray(mesh.coords)
     gap = np.linalg.norm(coords[:, None, :] - arc[None, :, :], axis=2)

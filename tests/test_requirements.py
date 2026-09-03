@@ -344,13 +344,21 @@ def test_the_map_is_an_identity_at_its_own_calibration_point(shipped_record):
 
 
 def test_the_calibration_reproduces_the_portfolio_the_plan_states(shipped_record):
-    """51.35 / 42.80 / 5.56 / 0.29 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
-    code is right — but somebody has to be told."""
+    """53.51 / 44.60 / 1.59 / 0.30 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
+    code is right — but somebody has to be told.
+
+    RECALIBRATED AT PLAN.md §103: `calibrated_priorities` derives its points from
+    `DEFAULT_WEIGHTS`, not the other way round, so `DEFAULT_WEIGHTS["stress_margin"]`
+    moving 325.0 -> 89.21 (§99's formula, wired in at §103) moved this portfolio with it
+    — `stress_margin`'s point share fell 5.56 -> 1.59 and the freed points landed on
+    `mass`/`deflection`, which is the same 100-point budget redistributing, not a second
+    change. The old numbers (51.35 / 42.80 / 5.56 / 0.29 / 0.00) were §99's own
+    predecessor's, not an independent MBSE_PLAN.md derivation."""
     p, _ = R.calibrated_priorities(shipped_record["loss_terms"]["smoothness"])
-    assert p.points["mass"] == pytest.approx(51.35, abs=0.01)
-    assert p.points["deflection"] == pytest.approx(42.80, abs=0.01)
-    assert p.points["stress_margin"] == pytest.approx(5.56, abs=0.01)
-    assert p.points["smoothness"] == pytest.approx(0.29, abs=0.01)
+    assert p.points["mass"] == pytest.approx(53.51, abs=0.01)
+    assert p.points["deflection"] == pytest.approx(44.60, abs=0.01)
+    assert p.points["stress_margin"] == pytest.approx(1.59, abs=0.01)
+    assert p.points["smoothness"] == pytest.approx(0.30, abs=0.01)
     assert p.points["phase_ripple"] == 0.0
 
 

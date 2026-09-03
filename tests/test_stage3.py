@@ -872,11 +872,11 @@ def test_the_ladder_costs_one_evaluation_per_rung_and_repins_per_design(genes, m
         float(x) for x in np.asarray(
             WW.flank_orientation(genes, WW.get_config(CFG))).ravel())
     row = rep["designs"][0]["rows"][0]
-    # The identity the report's series rest on, at the one rung that ran.  `Kt`, not `c`:
-    # `c` is still reported beside it, and the gap between these two numbers is M8b-i.6's
-    # finding rather than a discrepancy.
+    # The identity the report's series rest on, at the one rung that ran.  Region-p-norm,
+    # not `Kt`, since PLAN.md §102/§103: `kt_hub`/`kt_rim` stay in the report for the
+    # geometric `hub_fillet_cap_mm` story, but `util_j` reads the two junction QoIs below.
     assert row["stress_utilisation"] == pytest.approx(
-        max(row["kt_hub"], row["kt_rim"]) * row["pnorm_stress_agg_mpa"]
+        max(row["hub_region_pnorm_mpa"], row["rim_region_pnorm_mpa"])
         / WO.ALLOWABLE_STRESS_MPA, rel=1e-12)
 
 
@@ -934,16 +934,20 @@ def test_the_probe_reproduces_the_constraint_at_the_exponent_it_was_built_with(g
                           probe_p=(WO.STRESS_NOMINAL_P, WA.STRESS_PNORM_P))
 
     # The reproduction is read off the CONSTRAINT'S OWN exponent, which is now
-    # STRESS_NOMINAL_P.  And off `stress_utilisation_kt`, not `stress_utilisation`: the
-    # probe still reports the old `c * agg` under the latter name, because `c`'s drift with
-    # `p` and with the mesh is exactly what step 1 measured and what the sweep exists to
-    # show.  The two keys disagreeing is the finding, not a bug.
+    # STRESS_NOMINAL_P, for the two quantities the probe and the whole-wheel report still
+    # share: the raw Gauss p-norm and the diagnostic `c = mean(max/pnorm)`.
     at4 = rep["pnorm_by_p"][repr(float(WO.STRESS_NOMINAL_P))]
     assert at4["pnorm_agg_mpa"] == pytest.approx(rep["pnorm_stress_agg_mpa"], rel=1e-12)
     assert at4["stress_scale_measured"] == pytest.approx(
         rep["stress_scale_measured"], rel=1e-12)
-    assert at4["stress_utilisation_kt"] == pytest.approx(
-        rep["stress_utilisation"], rel=1e-12)
+    # `at4["stress_utilisation_kt"]` no longer belongs in this reproduction — PLAN.md
+    # §102/§103 moved `rep["stress_utilisation"]` onto the region-p-norm QoI, a quantity
+    # the Gauss-point probe swept here does not compute at any exponent. `stress_
+    # utilisation_kt` still reports what the ABANDONED `Kt * agg` construction would have
+    # read at this `p`, which is why it survives as a diagnostic (see `_stress_aggregate`'s
+    # own docstring on `c`) — it now measures a retired path, not the live constraint, so
+    # asserting it against `rep["stress_utilisation"]` would be asserting two different
+    # physical quantities happen to agree, which they no longer do by construction.
 
     # And the sweep is a sweep: a different exponent is a different number, in the
     # direction the p-norm's own docstring claims (it approaches the max from below).
