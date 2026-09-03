@@ -1186,7 +1186,7 @@ filletwiring:
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)
 # ---------------------------------------------------------------------------
-# ~15 s, GEOMETRY AND JACOBIANS ONLY, and off the `studies` critical path like
+# ~670 s, GEOMETRY AND JACOBIANS ONLY, and off the `studies` critical path like
 # `filletblock`, `fillet` and `junction`.
 #
 # At the FAITHFUL rim -- `uncap` blend 0.0, what the exporter's `_embed` actually uses --

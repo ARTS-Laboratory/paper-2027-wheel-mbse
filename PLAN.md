@@ -136,6 +136,22 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 > 4/16 and 6/16 genomes — the WIDE weld arcs, 15.9-41.2 deg against the shipped genome's
 > 2.73. The construction is proved; **the rule that places its interior point is not**, and
 > that is a third obstacle neither §37 nor §51 named.
+>
+> **AND AS OF §104 (2026-09-03) THE ARC IS CLOSED WITHOUT ADOPTION, AND ITS BLOCKER IS NO
+> LONGER THE INTERIOR-POINT RULE.** §55 got a fixed rule to the ceiling, §56 built the
+> curved Y, §70-§73 found the mechanism (the smallest wedge, conjunctive with the arc span),
+> and §104 closed the last three successors: the mechanism CALIBRATES on four fresh
+> hold-out band streams (0.800-0.900 held out against 0.550-0.625 majority) and **no
+> threshold triple survives** — at `medium` the calibrated rule loses to the hand-read one
+> it replaces, 0.800 against 0.850 — while a genome-dependent `bend` reaches **nine genomes
+> against the constant's nine**, i.e. nothing. **The decision is NOT ADOPTED, and the reason
+> is one no deferral could have named**: §103 made `fillet=True` unconditional, so the tree
+> now builds the ELEVEN-block filleted sector, and the twelve-block Y is a partition of the
+> seven-block one — on the sector that actually ships the faithful rim is 23.8x and 2.5x
+> WORSE (0.000343 / 0.003334 against 0.008176 / 0.008251). **§103 also demoted the warrant**:
+> the whole-wheel p-norm `rim:P_c` contaminates is REPORTING ONLY, so the peak this
+> construction exists to remove feeds no barrier and no gradient. What is left is a
+> Y-partition of the FILLETED junction, or a priced decision not to build one.
 
 > **ARC 9 IS NEW ON 2026-08-31 AND IT IS ALREADY THROUGH ITS LAST STEP — §97.** It was
 > written and executed in one pass, which is why it appears in this table for the first time
@@ -14498,3 +14514,175 @@ the reason that successor is not this commit's job. `stress`'s own wall (1.0) an
    that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
    revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
    successor 9, unchanged.
+
+---
+
+## §104 — 2026-09-03. THE TRI-BLOCK ARC'S THREE OPEN SUCCESSORS, CLOSED: THE FOLD MECHANISM CALIBRATES AND ITS THRESHOLDS DO NOT, A GENOME-DEPENDENT BEND BUYS EXACTLY NOTHING, AND THE FAITHFUL RIM IS NOT ADOPTED — BECAUSE SINCE §103 THE TREE BUILDS A SECTOR THIS CONSTRUCTION HAS NEVER BEEN MEASURED ON
+
+§73's successor 1 (*"still the oldest thing on the list"* at §94, §96 and §97), §56's
+successor 4, and the decision `UNCAP_PLAN.md` deferred twice in identical words —
+*"then, and only then, the decision to adopt the faithful rim"*.  Full working record:
+`UNCAP_PLAN.md` **STEP 3 RECORD, PART 10**, the part §73 named and never wrote.
+
+### THE PREMISE WAS CHECKED FIRST, AND BOTH HALVES OF IT HAD MOVED UNDER THE ARC
+
+**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1255` now
+carries `agg, c = _stress_aggregate(pn, maxes, q)   # whole-wheel pnorm — REPORTING ONLY`,
+and `stress`/`stress_margin` (`:1300-1310`) read the two per-junction region p-norms alone.
+Verified mechanically rather than off the comment: inside `t3_terms` the bare `agg` is
+assigned at `:1255` and read at exactly ONE place — `:1354`, the report key
+`pnorm_stress_agg_mpa`.  Every other occurrence in the module is a comment or a different
+function's own local, and the `probe_p` sweep builds its own `a_v` rather than reading this
+one.  **So `rim:P_c` — the corner §46 and §52 built the whole ranking on — feeds no barrier, no
+objective term and no gradient.** §52's *"the whole remaining path to a quotable peak"* is
+now a path to a REPORTING number and a fidelity claim.  That is worth having and it is not
+what it was priced at.
+
+**And §103 also changed which sector the tree builds.** `fillet=True` is unconditional in
+`phase_meshes` and `wheel_pool_worker.run_phase`, so every mesh the objective solves is the
+ELEVEN-block filleted sector, while `study_tri_block.region()`
+(`studies/study_tri_block.py:228`) builds `sector_blocks(..., uncap=(True, blend))` with no
+`fillet=` — the seven-block one.  Re-measured at the shipped genome on this tree
+(`MIN_SJ_TARGET` 0.2): the faithful rim's worst block is **0.008176 / 0.008251** unfilleted
+and **0.000343 / 0.003334** filleted, at `coarse` / `medium`.  The re-cut makes it 23.8x and
+2.5x WORSE, which `tests/test_fillet_block.py::test_the_recut_does_NOT_rescue_the_faithful_
+rim` has asserted as an ordering since the fillet arc's PART 10.  The degenerate vertex
+survives — the fillet rounds `P_t`, the ~180-degree corner is at `far_end` — so the region
+is still a triangle that needs partitioning, **but the twelve-block Y is a partition of the
+sector the tree stopped building, and no version of it exists for the one it builds.**
+
+### §73's SUCCESSOR 1: THE MECHANISM IS CONFIRMED ON FRESH DRAWS AND NO THRESHOLD TRIPLE IS
+
+`make trirule`, 958.8 s — the apparatus parked on `origin/tri-rule-holdout` (`8f0a725`,
+2026-08-24), cherry-picked and **re-aimed** from `best_w_valid` (the straight Y on a uniform
+draw — §53's question, closed at §55) to `curved_valid` on `sweep_arc_span_band`'s
+arc-span-conditioned draw, which is §73's actual subject.  Four fresh band streams, seed
+bases 1000 apart because a band draw consumes up to 400 consecutive batches; disjointness
+asserted on hashed gene vectors, not inferred from the spacing.
+
+```
+  config  direction  frozen rule                                        in-sample  HELD OUT  majority
+  coarse  forward    arc > 38.444 OR (arc > 30.556 AND wedge < 17.352)     0.975     0.875     0.625
+  coarse  swapped    arc > 37.779 OR (arc > 30.391 AND wedge < 16.310)     0.975     0.900     0.550
+  medium  forward    arc > 36.569 OR (arc > 30.537 AND wedge < 14.826)     0.975     0.800     0.600
+  medium  swapped    arc > 41.813 OR (arc > 33.272 AND wedge < 18.664)     0.925     0.900     0.575
+```
+
+**The conjunction is real** — every direction beats its own majority baseline by 20 to 35
+points on genomes the fit never saw, at four draws §73 did not have.  **And its constants
+are not.** Every fit lands 0.925-0.975 in sample on a DIFFERENT triple; the two directions
+disagree by 0.67 and 1.04 deg at `coarse` and by **5.24, 2.74 and 3.84 deg at `medium`**.
+At `medium` forward the calibrated rule is **beaten on its own hold-out by the hand-read
+`36.16 / 30 / 17.12` it exists to replace — 0.800 against 0.850** — and at `coarse` forward
+the two tie at 0.875.  §73 refused to publish a threshold because both numbers were fitted
+on the data they were scored on; a proper protocol has now been run and **it upholds that
+refusal rather than repairing it.** §73's counterexample class reproduces too: four of five
+`coarse` hold-out errors are the corner branch firing early at wedges 16.84-17.33, and the
+fifth is a clean genome at arc 39.17.
+
+### §56's SUCCESSOR 4: THE BEND AS A FUNCTION OF THE GENOME IS WORTH NOTHING, MEASURED
+
+`make tribend`, 23.9 s.  §56 named `bow_over_width` as the argument to fit and warned in
+the same sentence that the per-genome optima "are argmaxes over a plateau" — so two
+ONE-parameter families are fit instead against how many genomes stay valid and clear, at
+`w` held fixed to the published cell, under the same fit-freeze-score-once discipline:
+
+```
+  config  family    fit param   in-sample clear/valid   HELD OUT clear/valid   worst min SJ
+  coarse  constant    0.0            14 / 16                 9 / 13             -0.9950
+  coarse  linear      0.0 (k)        14 / 16                 9 / 13             -0.9950
+  medium  constant    0.4             9 / 10                 9 / 12             -0.1930
+  medium  linear      3.0 (k)         9 / 10                 9 / 12             -0.1912
+```
+
+**Nine against nine at both configs**, and the swap says it louder: fitting on the hold-out
+draw picks `0.0` for both families at both configs.  At `coarse` the constant family picks
+zero on its own, which is §56's own "0 rescued at `coarse`" arrived at from the other side.
+The one thing the null result buys is small and is recorded rather than sold: at `medium`
+the linear rule reaches the same coverage while asking the shipped genome for `bend` 0.0291
+instead of 0.40 — 0.5816 against 0.5820, the published straight-Y number to four figures.
+
+### THE DECISION, TAKEN
+
+**Not adopted, in all three parts.** The MESH keeps `UNCAP_DEFAULT = (True, 1.0)` and seven
+blocks — not on the gene-box grounds this arc has tracked since §53 (still true: fixed-w
+12/16 and 10/16, ceiling 15/16 and 12/16, and the 41.2-deg genome refuses at every interior
+point, every bend and every admissible `B`) but because the construction is measured on a
+sector the tree no longer builds.  The QUOTED CELL stays the single-genome argmax: §55 left
+that choice to *"whoever next picks it up"*, and this is that pickup declining — the cell it
+would move is not worse, it is a better figure for a mesh nobody will build, and one stated
+rule has meant one thing across seven sections.  The CURVE stays at `bend` 0.0, now as the
+fitted answer rather than an unadopted measurement.
+
+**`studies/study_tri_block.json` is regenerated** (665.3 s, 19/19 self-checks) because the
+cherry-pick adds a `genes` field to every band row and the committed artifact stopped
+reproducing from its driver the moment it landed.  Diff checked field by field: **41
+differences — one `seconds`, forty `genes` additions, nothing else.**
+
+### HOW THE SUITE WAS VERIFIED, AND ONE CORRECTION TO §103's COST TABLE
+
+`make test` is `pytest` with no arguments — 826 tests in one process — and it was run here
+in batches instead: the ~26 light files in one process (599 tests, 2 xfails, no failures),
+then each `t3`-tier file in its OWN process, sequentially and never concurrently, which is
+§101's one-process-per-cell discipline applied to the suite rather than to a study ladder.
+Measured on this box 2026-09-03, `/usr/bin/time -v`, exit 0 on every one:
+
+```
+  file                     wall time   peak RSS    §103's figure   ratio
+  test_gradient.py           6:33      13.5 GiB      0:06:40       0.98x
+  test_pool.py              12:09      15.3 GiB      0:12:19       0.99x
+  test_objective.py         33:17      51.0 GiB      0:15-17       2.12x
+  test_stage3.py            24:38      29.9 GiB      0:25:14       0.98x
+```
+
+**Three of the four reproduce §103's table to within 2.5%.  `test_objective.py` does not —
+it costs 2.1x what §103 recorded, and peaks at 51.0 GiB, 84% of this 61 GiB box.**  The
+extra time is not swapping: that run logged **one** major page fault.  §103's own entry for
+it is the only one written as a range (`~943 s (0:15-17)`) where its three siblings are
+written to the second (1514 s, 739 s, 401 s), which is the tell that it was the one
+estimated rather than timed.  The figures to carry forward are 33:17 and 51.0 GiB, and they
+are why the four heavy files must not share a process: at 51 GiB for one of them there is
+under 10 GiB of headroom.
+
+Nothing here changes a finding in this section or in §103 — the switch's conclusions were
+reconfirmed, only its price was understated — but a cost table is what the next section
+budgets against, so it is corrected where it will be read rather than left to be
+rediscovered.
+
+#### The successors, ranked — REVISED 2026-09-03 AFTER §104
+
+1. **RE-RUN STAGE 3 AND RE-PROMOTE** — unchanged from §103, and untouched by this section.
+   Still the only thing standing between the fillet switch and a shipped design that is
+   feasible under it.  One process per cell.
+2. **FIND OR DESCEND A GENUINELY BELOW-THE-KNEE WITNESS** — unchanged from §103.
+3. **THEN §97's SUCCESSOR 5** — re-optimise under `heavy_payload` and `long_life`,
+   downstream of 1.  Unchanged.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — unchanged.
+5. **A Y-PARTITION OF THE FILLETED RIM JUNCTION, OR A RECORDED DECISION THAT `rim:P_c`'s
+   FIDELITY IS NOT WORTH ONE.**  This is what the rim tri-block's cell in the arc table now
+   means, and it is a NARROWER item than the bare name it replaces: the seven-block Y is
+   built, valid and un-adoptable, the interior-point rule and the curve are both measured
+   out as far as they go, and what is missing is a construction on the ELEVEN-block sector.
+   **Its own warrant is also smaller than it was** — since §103 the peak it removes feeds no
+   barrier and no gradient — so "decide it is not worth building" is a legitimate outcome
+   and should be priced against building it rather than assumed away.
+6. **The mesh's SECOND junction fillet**; **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**;
+   **re-derive Gate 1 at the 1.2 mm floor** — §97's successor 8, less the tri-block, which
+   is now item 5 with content.
+7. **The sub-element fold, as its own unit**; **per-REGION agreement on a filleted mesh**;
+   **gate 10's `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**;
+   **what makes the 41.2-degree region impossible** (§56, §70 — the last open part of that
+   question, now that the bow and the wedge-arc conjunction are both accounted for); **the
+   REST of §45's audit list**; **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** — §97's successor 9, less §73's calibration and §56's bend,
+   both closed here.
+
+**AND THE RANKING LESSON, RECORDED BECAUSE IT IS THE FOURTH TIME.** §53 wrote that *"when a
+successor's value rests on a construction that does not exist, the thing that stops it is
+often not any of the reasons anyone listed."*  This is the next turn of the same screw: the
+tri-block was ranked, re-ranked and carried for eleven sections on a warrant — the global
+peak on `rim:P_c` — that **another arc quietly retired while this one was parked.** Nothing
+in §94-§103 was wrong to do it, and nothing in this arc's own successor lists noticed.  The
+check that caught it cost one grep of `wheel_objective.py` and one two-config probe, run
+before any study was launched, and it reframed the whole session's third item.  **A parked
+arc's premise is not preserved by parking it.**
