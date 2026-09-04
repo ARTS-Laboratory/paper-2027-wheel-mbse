@@ -4644,3 +4644,33 @@ re-promote against `tests/test_promotion.py`'s checklist, one process per cell.
 **Successor 2**: every fixture this arc has used for "below the knee" now reads above the
 wall, so a genuinely below-the-knee witness does not exist on disk until successor 1
 produces one.
+
+---
+
+# STEP 3 RECORD — PART 15. WHAT PART 14 BROKE WITHOUT TURNING ANYTHING RED: THIS ARC'S OWN A/B COLLAPSED ONTO ONE MESH. 2026-09-03, PLAN §105
+
+PART 14 made `phase_meshes` build `fillet=True` unconditionally.  `study_fillet_optimum`'s
+control arm was the bare `wheel_stage3.Evaluator`, which delegates its mesh construction to
+exactly that function, and was "unfilleted" only because `build_wheel`'s default was.  So
+the control followed the treatment onto the filleted mesh and **this arc's decisive A/B
+became a mesh compared with itself.**
+
+Nothing went red.  The driver ran, `_gate_guard` passed, and `study_fillet_optimum.json`
+recorded two arms that were one mesh under two labels.  A green suite was no evidence,
+because the property that broke had never been asserted anywhere — it was implied by a
+default, and PART 14 moved the caller rather than the default.
+
+**The sibling that survived says why.**  `study_fillet_condition_a.py:129` builds
+`fillet=True if filleted else None` and passes `meshes=` explicitly.  It names the value
+instead of inheriting it, and PART 14 went straight past it.  The rule this arc should carry
+forward: *an arm defined as "whatever the default is" is not an arm.*
+
+Repaired in `213bb96` with a `_UnfilletedEvaluator` carrying `_FILLET = None`, pinned by
+`tests/test_fillet_optimum.py`, which asserts on the `build_wheel` mesh REQUEST and was run
+against the reproduced collapse before it was trusted (it fails on the control reading
+`True`).  **The ARTIFACT is not regenerated** — it is a ~3.7 h descent pair, ranked as §105's
+successor 2 — so `study_fillet_optimum.json` on disk is still PART 14's two identical arms
+and must not be quoted until it is re-run.
+
+Measurements, the pool verdict and the t2/t3 mesh split this uncovered are in **PLAN §105**
+and are not restated here.

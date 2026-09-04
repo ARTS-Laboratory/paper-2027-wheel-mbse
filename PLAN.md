@@ -14686,3 +14686,248 @@ in §94-§103 was wrong to do it, and nothing in this arc's own successor lists 
 check that caught it cost one grep of `wheel_objective.py` and one two-config probe, run
 before any study was launched, and it reframed the whole session's third item.  **A parked
 arc's premise is not preserved by parking it.**
+
+---
+
+## §105 — 2026-09-03. STAGE 3 RE-PRICED ON THE MESH IT NOW BUILDS: 50.47 h SERIAL, THE 8-WORKER POOL IS OUT OF REACH ON THIS BOX, AND THE CONSTANT THAT JUSTIFIES PHASE PINNING IS UNDERSTATED BY 160x
+
+§104's successor 1 — re-run Stage 3 and re-promote — was ranked first and left unpriced.
+Before spending it, the cost model it would be spent against was checked, on the same
+premise-first discipline §104 closed with. **Every number in that model was wrong, and two
+of them were wrong in ways that change what the run is.**  No descent ran; this section is
+the price, and the decision it enables.
+
+### THE MODEL THAT WAS THERE, AND WHY NONE OF IT SURVIVED
+
+`Makefile:253` priced Stage 3 as `steps x phases x 0.7 s` at `coarse`, citing S10.  It has
+never matched S10 at any point in this repository's history:
+
+```
+  S10 artifact   date         per_phase_s   projected_serial_hours
+  506adfe        2026-07-29      18.0494          48.13
+  4fb950f        2026-08-19      17.4899          46.64
+  c9f29e8        2026-08-20      16.0683          42.85   (the committed artifact)
+```
+
+The line was written 2026-07-27, two days BEFORE the oldest S10 reading it cites, and 0.7 s
+is 26x under the cheapest figure S10 has ever produced.  It priced `make stage3` at 0.47 h
+against a study that said 48.  **This is not fillet staleness — it was wrong from the day
+it was written**, and `dca5629` corrects it to the measured figure.
+
+The `48.13 h` still quoted in `studies/study_stage3.py:1238` and `:2219` is the 2026-07-29
+reading, two generations stale; PLAN.md's own number of record is S13's 46.46 h -> 11.77 h.
+
+**And `0.774 s` is not the same quantity as either.**  `study_stage3.py:1230` describes it
+as the per-phase `coord_fn` TRACE cost, paid once per process at priming; `wheel_pool.py:26`
+records its provenance — M7 measured a `coord_fn` jit-cache MISS at 0.774 s against 0.05 s
+for the entire rest of the adjoint, which is why phase slots pin to workers.  It is a
+cache-miss cost, and it never belonged in the same sentence as a per-step price.
+
+### S10, RE-RUN ON THE FILLETED MESH
+
+`--sections cost`, `coarse`, 8 phases, one process, `/usr/bin/time -v`, exit 0.  Filed to a
+scratch `--out`: `_gate_guard.refuse_degraded_out` correctly refuses a `--sections`-degraded
+run under the committed artifact's name, so `studies/study_stage3.json` is untouched.
+
+```
+  quantity              pre-fillet (c9f29e8)   MEASURED 2026-09-03   delta
+  t1_s                        0.00557                0.00645
+  t1_t2_s                     0.30811                0.60100
+  full_s (8 phases)         128.546                151.422           +17.8%
+  per_phase_s                16.0683                18.9277           +17.8%
+  projected serial h         42.85                  50.47             +17.8%
+  peak RSS                      —                   43.4 GiB
+```
+
+**The fillet costs +17.8% of wall time.  That is not what makes this a multi-day run** —
+42.85 h was already multi-day.  What made 300 x 4 affordable was S13's pooled 11.77 h, and
+that is what this section finds is gone.
+
+### THE POOL, MEASURED TWICE, BECAUSE THE FIRST MEASUREMENT WOULD HAVE GIVEN THE WRONG ANSWER
+
+§101's memory law — "a near-fixed JIT-compile cost, not a per-element one", 41.60 GB for one
+filleted `coarse` cell — reads as though every process pays ~41 GB whatever it holds.  Taken
+at face value it says two workers cannot coexist on this 61 GB box and the pool is dead.
+**It is the right measurement of the wrong process.**  Two probes, both one process, both
+sampling `/proc/self/statm` at 0.5 s so that priming and steady state are separated rather
+than collapsed into one maximum:
+
+```
+  process holds        peak RSS    prime      steady
+  1 phase (a WORKER)    9.1 GiB    154.9 s     24.3 s   (same phase, cache hit)
+  2 phases             16.5 GiB      —        148.6 s   (a NEW phase, cache MISS)
+  8 phases (a PARENT)  35.9 GiB   1306.3 s    152.0 / 152.9 s
+```
+
+Two things fall out, and they point opposite ways.
+
+**Steady state IS the peak.**  The 8-phase parent reads 35.78 GiB peak during priming and
+35.89-35.90 GiB in the tail of each steady evaluation, 35.85 GiB idle afterwards.  The
+residency is retained after compile, not a transient spike — so there is no trough to
+stagger worker warmups into, and the obvious rescue does not exist.
+
+**But the residency tracks PHASES HELD, not the compile.**  A worker holding one phase is
+9.1 GiB, a quarter of the parent's 35.9 GiB.  §101's figure came from a one-cell process on
+a different driver and does not describe the pooled worker payload.  So the pool is not dead
+on memory the way §101 alone would predict — it is bounded, and the bound is 2 workers:
+
+```
+  workers  phases each  workers + parent   vs 58 GiB free
+     2          4         ~46 + 9 = ~55       fits, tight
+     4          2         ~66 + 9 = ~75       over
+     8          1         ~73 + 9 = ~82       far over
+```
+
+**The 11.77 h projection needed 8 workers and is unrecoverable.**  The best that fits is 2,
+worth 1.82x on S13's own ladder — **~28 h against 50.47 h serial.**
+
+*The worker-count table is an EXTRAPOLATION and is labelled as one.*  The fit is
+`RSS ~ 5.5 + 3.8 x phases` GiB, which reproduces the measured 1-phase and 8-phase points
+(9.3 / 35.9 against 9.1 / 35.9) but sits BELOW the measured 2-phase point (13.1 against
+16.5), so ~55 GiB for two workers may be optimistic.  No 2-worker pool was stood up: at
+these sizes a wrong guess OOMs the box mid-run, and the arithmetic that would justify the
+attempt is the arithmetic under test.  **Confirming it is a ~30 min S13 run with
+`--pool-workers 2`, and it should precede any pooled descent.**
+
+### THE FINDING WITH THE LONGEST REACH: A CACHE MISS IS NOW ~124 s, NOT 0.774 s
+
+A warm worker re-evaluating ITS OWN phase takes 24.3 s.  The same worker evaluating a NEW
+phase takes 148.6 s.  `wheel_wheel.coord_fn` keys its jit cache on `float(phase)`, so a
+phase landing on a cold worker pays a **~124 s** retrace — against the 0.774 s
+`wheel_pool.py:25-30` cites as the reason phase slots pin to workers.
+
+**The design decision is more right than its stated warrant, by about 160x.**  That is the
+danger: a reader pricing the pinning rule at 0.774 s against "0.05 s for the entire rest of
+the adjoint" would reasonably file it as a micro-optimisation and feel free to trade it away
+— for load balancing, for a work-stealing queue, for `Pool.map`.  At ~124 s per miss it is
+the difference between a pooled step and a pooled step that costs more than serial.
+
+How much of the 124 s is `coord_fn` specifically rather than other phase-keyed retracing was
+NOT isolated, and the number should be read as the cost of a cold phase, not as a new value
+for the `coord_fn` constant alone.
+
+### WHAT MOVED — FOUR COMMITS, ALL GREEN
+
+* `213bb96` — `study_fillet_optimum`'s control arm gets an explicit `fillet=None`, with
+  `tests/test_fillet_optimum.py` pinning the mesh REQUEST.  The only behaviour change here.
+* `dca5629` — `Makefile:253` and `study_stage3.py`'s two `48.13 h` citations, corrected to
+  the measured 18.9 s/phase and 50.47 h, each naming which reading it came from.  Also the
+  note that `--steps` defaults to 60, not the 300 the projection quotes.
+* `55ff7e5` — `wheel_pool.py`'s pinning warrant (0.774 s -> ~124 s on the filleted mesh) and
+  the `default_workers` RAM hazard, documented rather than capped.
+* `42fac9a` — `wheel_requirements.py`'s "two designs" mass spread, which is one design on
+  two meshes.
+
+**The suite was run against all four, one pytest process per test file** — the suite does
+not survive a single interpreter, and `test_objective` alone holds 34-43 GB for 35 min.
+**31 files, 823 passed, 5 xfailed, 0 failed, 0 errors, 0 xpassed.**  With `xfail_strict`
+the last of those is as load-bearing as the others.  The three §103 gates in
+`test_objective` are still xfail, which is correct: the shipped design is still infeasible.
+Wall clock 1.85 h, but the last third overlapped another session's 2-worker pool, so that
+figure is an upper bound under contention and not a measurement of the suite.
+
+### WHAT DID NOT MOVE
+
+`best_solution.json` is untouched.  No descent ran, no promotion, no artifact re-dated.
+`studies/study_stage3.json` is untouched — the re-price was filed to a scratch `--out`
+because the gate guard refused the committed name, which is the guard working.
+§104's successor 1 is still open and is now PRICED rather than closed.
+
+### THE SECOND STALENESS CLASS, WHICH IS NOT THE ONE THAT WAS NAMED
+
+`d2cf9fa` changed two things.  The mesh is one.  The other is
+`DEFAULT_WEIGHTS["stress_margin"]`, 325.0 -> 89.21 — the only value in that table that
+moved (`min_sj` is unchanged; the whole table was diffed across the commit).  It reaches
+every driver that computes a loss with default weights, which is NOT the same set as the
+mesh channel: **five drivers clean on the mesh are stale on the weight**
+(`study_fillet_condition_a`, `study_fillet_cost`, `study_fillet_terms`,
+`study_fillet_pnorm`, `study_fillet_wiring`), and three call sites are exempt because
+`stress_margin` is produced inside `t3_terms` and a `tiers=("t1","t2")` call never reaches
+it.  8 drivers on the mesh channel, 13 on the weight channel.  The full matrix is in the
+successor below rather than here, because none of it is regenerated in this commit.
+
+### THE PREMISE LESSON, RECORDED BECAUSE IT IS THE FIFTH TIME
+
+§104 closed on "a parked arc's premise is not preserved by parking it."  This section is the
+same screw turned once more, on a COST model rather than a finding: `Makefile:253` was wrong
+from the day it was written and survived five weeks and three S10 re-measurements, because a
+comment that prices a job nobody has run is never checked against the job.  The check cost 27 minutes.
+The run it was protecting is 50 hours.
+
+**And one measurement nearly gave the wrong answer.**  §101's memory law is correct and was
+correctly cited, and it still would have produced the wrong pool verdict — because it
+describes a process holding one ladder cell, not a process holding one phase slot.  A law
+measured on one process shape does not transfer to another by its name.
+
+### THE COLLAPSED A/B, AND WHY ITS TEST WAS RUN AGAINST THE BUG BEFORE IT WAS BELIEVED
+
+`study_fillet_optimum`'s control arm was the bare `wheel_stage3.Evaluator`, and its
+"unfilleted" arm was unfilleted only because `build_wheel`'s DEFAULT was.  §103 moved that
+default's effective value for every objective path and the control followed the treatment
+onto the filleted mesh.  Nothing went red.  The driver ran, the guard passed, and the
+artifact recorded two arms that were the same mesh under two labels.  A green suite is not
+evidence when the property that broke was never asserted — it was implied by a default.
+
+The repair is one line (an explicit `fillet=None` on a control subclass, so the two arms
+differ in that keyword and in nothing else) and it is not the interesting part.  The
+interesting part is that the regression test was **run against the reproduced bug before it
+was trusted**: `arm`'s selector was edited back to `cls = _FilletedEvaluator if filleted
+else WS.Evaluator`, and the test failed on `all(f is None for f in control)` reading
+`got [True]` — on the mesh REQUEST, which is the property the study depends on, not on a
+class name or an `_FILLET` attribute, either of which would go green again the day someone
+rewires the selector to another moving default.  Repaired, it is `2 passed` in 129.8 s.
+
+That exercise also caught a defect in the test itself.  The helper runs twice in one test
+and `monkeypatch.setattr` does not undo between calls, so a spy delegating to the CURRENT
+`WW.build_wheel` wrapped the previous spy and appended the second arm's calls to the first
+arm's list.  It read `[True, None]` for the treatment — a failure that LOOKED like arm
+contamination and would have sent a reader to repair something already correct.  The fix is
+to bind the real callable at import; the reason is in the test's header comment so it is not
+re-derived.
+
+Neither the repair nor the test is in this commit.  Both are prepared and the suite has not
+been run against them.
+
+#### The successors, ranked — REVISED 2026-09-03 AFTER §105
+
+1. **RE-RUN STAGE 3 AND RE-PROMOTE**, now priced: **50.47 h serial** for 300 x 4, or ~28 h
+   at 2 workers if the extrapolation above is confirmed first.  Serial is the default and
+   the safe path; the pooled path needs its ~30 min S13 confirmation before it is trusted
+   with a multi-day descent.  Unchanged in rank, and the only thing standing between the
+   fillet switch and a shippable design.
+2. **REGENERATE THE STALE ARTIFACTS, BY CHANNEL** — 8 drivers on the mesh, 13 on the weight,
+   5 of them invisible to a mesh-only triage.  `study_fillet_optimum`'s CODE is repaired in
+   `213bb96` above, but its artifact is not: the committed JSON is the two-identical-arms
+   run, and regenerating it is a ~3.7 h descent pair (`wall_s` 13320.8 on the last one), so
+   it is ranked here rather than done.  `study_mbse_score.json` is stale on both channels
+   while its sibling calibration was regenerated in the very commit that broke it — and per
+   successor 5 it should not be regenerated until the t2 mesh question is settled, or it
+   will have to be run twice.
+3. **FIND OR DESCEND A GENUINELY BELOW-THE-KNEE WITNESS** — unchanged from §103/§104.  Note
+   that of the three `strict=True` xfails, only two key on the shipped genome;
+   `test_below_the_knee_the_rim_fillet_radius_is_dead` keys on the `genes_over_knee`
+   FIXTURE, so re-promotion alone will not reopen it.
+4. **A RAM-AWARE CAP, OR A REFUSAL, IN `wheel_pool.default_workers`** — it is
+   `max(1, min(n_phase, cpu_count))` and consults cores only.  On this box that is 8, and 8
+   filleted workers want ~73 GiB of a 61 GB machine.  `--workers` defaults to `0`, so
+   `make stage3` as shipped is safe and this is a hazard for `-1` and for explicit integers,
+   not a live bug — but it was sized when a worker cost ~2 GiB.  `55ff7e5` DOCUMENTS this at
+   the function; it does not cap it, because choosing the cap needs the 2-worker S13
+   confirmation in successor 1.
+5. **DECIDE WHICH MESH t2 READS** — `objective(meshes=None)` evaluates `mass` and `min_sj`
+   on the unfilleted mesh and the stress and deflection terms on the filleted one, in one
+   call.  §103 opened it (before `d2cf9fa` both tiers were unfilleted and AGREED) and it is
+   worth **+3.867 g, +9.78%**, against a `mass` tolerance of 0.365 g — 10.6x.  Nine call
+   sites are exposed, three read a t2 quantity: `wheel_requirements.score_record` (so the
+   MBSE gate), `study_mbse_score`, and `test_objective.py:994`'s exchange rate.
+   **`wheel_stage3.Evaluator` is NOT among them** — it builds `phase_meshes` itself, and
+   builds `phases[:1]` even when pooled, for this exact reason and with a comment saying so
+   — which is why the descent above can be run before this is settled.  The fix is one line
+   on `wheel_stage3`'s own precedent; it is ranked here rather than done because it moves a
+   committed artifact and can move an MBSE verdict.  Measured at `smoke` on the shipped
+   genome, t2 only: `mesh_mass_g` 39.5488 unfilleted against 43.4161 filleted, and
+   `min_scaled_jacobian` 0.7807 against 0.2877 — so the mesh-validity barrier reads 290%
+   margin above `MIN_SJ_TARGET = 0.2` on a mesh the solver never uses, while the mesh it
+   does use sits at 44%.  Neither trips the barrier at this genome; the exposure is a
+   descent leaning on `mass` walking the filleted mesh toward 0.2 with the barrier flat.
+6. **THEN §97's SUCCESSOR 5**, and the rest of §104's list, unchanged.
