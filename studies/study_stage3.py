@@ -1227,16 +1227,20 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
 
     BOTH SIDES ARE PRIMED BEFORE THE CLOCK STARTS, and without that the measurement is
     nonsense.  The first evaluation in any process pays the jax import, the `wheel_fem`
-    kernel traces and one `coord_fn` trace per phase — measured at 0.774 s each — so an
-    unprimed serial arm compared against a warm pooled one reports a speedup an order of
-    magnitude too large.  What the priming costs is reported as `spawn_s` and
-    `first_call_s` rather than hidden: a pool is built once per run and amortises over
-    hundreds of steps, and that is a claim the numbers should let a reader check.
+    kernel traces and one `coord_fn` trace per phase — measured at 0.774 s each on the
+    UNFILLETED mesh, and at ~124 s on the filleted one (PLAN.md §105: a warm worker's own
+    phase 24.3 s, a new phase 148.6 s) — so an unprimed serial arm compared against a warm
+    pooled one reports a speedup an order of magnitude too large.  What the priming costs
+    is reported as `spawn_s` and `first_call_s` rather than hidden: a pool is built once
+    per run and amortises over hundreds of steps, and that is a claim the numbers should
+    let a reader check.
 
     Full tiers, not `("t3",)`.  T1 and T2 run in the PARENT on both paths — the pool only
     touches the phase loop — so including them is what makes the projected hours
-    comparable to S10's 48.13 h instead of flattering the result by timing only the part
-    that was parallelised.
+    comparable to S10's projection instead of flattering the result by timing only the part
+    that was parallelised.  That projection is 50.47 h as of PLAN.md §105 (2026-09-03, the
+    filleted mesh); the 48.13 h this line used to name was the 2026-07-29 reading, and S10
+    has been re-measured three times since.
 
     `req` IS THE ONE ARGUMENT HERE THAT IS NOT ABOUT TIMING.  A requirement set is
     expanded by `S3.Evaluator` into `force`, `E`, `nu`, the two stress/stroke keywords and
@@ -2216,9 +2220,10 @@ def main():
             lambda: run_multistart(
                 cfg, elites=S3.load_elites(args.elites, limit=n_elite),
                 n_phase=n_phase, steps=feas_steps, n_probe=n_probe),
-        # `cost_phase`, so S13's evaluation is the SAME evaluation S10 projected 48.13 h
-        # from.  A speedup quoted against a different phase count is not a speedup on the
-        # thing anyone is waiting for.
+        # `cost_phase`, so S13's evaluation is the SAME evaluation S10 projects its serial
+        # hours from (50.47 h at §105; 48.13 h when this comment was written, three S10
+        # re-measurements ago).  A speedup quoted against a different phase count is not a
+        # speedup on the thing anyone is waiting for.
         "phase_pool":
             lambda: run_phase_pool(genes, cfg, n_phase=cost_phase,
                                    worker_counts=pool_workers, req=req),

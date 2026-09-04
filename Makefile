@@ -250,7 +250,14 @@ elites:
 	$(PY_OPT) src/wheel_fea.py --dump-population
 
 # Stage 3 proper: projected Adam on the FEA objective.  Serial, so the cost is
-# roughly (steps x phases x 0.7 s) at `coarse` — see study_stage3.py's S10.
+# roughly (steps x phases x 18.9 s) at `coarse` — see study_stage3.py's S10.
+#
+# 18.9 s IS MEASURED ON THE FILLETED MESH (2026-09-03, S10 re-run after PLAN.md §103's
+# switch): 151.42 s for a full 8-phase evaluation, 50.47 h projected for 300 steps x 4
+# starts, 43.4 GiB peak RSS in one process.  The `0.7 s` this line carried from 2026-07-27
+# never matched ANY S10 reading — the oldest on record is 18.05 s (2026-07-29) — so it
+# priced the run 27x under from the day it was written.  Note `--steps` defaults to 60,
+# not the 300 the S10 projection is quoted at.
 stage3:
 	$(PY_OPT) src/wheel_stage3.py
 
