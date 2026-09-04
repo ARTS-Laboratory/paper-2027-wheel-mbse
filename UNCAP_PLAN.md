@@ -1755,3 +1755,227 @@ mechanism with an unvalidated threshold is where this stands.
 **Nothing promoted, no code changed, no artifact regenerated.**  Every number above is
 computed from `study_tri_block.json`'s committed `arc_span_band` and `refusal_search`
 sections except the hold-out, whose stream is named here so it can be re-run.
+
+---
+
+# STEP 3 RECORD, PART 10 — 2026-09-03. THE MECHANISM CALIBRATES AND ITS THRESHOLDS DO NOT, THE GENOME-DEPENDENT BEND BUYS EXACTLY NOTHING, AND THE ADOPTION QUESTION IS NO LONGER THE ONE THIS ARC HAS BEEN ASKING — SINCE §103 THE TREE BUILDS A FILLETED SECTOR AND THE Y-PARTITION IS MEASURED AGAINST THE ONE IT STOPPED BUILDING
+
+PART 2's successor 3, PART 4's successor 3, and PART 9's successor 1, in one session.  Two
+of the three are measurements and they are below.  The third is the decision this file has
+deferred at the end of PART 2 and again at the end of PART 4 — *"then, and only then, the
+decision to adopt the faithful rim"* — and it is taken here, against a blocker neither
+deferral could have named, because it did not exist until eleven days after PART 9.
+
+## FIRST, THE PREMISE — AND BOTH HALVES OF IT HAD MOVED
+
+Every ranking this arc carries traces to §46 and §52: the wheel's global peak sits on
+`rim:P_c`, a corner the part does not have, and the tri-block is the only measured path to
+removing it.  Both halves of that were checked before any study was re-run, because a
+successor whose value rests on a premise is worth exactly what the premise is worth.
+
+**THE QUANTITY IT WAS RANKED TO PROTECT IS NO LONGER READ BY ANYTHING THAT DECIDES.**
+§103 replaced `util_j`'s `Kt * agg` surrogate with a per-junction region p-norm on the
+fillet's own arc.  `wheel_objective.py:1255` now reads
+
+```
+    agg, c = _stress_aggregate(pn, maxes, q)          # whole-wheel pnorm — REPORTING ONLY
+```
+
+and the `stress` wall and `stress_margin` term at `:1300-1310` loop over `agg_hub` and
+`agg_rim` alone.  Checked mechanically rather than read: inside `t3_terms` the bare `agg`
+is assigned at `:1255` and read at exactly ONE place — `:1354`, the report key
+`pnorm_stress_agg_mpa`.  Every other occurrence of the identifier in the module is a
+comment or a different function's own local (`_stress_aggregate`'s and
+`_pnorm_and_grad`'s), and the `probe_p` sweep builds its own `a_v` rather than reading
+this one.  **So `rim:P_c`'s divergent peak reaches no barrier, no objective term and no
+gradient.**  What the tri-block would buy today is a reporting number
+and the mesh's own geometric fidelity — which is worth having, and is not what "the whole
+remaining path to a quotable peak" priced.
+
+**AND THE MESH THE TREE BUILDS IS NOT THE MESH THIS FILE PARTITIONS.**  §103 also made
+`fillet=True` unconditional in `wheel_objective.phase_meshes` and
+`wheel_pool_worker.run_phase`: every mesh the objective solves on is the ELEVEN-block
+filleted sector.  `study_tri_block.region()` (`studies/study_tri_block.py:228`) calls
+`WW.sector_blocks(genes, cfg, uncap=(True, blend), orientation=orientation)` with **no
+`fillet=`** — the unfilleted seven-block one.  Re-measured at the shipped genome on this
+tree, `MIN_SJ_TARGET` = 0.2:
+
+```
+  faithful rim (uncap blend 0.0)        coarse      medium
+    UNFILLETED sector, worst block     0.008176    0.008251
+    FILLETED sector, worst block       0.000343    0.003334
+  filleted sector at the SHIPPED uncap 0.359414    0.362312
+```
+
+The filleted re-cut makes the faithful rim **worse**, by 23.8x at `coarse` and 2.5x at
+`medium` — `tests/test_fillet_block.py::test_the_recut_does_NOT_rescue_the_faithful_rim`
+has asserted that ordering since PART 10 of the fillet arc and it still holds.  The
+degenerate vertex survives the fillet (the fillet rounds `P_t`; the ~180-degree corner is at
+`far_end`), so the region is still a curvilinear triangle and still needs partitioning —
+**but the twelve-block Y this file built is a partition of the seven-block sector, and
+there is no version of it for the eleven-block one.**
+
+## PART 9's SUCCESSOR 1 — THE THRESHOLDS, CALIBRATED.  THE MECHANISM SURVIVES; NO TRIPLE DOES
+
+`make trirule`, 958.8 s.  Driver `studies/study_tri_rule.py`, artifact
+`studies/study_tri_rule.json`, 20 tests in `tests/test_tri_rule.py`.
+
+The apparatus is the one parked on `origin/tri-rule-holdout` at `8f0a725` since
+2026-08-24, cherry-picked and **re-aimed**, which is what its own commit message said it
+needed: it was shaken down on `best_w_valid` — the STRAIGHT Y over `sweep_genomes`' uniform
+draw, §53's question and closed by §55 — and PART 9's subject is `curved_valid` over
+`sweep_arc_span_band`'s draw, conditioned on arc span > 30 deg.  The two enabling changes
+were already in that commit: a `seed_base` kwarg, and a `genes` field on every band row so
+disjointness is asserted from the genes rather than assumed from the seeds.
+
+Four fresh band streams, ~200 s each, seed bases 1000 apart (a band draw consumes batch `b`
+from `seed_base + b` and may use up to 400 of them, so nearer bases would share candidate
+batches verbatim).  Fit, freeze, score the hold-out once, then swap:
+
+```
+  config  role      seed base   drawn   in band   meshed   folds
+  coarse  fit       20262000    25290      57       40      18/40
+  coarse  hold-out  20263000    32047      62       40      15/40
+  medium  fit       20264000    35309      70       40      17/40
+  medium  hold-out  20265000    30895      66       40      16/40
+```
+
+```
+  config  direction  frozen rule                                        in-sample  HELD OUT  majority
+  coarse  forward    arc > 38.444 OR (arc > 30.556 AND wedge < 17.352)     0.975     0.875     0.625
+  coarse  swapped    arc > 37.779 OR (arc > 30.391 AND wedge < 16.310)     0.975     0.900     0.550
+  medium  forward    arc > 36.569 OR (arc > 30.537 AND wedge < 14.826)     0.975     0.800     0.600
+  medium  swapped    arc > 41.813 OR (arc > 33.272 AND wedge < 18.664)     0.925     0.900     0.575
+```
+
+**THE MECHANISM IS CONFIRMED AND IT IS NOT A COINCIDENCE OF PART 9's DRAW.**  Every
+direction beats its own majority baseline by 20 to 35 points, on genomes the fit never
+saw, at four independent draws PART 9 did not have.  The conjunction of a wide arc with a
+tight wedge is real.
+
+**AND NO THRESHOLD SURVIVES.**  In sample every fit lands 0.925-0.975 and each lands on a
+DIFFERENT triple.  Between the two directions the spread is 0.67 deg on `t_wide` and 1.04
+on `t_wedge` at `coarse` — tolerable — and **5.24, 2.74 and 3.84 deg at `medium`**, which
+is not.  Worse for the calibrated rule's dignity: **at `medium` forward it is BEATEN on its
+own hold-out by the hand-read informal rule it exists to replace, 0.800 against 0.850**,
+and at `coarse` forward the two tie exactly at 0.875.  PART 9 declined to publish
+`36.16 / 30 / 17.12` because both numbers were fitted on the data they were scored on.
+A proper protocol has now been run and it does not hand back a better triple; it hands back
+the same family with its thresholds visibly stream-dependent.  **The screen is real, its
+constants are not, and PART 9's refusal to publish them is upheld rather than repaired.**
+
+The five hold-out errors at `coarse` forward are all one shape — four conjunctive false
+fires at wedges 16.84-17.33 and arcs 30.8-31.8, plus one wide-branch false fire at arc
+39.17 / wedge 20.09 — i.e. the same "the corner branch fires too early" and "a wide enough
+arc does not always refuse" that PART 9 found, reproduced on fresh genomes.  Its
+counterexample class was not a fluke either.
+
+Scored on PART 9's OWN committed band (seed base `GENOME_SWEEP_SEED + 1000`), labelled
+outside the protocol: the `coarse` forward rule reaches 0.900 over n = 40.
+
+## PART 4's SUCCESSOR 2 — A BEND THAT IS A FUNCTION OF THE GENOME.  IT BUYS EXACTLY NOTHING
+
+`make tribend`, 23.9 s.  Driver `studies/study_tri_bend.py`, artifact
+`studies/study_tri_bend.json`, 15 tests in `tests/test_tri_bend.py`.
+
+PART 4 named `bow_over_width` as "the obvious argument to fit against" and warned in the
+same breath that the per-genome optima "are argmaxes over a plateau and their scatter is
+partly that."  So nothing here is fitted against those argmaxes.  Two ONE-parameter
+families are fit against what actually matters — how many genomes a rule leaves valid and
+clear — under the same fit/freeze/score-once discipline, at `w` held fixed to this file's
+own published cell, on fresh disjoint 16-genome uniform boxes:
+
+```
+  CONSTANT   bend(bow) = b,                      b in BEND_GRID (0.0 ... 1.0)
+  LINEAR     bend(bow) = clip(k * bow, 0, 1),    k in (0, 1, 2, 3, 4, 6, 8, 10, 15, 20, 30)
+```
+
+The linear family is zero at zero bow by construction, which is
+`test_the_bend_is_INERT_where_the_region_is_fat` made structural instead of measured.
+
+```
+  config  family    fit param   in-sample clear/valid   HELD OUT clear/valid   worst min SJ
+  coarse  constant    0.0            14 / 16                 9 / 13             -0.9950
+  coarse  linear      0.0 (k)        14 / 16                 9 / 13             -0.9950
+  medium  constant    0.4             9 / 10                 9 / 12             -0.1930
+  medium  linear      3.0 (k)         9 / 10                 9 / 12             -0.1912
+```
+
+**Nine against nine at both configs.**  The genome-dependent family does not reach one more
+genome than the number it was built to beat, on data neither had seen.  And the swap says
+the same thing louder: fitting on the hold-out draw picks `0.0` for BOTH families at BOTH
+configs — a freshly drawn uniform box does not want a bend at all.
+
+**AT `coarse` THE CONSTANT FAMILY ITSELF PICKS ZERO**, which is the honest version of PART
+4's own `coarse` column (0 rescued there).  The curve's two rescues live at `medium`, on the
+0.498-bow and 0.264-bow genomes, and a rule fit on sixteen fresh genomes does not
+rediscover them.
+
+**ONE THING THE NULL RESULT DOES BUY, AND IT IS SMALL.**  At `medium` the linear rule
+reaches the same held-out coverage while asking the shipped genome for `bend` = **0.0291**
+instead of the constant's **0.40** — 0.5816 against 0.5820, i.e. the published straight-Y
+number to four figures.  Genome-dependence does not reach more genomes; it reaches the same
+ones without imposing a bend on a genome whose region is fat.  That is a property worth
+recording and it is not a reason to adopt anything.
+
+## THE DECISION: THE FAITHFUL RIM IS NOT ADOPTED, AND THE REASON IS NEW
+
+Three sub-decisions, each stated with its own reason.
+
+**THE MESH — DECLINED.**  `UNCAP_DEFAULT` keeps its `(True, 1.0)` rim entry and
+`sector_blocks` keeps its seven blocks.  Not on the ground this arc has tracked since PART
+2 — that the interior-point rule folds on a quarter of the gene box, which is still true
+(fixed-w 12/16 and 10/16, ceiling 15/16 and 12/16, and the 41.2-degree genome refuses at
+every interior point, every bend and every admissible `B` at both configs) — but on the
+harder ground above: **the construction is a partition of a sector the tree stopped
+building on 2026-09-03**, and on the sector it does build the faithful rim is worse than the
+one this partition was measured against.  A rule that held across the whole gene box would
+not change that.
+
+**THE QUOTED CELL — DECLINED, AND THE REASON HAS CHANGED FROM PART 3's.**  PART 3 measured
+a genome-robust interior point, left it unadopted, and said in terms that *"the choice of
+which number this arc quotes going forward is made by whoever next picks it up."*  This is
+that pickup, and it declines — not because the cell is worse (at `coarse` it costs the
+shipped genome nothing, 0.6262 either way, while fixing two more drawn genomes) but because
+the number it would change describes an un-adoptable construction.  One stated rule — the
+argmax over the published grid at the shipped genome — has meant one thing across seven
+sections of `PLAN.md`; substituting a different argmax inside a file whose construction is
+now blocked for an unrelated reason spends that consistency and buys a better figure for a
+mesh nobody will build.  **PART 3's "there is no reason not to prefer it" was correct when
+written and is superseded by the premise, not by the measurement.**
+
+**THE CURVE — CONFIRMED AT 0.0, NOW BY MEASUREMENT.**  `bend` keeps its 0.0 default.  PART
+4 left it there as an unadopted measurement; this section makes it the fitted answer at
+`coarse` and a tie at `medium`.
+
+## WHAT IS UNCHANGED
+
+**Nothing promoted, `best_solution.json` untouched, no threshold moved anywhere in the
+tree, `UNCAP_DEFAULT` still `(True, 1.0)`, `sector_blocks` still seven blocks, `bend` still
+0.0, and the default mesh bit-identical.**  Pinned by
+`test_nothing_here_is_wired_into_the_mesh_the_tree_BUILDS` in all three tri test files.
+
+`studies/study_tri_block.json` IS regenerated — 665.3 s, 19 of 19 self-checks — because the
+cherry-picked commit adds a `genes` field to every `arc_span_band` row and the committed
+artifact therefore stopped reproducing from its own driver the moment the pick landed.  The
+diff was checked field by field rather than eyeballed: **41 differences, of which one is
+`seconds` and forty are the `genes` additions on the forty band rows.  Nothing else moved.**
+
+## WHAT PART 10 LEAVES
+
+1. **A Y-PARTITION OF THE FILLETED RIM JUNCTION, OR A DECISION THAT `rim:P_c`'s FIDELITY IS
+   NOT WORTH ONE.**  This replaces "a rule for the interior point that holds across the gene
+   box" as the binding constraint.  The rule is still imperfect and no longer decides
+   anything: the eleven-block sector needs its own partition before any rule on the
+   seven-block one can ship.  And the honest form of the alternative is on the table —
+   since §103 the peak `rim:P_c` carries feeds no barrier and no gradient, so the cost of
+   never fixing it is a reporting number and a fidelity claim, not a wrong answer.
+2. **THE SCREEN IS USABLE EVEN THOUGH ITS CONSTANTS ARE NOT.**  A band draw costs ~200 s
+   because 25-35k genomes are drawn to find forty above 30 degrees.  A fold screen at
+   0.875-0.900 held-out accuracy is a real instrument for conditioning such a draw, and it
+   is now measured rather than hand-read — provided it is refit per stream and never quoted
+   as a constant.
+3. **WHAT MAKES THE 41.2-DEGREE REGION IMPOSSIBLE IS STILL UNNAMED**, and it is now the only
+   part of PART 6's question still open: the bow explains where the bend is needed, the
+   wedge-and-arc conjunction explains which regions fold, and neither separates the genome
+   that refuses everything from the 0.498-bow one the curve reaches.

@@ -775,8 +775,29 @@ def test_the_t1_term_lists_stay_in_lockstep(genes):
     assert len(v) == len(WO.T1_NAMES)
 
 
+@pytest.mark.xfail(reason=(
+    "PLAN.md §102/§103: the fillet switch replaced `Kt * agg` with the region-p-norm term, "
+    "and under it the shipped genome's hub utilisation is 1.0557 -- ABOVE THE WALL (1.0), "
+    "not merely above the 0.80 knee this test was written to sit below. This is not a "
+    "threshold to move: §99 already predicted the faithful reading would land there "
+    "(\"the shipped hub sits at 1.1415\"), and MARGIN_KNEE_UTIL/the wall are policy, not "
+    "fitted to whichever genome happens to be on disk. It is a fixture -- the shipped "
+    "genome as a below-knee witness -- that no longer exists; finding or descending a "
+    "genome that is faithfully below the knee is future work, not this switch's job. "
+    "strict=True via pyproject.toml, so this reopens itself the day the shipped genome (or "
+    "its replacement) reads below 0.80 again."))
 def test_the_fillet_radii_are_not_dead_genes(genes):
-    """§15 defect 2, as the regression that would catch it coming back.
+    """RED SINCE THE FILLET SWITCH, AND THE PREMISE IS WHAT BROKE, NOT THE CLAIM.
+
+    Nothing measured here says the below-knee branch stopped being flat. What is measured
+    is that the shipped genome stopped being IN it -- see the xfail reason. Do not repair
+    this by lowering `MARGIN_KNEE_UTIL` or by evaluating at a phase count chosen to make
+    the number come out; the fix is a design that is genuinely below the knee on the
+    region-p-norm term, and finding or descending one is PLAN.md §103's successor work.
+
+    THE ORIGINAL DOCSTRING FOLLOWS, unedited, because it records what the test was for.
+
+    §15 defect 2, as the regression that would catch it coming back.
 
     `R_hub` and `R_rim` reach the loss only through `Kt`, and `Kt` reached it only through
     `soft_barrier(util - 1)`, which is identically flat below the knee. So the two genes
@@ -818,6 +839,15 @@ def test_the_fillet_radii_are_not_dead_genes(genes):
         f"the only thing that prices the fillets should be flat")
 
 
+@pytest.mark.xfail(reason=(
+    "PLAN.md §102/§103: under the region-p-norm term `genes_over_knee`'s rim reads "
+    "util 1.21257 -- above the WALL, not merely above the 0.80 knee the fixture was named "
+    "for the hub crossing. This is the same fixture-drift §38's uncap flip already caused "
+    "once (see the sibling xfail two tests down): the region term reads the true fillet "
+    "stress directly rather than diluting it through `Kt * agg`, and every genome measured "
+    "so far moves further from the knee under it, not closer. Not a threshold to move -- a "
+    "fixture that no longer sits where its name says. strict=True, so this reopens itself "
+    "the day some genome's rim reads faithfully below 0.80 again."))
 def test_below_the_knee_the_rim_fillet_radius_is_dead(genes_over_knee):
     """`R_rim` carries no gradient while the rim sits under the knee.  STILL LIVE.
 
@@ -843,28 +873,19 @@ def test_below_the_knee_the_rim_fillet_radius_is_dead(genes_over_knee):
         f"nothing the part pays for")
 
 
-@pytest.mark.xfail(reason=(
-    "PLAN.md §38: the 2026-08-18 uncap default RE-PRICED the stress term and no genome in "
-    "this tree is known to clear the 0.80 knee any more.  Uncapping deletes the two "
-    "re-entrant corners per junction the shipped part does not have, so the p=4 Gauss "
-    "p-norm the utilisation is built on falls ~10%.  Measured at coarse / 8 uniform "
-    "phases, the same settings this fixture uses: this fixture 0.85506 -> 0.77297, and "
-    "stage3_minwall_best_0.8.json — the THINNEST WALL and therefore the most stressed "
-    "design in the tree — reads 0.78664, also under.  This is NOT a threshold to move: "
-    "MARGIN_KNEE_UTIL stays at 0.80 and the new utilisations are the faithful ones.  It "
-    "is a fixture that no longer exists, and the honest reading is that `stress_margin` "
-    "is flat at every design currently on disk — including the shipped one, which was "
-    "descended with 0.1317 of it live.  strict=True via pyproject.toml, so this reopens "
-    "itself the day a design goes above the knee on the faithful mesh."))
 def test_but_above_the_knee_the_fillet_radii_are_live(genes_over_knee):
-    """RED SINCE THE UNCAP DEFAULT, AND THE PREMISE IS WHAT BROKE, NOT THE CLAIM.
+    """REOPENED AT §102/§103, XPASS(strict) UNDER THE OLD XFAIL — the xfail marker is
+    removed rather than kept, because the claim it named as unreachable is reachable again.
 
-    Nothing measured here says `R_hub` stopped carrying gradient above the knee.  What is
-    measured is that the fixture stopped being above the knee — see the xfail reason, and
-    PLAN.md §38 for why that is a finding about the objective rather than about this test.
-    Do not repair it by lowering `MARGIN_KNEE_UTIL` or by evaluating at a rung chosen to
-    make the number come out; the fix is a design that is genuinely above the knee on the
-    faithful mesh, and finding or descending one is §38's successor #1.
+    PLAN.md §38 marked this xfail on 2026-08-18: the uncap default re-priced the stress
+    term and no genome on disk cleared the 0.80 knee any more, so `genes_over_knee`'s hub
+    (0.85506 -> 0.77297) fell under it. The fillet switch (§102/§103) replaced `Kt * agg`
+    with the region-p-norm term, and under it `genes_over_knee`'s hub does not merely clear
+    the knee again, it clears the WALL — MEASURED at util 1.68672 (`coarse`, 8 uniform
+    phases, 2026-09-02), 1.973x the 0.85506 reading this test was written against, and
+    sitting at the low end of §99's own forecast that "the true fillet stress runs
+    1.68x-2.76x over what Kt*agg reported". The claim below was never wrong; the tree just
+    had no design left that was above the knee on the faithful mesh, and now it does.
 
     THE ORIGINAL DOCSTRING FOLLOWS, unedited, because it records what the test was for.
 
@@ -902,6 +923,18 @@ def test_but_above_the_knee_the_fillet_radii_are_live(genes_over_knee):
     assert g[12] < 0.0, f"dL/dR_hub is {g[12]:+.3e} — the hub fillet is dead above the knee"
 
 
+@pytest.mark.xfail(reason=(
+    "PLAN.md §102/§103: the region-p-norm term reads the shipped genome's hub at util "
+    "1.0557, over the hard `stress` wall at 1.0 -- so `stress` no longer reads 0.0 on it "
+    "and `selection_key` no longer calls it tier 0. The SPLIT this test names (an "
+    "OBJECTIVE that only prices margin, never gates, versus the BARRIER that still does) "
+    "is untouched -- the classification asserts above this comment all still hold -- what "
+    "broke is the incidental live check that the shipped genome happens to sit under the "
+    "wall, which the more faithful term now says it does not (§99 already forecast this: "
+    "\"the true fillet stress runs 1.68x-2.76x over what Kt*agg reported\"). Re-promotion "
+    "under the new term is PLAN.md §102 successor 2, explicitly deferred -- this is not "
+    "that. strict=True, so this reopens itself the day the shipped genome (or its "
+    "replacement) reads back under the wall."))
 def test_the_margin_term_prices_and_never_gates(genes):
     """It is an OBJECTIVE, and the distinction is the whole design of it.
 
@@ -944,13 +977,22 @@ def test_the_margin_weight_is_the_exchange_rate_it_claims_to_be(genes):
        fidelities at once (DEFECT8_PLAN.md step 1b).
 
     The rate is a property of the WEIGHT and the KNEE, not of whichever genome happens to
-    be in the tree, so it is now evaluated at the reference utilisation the weight was
-    calibrated at. That is §18's own 0.855, kept deliberately so this change is a change of
-    SHAPE at a fixed rate. The mass term still comes from the shipped genome, because it is
-    the thing being traded against and it is a real quantity.
+    be in the tree, so it is evaluated at the reference utilisation the weight was
+    calibrated at.
+
+    THE REFERENCE POINT MOVED TO THE WALL AT PLAN.md §99, AND `u_ref` MOVES WITH IT. §18's
+    0.855 was an empirical anchor that needed no separate justification as long as a real
+    design supplied it; §99 found that once the region-p-norm term replaced `Kt * agg`
+    (§102/§103), no measured genome sits in `[0.80, 1.0]` any more, so an unoccupied anchor
+    was replaced with `util_ref = 1.0` — the wall itself, which needs no design to stand on
+    because it calibrates the soft term's slope to the point the hard `stress` barrier
+    takes over. `DEFAULT_WEIGHTS["stress_margin"]` (89.21) is `§99`'s own formula at this
+    exact `u_ref`, so the rate this test checks is the rate the weight was actually fit to.
+    The mass term still comes from the shipped genome, because it is the thing being traded
+    against and it is a real quantity.
     """
     _, _, brk = WO.objective(genes, CFG, phases=WO.phase_stencil(n_phase=N_PHASE, scheme="uniform"))
-    u_ref = 0.855
+    u_ref = 1.0
     k = WO.MARGIN_KNEE_UTIL
     one_pct_of_mass = 0.01 * brk["terms"]["mass"]["value"]
     one_pct_of_util = WO.DEFAULT_WEIGHTS["stress_margin"] * (
@@ -1209,16 +1251,22 @@ def test_the_report_carries_both_junctions_and_the_headline_is_their_max(genes):
     junction is not currently worst and reintroduce the argmax kink the p-norm exists to
     blur.  If the report ever showed one number, a run could round the hub while the rim
     was the binding one and nothing would say so.
+
+    THE DIVISOR CHANGED AT §102/§103: `util_j` used to be `Kt_j * sigma_nominal /
+    ALLOWABLE` — this test's own assertion said so — and is now the junction's own
+    region-p-norm QoI over `ALLOWABLE`, with `Kt` dropped entirely (`kt_hub`/`kt_rim` stay
+    in the report, but only for the geometric `hub_fillet_cap_mm`/`r_hub_effective_mm`
+    story below, which the switch does not touch).
     """
     phases = WO.phase_stencil(n_phase=1, scheme="uniform")
     rep = WO.t3_terms(genes, CFG, phases=phases,
                       meshes=WO.phase_meshes(genes, CFG, phases))["report"]
 
-    agg, allow = rep["pnorm_stress_agg_mpa"], WO.ALLOWABLE_STRESS_MPA
+    allow = WO.ALLOWABLE_STRESS_MPA
     for j in ("hub", "rim"):
         assert rep[f"stress_utilisation_{j}"] == pytest.approx(
-            rep[f"kt_{j}"] * agg / allow, rel=1e-12), (
-            f"the {j} utilisation is not Kt_{j} * sigma_nominal / ALLOWABLE")
+            rep[f"{j}_region_pnorm_mpa"] / allow, rel=1e-12), (
+            f"the {j} utilisation is not {j}_region_pnorm_mpa / ALLOWABLE")
     assert rep["stress_utilisation"] == max(rep["stress_utilisation_hub"],
                                             rep["stress_utilisation_rim"])
 
@@ -1344,3 +1392,40 @@ def test_every_objective_term_is_classified_by_the_svk_rescore_gate():
         f"study_svk_rescore classifies terms the objective no longer has: "
         f"{sorted(classified - terms)}")
     assert not set(S.BARRIER_NAMES) & set(S.HEADLINE_NAMES)
+
+
+@pytest.mark.parametrize("scheme", ["uniform", "rqmc"])
+def test_t2_reads_the_same_mesh_t3_solves(genes, scheme):
+    """`mass` and `min_sj` must come off the geometry the stress terms are solved on.
+
+    PLAN.md §107.  `objective` used to build T2's `mesh0` with a bare
+    `WW.build_wheel(genes, cfg)` whenever the caller passed no `meshes`, and that differed
+    from `phase_meshes` in TWO independent ways: the fillet (since §103, worth +9.78% of
+    mass) and the phase (`phase_deg=0.0` against an rqmc stencil's 0.46875 deg offset,
+    which predates the fillet entirely).  Neither turned anything red, because no test
+    compared the two paths against each other.
+
+    THE ASSERT IS THAT THE TWO PATHS AGREE, not that either equals a recorded constant.
+    A golden mass here would need re-blessing every time the mesh changes, and it would go
+    green again the moment both paths moved together in the wrong direction — which is the
+    failure being pinned.  `tiers=("t2",)` keeps this in mesh space, no solve and no
+    adjoint, so it costs milliseconds rather than the minutes a t3 comparison would.
+
+    BOTH SCHEMES, because they fail for different reasons: under `uniform` the phases
+    agree and only the fillet separates the two paths, while under `rqmc` the phase
+    separates them as well.  A `uniform`-only test would go green on a tree that had
+    fixed the fillet and left the phase bug in place.
+    """
+    ph = WO.phase_stencil(n_phase=4, scheme=scheme)
+    _, _, fallback = WO.objective(genes, CFG, phases=ph, tiers=("t2",))
+    _, _, explicit = WO.objective(genes, CFG, phases=ph, tiers=("t2",),
+                                  meshes=WO.phase_meshes(genes, CFG, ph[:1]))
+
+    assert fallback["report"]["mesh_mass_g"] == pytest.approx(
+        explicit["report"]["mesh_mass_g"], rel=1e-12), (
+        f"T2's mesh fallback disagrees with `phase_meshes` on mass under {scheme!r} — "
+        f"the tier is being read on a mesh the T3 terms do not solve")
+    assert fallback["report"]["min_scaled_jacobian"] == pytest.approx(
+        explicit["report"]["min_scaled_jacobian"], rel=1e-12), (
+        f"T2's mesh fallback disagrees with `phase_meshes` on min_scaled_jacobian "
+        f"under {scheme!r}")

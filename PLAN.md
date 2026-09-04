@@ -68,9 +68,19 @@
 > | `DEFECT5_PLAN.md` | defect 5, closed as "none of them" | §21 |
 > | `REDS_PLAN.md` | the five inherited reds | §31 |
 >
-> **`HUB_PLAN.md` was ALREADY dangling before this cleanup** — `wheel_wheel.py:73` says "See
-> HUB_PLAN.md" and no such file was deleted today because none existed. Do not attribute that
-> one to the deletion above; the hub fillet milestone's record is §16 and §24.
+> **`HUB_PLAN.md` was ALREADY dangling before this cleanup** — `wheel_wheel.py:140` and
+> `wheel_wheel.py:3638` say "See HUB_PLAN.md" and no such file was deleted today because none
+> existed. Do not attribute those to the deletion above; the hub fillet milestone's record is
+> §16 and §24.
+>
+> **[CORRECTED 2026-09-04 — this named `wheel_wheel.py:73`, which is the fillet-area
+> cross-check (§87) and has been since the line moved, and it named ONE site where there are
+> TWO. Re-measured the same day: the headline count in the paragraph above is still exact —
+> **70** citations to the six deleted files across `.py`, `.md` and the `Makefile`, excluding
+> this file. The two named sub-counts have drifted with the code, `SVK_PLAN.md` reading 28
+> today against the 30 stated and `BUILD_PLAN.md` 21 against 22, and are left as the dated
+> record they are. All ten sections the table below points at resolve, and each one's title
+> corroborates its row.]**
 >
 > **The open work is no longer in this file.** It is one file per arc — see *Open arcs* below.
 
@@ -136,6 +146,31 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 > 4/16 and 6/16 genomes — the WIDE weld arcs, 15.9-41.2 deg against the shipped genome's
 > 2.73. The construction is proved; **the rule that places its interior point is not**, and
 > that is a third obstacle neither §37 nor §51 named.
+>
+> **AND AS OF §104 (2026-09-03) THE ARC IS CLOSED WITHOUT ADOPTION, AND ITS BLOCKER IS NO
+> LONGER THE INTERIOR-POINT RULE.** §55 got a fixed rule to the ceiling, §56 built the
+> curved Y, §70-§73 found the mechanism (the smallest wedge, conjunctive with the arc span),
+> and §104 closed the last three successors: the mechanism CALIBRATES on four fresh
+> hold-out band streams (0.800-0.900 held out against 0.550-0.625 majority) and **no
+> threshold triple survives** — at `medium` the calibrated rule loses to the hand-read one
+> it replaces, 0.800 against 0.850 — while a genome-dependent `bend` reaches **nine genomes
+> against the constant's nine**, i.e. nothing. **The decision is NOT ADOPTED, and the reason
+> is one no deferral could have named**: §103 made `fillet=True` unconditional, so the tree
+> now builds the ELEVEN-block filleted sector, and the twelve-block Y is a partition of the
+> seven-block one — on the sector that actually ships the faithful rim is 23.8x and 2.5x
+> WORSE (0.000343 / 0.003334 against 0.008176 / 0.008251). **§103 also demoted the warrant**:
+> the whole-wheel p-norm `rim:P_c` contaminates is REPORTING ONLY, so the peak this
+> construction exists to remove feeds no barrier and no gradient. What is left is a
+> Y-partition of the FILLETED junction, or a priced decision not to build one.
+
+> **ARC 9 IS NEW ON 2026-08-31 AND IT IS ALREADY THROUGH ITS LAST STEP — §97.** It was
+> written and executed in one pass, which is why it appears in this table for the first time
+> with its steps already closed. It changes no default and moves no genome, and the row's
+> claim to that effect is a test rather than a sentence. **It is also the arc that found a
+> `shall` being evaluated at a load it was never given** — `_buckling_ratio` read the module's
+> force and modulus whatever the caller loaded the wheel with, so any heavy or hot requirement
+> set would have had its `buckling` barrier reported PASS at the shipped mission.
+>
 
 | # | file | the question | cost |
 |---|---|---|---|
@@ -147,6 +182,7 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 | 6 | `MESHSTEP_PLAN.md` | The 16.8–30.3× rim-OD element-size step the contact patch sits on (§20) | small, needs G7 first |
 | 7 | `EXPORTPREC_PLAN.md` | Make the exporter write the overlap at 4 dp instead of 2 — §28's better fix, deferred | small, touches a shipped artifact |
 | 8 | `BOUNDARY_PLAN.md` | Defect 5's boundary placement, worth 0.61% of loss (§21) | small, lowest ranked |
+| 9 | `MBSE_PLAN.md` | A requirements layer: do `FORCE_LBS`, `TARGET_DEFLECTION_MM`, `SAFETY_FACTOR` and `MIN_WALL_MM` encode a MISSION, and can the wheel be re-optimised and verified against a different one? **STEPS 0-8 DONE 2026-08-31 — §97.** The four constants decode to 3.0 kg on three wheels at 0.263 m/s and every derivation closes to floating point; the weight table is a 51/43/6/0.3/0 portfolio; `objective(genes, req=baseline())` is bit-identical to `objective(genes)`; two of five named profiles come back NON-COMPLIANT. What is left is not the arc — it is what §97 ranks: a re-optimisation under a failing profile, which costs a `medium` descent this arc was forbidden to spend | steps 0-8 spent: three drivers, one of which solves (25 m 12 s); no descent, no promotion |
 
 **Ranking note — SETTLED.** 1 was put ahead of 2 deliberately, against §30's ranking, on the
 argument that it was cheap and that "if the answer is *linear is not acceptable*, it changes
@@ -272,8 +308,16 @@ committed study artifacts describe a wheel promoted out of their named file thre
 > `pyproject.toml`, so **an xfail that starts passing is a failure** and either one reopens
 > itself automatically. **A non-zero failure count now means something again — treat any red
 > as new.** Nothing is left waiting on a decision: the hub compliance bound was measured,
-> put up, and **resolved in §31 item 4 — it stays at `0.03` as an accepted deficit**, with
+> put up, and ~~**resolved in §31 item 4 — it stays at `0.03` as an accepted deficit**~~, with
 > the curvature route (`cy4`) filed as a design successor for Stage 2/3's objective.
+>
+> **§31's RESOLUTION WAS SUPERSEDED IN §109 (2026-09-04), AND THAT XFAIL IS A GREEN TEST
+> NOW.** Both legs §31 stood on are gone: the deficit WAS a mesh artefact after all — 76% of
+> the level was the unfilleted re-entrant corner — and the design the bound was calibrated on
+> does not build on the mesh the objective solves. The gate reads the FILLETED mesh against
+> `< 0.0117` and is named
+> `test_the_hub_junction_holds_a_small_minority_of_the_compliance`. **`make test` still reads
+> `0 failed`; the tree carries four strict xfails and this is no longer one of them.**
 
 **M8b-i.6 step 2 landed.** The stress constraint is no longer a p-norm rescaled to the true
 max by a measured ratio. It is now
@@ -12862,10 +12906,17 @@ the distinction was immaterial and not that it was unnecessary to make.  At the 
   b029622  rim               0.996984  0.986820  0.984294               0.256%
 ```
 
-The hub's region does not converge and the rim's does, by two and a half orders of
-magnitude, and the diagnostic that explains it is reported beside every cell.  A junction's
-fillet is meshed as two blocks, both starting ON the arc; the `b` half — welded to the ring
-— carries the coarser first element layer:
+The hub's region does not converge and the rim's does — by two and a half orders of
+magnitude at the shipped genome and by one at `b029622` — and the diagnostic that explains
+it is reported beside every cell.
+**[CORRECTED 2026-09-04 — "by two and a half orders of magnitude" was written under a
+sentence covering BOTH genomes and holds for only one.  Shipped is 3.037% / 0.008% = 379.6x =
+2.58 orders; `b029622` is 2.853% / 0.256% = 11.1x = **1.05 orders**.  The finding is unchanged
+at both cells — the hub's region does not converge and the rim's does — and only the size of
+the gap was stated from one column of a four-row table.]**
+
+A junction's fillet is meshed as two blocks, both starting ON the arc; the `b` half — welded
+to the ring — carries the coarser first element layer:
 
 ```
   first element layer touching the arc, mm, coarse/medium/fine
@@ -13333,3 +13384,2885 @@ keeps every word it had.
     (§91); **carry `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a
     FUNCTION of the genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth
     revision**; **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+---
+
+## §97 — 2026-08-31. ARC 9, STEPS 0-8. THE FOUR CONSTANTS DECODE TO ONE MISSION AND IT IS A PLACED LANDING — 3.0 kg ON THREE WHEELS AT 0.263 m/s — WHILE THE WEIGHT TABLE IS A 51/43/6/0.3/0 PORTFOLIO AND NOT THE 99/0.01 ITS OWN LOSS SHARE READS. AND A `shall` WAS BEING EVALUATED AT A LOAD IT WAS NEVER GIVEN
+
+`MBSE_PLAN.md` — open arc 9, written to ask whether this tree's design constants are a
+REQUIREMENT SET or four numbers that happen to be in a file, and whether the wheel can be
+re-optimised and verified against a DIFFERENT one. Steps 0-8 are done. Three drivers
+(`make mbsebase`, `make mbsecal`, `make mbsescore`), one new module
+(`src/wheel_requirements.py`), one new front end (`src/wheel_mbse.py`), 43 tests, and a
+`--requirements` flag on `wheel_stage3.py`. **`best_solution.json` did not move and no
+default changed** — that is a gated claim, not a hope, and the gate is the bit-identity
+test in the middle of this section.
+
+Two of the three drivers solve nothing: Step 0 reads the committed record and does
+arithmetic, Step 4 reads four committed records and does arithmetic. Only Step 5 solves,
+25 m 12 s for seven evaluations at `coarse`/SVK/8 phases — the five profiles plus the
+bit-identity pair, each with its gradient.
+
+### STEP 0 — THE CONSTANTS RUN BACKWARDS, AND THEY CLOSE
+
+`FORCE_LBS = 15.0`, `TARGET_DEFLECTION_MM = 2.0`, `SAFETY_FACTOR = 1.6`,
+`MIN_WALL_MM = 1.2`. Read forwards these are inputs nobody has to justify. Read backwards
+they are a vehicle:
+
+```
+  auw_kg 3.0   n_wheels 3   k_asym 1.5   field grass   ambient 20 C
+  landings 1000   nozzle 0.4 mm   perimeters 3        ->  sink rate 0.263346 m/s
+                                                          load factor n_land 4.53592
+```
+
+```
+  constant                 shipped   derived   rel err   from
+  force_n                  66.7233   66.7233   0.0e+00   auw*g/n_wheels * n_land * k_asym
+  target_deflection_mm      2.0       2.0      0.0e+00   max(STROKE_FLOOR, stroke[grass])
+  allowable_stress_mpa     25.0      25.0      0.0e+00   sigma_ult(20C)*sigma_ret(T)*fff/SF
+  min_wall_mm               1.2       1.2      1.9e-16   nozzle_mm * perimeters
+```
+
+**Four constants, four independent derivations, and every one closes to floating point.**
+The 1.9e-16 on `min_wall_mm` is `0.4 * 3`, which is what forced `Requirements.baseline()`
+to READ the constants while `Mission.implied_baseline()` DERIVES them — two objects,
+because Step 1 wanted an exact `==` and Step 0 wanted a measurement, and one function
+cannot be both. `MBSE_PLAN.md`'s record block states that decision.
+
+**The circularity is resolved by ORDER, not by a fixed point.** `n_land = 1 + v_z^2 /
+(2 g s_eff)` needs a stroke and the stroke is what the deflection target sets — but this
+repo loads to a FORCE and not to an indentation, so the field class and the floor set the
+stroke FIRST and the load factor follows. There is no iteration and nothing to converge.
+
+### AND THE ENVELOPE IS A PLACED LANDING, WHICH IS THE STEP THAT IS WORTH KNOWING
+
+`FORCE_LBS = 15.0` is one equation in four unknowns, so what it fixes is a
+three-parameter FAMILY and nothing on disk picks between the members. Over the 30 of them
+the driver sweeps (1, 2, 3, 5 and 8 kg x 3 and 4 wheels x `k_asym` 1.0, 1.5 and 2.0, all
+at the shipped 2.0 mm stroke) the implied touchdown sink rate spans **0.0735 to 0.7171
+m/s** and every one of them is under 1 m/s. What happens at 1 m/s:
+
+```
+  v_z m/s   n_land    force N   x shipped   stroke needed mm   / wheel radius
+  0.2633     4.536      66.72      1.00            2.00           0.041
+  0.5       13.746     202.21      3.03            7.21           0.149
+  1.0       51.986     764.71     11.46           28.84           0.595
+  1.5      115.718    1702.21     25.51           64.89           1.338
+  2.0      204.943    3014.71     45.18          115.36           2.378
+```
+
+**At a 1.0 m/s touchdown the same vehicle needs 11.5x the modelled load, or 28.8 mm of
+stroke — 59.5% of the wheel's own radius.** The shipped wheel is not a shock absorber and
+this table is the reason it does not have to be: the load case it was built for is a
+placed landing, and the honest statement of the envelope is the one written down here
+rather than a claim about what the wheel survives. `runway_m` is NOT a mission field for
+the same reason — see `MBSE_PLAN.md`'s correction 3.
+
+### STEP 2 — THE TEMPERATURE MODEL IS AN INTERPOLATION, AND IT SAYS SO IN ITS OWN OUTPUT
+
+`MaterialCard` carries two anchor tables and refuses to extrapolate off either end:
+
+```
+  T C     -20    0     20    40    50    55    60
+  E ret   1.18  1.09  1.00  0.85  0.68  0.45  0.15
+  sig ret 1.12  1.06  1.00  0.86  0.72  0.55  0.25
+```
+
+```
+  ambient C    E MPa   allowable MPa
+    -20       2714.0      28.00
+      0       2507.0      26.50
+     20       2300.0      25.00      <- the shipped constants
+     30       2127.5      23.25
+     40       1955.0      21.50
+     50       1564.0      18.00
+     55       1035.0      13.75
+     60        345.0       6.25      <- t_max_service_c; above it the card REFUSES
+```
+
+**Held out at every interior anchor and interpolated from its neighbours the worst error
+is 14.2% (`E`, at 50 C) and 11.8% (`sigma`, at 55 C).** So it is published as a piecewise-linear
+INTERPOLATION between asserted engineering anchors and not as a model. The scope note
+prints with every hot profile and is quoted here because it is the sentence the whole
+thermal axis stands on:
+
+> QUASI-STATIC KNOCKDOWN ONLY — no creep, no fatigue, no thermal expansion, no
+> self-heating, no rate dependence. PLA creeps badly above ~45 C, so a static allowable
+> at elevated temperature is OPTIMISTIC.
+
+**And the shipped wheel has essentially no thermal headroom.** It sits at util 0.8201 on
+its own committed record; the allowable at 40 C is 0.860 of the 20 C value, which puts the
+same wheel at **0.9536** on that arithmetic — under 1.0, and 4.6% from it, at an ambient a
+black wheel on tarmac reaches without trying.
+
+Service life is the same shape and is knocked down the same way: 1.0 to 1000 landings,
+1.15 at 1e4, 1.30 at 1e5, applied to `SAFETY_FACTOR` — so the allowable runs 25.0, 25.0,
+21.74, 19.23. **That is a decade slope asserted as a policy, not a fatigue curve
+measured in this tree**, and §97 does not let it be read as one.
+
+### STEP 3 — A `shall` WAS BEING EVALUATED AT A LOAD IT WAS NEVER GIVEN
+
+`MBSE_PLAN.md`'s Step 3 table says the plumbing is two constants, because *"`force`, `E`
+and `nu` already thread"*. They thread into T3. **`_buckling_ratio` read
+`W.FORCE_PER_SPOKE_NEWTONS` and the 20 C `YOUNGS_MODULUS_PLA_MPA` off the module whatever
+the caller loaded the wheel with.** A heavy or a hot requirement set would have had its
+`buckling` BARRIER — a `shall`, admissible value 0.0 — computed at the shipped mission and
+reported PASS.
+
+**A verifier that reports a barrier at zero for a load it never applied is worse than one
+that reports nothing**, because the zero is evidence and the silence is not. Both are
+arguments now, defaulting to the module constants, and the function divides by
+`NUMBER_OF_SPOKES / 3.0` internally so callers speak whole-wheel force. Two tests gate
+that the barrier moves with the load and with the modulus, and a third gates that the bare
+call is unchanged.
+
+#### The bit-identity result, which is what licenses everything above
+
+```
+  objective(genes, req=Requirements.baseline())  vs  objective(genes)
+
+  scalar       38.785946819991601  vs  38.785946819991601   identical
+  gradient     14/14 components identical, worst |diff| 0.000e+00
+  breakdown    14/14 terms identical
+```
+
+Not "agrees to 1e-12" — identical, in the scalar, in every gradient component and in every
+one of the fourteen breakdown terms. It is a driver check AND a test
+(`test_req_baseline_is_bit_identical_to_naming_no_requirements`), and it is joined by three
+cache-audit tests, because `_T1_CACHE` keys on the weights and `_KT_CACHE` does not, and a
+stale jit trace is exactly how a requirement set would leak into a run that never asked for
+one. Pooled == serial under a NON-baseline requirement set is gated too — `problem_kw` is
+pickled to the phase workers, so `force`, `E` and `nu` have to survive the transport.
+
+### STEP 4 — THE WEIGHT TABLE IS A PORTFOLIO, AND LOSS SHARE IS THE WRONG INSTRUMENT
+
+The question a requirements layer has to answer about `DEFAULT_WEIGHTS` is *what does this
+tree care about, in percent*. The obvious reading is each term's share of the loss at the
+shipped genome. **It is wrong, and on one axis it is wrong by a factor of 3400:**
+
+```
+  term            loss at 09e8188    share
+  mass                 32.440977    99.073%
+  smoothness            0.167828     0.513%
+  stress_margin         0.131681     0.402%
+  deflection            0.004146     0.0127%
+  phase_ripple          0.000000     0.0%
+```
+
+**`deflection` is small in the loss because the requirement is MET.** Loss share measures
+SATISFACTION, not priority — a term that is being served perfectly contributes nothing and
+reads as "nobody cares", which is the exact inversion of the truth. The other candidate,
+`dL/dx`, measures where the last descent happened to stop.
+
+What does work is the cost of a stated reference deviation: `c_T = L(d_T)`, the loss that a
+1%-miss costs at the reference genome.
+
+```
+  term            reference deviation d_T                      c_T        p_cal
+  mass            1% of MASS_REFERENCE_G  (0.365 g)         0.300000     51.354
+  deflection      1% relative on the stroke target           0.250000     42.795
+  stress_margin   1% of utilisation above MARGIN_KNEE_UTIL   0.032500      5.563
+  smoothness      1% of the curvature-rate integral          0.001678      0.287
+  phase_ripple    1 point of std/mean axle drop              0.000000      0.000
+                                                             --------
+                                                             0.584178
+```
+
+**The shipped weight table is a 51/43/6/0.3/0 portfolio: 51% on mass, 43% on stroke, 6% on
+durability, 0.3% on print finish and NOTHING AT ALL on rolling.** That is a defensible
+allocation and it is nobody's stated intent, because until today it was never stated.
+
+#### The map, which is cost per point and not `w * p / p_cal`
+
+`w_T(p)` is whatever weight makes term `T`'s reference deviation cost `sum(c_cal)/100 *
+p_T`. Stated that way there is no `0/0` at `phase_ripple` — the axis a user is most likely
+to want to move first, precisely because it is the one this tree has never bought any of —
+no special case in the code, and:
+
+```
+  identity at p_cal        weights_from_priorities(p_cal) == DEFAULT_WEIGHTS
+                           worst relative error 2.70e-16 (on `mass`)
+  conservation             37 reallocations, including all five single-axis extremes:
+                           sum(c_T) is invariant, worst |err| 1.11e-16
+  barriers                 all nine copied through untouched, gated
+```
+
+`sum p = 100` is an exact conservation law rather than an algebraic near-miss, and the nine
+`shall` weights are structurally out of reach of the points — `Priorities`' axis set is
+asserted equal to `OBJECTIVE_TERMS`, which `wheel_objective.py:394` already asserts is
+disjoint from and exhaustive with `BARRIER_TERMS`. **Points move `should`s only, and that
+is the whole shall/should spine in one line of validation.**
+
+#### The ripple anchor, and what it would cost to buy any
+
+One point of `rolling` buys `w_phase_ripple = 58.4178`. Bought at parity with `light`
+(51.354 points) that is `w = 3000.0` — exactly what the "same cost as one reference mass
+deviation" rule gives, arriving from a different direction. And at that weight the SHIPPED
+wheel's own ripple of 0.104429 — **10.4 points of it, not one** — would cost 32.716,
+**1.0085x its entire mass term**. Buying rolling smoothness at parity with mass is not a
+tweak to the table; it is a different wheel.
+
+#### Hold-out, because a calibration on one genome is not a rule
+
+Re-anchored at each of the three genomes that shipped before the current one
+(`350f4c7`, `e4219f3`, `e126cc3`), no share moves by more than **0.289 points** — because
+`smoothness` is the only term whose reference deviation reads a genome at all.
+`best_solution_ga_beam.json` is deliberately excluded: its `loss_terms` come from a
+different objective, and §14's rule about comparing losses across objectives applies to
+calibration inputs too.
+
+### STEP 5 — THE COMPLIANCE TABLE, AND IT CAN COME BACK BOTH WAYS
+
+Five one-field profiles against the shipped genome, `coarse`/SVK/8 phases:
+
+```
+  profile          force N   allow MPa    E MPa   target mm    drop mm   util hub   verdict
+  baseline          66.723     25.0000   2300.0       2.000    1.90110    0.77876   COMPLIANT
+  hot_day           66.723     21.5000   1955.0       2.000    2.27126    0.90299   COMPLIANT
+  heavy_payload    100.085     25.0000   2300.0       2.000    2.95803    1.16309   NON-COMPLIANT
+  rough_field       44.432     25.0000   2300.0       3.500    1.21247    0.50801   COMPLIANT
+  long_life         66.723     19.2308   2300.0       2.000    1.90110    1.01239   NON-COMPLIANT
+```
+
+**The baseline's own stroke `should` is the tightest row in the table**: it MET at a
+relative deviation of **0.049449 against a +/-0.05 band**, which is 1.1% of the tolerance
+to spare. The shipped wheel is not comfortably inside its stroke requirement; it is
+*just* inside it, and the band is a policy this arc states rather than one it found.
+
+**Two of five come back NON-COMPLIANT and both are bound by SHALL-STRESS.** That is what
+makes the three compliant rows worth reading: a verifier that cannot fail is a formatter.
+
+- **`heavy_payload`** — 4.5 kg instead of 3.0. Utilisation 1.163, and the wheel is 16.3%
+  over an allowable it clears by 22% at the baseline. A 50% payload increase is not
+  absorbed anywhere.
+- **`long_life`** — 1e5 landings instead of 1e3. Nothing about the load changes; the
+  fatigue knockdown moves the allowable to 19.23 MPa and the same wheel goes to 1.0124.
+  **It breaches by 1.2%, which means the shipped design is good for 1e4 landings and not
+  for 1e5** — and the number that decides it is the asserted decade slope, so this row is
+  a policy consequence and is labelled as one.
+- **`hot_day`** — 40 C. Compliant at 0.903, and the second-largest thing in this table:
+  the allowable falls 14% and the modulus falls 15%, so the wheel both softens (drop
+  2.271 mm, 13.56% past its target) and loses margin at once.
+- **`rough_field`** — the interesting one, below.
+
+#### COMPLIANCE IS NOT LOSS, AND `rough_field` IS THE PROOF
+
+`rough_field` is COMPLIANT with a loss of **1100.59**, against the baseline's 38.79.
+Its stroke target is 3.5 mm and it drops 1.212, so `SHOULD-DEFLECTION` misses by 65% —
+the term is two-sided about the target because for a compliant mechanism the travel IS the
+feature, and a wheel too stiff misses exactly as a wheel too soft does. **A `should` can
+never change compliance**, which is gated by test in both directions (a missed `should`
+does not fail; a breached `shall` does). A 28x loss and a PASS are answers to two
+different questions and the table is built so they cannot be confused.
+
+#### And the wheel misses one `should` in every single profile
+
+`SHOULD-MASS` reads MISSED at 39.548 g against 36.5 everywhere, because
+`MASS_REFERENCE_G` is a NORMALISER — *"v2.0 cantilever-era best, as a normaliser"* — and
+this tree has no mass budget. The row says so in its own statement field rather than
+inventing one. `smoothness` and `phase_ripple` report **NO LIMIT STATED** for the same
+reason. **Two of the five `should`s in this tree have no stated limit and the
+third is measured against a normaliser, and naming that is more useful than three numbers
+nobody chose.**
+
+### WHAT A RECORD WRITTEN BEFORE TODAY VERIFIES AS
+
+`unstated`. Every committed artifact in this tree predates `req_hash`, so `verify` reports
+its provenance as unstated rather than as matched — and refuses outright if a record
+carries a hash that disagrees with the requirement set it is being checked against.
+**No artifact in this tree currently claims compliance with anything**, and after this arc
+that is a visible fact rather than an absence.
+
+### SCOPE, AND WHAT IS NOT ESTABLISHED
+
+**Two different numbers for the same wheel appear above and neither is wrong.** Step 0's
+util 0.8201 and drop 1.9974 are READ from `best_solution.json`'s committed metrics, which
+are `medium`/SVK/8-phase from §26's descent. Step 5's 0.7788 and 1.9011 are SOLVED at
+`coarse`. Step 0 solves nothing by design, and a `coarse` verdict is a `coarse` verdict.
+
+**The thermal knockdown is not a life model and the fatigue slope is not a fatigue curve.**
+Both are asserted policies with in-file citations, both refuse to extrapolate, and the
+scope note prints with every hot profile. Nothing in this tree has measured PLA at
+temperature.
+
+**`STROKE_EFFICIENCY = 0.5` is an assumption** — the linear-spring figure — and it sits
+directly under the load factor, so every `n_land` above inherits it. `STROKE_BY_FIELD_CLASS`
+is three asserted numbers.
+
+**No `medium` production descent was run and nothing is promoted.** `--requirements` is
+proved at `coarse` and by test. **`ALLOWABLE_STRESS_MPA`'s `FFF_KNOCKDOWN` / `SAFETY_FACTOR`
+derivation is not re-opened**; the card recovers `sigma_ult(20C) = 50.0` from it rather than
+asserting a fourth number. **`studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25`
+is Roache's GCI factor, is unrelated, and was not touched.**
+
+**The 51/43/6/0.3/0 portfolio is arithmetic on the shipped weights, not a measurement of an
+optimum.** It says what the current table buys. It does not say the table is right.
+
+### WHAT MOVED
+
+`src/wheel_requirements.py` and `src/wheel_mbse.py` are new. `studies/study_mbse_baseline.py`,
+`studies/study_mbse_calibration.py` and `studies/study_mbse_score.py` are new with their three
+`.json` artifacts. `tests/test_requirements.py` is new, 43 tests. `wheel_objective.t3_terms`
+and `wheel_objective.objective` take `target_deflection_mm`, `allowable_stress_mpa` and
+`req` as keywords with `None` sentinels resolving to the module constants, and refuse a
+`req` given together with any keyword it would set. `_buckling_ratio` takes `force` and
+`youngs_modulus`. `wheel_stage3.py` takes `--requirements`, refuses it together with
+`--min-wall`, and writes a `requirements` block and a `req_hash` into every record.
+
+**AND THE ARC WROTE TWO DEFECTS OF ITS OWN, BOTH CAUGHT BEFORE THE COMMIT.**
+
+The first is `t3_terms`' two new keywords, written as
+`allowable_stress_mpa=ALLOWABLE_STRESS_MPA`. **A module global in a signature binds once,
+at import.** `tests/test_objective.py`'s product-rule test moves the stress barrier off
+zero by `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` — the only lever it has —
+and a default captured at `def` time does not see it. The test went RED with its own
+message: *"the barrier is still flat even at a 2 MPa allowable, so this test is asserting
+0 == 0 and would pass with any product rule at all"*. It was written to detect exactly the
+thing that happened to it. Both keywords are `None` sentinels resolved in the body now,
+and the binding time is pinned by its own test rather than left to the product-rule test
+to notice again.
+
+The second:
+It detects `--min-wall` by comparing it against `W.MIN_WALL_MM` and sat AFTER
+`set_min_wall`, which makes its own test false by construction — so a user who typed both
+would have had the requirements file silently win a floor that sets four of the fourteen
+genes. The check now runs before either flag moves anything, and the test pins the
+ORDERING rather than the message.
+`studies/study_stage3.py` takes `--requirements` and its gate guard refuses to file such a
+run under the committed name. The `Makefile` gains `mbse`, `mbsebase`, `mbsecal` and
+`mbsescore`. `MBSE_PLAN.md` gains a record block naming four places it was wrong and two
+decisions it left open. **Nothing in `src/` changed behaviour at the shipped requirement
+set, and the bit-identity test is what says so.**
+
+**AND TWO DATED QUOTATIONS OF `wheel_objective` ARE NOW QUOTATIONS OF THE PRE-ARC
+SOURCE, DELIBERATELY LEFT ALONE.** Threading the two requirements moved the deflection
+and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1153`
+is now :1165 and no longer reads a module global, and :1234 is now :1246 and reads
+`allowable_stress_mpa` where §93 and §94 quote it as `ALLOWABLE_STRESS_MPA`
+(`studies/study_fillet_kt.py:14`, `FILLET_PLAN.md`, `MBSE_PLAN.md` Step 3). Those are
+records of what was read on a date and rewriting them would falsify the account, so they
+keep their text and this paragraph is the pointer — the same treatment the six deleted
+arc files' citations get at the top of this file. The one citation that IS updated is the
+pool's `problem_kw` line, :1115 -> :1127, because it is a live pointer in four places and
+the line it names still does the same thing.
+
+#### The successors, ranked — NEW 2026-08-31 AT §97
+
+1. **STATE THE KNEE AND THE REFERENCE POINT** — §96's successor 1, unchanged and still
+   first. §97 sharpens it rather than displacing it: `MARGIN_KNEE_UTIL = 0.80` is now the
+   limit of a published `should` row that the shipped wheel meets by 0.021, and the
+   replacement stress term puts it 0.34 past it. The policy is now visible in a compliance
+   table, which is the right place to argue with it.
+2. **A MASS REQUIREMENT, OR AN EXPLICIT REFUSAL TO HAVE ONE** — new at §97. The wheel
+   misses `SHOULD-MASS` in every profile against a limit that is a normaliser, and `mass`
+   holds 51.4 of the 100 points. The largest single allocation in the table is being made
+   against a number nobody chose as a budget.
+3. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — §96's successor 2, unchanged.
+4. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A.
+5. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — new at §97, and the first thing
+   this arc built the machinery for. Two named profiles fail on `SHALL-STRESS` at the
+   shipped genome; `wheel_stage3.py --requirements` will descend against either, and what
+   comes back answers whether the failures are the wheel's or the load case's. Costs a
+   `medium` descent, which this arc was forbidden to spend.
+6. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5, behind 1, 3 and 4.
+7. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — new at §97. 1.5 is an
+   asserted asymmetry factor sitting directly on the force, multiplying everything
+   downstream of it, and it is the least evidenced number in the Step 0 chain.
+8. **The rim tri-block** (§96's 5); **the mesh's SECOND junction fillet** (§96's 6);
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law** (§14's item 6); **re-derive Gate 1 at
+   the 1.2 mm floor** (open arc 4, which §97 gives a second consumer — `min_wall_mm` is
+   now a process requirement with a caller that can move it).
+9. **The sub-element fold, as its own unit** (§89's item 3); **calibrate §73's two
+   thresholds on a proper hold-out protocol**; **per-REGION agreement on a filleted mesh**
+   (§86); **gate 10's `phase_ripple` cost** (§91) — which §97 reprices: buying any rolling
+   smoothness at parity with mass costs 1.0085x the entire mass term; **carry
+   `axle_drop_interp_mm` into `study_contact`** (§67); **a bend that is a FUNCTION of the
+   genome** (§56); **the REST of §45's audit list** (§49); **G1's fourth revision**;
+   **§32's successors 3 and 4**; **the element-validity check** (§44).
+
+## §98 — 2026-09-01. §97's SUCCESSOR 2, ADDRESSED: NO MASS REQUIREMENT IS STATED, BECAUSE THE ONE PRECEDENT ON DISK IS DENOMINATED IN A MASS `verify()` DOES NOT READ
+
+§97 found the shipped wheel missing `SHOULD-MASS` in every profile *"against a limit that
+is a normaliser"* and ranked stating a real budget, or an explicit refusal, second. This
+section takes the second.
+
+**THE ONE CANDIDATE ON DISK DOES NOT SURVIVE ITS OWN UNITS.**
+`Mission.implied_baseline`'s docstring (`wheel_requirements.py:470-476`) argues the vehicle
+from *"the shipped wheel is 48.64 g as an OCC solid, three of them are 146 g, and a landing
+gear that is ~5% of all-up weight"* — 146/3000 = 4.867%. That is the only mass-fraction
+reasoning this tree has ever stated for a landing wheel. `Requirements.verify`'s
+`SHOULD-MASS` row reads `metrics.mesh_mass_g`, the meshed-area x width x density figure a
+Stage-3 solve produces — **39.5478 g at the shipped genome, 43.4133 g on the filleted mesh
+`FILLET_PLAN.md` PART 7-10 measured** (`study_fillet_wiring.json`, `b029622`'s pair:
+39.6576 / 43.1247). Against the 48.64 g the 5% figure was computed from, those are 10.8% to
+18.7% LOW — three different numbers for approximately the same wheel, and the spread is
+not noise: an OCC solid integrates the exported geometry exactly, a mesh integrates over
+whatever elements the exporter's simplification produced, and nothing in this tree has
+ever reconciled the two. **Re-deriving 4.867% against `mesh_mass_g` instead of the OCC
+figure is not arithmetic** — the fraction was computed from one convention and the
+compliance row checks another, and moving the fraction over means either re-measuring the
+OCC mass at every scored genome (a CAD-kernel call `verify()` cannot make) or accepting a
+budget that is honest about being denominated in the wrong units. Neither is "cheap in
+machine time and expensive in judgement" the way §97 asked for; both are a new
+measurement wearing a policy's clothes.
+
+**SO NONE IS STATED**, and `mass` is moved into the same group as `smoothness` and
+`phase_ripple`: `_should_row`'s `mass` branch (`wheel_requirements.py`) now returns
+`limit: None, verdict: "NO LIMIT STATED"` instead of comparing against
+`W.MASS_REFERENCE_G`, and the comment above `BARRIER_EVIDENCE` is corrected from *"two of
+the five [have no stated reference]"* to three. `MASS_REFERENCE_G` ITSELF DOES NOT MOVE —
+it stays exactly what it always was, the DEFAULT_WEIGHTS mass-term normaliser and the
+`REFERENCE_DEVIATION["mass"]` anchor `wheel_requirements.py:524` uses to calibrate points
+into weights. Those are both about how much the OPTIMISER cares about a gram of mass, not
+about whether a design is COMPLIANT, and §97's own text already named the confusion this
+separates: a "limit" that is actually a normaliser was the thing making `SHOULD-MASS` read
+as a real requirement it never was.
+
+**WHAT THIS COSTS.** `test_a_missed_should_never_makes_a_design_non_compliant`
+(`tests/test_requirements.py`) used the shipped wheel's mass miss as its natural example of
+a `should` that does not block shipping. With `mass` no longer able to MISS, the test now
+verifies the shipped record against `field_class="paved"` instead — the shipped wheel's own
+1.9974 mm axle drop is 99.7% over a 1.0 mm paved-strip target, still ships, and the
+demonstration survives on a `should` that was never in question. A new test,
+`test_mass_has_no_stated_limit`, pins the `NO LIMIT STATED` verdict directly so the next
+person who reaches for a mass budget finds a red test naming why one was not there rather
+than silence.
+
+**AND `studies/study_mbse_score.json` IS REGENERATED**, because its five profile tables
+carry `SHOULD-MASS`'s old `limit: 36.5` / numeric `margin` / `MISSED` verdict verbatim —
+`make mbsescore`'s own artifact-carries-its-commit rule.
+
+### WHAT MOVED
+
+`src/wheel_requirements.py` (`_should_row`'s `mass` branch and the comment above
+`BARRIER_EVIDENCE`), `tests/test_requirements.py` (one test rewritten, one added),
+`studies/study_mbse_score.json` regenerated. `MBSE_PLAN.md`'s record block gains this as a
+third design decision. **`src/wheel_objective.py` did not change — `MASS_REFERENCE_G` and
+`DEFAULT_WEIGHTS["mass"]` are untouched, and no default the optimiser reads moved.**
+
+#### The successors, ranked — REVISED 2026-09-01 AFTER §98
+
+1. **STATE THE KNEE AND THE REFERENCE POINT** — §97's successor 1, unchanged, still open.
+2. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — §97's successor 3, unchanged.
+3. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A.
+4. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+5. **EXECUTE THE FILLET SWITCH** — behind 1 and 3.
+6. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+7. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+8. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
+
+## §99 — 2026-09-01. §97's SUCCESSOR 1, ADDRESSED: THE KNEE STAYS AT 0.80 ON ITS OWN EVIDENCE, THE REFERENCE POINT MOVES TO THE WALL BECAUSE NO DESIGN OCCUPIES THE BAND ANY MORE, AND THE WEIGHT THAT FALLS OUT IS 89.21
+
+`FILLET_PLAN.md` STEP 3 RECORD PART 10 is the full derivation; this is the record.
+`study_fillet_wiring.py` (PART 9 / §96) refused to pick either policy and printed the
+curve instead — *"it does not pick a weight, a knee or a reference point... the input a
+policy needs is the curve, which is here."* This section reads that curve and decides.
+
+**THE KNEE.** `MARGIN_KNEE_UTIL = 0.80`'s comment gives two pieces of evidence: a
+PRINT-PROCESS judgement (layer adhesion, orientation and batch scatter are +/-10-20%
+effects, so margin below 0.8 of allowable is spending mass on nothing) and a
+CORROBORATION (the shipped genome sat at 0.77952 under the old formula, essentially at the
+knee). `study_fillet_wiring.json`'s `knee.evidence_survives` is `false` — under the
+replacement reading the shipped hub sits at 1.1415, nowhere near it. **That kills the
+corroboration, not the derivation**: the process-variability argument is about the
+material and the printer, not about which formula estimated the utilisation, and losing
+the coincidence is the SAME finding PART 7-9 already made from the other side — the true
+fillet stress runs 1.68x-2.76x over what `Kt * agg` reported, so no design was ever really
+sitting at the knee. `MARGIN_KNEE_UTIL` is UNCHANGED at 0.80.
+
+**THE REFERENCE POINT.** §18's 0.855 was an empirical anchor — wherever the design sat —
+and needed no separate justification as long as a real design supplied it. PART 9 removed
+that design: both measured genomes, both junctions, now sit outside `[0.80, 1.0]`. Of the
+three candidates the driver printed, 0.855 is unoccupied and 0.90 is arbitrary in the way
+0.855 was not (nothing argues for the exact midpoint). `util_ref = 1.00`, the wall,
+survives because it needs no design to stand on: it calibrates the soft term's slope to
+the point the hard `stress` barrier takes over, which is what an exchange rate for
+"approaching the limit" should be pinned to. **`util_ref = 1.0` is TAKEN.**
+
+**THE WEIGHT.** `w = mass_term / (2*(util_ref - knee)*util_ref)` at those two settings, on
+the shipped genome's filleted mass term (35.6822 g, the mesh the replacement term would
+actually read): **`w = 89.21`**, a 3.6x cut from today's 325.0. `b029622` gives 88.61 from
+its own filleted mass term — 0.665% apart on an unrelated genome, the corroboration a
+wall-anchored rate is supposed to produce (it depends on the reference genome's own mass,
+not on where that genome's utilisation happens to sit).
+
+**THIS IS A POLICY RECORD, NOT A CODE CHANGE.** `wheel_objective.MARGIN_KNEE_UTIL` and
+`DEFAULT_WEIGHTS["stress_margin"]` are untouched — both feed the CURRENT `Kt * agg`
+construction, and the replacement term is not wired in: Condition A (which mesh is right,
+§94) and the `(r, p)` sweep across §82's held-out genomes still stand ahead of execution,
+and the rim `P_c` hole (§96 item 3) is still open. What closes here is the INPUT the switch
+needs when it runs — `0.80` and `89.21` — not the switch itself.
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and green; nothing in
+`src/` changed; nothing is promoted.
+
+### WHAT MOVED
+
+`FILLET_PLAN.md` (STEP 3 RECORD PART 10). No `src/` file, no test, no study artifact — the
+derivation runs entirely on `studies/study_fillet_wiring.json`, already committed at §96.
+
+#### The successors, ranked — REVISED 2026-09-01 AFTER §99
+
+1. **`(r, p)` ACROSS §82's THIRTY-TWO HELD-OUT GENOMES** — §97's successor 3, unchanged.
+2. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A.
+3. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+   Costs a `medium` descent this tree has not yet spent.
+4. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5. The knee (0.80) and reference weight
+   (89.21) are now stated; what stands ahead of it is 1 and 2 above and the rim tri-block.
+5. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+6. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+7. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
+
+## §100 — 2026-09-01. §99's SUCCESSOR 1, MEASURED: `(r, p) = (0.45, 16)` IS NOT A CONSTANT OF THE OBJECTIVE UNDER THE ORDER FLOOR — AND NEITHER IS ANY OTHER PAIR IN THE SWEPT GRID — BUT EVERY CELL THAT WOULD BIND THE BARRIER CONVERGES, INCLUDING BOTH CELLS THAT BREACH
+
+`studies/study_fillet_pnorm_box.py` (`make filletpnormbox`).  §95's own scope note named
+this the open half of its finding: *"TWO GENOMES IS NOT A DESIGN SPACE... `r` = 0.45 and
+`p` = 16 hold at the shipped genome and at `b029622` and the two disagree about the hub's
+largest `p` by 50%... §82's thirty-two held-out genomes are the instrument for that and
+this does not use them."*  This is that measurement, reusing `study_fillet_pnorm`'s
+quantity, kernel and Richardson machinery UNCHANGED and widening `genomes` from two named
+paths to the held-out draw's own gene vectors — `verdict()`'s cross-cell answer already
+aggregates over every `(genome, junction)` cell it is handed, so nothing new had to be
+written to ask the box the same question §95 asked at two points.
+
+### THE BOX
+
+28 genomes: the two named ones plus 26 of `study_fillet_block.json`'s 32 held-out
+genomes (seed 20267823, 8 per flank orientation) — the 6 excluded are the ones §82
+already knows refuse their own filleted sector at their own radii (three at the hub's
+tangent point passing the next sector's corner, one more at the hub, two at the rim; the
+reasons are on record in `study_fillet_block.json` and are not re-derived here).  Of the
+26 attempted, **zero refused the ladder solve** — every one built and converged three
+mesh densities under LINEAR, one phase, both kernels, both junctions.  84 solves,
+713.1 s.
+
+### AT THE ALREADY-TAKEN CELL, `r_sup = 0.45 mm`, `p = 16`: 25 OF 56 CLEAR, NOT 4 OF 4
+
+```
+  gates cleared (region resolved AND order >= 1.50 on both h)     25 of 56 cells
+  read over the allowable (util > 1.0) at the finest rung          2 of 56 cells
+```
+
+The two that breach are `b029622/hub` (util 1.6760) and `shipped/hub` (util 1.1415) —
+the same two §95 already reported over the allowable at two designs — and **both clear
+the order floor at this exact cell**: 1.77/1.91 and 2.33/2.33.  The highest-utilisation
+cell that MISSES the floor is `ho12/rim` at util 0.6936 (order 1.19/1.46) — comfortably
+under the knee.  Every cell at or above util 0.72 converges; every miss sits below it.
+
+### AND NO `(r, p)` IN THE GRID RESOLVES EVERYWHERE — NOT EVEN THE MOST GENEROUS RADIUS
+
+`r_sup = 0.90 mm` is mass-resolved at all 28 genomes (worst quadrature drift 0.066%, the
+smallest of any radius swept) — the MASS gate, section A's own instrument, passes
+everywhere.  But at that radius **7 of 56 cells have no exponent in `{2..30}` clearing
+order 1.25 on both `h`**: `ho03/rim`, `ho08/hub`, `ho09/rim`, `ho16/rim`, `ho18/hub`,
+`ho22/rim`, `ho26/hub`.  So `verdict()`'s cross-cell answer over the box is `NONE` at
+every radius — the same function that returned "r=0.45, p=16" at two genomes returns
+nothing at 28, and that is the honest reading of a stronger question, not a contradiction
+of the earlier one.
+
+**Every one of the seven is a low-utilisation cell.**  Read at `(0.90, 16)`, their
+utilisations are 0.1648, 0.1143, 0.4125, 0.2258, 0.2593, 0.0850, 0.2103 — all well under
+`MARGIN_KNEE_UTIL` = 0.80 (§99), where `soft_barrier` is exactly zero and exactly flat.
+Whatever is failing to converge there is failing on a quantity the loss does not read
+above noise regardless of how precisely it is measured.  Nothing here says the field is
+actually non-convergent at those cells (`ho14/hub` at `(0.45, 16)` reads order 12.79 —
+the opposite artefact §95 already named, three points a hair apart giving Roache's
+formula a large answer that measures nothing) — only that this ladder, at this radius,
+does not certify it, and it does not need to for the loss to be unaffected.
+
+### THE READING
+
+`(r, p) = (0.45, 16)` is **not** a mathematically universal constant of the objective
+under the order-floor criterion §95 stated — and neither is any other pair this grid
+tried, so the failure is not a defect specific to 16.  It **is** validated exactly where
+the term has anything to say: both cells currently reading over the allowable converge
+cleanly at the taken cell and stay clean at the most conservative radius swept, and the
+highest-utilisation miss at the taken cell sits at 0.69, already below the knee.  §99's
+weight derivation (`w = 89.21`) does not change — it is a function of `util_ref`, the
+knee and the reference genome's mass term, none of which this measurement touches — and
+neither does `MARGIN_KNEE_UTIL` or `DEFAULT_WEIGHTS["stress_margin"]`.  What moves is the
+CLAIM: "16 is a constant of the objective" (§95's own phrase) is withdrawn in its literal
+form and replaced with the narrower one this section actually supports — convergent
+where it binds, unresolved only where the term is already silent.
+
+**NOTHING IS WIRED AND NOTHING IS PROMOTED.**  No `src/` module changed.
+`test_nothing_wires_the_fillet_into_the_objective` is untouched and green.
+
+### WHAT MOVED
+
+`studies/study_fillet_pnorm_box.py`, `studies/study_fillet_pnorm_box.json`,
+`make filletpnormbox`.  `study_fillet_pnorm.py` itself is untouched — every function this
+driver calls (`run_ladder`, `converge`, `verdict`, `price_recommendation`, `_print`) is
+reused, not modified, and its own two-genome artifact still stands as written.
+
+#### The successors, ranked — REVISED 2026-09-01 AFTER §100
+
+1. **THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES** — §94's Condition A,
+   unchanged.  The gating item for the whole arc.
+2. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+   Costs a `medium` descent this tree has not yet spent.
+3. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5, behind 1.  The knee (0.80), reference
+   weight (89.21, §99) and the `(r, p)` pair (0.45, 16, validated where it binds, §100)
+   are all now stated.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+5. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+6. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
+
+## §101 — 2026-09-02. CONDITION A, MEASURED: THE FILLETED MESH IS THE CONVERGED ONE, THE ADMISSIBILITY DISAGREEMENT SURVIVES TO `fine`, AND `b029622`'s HUB CROSSES THE KNEE UNDER REFINEMENT BY 0.0007 — §94's "EXACTLY ZERO" WAS A `coarse`-ONLY READING
+
+§94's ranked successor 1 / §93's own stated sequence step 1, and §93 gave its check in
+full: does the filleted mesh's axle-drop spread stay materially smaller than the
+unfilleted mesh's on the SAME design, and does the admissibility disagreement §94 measured
+at `coarse` alone (1.0112 unfilleted / 0.7954 filleted) survive refinement to `fine`.
+`studies/study_fillet_condition_a.py` (`make filletconda`) is that ladder — `b029622`,
+SVK, eight phases, `coarse/medium/fine`, both mesh constructions, `wheel_objective
+.objective` read on whichever mesh built it, `study_deflection_gci.richardson` for the
+extrapolation.  Nothing new was derived: every quantity and every piece of machinery is
+FILLET_PLAN STEP 1 PART 12's and §94's own, run at the place neither one was.
+
+### THE LADDER
+
+```
+  axle drop mm      coarse      medium        fine     spread%
+  unfilleted       3.333512    3.353573    3.367621     1.023%
+  FILLETED         1.990224    1.999019    2.001406     0.562%
+
+  stress util       coarse      medium        fine
+  unfilleted         1.0112      1.0180      1.0230     BREACHED at every rung
+  FILLETED           0.7954      0.7994      0.8007     clears at every rung
+```
+
+**The spread ordering reproduces PART 12's**, at a different design, a different kernel
+and eight phases instead of one: filleted 0.562% < unfilleted 1.023%.  The margin is
+narrower than PART 12's own 0.141% against 1.216% — the ratio is 1.8x here against 8.6x
+there — but the direction is the same and it is the direction the switch rests on.
+
+**The admissibility disagreement survives.**  Unfilleted reads over the allowable at
+`coarse`, stays over it at `medium`, and is further over it at `fine` (1.0230); filleted
+reads under the allowable at all three and is not closing the gap it would need to close
+to reverse the finding — the disagreement BETWEEN the two meshes widens under refinement,
+0.2158 at `coarse` (1.0112 - 0.7954) to 0.2223 at `fine` (1.0230 - 0.8007).
+§94's coarse-only reading is not an artefact of stopping early: refining the mesh makes
+the two answers MORE different, not less.
+
+**[CORRECTED 2026-09-04 — THIS READ "it is 0.1993 below 1.0 at `fine`, against 0.1858 at
+`coarse`", AND 0.1858 IS NOT A NUMBER THIS SECTION HAS.**  1.0 - 0.7954 = **0.2046**, so on
+the stated reading the filleted arm's own distance below the wall NARROWS under refinement
+(0.2046 -> 0.1993) where the sentence has it widening — the opposite of what the next
+sentence concludes.  The conclusion is true of the quantity the line should have named, the
+gap between the two meshes, which widens because the unfilleted arm climbs 0.0118 up the
+ladder against the filleted arm's 0.0053.  So the finding stands and the arithmetic under it
+is replaced rather than the other way round.]**
+
+### RICHARDSON, AND WHY THE TWO ORDERS DISAGREE
+
+```
+              observed order   extrapolated mm   GCI(fine)
+  unfilleted        0.69          3.404726          1.377%
+  FILLETED          2.63          2.002496          0.068%
+```
+
+The filleted axle drop converges at an order close to the quadratic elements' theoretical
+ceiling and a GCI **20x** tighter than the unfilleted one — 0.068% against 1.377%.  The
+unfilleted order — 0.69, well under first order — is the same signature §94 already named
+for the unfilleted mesh's PEAK stress (C1: the field is singular at a corner the fillet removes)
+showing up in a QoI that is a volume integral rather than a local max: axle drop is not a
+pointwise probe, but a mesh that never resolves the corner still drags the global field
+enough to blunt the observed order on the quantity that averages over it. This is the
+FILLET_PLAN STEP 1 PART 12 finding again, now measured on the load-bearing kernel: *"the
+unfilleted axle drop is still climbing at `fine`... that is the singular field polluting a
+global functional."*
+
+**[CORRECTED 2026-09-04 — the GCI comparison above read "two orders of magnitude tighter".
+1.377 / 0.068 = **20.3x**, which is 1.3 orders.  Both Richardson rows themselves reproduce:
+the observed orders come back at 0.69 and 2.62 through Roache's non-constant-`r` iteration on
+this ladder's own `r21` = 1.6162 / `r32` = 1.5934, and the extrapolations at 3.404726 and
+2.002496.  Only the prose ratio over them was wrong.]**
+
+### AND ONE NUMBER MOVES PAST A THRESHOLD THAT MATTERS ELSEWHERE IN THIS ARC
+
+`b029622`'s filleted-mesh utilisation is monotone up the ladder — 0.7954, 0.7994,
+0.8007 — and at `fine` it is **0.0007 above `MARGIN_KNEE_UTIL` = 0.80** (§99).  §94's
+table reported this exact cell at `coarse` and called the double count *"worth exactly
+`0.0000`"*, correctly, because `soft_barrier` is exactly zero below the knee.  It is not
+exactly zero at `fine`: `soft_barrier(0.8007 - 0.80) = 4.9e-7`.  That is six orders of
+magnitude below anything this objective's weight table would register — §99's own
+`w = 89.21` on a term this small moves the loss by `4.4e-5`, nothing a line search would
+see over `wheel_stage3`'s own step tolerance — so it changes NOTHING about §94's
+conclusion that the double count is inert at this design.  What it changes is the word
+"exactly": §94's zero was measured at one mesh density, and a quantity sitting 0.0007
+above a knee is a quantity a coarser or finer mesh can read on either side of it. This is
+recorded here rather than left for the next person to find by grepping `MARGIN_KNEE_UTIL`
+next to `0.8007` — the same habit §94 itself named after making the opposite mistake once.
+
+### THE MEMORY LAW, MEASURED, BECAUSE THE ONE-PROCESS FORM OF THIS DRIVER COULD NOT FINISH
+
+Not part of §93's check, but the reason this section exists at all rather than three more
+killed runs: the whole-ladder driver was killed three times short of `fine`, the last time
+~1h25m in, with a background-process memory cap reported as the cause and nothing in
+`dmesg`/`journalctl` to explain it.  Splitting the driver into one process per cell (below)
+and measuring `ru_maxrss` directly — exact for a one-cell process, since nothing else has
+run in it — found why:
+
+```
+  mesh          coarse elem   peak RSS      fine elem   peak RSS    ratio (elem / RSS)
+  unfilleted        4704        9.06 GB       31200       11.19 GB     6.6x / 1.24x
+  FILLETED          5952       41.60 GB       37632       41.88 GB     6.3x / 1.007x
+```
+
+The filleted arm's memory is a near-fixed JIT-compile cost, not a per-element one — 6.3x
+the elements buys 0.7% more RSS.  The unfilleted arm stays under 12 GB throughout.
+Neither was knowable from `make gci`'s 20.6 GB whole-ladder figure (Makefile:727) or
+`study_m9`'s 3.1 GB `fine` figure — both solve `fine` outside the Stage-3 objective, and
+`study_stage3.py:2079` has flagged contact-plus-secant-plus-adjoint at `fine` as never
+attempted in this repo for exactly this reason. It has now been attempted, at both mesh
+constructions, and it fits the 61 GB box with room to spare when run one cell at a time.
+
+### WHAT THIS DOES AND DOES NOT DO
+
+**CONDITION A HOLDS.** Both halves of §93's check pass at the design and kernel where the
+disagreement lives: the filleted mesh's axle-drop spread stays materially smaller under
+refinement, and the admissibility disagreement §94 found at `coarse` survives to `fine`
+undiminished. **The filleted mesh is the converged one**, on this evidence, at `b029622`,
+SVK, eight phases. Condition B closed at §94. Both of §93's conditions are now addressed.
+
+Nothing in `src/` changed. `test_nothing_wires_the_fillet_into_the_objective` is untouched
+and green. Nothing is promoted — this is Condition A's own measurement, not the switch.
+
+### WHAT MOVED
+
+`studies/study_fillet_condition_a.py`, `studies/study_fillet_condition_a.json`,
+`make filletconda`. The driver runs one `(rung, mesh)` cell per process (`--rung`,
+`--mesh`) and merges into the committed artifact; `--finalise` runs the analysis and
+writes the verdict once all six cells are in. The whole-ladder, one-process entry point
+(no flags) is unchanged and still works — it is what killed three runs, and is kept only
+because nothing about it is wrong, it is just the wrong shape for this box.
+
+#### The successors, ranked — REVISED 2026-09-02 AFTER §101
+
+1. **EXECUTE THE FILLET SWITCH** — §93's steps 3-5. Both of §93's conditions are now
+   addressed: Condition B closed at §94 (double count worth `0.0000` at `coarse`, and
+   `4.9e-7` at `fine` where `b029622`'s hub sits 0.0007 above the knee — still inert
+   against §99's weight table); Condition A holds as of this section. The knee (0.80),
+   reference weight (89.21, §99) and the `(r, p)` pair (0.45, 16, validated where it
+   binds, §100) are all stated.
+2. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, unchanged.
+   Costs a `medium` descent this tree has not yet spent.
+3. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+4. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+5. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
+
+## §102 — 2026-09-02. THE REPLACEMENT STRESS TERM EXISTS, IT IS DIFFERENTIABLE, AND `R_hub`/`R_rim` ARE NOT DEAD ANY MORE — PLUS ONE ARGMAX §94's FOUR-ITEM LIST DID NOT NAME
+
+§101's ranked successor 1, first half.  §93's step 3 is *"wire `fillet=True` into
+`wheel_objective`/`wheel_stage3`"*, and the thing that has to exist before anything can be
+wired is the quantity itself: §94 specified a region-restricted peak over the fillet arc
+to replace `Kt * agg`, §95 gave it `(r, p) = (0.45, 16)` and a smooth kernel, §96 argued
+the `P_c` exclusion and §99 stated the knee and the reference point — but no line of
+`src/` computes it.  This section is that quantity, as a QoI, measured against the
+instrument that recommended it.  **Nothing reads it yet**: `wheel_objective` is untouched,
+`test_nothing_wires_the_fillet_into_the_objective` is green, and the scope gate is clean
+because no `fillet=` keyword reaches any of the five modules it scans.
+
+### THE ARC HAD TO BECOME A FUNCTION OF THE COORDINATES, AND IT ALREADY WAS ONE
+
+The obstacle looked structural and was not.  The region weight is a function of distance
+to the fillet arc; the arc moves with `R_hub`/`R_rim`/`t0`/`t3`; and `adjoint_grads`
+differentiates `Q` with respect to `(coords, u_full, y_ground)` only — so an arc computed
+from the GENES inside a QoI would be frozen, and the region would sit still while the
+geometry moved under it.  That is a missing gradient path, and it would have meant
+extending the adjoint's QoI contract.
+
+It is not missing.  `study_corner_singularity.fillet_arcs` already recovers the arc **by a
+least-squares circle fit through the arc's own mesh nodes** (`:226`), reporting a 7e-14 mm
+residual because the nodes are on a circle by construction.  Given the node IDS the
+identical fit runs on the traced `coords`, and the arc becomes a function of the mesh that
+`adjoint_grads` already differentiates and already chains to the genes through one shared
+vjp.  So the whole term needs one new topology query (`wheel_wheel.fillet_arc_nodes`) and
+no change to the adjoint at all.
+
+```
+                                   measured, shipped genome
+  arc points matched to mesh nodes       0.0 mm EXACTLY, both junctions, 17 ids, distinct
+  jnp fit vs `fillet_arcs` centre        2.3e-14 mm (hub), 8.5e-14 mm (rim)
+  jnp fit vs `fillet_arcs` radius        twelve digits
+  d(radius)/d(R_hub)   adjoint / FD      1.000000000 / 0.999999889
+  the other twelve genes' entries        <= 3.4e-13, i.e. the lstsq's own round-off
+```
+
+The zeroes are half of that check.  A fit contaminated by the mesh AROUND the arc would
+still give `dR/dR_hub` near 1 while smearing gradient onto `t0` and the rest; that the
+other twelve sit at round-off is what says the fit is reading the arc.
+
+### AN ARGMAX OVER TWELVE COPIES, WHICH IS NOT IN §94's LIST OF FOUR
+
+§94 put four things in front of the replacement term — differentiability, the moving
+region, the `P_c` exclusion, the exchange rate.  There is a fifth, and it comes from the
+instrument rather than from the quantity.  `study_fillet_pnorm.region_pnorm` reads ONE
+rotational copy, **picked as the one carrying the largest p-norm**, and it is right to:
+the wheel is loaded at one contact patch and the twelve images of a fillet see twelve
+loads, so an instrument measuring whether a quantity converges must not pool them.
+
+Wired into an objective unchanged, that is an argmax over twelve candidates.  It flips as
+the contact patch sweeps, and it reintroduces exactly the kink the p-norm exists to blur —
+the same class of defect as §95's indicator step, arrived at from the other direction.
+**It is a policy this tree had not stated, and it is stated here.**
+
+Every copy goes into the measure, so the choice disappears; what replaces it is a choice
+about the DENOMINATOR, which is where twelve copies would otherwise dilute the answer.
+Normalising by the whole region's mass averages twelve fillets, eleven of them unloaded.
+Normalising by ONE fillet's mass — the region mass over `n_spokes`, exactly, because the
+copies are rotations of each other and carry identical mass by construction — gives
+
+```
+    sigma_j  =  ( SUM_k sigma_k^p )^(1/p)   >=   max_k sigma_k
+```
+
+the `l_p` norm OVER the copies' own values: smooth, argmax-free, never below the loaded
+copy's own reading, and converging to it as one copy comes to dominate.  Conservative in
+the direction a stress term should be conservative in.  **Measured against the study's own
+loaded-copy instrument** at the shipped genome, `coarse`, linear, `r` = 0.45, `p` = 16:
+
+```
+  junction   study loaded copy   this QoI, all 12   ratio     whole-region normalisation
+  hub             27.520053          27.520053     1.00000            23.561365
+  rim             12.274936          12.283466     1.00069            10.509219
+```
+
+The construction reproduces the instrument to five and six figures with no argmax in it,
+and the third column is why the denominator is what it is: normalising by the whole region
+would have read **14.4% low** at both junctions, which against a 25 MPa allowable is a
+breach reported as clearance.
+
+### THE GRADIENT, AND §15 DEFECT 1 RUNNING BACKWARDS
+
+`smoke`, shipped genome, contact at 1.65 mm indentation, central differences scaled by
+each gene's own range:
+
+```
+  junction   adjoint          FD (best rung)    rel        sign
+  hub       -3.03772422e+00  -3.03772422e+00   1.745e-09   negative
+  rim       -3.24660263e+00  -3.24660261e+00   4.718e-09   negative
+```
+
+The sign is the sanity check and it is the right one: opening the fillet radius lowers the
+stress in the fillet.  A term that came back positive would be pricing margin backwards
+and no FD agreement would rescue it.
+
+**And all fourteen genes carry a nonzero entry, at both junctions.**  §15 DEFECT 1 is that
+`R_hub` and `R_rim` are DEAD — *"the only paths from a fillet radius into the loss are
+`stress` and the fillet barriers, and all of them are flat unless breached"*, measured at
+the shipped genome on 2026-08-12 as **exactly 0.0** for both, a nominally 14-dimensional
+search running in 8.  Read through a filleted mesh the radius moves the geometry the field
+is computed on rather than only a closed-form surrogate that is flat above its cap, and
+the two genes wake up.  That is the affirmative case for the switch stated as a
+derivative, and it is the first time this arc has been able to state it that way.
+
+### WHAT MOVED
+
+`wheel_wheel.fillet_arc_nodes` (+ `ARC_NODE_MATCH_TOL_MM`), and in `wheel_adjoint`:
+`FILLET_REGION_R_SUP_MM` = 0.45, `FILLET_REGION_P` = 16.0, `_arc_from_nodes`,
+`_distance_to_arc`, `_region_weight`, `_qoi_region_pnorm`.  The QoI is NOT in `QOI` — it
+needs the arc's node ids and the spoke count, so it goes through `adjoint_grads`'
+`(name, factory)` door, the one `_qoi_buckling_eig` already uses.
+
+TWO DEFINITIONS OF ONE KERNEL, AND THE TEST THAT KEEPS THEM ONE.  `_distance_to_arc` and
+`_region_weight` are jnp copies of the study's numpy originals, because the study's cannot
+be differentiated by the adjoint.  Two copies of a definition is the drift a shared kernel
+exists to prevent and here it cannot be prevented, so it is measured instead:
+`tests/test_fillet_pnorm.py` now checks both against the study's on synthetic inputs and
+finds them one ulp apart (1.11e-16, XLA's associativity, thirteen orders under the 0.068%
+step the kernel exists to remove) with identical support.  Without those two tests §95's
+`(r, p)` recommendation would be a measurement of a function the objective does not
+compute.
+
+Nothing is promoted.  No loss number moves, because no loss reads this yet.
+
+#### The successors, ranked — REVISED 2026-09-02 AFTER §102
+
+1. **WIRE IT IN** — §93's step 3, now the whole of it: `phase_meshes` builds
+   `fillet=True`, `util_j` reads this QoI instead of `kt * agg`, `DEFAULT_WEIGHTS
+   ["stress_margin"]` goes 325.0 -> 89.21 at `util_ref` = 1.0 (§99),
+   `MARGIN_KNEE_UTIL` stays 0.80, and
+   `test_nothing_wires_the_fillet_into_the_objective` is REPLACED by its mirror image.
+2. **THEN §93's STEPS 4 AND 5** — re-run Stage 3, re-promote on
+   `tests/test_promotion.py`'s six-item checklist, re-date every committed loss number.
+   **Cost this first**: §101 measured a filleted `coarse` cell at 41.6 GB peak RSS in a
+   ONE-CELL process, and a Stage-3 descent is long-lived, which is the configuration
+   §101 found does not survive.
+3. **RE-OPTIMISE UNDER `heavy_payload` AND `long_life`** — §97's successor 5, and it is
+   downstream of 1 and 2: §32's rule applies to meshes, so a descent run now is a descent
+   against the objective the switch is about to replace.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7.
+5. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+6. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
+
+## §103 — 2026-09-03. THE FILLET SWITCH IS WIRED: `util_j` READS THE REGION-P-NORM TERM, AND THE SHIPPED GENOME BREACHES THE WALL IT WAS NEVER MEASURED AGAINST
+
+§102's ranked successor 1, in full — §93's step 3. §102 built the quantity and wired
+nothing; this section wires it. `phase_meshes` now builds every mesh `fillet=True`,
+`t3_terms`'s `util_j` reads the junction's own region-p-norm QoI instead of
+`Kt_j * agg`, `DEFAULT_WEIGHTS["stress_margin"]` moves 325.0 -> 89.21 at §99's formula,
+and the scope gate that certified nothing was wired now certifies the opposite. **Six
+tests went red, one xfail reopened itself, one real bug surfaced in a study driver, and
+one separate arc's calibration moved underneath it** — all four are downstream
+consequences of the same one-line truth: the mesh everything solves on has fillets now,
+and the stress term reads them.
+
+### A PREREQUISITE THAT WOULD HAVE MADE THE WHOLE STENCIL WRONG: `fillet_arc_nodes` HAD NO `phase_deg`
+
+`WW.fillet_arc_nodes` recovers the fillet arc's own node ids by matching `sector_blocks`'
+query points — always sector 0, in its own unrotated frame — against `mesh.coords`, which
+is sector 0 **rolled by `mesh.phase_deg`** (`_sector_coords`'s own convention). Comparing
+an unrotated query against a rotated coordinate array is comparing two frames, and at any
+nonzero phase the match silently picks the nearest node in the WRONG place rather than
+raising. Measured at the shipped genome, `coarse`, `phase_deg` = 13.7: **0.513 mm off**,
+not a near-miss — and `phase_stencil`'s own 8-point grid is nonzero at 7 of 8 points, so
+this was not an edge case, it was most of what `phase_meshes` was about to build. Fixed by
+rolling the query points by `phase_deg` before the match (`src/wheel_wheel.py:3139`, node
+ids unaffected — the roll is a rigid rotation, so it reorders nothing, only fixes which
+coordinate each id is compared against). Caught and confirmed by
+`tests/test_gradient.py -k fillet` before any of the wiring below was written; without it
+every phase but the first would have aggregated a region QoI read off nodes near, but not
+on, the actual arc.
+
+### WHAT MOVED, MECHANICALLY
+
+`phase_meshes` (`wheel_objective.py:1000`) passes `fillet=True` to every
+`WW.build_wheel` call, unconditionally — the mesh the objective solves on and the mesh the
+report describes are now the same mesh. `t3_terms`'s per-phase loop builds
+`_region_qois(meshes[i])` (`:1055`) — `(hub_qoi, rim_qoi)` as `(name, factory)` pairs from
+`fillet_arc_nodes(mesh, "hub"/"rim")` and `W.NUMBER_OF_SPOKES`, going through
+`adjoint_grads`'s `(name, factory)` door the way `_qoi_buckling_eig` already does, because
+the QoI needs the arc's node ids and is not in the static `QOI` table. Each phase's two
+values and gradients accumulate into `pn_hub`/`pn_rim` lists exactly as the whole-wheel
+p-norm already did, and `_pnorm_and_grad` (`:1074`) — the phase-aggregation arithmetic
+`_stress_aggregate` computes for `agg`, factored out WITHOUT its `c = mean(max/pnorm)`
+diagnostic, which is measured against the WHOLE-WHEEL true max and means nothing for a
+per-junction region quantity — turns those into `agg_hub`/`agg_rim` and their gradients.
+`util_j` is now `agg_j / allowable_stress_mpa`, full stop; `Kt` does not appear in it.
+`junction_kt`'s two gradients are discarded (`(kt_hub, _), (kt_rim, _) = junction_kt(...)`)
+because `kt_hub`/`kt_rim` are RETAINED but demoted to reporting only — `wheel_stage3`'s
+`REPORT_KEYS`/`selection_key` still read them for the geometric-feasibility story
+(`hub_fillet_cap_mm`, `r_hub_effective_mm`), which the switch does not touch. Two new
+report keys, `hub_region_pnorm_mpa`/`rim_region_pnorm_mpa`, carry the raw junction
+aggregate in MPa — what `util_j` is now actually built on, visible in every run record.
+
+ONE DEFINITION, TWO CALLERS, same discipline as `_probe_values`: `wheel_pool_worker
+.run_phase` builds `_region_qois` from its OWN independently-built mesh and extends its
+returned tuple identically, because `tests/test_pool.py`'s bit-identity gate (pooled ==
+serial, to the bit) cannot hold if the two processes construct the QoI two different ways.
+It does not — confirmed below.
+
+### THE FINDING: THE WALL WAS NEVER MEASURED AGAINST THE MESH THAT NOW STANDS FOR IT
+
+```
+                                  Kt*agg (old)     region-p-norm (new)     settings
+  shipped genome, hub util              --              1.0557           smoke, 2 phase
+  genes_over_knee, hub util          0.85506             1.68672          coarse, 8 phase
+  genes_over_knee, rim util             --              1.21257          coarse, 8 phase
+```
+
+`genes_over_knee`'s hub reads **1.973x** its old capped-mesh reading — almost double, and
+landing at the LOW end of §99's own forecast that *"the true fillet stress runs
+1.68x-2.76x over what Kt*agg reported."* The shipped genome's 1.0557 clears not the 0.80
+knee this arc has tracked since §22 but the hard `stress` WALL at 1.0 — `stress` no longer
+reads 0.0 on it, and `selection_key` no longer calls it tier 0. Nothing about this is a
+threshold to move: `MARGIN_KNEE_UTIL` and the wall are policy, calibrated at §99 against
+what a design MEANS by 80%/100% of allowable, not fitted to whichever genome happens to be
+on disk today. What broke is narrower and stated precisely below — the shipped genome, and
+`genes_over_knee`, stopped being FIXTURES for "a design below the knee" and "a design whose
+rim is dead," because the more faithful term reads both of them somewhere else on the
+curve than the surrogate did.
+
+### SIX TESTS, TWO DIFFERENT KINDS OF BREAKAGE, TWO DIFFERENT FIXES
+
+Three tests asserted a GENOME'S POSITION relative to a threshold, and the position moved
+— the tests were never wrong, their fixture's premise expired. Marked
+`xfail(strict=True)`, following the one precedent already on file
+(`test_but_above_the_knee_the_fillet_radii_are_live`'s §38 marking): a new paragraph
+stating what broke and why the claim did not, then the ORIGINAL docstring unedited below
+it, because it still records what the test was for.
+
+  - `test_the_fillet_radii_are_not_dead_genes` — shipped genome hub 1.0557, above the wall.
+  - `test_below_the_knee_the_rim_fillet_radius_is_dead` — `genes_over_knee` rim 1.21257,
+    above the wall, not merely above the 0.80 knee the fixture was named for the HUB
+    crossing.
+  - `test_the_margin_term_prices_and_never_gates` — the shipped genome breaching `stress`
+    itself (12.391 != 0.0) is a fact about THIS genome, not about the split the test names
+    between an OBJECTIVE that prices margin and a BARRIER that gates; that split is
+    untested by this failure and still holds.
+
+One test's xfail (§38, `test_but_above_the_knee_the_fillet_radii_are_live`) REOPENED:
+`genes_over_knee`'s hub was reachable again the moment §102's replacement went live, and
+`strict=True` turned the resulting XPASS into a failure demanding the marker come off. The
+docstring now states the measured number rather than the estimate an earlier draft of this
+work carried — 1.68672, 1.973x, corroborated above.
+
+Two more tests and one sibling in `test_stage3.py` asserted a FORMULA that the switch
+changed on purpose, not a genome's position — fixed by correction, not `xfail`:
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be` (`u_ref` 0.855 -> 1.0, §99's
+own reference-point move, stated in its docstring already), `test_the_report_carries_
+both_junctions_and_the_headline_is_their_max` and `test_stage3.py::test_the_ladder_costs_
+one_evaluation_per_rung_and_repins_per_design` (both asserted `kt_j * agg / allow`; both
+now assert `{j}_region_pnorm_mpa / allow`), and `test_stage3.py::test_the_probe_
+reproduces_the_constraint_at_the_exponent_it_was_built_with` (dropped its cross-check
+against `stress_utilisation_kt`, a retained diagnostic of the abandoned construction that
+is now a genuinely different physical quantity from the live constraint, not the same one
+at a different exponent).
+
+### A REAL BUG THE WIRING SURFACED, NOT A FIXTURE PROBLEM: `study_stage3.run_mesh_convergence` NEVER LEARNED THE NEW REPORT KEYS
+
+The `test_stage3.py` fix above assumed `hub_region_pnorm_mpa`/`rim_region_pnorm_mpa` reach
+every caller that builds a per-rung row from `rep`, the way `wheel_stage3._row`'s
+`REPORT_KEYS` whitelist does. `studies/study_stage3.py:910`'s `run_mesh_convergence` does
+not go through `_row` — it hand-builds its own row dict from named `rep[...]` pulls, a
+second, independent construction `wheel_objective`'s new keys never reached. Running the
+full corrected test file found this as a `KeyError: 'hub_region_pnorm_mpa'`, not as a
+number mismatch — the row the test needed simply did not have the field. Fixed by adding
+the same two pulls beside the existing `kt_hub`/`kt_rim` ones (`:966`). **Left alone,
+deliberately**: `run_multistart`'s own hand-built row (`:1052`), fifty lines below in the
+same file — nothing reads `hub_region_pnorm_mpa` off it, and adding fields no test and no
+caller uses would be exactly the speculative completeness this project's house style
+argues against.
+
+### THE SCOPE GATE INVERTED
+
+`tests/test_corner_singularity.py`'s AST scan used to assert every `fillet=`/
+`fillet_blocking=` keyword found across five modules was the literal `None` — proof
+nothing was wired. It now asserts the opposite over SIX modules (`wheel_pool_worker.py`
+added to the scan): every such keyword found in `wheel_objective.py`, `wheel_stage3.py`,
+`wheel_fea.py`, `wheel_adjoint.py`, `wheel_pool.py` and `wheel_pool_worker.py` is the
+literal `True`, and at least one keyword must appear in BOTH `wheel_objective.py` and
+`wheel_pool_worker.py` — a gate that would fail silently-vacuous (zero keywords found,
+trivially "all `True`") if either module stopped building filleted meshes.
+
+### THE CASCADE INTO A SEPARATE ARC'S CALIBRATION
+
+`MBSE_PLAN.md`'s `calibrated_priorities`/`weights_from_priorities` (Open arc #9, Step 4)
+derive their 100-point portfolio FROM `DEFAULT_WEIGHTS` live, not from a copied table —
+the file's own Step 4 check says so: *"If `p_cal` does not come back as [the stated
+numbers], this file is wrong and the driver is right."* `stress_margin`'s weight move
+(325.0 -> 89.21) is exactly such a change, and it moved the portfolio with it:
+
+```
+  term             c_T (old -> new)        p_cal (old -> new)
+  --------------  --------------------    --------------------
+  mass             0.300000 -> 0.300000    51.35 -> 53.51
+  deflection       0.250000 -> 0.250000    42.80 -> 44.60
+  stress_margin    0.032500 -> 0.008921     5.56 ->  1.59
+  smoothness       0.001678 -> 0.001678     0.29 ->  0.30
+  phase_ripple     0.000000 -> 0.000000     0.00 ->  0.00
+  sum c            0.584178 -> 0.560599    100    -> 100
+```
+
+`stress_margin`'s freed points landed on `mass`/`deflection` — the same 100-point budget
+redistributing under one upstream weight change, not a second finding. `MBSE_PLAN.md`'s
+two tables and its Step 4 check are updated in this commit to the new numbers, with the
+old ones kept alongside as the "before" row; `tests/test_requirements.py::test_the_
+calibration_reproduces_the_portfolio_the_plan_states` is updated to match and passes;
+`studies/study_mbse_calibration.json` is regenerated (`make mbsecal`, all five checks
+`ok`, exit 0) rather than left describing a weight table `src/` no longer has — PLAN.md's
+own rule that a study's committed artifact must describe its script's current output.
+
+### COST, RECONFIRMED AT SUITE SCALE, NOT JUST ONE CELL
+
+§101 measured ~41.6 GB peak RSS for a single filleted `coarse` JIT compile in a
+one-cell process. This section's own verification runs reconfirm it at the scale the
+switch actually operates at — every `t3`-tier evaluation in the repository, not one study
+cell:
+
+```
+  file                          result                        wall time
+  test_objective.py             125 tests, exit 0              ~943 s   (0:15-17)
+  test_stage3.py                55 tests, 1 real bug found      1514 s   (0:25:14)
+  test_pool.py                  23 tests, exit 0                 739 s   (0:12:19)
+  test_corner_singularity.py    28 tests, exit 0                   3 s
+  test_gradient.py              24 tests, exit 0                 401 s   (0:06:40)
+```
+
+Peak RSS during the `genes_over_knee` re-measurement above reached 39-40 GB in a single
+process with 17-25 GB still free on this box — consistent with §101's fixed-per-process
+reading rather than a per-element one, and confirming a Stage-3 descent (successor 2
+below) still needs the one-process-per-cell discipline §101 already established, not a
+new one.
+
+### WHAT DID NOT MOVE
+
+`best_solution.json` is untouched. No Stage 3 descent ran. No loss number is re-dated.
+§93's steps 4 and 5 — re-run Stage 3 under the new term, re-promote against `tests/test_
+promotion.py`'s six-item checklist — are §102 successor 2, explicitly deferred, and remain
+so: this section is the wiring alone, and the shipped genome now reading over the wall is
+the reason that successor is not this commit's job. `stress`'s own wall (1.0) and
+`MARGIN_KNEE_UTIL` (0.80) are unchanged; only what feeds them changed.
+
+#### The successors, ranked — REVISED 2026-09-03 AFTER §103
+
+1. **RE-RUN STAGE 3 AND RE-PROMOTE** — §93's steps 4-5 / §102's successor 2, now the only
+   thing standing between this switch and a shipped design that is actually feasible under
+   it. One process per cell, per §101's own finding, reconfirmed above at suite scale.
+   `test_the_fillet_radii_are_not_dead_genes`'s xfail is this successor's own regression
+   test: it reopens itself the day a design comes back faithfully below the knee.
+2. **FIND OR DESCEND A GENUINELY BELOW-THE-KNEE WITNESS** — every fixture this arc has
+   used to exercise the below-knee branch (`genes_over_knee`, the shipped genome) now
+   reads above the wall under the faithful term; the branch itself is untested by anything
+   on disk until successor 1 produces one, or a design is constructed for the purpose.
+3. **THEN §97's SUCCESSOR 5** — re-optimise under `heavy_payload` and `long_life`,
+   downstream of 1: a descent run before re-promotion is a descent against the objective
+   the switch just replaced.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — §97's successor 7,
+   unchanged.
+5. **The rim tri-block**; **the mesh's SECOND junction fillet**;
+   **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**; **re-derive Gate 1 at the 1.2 mm
+   floor** — §97's successor 8, unchanged.
+6. **The sub-element fold, as its own unit**; **calibrate §73's two thresholds on a proper
+   hold-out protocol**; **per-REGION agreement on a filleted mesh**; **gate 10's
+   `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**; **a bend
+   that is a FUNCTION of the genome**; **the REST of §45's audit list**; **G1's fourth
+   revision**; **§32's successors 3 and 4**; **the element-validity check** — §97's
+   successor 9, unchanged.
+
+---
+
+## §104 — 2026-09-03. THE TRI-BLOCK ARC'S THREE OPEN SUCCESSORS, CLOSED: THE FOLD MECHANISM CALIBRATES AND ITS THRESHOLDS DO NOT, A GENOME-DEPENDENT BEND BUYS EXACTLY NOTHING, AND THE FAITHFUL RIM IS NOT ADOPTED — BECAUSE SINCE §103 THE TREE BUILDS A SECTOR THIS CONSTRUCTION HAS NEVER BEEN MEASURED ON
+
+§73's successor 1 (*"still the oldest thing on the list"* at §94, §96 and §97), §56's
+successor 4, and the decision `UNCAP_PLAN.md` deferred twice in identical words —
+*"then, and only then, the decision to adopt the faithful rim"*.  Full working record:
+`UNCAP_PLAN.md` **STEP 3 RECORD, PART 10**, the part §73 named and never wrote.
+
+### THE PREMISE WAS CHECKED FIRST, AND BOTH HALVES OF IT HAD MOVED UNDER THE ARC
+
+**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1255` now
+carries `agg, c = _stress_aggregate(pn, maxes, q)   # whole-wheel pnorm — REPORTING ONLY`,
+and `stress`/`stress_margin` (`:1300-1310`) read the two per-junction region p-norms alone.
+Verified mechanically rather than off the comment: inside `t3_terms` the bare `agg` is
+assigned at `:1255` and read at exactly ONE place — `:1354`, the report key
+`pnorm_stress_agg_mpa`.  Every other occurrence in the module is a comment or a different
+function's own local, and the `probe_p` sweep builds its own `a_v` rather than reading this
+one.  **So `rim:P_c` — the corner §46 and §52 built the whole ranking on — feeds no barrier, no
+objective term and no gradient.** §52's *"the whole remaining path to a quotable peak"* is
+now a path to a REPORTING number and a fidelity claim.  That is worth having and it is not
+what it was priced at.
+
+**And §103 also changed which sector the tree builds.** `fillet=True` is unconditional in
+`phase_meshes` and `wheel_pool_worker.run_phase`, so every mesh the objective solves is the
+ELEVEN-block filleted sector, while `study_tri_block.region()`
+(`studies/study_tri_block.py:228`) builds `sector_blocks(..., uncap=(True, blend))` with no
+`fillet=` — the seven-block one.  Re-measured at the shipped genome on this tree
+(`MIN_SJ_TARGET` 0.2): the faithful rim's worst block is **0.008176 / 0.008251** unfilleted
+and **0.000343 / 0.003334** filleted, at `coarse` / `medium`.  The re-cut makes it 23.8x and
+2.5x WORSE, which `tests/test_fillet_block.py::test_the_recut_does_NOT_rescue_the_faithful_
+rim` has asserted as an ordering since the fillet arc's PART 10.  The degenerate vertex
+survives — the fillet rounds `P_t`, the ~180-degree corner is at `far_end` — so the region
+is still a triangle that needs partitioning, **but the twelve-block Y is a partition of the
+sector the tree stopped building, and no version of it exists for the one it builds.**
+
+### §73's SUCCESSOR 1: THE MECHANISM IS CONFIRMED ON FRESH DRAWS AND NO THRESHOLD TRIPLE IS
+
+`make trirule`, 958.8 s — the apparatus parked on `origin/tri-rule-holdout` (`8f0a725`,
+2026-08-24), cherry-picked and **re-aimed** from `best_w_valid` (the straight Y on a uniform
+draw — §53's question, closed at §55) to `curved_valid` on `sweep_arc_span_band`'s
+arc-span-conditioned draw, which is §73's actual subject.  Four fresh band streams, seed
+bases 1000 apart because a band draw consumes up to 400 consecutive batches; disjointness
+asserted on hashed gene vectors, not inferred from the spacing.
+
+```
+  config  direction  frozen rule                                        in-sample  HELD OUT  majority
+  coarse  forward    arc > 38.444 OR (arc > 30.556 AND wedge < 17.352)     0.975     0.875     0.625
+  coarse  swapped    arc > 37.779 OR (arc > 30.391 AND wedge < 16.310)     0.975     0.900     0.550
+  medium  forward    arc > 36.569 OR (arc > 30.537 AND wedge < 14.826)     0.975     0.800     0.600
+  medium  swapped    arc > 41.813 OR (arc > 33.272 AND wedge < 18.664)     0.925     0.900     0.575
+```
+
+**The conjunction is real** — every direction beats its own majority baseline by 20 to 35
+points on genomes the fit never saw, at four draws §73 did not have.  **And its constants
+are not.** Every fit lands 0.925-0.975 in sample on a DIFFERENT triple; the two directions
+disagree by 0.67 and 1.04 deg at `coarse` and by **5.24, 2.74 and 3.84 deg at `medium`**.
+At `medium` forward the calibrated rule is **beaten on its own hold-out by the hand-read
+`36.16 / 30 / 17.12` it exists to replace — 0.800 against 0.850** — and at `coarse` forward
+the two tie at 0.875.  §73 refused to publish a threshold because both numbers were fitted
+on the data they were scored on; a proper protocol has now been run and **it upholds that
+refusal rather than repairing it.** §73's counterexample class reproduces too: four of five
+`coarse` hold-out errors are the corner branch firing early at wedges 16.84-17.33, and the
+fifth is a clean genome at arc 39.17.
+
+### §56's SUCCESSOR 4: THE BEND AS A FUNCTION OF THE GENOME IS WORTH NOTHING, MEASURED
+
+`make tribend`, 23.9 s.  §56 named `bow_over_width` as the argument to fit and warned in
+the same sentence that the per-genome optima "are argmaxes over a plateau" — so two
+ONE-parameter families are fit instead against how many genomes stay valid and clear, at
+`w` held fixed to the published cell, under the same fit-freeze-score-once discipline:
+
+```
+  config  family    fit param   in-sample clear/valid   HELD OUT clear/valid   worst min SJ
+  coarse  constant    0.0            14 / 16                 9 / 13             -0.9950
+  coarse  linear      0.0 (k)        14 / 16                 9 / 13             -0.9950
+  medium  constant    0.4             9 / 10                 9 / 12             -0.1930
+  medium  linear      3.0 (k)         9 / 10                 9 / 12             -0.1912
+```
+
+**Nine against nine at both configs**, and the swap says it louder: fitting on the hold-out
+draw picks `0.0` for both families at both configs.  At `coarse` the constant family picks
+zero on its own, which is §56's own "0 rescued at `coarse`" arrived at from the other side.
+The one thing the null result buys is small and is recorded rather than sold: at `medium`
+the linear rule reaches the same coverage while asking the shipped genome for `bend` 0.0291
+instead of 0.40 — 0.5816 against 0.5820, the published straight-Y number to four figures.
+
+### THE DECISION, TAKEN
+
+**Not adopted, in all three parts.** The MESH keeps `UNCAP_DEFAULT = (True, 1.0)` and seven
+blocks — not on the gene-box grounds this arc has tracked since §53 (still true: fixed-w
+12/16 and 10/16, ceiling 15/16 and 12/16, and the 41.2-deg genome refuses at every interior
+point, every bend and every admissible `B`) but because the construction is measured on a
+sector the tree no longer builds.  The QUOTED CELL stays the single-genome argmax: §55 left
+that choice to *"whoever next picks it up"*, and this is that pickup declining — the cell it
+would move is not worse, it is a better figure for a mesh nobody will build, and one stated
+rule has meant one thing across seven sections.  The CURVE stays at `bend` 0.0, now as the
+fitted answer rather than an unadopted measurement.
+
+**`studies/study_tri_block.json` is regenerated** (665.3 s, 19/19 self-checks) because the
+cherry-pick adds a `genes` field to every band row and the committed artifact stopped
+reproducing from its driver the moment it landed.  Diff checked field by field: **41
+differences — one `seconds`, forty `genes` additions, nothing else.**
+
+### HOW THE SUITE WAS VERIFIED, AND ONE CORRECTION TO §103's COST TABLE
+
+`make test` is `pytest` with no arguments — 826 tests in one process — and it was run here
+in batches instead: the ~26 light files in one process (599 tests, 2 xfails, no failures),
+then each `t3`-tier file in its OWN process, sequentially and never concurrently, which is
+§101's one-process-per-cell discipline applied to the suite rather than to a study ladder.
+Measured on this box 2026-09-03, `/usr/bin/time -v`, exit 0 on every one:
+
+```
+  file                     wall time   peak RSS    §103's figure   ratio
+  test_gradient.py           6:33      13.5 GiB      0:06:40       0.98x
+  test_pool.py              12:09      15.3 GiB      0:12:19       0.99x
+  test_objective.py         33:17      51.0 GiB      0:15-17       2.12x
+  test_stage3.py            24:38      29.9 GiB      0:25:14       0.98x
+```
+
+**Three of the four reproduce §103's table to within 2.5%.  `test_objective.py` does not —
+it costs 2.1x what §103 recorded, and peaks at 51.0 GiB, 84% of this 61 GiB box.**  The
+extra time is not swapping: that run logged **one** major page fault.  §103's own entry for
+it is the only one written as a range (`~943 s (0:15-17)`) where its three siblings are
+written to the second (1514 s, 739 s, 401 s), which is the tell that it was the one
+estimated rather than timed.  The figures to carry forward are 33:17 and 51.0 GiB, and they
+are why the four heavy files must not share a process: at 51 GiB for one of them there is
+under 10 GiB of headroom.
+
+Nothing here changes a finding in this section or in §103 — the switch's conclusions were
+reconfirmed, only its price was understated — but a cost table is what the next section
+budgets against, so it is corrected where it will be read rather than left to be
+rediscovered.
+
+#### The successors, ranked — REVISED 2026-09-03 AFTER §104
+
+1. **RE-RUN STAGE 3 AND RE-PROMOTE** — unchanged from §103, and untouched by this section.
+   Still the only thing standing between the fillet switch and a shipped design that is
+   feasible under it.  One process per cell.
+2. **FIND OR DESCEND A GENUINELY BELOW-THE-KNEE WITNESS** — unchanged from §103.
+3. **THEN §97's SUCCESSOR 5** — re-optimise under `heavy_payload` and `long_life`,
+   downstream of 1.  Unchanged.
+4. **A SECOND `k_asym`, OR A MEASUREMENT OF THE ONE THERE IS** — unchanged.
+5. **A Y-PARTITION OF THE FILLETED RIM JUNCTION, OR A RECORDED DECISION THAT `rim:P_c`'s
+   FIDELITY IS NOT WORTH ONE.**  This is what the rim tri-block's cell in the arc table now
+   means, and it is a NARROWER item than the bare name it replaces: the seven-block Y is
+   built, valid and un-adoptable, the interior-point rule and the curve are both measured
+   out as far as they go, and what is missing is a construction on the ELEVEN-block sector.
+   **Its own warrant is also smaller than it was** — since §103 the peak it removes feeds no
+   barrier and no gradient — so "decide it is not worth building" is a legitimate outcome
+   and should be priced against building it rather than assumed away.
+6. **The mesh's SECOND junction fillet**; **`EMBED_ALLOWANCE_PER_SPOKE_MM2`'s scaling law**;
+   **re-derive Gate 1 at the 1.2 mm floor** — §97's successor 8, less the tri-block, which
+   is now item 5 with content.
+7. **The sub-element fold, as its own unit**; **per-REGION agreement on a filleted mesh**;
+   **gate 10's `phase_ripple` cost**; **carry `axle_drop_interp_mm` into `study_contact`**;
+   **what makes the 41.2-degree region impossible** (§56, §70 — the last open part of that
+   question, now that the bow and the wedge-arc conjunction are both accounted for); **the
+   REST of §45's audit list**; **G1's fourth revision**; **§32's successors 3 and 4**; **the
+   element-validity check** — §97's successor 9, less §73's calibration and §56's bend,
+   both closed here.
+
+**AND THE RANKING LESSON, RECORDED BECAUSE IT IS THE FOURTH TIME.** §53 wrote that *"when a
+successor's value rests on a construction that does not exist, the thing that stops it is
+often not any of the reasons anyone listed."*  This is the next turn of the same screw: the
+tri-block was ranked, re-ranked and carried for eleven sections on a warrant — the global
+peak on `rim:P_c` — that **another arc quietly retired while this one was parked.** Nothing
+in §94-§103 was wrong to do it, and nothing in this arc's own successor lists noticed.  The
+check that caught it cost one grep of `wheel_objective.py` and one two-config probe, run
+before any study was launched, and it reframed the whole session's third item.  **A parked
+arc's premise is not preserved by parking it.**
+
+---
+
+## §105 — 2026-09-03. STAGE 3 RE-PRICED ON THE MESH IT NOW BUILDS: 50.47 h SERIAL, THE 8-WORKER POOL IS OUT OF REACH ON THIS BOX, AND THE CONSTANT THAT JUSTIFIES PHASE PINNING IS UNDERSTATED BY 160x
+
+§104's successor 1 — re-run Stage 3 and re-promote — was ranked first and left unpriced.
+Before spending it, the cost model it would be spent against was checked, on the same
+premise-first discipline §104 closed with. **Every number in that model was wrong, and two
+of them were wrong in ways that change what the run is.**  No descent ran; this section is
+the price, and the decision it enables.
+
+### THE MODEL THAT WAS THERE, AND WHY NONE OF IT SURVIVED
+
+`Makefile:253` priced Stage 3 as `steps x phases x 0.7 s` at `coarse`, citing S10.  It has
+never matched S10 at any point in this repository's history:
+
+```
+  S10 artifact   date         per_phase_s   projected_serial_hours
+  506adfe        2026-07-29      18.0494          48.13
+  4fb950f        2026-08-19      17.4899          46.64
+  c9f29e8        2026-08-20      16.0683          42.85   (the committed artifact)
+```
+
+The line was written 2026-07-27, two days BEFORE the oldest S10 reading it cites, and 0.7 s
+is 23x under the cheapest figure S10 has ever produced — 26x under the oldest.  It priced
+`make stage3` at 0.47 h against a study that said 48.  **This is not fillet staleness — it
+was wrong from the day it was written**, and `dca5629` corrects it to the measured figure.
+
+**[CORRECTED 2026-09-04 — THE MULTIPLIER ABOVE READ "26x under the cheapest figure".**  The
+three S10 readings are 18.0494 / 17.4899 / 16.0683 s per phase; the CHEAPEST is 16.0683, and
+16.0683 / 0.7 = **22.96x**.  26x is the DEAREST, which is also the oldest (18.0494,
+2026-07-29) — the reading the same sentence cites two clauses earlier, which is the likely
+route by which the two changed places.  `Makefile:253`, corrected by this section's own
+`dca5629`, states a third figure, 27x, and is right for what it says: 18.9277 / 0.7 = 27.04
+against the CURRENT filleted measurement.  All three divisions are true of something; only
+the superlative here was attached to the wrong one.]**
+
+The `48.13 h` still quoted in `studies/study_stage3.py:1238` and `:2219` is the 2026-07-29
+reading, two generations stale; PLAN.md's own number of record is S13's 46.46 h -> 11.77 h.
+
+**And `0.774 s` is not the same quantity as either.**  `study_stage3.py:1230` describes it
+as the per-phase `coord_fn` TRACE cost, paid once per process at priming; `wheel_pool.py:26`
+records its provenance — M7 measured a `coord_fn` jit-cache MISS at 0.774 s against 0.05 s
+for the entire rest of the adjoint, which is why phase slots pin to workers.  It is a
+cache-miss cost, and it never belonged in the same sentence as a per-step price.
+
+### S10, RE-RUN ON THE FILLETED MESH
+
+`--sections cost`, `coarse`, 8 phases, one process, `/usr/bin/time -v`, exit 0.  Filed to a
+scratch `--out`: `_gate_guard.refuse_degraded_out` correctly refuses a `--sections`-degraded
+run under the committed artifact's name, so `studies/study_stage3.json` is untouched.
+
+```
+  quantity              pre-fillet (c9f29e8)   MEASURED 2026-09-03   delta
+  t1_s                        0.00557                0.00645
+  t1_t2_s                     0.30811                0.60100
+  full_s (8 phases)         128.546                151.422           +17.8%
+  per_phase_s                16.0683                18.9277           +17.8%
+  projected serial h         42.85                  50.47             +17.8%
+  peak RSS                      —                   43.4 GiB
+```
+
+**The fillet costs +17.8% of wall time.  That is not what makes this a multi-day run** —
+42.85 h was already multi-day.  What made 300 x 4 affordable was S13's pooled 11.77 h, and
+that is what this section finds is gone.
+
+### THE POOL, MEASURED TWICE, BECAUSE THE FIRST MEASUREMENT WOULD HAVE GIVEN THE WRONG ANSWER
+
+§101's memory law — "a near-fixed JIT-compile cost, not a per-element one", 41.60 GB for one
+filleted `coarse` cell — reads as though every process pays ~41 GB whatever it holds.  Taken
+at face value it says two workers cannot coexist on this 61 GB box and the pool is dead.
+**It is the right measurement of the wrong process.**  Two probes, both one process, both
+sampling `/proc/self/statm` at 0.5 s so that priming and steady state are separated rather
+than collapsed into one maximum:
+
+```
+  process holds        peak RSS    prime      steady
+  1 phase (a WORKER)    9.1 GiB    154.9 s     24.3 s   (same phase, cache hit)
+  2 phases             16.5 GiB      —        148.6 s   (a NEW phase, cache MISS)
+  8 phases (a PARENT)  35.9 GiB   1306.3 s    152.0 / 152.9 s
+```
+
+Two things fall out, and they point opposite ways.
+
+**Steady state IS the peak.**  The 8-phase parent reads 35.78 GiB peak during priming and
+35.89-35.90 GiB in the tail of each steady evaluation, 35.85 GiB idle afterwards.  The
+residency is retained after compile, not a transient spike — so there is no trough to
+stagger worker warmups into, and the obvious rescue does not exist.
+
+**But the residency tracks PHASES HELD, not the compile.**  A worker holding one phase is
+9.1 GiB, a quarter of the parent's 35.9 GiB.  §101's figure came from a one-cell process on
+a different driver and does not describe the pooled worker payload.  So the pool is not dead
+on memory the way §101 alone would predict — it is bounded, and the bound is 2 workers:
+
+```
+  workers  phases each  workers + parent   vs 58 GiB free
+     2          4         ~46 + 9 = ~55       fits, tight
+     4          2         ~66 + 9 = ~75       over
+     8          1         ~73 + 9 = ~82       far over
+```
+
+**The 11.77 h projection needed 8 workers and is unrecoverable.**  The best that fits is 2,
+worth 1.82x on S13's own ladder — **~28 h against 50.47 h serial.**
+
+*The worker-count table is an EXTRAPOLATION and is labelled as one.*  The fit is
+`RSS ~ 5.5 + 3.8 x phases` GiB, which reproduces the measured 1-phase and 8-phase points
+(9.3 / 35.9 against 9.1 / 35.9) but sits BELOW the measured 2-phase point (13.1 against
+16.5), so ~55 GiB for two workers may be optimistic.  No 2-worker pool was stood up: at
+these sizes a wrong guess OOMs the box mid-run, and the arithmetic that would justify the
+attempt is the arithmetic under test.  **Confirming it is a ~30 min S13 run with
+`--pool-workers 2`, and it should precede any pooled descent.**
+
+### THE FINDING WITH THE LONGEST REACH: A CACHE MISS IS NOW ~124 s, NOT 0.774 s
+
+A warm worker re-evaluating ITS OWN phase takes 24.3 s.  The same worker evaluating a NEW
+phase takes 148.6 s.  `wheel_wheel.coord_fn` keys its jit cache on `float(phase)`, so a
+phase landing on a cold worker pays a **~124 s** retrace — against the 0.774 s
+`wheel_pool.py:25-30` cites as the reason phase slots pin to workers.
+
+**The design decision is more right than its stated warrant, by about 160x.**  That is the
+danger: a reader pricing the pinning rule at 0.774 s against "0.05 s for the entire rest of
+the adjoint" would reasonably file it as a micro-optimisation and feel free to trade it away
+— for load balancing, for a work-stealing queue, for `Pool.map`.  At ~124 s per miss it is
+the difference between a pooled step and a pooled step that costs more than serial.
+
+How much of the 124 s is `coord_fn` specifically rather than other phase-keyed retracing was
+NOT isolated, and the number should be read as the cost of a cold phase, not as a new value
+for the `coord_fn` constant alone.
+
+### WHAT MOVED — FOUR COMMITS, ALL GREEN
+
+* `213bb96` — `study_fillet_optimum`'s control arm gets an explicit `fillet=None`, with
+  `tests/test_fillet_optimum.py` pinning the mesh REQUEST.  The only behaviour change here.
+* `dca5629` — `Makefile:253` and `study_stage3.py`'s two `48.13 h` citations, corrected to
+  the measured 18.9 s/phase and 50.47 h, each naming which reading it came from.  Also the
+  note that `--steps` defaults to 60, not the 300 the projection quotes.
+* `55ff7e5` — `wheel_pool.py`'s pinning warrant (0.774 s -> ~124 s on the filleted mesh) and
+  the `default_workers` RAM hazard, documented rather than capped.
+* `42fac9a` — `wheel_requirements.py`'s "two designs" mass spread, which is one design on
+  two meshes.
+
+**The suite was run against all four, one pytest process per test file** — the suite does
+not survive a single interpreter, and `test_objective` alone holds 34-43 GB for 35 min.
+**31 files, 823 passed, 5 xfailed, 0 failed, 0 errors, 0 xpassed.**  With `xfail_strict`
+the last of those is as load-bearing as the others.  The three §103 gates in
+`test_objective` are still xfail, which is correct: the shipped design is still infeasible.
+Wall clock 1.85 h, but the last third overlapped another session's 2-worker pool, so that
+figure is an upper bound under contention and not a measurement of the suite.
+
+### WHAT DID NOT MOVE
+
+`best_solution.json` is untouched.  No descent ran, no promotion, no artifact re-dated.
+`studies/study_stage3.json` is untouched — the re-price was filed to a scratch `--out`
+because the gate guard refused the committed name, which is the guard working.
+§104's successor 1 is still open and is now PRICED rather than closed.
+
+### THE SECOND STALENESS CLASS, WHICH IS NOT THE ONE THAT WAS NAMED
+
+`d2cf9fa` changed two things.  The mesh is one.  The other is
+`DEFAULT_WEIGHTS["stress_margin"]`, 325.0 -> 89.21 — the only value in that table that
+moved (`min_sj` is unchanged; the whole table was diffed across the commit).  It reaches
+every driver that computes a loss with default weights, which is NOT the same set as the
+mesh channel: **five drivers clean on the mesh are stale on the weight**
+(`study_fillet_condition_a`, `study_fillet_cost`, `study_fillet_terms`,
+`study_fillet_pnorm`, `study_fillet_wiring`), and three call sites are exempt because
+`stress_margin` is produced inside `t3_terms` and a `tiers=("t1","t2")` call never reaches
+it.  8 drivers on the mesh channel, 13 on the weight channel.  The full matrix is in the
+successor below rather than here, because none of it is regenerated in this commit.
+
+### THE PREMISE LESSON, RECORDED BECAUSE IT IS THE FIFTH TIME
+
+§104 closed on "a parked arc's premise is not preserved by parking it."  This section is the
+same screw turned once more, on a COST model rather than a finding: `Makefile:253` was wrong
+from the day it was written and survived five weeks and three S10 re-measurements, because a
+comment that prices a job nobody has run is never checked against the job.  The check cost 27 minutes.
+The run it was protecting is 50 hours.
+
+**And one measurement nearly gave the wrong answer.**  §101's memory law is correct and was
+correctly cited, and it still would have produced the wrong pool verdict — because it
+describes a process holding one ladder cell, not a process holding one phase slot.  A law
+measured on one process shape does not transfer to another by its name.
+
+### THE COLLAPSED A/B, AND WHY ITS TEST WAS RUN AGAINST THE BUG BEFORE IT WAS BELIEVED
+
+`study_fillet_optimum`'s control arm was the bare `wheel_stage3.Evaluator`, and its
+"unfilleted" arm was unfilleted only because `build_wheel`'s DEFAULT was.  §103 moved that
+default's effective value for every objective path and the control followed the treatment
+onto the filleted mesh.  Nothing went red.  The driver ran, the guard passed, and the
+artifact recorded two arms that were the same mesh under two labels.  A green suite is not
+evidence when the property that broke was never asserted — it was implied by a default.
+
+The repair is one line (an explicit `fillet=None` on a control subclass, so the two arms
+differ in that keyword and in nothing else) and it is not the interesting part.  The
+interesting part is that the regression test was **run against the reproduced bug before it
+was trusted**: `arm`'s selector was edited back to `cls = _FilletedEvaluator if filleted
+else WS.Evaluator`, and the test failed on `all(f is None for f in control)` reading
+`got [True]` — on the mesh REQUEST, which is the property the study depends on, not on a
+class name or an `_FILLET` attribute, either of which would go green again the day someone
+rewires the selector to another moving default.  Repaired, it is `2 passed` in 129.8 s.
+
+That exercise also caught a defect in the test itself.  The helper runs twice in one test
+and `monkeypatch.setattr` does not undo between calls, so a spy delegating to the CURRENT
+`WW.build_wheel` wrapped the previous spy and appended the second arm's calls to the first
+arm's list.  It read `[True, None]` for the treatment — a failure that LOOKED like arm
+contamination and would have sent a reader to repair something already correct.  The fix is
+to bind the real callable at import; the reason is in the test's header comment so it is not
+re-derived.
+
+Neither the repair nor the test is in this commit.  Both are prepared and the suite has not
+been run against them.
+
+#### The successors, ranked — REVISED 2026-09-03 AFTER §105
+
+1. **RE-RUN STAGE 3 AND RE-PROMOTE**, now priced: **50.47 h serial** for 300 x 4, or ~28 h
+   at 2 workers if the extrapolation above is confirmed first.  Serial is the default and
+   the safe path; the pooled path needs its ~30 min S13 confirmation before it is trusted
+   with a multi-day descent.  Unchanged in rank, and the only thing standing between the
+   fillet switch and a shippable design.
+2. **REGENERATE THE STALE ARTIFACTS, BY CHANNEL** — 8 drivers on the mesh, 13 on the weight,
+   5 of them invisible to a mesh-only triage.  `study_fillet_optimum`'s CODE is repaired in
+   `213bb96` above, but its artifact is not: the committed JSON is the two-identical-arms
+   run, and regenerating it is a ~3.7 h descent pair (`wall_s` 13320.8 on the last one), so
+   it is ranked here rather than done.  `study_mbse_score.json` is stale on both channels
+   while its sibling calibration was regenerated in the very commit that broke it — and per
+   successor 5 it should not be regenerated until the t2 mesh question is settled, or it
+   will have to be run twice.
+3. **FIND OR DESCEND A GENUINELY BELOW-THE-KNEE WITNESS** — unchanged from §103/§104.  Note
+   that of the three `strict=True` xfails, only two key on the shipped genome;
+   `test_below_the_knee_the_rim_fillet_radius_is_dead` keys on the `genes_over_knee`
+   FIXTURE, so re-promotion alone will not reopen it.
+4. **A RAM-AWARE CAP, OR A REFUSAL, IN `wheel_pool.default_workers`** — it is
+   `max(1, min(n_phase, cpu_count))` and consults cores only.  On this box that is 8, and 8
+   filleted workers want ~73 GiB of a 61 GB machine.  `--workers` defaults to `0`, so
+   `make stage3` as shipped is safe and this is a hazard for `-1` and for explicit integers,
+   not a live bug — but it was sized when a worker cost ~2 GiB.  `55ff7e5` DOCUMENTS this at
+   the function; it does not cap it, because choosing the cap needs the 2-worker S13
+   confirmation in successor 1.
+5. **DECIDE WHICH MESH t2 READS — CLOSED AT §107, and this entry was wrong twice.**
+   It called the fix "one line on `wheel_stage3`'s own precedent": `phases` is never
+   normalised in `objective`, so `phases[:1]` crashes the common `tiers=("t1","t2")` call
+   and the stencil has to be defaulted first.  And it named ONE defect where there are two
+   — the same fallback also builds at `phase_deg=0.0` against an rqmc stencil's 0.46875 deg
+   offset, which predates the fillet entirely.  Original text follows.
+   **DECIDE WHICH MESH t2 READS** — `objective(meshes=None)` evaluates `mass` and `min_sj`
+   on the unfilleted mesh and the stress and deflection terms on the filleted one, in one
+   call.  §103 opened it (before `d2cf9fa` both tiers were unfilleted and AGREED) and it is
+   worth **+3.867 g, +9.78%**, against a `mass` tolerance of 0.365 g — 10.6x.  Nine call
+   sites are exposed, three read a t2 quantity: `wheel_requirements.score_record` (so the
+   MBSE gate), `study_mbse_score`, and `test_objective.py:994`'s exchange rate.
+   **`wheel_stage3.Evaluator` is NOT among them** — it builds `phase_meshes` itself, and
+   builds `phases[:1]` even when pooled, for this exact reason and with a comment saying so
+   — which is why the descent above can be run before this is settled.  The fix is one line
+   on `wheel_stage3`'s own precedent; it is ranked here rather than done because it moves a
+   committed artifact and can move an MBSE verdict.  Measured at `smoke` on the shipped
+   genome, t2 only: `mesh_mass_g` 39.5488 unfilleted against 43.4161 filleted, and
+   `min_scaled_jacobian` 0.7807 against 0.2877 — so the mesh-validity barrier reads 290%
+   margin above `MIN_SJ_TARGET = 0.2` on a mesh the solver never uses, while the mesh it
+   does use sits at 44%.  Neither trips the barrier at this genome; the exposure is a
+   descent leaning on `mass` walking the filleted mesh toward 0.2 with the barrier flat.
+6. **THEN §97's SUCCESSOR 5**, and the rest of §104's list, unchanged.
+
+---
+
+## §106 — 2026-09-03. [READ "A BARRIER SUM THREE ORDERS UNDER THE SCREEN" AS "33x UNDER THE SCREEN" — CORRECTED 2026-09-04, SEE THE BRACKET AT THE `stage2_elites#11` CHAIN.] §104's LESSON RUN FORWARD OVER THE SIX PARKED ARCS: FOUR PREMISES MOVED, HUBSHARE IS ANSWERED OUTRIGHT — THE HUB COMPLIANCE SHARE CONVERGES ON THE FILLETED MESH AND CLEARS THE BOUND IT HAS FAILED SINCE §14 BY 72% — AND ONE GA ELITE RAISES ON A FILLETED BUILD AT A BARRIER SUM THREE ORDERS UNDER THE SCREEN THAT EXISTS TO CATCH IT, FROM A START POINT SUCCESSOR 1 USES
+
+§104 closed with a recorded lesson, the fourth of its kind: *"a parked arc's premise is not
+preserved by parking it"* — the tri-block was carried for eleven sections on a warrant
+another arc had quietly retired, and *"the check that caught it cost one grep and one
+two-config probe."* That check has now been run **forward** over the six arcs nobody has
+opened since 2026-08-19/24, all of which were written before the fillet was wired into the
+objective (§85 default flip, §101-§103 switch). Every claim below is verified against this
+tree; nothing is inferred from a plan file's own account of itself.
+
+**Cost of the whole sweep: 8 mesh builds and 16 linear solves, 2.2 GB peak, under two
+minutes of compute.** It ran alongside the peer session's suite without contending for the
+box, which is the point: none of what follows needed the 51 GiB `test_objective.py` wants.
+
+### THE SCORECARD
+
+```
+  arc                       premise verdict           what moved
+  ------------------------  ------------------------  ---------------------------------
+  HUBSHARE  #3   ANSWERED   gate cleared AND the      the deficit the arc exists to
+                            question answered         close does not exist on the
+                                                      filleted mesh
+  MESHSTEP  #6   FALSIFIED  headline number is        16.8x -> 2.650x; the fillet did
+                            wrong by 5.7x             the arc's Step 1 as a side effect
+  RIMCAP    #5   RESHAPED   its own "check first"     the cap model's stress-pricing job
+                            trigger has fired         is gone; the gap left behind DOES
+                                                      bind -- 17 of 38 kept genomes and 117
+                                                      of 2598 iterates ON THE PATH, up to
+                                                      88.6%, none screened by T1_REJECT --
+                                                      and one elite REFUSES the filleted
+                                                      build and would kill a 50 h run
+  BOUNDARY  #8   REFRAMED   defect 5 does NOT reach   §99's margin knee gave the stress
+                            the barrier I expected    wall a non-zero restoring slope
+  WALLPIN   #4   INTACT     numbers reproduce         but Gate 1's subject moved: it is
+                                                      now about a mesh the optimizer
+                                                      does not use
+  EXPORTPREC #7  BLOCKED    premise intact            its own "must not happen" clause
+                                                      became true when successor 1 was
+                                                      ranked #1
+```
+
+---
+
+### HUBSHARE #3 — ANSWERED, AND BY ITS OWN PREDICTION
+
+The arc gates itself in three places, and all three name the same condition:
+
+> *"Do not build on a non-converged quantity. Check `FILLET_PLAN.md`'s status first."*
+> *"The unfilleted re-entrant corner is the prime suspect, and if the fillet arc lands
+> first this number may move on its own."*
+> *"That is a stronger reason to wait for the fillet arc than the arc had before ... the
+> field of suspects narrowed by one and the symptom did not."*
+
+**FILLET_PLAN landed at §103 and nobody came back.** And no driver on disk could have
+answered it: `study_reds_hub_share.rungs()` (`studies/study_reds_hub_share.py:179`) takes
+no `fillet` argument, so its `shares(genes, _config(cfg))` call takes `build_wheel`'s
+`fillet=None` default at every rung. `make reds-hub-fillet` exists but runs `--sweep`, not
+`--rungs`. The ladder the arc's gate is written against has only ever been measured on the
+unfilleted mesh.
+
+Measured here by calling the module's own `shares()` directly — the same function `rungs()`
+calls, with `fillet` set. Linear kinematics, one phase, `best_solution.json` and
+`best_solution_ga_beam.json`:
+
+```
+  genome   mesh       smoke     coarse    medium    fine      ultra     drift    vs 0.03 bound
+  -------  ---------  --------  --------  --------  --------  --------  -------  --------------
+  shipped  plain      0.032489  0.034188  0.035237  0.036483  0.037053  +14.05%  OVER  by 23.5%
+  shipped  FILLETED   0.008079  0.008308  0.008409  0.008442  0.008463   +4.75%  UNDER by 71.8%
+  ga_beam  plain      0.013823  0.013722  0.013849  0.014043     --       +1.60%  UNDER by 53.2%
+  ga_beam  FILLETED   0.005312  0.005381  0.005406  0.005417     --       +1.98%  UNDER by 81.9%
+```
+
+**[CORRECTED 2026-09-04 — §109. THE TWO `--` CELLS IN THE `ultra` COLUMN ARE NOT MISSING
+DATA.** `ga_beam` at `ultra` is **0.014144** and was committed in
+`studies/study_reds_hub_share.json`'s `rungs` block — the same block this section checked its
+own plain column against, three lines below. So the table compares shipped drift over FIVE
+rungs against ga_beam drift over FOUR: with `ultra` in, the plain ga_beam ladder drifts
+**+2.32%**, not +1.60%. The filleted `ga_beam` cell was genuinely unmeasured and is now
+**0.005423**, drift **+2.09%** not +1.98%. Two more on this table, same cause — reading a
+ratio off its own rounded cells: the shipped FILLETED drift is **+4.74%**, and the increment
+ratio quoted as 1.57 below is **1.640**. **Every measured value above reproduces** — the plain
+row bit-identically, the filleted rows to 4.2e-7 — **and no verdict in this section moves.]**
+
+**THE PLAIN COLUMN REPRODUCES THE ARC'S OWN COMMITTED TABLE, AND THAT IS WHAT LICENSES THE
+FILLETED ONE.**  Checked against `studies/study_reds_hub_share.json`'s `rungs` block rather
+than against the plan's prose: agreement is **3.3e-7 or better at all five rungs**, the drift
+comes back at the stated **+14.05%**, and the bound deficit at `ultra` comes back at the
+stated **23.5%**.  Three independent matches, so the filleted column is the same instrument
+reading a different mesh rather than a different measurement.
+
+**The convergence question is settled by the increments, not by the drift**, and the fifth
+rung is what makes that statement safe — a four-rung draft of this record claimed the plain
+mesh's last increment was the larger one, which is true only if the ladder stops at `fine`:
+
+```
+  shipped plain      +0.001699  +0.001049  +0.001246  +0.000570   NOT monotone (rises medium->fine)
+  shipped FILLETED   +0.000229  +0.000101  +0.000033  +0.000021   monotone at every rung
+```
+
+**The filleted increments fall at every rung; the plain ones do not.**  That
+non-monotonicity is why this arc could never call the quantity converged, and it survives to
+`ultra`: the plain ladder drifts **+14.05%** where the filleted one drifts **+4.75%**, 3.0x
+less, to a level 4.4x lower.  Richardson on the filleted tail at its slowest observed ratio
+(1.57) puts the limit at ~0.00850, so `ultra` is converged to about 0.4% — and every rung
+from `smoke` up is already inside the bound by more than 70%.
+
+**So all three of the arc's gating sentences resolve, and the prime suspect it named was
+right.** The unfilleted re-entrant corner was not merely *a* cause of the drift, it was
+76% of the level as well: 0.036483 -> 0.008442 at `fine`, a 4.32x reduction.
+
+**AND THAT ANSWERS THE ARC'S DESIGN QUESTION, NOT JUST ITS GATE.** HUBSHARE exists because
+*"the shipped wheel holds 3.2x the hub compliance share of the design it replaced"* and
+asks whether hub compliance should become an objective term. On the mesh the objective now
+solves, the shipped wheel holds **0.008442 against a 0.03 bound — 72% of margin** — and
+its Step 0 (*"find out whether the term would buy anything"*) has its answer: there is no
+deficit left for a term to close. The arc's own text calls this the better outcome:
+
+> *"If the answer is that the share is a diagnostic rather than a constraint, this arc
+> closes by recording that ... which is a better outcome than adding a term."*
+
+**ONE SCOPE LIMIT, STATED BECAUSE IT BOUNDS THE COMPARISON AND NOT THE FINDING.** `ga_beam`
+asks for `R_hub` 1.5598 / `R_rim` 3.0 and the mesh applies **(0.667, 0.8952) with both
+junctions CLAMPED** (`wheel_wheel.SECTOR_FIT_CLAMP`). The shipped genome is unclamped
+(0.6636, 3.0). So the shipped-to-ga_beam *ratio* on the filleted mesh — 1.56x — is a
+comparison between a clamped build and an unclamped one and **must not be quoted as a
+design comparison**. The shipped genome's own column is clean and carries the finding; the
+ga_beam column is there as the bound's calibration design and nothing more.
+
+**WHAT THIS DOES TO §31's XFAIL, WHICH IS NOT WHAT IT LOOKS LIKE.**
+`tests/test_wheel_fea.py::test_the_hub_junction_holds_under_three_percent_of_the_compliance`
+is `xfail(strict=True)` and its reason ends *"so this reopens itself the day the wheel
+passes it."* **The wheel passes it — on the mesh the objective solves — and the test does
+not reopen**, because its `mesh` fixture is `ww.build_wheel(genes, CFG)`
+(`tests/test_wheel_fea.py:41`), the bare default, and therefore unfilleted. The test is
+still red, still green as an xfail, and now records a deficit **of the instrument rather
+than of the design**. That is the §103 cascade in its purest form and it is the third
+entry in this tree's own "pin the finding, not its symptom" ledger: the test pins a number
+on one mesh, and the finding it was written to protect has been overtaken without the pin
+moving. Deciding what that test should assert is this arc's closing edit, and it is a
+judgement, not a mechanical fix.
+
+---
+
+### MESHSTEP #6 — THE HEADLINE NUMBER IS 2.650x, NOT 16.8x, AND THE FILLET DID THE ARC'S OWN STEP 1
+
+The arc is titled *"the 16.8-30.3x element-size step on the rim OD"* and its mechanism is:
+per 30-degree sector the rim OD gets `n_weld` elements over the weld arc and `n_rim_free`
+over the free arc, the two are not the same size, and — the sentence the whole arc rests on
+— *"refining buys a smaller element and the same step."*
+
+Measured on this tree, geometry only, no solve. Rim-OD nodes at `RIM_OUTER_RADIUS_MM` =
+50.0, `best_solution.json`:
+
+```
+  mesh              weld band   free band   weld node step  free node step  STEP RATIO
+  ----------------  ----------  ----------  --------------  --------------  ----------
+  coarse  plain      1.8746deg  28.1254deg     0.093731deg     1.406269deg      15.003
+  coarse  FILLETED   8.2186deg  21.7814deg     0.410929deg     1.089071deg       2.650
+  medium  plain      1.8746deg  28.1254deg     0.058582deg     0.878918deg      15.003
+  medium  FILLETED   8.2186deg  21.7814deg     0.256831deg     0.680669deg       2.650
+```
+
+**The mechanism, in one line the arc did not have:** the two bands get the *same* element
+count, so the step ratio IS the arc-length ratio of the bands — which is why the arc
+correctly observed the ratio to be invariant up the ladder and a function of the design.
+Both invariances reproduce here, on both meshes.
+
+**And the fillet widens the weld band by 4.384x** — 1.6359 mm to 7.1721 mm of arc at the
+OD, a difference of 5.5362 mm, 1.85x an applied `R_rim` of 3.0 — and the ratio falls by
+5.66x, 15.003 -> 2.650.
+
+**[CORRECTED 2026-09-04 — TWO ERRORS ON ONE LINE.**  It read *"0.8180 mm to 3.5860 mm of arc
+at the OD, a difference of 2.77 mm against an applied `R_rim` of 3.0 — so the ratio falls by
+the same factor"*.  **(i)** The millimetres were the R = 25.0 conversion, at a
+`RIM_OUTER_RADIUS_MM` = 50.0 this section names seven lines above; 2.7680 mm is the correct
+PER-SIDE widening, and quoting it against a 3.0 mm radius reads as a sanity check passing
+when the total widening is 1.85x that radius rather than two thirds of it.  **(ii)** The step
+ratio does NOT fall by the band's own factor: it falls 15.003 / 2.650 = **5.66x**, because
+the free band shrinks 1.291x as the two bands must sum to 30 deg, and 4.384 x 1.291 = 5.66.
+This section's own scorecard already has that right — *"headline number is wrong by 5.7x"* —
+and only this line disagreed with it.  Every ratio in the table above is an angle ratio that
+never passed through millimetres, so 15.003, 2.650 and 4.384x are untouched.
+`MESHSTEP_PLAN.md` carries (i) from the peer session and still carries (ii).]**
+
+Two consequences, and they point opposite ways:
+
+1. **The arc's Step 1 is already done, by accident.** Step 1 is *"grade the rim OD division
+   so the weld and free arcs meet at comparable element size."* 2.650x is not 1.0 but it is
+   not 16.8x either, and the arc's own Step 0 says *"if the cost is negligible, close the
+   arc here and record it."* Whatever the G7 cost measurement would have found at 15x, it
+   is a different question at 2.65x and has to be re-asked before any meshing change is
+   designed.
+2. **The arc's "why it matters" clause is measured on the wrong mesh.** Its case is that the
+   contact patch sits *on* the step — patch reaching back past the weld/free boundary *"by
+   0.1395 deg"*, three nodes instead of fewer, *"a knife-edge, and it moves with the design."*
+   On the plain mesh the boundary sits at +0.9373 deg from the junction centre; on the
+   filleted mesh at **+4.1093 deg**. Where the patch falls relative to that is a contact
+   solve and is **NOT measured here** — it is the one piece of this arc that still needs the
+   box. What IS established is that the boundary the knife-edge is measured against moved by
+   3.17 degrees, so the 0.1395 deg margin cannot be carried forward unchecked.
+
+**A SECOND STALENESS, INDEPENDENT OF THE FILLET AND WORTH SEPARATING.** The arc's `16.8`
+is not this genome's number even on the plain mesh: it reads **15.003**. The arc says the
+ratio tracks the design (*"16.8 on `e126cc3`, 30.3 on `e4219f3`"*) and the shipped genome
+has been `09e8188` since §26. So the title's range was already one promotion out of date
+before §103 touched it. Two stale mechanisms, and only one of them is the fillet.
+
+---
+
+### RIMCAP #5 — ITS OWN "CHECK FIRST" TRIGGER HAS FIRED, AND WHAT IS LEFT IS NARROWER AND UNGUARDED
+
+RIMCAP is the one arc that wrote its own tripwire, and it is exact:
+
+> *"**Check first — this arc may be reshaped by `FILLET_PLAN.md`.** The hub cap model exists
+> because the objective needed to price a fillet the **mesh cannot see**. If `FILLET_PLAN.md`
+> lands and the FEA meshes fillets directly, the reason for a closed-form cap model changes
+> substantially — the objective could price `R_rim` through the solve instead of through a
+> correlation. **Read `FILLET_PLAN.md`'s status before starting.**"*
+
+Every clause of that condition is now true, and it went unread for a day because the arc is
+parked and nothing reads a parked file:
+
+- the FEA meshes fillets directly — `wheel_objective.phase_meshes` passes `fillet=True`
+  unconditionally (`src/wheel_objective.py:1013`), as does `wheel_pool_worker.run_phase`
+  (`:63`);
+- the objective prices the junctions through the solve — `util_j` is the junction's own
+  region p-norm and `Kt` does not appear in it (§103);
+- and `R_rim` is not a dead gene any more — §102 gave it a nonzero entry for the first time.
+
+**So the half of the deliverable RIMCAP was ranked for is gone.** Its Step 1 asks for
+`rim_fillet_cap_mm(t3, arrival_angle)` in `wheel_objective`, differentiable, *"mirroring the
+hub"* — but the hub cap's stress-pricing job was retired at §103, which kept `Kt`,
+`hub_fillet_cap_mm` and `hub_fillet_r_effective` as **reporting only**
+(`src/wheel_objective.py:1259`).
+
+**What the hub cap still does is the half nobody restated, and the rim's guard models a
+DIFFERENT LIMIT from the one the mesh enforces.** There are three separate limits on a
+fillet radius in this tree and they are not the same question:
+
+```
+  limit                     asks                                    reads     lives in
+  ------------------------  --------------------------------------  --------  -------------
+  `fillet` barrier (3000)   does a circle of R fit the re-entrant    g[12] &   wheel_objective
+                            CORNER?                                  g[13]     :836
+  `fillet_cap` barrier      does it fit the SLOT between adjacent    g[12]     wheel_objective
+    (500) + selection tier  spokes?                                   ONLY     :861, stage3:223
+  SECTOR_FIT_CLAMP          does it fit its own SECTOR?              both      wheel_wheel:1527
+                                                                               (mesh, silent)
+```
+
+`_fillet_margins`'s own docstring says the first two are *"a SEPARATE mechanism ... and
+neither subsumes the other."* **The third is in neither, and since §103 it runs inside
+every objective evaluation.** Measured at `coarse`:
+
+```
+  genome    R_hub    R_rim    corner margins    `fillet`  `fillet_cap`   mesh applied      clamped
+  --------  -------  -------  ----------------  --------  ------------  ----------------  --------------
+  shipped   0.6636   3.0000   [4.0271, 10.7491]    0.0         0.00     (0.6636, 3.0000)  none
+  ga_beam   1.5598   3.0000   [4.6471,  0.1254]    0.0       401.70     (0.6670, 0.8952)  hub AND rim
+```
+
+**On `ga_beam` the mesh cuts the rim fillet from 3.0 mm to 0.8952 mm — 70% of the requested
+radius — while every barrier that reads `R_rim` reads exactly 0.0.** The corner test even
+passes it explicitly, at +0.1254 mm. The hub has a second guard that fires (401.70) and a
+selection tier behind it; the rim has neither, so on the rim the clamp is the ONLY thing
+enforcing the limit and nothing reports that it acted.
+
+So the reshaped arc is one sentence rather than four steps: **the objective can move `R_rim`
+into a region the mesh silently truncates, with the barrier that reads `R_rim` certifying it
+feasible, and that has been inside every evaluation since §103.** Whether it BINDS is not
+established here — the shipped genome is unclamped with 10.75 mm of corner margin, so it may
+be worth nothing, and this tree's own memory is that a successor ranked #1 was worth zero
+because the branch it fixed was 253% from binding. **That check is the arc's new Step 0 and
+it is cheap:** count clamped rim junctions over the elite pool. It is not a cap model, and a
+cap model is not what should be built first.
+
+**STEP 0, RUN THE SAME DAY: IT BINDS, AND THE FIRST ANSWER TO THIS WAS WRONG.** Enumerated
+rather than sampled — every genome anyone kept on disk: the 16 GA elites in
+`stage2_elites.json`, the `best` of all 25 `stage3_*.json` runs that carry one, and the two
+named genomes. 38 unique after deduplication, each built at `coarse` with `fillet=True`.
+
+```
+  unique genomes kept on disk                        38
+    REFUSE the filleted build outright                1   (2.6%)
+    rim fillet CLAMPED by the mesh                   17  (44.7%)   up to 88.6% of the radius
+    hub fillet clamped                               18  (47.4%)
+```
+
+**THE CORRECTION, STATED BEFORE THE RESULT, BECAUSE THE RESULT DEPENDS ENTIRELY ON IT.** The
+first cut of this scored the clamped genomes as unreachable because each one violates a t1
+barrier, and concluded the clamp never acts on anything an evaluation would reach. **That is
+not the descent's criterion.** `wheel_stage3.descend` rejects a trial only when
+`t1_barrier_sum(z) > max(T1_REJECT, b_here)`, and `T1_REJECT` is **1.0e4** — a threshold whose
+own comment explains why it is that loose: *"Every barrier is ALREADY a term in the objective
+... A pre-check that also forbids any increase duplicates that job and overrides it ... So the
+screen keeps only the job the objective cannot do: refusing to spend a solve on geometry that
+will not mesh."* Read against the right threshold:
+
+```
+  all 17 clamped genomes' t1 barrier sums:  43.77 to 712.2      T1_REJECT = 10000
+```
+
+**Every one is one to three orders of magnitude below the screen. All 17 reach a mesh build.**
+The worst is `stage2_elites#7`, which asks `R_rim` 2.7868 at a barrier sum of 301.2 and is
+built at **0.3184 — 88.6% of the radius removed**, with nothing in the objective, the barrier
+vector or `selection_key` recording that it happened. `best_solution_ga_beam.json` — the
+design the `hub < 0.03` bound was calibrated on — is cut 70.2% at a sum of 453.8.
+
+So the answer to RIMCAP's Step 0 on the kept population is **it binds**, and the arc's gap is
+live rather than theoretical. What it is NOT is a reason to build the cap model this file's
+Step 1 describes: the objective already carries a `fillet` barrier reading `g[13]` for the
+CORNER, and what is missing is the SECTOR limit the mesh applies silently. The cheapest honest
+fix is to make the clamp visible — report `fillet_clamped` and the applied radii the way
+`hub_fillet_cap_mm` is already reported — before deciding whether it needs a barrier of its own.
+
+**AND THE CLAMP IS NOT A PROPERTY OF THE KEPT POINTS — IT IS ON THE SEARCH PATH.**
+The kept population is 38 end points. The census above says nothing about whether the descent
+*travels* through the clamp, so every Stage-3 iterate on disk was scored as well: 25 committed
+`studies/stage3_*.json` runs, denormalised back to physical genes, deduplicated to **2598
+unique iterates**, each one built at `coarse` with `fillet=True`.
+
+```
+  unique Stage-3 iterates scored                      2598
+  REACH a mesh build (t1 sum <= T1_REJECT=10000)      2598  (100.0%)
+  REFUSED the filleted build outright                    0
+  rim fillet CLAMPED                                   117
+  hub fillet clamped                                   187
+
+  run                               clamped  iterates    idx range   max cut
+  stage3_minwall_2.2.json                44       126       #5-#56     18.0%
+  stage3_prod_elite10.json               43       300       #0-#42     87.0%
+  stage3_prod_elite9.json                24       150       #0-#23     82.3%
+  stage3_run_elite10.json                 4         4       #1-#4      85.7%
+  stage3_run_elite9.json                  2         2       #1-#2      81.6%
+```
+
+**Every iterate ever taken reaches a mesh build.** Not one of 2598 is screened out by
+`T1_REJECT`, which is the measurement that retires the "unreachable geometry" defence for good:
+the screen never fires on the search path, so anything the clamp does to a t1-infeasible point
+is done to a point the descent is actually standing on.
+
+**And what it does is hide the gene from its own optimiser.** `stage3_prod_elite10`'s first
+sixteen steps:
+
+```
+    it  R_rim asked   applied   cut %     t1 sum
+     0       2.8283    0.3668   87.0%      570.7
+     4       2.7975    0.6303   77.5%      213.5
+     8       2.7781    0.8417   69.7%      141.4
+    12       2.7675    1.0600   61.7%      103.6
+    15       2.7625    1.2369   55.2%       84.7
+```
+
+Over fifteen steps the gene the optimiser controls moves **2.3%** (2.8283 → 2.7625) while the
+radius actually built moves **237%** (0.3668 → 1.2369). The applied radius is not tracking the
+gene at all — it is tracking the sector geometry other genes are opening up. The descent reads
+a monotonically falling barrier sum (570.7 → 84.7) and concludes it is making progress on a
+design whose defining radius it is not, in this region, the thing that sets. `R_rim` was one of
+§15 DEFECT 1's two dead genes; §102 gave it a nonzero gradient entry for the first time. This
+says the entry it now gets is, for the first 40-odd steps of the elite-10 descents, an entry for
+a radius the mesh is going to overwrite.
+
+**A NOTE ON HOW THIS WAS NEARLY MISSED, BECAUSE THE MECHANISM GENERALISES.**
+The first pass filtered iterates to the strictly t1-feasible ones (every barrier exactly zero)
+on the assumption that the rest were unreachable. That filter returns **1195 of 2598** rows —
+a plausible-looking 46% — and **0 of the 117 rim clamps**. The clamped set and the strictly
+feasible set are *disjoint*, so the filter did not bias the count, it removed the entire signal
+and returned a clean, confident, wrong null. The screen the descent actually applies is
+`t1_barrier_sum > max(T1_REJECT, b_here)` with `T1_REJECT = 1.0e4`; the clamped iterates sit at
+84.7 to 570.7. Two orders of magnitude separated the filter that answers "no" from the filter
+that answers "yes".
+
+**AND THE SAME CENSUS FOUND A LIVE DEFECT ON THE RANKED-#1 PATH, WHICH IS THE LARGER FINDING.**
+`stage2_elites#11` does not clamp — it **refuses**: *"no filleted blocking exists at the rim:
+the fillet's tangent point has passed the next sector's corner (-2.685 deg of free ring left)."*
+Measured on this tree, that same genome **builds perfectly well unfilleted** (21012 nodes, 4704
+elements at `coarse`). Its t1 barrier sum is **301.4**. Chain it together:
+
+  - `T1_REJECT`'s one documented job is *"refusing to spend a solve on geometry that will not
+    mesh"*, and 1e4 was calibrated against the UNFILLETED mesh's notion of un-meshable —
+    the comment's own witness is M8a's analytically infeasible fillet at **112,000**.
+  - §103 changed which mesh must be built. The filleted mesh refuses geometry the unfilleted
+    one accepts, at a barrier sum of 301.4 — **33x below the screen**.
+    **[CORRECTED 2026-09-04 — THIS READ "three orders of magnitude below the screen" AND THE
+    DIVISION WAS NEVER DONE.  `T1_REJECT` / 301.4 = 10000 / 301.4 = **33.2x**, one and a half
+    orders.  The finding is untouched — the screen still does not fire, which is the whole
+    point of the chain — but the margin is 33x, not 1000x.  The same phrase stood in this
+    section's heading and in commit `6fd3122`'s message.  The OTHER orders claim in this
+    section — "one to three orders of magnitude below the screen", for the 17 clamped genomes'
+    sums of 43.77 to 712.2 — is a CORRECT bracket (14.0x to 228.5x, all inside 10x-1000x) and
+    is left exactly as written.]**
+  - `descend` wraps the evaluator in `except RuntimeError` (`src/wheel_stage3.py:600`), for
+    *"NewtonDivergedError, the secant's stall, or dF/ddelta <= 0"*. A blocking refusal is a
+    **`ValueError`**, so it is not caught and it ends the run.
+  - `--start all` loads all 16 elites and `--start rank:11` reaches this one directly
+    (`start_points`, `load_elites`), so a multi-start Stage-3 run **starts** there.
+
+**Successor 1 is a 50.47 h multi-start descent** — §105's price, landed the same day —
+**and one of its start points raises on its first objective evaluation and takes the run down
+with it.** That is found for free, before the fifty hours, and it is the concrete pre-flight
+item this sweep produced. It compounds with §105's other finding: the pool's bound on this
+box is **2 workers**, not 8, so a crash at `rank:11` forfeits a much larger share of the run
+than an 8-way pool would have lost.
+
+**AND ONE STALE DOCSTRING FOUND ON THE WAY, WITH ITS CONCLUSION INTACT.**
+`_fillet_margins` states *"At the shipped genome the margins are `[+4.647, +0.125]`"*
+(`src/wheel_objective.py:640`). Those are **`ga_beam`'s** margins, measured above to four
+decimals — the genome that was shipped when the line was written (`36aed36`, the GA/beam
+optimum). The current shipped genome reads `[4.0271, 10.7491]`, so the rim figure is off by
+86x. The docstring's ARGUMENT survives unharmed — it uses the margins only to show the
+barrier is flat there and `d(fillet)/dR_hub` is 0.0, and 4.0271 is comfortably feasible too
+— but the numbers are one promotion (§26, 2026-08-14) out of date and are the kind of figure
+this tree's own banner rule exists to catch.
+
+---
+
+### BOUNDARY #8 — REFRAMED, AND THE HYPOTHESIS I OPENED WITH WAS WRONG
+
+The obvious reading of §103 against this arc is that it re-ranks it hard: defect 5 is
+*"`soft_barrier(v) = scale * max(0, v)**2` has zero gradient at its own knee, so against a
+term that pushes steadily outward it cannot hold the boundary"*; §103 measured the shipped
+genome at hub utilisation 1.0557, i.e. **over the stress wall**, with `stress` reading
+12.391 where it read 0.0 before. A quadratic barrier that cannot hold a boundary, now
+active at the starting point of the descent ranked #1 — that looks like defect 5 landing on
+the critical path.
+
+**Measured, it is not.** `stress` does not stand alone at its knee any more:
+
+```
+  stress         = 4000.0 * max(0, u - 1.00)^2     BARRIER      d/du at u=1.0 =  0.00
+  stress_margin  =   89.21 * max(0, u - 0.80)^2    OBJECTIVE    d/du at u=1.0 = 35.68
+```
+
+`stress_margin` is in `OBJECTIVE_TERMS`, so it is in the loss at every step, and its knee
+sits 0.20 **inside** the wall. At the wall it contributes a restoring slope of
+`2 * 89.21 * 0.2` = **35.684** where the barrier itself contributes zero. The equilibrium
+overshoot is where `8000*(u-1) + 178.42*(u-0.8)` balances the outward pull, and it is
+bounded rather than free: any pull under 35.68 cannot push `u` past 1.0 at all.
+
+**So the stress wall is the first boundary in this tree that defect 5's mechanism does not
+reach — and it got that way as a side effect of §99's margin policy, not as a defect-5
+fix.** Nobody wrote that down because nobody was looking at the two terms together.
+
+What this does to the arc is narrow it, not re-rank it. The eight remaining barriers —
+`buckling`, `x_order`, `hub_overlap`, `fold`, `arrival`, `fillet`, `fillet_cap`, `min_sj` —
+have no companion objective term with an inner knee, so defect 5 reaches all of them
+undiluted, including `fillet_cap`, which is the one §19 actually measured wasting 45 steps
+of a 6h20m run. The arc's Step 0 (price it as wasted descent rather than as 0.61% of loss)
+is unchanged and still the thing that would re-rank it.
+
+**And there is a cheap thing worth doing before successor 1 spends 50 hours:** the same
+"give the barrier an inner-kneed companion" shape that fell out of §99 for `stress` is a
+candidate fix for `fillet_cap`, and it is a candidate `DEFECT5_PLAN` did not consider
+because `stress_margin` did not exist when that arc ran. That is new evidence in the exact
+sense the arc requires — *"do not re-propose a fix `DEFECT5_PLAN` already rejected without
+new evidence"* — because it is not a re-proposal at all.
+
+---
+
+### WALLPIN #4 — THE NUMBERS REPRODUCE; THE QUESTION THEY ANSWER MOVED
+
+Premise check, mechanical:
+
+- `set_min_wall(2.0)` is still wrapped around both tests named in the plan
+  (`tests/test_wheel_fea.py:370` and `:407`), restored in a `finally` as described. INTACT.
+- `MIN_WALL_MM = 1.2` (`src/wheel_fea.py:236`). INTACT.
+- The measurement path is untouched by §103: `study_reds_ratio_stability.py` never builds a
+  wheel; `run_beam_blindness`'s FEA side is `_blindness_row`, and it calls
+  `WW.build_wheel(v, cfg)` with **no `fillet=` argument** (`studies/study_wheel_fea.py:465`),
+  i.e. the unfilleted default. §31's CV floors and the 66/66 `correction_factor_is_
+  defensible` result therefore still reproduce from their driver. INTACT.
+
+**But Gate 1's subject moved and the arc's own judgement question is now two-dimensional.**
+The arc asks *"which gene box is Gate 1 a statement about?"* — 2.0 mm or 1.2 mm. Gate 1's
+conclusion is *"no single beam-to-wheel correction factor exists over the design space the
+optimizer searches"*, and since §103 the optimizer's wheel is the filleted one, which §91
+measured as disagreeing with the unfilleted mesh by **47.85% of axle drop**. So there is now
+a second question of the same kind — **which MESH is Gate 1 a statement about?** — and it was
+not on the arc's list.
+
+This does not weaken Gate 1's conclusion; a correction factor is if anything less likely to
+exist across two meshes than one. It does mean Step 1's *"write the argument down before the
+edit"* has a second argument to write down, and it costs nothing to answer it in the same
+sitting as the first.
+
+---
+
+### EXPORTPREC #7 — PREMISE INTACT, AND ITS OWN PROHIBITION JUST BECAME TRUE
+
+The exporter is OCC-side and does not touch the FEA mesh, so §103 leaves the arc's
+measurements alone: §28's derived tolerance, the 5.1e-5 budget, and the 2-dp volumes in
+`export/wheel_step_manifest.json` (`solid 39224.5`, `nofillet 36145.8`, `fillets 3078.77`,
+last exported 2026-08-15) all stand.
+
+**What changed is its blocking condition.** The arc's "What must NOT happen" reads:
+
+> *"**Do not do this immediately after a promotion.** §28 deferred it for that reason and
+> the reason is structural, not circumstantial — the shipped genome is `09e8188` (§26) and
+> if a new promotion is in flight, this waits."*
+
+A promotion **is** in flight: §103 and §104 both rank *"RE-RUN STAGE 3 AND RE-PROMOTE"* as
+successor 1, and §103's own finding is that the shipped genome now reads over the wall, so
+that re-promotion is not optional. EXPORTPREC therefore moves from *"no urgency, rank it
+accordingly"* to **explicitly blocked until successor 1 lands**, which is a status its
+ranking does not currently carry.
+
+---
+
+### THE COMMITTED ARTIFACTS: §45's SUCCESSOR 4, ANSWERED AS FAR AS DISK ALLOWS — AND THE REASON IT STOPS THERE
+
+§45 filed *"which committed `studies/*.json` predate the flip AND come from a driver that
+builds a wheel on the bare default"*, with the rule that *"a commit date is not a run date
+means it cannot be answered from `git log`"*, and concluded it *"makes it a driver with an
+artifact and a test, not a table in a plan file."* §103's switch is a far bigger flip than
+the one that filed it. Measured:
+
+```
+  committed study artifacts                                     57
+    that record the command that produced them                   0
+    that record a run date                                       0
+    that carry a `loss` or a `stress_margin`                     17
+  drivers passing an explicit `weights=` anywhere at all          2
+    (study_fillet_optimum.py, study_stage3.py)
+```
+
+**The staleness needs no per-artifact re-run to establish, because one mechanism covers the
+class.** `DEFAULT_WEIGHTS["stress_margin"]` moved 325.0 -> 89.21 at §103, and it is read
+live by every driver but two. **So every committed artifact carrying a loss number was
+computed at a weight the tree no longer has** — 17 of them, of which exactly one
+(`study_mbse_calibration.json`) was regenerated at §103, and it is the one a test reads.
+
+A second, independent mechanism hits the subset whose drivers do not inject their own
+meshes: `t3_terms` builds via `phase_meshes` only when `meshes is None and pool is None`
+(`src/wheel_objective.py:1168`), so a driver that hands in `meshes=` kept control of the
+geometry across §103 and one that did not had the mesh flipped under it.
+
+**AND A GENE BOX MOVED UNDER 13 OF THEM, WHICH IS THE SAME FAILURE ONE LEVEL DOWN.** Stage-3
+records store each iterate as `z`, the unit-box vector, and `z` means nothing without the box
+that produced it. Denormalising the committed runs with today's `GENE_SPACE` reproduces
+`best.genes` exactly for 12 runs and is wrong on **exactly one gene** for 13 others — `R_hub`,
+by up to 0.098 mm, with every other gene exact to machine precision. Fitting the box over
+those 13 runs' own `best.z` -> `best.genes` pairs returns
+
+```
+  historical R_hub box  [0.500000, 4.000000]      max residual 1.11e-16 over 13 runs
+  today's R_hub box     [0.4,      4.0     ]
+```
+
+and `git log -S` names the change: **`b5c22c9`, 2026-08-12, "svk descent step 1-9 done"**,
+whose own hunk comment argues the case — *"R_rim IS UNCHANGED at 0.5, on purpose ... Moving a
+constant because its neighbour moved is how a box stops meaning anything."* The change was
+deliberate and documented. **What is not recorded anywhere is which box a given artifact was
+written under**, so anyone reading a pre-2026-08-12 `z` with today's bounds gets an `R_hub`
+wrong by up to 0.098 mm — on the gene the fillet arc has spent twenty sections on.
+
+**THE BOX, UNLIKE THE COMMAND AND THE DATE, IS RECOVERABLE — AND THAT IS THE USEFUL HALF.**
+Any run storing both `best.z` and `best.genes` carries its own key: search the candidate boxes
+for the one that maps the first to the second. Over the 25 Stage-3 runs with step records,
+**every one resolves to exactly one box, with none ambiguous and none unrecoverable**:
+
+```
+  (min_wall, R_hub_low)   runs        (min_wall, R_hub_low)       runs
+  (1.2, 0.4)                8         (0.8/1.0/1.4/1.6/1.8/2.2, 0.5)  1 each
+  (1.2, 0.5)                6         (2.0, 0.5)                      5
+```
+
+**[CORRECTED 2026-09-04 — THE "1 each" LIST OMITTED `min_wall` 1.8 AND THE TABLE THEREFORE
+SUMMED TO 24 UNDER A SENTENCE CLAIMING 25.**  Re-counted off disk rather than off the prose:
+exactly 25 `stage3_*.json` carry a non-empty `steps` array, and their `settings.min_wall_mm`
+are 1.2 x14, {0.8, 1.0, 1.4, 1.6, **1.8**, 2.0, 2.2} x1 each, and `None` x4.  Both of the
+table's other cells are right and corroborate the fix — 8 + 6 = the fourteen 1.2 runs, and
+(2.0, 0.5)'s 5 = `stage3_minwall_2.0` plus the four `None` runs this paragraph names below.
+`stage3_minwall_1.8.json` is on disk with 126 steps, the same shape as the 0.8/1.0/1.4/1.6/2.2
+siblings that were listed.  The claim above — every one resolves to exactly one box, none
+ambiguous, none unrecoverable — is unchanged and now rests on all 25.]**
+
+The four runs that state no `min_wall_mm` at all — `stage3_prod_elite9/10` and
+`stage3_run_elite9/10` — resolve uniquely to `(2.0, 0.5)`, which is historically coherent:
+`MIN_WALL_MM` was 2.0 until §13 lowered it on 2026-08-06, and `R_hub`'s floor was 0.5 until
+`b5c22c9` on 2026-08-12. So they are the oldest Stage-3 runs on disk and they say so, once
+asked the right way.
+
+**AND THE PLACE TO STAMP PROVENANCE ALREADY EXISTS AND ALREADY SEES IT.**
+`studies/_gate_guard.refuse_degraded_out(ap, args, committed, degraded)` is called by **25 of
+the 37 drivers** and holds, at the moment of writing, both the fully parsed argv and the
+committed artifact's name. It **refuses** a degraded run under a committed name and records
+nothing about the run it allows. So §45's *"a driver with an artifact and a test"* is not new
+machinery — it is a stamp at the one point that already has both halves, and `_gate_guard`'s
+own docstring makes the argument for putting it there: *"one definition, so a fix to the
+wording or the failure mode reaches all nine."*
+
+**AND HERE IS WHERE THE AUDIT STOPS, WHICH IS ITSELF THE ANSWER TO WHY §45 ASKED FOR A
+DRIVER RATHER THAN A TABLE.** Twenty of the 57 artifacts have no same-named driver — they
+are `--out` variants (`study_svk_knee_coarse`, `study_stage3_pnorm`,
+`study_corner_singularity_fillet_b029622`, ...) — and **no artifact records the command that
+made it or when.** So which driver, at which flags, on which mesh produced a given committed
+row is not recoverable from disk, and any per-artifact verdict table would be inference
+dressed as measurement. §45's rule that a commit date is not a run date is the shallow half
+of this: an artifact records **neither**.
+
+The one artifact-level oddity found and deliberately not acted on: `study_objective_
+capcheck.json` (committed 2026-07-31) is referenced by nothing — not the `Makefile`, not a
+test, not a study, not `PLAN.md`. Noted, not deleted; pre-existing and not this work's mess.
+
+**NO SECOND INSTANCE OF THE COLLAPSED A/B, AND THAT IS A MEASUREMENT.** The peer session
+(`FILLET_PLAN.md` STEP 3 RECORD PART 15, commit `213bb96`)
+found that §103's unconditional `fillet=True` turned `study_fillet_optimum`'s control arm
+into a copy of its treatment. The same failure shape is possible in any driver with a mesh
+A/B whose control relies on `build_wheel`'s default. Checked across all of `studies/`: the
+other A/B drivers — `study_fillet_condition_a` (`:129`) and `study_fillet_cost` (`:273`) —
+build both arms themselves with an explicit `fillet=True if filleted else None` and pass
+them in through `meshes=`, so they bypass `phase_meshes` and their controls survived. **One
+instance existed and it is the one already fixed.**
+
+### WHAT DID NOT MOVE
+
+No source file, test or artifact is changed by this record — only `PLAN.md` and the six arc
+files, each gaining a dated block beneath its own unedited text. `best_solution.json` is
+untouched, no study artifact is regenerated, and no threshold moved: `MARGIN_KNEE_UTIL`, the
+`stress` wall, `T1_REJECT`, the `hub < 0.03` bound and `MIN_SJ_TARGET` are all as §103 left
+them. **The defect found above is recorded, not fixed** — neither `T1_REJECT`'s screen nor
+`descend`'s `except RuntimeError` is touched, because which of the two should learn the
+filleted mesh's refusals is a judgement and belongs in its own commit. MESHSTEP's
+contact-patch re-check is named as a measurement and **not** taken: it needs a contact solve.
+
+#### The successors this sweep produces, ranked
+
+1. **CLOSE HUBSHARE #3 ON THE EVIDENCE ABOVE** — record that the term is not needed, and
+   decide what `test_the_hub_junction_holds_under_three_percent_of_the_compliance` should
+   assert now that its subject is a mesh the objective does not use. A judgement, and the
+   arc says a human's.
+2. **GUARD THE FILLETED BLOCKING REFUSAL BEFORE SUCCESSOR 1 RUNS** — `stage2_elites#11`
+   raises a `ValueError` that `descend` does not catch, from a start point `--start all`
+   reaches. Either `T1_REJECT`'s screen learns the filleted mesh's refusals or `descend`
+   catches the blocking error the way it already catches a diverged solve. Cheap, and it
+   stands between the ranked-#1 item and a 50-hour run that dies partway.
+3. **RIMCAP's STEP 0 IS DONE AND IT BINDS ON THE SEARCH PATH** — 17 of 38 kept genomes
+   clamp, and 117 of 2598 Stage-3 iterates ever taken, from five separate runs, at up to
+   87.0%. All 2598 reach a mesh build, so `T1_REJECT` screens out none of it. The next step
+   is to make the clamp VISIBLE (report `fillet_clamped` and the applied radii) rather than
+   to build the cap model Step 1 describes — the descent currently moves `R_rim` 2.3% while
+   the radius built moves 237%, and nothing anywhere records the difference.
+4. **MESHSTEP's CONTACT-PATCH RE-CHECK** — where the patch falls against a weld/free
+   boundary that moved 3.17 degrees. Needs a contact solve; one cell, not a ladder.
+5. **BOUNDARY's `fillet_cap` COMPANION TERM** — new evidence for an arc that rejected every
+   candidate, and it costs a probe, not a descent.
+6. **RE-RUN STAGE 3 AND RE-PROMOTE** — §103/§104's successor 1, unchanged and still #1
+   overall; the items above are all cheap and none of them blocks it.
+
+---
+
+## §107 — 2026-09-04. §105's SUCCESSOR 5, CLOSED: T2 WAS READING A MESH T3 NEVER SOLVED — 9.78% LIGHT ON MASS, AND UNDER rqmc A PHASE BEHIND AS WELL. NO VERDICT MOVES; THE MESH-VALIDITY MARGIN WAS OVERSTATED 6.6x
+
+§105 ranked this fifth and described it as a one-line fix behind one defect.  Both halves of
+that description were wrong, and the check that found out cost one `grep` of `objective`'s
+body before any edit.
+
+### THE FALLBACK HAD TWO DEFECTS, AND ONLY ONE OF THEM WAS §103's
+
+`objective`'s T2 block built `mesh0` with a bare `WW.build_wheel(genes, cfg)` whenever the
+caller passed no `meshes`; T3 built its own through `phase_meshes`.
+
+**THE FILLET.** §103 made `phase_meshes` pass `fillet=True` and left the bare default alone,
+so `mass` and `min_sj` came off a mesh 9.78% lighter than the one being solved.  Before
+`d2cf9fa` both tiers were unfilleted and AGREED — the switch moved one caller, and the
+agreement was collateral damage nobody looked for.
+
+**THE PHASE.** `build_wheel`'s `phase_deg` defaults to 0.0 and an rqmc stencil's `phases[0]`
+is the offset — 0.46875 deg at `n_phase=8` — so T2 read a phase T3 never evaluated.  **This
+one predates the fillet entirely**, and the tree had already diagnosed it: `wheel_stage3
+.Evaluator` builds `phases[:1]` in the parent even when pooled, and its comment says why in
+almost these words.  The guard existed in exactly one caller.  §107 moves it to where every
+caller gets it.
+
+### MEASURED AT `coarse`, AND THE VERDICTS DO NOT MOVE
+
+Shipped genome, 8 phases, uniform, SVK, both readings in one process so the JIT prime is
+paid once:
+
+```
+  quantity                today (t2 unfilleted)   fixed (t2 = t3's mesh)   delta
+  mesh_mass_g                    39.5478                43.4133           +3.8655  (+9.78%)
+  min_scaled_jacobian             0.7822                 0.2877           -0.4945
+  loss                         1380.4115              1383.5887           +3.1771
+```
+
++3.8655 g is **10.6x** `REFERENCE_DEVIATION["mass"]`'s own 0.365 g band.  Fed through
+`wheel_requirements.verify`, **all 14 requirements hold their verdict.**  Only
+`SHOULD-MASS`'s reported VALUE moves, and it reads `NO LIMIT STATED` either way — §98's
+finding, undisturbed.
+
+**What does move is `SHALL-MIN-SJ`'s evidence: 0.7822 -> 0.2877 against a 0.2 floor.**  A
+genuine PASS both ways, but the MBSE gate has been reporting **291% margin on a mesh the
+solver never used, where the mesh it does solve has 44%**.  The barrier is `soft_barrier`
+over EVERY element at weight 3000, so the exposure is not this genome: it is a descent
+leaning on `mass` walking the solved mesh toward 0.2 with the barrier reading flat zero the
+whole way.  That overstatement, not a flipped verdict, is what this section fixes.
+
+### THE PART THAT WOULD HAVE BEEN A SILENT BUG
+
+`phases` is normalised at the top of `objective` now, because the T2 fallback needs the
+stencil T3 will use.  `scheme="uniform"` is spelled out, and that spelling is the whole
+point: **`phase_stencil`'s own default is `rqmc`.**  Defaulting it bare would have changed
+which stencil every phases-less caller receives — a behaviour change disguised as a tidy-up,
+in the same edit that fixes a phase bug.  `t3_terms` makes the identical call, so it is
+unaffected whether it receives the stencil or builds it.
+
+### WHAT MOVED
+
+* `4b77a6c` — the fix and its regression test.  The test asserts the two paths AGREE rather
+  than matching a golden mass: a constant would need re-blessing on every mesh change and
+  would go green again the moment both paths drifted together, which is the failure being
+  pinned.  Parametrised over BOTH schemes deliberately — under `uniform` only the fillet
+  separates the paths, so a uniform-only test would pass on a tree that fixed the fillet and
+  left the phase bug live.  Run against the bug before it was trusted: with the old `mesh0`
+  line restored, both parametrisations fail on the mass assertion.
+
+Full suite green, one pytest process per file: **31 files, 825 passed, 5 xfailed, 0 failed,
+0 xpassed** (was 823/5 at §105 — the delta is exactly the new parametrised test).
+
+### WHAT DID NOT MOVE
+
+`best_solution.json` is untouched and no descent ran.  **`make stage3` is unaffected in both
+cost and memory**: `Evaluator` always passed `meshes`, so its `mesh0` was already `meshes[0]`
+and §105's 50.47 h / 43.4 GiB pricing stands unchanged.  The cost lands on direct
+`objective(meshes=None)` callers — `test_objective.py` now peaks ~54 GiB against ~43 GiB,
+which is worth knowing before running it alongside anything else on a 61 GB box.
+
+`studies/study_mbse_score.json` is NOT regenerated and now reports a stale `mesh_mass_g`.
+It was already stale on §105's two channels; this is a third.
+
+#### The successors — §106's LIST STANDS; THESE ARE THE §107 DELTAS ONLY
+
+**§106 landed between §105 and this section and re-ranked the open work.  Its list is not
+superseded here.**  §107 touches three entries on it and adds nothing to the top:
+
+* **§106's successor 2 now gates the Stage 3 run, and §105 did not know that.**  §105 priced
+  the descent at 50.47 h serial and called it unblocked.  It is not: §106 found
+  `stage2_elites#11` raising a `ValueError` that `descend` does not catch, from a start point
+  `--start all` reaches.  The price is unchanged and still correct — §107 does not touch it,
+  because `Evaluator` always passed `meshes` — but **the guard is cheap and a 50-hour run
+  that dies partway is not, so §106's ordering is right and §105's was not.**
+* **REGENERATING THE STALE ARTIFACTS IS NOW UNBLOCKED.**  §105 held `study_mbse_score` back
+  until the t2 mesh question was decided, or it would have to be run twice.  It is decided,
+  and the artifact now additionally reports a stale `mesh_mass_g`.  `study_fillet_optimum`'s
+  artifact is still the two-identical-arms run of §105's PART 15 (~3.7 h to redo).
+* **A RAM-AWARE CAP IN `wheel_pool.default_workers`** stays where §105 put it, and the
+  measurement it waits on is unchanged.  Note that §107 raises `test_objective.py`'s own peak
+  from ~43 to ~54 GiB on a 61 GB box: that is a direct `objective(meshes=None)` caller, not
+  the pool, but it narrows what can run beside the suite.
+
+Everything else — HUBSHARE #3, RIMCAP's Step 0 visibility, MESHSTEP's contact-patch
+re-check, BOUNDARY's companion term, and the below-the-knee witness — is unchanged from
+§106 and §104 and is not re-ranked here.
+
+**AND THE LESSON, WHICH IS §105's OWN TURNED ON ITSELF.** §105 closed on a cost model that
+was never checked against the job it priced.  Its own successor 5 was then written from a
+reading of the defect rather than a reading of the code, and it was wrong about the size of
+the fix AND about how many defects there were.  A ranked successor is a hypothesis, not a
+finding, and the grep that tests it is cheaper than the section that repeats it.
+
+---
+
+## §108 — 2026-09-04. §106's SUCCESSOR 2, CLOSED: THE FILLETED MESH'S REFUSAL HAS A NAME NOW AND THE DESCENT CATCHES IT — AND THE TWO GUARDS §106 OFFERED WERE NEVER BOTH AVAILABLE
+
+§106 ranked this second and wrote it as a choice: *"Either `T1_REJECT`'s screen learns the
+filleted mesh's refusals or `descend` catches the blocking error the way it already catches a
+diverged solve."* Only one of those two exists, and finding out cost one reading of
+`t1_barrier_sum`.
+
+### THE SCREEN CANNOT BE THE GUARD, AND §106's OWN NUMBER SAYS SO ONCE IT IS DIVIDED
+
+`t1_barrier_sum` **never builds a mesh** — that is its whole value (§106 measured it at 0.0054 s
+at `coarse`, 0.003% of an evaluation). A screen that has not built the mesh cannot know the
+mesh refuses. The only version of "the screen learns the refusals" that could work is lowering
+`T1_REJECT` until it excludes the refusing genome, and §106's own census forbids that: the 117
+clamped iterates the descent actually took sit at **84.7 to 570.7**, all of them build, and
+`stage2_elites#11` refuses at **301.3658** — inside that range, not below it. A threshold cannot
+separate two sets that interleave.
+
+**AND THE GAP IS SMALLER THAN §106 SAID.** §106 wrote that 301.4 is *"three orders of magnitude
+below the screen"*. Re-measured on this tree at `coarse`:
+
+```
+  stage2_elites#11   t1 barrier sum  301.3658     T1_REJECT = 10000     ratio 33.2x
+  unfilleted build   21012 nodes, 4704 elements   (§106's figures reproduce exactly)
+  filleted build     MeshRefusedError: "no filleted blocking exists at the rim: the
+                     fillet's tangent point has passed the next sector's corner
+                     (-2.685 deg of free ring left)"
+```
+
+33.2x is **1.5 orders of magnitude**, not three. The conclusion is untouched — the screen is
+nowhere near firing — but the number was wrong in the file that exists so numbers do not have
+to be re-derived, which is the reason to correct it rather than let it be cited.
+
+Its NEIGHBOURING range claim survives the same division and is left alone: the 17 clamped
+genomes at 43.77 to 712.2 are 14.0x to 228.5x, or 1.15 to 2.36 orders, and *"one to three
+orders below"* is a true bracket around that. Loose is not wrong, and a sweep that flags it
+as an error is a sweep that has stopped distinguishing the two.
+
+### AND SINCE ONE ARITHMETIC SLIP WAS FOUND, §106 WAS SWEPT FOR THE REST
+
+Every ratio, percentage and sum §106 states that can be re-derived from the numbers printed
+beside it was re-divided. **All of them reproduce** — HUBSHARE's 23.5% over and 71.8% under
+against the 0.03 bound; RIMCAP's 88.6% cut on `stage2_elites#7`, the 2.3% / 237% split over
+`stage3_prod_elite10`'s first fifteen steps, the 87.0% and 55.2% endpoints, 1195/2598 = 46%,
+and 44+43+24+4+2 = 117 — except for **one more, in MESHSTEP, and it is a factor of two**:
+
+```
+  §106 printed   the weld band 0.8180 -> 3.5860 mm of arc "at the OD",
+                 RIM_OUTER_RADIUS_MM = 50.0, difference 2.77 mm against R_rim 3.0
+  re-derived     1.8746 deg and 8.2186 deg at R = 50.0 are 1.6359 -> 7.1721 mm,
+                 difference 5.5362 mm -- 1.85x the applied radius
+  the tell       0.8180 / 1.6359 = 0.50000 exactly; the printed pair is the R = 25.0
+                 conversion, i.e. the OD radius halved
+```
+
+**The MESHSTEP headline is untouched, because it never went through millimetres.** The two
+bands' ANGLES sum to exactly 30.0000 deg on both meshes, the step ratio IS the band-angle ratio
+(28.1254/1.8746 = 15.003, 21.7814/8.2186 = 2.650), and the widening 8.2186/1.8746 = 4.384x is
+likewise an angle ratio. Every number the falsification rests on is an angle. What was wrong is
+the one derived quantity stated in millimetres — and with it the clause *"a difference of
+2.77 mm against an applied `R_rim` of 3.0"*, which read as "the widening is about the fillet's
+own size" and is really **1.85 times it**.
+
+**AND ONE LINE BELOW IT, A THIRD ERROR THAT IS NOT A UNIT SLIP — CAUGHT BY THE OTHER SESSION,
+IN THIS ONE'S OWN FIX.** THIS section corrected the halved millimetres in `MESHSTEP_PLAN.md`
+and left standing the clause those millimetres serve; the concurrent session, holding §106's
+copy of the same line, read the clause and said so. It is
+*"the fillet widens the weld band 4.384x, so the ratio falls by that factor."* It does not.
+The two bands SUM TO 30.0000 deg, so widening the weld band 4.384x necessarily narrows the free
+band to 0.7744x of itself, and the step ratio is free/weld — the factors compound:
+
+```
+  weld band     1.8746 -> 8.2186 deg     widens  4.3842x
+  free band    28.1254 -> 21.7814 deg    narrows 0.7744x
+  step ratio    15.0034 -> 2.6503        FALLS   5.6611x  = 4.3842 / 0.7744
+```
+
+The table three lines above it prints 15.003 and 2.650, so the section carried its own
+disproof. This one is worth separating from the other two: they were ratios typed instead of
+divided, and this is a ratio *reasoned* wrongly — a factor applied to one of two complementary
+bands, carried through as if the other band were fixed. Re-deriving catches both, but only
+because the correct value was already on the page.
+
+### A BARE `except ValueError` WAS REFUSED, AND THE SCOPE IS THREE RAISE SITES
+
+The cheap fix is one word — `except (RuntimeError, ValueError)` in the trial loop — and it is
+wrong. `ValueError` is what the two modules on that path raise for everything else that can go
+wrong: a `WheelConfig` invariant violated (`wheel_wheel:225,227`), opposite Coons edges that
+disagree (`:629`), a corner mismatch (`:643`), an unknown `fillet_blocking` (`:2354`) — and, in
+`wheel_stage3` itself, `_apply_req`'s refusal to take `req=` and `weights=` together. Caught in
+a descent loop, every one of those becomes a silently rejected step — a 300-step run that
+quietly descends nothing, throwing away every trial for a reason no event records. So the
+refusal got a name:
+`wheel_wheel.MeshRefusedError`, a **subclass of `ValueError`** so that the `except ValueError`
+already wrapped around builds in `studies/study_hub_cap.py:654` and
+`studies/study_fillet_fold.py:202`, and the `pytest.raises(ValueError, match=...)` in
+`tests/test_filleted_mesh.py:823,862`, keep working untouched.
+
+Marked, all three where the condition is a function of the GENOME:
+
+```
+  src/wheel_wheel.py:1831  _filleted_sector_blocks   not c["built"]      THE FUNNEL
+  src/wheel_wheel.py:1846  _filleted_sector_blocks   not lo < hi         fillets cross
+  src/wheel_wheel.py:2058  per_genome_layer_profile  entry is None       no layer profile
+```
+
+`:1831` is one site and it carries far more than one failure: `_fillet_curves` already catches
+`_fillet_tangency`'s own `ValueError` (`:880`, *"the fillet is larger than the notch can hold"*)
+and the layer-width cliff, and returns `{"built": False, "why": ...}` rather than raising. Every
+curve-level refusal therefore arrives at this one `raise`. That is why the surface is three
+sites and not a dozen.
+
+Left a plain `ValueError` on purpose:
+
+```
+  :1773  _filleted_sector_blocks  R <= 0     unreachable from the box -- genes[12] in
+                                            [0.4, 4.0], genes[13] in [0.5, 3.0].  Only an
+                                            explicit fillet=(0.0, ...) tuple reaches it,
+                                            which is a caller error.
+  :335   ring_station             the spoke never reaches the ring    SHARED with the
+  :3056  _orient_elements         the mesh is folded                  unfilleted path
+```
+
+The two shared ones are the deliberate omission. They predate §103, `T1_REJECT` was calibrated
+against exactly that notion of un-meshable, and §106's census rebuilt **2598 iterates from 25
+committed runs with `fillet=True` and recorded 0 refusals of any kind** — so neither has ever
+fired on the search path. Marking them would change the unfilleted path's behaviour to fix
+something not measured to be broken.
+
+### THE SAME HOLE ELSEWHERE: THERE IS NONE, AND STAGE 2 EXPLAINS WHY THE GENOME EXISTS
+
+A `RuntimeError`-only guard occurred in **exactly one file in the whole tree** —
+`wheel_stage3.py`, at the three catch sites this section widened (`:370` the fidelity probe,
+`:602` the trial loop, `:906` L-BFGS-B's `fun`); `grep -rn "except RuntimeError" --include=*.py`
+returns those three lines and nothing else. Every other evaluation loop over many genomes
+already catches `Exception`:
+`study_stage3.run_multistart:1068` (the elite screen, whose own test asserts *"one bad genome
+must not cost the other fifteen"*), `study_objective.py:445,668,1022`, and
+`wheel_pool_worker.py:98`. Nothing else needed changing, and that is a measurement rather than
+an assumption.
+
+**AND THE ROOT CAUSE OF THE START POINT ITSELF.** `stage2_elites.json` can hand Stage 3 a
+genome that will not mesh because **Stage 2 never builds a mesh**: `wheel_fea.evaluate_design`
+scores through `generalized_spoke_mechanics`, a Castigliano force-method beam analysis, and
+`build_wheel` appears nowhere on that path. Meshability is not a constraint the GA optimises
+under, is not a term in its loss, and is not screened before its population is written out. So
+this is not a one-off bad elite — **every regeneration of `stage2_elites.json` can produce
+another one**, and the guard added here is the thing that makes that survivable rather than a
+fifty-hour run lost to whichever rank it lands on.
+
+### THE POOL WAS NOT THE ESCAPE HATCH IT LOOKS LIKE
+
+`wheel_pool._decode_error` collapses every unrecognised exception name to `RuntimeError`, and
+its docstring says why: *"a new exception type in the adjoint degrades to a rejected step rather
+than to an escaped exception."* Read alone that says pooled runs already survived this and only
+serial runs died — which would make the defect a property of the default path only, and would
+put a `MeshRefusedError` branch in `_decode_error` on the critical list.
+
+It says no such thing. `Evaluator.__call__` builds `wanted = phases[:1]` **in the parent even
+when pooled** (`src/wheel_stage3.py:435`), because T2 reads `meshes[0]`. That line predates
+§107 — §107 cites it as the one caller that already had the phase guard, and `4b77a6c` changed
+`wheel_objective` and tests, not this file. So the build that refuses is always the PARENT's,
+raised before any task is dispatched; the refusal reaches `descend` as itself on both paths,
+`wheel_pool` needed no change, and pooled and serial runs died identically.
+
+### STEP 0 IS NOT A TRIAL STEP, AND THAT IS WHERE IT ACTUALLY FIRED
+
+`descend` can reject a trial: halve the step, drop the warm vector, try again. It cannot reject
+its own **start point** — there is no previous iterate to fall back to and no step to shorten.
+`stage2_elites#11` refuses on its first objective evaluation, so `descend` can only raise, and
+the thing that has to survive it is the multi-start loop in `main`:
+
+* the loop catches `MeshRefusedError` per start, records `{label, error, message}`, prints
+  `REFUSED: <label> ...` with the count still to go, and continues;
+* the catch is **narrower than the trial loop's** — a `KeyboardInterrupt`, a `PoolDeadError` or
+  a bad requirement set still stops the run, because those are not facts about this start point;
+* every start refusing raises `SystemExit` naming each one, instead of `min()` over an empty
+  list saying `min() arg is an empty sequence` and naming neither the genome nor the file that
+  was not written;
+* a survivor is promoted as before, with a line saying how many starts were skipped — a silently
+  dropped start point is a run that descended fewer designs than it was asked for.
+
+Rejections are recorded under a **new event kind, `mesh_reject`**, not folded into
+`solve_reject`. The response is identical, the fact is not: S5 (`study_stage3.run_reject`)
+passes when `len(solve_rejects)` equals a known number of INJECTED SOLVER failures, so one kind
+for both would make that count mean two things at once — §84's error exactly. And note what the
+new kind buys beyond tidiness: **before this, a mesh refusal could not appear in a run record at
+all**, because it ended the run before the record was written. §106's census found 0 refusals in
+2598 iterates from 25 committed runs, and that is consistent with both "it never happened" and
+"it happened and took the run with it". From here the two are distinguishable.
+
+### WHAT THIS DOES NOT FIX
+
+* **The genome still refuses.** `--start all` now descends 15 of 16 elites instead of dying on
+  the 12th; it does not make `stage2_elites#11` a start point. Whether the filleted mesh should
+  accept it is FILLET_PLAN.md PART 10's question, untouched here.
+* **The clamp is untouched.** §106's successor 3 — reporting `fillet_clamped` and the applied
+  radii, so the 117 iterates where the built radius moves 237% while `R_rim` moves 2.3% stop
+  being invisible — is a different defect on the same mesh and stays open at its own rank.
+* **The two shared refusals still end a run**, by the argument above. If one ever fires, this is
+  the paragraph that says it was a decision.
+
+### THE TESTS
+
+`tests/test_stage3.py`, five, all green (13 selected passed in 777 s; the multi-start pair adds
+272 s):
+
+1. `test_a_refused_mesh_rejects_the_trial_and_not_the_run` — injected refusals halve the step
+   1.0, 0.5 and the run completes, exactly as an injected divergence does.
+2. `test_a_refused_mesh_is_not_counted_as_a_failed_solve` — the two kinds stay apart.
+3. `test_the_t1_screen_cannot_be_the_guard_for_a_refused_filleted_mesh` — `stage2_elites#11`
+   meshes unfilleted, raises `MeshRefusedError` filleted, and its t1 sum is below `T1_REJECT`.
+   Asserted as an INEQUALITY, not at 301.3658: the finding is that the screen cannot see this,
+   not any one number.
+4. `test_a_start_point_with_no_filleted_mesh_costs_one_start_and_not_the_run` — `main` over two
+   starts, one refusing; rc 0, the survivor promoted, the skip on the console.
+5. `test_a_run_whose_every_start_refuses_writes_nothing_and_says_which` — no promotion record
+   for a run that descended nothing.
+
+`_RefusingEvaluator` succeeds at step 0 and refuses afterwards, on purpose: a refusal at step 0
+is the OTHER half of the fix, and one evaluator doing both would make a green here mean either.
+
+### THE SUCCESSORS — §106's LIST WITH ITEM 2 STRUCK, NOTHING RE-RANKED
+
+§106's ranking stands and §107 confirmed its ordering against §105's. Item 2 is closed by this
+section. The rest are unchanged: **1** close HUBSHARE #3 on §106's evidence (a judgement);
+**3** make the rim clamp visible; **4** MESHSTEP's contact-patch re-check; **5** BOUNDARY's
+`fillet_cap` companion term; **6** re-run Stage 3 and re-promote, still #1 overall — and the
+pre-flight item that stood in front of it is now gone.
+
+**ADDED, AND DELIBERATELY NOT DONE HERE: `test_wheel_fea.py`'s xfail REASON IS STALE, AND
+REWRITING IT IS SUCCESSOR 1, NOT A TYPO FIX.** The reason string on
+`test_the_hub_junction_holds_under_three_percent_of_the_compliance` says the shipped genome
+*"holds 4.17% at coarse and 4.63% at the finest rung"*. `studies/study_reds_hub_share.json`
+holds neither:
+
+```
+  /rungs/shipped/rungs/coarse/hub   0.03418804073  =  3.4188%   (reason says 4.17%)
+  /rungs/shipped/rungs/ultra/hub    0.03705252498  =  3.7053%   (reason says 4.63%)
+  /sweep/rows[0..13]/hub            0.03418804073  -- one value across all 14 rows
+```
+
+THE VERDICT DOES NOT MOVE — 3.4188% and 3.7053% both breach the 0.03 bound, so the test stays
+red and `xfail_strict` still reopens it the day it passes. Only the quoted figures are wrong.
+What blocks a one-line fix is that the same artifact's `sweep_filleted_svk` puts the hub share
+at **0.008991 (0.90%)**, far UNDER the bound, against `sweep_unfilleted_svk`'s 0.029410 — which
+is HUBSHARE, §106's successor 1, and the reason §106's heading says the share clears a bound it
+has failed since §14. So the question is not what number to type, it is which mesh this test
+should read, and that is the judgement successor 1 exists to make. Editing the reason string
+first would answer it silently and in the wrong file.
+
+**[CORRECTED 2026-09-04 — §109, WHICH MADE THAT JUDGEMENT. `0.008991` IS THE WRONG ROW.** It
+is `sweep_filleted_svk`'s `rows[0]`, the `R_hub` = 0.400 end of the gene box; the SHIPPED row
+of that block is **0.007395**, so the figure is 21.6% high and the sentence compares two
+different designs. It reads as like-for-like because on the UNFILLETED side it is one — every
+row of that sweep is bit-identical, `R_hub` moving no node — while on the filleted side the
+rows differ by design, which is the entire reason that sweep exists. **The conclusion is
+untouched and moves the right way**: the shipped wheel sits FURTHER under the bound than this
+paragraph says. `0.029410` IS correctly the shipped reading, and it deserves its own line — it
+is INSIDE `0.03`, on the PLAIN mesh, so this gate's verdict was already kernel-dependent
+before the mesh question was asked. **The test is no longer red and no longer an xfail**; the
+paragraph above is the last record of it as one. See §109.]**
+
+**TWO LESSONS, AND THE SECOND ONE IS FREE.**
+
+**A successor that names two options has not established that it has two.** §106 offered a
+choice of guards and ranked the item without checking that both existed. One did not, for a
+reason readable in the guard's own docstring — it never builds a mesh — and finding out cost
+one reading and one division. The ranking was still right; the reasoning under it was half
+imaginary.
+
+**A magnitude claim is not measured until it is divided.** §106 stated "three orders of
+magnitude" where the two numbers printed in the same sentence divide to 33.2, and stated a
+millimetre conversion at a radius that its own angles halve. Neither number came from a bad
+measurement — every ANGLE, every barrier sum, every count in that section reproduces exactly.
+Both came from writing a ratio in prose without re-deriving it from the values beside it. The
+sweep that found the second one took minutes and needed no compute at all: **the arithmetic in
+a record is checkable for free.**
+
+**AND THE SWEEP FOUND WHAT IT WAS SHAPED TO FIND, WHICH IS NOT THE SAME AS ALL OF IT.** This
+section originally closed by calling the arithmetic the only wrong part of §106. A concurrent
+session sweeping the same file on 2026-09-04 (`56239a1`) found a fourth §106 defect
+independently, and it is not a ratio: the `min_wall` table's *"1 each"* list omitted 1.8, so
+the cells summed to 24 under a sentence claiming 25 runs, and `stage3_minwall_1.8.json` is on
+disk with 126 steps.
+Re-dividing every ratio cannot find a value missing from an enumeration — there is no printed
+pair to divide — and the check that does find it is re-counting the set off disk instead of
+off the prose. Both of that session's corrections to the two errors THIS one found agree with
+it exactly, to 33.2x and to 1.6359 -> 7.1721 mm; the disagreement is only about coverage, and
+the scope of a sweep belongs in its claim.
+
+
+---
+
+## §109 — 2026-09-04. §106's SUCCESSOR 1, CLOSED — THE JUDGEMENT §108 REFUSED TO MAKE AS A TYPO FIX: THE HUB-SHARE LADDER IS ON DISK ON BOTH MESHES, THE GATE MOVES TO THE FILLETED BUILD, AND `0.03` MOVES TO `0.0117` BECAUSE THE DESIGN IT WAS CALIBRATED ON IS REFUSED BY THE MESH THE OBJECTIVE SOLVES — PLUS FOUR CORRECTIONS, ONE OF THEM §108's OWN
+
+§106 answered HUBSHARE outright and §108 declined to touch the test, saying exactly why:
+*"the question is not what number to type, it is which mesh this test should read, and that
+is the judgement successor 1 exists to make. Editing the reason string first would answer it
+silently and in the wrong file."* This is that judgement. It is made in three parts and only
+the third is a decision.
+
+**Cost: two ladder runs, 28.2 s plain and 68.7 s filleted, twenty mesh builds and twenty
+linear solves. No box time, nothing promoted, `best_solution.json` untouched.**
+
+---
+
+### PART 1 — THE MEASUREMENT §106 COULD NOT COMMIT
+
+§106's filleted column was produced by calling `shares()` directly, because
+`study_reds_hub_share.rungs()` took no `fillet` argument and `make reds-hub-fillet` runs
+`--sweep`, not `--rungs`. So the arc's conclusion — *"clears the bound by 72%"* — rested on
+a number that existed only in prose and was reproducible from no driver in the tree. **That
+is not a reason to doubt it. It is a reason not to close a gate on it.**
+
+`rungs()` now forwards `fillet` AND `kinematics`; `make reds-hub-fillet-rungs` runs it; the
+artifact carries both arms, one key each, under the `sweep` arm's own rule — *the plain
+ladder is the control that licenses the filleted one, so a filleted run must not land on top
+of it.*
+
+**LINEAR ON BOTH SIDES, AND THAT IS THE WHOLE POINT OF THE ARM.** `--fillet` implies SVK for
+the sweep because FILLET_PLAN's cost section says so. The ladder takes `linear` unless asked,
+because its entire content is plain read against filleted rung for rung: a filleted ladder
+under a different kernel would differ from its control by two changes, and the 4.32x level
+reduction could not be attributed to the mesh at all.
+
+**THE PLAIN ARM REPRODUCES BIT-IDENTICALLY.** All forty committed values — two genomes, five
+rungs, `hub`/`spoke`/`rim`/`axle_drop_mm` — at every digit, worst absolute difference **0.0**.
+§106 wrote *"3.3e-7 or better"*; that was a safe bound, not a measurement, and the agreement
+is exact. Every §106 filleted value reproduces to ≤4.2e-7, which is the rounding of its own
+six-decimal table.
+
+```
+  genome   mesh       smoke     coarse    medium    fine      ultra     drift    vs 0.03
+  -------  ---------  --------  --------  --------  --------  --------  -------  ----------
+  shipped  plain      0.032489  0.034188  0.035237  0.036483  0.037053  +14.05%  OVER 23.5%
+  shipped  FILLETED   0.008079  0.008308  0.008409  0.008442  0.008463   +4.74%  under 71.8%
+  ga_beam  plain      0.013823  0.013722  0.013849  0.014043  0.014144   +2.32%  under 52.9%
+  ga_beam  FILLETED   0.005312  0.005381  0.005406  0.005417  0.005423   +2.09%  under 81.9%
+```
+
+---
+
+### PART 2 — FOUR CORRECTIONS, THREE IN §106's TABLE AND ONE IN §108's, NO VERDICT MOVED
+
+The first three are the fault §108 named one section ago: **a ratio written from the rounded
+prose table instead of from the values behind it.** §106's measurements are all correct. The
+fourth is §108's own, and is a different fault — the right quantity read off the wrong row.
+
+1. **`ga_beam` at `ultra` was marked `--` and 0.014144 was committed on disk the whole time**
+   — it is in the `rungs` block §106 checked its own plain column against. So the table
+   quoted shipped drift over FIVE rungs against ga_beam drift over FOUR. With `ultra` in,
+   **ga_beam plain drifts +2.32%, not +1.60%.** Conclusion unaffected; the comparison was not
+   apples-to-apples.
+2. **Shipped filleted drift is +4.74%, not +4.75%.** 0.008462759/0.008079409 = 1.047448.
+   0.008463/0.008079 — the printed table — gives 1.047531.
+3. **The filleted tail's slowest increment ratio is 1.640, not 1.57.** 1.571 is 33/21 off the
+   rounded increments; the values give 33.402/20.371.
+
+Richardson at the correct 1.640 puts the limit at **0.008495**, so `ultra` is converged to
+**0.375%** — §106's ~0.4%, reached by a different route.
+
+**AND A FOURTH, IN §108 RATHER THAN §106, FOUND WHILE CHECKING THE SAME ARTIFACT.** §108
+wrote that *"`sweep_filleted_svk` puts the hub share at **0.008991 (0.90%)**, far UNDER the
+bound, against `sweep_unfilleted_svk`'s 0.029410"*. **0.008991 is `rows[0]` — the `R_hub` =
+0.400 row at the bottom of the gene box, not the shipped genome.** The shipped row of that
+same block is **0.007395**, so the figure quoted is 21.6% high and the comparison pairs two
+different designs. It reads as a like-for-like because on the UNFILLETED side it is one: every
+row of that sweep is bit-identical, `R_hub` moving no node, so any row is the shipped wheel.
+On the filleted side the rows differ by design — which is the whole reason that sweep exists.
+**The verdict is unaffected and moves the right way**: the shipped wheel sits further under
+the bound than §108 said, not nearer it.
+
+**THE SAME TWO ROWS CARRY SOMETHING THIS SECTION NEEDED.** `sweep_unfilleted_svk` puts the
+shipped genome at **0.029410 — INSIDE `0.03`, on the PLAIN mesh.** So this gate's verdict was
+already kernel-dependent before any mesh question was asked: `linear` reads 0.034188 and
+breaches, SVK reads 0.029410 and passes, at the same rung on the same wheel. **That is a
+second axis of instrument-dependence in the same threshold**, and it is exactly why the
+ladder below holds the kernel fixed at `linear` on both sides instead of letting `--fillet`
+pull SVK in with it.
+
+**AND THE CONVERGENCE VERDICT DOES NOT REST ON THE EXTRAPOLATION AT ALL**, which is worth
+more than the correction. For the filleted ladder to climb to even the old `0.03`, its
+increments would have to stop decaying to a ratio of **1.00095** — against the 1.640
+measured. The pass has ~3.5x of headroom and the extrapolation lives in the fourth digit.
+
+---
+
+### PART 3 — THE CALL
+
+**§31 MADE ITS DECISION ON TWO NAMED LEGS AND BOTH ARE GONE.**
+
+> *"`< 0.03` is not an unreachable bound — `best_solution_ga_beam.json` meets it CONVERGED
+> ... with 53% to spare. And it is not a mesh artefact — the shipped genome is 30.5% over at
+> the COARSEST rung, before any refinement argument starts."*
+
+**§31's OWN FIGURES ARE ON THE CAPPED MESH AND DO NOT REPRODUCE TODAY** — its ladder reads
+0.0392–0.0463 where the committed one reads 0.032489–0.037053, because UNCAP took hub
+compliance down 18.4% in between. The quote is left as §31 wrote it. Nothing below turns on
+those particular digits: leg (B) is falsified by a factor of 4.1, not by a few points, and
+the shipped genome is 8.3% over at `smoke` on today's plain mesh rather than 30.5%.
+
+- **(B) "not a mesh artefact" is FALSIFIED.** It was one. The unfilleted re-entrant corner
+  was 76% of the LEVEL, not merely of the drift: 0.036483 → 0.008442 at `fine`, **4.32x**.
+- **(A) "achievable — ga_beam clears it by 53%" HAS NO REFERENT ON THE NEW MESH.** `ga_beam`
+  asks `R_hub` 1.5598 / `R_rim` 3.0. An explicit `fillet=(1.5598, 3.0)` is **refused
+  outright** — *"no filleted blocking exists at the hub: the fillet's tangent point has
+  passed the next sector's corner (−8.400 deg of free ring left)"*. The filleted `ga_beam`
+  row is `fillet=True`, which keeps the genome and CLAMPS it to (0.667, 0.895)
+  (`wheel_wheel.SECTOR_FIT_CLAMP`). **The design the bound was calibrated on cannot be built
+  on the mesh the objective solves.**
+
+**THE TRAP, NAMED BEFORE ANYONE WALKS INTO IT.** Point the fixture at the filleted mesh and
+leave `0.03` alone and the test passes — by 72.3% — and the calibration design's margin goes
+from **54.3% to 82.1%** at that rung. That is §14's own prohibition running backwards. §14
+forbids moving a bound to admit the design that breached it; holding a bound still while
+moving the instrument under it reaches the same place by the other road. **A gate sitting
+3.61x above the quantity it watches is not a gate.**
+
+**AND IT CANNOT BE RESCALED BY A FACTOR EITHER, WHICH IS THE HALF THAT IS NOT OBVIOUS.** The
+mesh does not rescale this quantity — **it rescales it differently per design.** At `coarse`
+the shipped genome falls **4.115x** and `ga_beam` falls **2.550x**, because the unfilleted
+corner penalises a thin hub junction far harder than a thick one — §30's rim-corner mechanism
+again, and the same reason §14's direction is real. There is no single transport factor for
+`0.03` to ride across. *"Point it at the filleted mesh"* was never a one-line change.
+
+**THE DECISION: THE GATE READS THE FILLETED MESH, THE BOUND IS `0.0117`, THE XFAIL IS GONE,
+AND THE TEST IS RENAMED.**
+
+`0.0117` preserves §31's *warrant* rather than §31's *number*. What made `0.03` defensible
+was leg (A) — the reference design cleared it by 54.3% at this rung. So rescale by the
+REFERENCE design's own mesh factor and never by the design under test, because calibrating on
+the genome being gated is the §14 sin itself:
+
+```
+0.03 * (0.005381416728939758 / 0.013722004451848286) = 0.011765...   ->  0.0117
+```
+
+rounded **DOWN**, so the gate is never looser than its derivation. `ga_beam` keeps **54.0%**
+of margin against the 54.3% it had; the shipped genome clears by **29.0%** — not the 72.3%
+that carrying `0.03` across would have advertised.
+
+**THE SCOPE LIMIT, WITH ITS DIRECTION, BECAUSE IT BOUNDS THE CONSTANT AND NOT THE CALL.**
+That factor comes from the CLAMPED `ga_beam`, so `0.0117` is derived from a stand-in. The
+stand-in's hub fillet (0.667 mm) lands within **0.51%** of the shipped genome's (0.664 mm);
+its rim fillet (0.895 mm) does not (3.0 mm). §14's direction — hub share RISES as `R_hub`
+FALLS, confirmed by §75 on a mesh that can express it — says an unclamped `ga_beam` would
+read LOWER, so the true factor is smaller and the honest bound is **tighter** than 0.0117.
+**`0.0117` is the loose end of the range, and the shipped genome's 29.0% is an upper bound on
+its own margin.**
+
+**THE RENAME IS PART OF THE CALL, NOT TIDYING.**
+`test_the_hub_junction_holds_under_three_percent_of_the_compliance` →
+`test_the_hub_junction_holds_a_small_minority_of_the_compliance`. The three percent stopped
+being true, and a name that quotes its own threshold goes stale silently the day the
+threshold moves. This name had already outlived one migration (the assertion lived in
+`..._rim_band_holds_a_large_minority_...` until §31). The bound lives in the assertion now.
+It parallels the sibling gate it split from, which still reads the plain mesh.
+
+**THE FIXTURE IS SEPARATE, AND THE COST OF THE ALTERNATIVE IS MEASURED, NOT ASSERTED.**
+`filleted_mesh` / `filleted_res` are new and exactly one test reads them. Giving the shared
+`mesh` fixture the flag instead is the one-line version of this change, and here is what that
+line does to the other gates in the file — shipped genome, `coarse`, both ladders:
+
+```
+  `0.25 < rim   < 0.40`    0.3113 -> 0.3781   holds, but eats 44.6% of the band
+  `0.58 < spoke < 0.72`    0.6545 -> 0.6136   holds, but eats 29.3% of the band
+  `1.4  < drop  < 2.0`     1.5516 -> 0.9614   BREAKS
+```
+
+**It does not re-aim eleven tests quietly — it turns one of them RED and moves two others
+most of the way to their edges.** Moving one gate is what was decided; moving twelve is not.
+
+**AND THE BROKEN ONE IS A FINDING, FILED AND NOT ACTED ON.** The filleted wheel is **38.9%
+stiffer** at the axle — 1.5745 mm to 0.9626 mm at `ultra`, and 38.0%–39.9% at every rung, so
+this is not a rung artefact.
+`test_the_beam_model_does_not_predict_the_axle_drop` gates `1.4 < axle_drop_mm < 2.0` on the
+PLAIN mesh, and M4's whole "the beam model's 2.0 mm target is not what the part does" headline
+is measured there too. On the mesh the objective solves, the part does something 38.9%
+different. **This section does not touch it**: it is a different arc, the number wants the
+same warrant-first treatment `0.03` just got, and §109 is scoped to the hub-share gate. It
+goes on the successor list at **#2**, ahead of everything §108 left, because it is the same
+defect class as the one just closed and it is now known rather than suspected.
+
+**WHAT DID NOT HAPPEN.** The wheel did not improve. `best_solution.json` is untouched and its
+hub junction is what it always was; the mesh stopped putting a singularity where the fillet
+is. No other threshold moved. HUBSHARE Step 0 — *"find out whether the term would buy
+anything"* — has its answer, **no**, and the arc closes. §31's `cy4` design route is not
+retired, it is de-prioritised, and it stays filed.
+
+### THE SUCCESSORS — §108's LIST WITH ITEM 1 STRUCK
+
+**1** ~~close HUBSHARE #3~~ — closed here. **2 (NEW, inserted at the top of what is left)**
+the axle-drop gate and M4's beam-blindness headline are measured on the plain mesh and the
+filleted wheel is 38.9% stiffer — same defect class as the gate just closed, now measured; the
+gate would fail outright if pointed at the mesh the objective solves. **3** make the rim clamp
+visible; **4** MESHSTEP's contact-patch re-check; **5** BOUNDARY's `fillet_cap` companion term;
+**6** re-run Stage 3 and re-promote, still #1 overall. Item 3 is now worth more than its rank suggests: this section
+turned a clamp into load-bearing evidence — `0.0117` is derived through one — and the clamp is
+still reported only in a driver's own JSON.
+
+**ADDED: THE OTHER FIVE `--` CELLS.** §106's table is the second artifact this week to quote a
+ladder against a rung it had on disk. The plain `sweep`/`attribute` blocks in
+`studies/study_reds_hub_share.json` are still §31-era and were NOT regenerated here; nothing
+in this section reads them, but §108's stale-figure finding came out of exactly that gap.
+
+**THE LESSON, AND IT IS THE FOURTH TIME THIS FILE HAS RECORDED A VERSION OF IT.** A gate's
+threshold is a claim about an INSTRUMENT as much as about a design. `0.03` was transported
+across §85's default flip, §101–§103's switch and §106's re-measurement without anyone asking
+what it was calibrated against — and the answer, when finally asked, was a wheel that the
+current mesh refuses to build. **Before moving a test to a new instrument, re-derive its
+threshold's warrant on that instrument. If the warrant does not survive the move, the number
+must not either.**

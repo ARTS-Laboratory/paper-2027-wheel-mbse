@@ -355,13 +355,18 @@ DEFAULT_WEIGHTS = {
     "stress":      4000.0,      # soft_barrier scale on utilisation - 1
     # x util^2 per junction, LIVE EVERYWHERE — see the derivation at the term itself.
     # This is the one weight in the table that sets an exchange rate rather than a scale:
-    # 1% of utilisation against 1% of mass at the shipped genome.
-    # 328.49 makes 1% of utilisation cost 1% of mass at MARGIN_KNEE_UTIL's reference point
-    # (util 0.855, §18's own), rounded DOWN for §18's reason: the rounding buys LESS margin,
-    # which is the conservative direction for a term whose purpose is to move the optimum.
-    # It is ~16x the old 20.0 ONLY because the argument shrank from `util` to `util - 0.80`;
-    # the RATE at the reference is unchanged, which is what makes this a shape change.
-    "stress_margin": 325.0,
+    # `w = mass_term / (2*(util_ref - knee)*util_ref)`, PLAN.md §99.  89.21 is that
+    # formula at `util_ref` = 1.0 (the wall — §99's reason for pinning it there rather
+    # than at a design's own reading: it needs no design to stand on) and the shipped
+    # genome's FILLETED mass term, 35.6822 g — the mesh this term now actually reads,
+    # since §103 wired `util_j` onto the region-p-norm QoI rather than `Kt * agg`.  A
+    # 3.6x cut from the old 325.0, which was calibrated at `util_ref` = 0.855 against the
+    # `Kt`-surrogate's own reading — a reference point §99 found no design occupies any
+    # more under the replacement quantity.  `b029622` gives 88.61 from its own filleted
+    # mass term, 0.665% apart on an unrelated genome — the corroboration a wall-anchored
+    # rate should produce, since it depends on the reference genome's own mass rather
+    # than on where that genome's utilisation happens to sit.
+    "stress_margin": 89.21,
     "buckling":    2000.0,      # soft_barrier scale on ratio - 1   [NO GRADIENT]
     "x_order":     80.0,        # per control-point pair
     "hub_overlap": 500.0,
@@ -999,8 +1004,13 @@ def phase_meshes(genes, cfg, phases, orientation=None):
     optimizer step.  It is a discrete decision; letting it flip mid-trajectory changes
     which block owns which node, and the gradient of the step that flips it does not
     exist.  M8b pins it between checkpoints and reports a flip as an event.
+
+    `fillet=True` — PLAN.md §93/§102's switch, executed at §103.  Every mesh the
+    objective solves on is now the filleted one; `t3_terms`' region-p-norm stress term
+    needs the fillet arc's own nodes, which an unfilleted mesh does not have.
     """
-    return [WW.build_wheel(genes, cfg, phase_deg=float(p), orientation=orientation)
+    return [WW.build_wheel(genes, cfg, phase_deg=float(p), orientation=orientation,
+                           fillet=True)
             for p in phases]
 
 
@@ -1042,8 +1052,45 @@ def _probe_values(prob, u, probe_p):
         for v in probe_p}
 
 
+def _region_qois(mesh):
+    """`(hub_qoi, rim_qoi)` — PLAN.md §102's region-p-norm term, at the two junctions.
+
+    ONE DEFINITION, TWO CALLERS, same reason as `_probe_values` above: `t3_terms`'s
+    serial loop and `wheel_pool_worker.run_phase` must build the identical QoI from the
+    identical arc ids or `tests/test_pool.py`'s bit-identity gate cannot hold.  Taking
+    `mesh` rather than caching across phases is deliberate even though the arc's node
+    ids are phase-invariant (`tests/test_gradient.py::
+    test_the_arc_node_ids_do_not_move_with_phase`) — the pooled worker never sees another
+    phase's mesh, so re-deriving per phase is what keeps it on the same code path as the
+    serial loop rather than trusting an invariant from outside the function that built it.
+    """
+    n = W.NUMBER_OF_SPOKES
+    hub_ids = WW.fillet_arc_nodes(mesh, "hub")
+    rim_ids = WW.fillet_arc_nodes(mesh, "rim")
+    return (("hub_region_pnorm", lambda prob: WA._qoi_region_pnorm(prob, hub_ids, n)),
+            ("rim_region_pnorm", lambda prob: WA._qoi_region_pnorm(prob, rim_ids, n)))
+
+
+def _pnorm_and_grad(values, grads, p):
+    """`(agg, dagg)`: the p-norm over a phase stencil and its gradient.
+
+    The arithmetic `_stress_aggregate` computes for `agg` alone, factored out so the two
+    junction region terms can phase-aggregate with it too, without carrying
+    `_stress_aggregate`'s `max/pnorm` diagnostic — which is measured against the
+    WHOLE-WHEEL true max and means nothing for a per-junction region quantity.
+    """
+    values = np.asarray(values, dtype=float)
+    grads = np.asarray(grads, dtype=float)
+    denom = np.sum(values ** p)
+    agg = float(denom ** (1.0 / p))
+    dagg = (values ** (p - 1.0))[:, None] * grads
+    dagg = dagg.sum(axis=0) * denom ** (1.0 / p - 1.0)
+    return agg, dagg
+
+
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
-             force=SERVICE_FORCE_N, stress_phase_p=8.0, warm=None,
+             force=SERVICE_FORCE_N, target_deflection_mm=None,
+             allowable_stress_mpa=None, stress_phase_p=8.0, warm=None,
              stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None,
              orientation=None, span_mm=W.S, flanks=None, **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
@@ -1085,6 +1132,22 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     same floats in the same sequence.  That is what lets S13 gate pooled == serial
     exactly rather than to a tolerance; see `wheel_pool`'s module docstring.
 
+    `target_deflection_mm` AND `allowable_stress_mpa` ARE THE TWO REQUIREMENTS THAT USED
+    TO BE MODULE GLOBALS, and `None` resolves to those globals IN THE BODY, so a call
+    that names neither is the call this file has always made.  The sentinel is not
+    stylistic: written as `allowable_stress_mpa=ALLOWABLE_STRESS_MPA` the default binds
+    at `def` time, and `tests/test_objective.py`'s
+    `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` — the only way that file has
+    to push the stress barrier off zero — stops reaching the term, which is a green test
+    asserting `0 == 0`.  A module global read at call time keeps working; one captured
+    in a signature does not.  They are keywords rather than reads
+    because `force`, `E` and `nu` already thread — `force` here, the other two on
+    `**problem_kw` and through the process pool (`wheel_objective.py:1127`) — and the
+    asymmetry was arbitrary: three of the five quantities a MISSION sets could be varied
+    inside one interpreter and two could not.  `tests/test_objective.py:1257` had to
+    `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move one of them, which is
+    the tell.  See `wheel_requirements.py` and MBSE_PLAN.md Step 3.
+
     `stress_p_probe` MEASURES WITHOUT SOLVING.  The p-norm is a pure function of the
     converged displacement field, so any number of exponents can be read off the field the
     adjoint already ran on — `_meta` hands back both `prob` and `res`.  Each probe `p` is
@@ -1094,6 +1157,11 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     probe `p`: a convergence study reads values, and one adjoint per exponent per phase
     would turn a 14-minute ladder into an hour for numbers nothing reads.
     """
+    # READ AT CALL TIME, NOT BOUND AT `def` TIME — see the two paragraphs above.
+    target_deflection_mm = (TARGET_DEFLECTION_MM if target_deflection_mm is None
+                            else target_deflection_mm)
+    allowable_stress_mpa = (ALLOWABLE_STRESS_MPA if allowable_stress_mpa is None
+                            else allowable_stress_mpa)
     w = dict(DEFAULT_WEIGHTS if weights is None else weights)
     if phases is None:
         phases = phase_stencil(scheme="uniform")
@@ -1115,10 +1183,12 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
          "problem_kw": problem_kw}
         for i, p in enumerate(phases)])
 
+    pn_hub, pgrads_hub, pn_rim, pgrads_rim = [], [], [], []
     for i, p in enumerate(phases):
         if pooled is None:
+            hub_qoi, rim_qoi = _region_qois(meshes[i])
             o = WA.service_qoi_value_and_grad(
-                genes, cfg, (qoi,), force=force, mesh=meshes[i],
+                genes, cfg, (qoi, hub_qoi, rim_qoi), force=force, mesh=meshes[i],
                 delta0=None if warm is None else warm[i], **problem_kw)
             # The same field the adjoint above differentiated, at a different exponent.
             probes = _probe_values(o["_meta"]["prob"], o["_meta"]["res"]["u"], probe_p)
@@ -1130,6 +1200,10 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
         dgrads.append(o["axle_drop"]["grad"])
         pn.append(o["pnorm_stress"]["value"])
         pgrads.append(o["pnorm_stress"]["grad"])
+        pn_hub.append(o["hub_region_pnorm"]["value"])
+        pgrads_hub.append(o["hub_region_pnorm"]["grad"])
+        pn_rim.append(o["rim_region_pnorm"]["value"])
+        pgrads_rim.append(o["rim_region_pnorm"]["grad"])
         maxes.append(o["_meta"]["max_stress_mpa"])
         rows.append({"phase_deg": float(p), "axle_drop_mm": float(o["axle_drop"]["value"]),
                      "pnorm_stress_mpa": float(o["pnorm_stress"]["value"]),
@@ -1150,49 +1224,44 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     # too soft — `wheel_fea`'s reasoning, unchanged.
     mean_drop = drops.mean()
     mean_dgrad = dgrads.mean(axis=0)
-    err = (mean_drop - TARGET_DEFLECTION_MM) / TARGET_DEFLECTION_MM
+    err = (mean_drop - target_deflection_mm) / target_deflection_mm
     deflection = w["deflection"] * err ** 2
-    d_deflection = w["deflection"] * 2.0 * err / TARGET_DEFLECTION_MM * mean_dgrad
+    d_deflection = w["deflection"] * 2.0 * err / target_deflection_mm * mean_dgrad
 
-    # -- stress: `Kt(R, t) * sigma_nominal <= ALLOWABLE`, one barrier per junction.
+    # -- stress: the region-p-norm QoI over the fillet arc, ALLOWABLE <= 1, one barrier
+    # per junction.  PLAN.md §102/§103.
     #
     # WHAT THIS REPLACED, AND WHY IT HAD TO GO.  The constraint used to be
-    # `c * agg / ALLOWABLE` with `c = mean_phase(max / pnorm)` — a MEASURED rescale from the
-    # p-norm up to the true max.  It had a known gradient hazard, handled by making `c` an
-    # explicit input the caller froze within a step: the rescale is exact only for a
-    # CONSTANT factor, since the p-norm is positively homogeneous of degree 1 and
-    # `d(c*pnorm) = c*d(pnorm)` holds if and only if `c` did not move.  (Recomputing it
-    # inside a finite difference once put a 10% error into the assembled gradient while
-    # every individual term still agreed with its own FD to 1e-8 — how an assembly bug
-    # hides.)
+    # `Kt(R, t) * sigma_nominal / ALLOWABLE`: a converged nominal p-norm at
+    # `STRESS_NOMINAL_P = 4.0` (M8b-i.6's reason: the raw p-norm at higher `p` chases M4's
+    # crack-tip singularity and does not converge) times an analytic, differentiable
+    # stress-concentration factor standing in for a fillet the UNFILLETED mesh did not
+    # model.  §93 wires `fillet=True` in, and on a filleted mesh the surrogate and the
+    # thing it stood in for are both present at once — §94 measured that double count at
+    # exactly 0.0 at the shipped genome (utilisation sat below the margin knee, where
+    # `stress_margin`'s gradient carried the term and the wall did not), but §101 found
+    # the disagreement WIDENS under refinement rather than closing, so the surrogate does
+    # not get to stay just because it was once free.  §102 built the quantity that
+    # replaces it — a smooth p-norm of von Mises stress in a bump-kernel tube around the
+    # fillet's own arc, `l_p`-normed over its twelve rotational copies (see
+    # `wheel_adjoint._qoi_region_pnorm`'s docstring for why an argmax over copies is the
+    # wrong construction) — and this is where it is read.
     #
-    # The freeze was sound and the quantity was not.  M8b-i.6 step 1 swept ten exponents off
-    # one set of solves and found the two factors converge in DISJOINT ranges of `p`: the
-    # p-norm for `p <= 6`, `c` only for `p >= 24`, and their product at NO exponent at
-    # either design.  The reason is structural — `c` is anchored to the true max, which is
-    # M4's crack-tip singularity and diverges under refinement — so no amount of freezing
-    # fixes it.  A frozen divergent number is still a divergent number.
-    #
-    # So the peak is no longer measured, it is MODELLED: a converged nominal stress at
-    # `STRESS_NOMINAL_P = 4.0` times an analytic, differentiable stress-concentration
-    # factor.  `Kt` is a function of the genes, so it is not hoisted or frozen — it is
-    # DIFFERENTIATED, and the product rule below is the whole change.
-    #
-    # TWO JUNCTIONS, TWO BARRIERS, not one aggregated `Kt`.  A hard `max` over the two
+    # TWO JUNCTIONS, TWO BARRIERS, not one aggregated peak.  A hard `max` over the two
     # would zero the gradient of whichever junction is not currently worst and reintroduce
-    # exactly the argmax kink the p-norm exists to blur; a p-norm over two samples is an
-    # arbitrary exponent for no smoothing benefit.  Summing two `soft_barrier`s is smooth
-    # everywhere and lets `R_hub` and `R_rim` both carry a live gradient at once.
+    # exactly the argmax kink the p-norm exists to blur.  Summing two `soft_barrier`s is
+    # smooth everywhere and lets `R_hub` and `R_rim` both carry a live gradient at once.
     q = stress_phase_p
-    agg, c = _stress_aggregate(pn, maxes, q)
-    denom = np.sum(pn ** q)
-    dagg = (pn ** (q - 1.0))[:, None] * pgrads
-    dagg = dagg.sum(axis=0) * denom ** (1.0 / q - 1.0)
+    agg, c = _stress_aggregate(pn, maxes, q)          # whole-wheel pnorm — REPORTING ONLY
+    agg_hub, dagg_hub = _pnorm_and_grad(pn_hub, pgrads_hub, q)
+    agg_rim, dagg_rim = _pnorm_and_grad(pn_rim, pgrads_rim, q)
 
-    (kt_hub, dkt_hub), (kt_rim, dkt_rim) = junction_kt(genes, cfg, span_mm=span_mm,
-                                                       flanks=flanks)
-    # Reporting only — `junction_kt` differentiates through both of these internally; these
-    # two calls just name the numbers so the run record can show WHY `kt_hub` is what it is.
+    # `Kt`/`hub_fillet_cap_mm`/`hub_fillet_r_effective` no longer feed `util_j` — kept
+    # for REPORTING ONLY.  They are a purely geometric feasibility question (does the
+    # requested fillet radius fit the sector the spoke leaves it) that `wheel_stage3`'s
+    # `REPORT_KEYS`/`selection_key` still reads off `kt_hub`/`hub_fillet_cap_mm`/
+    # `r_hub_effective_mm`, unrelated to and untouched by which quantity prices stress.
+    (kt_hub, _), (kt_rim, _) = junction_kt(genes, cfg, span_mm=span_mm, flanks=flanks)
     kt_cap = hub_fillet_cap_mm(genes, cfg, span_mm=span_mm, flanks=flanks)
     kt_reff = hub_fillet_r_effective(jnp.asarray(genes, dtype=float), kt_cap)
     # -- stress_margin: THE SAME TWO UTILISATIONS, PRICED INSTEAD OF WALLED.  §15 defect 1.
@@ -1216,23 +1285,21 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     # in `OBJECTIVE_TERMS`.  `stress` stays exactly as it is: the wall is still there, this
     # only stops the approach to it being free.
     #
-    # THE WEIGHT IS AN EXCHANGE RATE AND IT IS A POLICY, SO IT IS STATED.  At the shipped
-    # genome the mass term is 30.88 at 37.57 g, so 1% of mass is 0.309 of loss.  One percent
-    # of hub utilisation at `util` = 0.855 costs `w * (1.01^2 - 1) * 0.855^2` = 0.0147 `w`,
-    # so `w` = 21.0 makes the optimizer indifferent between 1% of mass and 1% of utilisation
-    # right where the design sits.  20.0 is that number rounded down — the rounding is
-    # toward buying LESS margin, i.e. toward the old behaviour, which is the conservative
-    # direction for a term whose whole purpose is to change the optimum.
+    # THE WEIGHT IS AN EXCHANGE RATE AND IT IS A POLICY, SO IT IS STATED — PLAN.md §99.
+    # `w = mass_term / (2*(util_ref - knee)*util_ref)` at `util_ref` = 1.0 (the wall) and
+    # the shipped genome's FILLETED mass term, 35.6822 g: `w` = 89.21.  See
+    # `DEFAULT_WEIGHTS["stress_margin"]`'s own comment for why `util_ref` moved to the
+    # wall rather than staying at a design's own reading.
     #
     # Quadratic rather than linear is deliberate and is the second half of the policy: the
     # exchange rate steepens as margin disappears, so the last 10% of utilisation costs far
     # more than the first, which is what "margin" is supposed to mean.  Linear would trade
     # the same at 0.5 as at 0.99.
-    stress, d_stress, utils = 0.0, np.zeros_like(dagg), {}
-    stress_margin, d_stress_margin = 0.0, np.zeros_like(dagg)
-    for name, kt, dkt in (("hub", kt_hub, dkt_hub), ("rim", kt_rim, dkt_rim)):
-        util_j = kt * agg / ALLOWABLE_STRESS_MPA
-        d_util = (dkt * agg + kt * dagg) / ALLOWABLE_STRESS_MPA   # THE PRODUCT RULE
+    stress, d_stress, utils = 0.0, np.zeros_like(dagg_hub), {}
+    stress_margin, d_stress_margin = 0.0, np.zeros_like(dagg_hub)
+    for name, agg_j, dagg_j in (("hub", agg_hub, dagg_hub), ("rim", agg_rim, dagg_rim)):
+        util_j = agg_j / allowable_stress_mpa
+        d_util = dagg_j / allowable_stress_mpa
         stress += float(soft_barrier(util_j - 1.0, w["stress"]))
         d_stress = d_stress + 2.0 * w["stress"] * max(0.0, util_j - 1.0) * d_util
         # THE SAME FUNCTION AS THE WALL ABOVE, WITH THE KNEE MOVED IN — see DEFECT 8.
@@ -1269,8 +1336,8 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     for v in probe_p:
         a_v, c_v = _stress_aggregate(probe_pn[v], maxes, q)
         by_p[repr(v)] = {"p": v, "pnorm_agg_mpa": a_v, "stress_scale_measured": c_v,
-                         "stress_utilisation": c_v * a_v / ALLOWABLE_STRESS_MPA,
-                         "stress_utilisation_kt": kt_max * a_v / ALLOWABLE_STRESS_MPA,
+                         "stress_utilisation": c_v * a_v / allowable_stress_mpa,
+                         "stress_utilisation_kt": kt_max * a_v / allowable_stress_mpa,
                          "pnorm_stress_mpa": [float(x) for x in probe_pn[v]]}
 
     return {
@@ -1287,6 +1354,10 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "pnorm_stress_agg_mpa": float(agg),
                    "max_stress_mpa": float(np.max(maxes)),
                    "stress_scale_measured": c,     # diagnostic only, see `_stress_aggregate`
+                   # THE QUANTITY `util_j` IS ACTUALLY BUILT ON — §102/§103.  `kt_hub`/
+                   # `kt_rim` below no longer feed it; they stay for the geometric report.
+                   "hub_region_pnorm_mpa": float(agg_hub),
+                   "rim_region_pnorm_mpa": float(agg_rim),
                    "kt_hub": float(kt_hub), "kt_rim": float(kt_rim),
                    # What the hub's Kt was actually priced on, and the slot that set it.
                    # `r_hub_effective_mm < genes[12]` is the whole point of PLAN.md §0(a):
@@ -1297,6 +1368,15 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "stress_utilisation_rim": utils["rim"],
                    "stress_utilisation": float(util),
                    "stress_gauss_p": float(stress_gauss_p), "pnorm_by_p": by_p,
+                   # THE TWO REQUIREMENTS THIS EVALUATION WAS SCORED UNDER, reported
+                   # beside the numbers they scaled.  A `stress_utilisation` without the
+                   # allowable it is a fraction OF, or an axle drop without the target it
+                   # is measured against, is exactly the ambiguity §14 records the cost of
+                   # for `kinematics`: two records, indistinguishable, answering different
+                   # questions.  Absent from every record written before MBSE_PLAN Step 3.
+                   "target_deflection_mm": float(target_deflection_mm),
+                   "allowable_stress_mpa": float(allowable_stress_mpa),
+                   "service_force_n": float(force),
                    "n_phase": n, "rows": rows},
     }
 
@@ -1306,8 +1386,9 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 # ---------------------------------------------------------------------------
 
 def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
-              normalized=False, force=SERVICE_FORCE_N, tiers=("t1", "t2", "t3"),
-              span_mm=W.S, pool=None, orientation=None, **problem_kw):
+              normalized=False, force=None, tiers=("t1", "t2", "t3"),
+              span_mm=W.S, pool=None, orientation=None, req=None,
+              target_deflection_mm=None, allowable_stress_mpa=None, **problem_kw):
     """`(value, grad, breakdown)` — the scalar Stage 3 descends, and its gradient.
 
     `normalized=True` takes and returns unit-box `z` instead of physical genes.  The
@@ -1323,7 +1404,52 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     expected to hand `meshes=[mesh0]` — one mesh, built at the first phase — rather than
     let T2 fall back to `build_wheel` at the default phase and quietly stop matching the
     serial path.  `wheel_stage3.Evaluator` does exactly that.
+
+    `req` IS A `wheel_requirements.Requirements`, AND IT IS THE WHOLE REQUIREMENTS ENTRY
+    POINT — MBSE_PLAN.md Step 3.  It supplies `weights`, `force`, `target_deflection_mm`,
+    `allowable_stress_mpa`, `E` and `nu` in one object, and
+    `objective(genes, req=Requirements.baseline())` is bit-identical to
+    `objective(genes)` in the scalar, all 14 gradient components and every one of the 14
+    breakdown terms — which `tests/test_requirements.py` gates, because a default that
+    moved would be a silent re-interpretation of every committed artifact and of the five
+    study drivers that re-alias `SERVICE_FORCE_N`.
+
+    **PASSING `req` TOGETHER WITH ANY OF THE SIX IT SETS IS REFUSED, not resolved by a
+    precedence rule.**  A rule ("the explicit one wins", "the req wins") is a rule someone
+    has to remember at the call site, and getting it wrong scores a design against a
+    requirement nobody chose — the same class of failure as a run whose kinematics is not
+    in its record.  Hence the six `None` sentinels above, which is also why `force`'s
+    default moved from `SERVICE_FORCE_N` to `None`: it still RESOLVES to
+    `SERVICE_FORCE_N`, one line down, and every caller that passes it explicitly is
+    unaffected.
+
+    `min_wall_mm` is deliberately NOT here.  It is not a term in the loss, it is the low
+    bound on four genes, and it reaches a run through `wheel_fea.set_min_wall` —
+    `Requirements.apply_process()` is that call, and it must happen before
+    `bounds_arrays`, exactly as `wheel_stage3.main` already does for `--min-wall`.
     """
+    if req is not None:
+        clash = [n for n, v in (("weights", weights), ("force", force),
+                                ("target_deflection_mm", target_deflection_mm),
+                                ("allowable_stress_mpa", allowable_stress_mpa))
+                 if v is not None]
+        clash += [n for n in ("E", "nu") if n in problem_kw]
+        if clash:
+            raise ValueError(
+                f"objective() got req= together with {sorted(clash)}, which req also "
+                f"sets.  Refused rather than resolved by precedence: pass the "
+                f"requirement set OR the individual keywords, never both.")
+        rkw = req.objective_kwargs()
+        weights = rkw["weights"]
+        force = rkw["force"]
+        target_deflection_mm = rkw["target_deflection_mm"]
+        allowable_stress_mpa = rkw["allowable_stress_mpa"]
+        problem_kw["E"], problem_kw["nu"] = rkw["E"], rkw["nu"]
+    force = SERVICE_FORCE_N if force is None else force
+    target_deflection_mm = (TARGET_DEFLECTION_MM if target_deflection_mm is None
+                            else target_deflection_mm)
+    allowable_stress_mpa = (ALLOWABLE_STRESS_MPA if allowable_stress_mpa is None
+                            else allowable_stress_mpa)
     low, high, rng = wg.bounds_arrays(W.GENE_SPACE)
     genes = wg.denormalize(np.asarray(genes, dtype=float), low, high) if normalized \
         else np.asarray(genes, dtype=float)
@@ -1339,6 +1465,14 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     # 0.32 ms on a `tiers=("t3",)` call.
     flanks = fillet_flanks(genes, WW.get_config(cfg), span_mm)
 
+    # NORMALISED HERE AND NOT IN `t3_terms` ALONE, because T2's mesh fallback below needs
+    # the same stencil T3 will use.  `scheme="uniform"` is spelled out because
+    # `phase_stencil`'s own default is `rqmc` — defaulting it bare here would silently
+    # change which stencil every phases-less caller gets.  `t3_terms` makes the identical
+    # call, so it is unaffected whether it receives this or builds it itself.
+    if phases is None:
+        phases = phase_stencil(scheme="uniform")
+
     if "t1" in tiers:
         v1j, j1j = _t1_cached_value_and_jacobian(gj, cfg, weights, span_mm, flanks)
         v1, j1 = np.asarray(v1j), np.asarray(j1j)
@@ -1347,14 +1481,46 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
             values[name], grads[name] = float(v1[k]), j1[k]
         # The one term with no gradient, and it is asserted rather than assumed — see the
         # module docstring.  Computed from the numpy beam surrogate.
-        _, _, _, ratio = _buckling_ratio(genes)
+        #
+        # AND IT IS GIVEN THE MISSION'S LOAD AND MODULUS, not the module's.  `buckling` is
+        # a BARRIER — a `shall` — and until MBSE_PLAN Step 3 it read
+        # `W.FORCE_PER_SPOKE_NEWTONS` and the 20 C `YOUNGS_MODULUS_PLA_MPA` off the module
+        # no matter what the caller loaded the wheel with.  A heavy-payload or hot-day
+        # requirement set would therefore have been checked for buckling AT THE SHIPPED
+        # LOAD, silently, and a verifier that reports a barrier at 0.0 for a load it never
+        # applied is worse than one that reports nothing.
+        _, _, _, ratio = _buckling_ratio(genes, force=force,
+                                         youngs_modulus=problem_kw.get("E"))
         wts = dict(DEFAULT_WEIGHTS if weights is None else weights)
         values["buckling"] = float(soft_barrier(ratio - 1.0, wts["buckling"]))
         grads["buckling"] = np.zeros(14)
         report["buckling_ratio"] = float(ratio)
 
     if "t2" in tiers:
-        mesh0 = (meshes[0] if meshes else WW.build_wheel(genes, cfg))
+        # T2 READS THE MESH T3 SOLVES.  Building it from `phase_meshes` rather than
+        # falling through to `WW.build_wheel(genes, cfg)` closes two disagreements the
+        # bare default opened, and they are independent of each other:
+        #
+        #   THE FILLET.  Since §103 `phase_meshes` passes `fillet=True` and the bare
+        #   default does not, so `mass` and `min_sj` were read on a mesh 9.78% lighter
+        #   than the one the stress and deflection terms solve — 39.5478 g against
+        #   43.4133 g at `coarse` on the shipped genome, which is 10.6x
+        #   `wheel_requirements.REFERENCE_DEVIATION["mass"]`'s own 0.365 g band.  The
+        #   `min_sj` barrier is the sharper end: it read 0.7822 on the mesh it guarded
+        #   against 0.2877 on the mesh actually solved — both above `MIN_SJ_TARGET = 0.2`
+        #   at this genome, so no verdict moved, but the MBSE gate was reporting 291%
+        #   margin where the solved mesh has 44%, and a descent leaning on `mass` could
+        #   walk that mesh toward the floor with the barrier flat at zero.
+        #
+        #   THE PHASE.  `build_wheel`'s `phase_deg` defaults to 0.0, and under an rqmc
+        #   stencil `phases[0]` is the offset — 0.46875 deg at `n_phase=8` — so T2 read a
+        #   phase T3 never evaluated.  This half predates the fillet entirely.
+        #
+        # `wheel_stage3.Evaluator` already guards both, building `phases[:1]` in the
+        # parent even when pooled and passing it down; its comment names the phase half.
+        # This is that guard moved to where every caller gets it instead of one.
+        mesh0 = (meshes[0] if meshes
+                 else phase_meshes(genes, cfg, phases[:1], orientation=orientation)[0])
         v2, mass_g = t2_vector(gj, mesh0, weights)
         j2 = np.asarray(jax.jacrev(lambda v: t2_vector(v, mesh0, weights)[0])(gj))
         v2 = np.asarray(v2)
@@ -1366,7 +1532,9 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
 
     if "t3" in tiers:
         t3 = t3_terms(genes, cfg, phases=phases, meshes=meshes, weights=weights,
-                      force=force, pool=pool, orientation=orientation,
+                      force=force, target_deflection_mm=target_deflection_mm,
+                      allowable_stress_mpa=allowable_stress_mpa,
+                      pool=pool, orientation=orientation,
                       span_mm=span_mm, flanks=flanks, **problem_kw)
         values.update(t3["values"])
         grads.update(t3["grads"])
@@ -1388,17 +1556,26 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     return total, gsum, breakdown
 
 
-def _buckling_ratio(genes):
+def _buckling_ratio(genes, force=None, youngs_modulus=None):
     """The legacy Euler equivalent-column check.  NO GRADIENT — see the module docstring.
 
     Delegates to `wheel_fea.generalized_spoke_mechanics` rather than reimplementing it:
     the value is the one M0's golden test pins, and a second copy that drifted would be a
     silent change to a committed number.
+
+    `force` is the WHOLE-WHEEL service load and is divided down here by the same
+    `NUMBER_OF_SPOKES / 3.0` that defines `W.FORCE_PER_SPOKE_NEWTONS` (`wheel_fea.py:154`)
+    — *"conservative: 1/3 of spokes are load-bearing at any stance"* — rather than being
+    passed per-spoke, so that every caller in the tree speaks the one unit `force` means
+    everywhere else.  Both arguments default to the module constants, so a bare call is
+    the call this function has always made.
     """
+    f = W.TOTAL_FORCE_NEWTONS if force is None else float(force)
+    e = W.YOUNGS_MODULUS_PLA_MPA if youngs_modulus is None else float(youngs_modulus)
     curve, _ = W.generate_bezier_centerline(*[float(genes[i]) for i in range(8)])
     return W.generalized_spoke_mechanics(
         curve, float(genes[8]), float(genes[9]), float(genes[10]), float(genes[11]),
-        W.SPOKE_WIDTH_MM, W.FORCE_PER_SPOKE_NEWTONS,
+        W.SPOKE_WIDTH_MM, f / (W.NUMBER_OF_SPOKES / 3.0), youngs_modulus=e,
         R_hub_fillet=float(genes[12]), R_rim_fillet=float(genes[13]))
 
 

@@ -1,0 +1,671 @@
+{
+  "inputs": {
+    "350f4c7": "stage3_minwall_best_1.2.json",
+    "e4219f3": "stage3_buildcap2_feasible_medium.json",
+    "e126cc3": "stage3_margin_best_medium.json",
+    "09e8188": "best_solution.json"
+  },
+  "reference_genome": "09e8188",
+  "reference_smoothness_loss": 0.16782828102126746,
+  "loss_share": {
+    "terms": {
+      "deflection": 0.004145690639631074,
+      "mass": 32.440977356532755,
+      "stress_margin": 0.13168057521473925,
+      "smoothness": 0.16782828102126746,
+      "phase_ripple": 0.0
+    },
+    "total": 32.74463190340839,
+    "share": {
+      "deflection": 0.00012660672600810484,
+      "mass": 0.9907265854210434,
+      "stress_margin": 0.004021440082245439,
+      "smoothness": 0.0051253677707031485,
+      "phase_ripple": 0.0
+    },
+    "objective_total": 32.74463190340839,
+    "record_loss": 32.74463190340839
+  },
+  "calibration": {
+    "reference_deviation": {
+      "mass": {
+        "what": "1% of MASS_REFERENCE_G",
+        "d": 0.365
+      },
+      "deflection": {
+        "what": "1% relative error on the stroke target",
+        "d": 0.01
+      },
+      "stress_margin": {
+        "what": "1% of utilisation above MARGIN_KNEE_UTIL",
+        "d": 0.01
+      },
+      "smoothness": {
+        "what": "1% of the curvature-rate integral at the reference genome",
+        "d": 0.01
+      },
+      "phase_ripple": {
+        "what": "1 point of std/mean axle drop",
+        "d": 0.01
+      }
+    },
+    "costs": {
+      "deflection": 0.25,
+      "mass": 0.3,
+      "stress_margin": 0.008921,
+      "smoothness": 0.0016782828102126746,
+      "phase_ripple": 0.0
+    },
+    "cost_total": 0.5605992828102127,
+    "cost_per_point": 0.0056059928281021265,
+    "p_cal": {
+      "deflection": 44.59513375521672,
+      "mass": 53.51416050626007,
+      "stress_margin": 1.5913327529211536,
+      "smoothness": 0.2993729856020609,
+      "phase_ripple": 0.0
+    },
+    "identity_weights": {
+      "deflection": 2500.0,
+      "mass": 0.821917808219178,
+      "stress": 4000.0,
+      "stress_margin": 89.21,
+      "buckling": 2000.0,
+      "x_order": 80.0,
+      "hub_overlap": 500.0,
+      "smoothness": 0.9999999999999999,
+      "fold": 3000.0,
+      "arrival": 3000.0,
+      "fillet": 3000.0,
+      "fillet_cap": 500.0,
+      "min_sj": 3000.0,
+      "phase_ripple": 0.0
+    },
+    "identity_max_rel_err": 1.1102230246251565e-16,
+    "identity_worst_term": "smoothness"
+  },
+  "conservation": {
+    "base_pressure": 0.5605992828102127,
+    "rows": [
+      {
+        "points": {
+          "deflection": 100.0,
+          "mass": 0.0,
+          "stress_margin": 0.0,
+          "smoothness": 0.0,
+          "phase_ripple": 0.0
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 0.0,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 0.0,
+          "mass": 100.0,
+          "stress_margin": 0.0,
+          "smoothness": 0.0,
+          "phase_ripple": 0.0
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 0.0,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 0.0,
+          "mass": 0.0,
+          "stress_margin": 100.0,
+          "smoothness": 0.0,
+          "phase_ripple": 0.0
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 0.0,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 0.0,
+          "mass": 0.0,
+          "stress_margin": 0.0,
+          "smoothness": 100.0,
+          "phase_ripple": 0.0
+        },
+        "pressure": 0.5605992828102125,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 0.0,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 0.0,
+          "mass": 0.0,
+          "stress_margin": 0.0,
+          "smoothness": 0.0,
+          "phase_ripple": 100.0
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 5605.992828102127,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 35.83429492098625,
+          "mass": 15.177705126084438,
+          "stress_margin": 2.3050952198647816,
+          "smoothness": 0.9298144263062862,
+          "phase_ripple": 45.75309030675823
+        },
+        "pressure": 0.5605992828102125,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 2564.914961231955,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 24.48651061338715,
+          "mass": 16.274229083416152,
+          "stress_margin": 19.57021762193958,
+          "smoothness": 14.583837617209463,
+          "phase_ripple": 25.085205064047646
+        },
+        "pressure": 0.5605992828102125,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 1406.2747968052224,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 33.447075301917856,
+          "mass": 0.11226870428220741,
+          "stress_margin": 35.15050618868655,
+          "smoothness": 1.3768883651057342,
+          "phase_ripple": 29.913261440007656
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1676.935290978268,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 7.628262976326674,
+          "mass": 37.485597060429455,
+          "stress_margin": 23.51424090714599,
+          "smoothness": 13.015701463514102,
+          "phase_ripple": 18.35619759258377
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1029.0471205525014,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 1.3577353624060005,
+          "mass": 5.958536686121608,
+          "stress_margin": 32.15187344674524,
+          "smoothness": 31.02832944383973,
+          "phase_ripple": 29.50352506088743
+        },
+        "pressure": 0.5605992828102128,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 1653.965498950663,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 10.37604604798664,
+          "mass": 26.968208325775883,
+          "stress_margin": 26.525379260753372,
+          "smoothness": 18.539565632094874,
+          "phase_ripple": 17.59080073338923
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 986.1390275195365,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 27.993521767066177,
+          "mass": 15.814266906037037,
+          "stress_margin": 5.493274622515968,
+          "smoothness": 29.337054936927032,
+          "phase_ripple": 21.361881767453788
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1197.545559831115,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 10.419879140898706,
+          "mass": 16.317415926788364,
+          "stress_margin": 29.87461223446296,
+          "smoothness": 31.371073073450113,
+          "phase_ripple": 12.017019624399861
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 673.6732582954812,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 25.776755919500328,
+          "mass": 14.516737859735178,
+          "stress_margin": 26.803722216649568,
+          "smoothness": 15.240245939979847,
+          "phase_ripple": 17.66253806413508
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 990.1606171362207,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 33.50323741802209,
+          "mass": 8.548505042650508,
+          "stress_margin": 23.45208172880552,
+          "smoothness": 3.1617062722954703,
+          "phase_ripple": 31.33446953822642
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1756.6081150368184,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 34.25685960110897,
+          "mass": 10.418070174192462,
+          "stress_margin": 38.14720086651941,
+          "smoothness": 2.549055087967208,
+          "phase_ripple": 14.628814270211954
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 820.0902788244626,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 8.947301448571155,
+          "mass": 26.81219298168909,
+          "stress_margin": 47.41135595097432,
+          "smoothness": 13.73191836031378,
+          "phase_ripple": 3.097231258451669
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 173.6305622185378,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 25.7210003011788,
+          "mass": 12.62126030588074,
+          "stress_margin": 5.76998763553296,
+          "smoothness": 36.89695115794471,
+          "phase_ripple": 18.99080059946279
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1064.6229196050597,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 29.418894217113262,
+          "mass": 8.734476903501687,
+          "stress_margin": 41.24425177589839,
+          "smoothness": 15.983957273383545,
+          "phase_ripple": 4.6184198301031145
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 258.908284447227,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 18.229068459150263,
+          "mass": 26.865275515382063,
+          "stress_margin": 12.760389897210109,
+          "smoothness": 27.660260667984886,
+          "phase_ripple": 14.485005460272681
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 812.0283672530879,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 12.327156041706788,
+          "mass": 17.97966448019053,
+          "stress_margin": 28.847328659839643,
+          "smoothness": 27.509382182115218,
+          "phase_ripple": 13.336468636147822
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 747.6414752645364,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 25.385356705666236,
+          "mass": 16.664605863473028,
+          "stress_margin": 17.732963550800083,
+          "smoothness": 26.325314695807872,
+          "phase_ripple": 13.891759184252772
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 778.7710235664288,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 22.798480448375578,
+          "mass": 22.07398180515661,
+          "stress_margin": 28.93127274477216,
+          "smoothness": 3.5675262094068327,
+          "phase_ripple": 22.62873879228882
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1268.5654737856748,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 24.699086919819305,
+          "mass": 25.77774021032012,
+          "stress_margin": 0.3916572490724144,
+          "smoothness": 23.000400354185103,
+          "phase_ripple": 26.13111526660306
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1464.9084477488675,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 25.250126655687183,
+          "mass": 3.924227124501995,
+          "stress_margin": 25.656852863789904,
+          "smoothness": 23.47549783316693,
+          "phase_ripple": 21.69329552285399
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1216.1245911901942,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 17.751677009095093,
+          "mass": 8.593984995232546,
+          "stress_margin": 29.65642327070851,
+          "smoothness": 34.15546160948357,
+          "phase_ripple": 9.842453115480277
+        },
+        "pressure": 0.5605992828102125,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 551.7672157631386,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 20.07038956623039,
+          "mass": 16.488503300941584,
+          "stress_margin": 34.67190062533082,
+          "smoothness": 1.5086543810483901,
+          "phase_ripple": 27.260552126448815
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1528.2245971097623,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 28.764124056374445,
+          "mass": 1.3280280107922886,
+          "stress_margin": 33.67289652035131,
+          "smoothness": 0.7487111363919738,
+          "phase_ripple": 35.48624027608997
+        },
+        "pressure": 0.5605992828102125,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 1989.3560848406921,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 21.22387234951395,
+          "mass": 38.45705297052847,
+          "stress_margin": 2.735256196298947,
+          "smoothness": 34.82341642934294,
+          "phase_ripple": 2.7604020543156818
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 154.74794119172088,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 13.440330377557961,
+          "mass": 16.796948896195754,
+          "stress_margin": 37.71076741971391,
+          "smoothness": 21.947030796433513,
+          "phase_ripple": 10.104922510098852
+        },
+        "pressure": 0.5605992828102125,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 566.4812312014191,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 13.665198092035787,
+          "mass": 50.2173452821002,
+          "stress_margin": 12.771454897005961,
+          "smoothness": 7.042762798540632,
+          "phase_ripple": 16.303238930317402
+        },
+        "pressure": 0.5605992828102125,
+        "abs_err": 1.1102230246251565e-16,
+        "w_phase_ripple": 913.9584051819473,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 20.941780776572266,
+          "mass": 19.79727897348792,
+          "stress_margin": 28.93041850692455,
+          "smoothness": 20.025426778255667,
+          "phase_ripple": 10.305094964759588
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 577.7028846535359,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 12.959685723454818,
+          "mass": 25.678577336648683,
+          "stress_margin": 19.664322536633584,
+          "smoothness": 30.102821335370297,
+          "phase_ripple": 11.59459306789261
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 649.9920558336861,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 21.698176854421877,
+          "mass": 23.320311139677962,
+          "stress_margin": 33.3079791331897,
+          "smoothness": 5.711988438735692,
+          "phase_ripple": 15.961544433974774
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 894.80303622296,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 30.12191370699307,
+          "mass": 1.4256215452951044,
+          "stress_margin": 27.233632088812094,
+          "smoothness": 13.750248809134662,
+          "phase_ripple": 27.468583849765068
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1539.8868405990486,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 0.7212956292040135,
+          "mass": 26.450810150848767,
+          "stress_margin": 5.697438915655596,
+          "smoothness": 47.287675526742134,
+          "phase_ripple": 19.842779777549488
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 1112.3848112255234,
+        "barriers_unmoved": true
+      },
+      {
+        "points": {
+          "deflection": 26.048143547501805,
+          "mass": 34.98783548199058,
+          "stress_margin": 4.701260014614873,
+          "smoothness": 32.05835450568248,
+          "phase_ripple": 2.2044064502102563
+        },
+        "pressure": 0.5605992828102127,
+        "abs_err": 0.0,
+        "w_phase_ripple": 123.57886750100764,
+        "barriers_unmoved": true
+      }
+    ],
+    "max_abs_err": 1.1102230246251565e-16,
+    "all_barriers_unmoved": true
+  },
+  "ripple": {
+    "reference_deviation": 0.01,
+    "cost_per_point": 0.0056059928281021265,
+    "weight_per_point": 56.059928281021264,
+    "points_held_by_mass": 53.51416050626007,
+    "weight_at_mass_parity": 3000.0,
+    "shipped_std_over_mean": 0.1044285616356061,
+    "shipped_points_of_ripple": 10.44285616356061,
+    "term_at_mass_parity": 32.71597345584475,
+    "mass_term_at_reference": 32.440977356532755,
+    "ratio_to_mass_term": 1.0084768130222999
+  },
+  "holdout": {
+    "350f4c7": {
+      "file": "stage3_minwall_best_1.2.json",
+      "smoothness_loss": 0.29015351752061114,
+      "p_cal": {
+        "deflection": 44.49803707536166,
+        "mass": 53.39764449043399,
+        "stress_margin": 1.5878679549972055,
+        "smoothness": 0.5164504792071501,
+        "phase_ripple": 0.0
+      },
+      "cost_total": 0.5618225351752061,
+      "max_abs_point_shift_vs_reference": 0.21707749360508927
+    },
+    "e4219f3": {
+      "file": "stage3_buildcap2_feasible_medium.json",
+      "smoothness_loss": 0.06230791890960379,
+      "p_cal": {
+        "deflection": 44.67923248554532,
+        "mass": 53.61507898265437,
+        "stress_margin": 1.5943337320141993,
+        "smoothness": 0.11135479978610772,
+        "phase_ripple": 0.0
+      },
+      "cost_total": 0.559544079189096,
+      "max_abs_point_shift_vs_reference": 0.18801818581595314
+    },
+    "e126cc3": {
+      "file": "stage3_margin_best_medium.json",
+      "smoothness_loss": 0.33760053692248376,
+      "p_cal": {
+        "deflection": 44.46048931664519,
+        "mass": 53.35258717997422,
+        "stress_margin": 1.5865281007751668,
+        "smoothness": 0.6003954026054308,
+        "phase_ripple": 0.0
+      },
+      "cost_total": 0.5622970053692248,
+      "max_abs_point_shift_vs_reference": 0.3010224170033699
+    },
+    "09e8188": {
+      "file": "best_solution.json",
+      "smoothness_loss": 0.16782828102126746,
+      "p_cal": {
+        "deflection": 44.59513375521672,
+        "mass": 53.51416050626007,
+        "stress_margin": 1.5913327529211536,
+        "smoothness": 0.2993729856020609,
+        "phase_ripple": 0.0
+      },
+      "cost_total": 0.5605992828102127,
+      "max_abs_point_shift_vs_reference": 0.0
+    }
+  },
+  "checks": {
+    "identity_at_the_calibration_point": true,
+    "identity_max_rel_err": 1.1102230246251565e-16,
+    "conservation_under_reallocation": true,
+    "conservation_max_abs_err": 1.1102230246251565e-16,
+    "barriers_never_move": true,
+    "points_sum_to_100": true,
+    "axes_are_objective_terms": true,
+    "all_ok": true
+  },
+  "verdict": {
+    "portfolio": {
+      "deflection": 44.6,
+      "mass": 53.51,
+      "stress_margin": 1.59,
+      "smoothness": 0.3,
+      "phase_ripple": 0.0
+    },
+    "portfolio_note": "the shipped weight table is a 54/45/2/0.3/0.0 portfolio \u2014 54% on mass, 45% on stroke, 2% on durability, 0.3% on print finish and nothing at all on rolling.  That is a defensible allocation and it is nothing like the 99%-mass reading the loss breakdown invites.  It has never been stated before this line.",
+    "loss_share_says_mass_is": 0.9907265854210434,
+    "calibration_says_mass_is": 0.5351416050626007,
+    "loss_share_refuted": true,
+    "loss_share_note": "loss share puts mass at 99.07% and stroke at 0.0127%; the calibration puts them at 53.51% and 44.60%.  The gap is the whole finding: `deflection` is small in the loss because the requirement is MET (1.99742 mm against 2.0), not because it is unimportant.",
+    "holdout_max_point_shift": 0.3010224170033699,
+    "calibration_survives_the_holdout": true,
+    "holdout_note": "re-anchoring the calibration at each of the three genomes that shipped before the current one moves no share by more than 0.301 points, because `smoothness` is the only term that reads a genome at all and it holds 0.30 of the 100.  The allocation is a property of the WEIGHT TABLE, not of the anchor \u2014 which is the claim `do not calibrate on one genome` requires, measured rather than asserted.",
+    "ripple_weight_per_point": 56.059928281021264,
+    "ripple_at_mass_parity_costs": 32.71597345584475,
+    "ripple_note": "one point of `rolling` buys weight 56.0599.  Bought at parity with `light` (53.51 points) that is w_ripple = 3000.0, and the SHIPPED wheel's own ripple of 0.104429 \u2014 10.4 points, not one \u2014 would then cost 32.72 loss units, 1.01x the entire mass term.  The axis nobody has ever bought is not a small one."
+  }
+}

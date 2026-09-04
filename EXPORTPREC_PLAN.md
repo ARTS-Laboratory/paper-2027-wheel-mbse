@@ -105,3 +105,20 @@ itself, so a future revert to 2 dp is caught.
 - **Do not do this immediately after a promotion.** §28 deferred it for that reason and the
   reason is structural, not circumstantial — the shipped genome is `09e8188` (§26) and if a
   new promotion is in flight, this waits.
+
+---
+
+## PREMISE CHECKED AGAINST THE FILLET SWITCH — 2026-09-03. **INTACT, AND THIS ARC IS NOW BLOCKED BY ITS OWN RULE.**
+
+PLAN.md §106.  The exporter is OCC-side and does not touch the FEA mesh, so §103 leaves
+this arc's measurements alone: §28's derived tolerance, the 5.1e-5 budget, and the 2-dp
+volumes in `export/wheel_step_manifest.json` (`solid 39224.5`, `nofillet 36145.8`,
+`fillets 3078.77`, last exported 2026-08-15) all stand.
+
+**WHAT CHANGED IS THE BLOCKING CONDITION.**  This file's own "What must NOT happen" reads
+*"Do not do this immediately after a promotion ... if a new promotion is in flight, this
+waits."*  A promotion **is** in flight: §103 and §104 both rank *"RE-RUN STAGE 3 AND
+RE-PROMOTE"* as successor 1, and §103's finding is that the shipped genome now reads over
+the stress wall, so that re-promotion is not optional.  This arc moves from *"no urgency,
+rank it accordingly"* to **explicitly blocked until successor 1 lands** — a status its
+ranking does not currently carry.

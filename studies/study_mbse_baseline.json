@@ -1,0 +1,685 @@
+{
+  "genome_file": "best_solution.json",
+  "implied_baseline_mission": {
+    "auw_kg": 3.0,
+    "n_wheels": 3,
+    "k_asym": 1.5,
+    "sink_rate_ms": 0.26334597016092726,
+    "field_class": "grass",
+    "ambient_c": 20.0,
+    "landings": 1000,
+    "nozzle_mm": 0.4,
+    "perimeters": 3,
+    "material": "PLA-FFF"
+  },
+  "implied_baseline_derived": {
+    "weight_n": 29.41995,
+    "static_force_n": 9.80665,
+    "stroke_mm": 2.0,
+    "effective_stroke_m": 0.001,
+    "landing_load_factor": 4.53592205289268,
+    "force_n": 66.7233,
+    "safety_factor": 1.6,
+    "min_wall_mm": 1.2000000000000002
+  },
+  "constants": {
+    "force_n": {
+      "shipped": 66.7233,
+      "derived": 66.7233,
+      "rel_err": 0.0,
+      "from": "auw_kg * g / n_wheels * n_land * k_asym"
+    },
+    "target_deflection_mm": {
+      "shipped": 2.0,
+      "derived": 2.0,
+      "rel_err": 0.0,
+      "from": "max(STROKE_FLOOR_MM, STROKE_BY_FIELD_CLASS[field_class])"
+    },
+    "allowable_stress_mpa": {
+      "shipped": 25.0,
+      "derived": 25.0,
+      "rel_err": 0.0,
+      "from": "sigma_ult(20C) * sigma_retention(T) * fff_knockdown / SF(landings)"
+    },
+    "min_wall_mm": {
+      "shipped": 1.2,
+      "derived": 1.2000000000000002,
+      "rel_err": 1.8503717077085943e-16,
+      "from": "nozzle_mm * perimeters"
+    }
+  },
+  "family": [
+    {
+      "auw_kg": 1.0,
+      "n_wheels": 3,
+      "k_asym": 1.0,
+      "static_force_n": 3.268883333333333,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.617030388230596,
+      "landing_load_factor": 20.41164923801706,
+      "admissible": true
+    },
+    {
+      "auw_kg": 1.0,
+      "n_wheels": 3,
+      "k_asym": 1.5,
+      "static_force_n": 3.268883333333333,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.497272460528431,
+      "landing_load_factor": 13.607766158678038,
+      "admissible": true
+    },
+    {
+      "auw_kg": 1.0,
+      "n_wheels": 3,
+      "k_asym": 2.0,
+      "static_force_n": 3.268883333333333,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.42491952179206827,
+      "landing_load_factor": 10.20582461900853,
+      "admissible": true
+    },
+    {
+      "auw_kg": 1.0,
+      "n_wheels": 4,
+      "k_asym": 1.0,
+      "static_force_n": 2.4516625,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.7170586447425342,
+      "landing_load_factor": 27.215532317356075,
+      "admissible": true
+    },
+    {
+      "auw_kg": 1.0,
+      "n_wheels": 4,
+      "k_asym": 1.5,
+      "static_force_n": 2.4516625,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.5798657603273364,
+      "landing_load_factor": 18.143688211570716,
+      "admissible": true
+    },
+    {
+      "auw_kg": 1.0,
+      "n_wheels": 4,
+      "k_asym": 2.0,
+      "static_force_n": 2.4516625,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.497272460528431,
+      "landing_load_factor": 13.607766158678038,
+      "admissible": true
+    },
+    {
+      "auw_kg": 2.0,
+      "n_wheels": 3,
+      "k_asym": 1.0,
+      "static_force_n": 6.537766666666666,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.42491952179206827,
+      "landing_load_factor": 10.20582461900853,
+      "admissible": true
+    },
+    {
+      "auw_kg": 2.0,
+      "n_wheels": 3,
+      "k_asym": 1.5,
+      "static_force_n": 6.537766666666666,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.3373919086166709,
+      "landing_load_factor": 6.803883079339021,
+      "admissible": true
+    },
+    {
+      "auw_kg": 2.0,
+      "n_wheels": 3,
+      "k_asym": 2.0,
+      "static_force_n": 6.537766666666666,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.28367525447243364,
+      "landing_load_factor": 5.102912309504264,
+      "admissible": true
+    },
+    {
+      "auw_kg": 2.0,
+      "n_wheels": 4,
+      "k_asym": 1.0,
+      "static_force_n": 4.903325,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.497272460528431,
+      "landing_load_factor": 13.607766158678038,
+      "admissible": true
+    },
+    {
+      "auw_kg": 2.0,
+      "n_wheels": 4,
+      "k_asym": 1.5,
+      "static_force_n": 4.903325,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.39788880356200024,
+      "landing_load_factor": 9.071844105785361,
+      "admissible": true
+    },
+    {
+      "auw_kg": 2.0,
+      "n_wheels": 4,
+      "k_asym": 2.0,
+      "static_force_n": 4.903325,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.3373919086166709,
+      "landing_load_factor": 6.803883079339021,
+      "admissible": true
+    },
+    {
+      "auw_kg": 3.0,
+      "n_wheels": 3,
+      "k_asym": 1.0,
+      "static_force_n": 9.80665,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.3373919086166709,
+      "landing_load_factor": 6.803883079339021,
+      "admissible": true
+    },
+    {
+      "auw_kg": 3.0,
+      "n_wheels": 3,
+      "k_asym": 1.5,
+      "static_force_n": 9.80665,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.26334597016092726,
+      "landing_load_factor": 4.53592205289268,
+      "admissible": true
+    },
+    {
+      "auw_kg": 3.0,
+      "n_wheels": 3,
+      "k_asym": 2.0,
+      "static_force_n": 9.80665,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.21704838170325066,
+      "landing_load_factor": 3.40194153966951,
+      "admissible": true
+    },
+    {
+      "auw_kg": 3.0,
+      "n_wheels": 4,
+      "k_asym": 1.0,
+      "static_force_n": 7.3549875,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.39788880356200024,
+      "landing_load_factor": 9.071844105785361,
+      "admissible": true
+    },
+    {
+      "auw_kg": 3.0,
+      "n_wheels": 4,
+      "k_asym": 1.5,
+      "static_force_n": 7.3549875,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.3146520300268218,
+      "landing_load_factor": 6.047896070523572,
+      "admissible": true
+    },
+    {
+      "auw_kg": 3.0,
+      "n_wheels": 4,
+      "k_asym": 2.0,
+      "static_force_n": 7.3549875,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.26334597016092726,
+      "landing_load_factor": 4.53592205289268,
+      "admissible": true
+    },
+    {
+      "auw_kg": 5.0,
+      "n_wheels": 3,
+      "k_asym": 1.0,
+      "static_force_n": 16.344416666666664,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.24587529359413077,
+      "landing_load_factor": 4.082329847603412,
+      "admissible": true
+    },
+    {
+      "auw_kg": 5.0,
+      "n_wheels": 3,
+      "k_asym": 1.5,
+      "static_force_n": 16.344416666666664,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.18375347615759546,
+      "landing_load_factor": 2.721553231735608,
+      "admissible": true
+    },
+    {
+      "auw_kg": 5.0,
+      "n_wheels": 3,
+      "k_asym": 2.0,
+      "static_force_n": 16.344416666666664,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.14290094471346226,
+      "landing_load_factor": 2.041164923801706,
+      "admissible": true
+    },
+    {
+      "auw_kg": 5.0,
+      "n_wheels": 4,
+      "k_asym": 1.0,
+      "static_force_n": 12.258312499999999,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.2952015921366279,
+      "landing_load_factor": 5.443106463471216,
+      "admissible": true
+    },
+    {
+      "auw_kg": 5.0,
+      "n_wheels": 4,
+      "k_asym": 1.5,
+      "static_force_n": 12.258312499999999,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.22706435211190681,
+      "landing_load_factor": 3.628737642314144,
+      "admissible": true
+    },
+    {
+      "auw_kg": 5.0,
+      "n_wheels": 4,
+      "k_asym": 2.0,
+      "static_force_n": 12.258312499999999,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.18375347615759546,
+      "landing_load_factor": 2.721553231735608,
+      "admissible": true
+    },
+    {
+      "auw_kg": 8.0,
+      "n_wheels": 3,
+      "k_asym": 1.0,
+      "static_force_n": 26.151066666666665,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.17443960272827957,
+      "landing_load_factor": 2.551456154752133,
+      "admissible": true
+    },
+    {
+      "auw_kg": 8.0,
+      "n_wheels": 3,
+      "k_asym": 1.5,
+      "static_force_n": 26.151066666666665,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.11725335816086463,
+      "landing_load_factor": 1.700970769834755,
+      "admissible": true
+    },
+    {
+      "auw_kg": 8.0,
+      "n_wheels": 3,
+      "k_asym": 2.0,
+      "static_force_n": 26.151066666666665,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.07353868029819409,
+      "landing_load_factor": 1.2757280773760662,
+      "admissible": true
+    },
+    {
+      "auw_kg": 8.0,
+      "n_wheels": 4,
+      "k_asym": 1.0,
+      "static_force_n": 19.6133,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.21704838170325066,
+      "landing_load_factor": 3.40194153966951,
+      "admissible": true
+    },
+    {
+      "auw_kg": 8.0,
+      "n_wheels": 4,
+      "k_asym": 1.5,
+      "static_force_n": 19.6133,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.15769876347010459,
+      "landing_load_factor": 2.26796102644634,
+      "admissible": true
+    },
+    {
+      "auw_kg": 8.0,
+      "n_wheels": 4,
+      "k_asym": 2.0,
+      "static_force_n": 19.6133,
+      "gear_mass_frac": null,
+      "sink_rate_ms": 0.11725335816086463,
+      "landing_load_factor": 1.700970769834755,
+      "admissible": true
+    }
+  ],
+  "stroke_trade": [
+    {
+      "sink_rate_ms": 0.263346,
+      "landing_load_factor": 4.535922854185681,
+      "force_n_at_shipped_stroke": 66.723311787,
+      "force_over_shipped": 1.0000001766549318,
+      "stroke_mm_at_shipped_force": 2.0000004532300144,
+      "stroke_over_wheel_radius": 0.04123712274701061
+    },
+    {
+      "sink_rate_ms": 0.5,
+      "landing_load_factor": 13.746452662224103,
+      "force_n_at_shipped_stroke": 202.209975,
+      "force_over_shipped": 3.030575151408878,
+      "stroke_mm_at_shipped_force": 7.209690978225293,
+      "stroke_over_wheel_radius": 0.14865342223144934
+    },
+    {
+      "sink_rate_ms": 1.0,
+      "landing_load_factor": 51.98581064889641,
+      "force_n_at_shipped_stroke": 764.7099749999999,
+      "force_over_shipped": 11.460913578914711,
+      "stroke_mm_at_shipped_force": 28.83876391290117,
+      "stroke_over_wheel_radius": 0.5946136889257974
+    },
+    {
+      "sink_rate_ms": 1.5,
+      "landing_load_factor": 115.71807396001692,
+      "force_n_at_shipped_stroke": 1702.209975,
+      "force_over_shipped": 25.51147762475777,
+      "stroke_mm_at_shipped_force": 64.88721880402763,
+      "stroke_over_wheel_radius": 1.3378808000830438
+    },
+    {
+      "sink_rate_ms": 2.0,
+      "landing_load_factor": 204.94324259558564,
+      "force_n_at_shipped_stroke": 3014.7099749999998,
+      "force_over_shipped": 45.18226728893805,
+      "stroke_mm_at_shipped_force": 115.35505565160469,
+      "stroke_over_wheel_radius": 2.3784547557031894
+    },
+    {
+      "sink_rate_ms": 3.0,
+      "landing_load_factor": 459.8722958400677,
+      "force_n_at_shipped_stroke": 6764.709975,
+      "force_over_shipped": 101.38452347231028,
+      "stroke_mm_at_shipped_force": 259.5488752161105,
+      "stroke_over_wheel_radius": 5.351523200332175
+    }
+  ],
+  "thermal": {
+    "anchors": {
+      "e": [
+        [
+          -20.0,
+          1.18
+        ],
+        [
+          0.0,
+          1.09
+        ],
+        [
+          20.0,
+          1.0
+        ],
+        [
+          40.0,
+          0.85
+        ],
+        [
+          50.0,
+          0.68
+        ],
+        [
+          55.0,
+          0.45
+        ],
+        [
+          60.0,
+          0.15
+        ]
+      ],
+      "sigma": [
+        [
+          -20.0,
+          1.12
+        ],
+        [
+          0.0,
+          1.06
+        ],
+        [
+          20.0,
+          1.0
+        ],
+        [
+          40.0,
+          0.86
+        ],
+        [
+          50.0,
+          0.72
+        ],
+        [
+          55.0,
+          0.55
+        ],
+        [
+          60.0,
+          0.25
+        ]
+      ]
+    },
+    "holdout": {
+      "e": [
+        {
+          "t_c": 0.0,
+          "actual": 1.09,
+          "predicted": 1.0899999999999999,
+          "abs_err": 2.220446049250313e-16,
+          "rel_err": 2.037106467202122e-16
+        },
+        {
+          "t_c": 20.0,
+          "actual": 1.0,
+          "predicted": 0.97,
+          "abs_err": 0.030000000000000027,
+          "rel_err": 0.030000000000000027
+        },
+        {
+          "t_c": 40.0,
+          "actual": 0.85,
+          "predicted": 0.7866666666666667,
+          "abs_err": 0.06333333333333324,
+          "rel_err": 0.07450980392156852
+        },
+        {
+          "t_c": 50.0,
+          "actual": 0.68,
+          "predicted": 0.5833333333333333,
+          "abs_err": 0.09666666666666679,
+          "rel_err": 0.1421568627450982
+        },
+        {
+          "t_c": 55.0,
+          "actual": 0.45,
+          "predicted": 0.41500000000000004,
+          "abs_err": 0.034999999999999976,
+          "rel_err": 0.07777777777777772
+        }
+      ],
+      "e_max_rel_err": 0.1421568627450982,
+      "sigma": [
+        {
+          "t_c": 0.0,
+          "actual": 1.06,
+          "predicted": 1.06,
+          "abs_err": 0.0,
+          "rel_err": 0.0
+        },
+        {
+          "t_c": 20.0,
+          "actual": 1.0,
+          "predicted": 0.96,
+          "abs_err": 0.040000000000000036,
+          "rel_err": 0.040000000000000036
+        },
+        {
+          "t_c": 40.0,
+          "actual": 0.86,
+          "predicted": 0.8133333333333334,
+          "abs_err": 0.046666666666666634,
+          "rel_err": 0.05426356589147283
+        },
+        {
+          "t_c": 50.0,
+          "actual": 0.72,
+          "predicted": 0.6533333333333333,
+          "abs_err": 0.06666666666666665,
+          "rel_err": 0.09259259259259257
+        },
+        {
+          "t_c": 55.0,
+          "actual": 0.55,
+          "predicted": 0.485,
+          "abs_err": 0.06500000000000006,
+          "rel_err": 0.11818181818181828
+        }
+      ],
+      "sigma_max_rel_err": 0.11818181818181828
+    },
+    "at_ambient": [
+      {
+        "ambient_c": -20.0,
+        "e_retention": 1.18,
+        "sigma_retention": 1.12,
+        "e_mpa": 2714.0,
+        "allowable_stress_mpa": 28.000000000000007
+      },
+      {
+        "ambient_c": 0.0,
+        "e_retention": 1.09,
+        "sigma_retention": 1.06,
+        "e_mpa": 2507.0,
+        "allowable_stress_mpa": 26.500000000000004
+      },
+      {
+        "ambient_c": 20.0,
+        "e_retention": 1.0,
+        "sigma_retention": 1.0,
+        "e_mpa": 2300.0,
+        "allowable_stress_mpa": 25.0
+      },
+      {
+        "ambient_c": 30.0,
+        "e_retention": 0.925,
+        "sigma_retention": 0.9299999999999999,
+        "e_mpa": 2127.5,
+        "allowable_stress_mpa": 23.25
+      },
+      {
+        "ambient_c": 40.0,
+        "e_retention": 0.85,
+        "sigma_retention": 0.86,
+        "e_mpa": 1955.0,
+        "allowable_stress_mpa": 21.499999999999996
+      },
+      {
+        "ambient_c": 50.0,
+        "e_retention": 0.68,
+        "sigma_retention": 0.72,
+        "e_mpa": 1564.0,
+        "allowable_stress_mpa": 18.0
+      },
+      {
+        "ambient_c": 55.0,
+        "e_retention": 0.45,
+        "sigma_retention": 0.55,
+        "e_mpa": 1035.0,
+        "allowable_stress_mpa": 13.750000000000002
+      },
+      {
+        "ambient_c": 60.0,
+        "e_retention": 0.15,
+        "sigma_retention": 0.25,
+        "e_mpa": 345.0,
+        "allowable_stress_mpa": 6.25
+      }
+    ],
+    "scope_note": "QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree."
+  },
+  "life": [
+    {
+      "landings": 100,
+      "fatigue_knockdown": 1.0,
+      "safety_factor": 1.6,
+      "allowable_stress_mpa": 25.0
+    },
+    {
+      "landings": 1000,
+      "fatigue_knockdown": 1.0,
+      "safety_factor": 1.6,
+      "allowable_stress_mpa": 25.0
+    },
+    {
+      "landings": 10000,
+      "fatigue_knockdown": 1.15,
+      "safety_factor": 1.8399999999999999,
+      "allowable_stress_mpa": 21.73913043478261
+    },
+    {
+      "landings": 100000,
+      "fatigue_knockdown": 1.3,
+      "safety_factor": 2.08,
+      "allowable_stress_mpa": 19.23076923076923
+    }
+  ],
+  "req_hash": {
+    "shipped": "69813b8",
+    "derived": "69813b8"
+  },
+  "reference_genome": {
+    "axle_drop_mean_mm": 1.9974245184870767,
+    "stress_utilisation_hub": 0.8201288598947069,
+    "mesh_mass_g": 39.46985578378152,
+    "phase_ripple_std_over_mean": 0.1044285616356061
+  },
+  "checks": {
+    "derivation_reproduces_constants": {
+      "force_n": {
+        "rel_err": 0.0,
+        "ok": true
+      },
+      "target_deflection_mm": {
+        "rel_err": 0.0,
+        "ok": true
+      },
+      "allowable_stress_mpa": {
+        "rel_err": 0.0,
+        "ok": true
+      },
+      "min_wall_mm": {
+        "rel_err": 1.8503717077085943e-16,
+        "ok": true
+      }
+    },
+    "derivation_reproduces_constants_ok": true,
+    "retention_is_exactly_one_at_20c": true,
+    "retention_is_monotone_non_increasing": true,
+    "refuses_above_t_max_service": true,
+    "baseline_weights_unmoved": true,
+    "all_ok": true
+  },
+  "verdict": {
+    "family_size": 30,
+    "family_admissible": 30,
+    "implied_sink_rate_ms_min": 0.07353868029819409,
+    "implied_sink_rate_ms_max": 0.7170586447425342,
+    "every_admissible_member_is_under_1_ms": true,
+    "sink_rate_note": "across 30 admissible members of the mission family the implied touchdown sink rate spans 0.0735 to 0.7171 m/s.  That is a taxi-speed arrival, not a landing, and it is a property of the 2.0 mm STROKE \u2014 which every member shares \u2014 and not of the vehicle, which is free.",
+    "force_multiple_at_1_ms": 11.460913578914711,
+    "stroke_mm_needed_at_1_ms": 28.83876391290117,
+    "stroke_fraction_of_wheel_radius_at_1_ms": 0.5946136889257974,
+    "stroke_note": "at a 1.0 m/s touchdown the same vehicle needs 11.5x the modelled load over the shipped 2.0 mm stroke, or 28.8 mm of stroke \u2014 59% of the wheel's own 48.5 mm radius \u2014 to hold the modelled load.  Neither is available.",
+    "thermal_is_an_interpolation_not_a_model": true,
+    "thermal_holdout_max_rel_err": 0.1421568627450982,
+    "thermal_note": "worst hold-out error over the interior anchors is 14.2%, so the retention curves are published as a piecewise-linear INTERPOLATION between asserted anchors and not as a model.  QUASI-STATIC KNOCKDOWN ONLY \u2014 no creep, no fatigue, no thermal expansion, no self-heating, no rate dependence.  PLA creeps badly above ~45 C, so a static allowable at elevated temperature is OPTIMISTIC.  The retention curves are a piecewise-linear interpolation between asserted engineering anchors, not a fitted model and not a measurement made in this tree.",
+    "allowable_at_40c_over_20c": 0.8599999999999999,
+    "shipped_utilisation_at_40c": 0.9536382091798918,
+    "shipped_breaches_the_allowable_at_40c": false,
+    "temperature_note": "the shipped wheel sits at util 0.8201 against a knee of 0.80 and has essentially no headroom: at 40 C the allowable falls to 86.0% of its 20 C value, which puts the SAME stress at util 0.9536 before the softer modulus is allowed to move the stress at all.  This is a knockdown arithmetic, NOT a re-solve \u2014 study_mbse_score.py is the one that re-solves."
+  }
+}

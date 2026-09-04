@@ -1178,6 +1178,16 @@ SECTOR_FIT_CLAMP = 0.95
 SECTOR_FIT_BRACKET = (0.05, 8.0)
 SECTOR_FIT_BISECTIONS = 40
 
+# `fillet_arc_nodes` looks its arc points up in `mesh.coords` and this is how close a hit
+# has to be to count.  The arc points ARE mesh nodes, so the honest tolerance is zero and
+# the measurement says so: at the shipped genome on `coarse`, both junctions, the largest
+# lookup distance is 0.0 mm EXACTLY — the two arrays are the same floats, arrived at by
+# the same arithmetic in the same order.  1e-9 mm is kept rather than `== 0.0` only
+# because a future construction could reorder that arithmetic; it is nine orders under the
+# 0.144 mm first element layer the arc's own tube is resolved across (PLAN.md §95), so
+# nothing can slip through it and land on a neighbouring node.
+ARC_NODE_MATCH_TOL_MM = 1e-9
+
 FILLETED_BLOCK_ORDER = (
     "spoke",
     "hub_fillet_a", "hub_fillet_b", "rim_fillet_a", "rim_fillet_b",
@@ -1592,6 +1602,41 @@ def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET, x
     return c if float(bracket[0]) <= c <= float(bracket[1]) else None
 
 
+class MeshRefusedError(ValueError):
+    """This GENOME has no filleted mesh -- not a mistake by the caller.
+
+    A `ValueError` SUBCLASS, so every `except ValueError` already wrapped around a build
+    keeps catching it and the message matches in `tests/test_filleted_mesh.py` still read
+    a `ValueError`.  The subclass exists for the opposite direction: it lets
+    `wheel_stage3.descend` catch a geometry refusal WITHOUT also catching a bad keyword,
+    a violated `WheelConfig` invariant or a shape mismatch, which a bare `except
+    ValueError` inside a descent loop would swallow into a silently rejected step.
+
+    Raised only where the condition is a function of the genome -- the blocking funnel
+    and the crossed tangent stations in `_filleted_sector_blocks`, and the missing layer
+    profile in `per_genome_layer_profile`.  NOT raised for `R <= 0` a few lines below:
+    the gene box (`genes[12]` in [0.4, 4.0], `genes[13]` in [0.5, 3.0]) cannot produce
+    it, only an explicit `fillet=(0.0, ...)` tuple reaches it, and that is a caller error
+    which stays a plain `ValueError`.
+
+    WHY THE NAME HAD TO EXIST, MEASURED.  PLAN.md §106: `stage2_elites#11` builds
+    perfectly well UNFILLETED (21012 nodes, 4704 elements at `coarse`) and refuses
+    filleted, at a t1 barrier sum of 301.3658 against `wheel_stage3.T1_REJECT = 1.0e4` --
+    a factor of 33.2 below the screen whose one documented job is refusing to spend a
+    solve on geometry that will not mesh.  (§106 called that gap "three orders of
+    magnitude"; re-measured here it is 1.5, and the point is unchanged -- the screen is
+    nowhere near firing.)  1e4 was calibrated against the UNFILLETED mesh's notion of
+    un-meshable, its witness M8a's analytically infeasible fillet at 112,000; §103 changed
+    which mesh gets built and did not move it.  So the screen cannot be the guard here,
+    and the catch has to be.
+
+    The refusals SHARED with the unfilleted path -- a spoke that never reaches the ring
+    (`ring_station`) and a folded mesh (`_orient_elements`) -- are NOT marked.
+    They predate §103, `T1_REJECT` was calibrated against exactly them, and 25 committed
+    Stage-3 runs never hit one.
+    """
+
+
 def _layer_profile(layer_profile):
     """`(entry, end)`, defaulting to the two measured constants.
 
@@ -1783,7 +1828,7 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                                  "why": c.get("why")}
             continue
         if not frozen and not c["built"]:
-            raise ValueError(
+            raise MeshRefusedError(
                 f"no filleted blocking exists at the {junction}: {c['why']}.  "
                 f"See FILLET_PLAN.md PART 10.")
         if not frozen:
@@ -1798,7 +1843,7 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
 
     lo, hi = curves["hub"]["s_A"], curves["rim"]["s_A"]
     if not frozen and not lo < hi:
-        raise ValueError(
+        raise MeshRefusedError(
             f"the two fillets are longer than the spoke: tangent stations {lo:.4f} and "
             f"{hi:.4f} cross.")
 
@@ -2010,7 +2055,7 @@ def per_genome_layer_profile(genes, cfg, fillet=True,
     """
     c = layer_cliff_entry(genes, cfg, fillet=fillet, end=end, **kw)
     if c["entry"] is None:
-        raise ValueError(
+        raise MeshRefusedError(
             f"no per-genome layer profile exists for this genome: {c['why']}.  "
             f"See PLAN.md §82.")
     # ONE EXPRESSION FOR BOTH PATHS: `layer_cliff_entry` has already narrowed its eager
@@ -3092,6 +3137,88 @@ def _node_sets(shapes, offsets, global_id, n_spokes, filleted=False):
         # the rim band is bending (M4's compliance_split).
         "rim_inner_free": gather([(rim_f, "j0")]),
     }
+
+
+def fillet_arc_nodes(mesh, label):
+    """Global node ids along junction `label`'s fillet arc, sector 0, hub end first.
+
+    THE TOPOLOGY FACT THE REGION-RESTRICTED STRESS TERM IS BUILT ON (PLAN.md §102).
+    `wheel_adjoint._qoi_region_pnorm` needs the fillet arc as a DIFFERENTIABLE function of
+    the genes, and the arc it needs is the one the mesh actually built.  Both halves of
+    that are supplied here and neither is a new derivation:
+
+      *  `study_corner_singularity.fillet_arcs` already recovers the arc by a circle fit
+         through these same nodes, and reports a 7e-14 mm residual because the nodes ARE
+         on a circle by construction.  What it cannot do is hand that fit to an adjoint:
+         it takes `genes` and rebuilds the sector eagerly, so nothing downstream of it
+         carries a derivative.
+      *  Given the node IDS, the same fit runs on `mesh_coords(genes, mesh)` instead, and
+         the arc becomes a function of the coordinates — which `adjoint_grads` already
+         differentiates and already chains back to the genes through one shared vjp.
+
+    So this returns IDS and nothing else.  It is the same kind of object as `_node_sets`'
+    `hub_tie` and `rim_outer` — a frozen consequence of the block layout — and it is
+    frozen for the same reason `mesh_coords` freezes the seam table: which node sits on
+    the arc is a discrete decision, and a step that changes it is a real discontinuity of
+    the design space rather than a defect in the gradient.
+
+    MATCHED BY COORDINATE, AND THE MATCH IS EXACT.  `build_wheel`'s block offsets and its
+    `global_id` remap are local to that function and are not carried on the mesh, so the
+    ids are recovered by looking each arc point up in `mesh.coords`.  That is not an
+    approximation: the arc points ARE mesh nodes, and measured at the shipped genome on
+    `coarse` the largest lookup distance is 0.0 mm exactly, at both junctions, with all 17
+    ids distinct.  Both of those are asserted below rather than assumed — a silent
+    near-miss here would put the region weight on the wrong nodes and price a fillet that
+    is not there.
+
+    `fillet_blocking="sector"` only, which is the construction that meshes and the default;
+    the arc is the `j0` column of the junction's two boundary-layer blocks, `a` then `b`,
+    sharing one node at the join (dropped from `b`, hence the `[1:]`).
+
+    `sector_blocks` HAS NO `phase_deg` -- it always returns sector 0 in ITS OWN,
+    UNROTATED frame, while `mesh.coords` is sector 0 rolled by `mesh.phase_deg` (see
+    `_sector_coords`: "`phase_deg` rolls the whole wheel under the ground").  Node IDS
+    are unaffected -- the roll is a rigid rotation applied uniformly, so it moves every
+    node's coordinate and reorders none of them -- but a coordinate lookup has to roll
+    the query points by the SAME angle first, or it is comparing two different frames and
+    every match at a nonzero phase fails.  Measured: at the shipped genome, `coarse`,
+    `phase_deg` = 13.7, an unrolled lookup misses its nearest node by 0.513 mm at the hub
+    -- not a near-miss, a wrong-frame comparison -- and `phase_stencil`'s own 8-phase
+    grid is nonzero at 7 of 8 points, so this is not an edge case: it is most of what
+    `phase_meshes` builds.
+    """
+    if not mesh.fillet:
+        raise ValueError(
+            "fillet_arc_nodes wants a filleted mesh — an unfilleted one has no arc, and "
+            "the corner it has instead is the P_t singularity the fillet exists to remove "
+            "(PLAN.md §52, §94)")
+    blocks = sector_blocks(mesh.genes, mesh.cfg, span_mm=mesh.span_mm,
+                           orientation=mesh.orientation, rim_outer=mesh.rim_outer,
+                           uncap=mesh.uncap, fillet=mesh.fillet)
+    a = np.asarray(blocks["%s_fillet_a" % label])
+    b = np.asarray(blocks["%s_fillet_b" % label])
+    arc = np.concatenate([a[:, 0, :], b[1:, 0, :]])
+
+    # Roll the query points into `mesh.coords`' own frame -- `_rotate`'s convention,
+    # reproduced rather than imported because `_rotate` is jnp/xp-generic and this path
+    # is eager numpy only.
+    theta = np.radians(mesh.phase_deg)
+    c, s = np.cos(theta), np.sin(theta)
+    arc = arc @ np.array([[c, -s], [s, c]]).T
+
+    coords = np.asarray(mesh.coords)
+    gap = np.linalg.norm(coords[:, None, :] - arc[None, :, :], axis=2)
+    ids = gap.argmin(axis=0)
+    worst = float(gap[ids, np.arange(len(arc))].max())
+    if worst > ARC_NODE_MATCH_TOL_MM:
+        raise RuntimeError(
+            "junction %r's arc point missed every mesh node by %.3e mm — the arc this "
+            "returns ids for is not the arc the mesh built" % (label, worst))
+    if len(set(ids.tolist())) != len(ids):
+        raise RuntimeError(
+            "junction %r's arc matched the same node twice — two arc points cannot share "
+            "a node on a mesh whose seams have already been merged" % label)
+    return ids
 
 
 # ---------------------------------------------------------------------------

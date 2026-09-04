@@ -99,3 +99,54 @@ that fix is still correct under a graded mesh, and that the patch still sees eno
   committed report was measured with, and `study_wheel_fea.py`'s header says re-deriving it
   under contact "would silently change every quoted value".
 - **Do not skip the G7 cost measurement** and go straight to the meshing change.
+
+---
+
+## RE-MEASURED ON THE FILLETED MESH — 2026-09-03. **THE HEADLINE NUMBER IS 2.650x, AND THE FILLET DID STEP 1 AS A SIDE EFFECT.**
+
+PLAN.md §106.  Geometry only, no solve — rim-OD nodes at `RIM_OUTER_RADIUS_MM` = 50.0 on
+`best_solution.json`:
+
+| mesh | weld band | free band | weld node step | free node step | STEP RATIO |
+|---|---|---|---|---|---|
+| coarse plain | 1.8746° | 28.1254° | 0.093731° | 1.406269° | **15.003** |
+| coarse FILLETED | 8.2186° | 21.7814° | 0.410929° | 1.089071° | **2.650** |
+| medium plain | 1.8746° | 28.1254° | 0.058582° | 0.878918° | **15.003** |
+| medium FILLETED | 8.2186° | 21.7814° | 0.256831° | 0.680669° | **2.650** |
+
+**THE MECHANISM, IN ONE LINE THIS FILE DID NOT HAVE:** the two bands get the SAME element
+count, so the step ratio IS the arc-length ratio of the bands.  That is why the ratio is
+invariant up the ladder and a function of the design — both reproduce here, on both meshes.
+The fillet widens the weld band 4.384x, so the ratio falls by that factor.
+
+> **CORRECTED — "by that factor" is wrong, and the table above disproves it.**  The two
+> bands SUM TO 30.0000°, so widening the weld band 4.384x necessarily NARROWS the free band
+> to 0.7744x of itself (28.1254° -> 21.7814°).  The step ratio is free/weld, so the two
+> factors compound: it falls by 4.384 / 0.7744 = **5.661x**, which is exactly the 15.003 ->
+> 2.650 the table prints (15.0034 / 2.6503 = 5.6611).  The mechanism sentence above it is
+> right and is what makes this checkable — because the ratio IS the arc-length ratio, a
+> factor applied to only one of two complementary bands cannot carry through unchanged.
+
+> **CORRECTED — the millimetre figures on this line were half.**  It read *"0.8180 mm ->
+> 3.5860 mm of arc at the OD, a difference of 2.77 mm against an applied `R_rim` of 3.0"*.
+> Those are the R = 25.0 conversion; at the `RIM_OUTER_RADIUS_MM` = 50.0 named three lines
+> above, 1.8746° and 8.2186° are **1.6359 mm -> 7.1721 mm**, a difference of **5.5362 mm —
+> 1.85x the applied radius**, not two thirds of it.  Nothing in the table or the headline
+> moves: the bands' angles sum to exactly 30.0000° on both meshes and every ratio here
+> (15.003, 2.650, 4.384x) is an angle ratio that never passed through millimetres.  See
+> PLAN.md §108.
+
+**Step 1 is therefore already done, by accident.**  It asks to *"grade the rim OD division
+so the weld and free arcs meet at comparable element size"*.  2.650x is not 1.0, but Step 0's
+own instruction — *"if the cost is negligible, close the arc here and record it"* — has to be
+re-asked at 2.65x before any meshing change is designed.
+
+**AND THE "WHY IT MATTERS" CLAUSE IS MEASURED AGAINST A BOUNDARY THAT MOVED.**  The contact
+patch straddling the step by 0.1395° is read against a weld/free boundary at +0.9373° on the
+plain mesh; on the filleted mesh it is at **+4.1093°**.  Where the patch now falls needs a
+contact solve and is NOT measured here.
+
+**A SECOND STALENESS, INDEPENDENT OF THE FILLET.**  `16.8` is not this genome's number even
+unfilleted — it reads **15.003**.  This file says the ratio tracks the design, and the
+shipped genome has been `09e8188` since §26, so the title's range was one promotion out of
+date before §103 touched it.  Two stale mechanisms; only one is the fillet.

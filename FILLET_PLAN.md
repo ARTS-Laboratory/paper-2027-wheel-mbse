@@ -34,8 +34,30 @@ corner to 0.008 deg (and the part fillets it, 24 edges to the mesh's 12), and
 `stress_margin`'s weight is invariant to the substitution while its REFERENCE POINT is not
 — neither design this arc has measured can calibrate it, and MARGIN_KNEE_UTIL's own
 evidence is gone. Both
-exclusions survive on corrected reasons. What is left is a SEQUENCE and not a blocker:
-state the knee and the reference point, then the switch.** The state, in four lines, so nobody re-derives it from thirty PARTs:
+exclusions survive on corrected reasons. What was left was a SEQUENCE and not a blocker:
+state the knee and the reference point, validate `(r, p)` where it binds, confirm the
+filleted mesh is the converged one — THE KNEE STAYS AT 0.80 AND THE WALL IS TAKEN — PART
+10, 2026-09-01, PLAN §99: `util_ref = 1.0` because both measured designs now sit outside
+`[0.80, 1.0]`, and `w = 89.21` falls out, corroborated to 0.665% at `b029622`. `(r, p) =
+(0.45, 16)` IS VALIDATED WHERE IT BINDS — PART 11, 2026-09-01, PLAN §100: not a universal
+constant of the objective over a 28-genome box, but convergent at every cell that reads
+over the allowable and silent everywhere it is not. CONDITION A HOLDS — PART 12,
+2026-09-02, PLAN §101: the ladder at `b029622` under SVK reproduces this PART's spread
+ordering and the admissibility disagreement §94 found at `coarse` survives refinement to
+`fine`. **BOTH OF §93's CONDITIONS ARE NOW ADDRESSED AND THE SWITCH IS UNBLOCKED.** THE
+REPLACEMENT TERM NOW EXISTS AND IS DIFFERENTIABLE — PART 13, 2026-09-02, PLAN §102:
+`wheel_adjoint._qoi_region_pnorm`, reproducing the study's loaded-copy instrument to five
+figures with its argmax removed, its gradient agreeing with a central difference to
+1.7e-09, and `R_hub`/`R_rim` — §15 DEFECT 1's two dead genes — carrying a nonzero entry
+for the first time. **THE WIRING IS DONE — PART 14, 2026-09-03, PLAN §103:**
+`phase_meshes` builds `fillet=True`, `util_j` reads the region-p-norm QoI at each
+junction, `stress_margin` is 89.21. **AND THE SHIPPED GENOME BREACHES THE WALL IT WAS
+NEVER MEASURED AGAINST**: hub utilisation 1.0557 against the 1.0 wall, `genes_over_knee`
+1.68672 against its old 0.85506 — six tests marked the fixture drift `xfail(strict=True)`
+or corrected the formula they asserted, one real bug surfaced in `study_stage3.py`, and
+MBSE_PLAN.md's calibrated portfolio moved underneath it. **Successor 1 is now §93's steps
+4 and 5: re-run Stage 3 under the live term and re-promote.** The
+state, in four lines, so nobody re-derives it from thirty PARTs:
 
 - **Step 0** — the four-corner baseline. Done, and REFRESHED at PART 7 after §38's uncap
   flip made the committed one describe a mesh the tree had stopped building.
@@ -4272,3 +4294,383 @@ supplies one. (2) A weight derived at a policy reference is a weight nobody has 
 under. (3) The `hub:P_c` hole is named, not closed, and closing it is a mesh change.
 
 Nothing in `src/` changed, nothing is promoted, the scope gate is untouched and green.
+
+---
+
+# STEP 3 RECORD — PART 10. ITEM 1: THE KNEE AND THE REFERENCE POINT, STATED. 2026-09-01, PLAN §99
+
+PART 9 / §96 left two policies open and refused to fit either — `study_fillet_wiring.py`'s
+own words: *"It does not pick a weight, a knee or a reference point. Each is a policy this
+repository states rather than fits."* This PART states both. No new solve: the curve PART
+9 already produced (`studies/study_fillet_wiring.json:exchange`) is the whole input.
+
+## THE KNEE STAYS AT 0.80, AND THE REASON IT SURVIVES IS NOT THE REASON PART 9 CHECKED
+
+`MARGIN_KNEE_UTIL`'s comment (`wheel_objective.py:326-334`) gives TWO pieces of evidence
+for 0.80, not one, and PART 9 tested only the weaker: *"the shipped genome sits at 0.77952,
+i.e. essentially AT this knee"* — a coincidence, and `study_fillet_wiring.json`'s own
+`knee.evidence_survives` is `false` once the shipped hub moves to 1.1415 under the
+replacement reading. **That is not the number's derivation, it is a sanity check the
+derivation happened to pass.** The derivation itself is a judgement about the PRINT
+PROCESS, not about where any one design sits: *"layer adhesion, print orientation and
+batch scatter are +/-10-20% effects, so a junction below 0.8 of allowable has more margin
+than those can eat."* Nothing about that argument depends on whether `util` is read off
+`Kt * agg` or off the mesh's own converged surface — both are estimates of the SAME
+physical quantity, a fraction of allowable stress, and the process-variability floor is a
+property of the material and the printer, not of the estimator. **The knee's evidence lost
+a corroboration, not its foundation**, and losing the corroboration is itself the finding
+PART 7-9 already made: the true fillet utilisation runs 1.68x-2.76x higher than the old
+formula reported, so a design that "sat at the knee" under `Kt * agg` was never actually
+there. `MARGIN_KNEE_UTIL = 0.80` is UNCHANGED.
+
+## THE REFERENCE POINT MOVES TO THE WALL, `util_ref = 1.0`, BECAUSE NOTHING ELSE IS LEFT TO ANCHOR IT
+
+§18's 0.855 was never a principled point — it was *"where the design sat"*, an empirical
+anchor that needed no justification of its own as long as some real design supplied it.
+PART 9 closed that door: **both measured designs, at both junctions, now sit outside
+`[0.80, 1.0]`** — shipped rim 0.5067 and b029622 rim 0.7845, both below the knee where the
+term is inert; shipped hub 1.1415 and b029622 hub 1.6760, both above the wall where a rate
+fit there is a rate for a place the optimiser must leave. Of `study_fillet_wiring.py`'s
+three stated candidates — 0.855 (the old, now-unoccupied anchor), 0.90 (the band's
+midpoint, which is arbitrary in exactly the way the old anchor was not: nothing picks the
+middle over any other interior point), and 1.00 (**"the rate is set where the constraint
+binds"**) — the wall is the only one that does not need a design to stand on. It anchors
+the soft term's slope to the point the hard barrier takes over, which is what an exchange
+rate for "how much does approaching the limit cost" should be calibrated against in the
+first place. `util_ref = 1.0` is TAKEN.
+
+## THE WEIGHT THAT FALLS OUT
+
+`w = mass_term / (2 * (util_ref - knee) * util_ref)` at `util_ref = 1.0`, `knee = 0.80`,
+on the shipped genome's FILLETED mass term (35.6822, matching the mesh the replacement
+term would actually read): **`w = 89.21`**, a 3.6x cut from today's 325.0 and the same
+figure PART 9 already printed as the wall candidate. `b029622` gives 88.61 from the same
+formula — 0.665% apart on a different genome entirely, which is the corroboration a wall
+anchor is SUPPOSED to produce: the rate depends on the reference genome's own mass, not on
+where its utilisation happens to sit, so two designs with similar mass agree to three
+figures without either one calibrating the other.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+This is `FILLET_PLAN.md`'s successor 1, taken. It is a POLICY RECORD, not a code change:
+`wheel_objective.MARGIN_KNEE_UTIL` and `DEFAULT_WEIGHTS["stress_margin"]` are untouched,
+because both feed the CURRENT `Kt * agg` construction and the replacement is not wired in
+— Condition A (which mesh is right) and successor 4 (the ladder at `b029622`) still stand
+ahead of execution, and the rim `P_c` hole (item 3) is still open. What this closes is the
+INPUT the switch needs when it runs: `MARGIN_KNEE_UTIL = 0.80` carries forward unchanged
+and `w = 89.21` at `util_ref = 1.0` is the number to write when it does. Nothing in `src/`
+changed, nothing is promoted, `test_nothing_wires_the_fillet_into_the_objective` is
+untouched and green.
+
+# STEP 3 RECORD — PART 11. `(r, p)` ACROSS §82's HELD-OUT BOX. 2026-09-01, PLAN §100
+
+PART 8 / §95 swept `(r, p)` at two genomes and said itself that two genomes is not a
+design space.  This runs the same sweep — `study_fillet_pnorm`'s own `build`/`verdict`,
+unmodified — across 26 more genomes drawn from §82's held-out box (`study_fillet_pnorm_
+box.py`, `make filletpnormbox`), plus the two named ones, 28 in all.
+
+## `(0.45, 16)` HOLDS WHERE IT HAS TO, NOT EVERYWHERE
+
+25 of 56 `(genome, junction)` cells clear both gates at the taken cell; the two that read
+over the allowable — `b029622/hub` (1.6760) and `shipped/hub` (1.1415), the same pair
+PART 8 already flagged breached — both converge cleanly there (order 1.77/1.91 and
+2.33/2.33).  The highest-utilisation MISS is 0.6936, already below `MARGIN_KNEE_UTIL`.
+No radius in the sweep resolves every cell, not even `r_sup = 0.90 mm`, which is
+mass-resolved at all 28 genomes: seven cells there have no exponent in `{2..30}`
+clearing order 1.25, and every one of the seven reads under 0.42 utilisation at
+`(0.90, 16)` — well under the knee, where `soft_barrier` is exactly zero regardless of
+how precisely the field is measured there.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+§95's phrase "16 is a constant of the objective" is withdrawn in its literal, universal
+form.  What survives is narrower and is what the switch actually needs: convergence at
+every cell close enough to the knee to matter, including both cells currently reading
+breached.  Nothing here changes PART 10's numbers — the knee (0.80), the reference point
+(the wall, 1.0) and the weight (89.21) are functions of `util_ref`, the knee and a
+reference genome's own mass term, none of which this measurement touches.
+`MARGIN_KNEE_UTIL`, `DEFAULT_WEIGHTS["stress_margin"]` and `study_fillet_pnorm.py` are all
+untouched; nothing in `src/` changed; `test_nothing_wires_the_fillet_into_the_objective`
+is untouched and green; nothing is promoted.  Condition A (§93, §94, PLAN §100's
+successor 1) is still the item ahead of execution.
+
+# STEP 3 RECORD — PART 12. CONDITION A, MEASURED: THE FILLETED MESH IS THE CONVERGED ONE. 2026-09-02, PLAN §101
+
+§93's own check, quoted in full at PLAN §101: does the filleted mesh's axle-drop spread
+stay materially smaller than the unfilleted mesh's on the SAME design, and does the
+admissibility disagreement §94 measured at `coarse` alone (1.0112 unfilleted / 0.7954
+filleted) survive refinement to `fine`.  `studies/study_fillet_condition_a.py`
+(`make filletconda`) is the ladder — `b029622`, SVK, eight phases, `coarse/medium/fine`,
+both mesh constructions — and it is a crossing this arc had not yet run: PART 12's own
+spread ordering was measured at the shipped genome under LINEAR at one phase; §94's
+admissibility disagreement was measured at `coarse` alone, no ladder. Neither number had
+been read at the place the other is stated.
+
+## BOTH HALVES OF §93's CHECK PASS
+
+```
+  axle drop mm      coarse      medium        fine     spread%
+  unfilleted       3.333512    3.353573    3.367621     1.023%
+  FILLETED         1.990224    1.999019    2.001406     0.562%
+```
+
+The ordering this PART found at the shipped genome, LINEAR, one phase — 0.141% against
+1.216% — reproduces here at `b029622`, SVK, eight phases: filleted 0.562% < unfilleted
+1.023%. The margin is narrower (1.8x here against 8.6x there) but the direction is the one
+the switch rests on.
+
+```
+  stress util       coarse      medium        fine
+  unfilleted         1.0112      1.0180      1.0230     BREACHED at every rung
+  FILLETED           0.7954      0.7994      0.8007     clears at every rung
+```
+
+§94's disagreement does not close under refinement, it widens: unfilleted moves further
+over the allowable (1.0112 -> 1.0230) while filleted's margin below it holds
+(0.1858 -> 0.1993 clear at `fine`). Richardson gives the filleted axle drop an observed
+order of 2.63 (near quadratic elements' ceiling, GCI(fine) 0.068%); the unfilleted order
+is 0.69 — the same signature PART 12 and §94 already named for a field singular at a
+corner the fillet removes, showing up here in a volume-integral QoI rather than a local
+peak.
+
+**CONDITION A HOLDS.** The filleted mesh is the converged one, at the design and kernel
+where the two meshes disagree. Condition B closed at PART 7 / §94. Both of §93's
+conditions this arc's own decision named are now addressed.
+
+## ONE NUMBER CROSSES A THRESHOLD THAT MATTERS ELSEWHERE IN THIS ARC
+
+`b029622`'s filleted utilisation is monotone up the ladder and at `fine` sits **0.0007
+above `MARGIN_KNEE_UTIL` = 0.80** (PART 10). PART 7 called the double count *"worth
+exactly `0.0000`"* at this cell, correctly, at `coarse`. It is not exactly zero at `fine`:
+`soft_barrier(0.8007 - 0.80) = 4.9e-7`, which moves the loss by `4.4e-5` against `w =
+89.21` — six orders of magnitude below anything a line search would see, so PART 7's
+conclusion that the double count is inert here is UNCHANGED. What moves is the word
+"exactly": that zero was measured at one mesh density, and a quantity 0.0007 above a knee
+is one a different mesh can read on either side of it.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+Nothing in `src/` changed; `test_nothing_wires_the_fillet_into_the_objective` is untouched
+and green; nothing is promoted — this is Condition A's own measurement, not the switch.
+The whole-ladder driver that could not finish it three times is unchanged and still there;
+what is new is `--rung`/`--mesh`/`--finalise`, one process per cell, which is what let it
+finish at all (PLAN §101's memory-law table). With both of §93's conditions now addressed,
+**successor 1 is EXECUTE THE FILLET SWITCH** — PLAN §101's revised ranking.
+
+# STEP 3 RECORD — PART 13. THE REPLACEMENT TERM EXISTS AS A QoI, AND IT IS DIFFERENTIABLE. 2026-09-02, PLAN §102
+
+PART 12 closed Condition A and left `EXECUTE THE FILLET SWITCH` as successor 1.  §93's
+step 3 is *"wire `fillet=True` into `wheel_objective`/`wheel_stage3`"* — and the quantity
+that step wires in did not exist in `src/`.  PART 8 gave it `(r, p) = (0.45, 16)` and a
+smooth kernel, PART 9 argued the `P_c` exclusion, PART 10 stated the knee and the
+reference point, PART 11 validated `(r, p)` where it binds.  This PART builds it.
+
+## THE OBSTACLE WAS NOT THERE
+
+The region weight is a function of distance to the fillet arc and the arc moves with the
+genes, while `adjoint_grads` differentiates `Q` in `(coords, u_full, y_ground)` only — so
+an arc computed from the GENES inside a QoI would be frozen and the region would sit still
+while the geometry moved under it.  That reads like a missing gradient path and it is not
+one: `study_corner_singularity.fillet_arcs` recovers the arc **by a circle fit through the
+arc's own mesh nodes**, so given the node ids the same fit runs on the traced `coords` and
+the arc rides the chain the adjoint already has.
+
+```
+                                   measured, shipped genome
+  arc points matched to mesh nodes       0.0 mm EXACTLY, both junctions, 17 ids, distinct
+  jnp fit vs `fillet_arcs`               centre 2.3e-14 mm, radius to twelve digits
+  d(radius)/d(R_hub)   adjoint / FD      1.000000000 / 0.999999889
+  the other twelve genes' entries        <= 3.4e-13 — the lstsq's own round-off
+```
+
+## A FIFTH ITEM, WHICH PART 7's LIST OF FOUR DID NOT HAVE
+
+`study_fillet_pnorm.region_pnorm` picks ONE rotational copy, by largest p-norm.  Correct
+for an instrument — the wheel is loaded at one contact patch and twelve images of a fillet
+see twelve loads — and an **argmax over twelve candidates** if it is wired into an
+objective unchanged, flipping as the patch sweeps, reintroducing the kink the p-norm
+exists to blur.  Same class of defect as PART 8's indicator step, from the other side.
+
+Every copy is in the measure, and the denominator is ONE fillet's region mass (the total
+over `n_spokes`, exactly, the copies being rotations carrying identical mass), which makes
+the result the `l_p` norm over the copies' own values: `>= max_k sigma_k`, smooth, no
+argmax, converging to the loaded copy as it comes to dominate.  Against the study's own
+instrument at the shipped genome, `coarse`, linear:
+
+```
+  junction   study loaded copy   this QoI, all 12   ratio     whole-region normalisation
+  hub             27.520053          27.520053     1.00000            23.561365
+  rim             12.274936          12.283466     1.00069            10.509219
+```
+
+Five and six figures with the argmax removed — and the third column is the reason the
+denominator is what it is: the obvious normalisation reads 14.4% low, which against a
+25 MPa allowable is a breach reported as clearance.
+
+## THE GRADIENT, AND §15 DEFECT 1 RUNNING BACKWARDS
+
+`smoke`, contact at 1.65 mm, central differences scaled by each gene's own range:
+
+```
+  junction   adjoint          FD (best rung)    rel        sign
+  hub       -3.03772422e+00  -3.03772422e+00   1.745e-09   negative
+  rim       -3.24660263e+00  -3.24660261e+00   4.718e-09   negative
+```
+
+Negative is the sanity check: opening the fillet lowers the stress in it.  **And all
+fourteen genes carry a nonzero entry at both junctions** — §15 DEFECT 1 measured `R_hub`
+and `R_rim` at exactly 0.0 on 2026-08-12, a 14-dimensional search running in 8, and read
+through a filleted mesh they wake up.  That is this arc's affirmative case stated as a
+derivative for the first time.
+
+## WHAT THIS DOES AND DOES NOT DO
+
+`wheel_wheel.fillet_arc_nodes`; `wheel_adjoint`'s `FILLET_REGION_R_SUP_MM`,
+`FILLET_REGION_P`, `_arc_from_nodes`, `_distance_to_arc`, `_region_weight`,
+`_qoi_region_pnorm`.  **Nothing reads it.**  `wheel_objective` is untouched, no loss number
+moves, nothing is promoted, and `test_nothing_wires_the_fillet_into_the_objective` is green
+— the scope gate scans five modules and no `fillet=` keyword reaches any of them.
+
+The jnp kernels are a SECOND copy of the study's numpy ones, which is the drift a shared
+kernel prevents and here cannot; `tests/test_fillet_pnorm.py` measures it instead and finds
+one ulp (1.11e-16) with identical support.  Without those two tests, PART 8's `(r, p)`
+would be a measurement of a function the objective does not compute.
+
+**Successor 1 is now the wiring itself** — `phase_meshes` at `fillet=True`, `util_j` off
+this QoI, `stress_margin` 325.0 -> 89.21 at `util_ref` = 1.0 (PART 10), the knee at 0.80,
+and the scope gate REPLACED by its mirror image.
+
+# STEP 3 RECORD — PART 14. THE WIRING ITSELF. THE SHIPPED GENOME BREACHES THE WALL IT WAS NEVER MEASURED AGAINST. 2026-09-03, PLAN §103
+
+PART 13's successor 1, executed in full.  `phase_meshes` builds `fillet=True`
+unconditionally, `t3_terms`'s `util_j` reads `agg_j / ALLOWABLE` off the junction's own
+region-p-norm QoI instead of `kt_j * agg`, `stress_margin` moves 325.0 -> 89.21, and the
+scope gate that certified nothing was wired now certifies the opposite over six modules,
+`wheel_pool_worker.py` added to the scan.
+
+## A PREREQUISITE THIS PART FOUND FIRST: `fillet_arc_nodes` HAD NO `phase_deg`
+
+Its query points are always sector 0 in its OWN unrotated frame; `mesh.coords` is sector 0
+rolled by `mesh.phase_deg`.  Comparing the two without rolling the query first is comparing
+two frames, and at any nonzero phase the nearest-node match silently lands in the wrong
+place rather than raising.  Measured at the shipped genome, `coarse`, `phase_deg` = 13.7:
+**0.513 mm off** — and `phase_stencil`'s 8-point grid is nonzero at 7 of 8 points, so this
+was most of what the multi-phase stencil was about to run on, not an edge case.  Fixed by
+rolling the query points by `phase_deg` before the match; node ids are unaffected, since a
+rigid rotation reorders nothing.  Confirmed by `tests/test_gradient.py -k fillet` before
+any of the wiring below.
+
+## THE FINDING
+
+```
+                                  Kt*agg (old)     region-p-norm (new)     settings
+  shipped genome, hub util              --              1.0557           smoke, 2 phase
+  genes_over_knee, hub util          0.85506             1.68672          coarse, 8 phase
+  genes_over_knee, rim util             --              1.21257          coarse, 8 phase
+```
+
+`genes_over_knee`'s hub reads 1.973x its old reading, landing at the LOW end of PART 8's
+own forecast (1.68x-2.76x over `Kt*agg`).  The shipped genome's 1.0557 clears not the 0.80
+knee but the hard `stress` WALL at 1.0 — `stress` no longer reads 0.0 on it and
+`selection_key` no longer calls it tier 0.  Not a threshold to move: the fixtures this arc
+has used for "a design below the knee" and "a design whose rim is dead" stopped being
+those fixtures, because the faithful term reads both of them somewhere else on the curve.
+
+## SIX TESTS, TWO KINDS OF BREAKAGE
+
+Three asserted a GENOME'S POSITION and the position moved — `xfail(strict=True)`, the §38
+precedent's own pattern (a paragraph on what broke, the original docstring below it
+unedited): `test_the_fillet_radii_are_not_dead_genes` (shipped hub 1.0557),
+`test_below_the_knee_the_rim_fillet_radius_is_dead` (`genes_over_knee` rim 1.21257),
+`test_the_margin_term_prices_and_never_gates` (the shipped genome breaches `stress`
+itself, 12.391092469585145 != 0.0 — a fact about this genome, not about the OBJECTIVE/
+BARRIER split the test names, which the failure leaves untouched).  One xfail (§38's)
+REOPENED — `test_but_above_the_knee_the_fillet_radii_are_live` XPASSed the moment PART 13's
+term went live, `strict=True` turned that into a failure, and the marker came off.
+
+Two tests and one `test_stage3.py` sibling asserted a FORMULA the switch changed on
+purpose — fixed by correction: `u_ref` 0.855 -> 1.0 (PART 10's reference-point move),
+and `kt_j * agg / allow` -> `{j}_region_pnorm_mpa / allow` in two places.  A third
+`test_stage3.py` test dropped its cross-check against `stress_utilisation_kt`, a retained
+diagnostic of the abandoned construction that is now a genuinely different quantity from
+the live constraint, not the same one at a different exponent.
+
+## A REAL BUG, NOT A FIXTURE: `study_stage3.run_mesh_convergence` NEVER LEARNED THE NEW KEYS
+
+It hand-builds its own row from named `rep[...]` pulls rather than going through
+`wheel_stage3._row`'s `REPORT_KEYS` whitelist — a second, independent construction
+`wheel_objective`'s two new report keys never reached.  Running the corrected test found
+it as `KeyError: 'hub_region_pnorm_mpa'`, not a number mismatch.  Fixed by adding the same
+two pulls beside `kt_hub`/`kt_rim`.  `run_multistart`'s OWN hand-built row, fifty lines
+below in the same file, is left alone — nothing reads the new keys off it.
+
+## THE CASCADE INTO MBSE_PLAN.md's CALIBRATION
+
+`stress_margin`'s weight feeds `calibrated_priorities` live, and MBSE_PLAN.md's own Step 4
+check says its table is wrong if the code disagrees.  It disagreed: `stress_margin`'s
+point share fell 5.56 -> 1.59, `mass`/`deflection` absorbed it (51.35 -> 53.51,
+42.80 -> 44.60), `smoothness` moved 0.29 -> 0.30, `phase_ripple` stayed 0.0 — the same
+100-point budget redistributing under one weight change.  `MBSE_PLAN.md`'s two tables and
+Step 4 check, `tests/test_requirements.py`'s pinned numbers, and
+`studies/study_mbse_calibration.json` (`make mbsecal`, all five checks `ok`) are all
+updated in this commit.
+
+## COST, RECONFIRMED AT SUITE SCALE
+
+PART 12 measured ~41.6 GB peak RSS for one filleted `coarse` cell.  This PART's own
+verification runs reconfirm it where the switch actually operates — every `t3`-tier
+evaluation in the repository:
+
+```
+  file                          result                        wall time
+  test_objective.py             125 tests, exit 0              ~943 s
+  test_stage3.py                55 tests, 1 real bug found     1514 s
+  test_pool.py                  23 tests, exit 0                739 s
+  test_corner_singularity.py    28 tests, exit 0                  3 s
+  test_gradient.py              24 tests, exit 0                401 s
+```
+
+One process per cell, per PART 12, still holds — nothing here found a configuration that
+survives otherwise.
+
+## WHAT DID NOT MOVE
+
+`best_solution.json` is untouched, no Stage 3 descent ran, no loss number is re-dated.
+§93's steps 4-5 remain future work, and the shipped genome now reading over the wall is
+the reason: re-promoting under a term the shipped design breaches is not this PART's job.
+
+**Successor 1 is now §93's steps 4 and 5** — re-run Stage 3 under the live term and
+re-promote against `tests/test_promotion.py`'s checklist, one process per cell.
+**Successor 2**: every fixture this arc has used for "below the knee" now reads above the
+wall, so a genuinely below-the-knee witness does not exist on disk until successor 1
+produces one.
+
+---
+
+# STEP 3 RECORD — PART 15. WHAT PART 14 BROKE WITHOUT TURNING ANYTHING RED: THIS ARC'S OWN A/B COLLAPSED ONTO ONE MESH. 2026-09-03, PLAN §105
+
+PART 14 made `phase_meshes` build `fillet=True` unconditionally.  `study_fillet_optimum`'s
+control arm was the bare `wheel_stage3.Evaluator`, which delegates its mesh construction to
+exactly that function, and was "unfilleted" only because `build_wheel`'s default was.  So
+the control followed the treatment onto the filleted mesh and **this arc's decisive A/B
+became a mesh compared with itself.**
+
+Nothing went red.  The driver ran, `_gate_guard` passed, and `study_fillet_optimum.json`
+recorded two arms that were one mesh under two labels.  A green suite was no evidence,
+because the property that broke had never been asserted anywhere — it was implied by a
+default, and PART 14 moved the caller rather than the default.
+
+**The sibling that survived says why.**  `study_fillet_condition_a.py:129` builds
+`fillet=True if filleted else None` and passes `meshes=` explicitly.  It names the value
+instead of inheriting it, and PART 14 went straight past it.  The rule this arc should carry
+forward: *an arm defined as "whatever the default is" is not an arm.*
+
+Repaired in `213bb96` with a `_UnfilletedEvaluator` carrying `_FILLET = None`, pinned by
+`tests/test_fillet_optimum.py`, which asserts on the `build_wheel` mesh REQUEST and was run
+against the reproduced collapse before it was trusted (it fails on the control reading
+`True`).  **The ARTIFACT is not regenerated** — it is a ~3.7 h descent pair, ranked as §105's
+successor 2 — so `study_fillet_optimum.json` on disk is still PART 14's two identical arms
+and must not be quoted until it is re-run.
+
+Measurements, the pool verdict and the t2/t3 mesh split this uncovered are in **PLAN §105**
+and are not restated here.

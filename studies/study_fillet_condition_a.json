@@ -1,0 +1,227 @@
+{
+  "genome": "fillet_optimum_b029622.json",
+  "n_phase": 8,
+  "kinematics": "svk",
+  "ladder": [
+    "coarse",
+    "medium",
+    "fine"
+  ],
+  "orientation_pinned_at": "fine",
+  "orientation": [
+    1.0,
+    1.0
+  ],
+  "rows": [
+    {
+      "config": "coarse",
+      "meshes": {
+        "unfilleted": {
+          "n_elements": 4704,
+          "n_nodes": 21012,
+          "h": 0.014580296087995107,
+          "axle_drop_mean_mm": 3.333512179148724,
+          "axle_drop_min_mm": 3.1357881123495748,
+          "axle_drop_max_mm": 3.5688082420872576,
+          "stress_utilisation": 1.0111569086603922,
+          "mesh_mass_g": 39.657608324529846,
+          "min_scaled_jacobian": 0.6724412633659189,
+          "max_stress_mpa": 127.44072621246204,
+          "loss": 1160.7091626308882,
+          "grad_norm": 5733.186999949035,
+          "mesh_s": 0.1,
+          "solve_s": 502.6,
+          "peak_rss_gb": 9.06
+        },
+        "filleted": {
+          "n_elements": 5952,
+          "n_nodes": 26196,
+          "h": 0.012961896184130316,
+          "axle_drop_mean_mm": 1.9902239021381485,
+          "axle_drop_min_mm": 1.7641700043530149,
+          "axle_drop_max_mm": 2.2732642263845886,
+          "stress_utilisation": 0.7953641277979535,
+          "mesh_mass_g": 43.12465379847315,
+          "min_scaled_jacobian": 0.23803608521865427,
+          "max_stress_mpa": 52.38485298858964,
+          "loss": 37.22055467466421,
+          "grad_norm": 32.92393571733408,
+          "mesh_s": 2.1,
+          "solve_s": 1417.4,
+          "peak_rss_gb": 41.6
+        }
+      }
+    },
+    {
+      "config": "medium",
+      "meshes": {
+        "unfilleted": {
+          "n_elements": 12288,
+          "n_nodes": 53124,
+          "h": 0.009021097956087904,
+          "axle_drop_mean_mm": 3.3535729126526785,
+          "axle_drop_min_mm": 3.156621336736761,
+          "axle_drop_max_mm": 3.5847158949870397,
+          "stress_utilisation": 1.0179879129610894,
+          "mesh_mass_g": 39.65760930383896,
+          "min_scaled_jacobian": 0.6725471969287528,
+          "max_stress_mpa": 159.4885065292112,
+          "loss": 1196.1488125385188,
+          "grad_norm": 5889.521172332843,
+          "mesh_s": 0.3,
+          "solve_s": 1048.6,
+          "peak_rss_gb": 10.57
+        },
+        "filleted": {
+          "n_elements": 15552,
+          "n_nodes": 66468,
+          "h": 0.008018753738744801,
+          "axle_drop_mean_mm": 1.9990188037674743,
+          "axle_drop_min_mm": 1.7723592879691192,
+          "axle_drop_max_mm": 2.2827144133332653,
+          "stress_utilisation": 0.7993983756872208,
+          "mesh_mass_g": 43.12452947192804,
+          "min_scaled_jacobian": 0.23803610998229827,
+          "max_stress_mpa": 66.0494144315031,
+          "loss": 37.16132164886414,
+          "grad_norm": 9.439699758205958,
+          "mesh_s": 2.4,
+          "solve_s": 2890.7,
+          "peak_rss_gb": 43.65
+        }
+      }
+    },
+    {
+      "config": "fine",
+      "meshes": {
+        "unfilleted": {
+          "n_elements": 31200,
+          "n_nodes": 132276,
+          "h": 0.005661385170722979,
+          "axle_drop_mean_mm": 3.367621033206193,
+          "axle_drop_min_mm": 3.171055329748908,
+          "axle_drop_max_mm": 3.598430757320393,
+          "stress_utilisation": 1.0229529781048496,
+          "mesh_mass_g": 39.65760949817946,
+          "min_scaled_jacobian": 0.672618414275182,
+          "max_stress_mpa": 192.65335069605982,
+          "loss": 1221.5657199193936,
+          "grad_norm": 5993.263438794865,
+          "mesh_s": 0.6,
+          "solve_s": 2688.7,
+          "peak_rss_gb": 11.19
+        },
+        "filleted": {
+          "n_elements": 37632,
+          "n_nodes": 158388,
+          "h": 0.005154913117764516,
+          "axle_drop_mean_mm": 2.001406100991451,
+          "axle_drop_min_mm": 1.7746673110524707,
+          "axle_drop_max_mm": 2.284775903706559,
+          "stress_utilisation": 0.8007203688304605,
+          "mesh_mass_g": 43.12450914383917,
+          "min_scaled_jacobian": 0.23803612000748373,
+          "max_stress_mpa": 84.10477863773298,
+          "loss": 37.16210757722241,
+          "grad_norm": 3.251154225885828,
+          "mesh_s": 3.0,
+          "solve_s": 3618.5,
+          "peak_rss_gb": 41.88
+        }
+      }
+    }
+  ],
+  "complete": true,
+  "analysis": {
+    "spread_pct": {
+      "unfilleted": 1.023210722637268,
+      "filleted": 0.5618563238683444
+    },
+    "richardson": {
+      "unfilleted": {
+        "h": [
+          0.014580296087995107,
+          0.009021097956087904,
+          0.005661385170722979
+        ],
+        "phi": [
+          3.333512179148724,
+          3.3535729126526785,
+          3.367621033206193
+        ],
+        "r21": 1.6162440712835369,
+        "r32": 1.5934435979977455,
+        "observed_order_p": 0.6891546685606749,
+        "order_converged": true,
+        "naive_ratio": 1.4280012352923344,
+        "monotone": true,
+        "extrapolated_mm": 3.4047255411319353,
+        "finest_error_vs_extrapolated_pct": -1.0897943895179951,
+        "gci_fine": 0.013772522041478203,
+        "gci_fine_pct": 1.3772522041478203
+      },
+      "filleted": {
+        "h": [
+          0.012961896184130316,
+          0.008018753738744801,
+          0.005154913117764516
+        ],
+        "phi": [
+          1.9902239021381485,
+          1.9990188037674743,
+          2.001406100991451
+        ],
+        "r21": 1.6164477182409742,
+        "r32": 1.5555555555555554,
+        "observed_order_p": 2.6261545641489374,
+        "order_converged": true,
+        "naive_ratio": 3.6840413254766737,
+        "monotone": true,
+        "extrapolated_mm": 2.0024957145411846,
+        "finest_error_vs_extrapolated_pct": -0.05441277810590561,
+        "gci_fine": 0.000680530021614558,
+        "gci_fine_pct": 0.0680530021614558
+      }
+    },
+    "finest": {
+      "unfilleted": {
+        "axle_drop_mean_mm": 3.367621033206193,
+        "axle_drop_min_mm": 3.171055329748908,
+        "axle_drop_max_mm": 3.598430757320393,
+        "stress_utilisation": 1.0229529781048496,
+        "mesh_mass_g": 39.65760949817946,
+        "min_scaled_jacobian": 0.672618414275182,
+        "max_stress_mpa": 192.65335069605982
+      },
+      "filleted": {
+        "axle_drop_mean_mm": 2.001406100991451,
+        "axle_drop_min_mm": 1.7746673110524707,
+        "axle_drop_max_mm": 2.284775903706559,
+        "stress_utilisation": 0.8007203688304605,
+        "mesh_mass_g": 43.12450914383917,
+        "min_scaled_jacobian": 0.23803612000748373,
+        "max_stress_mpa": 84.10477863773298
+      }
+    },
+    "utilisation": {
+      "unfilleted": [
+        1.0111569086603922,
+        1.0179879129610894,
+        1.0229529781048496
+      ],
+      "filleted": [
+        0.7953641277979535,
+        0.7993983756872208,
+        0.8007203688304605
+      ]
+    },
+    "spread_ordering_reproduces_part_12": true,
+    "admissibility_at_finest": {
+      "unfilleted_util": 1.0229529781048496,
+      "unfilleted_breached": true,
+      "filleted_util": 0.8007203688304605,
+      "filleted_breached": false,
+      "disagreement_survives_refinement": true
+    }
+  }
+}

@@ -56,7 +56,7 @@ Four consequences, each of which this arc is meant to end:
 
 3. **`ALLOWABLE_STRESS_MPA`, `TARGET_DEFLECTION_MM` and the weight table cannot be varied
    at all.** `force`, `E` and `nu` already thread as keywords through the whole solve path
-   and even survive the process pool (`wheel_objective.py:1115` ships `problem_kw`). The
+   and even survive the process pool (`wheel_objective.py:1127` ships `problem_kw`). The
    other three are read as module globals inside the loss — `wheel_objective.py:1153`
    (target), `:1234-1235` and `:1272-1273` (allowable). `tests/test_objective.py:1257` has
    to `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move it, which is the tell.
@@ -144,7 +144,7 @@ The calibration below is that paragraph, generalised to all five objective terms
                         rides to pool workers at :1111-1115
   E, nu                 ride **problem_kw -> service_qoi_value_and_grad       nothing
                         (wheel_adjoint.py:646) -> wheel_contact_problem;
-                        survive the pool (wheel_objective.py:1115)
+                        survive the pool (wheel_objective.py:1127)
   min_wall              set_min_wall(wheel_fea.py:852) + --min-wall            route it
   target_deflection     MODULE GLOBAL, read at wheel_objective.py:1153-1155   PLUMB IT
   allowable_stress      MODULE GLOBAL, read at :1234-1235 and :1272-1273      PLUMB IT
@@ -275,10 +275,15 @@ reference genome under `DEFAULT_WEIGHTS`:
   --------------  -----------------------------------------------  ---------   --------
   mass            1% of MASS_REFERENCE_G (0.365 g)                  linear      0.300000
   deflection      1% relative error on TARGET_DEFLECTION_MM         quadratic   0.250000
-  stress_margin   1% of utilisation above MARGIN_KNEE_UTIL (0.80)   quadratic   0.032500
+  stress_margin   1% of utilisation above MARGIN_KNEE_UTIL (0.80)   quadratic   0.008921
   smoothness      1% of the curvature-rate integral                 STEP 4      0.001678
   phase_ripple    1% of std/mean axle drop                          STEP 4      0.000000
 ```
+
+`stress_margin`'s `c_T` RE-MEASURED AT PLAN.md §103: it was 0.032500 against
+`DEFAULT_WEIGHTS["stress_margin"] = 325.0`; the fillet switch re-derived that weight to
+89.21 (§99's formula, wired in at §103), and `c_T` moved with it since it is read from the
+weight table, not asserted independently.
 
 `c_T = L(d_T)` — the cost of a full 1% miss measured from that term's own satisfied point —
 and **not** `dL/dx` at the current iterate. The marginal rate is the wrong instrument here
@@ -293,14 +298,18 @@ descent happened to stop. `L(d_T)` is a property of the weight, not of the itera
 
   term             c_T        p_cal
   --------------  --------   ------
-  mass            0.300000    51.35
-  deflection      0.250000    42.80
-  stress_margin   0.032500     5.56
-  smoothness      0.001678     0.29
+  mass            0.300000    53.51
+  deflection      0.250000    44.60
+  stress_margin   0.008921     1.59
+  smoothness      0.001678     0.30
   phase_ripple    0.000000     0.00
   --------------------------------
-  sum c = 0.584178             100
+  sum c = 0.560599             100
 ```
+
+RE-MEASURED AT PLAN.md §103, same reason as the table above: `stress_margin`'s point share
+fell 5.56 -> 1.59 and the freed points landed on `mass`/`deflection`, which is the same
+100-point budget redistributing under one weight change, not a second finding.
 
 **THIS IS THE ARC'S FIRST REAL FINDING AND IT IS AVAILABLE BEFORE ANY CODE IS WRITTEN.**
 The shipped weight table is a **51/43/6/0.3/0** portfolio — roughly half on mass, roughly
@@ -475,8 +484,9 @@ derive `p^cal`, implement `weights_from_priorities`, and anchor `phase_ripple` f
   point. The map must be an identity at its own calibration point or it is not a
   re-parameterisation, it is a change.
 - **CHECK — the table above is reproduced from `src/`**, not copied from this file. If
-  `p_cal` does not come back as 51.35 / 42.80 / 5.56 / 0.29 / 0.00, this file is wrong and
-  the driver is right.
+  `p_cal` does not come back as 53.51 / 44.60 / 1.59 / 0.30 / 0.00 (RE-MEASURED AT PLAN.md
+  §103, after the fillet switch re-derived `DEFAULT_WEIGHTS["stress_margin"]`; it was
+  51.35 / 42.80 / 5.56 / 0.29 / 0.00 before), this file is wrong and the driver is right.
 - **CHECK — conservation:** total exchange-rate pressure is invariant under any
   reallocation summing to 100, to floating point.
 - **CHECK — ripple:** its anchor is a measured number filed beside the shipped
@@ -571,3 +581,115 @@ Add the arc to `PLAN.md`'s *Open arcs* table as row 9.
 - **Do not regenerate a committed study artifact as a side effect**, and never commit while
   a driver is mid-write — the drivers rewrite `studies/*.json` and `studies/*.jpg` in place
   over minutes to hours and those files are tracked on purpose.
+
+---
+
+# THE RECORD — 2026-08-31
+
+**Steps 0-7 are DONE.  Step 8 is `PLAN.md` §97 and this block.**  Read §97 for the
+findings; what follows is the arc's own account of what was built, what the plan got
+wrong, and what it deliberately did not do.
+
+## Where each step landed
+
+```
+  step  what                                       where
+  ----  -----------------------------------------  ------------------------------------
+   0    the derivations, run backwards             studies/study_mbse_baseline.py
+                                                   `make mbsebase`, ~1 s, solves nothing
+   1    the module                                 src/wheel_requirements.py
+   2    the temperature model                      MaterialCard + PLA_FFF, in the module
+   3    thread it, and prove nothing moved         wheel_objective.{t3_terms,objective}
+                                                   tests/test_requirements.py
+   4    the calibration                            studies/study_mbse_calibration.py
+                                                   `make mbsecal`, ~1 s, solves nothing
+   5    scoring and verification                   wheel_requirements.{score_record,verify}
+                                                   studies/study_mbse_score.py
+                                                   `make mbsescore` — the only one that solves
+   6    re-optimisation under a requirement set    wheel_stage3.py --requirements
+   7    the front end                              src/wheel_mbse.py, `make mbse`
+   8    the write-up                               PLAN.md §97, and this block
+```
+
+## Four places this plan was wrong, corrected in the build rather than argued with
+
+1. **`FORCE_LBS = 15.0` IS NOT 66.72 N, IT IS 66.7233 N.**  This file's header block and
+   its Step 1 check both say `force_n == 66.72`; `wheel_fea.py:152` says
+   `FORCE_LBS * 4.44822` and its own comment rounds.  The check is implemented against
+   `W.TOTAL_FORCE_NEWTONS` and not against the literal, which is the only version of it
+   that can be true.
+
+2. **THE WRITE-UP IS §97, NOT §95.**  Step 8 says *"a `PLAN.md` section (`## §95`,
+   append-only, never renumbered)"*.  §95 and §96 were both written on 2026-08-31, before
+   this arc started work.  Append-only means append.
+
+3. **`runway_m` IS NOT A MISSION FIELD.**  This file lists it as mission axis 3, reaching
+   `sink_rate` through approach angle — and then says, in the same paragraph and in bold,
+   that a short-field braking case is *"genuinely out of model, and a plan that lets
+   'runway length' imply otherwise is lying about what was verified."*  Nothing in this
+   tree measures the approach-angle correlation, and the only other thing runway could
+   reach is a number the caller already types directly.  A field with no route into the
+   physics that is not already covered by `sink_rate_ms` is a wish with a units label, so
+   it was left out and `field_class` reaches the stroke and nothing else.
+
+4. **THE PLUMBING SURFACE WAS NOT TWO CONSTANTS.**  This file's table says
+   `target_deflection` and `allowable_stress` are the whole job because *"`force`, `E` and
+   `nu` already thread"*.  They thread into T3.  **`_buckling_ratio` (`wheel_objective.py`)
+   read `W.FORCE_PER_SPOKE_NEWTONS` and the 20 C `YOUNGS_MODULUS_PLA_MPA` off the module
+   whatever the caller loaded the wheel with** — so a heavy or hot requirement set would
+   have had its `buckling` BARRIER, a `shall`, evaluated at the shipped mission and
+   silently reported 0.0.  A verifier that reports a barrier at zero for a load it never
+   applied is worse than one that reports nothing.  Both are now arguments with the module
+   constants as defaults, and `tests/test_requirements.py` gates that the barrier moves
+   with the load and with the modulus.
+
+## Three design decisions this file left open, taken here and stated
+
+**`Requirements.baseline()` READS THE CONSTANTS; `Mission.implied_baseline()` DERIVES
+THEM.**  Step 1's check wants `baseline()` to give `force_n == 66.72` exactly and Step 0's
+wants the derivation to reproduce the constants to 1e-12.  Those are two different objects
+and making them one would have meant either a `==` that cannot hold (`0.4 * 3` is
+1.2000000000000002) or a tolerance where "do not move a single default" needs an equality.
+So `baseline()` is the constants themselves — exact by construction, which is what makes
+"nothing moved" checkable — and the derivation is a separate path whose agreement with it
+is a MEASUREMENT.  §97's Step 0 table is that measurement.
+
+**THE POINTS MAP IS STATED AS COST PER POINT, NOT AS `w_default * p / p_cal`.**  Those two
+are the same function wherever `p_cal > 0`, and the second is `0/0` on `phase_ripple` —
+the axis a user is most likely to want to move first, because it is the one this tree has
+never bought any of.  This file's remedy was a separate anchor for that term.  Stated as
+*"`w_T(p)` is whatever weight makes term `T`'s reference deviation cost
+`sum(c_cal)/100 * p_T`"* there is no singularity, no special case in the code, the
+conservation law is exact by construction rather than by algebra, and the identity at
+`p_cal` still returns `DEFAULT_WEIGHTS` **including** `phase_ripple = 0.0`.  The anchor
+this file asked for falls out as a consequence and is reported: one point of `rolling`
+buys `w = 58.4178`, and at parity with `light` that is exactly the 3000.0 the "same cost
+as one reference mass deviation" rule gives.
+
+**`SHOULD-MASS` REPORTS `NO LIMIT STATED`, ADDED AT PLAN §98.**  This file's own compliance
+table read the shipped wheel against `MASS_REFERENCE_G` and called it a miss every time,
+naming the number a normaliser in the same sentence — a limit stated and disclaimed in one
+breath. The one candidate for a real budget, the ~5% of all-up weight `Mission.
+implied_baseline`'s own docstring cites, is computed from the 48.64 g OCC-solid export and
+`verify()` reads `metrics.mesh_mass_g` instead — 39.55 to 43.41 g across the two designs
+this tree has measured, 11-19% under the solid and never reconciled with it. Moving the
+5% figure onto the mesh convention would be a new measurement dressed as arithmetic, so
+none is stated: `mass` now reports `NO LIMIT STATED`, the same verdict `smoothness` and
+`phase_ripple` already carried for the identical reason. `MASS_REFERENCE_G` did not move —
+it is still the `DEFAULT_WEIGHTS` normaliser and the `REFERENCE_DEVIATION` anchor, neither
+of which is a compliance question.
+
+## What was NOT done, and why
+
+- **No `medium` production descent.**  This file forbids it and this arc has nothing to
+  promote.  `--requirements` is proved at `coarse` and by test, not by spending 6.3 h.
+- **`best_solution.json` did not move**, no committed study artifact was regenerated as a
+  side effect, and no default changed.  The wheel that ships at the baseline requirement
+  set is the wheel that shipped this morning, bit for bit — and that is a gated claim,
+  not a hope: `test_req_baseline_is_bit_identical_to_naming_no_requirements`.
+- **Ø100, `NUMBER_OF_SPOKES = 12` and `SPOKE_WIDTH_MM` were not touched**, and no
+  requirement axis reaches any of them.
+- **`studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25` was not touched.**  It
+  is Roache's GCI factor and is unrelated to `wheel_fea.SAFETY_FACTOR = 1.6`;
+  `wheel_requirements.SAFETY_FACTOR_BASE`'s docstring names the collision so the next
+  person to reach for a global rename is warned in the file that would break.

@@ -631,53 +631,47 @@ def test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one(
     assert fillet_report["deflection"]["interp"]["settling"] is True
 
 
-def test_nothing_wires_the_fillet_into_the_objective():
-    """PART 10's scope, as a check rather than a note.
+def test_the_objective_builds_the_filleted_mesh():
+    """`test_nothing_wires_the_fillet_into_the_objective`'s mirror image — PLAN §93/§103.
 
-    THE GATE STANDS AND ITS REASON HAS CHANGED (PLAN §89). What stood here read *"`fillet=`
-    is a measurement instrument for ONE genome — 6 of 16 feasible genomes refuse it at
-    their own radii and 6 of the 10 that build sit under `MIN_SJ_TARGET`"*. Neither half
-    survives: the refusals were closed by the sector-fit clamp (§74, §78), and the barrier
-    half was a count taken on the SHIPPED GLOBAL PAIR, which stopped being what
-    `fillet=True` builds at §85. On the assembled mesh at the objective's own config the
-    default clears 16 of 16 and 31 of 32 — and so does `fillet=None`, on the same genomes,
-    failing on the same one and failing harder.
+    THAT TEST STOOD FROM §48 THROUGH §102 as a SCOPE gate: wiring the fillet into the
+    objective was "a decision about cost and about the `Kt` surrogate ... not a keyword",
+    and until it was taken deliberately, any `fillet=`/`fillet_blocking=` keyword reaching
+    a call in `src/` had to be the literal `None` — an accident that gate existed to catch.
 
-    So this is no longer a mesh-validity gate. It is the SCOPE gate: wiring the fillet into
-    the objective is a decision about cost and about the `Kt` surrogate (§75, §88 ranking
-    item 2), and it must be taken deliberately rather than arrived at because a keyword
-    leaked into a call. The day that decision is taken, this test is the thing to update —
-    with the record that took it named here.
+    THE DECISION WAS TAKEN AT §93 AND BOTH CONDITIONS THAT HELD EXECUTION ARE NOW MET.
+    Condition A (which mesh is converged) closed at §101: the filleted mesh's spread stays
+    materially smaller under refinement and §94's admissibility disagreement survives to
+    `fine` rather than closing. Condition B (the stress term double-counts the fillet on a
+    filleted mesh) closed at §94 itself: the double count is worth exactly 0.0 at the
+    shipped genome, because utilisation there sits below the margin knee where the term is
+    flat — inert, not merely small. §102 then built what replaces `Kt * agg`: a
+    differentiable region-p-norm over the fillet arc's own mesh nodes, `l_p`-normed over
+    its twelve rotational copies rather than an argmax. §103 wires it in.
 
-    **THE DECISION IS TAKEN — PLAN §93, 2026-08-30 — AND THIS GATE STILL STANDS, WHICH IS
-    NOT A CONTRADICTION.** §93 decides the fillet IS to be wired in: every objection was
-    measured and every one failed (§74/§78 build, §89 barrier, §90 cost 1.12x, §75 the
-    surrogate, §91 the attribution, §92 the preference reversal). What holds EXECUTION is
-    two named conditions, and until both are met a `fillet=` keyword reaching a call in
-    `src/` would still be the accident this gate exists to catch:
+    SO THE INVARIANT FLIPS RATHER THAN DISAPPEARS.  A scope gate deleted rather than
+    inverted would leave the tree unable to say which way round it is supposed to be — see
+    the retired test's own closing line.  What this checks now: every
+    `fillet=`/`fillet_blocking=` keyword reaching a call in the modules that build the
+    objective's meshes is the literal `True` (`fillet_blocking` is not overridden anywhere
+    — `"sector"` is `build_wheel`'s own default, unchanged by the switch), and the two call
+    sites the switch actually depends on are among them. Both must build filleted, or the
+    pooled and serial paths silently diverge onto two different meshes with
+    `tests/test_pool.py`'s bit-identity gate none the wiser until it happens to be run:
 
-      A. WHICH MESH IS RIGHT, at the design and kernel where they disagree. The switch
-         rests on the filleted mesh being the converged one and the only evidence is PART
-         12's ladder at ONE genome, under LINEAR, at ONE phase — while §92's disagreement
-         is at `b029622` under SVK over eight phases and is about ADMISSIBILITY.
-      B. THE STRESS TERM COUNTS THE FILLET TWICE on a filleted mesh. `wheel_objective.py`'s
-         `util_j = kt * agg / ALLOWABLE_STRESS_MPA` multiplies the mesh's own p-norm by a
-         closed-form surrogate for a fillet the mesh does not model — which, on a filleted
-         mesh, it does. Conservative (Kt > 1) and therefore invisible, but it means the
-         switch as specified is incomplete rather than merely unexecuted.
-
-    WHEN BOTH ARE MET, this test is REPLACED — not deleted — by its mirror image: a check
-    that the objective builds the filleted mesh, naming §93 and the section that executes
-    it. A scope gate deleted rather than inverted leaves the tree unable to say which way
-    round it is supposed to be."""
-    # PARSED, NOT GREPPED, and the two failures a grep gives here are both real. A pattern
-    # loose enough to catch `fillet=True` also catches `wheel_objective`'s local
-    # `fillet = jnp.sum(...)` — the fillet-MARGIN barrier, which has nothing to do with the
-    # mesh — and `wheel_fea`'s `R_hub_fillet=`, which goes to the EXPORTER, where the
-    # fillets have always been geometry. What may not appear is the keyword argument, and
-    # `ast` knows the difference between one of those and an assignment.
+      * `wheel_objective.phase_meshes` — every phase mesh `t3_terms`'s serial loop and
+        `wheel_stage3.Evaluator` solve on.
+      * `wheel_pool_worker.run_phase` — the pooled path's own, independent rebuild, which
+        cannot share `phase_meshes`' mesh at all (`WheelMesh._coord_fn` cannot cross a
+        process boundary) and so must repeat the same keyword rather than inherit it.
+    """
+    # PARSED, NOT GREPPED, for the same reason the retired gate parsed rather than grepped:
+    # `wheel_objective`'s local `fillet = jnp.sum(...)` (the fillet-MARGIN barrier) and
+    # `wheel_fea`'s `R_hub_fillet=` (the EXPORTER's geometry) are not this keyword, and
+    # `ast` knows the difference between one of those and an actual keyword argument.
+    sites = {"wheel_objective.py": False, "wheel_pool_worker.py": False}
     for mod in ("wheel_objective.py", "wheel_stage3.py", "wheel_fea.py",
-                "wheel_adjoint.py", "wheel_pool.py"):
+                "wheel_adjoint.py", "wheel_pool.py", "wheel_pool_worker.py"):
         with open(os.path.join(REPO, "src", mod)) as fh:
             tree = ast.parse(fh.read(), filename=mod)
         for node in ast.walk(tree):
@@ -686,11 +680,16 @@ def test_nothing_wires_the_fillet_into_the_objective():
             for kw in node.keywords:
                 if kw.arg not in ("fillet", "fillet_blocking"):
                     continue
-                assert isinstance(kw.value, ast.Constant) and kw.value.value is None, (
-                    f"{mod}:{node.lineno} passes {kw.arg}= to a call — wiring the "
-                    f"fillet into the objective is a DECISION about cost and about the "
-                    f"`Kt` surrogate, not a keyword (PLAN §89; §48's mesh-validity "
-                    f"clause is retired)")
+                assert isinstance(kw.value, ast.Constant) and kw.value.value is True, (
+                    f"{mod}:{node.lineno} passes {kw.arg}={ast.dump(kw.value)} to a "
+                    f"call — the switch (PLAN §93/§103) wires the fillet in "
+                    f"unconditionally, so every occurrence left in these modules should "
+                    f"be the literal True")
+                if kw.arg == "fillet" and mod in sites:
+                    sites[mod] = True
+    assert all(sites.values()), (
+        f"expected a literal fillet=True reaching a call in both {sorted(sites)} — "
+        f"found: {sites}")
 
 
 def test_parse_fillet_refuses_what_it_cannot_mean():

@@ -456,3 +456,212 @@ def test_the_filleted_gate_runs_and_inverts_the_census(genes):
     assert rim["rel_frozen"] > 1e4 * rim["rel_rule"], rim
     assert pg["binding_junction"] == "rim", pg["cliff_per_junction"]
     assert rep["pass"], rep
+
+
+# ---------------------------------------------------------------------------
+# THE REGION-RESTRICTED P-NORM'S ARC  (PLAN.md §102)
+# ---------------------------------------------------------------------------
+# `_qoi_region_pnorm` reads the fillet surface instead of modelling it with `Kt`, and the
+# region it reads is a tube about the junction's own arc.  Everything below is about that
+# arc being (a) the arc the mesh actually built and (b) a differentiable function of the
+# genes — because if either fails, the term prices a feature that is not there and gives
+# `R_hub`/`R_rim` a gradient that means nothing.
+
+@pytest.fixture(scope="module")
+def filleted(genes):
+    return WW.build_wheel(genes, CFG, fillet=True)
+
+
+def test_the_arc_node_ids_do_not_move_with_phase(genes):
+    """`phase_deg` rolls the whole wheel under the ground (`_sector_coords`'s own
+    comment); it does not touch sector 0's block layout, so the SAME node ids must come
+    back at every phase. Caught the hard way: `fillet_arc_nodes` originally matched
+    `sector_blocks`' UNROTATED arc points against `mesh.coords`, which IS rolled, and at
+    `phase_deg` = 13.7 the nearest node was 0.513 mm away — not a near-miss, a
+    comparison between two different frames.  `phase_stencil` is nonzero at 7 of its 8
+    points, so an unfixed version of this would raise
+    `fillet_arc_nodes`' own frame-mismatch error on most of what `phase_meshes` builds,
+    the first time §102's term ran inside `t3_terms` rather than at the `phase_deg=0.0`
+    default every fixture in this module happens to use.
+    """
+    ref = {lab: WW.fillet_arc_nodes(WW.build_wheel(genes, CFG, fillet=True), lab)
+           for lab in ("hub", "rim")}
+    for phase in (3.75, 13.7, -7.5, 359.9):
+        m = WW.build_wheel(genes, CFG, fillet=True, phase_deg=phase)
+        for lab in ("hub", "rim"):
+            assert np.array_equal(WW.fillet_arc_nodes(m, lab), ref[lab]), (
+                f"{lab}: arc node ids at phase_deg={phase} differ from phase_deg=0.0")
+
+
+def test_the_arc_node_ids_are_the_arcs_own_nodes(genes, filleted):
+    """`fillet_arc_nodes` matches by coordinate, and the match has to be EXACT.
+
+    The ids are recovered by looking each arc point up in `mesh.coords` rather than by
+    carrying `build_wheel`'s block offsets around, so the thing that makes it sound is
+    that the arc points ARE mesh nodes — not nearly, exactly.  A near-miss would be
+    silent: the term would weight a neighbouring node and price a slightly different
+    region, at every genome, forever.
+    """
+    import study_corner_singularity as CS
+
+    coords = np.asarray(filleted.coords)
+    blocks = WW.sector_blocks(genes, filleted.cfg, fillet=True)
+    for label in ("hub", "rim"):
+        a = np.asarray(blocks[f"{label}_fillet_a"])
+        b = np.asarray(blocks[f"{label}_fillet_b"])
+        arc = np.concatenate([a[:, 0, :], b[1:, 0, :]])
+        ids = WW.fillet_arc_nodes(filleted, label)
+
+        assert len(ids) == len(arc)
+        assert len(set(ids.tolist())) == len(ids), \
+            f"{label}: two arc points matched the same node"
+        worst = np.abs(coords[ids] - arc).max()
+        assert worst == 0.0, \
+            f"{label}: arc point missed its node by {worst:.3e} mm — measured, this is 0.0"
+
+        # And it is the same arc `study_corner_singularity` fits, which is what makes
+        # §95's whole `(r, p)` measurement transfer to the objective.
+        ref = CS.fillet_arcs(genes, filleted.cfg, True)[label]
+        C, R, _, _, _, _ = WA._arc_from_nodes(jnp.asarray(coords[ids]))
+        assert abs(float(R) - ref["radius"]) < 1e-11, f"{label}: radius disagrees"
+        assert np.linalg.norm(np.asarray(C) - ref["centre"]) < 1e-11, \
+            f"{label}: centre disagrees"
+
+
+def test_an_unfilleted_mesh_is_refused_rather_than_given_a_wrong_arc(mesh):
+    """There is no arc on an unfilleted mesh, and the honest answer is to say so.
+
+    The failure this prevents is not hypothetical — it is §85's, generalised: a path that
+    quietly produces SOMETHING for a mesh that cannot support the quantity is how a
+    refusal turns into a wrong number.  What an unfilleted mesh has at `P_t` is the
+    singularity the fillet exists to remove (§52, §94), and a tube round it would be a
+    region-restricted p-norm over a field that diverges.
+    """
+    with pytest.raises(ValueError, match="filleted mesh"):
+        WW.fillet_arc_nodes(mesh, "hub")
+
+
+def test_the_arc_rides_the_genes_through_mesh_coords(genes, filleted):
+    """`d(fitted radius)/d(R_hub)` is 1, and every other gene's entry is 0.
+
+    THE PREMISE THE WHOLE TERM RESTS ON.  `adjoint_grads` differentiates `Q` with respect
+    to the COORDINATES and chains that back to the genes through one shared vjp; the arc
+    is not an argument of `Q`, so if it did not ride the coordinates it would be frozen,
+    and the region would be a constant region while the geometry moved under it.  It does
+    ride them: the fit reads the arc's own nodes, the nodes move with `mesh_coords`, and
+    the radius that comes back is the gene.
+
+    The other twelve entries are half the check.  A fit contaminated by the mesh AROUND
+    the arc would still give `dR/dR_hub` near 1 and would smear gradient onto `t0`, `cy2`
+    and the rest — so the test that the fit is reading the arc is that nothing else moves
+    it.  They are NOT identically zero and the tolerance says so: measured at `smoke`, the
+    largest is 3.4e-13 on `t0`, twelve orders under the entry that should be 1.  That is
+    the least-squares solve's own round-off, not a path — the arc's nodes genuinely do
+    move with `t0`, and what the fit extracts from that motion is a radius that does not.
+    Asserting `== 0.0` here fails on arithmetic noise while proving nothing extra.
+    """
+    for label, gid in (("hub", wg.GENE_NAMES.index("R_hub")),
+                       ("rim", wg.GENE_NAMES.index("R_rim"))):
+        ids = WW.fillet_arc_nodes(filleted, label)
+
+        def radius_of(g):
+            return WA._arc_from_nodes(WW.mesh_coords(g, filleted)[ids])[1]
+
+        value, grad = jax.value_and_grad(radius_of)(jnp.asarray(genes))
+        grad = np.asarray(grad)
+        assert abs(float(value) - genes[gid]) < 1e-9, \
+            f"{label}: the fitted radius is not the gene"
+        assert abs(grad[gid] - 1.0) < 1e-7, \
+            f"{label}: d(radius)/d({wg.GENE_NAMES[gid]}) = {grad[gid]:.9f}, want 1"
+        others = np.delete(grad, gid)
+        worst = float(np.abs(others).max())
+        assert worst < 1e-10, (
+            f"{label}: the arc fit picked up {worst:.3e} of gradient from "
+            f"{wg.GENE_NAMES[int(np.argmax(np.abs(others)))]} — measured, the largest "
+            "round-off entry is 3.4e-13")
+
+
+def test_the_region_pnorms_gradient_matches_a_central_difference(genes, filleted):
+    """§94's item 2 CHECK, which asked for exactly this: "the FD test the assembled
+    gradient already has".
+
+    The hub, because it is the junction §94 measured at 1.46x and 2.20x the allowable
+    while the objective read 0.58 and 0.80, and `R_hub` because giving that gene a live
+    gradient is what the replacement term is FOR.  One junction and one gene rather than
+    four of each: a filleted mesh costs a ~2 min XLA compile before it costs a solve, and
+    the property being pinned is that the adjoint chain closes, which one gene proves and
+    four do not prove any harder.
+
+    MEASURED 2026-09-02 at `smoke`, shipped genome, indentation 1.65 mm:
+
+        h        FD               adjoint          rel
+        1e-3    -2.85986560e+00  -3.03772422e+00   5.855e-02
+        1e-4    -3.03891570e+00  -3.03772422e+00   3.922e-04
+        1e-5    -3.03772422e+00  -3.03772422e+00   1.745e-09
+
+    The ladder is the point and the tolerance is set against its BEST rung, the way
+    `test_the_buckling_eigenvalue_gradient_matches_a_central_difference` does: at 1e-3 the
+    step is large enough that the FD is measuring curvature, and a single step size would
+    be reporting on the step rather than on the gradient.
+
+    THE SIGN IS THE SANITY CHECK.  It is negative: opening the fillet radius lowers the
+    stress in the fillet.  A term that came back positive here would be pricing margin
+    backwards, and no FD agreement would make that right.
+    """
+    ids = WW.fillet_arc_nodes(filleted, "hub")
+    n_sp = filleted.n_spokes
+
+    def qoi(prob):
+        return WA._qoi_region_pnorm(prob, ids, n_sp)
+
+    def value_at(g):
+        m = WW.build_wheel(g, CFG, fillet=True)
+        return WA.solve_and_grad(g, CFG, qoi, indentation_mm=INDENT_MM,
+                                 mesh=m)["value"]
+
+    out = WA.solve_and_grad(genes, CFG, qoi, indentation_mm=INDENT_MM, mesh=filleted)
+    grad = out["grad"]
+    gid = wg.GENE_NAMES.index("R_hub")
+
+    assert grad[gid] < 0.0, (
+        f"d(fillet stress)/d(R_hub) = {grad[gid]:+.6e} — opening the fillet must not "
+        "raise the stress in it")
+
+    rng = sg._ranges()
+    best = min(
+        abs((value_at(_bump(genes, gid, rng[gid] * h))
+             - value_at(_bump(genes, gid, -rng[gid] * h)))
+            / (2.0 * rng[gid] * h) - grad[gid]) / abs(grad[gid])
+        for h in (1e-3, 1e-4, 1e-5))
+    assert best < 1e-6, (
+        f"d(fillet stress)/d(R_hub) is out by {best:.2e} on its whole FD ladder")
+
+
+def test_the_region_pnorm_wakes_the_two_genes_defect_1_measured_at_zero(genes, filleted):
+    """§15 DEFECT 1, reversed — and this is the affirmative case for the whole switch.
+
+    DEFECT 1 is that `R_hub` and `R_rim` are DEAD: the only paths from a fillet radius
+    into the loss are `stress` and the fillet barriers, all of them flat unless breached,
+    and measured at the shipped genome on 2026-08-12 `dL/dR_hub` and `dL/dR_rim` are both
+    EXACTLY 0.0 — a nominally 14-dimensional search running in 8.  `wheel_objective`'s
+    own comment says so at the `stress_margin` block.
+
+    On a filleted mesh read by this term they are not dead, because the radius now moves
+    the geometry the field is computed on rather than only a closed-form surrogate that
+    is flat above its cap.  Measured at `smoke`: all 14 genes carry a nonzero entry, at
+    both junctions.
+
+    This asserts the two that were zero, not all fourteen — the other twelve were never
+    the defect, and pinning "all 14 are nonzero" would go red for a reason that has
+    nothing to do with §15 if some unrelated gene ever legitimately drops out.
+    """
+    for label in ("hub", "rim"):
+        ids = WW.fillet_arc_nodes(filleted, label)
+        out = WA.solve_and_grad(
+            genes, CFG, lambda prob: WA._qoi_region_pnorm(prob, ids, filleted.n_spokes),
+            indentation_mm=INDENT_MM, mesh=filleted)
+        for name in ("R_hub", "R_rim"):
+            entry = out["grad"][wg.GENE_NAMES.index(name)]
+            assert entry != 0.0, (
+                f"{label}: d(fillet stress)/d({name}) came back exactly 0.0 — that is "
+                "§15 DEFECT 1's dead gene, which this term exists to wake")

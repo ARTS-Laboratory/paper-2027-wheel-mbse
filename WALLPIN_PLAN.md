@@ -102,3 +102,23 @@ pin whose justification was retired is not.
   is adopted the gate stays 0.14 and simply gains margin.
 - **`max/min` is not reinstated.** See §31; both test files carry a DO NOT REINTRODUCE block.
 - **No test deleted.**
+
+---
+
+## PREMISE CHECKED AGAINST THE FILLET SWITCH — 2026-09-03. **INTACT, AND THE JUDGEMENT GAINS A SECOND DIMENSION.**
+
+PLAN.md §106.  Verified mechanically: `set_min_wall(2.0)` still wraps both named tests
+(`tests/test_wheel_fea.py:370`, `:407`) and is restored in a `finally`; `MIN_WALL_MM = 1.2`
+(`src/wheel_fea.py:236`); and the measurement path is untouched by §103 — `run_beam_
+blindness`'s FEA side is `_blindness_row`, which calls `WW.build_wheel(v, cfg)` with **no
+`fillet=` argument** (`studies/study_wheel_fea.py:465`), the unfilleted default.  §31's CV
+floors and the 66/66 `correction_factor_is_defensible` result still reproduce from their
+driver.  **Nothing in this arc's evidence moved.**
+
+**WHAT MOVED IS THE SUBJECT.**  Gate 1's conclusion is *"no single beam-to-wheel correction
+factor exists over the design space the optimizer searches"*, and since §103 the optimizer's
+wheel is the FILLETED one, which §91 measured as disagreeing with the unfilleted mesh by
+**47.85% of axle drop**.  Step 1 asks *which gene box* Gate 1 is a statement about; there is
+now a second question of exactly the same kind — **which MESH** — and it was not on this
+file's list.  It does not weaken Gate 1 (a correction factor is less likely to hold across
+two meshes than one), and it costs nothing to write both arguments down in one sitting.

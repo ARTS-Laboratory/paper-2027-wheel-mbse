@@ -1,9 +1,8 @@
 """REDS Step 3 — the hub compliance share, and PLAN §14 item 4b's unmeasured hypothesis.
 
-`tests/test_wheel_fea.py::test_the_rim_band_holds_a_large_minority_of_the_compliance`
-asserts `compliance_split["hub"] < 0.03`.  It has been red since §14, which recorded 0.0321
-and called it 7% over.  It is now 0.0417 at the same rung.  §14 left it open deliberately,
-and said exactly why:
+`tests/test_wheel_fea.py::test_the_hub_junction_holds_a_small_minority_of_the_compliance`
+is the gate this driver feeds.  It has been red since §14, which recorded 0.0321 and called
+it 7% over.  §14 left it open deliberately, and said exactly why:
 
     "This is the one where the *direction* is surprising: thinner, floppier spokes should
     push compliance toward the spokes and the hub share DOWN.  It went up.  The plausible
@@ -27,12 +26,27 @@ This driver measures it.  Two experiments, which answer two different questions:
             on a non-converged quantity is PLAN §29's problem again.  Separating the two
             is what tells you whether `< 0.03` is measuring the wheel or the mesh.
 
+            WITH `--fillet` IT RUNS THE SAME LADDER ON THE MESH THE OBJECTIVE ACTUALLY
+            SOLVES, which it could not do until 2026-09-04 -- see `rungs`.  That arm is
+            filed under its own key, because the plain ladder is the control the filleted
+            one is read against.
+
+**THE GATE IS GREEN AS OF §109 (2026-09-04), AND THE BOUND IT ASSERTS IS NO LONGER 0.03.**
+The test reads the FILLETED mesh now -- the one `wheel_objective` actually solves -- against
+`< 0.0117`, and this driver's `rungs_filleted_linear` arm is the evidence for both halves of
+that call.  The test's NAME moved twice on the way: the assertion lived in
+`..._rim_band_holds_a_large_minority_...` until §31, then in
+`..._holds_under_three_percent_of_the_compliance` until §109 renamed it, because the three
+percent had stopped being true.  See PLAN.md §109 for where 0.0117 comes from, and for why
+0.03 could not simply be carried across a mesh change.
+
 THIS DRIVER DECIDES NOTHING.  §14 said the threshold call is a human's and REDS_PLAN.md
 Step 3.3 does not overrule it; the output goes into PLAN.md and then to the user.
 
 Run:
     studies/redsrun.sh studies/study_reds_hub_share.py --sweep
     studies/redsrun.sh studies/study_reds_hub_share.py --rungs
+    studies/redsrun.sh studies/study_reds_hub_share.py --rungs --fillet
 """
 
 import argparse
@@ -176,16 +190,36 @@ def _config(name):
     return WW.WheelConfig(*ULTRA, n_curve=9600)
 
 
-def rungs(configs):
-    """Design x mesh, so discretisation drift and design change can be told apart."""
+def rungs(configs, fillet=None, kinematics="linear"):
+    """Design x mesh, so discretisation drift and design change can be told apart.
+
+    `fillet` REACHES THE LADDER, AND UNTIL 2026-09-04 IT DID NOT (PLAN §106).  The ladder is
+    where this arc's gate lives -- `hub < 0.03` is a claim about a converged quantity, and
+    the rungs are what say whether it is converged -- yet every rung ever measured here took
+    `build_wheel`'s unfilleted default, because this function did not forward the argument
+    `shares` above has taken since §75.  `make reds-hub-fillet` did not cover the gap: it
+    runs `--sweep`, not `--rungs`.  So §106 had to measure the filleted ladder by calling
+    `shares()` directly, and its conclusion -- that the shipped wheel clears the bound by 72%
+    on the mesh the objective solves -- rested on a column that existed only in prose.  This
+    argument is what puts that column on disk and makes the finding re-runnable.
+
+    `kinematics` is forwarded for the same reason, and defaults to `linear` HERE rather than
+    following the CLI's filleted-implies-SVK rule.  The ladder's entire content is plain read
+    against filleted, rung for rung; a filleted ladder solved with a different kernel from
+    the plain one it is compared to would differ by two changes instead of one, and the 4.32x
+    level reduction could not be attributed to the mesh.  The caller states the kernel and
+    the report records it, which is the same discipline `sweep` follows.
+    """
     out = {}
     for name in GENOMES:
         genes = load(name)
-        out[name] = {"R_hub": float(genes[R_HUB_GENE]), "rungs": {}}
+        out[name] = {"R_hub": float(genes[R_HUB_GENE]),
+                     "fillet": bool(fillet), "kinematics": kinematics, "rungs": {}}
         for cfg in configs:
             t0 = time.time()
-            out[name]["rungs"][cfg] = dict(shares(genes, _config(cfg)),
-                                           elapsed_s=round(time.time() - t0, 1))
+            out[name]["rungs"][cfg] = dict(
+                shares(genes, _config(cfg), fillet=fillet, kinematics=kinematics),
+                elapsed_s=round(time.time() - t0, 1))
     return out
 
 
@@ -291,8 +325,13 @@ def _print_sweep(rep):
 
 
 def _print_rungs(rep):
-    print("\n=== hub compliance share, design x mesh ===")
-    cfgs = list(next(iter(rep.values()))["rungs"])
+    first = next(iter(rep.values()))
+    # THE MESH AND THE KERNEL GO IN THE HEADER, because this table is now printed for two
+    # meshes and the only difference between the two prints is the numbers.
+    mesh = "FILLETED" if first.get("fillet") else "unfilleted"
+    print(f"\n=== hub compliance share, design x mesh   mesh={mesh} "
+          f"kinematics={first.get('kinematics', 'linear')} ===")
+    cfgs = list(first["rungs"])
     print(f"  {'genome':10s} {'R_hub':>7s}  " + "  ".join(f"{c:>8s}" for c in cfgs)
           + "   drift smoke->finest")
     for name, d in rep.items():
@@ -344,8 +383,24 @@ def main(argv=None):
                          fillet=True if args.fillet else None, kinematics=kin)
         _print_sweep(rep[key])
     if args.rungs:
-        rep["rungs"] = rungs(args.configs.split(","))
-        _print_rungs(rep["rungs"])
+        # ONE KEY PER ARM HERE TOO, and for the sweep's reason: the plain ladder is what
+        # LICENSES the filleted one -- §106 accepted the filleted column only because the
+        # plain column reproduced this artifact's committed `rungs` block, and §109 re-ran
+        # that check and got all forty values BIT-IDENTICAL (§106 claimed 3.3e-7, which was
+        # a bound rather than a measurement) -- so a filleted run must not land on top of
+        # the control it is checked against.
+        #
+        # `--fillet` implies SVK for the sweep and NOT for the ladder.  The sweep is
+        # FILLET_PLAN Step 3's acceptance test and its kernel is that plan's call; the
+        # ladder is a mesh-against-mesh comparison and has to hold every other variable
+        # still, so it takes `linear` unless a kernel is asked for by name.  Each arm prints
+        # and records its own, so the two never have to be told apart by memory.
+        rkin = args.kinematics or "linear"
+        rkey = ("rungs" if not args.fillet and rkin == "linear" else
+                f"rungs_{'filleted' if args.fillet else 'unfilleted'}_{rkin}")
+        rep[rkey] = rungs(args.configs.split(","),
+                          fillet=True if args.fillet else None, kinematics=rkin)
+        _print_rungs(rep[rkey])
     if args.attribute:
         rep["attribute"] = attribute(args.config)
         _print_attribute(rep["attribute"])

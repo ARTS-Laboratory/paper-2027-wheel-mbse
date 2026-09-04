@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletwiring triblock reds reds-ratio reds-hub studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -45,6 +45,20 @@ help:
 	@echo "make smoke    fast GA run (seconds) — proves the pipeline is wired up"
 	@echo "make ga       full GA run (minutes), then hands off to the exporter"
 	@echo "make export   rebuild wheel.step from the existing best_solution.json"
+	@echo "make mbse     MBSE_PLAN Step 7: a mission and a 100-point allocation in,"
+	@echo "              a requirement set, a compliance table and (with --descend)"
+	@echo "              a re-optimised genome out.  Seconds without --descend."
+	@echo "              Override MBSE_ARGS, e.g. MBSE_ARGS='--ambient-c 40'"
+	@echo "make mbsebase MBSE_PLAN Step 0: the derivations run BACKWARDS — what"
+	@echo "              all-up weight, sink rate, ambient and service life the four"
+	@echo "              shipped constants imply.  Solves nothing, ~1 s"
+	@echo "make mbsecal  MBSE_PLAN Step 4: what portfolio DEFAULT_WEIGHTS is already"
+	@echo "              running, in points, with the loss-share reading refuted and"
+	@echo "              the promotion chain as a hold-out.  Solves nothing, ~1 s"
+	@echo "make mbsescore MBSE_PLAN Step 5: the shipped wheel against five named"
+	@echo "              requirement profiles, with a compliance table each.  Gates"
+	@echo "              that req=baseline() is bit-identical to naming nothing AND"
+	@echo "              that at least one profile comes back NON-COMPLIANT"
 	@echo "make studies  the verification gates: spoke-mesh validity (M2a),"
 	@echo "              full-wheel mesh (M2b), beam agreement (M3), full-wheel"
 	@echo "              FEA (M4), geometric nonlinearity (M5), real contact"
@@ -155,6 +169,16 @@ help:
 	@echo "              measures what an indicator region weight costs at a"
 	@echo "              gene value where a Gauss point crosses the boundary."
 	@echo "              ~4 min, eight solves. exits 0"
+	@echo "make filletpnormbox the same (r, p) sweep across §82's 32 held-out"
+	@echo "              genomes, not just the two named ones — is 16 a constant"
+	@echo "              of the objective or a property of two designs. ~13 min,"
+	@echo "              84 solves. exits 0"
+	@echo "make filletconda Condition A — the convergence ladder at \`b029622\`,"
+	@echo "              SVK, eight phases, coarse/medium/fine, both meshes: does"
+	@echo "              the filleted mesh stay the converged one and does the"
+	@echo "              admissibility disagreement (1.0112 / 0.7954) survive"
+	@echo "              refinement. slow — hours, dominated by the filleted"
+	@echo "              mesh's own JIT trace at each rung. exits 0"
 	@echo "make filletwiring the last two things in front of the switch — §94's"
 	@echo "              items 3 and 4. the \`P_c\` exclusion argued rather than"
 	@echo "              assumed (its stated reason names a feature the mesh has"
@@ -171,6 +195,15 @@ help:
 	@echo "              the box drawn out to 64 genomes, and a draw CONDITIONED on"
 	@echo "              arc span — 22 of 40 in the band refuse, against 1 of 64"
 	@echo "              uniform. ~670 s"
+	@echo "make trirule  the tri-block's fold rule, CALIBRATED — a fit-freeze-"
+	@echo "              score-swap hold-out protocol on section 73's own"
+	@echo "              subject, curved-Y refusal on the arc-span band. no"
+	@echo "              threshold published in-sample; a held-out score,"
+	@echo "              including an embarrassing one, is a finding. ~15 min"
+	@echo "make tribend  a bend that is a FUNCTION of the genome, fit against"
+	@echo "              a constant under the same discipline, at w held"
+	@echo "              fixed to the tri-block's own cell. whether genome-"
+	@echo "              dependence helps at all is reported either way. ~1 min"
 	@echo "make reds-hub-fillet  FILLET_PLAN Step 3's ACCEPTANCE TEST, and the one"
 	@echo "              the whole fillet arc was aimed at: the R_hub sweep on a"
 	@echo "              FILLETED mesh under SVK. It stops being bit-identical —"
@@ -178,6 +211,10 @@ help:
 	@echo "              §14's hub-share direction survives, and the Kt term the"
 	@echo "              objective prices R_hub through goes EXACTLY flat above"
 	@echo "              its cap while the wheel keeps stiffening. ~80 s (§75)"
+	@echo "make reds-hub-fillet-rungs  the hub-share LADDER on the filleted mesh —"
+	@echo "              the gate's own quantity, which no target could produce"
+	@echo "              until §109. five rungs x two genomes, linear so the only"
+	@echo "              difference from reds-hub's ladder is the mesh. ~35 s"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -217,7 +254,14 @@ elites:
 	$(PY_OPT) src/wheel_fea.py --dump-population
 
 # Stage 3 proper: projected Adam on the FEA objective.  Serial, so the cost is
-# roughly (steps x phases x 0.7 s) at `coarse` — see study_stage3.py's S10.
+# roughly (steps x phases x 18.9 s) at `coarse` — see study_stage3.py's S10.
+#
+# 18.9 s IS MEASURED ON THE FILLETED MESH (2026-09-03, S10 re-run after PLAN.md §103's
+# switch): 151.42 s for a full 8-phase evaluation, 50.47 h projected for 300 steps x 4
+# starts, 43.4 GiB peak RSS in one process.  The `0.7 s` this line carried from 2026-07-27
+# never matched ANY S10 reading — the oldest on record is 18.05 s (2026-07-29) — so it
+# priced the run 27x under from the day it was written.  Note `--steps` defaults to 60,
+# not the 300 the S10 projection is quoted at.
 stage3:
 	$(PY_OPT) src/wheel_stage3.py
 
@@ -1036,6 +1080,79 @@ filletpnorm:
 	$(PY_OPT) -u studies/study_fillet_pnorm.py --out $(FILLETPNORM_OUT)
 
 # ---------------------------------------------------------------------------
+# (r, p) ACROSS §82's THIRTY-TWO HELD-OUT GENOMES  (PLAN.md §95/§99's successor 1)
+# ---------------------------------------------------------------------------
+# ~13 min, 84 solves (28 genomes x coarse/medium/fine — `smoke` dropped, it is
+# excluded from every Richardson anyway).  §95 found r=0.45mm, p=16 the cross-cell
+# answer at the shipped genome and at `b029622`, and said itself that two genomes
+# is not a design space.  This reuses `study_fillet_pnorm`'s `build`/`verdict`
+# UNCHANGED over the wider `genomes` list `studies/study_fillet_block.json`'s own
+# held-out draw supplies, so the same function that answered "16, at two designs"
+# now answers whether 16 survives the box.  26 of 32 held-out genomes build their
+# own filleted sector at their own radii; the other 6 are excluded for §82's own
+# stated reason, not this driver's.
+#
+# SCOPE: the same as `filletpnorm` — LINEAR, ONE PHASE.  Nothing here touches
+# `wheel_objective`.
+#
+# EXITS 0 ALWAYS, for `filletpnorm`'s reason: whether 16 is a constant of the
+# objective or a property of two designs is a measurement, not a threshold.
+FILLETPNORMBOX_OUT ?= study_fillet_pnorm_box.json
+
+filletpnormbox:
+	$(PY_OPT) -u studies/study_fillet_pnorm_box.py --out $(FILLETPNORMBOX_OUT)
+
+# ---------------------------------------------------------------------------
+# CONDITION A — THE CONVERGENCE LADDER AT `b029622`, SVK, EIGHT PHASES
+# (PLAN.md §93's sequence step 1 / §99's ranked successor 2)
+# ---------------------------------------------------------------------------
+# SLOW, AND ONE PROCESS PER CELL.  The whole-ladder, one-process form of this driver was
+# killed three times short of `fine`, the last time ~1h25m in with a background-process
+# memory cap reported as the cause — JAX does not release compiled executables between
+# cells, so a long-lived process's baseline climbs across the ladder even though no
+# single cell needs that much.  Six single-cell processes, each returning its memory to
+# the OS on exit, is the one configuration this repo has observed to survive; `--finalise`
+# then runs the analysis over the six merged cells and writes the verdict.  No cell needs
+# `--workers`-style parallelism of its own, so this is six short recipe lines, not a loop.
+#
+# COST, MEASURED — RUN 2026-09-02, one cell per process:
+#
+#   cell                elem    wall       peak RSS
+#   coarse  unfilleted   4704    503 s        9.1 GB
+#   coarse  filleted     5952   1417 s       41.6 GB
+#   medium  unfilleted  12288   1049 s       10.6 GB
+#   medium  filleted    15552   2891 s       43.7 GB
+#   fine    unfilleted  31200   2689 s       11.2 GB
+#   fine    filleted    37632   3619 s       41.9 GB
+#
+# ~3h23m serial total.  The filleted arm's memory is dominated by a large, largely
+# size-independent JIT-compile cost (41.6 GB at `coarse`, 41.9 GB at `fine` — 6.3x the
+# elements for +0.7%), not a per-element one; the unfilleted arm stays under 12 GB
+# throughout.  Both fit the 61 GB box with room to spare once run one cell at a time.
+#
+# §93's own check: does the filleted mesh's axle-drop spread stay materially smaller than
+# the unfilleted mesh's (FILLET_PLAN STEP 1 PART 12's ordering, reproduced at this design
+# and kernel), AND does the admissibility disagreement §94 measured at `coarse` alone
+# (1.0112 unfilleted / 0.7954 filleted) survive refinement to `fine`.  If not, §93 says
+# what happens: "this decision is reopened and nothing below happens."
+#
+# SCOPE: SVK, eight phases only — Condition A is not stated under linear.  Nothing here
+# touches `wheel_objective`.
+#
+# EXITS 0 ALWAYS: Condition A failing is a live, meaningful outcome this arc already
+# named, not a bug to signal nonzero about.
+FILLETCONDA_OUT ?= study_fillet_condition_a.json
+
+filletconda:
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung coarse --mesh unfilleted --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung coarse --mesh filleted   --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung medium --mesh unfilleted --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung medium --mesh filleted   --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung fine   --mesh unfilleted --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --rung fine   --mesh filleted   --out $(FILLETCONDA_OUT)
+	$(PY_OPT) -u studies/study_fillet_condition_a.py --finalise --out $(FILLETCONDA_OUT)
+
+# ---------------------------------------------------------------------------
 # THE LAST TWO THINGS IN FRONT OF THE SWITCH  (PLAN.md §94, items 3 and 4)
 # ---------------------------------------------------------------------------
 # ~3 s, AND IT SOLVES NOTHING.  Seven committed artifacts in, two arguments out.  The one
@@ -1080,7 +1197,7 @@ filletwiring:
 # ---------------------------------------------------------------------------
 # THE RIM TRI-BLOCK, BUILT (PLAN.md §37, §51 — UNCAP_PLAN Step 3)
 # ---------------------------------------------------------------------------
-# ~15 s, GEOMETRY AND JACOBIANS ONLY, and off the `studies` critical path like
+# ~670 s, GEOMETRY AND JACOBIANS ONLY, and off the `studies` critical path like
 # `filletblock`, `fillet` and `junction`.
 #
 # At the FAITHFUL rim -- `uncap` blend 0.0, what the exporter's `_embed` actually uses --
@@ -1125,6 +1242,34 @@ TRIBLOCK_OUT ?= study_tri_block.json
 
 triblock:
 	$(PY_OPT) -u studies/study_tri_block.py --out $(TRIBLOCK_OUT)
+
+# ---------------------------------------------------------------------------
+# THE TRI-BLOCK'S FOLD RULE, CALIBRATED (PLAN.md §73 successor 1)
+# ---------------------------------------------------------------------------
+# A fit-freeze-score-swap hold-out calibration of the conjunctive fold family
+# `arc > t_wide OR (arc > t_conj AND min_wedge < t_wedge)` against section 73's own
+# subject, curved-Y refusal (`curved_valid`) on `sweep_arc_span_band`'s draw -- four fresh
+# band streams, ~200 s each.  Nonzero exit only on a self-check (stream disjointness, a
+# band that missed its 40-genome target); a held-out accuracy, including an embarrassing
+# one, is a finding and exits zero.  ~15 min.
+TRIRULE_OUT ?= study_tri_rule.json
+
+trirule:
+	$(PY_OPT) -u studies/study_tri_rule.py --out $(TRIRULE_OUT)
+
+# ---------------------------------------------------------------------------
+# A BEND THAT IS A FUNCTION OF THE GENOME (PLAN.md §56 successor 2)
+# ---------------------------------------------------------------------------
+# Two one-parameter families -- a constant bend and bend = clip(k * bow_over_width, 0, 1)
+# -- fit and scored under the same fit-freeze-score-swap discipline as `trirule`, at `w`
+# held fixed to the tri-block's own published cell.  Answers whether genome-dependence
+# helps at all; a "no" is reported in `self_checks["linear_beats_constant_on_holdout"]`
+# rather than hidden.  Draws are the cheap uniform 16-genome box, not the band -- seconds,
+# not minutes, per stream.
+TRIBEND_OUT ?= study_tri_bend.json
+
+tribend:
+	$(PY_OPT) -u studies/study_tri_bend.py --out $(TRIBEND_OUT)
 
 # ---------------------------------------------------------------------------
 # THE REDS ARC (PLAN §31) — the two measurements that cleared the inherited reds
@@ -1193,4 +1338,66 @@ reds-hub-fillet:
 	studies/redsrun.sh studies/study_reds_hub_share.py --sweep --fillet \
 	    --config coarse --out $(notdir $(REDS_HUB_OUT))
 
+# THE LADDER ON THE MESH THE OBJECTIVE SOLVES — the gate's own quantity, which no target
+# could produce until 2026-09-04 (PLAN §106, §109).  `reds-hub` above runs `--rungs` on
+# `build_wheel`'s unfilleted default and `reds-hub-fillet` runs `--sweep`, so the filleted
+# ladder fell between them and §106 had to measure it by calling `shares()` by hand.
+#
+# LINEAR, NOT SVK, AND THAT IS DELIBERATE: `--fillet` implies SVK for the sweep because
+# FILLET_PLAN's cost section says so, but this ladder's entire content is the plain rungs
+# read against the filleted ones, and a kernel change on one side would confound the mesh
+# change with a kinematics change.  The driver defaults the ladder to `linear` for that
+# reason; it is named here anyway so the target states it rather than inheriting it.
+#
+# ~35 s, and it writes `rungs_filleted_linear` alongside `reds-hub`'s `rungs` rather than
+# over it — the plain ladder is the control that licenses the filleted column.
+reds-hub-fillet-rungs:
+	studies/redsrun.sh studies/study_reds_hub_share.py --rungs --fillet \
+	    --kinematics linear --configs smoke,coarse,medium,fine,ultra \
+	    --out $(notdir $(REDS_HUB_OUT))
+
 reds: reds-ratio reds-hub
+
+# ---------------------------------------------------------------------------
+# THE REQUIREMENTS LAYER (PLAN.md §97 — MBSE_PLAN Steps 0, 4, 5, 7)
+# ---------------------------------------------------------------------------
+# The arc that asks what the QUESTION was.  Three drivers and a front end, and only the
+# third of them solves anything.
+#
+# `mbsebase` and `mbsecal` read committed artifacts and do arithmetic, in the idiom
+# `filletkt` established.  They are seconds, they are off the `studies` critical path, and
+# they exit nonzero on their own checks — `mbsebase` on the derivation reproducing the
+# four shipped constants to 1e-12 and on the thermal curve being exactly 1.0 at 20 C,
+# `mbsecal` on the points map being an identity at its own calibration point and on total
+# exchange-rate pressure being invariant under any reallocation summing to 100.
+#
+# `mbsescore` is the only one that solves: seven evaluations with gradients at `coarse`
+# under SVK at 8 phases — the five profiles plus the bit-identity pair.  It gates BOTH directions of the
+# same criterion — the baseline profile compliant AND bit-identical to naming no
+# requirements at all, and at least one other profile NON-COMPLIANT naming a binding
+# requirement.  A verifier that cannot fail is not a verifier.
+#
+# `--kinematics svk` IS NOT OPTIONAL AND IS NOT A DEFAULT BEING RELIED ON.  `wheel_fem`'s
+# kernel default is `linear` (§32) and eleven study drivers never mention it; the shipped
+# genome was descended under SVK, and a loss from one strain measure is not comparable
+# with a loss from the other (§14).  The driver's own default is `svk` and its gate guard
+# refuses filing a `linear` run under the committed name.
+MBSEBASE_OUT  ?= study_mbse_baseline.json
+MBSECAL_OUT   ?= study_mbse_calibration.json
+MBSESCORE_OUT ?= study_mbse_score.json
+# No mission or priority flags: the front end's defaults ARE the shipped wheel's implied
+# mission, and `--points` omitted leaves `DEFAULT_WEIGHTS` untouched rather than
+# re-deriving the calibrated allocation and re-applying it a couple of ulp off.
+MBSE_ARGS     ?=
+
+mbsebase:
+	$(PY_OPT) -u studies/study_mbse_baseline.py --out $(MBSEBASE_OUT)
+
+mbsecal:
+	$(PY_OPT) -u studies/study_mbse_calibration.py --out $(MBSECAL_OUT)
+
+mbsescore:
+	$(PY_OPT) -u studies/study_mbse_score.py --out $(MBSESCORE_OUT)
+
+mbse:
+	$(PY_OPT) -u src/wheel_mbse.py $(MBSE_ARGS)

@@ -205,19 +205,32 @@ TRACK_KEYS = ("axle_drop_mean_mm", "mesh_mass_g", "min_scaled_jacobian",
 
 
 class _FilletedEvaluator(WS.Evaluator):
-    """`wheel_stage3.Evaluator` with `fillet=True` on the mesh build, and nothing else.
+    """`wheel_stage3.Evaluator` with the mesh build's `fillet=` PINNED, and nothing else.
 
-    This is `Evaluator.__call__` copied with ONE keyword added, rather than a hook added
-    to `wheel_stage3`, and that is the point: the scope gate
-    (`test_nothing_wires_the_fillet_into_the_objective`) parses `src/` for a `fillet=`
-    keyword reaching any call, and it must keep passing while this runs.  The decision to
-    wire the fillet in is taken in a record, not by a subclass in `studies/`.
+    This was `Evaluator.__call__` copied with ONE keyword added, rather than a hook added
+    to `wheel_stage3`, because the scope gate
+    (`test_nothing_wires_the_fillet_into_the_objective`) parsed `src/` for a `fillet=`
+    keyword reaching any call and had to keep passing while this ran.  **THAT GATE WAS
+    INVERTED AT §103**, which wired the fillet into the objective; the subclass stays
+    anyway, and now carries the CONTROL as well -- see `_UnfilletedEvaluator` and the
+    paragraph below.
+
+    `_FILLET` EXISTS BECAUSE THE CONTROL STOPPED BEING A CONTROL.  Until §103 the control
+    arm was the plain `wheel_stage3.Evaluator`, whose mesh build took `build_wheel`'s
+    `fillet=None` default.  §103 made `wheel_objective.phase_meshes` pass `fillet=True`,
+    so the plain evaluator began building the SAME mesh as this subclass and the A/B
+    silently compared a mesh with itself -- the driver still ran, still wrote an artifact,
+    and the artifact was two identical arms labelled `control` and `treatment`.  Both arms
+    now state their `fillet=` explicitly, so neither depends on a default that can move
+    under them again (PLAN.md §105).
 
     The pooled branch of the parent is dropped rather than reproduced: `descend` never
     gives an INJECTED evaluator a pool, so `self.pool` is always None here and a pooled
     path would be untestable dead code.  `mesh_s`/`solve_s`/`n_calls` are kept because
     `_record` reads all three off the evaluator it was handed.
     """
+
+    _FILLET = True
 
     def __call__(self, z, low, high, *, phases, warm=None, tiers=("t1", "t2", "t3")):
         genes = self.genes(z, low, high)
@@ -226,7 +239,7 @@ class _FilletedEvaluator(WS.Evaluator):
         meshes = None
         if "t2" in tiers or "t3" in tiers:
             meshes = [WW.build_wheel(genes, self.cfg, phase_deg=float(p),
-                                     orientation=self.orientation, fillet=True)
+                                     orientation=self.orientation, fillet=self._FILLET)
                       for p in phases]
         self.mesh_s += time.time() - t0
 
@@ -238,6 +251,18 @@ class _FilletedEvaluator(WS.Evaluator):
         self.solve_s += time.time() - t0
         self.n_calls += 1
         return val, grad, brk
+
+
+class _UnfilletedEvaluator(_FilletedEvaluator):
+    """The CONTROL arm, with `fillet=None` stated rather than inherited from a default.
+
+    Subclassing the treatment rather than `WS.Evaluator` is deliberate: the two arms must
+    differ in the `fillet=` keyword and in NOTHING else, and sharing one `__call__` is the
+    only way to keep that true as `wheel_stage3.Evaluator` changes.  See the sibling's
+    docstring for why this class had to exist at all.
+    """
+
+    _FILLET = None
 
 
 def load_genes(path):
@@ -262,7 +287,7 @@ def arm(z0, cfg, *, filleted, steps, n_phase, kinematics, scheme, seed):
     wcfg = WW.get_config(cfg)
     orientation = tuple(float(o) for o in WW.flank_orientation(
         wg.denormalize(z0, low, high), wcfg, span_mm=W.S))
-    cls = _FilletedEvaluator if filleted else WS.Evaluator
+    cls = _FilletedEvaluator if filleted else _UnfilletedEvaluator
     ev = cls(cfg, orientation=orientation, kinematics=kinematics)
     return WS.descend(z0, cfg, steps=steps, n_phase=n_phase, scheme=scheme, seed=seed,
                       evaluator=ev, orientation=orientation, out=None, verbose=True,

@@ -22,10 +22,13 @@ than on any one number:
   4. THE PARTITION COVERS ITS OWN REGION.  Three quads whose areas sum to the quad's is
      the cheap check that they tile the triangle rather than overlap it.
 
-EVERY TEST HERE RE-MEASURES, for PART 7's reason: a committed artifact whose driver takes
-a bare default rots silently, and every test that reads it reads the same stale file.  Two
-read `study_tri_block.json` at all — the freshness guard, which exists to catch exactly
-that, and the self-check pin.
+MOST TESTS HERE RE-MEASURE, for PART 7's reason: a committed artifact whose driver takes
+a bare default rots silently, and every test that reads it reads the same stale file.
+ELEVEN read `study_tri_block.json` — the freshness guard and the self-check pin among
+them, plus the curved-Y, refusal-search, arc-span-band and gene-box sections added since
+PART 4, each too expensive to re-measure inline and each pinned instead by asserting the
+STRUCTURE of what it reports (that a refusal survives, that a class exists, that a
+quantity is not adopted) rather than by trusting the committed numbers blind.
 
 AND ONE TEST IS ABOUT THE SCOPE RATHER THAN THE CONSTRUCTION.  The faithful rim is not
 opt-in: adopting it would move the mesh under every genome.  So the gene-box column is
