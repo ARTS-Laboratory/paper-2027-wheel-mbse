@@ -117,8 +117,24 @@ PLAN.md §106.  Geometry only, no solve — rim-OD nodes at `RIM_OUTER_RADIUS_MM
 **THE MECHANISM, IN ONE LINE THIS FILE DID NOT HAVE:** the two bands get the SAME element
 count, so the step ratio IS the arc-length ratio of the bands.  That is why the ratio is
 invariant up the ladder and a function of the design — both reproduce here, on both meshes.
-The fillet widens the weld band 4.384x (0.8180 mm -> 3.5860 mm of arc at the OD, a
-difference of 2.77 mm against an applied `R_rim` of 3.0), so the ratio falls by that factor.
+The fillet widens the weld band 4.384x, so the ratio falls by that factor.
+
+> **CORRECTED — "by that factor" is wrong, and the table above disproves it.**  The two
+> bands SUM TO 30.0000°, so widening the weld band 4.384x necessarily NARROWS the free band
+> to 0.7744x of itself (28.1254° -> 21.7814°).  The step ratio is free/weld, so the two
+> factors compound: it falls by 4.384 / 0.7744 = **5.661x**, which is exactly the 15.003 ->
+> 2.650 the table prints (15.0034 / 2.6503 = 5.6611).  The mechanism sentence above it is
+> right and is what makes this checkable — because the ratio IS the arc-length ratio, a
+> factor applied to only one of two complementary bands cannot carry through unchanged.
+
+> **CORRECTED — the millimetre figures on this line were half.**  It read *"0.8180 mm ->
+> 3.5860 mm of arc at the OD, a difference of 2.77 mm against an applied `R_rim` of 3.0"*.
+> Those are the R = 25.0 conversion; at the `RIM_OUTER_RADIUS_MM` = 50.0 named three lines
+> above, 1.8746° and 8.2186° are **1.6359 mm -> 7.1721 mm**, a difference of **5.5362 mm —
+> 1.85x the applied radius**, not two thirds of it.  Nothing in the table or the headline
+> moves: the bands' angles sum to exactly 30.0000° on both meshes and every ratio here
+> (15.003, 2.650, 4.384x) is an angle ratio that never passed through millimetres.  See
+> PLAN.md §108.
 
 **Step 1 is therefore already done, by accident.**  It asks to *"grade the rim OD division
 so the weld and free arcs meet at comparable element size"*.  2.650x is not 1.0, but Step 0's

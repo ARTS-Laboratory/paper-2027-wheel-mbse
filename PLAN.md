@@ -15732,3 +15732,284 @@ was never checked against the job it priced.  Its own successor 5 was then writt
 reading of the defect rather than a reading of the code, and it was wrong about the size of
 the fix AND about how many defects there were.  A ranked successor is a hypothesis, not a
 finding, and the grep that tests it is cheaper than the section that repeats it.
+
+---
+
+## §108 — 2026-09-04. §106's SUCCESSOR 2, CLOSED: THE FILLETED MESH'S REFUSAL HAS A NAME NOW AND THE DESCENT CATCHES IT — AND THE TWO GUARDS §106 OFFERED WERE NEVER BOTH AVAILABLE
+
+§106 ranked this second and wrote it as a choice: *"Either `T1_REJECT`'s screen learns the
+filleted mesh's refusals or `descend` catches the blocking error the way it already catches a
+diverged solve."* Only one of those two exists, and finding out cost one reading of
+`t1_barrier_sum`.
+
+### THE SCREEN CANNOT BE THE GUARD, AND §106's OWN NUMBER SAYS SO ONCE IT IS DIVIDED
+
+`t1_barrier_sum` **never builds a mesh** — that is its whole value (§106 measured it at 0.0054 s
+at `coarse`, 0.003% of an evaluation). A screen that has not built the mesh cannot know the
+mesh refuses. The only version of "the screen learns the refusals" that could work is lowering
+`T1_REJECT` until it excludes the refusing genome, and §106's own census forbids that: the 117
+clamped iterates the descent actually took sit at **84.7 to 570.7**, all of them build, and
+`stage2_elites#11` refuses at **301.3658** — inside that range, not below it. A threshold cannot
+separate two sets that interleave.
+
+**AND THE GAP IS SMALLER THAN §106 SAID.** §106 wrote that 301.4 is *"three orders of magnitude
+below the screen"*. Re-measured on this tree at `coarse`:
+
+```
+  stage2_elites#11   t1 barrier sum  301.3658     T1_REJECT = 10000     ratio 33.2x
+  unfilleted build   21012 nodes, 4704 elements   (§106's figures reproduce exactly)
+  filleted build     MeshRefusedError: "no filleted blocking exists at the rim: the
+                     fillet's tangent point has passed the next sector's corner
+                     (-2.685 deg of free ring left)"
+```
+
+33.2x is **1.5 orders of magnitude**, not three. The conclusion is untouched — the screen is
+nowhere near firing — but the number was wrong in the file that exists so numbers do not have
+to be re-derived, which is the reason to correct it rather than let it be cited.
+
+Its NEIGHBOURING range claim survives the same division and is left alone: the 17 clamped
+genomes at 43.77 to 712.2 are 14.0x to 228.5x, or 1.15 to 2.36 orders, and *"one to three
+orders below"* is a true bracket around that. Loose is not wrong, and a sweep that flags it
+as an error is a sweep that has stopped distinguishing the two.
+
+### AND SINCE ONE ARITHMETIC SLIP WAS FOUND, §106 WAS SWEPT FOR THE REST
+
+Every ratio, percentage and sum §106 states that can be re-derived from the numbers printed
+beside it was re-divided. **All of them reproduce** — HUBSHARE's 23.5% over and 71.8% under
+against the 0.03 bound; RIMCAP's 88.6% cut on `stage2_elites#7`, the 2.3% / 237% split over
+`stage3_prod_elite10`'s first fifteen steps, the 87.0% and 55.2% endpoints, 1195/2598 = 46%,
+and 44+43+24+4+2 = 117 — except for **one more, in MESHSTEP, and it is a factor of two**:
+
+```
+  §106 printed   the weld band 0.8180 -> 3.5860 mm of arc "at the OD",
+                 RIM_OUTER_RADIUS_MM = 50.0, difference 2.77 mm against R_rim 3.0
+  re-derived     1.8746 deg and 8.2186 deg at R = 50.0 are 1.6359 -> 7.1721 mm,
+                 difference 5.5362 mm -- 1.85x the applied radius
+  the tell       0.8180 / 1.6359 = 0.50000 exactly; the printed pair is the R = 25.0
+                 conversion, i.e. the OD radius halved
+```
+
+**The MESHSTEP headline is untouched, because it never went through millimetres.** The two
+bands' ANGLES sum to exactly 30.0000 deg on both meshes, the step ratio IS the band-angle ratio
+(28.1254/1.8746 = 15.003, 21.7814/8.2186 = 2.650), and the widening 8.2186/1.8746 = 4.384x is
+likewise an angle ratio. Every number the falsification rests on is an angle. What was wrong is
+the one derived quantity stated in millimetres — and with it the clause *"a difference of
+2.77 mm against an applied `R_rim` of 3.0"*, which read as "the widening is about the fillet's
+own size" and is really **1.85 times it**.
+
+**AND ONE LINE BELOW IT, A THIRD ERROR THAT IS NOT A UNIT SLIP — CAUGHT BY THE OTHER SESSION,
+IN THIS ONE'S OWN FIX.** THIS section corrected the halved millimetres in `MESHSTEP_PLAN.md`
+and left standing the clause those millimetres serve; the concurrent session, holding §106's
+copy of the same line, read the clause and said so. It is
+*"the fillet widens the weld band 4.384x, so the ratio falls by that factor."* It does not.
+The two bands SUM TO 30.0000 deg, so widening the weld band 4.384x necessarily narrows the free
+band to 0.7744x of itself, and the step ratio is free/weld — the factors compound:
+
+```
+  weld band     1.8746 -> 8.2186 deg     widens  4.3842x
+  free band    28.1254 -> 21.7814 deg    narrows 0.7744x
+  step ratio    15.0034 -> 2.6503        FALLS   5.6611x  = 4.3842 / 0.7744
+```
+
+The table three lines above it prints 15.003 and 2.650, so the section carried its own
+disproof. This one is worth separating from the other two: they were ratios typed instead of
+divided, and this is a ratio *reasoned* wrongly — a factor applied to one of two complementary
+bands, carried through as if the other band were fixed. Re-deriving catches both, but only
+because the correct value was already on the page.
+
+### A BARE `except ValueError` WAS REFUSED, AND THE SCOPE IS THREE RAISE SITES
+
+The cheap fix is one word — `except (RuntimeError, ValueError)` in the trial loop — and it is
+wrong. `ValueError` is what the two modules on that path raise for everything else that can go
+wrong: a `WheelConfig` invariant violated (`wheel_wheel:225,227`), opposite Coons edges that
+disagree (`:629`), a corner mismatch (`:643`), an unknown `fillet_blocking` (`:2354`) — and, in
+`wheel_stage3` itself, `_apply_req`'s refusal to take `req=` and `weights=` together. Caught in
+a descent loop, every one of those becomes a silently rejected step — a 300-step run that
+quietly descends nothing, throwing away every trial for a reason no event records. So the
+refusal got a name:
+`wheel_wheel.MeshRefusedError`, a **subclass of `ValueError`** so that the `except ValueError`
+already wrapped around builds in `studies/study_hub_cap.py:654` and
+`studies/study_fillet_fold.py:202`, and the `pytest.raises(ValueError, match=...)` in
+`tests/test_filleted_mesh.py:823,862`, keep working untouched.
+
+Marked, all three where the condition is a function of the GENOME:
+
+```
+  src/wheel_wheel.py:1831  _filleted_sector_blocks   not c["built"]      THE FUNNEL
+  src/wheel_wheel.py:1846  _filleted_sector_blocks   not lo < hi         fillets cross
+  src/wheel_wheel.py:2058  per_genome_layer_profile  entry is None       no layer profile
+```
+
+`:1831` is one site and it carries far more than one failure: `_fillet_curves` already catches
+`_fillet_tangency`'s own `ValueError` (`:880`, *"the fillet is larger than the notch can hold"*)
+and the layer-width cliff, and returns `{"built": False, "why": ...}` rather than raising. Every
+curve-level refusal therefore arrives at this one `raise`. That is why the surface is three
+sites and not a dozen.
+
+Left a plain `ValueError` on purpose:
+
+```
+  :1773  _filleted_sector_blocks  R <= 0     unreachable from the box -- genes[12] in
+                                            [0.4, 4.0], genes[13] in [0.5, 3.0].  Only an
+                                            explicit fillet=(0.0, ...) tuple reaches it,
+                                            which is a caller error.
+  :335   ring_station             the spoke never reaches the ring    SHARED with the
+  :3056  _orient_elements         the mesh is folded                  unfilleted path
+```
+
+The two shared ones are the deliberate omission. They predate §103, `T1_REJECT` was calibrated
+against exactly that notion of un-meshable, and §106's census rebuilt **2598 iterates from 25
+committed runs with `fillet=True` and recorded 0 refusals of any kind** — so neither has ever
+fired on the search path. Marking them would change the unfilleted path's behaviour to fix
+something not measured to be broken.
+
+### THE SAME HOLE ELSEWHERE: THERE IS NONE, AND STAGE 2 EXPLAINS WHY THE GENOME EXISTS
+
+A `RuntimeError`-only guard occurred in **exactly one file in the whole tree** —
+`wheel_stage3.py`, at the three catch sites this section widened (`:370` the fidelity probe,
+`:602` the trial loop, `:906` L-BFGS-B's `fun`); `grep -rn "except RuntimeError" --include=*.py`
+returns those three lines and nothing else. Every other evaluation loop over many genomes
+already catches `Exception`:
+`study_stage3.run_multistart:1068` (the elite screen, whose own test asserts *"one bad genome
+must not cost the other fifteen"*), `study_objective.py:445,668,1022`, and
+`wheel_pool_worker.py:98`. Nothing else needed changing, and that is a measurement rather than
+an assumption.
+
+**AND THE ROOT CAUSE OF THE START POINT ITSELF.** `stage2_elites.json` can hand Stage 3 a
+genome that will not mesh because **Stage 2 never builds a mesh**: `wheel_fea.evaluate_design`
+scores through `generalized_spoke_mechanics`, a Castigliano force-method beam analysis, and
+`build_wheel` appears nowhere on that path. Meshability is not a constraint the GA optimises
+under, is not a term in its loss, and is not screened before its population is written out. So
+this is not a one-off bad elite — **every regeneration of `stage2_elites.json` can produce
+another one**, and the guard added here is the thing that makes that survivable rather than a
+fifty-hour run lost to whichever rank it lands on.
+
+### THE POOL WAS NOT THE ESCAPE HATCH IT LOOKS LIKE
+
+`wheel_pool._decode_error` collapses every unrecognised exception name to `RuntimeError`, and
+its docstring says why: *"a new exception type in the adjoint degrades to a rejected step rather
+than to an escaped exception."* Read alone that says pooled runs already survived this and only
+serial runs died — which would make the defect a property of the default path only, and would
+put a `MeshRefusedError` branch in `_decode_error` on the critical list.
+
+It says no such thing. `Evaluator.__call__` builds `wanted = phases[:1]` **in the parent even
+when pooled** (`src/wheel_stage3.py:435`), because T2 reads `meshes[0]`. That line predates
+§107 — §107 cites it as the one caller that already had the phase guard, and `4b77a6c` changed
+`wheel_objective` and tests, not this file. So the build that refuses is always the PARENT's,
+raised before any task is dispatched; the refusal reaches `descend` as itself on both paths,
+`wheel_pool` needed no change, and pooled and serial runs died identically.
+
+### STEP 0 IS NOT A TRIAL STEP, AND THAT IS WHERE IT ACTUALLY FIRED
+
+`descend` can reject a trial: halve the step, drop the warm vector, try again. It cannot reject
+its own **start point** — there is no previous iterate to fall back to and no step to shorten.
+`stage2_elites#11` refuses on its first objective evaluation, so `descend` can only raise, and
+the thing that has to survive it is the multi-start loop in `main`:
+
+* the loop catches `MeshRefusedError` per start, records `{label, error, message}`, prints
+  `REFUSED: <label> ...` with the count still to go, and continues;
+* the catch is **narrower than the trial loop's** — a `KeyboardInterrupt`, a `PoolDeadError` or
+  a bad requirement set still stops the run, because those are not facts about this start point;
+* every start refusing raises `SystemExit` naming each one, instead of `min()` over an empty
+  list saying `min() arg is an empty sequence` and naming neither the genome nor the file that
+  was not written;
+* a survivor is promoted as before, with a line saying how many starts were skipped — a silently
+  dropped start point is a run that descended fewer designs than it was asked for.
+
+Rejections are recorded under a **new event kind, `mesh_reject`**, not folded into
+`solve_reject`. The response is identical, the fact is not: S5 (`study_stage3.run_reject`)
+passes when `len(solve_rejects)` equals a known number of INJECTED SOLVER failures, so one kind
+for both would make that count mean two things at once — §84's error exactly. And note what the
+new kind buys beyond tidiness: **before this, a mesh refusal could not appear in a run record at
+all**, because it ended the run before the record was written. §106's census found 0 refusals in
+2598 iterates from 25 committed runs, and that is consistent with both "it never happened" and
+"it happened and took the run with it". From here the two are distinguishable.
+
+### WHAT THIS DOES NOT FIX
+
+* **The genome still refuses.** `--start all` now descends 15 of 16 elites instead of dying on
+  the 12th; it does not make `stage2_elites#11` a start point. Whether the filleted mesh should
+  accept it is FILLET_PLAN.md PART 10's question, untouched here.
+* **The clamp is untouched.** §106's successor 3 — reporting `fillet_clamped` and the applied
+  radii, so the 117 iterates where the built radius moves 237% while `R_rim` moves 2.3% stop
+  being invisible — is a different defect on the same mesh and stays open at its own rank.
+* **The two shared refusals still end a run**, by the argument above. If one ever fires, this is
+  the paragraph that says it was a decision.
+
+### THE TESTS
+
+`tests/test_stage3.py`, five, all green (13 selected passed in 777 s; the multi-start pair adds
+272 s):
+
+1. `test_a_refused_mesh_rejects_the_trial_and_not_the_run` — injected refusals halve the step
+   1.0, 0.5 and the run completes, exactly as an injected divergence does.
+2. `test_a_refused_mesh_is_not_counted_as_a_failed_solve` — the two kinds stay apart.
+3. `test_the_t1_screen_cannot_be_the_guard_for_a_refused_filleted_mesh` — `stage2_elites#11`
+   meshes unfilleted, raises `MeshRefusedError` filleted, and its t1 sum is below `T1_REJECT`.
+   Asserted as an INEQUALITY, not at 301.3658: the finding is that the screen cannot see this,
+   not any one number.
+4. `test_a_start_point_with_no_filleted_mesh_costs_one_start_and_not_the_run` — `main` over two
+   starts, one refusing; rc 0, the survivor promoted, the skip on the console.
+5. `test_a_run_whose_every_start_refuses_writes_nothing_and_says_which` — no promotion record
+   for a run that descended nothing.
+
+`_RefusingEvaluator` succeeds at step 0 and refuses afterwards, on purpose: a refusal at step 0
+is the OTHER half of the fix, and one evaluator doing both would make a green here mean either.
+
+### THE SUCCESSORS — §106's LIST WITH ITEM 2 STRUCK, NOTHING RE-RANKED
+
+§106's ranking stands and §107 confirmed its ordering against §105's. Item 2 is closed by this
+section. The rest are unchanged: **1** close HUBSHARE #3 on §106's evidence (a judgement);
+**3** make the rim clamp visible; **4** MESHSTEP's contact-patch re-check; **5** BOUNDARY's
+`fillet_cap` companion term; **6** re-run Stage 3 and re-promote, still #1 overall — and the
+pre-flight item that stood in front of it is now gone.
+
+**ADDED, AND DELIBERATELY NOT DONE HERE: `test_wheel_fea.py`'s xfail REASON IS STALE, AND
+REWRITING IT IS SUCCESSOR 1, NOT A TYPO FIX.** The reason string on
+`test_the_hub_junction_holds_under_three_percent_of_the_compliance` says the shipped genome
+*"holds 4.17% at coarse and 4.63% at the finest rung"*. `studies/study_reds_hub_share.json`
+holds neither:
+
+```
+  /rungs/shipped/rungs/coarse/hub   0.03418804073  =  3.4188%   (reason says 4.17%)
+  /rungs/shipped/rungs/ultra/hub    0.03705252498  =  3.7053%   (reason says 4.63%)
+  /sweep/rows[0..13]/hub            0.03418804073  -- one value across all 14 rows
+```
+
+THE VERDICT DOES NOT MOVE — 3.4188% and 3.7053% both breach the 0.03 bound, so the test stays
+red and `xfail_strict` still reopens it the day it passes. Only the quoted figures are wrong.
+What blocks a one-line fix is that the same artifact's `sweep_filleted_svk` puts the hub share
+at **0.008991 (0.90%)**, far UNDER the bound, against `sweep_unfilleted_svk`'s 0.029410 — which
+is HUBSHARE, §106's successor 1, and the reason §106's heading says the share clears a bound it
+has failed since §14. So the question is not what number to type, it is which mesh this test
+should read, and that is the judgement successor 1 exists to make. Editing the reason string
+first would answer it silently and in the wrong file.
+
+**TWO LESSONS, AND THE SECOND ONE IS FREE.**
+
+**A successor that names two options has not established that it has two.** §106 offered a
+choice of guards and ranked the item without checking that both existed. One did not, for a
+reason readable in the guard's own docstring — it never builds a mesh — and finding out cost
+one reading and one division. The ranking was still right; the reasoning under it was half
+imaginary.
+
+**A magnitude claim is not measured until it is divided.** §106 stated "three orders of
+magnitude" where the two numbers printed in the same sentence divide to 33.2, and stated a
+millimetre conversion at a radius that its own angles halve. Neither number came from a bad
+measurement — every ANGLE, every barrier sum, every count in that section reproduces exactly.
+Both came from writing a ratio in prose without re-deriving it from the values beside it. The
+sweep that found the second one took minutes and needed no compute at all: **the arithmetic in
+a record is checkable for free.**
+
+**AND THE SWEEP FOUND WHAT IT WAS SHAPED TO FIND, WHICH IS NOT THE SAME AS ALL OF IT.** This
+section originally closed by calling the arithmetic the only wrong part of §106. A concurrent
+session sweeping the same file on 2026-09-04 (`56239a1`) found a fourth §106 defect
+independently, and it is not a ratio: the `min_wall` table's *"1 each"* list omitted 1.8, so
+the cells summed to 24 under a sentence claiming 25 runs, and `stage3_minwall_1.8.json` is on
+disk with 126 steps.
+Re-dividing every ratio cannot find a value missing from an enumeration — there is no printed
+pair to divide — and the check that does find it is re-counting the set off disk instead of
+off the prose. Both of that session's corrections to the two errors THIS one found agree with
+it exactly, to 33.2x and to 1.6359 -> 7.1721 mm; the disagreement is only about coverage, and
+the scope of a sweep belongs in its claim.
+
