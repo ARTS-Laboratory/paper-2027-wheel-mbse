@@ -1392,3 +1392,40 @@ def test_every_objective_term_is_classified_by_the_svk_rescore_gate():
         f"study_svk_rescore classifies terms the objective no longer has: "
         f"{sorted(classified - terms)}")
     assert not set(S.BARRIER_NAMES) & set(S.HEADLINE_NAMES)
+
+
+@pytest.mark.parametrize("scheme", ["uniform", "rqmc"])
+def test_t2_reads_the_same_mesh_t3_solves(genes, scheme):
+    """`mass` and `min_sj` must come off the geometry the stress terms are solved on.
+
+    PLAN.md §106.  `objective` used to build T2's `mesh0` with a bare
+    `WW.build_wheel(genes, cfg)` whenever the caller passed no `meshes`, and that differed
+    from `phase_meshes` in TWO independent ways: the fillet (since §103, worth +9.78% of
+    mass) and the phase (`phase_deg=0.0` against an rqmc stencil's 0.46875 deg offset,
+    which predates the fillet entirely).  Neither turned anything red, because no test
+    compared the two paths against each other.
+
+    THE ASSERT IS THAT THE TWO PATHS AGREE, not that either equals a recorded constant.
+    A golden mass here would need re-blessing every time the mesh changes, and it would go
+    green again the moment both paths moved together in the wrong direction — which is the
+    failure being pinned.  `tiers=("t2",)` keeps this in mesh space, no solve and no
+    adjoint, so it costs milliseconds rather than the minutes a t3 comparison would.
+
+    BOTH SCHEMES, because they fail for different reasons: under `uniform` the phases
+    agree and only the fillet separates the two paths, while under `rqmc` the phase
+    separates them as well.  A `uniform`-only test would go green on a tree that had
+    fixed the fillet and left the phase bug in place.
+    """
+    ph = WO.phase_stencil(n_phase=4, scheme=scheme)
+    _, _, fallback = WO.objective(genes, CFG, phases=ph, tiers=("t2",))
+    _, _, explicit = WO.objective(genes, CFG, phases=ph, tiers=("t2",),
+                                  meshes=WO.phase_meshes(genes, CFG, ph[:1]))
+
+    assert fallback["report"]["mesh_mass_g"] == pytest.approx(
+        explicit["report"]["mesh_mass_g"], rel=1e-12), (
+        f"T2's mesh fallback disagrees with `phase_meshes` on mass under {scheme!r} — "
+        f"the tier is being read on a mesh the T3 terms do not solve")
+    assert fallback["report"]["min_scaled_jacobian"] == pytest.approx(
+        explicit["report"]["min_scaled_jacobian"], rel=1e-12), (
+        f"T2's mesh fallback disagrees with `phase_meshes` on min_scaled_jacobian "
+        f"under {scheme!r}")

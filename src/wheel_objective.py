@@ -1465,6 +1465,14 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     # 0.32 ms on a `tiers=("t3",)` call.
     flanks = fillet_flanks(genes, WW.get_config(cfg), span_mm)
 
+    # NORMALISED HERE AND NOT IN `t3_terms` ALONE, because T2's mesh fallback below needs
+    # the same stencil T3 will use.  `scheme="uniform"` is spelled out because
+    # `phase_stencil`'s own default is `rqmc` — defaulting it bare here would silently
+    # change which stencil every phases-less caller gets.  `t3_terms` makes the identical
+    # call, so it is unaffected whether it receives this or builds it itself.
+    if phases is None:
+        phases = phase_stencil(scheme="uniform")
+
     if "t1" in tiers:
         v1j, j1j = _t1_cached_value_and_jacobian(gj, cfg, weights, span_mm, flanks)
         v1, j1 = np.asarray(v1j), np.asarray(j1j)
@@ -1489,7 +1497,30 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
         report["buckling_ratio"] = float(ratio)
 
     if "t2" in tiers:
-        mesh0 = (meshes[0] if meshes else WW.build_wheel(genes, cfg))
+        # T2 READS THE MESH T3 SOLVES.  Building it from `phase_meshes` rather than
+        # falling through to `WW.build_wheel(genes, cfg)` closes two disagreements the
+        # bare default opened, and they are independent of each other:
+        #
+        #   THE FILLET.  Since §103 `phase_meshes` passes `fillet=True` and the bare
+        #   default does not, so `mass` and `min_sj` were read on a mesh 9.78% lighter
+        #   than the one the stress and deflection terms solve — 39.5478 g against
+        #   43.4133 g at `coarse` on the shipped genome, which is 10.6x
+        #   `wheel_requirements.REFERENCE_DEVIATION["mass"]`'s own 0.365 g band.  The
+        #   `min_sj` barrier is the sharper end: it read 0.7822 on the mesh it guarded
+        #   against 0.2877 on the mesh actually solved — both above `MIN_SJ_TARGET = 0.2`
+        #   at this genome, so no verdict moved, but the MBSE gate was reporting 291%
+        #   margin where the solved mesh has 44%, and a descent leaning on `mass` could
+        #   walk that mesh toward the floor with the barrier flat at zero.
+        #
+        #   THE PHASE.  `build_wheel`'s `phase_deg` defaults to 0.0, and under an rqmc
+        #   stencil `phases[0]` is the offset — 0.46875 deg at `n_phase=8` — so T2 read a
+        #   phase T3 never evaluated.  This half predates the fillet entirely.
+        #
+        # `wheel_stage3.Evaluator` already guards both, building `phases[:1]` in the
+        # parent even when pooled and passing it down; its comment names the phase half.
+        # This is that guard moved to where every caller gets it instead of one.
+        mesh0 = (meshes[0] if meshes
+                 else phase_meshes(genes, cfg, phases[:1], orientation=orientation)[0])
         v2, mass_g = t2_vector(gj, mesh0, weights)
         j2 = np.asarray(jax.jacrev(lambda v: t2_vector(v, mesh0, weights)[0])(gj))
         v2 = np.asarray(v2)
