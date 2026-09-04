@@ -96,3 +96,86 @@ A PLAN.md section with the grid, both boundaries, the fit, and the binding check
 - **Do not put the fillet model in `wheel_wheel`.** That module states no fillet model, by
   design; the hub's lives in `wheel_objective` and the rim's belongs beside it.
 - **Do not calibrate the cap on one genome.** That is the exact error §24 corrected.
+
+---
+
+## THE "CHECK FIRST" TRIGGER FIRED — 2026-09-03. **FILLET_PLAN LANDED AT §103, AND THIS ARC'S DELIVERABLE IS NARROWER AND ITS GAP IS LIVE.**
+
+PLAN.md §106.  This file's own tripwire — *"If `FILLET_PLAN.md` lands and the FEA meshes
+fillets directly, the reason for a closed-form cap model changes substantially ... Read
+`FILLET_PLAN.md`'s status before starting"* — became true on 2026-09-03 and nothing read it,
+because a parked arc is a file nobody opens.  Every clause of it now holds:
+`wheel_objective.phase_meshes` passes `fillet=True` unconditionally (`:1013`), `util_j` is the
+junction's own region p-norm with `Kt` absent, and §102 gave `R_rim` a nonzero gradient entry
+for the first time.
+
+**SO THE HALF THIS ARC WAS RANKED FOR IS GONE.**  Step 1 asks for `rim_fillet_cap_mm` in
+`wheel_objective`, differentiable, *"mirroring the hub"* — but §103 demoted `Kt`,
+`hub_fillet_cap_mm` and `hub_fillet_r_effective` to **reporting only** (`:1259`).  The rim
+does not need a stress surrogate; the solve prices it.
+
+**WHAT THE HUB CAP STILL DOES IS THE HALF NOBODY RESTATED, AND THERE ARE THREE LIMITS, NOT
+TWO.**  `_fillet_margins`'s own docstring says the first two are *"a SEPARATE mechanism ...
+neither subsumes the other"*; the third is in neither and, since §103, runs inside every
+objective evaluation:
+
+| limit | asks | reads | lives in |
+|---|---|---|---|
+| `fillet` barrier (3000) | does a circle of R fit the re-entrant **corner**? | `g[12]` & `g[13]` | `wheel_objective:836` |
+| `fillet_cap` (500) + selection tier | does it fit the **slot** between adjacent spokes? | **`g[12]` only** | `wheel_objective:861`, `wheel_stage3:223` |
+| `SECTOR_FIT_CLAMP` | does it fit its own **sector**? | both | `wheel_wheel:1527` — mesh, silent |
+
+**STEP 0, RUN: THE GAP BINDS.**  Enumerated over every genome kept on disk (16 GA elites, the
+`best` of all 25 `stage3_*.json` runs carrying one, and the two named genomes; 38 unique):
+**17 of 38 have the rim fillet clamped**, up to **88.6%** of the requested radius
+(`stage2_elites#7`: 2.7868 asked, 0.3184 built).  All 17 have t1 barrier sums of **43.77 to
+712.2** against `T1_REJECT` = **1.0e4**, so every one of them reaches a mesh build —
+`descend` rejects a trial only above that threshold, deliberately, because *"every barrier is
+ALREADY a term in the objective"*.  `best_solution_ga_beam.json` is cut 70.2% at a sum of
+453.8.  The shipped genome is unclamped, with corner margins [4.0271, 10.7491] mm.
+
+**AND IT BINDS ON THE PATH, NOT ONLY AT THE END POINTS.**  Those 38 are where runs stopped.
+Every Stage-3 iterate on disk was scored too — 25 committed `studies/stage3_*.json` runs,
+denormalised to physical genes, **2598 unique iterates**, each built at `coarse` with
+`fillet=True`:
+
+```
+  REACH a mesh build (t1 sum <= T1_REJECT=10000)    2598  (100.0%)
+  REFUSED the filleted build outright                  0
+  rim fillet CLAMPED                                 117        hub clamped  187
+
+  run                        clamped  iterates   idx range   max cut
+  stage3_minwall_2.2.json         44       126      #5-#56      18.0%
+  stage3_prod_elite10.json        43       300      #0-#42      87.0%
+  stage3_prod_elite9.json         24       150      #0-#23      82.3%
+  stage3_run_elite10.json          4         4      #1-#4       85.7%
+  stage3_run_elite9.json           2         2      #1-#2       81.6%
+```
+
+**Not one iterate of 2598 is screened out by `T1_REJECT`**, which retires the "unreachable
+geometry" defence: the screen never fires on the search path at all.  And the clamp hides the
+gene from its own optimiser — over `stage3_prod_elite10`'s first fifteen steps the gene moves
+**2.3%** (2.8283 -> 2.7625) while the radius actually built moves **237%** (0.3668 -> 1.2369),
+because the applied radius tracks the sector other genes are opening, not `g[13]`.  The barrier
+sum falls monotonically (570.7 -> 84.7) throughout, so the descent reads steady progress.
+§102 gave `R_rim` its first nonzero gradient entry; for the first 40-odd steps of the elite-10
+descents that entry is for a radius the mesh overwrites.
+
+*A note on method, because the mechanism generalises.*  The first pass filtered to strictly
+t1-feasible iterates (every barrier exactly 0), assuming the rest unreachable.  That filter
+keeps **1195 of 2598** — a plausible 46% — and **0 of the 117 clamps**: the two sets are
+disjoint, so it did not bias the count, it deleted the signal and returned a confident null.
+The screen the descent actually applies is `t1_barrier_sum > max(T1_REJECT, b_here)`.
+
+**THE NEXT STEP IS NOT THE CAP MODEL.**  The objective already reads `g[13]` for the CORNER;
+what is missing is the SECTOR limit, applied silently by the mesh.  Make the clamp VISIBLE
+first — report `fillet_clamped` and the applied radii the way `hub_fillet_cap_mm` is already
+reported — and decide whether it needs a barrier once a run can show how often it fires.
+
+**AND A STALE DOCSTRING, WITH ITS CONCLUSION INTACT.**  `_fillet_margins` states *"At the
+shipped genome the margins are `[+4.647, +0.125]`"* (`src/wheel_objective.py:640`).  Those are
+**`ga_beam`'s** margins, measured to four decimals here — the genome that was shipped when the
+line was written.  The current shipped genome reads `[4.0271, 10.7491]`, so the rim figure is
+off by 86x.  The docstring's ARGUMENT survives (it uses the margins only to show the barrier
+is flat there, and 4.0271 is comfortably feasible), but the numbers are one promotion out of
+date.

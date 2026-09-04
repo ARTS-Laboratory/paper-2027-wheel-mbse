@@ -196,3 +196,60 @@ one: the field of suspects narrowed by one and the symptom did not.
 **Step 0 is still not started, and this does not start it.** This measurement only refreshes
 the inputs Step 0 would use and re-checks the prohibition that gates the whole arc. The
 design question — whether a high hub share is actually bad — is untouched and still open.
+
+---
+
+## RE-MEASURED ON THE FILLETED MESH — 2026-09-03. **THE GATE IS CLEARED AND THE ARC'S OWN QUESTION IS ANSWERED.**
+
+PLAN.md §106.  This arc gates itself in three places on one event — *"check
+`FILLET_PLAN.md`'s status first"*, *"the unfilleted re-entrant corner is the prime
+suspect"*, *"if the fillet arc lands first this number may move on its own"*.  **The event
+happened at §103 and nothing read this file.**  No driver could have answered it either:
+`study_reds_hub_share.rungs()` takes no `fillet` argument, so every rung it has ever
+measured took `build_wheel`'s unfilleted default, and `make reds-hub-fillet` runs `--sweep`,
+not `--rungs`.  Measured by calling the module's own `shares()` directly, which is what
+`rungs()` calls:
+
+| genome | mesh | smoke | coarse | medium | fine | ultra | drift | vs 0.03 |
+|---|---|---|---|---|---|---|---|---|
+| shipped | plain | 0.032489 | 0.034188 | 0.035237 | 0.036483 | 0.037053 | +14.05% | **OVER by 23.5%** |
+| shipped | FILLETED | 0.008079 | 0.008308 | 0.008409 | 0.008442 | 0.008463 | +4.75% | **UNDER by 71.8%** |
+| ga_beam | plain | 0.013823 | 0.013722 | 0.013849 | 0.014043 | — | +1.60% | UNDER by 53.2% |
+| ga_beam | FILLETED | 0.005312 | 0.005381 | 0.005406 | 0.005417 | — | +1.98% | UNDER by 81.9% |
+
+**The plain column reproduces this arc's committed `rungs` block to 3.3e-7 at all five
+rungs**, returns its stated +14.05% drift, and returns its stated 23.5% deficit at `ultra` —
+three matches, so the filleted column is the same instrument on a different mesh.
+
+**CONVERGENCE IS SETTLED BY THE INCREMENTS, NOT THE DRIFT.**
+Plain: `+0.001699, +0.001049, +0.001246, +0.000570` — **not monotone**, rising at
+`medium`->`fine`, which is why this quantity could never be called converged.
+Filleted: `+0.000229, +0.000101, +0.000033, +0.000021` — **falling at every rung**.
+Richardson on the filleted tail at its slowest observed ratio (1.57) puts the limit at
+~0.00850, so `ultra` is converged to ~0.4%, and every rung from `smoke` up is already inside
+the bound by more than 70%.
+
+**So all three gating sentences resolve, and the prime suspect this file named was right:**
+the unfilleted re-entrant corner was not merely a cause of the drift, it was 76% of the
+LEVEL as well (0.036483 -> 0.008442 at `fine`, a 4.32x reduction).
+
+**AND THAT ANSWERS THE DESIGN QUESTION, NOT JUST THE GATE.**  Step 0 asks *"find out whether
+the term would buy anything"*.  On the mesh the objective now solves the shipped wheel holds
+0.008442 against a 0.03 bound — **72% of margin** — so there is no deficit left for a term
+to close.  This file already calls that the better outcome: *"If the answer is that the
+share is a diagnostic rather than a constraint, this arc closes by recording that ... which
+is a better outcome than adding a term."*
+
+**SCOPE, BECAUSE IT BOUNDS A COMPARISON.**  `ga_beam` asks `R_hub` 1.5598 / `R_rim` 3.0 and
+the mesh applies (0.667, 0.8952) with BOTH junctions clamped; the shipped genome is
+unclamped.  The shipped-to-ga_beam ratio on the filleted mesh — 1.56x — therefore compares a
+clamped build against an unclamped one and **is not a design comparison**.  The shipped
+column is clean and carries the finding.
+
+**WHAT IS LEFT IS A JUDGEMENT, AND IT IS THE ONE §31 RESERVED.**
+`tests/test_wheel_fea.py::test_the_hub_junction_holds_under_three_percent_of_the_compliance`
+is `xfail(strict=True)` and says *"this reopens itself the day the wheel passes it."*  The
+wheel passes it — on the mesh the objective solves — and the test does not reopen, because
+its `mesh` fixture is `ww.build_wheel(genes, CFG)`, the bare default.  It is still red,
+still green as an xfail, and now records a deficit **of the instrument rather than of the
+design**.  Deciding what it should assert closes this arc.

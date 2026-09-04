@@ -105,3 +105,36 @@ is fixed, and it has caught two real over-cap promotions. A barrier fix does not
   that cost 2.8 hours of a production run. Any claim that a fix holds must be measured on a run
   long enough for the opposing term to develop.
 - **Do not re-descend and promote inside this arc.**
+
+---
+
+## RE-EXAMINED AFTER THE FILLET SWITCH — 2026-09-03. **DEFECT 5 DOES NOT REACH THE STRESS WALL, AND §99's MARGIN POLICY IS WHY.**
+
+PLAN.md §106.  The obvious reading of §103 against this arc is that it re-ranks it hard:
+§103 measured the shipped genome OVER the stress wall with `stress` reading 12.391 where it
+read 0.0 before, so a barrier that *"cannot hold the boundary"* is now active at the starting
+point of the descent ranked #1.  **Measured, it is not.**  `stress` does not stand alone at
+its knee any more:
+
+```
+  stress         = 4000.0 * max(0, u - 1.00)^2     BARRIER      d/du at u=1.0 =  0.00
+  stress_margin  =   89.21 * max(0, u - 0.80)^2    OBJECTIVE    d/du at u=1.0 = 35.68
+```
+
+`stress_margin` is in `OBJECTIVE_TERMS`, so it is in the loss at every step, and its knee
+sits 0.20 INSIDE the wall.  At the wall it contributes a restoring slope of
+`2 * 89.21 * 0.2` = **35.684** where the barrier contributes zero, so any outward pull under
+35.68 cannot push utilisation past 1.0 at all.  **The stress wall is the first boundary in
+this tree that defect 5's mechanism does not reach, and it got that way as a side effect of
+§99's margin policy rather than as a defect-5 fix.**
+
+**THIS NARROWS THE ARC RATHER THAN RE-RANKING IT.**  The eight remaining barriers —
+`buckling`, `x_order`, `hub_overlap`, `fold`, `arrival`, `fillet`, `fillet_cap`, `min_sj` —
+have no companion objective term with an inner knee, so defect 5 reaches all of them
+undiluted, including `fillet_cap`, which is the one §19 measured wasting 45 steps of a
+6h20m run.  Step 0 is unchanged and still the thing that would re-rank this.
+
+**AND IT SUPPLIES THE NEW EVIDENCE THIS FILE REQUIRES.**  *"Do not re-propose a fix
+`DEFECT5_PLAN` already rejected without new evidence."*  An inner-kneed companion term for
+`fillet_cap` is not a re-proposal: `stress_margin` did not exist when that arc ran, and the
+shape is now demonstrated to work on a live barrier at zero cost to differentiability.
