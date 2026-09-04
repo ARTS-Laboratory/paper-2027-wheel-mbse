@@ -1602,6 +1602,41 @@ def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET, x
     return c if float(bracket[0]) <= c <= float(bracket[1]) else None
 
 
+class MeshRefusedError(ValueError):
+    """This GENOME has no filleted mesh -- not a mistake by the caller.
+
+    A `ValueError` SUBCLASS, so every `except ValueError` already wrapped around a build
+    keeps catching it and the message matches in `tests/test_filleted_mesh.py` still read
+    a `ValueError`.  The subclass exists for the opposite direction: it lets
+    `wheel_stage3.descend` catch a geometry refusal WITHOUT also catching a bad keyword,
+    a violated `WheelConfig` invariant or a shape mismatch, which a bare `except
+    ValueError` inside a descent loop would swallow into a silently rejected step.
+
+    Raised only where the condition is a function of the genome -- the blocking funnel
+    and the crossed tangent stations in `_filleted_sector_blocks`, and the missing layer
+    profile in `per_genome_layer_profile`.  NOT raised for `R <= 0` a few lines below:
+    the gene box (`genes[12]` in [0.4, 4.0], `genes[13]` in [0.5, 3.0]) cannot produce
+    it, only an explicit `fillet=(0.0, ...)` tuple reaches it, and that is a caller error
+    which stays a plain `ValueError`.
+
+    WHY THE NAME HAD TO EXIST, MEASURED.  PLAN.md §106: `stage2_elites#11` builds
+    perfectly well UNFILLETED (21012 nodes, 4704 elements at `coarse`) and refuses
+    filleted, at a t1 barrier sum of 301.3658 against `wheel_stage3.T1_REJECT = 1.0e4` --
+    a factor of 33.2 below the screen whose one documented job is refusing to spend a
+    solve on geometry that will not mesh.  (§106 called that gap "three orders of
+    magnitude"; re-measured here it is 1.5, and the point is unchanged -- the screen is
+    nowhere near firing.)  1e4 was calibrated against the UNFILLETED mesh's notion of
+    un-meshable, its witness M8a's analytically infeasible fillet at 112,000; §103 changed
+    which mesh gets built and did not move it.  So the screen cannot be the guard here,
+    and the catch has to be.
+
+    The refusals SHARED with the unfilleted path -- a spoke that never reaches the ring
+    (`ring_station`) and a folded mesh (`_orient_elements`) -- are NOT marked.
+    They predate §103, `T1_REJECT` was calibrated against exactly them, and 25 committed
+    Stage-3 runs never hit one.
+    """
+
+
 def _layer_profile(layer_profile):
     """`(entry, end)`, defaulting to the two measured constants.
 
@@ -1793,7 +1828,7 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
                                  "why": c.get("why")}
             continue
         if not frozen and not c["built"]:
-            raise ValueError(
+            raise MeshRefusedError(
                 f"no filleted blocking exists at the {junction}: {c['why']}.  "
                 f"See FILLET_PLAN.md PART 10.")
         if not frozen:
@@ -1808,7 +1843,7 @@ def _filleted_sector_blocks(sample, cfg, s_hub, s_rim, orientation, rim_inner,
 
     lo, hi = curves["hub"]["s_A"], curves["rim"]["s_A"]
     if not frozen and not lo < hi:
-        raise ValueError(
+        raise MeshRefusedError(
             f"the two fillets are longer than the spoke: tangent stations {lo:.4f} and "
             f"{hi:.4f} cross.")
 
@@ -2020,7 +2055,7 @@ def per_genome_layer_profile(genes, cfg, fillet=True,
     """
     c = layer_cliff_entry(genes, cfg, fillet=fillet, end=end, **kw)
     if c["entry"] is None:
-        raise ValueError(
+        raise MeshRefusedError(
             f"no per-genome layer profile exists for this genome: {c['why']}.  "
             f"See PLAN.md §82.")
     # ONE EXPRESSION FOR BOTH PATHS: `layer_cliff_entry` has already narrowed its eager

@@ -354,7 +354,9 @@ def _fidelity_check(ev_fc, z, low, high, phases, cfg_label):
     stress are the question a second fidelity is asked, not T1's barriers or T2's mass.
 
     A probe's own failure must not abort the run it is watching: a solve divergence at
-    the second fidelity is recorded as a `"failed"` result, not raised.
+    the second fidelity -- or a filleted mesh the second fidelity refuses where the
+    step's own fidelity built one -- is recorded as a `"failed"` result, not raised.
+    `error` carries `type(err).__name__`, so the two are told apart in the record.
 
     `report` is stored RAW, not as a diff or ratio against the coarse step's own report:
     this repo removed a derived, unrevisited quantity once already (`stress_scale`'s old
@@ -365,7 +367,7 @@ def _fidelity_check(ev_fc, z, low, high, phases, cfg_label):
     """
     try:
         val, _grad_discarded, brk = ev_fc(z, low, high, phases=phases, tiers=("t3",))
-    except RuntimeError as err:
+    except (RuntimeError, WW.MeshRefusedError) as err:
         return {"config": cfg_label, "failed": True,
                 "error": type(err).__name__, "message": str(err)[:400]}
     rep = brk.get("report", {})
@@ -597,11 +599,25 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
                 try:
                     val_new, grad_new, brk_new = ev(z_trial, low, high, phases=phases,
                                                     warm=warm)
-                except RuntimeError as err:
-                    # NewtonDivergedError, the secant's stall, or dF/ddelta <= 0.  All three
-                    # mean "this design did not solve", which is information, not noise.
+                except (RuntimeError, WW.MeshRefusedError) as err:
+                    # `RuntimeError` is NewtonDivergedError, the secant's stall, or
+                    # dF/ddelta <= 0.  All three mean "this design did not solve", which is
+                    # information, not noise.  `MeshRefusedError` means the filleted
+                    # construction has no mesh for this genome AT ALL, so there was nothing
+                    # to solve; since §103 built that mesh unconditionally it is reachable
+                    # from a trial step, and before PLAN.md §106 it ended the run.
+                    #
+                    # SHORTEN THE STEP THE SAME WAY, RECORD IT UNDER A DIFFERENT KIND.  The
+                    # response is identical because both say the trial went too far, but
+                    # "the solver failed" and "there was nothing to solve" are not the same
+                    # fact, and S5 counts `solve_reject` events against a known number of
+                    # INJECTED SOLVER failures.  One kind for both would make that count
+                    # mean two things at once -- §84's error, and the reason §106 could not
+                    # see these refusals in 25 committed runs.
                     events.append({
-                        "step": i, "kind": "solve_reject", "attempt": attempt,
+                        "step": i, "attempt": attempt,
+                        "kind": ("mesh_reject" if isinstance(err, WW.MeshRefusedError)
+                                 else "solve_reject"),
                         "scale": scale, "error": type(err).__name__, "message": str(err)[:400],
                         "n_newton_records": len(getattr(err, "history", []) or [])})
                     scale *= 0.5
@@ -887,11 +903,16 @@ def descend_lbfgsb(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, weights=None,
         t0 = time.time()
         try:
             val, grad, brk = ev(z, low, high, phases=phases, warm=state["warm"])
-        except RuntimeError as err:
+        except (RuntimeError, WW.MeshRefusedError) as err:
             # L-BFGS-B has no reject hook, so a failed solve is reported as a large
             # value with a zero gradient, which its line search reads as "shorten the
             # step".  Recorded as an event so it can never be mistaken for a real point.
-            events.append({"step": len(step_rows), "kind": "solve_reject",
+            # A refused filleted mesh takes the same route and the same separate kind
+            # `descend` gives it -- see the trial loop for why the two are not one kind.
+            events.append({"step": len(step_rows),
+                           "kind": ("mesh_reject"
+                                    if isinstance(err, WW.MeshRefusedError)
+                                    else "solve_reject"),
                            "error": type(err).__name__, "message": str(err)[:400]})
             state["warm"] = None
             return 1e12, np.zeros_like(np.asarray(z, dtype=float))
@@ -1161,7 +1182,7 @@ def main():
 
     low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
     starts = start_points(args.start, args.genome, args.elites)
-    runs = []
+    runs, refused = [], []
 
     for label, genes0 in starts:
         z0 = wg.normalize(genes0, low, high)
@@ -1178,24 +1199,55 @@ def main():
               f"{args.steps} steps, {args.phase_scheme}, {args.kinematics})\n{'=' * 78}")
         print(wg.describe(genes0, low, high))
 
-        if args.optimizer == "lbfgsb":
-            rec = descend_lbfgsb(z0, args.config, steps=args.steps,
-                                 n_phase=args.n_phase, scheme=args.phase_scheme,
-                                 out=out, kinematics=args.kinematics, req=req)
-        else:
-            rec = descend(z0, args.config, steps=args.steps, lr=args.lr,
-                          n_phase=args.n_phase, n_sub=args.n_sub,
-                          scheme=args.phase_scheme, seed=args.seed,
-                          grad_clip=args.grad_clip, max_rejects=args.max_rejects,
-                          t1_reject=args.t1_reject, t1_precheck=not args.no_t1_precheck,
-                          log_every=args.log_every, out=out, workers=args.workers,
-                          fidelity_check_every=args.fidelity_check_every,
-                          fidelity_check_cfg=args.fidelity_check_config,
-                          kinematics=args.kinematics, req=req)
+        # ONE START POINT MUST NOT COST THE OTHER FIFTEEN.  `descend` catches a refused
+        # mesh at every TRIAL step, but step 0 has no previous iterate to fall back to and
+        # no step to shorten, so a start point that has no filleted mesh at all can only
+        # raise -- and before PLAN.md §106 that raise ended the whole multi-start run.
+        # It is not hypothetical: §106 measured `stage2_elites#11`, which `--start all`
+        # reaches, refusing on its first objective evaluation while building perfectly
+        # well unfilleted.  §105 prices this run at 50.47 h serial with the pool bounded
+        # at 2 workers on this box, so the forfeit was most of a two-day run.
+        try:
+            if args.optimizer == "lbfgsb":
+                rec = descend_lbfgsb(z0, args.config, steps=args.steps,
+                                     n_phase=args.n_phase, scheme=args.phase_scheme,
+                                     out=out, kinematics=args.kinematics, req=req)
+            else:
+                rec = descend(z0, args.config, steps=args.steps, lr=args.lr,
+                              n_phase=args.n_phase, n_sub=args.n_sub,
+                              scheme=args.phase_scheme, seed=args.seed,
+                              grad_clip=args.grad_clip, max_rejects=args.max_rejects,
+                              t1_reject=args.t1_reject,
+                              t1_precheck=not args.no_t1_precheck,
+                              log_every=args.log_every, out=out, workers=args.workers,
+                              fidelity_check_every=args.fidelity_check_every,
+                              fidelity_check_cfg=args.fidelity_check_config,
+                              kinematics=args.kinematics, req=req)
+        except WW.MeshRefusedError as err:
+            # NARROWER THAN THE TRIAL LOOP'S CATCH ON PURPOSE.  Only a genome refusal is
+            # survivable here; a `KeyboardInterrupt`, a dead pool or a bad requirement set
+            # still stops the run, because those are not facts about this start point.
+            refused.append({"label": label, "error": type(err).__name__,
+                            "message": str(err)})
+            print(f"\n  REFUSED: {label} has no filleted mesh, so it cannot be a start "
+                  f"point.\n    {err}\n  Continuing with the remaining "
+                  f"{len(starts) - len(runs) - len(refused)} start(s).")
+            continue
         rec["label"] = label
         runs.append(rec)
         print(f"\nwrote {out}  ({rec['settings']['elapsed_s']} s, "
               f"{rec['settings']['n_objective_calls']} objective calls)")
+
+    if not runs:
+        # Every start refused.  Raised rather than returned as an empty record: the lines
+        # below promote `best` into `--best-out`, and there is no genome to promote.
+        raise SystemExit(
+            f"all {len(starts)} start point(s) refused the filleted mesh; nothing was "
+            f"descended and nothing was written to {args.best_out}.\n  "
+            + "\n  ".join(f"{r['label']}: {r['message']}" for r in refused))
+    if refused:
+        print(f"\n  {len(refused)} of {len(starts)} start(s) refused the filleted mesh "
+              f"and were skipped: {', '.join(r['label'] for r in refused)}")
 
     # Across starts by the SAME rule as within one, or the fix would hold only until a
     # multi-start run put a feasible iterate and a lower-loss violating one side by side.

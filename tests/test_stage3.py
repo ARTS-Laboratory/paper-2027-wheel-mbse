@@ -495,6 +495,174 @@ def test_a_failed_solve_is_a_step_reject_and_the_run_recovers(genes):
         "a rejected trial must halve the step, so the scales are 1, 1/2, 1/4, ...")
 
 
+class _RefusingEvaluator(S3.Evaluator):
+    """Solves at step 0, then refuses a MESH on the next `n_fail` trial evaluations.
+
+    Not `study_stage3._FaultyEvaluator`, which raises `NewtonDivergedError` -- the failure
+    `descend` has caught since S5.  This one raises `wheel_wheel.MeshRefusedError`, which
+    until PLAN.md §106 escaped the trial loop and ended the run outright.
+
+    STEP 0 MUST SUCCEED.  A refusal there is the OTHER half of the fix (there is no
+    previous iterate to fall back to and no step to shorten, so `descend` can only raise
+    and the multi-start loop has to survive it); mixing the two into one evaluator would
+    make a green here mean either.
+    """
+
+    def __init__(self, *a, n_fail=2, **kw):
+        super().__init__(*a, **kw)
+        self.n_fail, self.n_seen = n_fail, 0
+
+    def __call__(self, *a, **kw):
+        self.n_seen += 1
+        if self.n_seen > 1 and self.n_fail:
+            self.n_fail -= 1
+            raise WW.MeshRefusedError(
+                "no filleted blocking exists at the rim: injected by the test.")
+        return super().__call__(*a, **kw)
+
+
+def test_a_refused_mesh_rejects_the_trial_and_not_the_run(genes, z0):
+    """PLAN.md §106's defect, at the trial step: the run must survive a genome the
+    filleted construction will not build.
+
+    Since §103, `wheel_objective.phase_meshes` passes `fillet=True` unconditionally, so
+    every trial step builds the mesh that can refuse.  The response is the one a diverged
+    solve already gets -- halve the step, drop the warm vector, try again -- because both
+    say the trial went too far.
+    """
+    ori = WW.flank_orientation(genes, WW.get_config(CFG))
+    ev = _RefusingEvaluator(CFG, orientation=ori, n_fail=2)
+    rec = S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", max_rejects=3,
+                     evaluator=ev, verbose=False)
+
+    refusals = [e for e in rec["events"] if e["kind"] == "mesh_reject"]
+    assert len(refusals) == 2, (
+        f"two injected refusals, {len(refusals)} recorded -- the trial loop either did "
+        f"not catch them or did not record them: {rec['events']}")
+    assert [e["scale"] for e in refusals] == [1.0, 0.5], (
+        "a refused trial must halve the step exactly as a failed solve does")
+    assert {e["error"] for e in refusals} == {"MeshRefusedError"}, (
+        "the record must name the type; a run that says only `ValueError` cannot be told "
+        "apart from a bad keyword after the fact")
+    assert len(rec["steps"]) == 2 and not np.allclose(
+        np.asarray(rec["steps"][-1]["z"]), z0), (
+        "the run did not complete its step -- the refusal cost the run, not the trial")
+
+
+def test_a_refused_mesh_is_not_counted_as_a_failed_solve(genes, z0):
+    """The two kinds stay apart, and S5 is why this is asserted rather than assumed.
+
+    `study_stage3.run_reject` passes when `len(solve_rejects) == n_injected` SOLVER
+    failures.  Filed under one kind, a mesh refusal would inflate that count and the gate
+    would read a solver that failed more often than it was made to.  It is also the
+    distinction §106 needed and did not have: "the solver failed" and "there was nothing
+    to solve" are different facts about the design.
+    """
+    ori = WW.flank_orientation(genes, WW.get_config(CFG))
+    rec = S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", max_rejects=3,
+                     evaluator=_RefusingEvaluator(CFG, orientation=ori, n_fail=1),
+                     verbose=False)
+    assert not [e for e in rec["events"] if e["kind"] == "solve_reject"], (
+        "a refused mesh was recorded as a failed solve -- one value, two meanings")
+
+
+def test_the_t1_screen_cannot_be_the_guard_for_a_refused_filleted_mesh():
+    """PLAN.md §106, measured on `stage2_elites#11`, and the reason the fix is a CATCH.
+
+    `T1_REJECT`'s one documented job is refusing to spend a solve on geometry that will
+    not mesh, and this genome's t1 barrier sum sits far below it while the filleted mesh
+    refuses outright -- because 1e4 was calibrated against the UNFILLETED mesh's notion of
+    un-meshable (its witness is M8a's analytically infeasible fillet at 112,000) and §103
+    changed which mesh gets built.  The gap is asserted as an INEQUALITY, not at §106's
+    measured 301.4: the finding is that the screen cannot see this, not any one number.
+
+    `--start all` reaches this genome, so it is a start point of the run §105 prices at
+    50.47 h serial.
+    """
+    pop = S3.load_elites(limit=16)
+    assert len(pop) > 11, "stage2_elites.json no longer has a rank 11 -- see PLAN.md §106"
+    g = pop[11]
+    wcfg = WW.get_config(CFG)
+    ori = tuple(float(o) for o in WW.flank_orientation(g, wcfg, span_mm=W.S))
+
+    WW.build_wheel(g, wcfg, fillet=None, orientation=ori)      # meshes unfilleted
+    with pytest.raises(WW.MeshRefusedError, match="no filleted blocking exists"):
+        WW.build_wheel(g, wcfg, fillet=True, orientation=ori)
+
+    assert issubclass(WW.MeshRefusedError, ValueError), (
+        "the refusal must stay a ValueError -- `studies/study_hub_cap.py` and "
+        "`studies/study_fillet_fold.py` catch one around a build")
+
+    low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+    b, _ = S3.t1_barrier_sum(wg.normalize(g, low, high), CFG)
+    assert b < S3.T1_REJECT, (
+        f"the t1 sum is {b:.1f} against T1_REJECT = {S3.T1_REJECT:.0f}: if the screen "
+        f"had grown to cover this refusal the guard could live there instead, and this "
+        f"test should be re-read against PLAN.md §106 rather than adjusted")
+
+
+def _run_main(tmp_path, monkeypatch, starts):
+    """`main()` over `starts`, at `smoke`, one step.  Returns `(rc, best_out_path)`.
+
+    `--kinematics linear` only because it is the cheap solve: what is under test is the
+    multi-start LOOP, which never looks at the strain measure.
+    """
+    monkeypatch.setattr(S3, "start_points", lambda *a, **kw: list(starts))
+    best_out = tmp_path / "best.json"
+    monkeypatch.setattr(sys, "argv", [
+        "wheel_stage3.py", "--config", CFG, "--steps", "1", "--n-phase", "1",
+        "--phase-scheme", "uniform", "--kinematics", "linear",
+        "--out", str(tmp_path / "run.json"), "--best-out", str(best_out)])
+    return S3.main(), best_out
+
+
+def test_a_start_point_with_no_filleted_mesh_costs_one_start_and_not_the_run(
+        tmp_path, monkeypatch, genes, capsys):
+    """PLAN.md §106's defect at STEP 0, which is where it was actually measured.
+
+    `descend` cannot reject its own start point -- there is no previous iterate and no
+    step to shorten -- so the multi-start loop is what has to survive it.  Before this,
+    one refusing elite took every other start down with it: §105 prices the run at
+    50.47 h serial with the pool bounded at 2 workers on this box, so the forfeit was
+    most of a two-day run and the genome that caused it (`stage2_elites#11`) is one
+    `--start all` reaches.
+    """
+    pop = S3.load_elites(limit=16)
+    assert len(pop) > 11, "stage2_elites.json no longer has a rank 11 -- see PLAN.md §106"
+    rc, best_out = _run_main(tmp_path, monkeypatch,
+                             [("refuses", pop[11]), ("builds", genes)])
+
+    assert rc == 0, "a refused start point ended the whole multi-start run"
+    assert best_out.exists(), "the surviving start was never promoted"
+    rec = json.loads(best_out.read_text())
+    assert rec["search"]["label"] == "builds", (
+        f"the promoted run is not the one that descended: {rec['search']['label']}")
+    out = capsys.readouterr().out
+    assert "REFUSED: refuses" in out and "1 of 2 start(s) refused" in out, (
+        "the skip has to be on the console, not only in the exit code -- a silently "
+        "dropped start point is a run that quietly descended fewer designs than asked")
+
+
+def test_a_run_whose_every_start_refuses_writes_nothing_and_says_which(
+        tmp_path, monkeypatch):
+    """Surviving a refusal must not become promoting nothing.
+
+    `min(runs, ...)` over an empty list raises `ValueError: min() arg is an empty
+    sequence`, which names neither the genome nor the file that was not written.  The
+    refusal is explicit and carries both.
+    """
+    pop = S3.load_elites(limit=16)
+    assert len(pop) > 11, "stage2_elites.json no longer has a rank 11 -- see PLAN.md §106"
+    with pytest.raises(SystemExit) as caught:
+        _run_main(tmp_path, monkeypatch, [("refuses", pop[11])])
+
+    msg = str(caught.value)
+    assert "all 1 start point(s) refused" in msg and "no filleted blocking" in msg, (
+        f"the refusal must name what happened and to which start: {msg}")
+    assert not (tmp_path / "best.json").exists(), (
+        "a promotion record was written for a run that descended nothing")
+
+
 def test_the_evaluator_carries_no_state_that_could_stale_a_gradient(z0):
     """S4 is gone, and this is what replaced it: nothing is frozen, so check nothing is.
 
