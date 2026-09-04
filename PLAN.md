@@ -308,8 +308,16 @@ committed study artifacts describe a wheel promoted out of their named file thre
 > `pyproject.toml`, so **an xfail that starts passing is a failure** and either one reopens
 > itself automatically. **A non-zero failure count now means something again — treat any red
 > as new.** Nothing is left waiting on a decision: the hub compliance bound was measured,
-> put up, and **resolved in §31 item 4 — it stays at `0.03` as an accepted deficit**, with
+> put up, and ~~**resolved in §31 item 4 — it stays at `0.03` as an accepted deficit**~~, with
 > the curvature route (`cy4`) filed as a design successor for Stage 2/3's objective.
+>
+> **§31's RESOLUTION WAS SUPERSEDED IN §109 (2026-09-04), AND THAT XFAIL IS A GREEN TEST
+> NOW.** Both legs §31 stood on are gone: the deficit WAS a mesh artefact after all — 76% of
+> the level was the unfilleted re-entrant corner — and the design the bound was calibrated on
+> does not build on the mesh the objective solves. The gate reads the FILLETED mesh against
+> `< 0.0117` and is named
+> `test_the_hub_junction_holds_a_small_minority_of_the_compliance`. **`make test` still reads
+> `0 failed`; the tree carries four strict xfails and this is no longer one of them.**
 
 **M8b-i.6 step 2 landed.** The stress constraint is no longer a p-norm rescaled to the true
 max by a measured ratio. It is now
@@ -15055,6 +15063,17 @@ calls, with `fillet` set. Linear kinematics, one phase, `best_solution.json` and
   ga_beam  FILLETED   0.005312  0.005381  0.005406  0.005417     --       +1.98%  UNDER by 81.9%
 ```
 
+**[CORRECTED 2026-09-04 — §109. THE TWO `--` CELLS IN THE `ultra` COLUMN ARE NOT MISSING
+DATA.** `ga_beam` at `ultra` is **0.014144** and was committed in
+`studies/study_reds_hub_share.json`'s `rungs` block — the same block this section checked its
+own plain column against, three lines below. So the table compares shipped drift over FIVE
+rungs against ga_beam drift over FOUR: with `ultra` in, the plain ga_beam ladder drifts
+**+2.32%**, not +1.60%. The filleted `ga_beam` cell was genuinely unmeasured and is now
+**0.005423**, drift **+2.09%** not +1.98%. Two more on this table, same cause — reading a
+ratio off its own rounded cells: the shipped FILLETED drift is **+4.74%**, and the increment
+ratio quoted as 1.57 below is **1.640**. **Every measured value above reproduces** — the plain
+row bit-identically, the filleted rows to 4.2e-7 — **and no verdict in this section moves.]**
+
 **THE PLAIN COLUMN REPRODUCES THE ARC'S OWN COMMITTED TABLE, AND THAT IS WHAT LICENSES THE
 FILLETED ONE.**  Checked against `studies/study_reds_hub_share.json`'s `rungs` block rather
 than against the plan's prose: agreement is **3.3e-7 or better at all five rungs**, the drift
@@ -15985,6 +16004,18 @@ has failed since §14. So the question is not what number to type, it is which m
 should read, and that is the judgement successor 1 exists to make. Editing the reason string
 first would answer it silently and in the wrong file.
 
+**[CORRECTED 2026-09-04 — §109, WHICH MADE THAT JUDGEMENT. `0.008991` IS THE WRONG ROW.** It
+is `sweep_filleted_svk`'s `rows[0]`, the `R_hub` = 0.400 end of the gene box; the SHIPPED row
+of that block is **0.007395**, so the figure is 21.6% high and the sentence compares two
+different designs. It reads as like-for-like because on the UNFILLETED side it is one — every
+row of that sweep is bit-identical, `R_hub` moving no node — while on the filleted side the
+rows differ by design, which is the entire reason that sweep exists. **The conclusion is
+untouched and moves the right way**: the shipped wheel sits FURTHER under the bound than this
+paragraph says. `0.029410` IS correctly the shipped reading, and it deserves its own line — it
+is INSIDE `0.03`, on the PLAIN mesh, so this gate's verdict was already kernel-dependent
+before the mesh question was asked. **The test is no longer red and no longer an xfail**; the
+paragraph above is the last record of it as one. See §109.]**
+
 **TWO LESSONS, AND THE SECOND ONE IS FREE.**
 
 **A successor that names two options has not established that it has two.** §106 offered a
@@ -16013,3 +16044,225 @@ off the prose. Both of that session's corrections to the two errors THIS one fou
 it exactly, to 33.2x and to 1.6359 -> 7.1721 mm; the disagreement is only about coverage, and
 the scope of a sweep belongs in its claim.
 
+
+---
+
+## §109 — 2026-09-04. §106's SUCCESSOR 1, CLOSED — THE JUDGEMENT §108 REFUSED TO MAKE AS A TYPO FIX: THE HUB-SHARE LADDER IS ON DISK ON BOTH MESHES, THE GATE MOVES TO THE FILLETED BUILD, AND `0.03` MOVES TO `0.0117` BECAUSE THE DESIGN IT WAS CALIBRATED ON IS REFUSED BY THE MESH THE OBJECTIVE SOLVES — PLUS FOUR CORRECTIONS, ONE OF THEM §108's OWN
+
+§106 answered HUBSHARE outright and §108 declined to touch the test, saying exactly why:
+*"the question is not what number to type, it is which mesh this test should read, and that
+is the judgement successor 1 exists to make. Editing the reason string first would answer it
+silently and in the wrong file."* This is that judgement. It is made in three parts and only
+the third is a decision.
+
+**Cost: two ladder runs, 28.2 s plain and 68.7 s filleted, twenty mesh builds and twenty
+linear solves. No box time, nothing promoted, `best_solution.json` untouched.**
+
+---
+
+### PART 1 — THE MEASUREMENT §106 COULD NOT COMMIT
+
+§106's filleted column was produced by calling `shares()` directly, because
+`study_reds_hub_share.rungs()` took no `fillet` argument and `make reds-hub-fillet` runs
+`--sweep`, not `--rungs`. So the arc's conclusion — *"clears the bound by 72%"* — rested on
+a number that existed only in prose and was reproducible from no driver in the tree. **That
+is not a reason to doubt it. It is a reason not to close a gate on it.**
+
+`rungs()` now forwards `fillet` AND `kinematics`; `make reds-hub-fillet-rungs` runs it; the
+artifact carries both arms, one key each, under the `sweep` arm's own rule — *the plain
+ladder is the control that licenses the filleted one, so a filleted run must not land on top
+of it.*
+
+**LINEAR ON BOTH SIDES, AND THAT IS THE WHOLE POINT OF THE ARM.** `--fillet` implies SVK for
+the sweep because FILLET_PLAN's cost section says so. The ladder takes `linear` unless asked,
+because its entire content is plain read against filleted rung for rung: a filleted ladder
+under a different kernel would differ from its control by two changes, and the 4.32x level
+reduction could not be attributed to the mesh at all.
+
+**THE PLAIN ARM REPRODUCES BIT-IDENTICALLY.** All forty committed values — two genomes, five
+rungs, `hub`/`spoke`/`rim`/`axle_drop_mm` — at every digit, worst absolute difference **0.0**.
+§106 wrote *"3.3e-7 or better"*; that was a safe bound, not a measurement, and the agreement
+is exact. Every §106 filleted value reproduces to ≤4.2e-7, which is the rounding of its own
+six-decimal table.
+
+```
+  genome   mesh       smoke     coarse    medium    fine      ultra     drift    vs 0.03
+  -------  ---------  --------  --------  --------  --------  --------  -------  ----------
+  shipped  plain      0.032489  0.034188  0.035237  0.036483  0.037053  +14.05%  OVER 23.5%
+  shipped  FILLETED   0.008079  0.008308  0.008409  0.008442  0.008463   +4.74%  under 71.8%
+  ga_beam  plain      0.013823  0.013722  0.013849  0.014043  0.014144   +2.32%  under 52.9%
+  ga_beam  FILLETED   0.005312  0.005381  0.005406  0.005417  0.005423   +2.09%  under 81.9%
+```
+
+---
+
+### PART 2 — FOUR CORRECTIONS, THREE IN §106's TABLE AND ONE IN §108's, NO VERDICT MOVED
+
+The first three are the fault §108 named one section ago: **a ratio written from the rounded
+prose table instead of from the values behind it.** §106's measurements are all correct. The
+fourth is §108's own, and is a different fault — the right quantity read off the wrong row.
+
+1. **`ga_beam` at `ultra` was marked `--` and 0.014144 was committed on disk the whole time**
+   — it is in the `rungs` block §106 checked its own plain column against. So the table
+   quoted shipped drift over FIVE rungs against ga_beam drift over FOUR. With `ultra` in,
+   **ga_beam plain drifts +2.32%, not +1.60%.** Conclusion unaffected; the comparison was not
+   apples-to-apples.
+2. **Shipped filleted drift is +4.74%, not +4.75%.** 0.008462759/0.008079409 = 1.047448.
+   0.008463/0.008079 — the printed table — gives 1.047531.
+3. **The filleted tail's slowest increment ratio is 1.640, not 1.57.** 1.571 is 33/21 off the
+   rounded increments; the values give 33.402/20.371.
+
+Richardson at the correct 1.640 puts the limit at **0.008495**, so `ultra` is converged to
+**0.375%** — §106's ~0.4%, reached by a different route.
+
+**AND A FOURTH, IN §108 RATHER THAN §106, FOUND WHILE CHECKING THE SAME ARTIFACT.** §108
+wrote that *"`sweep_filleted_svk` puts the hub share at **0.008991 (0.90%)**, far UNDER the
+bound, against `sweep_unfilleted_svk`'s 0.029410"*. **0.008991 is `rows[0]` — the `R_hub` =
+0.400 row at the bottom of the gene box, not the shipped genome.** The shipped row of that
+same block is **0.007395**, so the figure quoted is 21.6% high and the comparison pairs two
+different designs. It reads as a like-for-like because on the UNFILLETED side it is one: every
+row of that sweep is bit-identical, `R_hub` moving no node, so any row is the shipped wheel.
+On the filleted side the rows differ by design — which is the whole reason that sweep exists.
+**The verdict is unaffected and moves the right way**: the shipped wheel sits further under
+the bound than §108 said, not nearer it.
+
+**THE SAME TWO ROWS CARRY SOMETHING THIS SECTION NEEDED.** `sweep_unfilleted_svk` puts the
+shipped genome at **0.029410 — INSIDE `0.03`, on the PLAIN mesh.** So this gate's verdict was
+already kernel-dependent before any mesh question was asked: `linear` reads 0.034188 and
+breaches, SVK reads 0.029410 and passes, at the same rung on the same wheel. **That is a
+second axis of instrument-dependence in the same threshold**, and it is exactly why the
+ladder below holds the kernel fixed at `linear` on both sides instead of letting `--fillet`
+pull SVK in with it.
+
+**AND THE CONVERGENCE VERDICT DOES NOT REST ON THE EXTRAPOLATION AT ALL**, which is worth
+more than the correction. For the filleted ladder to climb to even the old `0.03`, its
+increments would have to stop decaying to a ratio of **1.00095** — against the 1.640
+measured. The pass has ~3.5x of headroom and the extrapolation lives in the fourth digit.
+
+---
+
+### PART 3 — THE CALL
+
+**§31 MADE ITS DECISION ON TWO NAMED LEGS AND BOTH ARE GONE.**
+
+> *"`< 0.03` is not an unreachable bound — `best_solution_ga_beam.json` meets it CONVERGED
+> ... with 53% to spare. And it is not a mesh artefact — the shipped genome is 30.5% over at
+> the COARSEST rung, before any refinement argument starts."*
+
+**§31's OWN FIGURES ARE ON THE CAPPED MESH AND DO NOT REPRODUCE TODAY** — its ladder reads
+0.0392–0.0463 where the committed one reads 0.032489–0.037053, because UNCAP took hub
+compliance down 18.4% in between. The quote is left as §31 wrote it. Nothing below turns on
+those particular digits: leg (B) is falsified by a factor of 4.1, not by a few points, and
+the shipped genome is 8.3% over at `smoke` on today's plain mesh rather than 30.5%.
+
+- **(B) "not a mesh artefact" is FALSIFIED.** It was one. The unfilleted re-entrant corner
+  was 76% of the LEVEL, not merely of the drift: 0.036483 → 0.008442 at `fine`, **4.32x**.
+- **(A) "achievable — ga_beam clears it by 53%" HAS NO REFERENT ON THE NEW MESH.** `ga_beam`
+  asks `R_hub` 1.5598 / `R_rim` 3.0. An explicit `fillet=(1.5598, 3.0)` is **refused
+  outright** — *"no filleted blocking exists at the hub: the fillet's tangent point has
+  passed the next sector's corner (−8.400 deg of free ring left)"*. The filleted `ga_beam`
+  row is `fillet=True`, which keeps the genome and CLAMPS it to (0.667, 0.895)
+  (`wheel_wheel.SECTOR_FIT_CLAMP`). **The design the bound was calibrated on cannot be built
+  on the mesh the objective solves.**
+
+**THE TRAP, NAMED BEFORE ANYONE WALKS INTO IT.** Point the fixture at the filleted mesh and
+leave `0.03` alone and the test passes — by 72.3% — and the calibration design's margin goes
+from **54.3% to 82.1%** at that rung. That is §14's own prohibition running backwards. §14
+forbids moving a bound to admit the design that breached it; holding a bound still while
+moving the instrument under it reaches the same place by the other road. **A gate sitting
+3.61x above the quantity it watches is not a gate.**
+
+**AND IT CANNOT BE RESCALED BY A FACTOR EITHER, WHICH IS THE HALF THAT IS NOT OBVIOUS.** The
+mesh does not rescale this quantity — **it rescales it differently per design.** At `coarse`
+the shipped genome falls **4.115x** and `ga_beam` falls **2.550x**, because the unfilleted
+corner penalises a thin hub junction far harder than a thick one — §30's rim-corner mechanism
+again, and the same reason §14's direction is real. There is no single transport factor for
+`0.03` to ride across. *"Point it at the filleted mesh"* was never a one-line change.
+
+**THE DECISION: THE GATE READS THE FILLETED MESH, THE BOUND IS `0.0117`, THE XFAIL IS GONE,
+AND THE TEST IS RENAMED.**
+
+`0.0117` preserves §31's *warrant* rather than §31's *number*. What made `0.03` defensible
+was leg (A) — the reference design cleared it by 54.3% at this rung. So rescale by the
+REFERENCE design's own mesh factor and never by the design under test, because calibrating on
+the genome being gated is the §14 sin itself:
+
+```
+0.03 * (0.005381416728939758 / 0.013722004451848286) = 0.011765...   ->  0.0117
+```
+
+rounded **DOWN**, so the gate is never looser than its derivation. `ga_beam` keeps **54.0%**
+of margin against the 54.3% it had; the shipped genome clears by **29.0%** — not the 72.3%
+that carrying `0.03` across would have advertised.
+
+**THE SCOPE LIMIT, WITH ITS DIRECTION, BECAUSE IT BOUNDS THE CONSTANT AND NOT THE CALL.**
+That factor comes from the CLAMPED `ga_beam`, so `0.0117` is derived from a stand-in. The
+stand-in's hub fillet (0.667 mm) lands within **0.51%** of the shipped genome's (0.664 mm);
+its rim fillet (0.895 mm) does not (3.0 mm). §14's direction — hub share RISES as `R_hub`
+FALLS, confirmed by §75 on a mesh that can express it — says an unclamped `ga_beam` would
+read LOWER, so the true factor is smaller and the honest bound is **tighter** than 0.0117.
+**`0.0117` is the loose end of the range, and the shipped genome's 29.0% is an upper bound on
+its own margin.**
+
+**THE RENAME IS PART OF THE CALL, NOT TIDYING.**
+`test_the_hub_junction_holds_under_three_percent_of_the_compliance` →
+`test_the_hub_junction_holds_a_small_minority_of_the_compliance`. The three percent stopped
+being true, and a name that quotes its own threshold goes stale silently the day the
+threshold moves. This name had already outlived one migration (the assertion lived in
+`..._rim_band_holds_a_large_minority_...` until §31). The bound lives in the assertion now.
+It parallels the sibling gate it split from, which still reads the plain mesh.
+
+**THE FIXTURE IS SEPARATE, AND THE COST OF THE ALTERNATIVE IS MEASURED, NOT ASSERTED.**
+`filleted_mesh` / `filleted_res` are new and exactly one test reads them. Giving the shared
+`mesh` fixture the flag instead is the one-line version of this change, and here is what that
+line does to the other gates in the file — shipped genome, `coarse`, both ladders:
+
+```
+  `0.25 < rim   < 0.40`    0.3113 -> 0.3781   holds, but eats 44.6% of the band
+  `0.58 < spoke < 0.72`    0.6545 -> 0.6136   holds, but eats 29.3% of the band
+  `1.4  < drop  < 2.0`     1.5516 -> 0.9614   BREAKS
+```
+
+**It does not re-aim eleven tests quietly — it turns one of them RED and moves two others
+most of the way to their edges.** Moving one gate is what was decided; moving twelve is not.
+
+**AND THE BROKEN ONE IS A FINDING, FILED AND NOT ACTED ON.** The filleted wheel is **38.9%
+stiffer** at the axle — 1.5745 mm to 0.9626 mm at `ultra`, and 38.0%–39.9% at every rung, so
+this is not a rung artefact.
+`test_the_beam_model_does_not_predict_the_axle_drop` gates `1.4 < axle_drop_mm < 2.0` on the
+PLAIN mesh, and M4's whole "the beam model's 2.0 mm target is not what the part does" headline
+is measured there too. On the mesh the objective solves, the part does something 38.9%
+different. **This section does not touch it**: it is a different arc, the number wants the
+same warrant-first treatment `0.03` just got, and §109 is scoped to the hub-share gate. It
+goes on the successor list at **#2**, ahead of everything §108 left, because it is the same
+defect class as the one just closed and it is now known rather than suspected.
+
+**WHAT DID NOT HAPPEN.** The wheel did not improve. `best_solution.json` is untouched and its
+hub junction is what it always was; the mesh stopped putting a singularity where the fillet
+is. No other threshold moved. HUBSHARE Step 0 — *"find out whether the term would buy
+anything"* — has its answer, **no**, and the arc closes. §31's `cy4` design route is not
+retired, it is de-prioritised, and it stays filed.
+
+### THE SUCCESSORS — §108's LIST WITH ITEM 1 STRUCK
+
+**1** ~~close HUBSHARE #3~~ — closed here. **2 (NEW, inserted at the top of what is left)**
+the axle-drop gate and M4's beam-blindness headline are measured on the plain mesh and the
+filleted wheel is 38.9% stiffer — same defect class as the gate just closed, now measured; the
+gate would fail outright if pointed at the mesh the objective solves. **3** make the rim clamp
+visible; **4** MESHSTEP's contact-patch re-check; **5** BOUNDARY's `fillet_cap` companion term;
+**6** re-run Stage 3 and re-promote, still #1 overall. Item 3 is now worth more than its rank suggests: this section
+turned a clamp into load-bearing evidence — `0.0117` is derived through one — and the clamp is
+still reported only in a driver's own JSON.
+
+**ADDED: THE OTHER FIVE `--` CELLS.** §106's table is the second artifact this week to quote a
+ladder against a rung it had on disk. The plain `sweep`/`attribute` blocks in
+`studies/study_reds_hub_share.json` are still §31-era and were NOT regenerated here; nothing
+in this section reads them, but §108's stale-figure finding came out of exactly that gap.
+
+**THE LESSON, AND IT IS THE FOURTH TIME THIS FILE HAS RECORDED A VERSION OF IT.** A gate's
+threshold is a claim about an INSTRUMENT as much as about a design. `0.03` was transported
+across §85's default flip, §101–§103's switch and §106's re-measurement without anyone asking
+what it was calibrated against — and the answer, when finally asked, was a wheel that the
+current mesh refuses to build. **Before moving a test to a new instrument, re-derive its
+threshold's warrant on that instrument. If the warrant does not survive the move, the number
+must not either.**
