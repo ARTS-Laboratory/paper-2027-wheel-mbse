@@ -1398,7 +1398,7 @@ def test_every_objective_term_is_classified_by_the_svk_rescore_gate():
 def test_t2_reads_the_same_mesh_t3_solves(genes, scheme):
     """`mass` and `min_sj` must come off the geometry the stress terms are solved on.
 
-    PLAN.md §106.  `objective` used to build T2's `mesh0` with a bare
+    PLAN.md §107.  `objective` used to build T2's `mesh0` with a bare
     `WW.build_wheel(genes, cfg)` whenever the caller passed no `meshes`, and that differed
     from `phase_meshes` in TWO independent ways: the fillet (since §103, worth +9.78% of
     mass) and the phase (`phase_deg=0.0` against an rqmc stencil's 0.46875 deg offset,

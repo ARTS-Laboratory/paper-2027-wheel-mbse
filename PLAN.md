@@ -14914,7 +14914,13 @@ been run against them.
    not a live bug — but it was sized when a worker cost ~2 GiB.  `55ff7e5` DOCUMENTS this at
    the function; it does not cap it, because choosing the cap needs the 2-worker S13
    confirmation in successor 1.
-5. **DECIDE WHICH MESH t2 READS** — `objective(meshes=None)` evaluates `mass` and `min_sj`
+5. **DECIDE WHICH MESH t2 READS — CLOSED AT §107, and this entry was wrong twice.**
+   It called the fix "one line on `wheel_stage3`'s own precedent": `phases` is never
+   normalised in `objective`, so `phases[:1]` crashes the common `tiers=("t1","t2")` call
+   and the stencil has to be defaulted first.  And it named ONE defect where there are two
+   — the same fallback also builds at `phase_deg=0.0` against an rqmc stencil's 0.46875 deg
+   offset, which predates the fillet entirely.  Original text follows.
+   **DECIDE WHICH MESH t2 READS** — `objective(meshes=None)` evaluates `mass` and `min_sj`
    on the unfilleted mesh and the stress and deflection terms on the filleted one, in one
    call.  §103 opened it (before `d2cf9fa` both tiers were unfilleted and AGREED) and it is
    worth **+3.867 g, +9.78%**, against a `mass` tolerance of 0.365 g — 10.6x.  Nine call
@@ -15541,3 +15547,115 @@ contact-patch re-check is named as a measurement and **not** taken: it needs a c
    candidate, and it costs a probe, not a descent.
 6. **RE-RUN STAGE 3 AND RE-PROMOTE** — §103/§104's successor 1, unchanged and still #1
    overall; the items above are all cheap and none of them blocks it.
+
+---
+
+## §107 — 2026-09-04. §105's SUCCESSOR 5, CLOSED: T2 WAS READING A MESH T3 NEVER SOLVED — 9.78% LIGHT ON MASS, AND UNDER rqmc A PHASE BEHIND AS WELL. NO VERDICT MOVES; THE MESH-VALIDITY MARGIN WAS OVERSTATED 6.6x
+
+§105 ranked this fifth and described it as a one-line fix behind one defect.  Both halves of
+that description were wrong, and the check that found out cost one `grep` of `objective`'s
+body before any edit.
+
+### THE FALLBACK HAD TWO DEFECTS, AND ONLY ONE OF THEM WAS §103's
+
+`objective`'s T2 block built `mesh0` with a bare `WW.build_wheel(genes, cfg)` whenever the
+caller passed no `meshes`; T3 built its own through `phase_meshes`.
+
+**THE FILLET.** §103 made `phase_meshes` pass `fillet=True` and left the bare default alone,
+so `mass` and `min_sj` came off a mesh 9.78% lighter than the one being solved.  Before
+`d2cf9fa` both tiers were unfilleted and AGREED — the switch moved one caller, and the
+agreement was collateral damage nobody looked for.
+
+**THE PHASE.** `build_wheel`'s `phase_deg` defaults to 0.0 and an rqmc stencil's `phases[0]`
+is the offset — 0.46875 deg at `n_phase=8` — so T2 read a phase T3 never evaluated.  **This
+one predates the fillet entirely**, and the tree had already diagnosed it: `wheel_stage3
+.Evaluator` builds `phases[:1]` in the parent even when pooled, and its comment says why in
+almost these words.  The guard existed in exactly one caller.  §107 moves it to where every
+caller gets it.
+
+### MEASURED AT `coarse`, AND THE VERDICTS DO NOT MOVE
+
+Shipped genome, 8 phases, uniform, SVK, both readings in one process so the JIT prime is
+paid once:
+
+```
+  quantity                today (t2 unfilleted)   fixed (t2 = t3's mesh)   delta
+  mesh_mass_g                    39.5478                43.4133           +3.8655  (+9.78%)
+  min_scaled_jacobian             0.7822                 0.2877           -0.4945
+  loss                         1380.4115              1383.5887           +3.1771
+```
+
++3.8655 g is **10.6x** `REFERENCE_DEVIATION["mass"]`'s own 0.365 g band.  Fed through
+`wheel_requirements.verify`, **all 14 requirements hold their verdict.**  Only
+`SHOULD-MASS`'s reported VALUE moves, and it reads `NO LIMIT STATED` either way — §98's
+finding, undisturbed.
+
+**What does move is `SHALL-MIN-SJ`'s evidence: 0.7822 -> 0.2877 against a 0.2 floor.**  A
+genuine PASS both ways, but the MBSE gate has been reporting **291% margin on a mesh the
+solver never used, where the mesh it does solve has 44%**.  The barrier is `soft_barrier`
+over EVERY element at weight 3000, so the exposure is not this genome: it is a descent
+leaning on `mass` walking the solved mesh toward 0.2 with the barrier reading flat zero the
+whole way.  That overstatement, not a flipped verdict, is what this section fixes.
+
+### THE PART THAT WOULD HAVE BEEN A SILENT BUG
+
+`phases` is normalised at the top of `objective` now, because the T2 fallback needs the
+stencil T3 will use.  `scheme="uniform"` is spelled out, and that spelling is the whole
+point: **`phase_stencil`'s own default is `rqmc`.**  Defaulting it bare would have changed
+which stencil every phases-less caller receives — a behaviour change disguised as a tidy-up,
+in the same edit that fixes a phase bug.  `t3_terms` makes the identical call, so it is
+unaffected whether it receives the stencil or builds it.
+
+### WHAT MOVED
+
+* `4b77a6c` — the fix and its regression test.  The test asserts the two paths AGREE rather
+  than matching a golden mass: a constant would need re-blessing on every mesh change and
+  would go green again the moment both paths drifted together, which is the failure being
+  pinned.  Parametrised over BOTH schemes deliberately — under `uniform` only the fillet
+  separates the paths, so a uniform-only test would pass on a tree that fixed the fillet and
+  left the phase bug live.  Run against the bug before it was trusted: with the old `mesh0`
+  line restored, both parametrisations fail on the mass assertion.
+
+Full suite green, one pytest process per file: **31 files, 825 passed, 5 xfailed, 0 failed,
+0 xpassed** (was 823/5 at §105 — the delta is exactly the new parametrised test).
+
+### WHAT DID NOT MOVE
+
+`best_solution.json` is untouched and no descent ran.  **`make stage3` is unaffected in both
+cost and memory**: `Evaluator` always passed `meshes`, so its `mesh0` was already `meshes[0]`
+and §105's 50.47 h / 43.4 GiB pricing stands unchanged.  The cost lands on direct
+`objective(meshes=None)` callers — `test_objective.py` now peaks ~54 GiB against ~43 GiB,
+which is worth knowing before running it alongside anything else on a 61 GB box.
+
+`studies/study_mbse_score.json` is NOT regenerated and now reports a stale `mesh_mass_g`.
+It was already stale on §105's two channels; this is a third.
+
+#### The successors — §106's LIST STANDS; THESE ARE THE §107 DELTAS ONLY
+
+**§106 landed between §105 and this section and re-ranked the open work.  Its list is not
+superseded here.**  §107 touches three entries on it and adds nothing to the top:
+
+* **§106's successor 2 now gates the Stage 3 run, and §105 did not know that.**  §105 priced
+  the descent at 50.47 h serial and called it unblocked.  It is not: §106 found
+  `stage2_elites#11` raising a `ValueError` that `descend` does not catch, from a start point
+  `--start all` reaches.  The price is unchanged and still correct — §107 does not touch it,
+  because `Evaluator` always passed `meshes` — but **the guard is cheap and a 50-hour run
+  that dies partway is not, so §106's ordering is right and §105's was not.**
+* **REGENERATING THE STALE ARTIFACTS IS NOW UNBLOCKED.**  §105 held `study_mbse_score` back
+  until the t2 mesh question was decided, or it would have to be run twice.  It is decided,
+  and the artifact now additionally reports a stale `mesh_mass_g`.  `study_fillet_optimum`'s
+  artifact is still the two-identical-arms run of §105's PART 15 (~3.7 h to redo).
+* **A RAM-AWARE CAP IN `wheel_pool.default_workers`** stays where §105 put it, and the
+  measurement it waits on is unchanged.  Note that §107 raises `test_objective.py`'s own peak
+  from ~43 to ~54 GiB on a 61 GB box: that is a direct `objective(meshes=None)` caller, not
+  the pool, but it narrows what can run beside the suite.
+
+Everything else — HUBSHARE #3, RIMCAP's Step 0 visibility, MESHSTEP's contact-patch
+re-check, BOUNDARY's companion term, and the below-the-knee witness — is unchanged from
+§106 and §104 and is not re-ranked here.
+
+**AND THE LESSON, WHICH IS §105's OWN TURNED ON ITSELF.** §105 closed on a cost model that
+was never checked against the job it priced.  Its own successor 5 was then written from a
+reading of the defect rather than a reading of the code, and it was wrong about the size of
+the fix AND about how many defects there were.  A ranked successor is a hypothesis, not a
+finding, and the grep that tests it is cheaper than the section that repeats it.
