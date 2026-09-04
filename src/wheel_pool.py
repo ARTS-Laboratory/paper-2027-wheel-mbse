@@ -24,12 +24,22 @@ WHY THIS IS NOT `multiprocessing.Pool`, and all three reasons are load-bearing:
 
 2.  PHASE SLOTS MUST PIN TO WORKERS.  `wheel_wheel.coord_fn` keys its jit cache on
     `float(phase)` and M7 measured a miss at 0.774 s against 0.05 s for the entire rest of
-    the adjoint.  `Pool.map` gives no control over which worker sees which task, so a
-    phase would land on a cold worker at random and pay that 0.774 s.  Here slot `i` goes
-    to worker `i % n_workers` and nowhere else, so worker `k` only ever traces the phases
-    of its own slots.  An rqmc stencil draws its offset from the `n_sub`-point sub-lattice,
-    so one slot spans at most `n_sub` = 8 distinct phases: 8 cache entries per worker at
-    `workers=8`, 16 at `workers=4`, against `_COORD_FN_CACHE_MAX = 128`.
+    the adjoint.  ON THE FILLETED MESH THAT MISS IS ~124 s, NOT 0.774 s (PLAN.md §105,
+    measured 2026-09-03: a warm worker re-evaluating its own phase takes 24.3 s, the same
+    worker on a NEW phase 148.6 s).  The rule below is unchanged and is now worth ~160x
+    what this paragraph originally priced it at — read at 0.774 s against "0.05 s for the
+    entire rest of the adjoint" it looks like a micro-optimisation safe to trade away for
+    load balancing or a work-stealing queue, and it is not: at ~124 s a miss it decides
+    whether a pooled step beats a serial one.  How much of the 124 s is `coord_fn` rather
+    than other phase-keyed retracing was not isolated, so read it as the cost of a COLD
+    PHASE rather than as a new value for this constant alone.  `Pool.map` gives no control
+    over which worker sees which task, so a phase would land on a cold worker at random
+    and pay that cost — whichever of the two figures above applies to the mesh in hand.
+    Here slot `i` goes to worker `i % n_workers` and nowhere else, so worker `k` only ever
+    traces the phases of its own slots.  An rqmc stencil draws its offset from the
+    `n_sub`-point sub-lattice, so one slot spans at most `n_sub` = 8 distinct phases:
+    8 cache entries per worker at `workers=8`, 16 at `workers=4`, against
+    `_COORD_FN_CACHE_MAX = 128`.
 
 3.  RESULTS MUST COMBINE IN SLOT ORDER.  `map_phases` returns a list indexed by slot
     regardless of which worker finished first.  Floating-point addition is not
@@ -135,6 +145,16 @@ def default_workers(n_phase):
     worker for eight phases is a ninth jax import, a ninth interpreter's worth of resident
     memory, and no work.  `os.cpu_count()` returns `None` on platforms that cannot answer,
     which is a one-worker answer rather than a crash.
+
+    IT STILL KNOWS NOTHING ABOUT RAM, AND SINCE §103 THAT MATTERS.  This was sized when a
+    worker cost ~2 GiB.  On the FILLETED mesh a worker holding one phase is 9.1 GiB
+    measured (PLAN.md §105), so the eight workers this returns for an eight-phase stencil
+    on any 8+ core box want ~73 GiB -- more than the 61 GB machine these numbers were taken
+    on.  `wheel_stage3.py --workers` defaults to `0` (serial), so nothing reaches this by
+    default and it is a hazard for `-1` rather than a live bug; but `-1` is documented as
+    "size the pool to the machine", and on memory it does not.  §105's successor 4 is a
+    RAM-aware cap or an outright refusal here; until then an explicit integer is the only
+    safe way to ask for a pool, and 2 is the largest that fits a 61 GB box.
     """
     return max(1, min(int(n_phase), os.cpu_count() or 1))
 
