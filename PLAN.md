@@ -68,9 +68,19 @@
 > | `DEFECT5_PLAN.md` | defect 5, closed as "none of them" | §21 |
 > | `REDS_PLAN.md` | the five inherited reds | §31 |
 >
-> **`HUB_PLAN.md` was ALREADY dangling before this cleanup** — `wheel_wheel.py:73` says "See
-> HUB_PLAN.md" and no such file was deleted today because none existed. Do not attribute that
-> one to the deletion above; the hub fillet milestone's record is §16 and §24.
+> **`HUB_PLAN.md` was ALREADY dangling before this cleanup** — `wheel_wheel.py:140` and
+> `wheel_wheel.py:3638` say "See HUB_PLAN.md" and no such file was deleted today because none
+> existed. Do not attribute those to the deletion above; the hub fillet milestone's record is
+> §16 and §24.
+>
+> **[CORRECTED 2026-09-04 — this named `wheel_wheel.py:73`, which is the fillet-area
+> cross-check (§87) and has been since the line moved, and it named ONE site where there are
+> TWO. Re-measured the same day: the headline count in the paragraph above is still exact —
+> **70** citations to the six deleted files across `.py`, `.md` and the `Makefile`, excluding
+> this file. The two named sub-counts have drifted with the code, `SVK_PLAN.md` reading 28
+> today against the 30 stated and `BUILD_PLAN.md` 21 against 22, and are left as the dated
+> record they are. All ten sections the table below points at resolve, and each one's title
+> corroborates its row.]**
 >
 > **The open work is no longer in this file.** It is one file per arc — see *Open arcs* below.
 
@@ -12888,10 +12898,17 @@ the distinction was immaterial and not that it was unnecessary to make.  At the 
   b029622  rim               0.996984  0.986820  0.984294               0.256%
 ```
 
-The hub's region does not converge and the rim's does, by two and a half orders of
-magnitude, and the diagnostic that explains it is reported beside every cell.  A junction's
-fillet is meshed as two blocks, both starting ON the arc; the `b` half — welded to the ring
-— carries the coarser first element layer:
+The hub's region does not converge and the rim's does — by two and a half orders of
+magnitude at the shipped genome and by one at `b029622` — and the diagnostic that explains
+it is reported beside every cell.
+**[CORRECTED 2026-09-04 — "by two and a half orders of magnitude" was written under a
+sentence covering BOTH genomes and holds for only one.  Shipped is 3.037% / 0.008% = 379.6x =
+2.58 orders; `b029622` is 2.853% / 0.256% = 11.1x = **1.05 orders**.  The finding is unchanged
+at both cells — the hub's region does not converge and the rim's does — and only the size of
+the gap was stated from one column of a four-row table.]**
+
+A junction's fillet is meshed as two blocks, both starting ON the arc; the `b` half — welded
+to the ring — carries the coarser first element layer:
 
 ```
   first element layer touching the arc, mm, coarse/medium/fine
@@ -14035,9 +14052,19 @@ there — but the direction is the same and it is the direction the switch rests
 **The admissibility disagreement survives.**  Unfilleted reads over the allowable at
 `coarse`, stays over it at `medium`, and is further over it at `fine` (1.0230); filleted
 reads under the allowable at all three and is not closing the gap it would need to close
-to reverse the finding — it is 0.1993 below 1.0 at `fine`, against 0.1858 at `coarse`.
+to reverse the finding — the disagreement BETWEEN the two meshes widens under refinement,
+0.2158 at `coarse` (1.0112 - 0.7954) to 0.2223 at `fine` (1.0230 - 0.8007).
 §94's coarse-only reading is not an artefact of stopping early: refining the mesh makes
 the two answers MORE different, not less.
+
+**[CORRECTED 2026-09-04 — THIS READ "it is 0.1993 below 1.0 at `fine`, against 0.1858 at
+`coarse`", AND 0.1858 IS NOT A NUMBER THIS SECTION HAS.**  1.0 - 0.7954 = **0.2046**, so on
+the stated reading the filleted arm's own distance below the wall NARROWS under refinement
+(0.2046 -> 0.1993) where the sentence has it widening — the opposite of what the next
+sentence concludes.  The conclusion is true of the quantity the line should have named, the
+gap between the two meshes, which widens because the unfilleted arm climbs 0.0118 up the
+ladder against the filleted arm's 0.0053.  So the finding stands and the arithmetic under it
+is replaced rather than the other way round.]**
 
 ### RICHARDSON, AND WHY THE TWO ORDERS DISAGREE
 
@@ -14048,15 +14075,21 @@ the two answers MORE different, not less.
 ```
 
 The filleted axle drop converges at an order close to the quadratic elements' theoretical
-ceiling and a GCI two orders of magnitude tighter than the unfilleted one.  The unfilleted
-order — 0.69, well under first order — is the same signature §94 already named for the
-unfilleted mesh's PEAK stress (C1: the field is singular at a corner the fillet removes)
+ceiling and a GCI **20x** tighter than the unfilleted one — 0.068% against 1.377%.  The
+unfilleted order — 0.69, well under first order — is the same signature §94 already named
+for the unfilleted mesh's PEAK stress (C1: the field is singular at a corner the fillet removes)
 showing up in a QoI that is a volume integral rather than a local max: axle drop is not a
 pointwise probe, but a mesh that never resolves the corner still drags the global field
 enough to blunt the observed order on the quantity that averages over it. This is the
 FILLET_PLAN STEP 1 PART 12 finding again, now measured on the load-bearing kernel: *"the
 unfilleted axle drop is still climbing at `fine`... that is the singular field polluting a
 global functional."*
+
+**[CORRECTED 2026-09-04 — the GCI comparison above read "two orders of magnitude tighter".
+1.377 / 0.068 = **20.3x**, which is 1.3 orders.  Both Richardson rows themselves reproduce:
+the observed orders come back at 0.69 and 2.62 through Roache's non-constant-`r` iteration on
+this ladder's own `r21` = 1.6162 / `r32` = 1.5934, and the extrapolations at 3.404726 and
+2.002496.  Only the prose ratio over them was wrong.]**
 
 ### AND ONE NUMBER MOVES PAST A THRESHOLD THAT MATTERS ELSEWHERE IN THIS ARC
 
@@ -14710,9 +14743,18 @@ never matched S10 at any point in this repository's history:
 ```
 
 The line was written 2026-07-27, two days BEFORE the oldest S10 reading it cites, and 0.7 s
-is 26x under the cheapest figure S10 has ever produced.  It priced `make stage3` at 0.47 h
-against a study that said 48.  **This is not fillet staleness — it was wrong from the day
-it was written**, and `dca5629` corrects it to the measured figure.
+is 23x under the cheapest figure S10 has ever produced — 26x under the oldest.  It priced
+`make stage3` at 0.47 h against a study that said 48.  **This is not fillet staleness — it
+was wrong from the day it was written**, and `dca5629` corrects it to the measured figure.
+
+**[CORRECTED 2026-09-04 — THE MULTIPLIER ABOVE READ "26x under the cheapest figure".**  The
+three S10 readings are 18.0494 / 17.4899 / 16.0683 s per phase; the CHEAPEST is 16.0683, and
+16.0683 / 0.7 = **22.96x**.  26x is the DEAREST, which is also the oldest (18.0494,
+2026-07-29) — the reading the same sentence cites two clauses earlier, which is the likely
+route by which the two changed places.  `Makefile:253`, corrected by this section's own
+`dca5629`, states a third figure, 27x, and is right for what it says: 18.9277 / 0.7 = 27.04
+against the CURRENT filleted measurement.  All three divisions are true of something; only
+the superlative here was attached to the wrong one.]**
 
 The `48.13 h` still quoted in `studies/study_stage3.py:1238` and `:2219` is the 2026-07-29
 reading, two generations stale; PLAN.md's own number of record is S13's 46.46 h -> 11.77 h.
@@ -14940,7 +14982,7 @@ been run against them.
 
 ---
 
-## §106 — 2026-09-03. §104's LESSON RUN FORWARD OVER THE SIX PARKED ARCS: FOUR PREMISES MOVED, HUBSHARE IS ANSWERED OUTRIGHT — THE HUB COMPLIANCE SHARE CONVERGES ON THE FILLETED MESH AND CLEARS THE BOUND IT HAS FAILED SINCE §14 BY 72% — AND ONE GA ELITE RAISES ON A FILLETED BUILD AT A BARRIER SUM THREE ORDERS UNDER THE SCREEN THAT EXISTS TO CATCH IT, FROM A START POINT SUCCESSOR 1 USES
+## §106 — 2026-09-03. [READ "A BARRIER SUM THREE ORDERS UNDER THE SCREEN" AS "33x UNDER THE SCREEN" — CORRECTED 2026-09-04, SEE THE BRACKET AT THE `stage2_elites#11` CHAIN.] §104's LESSON RUN FORWARD OVER THE SIX PARKED ARCS: FOUR PREMISES MOVED, HUBSHARE IS ANSWERED OUTRIGHT — THE HUB COMPLIANCE SHARE CONVERGES ON THE FILLETED MESH AND CLEARS THE BOUND IT HAS FAILED SINCE §14 BY 72% — AND ONE GA ELITE RAISES ON A FILLETED BUILD AT A BARRIER SUM THREE ORDERS UNDER THE SCREEN THAT EXISTS TO CATCH IT, FROM A START POINT SUCCESSOR 1 USES
 
 §104 closed with a recorded lesson, the fourth of its kind: *"a parked arc's premise is not
 preserved by parking it"* — the tri-block was carried for eleven sections on a warrant
@@ -15097,9 +15139,22 @@ count, so the step ratio IS the arc-length ratio of the bands — which is why t
 correctly observed the ratio to be invariant up the ladder and a function of the design.
 Both invariances reproduce here, on both meshes.
 
-**And the fillet widens the weld band by 4.384x** — 0.8180 mm to 3.5860 mm of arc at the
-OD, a difference of 2.77 mm against an applied `R_rim` of 3.0 — so the ratio falls by the
-same factor, 15.003 -> 2.650.
+**And the fillet widens the weld band by 4.384x** — 1.6359 mm to 7.1721 mm of arc at the
+OD, a difference of 5.5362 mm, 1.85x an applied `R_rim` of 3.0 — and the ratio falls by
+5.66x, 15.003 -> 2.650.
+
+**[CORRECTED 2026-09-04 — TWO ERRORS ON ONE LINE.**  It read *"0.8180 mm to 3.5860 mm of arc
+at the OD, a difference of 2.77 mm against an applied `R_rim` of 3.0 — so the ratio falls by
+the same factor"*.  **(i)** The millimetres were the R = 25.0 conversion, at a
+`RIM_OUTER_RADIUS_MM` = 50.0 this section names seven lines above; 2.7680 mm is the correct
+PER-SIDE widening, and quoting it against a 3.0 mm radius reads as a sanity check passing
+when the total widening is 1.85x that radius rather than two thirds of it.  **(ii)** The step
+ratio does NOT fall by the band's own factor: it falls 15.003 / 2.650 = **5.66x**, because
+the free band shrinks 1.291x as the two bands must sum to 30 deg, and 4.384 x 1.291 = 5.66.
+This section's own scorecard already has that right — *"headline number is wrong by 5.7x"* —
+and only this line disagreed with it.  Every ratio in the table above is an angle ratio that
+never passed through millimetres, so 15.003, 2.650 and 4.384x are untouched.
+`MESHSTEP_PLAN.md` carries (i) from the peer session and still carries (ii).]**
 
 Two consequences, and they point opposite ways:
 
@@ -15299,7 +15354,15 @@ elements at `coarse`). Its t1 barrier sum is **301.4**. Chain it together:
     mesh"*, and 1e4 was calibrated against the UNFILLETED mesh's notion of un-meshable —
     the comment's own witness is M8a's analytically infeasible fillet at **112,000**.
   - §103 changed which mesh must be built. The filleted mesh refuses geometry the unfilleted
-    one accepts, at a barrier sum of 301.4 — **three orders of magnitude below the screen**.
+    one accepts, at a barrier sum of 301.4 — **33x below the screen**.
+    **[CORRECTED 2026-09-04 — THIS READ "three orders of magnitude below the screen" AND THE
+    DIVISION WAS NEVER DONE.  `T1_REJECT` / 301.4 = 10000 / 301.4 = **33.2x**, one and a half
+    orders.  The finding is untouched — the screen still does not fire, which is the whole
+    point of the chain — but the margin is 33x, not 1000x.  The same phrase stood in this
+    section's heading and in commit `6fd3122`'s message.  The OTHER orders claim in this
+    section — "one to three orders of magnitude below the screen", for the 17 clamped genomes'
+    sums of 43.77 to 712.2 — is a CORRECT bracket (14.0x to 228.5x, all inside 10x-1000x) and
+    is left exactly as written.]**
   - `descend` wraps the evaluator in `except RuntimeError` (`src/wheel_stage3.py:600`), for
     *"NewtonDivergedError, the secant's stall, or dF/ddelta <= 0"*. A blocking refusal is a
     **`ValueError`**, so it is not caught and it ends the run.
@@ -15470,10 +15533,20 @@ for the one that maps the first to the second. Over the 25 Stage-3 runs with ste
 **every one resolves to exactly one box, with none ambiguous and none unrecoverable**:
 
 ```
-  (min_wall, R_hub_low)   runs        (min_wall, R_hub_low)   runs
-  (1.2, 0.4)                8         (0.8/1.0/1.4/1.6/2.2, 0.5)   1 each
-  (1.2, 0.5)                6         (2.0, 0.5)                   5
+  (min_wall, R_hub_low)   runs        (min_wall, R_hub_low)       runs
+  (1.2, 0.4)                8         (0.8/1.0/1.4/1.6/1.8/2.2, 0.5)  1 each
+  (1.2, 0.5)                6         (2.0, 0.5)                      5
 ```
+
+**[CORRECTED 2026-09-04 — THE "1 each" LIST OMITTED `min_wall` 1.8 AND THE TABLE THEREFORE
+SUMMED TO 24 UNDER A SENTENCE CLAIMING 25.**  Re-counted off disk rather than off the prose:
+exactly 25 `stage3_*.json` carry a non-empty `steps` array, and their `settings.min_wall_mm`
+are 1.2 x14, {0.8, 1.0, 1.4, 1.6, **1.8**, 2.0, 2.2} x1 each, and `None` x4.  Both of the
+table's other cells are right and corroborate the fix — 8 + 6 = the fourteen 1.2 runs, and
+(2.0, 0.5)'s 5 = `stage3_minwall_2.0` plus the four `None` runs this paragraph names below.
+`stage3_minwall_1.8.json` is on disk with 126 steps, the same shape as the 0.8/1.0/1.4/1.6/2.2
+siblings that were listed.  The claim above — every one resolves to exactly one box, none
+ambiguous, none unrecoverable — is unchanged and now rests on all 25.]**
 
 The four runs that state no `min_wall_mm` at all — `stage3_prod_elite9/10` and
 `stage3_run_elite9/10` — resolve uniquely to `(2.0, 0.5)`, which is historically coherent:
