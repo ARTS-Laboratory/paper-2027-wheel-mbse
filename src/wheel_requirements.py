@@ -922,9 +922,15 @@ BARRIER_EVIDENCE = {
 # `MASS_REFERENCE_G` — until PLAN.md §98 checked it: `Mission.implied_baseline`'s own
 # docstring derives "~5% of all-up weight" from the shipped wheel's 48.64 g OCC-SOLID
 # mass, and `verify()` here reads `metrics.mesh_mass_g`, the MESHED-AREA-x-width-x-density
-# figure — 39.55 to 43.41 g across the two designs this tree has measured, 11-19% under
-# the solid.  The only stated precedent for a mass budget is denominated in a mass this
-# function never sees, and reconciling the two conventions is unmeasured work, not
+# figure — 39.55 to 43.41 g, 11-19% under the solid.  THAT PAIR IS ONE DESIGN ON TWO
+# MESHES, NOT TWO DESIGNS.  `FILLET_PLAN.md:3750` measures the same two numbers as the
+# fillet's own mass — "9.8% heavier (39.548 g against 43.413 g; the fillet is material the
+# unfilleted mesh" — and §105 reproduced them at `smoke` on the shipped genome: 39.5488
+# unfilleted against 43.4161 filleted, +3.867 g, which is 10.6x this table's own 0.365 g
+# tolerance for `mass`.  The conclusion below does not depend on it (neither mesh has a
+# stated budget), but the spread is evidence about the MESH and must not be re-quoted as a
+# design-to-design range.  The only stated precedent for a mass budget is denominated in a
+# mass this function never sees, and reconciling the two conventions is unmeasured work, not
 # arithmetic.  So `mass` joins the other two: reporting "NO LIMIT STATED" is more useful
 # than a number nobody chose under the units this table actually checks, and it names the
 # gap instead of hiding it behind a normaliser that was never a budget.
