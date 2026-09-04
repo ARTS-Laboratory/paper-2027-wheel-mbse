@@ -46,6 +46,36 @@ def res(mesh):
     return fem.solve_wheel(mesh)
 
 
+# A SECOND MESH, AND DELIBERATELY NOT A CHANGE TO THE ONE ABOVE (PLAN.md §109).
+#
+# `fillet=True` is what `wheel_objective.phase_meshes` and `wheel_pool_worker.run_phase`
+# pass unconditionally, so this is the wheel the optimizer actually solves.  Exactly one
+# test below reads it, and the temptation is to give `mesh` the flag instead and let the
+# whole file follow -- which would silently re-aim the ELEVEN other tests that read them at
+# a mesh none of them was calibrated on.  MEASURED RATHER THAN ASSERTED (§109, from the two ladders in
+# `studies/study_reds_hub_share.json` at the shipped genome, `coarse`):
+#
+#   `0.25 < rim   < 0.40`   0.3113 -> 0.3781   holds, but eats 44.6% of the band
+#   `0.58 < spoke < 0.72`   0.6545 -> 0.6136   holds, but eats 29.3% of the band
+#   `1.4  < drop  < 2.0`    1.5516 -> 0.9614   BREAKS, and at every rung on the ladder
+#
+# So a shared fixture would not have re-aimed six gates quietly; it would have turned one
+# of them red on the spot and moved two others most of the way to their edges.  Moving one
+# gate is the judgement §109 made.  Moving twelve is not, and one flag on `mesh` would have
+# made it look like one edit.
+#
+# Module-scoped and therefore lazy: costs a build and a ~1.1 s solve only on the runs that
+# reach the test that asks for it.
+@pytest.fixture(scope="module")
+def filleted_mesh(genes):
+    return ww.build_wheel(genes, CFG, fillet=True)
+
+
+@pytest.fixture(scope="module")
+def filleted_res(filleted_mesh):
+    return fem.solve_wheel(filleted_mesh)
+
+
 # ---------------------------------------------------------------------------
 # EQUILIBRIUM AND THE LOAD
 # ---------------------------------------------------------------------------
@@ -185,94 +215,108 @@ def test_the_rim_band_holds_a_large_minority_of_the_compliance(res):
     assert 0.58 < s["spoke"] < 0.72, s
 
 
-@pytest.mark.xfail(reason=(
-    "PLAN.md §14 item 4b, re-measured by §31 (REDS Step 3) and DECIDED there: the bound "
-    "STAYS at 0.03 and this stays red.  The shipped genome holds 4.17% at coarse and "
-    "4.63% at the finest rung; the design the bound was calibrated on meets it converged, "
-    "with 53% to spare, so 0.03 is achievable and is not a mesh artefact.  Moving it "
-    "would be re-fitting a gate to the design that breached it.  strict=True via "
-    "pyproject.toml, so this reopens itself the day the wheel passes it."))
-def test_the_hub_junction_holds_under_three_percent_of_the_compliance(res):
-    """RED SINCE §14, MEASURED IN FULL BY §31, AND WAITING ON A HUMAN.  Not a test edit.
+def test_the_hub_junction_holds_a_small_minority_of_the_compliance(filleted_res):
+    """RED FROM §14 TO §108, AND GREEN HERE BECAUSE THE INSTRUMENT CHANGED, NOT THE WHEEL.
 
-    §14 recorded 0.0321 here and called it 7% over.  It is 0.0417 at the same rung now.
-    §14 also named the one thing nobody had measured:
+    THE NAME NO LONGER CARRIES THE NUMBER, ON PURPOSE.  This was
+    `..._holds_under_three_percent_of_the_compliance` and the three percent is gone.  A
+    name that quotes its own threshold goes stale silently the day the threshold moves,
+    and there is nothing to make it fail -- the assertion below still passes while the name
+    above it lies.  The bound lives in the assertion now.  (The assertion has moved once
+    before, out of `..._rim_band_holds_a_large_minority_...` at §31, which is why that
+    older name is the one most of PLAN.md's early sections use for this gate.)
 
-        "the *direction* is surprising: thinner, floppier spokes should push compliance
-        toward the spokes and the hub share DOWN.  It went up.  The plausible cause is
-        `R_hub` dropping 1.5598 -> 0.5790 — much less material at the hub junction — but
-        that is a hypothesis and it has not been measured."
+    WHAT §31 DECIDED, AND WHY IT NO LONGER HOLDS.  §31 (2026-08-15) put the question up
+    with numbers, had it handed back, and made the call itself: *the bound stays at 0.03
+    and this stays red, as an accepted deficit.*  That call rested on exactly two legs,
+    both stated in §31 and both now gone:
 
-    IT WAS MEASURED BY `studies/study_reds_hub_share.py`, WHICH SWEPT `R_hub` ACROSS ITS
-    WHOLE GENE BOX AND FOUND THE SOLVED WHEEL BIT-IDENTICAL — hub share
-    0.04165644522132511 and axle drop 1.6207901051335216 at every point.  This docstring
-    read that as the hypothesis being dead, *"not falsified by a close call, but
-    structurally impossible"*.
+      (A) `0.03` IS ACHIEVABLE -- `best_solution_ga_beam.json`, "the design the 3% bound
+          was calibrated on", met it converged with 53% to spare.
+      (B) `0.03` IS NOT A MESH ARTEFACT -- the shipped genome was over at the COARSEST
+          rung, before any refinement argument starts.
 
-    **THAT INFERENCE WAS WRONG AND §75 CORRECTS IT.**  The sentence after it had the
-    mechanism exactly right — `wheel_wheel.py:44`, "FILLETS ARE NOT MODELLED"; `R_hub`
-    reaches the beam model, the objective and the buildability barriers but never the mesh
-    — and that is precisely why the sweep could not answer §14.  **A model that cannot
-    express a hypothesis cannot falsify it.**  Bit-identical rows are the instrument
-    reporting its own blindness, not the wheel reporting indifference.
+    (B) IS FALSIFIED.  §106 re-ran the ladder on the filleted mesh and the level fell by
+    76%; the ladder is on disk here as of §109, both arms, five rungs, linear on both
+    sides so the only difference between them is the mesh
+    (`studies/study_reds_hub_share.json`, `rungs` and `rungs_filleted_linear`;
+    `make reds-hub` and `make reds-hub-fillet-rungs`):
 
-    ON A FILLETED MESH THE HYPOTHESIS SURVIVES (§75, FILLET_PLAN STEP 3 RECORD PART 1).
-    `--sweep --fillet` at `coarse` under SVK gives eleven distinct values of fourteen rows,
-    and over the feasible range the hub share runs 0.007755 -> 0.003703 as `R_hub` goes
-    0.400 -> 1.900: it RISES as `R_hub` FALLS, monotonically, which is §14's direction.
+        genome    mesh       smoke     coarse    medium    fine      ultra     drift
+        shipped   plain      0.032489  0.034188  0.035237  0.036483  0.037053  +14.05%
+        shipped   FILLETED   0.008079  0.008308  0.008409  0.008442  0.008463   +4.74%
+        ga_beam   plain      0.013823  0.013722  0.013849  0.014043  0.014144   +2.32%
+        ga_beam   FILLETED   0.005312  0.005381  0.005406  0.005417  0.005423   +2.09%
 
-    THE REST OF THIS DOCSTRING IS UNAFFECTED.  What follows is a comparison BETWEEN
-    genomes on one mesh, and the curvature finding does not depend on `R_hub` moving
-    anything — `cy4` alone still takes the share under the bound.  §14's instinct was
-    right in sign and swamped, rather than wrong.
+    It WAS the mesh.  The plain increments are +0.001699, +0.001049, +0.001246, +0.000570
+    -- not monotone, rising at `medium`->`fine`, which is why this quantity could never be
+    called converged.  The filleted ones are +0.000228, +0.000101, +0.000033, +0.000020,
+    falling at every rung.  For the filleted ladder to climb to 0.03 its increments would
+    have to stop decaying almost exactly -- a ratio of 1.00095 against the 1.640 measured
+    at the top of the ladder -- so the pass here is not resting on the extrapolation.
 
-    WHAT DOES MOVE IT is the spoke's CURVATURE.  One-at-a-time gene swaps from the shipped
-    genome toward `best_solution_ga_beam.json` (the design the 3% bound was calibrated on),
-    at `coarse`, hub share 0.0417 -> 0.0138:
+    (A) IS GONE, AND MORE COMPLETELY THAN "THE NUMBER MOVED".  `ga_beam` asks for
+    `R_hub` 1.5598 / `R_rim` 3.0, and on the filleted mesh THAT WHEEL DOES NOT EXIST:
+    an explicit `fillet=(1.5598, 3.0)` is refused outright -- *"the fillet's tangent point
+    has passed the next sector's corner (-8.400 deg of free ring left)"*.  The filleted
+    `ga_beam` row above is `fillet=True`, which keeps the genome and CLAMPS it to
+    (0.667, 0.895) (`wheel_wheel.SECTOR_FIT_CLAMP`).  So the design the bound was
+    calibrated on cannot be built on the mesh the objective solves, and leg (A) has no
+    referent there at all.
 
-        gene   shipped   ga_beam     hub     closes the gap by
-        cy4     6.4375   29.2919   0.0132        102.4%
-        cy3     9.4191   24.3248   0.0219         70.9%
-        cy1     8.7212   27.9529   0.0250         59.7%
-        cy2    11.8088   31.7187   0.0255         57.9%
-        t0      1.4738    2.4774   0.0561        -51.9%   <-- WRONG WAY
+    WHY THE BOUND COULD NOT SIMPLY BE CARRIED OVER, WHICH IS THE TRAP THIS TEST WAS ONE
+    EDIT AWAY FROM.  Pointing the fixture at the filleted mesh and leaving `0.03` alone
+    passes -- by 72% -- and it takes the calibration design's margin from 54.3% to 82.1%
+    at this rung.  That is §14's own prohibition running backwards: §14 forbids moving a
+    bound to admit the design that breached it, and holding a bound still while moving the
+    instrument under it has the same effect by the other route.  A gate sitting 3.6x above
+    the quantity it watches is not a gate.
 
-    `cy4` alone takes it under the bound.  The shipped spoke is much flatter (cy 6.4-11.8
-    against 24-32), and a flatter spoke feeds moment into the hub junction instead of
-    storing it in its own bending.  §14's instinct about THICKNESS was right in sign — the
-    t0 row shows a thicker root RAISES the hub share, so thinning lowers it — it was just
-    swamped by a curvature change pulling twice as hard the other way.
+    AND IT COULD NOT BE RESCALED BY A FACTOR EITHER, WHICH IS THE LESS OBVIOUS HALF.  The
+    mesh does not rescale this quantity -- it rescales it DIFFERENTLY PER DESIGN.  At
+    `coarse` the shipped genome falls 4.115x and `ga_beam` falls 2.550x, because the
+    unfilleted re-entrant corner penalises a thin hub junction far harder than a thick
+    one, which is the same mechanism §30 measured on the rim corner.  There is no single
+    transport factor for `0.03` to ride across.
 
-    AND THE BOUND IS NOT A MESH ARTEFACT, which was the other live possibility (§29/§30).
-    Design x mesh, hub share, five rungs:
+    THE CALL, MADE IN §109 (2026-09-04): THE MESH MOVES TO THE FILLETED BUILD, THE BOUND
+    MOVES TO `0.0117`, AND THIS STOPS BEING AN XFAIL.
 
-        genome     smoke   coarse   medium    fine    ultra   drift
-        shipped   0.0392   0.0417   0.0433  0.0453   0.0463  +18.3%
-        ga_beam   0.0139   0.0138   0.0139  0.0141   0.0143   +2.4%
+    `0.0117` PRESERVES §31's WARRANT RATHER THAN §31's NUMBER.  What made `0.03`
+    defensible was leg (A): the reference design cleared it by 54.3% at this rung.  So the
+    bound is rescaled by the REFERENCE design's own mesh factor and never by the design
+    under test -- calibrating on the genome being gated is the §14 sin itself:
 
-    The ga_beam design is converged on the same ladder and passes with ~53% to spare, so
-    the ladder is not the problem.  The shipped design is 30.5% over at the COARSEST rung
-    and 54.3% over at the finest, and refinement makes it worse, not better.  No reading
-    of the discretisation rescues it: this is the wheel, not the mesh.
+        0.03 * (0.005381416728939758 / 0.013722004451848286) = 0.011765...
 
-    THE CALL, MADE IN §31 (2026-08-15): THE BOUND STAYS AT 0.03 AND THIS STAYS RED.
+    rounded DOWN to 0.0117 so the gate is never looser than its derivation.  `ga_beam`
+    keeps 54.0% of margin, against the 54.3% it had on the plain mesh at `0.03`; the
+    shipped genome clears it by 29.0%.
 
-    The measurement rules out both readings that would justify moving it.  `< 0.03` is not
-    an unreachable bound — `best_solution_ga_beam.json` meets it CONVERGED, at 0.0139 to
-    0.0143 across the whole ladder, with 53% to spare.  And it is not a mesh artefact —
-    the shipped genome is 30.5% over at the COARSEST rung, before any refinement argument
-    starts.  What is left is a real hub-stiffness deficit in the 1.2 mm wheel, and moving
-    the bound to accommodate it is re-fitting a gate to the design that breached it: the
-    move PLAN §14's rule exists to prevent, and one this tree has already refused three
-    times for `GATE_SMALL_LOAD_REL`.
+    THE ONE SCOPE LIMIT, AND ITS DIRECTION IS KNOWN.  The factor above comes from the
+    CLAMPED `ga_beam`, because the unclamped one does not build -- so it is a bound on a
+    stand-in, and the stand-in's hub fillet (0.667 mm) happens to land within 0.51% of the
+    shipped genome's (0.664 mm) while its rim fillet (0.895 mm) does not (3.0 mm).  §14's
+    direction -- the hub share RISES as `R_hub` FALLS, which §75 confirmed on a mesh that
+    can express it -- says an unclamped `ga_beam` would read LOWER, so the true factor is
+    SMALLER and the honest bound is TIGHTER than 0.0117.  `0.0117` is the loose end of the
+    range, and the shipped genome's 29.0% is therefore an upper bound on its own margin.
 
-    So this is a recorded, accepted deficit rather than an open question, and `xfail_strict`
-    means it reopens itself if the wheel ever passes.  THE SUCCESSOR IS A DESIGN CHANGE,
-    NOT A THRESHOLD ONE: `cy4` alone moves the share by 102% of the gap, so if hub
-    compliance is worth constraining it belongs in Stage 2/3's objective.  Not done here —
-    this arc is scoped to tests and their supporting measurements.
+    WHAT IS NOT CLAIMED HERE.  Not that the wheel improved: `best_solution.json` is
+    untouched and its hub junction is what it always was.  What changed is that the mesh
+    stopped putting a singularity where the fillet is.  §31's design successor -- `cy4`
+    alone moves the plain-mesh share by 102% of the gap, so hub compliance is reachable
+    from Stage 2/3's objective if it is ever worth constraining -- is not retired by this,
+    it is de-prioritised: HUBSHARE Step 0 asked whether such a term would buy anything and
+    the answer on this mesh is no.
+
+    THE SIBLING GATE ABOVE STILL READS THE PLAIN MESH.  `..._rim_band_holds_a_large_
+    minority_...` and the ten other tests on the `mesh`/`res` fixtures were calibrated there
+    and stay there; see the `filleted_mesh` fixture for the measured reason that is
+    deliberate rather than lazy.
     """
-    assert res["compliance_split"]["hub"] < 0.03, res["compliance_split"]
+    assert filleted_res["compliance_split"]["hub"] < 0.0117, (
+        filleted_res["compliance_split"])
 
 
 def test_the_beam_model_does_not_predict_the_axle_drop(res, genes):

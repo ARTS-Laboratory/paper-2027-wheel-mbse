@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -211,6 +211,10 @@ help:
 	@echo "              §14's hub-share direction survives, and the Kt term the"
 	@echo "              objective prices R_hub through goes EXACTLY flat above"
 	@echo "              its cap while the wheel keeps stiffening. ~80 s (§75)"
+	@echo "make reds-hub-fillet-rungs  the hub-share LADDER on the filleted mesh —"
+	@echo "              the gate's own quantity, which no target could produce"
+	@echo "              until §109. five rungs x two genomes, linear so the only"
+	@echo "              difference from reds-hub's ladder is the mesh. ~35 s"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -1333,6 +1337,24 @@ reds-hub:
 reds-hub-fillet:
 	studies/redsrun.sh studies/study_reds_hub_share.py --sweep --fillet \
 	    --config coarse --out $(notdir $(REDS_HUB_OUT))
+
+# THE LADDER ON THE MESH THE OBJECTIVE SOLVES — the gate's own quantity, which no target
+# could produce until 2026-09-04 (PLAN §106, §109).  `reds-hub` above runs `--rungs` on
+# `build_wheel`'s unfilleted default and `reds-hub-fillet` runs `--sweep`, so the filleted
+# ladder fell between them and §106 had to measure it by calling `shares()` by hand.
+#
+# LINEAR, NOT SVK, AND THAT IS DELIBERATE: `--fillet` implies SVK for the sweep because
+# FILLET_PLAN's cost section says so, but this ladder's entire content is the plain rungs
+# read against the filleted ones, and a kernel change on one side would confound the mesh
+# change with a kinematics change.  The driver defaults the ladder to `linear` for that
+# reason; it is named here anyway so the target states it rather than inheriting it.
+#
+# ~35 s, and it writes `rungs_filleted_linear` alongside `reds-hub`'s `rungs` rather than
+# over it — the plain ladder is the control that licenses the filleted column.
+reds-hub-fillet-rungs:
+	studies/redsrun.sh studies/study_reds_hub_share.py --rungs --fillet \
+	    --kinematics linear --configs smoke,coarse,medium,fine,ultra \
+	    --out $(notdir $(REDS_HUB_OUT))
 
 reds: reds-ratio reds-hub
 
