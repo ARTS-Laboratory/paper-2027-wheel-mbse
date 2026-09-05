@@ -49,19 +49,25 @@ def res(mesh):
 # A SECOND MESH, AND DELIBERATELY NOT A CHANGE TO THE ONE ABOVE (PLAN.md §109).
 #
 # `fillet=True` is what `wheel_objective.phase_meshes` and `wheel_pool_worker.run_phase`
-# pass unconditionally, so this is the wheel the optimizer actually solves.  Exactly one
-# test below reads it, and the temptation is to give `mesh` the flag instead and let the
-# whole file follow -- which would silently re-aim the ELEVEN other tests that read them at
-# a mesh none of them was calibrated on.  MEASURED RATHER THAN ASSERTED (§109, from the two ladders in
-# `studies/study_reds_hub_share.json` at the shipped genome, `coarse`):
+# pass unconditionally, so this is the wheel the optimizer actually solves.  Two tests below
+# read it now -- §109 closed the hub-share gate on it, and §111 moved the beam-blindness
+# ratio and its band here too -- and the temptation is still to give `mesh` the flag instead
+# and let the whole file follow, which would silently re-aim the TEN other tests that read
+# `mesh`/`res` at a mesh none of them was calibrated on.  MEASURED RATHER THAN ASSERTED
+# (§109, from the two ladders in `studies/study_reds_hub_share.json` at the shipped genome,
+# `coarse`):
 #
 #   `0.25 < rim   < 0.40`   0.3113 -> 0.3781   holds, but eats 44.6% of the band
 #   `0.58 < spoke < 0.72`   0.6545 -> 0.6136   holds, but eats 29.3% of the band
-#   `1.4  < drop  < 2.0`    1.5516 -> 0.9614   BREAKS, and at every rung on the ladder
+#   `1.4  < drop  < 2.0`    1.5516 -> 0.9614   BREAKS, and at every rung on the ladder --
+#                                              now `test_the_axle_drop_meets_the_stroke_
+#                                              target` below, xfailed at §111 rather than
+#                                              silently inherited by a shared fixture
 #
 # So a shared fixture would not have re-aimed six gates quietly; it would have turned one
-# of them red on the spot and moved two others most of the way to their edges.  Moving one
-# gate is the judgement §109 made.  Moving twelve is not, and one flag on `mesh` would have
+# of them red on the spot and moved two others most of the way to their edges.  Moving two
+# gates onto this fixture is the judgement §109 and §111 made, one at a time and each
+# measured.  Moving all twelve tests onto it in one flag on `mesh` is not, and would have
 # made it look like one edit.
 #
 # Module-scoped and therefore lazy: costs a build and a ~1.1 s solve only on the runs that
@@ -319,8 +325,22 @@ def test_the_hub_junction_holds_a_small_minority_of_the_compliance(filleted_res)
         filleted_res["compliance_split"])
 
 
-def test_the_beam_model_does_not_predict_the_axle_drop(res, genes):
+def test_the_beam_model_does_not_predict_the_axle_drop(filleted_res, genes):
     """THE M4 HEADLINE: the beam model's 2.0 mm target is not what the part does.
+
+    ON THE FILLETED MESH NOW, NOT THE PLAIN ONE (PLAN.md §111) — the mesh
+    `wheel_objective.phase_meshes` has built unconditionally since §103, so this is the wheel
+    the beam-blindness claim is actually about. The move STRENGTHENS the claim rather than
+    weakening it, which is the opposite of the risk §109 was guarding against for the
+    hub-share gate and is why it can just move, measured rather than assumed:
+
+        genome              beam       plain |ratio-1|   filleted |ratio-1|
+        best_solution        0.515414 mm      2.0105          0.8652
+        best_solution_ga_beam 1.990055 mm     0.1665          0.7451
+
+    `ga_beam` is the design the beam model was optimised against, and even it clears the
+    0.10 bar on the filleted mesh by 7.45x — up from 1.67x on the plain one, where the
+    margin was thinnest.
 
     The sign of this has flipped once already — the wheel was 42.7% SOFTER than the
     target with the 1.1 mm band and is now stiffer than it — so the test pins the
@@ -329,13 +349,50 @@ def test_the_beam_model_does_not_predict_the_axle_drop(res, genes):
     as a failure to be looked at rather than passing unnoticed.
     """
     beam = wf.evaluate_design(genes)[0]["deflection_mm"]
-    ratio = res["axle_drop_mm"] / beam
+    ratio = filleted_res["axle_drop_mm"] / beam
     assert abs(ratio - 1.0) > 0.10, (
-        f"axle drop {res['axle_drop_mm']:.4f} mm vs beam {beam:.4f} mm — the beam model "
-        f"has become predictive on this genome, which would be news; check whether "
+        f"axle drop {filleted_res['axle_drop_mm']:.4f} mm vs beam {beam:.4f} mm — the beam "
+        f"model has become predictive on this genome, which would be news; check whether "
         f"study_wheel_fea.run_beam_blindness still finds a spread across genomes before "
         f"believing it")
-    assert 1.4 < res["axle_drop_mm"] < 2.0, res["axle_drop_mm"]
+
+
+@pytest.mark.xfail(reason=(
+    "PLAN.md §111: 0.961370 mm at `coarse` (38.0-39.9% \"stiffer\" than the plain mesh at "
+    "every rung on §109's ladder, so not a rung artefact) against a `1.4 < ... < 2.0` band "
+    "that has NO recorded warrant for its lower edge -- born in f0a9e83 ('fillet tweaks', "
+    "2026-07-25, the 4th commit of 157, before PLAN.md existed), never edited since, and "
+    "unjustified anywhere in the tree.  `2.0` is TARGET_DEFLECTION_MM and its sign claim "
+    "('stiffer than the target') still holds; only the lower edge breaks.  Not moved to a "
+    "new value, because there is no warrant to re-derive one from -- see the docstring.  "
+    "Clears on a re-promotion (successor 6) or a section that gives the band a warrant, "
+    "not on an edit to this number."))
+def test_the_axle_drop_meets_the_stroke_target(filleted_res):
+    """The band half of the old combined gate, split out and read on the filleted mesh.
+
+    THIS IS A DIFFERENT CLAIM FROM THE RATIO ABOVE, AND IT DOES NOT SURVIVE THE SAME MOVE.
+    The ratio is a statement about whether the beam model predicts the wheel and gets
+    stronger on the mesh the objective solves. This is an absolute distance from a 2.0 mm
+    target, and PLAN §29 already retired exactly that class of claim once, for the same
+    reason: "an absolute distance from 2.0 mm quoted without naming its rung"
+    (`test_wheel_fea.py`, `drops[-1] < TARGET_DEFLECTION_MM < drops[0]`). This band is
+    evaluated at `coarse` and has never named its rung either — it survived that purge by
+    sitting in a different test.
+
+    NOT A CONFORMANCE CLAIM. `wheel_requirements.SHOULD-DEFLECTION` is the tree's actual
+    stroke-conformance gate, on `axle_drop_mean_mm` (the contact-phase mean, 1.9011 mm in
+    the committed `studies/study_mbse_score.json`) — 22.5% away from the linear phase-0
+    quantity this test reads (1.5516 mm plain). This band is a regression bound that has
+    ridden alongside the ratio assertion since the test was written; it never was a
+    requirement and moving it to look like one would be inventing a warrant, not finding
+    one.
+
+    NO TRANSPORT FACTOR EXISTS TO MOVE THE EDGES BY, PER §109's OWN CHECK 3 -- measured
+    fillet stiffening is 1.614x for the shipped genome and 3.270x for `ga_beam` (which
+    both fillet junctions clamp), 2.03x apart. A per-design factor this wide is the same
+    finding §109 made for the hub-share bound, more extreme.
+    """
+    assert 1.4 < filleted_res["axle_drop_mm"] < 2.0, filleted_res["axle_drop_mm"]
 
 
 def test_the_beam_to_wheel_ratio_is_not_a_constant(genes):
