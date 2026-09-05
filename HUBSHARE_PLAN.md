@@ -1,6 +1,12 @@
 # HUBSHARE_PLAN.md — should hub compliance be an objective term?
 
-**Open arc #3. Created 2026-08-16 from PLAN §31 item 4's filed successor. Nothing started.**
+**~~Open arc #3.~~ Created 2026-08-16 from PLAN §31 item 4's filed successor. ~~Nothing
+started.~~**
+
+**STATUS CORRECTED 2026-09-05 — PLAN §114. THIS ARC IS CLOSED — 2026-09-04, §109.** The
+answer is NO: the gate is green, the bound is `0.0117`, and there is no deficit for an
+objective term to close. The closing record is at the foot of this file — three lines below a
+header that claimed nothing had started, which is how long that contradiction stood.
 
 **VERSION CONTROL IS PART OF THIS PROJECT'S WORKFLOW — CHANGED 2026-08-19.** The rule that
 stood here read *"Ignore version control entirely. Do not commit, branch, stage, revert or

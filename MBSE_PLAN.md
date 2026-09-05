@@ -1,8 +1,15 @@
 # MBSE_PLAN.md — a requirements layer: what is this wheel for?
 
 **Open arc #9. Created 2026-08-31, carried forward from nothing — this is the first arc in
-the tree that is about the PROBLEM STATEMENT rather than about the solution. Nothing
-started.**
+the tree that is about the PROBLEM STATEMENT rather than about the solution. ~~Nothing
+started.~~**
+
+**STATUS CORRECTED 2026-09-05 — PLAN §114. STEPS 0-8 ARE DONE (§97), and `PLAN.md`'s own
+open-arcs table has said so since §97 — this file and the index have contradicted each other
+for eight days.** See `THE RECORD — 2026-08-31` below. The weight portfolio quoted in that
+record was re-derived at §103 (`DEFAULT_WEIGHTS["stress_margin"]` 325.0→89.21, `p_cal` to
+53.51/44.60/1.59/0.30/0.00). What is left is not the arc: it is a re-optimisation under a
+failing profile, which costs a `medium` descent this arc was forbidden to spend.
 
 **VERSION CONTROL IS PART OF THIS PROJECT'S WORKFLOW — CHANGED 2026-08-19.** The rule that
 stood here read *"Ignore version control entirely. Do not commit, branch, stage, revert or

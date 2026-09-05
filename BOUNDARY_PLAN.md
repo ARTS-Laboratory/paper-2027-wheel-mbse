@@ -1,7 +1,13 @@
 # BOUNDARY_PLAN.md — defect 5's boundary placement
 
 **Open arc #8, lowest ranked. Created 2026-08-16, carried forward from PLAN §19 and §21.
-Nothing started.**
+~~Nothing started.~~**
+
+**STATUS CORRECTED 2026-09-05 — PLAN §114. STEP 0 IS ANSWERED (§112, 2026-09-04) and the arc
+stays at #8.** The wasted-descent ratio does not generalise — four of twenty-five committed
+runs, all `medium`/SVK, 17.5%–42.8% each. See the Step 0 record at the foot of this file. The
+header was left claiming nothing had started in the same change that appended that record;
+this corrects it.
 
 **VERSION CONTROL IS PART OF THIS PROJECT'S WORKFLOW — CHANGED 2026-08-19.** The rule that
 stood here read *"Ignore version control entirely. Do not commit, branch, stage, revert or
