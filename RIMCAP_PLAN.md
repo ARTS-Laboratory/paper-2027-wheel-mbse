@@ -1,6 +1,12 @@
 # RIMCAP_PLAN.md — a rim cap model
 
-**Open arc #5. Created 2026-08-16, carried forward from PLAN §22 and §24. Nothing started.**
+**Open arc #5. Created 2026-08-16, carried forward from PLAN §22 and §24. ~~Nothing
+started.~~**
+
+**STATUS CORRECTED 2026-09-05 — PLAN §114.** Step 0 was run (`THE 'CHECK FIRST' TRIGGER
+FIRED` below — 17 of 38 genomes rim-clamped, 2598 iterates scored), and **both halves of what
+this arc was ranked for are now superseded: the arc is PARKED — see the park record at the
+foot of this file.**
 
 **VERSION CONTROL IS PART OF THIS PROJECT'S WORKFLOW — CHANGED 2026-08-19.** The rule that
 stood here read *"Ignore version control entirely. Do not commit, branch, stage, revert or
@@ -179,3 +185,78 @@ line was written.  The current shipped genome reads `[4.0271, 10.7491]`, so the 
 off by 86x.  The docstring's ARGUMENT survives (it uses the margins only to show the barrier
 is flat there, and 4.0271 is comfortably feasible), but the numbers are one promotion out of
 date.
+
+---
+
+# THE PARK — 2026-09-05. **BOTH HALVES OF THIS ARC ARE SUPERSEDED, AND THE SECOND ONE WAS CLOSED AS IMPOSSIBLE RATHER THAN DONE.**
+
+PLAN.md §114. This arc was ranked #5 for two deliverables. Neither is reachable as written,
+and they stopped being reachable for different reasons and in different sections.
+
+## HALF ONE — THE CAP MODEL. SUPERSEDED BY §103.
+
+Step 1 asks for `rim_fillet_cap_mm(t3, arrival_angle)` in `wheel_objective`, differentiable,
+finite-difference validated, *"mirroring the hub"*. The thing it mirrors no longer exists in
+that role: §103 demoted `Kt`, `hub_fillet_cap_mm` and `hub_fillet_r_effective` to **reporting
+only**. Verified in the code as it stands, `src/wheel_objective.py:1261-1265`:
+
+> *"`Kt`/`hub_fillet_cap_mm`/`hub_fillet_r_effective` no longer feed `util_j` — kept for
+> REPORTING ONLY. They are a purely geometric feasibility question ... unrelated to and
+> untouched by which quantity prices stress."*
+
+**A surrogate mirroring a surrogate that was retired is not a deliverable.** The rim does not
+need a stress model; the solve prices it directly through the region p-norms.
+
+## HALF TWO — MAKE THE CLAMP VISIBLE. TRIED AT §110, AND IT CANNOT BE DONE THE PRESCRIBED WAY.
+
+The block above ends *"THE NEXT STEP IS NOT THE CAP MODEL ... report `fillet_clamped` and the
+applied radii the way `hub_fillet_cap_mm` is already reported."* **That was attempted at §110
+(commit `f21ec7d`) and reverted, on a reason worth keeping.**
+
+`hub_fillet_cap_mm` is reportable because it is computed on the corner barrier's own path,
+which never touches the mesh. The sector-fit clamp is not: it is discovered inside
+`_filleted_gradient_recipe`, which runs only because `mesh_coords` was called — and
+`mesh_coords` **raises before either report dict exists**. A clamped evaluation never reaches
+a return statement to hang a key on. Built and tested against `ga_beam`, §106's own clamped
+witness, the keys came back constant-by-construction — always `False` — and were reverted
+rather than shipped.
+
+Confirmed in the tree today: `wheel_stage3.REPORT_KEYS` (`:179-183`) carries `kt_hub`,
+`kt_rim`, `hub_fillet_cap_mm` and `r_hub_effective_mm` and **does not carry `fillet_clamped`**,
+which exists only as a `Mesh` attribute (`wheel_wheel.py:2583`). What shipped instead is
+visibility in the **event record**: `FilletClampRefusedError` (`wheel_wheel.py:1605`) and
+`wheel_stage3._reject_kind` classifying it as `clamp_reject` (`:206`, `:216-217`), split out
+of `solve_reject` where S5's calibration had been silently absorbing it.
+
+**So the prescription was not merely completed by someone else — it was shown to be
+unreachable, and a different mechanism was substituted.** §110's own successor list records
+the same conclusion: *"make the rim clamp visible — closed here: visible in the event record,
+not the report dict, because the report dict is unreachable from a clamped evaluation."*
+
+## WHAT IS NOT PARKED
+
+Two things, named so they are not lost with the arc:
+
+1. **Whether the clamp needs a BARRIER.** §106 deferred this explicitly to *"once a run can
+   show how often it fires"*, and no run can yet: all 25 committed Stage-3 artifacts predate
+   §103's fillet switch, so the clamp has never fired on disk. This is **blocked behind the
+   Stage-3 re-run** (§113, still #1 tree-wide), not behind anything in this file. When that
+   run lands, its `clamp_reject` event count is the measurement, and it is now recorded
+   because §110 made the event distinguishable.
+2. **Step 0's grid** — the closed-form slot against OCC acceptance — remains unspent. Step 0's
+   enumeration ran (17 of 38 genomes rim-clamped, 2598 iterates scored) and is above; the grid
+   itself was never built.
+
+## SCOPE, WITH ITS DIRECTION
+
+The gap this arc named is **real and still open** — the objective reads `g[13]` for the corner
+and the SECTOR limit is still applied by the mesh rather than priced by the objective. What
+changed is that neither of this arc's two routes to closing it survives. If the re-run shows
+`clamp_reject` firing often, the answer is a barrier on the sector limit, which is neither
+Step 1 nor the report half. **Parking this arc does not park the gap.**
+
+**WHAT DID NOT HAPPEN.** No code was written for this decision, `best_solution.json` is
+untouched, no threshold moved. One loose end from the block above IS now closed and is not
+part of this decision: the stale `_fillet_margins` docstring quoting `[+4.647, +0.125]` as the
+shipped genome's margins was corrected at §112 (`89a370e`) — it now names `ga_beam` as the
+genome those belong to and records the current `[4.0271, 10.7491]` alongside.

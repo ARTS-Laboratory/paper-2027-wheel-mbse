@@ -1,8 +1,17 @@
 # UNCAP_PLAN.md — the mesh's second junction corner is manufactured, and it carries the peak stress
 
-**Open arc #2, promoted to the top. Created 2026-08-17 from PLAN §34 Findings 1 and 4.
-Nothing started. NOT CHEAP — read the cost section, and read the premise section first
+**~~Open arc #2, promoted to the top.~~ Created 2026-08-17 from PLAN §34 Findings 1 and 4.
+~~Nothing started.~~ NOT CHEAP — read the cost section, and read the premise section first
 because it is unusually load-bearing.**
+
+**STATUS CORRECTED 2026-09-05 — PLAN §114. TWO THINGS IN THAT HEADER WERE FALSE.** *"Nothing
+started"* — STEP 3 RECORD PARTS 2 through 10 are in this file, recorded at §104, and PART 10
+already carries `THE DECISION: THE FAITHFUL RIM IS NOT ADOPTED`. And *"#2, promoted to the
+top"* was this file's claim about itself, never ratified: `PLAN.md`'s open-arcs table gives #2
+to `FILLET_PLAN.md` and carried **no UNCAP row at all** until §114 added one. **The arc is now
+PARKED — see the park record at the foot of this file.** Read the records, not the plan above
+them; the plan text is kept unedited because a plan quietly rewritten to match its outcome is
+not a record.
 
 **VERSION CONTROL IS PART OF THIS PROJECT'S WORKFLOW — CHANGED 2026-08-19.** The rule that
 stood here read *"Ignore version control entirely. Do not commit, branch, stage, revert or
@@ -1979,3 +1988,83 @@ diff was checked field by field rather than eyeballed: **41 differences, of whic
    part of PART 6's question still open: the bow explains where the bend is needed, the
    wedge-and-arc conjunction explains which regions fold, and neither separates the genome
    that refuses everything from the 0.498-bow one the curve reaches.
+
+---
+
+# THE PARK — 2026-09-05. **`rim:P_c`'s FIDELITY IS NOT WORTH A Y-PARTITION. PART 10's ITEM 1 RESOLVES TO ITS SECOND BRANCH, AND THE ARC IS PARKED WITHOUT ADOPTION.**
+
+PLAN.md §114. PART 10 (§104, 2026-09-03) left the arc holding one binding choice: *"a
+Y-partition of the FILLETED rim junction, or a decision that `rim:P_c`'s fidelity is not worth
+one."* Nobody has taken it in the fifteen sections since. **This takes the second branch.**
+
+## THE PREMISE, RE-CHECKED MECHANICALLY RATHER THAN READ OFF PART 10
+
+Both legs were re-verified against the tree as it stands today, not quoted from the record
+that established them:
+
+1. **The mesh this file partitions is not the mesh the tree builds.**
+   `wheel_wheel.sector_blocks` takes `fillet=None` by default and its own docstring reads
+   *"The seven node grids of sector 0 — eleven when the fillet is blocked"*
+   (`wheel_wheel.py:2282-2286`). `study_tri_block.region()` calls it with **no `fillet=`**
+   (`studies/study_tri_block.py:228`) — the seven-block sector. Every mesh the objective
+   actually solves passes `fillet=True`: `wheel_objective.py:1015` and
+   `wheel_pool_worker.py:63`, unconditional since §103. **The twelve-block Y this file built
+   partitions a sector the tree stopped building**, and PART 10 already measured the
+   inversion: the faithful rim's worst block goes 23.8x worse at `coarse` and 2.5x at
+   `medium` once filleted.
+
+2. **`rim:P_c` reaches nothing that decides anything.** `grep -rn "rim:P_c" src/` returns
+   **zero matches** — the string survives only in `tests/`, in study drivers and in committed
+   study artifacts. The quantity it contaminates is assigned once and read once:
+   `agg, c = _stress_aggregate(pn, maxes, q)` at `wheel_objective.py:1257`, carrying the
+   comment *"whole-wheel pnorm — REPORTING ONLY"*, and read at `:1356` into
+   `"pnorm_stress_agg_mpa"`, plus the `stress_utilisation` diagnostic that `:1333` records as
+   *"retained as the diagnostic that shows why it was abandoned"*. Neither `BARRIER_TERMS`
+   nor `OBJECTIVE_TERMS` (`:399-401`) names it. What prices stress on the live path is the
+   two per-junction region p-norms, `agg_hub`/`agg_rim`.
+
+## THE REASON, AND IT IS NOT THE ONE THIS ARC CARRIED
+
+This arc was created because **the wheel's global peak stress lived on a corner the shipped
+part does not have**. That was true and it was worth chasing. It is not why the arc stops.
+
+The arc stops because the payoff it was ranked for has been disconnected from every consumer.
+Step 3.1 asks whether the global peak leaves the artefact corner — but since §103 that peak is
+a **reporting number**, so the answer changes a diagnostic and no decision. Step 3.2 predicts
+that removing the end cap makes the fillet tractable — **inverted**: on the mesh the tree now
+builds, the faithful rim is 23.8x worse, not better. Step 3.3 says *"only then is FILLET_PLAN
+Step 2 reachable"* — and FILLET Step 2 landed independently at §103 without this arc. **All
+three steps are answered, unreachable, or moot, and none of them by being done.**
+
+So the cost of never partitioning the eleven-block junction is a fidelity claim about a
+reporting number. That is not worth the measured price of the alternative: PART 10 put a band
+draw at ~200 s because 25-35k genomes must be drawn to find forty above 30 degrees, before any
+partition work begins at all.
+
+## WHAT WOULD REOPEN IT
+
+**One thing, and it is not a refinement of this arc's own argument: `rim:P_c` acquiring a
+consumer.** If a future term, barrier or gradient reads the whole-wheel p-norm — or if
+`stress_utilisation` is ever promoted back out of diagnostic status — the fidelity of the
+corner it is computed on stops being cosmetic and this arc becomes live again, on the
+eleven-block sector. The park is a statement about what reads the quantity, not about whether
+the corner is real. **The corner is still manufactured and the mesh still puts the global peak
+on it; nothing downstream cares.**
+
+The fold screen (PART 10's item 2) is **not parked with the arc** — it is a usable instrument
+for conditioning a band draw, refit per stream, and it outlives this file.
+
+## SCOPE, WITH ITS DIRECTION
+
+This parks the arc against the objective **as §103 left it**. The direction of the error is
+worth naming: if the Stage-3 re-run (§113) or anything after it re-wires the whole-wheel
+p-norm into a live term, this decision is wrong in the direction of having under-invested in
+mesh fidelity — recoverable, because the seven-block partition work in this file is kept, not
+deleted. It is wrong in no direction that costs a wrong answer today, because today the
+quantity is read by a report key.
+
+**WHAT DID NOT HAPPEN.** `best_solution.json` is untouched, no threshold moved, no mesh
+default changed, and no code was written for this decision. The seven-block Y-partition, the
+calibrated thresholds and the fold screen all stay on file exactly as PART 10 left them. What
+moved is this file's header, its row in `PLAN.md`'s open-arcs table — which it did not have
+until now — and this record.
