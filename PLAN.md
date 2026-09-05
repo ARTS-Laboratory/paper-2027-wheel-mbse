@@ -16345,3 +16345,114 @@ very descent BOUNDARY's own Step 0 was designed to avoid spending.
 **What moved:** `studies/study_boundary_waste.py` and its regenerated
 `studies/study_boundary_waste.json`, `Makefile` (`make boundarywaste`), and this section.
 `best_solution.json` untouched, no threshold moved, no study driver mid-write.
+
+---
+
+## §110 — 2026-09-04. §109's SUCCESSOR (§108'S OLD #3), CLOSED: THE CLAMP IS A THIRD REJECT KIND, NOT `solve_reject` WEARING ITS NAME — AND §106'S "SILENTLY TRUNCATES" WAS HALF RIGHT
+
+§106 named the gap and prescribed the fix in one sentence: *"the objective can move `R_rim`
+into a region the mesh silently truncates, with the barrier that reads `R_rim` certifying it
+feasible… The cheapest honest fix is to make the clamp visible — report `fillet_clamped` and
+the applied radii the way `hub_fillet_cap_mm` is already reported."* §108 ranked it #3 and
+left it, behind the gate call §109 has since closed.
+
+### THE PRESCRIBED FIX DOES NOT REACH THE THING IT WOULD REPORT
+
+`hub_fillet_cap_mm` is reportable because it is computed on the CORNER barrier's own path,
+which never touches the mesh. The sector-fit clamp is different: it is discovered inside
+`_filleted_gradient_recipe`, which only runs because `t2_vector`/`t3_terms` called
+`mesh_coords` — and `mesh_coords` raises before either function's report dict exists. A
+clamped evaluation does not reach a return statement to attach a key to. Confirmed by
+building the report keys and testing them against `ga_beam` (§106's own clamped witness,
+both junctions cut): `hub_fillet_clamped` and `rim_fillet_clamped` were constant-by-
+construction, always `False`, because the only genomes that ever reach the report line are
+the ones that did NOT clamp. Reverted rather than shipped — a ranked successor is a
+hypothesis, and this is the fourth time the tree has caught one as wrong before writing it
+down (§104, §105 successor 5, §107, now this).
+
+### THE REAL DEFECT WAS ONE LEVEL UP, AND IT ALREADY HAD A NAME FOR THE MISTAKE IT REPEATS
+
+§108's own trial-loop comment says why `MeshRefusedError` needed its own event kind rather
+than falling into `solve_reject`: *S5 counts `solve_reject` against a known number of
+INJECTED SOLVER failures, and one kind for two causes would make that count mean two things
+at once.* The sector-fit clamp raises a bare `NotImplementedError` at
+`_filleted_gradient_recipe` — a `RuntimeError` subclass, so §108's own catch swallowed it
+into the `else` branch and filed it as `solve_reject`. **The comment forbade this conflation
+for one cause and the code committed it for a second, one paragraph later.**
+
+It is not a failed solve. The mesh built and solved; only the GRADIENT is unavailable,
+because `mesh_coords`'s differentiable path will not return a derivative for radii the
+genome did not ask for. The response Stage 3 takes is identical to the other two refusals —
+shorten the step — so nothing about the descent's behaviour was ever wrong. What was wrong
+is what the event record calls it, and that record is exactly what S5 calibrates against.
+
+### THE FIX: A NAME, AND ONE CLASSIFIER SHARED BY BOTH CATCH SITES
+
+`FilletClampRefusedError(NotImplementedError)` (`src/wheel_wheel.py`, immediately before
+`MeshRefusedError`) — raised at the clamp-refusal site in `_filleted_gradient_recipe`, naming
+which junction(s) clamped. Subclassing `NotImplementedError` keeps it a `RuntimeError`, so
+every existing `except (RuntimeError, MeshRefusedError)` around a descent — there are three,
+per §108's own count — keeps catching it with no change in behaviour; only the label changes.
+
+`wheel_stage3._reject_kind(err)` — one function, used at BOTH of Stage 3's catch sites
+(`descend`'s trial loop and `descend_lbfgsb`'s `fun` closure), so the two cannot disagree
+about what a given exception is called:
+
+```
+  mesh_reject   MeshRefusedError            this genome has no filleted mesh at all
+  clamp_reject  FilletClampRefusedError     the mesh exists and solves; only the
+                                            GRADIENT is refused (NEW)
+  solve_reject  everything else             a real failure to solve
+```
+
+`tests/test_stage3.py` adds `_ClampRefusingEvaluator` (sibling of §108's
+`_RefusingEvaluator`, deliberately a separate class — one evaluator raising both refusals
+would make a green mean either) and three tests: the three-way classification stays correct
+under two injected clamp refusals in one run; the exception hierarchy is unchanged
+(`FilletClampRefusedError` is a `RuntimeError`, is NOT a `MeshRefusedError`, and
+`_reject_kind` reads all three correctly); and — the test that corrects §106's premise —
+`test_a_clamped_genome_refuses_the_objective_rather_than_being_truncated`.
+
+### §106's PREMISE, CORRECTED: THE SILENCE WAS IN THE REBUILD, NOT THE OBJECTIVE
+
+§106 read `ga_beam`'s clamped radii off a direct `build_wheel(fillet=True)` call and
+concluded the objective *"can move `R_rim` into a region the mesh silently truncates, with
+the barrier that reads `R_rim` certifying it feasible."* The barrier half is exact — every
+barrier reading `R_rim` is 0.0 at `ga_beam`, confirmed again here. **The silence is not**: a
+direct `build_wheel` call bypasses `mesh_coords` entirely, which is why §106's own rebuild
+saw a truncated radius where an actual evaluation sees an exception. Pinned now by one test:
+`WO.objective(ga_beam, CFG, tiers=("t1","t2"))` and `tiers=("t1","t3")` both raise
+`FilletClampRefusedError`; `tiers=("t1",)` alone survives, because T1 is barrier-only and
+builds no mesh — which is exactly where `R_rim` reads feasible. Both halves of §106's
+sentence are true, about two different code paths, and neither contradicts the other once
+the two are told apart.
+
+### SCOPE: NEVER FIRED ON DISK, WHICH IS A DATE AND NOT A REPRIEVE
+
+All 25 committed `stage3_*.json` runs are from 2026-08-01/03 and predate §103's fillet
+switch — none of them ever built a filleted mesh, so `grep` for `NotImplementedError` in any
+committed event list returns nothing and this defect has cost no run to date. §106 rebuilt
+their 2598 iterates at `coarse` with `fillet=True` and found 117 rim-clamped and 187
+hub-clamped (this section's own re-check reproduces both counts exactly); on the next
+filleted Stage-3 run, each of those is one `clamp_reject` event that would otherwise have
+corrupted an S5 calibration by exactly its count.
+
+### VERIFICATION
+
+`tests/test_stage3.py -q -k clamp`: 3 passed, targeted. Full file: 63 passed. Backward
+compatibility — `tests/test_filleted_mesh.py`'s existing `pytest.raises(NotImplementedError,
+match="clamp")` sites — 39 passed, unchanged, because the new class is still a
+`NotImplementedError` and the message still contains "clamp". Full batched suite (one
+process per file, `run_suite.sh`'s pattern, run against this change): all 31 files, exit 0
+each, including the three heaviest — `test_objective.py` 2253s, `test_requirements.py`
+1221s, `test_stage3.py` 1724s (63 tests, the three new ones among them) — and
+`test_wheel_fea.py` at 23s with its one pre-existing xfail (§29's, unrelated to this
+section) still reported `x`, not `X`.
+
+### THE SUCCESSORS — §109's LIST WITH ITEM 3 STRUCK
+
+**2** the axle-drop gate / M4 beam-blindness headline, plain-mesh-only since birth — ranked
+here as §111. **3** ~~make the rim clamp visible~~ — closed here: visible in the event
+record, not the report dict, because the report dict is unreachable from a clamped
+evaluation. **4** MESHSTEP's contact-patch re-check. **5** BOUNDARY's `fillet_cap` companion
+term. **6** re-run Stage 3 and re-promote — still #1 overall, and still not started.
