@@ -16266,3 +16266,82 @@ what it was calibrated against — and the answer, when finally asked, was a whe
 current mesh refuses to build. **Before moving a test to a new instrument, re-derive its
 threshold's warrant on that instrument. If the warrant does not survive the move, the number
 must not either.**
+
+---
+
+## §112 — 2026-09-04. BOUNDARY STEP 0, ANSWERED: THE RATIO DOES NOT GENERALISE — IT IS FOUR OF TWENTY-FIVE RUNS, ALL `medium`/SVK, 17.5%–42.8% EACH — AND §19's OWN RUN RECONSTRUCTS EXACTLY FROM THE STEPS ARRAY
+
+§21's Step 0 asked whether §19's *"45 steps of a 6 h 20 m run descending into the
+unbuildable"* generalises across the Stage-3 runs already on disk, priced as wasted descent
+rather than as §21's 0.61%-of-loss reading. Answerable with **no solve** — every committed
+`stage3_*.json` with a `steps` trace already carries `terms.<name>.value` and `wall_s` per
+step — and a driver now does it: `studies/study_boundary_waste.py` (`make boundarywaste`,
+well under a second, no jax import).
+
+**§19's own run reconstructs exactly, which is the first thing worth recording.**
+`stage3_margin_medium.json` — line 231's `e126cc3 §19` mapping — carries `settings.elapsed_s`
+= 22834.0 s = **6 h 20 m**, to the word. `fillet_cap` is nonzero at 74 of its 101 steps
+(§19/§21's *"74 of 101 iterates in violation"*), not contiguously — the first violation is at
+step 3 and it recovers — and the LAST recovery is at step 56, after which every step through
+100 stays in violation (§19/§21's *"every step from 56 to 100"*). Isolating that terminal
+span, rather than the raw violating count, is the right reading of *"descending into the
+unbuildable"*: it is a one-way condition, and the driver's `last_all_feasible_index` finds
+the point after which it never resolves. Wall past that point: **2.57 h of 6.01 h, 42.8%** —
+against §19/§21's own 45-of-101-step, ~2.8-hour reading. Both numbers agree; the driver adds
+nothing to this one row that the plan record did not already have, which is the calibration
+that says the other twenty-four rows can be trusted.
+
+**Full census, 25 of 25 committed `stage3_*.json` runs with a step trace** (24 more files are
+`*_best*`/`*_check*` summaries with no `steps` array, and are named, not silently dropped):
+
+```
+  total wall, all 25 runs                                    75.24 h
+  wall past the last all-barriers-feasible iterate            7.58 h   (10.1%)
+  wall past the last fillet_cap-feasible iterate               7.38 h   ( 9.9% of the 23
+                                                                          runs that carry
+                                                                          the term at all)
+```
+
+**It is four runs, not a general property of the descent, and every one shares two
+settings:**
+
+```
+  run                            config   kinematics   n    last feasible   wall past    % of run
+  stage3_margin_medium.json      medium   svk          101  56              2.57 h       42.8%
+  stage3_buildcap_medium.json    medium   svk          101  61              2.28 h       37.8%
+  stage3_knee_medium.json        medium   svk          101  74              1.46 h       24.6%
+  stage3_buildcap2_medium.json   medium   svk          101  82              1.06 h       17.5%
+  stage3_svk_medium.json         medium   svk          101  100             0.00 h        0.0%
+```
+
+All five `medium`/SVK full descents on disk are in this table; four of the five bite and one
+does not. Two more rows bite lightly and are a different shape, not the same finding at
+smaller scale: `stage3_minwall_2.2.json` (`coarse`, unfilleted default) loses 0.06 h of 1.93
+(3.0%) at step 120 of 126 — a late, shallow excursion, not a terminal descent into violation.
+`stage3_run_elite9.json` is a 3-step run, unfilleted, that **never reaches feasibility at
+all** — not evidence for a wasted-descent ratio, since there is no feasible point to have
+departed from; it and its sibling `stage3_run_elite10.json` predate `fillet_cap` existing in
+the term set at all (`barrier_keys_missing: ["fillet_cap"]`), which the driver reports rather
+than silently reading the absent key as zero and calling both runs feasible on a term neither
+ever evaluated — a live instance of the "sentinel with two meanings" failure this tree has
+been caught by before. The other eighteen runs, including all three 301-step `coarse` full
+descents (`prod_elite10`, `svk_elite10`, `svk_shipped`), lose exactly nothing.
+
+**So the mechanism is real and the ratio is not universal — it is conditional on `medium` +
+SVK, 4 of 5 times it was tried, 17.5%–42.8% each.** §21's 0.61%-of-loss reading and this
+10.1%-of-wall reading are both true, of different things: one prices the answer, the other
+prices the search, and neither generalises the other. **The arc's own trigger — "if it holds
+across runs, the defect costs roughly half of every Stage-3 descent, which would move this
+arc well up the list; if not, record that and leave it at #8" — resolves to the second
+branch.** BOUNDARY stays at #8.
+
+**Scope, checked rather than assumed:** `all_pre_fillet_switch` is `True` — none of the 25
+artifacts carries a `fillet` key in `settings`, and all are dated 2026-08-01/03, before
+§103. This prices defect 5 against the objective §103 replaced. Whether the same
+`medium`/SVK conditionality holds on the filleted objective is a question for the Stage-3
+re-run ranked #1 tree-wide (§105/§109), not for this driver — regenerating it would need the
+very descent BOUNDARY's own Step 0 was designed to avoid spending.
+
+**What moved:** `studies/study_boundary_waste.py` and its regenerated
+`studies/study_boundary_waste.json`, `Makefile` (`make boundarywaste`), and this section.
+`best_solution.json` untouched, no threshold moved, no study driver mid-write.

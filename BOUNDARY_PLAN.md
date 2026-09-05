@@ -138,3 +138,49 @@ undiluted, including `fillet_cap`, which is the one §19 measured wasting 45 ste
 `DEFECT5_PLAN` already rejected without new evidence."*  An inner-kneed companion term for
 `fillet_cap` is not a re-proposal: `stress_margin` did not exist when that arc ran, and the
 shape is now demonstrated to work on a live barrier at zero cost to differentiability.
+
+## STEP 0 ANSWERED — 2026-09-04. THE RATIO DOES NOT GENERALISE. FOUR OF TWENTY-FIVE RUNS, ALL `medium`/SVK, 17.5%–42.8% EACH — THE ARC STAYS AT #8
+
+PLAN.md §112.  `studies/study_boundary_waste.py` (`make boundarywaste`) reads every
+committed `stage3_*.json` with a `steps` trace — 25 of them — and prices, per run, the wall
+spent past the last iterate where every barrier held.  No solve: the steps array already
+carries `terms.<name>.value` and `wall_s`.
+
+§19's own run (`stage3_margin_medium.json`) reconstructs exactly — `settings.elapsed_s` =
+22834.0 s = 6 h 20 m to the word, `fillet_cap` nonzero at 74 of 101 steps, last recovery at
+step 56, permanently violated from 57 to 100 — so the driver is calibrated on the one row
+this arc has always had a hand check for.
+
+**Across all 25: 7.58 h of 75.24 h (10.1%) is spent past the last all-barriers-feasible
+iterate.  But it is not spread across the descent generally — it is four runs:**
+
+```
+  stage3_margin_medium.json      medium/svk   56/101   2.57 h   42.8%
+  stage3_buildcap_medium.json    medium/svk   61/101   2.28 h   37.8%
+  stage3_knee_medium.json        medium/svk   74/101   1.46 h   24.6%
+  stage3_buildcap2_medium.json   medium/svk   82/101   1.06 h   17.5%
+```
+
+All five `medium`/SVK full descents on disk are named above or here: the fifth,
+`stage3_svk_medium.json`, loses 0.00 h.  Every one of the three 301-step `coarse` full
+descents loses 0.00 h.  `stage3_minwall_2.2.json` loses a shallow 0.06 h (3.0%) late in a
+`coarse` run — a different shape, not the same finding smaller.  `stage3_run_elite9.json`
+(3 steps, unfilleted) never reaches feasibility at all, and it and `stage3_run_elite10.json`
+predate `fillet_cap` existing in the term set — reported as a schema gap, not defaulted to
+"feasible" on a term neither run ever evaluated.
+
+**Step 0's own trigger resolves to its second branch.** *"If the ratio holds across runs,
+the defect costs roughly half of every Stage-3 descent... if not, record that and leave the
+arc at #8."* It does not hold as a property of the descent; it holds 4-of-5 times on
+`medium`+SVK specifically, at 17.5%–42.8% each. **THE ARC STAYS AT #8.** Step 1 is therefore
+not opened by this section — §106's inner-kneed-companion candidate for `fillet_cap` remains
+the only thing that would re-rank it, unchanged from the 2026-09-03 block above.
+
+**Scope, checked and not assumed:** all 25 artifacts predate §103 — none carries a `fillet`
+key in `settings`. This prices defect 5 against the objective §103 replaced. Whether the
+`medium`+SVK conditionality survives on the filleted objective is a question for the
+Stage-3 re-run ranked #1 tree-wide, not for this driver.
+
+What moved: `studies/study_boundary_waste.py`, `studies/study_boundary_waste.json`,
+`Makefile`, PLAN.md §112, and this block. `best_solution.json` untouched, no threshold
+moved.
