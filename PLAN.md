@@ -16600,3 +16600,85 @@ band's width under the mesh the objective already solves, on the currently-promo
 design. **New**: regenerate `studies/study_mbse_score.json` under the filleted mesh (filed
 at B4 above, not run here) — no longer a bookkeeping catch-up, since the committed verdict
 it would replace is the one B4 just found stale in the direction that matters.
+
+---
+
+## §113 — 2026-09-05. THE STAGE 3 RE-RUN, LAUNCHED: A TWO-WORKER POOL MEASURES 1.26x–1.33x OVER ITS OWN FITTED PREDICTION AND PUSHES THIS BOX TO 60/61 GiB + 7.4/8 GiB SWAP INSIDE 14 MINUTES — `default_workers`'S "LARGEST THAT FITS A 61 GB BOX" WAS AN ESTIMATE STATED AS A MEASUREMENT
+
+§104/§105/§109/§110/§111 all close on the same line: successor #1, "re-run Stage 3 and
+re-promote," still open. Launching it is where this section starts, and it does not reach a
+genome — it reaches a measurement §105 named and never took: whether a pooled Stage-3 descent
+actually fits this 61 GB box on the filleted mesh, or only fits a fitted curve.
+
+### THE ATTEMPT
+
+`src/wheel_stage3.py --start best --genome best_solution.json --steps 300 --workers 2
+--phase-scheme uniform --fidelity-check-every 0`, the same single-start recipe `svk-shipped`
+already runs (kinematics defaults to `svk`, `--min-wall` defaults to the shipped 1.2 mm since
+§32), pointed at fresh `--out`/`--best-out` names (`stage3_svk_refillet_shipped.json` /
+`stage3_svk_refillet_best_shipped.json`) so the pre-fillet `stage3_svk_shipped.json` §112's
+census reads stays untouched.
+
+`--workers 2` on `wheel_pool.default_workers`'s own word: its docstring named 2 "the largest
+that fits a 61 GB box," §105 having priced the 8-worker pool at ~82 GiB and the 4-worker one
+at ~75 against this box's ~58 GiB free, with 2 the only rung under its own ~55 GiB estimate.
+But §105 flagged that estimate as unconfirmed in the same breath: *"No 2-worker pool was
+stood up: at these sizes a wrong guess OOMs the box mid-run... Confirming it is a ~30 min S13
+run with `--pool-workers 2`, and it should precede any pooled descent."* That confirmation
+was not run first. It was run as the descent itself.
+
+### WHAT IT COST, MEASURED TWICE ABOUT A MINUTE APART TO TELL STEADY STATE FROM A CLIMB
+
+```
+  process              RSS, read 1   RSS, read 2
+  worker 0 (4 phases)     27.63 GiB     27.64 GiB
+  worker 1 (4 phases)     25.96 GiB     25.97 GiB
+  parent                   4.91 GiB      3.55 GiB
+  box used / total         61 / 61 GiB   60 / 61 GiB
+  swap used / total       6.1 / 8.0 GiB  7.4 / 8.0 GiB
+```
+
+Both workers had already logged step 0 (`loss 1383.5887 ... 812.29 s`) and sat flat between
+the two reads — steady state, not mid-priming-climb. **Two workers holding four phases each
+measured 26.0–27.6 GiB, against the §105 fit's own 20.7 GiB prediction for four phases
+(`5.5 + 3.8 × 4`) — 1.26x–1.33x over.** That fit was built from an isolated single-process
+probe holding N phases with nothing else running; this number comes from the live pool
+inside a real descent, with the parent's own problem construction, IPC and Adam state
+alongside it. Which of those two differences the 1.3x belongs to is not isolated here — only
+that the fit's own lone other checkpoint past its calibration points, the 2-phase probe,
+already read the same direction (13.1 GiB predicted against 16.5 measured, §105) — so "the
+fit undershoots past 1 phase" is now two data points, not one, and both point the same way.
+
+Combined, the pool's real footprint left no headroom at all on a box the §105 table itself
+called "fits, tight." **Killed by hand at the second read, before `systemd-oomd` could take
+the decision out of anyone's hands** — the exact failure mode the `prod9`/`prod10` Makefile
+comment already named: the whole `user@1000.service` slice goes, not just this process.
+
+### THE RE-RUN, SERIAL
+
+Same recipe, `--workers 0`. Step 0 logged at 1358.43 s (compile-dominated; steady-state steps
+should be far cheaper), RSS 37.9 GiB and rising toward §105's own measured 43.4 GiB peak, 19
+GiB still free, swap draining rather than growing. This is the one configuration §105 actually
+measured before this section, and it is now the one running, in a detached `tmux` session
+(`wheel-stage3`): ~50.47 h projected, against the ~28 h the killed pool would have cost had
+its own estimate held.
+
+### THE LESSON
+
+§105 wrote the fit, labelled it an extrapolation, and named the exact 30-minute check that
+would confirm or refute it before a multi-day run was spent on the difference between them.
+That check is cheap BECAUSE the descent it guards is not, and it was skipped anyway — not
+because §105 was unclear, but because by the time `default_workers`'s own docstring was read
+it stated "2 is the largest that fits" as a settled number rather than as the unconfirmed one
+§105 called it three paragraphs earlier in the same file. **A number written down as "the
+largest that fits" is a claim about an instrument that was never run**, and it reads
+differently once it has travelled one file away from the section that hedged it.
+
+### WHAT MOVED
+
+`5dd3c56` — `wheel_pool.py`'s `default_workers` docstring, corrected in place: no pooled
+worker count is confirmed safe on this box for the filleted mesh, `--workers 0` is the only
+one actually measured to fit. `best_solution.json` untouched, no genome descended yet, no
+promotion. The Stage-3 re-run (successor #1, still open) continues at `--workers 0`,
+`stage3_svk_refillet_shipped.json` / `stage3_svk_refillet_best_shipped.json`, not yet
+complete.
