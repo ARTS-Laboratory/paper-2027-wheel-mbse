@@ -638,9 +638,11 @@ def _fillet_margins(genes, cfg, span_mm, hub_radius, flanks, xp=jnp):
 
     THIS TERM IS NOT WHERE `R_hub`'S LOSS GRADIENT ACTUALLY COMES FROM, and the claim that
     it is has been on file (here and in PLAN.md) since M8b-i.6 without being measured.  At
-    the shipped genome the margins are `[+4.647, +0.125]`, both feasible, so the barrier
-    built on them is FLAT and `d(fillet)/dR_hub` is exactly 0.0.  The +645.8 adjoint
-    belongs to `hub_overlap`, every unit of it.  See `t1_vector`.
+    `ga_beam`, shipped when this was written, the margins were `[+4.647, +0.125]`; at the
+    current shipped genome they are `[+4.0271, +10.7491]` (PLAN.md §106 -- the rim figure
+    moves 86x with the promotion), both readings feasible either way, so the barrier built
+    on them is FLAT and `d(fillet)/dR_hub` is exactly 0.0.  The +645.8 adjoint belongs to
+    `hub_overlap`, every unit of it.  See `t1_vector`.
 
     `tangent_fillet_arc` refuses a radius at four places (`wheel_fea.py:948`, `:955`,
     `:959`, `:964`) and `fillet_junctions` then walks the radius ladder DOWN, so the
