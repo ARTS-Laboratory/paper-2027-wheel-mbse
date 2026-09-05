@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs boundarywaste mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs boundarywaste stage3-resume mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -215,6 +215,11 @@ help:
 	@echo "              the gate's own quantity, which no target could produce"
 	@echo "              until §109. five rungs x two genomes, linear so the only"
 	@echo "              difference from reds-hub's ladder is the mesh. ~35 s"
+	@echo "make stage3-resume TRAJ=f.json   recover a killed descent's best iterate"
+	@echo "              into a genome file --genome can read, and print the restart"
+	@echo "              command. --best-out is only written when a descent COMPLETES,"
+	@echo "              so a kill leaves a full trajectory and nothing to restart from."
+	@echo "              WARM restart: position only, Adam's moments start from zero"
 	@echo "make boundarywaste  BOUNDARY_PLAN Step 0: does defect 5's wasted-descent"
 	@echo "              ratio generalise across the 25 committed Stage-3 runs?"
 	@echo "              solves nothing — reads each run's own steps array. Four"
@@ -1369,6 +1374,22 @@ reds: reds-ratio reds-hub
 # not a property of the descent in general, so the arc stays at #8.
 boundarywaste:
 	$(PY_OPT) studies/study_boundary_waste.py
+
+# THE RECOVERY PATH FOR A KILLED DESCENT (PLAN.md §114).  `wheel_stage3` persists its
+# trajectory after every step, atomically, so that a long run survives a kill (`_persist`/
+# `_write`, wheel_stage3.py:875-896) — but it writes the GENOME only after the whole descent
+# returns (`:1299-1310`).  A run killed at step 299 of 300 therefore leaves a complete history
+# and nothing promotable, and the history is not in the shape `--genome` reads: `load_genes`
+# wants a TOP-LEVEL `genes` (`:980`) and a trajectory nests them under `best`/`final`.  This
+# is that adapter.  SOLVES NOTHING: one JSON in, one JSON out, measured 0.11 s at 34 MB.
+#
+# A WARM RESTART, NOT A RESUME.  Adam's moments (`:589-590`), the secant `delta0`, `n_reject`
+# and the decayed cosine lr (`:595`) are not recorded in a trajectory and cannot be recovered
+# from one, so the restart recovers POSITION only.  The driver prints the restart command and
+# names what it is assuming.
+stage3-resume:
+	@test -n "$(TRAJ)" || { echo "usage: make stage3-resume TRAJ=stage3_run.json"; exit 2; }
+	$(PY_OPT) studies/stage3_resume_genome.py $(TRAJ)
 
 # ---------------------------------------------------------------------------
 # THE REQUIREMENTS LAYER (PLAN.md §97 — MBSE_PLAN Steps 0, 4, 5, 7)
