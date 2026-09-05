@@ -1287,7 +1287,7 @@ tribend:
 # evidence has to be re-runnable by whoever doubts them rather than quoted from a plan
 # file.  `reds-ratio` is ~4 min wall across $(REDS_JOBS) processes; `reds-hub` is ~50 s.
 #
-# `reds-hub` MEASURED 2026-09-05 (PLAN §114): wall 44.3 s, PEAK RSS 3.05 GB, in one process.
+# `reds-hub` MEASURED 2026-09-05 (PLAN §114): wall 44.3 s, PEAK RSS 3.05 GiB, in one process.
 # The wall figure had been on file since §31 and the memory figure never had been, which made
 # "CHEAP" a claim about time only -- the distinction that matters when something else already
 # holds the box.  It is unfilleted, linear, single-phase, no gradient and no `wheel_objective`,

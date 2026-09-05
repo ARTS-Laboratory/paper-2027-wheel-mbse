@@ -16689,3 +16689,146 @@ one actually measured to fit. `best_solution.json` untouched, no genome descende
 promotion. The Stage-3 re-run (successor #1, still open) continues at `--workers 0`,
 `stage3_svk_refillet_shipped.json` / `stage3_svk_refillet_best_shipped.json`, not yet
 complete.
+
+---
+
+## §114 — 2026-09-05. A KILLED DESCENT HAD NO RECOVERY PATH AND NOW HAS ONE; TWO ARCS ARE PARKED ON PREMISES THAT COLLAPSED AT §103; THE INDEX WAS FALSE ABOUT FOUR OF THE SEVEN ARCS IT DESCRIBED — AND §112'S OWN COMMIT HAD SILENTLY SHIFTED TWENTY-ONE LINE CITATIONS BY TWO
+
+Five commits, written while §113's Stage-3 re-run held 38.3 GiB of a 61 GiB box, and chosen
+so that none of them competed with it: `dd5ab60`, `03a0776`, `3d5ffbc`, `68ecab5`, `4a2fc2e`.
+
+### 1. THE RECOVERY PATH — `studies/stage3_resume_genome.py`, `make stage3-resume`
+
+**A Stage-3 run killed at step 299 of 300 leaves a complete history and nothing to restart
+from, and nothing in the tree bridged that.** `_persist` rewrites the trajectory after every
+step and does it atomically, on the stated grounds that *"a run measured in tens of minutes
+must survive a kill"* (`wheel_stage3.py:875-896`). The genome gets no such treatment:
+`--best-out` is written once, by `save_record`, **after** the descent loop returns
+(`:1299-1310`). And the trajectory is not a restart either — `load_genes` reads a TOP-LEVEL
+`"genes"` (`:980-982`) while a trajectory nests them under `best`/`final`, so
+`--genome <trajectory>` raises `KeyError`.
+
+The driver is that adapter and nothing else: one JSON in, one JSON out, **0.11 s at 34 MB**,
+no jax — deliberately, so it runs on a box whose memory was just taken by whatever killed the
+descent. It reuses `wheel_genome.save_record` rather than hand-rolling `json.dump`, which buys
+the exactly-14-canonical-keys validation and the hash, and it cross-checks that hash against
+the one the trajectory recorded for the same iterate.
+
+**IT IS A WARM RESTART, NOT A RESUME, AND THE DIFFERENCE IS THREE CONCRETE THINGS.** Adam's
+moments are re-zeroed on entry to every `descend` (`:589-590`) and `_row` never records them
+(`:740-762`); the secant `delta0`, `n_reject` and the rejection-halved `lr` are equally
+absent. `--lr` cannot restore a decayed rate because the cosine schedule recomputes from
+`lr0` (`:595`, `:258-263`). Four run-shaping flags are in no `settings` block at all, so the
+printed restart command names them at their defaults where an operator can see the assumption.
+**A restarted run is not bit-identical to an uninterrupted one, and a record quoting both
+halves as one descent is quoting two.** A true `--resume` — persisting `m`/`v`/`lr0`/`n_reject`
+into the trajectory — is the honest fix and is **filed as a successor**, not built here: it
+edits the module the live descent is running from and changes the artifact schema.
+
+### 2. THE HAZARD THE ADAPTER EXPOSED — `tests/test_genome_key_order.py`
+
+**`genome_hash` is order-INDEPENDENT and `load_genes` is order-DEPENDENT, and nothing in the
+tree reconciled them.** The hash sorts before hashing (`wheel_genome.py:122-132`); `load_genes`
+takes `.values()` positionally with no name lookup (`wheel_stage3.py:980-982`). So a genome
+file serialised in sorted key order carries the **correct hash**, satisfies every promotion
+pin, exports identically, and hands a **scrambled 14-vector** to a descent.
+
+Demonstrated rather than argued: `best_solution.json` re-serialised in sorted order hashes to
+**`09e8188`, identically**, while its positional read returns `R_hub`'s 0.664 as `cx1`.
+
+**Latent, not live — all 28 repo-root genome records were already canonical.** This is a
+regression guard on the writer being added, not a fix for anything on disk, and it is
+described that way rather than oversold. Copying a `genes` block out of a trajectory is
+exactly the operation that could permute one.
+
+### 3. `reds-hub` REGENERATED — AND §109'S WORRY DOES NOT SURVIVE CONTACT
+
+§109 filed the plain `sweep`/`attribute` blocks as *"still §31-era and never regenerated"*.
+Regenerated: **every pre-existing key in all 14 `sweep` rows is byte-identical**, and the whole
+`attribute` block is byte-identical. `rungs` differs only in `elapsed_s`. **The numbers were
+never wrong.** What was stale was the SCHEMA — `sweep` rows gained `axle_drop_interp_mm` and
+the two `fillet_*` keys that are correctly null on an unfilleted arm, matching the sibling
+`sweep_unfilleted_svk` block instead of predating it. **There were never any `--` cells in
+this artifact**; the 20 nulls under `rungs` are null by construction.
+
+**MEASURED, BECAUSE IT NEVER HAD BEEN: wall 44.3 s, PEAK RSS 3.05 GiB** (3198708 kB — 3.28 GB
+decimal, and the tree uses both units, so the number is given with its base). The wall figure has
+been on file since §31 and the memory figure never had been, which made "CHEAP" a claim about
+time alone — the distinction that binds when something else already holds the box. Run under
+`systemd-run --user --scope -p MemoryMax=8G` for exactly that reason, capped so a surprise
+could kill only this process and never the 13-hour run. It never approached the cap.
+
+### 4. TWO ARCS PARKED
+
+**UNCAP.** PART 10 (§104) left one binding choice — *"a Y-partition of the FILLETED rim
+junction, or a decision that `rim:P_c`'s fidelity is not worth one"* — and ten sections passed
+without anyone taking it. **Second branch taken.** Both legs re-verified against the tree
+rather than quoted: `sector_blocks` defaults to `fillet=None` and is *"seven node grids —
+eleven when the fillet is blocked"* (`wheel_wheel.py:2282-2286`), `study_tri_block.region()`
+passes no `fillet=` (`studies/study_tri_block.py:228`) while `wheel_objective.py:1015` and
+`wheel_pool_worker.py:63` pass `fillet=True` unconditionally; and `grep -rn "rim:P_c" src/`
+returns **zero matches**, the whole-wheel p-norm being assigned once at `:1257` under
+*"REPORTING ONLY"* and read once at `:1356`. **The arc does not stop for the reason it
+carried:** 3.1's payoff is now a reporting number, 3.2's prediction is **inverted** (the
+faithful rim is 23.8× worse filleted, not better), 3.3 depends on a FILLET step that landed
+without it. Reopens if and only if `rim:P_c` acquires a consumer.
+
+**RIMCAP.** Both halves superseded, in different sections. Step 1's cap model mirrors
+`hub_fillet_cap_mm`, which §103 demoted to reporting-only (`:1261-1265`) — a surrogate
+mirroring a retired surrogate. The report half was tried at §110 (`f21ec7d`) and **reverted as
+unreachable**: `mesh_coords` raises before either report dict exists, so the keys were
+constant-by-construction, and visibility shipped in the event record instead. **Parking the
+arc does not park the gap** — the sector limit is still applied by the mesh rather than priced
+by the objective, and whether it needs a barrier is blocked behind the re-run, because no run
+on disk has ever fired the clamp.
+
+### 5. THE INDEX WAS FALSE, AND UNCAP HAD NO ROW
+
+*"Arc 1 is CLOSED (§32); 2–8 are unstarted"* was wrong about four of the seven arcs and silent
+about two more. Corrected, with the table rows brought into agreement with the sentence that
+summarises them. **UNCAP was added to the open-arcs table for the first time** — it ran to
+PART 10 without ever appearing in the index that ranks the arcs, while its own header claimed
+*"#2, promoted to the top"*, a rank the table never granted and which collided with FILLET's.
+**The collision was one-sided and resolves in the table's favour.** Six arc-file headers still
+said *"Nothing started"* — including `BOUNDARY_PLAN.md`'s, which §112 left contradicting the
+record §112 itself had just appended four lines below it.
+
+### 6. TWO CORRECTIONS I OWE, BOTH MINE
+
+**The citations.** `89a370e` (§112) added two lines to `_fillet_margins`' docstring at
+`wheel_objective.py:640` and shifted **every** line number past it by +2. §112 fixed four and
+assumed that was the blast radius. It was **26, across 11 files**, and all 26 were correct
+before that commit. Six of them I had written off as pre-existing drift because the cited
+content did not match the cited line — **that reasoning was wrong; it matched two lines down**,
+and reading each cited line's content out of `89a370e^` is what settled it. A docstring edit
+is not a free change in a tree that cites line numbers this heavily.
+
+**The 41 GB figure, which I over-generalised.** I carried *"any filleted JIT cell costs
+41.6–43.7 GB regardless of rung"* into a plan and repeated it. The rung-independence is right;
+the **scope** is wrong, and this file already says so at §105 (`:14798-14812`): that figure
+measures a `study_fillet_condition_a` cell — `WO.objective` **with a gradient, SVK, eight
+phases** — and *"residency tracks PHASES HELD, not the compile"* (1 phase 9.1 GiB, 2 phases
+16.5, 8-phase parent 35.9). *"The right measurement of the wrong process."* Pricing `reds-hub`
+at 41 GB because the word "filleted" appears near it would have been the same error, and it is
+3.05 GB. **This is the `state-the-scope-of-a-measurement` failure, on a measurement this file
+had already scoped correctly.**
+
+### 7. AND §105'S OTHER TWO NUMBERS ARE BOTH RUNNING LONG
+
+Read off §113's live trajectory at 99 of 300 steps: per-step cost is **flat** after JIT warmup
+— 249.2 s over steps 0–19, then 216.5 / 223.7 / 218.2 / 216.7 over the four twenty-step blocks
+that follow, a steady mean of 218.8 s — with **zero rejects and zero abandoned steps**. A flat series extrapolates honestly, unlike a rising one where the top rung
+would only be a lower bound. **Projected total ≈ 18.2 h against §105's 50.47 h serial: 2.8×
+pessimistic.** And its resident set is **plateaued at 38.3 GiB**, not climbing to §105's
+predicted 43.4 GiB peak — 37.9 GiB at 23 minutes, 38.3 GiB at six hours. Both of §105's
+estimates are conservative in the same direction, which is the safe direction, but a 2.8×
+error in a cost model is what makes work look unaffordable that is not.
+
+**WHAT DID NOT HAPPEN.** `best_solution.json` untouched, no threshold moved, no default
+changed. Nothing was committed that belongs to §113's run — `stage3_svk_refillet_shipped.json`
+and its log stay untracked while the descent writes them. The light pytest batch was NOT run:
+it peaked at 32 GiB this morning and running it against a 38.3 GiB descent with 17 GiB free
+would have OOM-killed a 13-hour run to test a driver that imports no jax and is imported by
+nothing. What was run instead, under a 6 GiB cap: the new guard (57 cases),
+`test_study_gate_guard`, `test_promotion`, and the round trip that actually matters —
+`load_genes(shim output)` element-wise equal to `genes_to_vector(best.genes)`.
