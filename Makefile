@@ -1287,6 +1287,14 @@ tribend:
 # evidence has to be re-runnable by whoever doubts them rather than quoted from a plan
 # file.  `reds-ratio` is ~4 min wall across $(REDS_JOBS) processes; `reds-hub` is ~50 s.
 #
+# `reds-hub` MEASURED 2026-09-05 (PLAN §114): wall 44.3 s, PEAK RSS 3.05 GB, in one process.
+# The wall figure had been on file since §31 and the memory figure never had been, which made
+# "CHEAP" a claim about time only -- the distinction that matters when something else already
+# holds the box.  It is unfilleted, linear, single-phase, no gradient and no `wheel_objective`,
+# so the 41.6-43.7 GB filleted-cell figure at :1124-1130 does NOT apply to it: that measures an
+# 8-phase SVK objective cell WITH a gradient, and residency tracks phases held, not the compile
+# (PLAN.md §105, :14798-14812).  `ultra` here is 70080 elements at 587208 dofs and costs 8.9 s.
+#
 # `reds-ratio` fans one cell per process because a cell is 2-6 s and the box has 24 cores,
 # but every cell runs under the same five thread pins as `make test` (`studies/redsrun.sh`
 # exports `wheel_pool.PINNED_ENV`) — a number quoted against a test's value has to be taken

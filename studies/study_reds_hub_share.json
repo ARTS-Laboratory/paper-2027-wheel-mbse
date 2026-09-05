@@ -16,7 +16,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 0.6636060402965218,
@@ -31,7 +34,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 0.7,
@@ -46,7 +52,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 1.0,
@@ -61,7 +70,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 1.2999999999999998,
@@ -76,7 +88,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 1.6,
@@ -91,7 +106,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 1.9,
@@ -106,7 +124,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 2.1999999999999997,
@@ -121,7 +142,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 2.5,
@@ -136,7 +160,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 2.8,
@@ -151,7 +178,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 3.0999999999999996,
@@ -166,7 +196,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 3.4,
@@ -181,7 +214,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 3.6999999999999997,
@@ -196,7 +232,10 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    },
    {
     "R_hub": 4.0,
@@ -211,14 +250,59 @@
     "hub": 0.03418804073254936,
     "spoke": 0.6545356829597623,
     "rim": 0.3112762763076883,
-    "axle_drop_mm": 1.5516446176990795
+    "fillet_radii_mm": null,
+    "fillet_clamped": null,
+    "axle_drop_mm": 1.5516446176990795,
+    "axle_drop_interp_mm": 1.5498194757832127
    }
   ],
+  "fillet": false,
+  "kinematics": "linear",
   "R_hub_shipped": 0.6636060402965218,
   "box": [
    0.4,
    4.0
-  ]
+  ],
+  "spread": {
+   "hub": {
+    "min": 0.03418804073254936,
+    "max": 0.03418804073254936,
+    "range": 0.0,
+    "distinct_values": 1,
+    "bit_identical": true
+   },
+   "spoke": {
+    "min": 0.6545356829597623,
+    "max": 0.6545356829597623,
+    "range": 0.0,
+    "distinct_values": 1,
+    "bit_identical": true
+   },
+   "rim": {
+    "min": 0.3112762763076883,
+    "max": 0.3112762763076883,
+    "range": 0.0,
+    "distinct_values": 1,
+    "bit_identical": true
+   },
+   "axle_drop_mm": {
+    "min": 1.5516446176990795,
+    "max": 1.5516446176990795,
+    "range": 0.0,
+    "distinct_values": 1,
+    "bit_identical": true
+   },
+   "axle_drop_interp_mm": {
+    "min": 1.5498194757832127,
+    "max": 1.5498194757832127,
+    "range": 0.0,
+    "distinct_values": 1,
+    "bit_identical": true
+   },
+   "n_rows": 14,
+   "n_solved": 14,
+   "n_clamped": 0
+  }
  },
  "rungs": {
   "shipped": {
@@ -244,7 +328,7 @@
      "fillet_clamped": null,
      "axle_drop_mm": 1.5516446176990795,
      "axle_drop_interp_mm": 1.5498194757832127,
-     "elapsed_s": 0.7
+     "elapsed_s": 0.4
     },
     "medium": {
      "hub": 0.03523663283635889,
@@ -254,7 +338,7 @@
      "fillet_clamped": null,
      "axle_drop_mm": 1.5629805689038112,
      "axle_drop_interp_mm": 1.5635343813664888,
-     "elapsed_s": 1.4
+     "elapsed_s": 1.6
     },
     "fine": {
      "hub": 0.036482668687183424,
@@ -264,7 +348,7 @@
      "fillet_clamped": null,
      "axle_drop_mm": 1.5705053322812605,
      "axle_drop_interp_mm": 1.5700208441767491,
-     "elapsed_s": 3.5
+     "elapsed_s": 4.0
     },
     "ultra": {
      "hub": 0.037052524984222866,
@@ -274,7 +358,7 @@
      "fillet_clamped": null,
      "axle_drop_mm": 1.5744619418133794,
      "axle_drop_interp_mm": 1.5745324435983226,
-     "elapsed_s": 8.9
+     "elapsed_s": 9.9
     }
    }
   },
@@ -311,7 +395,7 @@
      "fillet_clamped": null,
      "axle_drop_mm": 1.6677421727164197,
      "axle_drop_interp_mm": 1.6658169679330141,
-     "elapsed_s": 1.1
+     "elapsed_s": 1.2
     },
     "fine": {
      "hub": 0.014043278703661174,
@@ -321,7 +405,7 @@
      "fillet_clamped": null,
      "axle_drop_mm": 1.6734428821242646,
      "axle_drop_interp_mm": 1.6717007179702723,
-     "elapsed_s": 3.1
+     "elapsed_s": 3.6
     },
     "ultra": {
      "hub": 0.01414393484781521,
@@ -331,7 +415,7 @@
      "fillet_clamped": null,
      "axle_drop_mm": 1.6734648308374176,
      "axle_drop_interp_mm": 1.6743097783016105,
-     "elapsed_s": 8.5
+     "elapsed_s": 9.7
     }
    }
   }
@@ -452,7 +536,7 @@
   ]
  },
  "settings": {
-  "elapsed_s": 68.7
+  "elapsed_s": 43.9
  },
  "sweep_filleted_svk": {
   "genome": "shipped",
