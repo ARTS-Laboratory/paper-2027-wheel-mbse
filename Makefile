@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs boundarywaste mbse mbsebase mbsecal mbsescore studies clean-pyc
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -215,6 +215,10 @@ help:
 	@echo "              the gate's own quantity, which no target could produce"
 	@echo "              until §109. five rungs x two genomes, linear so the only"
 	@echo "              difference from reds-hub's ladder is the mesh. ~35 s"
+	@echo "make boundarywaste  BOUNDARY_PLAN Step 0: does defect 5's wasted-descent"
+	@echo "              ratio generalise across the 25 committed Stage-3 runs?"
+	@echo "              solves nothing — reads each run's own steps array. Four"
+	@echo "              of 25 bite, all medium+SVK, 17.5-42.8% each (§112)"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -1357,6 +1361,14 @@ reds-hub-fillet-rungs:
 	    --out $(notdir $(REDS_HUB_OUT))
 
 reds: reds-ratio reds-hub
+
+# BOUNDARY_PLAN Step 0 (PLAN.md §112) — does defect 5's wasted-descent ratio generalise
+# across the 25 committed Stage-3 runs, or was §19's run the outlier?  SOLVES NOTHING: it
+# reads `terms.<name>.value` and `wall_s` off each run's own `steps` array, already on disk.
+# Well under a second.  The answer is four of the 25, all `medium`+SVK, 17.5-42.8% each —
+# not a property of the descent in general, so the arc stays at #8.
+boundarywaste:
+	$(PY_OPT) studies/study_boundary_waste.py
 
 # ---------------------------------------------------------------------------
 # THE REQUIREMENTS LAYER (PLAN.md §97 — MBSE_PLAN Steps 0, 4, 5, 7)
