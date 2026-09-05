@@ -16456,3 +16456,147 @@ here as §111. **3** ~~make the rim clamp visible~~ — closed here: visible in 
 record, not the report dict, because the report dict is unreachable from a clamped
 evaluation. **4** MESHSTEP's contact-patch re-check. **5** BOUNDARY's `fillet_cap` companion
 term. **6** re-run Stage 3 and re-promote — still #1 overall, and still not started.
+---
+
+## §111 — 2026-09-04. §109's SUCCESSOR (§108'S OLD #2), CLOSED: THE AXLE-DROP GATE READS THE MESH THE OBJECTIVE SOLVES — THE RATIO CLEARS BY MORE, THE BAND GOES XFAIL BECAUSE `1.4` HAS NO WARRANT TO MOVE IT BY
+
+§109 filed this one in its own closing words: *"the axle-drop gate and M4's beam-blindness
+headline are measured on the plain mesh and the filleted wheel is 38.9% stiffer… the number
+wants the same warrant-first treatment `0.03` just got."* Since §103, `phase_meshes` builds
+every mesh `fillet=True`; `tests/test_wheel_fea.py`'s old combined test read the plain one.
+
+### THE COMBINED TEST WAS TWO CLAIMS SHARING ONE FIXTURE, AND THEY DO NOT SURVIVE THE SAME MOVE
+
+`test_the_beam_model_does_not_predict_the_axle_drop` asserted both `abs(ratio - 1.0) > 0.10`
+and `1.4 < axle_drop_mm < 2.0` off one `res` fixture. Measured at `coarse`, linear
+`solve_wheel`, both committed genomes, plain vs. filleted:
+
+```
+genome                 beam        plain |ratio-1|   filleted |ratio-1|   plain->filleted stiffening
+best_solution          0.515414 mm  2.0105           0.8652              1.551645 -> 0.961370 mm  = 1.614x
+best_solution_ga_beam  1.990055 mm  0.1665           0.7451              1.658778 -> 0.507212 mm  = 3.270x
+```
+
+**The ratio clears by more on the filleted mesh** — `ga_beam`'s margin, the thinnest of the
+two, goes from 1.67x the 0.10 bar to 7.45x. This is the opposite of the risk §109 guarded
+against for the hub-share gate, so the move is not just permitted but strengthens the
+headline, measured rather than assumed. Only the fixture changed
+(`test_the_beam_model_does_not_predict_the_axle_drop(filleted_res, genes)`); the assertion is
+untouched.
+
+**The band does not.** `0.961370 mm` sits outside `1.4 < … < 2.0` at every rung on §109's
+own ladder (38.0–39.9% "stiffer" throughout), so it is not a rung artefact — and the two
+genomes' stiffening factors, 1.614x and 3.270x, are 2.03x apart, which is the same
+non-uniformity §109 found for the hub-share bound (4.115x vs 2.550x) and more extreme: there
+is no single number to multiply `1.4` or `2.0` by.
+
+### THE BAND'S WARRANT, AUDITED BEFORE TOUCHING EITHER EDGE
+
+Per §109's own rule — re-derive the warrant on the new instrument; if it does not survive the
+move, the number does not either — the band was checked, not just the ratio:
+
+- **`1.4` has no recorded warrant anywhere in the tree.** Born in `f0a9e83`
+  ("fillet tweaks", 2026-07-25, the 4th commit of 157, which created
+  `tests/test_wheel_fea.py` whole) — before PLAN.md existed and before version control was
+  adopted (2026-08-19). Never edited since. It appears in exactly three places in the repo
+  and all three are usages, not justifications.
+- **`2.0` is `TARGET_DEFLECTION_MM`** (`wheel_fea.py:156`); `drop < 2.0` encodes the
+  docstring's own sign claim, "is now stiffer than [the target]." The identity is real but
+  was never stated in code — `wheel_requirements.py:129-131` flags exactly this kind of
+  collision explicitly, for `grass`, and this one has ridden unflagged since birth.
+- **The band has had one value its whole life.** The docstring's "1.1 mm" is not an earlier
+  version of `1.4` — it is the rim's radial thickness (`wheel_fea.py:113-132`), and the 42.7%
+  figure comes from that table's `1.1 mm -> 2.85 mm` row against the 2.0 mm target.
+- **Class: regression bound, not a requirement and not a calibration against a design.**
+  Conformance lives separately, in `SHOULD-DEFLECTION` (`wheel_requirements.py:1051-1061`),
+  on `axle_drop_mean_mm` — the contact-phase mean, 1.9011 mm in the committed
+  `study_mbse_score.json` against this test's linear phase-0 quantity, 1.5516 mm plain.
+  **22.5% apart: the band never was a conformance statement and must not become one now.**
+- **It is the class of claim §29 already retired, one test away.** §29 struck
+  `drops[-1] < TARGET_DEFLECTION_MM < drops[0]` as "an absolute distance from 2.0 mm quoted
+  without naming its rung." `1.4 < axle_drop_mm < 2.0` is evaluated at `coarse` and names no
+  rung either. It survived that purge by sitting in a different test, and nothing in
+  PLAN.md noted the survivor until now.
+- **§64's blast-radius audit never classified it.** The Classes A/B/C/D enumeration for
+  `axle_drop_interp_mm` (PLAN §61-§67) does not list `test_wheel_fea.py`, and this gate still
+  reads the nearest-node value.
+
+No transport factor survives this audit and no warrant survives it either, so the fix is not
+a new number — it is `@pytest.mark.xfail`, with a `reason=` that states the finding rather
+than hiding it:
+
+```
+test_the_axle_drop_meets_the_stroke_target(filleted_res):
+    assert 1.4 < filleted_res["axle_drop_mm"] < 2.0
+```
+
+`xfail_strict = true` (`pyproject.toml:38`) makes an `xpass` here a failure, so a future
+re-promotion that softens the wheel back toward the band surfaces loudly rather than
+silently passing. That is the intended signal, and it is why this xfail is load-bearing
+rather than a way of parking a red.
+
+### THE FIXTURE COMMENT, UPDATED FOR ITS SECOND READER
+
+`filleted_mesh`'s §109 comment said "Exactly one test below reads it" when only the
+hub-share gate did. It now reads two — the ratio test above and the new band xfail — and the
+comment's own measured ladder table gained the `BREAKS` row's pointer to the xfail's name, so
+the comment and the two tests it explains stay in one place.
+
+### THE MBSE CONSEQUENCE — MEASURED, NOT REGENERATED
+
+`studies/study_mbse_score.json` (committed 2026-09-01, two days before §103 wired the fillet
+switch) reports `SHOULD-DEFLECTION`'s `axle_drop_mean_mm` at 1.9011015378085443 mm against a
+2.0 mm target and a ±5% tolerance — a −4.945% margin, 1.1% of the band left. §107 called
+regenerating this artifact "now unblocked" but named only `mesh_mass_g`; `study_mbse_score`
+calls `WO.objective` directly, so any re-run today goes through `phase_meshes(fillet=True)`
+for every field it reports, not only mass.
+
+**MEASURED THIS SESSION** — one `WO.score_record(genes, req, cfg="coarse",
+n_phase=8, kinematics="svk")` run, `best_solution.json`'s genes, the artifact's own
+settings, against a wheel now built `fillet=True` throughout (elapsed 1379.7s / 23.0 min,
+consistent with the near-fixed JIT cost of the filleted mesh noted at §101/§105/§107 --
+this is compile time, not iteration count):
+
+```
+axle_drop_mean_mm   1.9011015378085443  ->  0.9913888889642843 mm   (-47.85%)
+rel. to 2.0 mm target                       -50.43%
+DEFLECTION_TOLERANCE                        +/-5%
+verdict                                     MET  ->  MISSED
+```
+
+**Not a marginal crossing.** The committed value sat at -4.945% of a +/-5% band -- 98.9%
+of the band used, 1.1% left, per this section's own earlier accounting. The re-measured
+value sits at -50.43% -- 10.09x the tolerance band's own width, not a smaller fraction of
+it left over. The artifact predates both movers of
+the mesh this quantity now reads: §103 wired `fillet=True` unconditionally, and §107
+separately fixed T2 (`mass`/`min_sj`) to read the same mesh T3 solves. Axle drop is a T3
+report quantity, so §107's own change does not itself move it -- this is reported as one
+measured before/after against the tree as both sections left it, not attributed to
+either in isolation.
+
+This is independent confirmation, at the artifact's own contact-phase/SVK settings, of
+the same direction this section's linear-phase measurements already showed (1.614x-3.270x
+stiffening) -- and a larger swing than either of those, which is why the verdict flips
+rather than merely losing margin.
+
+Filed as its own successor rather than run here: regenerating `study_mbse_score.json` moves a
+committed artifact and can move a published verdict, and B4 was scoped as measure-and-file,
+not measure-and-replace.
+
+### VERIFICATION
+
+`tests/test_wheel_fea.py -q -rxX`: 22 passed, 1 xfailed (reported `x`, never `X` — strict
+mode makes those opposite outcomes). Confirmed both standalone (23s) and inside the full
+batched suite run for §110 (same 23s, same one `x`).
+
+### THE SUCCESSORS — §109's LIST WITH ITEM 2 STRUCK, CONTINUING §110's
+
+**2** ~~the axle-drop gate / M4 headline~~ — closed here: ratio moved and strengthened, band
+xfailed on its own missing warrant rather than re-derived. **3** — closed at §110. **4**
+MESHSTEP's contact-patch re-check. **5** BOUNDARY's `fillet_cap` companion term. **6**
+re-run Stage 3 and re-promote — still #1 overall, still not started, and now carrying more
+than the xfail: B4's measurement found `SHOULD-DEFLECTION` MISSED at 10.09x the tolerance
+band's width under the mesh the objective already solves, on the currently-promoted
+design. **New**: regenerate `studies/study_mbse_score.json` under the filleted mesh (filed
+at B4 above, not run here) — no longer a bookkeeping catch-up, since the committed verdict
+it would replace is the one B4 just found stale in the direction that matters.
