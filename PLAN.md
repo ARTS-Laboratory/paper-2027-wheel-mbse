@@ -89,7 +89,13 @@
 ## Open arcs — one file each, created 2026-08-16
 
 These replace the deleted plan files. Each is a live arc with its own steps; this table is the
-index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted.**
+index and the ranking. ~~**Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted.**~~
+**CORRECTED 2026-09-05 — §114; the sentence above was false for four of the seven arcs it
+described and silent about two more.** As it stands: **1 CLOSED** (§32), **3 CLOSED** (§109),
+**5 and UNCAP PARKED** (§114), **2**'s Steps 0-2 done (§50, §52) with only Step 3's record
+outstanding, **9**'s Steps 0-8 done (§97), **6**'s Step 1 done by accident at §103 (§106,
+§108), **8**'s Step 0 answered (§112). **Only 4 and 7 are genuinely unstarted**, and each has
+had its premise re-checked against the fillet switch (2026-09-03) without a step being spent.
 
 > **ARC 2 IS NO LONGER "UNSTARTED" — Step 0 and Step 1 are answered (§34, §38, §44, §47).**
 > The seam merge survives untouched, half the mesh's corners are not the part's, and as of
@@ -176,13 +182,14 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
 | 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52); Step 3 IS THE ONLY THING LEFT AND IT IS A DECISION, NOT A MECHANISM — REWRITTEN 2026-08-29 AFTER §92.** The two meshes disagree about the solved wheel by 37.97% (§52, linear, one phase) and by 47.85% (§91, svk, eight phases), and §91 files that spread open. `R_hub`/`R_rim` are no longer invisible to the optimizer — §79 made the filleted mesh differentiable and §88 removed the last refusal — so what keeps the optimizer off that mesh is now the SCOPE GATE, which is a decision this tree has taken deliberately rather than a thing it cannot do. Genome-robustness, which this cell used to name as the blocker, was settled at §74/§78/§89. **And the rim tri-block is no longer part of that queue: §53 BUILT it, and it has the same genome problem** | Steps 0-2 spent; Step 3's measurements are all spent too — what remains is a record |
-| 3 | `HUBSHARE_PLAN.md` | Should hub compliance be an objective term? `cy4` alone moves it by 102% of the gap (§31) | medium |
+| ~~3~~ | ~~`HUBSHARE_PLAN.md`~~ | **CLOSED 2026-09-04 — §109. NO.** The gate is green on the mesh the objective solves, the bound is `0.0117`, and the shipped wheel holds 0.008308 at `coarse` inside a bound derived without reference to it — there is no deficit for an objective term to close. §31's `cy4` route is not retired, it is de-prioritised and stays filed | settled |
 | 4 | `WALLPIN_PLAN.md` | Re-derive Gate 1 at the 1.2 mm floor and drop the beam test's 2.0 mm pin (§14's reserved judgement, measured by §31) | small |
-| 5 | `RIMCAP_PLAN.md` | A rim cap model — the boundary as a function of `t3` and rim arrival angle, not at one design (§22, §24) | medium |
-| 6 | `MESHSTEP_PLAN.md` | The 16.8–30.3× rim-OD element-size step the contact patch sits on (§20) | small, needs G7 first |
+| ~~5~~ | ~~`RIMCAP_PLAN.md`~~ | **PARKED 2026-09-05 — §114. BOTH HALVES SUPERSEDED.** Step 1's cap model mirrors `hub_fillet_cap_mm`, which §103 demoted to reporting-only; the report half was tried at §110 (`f21ec7d`) and reverted as UNREACHABLE — `mesh_coords` raises before the report dict exists, so the keys were constant-by-construction, and visibility shipped in the event record instead (`clamp_reject`). **The gap is not parked with the arc:** the sector limit is still applied by the mesh, not priced by the objective, and whether it needs a barrier is blocked behind the Stage-3 re-run | Step 0 spent; both deliverables superseded |
+| 6 | `MESHSTEP_PLAN.md` | The 16.8–30.3× rim-OD element-size step the contact patch sits on (§20). **STEP 1 IS ALREADY DONE, BY ACCIDENT — §106, corrected §108:** §103's fillet switch re-cut the rim OD and the step fell to **2.650×** without this arc spending anything. Steps 0.2 and 2 remain, and Step 2's patch margin cannot be carried forward — the weld/free boundary moved +0.9373° → +4.1093° | small, needs G7 first; Step 1 already spent by §103 |
 | 7 | `EXPORTPREC_PLAN.md` | Make the exporter write the overlap at 4 dp instead of 2 — §28's better fix, deferred | small, touches a shipped artifact |
-| 8 | `BOUNDARY_PLAN.md` | Defect 5's boundary placement, worth 0.61% of loss (§21) | small, lowest ranked |
+| 8 | `BOUNDARY_PLAN.md` | Defect 5's boundary placement, worth 0.61% of loss (§21). **STEP 0 ANSWERED — §112:** the wasted-descent ratio does NOT generalise — four of twenty-five committed runs, all `medium`/SVK, 17.5%–42.8% each; the other twenty-one lose nothing and several descend INTO feasibility. **The arc stays at #8** | small, lowest ranked; Step 0 spent for no solve |
 | 9 | `MBSE_PLAN.md` | A requirements layer: do `FORCE_LBS`, `TARGET_DEFLECTION_MM`, `SAFETY_FACTOR` and `MIN_WALL_MM` encode a MISSION, and can the wheel be re-optimised and verified against a different one? **STEPS 0-8 DONE 2026-08-31 — §97.** The four constants decode to 3.0 kg on three wheels at 0.263 m/s and every derivation closes to floating point; the weight table was a 51/43/6/0.3/0 portfolio at §97 [RE-DERIVED 53.51/44.60/1.59/0.30/0.00 AT §103, `DEFAULT_WEIGHTS["stress_margin"]` 325.0→89.21, SEE `MBSE_PLAN.md`]; `objective(genes, req=baseline())` is bit-identical to `objective(genes)`; two of five named profiles come back NON-COMPLIANT. What is left is not the arc — it is what §97 ranks: a re-optimisation under a failing profile, which costs a `medium` descent this arc was forbidden to spend | steps 0-8 spent: three drivers, one of which solves (25 m 12 s); no descent, no promotion |
+| ~~10~~ | ~~`UNCAP_PLAN.md`~~ | **ADDED TO THIS TABLE 2026-09-05 — §114, AND PARKED IN THE SAME BREATH.** Created 2026-08-17 from §34, it ran to STEP 3 RECORD PART 10 (§104) without ever appearing in this index, and its own header claimed "#2, promoted to the top" — a rank this table never granted and which collided with `FILLET_PLAN.md`'s. **PARKED:** since §103 the tree builds an ELEVEN-block filleted sector and this arc's Y-partition is measured against the SEVEN-block one it stopped building (23.8× worse at `coarse` once filleted), and `rim:P_c` — the quantity the arc exists to make faithful — reaches no barrier, no objective term and no gradient (`grep -rn "rim:P_c" src/` → zero). Reopens only if that quantity acquires a consumer | Step 3 parts 2-10 spent; parked without adoption |
 
 **Ranking note — SETTLED.** 1 was put ahead of 2 deliberately, against §30's ranking, on the
 argument that it was cheap and that "if the answer is *linear is not acceptable*, it changes
@@ -14567,11 +14574,11 @@ successor 4, and the decision `UNCAP_PLAN.md` deferred twice in identical words 
 
 ### THE PREMISE WAS CHECKED FIRST, AND BOTH HALVES OF IT HAD MOVED UNDER THE ARC
 
-**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1255` now
+**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1257` now
 carries `agg, c = _stress_aggregate(pn, maxes, q)   # whole-wheel pnorm — REPORTING ONLY`,
-and `stress`/`stress_margin` (`:1300-1310`) read the two per-junction region p-norms alone.
+and `stress`/`stress_margin` (`:1302-1312`) read the two per-junction region p-norms alone.
 Verified mechanically rather than off the comment: inside `t3_terms` the bare `agg` is
-assigned at `:1255` and read at exactly ONE place — `:1354`, the report key
+assigned at `:1257` and read at exactly ONE place — `:1356`, the report key
 `pnorm_stress_agg_mpa`.  Every other occurrence in the module is a comment or a different
 function's own local, and the `probe_p` sweep builds its own `a_v` rather than reading this
 one.  **So `rim:P_c` — the corner §46 and §52 built the whole ranking on — feeds no barrier, no
@@ -15224,7 +15231,7 @@ parked and nothing reads a parked file:
 `rim_fillet_cap_mm(t3, arrival_angle)` in `wheel_objective`, differentiable, *"mirroring the
 hub"* — but the hub cap's stress-pricing job was retired at §103, which kept `Kt`,
 `hub_fillet_cap_mm` and `hub_fillet_r_effective` as **reporting only**
-(`src/wheel_objective.py:1259`).
+(`src/wheel_objective.py:1261`).
 
 **What the hub cap still does is the half nobody restated, and the rim's guard models a
 DIFFERENT LIMIT from the one the mesh enforces.** There are three separate limits on a

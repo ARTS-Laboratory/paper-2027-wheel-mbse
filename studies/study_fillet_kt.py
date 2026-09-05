@@ -11,7 +11,7 @@ WHY THIS EXISTS
 ---------------
 §93 took the decision to wire the fillet into the objective and put two conditions in
 front of it.  Condition B was found while §93 was being written, by reading
-`wheel_objective.py:1234` rather than the plan files:
+`wheel_objective.py:1236` rather than the plan files:
 
     util_j = kt * agg / ALLOWABLE_STRESS_MPA
 

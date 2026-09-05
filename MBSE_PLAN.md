@@ -63,9 +63,9 @@ Four consequences, each of which this arc is meant to end:
 
 3. **`ALLOWABLE_STRESS_MPA`, `TARGET_DEFLECTION_MM` and the weight table cannot be varied
    at all.** `force`, `E` and `nu` already thread as keywords through the whole solve path
-   and even survive the process pool (`wheel_objective.py:1127` ships `problem_kw`). The
-   other three are read as module globals inside the loss — `wheel_objective.py:1153`
-   (target), `:1234-1235` and `:1272-1273` (allowable). `tests/test_objective.py:1257` has
+   and even survive the process pool (`wheel_objective.py:1129` ships `problem_kw`). The
+   other three are read as module globals inside the loss — `wheel_objective.py:1155`
+   (target), `:1236-1237` and `:1274-1275` (allowable). `tests/test_objective.py:1257` has
    to `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move it, which is the tell.
    Only `MIN_WALL_MM` and `CY_BOUND_MM` have setters (`wheel_fea.py:840`, `:852`) and only
    they are recorded into a genome record's `search` block.
@@ -151,9 +151,9 @@ The calibration below is that paragraph, generalised to all five objective terms
                         rides to pool workers at :1111-1115
   E, nu                 ride **problem_kw -> service_qoi_value_and_grad       nothing
                         (wheel_adjoint.py:646) -> wheel_contact_problem;
-                        survive the pool (wheel_objective.py:1127)
+                        survive the pool (wheel_objective.py:1129)
   min_wall              set_min_wall(wheel_fea.py:852) + --min-wall            route it
-  target_deflection     MODULE GLOBAL, read at wheel_objective.py:1153-1155   PLUMB IT
+  target_deflection     MODULE GLOBAL, read at wheel_objective.py:1155-1157   PLUMB IT
   allowable_stress      MODULE GLOBAL, read at :1234-1235 and :1272-1273      PLUMB IT
 ```
 
@@ -473,7 +473,7 @@ constants; everything else already threads.
   `study_contact.py:94`, `study_gradient.py:120`, `study_fillet_cost.py:115`,
   `study_svk_rescore.py:67`).
 - **CHECK — the cache audit, BY TEST AND NOT BY READING.** `_T1_CACHE` keys on
-  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:908`);
+  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:910`);
   `_KT_CACHE` keys without weights (`:533`); `wheel_wheel._COORD_FN_CACHE` (`:2760`) keys on the
   static mesh recipe. Two requirement sets differing **only** in `allowable_stress_mpa`
   must give different `stress`/`stress_margin` **in the same interpreter**. A stale jit

@@ -1784,15 +1784,15 @@ successor whose value rests on a premise is worth exactly what the premise is wo
 
 **THE QUANTITY IT WAS RANKED TO PROTECT IS NO LONGER READ BY ANYTHING THAT DECIDES.**
 §103 replaced `util_j`'s `Kt * agg` surrogate with a per-junction region p-norm on the
-fillet's own arc.  `wheel_objective.py:1255` now reads
+fillet's own arc.  `wheel_objective.py:1257` now reads
 
 ```
     agg, c = _stress_aggregate(pn, maxes, q)          # whole-wheel pnorm — REPORTING ONLY
 ```
 
-and the `stress` wall and `stress_margin` term at `:1300-1310` loop over `agg_hub` and
+and the `stress` wall and `stress_margin` term at `:1302-1312` loop over `agg_hub` and
 `agg_rim` alone.  Checked mechanically rather than read: inside `t3_terms` the bare `agg`
-is assigned at `:1255` and read at exactly ONE place — `:1354`, the report key
+is assigned at `:1257` and read at exactly ONE place — `:1356`, the report key
 `pnorm_stress_agg_mpa`.  Every other occurrence of the identifier in the module is a
 comment or a different function's own local (`_stress_aggregate`'s and
 `_pnorm_and_grad`'s), and the `probe_p` sweep builds its own `a_v` rather than reading

@@ -1144,7 +1144,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     asserting `0 == 0`.  A module global read at call time keeps working; one captured
     in a signature does not.  They are keywords rather than reads
     because `force`, `E` and `nu` already thread — `force` here, the other two on
-    `**problem_kw` and through the process pool (`wheel_objective.py:1127`) — and the
+    `**problem_kw` and through the process pool (`wheel_objective.py:1129`) — and the
     asymmetry was arbitrary: three of the five quantities a MISSION sets could be varied
     inside one interpreter and two could not.  `tests/test_objective.py:1257` had to
     `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move one of them, which is

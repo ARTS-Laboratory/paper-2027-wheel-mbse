@@ -111,13 +111,13 @@ PLAN.md §106.  This file's own tripwire — *"If `FILLET_PLAN.md` lands and the
 fillets directly, the reason for a closed-form cap model changes substantially ... Read
 `FILLET_PLAN.md`'s status before starting"* — became true on 2026-09-03 and nothing read it,
 because a parked arc is a file nobody opens.  Every clause of it now holds:
-`wheel_objective.phase_meshes` passes `fillet=True` unconditionally (`:1013`), `util_j` is the
+`wheel_objective.phase_meshes` passes `fillet=True` unconditionally (`:1015`), `util_j` is the
 junction's own region p-norm with `Kt` absent, and §102 gave `R_rim` a nonzero gradient entry
 for the first time.
 
 **SO THE HALF THIS ARC WAS RANKED FOR IS GONE.**  Step 1 asks for `rim_fillet_cap_mm` in
 `wheel_objective`, differentiable, *"mirroring the hub"* — but §103 demoted `Kt`,
-`hub_fillet_cap_mm` and `hub_fillet_r_effective` to **reporting only** (`:1259`).  The rim
+`hub_fillet_cap_mm` and `hub_fillet_r_effective` to **reporting only** (`:1261`).  The rim
 does not need a stress surrogate; the solve prices it.
 
 **WHAT THE HUB CAP STILL DOES IS THE HALF NOBODY RESTATED, AND THERE ARE THREE LIMITS, NOT

@@ -368,7 +368,7 @@ def test_a_pooled_SVK_evaluation_matches_the_serial_one():
 
     SVK_PLAN.md step 2.  What the pool has to get right is unchanged — same task dict,
     same slot order, same reduction — and `kinematics` rides `**problem_kw` into the task
-    (`wheel_objective.py:940`) and back out at `wheel_pool_worker.py:66`, so this test is
+    (`wheel_objective.py:942`) and back out at `wheel_pool_worker.py:66`, so this test is
     really asking whether that ONE key survives the round trip through pickle and lands on
     the worker's solver rather than defaulting there.
 

@@ -15,7 +15,7 @@ TWO CLAIMS THAT PULL IN OPPOSITE DIRECTIONS, AND BOTH ARE GATED HERE.
      `allowable_stress_mpa` must give different `stress`/`stress_margin` IN THE SAME
      INTERPRETER, and likewise for `target_deflection_mm` and `deflection`.  This is a
      CACHE AUDIT BY TEST AND NOT BY READING: `_T1_CACHE` keys on
-     `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:908`),
+     `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:910`),
      `_KT_CACHE` keys without weights (:533) and `wheel_wheel._COORD_FN_CACHE` (:2760)
      keys on the static mesh recipe.  A stale jit trace returning the old answer is
      exactly the failure these two tests exist for, and it is invisible to inspection.
@@ -290,7 +290,7 @@ def test_pooled_equals_serial_under_a_non_baseline_requirement_set(genes):
     """MBSE_PLAN Step 3's third check, as a test rather than as a `make` invocation.
 
     `force`, `E` and `nu` are the three routed quantities that must survive being PICKLED
-    into a worker process (`wheel_objective.py:1127` ships `problem_kw`).  Defaulted
+    into a worker process (`wheel_objective.py:1129` ships `problem_kw`).  Defaulted
     there, the pooled arm would score the shipped mission while the serial arm scored the
     given one — and this comparison is exact, not to a tolerance, which is what
     `wheel_pool.PINNED_ENV` and the Makefile's `XLA_FLAGS` line buy.

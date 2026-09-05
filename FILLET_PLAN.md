@@ -3954,7 +3954,7 @@ precedent: a loss is not comparable across kinematics, and that rule exists beca
 Stage-3 headline once survived to promotion with nothing in the record saying so.
 
 **B — ON A FILLETED MESH THE STRESS TERM COUNTS THE FILLET TWICE.  NEW AT §93, AND NOTHING
-IN THIS TREE RECORDED IT.**  `wheel_objective.py:1234` computes
+IN THIS TREE RECORDED IT.**  `wheel_objective.py:1236` computes
 `util_j = kt * agg / ALLOWABLE_STRESS_MPA`, where `agg` is the p-norm of the MESH's own
 stress field and `kt` is a closed-form surrogate standing in for a fillet the mesh does not
 model — which, on a filleted mesh, it does.  `kt_hub` 2.0963 and `kt_rim` 1.3939 at the

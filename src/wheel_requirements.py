@@ -514,7 +514,7 @@ class Mission:
 #
 # `smoothness`'s deviation is relative because its argument is an integral with no
 # reference scale in the table — the term is LINEAR in that integral
-# (`wheel_objective.py:823-826`), so 1% of it costs 1% of the term and the reference
+# (`wheel_objective.py:825-828`), so 1% of it costs 1% of the term and the reference
 # genome supplies the scale.  That is the one `c_T` that must be MEASURED off a committed
 # artifact rather than read off the weight table, and `studies/study_mbse_calibration.py`
 # is where it is measured.
