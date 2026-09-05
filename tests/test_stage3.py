@@ -566,6 +566,112 @@ def test_a_refused_mesh_is_not_counted_as_a_failed_solve(genes, z0):
         "a refused mesh was recorded as a failed solve -- one value, two meanings")
 
 
+class _ClampRefusingEvaluator(S3.Evaluator):
+    """Solves at step 0, then raises the CLAMP refusal on the next `n_fail` trials.
+
+    Sibling of `_RefusingEvaluator` above and deliberately a separate class: that one says
+    "this genome has no filleted mesh", this one says "the mesh built and solves, but its
+    radii are not the genome's".  One evaluator raising both would make a green here mean
+    either, which is the same reason `_RefusingEvaluator` splits step 0 out.
+    """
+
+    def __init__(self, *a, n_fail=2, **kw):
+        super().__init__(*a, **kw)
+        self.n_fail, self.n_seen = n_fail, 0
+
+    def __call__(self, *a, **kw):
+        self.n_seen += 1
+        if self.n_seen > 1 and self.n_fail:
+            self.n_fail -= 1
+            raise WW.FilletClampRefusedError(
+                "mesh_coords: the sector-fit clamp moved this mesh's fillet radius at "
+                "rim: injected by the test.")
+        return super().__call__(*a, **kw)
+
+
+def test_a_clamped_mesh_is_its_own_reject_kind_and_not_a_failed_solve(genes, z0):
+    """PLAN.md §110.  THREE causes reach one catch, and the third was wearing the first's
+    name.
+
+    The trial loop's own comment forbids exactly this: *"S5 counts `solve_reject` events
+    against a known number of INJECTED SOLVER failures.  One kind for both would make that
+    count mean two things at once."*  It said that about `mesh_reject` and then filed the
+    sector-fit clamp under `solve_reject` anyway, because the clamp raises
+    `NotImplementedError` -- a `RuntimeError` subclass, so the existing catch swallowed it
+    into the `else`.
+
+    It is not a failed solve and not a missing mesh.  The mesh exists and solves; only the
+    GRADIENT is refused, because `mesh_coords` will not hand back a derivative for radii
+    the genome did not ask for.  The response is still to shorten the step -- what changes
+    is only what the record calls it.
+    """
+    ori = WW.flank_orientation(genes, WW.get_config(CFG))
+    ev = _ClampRefusingEvaluator(CFG, orientation=ori, n_fail=2)
+    rec = S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", max_rejects=3,
+                     evaluator=ev, verbose=False)
+
+    clamps = [e for e in rec["events"] if e["kind"] == "clamp_reject"]
+    assert len(clamps) == 2, (
+        f"two injected clamp refusals, {len(clamps)} recorded: {rec['events']}")
+    assert not [e for e in rec["events"] if e["kind"] in ("solve_reject", "mesh_reject")], (
+        "a clamped mesh was filed under another kind -- one value, three meanings")
+    assert [e["scale"] for e in clamps] == [1.0, 0.5], (
+        "a clamped trial must halve the step exactly as the other two refusals do")
+    assert {e["error"] for e in clamps} == {"FilletClampRefusedError"}, (
+        "the record must name the type, so a run can be audited after the fact")
+    assert len(rec["steps"]) == 2 and not np.allclose(
+        np.asarray(rec["steps"][-1]["z"]), z0), (
+        "the clamp cost the run rather than the trial")
+
+
+def test_the_clamp_refusal_is_still_caught_by_the_existing_handlers():
+    """The subclass must not change WHICH exceptions the descent survives, only the label.
+
+    `FilletClampRefusedError` derives from `NotImplementedError` and therefore from
+    `RuntimeError`, which is what every `except (RuntimeError, WW.MeshRefusedError)` in
+    this module already catches.  Asserted rather than assumed because re-parenting it to
+    a bare `Exception` later would keep every other test in this file green while turning
+    a shortened step back into a dead run.
+    """
+    assert issubclass(WW.FilletClampRefusedError, RuntimeError)
+    assert not issubclass(WW.FilletClampRefusedError, WW.MeshRefusedError), (
+        "a clamp is not a missing mesh; sharing a base would re-merge the two kinds")
+    assert S3._reject_kind(WW.FilletClampRefusedError("x")) == "clamp_reject"
+    assert S3._reject_kind(WW.MeshRefusedError("x")) == "mesh_reject"
+    assert S3._reject_kind(RuntimeError("x")) == "solve_reject"
+
+
+def test_a_clamped_genome_refuses_the_objective_rather_than_being_truncated():
+    """PLAN.md §110's correction to §106: the clamp is FATAL to an evaluation, not silent.
+
+    §106 read the mesh's own `fillet_radii_mm` after a direct `build_wheel(fillet=True)`
+    and concluded the objective *"can move `R_rim` into a region the mesh silently
+    truncates, with the barrier that reads `R_rim` certifying it feasible"*.  The barrier
+    half is exact -- every barrier reading `R_rim` is 0.0 here.  The silence is not: an
+    evaluation that touches a mesh REFUSES, because `t2_vector` and `t3_terms` both route
+    through `mesh_coords`.  A direct build bypasses that path, which is why the rebuild
+    saw a truncated radius where an evaluation sees an exception.
+
+    `ga_beam` is the witness because it is the design the hub bound was calibrated on
+    (§109) and the mesh clamps BOTH its junctions.
+    """
+    g = wg.genes_to_vector(json.load(
+        open(os.path.join(REPO, "best_solution_ga_beam.json")))["genes"])
+    g = np.asarray(g, dtype=float)
+
+    mesh = WW.build_wheel(g, WW.get_config(CFG), fillet=True)
+    assert mesh.fillet_clamped["rim"], "ga_beam must still clamp; see PLAN.md §106"
+    assert mesh.fillet_radii_mm[1] < g[13], "the applied rim radius must be the cut one"
+
+    for tiers in (("t1", "t2"), ("t1", "t3")):
+        with pytest.raises(WW.FilletClampRefusedError):
+            WO.objective(g, CFG, tiers=tiers)
+
+    # t1 is barrier-only and builds no mesh, so it is the one tier that survives -- and it
+    # is exactly where `R_rim` reads feasible.  Both halves of §106's sentence, together.
+    WO.objective(g, CFG, tiers=("t1",))
+
+
 def test_the_t1_screen_cannot_be_the_guard_for_a_refused_filleted_mesh():
     """PLAN.md §106, measured on `stage2_elites#11`, and the reason the fix is a CATCH.
 

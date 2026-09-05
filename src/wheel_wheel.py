@@ -1602,6 +1602,34 @@ def _layer_cliff_from_scalars(wall, layer_k, end, bracket=LAYER_CLIFF_BRACKET, x
     return c if float(bracket[0]) <= c <= float(bracket[1]) else None
 
 
+class FilletClampRefusedError(NotImplementedError):
+    """The mesh BUILT, but the sector-fit clamp moved its radii off the genes' (§110).
+
+    A THIRD CAUSE, and it needs its own name because the two it was tallied with are both
+    false about it.  `MeshRefusedError` means this genome has no filleted mesh AT ALL --
+    nothing to solve.  A bare `RuntimeError` out of a descent means the solver failed on a
+    mesh that existed.  This is neither: the mesh exists and solves, and what is missing is
+    only that `mesh_coords`' differentiable path would hand back a gradient for radii the
+    genome did not ask for.
+
+    `NotImplementedError` SUBCLASS, so it is still a `RuntimeError` and every existing
+    `except (RuntimeError, MeshRefusedError)` around a descent keeps catching it with no
+    change in behaviour.  The subclass exists so `wheel_stage3` can tell it apart when it
+    LABELS the event.  Before §110 a clamped trial was recorded as `solve_reject` -- the
+    same "one kind for both" error the trial loop's own comment warns about for
+    `mesh_reject`, one level down, and worse here because S5 counts `solve_reject` events
+    against a known number of INJECTED solver failures, so a clamp in that bucket corrupts
+    a calibration rather than merely blurring a label.
+
+    NOT YET SEEN ON DISK, WHICH IS A DATE AND NOT A REPRIEVE.  All 25 committed
+    `stage3_*.json` runs are from 2026-08-01/03 and predate §103's fillet switch, so none
+    ever built a filleted mesh and this has never fired -- `grep` finds no
+    `NotImplementedError` in any committed event list.  §106 rebuilt their 2598 iterates at
+    `coarse` with `fillet=True` and found 117 rim-clamped and 187 hub-clamped; on the next
+    filleted run each of those is one of these.
+    """
+
+
 class MeshRefusedError(ValueError):
     """This GENOME has no filleted mesh -- not a mistake by the caller.
 
@@ -2789,10 +2817,15 @@ def _filleted_gradient_recipe(mesh):
             f"`fillet_blocking={rec.get('blocking')!r}`, which carries no root record.  "
             "Only the eleven-block sector blocking has a differentiable path; see "
             "`_filleted_gradient_recipe` and PLAN.md §79.")
-    if any(rec["roots"][j]["clamped"] for j in _FILLET_ROOT_JUNCTIONS):
-        raise NotImplementedError(
-            "mesh_coords: the sector-fit clamp moved this mesh's fillet radius, so the "
-            f"radii it was built at {mesh.fillet_radii_mm} are not the genes' "
+    clamped_at = [j for j in _FILLET_ROOT_JUNCTIONS if rec["roots"][j]["clamped"]]
+    if clamped_at:
+        # `FilletClampRefusedError` rather than a bare `NotImplementedError` since §110 --
+        # same base class, same catch sites, but `wheel_stage3` can now name this in an
+        # event instead of filing it under `solve_reject` with the Newton failures.
+        raise FilletClampRefusedError(
+            "mesh_coords: the sector-fit clamp moved this mesh's fillet radius at "
+            f"{'and '.join(clamped_at)}, so the radii it was built at "
+            f"{mesh.fillet_radii_mm} are not the genes' "
             "and do not follow them.  The differentiable path would return a gradient "
             "that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md "
             "§79.")
