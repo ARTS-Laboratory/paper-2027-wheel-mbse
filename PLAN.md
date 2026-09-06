@@ -228,7 +228,7 @@ committed study artifacts describe a wheel promoted out of their named file thre
 > characterisation finding and exiting 0 anyway. **That is the first completion since
 > 2026-08-06**, and it has happened exactly once.
 
-> **THE SHIPPED GENOME IS `09e8188`, PROMOTED 2026-08-14 (§26). READ THE CHAIN BEFORE
+> **THE SHIPPED GENOME IS `b729e86`, PROMOTED 2026-09-06 (§115). READ THE CHAIN BEFORE
 > TRUSTING ANY PER-DESIGN NUMBER IN THIS FILE.**
 >
 > ```
@@ -236,8 +236,15 @@ committed study artifacts describe a wheel promoted out of their named file thre
 >   350f4c7  §13, 2026-08-06      →  stage3_minwall_best_1.2.json   (the §14 control genome)
 >   e4219f3  §16, 2026-08-11      →  stage3_buildcap2_feasible_medium.json
 >   e126cc3  §19, 2026-08-13      →  stage3_margin_best_medium.json
->   09e8188  §26, 2026-08-14      →  best_solution.json  ← SHIPPED.  48.64 g OCC / 39.47 g mesh
+>   09e8188  §26, 2026-08-14      →  stage3_knee_best_medium.json   (preserved, no longer ships)
+>   b729e86  §115, 2026-09-06     →  best_solution.json  ← SHIPPED.  59.47 g OCC / 54.12 g mesh
 > ```
+>
+> **THE PROMOTION BEFORE THIS ONE (§26 -> §115) SPANS THE §103 FILLET-MESH SWITCH.** Every
+> per-design number attributed to `09e8188` above and below predates §103 making the FEA
+> objective unconditionally build a filleted mesh; §111 found `09e8188` outright infeasible
+> under it (SHOULD-DEFLECTION MET->MISSED, -50.43% against the committed -4.945%). `b729e86`
+> is the re-descent that answers it -- see §115.
 >
 > **AND THE BANNER BELOW WENT STALE FOR TWO PROMOTIONS, WHICH IS ITSELF THE WARNING.** It
 > declared `350f4c7` shipped and said in terms that the shipped genome had not changed; that
@@ -16832,3 +16839,172 @@ would have OOM-killed a 13-hour run to test a driver that imports no jax and is 
 nothing. What was run instead, under a 6 GiB cap: the new guard (57 cases),
 `test_study_gate_guard`, `test_promotion`, and the round trip that actually matters —
 `load_genes(shim output)` element-wise equal to `genes_to_vector(best.genes)`.
+
+## §115 — 2026-09-06. `b729e86` PROMOTED, RECOVERED ACROSS AN ACTUAL POWER OUTAGE MID-DESCENT — AND VERIFYING IT FOUND THREE MORE POST-§103 NUMBERS THAT NO LONGER HOLD
+
+§113's descent kept running after that section closed. This is the record of how it finished,
+what promoting it found, and three more instances of the pattern §113 already named: a memory
+or feasibility figure measured before §103's fillet-mesh switch, still cited after it, wrong.
+
+### 1. THE DESCENT'S SECOND HALF: AN ACTUAL CRASH, NOT A DRILL
+
+The box lost power outright at some point after 2026-09-05 17:30 (last successful trajectory
+write) and before 17:38 (the next session's tmux window). Not a memory kill this time — the
+whole machine went down. `wheel_stage3.py` had reached **step 177 of 300** (178 rows), loss
+1383.5887 -> 52.6886, `--workers 0`, exactly where §113 left it.
+
+**The recovery path §114 built was exercised for real, not as a drill.** The trajectory
+survives a kill by construction — `_persist`/`_write` (`wheel_stage3.py:875-896`) write via a
+tmp file plus `os.replace`, so an abrupt kill (kernel-level, this time, not a `SIGTERM`) leaves
+either the previous complete file or the next one, never a partial one. All 178 rows were
+intact on disk. `studies/stage3_resume_genome.py` (§114) read the trajectory, recovered the
+tracked **`best`** iterate — step 161, tier 0, loss 52.79199 — not the raw-latest step 177,
+round-trip-verified its hash (`11adca8`, matched), and printed the restart command for the 122
+steps still owed. Relaunched identically (`--workers 0`, same env pins), in a fresh tmux
+session; ran clean for 27430.4 s (7.6 h) and completed all 122 steps with no further incident.
+
+**Total wall-clock: 39440.6 s + 27430.4 s = 66871 s, 18.58 h** — against §105's original 50.47 h
+serial estimate (2.7x pessimistic, consistent with §114's live 2.8x reading mid-run) and
+within 2% of the 18.2 h projection §114 made from the first leg's steady-state pace alone.
+**The warm restart's stated cost (Adam's moments, the secant `delta0`, `n_reject`, the decayed
+`lr` all re-zero) was small in practice**: loss picked up from 52.792 and proceeded to 52.55
+over the resumed leg with no visible thrashing.
+
+### 2. THE RUN'S OWN LAST STEP IS NOT THE ANSWER — A LIVE `selection_key` / DEFECT-6 CASE
+
+The resumed leg's raw final step (122 of 122) reads **loss 52.5139** — lower than any other
+point in either leg. It is **not a valid promotion candidate.** Tracing `BARRIER_TERMS`
+violation across the resumed leg's own recorded `terms`: the descent is tier-0 (feasible) at
+step 57, crosses into `fillet_cap` violation at step 59, and **never returns to tier 0 for the
+remaining 63 steps** — `R_hub` (0.5535 mm) ends up past the hub fillet cap (0.5496 mm) at the
+run's end, slack -0.0039 mm against the +0.001 mm floor `MIN_CAP_SLACK_MM` sets.
+
+This is `wheel_stage3.selection_key`'s DEFECT 6 (the docstring at `wheel_stage3.py:221-241`),
+seen live rather than in the run it was written to fix: a step that trades a barrier for loss
+scores lower than a feasible step, and no amount of further descent buys that back. The
+tracker's own `best` field correctly stayed at **step 58 of the resumed leg** (tier 0, loss
+52.5662, genome hash `b729e86`) — clearing the tier-0 floor by only ~7% margin (slack 1.07e-3
+mm against the 1e-3 mm minimum) — and that is the genome this section promotes.
+
+### 3. THE PROMOTION
+
+**`b729e86` ships, replacing `09e8188` (§26).** `09e8188` is preserved unchanged as
+`stage3_knee_best_medium.json` (already existed, verified bit-identical — no new preservation
+action needed). `b729e86`'s own record is `stage3_svk_refillet_shipped_r2_best.json`.
+
+```
+                        09e8188 (outgoing)   b729e86 (shipped)     delta
+  mesh mass (g)              48.64                54.115          +11.3%
+  axle drop, this mesh     MISSED (-50.43%)     1.992 mm            MET (target 2.0 mm)
+  stress utilisation           n/a               0.953 (coarse)
+                                                  0.9723 (medium, SVK -- §115.5)
+  buckling ratio                n/a               0.156
+  barriers                      n/a               all 0.0
+```
+
+The mass increase is real, not a search artifact: it is what §111 already implied — a fillet
+mesh prices the hub junction the old genome was never asked to survive, and clearing it costs
+material. `make export` rebuilds clean: valid OCC solid, one solid, STEP `BRepCheck` valid, not
+self-intersecting, 59.47 g as built. `tests/test_promotion.py`, `test_export_contract.py`,
+`test_golden.py` — 30/30 green against the new genome (§115.4 below covers why this is a
+narrower re-check than a full suite, and why that is still sufficient).
+
+**Checklist walked (`tests/test_promotion.py`'s `PROMOTION_CHECKLIST`):** (1) banner above,
+amended in the same commit as the genome; (2) `make export` re-run after the note-field edit
+that follows it, so the STEP's mtime is not stale against it; (3) driver audit below;
+(4) `make svk` — see §115.5, blocked by a pre-existing bug, real feasibility confirmed by
+direct probe instead; (5) outgoing genome preserved (pre-existing file), `note` field written;
+(6) `test_golden.py` untouched, still reads `best_solution_ga_beam.json`.
+
+**Driver audit (item 3), done as a real grep, not assumed clean.** The one known constant
+(`study_svk_rescore.py`'s §14 control) is pinned to `stage3_minwall_best_1.2.json` by file,
+unaffected. Two more spots pair a hardcoded `"09e8188"` **label** with a live read of
+`best_solution.json` — `study_kinematics_rank.py`'s `GRAD_PROBES`/genome table (two tuples) and
+`study_mbse_calibration.py`'s `DEFAULT_INPUTS`/`REFERENCE`. Both are display labels only: the
+values they print are read live from whatever the file holds, so nothing computes wrong —
+only the printed label now says `09e8188` where the file holds `b729e86`. Left unfixed
+(cosmetic, not the correctness-critical class of bug the checklist exists for), noted in
+`best_solution.json`'s own `note` field for whoever next touches those two files.
+
+### 4. VERIFYING THIS PROMOTION FOUND TWO MORE MEMORY FIGURES §103 MADE STALE
+
+Confirming green before commit meant running `make test` for the first time since §103 shipped
+against a suite this large, and it did not go the way §105's-era numbers said it would.
+
+**`make test` bare (plain `pytest`, all 32 files, one process) OOM'd.**
+`journalctl -k`: `Killed process ... python ... anon-rss:53145532kB` at 10:00:39. This is
+exactly the invocation this file already has a table against (`:14673-14681`, 2026-09-03):
+`test_objective.py` alone peaks at 51.0 GiB on this 61 GiB box, so the four `t3`-tier files
+must never share a process with each other OR with the ~28 light ones. I ran the naive command
+anyway, without re-reading that table first — the fix is not new information, it is a rule I
+already had and did not check before acting.
+
+Re-run correctly, batched: the 28 light files together (**661 passed, 2 xfailed**, 28:23,
+matching the 2026-09-03 599-test figure plus new files added since), then each `t3`-tier file
+alone — `test_gradient.py` (24 passed, 6:43, matches 6:33), `test_pool.py` (23 passed, 12:20,
+matches 12:09), `test_stage3.py` (63 passed, 26:30, peak **34.6 GiB** against a documented 29.9
+— some growth, comfortable headroom throughout), and `test_objective.py` (**124 passed, 3
+xfailed**, 35:44 against a documented 33:17). **`test_objective.py`'s peak this run: ~59.8 GiB
+used system-wide, ~3 GiB available at the low point** — against the table's own 51.0 GiB. It
+passed, but the documented figure is no longer a safe margin estimate on this box; treat it as
+a near-miss, not a clean pass. 900 collected, 895 passed + 5 xfailed = 900 accounted for.
+
+**`make svk`'s own default (`SVK_WORKERS=4`) came far closer to OOM, far faster, than the pool
+this file already has a table for.** Launched at `medium` config per the Makefile default;
+15 minutes in — still inside JIT compilation, the actual solve loop not yet reached — available
+memory read **1.4 GiB and falling, swap actively growing** (461 MiB -> 1.4 GiB across that
+window). Four workers at 11.5-12.7 GiB RSS each plus an 10.8 GiB parent, none of them yet past
+the compile phase. Killed (`SIGTERM`, clean exit, no `SIGKILL` needed) before the box went the
+way §113's pool did. Re-run with `SVK_WORKERS=0` (serial — the same safe configuration §105/§113
+already established for `wheel_stage3`) completed the run's memory profile safely, peaking at 9+
+GiB available throughout.
+
+This is the **third** case this file now has of a documented-safe worker count or memory figure
+turning out stale after §103: the phase-pool (§113), `test_objective.py`'s peak (above), and now
+`SVK_WORKERS`'s own default. None of the three pre-§103 memory figures for parallel or
+large-mesh work on this box have been re-measured since, and this section is not the last one
+that will find that out — the fix is not any one number, it is to stop trusting one.
+
+### 5. `make svk` ITSELF HIT A FOURTH THING, AND THIS ONE IS NOT A MEMORY FIGURE
+
+Re-run serially, `make svk` reached the re-score phase and raised, rather than completing:
+
+```
+RuntimeError: the p=4.0 probe (0.886982395352275) does not reproduce the constraint's
+utilisation (0.9559481412419902); the probe and the constraint are no longer the same
+construction
+```
+
+`study_svk_rescore.py`'s own internal check (`_score`, asserting its diagnostic `p=4` probe
+reproduces `report["stress_utilisation"]` to 1e-12) failed for `b729e86` specifically. Traced,
+not worked around: `wheel_objective.py`'s REAL constraint has computed per-region since
+§102/§103 — `util = max(agg_hub, agg_rim) / allowable`, each region carrying its own Kt already
+folded in — but the diagnostic `pnorm_by_p` block (`:1336-1343`) still builds
+`stress_utilisation_kt` from one GLOBAL `kt_max = max(kt_hub, kt_rim)` times one global
+aggregate, a construction that only reproduces the real constraint when the region with the
+larger Kt is also the region with the larger raw stress.
+
+**`b729e86` is the first genome scored by this gate where that stops being true.** Confirmed by
+direct probe at medium/SVK: `kt_hub` 3.124 > `kt_rim` 1.815 (hub has the bigger Kt), but
+`stress_utilisation_rim` 0.9723 > `stress_utilisation_hub` 0.9545 (rim narrowly governs the real
+constraint anyway — its raw stress is high enough to overcome the smaller Kt). The diagnostic's
+`kt_max` picks hub's Kt and pairs it with a global aggregate that tracks hub's own region,
+producing 0.9526 — close to hub's own number, nowhere near the true governing max. Every genome
+this gate has scored before now happened to have hub govern on both counts, which is the only
+reason a 1e-12 assertion on a construction this narrow has never tripped before.
+
+**This is a bug in a diagnostic sanity-check, not in the design or the real constraint** — the
+number the gate exists to answer, `report["stress_utilisation"]`, is unaffected by it; it was
+read directly, bypassing the broken assertion: **0.9723 at medium config under SVK kinematics,
+feasible.** `wheel_objective.py`'s `pnorm_by_p` construction is left unfixed here — it is
+differentiated code that feeds the optimizer, and a fix deserves its own verification against
+the rest of the tree rather than a rushed edit inside a promotion. Filed here for whoever picks
+it up: fix `stress_utilisation_kt` (`wheel_objective.py:1342`) to use each region's own Kt
+against its own aggregate and take the max of THOSE, matching what `util` (`:1313`) already
+does, rather than one global `kt_max` times one global aggregate.
+
+**WHAT MOVED.** `best_solution.json` (genes + `note`), `tests/test_promotion.py`
+(`SHIPPED_GENOME_HASH`, `SHIPPED_PROMOTED_IN`), the banner above, `export/wheel.step` +
+`export/wheel_step_manifest.json`, `stage3_svk_refillet_shipped_r2_best.json` (new, preserved).
+Not touched: `study_kinematics_rank.py`, `study_mbse_calibration.py` (§115.3's cosmetic label
+finding), `wheel_objective.py` (§115.5's diagnostic bug).
