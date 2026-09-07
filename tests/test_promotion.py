@@ -52,6 +52,16 @@ SHIPPED_PROMOTED_IN = "PLAN.md §115 (2026-09-06)"
 CONTROL_GENOME_FILE = "stage3_minwall_best_1.2.json"
 CONTROL_GENOME_HASH = "350f4c7"
 
+# The genome the FILLET arc's published constants were measured on — FILLET_PLAN.md PART 3,
+# PART 5, PART 13 and PART 20, and PLAN §37/§51, all dated 2026-08-17 to 2026-08-23, when
+# this was what `best_solution.json` held.  §120 pinned three drivers to this FILE for the
+# same reason §25 pinned `run_control` to the one above, so it is now load-bearing in the
+# same way: overwrite it and six recorded constants silently change what they are about.
+# It is also §115's checklist item 5 — the preserved outgoing genome — so the two roles
+# are one file and neither may move it.
+PROFILE_GENOME_FILE = "stage3_knee_best_medium.json"
+PROFILE_GENOME_HASH = "09e8188"
+
 # The GA/beam reference the regression net is pinned to.  §10 decoupled the golden test from
 # the shipped genome precisely so a promotion cannot re-baseline it.
 GOLDEN_GENOME_FILE = "best_solution_ga_beam.json"
@@ -79,10 +89,18 @@ PROMOTION_CHECKLIST = f"""
              `shipped_control_is_the_published_0.78`).
            - `studies/study_fillet_block.py` (PART 13's argmax, PART 20's bisections, and
              both candidate-constant surfaces).
-         These three still read the shipped pointer, so each PROMOTION MAKES THEM EXIT 1
-         and a re-run files a saved failure rather than a refresh — which is why item 7 is
-         not sufficient on its own.  If you add another constant measured on one wheel, pin
-         it to a FILE, never to the shipped pointer.
+         ALL FOUR ARE NOW PINNED BY FILE — the last three at §120, to
+         {PROFILE_GENOME_FILE}.  Until then each PROMOTION MADE THEM EXIT 1 and a re-run
+         filed a saved failure rather than a refresh, which is why item 7 was not
+         sufficient on its own.  If you add another constant measured on one wheel, pin it
+         to a FILE, never to the shipped pointer.
+
+         AND PIN THE WHOLE FAMILY, NOT THE CELLS THAT WENT RED.  §120 pinned
+         `study_fillet_block`'s four failing checks and left `cliff_profile` following the
+         shipped pointer; the two are compared against EACH OTHER, so the table came back
+         reading 0.7909 against a 0.5520 bound — coherent-looking, every field present,
+         and describing two different wheels.  A half-pinned comparison is worse than an
+         unpinned one, because nothing goes red.
       4. `make svk` — the feasibility gate.  It is the check that runs about once a
          promotion, so assume it has rotted since you last looked.
       5. PRESERVE THE OUTGOING GENOME under its own name, and leave the `note` field in
@@ -97,6 +115,15 @@ PROMOTION_CHECKLIST = f"""
          a FAILURE the day it clears, not a bonus.  A suite run from before the genome swap
          does not answer this, which is how §115's record came to say `895 passed / 0 failed`
          for a commit that is red.
+      8. AND THE ARTIFACTS THAT READ *THOSE* ARTIFACTS — item 7 one level down, added by
+         §120 after refreshing three of them.  A driver's output is another driver's input:
+         `study_tri_bend.py` and `study_tri_rule.py` both take `sweep.best`'s cell from
+         `studies/study_tri_block.json`, and `study_fillet_kt.py` and
+         `study_fillet_wiring.py` read the corner and junction artifacts.  None of those
+         re-derives what it reads, so a promotion invalidates them WITHOUT running them and
+         without any test noticing — `study_tri_rule.json` had no check at all, and
+         `tests/test_fillet_artifact_chain.py` was written because neither fillet consumer
+         did either.  Re-run the consumers after the producers, in that order.
 """
 
 
@@ -161,6 +188,22 @@ def test_the_control_genome_has_not_moved():
         f"{CONTROL_GENOME_FILE} is `{got}`, not `{CONTROL_GENOME_HASH}` — "
         "`study_svk_rescore.run_control` compares this genome against PLAN §14 constants "
         "measured ON it, so moving the file silently changes what the control means.")
+
+
+def test_the_fillet_arcs_constant_genome_has_not_moved():
+    """§120's fix pins three drivers to a file, which makes that file's CONTENT load-bearing.
+
+    The same failure mode as `test_the_control_genome_has_not_moved` one arc over: six
+    constants across FILLET_PLAN PART 3 / PART 5 / PART 13 / PART 20 and PLAN §37/§51 are
+    compared against surfaces measured on this genome, so overwriting the file would leave
+    every self-check still computed, still green, and no longer about anything recorded.
+    """
+    got = _hash(_genome(PROFILE_GENOME_FILE)["genes"])
+    assert got == PROFILE_GENOME_HASH, (
+        f"{PROFILE_GENOME_FILE} is `{got}`, not `{PROFILE_GENOME_HASH}` — "
+        "`study_fillet_fold`, `study_tri_block` and `study_fillet_block` compare "
+        "FILLET_PLAN and PLAN constants against surfaces measured ON this genome, so "
+        "moving the file silently changes what six recorded numbers are about.")
 
 
 def test_the_golden_reference_genome_has_not_moved():
