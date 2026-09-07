@@ -19480,7 +19480,7 @@ that is still on disk under another name, which is no longer a caption problem.
 §43 gave the study drivers a refusal that stops a reduced run being filed under a committed
 artifact's name, after §41 caught `study_contact --quick` writing smoke data into
 `study_contact.json` and reading a FALSE GREEN out of it. The mechanism is
-`_gate_guard.py:44` — **`if args.out != committed: return`**. One name, one string equality,
+`_gate_guard.py:52` — **`if args.out != committed: return`**. One name, one string equality,
 per driver.
 
 This section first read that as a five-driver problem — the four audited here plus
@@ -19529,7 +19529,7 @@ the single `args.out !=` test, guarding `study_stage3.json` alone. Three tracked
 come out of that same file uncovered: `study_stage3_m8bi5.json`, `study_stage3_pnorm.json`,
 `study_stage3_pool.json`. `make m8bi5` is permitted precisely because it writes elsewhere,
 and `--sections mesh_convergence,multistart --config smoke --out study_stage3_m8bi5.json`
-is accepted. The plot goes with it: `:2268` derives the `.jpg` from `--out`, so a degraded
+is accepted. The plot goes with it: `:2284` derives the `.jpg` from `--out`, so a degraded
 run redraws the committed figure as well.
 
 **`tests/test_study_gate_guard.py` cannot catch either gap by construction.** Its `DRIVERS`
