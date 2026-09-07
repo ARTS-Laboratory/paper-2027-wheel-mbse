@@ -18340,3 +18340,182 @@ alongside the positions:
    measurement of ten files; the tree-wide figure is not, and `test_full.log` from
    2026-09-06 is a truncated killed run. One batched pass under `tmux new-session -d`,
    heavy files one per process, nothing beside any tier, settles it.
+
+## §122 — 2026-09-07. §121's TWO NEIGHBOURS, DECIDED. ONE FAILED FOR A REASON NOBODY HAD LOOKED FOR — A HARDCODED CELL, THE THIRD CLASS OF STALE GENOME REFERENCE — AND THE OTHER TURNS OUT TO CARRY A FALSIFIED PREMISE OF §82 AND A MEASURED ANSWER TO ONE OF §68's OWN TWO REOPENING CONDITIONS
+
+§121 closed eight test-side twins and named two neighbours it deliberately did not touch,
+recording both with measurements so the judgement could be made without re-running
+anything. This section makes both judgements. Neither came out the way §121's one-line
+description of it predicted, and both produced a finding that is about the project rather
+than about a test.
+
+### 1. NEIGHBOUR 1 CARRIED THREE REFERENCES TO §37's WHEEL, AND THE THIRD IS A CELL
+
+`test_tri_block::test_the_tri_block_clears_the_barrier_the_quad_could_not`. §121 described
+it as a genome-general floor fused with two of §37's numbers — `> 0.5` and the ratio
+`> 50.0`. There is a third, and it is not a threshold at all:
+
+```
+  for name, B, w in (("coarse", 10, (0.124, 0.751, 0.124)),
+                     ("medium", 18, (0.072, 0.803, 0.124))):
+```
+
+Those are the cells `sweep` chose, **hardcoded rather than read**. §115's promotion moved
+the `medium` one from `(18, (0.072, 0.803, 0.124))` to `(20, (0.020, 0.751, 0.229))` —
+which is not a new fact: §120 found the same cell moving under `study_tri_bend` and
+`study_tri_rule` and fixed both by regenerating. **This test is its third consumer, and it
+was missed because it hardcodes the cell instead of reading the artifact.** §120's item 8
+says to re-run consumers after producers; a consumer that transcribes its input cannot be
+found by following the reads.
+
+**And it changes the diagnosis.** Measured at both genomes, each at its OWN chosen cell,
+which is the only comparison that means anything once the cell has moved:
+
+```
+  min scaled Jacobian     09e8188 (pinned)     b729e86 (shipped)
+  coarse, at its cell     0.626233             0.569803
+  medium, at its cell     0.581582             0.570257
+  ratio to the faithful   76.59 / 69.29        17.41 / 17.42
+```
+
+`> 0.5` was never failing on the merits. At the shipped genome's own `medium` cell it reads
+0.570257 and clears; the 0.489645 §121 reported is b729e86's wheel measured at 09e8188's
+cell. What genuinely does not survive is the 77x, and **the whole of that 4.4x is the
+denominator** — §37's collapse is 4.0x shallower on the wheel that ships (§121 §4) against
+a numerator only 1.10x lower.
+
+**The call: split, which is §120's driver-side shape applied on the test side.** The pinned
+half keeps §37's cells and §37's magnitudes on §37's wheel and is restored entire. A new
+sibling, `test_the_barrier_claim_ITSELF_still_holds_on_the_wheel_that_ships`, re-measures
+the headline STRIPPED of published numbers on whatever ships — the sector above
+`MIN_SJ_TARGET` and the faithful rim below it, both genome-general and both measured true
+at either genome — taking its cell from the report and its verdict live, exactly as
+`test_tri_bend` does with the same cell. Pinning alone would have left nothing re-measuring
+the headline on the shipped wheel: `every_config_found_a_valid_cell` is only `"sector" in
+c`, and no test asserted the chosen cell clears the barrier.
+
+### 2. NEIGHBOUR 2 FUSED THREE CLAIMS WITH THREE DIFFERENT GENOME DEPENDENCIES
+
+`test_fillet_block::test_the_per_genome_profile_is_the_ADOPTED_operating_point`. §121 called
+it a claim about a RULE applied to whatever ships, validated with a number measured at
+09e8188. That was two-thirds right: three assertions fail at the shipped genome and they
+fail for three different reasons, so the test splits three ways.
+
+**THE ORDERING STAYS ON THE SHIPPED POINTER, and it is not a tautology.**
+`margin > GENOME_ROBUST_ENTRY - cliff` reduces to `entry > GENOME_ROBUST_ENTRY`, and with
+`entry = 0.45 * cliff` that is `cliff > -1.6667`. Measured -0.806403 at `09e8188` and
+-1.437959 at `b729e86`: **§115's promotion spent 0.63 of that 0.86 and the shipped genome
+now stands 0.23 from it.** One more move in the same direction and §82's rule stops leaving
+more room than the pair §68 declined — which reopens §68 rather than merely reddening a
+test. It is asserted live on `genes` for exactly that reason.
+
+**§68's MAGNITUDE GOES TO §68's WHEEL,** with the rest of the profile family §121 pinned:
+
+```
+                                   09e8188 (pinned)    b729e86 (shipped)
+  margin the rule leaves           0.443521            0.790877
+  margin GENOME_ROBUST_* leaves    0.056403            0.687959
+  ratio                            7.86x               1.15x
+```
+
+The rule leaves the shipped genome MORE absolute room than it left §68's and still fails
+the comparison, because the pair §68 turned down gained **12.2x** more room than it had.
+
+**AND §82's SAFETY PREMISE IS FALSE ON THE WHEEL THAT SHIPS.** §82 argued the per-genome
+rule is safe against the `_sector_fit_span` defect it also records because the clamp only
+misreads a layer refusal as "no room" at a STEEP entry, and *"this rule never asks for
+one"*. It asks for one now: -0.647081 at `b729e86` against the shipped -0.45, where
+`09e8188` gave -0.362881. The cliff deepened and `entry = 0.45 * cliff` followed it.
+
+The CONCLUSION still holds — neither junction is clamped at either genome, and that is the
+assertion that stayed live — so §82's argument was **sufficient and not necessary**, and
+nothing built on it is retired. Kept as `xfail(strict=True)` with the paragraph, on the
+SHIPPED genome. Deliberately not pinned: pinning would restate §82's argument on §82's
+wheel and lose the only signal that its premise has stopped holding. Strict, so a rule
+change or promotion that makes it true again XPASSes and forces this record open rather
+than quietly going green — `test_promotion.py`'s own item about strict XPASSes is the
+precedent.
+
+### 3. THE PART THAT IS NOT ABOUT TESTS: §68's FIRST REOPENING CONDITION HAS MOVED, AND ITS SECOND HAS NOT
+
+§68 named its own two reopening conditions in writing:
+
+> Two things would change it, both concrete: a candidate with a margin comparable to the
+> shipped pair's, or a consumer for the filleted blocking (Step 3's live `R_hub`/`R_rim`
+> genes) that makes the genome-box floor a number something reads.
+
+The first one is now measurable and it has moved a long way. §68's whole margin column is
+`(candidate entry) - (cliff at that end)` on the wheel that shipped in August, and the
+promotion moved every entry in it. Measured at both genomes over the same candidate set
+§77's scope note used — the reproduction of 0.2329 at `09e8188` is what confirms the sets
+are the same:
+
+```
+                              09e8188      b729e86
+  the shipped pair's margin   0.5520       1.3367
+  the roomiest candidate      0.2329       0.8851
+  candidate as a fraction       42%          66%
+  the shipped pair's lead     2.37x        1.51x
+```
+
+§68 declined `(-0.85, 1.00)` at 5.6% of the shipped pair's margin, calling *"a 0.031 margin
+to a hard refusal of the shipped genome ... not a defensible place to put a default"*. On
+`b729e86` the field stands at two thirds of the shipped pair rather than at a twentieth,
+and every margin in the column is absolutely larger.
+
+**THE CALL: §68 STAYS DECLINED, and the reason that survives the promotion is the second
+one, not the first.** Three parts to that, and the first two are why this is not a flip:
+
+- The candidate set itself was DRAWN AND RANKED at `09e8188`. `LAYER_PROFILE_CANDIDATES`
+  and its fine grid are that wheel's argmax, and 0.8851 is the roomiest of 09e8188's
+  proposals re-priced on b729e86, not b729e86's roomiest. Re-deriving the argmax on the
+  shipped genome is a study run, not a reading, and until it exists "comparable" has no
+  measured referent — the enumeration lesson exactly.
+- §68's absolute objection weakens but does not invert. A default is still being placed
+  against a hard geometric refusal of the one genome every published number uses, and the
+  distance is 34% short of the pair that ships.
+- **§68's second clause is genome-independent and is still unmet.** *"Wrong side of the
+  trade for a benefit nothing yet collects"* — the genome-box floor is still not a number
+  anything reads, and no promotion changes that. §80 already showed that clause cannot be
+  discharged before the item it blocks.
+
+So the finding is recorded and the decision is unchanged, but **the grounds for it have
+narrowed to one clause**, and that is worth knowing before the next promotion moves the
+column again.
+
+### 4. WHERE THE COUNT STANDS
+
+Blast radius is the two edited files. Both run in full, failure LIST diffed:
+
+```
+                        §121        now
+  test_fillet_block      16          15   + 1 deliberate xfail
+  test_tri_block          3           2
+  test_fillet_fold        3           3   (untouched)
+                         --          --
+                         22          20
+```
+
+Two closed, none opened. Against the measured board: **32**, of which 5 are §119's declined
+freshness set, 1 is §120's tripwire, and **26** are §117 successor 2's positions —
+`test_fillet_block` 13, `test_filleted_mesh` 6, `test_fillet_fold` 3, `test_tri_block` 2,
+`test_corner_singularity` 2.
+
+**SUCCESSORS.**
+
+0. **CHECK THE OTHER TWO `test_tri_block` REDS FOR THE CELL DEFECT FIRST**, because §1 has
+   just shown it is invisible to a read-following audit.
+   `test_the_faithful_rim_junction_really_is_a_triangle` fails comparing something to
+   0.5698029933811283, which is the SHIPPED `coarse` cell's own minimum — that is either a
+   fourth instance or a coincidence at sixteen digits, and it costs one run to tell. Then
+   grep the tree for hardcoded `(B, w)` pairs generally: §120 fixed the two consumers that
+   read `sweep.best` and this class transcribes it instead.
+1. **RE-DERIVE THE LAYER-PROFILE ARGMAX ON THE SHIPPED GENOME**, §3. It is the only thing
+   that would give §68's first reopening condition a measured referent, and §68's decision
+   currently rests on one clause where it used to rest on two. Cost is a
+   `sweep_layer_profile_genomes` run, not a solve ladder.
+2. **§117's SUCCESSOR 2**, twenty-six positions, unchanged in kind. §121's successor 0 said
+   the two neighbours were the ranked pair of that bucket; they are done, and what is left
+   has no pair with a worked pattern in front of it.
+3. **§120's SUCCESSOR 1 AND §119's SUCCESSOR 1 ARE STILL UNTOUCHED**, and still the
+   expensive one.
