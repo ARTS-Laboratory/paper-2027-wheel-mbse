@@ -19688,7 +19688,9 @@ formats its clamp refusal as `"...radius at huband rim"` — a missing space in
 `:16795`) and resolves to a blank line; the live target is `:242`, which is what
 `UNCAP_PLAN.md` was already repaired to and what both citations describe — stale before
 this section, mechanism in §7, left to the change that fixes the cause. `.gitignore:8` —
-§7, successor 5.
+§7, successor 5. **[BOTH CLOSED SAME DAY at `58b311a` — successor 5 below. The two
+citations now read `:242` and the ignore line is gone; this paragraph is left as written,
+with the correction here, because it is the record of what was true when the audit ran.]**
 
 **SUCCESSORS.**
 
@@ -19742,3 +19744,20 @@ this section, mechanism in §7, left to the change that fixes the cause. `.gitig
    change carries its own tree-wide sweep, enumerated with `git grep`. `PLAN.md:14619` and
    `:16795` (`study_tri_block.py:228` -> `:242`) are the two known casualties and belong in
    the same commit as the first thing the restored visibility finds.
+
+   **CLOSED 2026-09-07 at `58b311a`, as filed and in one commit.** The line is deleted, the
+   header sentence carries its dated bracket, and both `study_tri_block` citations read
+   `:242`. **The demonstration is the repair itself**: the same ignore-aware
+   `grep -rl 'study_tri_block\.py:242' --include=*.md .` returned `UNCAP_PLAN.md` alone
+   before and `UNCAP_PLAN.md, PLAN.md` after — this file re-entering its own search results
+   is the fix reporting on itself. The sweep it carried was five citations
+   (`MBSE_PLAN.md:58`, four here), and classified against the parent rather than by content
+   match, **all five were stale by that commit's own delta and none pre-existing** — which
+   is not a statement about the tree's health but about timing: `5b58a1a` had re-pointed
+   everything hours earlier, so the first sweep in this repository's history that could see
+   this file found it already clean. Two corrections were caught inside that commit and
+   are recorded with it: the re-point it cites is §120's, not §118's, and
+   `studies/study_stage3.py:642`'s `PLAN.md:41` does not resolve to the feasibility
+   question it claims — pre-existing, left alone under the house rule, and **findable for
+   the first time in 39 days**, which is the successor paying for itself on its first
+   pass.
