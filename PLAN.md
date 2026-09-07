@@ -18108,3 +18108,235 @@ section's.
    nine findings to decide one at a time. Nothing here has made it cheaper — but §5 has made
    it bigger by one artifact, since a corner refresh now also owes `study_fillet_kt.json` a
    rebuild.
+
+## §121 — 2026-09-07. §120's SUCCESSOR 0, CLOSED. THE SEVEN TEST-SIDE TWINS WERE EIGHT, AND ALL EIGHT ARE ONE ANSWER: EVERY ONE IS A CLAIM ABOUT THE CONSTRUCTION, NOT ABOUT THE WHEEL THAT SHIPS. WHAT THE PROMOTION MOVED IS THE DEPTH OF THREE FINDINGS AND THE IDENTITY OF NONE OF THEM
+
+§120 pinned four study drivers' constants to the genome file they were measured on and
+recorded that each pinned constant has a twin on the TEST side — the same number asserted
+against a live re-measurement through a `best_solution.json` fixture, red since §115's
+promotion for the same reason and by the same amount. It counted seven, filed them as its
+successor 0, and left them deliberately: applying the driver-side pin to a test fixture
+without deciding each test's claim would settle seven of §117 successor 2's judgements as
+a side effect of a different successor.
+
+This section makes the seven calls, finds an eighth twin §120's own enumeration missed,
+and closes all eight. Three commits, one per group, because the three groups are three
+different claims.
+
+### 1. THE CALL IS THE SAME IN ALL THREE GROUPS, AND EACH GROUP SAYS SO IN ITS OWN WORDS
+
+§120 posed the question as CONSTRUCTION (pin the fixture) against WHEEL THAT SHIPS
+(re-derive, or `xfail` with the paragraph). All eight come out CONSTRUCTION, and none of
+them needed a judgement call to get there — each file had already written down which kind
+of claim it was making, in prose that predates the promotion:
+
+```
+  test_fillet_fold    file header:  "the RECONCILIATION is pinned hard -- both recorded
+                      tables must keep reproducing, because if a change to
+                      `_filleted_spoke` moves either one, the change is to the INSTRUMENT
+                      and everything measured with it is in question"
+
+  test_tri_block      docstring:    "Re-measured rather than read: this is the number the
+                      77x is a multiple of, and PART 7 is the record of what happens when
+                      a baseline is quoted from a file instead"
+
+  test_fillet_block   docstring:    "Pinned against the RECORD rather than against a
+                      re-run of itself, at the precision §68 published to"
+```
+
+An instrument check, a baseline, and a record. None of the three is a question about
+`best_solution.json`, and a re-measurement of any of them on a wheel other than the one it
+was published from is a different measurement rather than a check of that one. **The
+constants stay where they are and the READ moves** — §25's `study_svk_rescore.run_control`
+shape, now applied on both sides of every one of these four drivers.
+
+Mechanically that is one new module-scoped fixture per file, taking the driver's own
+`load_genes(<DRIVER>_GENOME)` read so the two sides cannot drift apart, and used ONLY by
+the twins. Every other test in all three files keeps `genes` and keeps following
+`best_solution.json`.
+
+```
+  tests/test_fillet_fold.py    reconciliation_genes   ff.RECONCILIATION_GENOME   2 tests
+  tests/test_tri_block.py      control_genes          tb.CONTROL_GENOME          1 test
+  tests/test_fillet_block.py   profile_genes          fb.PROFILE_GENOME          5 tests
+```
+
+### 2. THE MEASUREMENTS, SAME CODE, BOTH GENOMES
+
+`09e8188` is `stage3_knee_best_medium.json`, shipped 2026-08-14 to 2026-09-06 and
+preserved by §115's checklist item 5. `b729e86` is `best_solution.json` as it stands.
+
+**GROUP 1 — `test_fillet_fold::test_the_two_contested_criteria_both_reproduce_at_coarse`,
+`[hub]` and `[rim]`.** PART 3's largest surviving radius and PART 5's first fold, on PART
+5's own ten-point grid:
+
+```
+  criterion, cell          09e8188 (pinned)     b729e86 (shipped)
+  block_cells largest      hub 0.20  rim 0.20   hub 0.20  rim 0.30
+  build_wheel first fold   hub 4.00  rim 3.00   hub none   rim 4.00
+```
+
+**GROUP 2 — `test_tri_block::test_the_control_is_the_collapse_section_37_measured`.**
+§37's collapse depth and the depth the rim blend rescues it to:
+
+```
+  min scaled Jacobian    09e8188 (pinned)        b729e86 (shipped)
+  blend 0.0, faithful    0.008176 / 0.008251     0.032732 / 0.032741
+  blend 1.0, shipped     0.782735 / 0.782926     0.547847 / 0.547420
+                         (coarse / medium)
+```
+
+**GROUP 3 — `test_fillet_block::test_the_cliff_column_reproduces_PART_20s_hand_bisections`
+×4 and `test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate`.** PART
+20's four hand bisections and §68's margin, `coarse`:
+
+```
+  end     published    09e8188 (pinned)    b729e86 (shipped)
+  0.85    -0.845458    -0.845458           -1.507602
+  1.00    -0.881143    -0.881143           -1.571234
+  1.10    -0.903400    -0.903437           -1.610989
+  1.60    -1.001967    -1.001967           -1.786686
+
+                        09e8188 (pinned)    b729e86 (shipped)
+  shipped margin        0.5520              1.3367
+  worst candidate       0.2329              0.8851   (25 of 25 comparable at both)
+```
+
+Every published number reproduces at `09e8188` and none of them at `b729e86`. The pin
+restores a measurement; it does not choose a friendlier one.
+
+### 3. THE EIGHTH TWIN, WHICH §120's OWN ENUMERATION MISSED
+
+§120 §6 listed four twins in `test_fillet_block`, the cliff column's four
+parametrisations. There is a fifth, and §120's own driver comment names it:
+
+> THE WHOLE PROFILE FAMILY MOVES TOGETHER, not just the four cells that go red. The
+> candidate rows, the cliff column and the shipped profile's own margin are compared
+> against EACH OTHER — `the_shipped_profile_is_farthest_from_the_cliff` is that comparison
+
+`test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate` is that
+self-check's test-side twin, it asserts §68's published `0.5520`, and §120 pinned its
+driver counterpart in the same commit that pinned the column. It was miscounted into the
+"remaining thirty" because it was read as a claim about the shipped GENOME, and it is not:
+**SHIPPED there is the shipped PROFILE** — `LAYER_ENTRY_SLOPE` and `LAYER_END_OFFSET`, the
+two constants `wheel_wheel` builds with — and the whole comparison is between profiles on
+one wheel. A name is a premise, and this one outlived what it named.
+
+Pinning four of the five would have been §120's own half-pin, paid a second time in the
+other direction: the driver-side version left a coherent-looking table whose rows described
+two wheels, and the test-side version would have left two GREEN tests describing two
+wheels — the cliff column measured on §68's wheel and the margin it is compared against
+measured on whatever ships. Nothing would have gone red to say so.
+
+### 4. WHAT A PASS/FAIL COUNT COULD NOT SHOW: THE PROMOTION MOVED THREE DEPTHS AND NO IDENTITY
+
+Eight reds closing says only that the numbers came back. Measuring both genomes rather
+than only the pinned one says what the promotion actually did to each finding, and in all
+three groups the answer is the same shape — **the genome-general half of every claim
+survived `b729e86` untouched, and only the published magnitude moved.**
+
+**§37's collapse is still the same collapse, 4.0x shallower.** The worst block is
+`rim_junction` at both genomes and both configs; the faithful rim fails `MIN_SJ_TARGET`
+and the blended one clears it at both. `b729e86` is a weaker instance of §37's finding,
+not a counterexample to it.
+
+**PART 20's cliff is still the same edge, 0.66-0.78 deeper.** `CLIFF_REASON` — the layer's
+width profile reaching zero thickness — is the bound at every row of BOTH columns, and the
+deepening is monotone in `end`. What moved is where the edge sits, not which of the four
+geometric refusals is being found. That is also why
+`test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first` was never red
+and correctly keeps `genes`: it asserts WHICH refusal bounds the bisection and a ±0.01
+behaviour either side of it, and both hold on whatever ships.
+
+**§68's ordering is genome-robust; only its published number is not.** The shipped profile
+is still the roomiest of the twenty-six, by 0.32 at `09e8188` and by 0.45 at `b729e86`.
+The finding this test exists to protect would have gone on holding at the shipped genome —
+but the test holds it by its published margin, and that is the thing being checked.
+
+**PART 3 and PART 5's window got WIDER, not narrower.** Three of the four cells move one
+grid point outward and the fourth does not move at all; at the hub `build_wheel` accepts
+the entire legacy grid, so `summarize` reports no first fold. That last cell is a `None`
+with one meaning here and it is worth naming, because the field carries two elsewhere: it
+is "nothing on this grid folded", not "nothing on this grid built". The immobile fourth
+cell is why the hub row's PART 3 half kept agreeing at the shipped genome while its PART 5
+half did not — a partial agreement that would have read as a near-miss rather than as two
+wheels.
+
+### 5. THE TWO NEIGHBOURS LEFT RED, AND WHY THEY ARE NOT THIS SECTION'S
+
+Both were measured at both genomes while the twins were, because the measurement was
+nearly free once the harness existed. Both are recorded here and neither is fixed.
+
+**`test_tri_block::test_the_tri_block_clears_the_barrier_the_quad_could_not`** mixes a
+genome-general floor with two of §37's numbers, and only the numbers fail. At both genomes
+and both configs the sector is valid, with zero non-positive Gauss points, zero mixed-sign
+cells, and a minimum scaled Jacobian above `MIN_SJ_TARGET` (0.2). What fails at `b729e86`
+is `> 0.5` at `medium` (0.489645) and the ratio against the faithful control:
+
+```
+  min sj / faithful control     09e8188  76.59 / 69.29     b729e86  17.41 / 14.95
+```
+
+against a `> 50.0` bound — 76.59 being §37's 77x. No driver self-check pins this ratio, so
+it has no twin on the driver side and no pattern to inherit. Splitting a genome-general
+floor from a §37 measurement inside one test is a judgement about that test.
+
+**`test_fillet_block::test_the_per_genome_profile_is_the_ADOPTED_operating_point`** is
+about `ww.per_genome_layer_profile`, a RULE applied to whatever ships rather than a
+constant §120 pinned — but it validates that rule with `0.4435`, measured at `09e8188`,
+and compares a live cliff against the pinned `GENOME_ROBUST_ENTRY`:
+
+```
+  margin                        09e8188  0.443521     b729e86  0.790877
+  5x(GENOME_ROBUST_ENTRY - cliff)        0.282013              3.439794
+```
+
+The rule leaves the shipped genome MORE room than §68's number, not less, and still fails
+the comparison because the declined pair's own distance from the cliff grew faster. That is
+a finding about the rule and belongs with the rule's other judgements.
+
+Both are §117 successor 2's, and §120 declined the same shape of side-effect for the nine
+findings for the same reason.
+
+### 6. WHERE THE COUNT STANDS
+
+Blast radius is the three edited files and nothing else: the change is three fixtures and
+eight signatures, no driver, no artifact, no `conftest.py` — the three fixture names are
+module-scoped and unique in `tests/`. Each file run in full at both ends, failure LIST
+diffed rather than the count:
+
+```
+                        §120's HEAD    now
+  test_fillet_block          21          16
+  test_fillet_fold            5           3
+  test_tri_block              4           3
+                             --          --
+                             30          22
+```
+
+Eight closed, none opened, and every remaining name in all three files is one that was
+already there. Against §120's whole measured board of 42: **34**, and the split of it is
+now clean, which §120's was not — it counted its own deliberate tripwire into the "thirty"
+alongside the positions:
+
+```
+  §119's declined freshness set, untouched by construction          5
+  §120's tripwire, red until its inputs move and that is its job    1
+  §117 successor 2's position reds                                 28
+```
+
+**SUCCESSORS.**
+
+0. **§117's SUCCESSOR 2 IS NOW THE WHOLE OF WHAT IS LEFT TO DECIDE**, twenty-eight
+   positions across `test_fillet_block` (14), `test_filleted_mesh` (6), `test_fillet_fold`
+   (3), `test_tri_block` (3) and `test_corner_singularity` (2). The two neighbours in §5
+   are the ranked pair: both are measured at both genomes already, both have a written
+   reason, and neither needs a solve to decide.
+1. **§120's SUCCESSOR 1 AND §119's SUCCESSOR 1 ARE UNCHANGED**, and this section touched
+   neither. `study_fillet_wiring.json` waits on its inputs; the nine findings and four
+   freshness reds are still the expensive one.
+2. **CONFIRM THE TREE-WIDE COUNT WITH ONE BATCHED RUN.** Every number in play since §117
+   descends from its measured 62 by arithmetic. The board above is a real, twice-run
+   measurement of ten files; the tree-wide figure is not, and `test_full.log` from
+   2026-09-06 is a truncated killed run. One batched pass under `tmux new-session -d`,
+   heavy files one per process, nothing beside any tier, settles it.
