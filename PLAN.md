@@ -49,6 +49,26 @@
 > Git ignores nothing it already tracks, so this file is versioned today — but were it ever
 > untracked, it would leave the repository silently. Decide which was intended before relying
 > on either.
+>
+> **[CORRECTED 2026-09-07 — SEE §129 §7.  "THE IGNORE LINE IS A NO-OP" IS TRUE OF GIT AND
+> FALSE OF EVERY SEARCH TOOL, AND THE DIFFERENCE HID THIS FILE FROM ITS OWN SWEEPS FOR 39
+> DAYS.**  Git ignores nothing it already tracks, so the claim held for versioning — but
+> ignore-aware tools skip an ignored path during DIRECTORY TRAVERSAL regardless of tracking,
+> and the `grep` in this environment wraps `ugrep --ignore-files`.  One pattern, four
+> controls: `grep -rl` returned PLAN.md **absent**; `grep -c PLAN.md` returned **3**;
+> `git grep -c` returned **`PLAN.md:3`**; ignore-unaware `command grep -rl` returned
+> **`./PLAN.md`**.  Only traversal was blind, and it failed SILENTLY — exit 1, identical to
+> "no such text".  The entry landed at `50d9a86` (2026-07-30, "M9 Phase 1 added and
+> verified") as a bare uncommented line beside a comment rewrite of the virtualenv block,
+> four days after this file was first tracked at `500f5b8` (2026-07-26); every other entry
+> in that file carries a comment.  It cost at least one real sweep: the
+> `study_tri_block.py:228` -> `:242` re-point recorded at §120 repaired `UNCAP_PLAN.md`
+> twice and left this file twice, because PLAN.md was never a candidate its enumeration
+> could see.  **"Decide which was intended" is now DECIDED**: the line is deleted in the
+> same commit as this bracket.  Deleting it cannot change git's behaviour — an ignore entry
+> is inert for an already-tracked file — so the original block's "were it ever untracked"
+> half is retired rather than answered: this file cannot leave the repository by that route.
+> **Enumerate every tree-wide sweep with `git grep`, not traversal.**]**
 
 > **THE SIX CLOSED ARC FILES WERE DELETED ON 2026-08-16, AND THEIR CITATIONS WERE NOT.**
 > `BUILD_PLAN.md`, `CONTACT_PLAN.md`, `DEFECT5_PLAN.md`, `DEFECT8_PLAN.md`, `REDS_PLAN.md`
@@ -14596,7 +14616,7 @@ what it was priced at.
 **And §103 also changed which sector the tree builds.** `fillet=True` is unconditional in
 `phase_meshes` and `wheel_pool_worker.run_phase`, so every mesh the objective solves is the
 ELEVEN-block filleted sector, while `study_tri_block.region()`
-(`studies/study_tri_block.py:228`) builds `sector_blocks(..., uncap=(True, blend))` with no
+(`studies/study_tri_block.py:242`) builds `sector_blocks(..., uncap=(True, blend))` with no
 `fillet=` — the seven-block one.  Re-measured at the shipped genome on this tree
 (`MIN_SJ_TARGET` 0.2): the faithful rim's worst block is **0.008176 / 0.008251** unfilleted
 and **0.000343 / 0.003334** filleted, at `coarse` / `medium`.  The re-cut makes it 23.8x and
@@ -16772,7 +16792,7 @@ junction, or a decision that `rim:P_c`'s fidelity is not worth one"* — and ten
 without anyone taking it. **Second branch taken.** Both legs re-verified against the tree
 rather than quoted: `sector_blocks` defaults to `fillet=None` and is *"seven node grids —
 eleven when the fillet is blocked"* (`wheel_wheel.py:2282-2286`), `study_tri_block.region()`
-passes no `fillet=` (`studies/study_tri_block.py:228`) while `wheel_objective.py:1015` and
+passes no `fillet=` (`studies/study_tri_block.py:242`) while `wheel_objective.py:1015` and
 `wheel_pool_worker.py:63` pass `fillet=True` unconditionally; and `grep -rn "rim:P_c" src/`
 returns **zero matches**, the whole-wheel p-norm being assigned once at `:1257` under
 *"REPORTING ONLY"* and read once at `:1356`. **The arc does not stop for the reason it
@@ -19612,9 +19632,9 @@ block, in a commit about something else, in a file where every other entry carri
 comment explaining itself. **39 days blind.**
 
 **This is the mechanism behind the stale `study_tri_block.py:228` citations named in NOT
-touched below, and the evidence was already written down here.** `PLAN.md:18036` records
+touched below, and the evidence was already written down here.** `PLAN.md:18056` records
 that sweep as `UNCAP_PLAN.md x2   study_tri_block.py:228 -> :242   MINE`. It repaired both
-`UNCAP_PLAN.md` sites and left `PLAN.md:14599` and `:16775` untouched. That was not a lapse
+`UNCAP_PLAN.md` sites and left `PLAN.md:14619` and `:16795` untouched. That was not a lapse
 of judgement: the sweep enumerated its targets with a tool for which this file does not
 exist, so the two sites were never candidates. §114's and §118's audits predate the
 finding and cannot have reached this file by traversal either — §118's own "2 mine / 3 not"
@@ -19664,8 +19684,8 @@ probe sets and `--designs` defaults — every one of those is a decision about w
 should measure, and §116's successor 3 already has the shape of it. `wheel_wheel.py:2827`
 formats its clamp refusal as `"...radius at huband rim"` — a missing space in
 `{'and '.join(clamped_at)}`, pre-existing, cosmetic, mentioned rather than fixed.
-`studies/study_tri_block.py:228` is cited twice in this file (`PLAN.md:14599` and
-`:16775`) and resolves to a blank line; the live target is `:242`, which is what
+`studies/study_tri_block.py:228` is cited twice in this file (`PLAN.md:14619` and
+`:16795`) and resolves to a blank line; the live target is `:242`, which is what
 `UNCAP_PLAN.md` was already repaired to and what both citations describe — stale before
 this section, mechanism in §7, left to the change that fixes the cause. `.gitignore:8` —
 §7, successor 5.
@@ -19719,6 +19739,6 @@ this section, mechanism in §7, left to the change that fixes the cause. `.gitig
    of `.gitignore`, plus a dated correction to the header block's *"the ignore line is a
    no-op"* — it is a no-op to git and has blinded every ignore-aware search of this
    repository for 39 days. The header edit shifts every line citation below it, so the
-   change carries its own tree-wide sweep, enumerated with `git grep`. `PLAN.md:14599` and
-   `:16775` (`study_tri_block.py:228` -> `:242`) are the two known casualties and belong in
+   change carries its own tree-wide sweep, enumerated with `git grep`. `PLAN.md:14619` and
+   `:16795` (`study_tri_block.py:228` -> `:242`) are the two known casualties and belong in
    the same commit as the first thing the restored visibility finds.
