@@ -1475,26 +1475,94 @@ def test_the_layer_cliff_has_a_CLOSED_FORM_that_reproduces_the_bisection(genes):
 
 
 def test_the_per_genome_profile_is_the_ADOPTED_operating_point(genes):
-    """The rule, its factor, and the margin it leaves the genome every number is at."""
+    """The rule, its factor, and that it still leaves more room than the pair §68 declined.
+
+    THREE CLAIMS WERE FUSED HERE AND §122 SPLIT THEM, because they have three different
+    genome dependencies and only one of them belongs on the shipped pointer.  What stays
+    is the part that is about the RULE applied to whatever ships: its own algebra, that it
+    asks the clamp for nothing, and the ORDERING §68's first reason rests on.  §68's
+    MAGNITUDE for that ordering went to the sibling on `profile_genes` below, and the
+    premise §82 argued the rule's safety from is now an `xfail` two tests down, because it
+    is false on the wheel that ships.
+
+    The ordering below is not a tautology and it has a measurable distance to failure.
+    `margin > GENOME_ROBUST_ENTRY - cliff` reduces to `entry > GENOME_ROBUST_ENTRY`, and
+    with `entry = 0.45 * cliff` that is `cliff > -1.6667`.  Measured: -0.806403 at
+    `09e8188` and -1.437959 at `b729e86`.  **§115's promotion spent 0.63 of that 0.86 and
+    the shipped genome now stands 0.23 from it** — one more move in the same direction and
+    §82's rule stops leaving more room than the global pair §68 turned down, which reopens
+    §68 rather than merely reddening a test.  That is what this assertion is for.
+    """
     cfg = "coarse"
     entry, end = ww.per_genome_layer_profile(genes, cfg)
     cliff = ww.layer_cliff_entry(genes, cfg, end=ww.FILLET_LAYER_CLIFF_END)["entry"]
     assert end == ww.FILLET_LAYER_CLIFF_END
     assert entry == pytest.approx(ww.FILLET_LAYER_CLIFF_FACTOR * cliff)
 
-    # what §68's first reason asked for: the rule leaves the shipped genome several
-    # times what the global pair it declined would have left it
+    # what §68's first reason asked for, as the ORDERING alone: the rule leaves this
+    # genome more room than the global pair it declined would have left it
+    margin = entry - cliff
+    assert margin > fb.GENOME_ROBUST_ENTRY - cliff, (margin, cliff)
+
+    per = ww.layer_cliff_entry(genes, cfg)["per_junction"]
+    assert not any(per[j].get("clamped") for j in ("hub", "rim")), per
+
+
+def test_the_rule_leaves_SEVERAL_TIMES_the_room_the_pair_68_declined_would_have(
+        profile_genes):
+    """§68's first reason at its published size, on the wheel §68 measured it on.
+
+    §68 declined `GENOME_ROBUST_*` in part for standing 0.056 from a hard refusal of the
+    genome that shipped then, against 0.4435 for the rule it adopted — a factor of 7.9,
+    and `> 5.0` is where that was pinned.  Both numbers are `09e8188`'s, so this reads
+    `profile_genes` for the same reason the cliff column and §68's margin above do.
+
+    Measured, same code, both genomes, `coarse`:
+
+                                       09e8188 (pinned)    b729e86 (shipped)
+        margin the rule leaves         0.443521            0.790877
+        margin GENOME_ROBUST_* leaves  0.056403            0.687959
+        ratio                          7.86x               1.15x
+
+    The rule leaves the shipped genome MORE absolute room than it left §68's, and still
+    fails the comparison, because the pair §68 declined gained 12.2x more room than it had.
+    The ordering survives — the sibling above holds it on whatever ships — but "several
+    times" is a fact about `09e8188` and it is checked here.
+    """
+    cfg = "coarse"
+    entry, end = ww.per_genome_layer_profile(profile_genes, cfg)
+    cliff = ww.layer_cliff_entry(profile_genes, cfg,
+                                 end=ww.FILLET_LAYER_CLIFF_END)["entry"]
+    assert end == ww.FILLET_LAYER_CLIFF_END
     margin = entry - cliff
     assert margin == pytest.approx(0.4435, abs=5e-4), margin
     assert margin > 5.0 * (fb.GENOME_ROBUST_ENTRY - cliff)
 
-    # AND THE OPERATING POINT IS SHALLOWER THAN THE SHIPPED ENTRY, which is the whole
-    # reason §82's rule is safe against the `_sector_fit_span` defect it also records:
-    # the clamp only misreads a layer refusal as "no room" at a STEEP entry, and this
-    # rule never asks for one.
+
+@pytest.mark.xfail(strict=True, reason=(
+    "§122: FALSE ON THE WHEEL THAT SHIPS, and it is the PREMISE of §82's safety argument "
+    "rather than its conclusion.  §82 argued the per-genome rule is safe against the "
+    "`_sector_fit_span` defect it also records because the clamp only misreads a layer "
+    "refusal as 'no room' at a STEEP entry and the rule never asks for one.  Measured at "
+    "`coarse`: the rule returns -0.362881 at 09e8188, shallower than the shipped "
+    "-0.45, and -0.647081 at b729e86, steeper than it.  §115's promotion deepened the "
+    "cliff from -0.806403 to -1.437959 and `entry = 0.45 * cliff` followed it.  The "
+    "CONCLUSION still holds and is asserted live two tests up -- neither junction is "
+    "clamped at either genome -- so the argument was sufficient and not necessary, and "
+    "nothing built on it has been retired.  Strict, so that a future rule or promotion "
+    "that makes the premise true again XPASSes and forces this record to be revisited "
+    "rather than silently going green."))
+def test_the_operating_point_is_SHALLOWER_than_the_shipped_entry(genes):
+    """§82's safety premise, kept as a tripwire on the shipped genome rather than pinned.
+
+    Deliberately NOT moved to `profile_genes`, where it passes: pinning it would restate
+    §82's argument on the wheel §82 was written for and lose the only signal that the
+    argument's premise has stopped holding.  This is a claim about whatever ships, it is
+    false there, and that is the finding.
+    """
+    cfg = "coarse"
+    entry, _ = ww.per_genome_layer_profile(genes, cfg)
     assert entry > ww.FILLET_LAYER_ENTRY_SLOPE, (entry, ww.FILLET_LAYER_ENTRY_SLOPE)
-    per = ww.layer_cliff_entry(genes, cfg)["per_junction"]
-    assert not any(per[j].get("clamped") for j in ("hub", "rim")), per
 
 
 def test_the_cliff_bracket_the_study_uses_is_TOO_NARROW_and_the_module_says_so(genes):
