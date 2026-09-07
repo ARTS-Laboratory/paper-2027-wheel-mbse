@@ -923,18 +923,6 @@ def test_but_above_the_knee_the_fillet_radii_are_live(genes_over_knee):
     assert g[12] < 0.0, f"dL/dR_hub is {g[12]:+.3e} — the hub fillet is dead above the knee"
 
 
-@pytest.mark.xfail(reason=(
-    "PLAN.md §102/§103: the region-p-norm term reads the shipped genome's hub at util "
-    "1.0557, over the hard `stress` wall at 1.0 -- so `stress` no longer reads 0.0 on it "
-    "and `selection_key` no longer calls it tier 0. The SPLIT this test names (an "
-    "OBJECTIVE that only prices margin, never gates, versus the BARRIER that still does) "
-    "is untouched -- the classification asserts above this comment all still hold -- what "
-    "broke is the incidental live check that the shipped genome happens to sit under the "
-    "wall, which the more faithful term now says it does not (§99 already forecast this: "
-    "\"the true fillet stress runs 1.68x-2.76x over what Kt*agg reported\"). Re-promotion "
-    "under the new term is PLAN.md §102 successor 2, explicitly deferred -- this is not "
-    "that. strict=True, so this reopens itself the day the shipped genome (or its "
-    "replacement) reads back under the wall."))
 def test_the_margin_term_prices_and_never_gates(genes):
     """It is an OBJECTIVE, and the distinction is the whole design of it.
 
@@ -943,6 +931,24 @@ def test_the_margin_term_prices_and_never_gates(genes):
     ever landed in `BARRIER_TERMS` it would start vetoing promotion candidates for having
     any stress at all, which every real design does — `selection_key` would return tier 2
     on the shipped wheel.
+
+    XFAILED AT §102/§103, LIFTED AT §118 BY THE RE-PROMOTION ITS OWN REASON PRE-COMMITTED
+    TO. The region-p-norm term read the then-shipped genome's hub at util 1.0557, over the
+    hard `stress` wall at 1.0, so the barrier stopped reading 0.0 on it and `selection_key`
+    stopped calling it tier 0. The SPLIT this test is about was never what broke — the
+    classification asserts above held throughout — only the incidental live check that the
+    shipped genome happens to sit UNDER the wall, which §99 had already forecast ("the true
+    fillet stress runs 1.68x-2.76x over what Kt*agg reported"). The marker was `strict=True`
+    exactly so it would reopen "the day the shipped genome (or its replacement) reads back
+    under the wall"; §115's `b729e86` is that replacement, and on this fixture (`smoke`,
+    2 phases) it reads hub 0.667478 and rim 0.708341 — both under 1.0, barrier 0.0, tier 0.
+
+    READ THE CLEARANCE AT THIS FIDELITY AS A FIDELITY FACT, NOT A SAFETY ONE. The same
+    quantity on the same genome is 0.955948 at `medium`/8/linear and 0.972345 at
+    `medium`/8/SVK, which is what ships — 2.77% under the wall against the 29.2% this
+    fixture reads (§118, table). The rim governs here and at `medium`/SVK but the HUB
+    governs at `medium`/8/linear, so which junction is critical does not travel between
+    settings either.
     """
     assert "stress_margin" in WO.OBJECTIVE_TERMS
     assert "stress_margin" not in WO.BARRIER_TERMS

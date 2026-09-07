@@ -59,10 +59,14 @@ def res(mesh):
 #
 #   `0.25 < rim   < 0.40`   0.3113 -> 0.3781   holds, but eats 44.6% of the band
 #   `0.58 < spoke < 0.72`   0.6545 -> 0.6136   holds, but eats 29.3% of the band
-#   `1.4  < drop  < 2.0`    1.5516 -> 0.9614   BREAKS, and at every rung on the ladder --
-#                                              now `test_the_axle_drop_meets_the_stroke_
+#   `1.4  < drop  < 2.0`    1.5516 -> 0.9614   BROKE on the genome shipped then, at every
+#                                              rung -- `test_the_axle_drop_meets_the_stroke_
 #                                              target` below, xfailed at §111 rather than
-#                                              silently inherited by a shared fixture
+#                                              silently inherited by a shared fixture.
+#                                              §115's promotion cleared it (1.8431 on
+#                                              `b729e86`) and §118 lifted the marker; the
+#                                              three numbers in this table are still the
+#                                              ones §109 measured, on the outgoing genome
 #
 # So a shared fixture would not have re-aimed six gates quietly; it would have turned one
 # of them red on the spot and moved two others most of the way to their edges.  Moving two
@@ -357,18 +361,20 @@ def test_the_beam_model_does_not_predict_the_axle_drop(filleted_res, genes):
         f"believing it")
 
 
-@pytest.mark.xfail(reason=(
-    "PLAN.md §111: 0.961370 mm at `coarse` (38.0-39.9% \"stiffer\" than the plain mesh at "
-    "every rung on §109's ladder, so not a rung artefact) against a `1.4 < ... < 2.0` band "
-    "that has NO recorded warrant for its lower edge -- born in f0a9e83 ('fillet tweaks', "
-    "2026-07-25, the 4th commit of 157, before PLAN.md existed), never edited since, and "
-    "unjustified anywhere in the tree.  `2.0` is TARGET_DEFLECTION_MM and its sign claim "
-    "('stiffer than the target') still holds; only the lower edge breaks.  Not moved to a "
-    "new value, because there is no warrant to re-derive one from -- see the docstring.  "
-    "Clears on a re-promotion (successor 6) or a section that gives the band a warrant, "
-    "not on an edit to this number."))
 def test_the_axle_drop_meets_the_stroke_target(filleted_res):
     """The band half of the old combined gate, split out and read on the filleted mesh.
+
+    XFAILED AT §111, LIFTED AT §118 BY THE PROMOTION ITS OWN REASON NAMED. §111 read
+    0.961370 mm here on the then-shipped genome — 38.0-39.9% "stiffer" than the plain mesh
+    at every rung of §109's ladder, so not a rung artefact — and marked this
+    `xfail(strict=True)` rather than move `1.4`, because that edge has no warrant to
+    re-derive a new value from: it was born in `f0a9e83` ("fillet tweaks", 2026-07-25, the
+    4th commit of 157, before PLAN.md existed) and was never edited afterwards. The marker
+    named two clearing conditions, "a re-promotion (successor 6) or a section that gives the
+    band a warrant", and §115 delivered the FIRST OF THEM AND NOT THE SECOND: `b729e86`
+    reads **1.843091 mm** on this fixture. So the lower edge is exactly as unwarranted today
+    as §111 found it, and this test passing is a fact about the genome rather than a
+    justification for the band — read the paragraphs below unchanged.
 
     THIS IS A DIFFERENT CLAIM FROM THE RATIO ABOVE, AND IT DOES NOT SURVIVE THE SAME MOVE.
     The ratio is a statement about whether the beam model predicts the wheel and gets

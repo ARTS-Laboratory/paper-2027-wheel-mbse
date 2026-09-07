@@ -1,8 +1,8 @@
 """The promotion contract — PLAN.md §25 and §26's ranked successor #1.
 
-A promotion is a one-file change to `best_solution.json`, and this repo has now twice found
-that it is not: §16 and §19 each moved the shipped genome and left references behind that
-nothing checked.
+A promotion is a one-file change to `best_solution.json`, and this repo has now three times
+found that it is not: §16, §19 and §115 each moved the shipped genome and left references
+behind that nothing checked.
 
   PLAN §25   `study_svk_rescore.py`'s §14 control read `best_solution.json` while comparing
              against a constant measured on `350f4c7`.  §19 made those different wheels and
@@ -14,6 +14,10 @@ nothing checked.
              terms that the shipped genome had not changed.  False since §16, through two
              promotions, in the one place `SVK_PLAN.md` step 7 requires to be amended when
              the genome moves.
+  PLAN §117  THE CHECKLIST BELOW WAS WALKED IN FULL AND THE SUITE WAS STILL 62 RED, because
+             items 1-6 do not include "re-run the suite against the new genome" or
+             "regenerate the artifacts that read it".  That is item 7, added at §118 — the
+             one this file learned about itself rather than about a driver.
 
 WHAT THIS FILE DOES NOT TRY TO DO.  There are ~100 references to `best_solution.json` across
 `src/`, `studies/` and `tests/`, and almost all of them are correct: they mean "the design we
@@ -74,6 +78,14 @@ PROMOTION_CHECKLIST = f"""
          `best_solution.json` saying where the new one came from.
       6. LEAVE `tests/test_golden.py` READING {GOLDEN_GENOME_FILE} — §10's decoupling is what
          makes a promotion unable to re-baseline the regression net.
+      7. RE-RUN THE SUITE *AFTER* WRITING THE NEW GENOME, AND RE-RUN EVERY DRIVER THAT
+         DEFAULTS TO `best_solution.json`, COMMITTING ITS ARTIFACT.  Items 1-6 imply neither,
+         and §115 walked all six and still left the suite 62 red (PLAN §117): nine of those
+         say a committed `studies/*.json` no longer describes this tree, and TWO are strict
+         XPASSes — an `xfail` whose own reason names a promotion as its clearing condition is
+         a FAILURE the day it clears, not a bonus.  A suite run from before the genome swap
+         does not answer this, which is how §115's record came to say `895 passed / 0 failed`
+         for a commit that is red.
 """
 
 

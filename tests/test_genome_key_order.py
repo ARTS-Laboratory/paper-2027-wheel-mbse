@@ -42,7 +42,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def _genome_files():
     """Every repo-root JSON that is a genome record, by the same test
-    `test_promotion.py:172-181` uses to find them — a dict with a dict `genes`."""
+    `test_promotion.py:184-193` uses to find them — a dict with a dict `genes`."""
     found = []
     for name in sorted(os.listdir(HERE)):
         if not name.endswith(".json"):
@@ -81,7 +81,7 @@ def test_genes_are_serialised_in_canonical_order(name, genes):
 @pytest.mark.parametrize("name,genes", _genome_files(),
                          ids=[n for n, _ in _genome_files()])
 def test_gene_values_are_plain_numbers(name, genes):
-    """`test_promotion.py:176-181` json-loads every one of these files inside a `try` that
+    """`test_promotion.py:188-193` json-loads every one of these files inside a `try` that
     catches only `ValueError` and `OSError`, then hashes the result. A non-numeric gene value
     would raise `TypeError` out of that loop and turn an unrelated test red, so the constraint
     belongs here where the failure names the actual file."""
