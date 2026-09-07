@@ -18898,3 +18898,135 @@ byte-identical bar a timestamp and reverted; nothing committed there.
    it. Whoever picks this up should check whether `sector_fit_limit`'s own re-entrant-
    corner geometry (already computed for the sector-fit clamp) is the same constraint OCC
    is hitting, or a genuinely separate one, before writing a predictor.
+
+---
+
+## §126 — 2026-09-07. THE RECORD FOR `de0d368`: `test_junction_fit`'s THREE §119 FINDINGS DECIDED — THE END CAP NO LONGER REFUSES AT THE HUB, UNCAPPING NO LONGER FLIPS IT THERE EITHER, AND THE FAITHFUL RIM'S FACTOR SHRANK FROM 4.6x TO 2.03x — PLUS A FOURTH FINDING THE REFRESH ITSELF OPENED IN A DIFFERENT FILE
+
+Worked alongside a peer session taking `test_corner_singularity.py`'s six findings on the
+same list — §119 §3's nine findings, split by which artifact each reads. This section is
+the three under `studies/study_junction_agreement.json` alone, plus the refresh
+(`make junction`) that makes deciding them possible, plus one thing the refresh broke in a
+file neither cluster was assigned.
+
+### 0. THE REFRESH ITSELF
+
+`make junction` (0.078 s) moved `genome_hash` from `09e8188` to `b729e86`. Confirmed by
+re-running the same driver at both genomes with scratch `--out` before touching any test —
+the numbers below are measured at both, not inferred from one side:
+
+```
+  mesh (uncap=False) P_c        09e8188            b729e86
+    hub   leg_mm                 0.7369             1.7527   (2.38x)
+    hub   T_over_leg             1.4700             0.3595
+    hub   fits                   False              True
+    rim   leg_mm                 0.7156             1.2274   (1.72x)
+    rim   T_over_leg             8.4900             4.8891
+    rim   fits                   False              False
+```
+
+`t/2` is a genome quantity (the end cap's leg) and `b729e86` is a different design point
+from `09e8188`, not a code change — both capped legs grew, unevenly, and the hub grew far
+enough to cross its own fit threshold.
+
+### 1. `test_the_end_cap_refused_the_fillet_at_both_rings` — FALSE AT THE HUB, TRUE AT THE RIM
+
+PART 2's original NO-GO was that the capped mesh refuses the fillet at both rings. §0's
+table says the hub no longer does: `T/leg` 0.36 against the shipped 0.571 mm hub radius
+(`R_max` 1.588 mm, not a near thing). The rim still refuses (`T/leg` 4.89, `R_max`
+0.344 mm against the shipped 1.680 mm rim radius), margin shrunk from 8.49 to 4.89 but the
+verdict unchanged. Re-derived as two separate per-ring assertions rather than one shared
+loop, since the two rings no longer agree on the verdict.
+
+### 2. `test_uncapping_FLIPPED_the_hub_verdict_and_did_not_flip_the_rim` — THE HUB HALF OF
+   THE NAME IS NOW MISLEADING, THE ASSERTIONS THEMSELVES MOSTLY WEREN'T BROKEN
+
+Only one of the test's seven assertions failed: `rim["t_over_leg"] > 4.0` (measured
+2.7427). The four capped-vs-uncapped ordering assertions (both rings' `t_over_leg` and
+`spoke_side_leg_mm` fall from capped to shipped-default) all still hold, some by a wide
+margin, one (`hub leg`, 1.7455 vs 1.7527) by under a hundredth of a millimetre but
+deterministically so. Re-derived the one bound to 2.5 (actual 2.74).
+
+But §1 changes what the test's own NAME means: at `09e8188` the hub only fit because of
+uncapping (0.36 the sibling test's own after-value; `09e8188`'s capped hub was 1.47, a real
+NO-to-YES flip). At `b729e86` the capped hub already fits (§1), so uncapping only improves
+an existing YES (0.36 -> 0.32) rather than causing one. The *verdict pair* this test
+actually asserts (hub yes, rim no) is unchanged — only the mechanism producing the hub
+verdict has moved, from "uncapping decides it" to "uncapping no longer needs to". Recorded
+in the docstring rather than in the test's name, matching this arc's practice of not
+renaming a test whose numbers move under it.
+
+### 3. `test_the_faithful_rim_would_buy_a_factor_of_FOUR_on_the_admissible_radius` — THE
+   FACTOR IS SMALLER, THE CONCLUSION IS NOT
+
+`r_max_on_this_leg_mm` at the rim went from 0.56 mm to 2.59 mm (factor 4.6, within 14% of
+the shipped `R_rim`) at `09e8188`. `b729e86` carries a different `R_rim` outright —
+1.6802 mm, not 3.0 — and a different rim geometry throughout: 0.6126 mm to 1.2416 mm, a
+factor of 2.03, and 26% *short* of the shipped radius rather than within 14% of it. This is
+§119's own ninth finding, re-derived here rather than re-measured from scratch, and it
+still supports the same conclusion PLAN §46 rests on: the tri-block buys rim corner
+fidelity, not the fillet at the shipped radius. Bound moved from `4.0 *` to `1.9 *`
+(actual 2.0268); the `fits is False` half of the test was already correct and untouched.
+
+### 4. THE REFRESH BROKE A FOURTH TEST, IN A FILE NEITHER CLUSTER WAS ASSIGNED
+
+`tests/test_fillet_block.py::test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces`
+was fixed at §124 (`5fe8e80`) by reading a dedicated `junction_genes` fixture
+(`stage3_knee_best_medium.json`, i.e. `09e8188`) specifically *because*
+`study_junction_agreement.json` was frozen at that genome. Refreshing the artifact to
+`b729e86` without also switching that test back to `genes` reproduces nothing — verified
+this would fail before touching it (both junctions, ~2-17 deg off) — so the fixture read is
+reverted to `genes`, and the now-unused `junction_genes` fixture and its docstring are
+removed with it.
+
+That revert surfaced a real, independent finding of its own: the same test's second
+assertion, `chord_minus_tangent_deg`, changed SIGN at the rim. `09e8188` had both rings'
+chord past tangent by a similar amount (hub 0.805, rim 0.566 deg); `b729e86` has the hub
+gap shrunk but same-signed (0.481) and the rim gap flipped (-0.612 — chord now lands
+BEFORE tangent). No verdict in PART 8 moves on it — it is a reported diagnostic, not one
+of the `P_t`/`P_c` fit numbers PART 8 prices, and both `P_t` rows still clear PART 8's
+margins by 5-20x (§1-3 above, not this test). Bound split per ring: `(0.3, 0.7)` hub,
+`(-0.8, -0.4)` rim.
+
+### 5. FLAGGED, NOT TOUCHED: THE WIRING/KT CHAIN ALSO BREAKS ON THIS REFRESH ALONE
+
+`tests/test_fillet_artifact_chain.py` (§120's successor 1) reads
+`study_junction_agreement.json` directly (`study_junction_agreement.json ->
+study_fillet_wiring.json`, its own dependency diagram) as well as the corner artifacts the
+peer session's cluster touches. Confirmed live: `test_the_wiring_verdict_survives_the_
+rebuild` was green at HEAD (both files agreed on `09e8188`) and is red against my refresh
+alone — `hub_wedge_err_end_cap_deg` 28.71 -> 6.43, `hub_wedge_err_as_built_deg` 0.008 ->
+0.018, `rim_wedge_err_as_built_deg` 50.61 -> 32.34. `test_study_fillet_wiring_reproduces_
+from_its_committed_inputs` (already red on purpose, pre-existing) now also disagrees at a
+junction-side field it did not before.
+
+Left alone: the peer session claimed `study_fillet_kt.json`/`study_fillet_wiring.json` as
+downstream of its own `study_corner_singularity_fillet.json` refresh, and the two clusters'
+artifacts feed the SAME derived files, so rebuilding it needs both refreshes on disk
+together or the result is partial. Messaged the peer session directly with the diffs above
+rather than editing shared territory.
+
+### 6. WHERE THE COUNT STANDS
+
+```
+                                                  before   now
+  test_junction_fit (§119's three)                   3      0
+  test_fillet_block (§4's fourth, unassigned)         1      0
+                                                      --     --
+                                                       4      0
+```
+
+Four closed (three of §119's nine, one this refresh opened on its own), five of §119's nine
+still stand — the peer session's six, minus whatever it has already closed by the time this
+is read. `tests/test_fillet_artifact_chain.py`'s wiring-chain reds are NOT counted here:
+they were already red or are the peer session's to decide.
+
+**SUCCESSORS.**
+
+0. **§119/§120's successor 1 (or whatever it is renumbered to) still needs the wiring/kt
+   chain decided against BOTH refreshed corner and junction artifacts together** — §5's
+   finding. Whoever does it should rebuild after both are on disk, not incrementally.
+1. **THE `chord_minus_tangent_deg` SIGN FLIP (§4) IS UNEXPLAINED.** It is pinned as a
+   direction and a band, not traced to a mechanism — plausibly the same flank-curvature
+   move §124 found at `A`, but that is a guess, not a measurement, and nothing here checked
+   it.
