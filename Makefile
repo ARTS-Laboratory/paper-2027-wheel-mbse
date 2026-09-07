@@ -126,7 +126,8 @@ help:
 	@echo "              R -> 0 control that says it is the same wheel, and what"
 	@echo "              each candidate LAYER PROFILE costs the deflection's"
 	@echo "              convergence — the two-objective half of PART 13's"
-	@echo "              declined call. ~110 s"
+	@echo "              declined call. ~5 m 30 s, and the LAYER PROFILE half is"
+	@echo "              312 s of it — see the recipe's own comment"
 	@echo "make filletblock  can the fillet BE a block, and can the sector be"
 	@echo "              blocked around it? the region PART 3 named has two cusps;"
 	@echo "              the boundary-layer block that meshes; and the whole"
@@ -797,16 +798,34 @@ corner:
 
 # THE SAME LADDER ON A FILLETED MESH.  FILLET_PLAN.md Step 2, reachable since PART 11.
 #
-# ~22 s and it is the same driver — one flag — which is the point: a filleted "before and
+# It is the same driver — three flags — which is the point: a filleted "before and
 # after" measured by two scripts is two instruments, and this arc has already been bitten
 # once by exactly that (PART 6, two recorded fold tables disagreeing 20x with neither
 # criterion written down).  `--fillet genome` takes genes 12 and 13.
+#
+# THE WALL IS 5 m 32 s AND ALMOST ALL OF IT IS `--profiles`.  This line read "~22 s" and
+# §119 measured the recipe at 335 s — 15.2x — and read that as the filleted path having
+# got slower.  It has not.  Decomposed 2026-09-07 on `b729e86`, same box, one flag at a
+# time (PLAN.md §120):
+#
+#     `make corner`, unfilleted control                                    7.8 s
+#     + --fillet genome                                                   15.5 s
+#     + --continuity coarse                                               20.5 s
+#     + --profiles                       <- `make corner-fillet`         332.3 s
+#
+# So "~22 s" was EXACTLY RIGHT for the recipe it was written against, and stayed on the
+# line after `--profiles` was added to it.  The filleted ladder itself is 2.0x the
+# unfilleted one, not 15x.  `--profiles` is 312 s — 94% of the wall — and it is not a
+# ladder at all: it sweeps the deflection's convergence over every pair in
+# `study_fillet_block.LAYER_PROFILE_CANDIDATES`, PART 16's two-objective work, whose cost
+# belongs to that question and not to the fillet.  (The help text above said "~110 s",
+# which is a third figure and also wrong: somebody updated one of the two places.)
 #
 # `--continuity coarse` is NOT decoration.  The filleted ladder reports an axle drop 38%
 # below the unfilleted one, and one ladder cannot tell the fillet's stiffness from a
 # different model.  The control drives the radius pair toward zero and asks the filleted
 # blocking to reproduce the unfilleted wheel; it does, to -0.17% at R = 0.05 mm.  Thirteen
-# extra `coarse` solves, ~8 s of the 22.
+# extra `coarse` solves, 5.0 s of the 20.5 above.
 #
 # SCOPE, WHICH IS PART 10's AND HAS NOT MOVED: `fillet=` is a MEASUREMENT INSTRUMENT for
 # one genome.  6 of 16 feasible genomes refuse it at their own radii.  Nothing on this
