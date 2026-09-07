@@ -17621,3 +17621,185 @@ this file at all, so the drift predates that too.
 5. **THE `1.4` EDGE STILL HAS NO WARRANT.** §111's second clearing condition is open, and
    the test being green now makes it less likely anyone looks. Recorded so that the pass is
    not mistaken for the answer.
+
+---
+
+## §119 — 2026-09-07. §117's SUCCESSOR 1 IS NOT EXECUTABLE AS FILED: NOT ONE OF THE SIX ARTIFACTS CAN BE REFRESHED INTO A NET IMPROVEMENT. THREE DRIVERS EXIT 1 ON THEIR OWN SELF-CHECKS, AND THE THREE THAT EXIT 0 PRODUCE ARTIFACTS THAT CONTRADICT NINE FINDINGS THE TREE ASSERTS
+
+§117 filed this as *"six drivers to re-run and commit with their outputs"* — bookkeeping,
+cost unknown for five of six. All six were run. **The cost was 27m35s and was never the
+obstacle.** What the refresh actually is: these artifacts are the EVIDENCE BASE for recorded
+findings, and tests assert those findings against them. Refreshing one on a new genome does
+not update a stale number; it rewrites the evidence under a conclusion the tree still makes.
+
+Nothing is committed from the six runs. What follows is what they measured.
+
+### 1. WHAT IT COST, WHICH IS WORTH HAVING SINCE §117 COULD NOT SAY
+
+```
+  target          exit   wall     artifact
+  junction          0      <1 s   study_junction_agreement.json
+  corner            0       8 s   study_corner_singularity.json
+  fillet            1      38 s   study_fillet_fold.json
+  corner-fillet     0     335 s   study_corner_singularity_fillet.json
+  filletblock       1     588 s   study_fillet_block.json
+  triblock          1     686 s   study_tri_block.json
+                          -----
+                          1655 s
+```
+
+`triblock` at 686 s sits on §114's recorded 665.3 s and `corner` at 8 s on the Makefile's own
+"wall 8.5 s". **`corner-fillet` does not: the Makefile says "~22 s and it is the same driver
+— one flag", and it measured 335 s, 15.2x.** Same box, same ladder, and the unfilleted half
+of that same driver is still 8 s, so this is the filleted path on `b729e86`, not drift in the
+machine.
+
+### 2. THE FIRST FAILURE MODE: THREE DRIVERS EXIT 1, AND ALL THREE FOR ONE REASON
+
+Every failing self-check has the same shape — *a constant recorded in a plan file, compared
+against a quantity measured on whatever `best_solution.json` currently holds*:
+
+```
+  driver         self-checks that went True -> False on the new genome
+  fillet_fold    reconciliation vs FILLET_PLAN PART 3 / PART 5 (4 of 8 rows disagree)
+  tri_block      control_reproduces_the_collapse
+                 shipped_control_is_the_published_0.78
+  fillet_block   the_candidate_constant_matches_the_measured_surface
+                 the_fine_candidate_constant_matches_the_measured_surface
+                 the_cliff_column_reproduces_PART_20s_bisections
+                 the_re_derived_argmax_is_still_PART_13s_pair
+```
+
+**MEASURED, NOT INFERRED.** `study_fillet_fold.py` re-run at the OUTGOING genome
+(`stage3_knee_best_medium.json` = `09e8188`, preserved by §115's checklist item 5), same
+code, scratch `--out`:
+
+```
+  genome        reconciliation rows agreeing
+  b729e86        4 of 8      <- what ships
+  09e8188        8 of 8
+```
+
+And the tree forbids filing the result anyway, in writing:
+`test_fillet_fold::test_the_committed_report_passes_its_own_self_checks` — *"The artifact in
+the tree must be a passing run, not a saved failure"* — with siblings
+`test_tri_block::test_the_reports_self_checks_all_pass`,
+`test_tri_bend::test_the_committed_run_passed_its_own_protocol_checks` and
+`test_fillet_block::test_the_committed_report_passes_its_own_self_checks`. All four are green
+today, on artifacts that are passing runs of the outgoing genome.
+
+### 3. THE SECOND FAILURE MODE, WHICH IS THE REAL FINDING: A CLEAN REFRESH COSTS MORE THAN IT BUYS
+
+`junction`, `corner` and `corner-fillet` exit 0. Their artifacts were regenerated, the eight
+affected test files run in full, and the failure list diffed against the same eight files at
+`d07c5e3` in a detached worktree — **the list, not the count**:
+
+```
+  refreshing study_corner_singularity{,_fillet}.json and study_junction_agreement.json
+
+    CLOSED  4   the three `..._BUILDS_TODAY` freshness tests, plus
+                test_fillet_block::test_make_junction_s_void_is_a_ONE_NODE_CHORD_...[hub]
+    OPENED  9   all of them findings, none of them freshness
+```
+
+The nine, with what they actually say:
+
+```
+  test_all_four_junction_corners_are_re_entrant
+      "rim:P_t lambda 0.5101 -- this is the PART's corner and its wedge should not move
+       with a mesh option"                              0.5101 vs 0.5031 +/- 0.002
+  test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet
+      "patch counts [54, 56, 60] appear on both sides -- the band is no longer separated
+       by the contact patch alone, WHICH IS A FINDING"
+  test_the_fillet_surface_peak_settles_where_the_sharp_corner_never_did
+      "hub:surface still moves 3.83% on the last rung"  0.0383 vs < 0.03
+  test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one
+      ('unfilleted', 38.6416)
+  test_the_filleted_blocking_solves_the_SAME_WHEEL          False is True
+  test_a_genome_robust_layer_profile_holds_the_deflection_band   6 of 8 profiles built
+  test_the_end_cap_refused_the_fillet_at_both_rings         True is False
+  test_uncapping_FLIPPED_the_hub_verdict_and_did_not_flip_the_rim   2.7427 > 4.0 fails
+  test_the_faithful_rim_would_buy_a_factor_of_FOUR_on_the_admissible_radius
+      1.2416 vs 4.0 x 0.6126 -- the factor is 2.03, not 4
+```
+
+**Both states are true statements and that is the whole difficulty.** Left alone, the
+artifacts describe `09e8188` and three freshness tests say so — but the nine finding tests
+are then GREEN VACUOUSLY, asserting things about a wheel that no longer ships. Refreshed,
+the freshness tests close and the nine correctly report that those findings do not survive
+the promotion.
+
+**The refresh is not adopted here, and the reason is not the count.** Turning nine recorded
+findings red is a claim that they are dead — that the end cap no longer refuses the fillet at
+both rings, that the faithful rim buys 2.03x and not 4x, that `rim:P_t`'s wedge moves with a
+mesh option when the test says the PART's corner must not. Each of those needs reading on its
+own merits by someone who then writes down what replaced it. **An artifact refresh is the
+wrong instrument for retiring nine findings, and doing it as a side effect of clearing a red
+is how a record gets quietly rewritten to match its outcome.** §15's precedent is the one
+that applies: record them, do not refresh them mid-arc. The measurements above are the
+record.
+
+### 4. AND TWO OF §117's NINE WERE NEVER ARTIFACT REDS — MY OWN BUCKETING, FROM A BATCH
+
+`test_mesh::test_fold_margin_on_the_shipped_genome_is_the_recorded_value` and
+`test_requirements::test_the_calibration_reproduces_the_portfolio_the_plan_states` read no
+`studies/*.json` at all. Both are golden constants in the test files — ordinary position
+reds, re-derived here, and **the only two of the nine this section closes**:
+
+```
+  fold_margin at coarse (n_curve 600)   14.365501181531 -> 9.004243676666
+    ladder spread across 600/1200/2400        1.10e-05 -> 5.42e-05  (4.9x wider)
+```
+
+**The portfolio one is a finding rather than bookkeeping.** `calibrated_priorities` reads
+`DEFAULT_WEIGHTS` for four axes and the SHIPPED GENOME's own `loss_terms["smoothness"]` for
+the fifth, so a promotion re-derives the whole 100-point budget:
+
+```
+  term            p_cal §103   p_cal §119        c_T §103    c_T §119
+  mass                 53.51        49.37        0.300000    0.300000
+  deflection           44.60        41.14        0.250000    0.250000
+  stress_margin         1.59         1.47        0.008921    0.008921
+  smoothness            0.30         8.02        0.001678    0.048716   <- 29x
+  phase_ripple          0.00         0.00        0.000000    0.000000
+```
+
+`b729e86` carries smoothness **4.871578951506198** against the outgoing genome's implied
+~0.168. **Smoothness was a rounding error in this portfolio and is now its third-largest
+axis** — the same 100-point redistribution §103 recorded, driven from the genome side
+instead of the weight side. `MBSE_PLAN.md`'s table and its own CHECK line are updated, which
+is what that file's tripwire instructs (*"this file is wrong and the driver is right"*); its
+§103 and §114 records are left as written.
+
+### 5. THE CHECKLIST LEARNS ABOUT ITSELF A SECOND TIME
+
+`tests/test_promotion.py`'s item 3 said **"Known one"** — one driver pairing
+`best_solution.json` with a genome-specific constant. It now names **four**, with §2's
+evidence. And it records why §118's item 7 is not sufficient on its own: re-running one of
+these drivers after a promotion produces a saved failure rather than a refresh, so
+"regenerate the artifacts that read it" is not a step anyone can complete until the constants
+are pinned.
+
+### 6. WHERE THE COUNT STANDS
+
+**Two of §117's nine are closed. Seven stand.** The suite total goes 60 -> 58. The seven are
+no longer one bucket: three are drivers that cannot self-pass, and four are freshness tests
+whose refresh would cost nine findings.
+
+**SUCCESSORS.**
+
+0. **PIN THE THREE DRIVERS' RECORDED CONSTANTS TO A GENOME FILE**, §2's fix.
+   `study_svk_rescore.run_control` is the worked precedent (§25): the constant stays, the
+   READ moves off `best_solution.json` onto the file the constant was measured on. Each
+   driver needs a decision about WHICH genome its PART constants belong to — `09e8188`
+   reproduces `fillet_fold`'s eight rows, and `tri_block`/`fillet_block` are unmeasured.
+   This makes the three drivers runnable again; it does NOT by itself decide §3.
+1. **DECIDE THE NINE FINDINGS, ONE AT A TIME** — §3's list, each needing "does this survive
+   `b729e86`, and if not what replaces it". This is the expensive one and it is a section's
+   work per cluster, not per test. Until it is done the four freshness reds are the
+   tree's honest state and should stay red.
+2. **THE `corner-fillet` COST COMMENT IS 15x LOW** (§1). One line in the Makefile, but check
+   whether the filleted ladder got slower for a reason before rewriting the number.
+3. **`studies/study_fillet_kt.json` AND `study_fillet_wiring.json` READ THE CORNER
+   ARTIFACTS**, and no test covers that dependency. Whether they describe a mesh that no
+   longer exists is unmeasured, and they would inherit §3's whole problem.
