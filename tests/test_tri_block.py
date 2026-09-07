@@ -303,21 +303,52 @@ def test_the_cascade_stops_at_the_hub_junction(genes):
 # 4. THE REGION, AND THAT THE PARTITION COVERS IT
 # ---------------------------------------------------------------------------
 
-def test_the_faithful_rim_junction_really_is_a_triangle(genes):
+def test_the_faithful_rim_junction_really_is_a_triangle(control_genes):
     """The turn at `far_end` is within a degree of straight, at both configs.
 
-    This is UNCAP_PLAN Step 2's finding and it is the premise of the whole file: if the
-    corner existed, a quad would sit on the region and there would be nothing to
-    partition.  Measured on the region's own curve rather than quoted.
+    §123: reads `control_genes` now, not `genes`.  This is UNCAP_PLAN Step 2's finding --
+    if the corner existed, a quad would sit on the region and there would be nothing to
+    partition -- and the +-1 deg window is a claim about the GENOME Step 2 measured it on
+    (179.35 deg as originally reported; 179.511/179.510 measured fresh here at
+    coarse/medium), not a genome-general one.  On the wheel that ships the same turn reads
+    178.126/178.125 -- outside this window without the corner becoming real, which is why
+    the premise that actually has to survive a promotion moved to the sibling below.
+    Measured on the region's own curve rather than quoted.
     """
     for name in ("coarse", "medium"):
-        reg = tb.region(genes, name, blend=0.0)
+        reg = tb.region(control_genes, name, blend=0.0)
         r = tb.region_report(reg)
         assert 179.0 < r["turn_at_far_end_deg"] < 181.0
         # And at the SHIPPED blend the same vertex is a real corner, which is why the
         # tree meshes today.  Same instrument, same genome, one argument changed.
-        r1 = tb.region_report(tb.region(genes, name, blend=1.0))
+        r1 = tb.region_report(tb.region(control_genes, name, blend=1.0))
         assert r1["turn_at_far_end_deg"] < 160.0
+
+
+def test_the_DEGENERATE_QUAD_premise_still_holds_on_the_wheel_that_ships(genes):
+    """Not "within a degree" any more, but a quad here still fails MIN_SJ_TARGET outright.
+
+    §123.  The sibling above pins UNCAP_PLAN Step 2's own measurement to the genome it was
+    made on; this measures the claim the file's premise actually needs on whatever ships --
+    that treating this junction as a QUAD, not a triangle, is still indefensible.  Read
+    directly off `reg["base"]["rim_junction"]`, the same block
+    `test_the_three_quads_tile_the_quad_blocks_own_region` already reads for area:
+
+                                  control_genes (09e8188)   genes (b729e86, shipped)
+      quad min scaled Jacobian     0.008176 / 0.008251        0.032732 / 0.032741
+      (coarse / medium)
+
+    Both are an order of magnitude under `MIN_SJ_TARGET = 0.2`.  The shipped pair is also
+    exactly the denominator f1bbc0e already named "the faithful" --
+    0.569803 / 0.032732 = 17.41 and 0.570257 / 0.032741 = 17.42, matching its own
+    ratio-to-the-faithful column to four figures.  The corner narrowed; it did not stop
+    being a corner no quad belongs on.
+    """
+    for name in ("coarse", "medium"):
+        reg = tb.region(genes, name, blend=0.0)
+        quad = np.asarray(reg["base"]["rim_junction"], float)
+        q = fb.block_quality(quad)
+        assert q["min_scaled_jacobian"] < wo.MIN_SJ_TARGET, name
 
 
 def test_the_three_quads_tile_the_quad_blocks_own_region(genes):
@@ -492,18 +523,43 @@ def test_section_51s_probe_was_a_FLOOR_and_this_is_above_it(genes):
     assert swept["min_scaled_jacobian"] > centroid["min_scaled_jacobian"]
 
 
-def test_a_generated_interior_cannot_move_it(genes):
+def test_a_generated_interior_cannot_move_it(control_genes):
     """The worst corner is on a held boundary, so Winslow changes nothing.
+
+    §123: reads `control_genes` now, not `genes` -- on the wheel that ships the same
+    narrowing that moves the far_end turn (see the triangle test above) leaves the worst
+    node in `rim_tri_t` no longer purely on a held boundary, so this bit-identical
+    invariance breaks there.  That is the sibling below; this pin keeps PART 9's route-2
+    invariance argument on the wheel it was measured on.
 
     Same argument as PART 9's route-2 invariance and the same technique, imported from
     `study_fillet_block` rather than re-written.  It is what says the successor is a
     CURVED Y and not a better smoother.
     """
-    reg = tb.region(genes, "coarse", blend=0.0)
+    reg = tb.region(control_genes, "coarse", blend=0.0)
     w = (0.124, 0.751, 0.124)
     raw = tb.cell(reg, 10, w)["min_scaled_jacobian"]
     smoothed = tb.winslow_column(reg, 10, w)["min_scaled_jacobian"]
     assert abs(smoothed - raw) < 1.0e-9
+
+
+def test_a_generated_interior_DOES_NOT_RESCUE_the_shipped_cell_either(genes):
+    """Winslow moves the shipped cell now, but DOWN, and both stay well clear of the floor.
+
+    §123.  Raw 0.569803, smoothed 0.565894: a 0.0039 (0.7%) change, in the wrong direction
+    to be mistaken for a rescue -- Winslow does not improve this cell, it costs it a
+    sliver, because the corner it once held exactly is no longer purely on the boundary.
+    Both readings clear `MIN_SJ_TARGET = 0.2` by nearly 3x regardless, so the conclusion
+    PART 9 built on the pinned sibling above -- the successor is a curved Y, not a better
+    smoother -- still holds; a smoother that made things worse would be an odd rescue to
+    reach for anyway.
+    """
+    reg = tb.region(genes, "coarse", blend=0.0)
+    w = (0.124, 0.751, 0.124)
+    raw = tb.cell(reg, 10, w)["min_scaled_jacobian"]
+    smoothed = tb.winslow_column(reg, 10, w)["min_scaled_jacobian"]
+    assert smoothed <= raw + 1.0e-9
+    assert smoothed > wo.MIN_SJ_TARGET
 
 
 def test_the_bend_is_OFF_by_default_and_off_means_untouched(genes):
