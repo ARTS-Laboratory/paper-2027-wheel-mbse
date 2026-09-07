@@ -72,6 +72,21 @@ def genes():
 
 
 @pytest.fixture(scope="module")
+def profile_genes():
+    """The wheel PART 20 and §68 measured the layer profile on, read by FILE.
+
+    `study_fillet_block.PROFILE_GENOME` carries the argument and the before/after; this
+    fixture exists so the test side takes the same read as the driver's `_cliff_audit`,
+    `shipped_profile_cliff` and candidate rows, and the two cannot drift apart.  The
+    whole profile family uses it or none of it does — the cliff column and the shipped
+    profile's own margin are compared against each other, so half of each would leave a
+    coherent-looking pair of tests describing two different wheels.  Everything else in
+    this file keeps `genes`.
+    """
+    return fb.load_genes(fb.PROFILE_GENOME)
+
+
+@pytest.fixture(scope="module")
 def report():
     with open(os.path.join(REPO, "studies", "study_fillet_block.json")) as fh:
         return json.load(fh)
@@ -1148,15 +1163,35 @@ def test_a_degraded_run_may_not_be_filed_as_the_committed_artifact():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("end,published", fb.CLIFF_PUBLISHED)
-def test_the_cliff_column_reproduces_PART_20s_hand_bisections(genes, end, published):
+def test_the_cliff_column_reproduces_PART_20s_hand_bisections(profile_genes, end,
+                                                              published):
     """The automated column has to land on the four numbers the record was written from.
 
     PLAN §68 and FILLET_PLAN PART 20 declined the genome-robust layer profile on these
     four bisections and the margins they imply, so a column that disagreed with them
     would mean either the decision or the code is wrong.  Pinned against the RECORD
     rather than against a re-run of itself, at the precision §68 published to.
+
+    ON THE GENOME (§121).  Against the record means on the record's own wheel: these are
+    four hand bisections of one genome, and re-running them on another produces four
+    different numbers rather than a check of these.  §115's promotion made that a
+    different wheel and turned all four red; §120 pinned the driver's `_cliff_audit` to
+    the same file.  Measured, same code, both genomes, `coarse`:
+
+        end     published    09e8188 (pinned)    b729e86 (shipped)
+        0.85    -0.845458    -0.845458           -1.507602
+        1.00    -0.881143    -0.881143           -1.571234
+        1.10    -0.903400    -0.903437           -1.610989
+        1.60    -1.001967    -1.001967           -1.786686
+
+    The cliff sits 0.66-0.78 DEEPER on the wheel that ships, monotonically in `end`, and
+    `CLIFF_REASON` is the bound at every row of both columns — so what the promotion moved
+    is the depth of the edge, not which edge is being found.  That second half is the
+    reason `test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first`
+    below stays on `genes`: it asserts WHICH refusal bounds the bisection and a ±0.01
+    behaviour either side of it, and both hold on whatever ships.
     """
-    got = fb.cliff_entry(genes, "coarse", end)
+    got = fb.cliff_entry(profile_genes, "coarse", end)
     assert got["entry"] is not None, got["why"]
     assert abs(got["entry"] - published) < 1e-4, (end, got["entry"], published)
     assert fb.CLIFF_REASON in got["why"], got["why"]
@@ -1183,7 +1218,8 @@ def test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first(ge
     assert v["built"], v
 
 
-def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(genes):
+def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(
+        profile_genes):
     """§68's finding, as a check: the arc's candidates are all closer to the edge.
 
     Every pair this arc proposed stands within 0.08 of a hard refusal of the shipped
@@ -1191,13 +1227,30 @@ def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(ge
     profile is measured and not adopted.  A future grid that produced a roomier candidate
     would go red here, and that is the outcome that should reopen the call rather than a
     line in a plan file nobody re-reads.
+
+    ON THE GENOME (§121).  SHIPPED here is the shipped PROFILE — `LAYER_ENTRY_SLOPE` and
+    `LAYER_END_OFFSET`, the two constants `wheel_wheel` builds with — and not the shipped
+    genome; the whole comparison is between profiles on one wheel.  It reads
+    `PROFILE_GENOME` for the same reason the driver's `shipped_profile_cliff` does: this
+    margin and the cliff column above are compared against each other, so measuring one
+    on §68's wheel and the other on whatever ships would leave two green tests describing
+    two different wheels.  Measured, `coarse`, 25 of 25 candidates comparable at both:
+
+                              09e8188 (pinned)    b729e86 (shipped)
+        shipped margin        0.5520              1.3367
+        worst candidate       0.2329              0.8851
+
+    §68's ORDERING survives the promotion — the shipped pair is still the roomiest, by
+    0.32 pinned and 0.45 shipped — but the 0.5520 it was published with does not, and it
+    is the published number this test exists to hold.  The finding being genome-robust is
+    a fact about §68 worth having; it is not a reason to check it against the wrong wheel.
     """
-    shipped = fb.cliff_entry(genes, "coarse", fb.LAYER_END_OFFSET)
+    shipped = fb.cliff_entry(profile_genes, "coarse", fb.LAYER_END_OFFSET)
     shipped_margin = fb.LAYER_ENTRY_SLOPE - shipped["entry"]
     assert shipped_margin == pytest.approx(0.5520, abs=1e-3), shipped_margin
     compared = 0
     for entry, end in fb.LAYER_PROFILE_FINE_CANDIDATES + fb.LAYER_PROFILE_CANDIDATES:
-        c = fb.cliff_entry(genes, "coarse", end)
+        c = fb.cliff_entry(profile_genes, "coarse", end)
         if c["entry"] is None:
             continue
         compared += 1
