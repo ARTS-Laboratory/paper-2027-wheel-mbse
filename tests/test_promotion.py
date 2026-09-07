@@ -68,10 +68,21 @@ PROMOTION_CHECKLIST = f"""
       2. `export/wheel.step` AND its manifest — rebuild with `make export`, so the shipped
          STEP does not describe a previous genome.  That silent failure is what
          `wheel_step_export.py` was audited for.
-      3. DRIVERS THAT PAIR `best_solution.json` WITH A GENOME-SPECIFIC CONSTANT.  Known one:
-         `studies/study_svk_rescore.py`'s §14 control, which is now pinned to
-         {CONTROL_GENOME_FILE} by file for this reason (PLAN §25).  If you add another
-         constant measured on one wheel, pin it to a FILE, never to the shipped pointer.
+      3. DRIVERS THAT PAIR `best_solution.json` WITH A GENOME-SPECIFIC CONSTANT.  FOUR
+         KNOWN, and the last three were found by §119 walking item 7:
+           - `studies/study_svk_rescore.py`'s §14 control, pinned to {CONTROL_GENOME_FILE}
+             by file for this reason (PLAN §25) — the worked precedent for the fix.
+           - `studies/study_fillet_fold.py`, whose reconciliation checks FILLET_PLAN.md
+             PART 3 / PART 5 against a sweep at the shipped genome.  8 of 8 rows agree on
+             `09e8188`, 4 of 8 on `b729e86`, same code.
+           - `studies/study_tri_block.py` (`control_reproduces_the_collapse`,
+             `shipped_control_is_the_published_0.78`).
+           - `studies/study_fillet_block.py` (PART 13's argmax, PART 20's bisections, and
+             both candidate-constant surfaces).
+         These three still read the shipped pointer, so each PROMOTION MAKES THEM EXIT 1
+         and a re-run files a saved failure rather than a refresh — which is why item 7 is
+         not sufficient on its own.  If you add another constant measured on one wheel, pin
+         it to a FILE, never to the shipped pointer.
       4. `make svk` — the feasibility gate.  It is the check that runs about once a
          promotion, so assume it has rotted since you last looked.
       5. PRESERVE THE OUTGOING GENOME under its own name, and leave the `note` field in

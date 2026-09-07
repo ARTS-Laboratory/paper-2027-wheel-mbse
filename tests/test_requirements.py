@@ -344,7 +344,7 @@ def test_the_map_is_an_identity_at_its_own_calibration_point(shipped_record):
 
 
 def test_the_calibration_reproduces_the_portfolio_the_plan_states(shipped_record):
-    """53.51 / 44.60 / 1.59 / 0.30 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
+    """49.37 / 41.14 / 1.47 / 8.02 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
     code is right — but somebody has to be told.
 
     RECALIBRATED AT PLAN.md §103: `calibrated_priorities` derives its points from
@@ -353,12 +353,22 @@ def test_the_calibration_reproduces_the_portfolio_the_plan_states(shipped_record
     — `stress_margin`'s point share fell 5.56 -> 1.59 and the freed points landed on
     `mass`/`deflection`, which is the same 100-point budget redistributing, not a second
     change. The old numbers (51.35 / 42.80 / 5.56 / 0.29 / 0.00) were §99's own
-    predecessor's, not an independent MBSE_PLAN.md derivation."""
+    predecessor's, not an independent MBSE_PLAN.md derivation.
+
+    RE-DERIVED AGAIN AT §119, AND THIS TIME THE GENOME MOVED IT, NOT A WEIGHT.  The
+    portfolio reads `DEFAULT_WEIGHTS` for four axes and the SHIPPED GENOME's own
+    `loss_terms["smoothness"]` for the fifth, so a promotion re-derives it.  §115's
+    `b729e86` carries smoothness 4.871578951506198 where the outgoing genome's reference
+    cost implied ~0.168, which takes `c_smoothness` 0.001678 -> 0.048716 (**29x**) and
+    `sum c` 0.560599 -> 0.607637.  Every share falls except smoothness, which goes
+    0.30 -> 8.02 points and becomes the third-largest axis in the budget: the same
+    100-point redistribution as §103, driven from the other side.  MBSE_PLAN.md's table
+    and its own CHECK line are updated to match, as that file's tripwire instructs."""
     p, _ = R.calibrated_priorities(shipped_record["loss_terms"]["smoothness"])
-    assert p.points["mass"] == pytest.approx(53.51, abs=0.01)
-    assert p.points["deflection"] == pytest.approx(44.60, abs=0.01)
-    assert p.points["stress_margin"] == pytest.approx(1.59, abs=0.01)
-    assert p.points["smoothness"] == pytest.approx(0.30, abs=0.01)
+    assert p.points["mass"] == pytest.approx(49.37, abs=0.01)
+    assert p.points["deflection"] == pytest.approx(41.14, abs=0.01)
+    assert p.points["stress_margin"] == pytest.approx(1.47, abs=0.01)
+    assert p.points["smoothness"] == pytest.approx(8.02, abs=0.01)
     assert p.points["phase_ripple"] == 0.0
 
 

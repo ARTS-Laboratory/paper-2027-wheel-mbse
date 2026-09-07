@@ -323,15 +323,25 @@ def test_fold_margin_on_the_shipped_genome_is_the_recorded_value(vec):
     `test_mesh.py` green without this test, and fails it with.
 
     `n_curve` is the reason the config is named: it is 600 at `smoke` and `coarse`, 1200
-    at `medium`, 2400 at `fine`, and the margin moves in the 8th significant figure
-    across them (14.365501181531 / 14.365501553787 / 14.365490528472).  The tolerance
+    at `medium`, 2400 at `fine`, and the margin moves in the 5th significant figure
+    across them (9.004243676666 / 9.004189437088 / 9.004189878580).  The tolerance
     below is well inside that spread, so this pins the arithmetic without pinning the
     mesh ladder.
+
+    RE-DERIVED AT §119 FOR `b729e86`.  It read 14.365501181531 on the genome §115
+    replaced, over a 1.10e-05 ladder spread; the new value's spread is 5.42e-05, 4.9x
+    wider, and the assertion's `abs=1e-9` is far inside both.  **THE CONSTANT IS PINNED TO
+    WHATEVER SHIPS AND SO RE-ROTS AT EVERY PROMOTION** — `test_promotion.py`'s checklist
+    item 3 says a constant measured on one wheel belongs against that wheel's FILE, and
+    this one is measured against the shipped pointer instead.  Not re-aimed here: `vec` is
+    shared with the rest of this file, so pointing this test at a fixed genome is its own
+    change with its own blast radius.  Filed as a successor at §119 rather than done
+    quietly inside an artifact refresh.
     """
     margin = smq.fold_margin(vec, M.get_config("coarse"))
-    assert margin == pytest.approx(14.365501181531, abs=1e-9), (
+    assert margin == pytest.approx(9.004243676666, abs=1e-9), (
         f"the shipped genome's fold margin at `coarse` (n_curve=600) reads {margin:.12f}, "
-        f"not the recorded 14.365501181531 — the gate's predictor has changed")
+        f"not the recorded 9.004243676666 — the gate's predictor has changed")
 
 
 def test_meshable_is_feasible_geom_plus_a_positive_fold_margin():
