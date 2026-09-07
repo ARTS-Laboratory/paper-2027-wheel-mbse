@@ -65,6 +65,19 @@ def genes():
 
 
 @pytest.fixture(scope="module")
+def control_genes():
+    """The wheel §37 and §51 measured the collapse on, read by FILE rather than by pointer.
+
+    `study_tri_block.CONTROL_GENOME` carries the argument and the before/after; this
+    fixture exists so the test side takes the same read as the driver's
+    `control_*_pinned` rows and the two cannot drift apart.  Only the published-number
+    control uses it — everything else in this file is about the wheel that ships and
+    keeps `genes`.
+    """
+    return tb.load_genes(tb.CONTROL_GENOME)
+
+
+@pytest.fixture(scope="module")
 def report():
     with open(ARTIFACT) as fh:
         return json.load(fh)
@@ -357,18 +370,36 @@ def test_the_shared_sides_keep_their_NEIGHBOURS_distribution(genes):
 # 5. THE VERDICT, AND ITS CONTROL
 # ---------------------------------------------------------------------------
 
-def test_the_control_is_the_collapse_section_37_measured(genes):
+def test_the_control_is_the_collapse_section_37_measured(control_genes):
     """0.0072-0.0082 on `rim_junction`, and 0.78 at the shipped blend.
 
     Re-measured rather than read: this is the number the 77x is a multiple of, and PART 7
     is the record of what happens when a baseline is quoted from a file instead.
+
+    ON THE GENOME (§121).  Re-measured, but on §37's own wheel, because these four
+    numbers ARE §37 — the depth of the collapse and the depth the rim blend rescues it
+    to — and a re-measurement on a different wheel is a different measurement, not a
+    check of this one.  §115's promotion made `best_solution.json` a different wheel and
+    turned this red without the construction moving; §120 pinned the driver's two
+    published-number checks to the same file.  Same code, both genomes:
+
+        min scaled Jacobian    09e8188 (pinned)        b729e86 (shipped)
+        blend 0.0, faithful    0.008176 / 0.008251     0.032732 / 0.032741
+        blend 1.0, shipped     0.782735 / 0.782926     0.547847 / 0.547420
+                               (coarse / medium)
+
+    The two GENOME-GENERAL halves of the claim survive the promotion untouched: the worst
+    block is `rim_junction` at both genomes and at both configs, and the faithful rim
+    fails `MIN_SJ_TARGET` while the blended one clears it at both.  What moved is only the
+    depth — the collapse is 4.0x shallower on the wheel that ships — so the shipped wheel
+    is a weaker instance of §37's finding rather than a counterexample to it.
     """
     for name in ("coarse", "medium"):
-        faithful = tb.control(genes, name, 0.0)
+        faithful = tb.control(control_genes, name, 0.0)
         assert faithful["worst_block"] == "rim_junction"
         assert faithful["min_scaled_jacobian"] < 0.01
         assert not faithful["clears_min_sj_target"]
-        shipped = tb.control(genes, name, 1.0)
+        shipped = tb.control(control_genes, name, 1.0)
         assert abs(shipped["min_scaled_jacobian"] - 0.7827) < 0.005
         assert shipped["clears_min_sj_target"]
 
