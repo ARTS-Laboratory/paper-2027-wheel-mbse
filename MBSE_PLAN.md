@@ -471,7 +471,7 @@ constants; everything else already threads.
   for bit. A default that moved is a silent re-interpretation of every committed artifact
   and of the five study files that re-alias `SERVICE_FORCE_N` (`study_gnl.py:106`,
   `study_contact.py:94`, `study_gradient.py:120`, `study_fillet_cost.py:115`,
-  `study_svk_rescore.py:67`).
+  `study_svk_rescore.py:75`).
 - **CHECK — the cache audit, BY TEST AND NOT BY READING.** `_T1_CACHE` keys on
   `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:910`);
   `_KT_CACHE` keys without weights (`:533`); `wheel_wheel._COORD_FN_CACHE` (`:2760`) keys on the

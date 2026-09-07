@@ -19,6 +19,14 @@ answers is not rhetorical and not expensive:
     IS THE SHIPPED GENOME STILL FEASIBLE UNDER SVK — every barrier at 0.0 and
     utilisation below 1.0 — OR IS IT NOT?
 
+[CORRECTED 2026-09-06 — PLAN.md §116.  `Kt * pnorm(p=4) / ALLOWABLE` was the constraint on
+the day this file was written and stopped being it at §103: `util_j` is now the region
+p-norm over the junction's own fillet arc, worse of hub and rim, with `Kt` reporting-only.
+The question above, the key it is read off (`rep["stress_utilisation"]`) and the verdict
+rule (`< 1.0`, every barrier 0.0) are all unchanged — only the construction behind that key
+moved.  What did NOT survive the move is `_score`'s probe assertion, which is why this gate
+raised on the first genome it was asked to score afterwards.]
+
 DELIBERATELY NOT IN `make studies`, for the reason PLAN.md gives for `m8bi5`, `m9buck`
 and `hubcap`: it measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the
 code changes, it costs the better part of an hour at `medium`, and a gate nobody can
@@ -101,6 +109,14 @@ HEADLINE_NAMES = ("mass", "deflection", "phase_ripple", "smoothness", "stress_ma
 # numbers: "a genome that puts this term at 103.2 against `hub_overlap`'s 52.1 and
 # `mass`'s 55.3".  It is here as a control on the SVK CORRECTION — a thicker, duller
 # wheel whose correction §14 measured at +3.953% — not as a promotion candidate.
+#
+# [AND SINCE §103 IT DOES NOT COME BACK AT ALL — measured 2026-09-06, PLAN.md §116.  On the
+# filleted mesh the objective now builds, `mesh_coords` REFUSES this genome at `medium`:
+# the sector-fit clamp moves its fillet radii off its genes, which is `clamp_reject`
+# (§108/§110), so it has no re-score row.  It is the ONLY one of these seven that refuses —
+# the other six, `b729e86` included, differentiate fine.  Its CONTROL row is untouched:
+# `run_control` solves the unfilleted force-controlled point §14 measured, and that is the
+# half of this genome's job the fillet switch does not reach.]
 
 # `minwall 1.2` WAS THE SHIPPED GENOME BIT-FOR-BIT, AND STOPPED BEING IT AT §19.  It is
 # `350f4c7`; `best_solution.json` has been `e126cc3` since 2026-08-13.  So the two rows no
@@ -174,7 +190,30 @@ def run_control(cfg=CONTROL_CONFIG):
     for label, path in (("350f4c7 §14 control", "stage3_minwall_best_1.2.json"),
                         ("36aed36 GA/beam", "best_solution_ga_beam.json")):
         genes = load_genes(path)
-        mesh = WW.build_wheel(genes, cfg)
+        # AND PINNED TO THE CAPPED GEOMETRY, for the reason the genome above is pinned to a
+        # FILE: §14's two constants were measured on 2026-08-10, `UNCAP_DEFAULT` flipped on
+        # 2026-08-18 (§36/§38, `c416cb5`), and the default build stopped being the wheel
+        # those constants describe.  Bisected 2026-09-06 (§116) — that ONE commit moves the
+        # control and nothing since moves it again, HEAD and `c416cb5` agreeing to the bit:
+        #
+        #     350f4c7   linear 1.952966 -> 1.872257 (-4.13%)   svk 2.408898 -> 2.293873 (-4.78%)
+        #               correction 23.3456% -> 22.5191%, which FAILS this gate's 2% band at 3.54%
+        #
+        # `uncap=False` reproduces the pre-flip geometry BIT-FOR-BIT (`UNCAP_DEFAULT`'s own
+        # comment, and `studies/study_junction_agreement.py`'s `capped` rows), and with it
+        # both rows come back at 1.6e-05 and 2.6e-05 of §14 — the committed artifact's own
+        # numbers, to every digit.  Pinning RESTORES §14's measurement rather than changing
+        # it, exactly as §25's file pin did.  A control that tracked the default would be
+        # asking "does today's wheel match a wheel this repo deliberately stopped building",
+        # and re-deriving the two constants against the uncapped wheel would turn a
+        # reproduction target into "whatever we measured today", which is not a control.
+        #
+        # WHAT THIS NARROWS, SAID OUT LOUD: the control now gates the SOLVER — kernel,
+        # kinematics, service force, drop reading — and no longer sees the mesh default the
+        # re-score table below is built on.  The re-score is uncapped AND filleted; this row
+        # is neither.  §116 carries the delta between them so a reader is not left to
+        # discover it in a table that looks comparable to §14 and is not.
+        mesh = WW.build_wheel(genes, cfg, uncap=False)
         lin = fem.solve_wheel(mesh, kinematics="linear", force=SERVICE_FORCE_N)
         svk = fem.solve_wheel(mesh, kinematics="svk", force=SERVICE_FORCE_N)
         rel = float(svk["axle_drop_mm"] / lin["axle_drop_mm"] - 1.0)
@@ -209,17 +248,34 @@ def _score(genes, cfg, phases, meshes, kinematics, pool=None, orientation=None):
     breached, worst = _barriers(terms)
     p30 = rep["pnorm_by_p"][repr(30.0)]
     drop = rep["axle_drop_mean_mm"]
-    # The probe at the CONSTRAINT'S OWN exponent must reproduce the constraint's own
-    # utilisation, because both go through `_stress_aggregate` and `Kt` is the same
-    # `max(kt_hub, kt_rim)`.  Asserted rather than assumed: it is the one line that says
-    # the p=30 column below is the same construction as the verdict column, differing
-    # only in the exponent, and a mismatch would mean this file is reading the wrong key.
+    # THE PROBE MUST REPRODUCE WHAT IT PROBES — AND WHAT IT PROBES IS NO LONGER THE
+    # CONSTRAINT.  What stood here asserted `p4["stress_utilisation_kt"]` against
+    # `rep["stress_utilisation"]` at 1e-12, and it held BY CONSTRUCTION rather than by
+    # luck: the constraint was `util_j = kt * agg / ALLOWABLE` per junction and the probe
+    # key is `max(kt_hub, kt_rim) * agg / ALLOWABLE`, the same arithmetic at the same
+    # exponent.  §102/§103 moved `util_j` onto the region p-norm over the junction's own
+    # fillet arc — a quantity this Gauss-point sweep does not compute at any exponent —
+    # so the two sides became different physical quantities and the assertion could not
+    # hold for ANY genome.  `tests/test_stage3.py` dropped exactly this cross-check inside
+    # §103's own commit (`d2cf9fa`); this driver was not swept with it, and it did not
+    # raise on the day it broke for the reason nothing about this gate raises on a code
+    # change — IT IS NOT RUN BY ONE.  It next ran at §115's promotion three days later and
+    # raised on the first genome it touched.  PLAN.md §116.
+    #
+    # WHAT REPLACES IT IS THE CHECK THAT MAKES THE CHEAP PATH SOUND, and it is the pair
+    # `tests/test_stage3.py` kept: the probe reads its exponents off the field the adjoint
+    # already converged instead of re-solving, which is only sound if probing at the
+    # exponent the report itself aggregated returns the report's own numbers.  Both sides
+    # go through `_stress_aggregate` precisely so this can be asserted at 1e-12 rather
+    # than hoped for, and a mismatch still means this file is reading the wrong key.
     p4 = rep["pnorm_by_p"][repr(WO.STRESS_NOMINAL_P)]
-    if abs(p4["stress_utilisation_kt"] - rep["stress_utilisation"]) > 1e-12:
-        raise RuntimeError(
-            f"the p={WO.STRESS_NOMINAL_P} probe ({p4['stress_utilisation_kt']}) does not "
-            f"reproduce the constraint's utilisation ({rep['stress_utilisation']}); the "
-            f"probe and the constraint are no longer the same construction")
+    for key, live in (("pnorm_agg_mpa", rep["pnorm_stress_agg_mpa"]),
+                      ("stress_scale_measured", rep["stress_scale_measured"])):
+        if abs(p4[key] / live - 1.0) > 1e-12:
+            raise RuntimeError(
+                f"the p={WO.STRESS_NOMINAL_P} probe's {key} ({p4[key]}) does not "
+                f"reproduce the report's own ({live}); the probe and the report are no "
+                f"longer the same construction")
     return {
         "kinematics": kinematics,
         "loss": float(val),
@@ -230,14 +286,19 @@ def _score(genes, cfg, phases, meshes, kinematics, pool=None, orientation=None):
         "deflection_error_pct": float(100.0 * (drop / WO.TARGET_DEFLECTION_MM - 1.0)),
         "kt_hub": float(rep["kt_hub"]), "kt_rim": float(rep["kt_rim"]),
         "pnorm_stress_agg_mpa": float(rep["pnorm_stress_agg_mpa"]),
-        # THE CONSTRAINT'S OWN NUMBER, not a scaled estimate: max(hub, rim) of
-        # Kt * pnorm(p=4) / ALLOWABLE.
+        # THE CONSTRAINT'S OWN NUMBER, not a scaled estimate: max(hub, rim) of the region
+        # p-norm over that junction's fillet arc / ALLOWABLE (§102/§103).  It was
+        # `max(hub, rim)` of `Kt * pnorm(p=4) / ALLOWABLE` when this file was written; the
+        # key is the same and the construction behind it is not.
         "stress_utilisation": float(rep["stress_utilisation"]),
         "stress_utilisation_hub": float(rep["stress_utilisation_hub"]),
         "stress_utilisation_rim": float(rep["stress_utilisation_rim"]),
-        # The p=30 aggregate, reported because §14's estimate came from the peak end of
-        # the exponent range.  M8b-i.5 measured p=30 to be NOT mesh-convergent (GCI 63%),
-        # so it is a diagnostic here and never a verdict.
+        # The p=30 aggregate under the RETIRED `Kt * agg` construction — since §103 this
+        # is not the constraint at another exponent, it is a different quantity that the
+        # objective keeps reporting so `make m8bi6`'s sweep stays reproducible.  Kept
+        # because §14's estimate came from the peak end of the exponent range.  M8b-i.5
+        # measured p=30 to be NOT mesh-convergent (GCI 63%), so it was already a
+        # diagnostic here and never a verdict.
         "pnorm_p30_utilisation_kt": float(p30["stress_utilisation_kt"]),
         "pnorm_p30_agg_mpa": float(p30["pnorm_agg_mpa"]),
         # Diverges under refinement (PLAN.md §0) — printed, never compared.
@@ -273,16 +334,40 @@ def run_rescore(genomes=GENOMES, cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0)
             meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
             row = {"genome": label, "file": path,
                    "mesh_s": round(time.time() - t0, 1)}
-            for kin in ("linear", "svk"):
-                t1 = time.time()
-                row[kin] = _score(genes, cfg, phases, meshes, kin,
-                                  pool=pool, orientation=orientation)
-                row[kin]["elapsed_s"] = round(time.time() - t1, 1)
-                print(f"  {label:<16} {kin:<6} drop {row[kin]['axle_drop_mean_mm']:7.4f} "
-                      f"util {row[kin]['stress_utilisation']:6.3f} "
-                      f"loss {row[kin]['loss']:10.4f} "
-                      f"{'FEASIBLE' if row[kin]['feasible'] else 'INFEASIBLE'} "
-                      f"({row[kin]['elapsed_s']} s)", flush=True)
+            try:
+                for kin in ("linear", "svk"):
+                    t1 = time.time()
+                    row[kin] = _score(genes, cfg, phases, meshes, kin,
+                                      pool=pool, orientation=orientation)
+                    row[kin]["elapsed_s"] = round(time.time() - t1, 1)
+                    print(f"  {label:<16} {kin:<6} "
+                          f"drop {row[kin]['axle_drop_mean_mm']:7.4f} "
+                          f"util {row[kin]['stress_utilisation']:6.3f} "
+                          f"loss {row[kin]['loss']:10.4f} "
+                          f"{'FEASIBLE' if row[kin]['feasible'] else 'INFEASIBLE'} "
+                          f"({row[kin]['elapsed_s']} s)", flush=True)
+            except WW.FilletClampRefusedError as exc:
+                # THE MESH BUILDS AND REFUSES TO BE DIFFERENTIATED — §108/§110's third
+                # reject kind, `wheel_stage3._reject_kind`'s `clamp_reject`, raised out of
+                # `t2_vector`'s `mesh_coords` after the mesh itself came back fine.  It
+                # reaches this driver because §103 made every objective mesh a filleted
+                # one, and a genome whose requested fillet radii do not fit the sector its
+                # spokes leave has its radii CLAMPED — 36aed36, the GA/beam control, is
+                # such a genome at `medium` and is the only one of these seven (measured
+                # 2026-09-06, PLAN.md §116).
+                #
+                # RECORDED, NOT FATAL, and not silently skipped either.  "This genome
+                # cannot be scored on the mesh the objective now solves" is an answer to
+                # the question this file asks, in the same class as §39's split: the
+                # driver's exit code stays the CONTROL's verdict, because a characterisation
+                # finding about one genome is not a broken driver.
+                row["refused"] = {"reject_kind": "clamp_reject",
+                                  "error": type(exc).__name__, "detail": str(exc)}
+                rows.append(row)
+                print(f"  {label:<16} REFUSED  clamp_reject — the sector-fit clamp moved "
+                      f"this genome's fillet radii off its genes; not scoreable on the "
+                      f"filleted mesh", flush=True)
+                continue
             row["drop_rel_diff"] = float(row["svk"]["axle_drop_mean_mm"]
                                          / row["linear"]["axle_drop_mean_mm"] - 1.0)
             row["util_rel_diff"] = float(row["svk"]["stress_utilisation"]
@@ -329,11 +414,17 @@ def _print_rescore(rep):
     print(f"  RE-SCORE — the objective's own quantities, {rs['config']}, "
           f"{rs['n_phase']} phases, target {rs['target_deflection_mm']} mm")
     print("=" * 92)
+    # `p30 Kt*agg` is NOT `util` at another exponent — see the key's own comment in
+    # `_score`.  Headed for what it computes so the two columns cannot be read as a ladder.
     print(f"  {'genome':<16} {'kin':<6} {'drop mm':>9} {'err %':>8} {'util':>7} "
-          f"{'p30 util':>9} {'mass g':>8} {'loss':>11}  barriers")
+          f"{'p30 Kt*agg':>11} {'mass g':>8} {'loss':>11}  barriers")
     for r in rs["rows"]:
         if r.get("missing"):
             print(f"  {r['genome']:<16} MISSING {r['file']}")
+            continue
+        if r.get("refused"):
+            print(f"  {r['genome']:<16} REFUSED  {r['refused']['reject_kind']} — no "
+                  f"score on the filleted mesh")
             continue
         for kin in ("linear", "svk"):
             s = r[kin]
@@ -341,7 +432,7 @@ def _print_rescore(rep):
                  or "-")
             print(f"  {r['genome']:<16} {kin:<6} {s['axle_drop_mean_mm']:9.4f} "
                   f"{s['deflection_error_pct']:7.2f}% {s['stress_utilisation']:7.3f} "
-                  f"{s['pnorm_p30_utilisation_kt']:9.3f} {s['mass_g']:8.2f} "
+                  f"{s['pnorm_p30_utilisation_kt']:11.3f} {s['mass_g']:8.2f} "
                   f"{s['loss']:11.4f}  {b}")
         print(f"  {'':<16} {'Δsvk':<6} {100 * r['drop_rel_diff']:8.3f}% "
               f"{'':>8} {100 * r['util_rel_diff']:6.2f}%")
@@ -349,6 +440,11 @@ def _print_rescore(rep):
     print("\n  THE QUESTION THIS FILE EXISTS TO ANSWER")
     for r in rs["rows"]:
         if r.get("missing"):
+            continue
+        if r.get("refused"):
+            # NOT FEASIBLE and NOT INFEASIBLE: the question was never put to a solver.
+            print(f"    {r['genome']:<16} {'both':<6} NOT SCOREABLE  "
+                  f"{r['refused']['reject_kind']}")
             continue
         for kin in ("linear", "svk"):
             s = r[kin]

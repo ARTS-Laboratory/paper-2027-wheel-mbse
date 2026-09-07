@@ -472,7 +472,13 @@ export:
 # it is the better part of an hour at `medium`, and a gate nobody can afford to run stops
 # being run.  SVK_WORKERS is the memory cap and nothing else sizes it — see PLAN.md §1.
 SVK_CONFIG ?= medium
-SVK_WORKERS ?= 4
+# 4 UNTIL 2026-09-06, AND IT NO LONGER FITS THIS BOX — PLAN.md §115.4/§116.  On the
+# filleted mesh §103 made unconditional, four workers read 11.5–12.7 GiB RSS each beside a
+# 10.8 GiB parent and had available memory at 1.4 GiB with swap growing, fifteen minutes in
+# and still inside JIT compilation, before the solve loop was reached at all.  Serial is
+# the configuration §105/§113 measured safe for the same box on the same mesh, and it is
+# what the committed artifact was regenerated with; 2 workers has never been measured here.
+SVK_WORKERS ?= 0
 # Step 6 re-scores the descent winner at `medium` before promoting it, because Step 5
 # descended at `coarse` and the two rungs differ by ~1.1% on this wheel.  SVK_EXTRA is
 # additive (`label=path,...`) and SVK_ONLY narrows the built-in set, so the winner can be
