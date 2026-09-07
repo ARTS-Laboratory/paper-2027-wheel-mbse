@@ -404,16 +404,42 @@ def test_the_control_is_the_collapse_section_37_measured(control_genes):
         assert shipped["clears_min_sj_target"]
 
 
-def test_the_tri_block_clears_the_barrier_the_quad_could_not(genes):
+def test_the_tri_block_clears_the_barrier_the_quad_could_not(control_genes):
     """The headline, re-measured at both configs, against the floor the optimizer enforces.
 
     `MIN_SJ_TARGET` is imported from `wheel_objective` rather than written down, because
     a floor quoted from memory in a study is a floor that drifts from the one the barrier
     actually applies.
+
+    ON THE GENOME (§122).  This test carries THREE references to §37's wheel, not one, and
+    that is why it reads `control_genes` entire rather than only where the control appears:
+
+      the CELLS.  `(10, (0.124, 0.751, 0.124))` and `(18, (0.072, 0.803, 0.124))` are the
+      cells `sweep` chose, hardcoded rather than read.  §115's promotion moved the
+      `medium` one to `(20, (0.020, 0.751, 0.229))` — §120 found the same cell move under
+      `study_tri_bend` and `study_tri_rule`, and this is its third consumer, missed
+      because it hardcodes the cell instead of reading the artifact.
+      the 0.5, and the 50.0.  §37's magnitudes, and the 50.0 is what its 77x is a
+      multiple of.
+
+    Measured at both genomes, each at its OWN chosen cell, which is the only comparison
+    that means anything once the cell moves:
+
+        min scaled Jacobian     09e8188 (pinned)     b729e86 (shipped)
+        coarse, at its cell     0.626233             0.569803
+        medium, at its cell     0.581582             0.570257
+        ratio to the faithful   76.59 / 69.29        17.41 / 17.42
+
+    So `> 0.5` was never a real failure — at the shipped genome's own `medium` cell it
+    reads 0.570257 and clears. What genuinely does not survive is the 77x, and the whole
+    of that 4.4x is the denominator: §37's collapse is 4.0x shallower on the wheel that
+    ships (see `test_the_control_is_the_collapse_section_37_measured`) against a numerator
+    1.10x lower. The barrier claim itself, without §37's magnitudes, is re-measured live on
+    whatever ships by the sibling test below.
     """
     for name, B, w in (("coarse", 10, (0.124, 0.751, 0.124)),
                        ("medium", 18, (0.072, 0.803, 0.124))):
-        reg = tb.region(genes, name, blend=0.0)
+        reg = tb.region(control_genes, name, blend=0.0)
         v = tb.sector_verdict(reg, B, w)
         assert v["all_blocks_valid"]
         assert v["non_positive_gauss_elements"] == 0
@@ -421,7 +447,34 @@ def test_the_tri_block_clears_the_barrier_the_quad_could_not(genes):
         assert v["min_scaled_jacobian"] > wo.MIN_SJ_TARGET
         assert v["min_scaled_jacobian"] > 0.5
         assert v["min_scaled_jacobian"] / tb.control(
-            genes, name, 0.0)["min_scaled_jacobian"] > 50.0
+            control_genes, name, 0.0)["min_scaled_jacobian"] > 50.0
+
+
+def test_the_barrier_claim_ITSELF_still_holds_on_the_wheel_that_ships(genes, report):
+    """The headline stripped of §37's magnitudes, on whatever `best_solution.json` holds.
+
+    "Clears the barrier the quad could not" needs exactly two facts and no published
+    number: the tri-block sector is above `MIN_SJ_TARGET` and the faithful rim junction is
+    below it.  Both are genome-general — measured true at `09e8188` and at `b729e86` — so
+    this is the half of the headline that can follow the shipped pointer, and the sibling
+    above is the half that cannot.
+
+    THE CELL COMES FROM THE ARTIFACT AND THE VERDICT DOES NOT.  `sweep` chooses `(B, w)`
+    per genome and the choice moves under a promotion, so a hardcoded cell measures a wheel
+    at another wheel's cell — the defect the sibling above records.  Reading the cell from
+    the report and re-measuring the verdict live is what `test_tri_bend` does with the same
+    cell, and `test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY` holds
+    the report's own copy of that verdict to a fresh one at 1e-9.
+    """
+    for name, per in report["per_config"].items():
+        reg = tb.region(genes, name, blend=0.0)
+        v = tb.sector_verdict(reg, per["sector"]["B"], per["sector"]["w"])
+        assert v["all_blocks_valid"]
+        assert v["non_positive_gauss_elements"] == 0
+        assert v["mixed_sign_cells"] == 0
+        assert v["min_scaled_jacobian"] > wo.MIN_SJ_TARGET, name
+        # and the quad it replaces does not, or the sentence has no second half
+        assert tb.control(genes, name, 0.0)["min_scaled_jacobian"] < wo.MIN_SJ_TARGET, name
 
 
 def test_section_51s_probe_was_a_FLOOR_and_this_is_above_it(genes):
