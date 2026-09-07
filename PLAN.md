@@ -19030,3 +19030,177 @@ they were already red or are the peer session's to decide.
    direction and a band, not traced to a mechanism — plausibly the same flank-curvature
    move §124 found at `A`, but that is a guess, not a measurement, and nothing here checked
    it.
+
+## §127 — 2026-09-07. THE RECORD FOR `1a42de4`/`02e49cb`: `test_corner_singularity`'s SIX §119 FINDINGS DECIDED — THREE TURN OUT TO BE ONE FINDING (THE SHIPPED LAYER PROFILE NO LONGER CONVERGES), AND THE WIRING/KT CHAIN §126 FLAGGED IS CLOSED NOW BOTH REFRESHES ARE ON DISK
+
+Worked alongside the peer session's §126 on the same list — §119 §3's nine findings, split
+by artifact. This section is the six under `studies/study_corner_singularity.json` and
+`studies/study_corner_singularity_fillet.json`, the refresh that makes deciding them
+possible, and §126's successor 0 (the wiring/kt chain), now unblocked by both refreshes
+landing together.
+
+### 0. THE REFRESH ITSELF
+
+`make corner` (8.1 s) and `make corner-fillet` (5m32s, matching §120's own decomposition)
+against `best_solution.json`, scratch `--out` first, diffed against committed before
+touching either JSON. Both moved `genome_hash` `09e8188` -> `b729e86`.
+
+### 1. `test_all_four_junction_corners_are_re_entrant` — THE SHARED CONSTANT WAS A
+   09e8188 COINCIDENCE
+
+`P_t`'s wedge is set by the spoke geometry and does not move with a mesh option — that part
+of §45's finding is untouched. What moved is the GENOME: hub and rim happened to land
+within 0.0001 of each other at `09e8188` (lambda 0.5032/0.5031), which is why one shared
+constant covered both. `b729e86` reads hub 0.5026 (barely moved) and rim 0.5101 (moved
+past the old ±0.002 band) — independently corroborated by §125's unrelated measurement of
+the same rim corner's `at_P_t_deg` growing 18 deg by a different route. Pinned per ring now.
+`P_c`'s band (re-entrant, function of `uncap`) is untouched: 0.546/0.542, both still inside
+`[0.50, 0.56)`.
+
+### 2. `test_the_fillet_surface_peak_settles_where_the_sharp_corner_never_did` — SETTLES
+   SLOWER, NOT DIFFERENTLY
+
+`tail_fraction` moved 2.45%/1.86% -> 3.83%/3.80% (hub/rim) because the successive-difference
+ratio itself grew (0.452/0.329 -> 0.572/0.655) — still well clear of `SETTLING_RATIO`
+(0.75), so `settling` stays `True` at both rings; only the tail got fatter. Widened
+0.03 -> 0.05, comfortably above both measured values rather than re-centred on them.
+
+### 3. `test_the_filleted_blocking_solves_the_SAME_WHEEL` — §124's COLLAPSE ARRIVING A
+   THIRD TIME, PLUS TWO SMALLER RE-DERIVATIONS
+
+`continuity_sweep` unions `CONTINUITY_RADII_MM` (11 fixed radii) with the genome's own two
+gene radii — 13 candidates at `b729e86` (both gene radii are new points; at `09e8188` one
+gene radius coincided with an existing candidate, for 12). Only 6 build: every `R >= 0.8`
+now refuses at the hub with "the fillet's tangent point has passed the next sector's
+corner", which is §124's `sector_fit_span` hub-limit collapse (3.130 -> 0.743 mm) arriving
+here rather than a new mechanism — the surviving row (0.571 mm) and the first refusal
+(0.8 mm) bracket §124's number exactly. Threshold lowered `>= 8` -> `>= 6`.
+
+Two more things needed deciding once the row count was fixed. First, a small non-monotonic
+wobble at 0.4 mm (+0.23% against 0.2 mm, before resuming its decline) — checked against
+mesh quality rather than assumed, since the R < 0.05 mm floor already excludes one
+discretisation artifact of this shape: `scaled_jacobian` at 0.2/0.4/0.571 mm gives
+0.4259/0.4287/0.4113, and 0.4 mm is not the worst of the three, so this is not that
+mechanism recurring. No cause was found cheaply enough to chase further; a 0.3% slack was
+added to the monotonicity check rather than excluding the point outright. Second,
+`shipped_rel_to_unfilleted` shrank -38.04% -> -11.77%: the unfilleted axle drop grew 34.6%
+(1.5516 -> 2.0890 mm) but the shipped-fillet case grew 91.7% (0.9614 -> 1.8434 mm) — the
+control still shows an effect an order of magnitude above noise, just a smaller one.
+Threshold lowered `< -0.30` -> `< -0.10`.
+
+### 4. THREE TESTS, ONE FINDING: THE SHIPPED LAYER PROFILE NO LONGER HOLDS ITS OWN BAND
+
+`test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one`,
+`test_a_genome_robust_layer_profile_holds_the_deflection_band` and
+`test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet` looked like three
+separate reds and are one mechanism measured three ways.
+
+The main ladder's unfilleted `interp` deflection reading no longer settles at all
+(`increment_ratio` 0.473 -> 38.64 — the last increment is 38x the first rather than
+decaying), so its remaining tail is undefined. That alone would be the arc's existing
+story getting stronger (the sharp corner pollutes the global functional worse on this
+genome) — except the FILLETED reading has also stopped clearing `SETTLING_RATIO` (0.75):
+its ratio moved 0.466 -> 0.842 and its remaining tail 0.131% -> 0.630%, past the very
+`<0.3%` band this arc exists partly to earn back. That reading uses the SHIPPED layer
+profile (`FILLET_LAYER_ENTRY_SLOPE`/`END_OFFSET` = -0.45/1.6), and the `--profiles` sweep
+confirms it directly: at `b729e86` that exact pair measures `spread_pct` 0.559% and
+`patch_spread_pct` 0.562%, both past 0.3% — it held only the single-node band at `09e8188`
+and now holds neither.
+
+Two things do NOT move with it. `TWO_OBJECTIVE_ENTRY/END` (-0.8, 1.0) still holds both
+bands, unaffected — so the admissible set stays nonempty and PART 16/17's claim that a
+better-converged alternative exists survives. And PART 13/§68's REJECTED genome-robust
+pair (-0.75, 0.7) now measures `spread_pct` 0.230%, `patch_spread_pct` 0.174% — comfortably
+inside both bands, a straight reversal of the reason it was declined ("spends the shipped
+genome's layer-width margin down to ~0.06"). Whether that margin cost moved too, and
+whether genome-robust should be reconsidered, is not chased here.
+
+The patch-count test shows the same thing from a third angle, and its own docstring
+already names the check: "check whether the artifact is stale... before believing the band
+moved." It is not stale here — this section's own refresh — so this is a genuine new
+instance, not §82/83's recurring. Measured: `ok={52,53,54,55,56,60}`,
+`bad={54,56,57,58,59,60}`; patch counts 54, 56 and 60 now appear on both sides, each split
+by SPREAD rather than resolution (e.g. entry -0.7/end 0.6: `patch_spread_pct` 0.321% just
+over the band despite `spread_pct` 0.132% comfortable; entry -0.7/end 0.7: `spread_pct`
+0.519% badly over despite `patch_spread_pct` 0.136% comfortable). Patch-node-count is no
+longer the sole variable separating convergent profiles from non-convergent ones near the
+shipped entry/end.
+
+All three converted to `xfail(strict=True)` with the measurement in the reason string.
+Re-choosing the shipped layer profile against `b729e86` — PART 13/16/17's decision to
+re-open — is real optimisation work and would retire or replace all three at once; doing
+it as a side effect of any one test would be exactly the failure mode §119 declined for
+the original nine, so it is filed as a successor instead.
+
+### 5. §125's `test_the_manifests_worst_wedge_STILL_MATCHES_P_t` XPASSES, AS DESIGNED
+
+That xfail was staleness in `study_corner_singularity.json` specifically, filed with
+"forces this record to be revisited the day someone actually does that work" — today, this
+section. Both junctions now agree with the fresh STEP manifest well inside the 2 deg
+rounding band. Xfail lifted; the sibling `test_the_hub_fillet_STILL_MATCHES_what_the_
+exporter_built` (the OCC radius-feasibility gap, an unrelated and permanent finding) is
+untouched.
+
+### 6. §126's SUCCESSOR 0, CLOSED: THE WIRING/KT CHAIN, NOW BOTH INPUTS ARE FRESH
+
+`study_fillet_kt.json` and `study_fillet_wiring.json` were frozen behind both refreshes
+landing together (§126 §5's finding, messaged rather than half-done). Rebuilt via `make
+filletkt`/`make filletwiring` once the peer session's `study_junction_agreement.json`
+commit (`de0d368`) was on disk alongside this section's two corner artifacts.
+
+`study_fillet_kt` makes no live read and reproduces exactly apart from the corner census
+it copies verbatim. `study_fillet_wiring`'s `verdict` block — the one that needed judgement
+if it moved, per its own test's docstring — survives CATEGORICALLY unchanged: every
+boolean (`end_cap_justification_is_stale`, `hub_P_c_is_the_parts_corner`,
+`both_P_c_diverge_on_the_filleted_mesh`, `knee_evidence_survives`, and four more) is
+identical to the committed value. Only three numeric fields moved, all downstream of the
+junction refresh alone (§126 §5 already measured these against the junction refresh in
+isolation):
+
+```
+  hub_wedge_err_end_cap_deg     28.705  ->  6.426
+  hub_wedge_err_as_built_deg     0.0080 ->  0.0183
+  rim_wedge_err_as_built_deg    50.612  -> 32.343
+```
+
+Because no verdict moved, this is bookkeeping rather than a finding needing §119's
+one-at-a-time treatment — `test_the_wiring_verdict_survives_the_rebuild` passes by
+construction once the artifact is refreshed. `test_fillet_artifact_chain.py`'s docstring
+is updated per its own "delete this paragraph when refreshed" instruction rather than left
+describing a gap that no longer exists.
+
+### 7. WHERE THE COUNT STANDS
+
+```
+                                                          before   now
+  test_corner_singularity (§119's six)                       6      0
+  test_fillet_artifact_chain (§120 successor 1, §126 §5)      *      0   (* not separately
+                                                                          counted before)
+                                                              --     --
+                                                               6      0
+```
+
+Combined with §126: all nine of §119's original findings are decided (three re-derived
+outright in §126, six here — three of those six turning out to be one mechanism, xfail'd —
+and two more ordinary re-derivations), plus the two side findings each refresh opened
+(§126 §4's `test_fillet_block` fourth, and this section's wiring/kt chain).
+
+One pre-existing red, unrelated to either refresh, surfaced while running the full blast
+radius and confirmed via `git stash` to fail identically at HEAD:
+`tests/test_gradient.py::test_the_filleted_gate_runs_and_inverts_the_census` — a
+`FilletClampRefusedError` at hub radius 0.706 mm, the same `sector_fit_span` collapse (§124)
+arriving through a fourth, previously-unconnected path. Not chased here.
+
+**SUCCESSORS.**
+
+0. **RE-CHOOSE THE SHIPPED LAYER PROFILE AGAINST `b729e86`** (§4). `FILLET_LAYER_ENTRY_
+   SLOPE`/`END_OFFSET` no longer holds its own convergence band; `TWO_OBJECTIVE_ENTRY/END`
+   still does, and the previously-rejected `GENOME_ROBUST_ENTRY/END` now does too, reversing
+   §68's reason for declining it. This is PART 13/16/17's decision to re-open, priced across
+   the whole candidate set the way PART 16 originally was, not a test-file change.
+1. **`tests/test_gradient.py::test_the_filleted_gate_runs_and_inverts_the_census` IS RED AT
+   HEAD**, unrelated to this section's or §126's work, same `sector_fit_span` collapse
+   arriving a fourth time. Nobody has picked this up.
+2. **§4's SIBLING FINDING, THE CONTACT-PATCH SEPARATION LOSING ITS SOLE VARIABLE, IS NOT
+   RE-DERIVED INTO A SECOND VARIABLE.** Whoever takes successor 0 should check whether
+   identifying that second variable falls out of the same work for free.
