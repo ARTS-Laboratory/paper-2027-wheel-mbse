@@ -14148,7 +14148,7 @@ The filleted arm's memory is a near-fixed JIT-compile cost, not a per-element on
 the elements buys 0.7% more RSS.  The unfilleted arm stays under 12 GB throughout.
 Neither was knowable from `make gci`'s 20.6 GB whole-ladder figure (Makefile:727) or
 `study_m9`'s 3.1 GB `fine` figure — both solve `fine` outside the Stage-3 objective, and
-`study_stage3.py:2079` has flagged contact-plus-secant-plus-adjoint at `fine` as never
+`study_stage3.py:2095` has flagged contact-plus-secant-plus-adjoint at `fine` as never
 attempted in this repo for exactly this reason. It has now been attempted, at both mesh
 constructions, and it fits the 61 GB box with room to spare when run one cell at a time.
 
@@ -14778,10 +14778,10 @@ route by which the two changed places.  `Makefile:253`, corrected by this sectio
 against the CURRENT filleted measurement.  All three divisions are true of something; only
 the superlative here was attached to the wrong one.]**
 
-The `48.13 h` still quoted in `studies/study_stage3.py:1238` and `:2219` is the 2026-07-29
+The `48.13 h` still quoted in `studies/study_stage3.py:1254` and `:2235` is the 2026-07-29
 reading, two generations stale; PLAN.md's own number of record is S13's 46.46 h -> 11.77 h.
 
-**And `0.774 s` is not the same quantity as either.**  `study_stage3.py:1230` describes it
+**And `0.774 s` is not the same quantity as either.**  `study_stage3.py:1246` describes it
 as the per-phase `coord_fn` TRACE cost, paid once per process at priming; `wheel_pool.py:26`
 records its provenance — M7 measured a `coord_fn` jit-cache MISS at 0.774 s against 0.05 s
 for the entire rest of the adjoint, which is why phase slots pin to workers.  It is a
@@ -15861,7 +15861,7 @@ a descent loop, every one of those becomes a silently rejected step — a 300-st
 quietly descends nothing, throwing away every trial for a reason no event records. So the
 refusal got a name:
 `wheel_wheel.MeshRefusedError`, a **subclass of `ValueError`** so that the `except ValueError`
-already wrapped around builds in `studies/study_hub_cap.py:654` and
+already wrapped around builds in `studies/study_hub_cap.py:704` and
 `studies/study_fillet_fold.py:202`, and the `pytest.raises(ValueError, match=...)` in
 `tests/test_filleted_mesh.py:823,862`, keep working untouched.
 
@@ -17054,7 +17054,7 @@ time it ran was §115's promotion, three days later, and it raised on the first 
 touched.
 
 **AND IT IS TWO DRIVERS, NOT ONE — THE SECOND ONE FAILS QUIETLY.**
-`studies/study_kinematics_rank.py:190` calls the same `SR._score`, inside a deliberate
+`studies/study_kinematics_rank.py:235` calls the same `SR._score`, inside a deliberate
 `except Exception` that records a genome as `failed` rather than losing an hour-long run
 to one divergence. So since §103 `make kinrank` would not have raised: it would have
 returned **all 36 genomes x both kinematics as FAILED**, with the RuntimeError text in
@@ -19255,3 +19255,470 @@ not chase; regenerating it is a fourth artifact needing the same one-at-a-time a
 0. **`study_gradient.json` NEEDS THE SAME DECISION §119's THREE ARTIFACTS GOT** — refresh
    against `b729e86` and adjudicate whatever it silently retires, or name why it stays frozen.
    Nobody has picked this up.
+
+---
+
+## §129 — 2026-09-07. §116's SUCCESSOR 1, CLOSED FOR ALL FOUR REMAINING DRIVERS. `make kinrank` CANNOT PRODUCE AN ARTIFACT AT ALL — IT DIES AT ROW 32 OF 36 AND THE REPORT IS WRITTEN AFTER THE LOOP — AND `make m8bi5`'s SECOND HALF SCORES 0 OF 16. THE ANCHOR THAT LOOKED LIKE AN UNCAP CASUALTY IS A PROMOTION CASUALTY: 20.3% OUT, OF WHICH THE FLIP IS 0.3. AND A FIFTH EXPOSURE THE AUDIT WAS NOT LOOKING FOR: §43's DEGRADED-RUN GUARD IS FOURTEEN DRIVERS SHORT, AND SEVEN COMMIT-PINNED EVIDENCE BASELINES ARE NAMED BY NOTHING
+
+§116's successor 1 asked for one thing — *read each of the other four's own guards and
+pinned constants against today's `wheel_objective`/`wheel_wheel`, no solves, no descent*.
+This is that audit for `m8bi5`, `m9buck`, `hubcap` and `kinrank`, plus §5, which the audit
+ran into rather than went looking for and which is a census over every driver in `studies/`
+rather than over these four. It is a read plus mesh builds, and it stays inside that scope
+with two named exceptions: six buckling
+measurements in §1 (three constructions x `smoke`/`coarse`, 4-25 s each) which exist to
+prove a pin REPRODUCES rather than to re-derive anything, and two `score()` calls in §3
+that refuse before they solve. No descent, no artifact regenerated, and not one gate
+constant moved anywhere in the four files.
+
+**THE FACT ALL FOUR SHARE.** Every committed artifact predates both changes §116 named:
+
+```
+  driver   committed artifact                    committed at        pre-§103  pre-c416cb5
+  m8bi5    studies/study_stage3_m8bi5.json       506acfe  2026-07-29   yes         yes
+  m9buck   studies/study_m9_buckling.json        43da58f  2026-08-03   yes         yes
+  hubcap   studies/study_hub_cap.json            b5c22c9  2026-08-12   yes         yes
+  kinrank  studies/study_kinematics_rank.json    97f9629  2026-08-19   yes      see below
+```
+
+`97f9629` lands **34 seconds** before `c416cb5` — 13:02:31 against 13:03:05 on the same
+day. That is commit order, and it does NOT settle which wheel that artifact describes:
+§116.4 records the flip as *committed 2026-08-19, adopted 2026-08-18*, so the working tree
+that produced the artifact may already have been uncapped. Not measured here, and not
+guessable from the file — its rows carry `mesh_s`, losses and drops, and no node count.
+Named rather than assumed.
+
+### 1. `m9buck`: THE HEADER'S ANCHOR IS 20% OUT, AND THE UNCAP FLIP IS 0.3 OF IT
+
+The header table justifying this study's whole formulation — *assembling an SVK stiffness
+at a LINEAR-converged displacement gives a different and larger answer* — is four numbers
+said to be measured *"on `best_solution` at phase 0"*. `measure()` reads that file live
+(`_designs`, `--genome`, both through `PP.BEST_SOLUTION`).
+
+**`best_solution.json` on 2026-08-03 was `36aed36`** — `git show 43da58f:best_solution.json`
+— which is `best_solution_ga_beam.json`, still on disk under that name, and the genome
+§116.3 found cannot be scored on the filleted mesh at all. It has changed genome **five
+times** since (`350f4c7`, `e4219f3`, `e126cc3`, `09e8188`, `b729e86`), and against today's
+`b729e86` not one of the fourteen genes is within 10%: `R_hub` -63.4%, `cy4` -78.0%,
+`t0` +41.5%.
+
+Re-measured 2026-09-07, `measure()` verbatim with the two construction knobs exposed:
+
+```
+                        smoke                     coarse
+  both pins        1.378129  (-0.000%)      1.359846  (-0.000%)     genome + uncap=False
+  genome pin only  1.382440  (+0.313%)      1.362729  (+0.212%)     today's UNCAP_DEFAULT
+  make m9buck      1.098719 (-20.275%)      1.090341 (-19.819%)     what it measures today
+```
+
+**Both anchors reproduce to all seven digits under both pins.** The interesting half is the
+decomposition. The `UNCAP_DEFAULT` flip cost `study_svk_rescore.py`'s control **-4.13% /
+-4.78%** (§116.4); on THIS quantity the same flip is worth **+0.313% / +0.212%**, and
+everything else is the promotion. Both readings say the same physical thing — the caps came
+off and the wheel got stiffer, so a deflection falls and a load factor rises — but the
+magnitude does not carry across: a load factor is a ratio of two stiffnesses assembled on
+one mesh, so the stiffening largely divides out of it, and quoting §116.4's percentage here
+would have been **13x too big at `smoke` and 23x at `coarse`.** §120's pattern again: the
+genome is very nearly the whole cause, and the change everyone would have suspected is
+under half a point of it.
+
+Pinned in the header, not re-derived — §25's fix for §25's reason. Also recorded there and
+NOT measured: `measure()` still builds `fillet=None`, which is +26.5% elements at `coarse`
+away from what `wheel_objective` has solved since §103. Nothing in this driver has ever
+been measured on that mesh.
+
+### 2. `hubcap`: THE WARRANT NAMES A DEAD CONSUMER AND MISSES A HARDER LIVE ONE
+
+The module docstring's reason for existing is *"Stage 3 now believes that claim twice — a
+barrier pushes `R_hub` under it, and `Kt_hub` is priced on it"*. Half of that is true. The
+`fillet_cap` barrier is live (`wheel_objective.py:863`). **`Kt_hub` has priced nothing
+since §102/§103** — `util_j` reads the region p-norm, and `wheel_objective.py:1261` says so
+in the code.
+
+The second believer it does have is worse than the one it names: **`wheel_stage3.selection_key`**
+drops any iterate whose `cap - R_hub` is under `MIN_CAP_SLACK_MM` out of tier 0, i.e. out of
+promotability. That is the rule §115 selected `b729e86` by. Measured at the shipped genome,
+2026-09-07, `coarse`:
+
+```
+  R_hub                    0.570995 mm
+  hub_fillet_cap_mm        0.572066 mm
+  slack                    0.001071 mm        MIN_CAP_SLACK_MM = 0.001  ->  tier 0 by 7.1%
+  BISECT_REL x cap         0.005721 mm        this gate's own resolution — 5.3x the slack
+```
+
+**The gate's instrument is now five times coarser than the margin its answer decides.**
+Nothing is re-tuned for that here; a threshold is a claim about its instrument and moving
+either is a decision, not a correction.
+
+Three more, all measured the same day and all now recorded in the driver:
+
+- **The `occ_limit` section's motivating example is unreachable at the design that ships.**
+  It reads *"is FALSE at the shipped genome: `_fillet_ladder(1.5598)` ... the largest rung
+  under the 1.1057 cap is 0.9579, and OCC took 1.1269"*. `1.5598` is `36aed36`'s `R_hub`,
+  and that has not been the shipped genome since §26. At `b729e86` the ladder is 0.5710,
+  0.4853, 0.4125, 0.3507, 0.2981, 0.2534, 0.25 against a 0.5721 cap — **the largest rung
+  under the cap is the TOP one**, the requested radius itself. There is no straddle left to
+  see, so the bisection is the only instrument that can still detect the effect it was
+  built for. The example is pinned to `36aed36` rather than re-taken.
+- **The `sweep` section's span is from a cap that no longer exists.** *"the caps span 0.99
+  to 1.53 mm across the 16 Stage-2 elites"* was written 2026-07-31 (`2c2c9a9`), and
+  `HUB_CAP_ARRIVAL_SLOPE` — the term that made the cap a function of where the spoke aims
+  — arrived at `b5c22c9` on 2026-08-12. Re-measured over the same sixteen at `coarse`:
+  **0.5939 to 0.9159**, a span that does not overlap the recorded one. The argument it
+  supports is untouched: a fixed bound still fits one genome and no other.
+- **`_designs()`'s negative control is inverted.** Its three-row default is justified as
+  *shipped genome + elite14 (tightest cap on disk, 0.9898 mm) + elite13 (the ONE design
+  whose `R_hub` is already under its cap)*. Today: elite14's cap is **0.5939**, not 0.9898,
+  and is not the tightest — `best_solution`'s 0.5721 is; elite13 is **0.2959 mm OVER** its
+  cap and is now a fourth confirmation rather than a control; and `best_solution` is the
+  only design on disk under its own cap, having taken elite13's old role. The list still
+  samples three designs and no longer samples the two SIDES it was built to sample.
+
+### 3. `m8bi5`: S11's LADDER LABELLED ITSELF WITH A MESH NO OTHER NUMBER IN THE ROW CAME FROM, AND S12 NOW SCORES 0 OF 16
+
+**S11 (`run_mesh_convergence`), fixed here.** Every quantity on a ladder row comes from
+`score` -> `S3.Evaluator` -> `WO.phase_meshes`, filleted unconditionally since §103. The
+`n_elements` column came from a bare `WW.build_wheel(genes, cfg)`. Measured at the shipped
+genome:
+
+```
+  smoke     column   960    row's own mesh  1152     understated 20.0%
+  coarse    column  4704    row's own mesh  5952     understated 26.5%
+  medium    column 12288    row's own mesh 15552     understated 26.6%
+```
+
+A convergence study's independent variable, describing a different mesh from its dependent
+ones. One argument, fixed.
+
+**And its docstring states a retired constraint.** *"`util` is now `max(Kt_hub, Kt_rim) *
+pnorm(p=4) / allowable`"* has been false since §102/§103; `util` is
+`max(hub_region_pnorm, rim_region_pnorm) / allowable`. Note where the truth was kept:
+`tests/test_stage3.py`'s own rung test asserts exactly the right identity off this
+function's row, with a comment citing §102/§103. **The test-side twin has been right the
+whole time and only the driver's prose was stale** — §121's pattern, arriving from the
+other direction.
+
+**S12 (`run_multistart`) scores 0 of 16 — and this one fails LOUDLY, which is the whole
+point of how it was written.** It scores the sixteen Stage-2 elites, each in its own `try`,
+and ranks the survivors by `corner_distance`. Measured at the driver's own `coarse`
+default: **all sixteen refuse the mesh the objective solves** — fifteen `clamp_reject`,
+plus `elite11` (`fc7aeb1`), which has no filleted mesh at the rim at all. Confirmed through
+the driver's own call path rather than inferred from the classification:
+`so3.score(elites[13], "smoke")` and `so3.score(elites[0], "smoke")` both raise
+`FilletClampRefusedError` out of `mesh_coords`, which `t3`'s adjoint reaches through
+`wheel_adjoint.py:716`'s `jax.vjp` — `tiers=("t3",)` does not skip the guard, it arrives at
+it by the gradient instead of by `t2`.
+
+So `scored` is empty, `spread` is `{}`, `n_elites_scored` is 0, `ranked[:n_probe]` is
+empty and no bound is probed. **`run_multistart`'s gate is `bool(scored) and ...` — "some
+elite got scored" — so it returns `pass: False`, `rep["pass"]` is `all(...)` over the
+sections, and `make m8bi5` exits 1.** That is the one guard in this audit that catches its
+own rot, and it catches it for the right reason: what is gated is that the screen did its
+work, not that the screen liked the answer. What it cannot say is WHY, and the sixteen
+recorded `FilletClampRefusedError`s in `failed` are the answer sitting in the artifact
+nobody reruns.
+
+**The half of M8b-i.5 that exists to answer "was the verdict about the space, or the
+basin?" now measures neither.** Not repaired here: what S12 should start from once its own
+start points are inadmissible is a question about the milestone, not about this function.
+
+### 4. `kinrank`: THE RUN CANNOT REACH ITS OWN WRITE, AND THE COLLAPSE EVERYONE FEARED IS NOT THE ONE IT HAS
+
+Classified all 36 pool genomes at `coarse` — the driver's default — by building the mesh
+`WO.phase_meshes` builds and putting each through `mesh_coords`' own guard. No solves:
+
+```
+  ok (builds and differentiates)   19      every one a Stage-3 output
+  clamp_reject                     16      15 of the 16 Stage-2 elites, plus minwall 2.2
+  mesh_reject                       1      elite11 fc7aeb1, no filleted blocking at the rim
+```
+
+`36aed36` is `stage2_elites` rank 0 and the pool folds the two together, so the two lines
+above account for **every Stage-2 elite there is**: fifteen clamp-refused and `elite11`
+mesh-refused. Nineteen of the twenty-one `COMMITTED` rows survive; `36aed36` and
+`minwall 2.2` are the two that do not.
+
+**Two unhandled paths, both fixed here.**
+
+- `run_rank` caught `_score`'s refusals from the day it was written, but built the mesh
+  ABOVE the handler. `elite11` is **row 32 of 36**, and the report is written only after
+  `run_rank` RETURNS — so the run spends an hour, dies, and leaves nothing on disk. §116.1
+  read this driver and repaired the `_score` assertion it shares with `make svk`; the build
+  above it was not reached because nobody had run the pool against a filleted mesh.
+- `run_gradients` had no handler at all, and `36aed36` is **probe 4 of 4**. Unhandled, that
+  killed `main()` after `run_rank`'s report was written and before `registered_criterion`
+  ever was. A refused probe is now recorded and excluded from `r3_pass`, which becomes
+  `None` — not `False` — when nothing differentiates: *"every probe disagreed"* and *"no
+  probe could be taken"* are different findings and the artifact has to keep them apart.
+
+**THE FEARED COLLAPSE MEASURES FALSE, AND THAT IS THE USEFUL HALF.** The worry going in was
+that R2's binding subset — feasible under BOTH kinematics, `n = 10` in the committed
+artifact — would quietly collapse behind those refusals. Cross-referenced row by row:
+**all ten are in the nineteen that build.** The refusals land exactly on rows the artifact
+already excluded. What does move the binding subset is the other channel, which needs
+solves and is not measured here: §116.5 already read `minwall 1.4` at utilisation
+**1.4215 / 1.4381** with `stress` at 784 / 893 on the mesh the objective now solves, and
+that genome is one of the ten.
+
+**And the pool has lost a genome to a premise that expired.** The header says the pool is
+every distinct committed genome, de-duplicated by gene vector because *"`best_solution.json`
+and `stage3_knee_best_medium.json` are the same wheel"*. §115 made them two wheels — the
+knee file is where the outgoing `09e8188` was deliberately preserved — and `COMMITTED`
+never listed the knee file because it never had to. Census over every tracked file carrying
+a genome, 2026-09-07: **39 distinct gene vectors on disk, 36 reachable, three not** —
+`stage3_knee_best_medium.json`, `defect5_step100.json`, `fillet_optimum_b029622.json`. The
+other two aliases still hold (`margin_best_medium == margin_promote_best`, `stage2_elites#0
+== ga_beam`), checked the same day. Whether the three belong in the pool is §116's successor
+3 and is not decided here. The `09e8188` display labels in `COMMITTED` and `GRAD_PROBES`
+are corrected to `b729e86`: `best_solution.json`'s own promotion note called them cosmetic,
+and that was right at the time — since the promotion the old label names a DIFFERENT genome
+that is still on disk under another name, which is no longer a caption problem.
+
+### 5. A FIFTH EXPOSURE NONE OF THE FOUR WAS BEING AUDITED FOR, AND IT IS THREE TIMES THE SIZE THIS SECTION FIRST ESTIMATED: FOURTEEN DRIVERS HAVE NO DEGRADED-RUN GUARD, AND THIRTY-THREE TRACKED ARTIFACTS ARE NAMED BY NONE
+
+§43 gave the study drivers a refusal that stops a reduced run being filed under a committed
+artifact's name, after §41 caught `study_contact --quick` writing smoke data into
+`study_contact.json` and reading a FALSE GREEN out of it. The mechanism is
+`_gate_guard.py:44` — **`if args.out != committed: return`**. One name, one string equality,
+per driver.
+
+This section first read that as a five-driver problem — the four audited here plus
+`study_svk_rescore.py`. **Censused across every driver in `studies/` and re-derived here, it
+is fourteen.** Twenty-five drivers call the guard; fourteen call none:
+
+```
+  no guard, EXPOSED (a fidelity flag reaches a tracked artifact)          10
+    study_m9            study_m9_buckling     study_svk_rescore
+    study_kinematics_rank                     study_reds_hub_share
+    study_knee_rungs    study_hub_cap         study_corner_singularity
+    study_deflection_gci                      study_junction_agreement
+
+  no guard, NOT exposed                                                    4
+    study_boundary_waste          `--out` is its only flag
+    study_arrival_cap             no argparse at all; the path is hardcoded
+    study_reds_ratio_stability    writes NO file without an explicit `--out`;
+                                  a cell run prints to stdout (`:245`)
+    stage3_resume_genome          a recovery launcher, writes no tracked name
+```
+
+**Carry 10 exposed of 14 unguarded, not a flat 14** — the four exemptions are real and each
+has its own reason, and a reader who checks will find them.
+
+**AND NOT ALL OF IT IS A FIDELITY DIAL, WHICH IS THE PART THAT MATCHES §41 EXACTLY.**
+Enumerating every `add_argument` rather than the obvious ones, the degrading surface here
+is dominated by SECTION-DROPPING flags: `--only` and `--skip-control` on
+`study_svk_rescore`, `--skip-rank`/`--skip-grad`/`--no-elites` on `study_kinematics_rank`,
+`--designs` on `study_hub_cap`, `--sections` on `study_stage3`, `--phases` on
+`study_knee_rungs`, `--reanalyse` on `study_deflection_gci`. Those do not produce a coarse
+gate standing in for a fine one — they produce a report with whole sections ABSENT that
+still reads as the gate, because every field it did compute is present and every verdict it
+did reach is computed. `study_svk_rescore --skip-control` drops the control row — the gate
+on whether anything below it may be quoted, and the row §116.4 found FAIL — out of a file
+named `study_svk_rescore.json`. That is §41's failure mode itself, not a weaker cousin.
+
+**The cleanest reproducer is one line on a driver nobody has looked at:**
+`study_m9.py --quick --out study_m9.json`. `--quick` cuts the design set from three to one,
+`study_m9.json` is tracked, and there is nothing in the way. That is §41's invocation with
+§41's consequence, four months after §43 was supposed to have closed it.
+
+**And a guarded driver is not a covered driver.** `study_stage3.py` collects **nine**
+degraded conditions — `--quick`, `--config`, `--genome`, `--elites`, `--sections`,
+`--ladder-p`, `--ladder-configs`, `--no-plot`, `--requirements` — and all nine sit behind
+the single `args.out !=` test, guarding `study_stage3.json` alone. Three tracked artifacts
+come out of that same file uncovered: `study_stage3_m8bi5.json`, `study_stage3_pnorm.json`,
+`study_stage3_pool.json`. `make m8bi5` is permitted precisely because it writes elsewhere,
+and `--sections mesh_convergence,multistart --config smoke --out study_stage3_m8bi5.json`
+is accepted. The plot goes with it: `:2268` derives the `.jpg` from `--out`, so a degraded
+run redraws the committed figure as well.
+
+**`tests/test_study_gate_guard.py` cannot catch either gap by construction.** Its `DRIVERS`
+table covers the nine drivers in `make studies` and **never passes `--out` at all** — every
+row exercises the default name. A guard that is wrong about second names is invisible to a
+test that only ever supplies the first.
+
+**INVERTING THE CENSUS IS WHERE THE SHARP ONE IS, AND IT IS NOT A GATE.** Asked the other
+way round — for every tracked artifact, does any guard name it — **33 of the 58 tracked
+`studies/*.json` are named by none.** The twenty-five guarded names are one per guarded
+driver. The 33 split three ways:
+
+```
+   7  by-design degraded variants whose FILENAME is the disclosure —
+      study_gradient_{lin_quick,lin_check,svk,svk_quick}, study_m9_quick,
+      study_svk_knee_{coarse,medium}.  These want no guard.
+  19  live gate artifacts of the ten exposed drivers above.
+   7  COMMIT-PINNED EVIDENCE BASELINES.  These are the sharp ones:
+```
+
+```
+  study_contact_e126cc3_lin.json        study_contact_e4219f3_lin.json
+  study_contact_e126cc3_svk.json        study_contact_e4219f3_svk.json
+  study_corner_singularity_b029622.json study_fillet_terms_b029622.json
+  study_corner_singularity_fillet_b029622.json
+```
+
+(The two `study_svk_knee_*` files are `study_svk_rescore` outputs — `control`/`rescore`/
+`settings` keys, `settings.config` matching the name — and no `.py` or `Makefile` target
+writes them, so they were filed by hand through an explicit `--out`, the case the guard
+deliberately allows.)
+
+**These are commit-pinned evidence baselines, and overwriting one is strictly worse than
+overwriting a gate.** A gate can be re-run: it measures today's tree, and §116 re-ran one
+that had rotted for 25 days. A baseline pinned to `e126cc3`, `e4219f3` or `b029622` is
+evidence about a commit that is not checked out, and §119's whole finding was that these
+cannot be regenerated into a net improvement. Nothing guards them, and nothing tests that
+nothing guards them.
+
+**One non-finding, recorded so it is not re-discovered as one.** The guard compares the raw
+`--out` string, so an explicit path resolving to the same file is accepted. That is
+deliberate and argued in `_gate_guard.py`'s own docstring — the guard exists to stop a weak
+run being filed under the gate's name BY DEFAULT, not to protect the inode from someone who
+typed the path. It is the reason `study_reds_ratio_stability` is exempt above rather than a
+hole beside it.
+
+### 6. `KINRANK_WORKERS` IS STILL 8, AND ITS COMMENT POINTS AT A NUMBER THAT HAS SINCE MOVED TO 0
+
+`KINRANK_WORKERS ?= 8`, under a comment reading *"the memory cap and nothing else sizes it,
+exactly as `SVK_WORKERS`"*. §116.6 moved `SVK_WORKERS` from 4 to **0** on §115.4's
+measurement — four workers at 11.5-12.7 GiB RSS each beside a 10.8 GiB parent, killed
+before the box went the way §113's did. The sibling the comment binds itself to has halved
+twice and this one has not moved.
+
+**Deliberately NOT changed here.** §115.4's reading is `medium` and filleted; `kinrank`
+runs `coarse`, which is a different footprint, and carrying a memory measurement across a
+fidelity is exactly the error `state the scope` exists to prevent. It needs one measured
+rung at `coarse`, which is a run, not a read. Filed below.
+
+### 7. THE CITATION SWEEP IN THIS SECTION WAS ENUMERATED WITH A TOOL THAT CANNOT SEE THIS FILE
+
+`.gitignore:8` is a bare, uncommented `PLAN.md`. This file's own header block already
+records that line and calls it a no-op — *"Git ignores nothing it already tracks, so this
+file is versioned today."* **That is true of git and false of every other tool.** An
+ignore-aware searcher skips the file during directory TRAVERSAL, and the `grep` in this
+environment is a shell function wrapping `ugrep --ignore-files`. Four controls, one pattern
+(`study_tri_block\.py:228` over `*.md`):
+
+```
+  shell `grep -rl`   (ignore-aware)     PLAN.md ABSENT
+  `grep -c PLAN.md`  (explicit name)    3
+  `git grep -c`      (tracked files)    PLAN.md:3
+  `command grep -rl` (system grep)      ./PLAN.md
+```
+
+Explicit filename and `git grep` both see it. Only traversal is blind. The entry landed at
+`50d9a86` (2026-07-30), four days after the file was first tracked at `500f5b8`
+(2026-07-26): a bare uncommented line added beside a comment rewrite of the virtualenv
+block, in a commit about something else, in a file where every other entry carries a
+comment explaining itself. **39 days blind.**
+
+**This is the mechanism behind the stale `study_tri_block.py:228` citations named in NOT
+touched below, and the evidence was already written down here.** `PLAN.md:18036` records
+that sweep as `UNCAP_PLAN.md x2   study_tri_block.py:228 -> :242   MINE`. It repaired both
+`UNCAP_PLAN.md` sites and left `PLAN.md:14599` and `:16775` untouched. That was not a lapse
+of judgement: the sweep enumerated its targets with a tool for which this file does not
+exist, so the two sites were never candidates. §114's and §118's audits predate the
+finding and cannot have reached this file by traversal either — §118's own "2 mine / 3 not"
+split across eleven files was drawn from a search that could not see the twelfth.
+
+**And this section's citation sweep was enumerated the same way.** Re-run with `git grep`
+before committing: eight citations into the four edited drivers, seven here and one in
+`MBSE_PLAN.md` — exactly the set already re-pointed, so there is no false negative. **But
+that was luck, not method.** The first enumeration piped `grep -v '^\./PLAN.md'` over a
+list that had never contained a PLAN.md row, which reads like a deliberate exclusion and
+was a filter over nothing; the seven were recovered only because the next command named the
+file explicitly. The shell grep finds **1 of the 8**.
+
+Not fixed here, and it is one line. Deleting `.gitignore:8` cannot change git's behaviour —
+removing an ignore for an already-tracked file is a no-op to git — and it hands the project
+record back to every search tool in the tree. It also answers the header's own open
+question (*"Decide which was intended before relying on either"*) by measurement: the entry
+has never done anything except hide this file from search, and the header's stated worry —
+that an untracked PLAN.md *"would leave the repository silently"* — argues the same way.
+Filed as a successor rather than folded in, because the header's "the ignore line is a
+no-op" sentence needs a dated correction bracket in the same change, and editing the header
+shifts every line citation in a 19,000-line file. That is its own unit of work with its own
+sweep, run with the right tool.
+
+**WHAT MOVED.** `studies/study_m9_buckling.py` — the anchor table pinned to
+`best_solution_ga_beam.json` + `uncap=False` with today's three-row re-measurement beside
+it. `studies/study_hub_cap.py` — the "believes twice" clause corrected to name
+`selection_key` and carry the 0.001071 mm slack, the `occ_limit` example pinned to
+`36aed36` with today's ladder, the `sweep` section's elite cap span re-measured, and
+`_designs()`'s three stated reasons corrected. `studies/study_stage3.py`
+— `run_mesh_convergence`'s `n_elements` now built `fillet=True`, and the retired `util`
+formula corrected. `studies/study_kinematics_rank.py` — the mesh build moved inside
+`run_rank`'s handler, a handler added to `run_gradients` with `r3_pass` tri-state and
+`n_refused`, `_print` taught to render a refused gradient row, the pool's expired alias and
+the two `09e8188` labels corrected. `PLAN.md`/`MBSE_PLAN.md` — six line citations
+re-pointed for the shifts these edits caused (§114's lesson, applied to my own delta):
+`study_stage3.py` `:1230`->`:1246`, `:1238`->`:1254`, `:2079`->`:2095`,
+`:2109-2110`->`:2125-2126`, `:2219`->`:2235`; `study_hub_cap.py` `:654`->`:704`;
+`study_kinematics_rank.py` `:190`->`:235`. `study_stage3.py:902` and `:910` are above every
+edit and unchanged. The sweep's completeness was re-checked with `git grep` for §7's
+reason, not with the shell's.
+
+**NOT touched.** No committed study artifact is regenerated — all four are stale for
+reasons this section measured and none is refreshable into a net improvement while the
+findings above are live (§119's rule). `Makefile` — see §6. The four drivers' genome lists,
+probe sets and `--designs` defaults — every one of those is a decision about what the gate
+should measure, and §116's successor 3 already has the shape of it. `wheel_wheel.py:2827`
+formats its clamp refusal as `"...radius at huband rim"` — a missing space in
+`{'and '.join(clamped_at)}`, pre-existing, cosmetic, mentioned rather than fixed.
+`studies/study_tri_block.py:228` is cited twice in this file (`PLAN.md:14599` and
+`:16775`) and resolves to a blank line; the live target is `:242`, which is what
+`UNCAP_PLAN.md` was already repaired to and what both citations describe — stale before
+this section, mechanism in §7, left to the change that fixes the cause. `.gitignore:8` —
+§7, successor 5.
+
+**SUCCESSORS.**
+
+0. **`make kinrank` HAS NEVER RUN AGAINST A FILLETED MESH AND NOW CAN.** Both refusal paths
+   are handled and the pool classification is on record, so the run would complete: ~1 h at
+   `coarse` on the artifact's own settings, and it would answer R1/R2/R3 on the mesh the
+   objective actually solves for the first time. Its verdict is currently FAIL on all three
+   from a pre-fillet, pre-promotion pool. **Do §6 first** — 8 workers is unmeasured on this
+   construction.
+1. **`KINRANK_WORKERS` NEEDS ONE MEASURED RUNG AT `coarse`.** §6. One genome, one worker
+   count, RSS sampled — the same shape §115.4 used — and then the default follows the
+   measurement rather than its sibling's old value.
+2. **§43's GUARD IS FOURTEEN DRIVERS SHORT AND THIRTY-THREE ARTIFACTS WIDE, AND THE FIX
+   SHAPE IS A DECISION.** §5. Ten exposed drivers need a guard with their own list of what
+   degrades them; `study_stage3.py` needs its three uncovered secondary names reached; the
+   seven commit-pinned baselines need something, and they are the reason this is not a
+   mechanical repair. Two shapes, and they are not equivalent:
+
+   *(a) widen `committed` to a SET per driver.* Minimal, matches the existing design, and
+   keeps each driver's judgement local — but it is a hand-maintained list per driver, which
+   is precisely the maintenance failure that produced this gap: `make m8bi5` has written an
+   unguarded tracked name since the day the guard was added.
+
+   *(b) refuse any `--out` naming a TRACKED file while any degrading flag is set.* One
+   rule, no list to keep in sync, and it covers the secondary names AND the seven pins
+   together. **But it overturns an argued decision** — `_gate_guard.py`'s docstring
+   deliberately accepts an explicit path, on the reasoning that the guard is about defaults
+   and not about the inode. (b) makes the guard about the inode. That reversal has to be
+   argued and recorded, not slipped in as a refactor — though the seven pins are an
+   argument for it that did not exist when the docstring was written: its case rests on
+   "someone who typed the path deliberately", which describes a person re-running a gate
+   well and a person clobbering a frozen baseline they may not know is frozen badly.
+
+   Neither is costed and no code exists for either. Extend
+   `tests/test_study_gate_guard.py`'s `DRIVERS` table with an `--out` column whichever way
+   it goes, since today it cannot see the gap at all.
+3. **S12 HAS NO ADMISSIBLE START POINTS LEFT.** §3. All sixteen Stage-2 elites refuse the
+   filleted mesh, so "the same feasibility question from somewhere else" has nowhere else to
+   ask from. Either the question is retired with §103 named as what retired it, or S12 gets
+   a start set from designs that do build — §4's classification names nineteen, though every
+   one of them is a Stage-3 output rather than the independent second opinion S12 was built
+   to be. A decision about the milestone, not a repair.
+4. **`m9buck` HAS NEVER BEEN MEASURED ON THE FILLETED MESH.** §1. `measure()` builds
+   `fillet=None` and every number in the study is on that construction. Whether the
+   generalised load factor even converges on the mesh the objective solves is unmeasured,
+   and `GATE_MESH_REL` is a claim about a ladder that has only ever been walked unfilleted.
+5. **DELETE `.gitignore:8` AND BRACKET THE HEADER SENTENCE IT FALSIFIES.** §7. One line out
+   of `.gitignore`, plus a dated correction to the header block's *"the ignore line is a
+   no-op"* — it is a no-op to git and has blinded every ignore-aware search of this
+   repository for 39 days. The header edit shifts every line citation below it, so the
+   change carries its own tree-wide sweep, enumerated with `git grep`. `PLAN.md:14599` and
+   `:16775` (`study_tri_block.py:228` -> `:242`) are the two known casualties and belong in
+   the same commit as the first thing the restored visibility finds.
