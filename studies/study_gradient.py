@@ -1104,7 +1104,12 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
     np.asarray(WW.coord_fn(m_first)(genes))
     n_after_first = len(WW._COORD_FN_CACHE)
     other = genes.copy()
-    other[12] += 0.2
+    # §128: was `+= 0.2`.  §124's hub `_sector_fit_span` collapse (4.2x) shrank the room a
+    # bumped `R_hub` has to fall in before `SECTOR_FIT_CLAMP` pulls it back; at the shipped
+    # genome the limit is now ~0.743 mm, so +0.2 (-> 0.771) is refused and +0.1 (-> 0.671)
+    # is not. Only the margin changed -- this genome only ever had to be a genuinely
+    # different, unclamped second point, not this specific one.
+    other[12] += 0.1
     other[3] += 0.05
     m_other = WW.build_wheel(other, cfg, fillet=True)
     got = np.asarray(WW.coord_fn(m_other)(other))
@@ -1122,6 +1127,11 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
         "identity_max_abs_mm": float(np.abs(
             np.asarray(WW.mesh_coords(jnp.asarray(genes), mp))
             - np.asarray(mp.coords)).max()),
+        # §128: NOT bit-identical at every genome -- fe8dd88 already measured this (18
+        # builds against the old bisection's pair, 11 bit-identical, worst 3.553e-14 mm)
+        # and shipped anyway. `mesh_coords`'s numpy path lands in the same bucket at the
+        # current genome: deterministic run to run, worst 7.105e-15 mm. Gated like
+        # `identity_max_abs_mm` rather than required exact for the same reason.
         "numpy_path_max_abs_mm": float(np.abs(
             np.asarray(WW.mesh_coords(genes, mp, xp=np))
             - np.asarray(mp.coords)).max()),
@@ -1140,7 +1150,7 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
     out["per_genome"]["ok"] = bool(
         out["per_genome"]["worst_rel_rule"] < GATE_FILLET_JAC_REL
         and out["per_genome"]["identity_max_abs_mm"] < GATE_FILLET_MESH_MM
-        and out["per_genome"]["numpy_path_max_abs_mm"] == 0.0
+        and out["per_genome"]["numpy_path_max_abs_mm"] < GATE_FILLET_MESH_MM
         and n_after_first == 1 and n_after_second == 1
         and out["per_genome"]["trace_shared"]["after_a_shipped_pair_mesh"] == 2)
 
