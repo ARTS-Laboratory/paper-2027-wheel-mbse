@@ -19761,3 +19761,175 @@ with the correction here, because it is the record of what was true when the aud
    question it claims — pre-existing, left alone under the house rule, and **findable for
    the first time in 39 days**, which is the successor paying for itself on its first
    pass.
+
+---
+
+## §130 — 2026-09-07. §129's SUCCESSOR 0, CLOSED: `make kinrank` RAN ON THE FILLETED MESH AND §32's VERDICT SURVIVES — BUT NOT ONE OF ITS THREE CONDITIONS FAILS FOR THE REASON IT FAILED IN AUGUST. R2's BINDING STATISTIC CHANGED SIGN, -0.8303 TO +1.0000, AND THE WHOLE VERDICT NOW RESTS ON ONE PROBE AT THE GENOME THAT SHIPS
+
+`make kinrank` at its own `coarse`/8-phase defaults, serial, **9736.6 s (2 h 42 m), exit 0**,
+first completion in this driver's history on the mesh `wheel_objective` has solved since
+§103. Both refusal paths handled at §129 fired in production and neither cost the run:
+`elite11` at row 32 of 36 and `36aed36` at gradient probe 4 of 4, recorded and stepped over.
+
+**WRITTEN TO A NEW NAME, `studies/study_kinematics_rank_filleted.json`, AND THAT IS THE
+FINDING'S OWN REQUIREMENT.** `studies/study_kinematics_rank.json` is cited as evidence by
+§32 — a CLOSED arc — and `KINEMATICS_PLAN.md`'s Step 1 record quotes its internals: 36
+genomes, **0 failed cells**, 3549 s, exactly one alias collapse. This run structurally
+cannot reproduce any of those, so overwriting would have falsified a closed arc's record
+without replacing it and destroyed the comparison below. Both files are on disk. Which one
+is canonical is a decision, filed as successor 0 and not taken here.
+
+### 1. THE REGISTERED CRITERION, BOTH RUNS SIDE BY SIDE
+
+```
+                          COMMITTED 2026-08-19        TODAY, filleted
+  R1 argmin identity            FAIL                       PASS
+  R2 rank agreement             FAIL                       PASS
+  R3 descent direction          FAIL                       FAIL
+  LINEAR ACCEPTABLE FOR SEARCH   NO                         NO
+```
+
+**The headline is unchanged and everything under it moved.** §32's verdict — *linear
+kinematics is not an acceptable default for search* — is reproduced on the mesh the
+objective actually solves, with the shipped wheel again never at risk. Two of its three
+supporting conditions have flipped to PASS, and the one that still fails does so at a
+different genome for a different reason.
+
+```
+              n        Spearman rho          discordant pairs        argmin lin / svk
+  FULL     36 -> 19   +0.6914 -> +0.9860   153/630 -> 5/171    minwall 0.8 / margin probe
+                                                            -> b729e86 / b729e86
+  FEASIBLE 10 ->  5   -0.8303 -> +1.0000    37/45  -> 0/10    minwall 0.8 / margin probe
+   (BINDING)                                                 -> b729e86 / b729e86
+```
+
+**R2's binding statistic did not improve, it CHANGED SIGN.** In August the two kinematics
+ranked the feasible designs very nearly backwards — rho **-0.8303**, 37 of 45 pairs
+discordant, 82%. Today they agree perfectly: rho **+1.0000**, 0 of 10 discordant. A gate
+written to catch disagreement is now being cleared by a subset in which no disagreement is
+left to find.
+
+### 2. R3 STILL FAILS AND IT HAS MOVED GENOME — THE OLD FAILURE IS NOW A PASS AT +0.9989
+
+```
+  probe                    COMMITTED cos   flips   ratio        TODAY cos   flips  ratio
+  09e8188 / b729e86 SHIPPED   +0.9885     0      0.10          +0.7878     8     0.05
+  e126cc3 margin              +0.9735     2      0.05          +0.9827     0     1.21
+  350f4c7 minwall1.2          -0.5437    11    171.97          +0.9989     0     1.10
+  36aed36 ga_beam             +0.9997     0      0.97          REFUSED (clamp_reject)
+```
+
+(Row 1 is not the same genome on both sides — the probe reads `best_solution.json` live and
+§115 promoted it. That is §129's finding, and the row is the reason the label was corrected.)
+
+**In August R3 failed at `350f4c7`, catastrophically**: cosine **-0.5437**, the two models
+wanting opposite directions, 11 of 14 genes sign-flipped, and an SVK gradient 172x the
+linear one. **Today that same genome reads +0.9989 with zero sign flips and a norm ratio of
+1.10.** The failure has moved to the shipped genome, at +0.7878 — 38.0 degrees, 8 sign
+flips, and an SVK gradient **20x SHORTER** than the linear one. Both probes that are not the
+shipped genome now pass comfortably.
+
+**AND THE MECHANISM IS THE DRIVER'S OWN WARNING, ARRIVING FROM THE OTHER SIDE.** Its header
+argues R2 must bind on the feasible subset because a barrier breach is *"overwhelmingly a
+GEOMETRY fact"* that both kinematics see identically, so an infeasible-dominated pool
+*"would return rho ~ 1.0 while telling you nothing"*. **14 of the 19 scored genomes are
+infeasible and the full pool returns +0.9860** — the predicted artefact, measured. The same
+mechanism explains R3: where the loss is dominated by barriers the two models agree, and
+the only genome in the pool that is both feasible AND near an optimum is `b729e86`, at loss
+**52.57 against 887-3260** for everything else scored. It is the one design where the FEA
+term, not the geometry, decides the gradient — and it is the one design where the two
+kinematics disagree. **R3 is not failing despite the pool having improved; it is failing at
+the only point in the pool where the question can still be asked.**
+
+### 3. R2 PASSES PARTLY ON A CLAUSE THAT CANNOT FAIL AT n = 5
+
+`_rank_block` takes `k = min(5, len(rows))` and reports `top5_sets_equal` as
+`set(order_linear[:k]) == set(order_svk[:k])`. **At n = 5 both slices are the whole subset,
+so the sets are equal by construction** — for any orderings whatsoever, including exactly
+reversed ones. R2's gate is `rho >= GATE_SPEARMAN and top5_sets_equal`, so at this pool size
+its second clause is vacuous and the gate reduces to the Spearman alone. It happens not to
+matter here — the two orderings are identical element for element, not merely equal as sets
+— but the criterion registered in `KINEMATICS_PLAN.md` Step 0c was written for a pool where
+a top-5 is a proper subset, and it silently stopped being two conditions when the feasible
+subset fell below six. A threshold is a claim about its instrument.
+
+### 4. THE FEASIBLE SUBSET COLLAPSED 10 -> 5, BY THE CHANNEL §129 COULD NOT MEASURE
+
+§129 measured that the REFUSAL channel took none of the committed artifact's feasible ten,
+and predicted from §116.5's single reading of `minwall 1.4` that the FEASIBILITY channel
+would. Both halves confirmed, and the second is now measured in full:
+
+```
+  survived feasible (4)   elite9 prod, elite10 prod, minwall 1.8, minwall 2.0
+  went infeasible  (5)    minwall 0.8 (util 1.700), minwall 1.4 (1.383),
+                          margin probe (1.429), e126cc3 margin (1.238),
+                          promote2 check (1.687)
+  left the pool    (1)    09e8188 -- the alias that expired at §115 (§129 §4)
+  new              (1)    b729e86 SHIPPED, util 0.953
+```
+
+Every one of the four survivors builds and differentiates, exactly as §129 said. **The
+binding subset is now five designs, of which four are stiff-and-heavy rather than efficient**
+— `elite10 prod` and `minwall 2.0` are the pair §116.5 already characterised as 30% heavier
+and 78% under the deflection target. The one efficient feasible design in the tree is the
+one that ships.
+
+### 5. AN INDEPENDENT CROSS-CHECK NOBODY ASKED FOR, AND IT IS EXACT
+
+`b729e86` scored under SVK by this driver, against the metrics `best_solution.json` recorded
+when `wheel_stage3` selected it:
+
+```
+                        kinrank                 best_solution.json        rel
+  loss                  52.56615068117939       52.5661507207903          7.5e-10
+  axle_drop_mean_mm      1.9920260083894532      1.9920260119553344       1.8e-09
+  stress_utilisation     0.9530146334989034      0.9530146348215367       1.4e-09
+```
+
+**Three quantities to nine significant figures, through a different driver, on a genome
+selected by a descent this file has never run.** §116.5 got the same agreement to four
+digits on `stress_utilisation` at `medium` through `study_svk_rescore`. Nothing in the
+promote-export-score chain has drifted.
+
+### 6. COST, AND WHY IT IS NOT COMPARABLE TO THE COMMITTED 3549 s
+
+9736.6 s serial against 3549 s at 8 workers, and the ratio means nothing: different mesh
+(filleted, +26.5% elements at `coarse`), different pool composition (17 refusals now cost
+seconds instead of minutes), different worker count. **Run serial deliberately** —
+`KINRANK_WORKERS` still defaults to 8, which §129 §6 declined to change without a
+measurement and which §113's two-worker reading at `coarse` says would not survive. Peak RSS
+was never sampled above single-digit GiB and a watch armed at 8 GiB available never fired.
+The one-time JIT trace is visible in the first genome scored: `elite9 prod` linear
+**1254.5 s**, its own SVK score immediately after **136.4 s**, a 9.2x first-call penalty
+consistent with §90.
+
+**WHAT MOVED.** `studies/study_kinematics_rank_filleted.json` — new, the run above.
+Nothing else; no source file was touched to produce it.
+
+**NOT touched.** `studies/study_kinematics_rank.json` — §32's evidence, see the header note.
+`Makefile` — `KINRANK_WORKERS` is still 8 and this run does not license changing it, since
+serial is what was measured (§129 successor 1). `KINEMATICS_PLAN.md` — its Step 1 record
+now has a companion measurement and does not know it; successor 1 below.
+
+**SUCCESSORS.**
+
+0. **WHICH ARTIFACT IS CANONICAL IS NOW A DECISION WITH DATA BEHIND IT.** Both are on disk
+   and they answer the same registered criterion on different constructions. The filleted
+   one describes the mesh the objective solves and the genome that ships; the committed one
+   is §32's evidence and `KINEMATICS_PLAN.md` Step 1's subject. Promoting the new file is
+   not a rename — §32's summary, Step 1's quoted internals (36 genomes, 0 failed cells,
+   3549 s, one alias collapse) and the `make kinrank` recipe's own `KINRANK_OUT` default all
+   describe the old one. Same shape as §115's checklist: never a one-file change.
+1. **`KINEMATICS_PLAN.md` STEP 1 NEEDS THE COMPANION RECORD.** §1-§4. Its verdict still
+   holds and its evidence no longer describes this tree; the arc file should say so beside
+   the original rather than instead of it.
+2. **R2's SECOND CLAUSE IS VACUOUS BELOW n = 6 AND THE GATE DOES NOT SAY SO.** §3. Either
+   `top5_sets_equal` reports `None` when `k == len(rows)`, or the criterion records that it
+   degrades to a bare Spearman on small subsets. Cheap, and it is a correctness fix to a
+   registered criterion rather than a preference.
+3. **R3 NOW RESTS ON ONE PROBE, AND `GRAD_PROBES` WAS CHOSEN FOR A DIFFERENT POOL.** §2.
+   Three of four probes pass; the fourth refuses; the verdict is carried by `b729e86` alone.
+   §129 declined to re-choose the probe set as a decision rather than a correction, and this
+   run is the evidence that decision now needs taking: a criterion carried by a single point
+   should be measured at more than one feasible, near-optimal design, and §4 says there are
+   four others.
