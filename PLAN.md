@@ -17008,3 +17008,401 @@ does, rather than one global `kt_max` times one global aggregate.
 `export/wheel_step_manifest.json`, `stage3_svk_refillet_shipped_r2_best.json` (new, preserved).
 Not touched: `study_kinematics_rank.py`, `study_mbse_calibration.py` (§115.3's cosmetic label
 finding), `wheel_objective.py` (§115.5's diagnostic bug).
+
+---
+
+## §116 — 2026-09-06. `make svk` REPAIRED AND RUN, CLOSING §115's CHECKLIST ITEM 4 — AND §115.5's FILED FIX WAS A NO-OP ON A CAUSE THAT IS NOT THE CAUSE: THE PROBE CHECK HAS BEEN BROKEN BY CONSTRUCTION SINCE §103, ON EVERY GENOME, WORST ON THE FOUR §115 SAID WOULD PASS. TWO MORE ROTS UNDER IT, ONE RED SINCE 2026-08-19
+
+§115 promoted `b729e86` with item 4 of its own promotion checklist unwalked — "`make svk` —
+the feasibility gate. It is the check that runs about once a promotion, so assume it has
+rotted since you last looked" — and filed a one-line fix for the raise that stopped it.
+This is the record of executing that item. The filed fix is not made, because measuring it
+first showed it changes nothing; the gate had rotted in three independent places, not one;
+and it now runs end to end at its own defaults for the first time in **25 days** — §25's
+own note in the driver records that it had not completed since **2026-08-13**, and the
+artifact it had been carrying until today was committed on **2026-08-12** (`b5c22c9`).
+
+### 1. §115.5's FILED FIX IS A NO-OP, AND ITS CAUSE IS NOT THE CAUSE
+
+§115.5 filed: *fix `stress_utilisation_kt` (`wheel_objective.py:1342`) to use each region's
+own Kt against its own aggregate and take the max of THOSE, matching what `util` (`:1313`)
+already does.* Read literally against the code, there is no such construction to write:
+
+- **The probe sweep has exactly one aggregate**, `a_v = _stress_aggregate(probe_pn[v],
+  maxes, q)`, a WHOLE-WHEEL Gauss p-norm. So "each region's own Kt against its own
+  aggregate, max of those" is `max(kt_hub * a_v, kt_rim * a_v)`, which is
+  `max(kt_hub, kt_rim) * a_v` — **the line it replaces, character for character.**
+- Read the other way, against the two REGION aggregates, it is worse than a no-op: `util_j`
+  has had no `Kt` in it since §102/§103, so re-multiplying double-counts the thing §103
+  removed. On §115's own medium numbers that reads `max(3.124 * 0.9545, 1.815 * 0.9723)`
+  = **2.98 against the real 0.9723**, out by 3.07x.
+- **The only expression that matches `util` at `:1313` is `max(agg_hub, agg_rim) /
+  ALLOWABLE`** — which is `report["stress_utilisation"]` itself, does not vary with the
+  probe exponent, and therefore cannot live in a per-`p` dict at all.
+
+**And `b729e86` is not why the gate raised.** The assertion held BY CONSTRUCTION until
+§103: `d2cf9fa^:src/wheel_objective.py:1256` reads `util_j = kt * agg / allowable_stress_mpa`
+per junction, so `max(utils)` WAS `kt_max * agg / ALLOWABLE`, which is `stress_utilisation_kt`
+at `stress_gauss_p` — the same arithmetic at the same exponent, not two quantities that
+happened to agree. §103 moved `util_j` onto the region p-norm over the junction's own
+fillet arc, a quantity the Gauss-point probe does not compute at any exponent, and the
+1e-12 assertion became unsatisfiable for **every** genome. `tests/test_stage3.py:1217`
+dropped exactly this cross-check **inside §103's own commit**, with a paragraph saying why;
+`study_svk_rescore.py` was not swept with it. It did not raise on 2026-09-03 for the
+reason nothing about this gate raises on a code change: **it is not run by one.** The next
+time it ran was §115's promotion, three days later, and it raised on the first genome it
+touched.
+
+**AND IT IS TWO DRIVERS, NOT ONE — THE SECOND ONE FAILS QUIETLY.**
+`studies/study_kinematics_rank.py:190` calls the same `SR._score`, inside a deliberate
+`except Exception` that records a genome as `failed` rather than losing an hour-long run
+to one divergence. So since §103 `make kinrank` would not have raised: it would have
+returned **all 36 genomes x both kinematics as FAILED**, with the RuntimeError text in
+every cell, and its statistics computed over nothing. Repaired by the same one fix and not
+re-run here — it is over an hour, and its committed artifact predates §103, so it holds no
+wrong number, only pre-fillet ones.
+
+### 2. MEASURED ACROSS THE GATE'S OWN GENOME LIST, AND THE PATTERN IS THE OPPOSITE OF §115.5's
+
+The gate's seven, plus the outgoing `09e8188` for a genome §115's own claim covers, at
+`smoke`/2 phases (the construction question is config-independent; forward values only, so
+the `XLA_FLAGS` pin that matters at 3.33e-16 for gradients does not enter):
+
+```
+  genome              util (constraint)   Kt probe      gap    hub governs kt / util
+  shipped b729e86           0.70834       0.69449    + 1.99%      yes / NO
+  36aed36 GA/beam                  — refused, see §116.3 —
+  elite10                   0.46301       0.25046    +84.86%      yes / NO
+  minwall 1.2               1.37447       0.48062   +185.98%      yes / yes
+  minwall 1.4               1.08856       0.42832   +154.15%      yes / yes
+  minwall 1.6               0.81016       0.36928   +119.39%      yes / yes
+  minwall 2.0               0.46281       0.25197   +83.68%       yes / NO
+  09e8188 outgoing          1.05566       0.42126   +150.60%      yes / yes
+```
+
+**All seven scoreable genomes fail the 1e-12 assertion, by 2% to 186%.** The four where hub
+governs BOTH Kt and utilisation — the configuration §115.5 named as the reason the check
+had always passed, and three of the four are on the gate's own list — are the four that
+fail WORST, by 119%–186%. The shipped genome §115.5 blames has the **smallest gap of the
+seven.**
+
+The mechanism, per region, same run:
+
+```
+  genome              kt_hub*agg   hub region     err     kt_rim*agg   rim region     err
+  shipped b729e86        17.362      16.687     + 4.0%       10.089      17.709    -43.0%
+  elite10                 6.262      11.116     -43.7%        4.676      11.575    -59.6%
+  minwall 1.2            12.015      34.362     -65.0%        8.325      22.196    -62.5%
+  minwall 1.4            10.708      27.214     -60.7%        7.386      20.111    -63.3%
+  minwall 1.6             9.232      20.254     -54.4%        6.593      16.906    -61.0%
+  minwall 2.0             6.299      11.066     -43.1%        4.703      11.570    -59.3%
+  09e8188 outgoing       10.531      26.391     -60.1%        7.002      20.403    -65.7%
+```
+
+`Kt * nominal` under-reads the region p-norm by **43.0%–65.7% on thirteen of the fourteen
+regions**. The fourteenth is the shipped genome's hub, which over-reads by 4.0% — and
+because rim governs there, the surrogate built from HUB's Kt lands near RIM's true value.
+**The shipped genome's 2% gap is the coincidence; the disagreement is the rule.**
+
+### 3. A SECOND ROT UNDER IT: THE GA/BEAM CONTROL GENOME CANNOT BE SCORED AT ALL
+
+§115 never reached this, because `_score` raised first. At `medium`, `36aed36`
+(`best_solution_ga_beam.json`) raises `FilletClampRefusedError` out of `t2_vector`'s
+`mesh_coords`: the mesh BUILDS, and the sector-fit clamp has moved its fillet radii off its
+genes, so the differentiable path refuses — §108/§110's third reject kind, `clamp_reject`.
+Measured across all seven at `medium`: **it is the only one that refuses**; the other six
+of the gate's list — `b729e86` included — and the outgoing `09e8188` beside them all
+differentiate in 0.3–1.9 s. The driver had no handler, so with the
+assertion fixed `make svk` would still have died at row 2 of 7.
+
+Recorded rather than fatal, and rather than skipped: "this genome cannot be scored on the
+mesh the objective now solves" is an answer to the question this file asks, and the exit
+code stays the CONTROL's verdict — §39's split between a solver verdict and a
+characterisation finding. Its control row is untouched: `run_control` solves an unfilleted
+force-controlled point, the half of this genome's job the fillet switch does not reach.
+
+### 4. A THIRD ROT, AND THIS ONE HAS BEEN RED SINCE 2026-08-19 WITH NOBODY LOOKING
+
+With the raise gone, the driver got far enough to PRINT its own control table, and the
+control — §14's force-controlled reproduction, the gate on whether anything below it may be
+quoted — was **FAIL**:
+
+```
+                        committed artifact   today (before fix)     delta
+  350f4c7  linear mm         1.9529656850         1.8722572082      -4.13%
+  350f4c7  svk mm            2.4088977028         2.2938734825      -4.78%
+  correction                   23.3456%             22.5191%      err 3.54% vs §14, band 2%
+```
+
+Bisected, not guessed, and it took one step: **`c416cb5`** (committed 2026-08-19, adopted
+2026-08-18 — `UNCAP_DEFAULT` flipped, §36/§38). Its parent reproduces the committed
+artifact's control row **to all sixteen digits**; the commit itself reproduces HEAD's to all
+sixteen. Nothing in the twenty commits to `wheel_wheel`/`wheel_fem`/`wheel_fea` since (29
+to `src/` in all) has moved it again, and the node count
+is identical at 21012 — the caps came off, and the wheel got 4.13% / 4.78% stiffer at the
+service point.
+
+**§14's two constants were measured on 2026-08-10 and describe a CAPPED wheel.** The fix is
+the same one §25 made for the same class of break: pin what the control is measured on.
+§25 pinned the GENOME to a file; this pins the GEOMETRY — `build_wheel(genes, cfg,
+uncap=False)`, which `UNCAP_DEFAULT`'s own comment documents as bit-for-bit pre-flip and
+which `study_junction_agreement.py` already uses for its `capped` rows. Both rows come back
+at **0.00%** of §14 (1.6e-05 and 2.6e-05), which are the committed artifact's own figures.
+
+Re-deriving the two constants against the uncapped wheel was the alternative and is
+refused: it turns a reproduction target into "whatever we measured today", which is not a
+control. What the pin NARROWS is stated in the code and here — the control now gates the
+SOLVER (kernel, kinematics, service force, drop reading) and no longer sees the mesh
+default the re-score below is built on. The re-score is uncapped AND filleted; the control
+row is neither, and the -4.13% / -4.78% above is the distance between them.
+
+### 5. THE GATE, RUN — AND `b729e86` IS FEASIBLE UNDER SVK ON THE MESH THE OBJECTIVE SOLVES
+
+`make svk` at its own defaults (`medium`, 8 uniform phases, serial), **exit 0, 9085.4 s
+(2 h 31 m)**, control PASS at 0.00% on both rows. `studies/study_svk_rescore.json` is
+regenerated for the first time since 2026-08-12.
+
+```
+  genome            kin      drop mm    err %     util   mass g         loss   barriers
+  shipped b729e86   linear    1.8060    -9.70%   0.9559   54.12      76.4903   -
+  shipped b729e86   svk       1.9968    -0.16%   0.9723   54.12      54.1355   -
+                    Δsvk     +10.560%            +1.72%
+  36aed36 GA/beam   —— REFUSED, clamp_reject, not scoreable on the filleted mesh ——
+  elite10           linear    0.4354   -78.23%   0.7150   70.47    1589.3793   -
+  elite10           svk       0.4469   -77.65%   0.7214   70.47    1566.9504   -
+  minwall 1.2       linear    1.1659   -41.70%   1.7886   42.36    3252.6978   fillet_cap 0.0206, stress 2.68e3
+  minwall 1.2       svk       1.3433   -32.84%   1.8254   42.36    3458.4430   fillet_cap 0.0206, stress 3.04e3
+  minwall 1.4       linear    1.0075   -49.62%   1.4215   47.21    1482.7412   stress 784
+  minwall 1.4       svk       1.1076   -44.62%   1.4381   47.21    1478.3443   stress 893
+  minwall 1.6       linear    0.8004   -59.98%   1.0533   53.18     964.7066   fillet_cap 0.455, stress 11.4
+  minwall 1.6       svk       0.8521   -57.40%   1.0615   53.18     896.9765   fillet_cap 0.455, stress 18.1
+  minwall 2.0       linear    0.4362   -78.19%   0.7153   70.39    1587.7665   -
+  minwall 2.0       svk       0.4478   -77.61%   0.7217   70.39    1565.2147   -
+```
+
+**THE QUESTION THIS GATE EXISTS TO ANSWER, ANSWERED FOR `b729e86`: YES.** Every barrier
+exactly 0.0 under both kinematics, utilisation **0.9723** under SVK, and an axle drop of
+**1.9968 mm against the 2.0 mm target — 0.16% off**. §115 read 0.9723 by direct probe,
+bypassing the assertion that had just raised; the gate now returns **the same four
+digits** through its own path, which is the cross-check §115 could not make at the time.
+Checklist item 4 is walked.
+
+**Three of the five older genomes are INFEASIBLE on this mesh, including the genome §14
+itself measured.** `minwall 1.2` is `350f4c7` — the control genome, pinned by file since
+§25 — and it reads utilisation **1.7886 / 1.8254** with `stress` at 2.68e3 / 3.04e3 and
+`fillet_cap` breached as well. `minwall 1.4` (1.4215 / 1.4381) and `minwall 1.6` (1.0533 /
+1.0615) join it. This is not a new class of finding — it is §111's reading of `09e8188`,
+which is what §115's promotion answered — but it is now on record for four genomes rather
+than one, and it says plainly what §103 did: **the pre-fillet designs are not admissible
+against the objective that replaced the one they were optimised under.** The two that
+survive, `elite10` and `minwall 2.0`, do it by being 30% heavier (70.4 g against 54.1) and
+78% under the deflection target — they are stiff, not efficient.
+
+**The SVK correction is large on deflection and small on utilisation**, consistently across
+all six: drop +2.6% to +15.2%, utilisation +0.78% to +2.06%. §14's whole reason for
+existing was the deflection half, and the split is still that lopsided.
+
+**Cost and memory, for the next section to budget against.** 9085.4 s serial, of which the
+shipped genome's first score is **2752.5 s** — it carries the one-time JIT trace, and the
+second score of the same genome cost 922.3 s. The remaining ten scores ran 360.8–803.1 s
+each. Memory was SAMPLED, not tracked: 40 GiB used / 21 GiB available during the JIT phase,
+and a watch armed to fire under 6 GiB available never fired across the whole run. That is a
+floor on the headroom, not a peak — but it is nowhere near the 1.4 GiB §115.4 measured for
+the four-worker default.
+
+### 6. `SVK_WORKERS` DEFAULTS TO SERIAL
+
+`SVK_WORKERS ?= 4` was written when the objective built an unfilleted mesh. §115.4 measured
+what it does now — four workers at 11.5–12.7 GiB RSS each beside a 10.8 GiB parent, 1.4 GiB
+available and swap growing, fifteen minutes in and still inside JIT compilation, killed
+before the box went the way §113's pool did. The default is now `0`, the configuration
+§105/§113 measured safe on this box for this mesh, and it is what the committed artifact was
+regenerated with — which the file's own rule requires, since "the bare `make svk` must keep
+reproducing Step 3". **2 workers has never been measured here** and is not recommended by
+this section; §113's own two-worker reading was 1.26x–1.33x over its fitted prediction.
+
+**WHAT MOVED.** `studies/study_svk_rescore.py` — the probe assertion replaced, a
+`clamp_reject` handler added to `run_rescore` and to both print loops, the control pinned to
+`uncap=False`, four comments that named the retired construction corrected, and the `p30
+util` column re-headed `p30 Kt*agg` so it cannot be read as `util` at another exponent.
+`Makefile` — `SVK_WORKERS ?= 4` -> `0`. `studies/study_svk_rescore.json` — regenerated, the
+run above. `MBSE_PLAN.md`, `studies/study_mbse_score.py`, `tests/test_requirements.py` —
+the `study_svk_rescore.py:67` citation, which this section's own docstring edit shifted to
+`:75` (§114's lesson, applied to my own delta rather than rediscovered later).
+
+**NOT touched:** `wheel_objective.py` — §115.5 filed a fix at `:1342` and §116.1 is the
+measurement of why it is not made; the key reports a retired construction accurately, which
+is what `tests/test_stage3.py:1217` already says it survives to do.
+`studies/study_kinematics_rank.py` — repaired by the shared `_score` and not re-run here.
+
+**SUCCESSORS.**
+
+1. **THE OTHER DRIVERS OUTSIDE `make studies` HAVE THE SAME EXPOSURE AND NOBODY HAS
+   LOOKED.** `svk`, `m8bi5`, `m9buck`, `hubcap` and `kinrank` are all out of the recipe for
+   the same stated reason — they measure THE WHEEL, NOT THE COMMIT — which is exactly the
+   property that stops a code change from ever running them. Each carries internal
+   cross-checks and constants written against constructions this tree has since changed
+   twice (§103's `util_j`, §36/§38's `UNCAP_DEFAULT`). One of them turned out to hold three
+   independent rots, two of which no test in the suite could have caught, and one of which
+   had stood for eighteen days. **Cheap and ranked 1: read each of the other four's own
+   guards and pinned constants against today's `wheel_objective`/`wheel_wheel` — no solves,
+   no descent.**
+2. **`stress_utilisation_kt`'s NAME IS NOW WRONG, AND THE RENAME IS NOT FREE.** It reads as
+   "the constraint, with `Kt`" and is a retired construction. `study_stage3.py:902`, `make
+   m8bi6`'s ladder columns and this gate's own `pnorm_p30_utilisation_kt` output key all
+   spell it, and two committed artifacts carry it. Considered here and DECLINED: a schema
+   rename inside a gate repair is how the next reader gets a driver that disagrees with its
+   own artifact. Filed with its blast radius named rather than left as a good idea.
+3. **THE GATE'S GENOME LIST IS A §19-ERA ARTIFACT.** Seven files, six genomes, one of which
+   can no longer be scored at all and three of which are now infeasible, at worst-barrier
+   11.4, 893 and 3039. The genome §115 just replaced (`09e8188`) is not on it, and neither
+   are `b729e86`'s own rivals from the re-descent. Whether "the shipped genome and its
+   rivals" still describes this list is a decision, not a measurement.
+
+---
+
+## §117 — 2026-09-06. §115's PROMOTION LEFT THE SUITE 62 RED AND ITS RECORD SAYS 895 PASSED / 0 FAILED. THE THREE PROBED REDS PASS AT THE PARENT COMMIT AND FAIL AT `cb4e3dd` WITH NOTHING ELSE CHANGED — AND NINE OF THEM SAY A COMMITTED STUDY ARTIFACT NO LONGER DESCRIBES THIS TREE
+
+Found while establishing "green before commit" for §116, which is the only reason it was
+found at all: §116 changes a study driver, a `Makefile` default and three comments, so the
+suite it ran was not run for this.
+
+### 1. THE COUNT, AND IT IS NOT §116's
+
+`make test`, batched by §115.4's own discipline (the 28 light files in one process, then
+each `t3` file alone), against the working tree at `cb4e3dd` plus §116's changes:
+
+```
+  batch                 exit   failures
+  light tier (28)         1       58
+  test_gradient.py        1        1
+  test_pool.py            0        0
+  test_stage3.py          0        0
+  test_objective.py       1        3
+                                  --
+                                  62
+```
+
+**§115.4 records the same suite as `900 collected, 895 passed + 5 xfailed = 900 accounted
+for`, and the light tier specifically as `661 passed, 2 xfailed`.** Both numbers are in the
+record for the commit that is 62 red.
+
+### 2. IT IS THE PROMOTION, MEASURED THREE WAYS AND NOT INFERRED
+
+Three of the reds, one per mechanism, run in detached worktrees so the shared checkout was
+never touched:
+
+```
+  tests/test_wheel_fea.py::test_the_axle_drop_meets_the_stroke_target
+  tests/test_mesh.py::test_fold_margin_on_the_shipped_genome_is_the_recorded_value
+  tests/test_requirements.py::test_the_calibration_reproduces_the_portfolio_the_plan_states
+
+  at 96a0ac5 (HEAD~1, best_solution.json = 09e8188)   all three PASS
+  at cb4e3dd (HEAD,   best_solution.json = b729e86)   all three FAIL
+```
+
+`cb4e3dd` IS the promotion, and `HEAD~1 -> HEAD` changes `best_solution.json`, `PLAN.md`,
+the two `export/` files and one preserved artifact — nothing a test executes. The
+fixtures reach the genome directly: `tests/test_fillet_block.py:70` opens
+`best_solution.json` and hands it to every case in the file, which is 23 of the 58 on its
+own.
+
+**This is not exhaustive** — an exhaustive count at `cb4e3dd` was started and killed at
+0 GiB available (§117.4), so what stands is three probes, not 62. The attribution does not
+rest on the count: §116's changes cannot reach `test_fillet_block`, `test_gnl` or
+`test_wheel_fea`, and the two that survive both trees prove the genome is the variable.
+
+### 3. THEY ARE NOT ONE THING. FOUR KINDS, AND TWO OF THEM ARE GOOD NEWS
+
+**TWO ARE STRICT XPASSES — the promotion made the wheel BETTER and the markers must come
+off.** Both were written with a reason that names this exact day:
+
+```
+  test_wheel_fea   test_the_axle_drop_meets_the_stroke_target      §111's xfail
+     "Clears on a re-promotion (successor 6) or a section that gives the band a warrant"
+  test_objective   test_the_margin_term_prices_and_never_gates     §103's xfail
+     "strict=True, so this reopens itself the day the shipped genome (or its replacement)
+      reads back under the wall"
+```
+
+`b729e86` reads back under the wall — `stress` utilisation 0.9559 at `coarse`, and §116.5
+measures 0.9723 at `medium`/SVK — and its axle drop meets the stroke band. **The mechanism
+did exactly what it was built to do, on the commit that promoted the genome, and the record
+for that commit says `5 xfailed` with no XPASS.** The header's own rule is the one being
+tested here: *an `xfail` that starts passing is a FAILURE, not a bonus.*
+
+**ONE IS THE CLAMP AGAIN.** `test_gradient.py::test_the_filleted_gate_runs_and_inverts_the_
+census` raises `FilletClampRefusedError` — the sector-fit clamp moves the new genome's hub
+radius off its genes in that fixture's configuration, which is §116.3's mechanism arriving
+in the suite rather than in the gate.
+
+**FIFTY ASSERT WHERE A GENOME SITS**, and a new genome sits elsewhere; those are re-derived
+or re-marked one at a time, and that is ordinary promotion tail.
+
+**THE REMAINING NINE ASSERT THAT A COMMITTED ARTIFACT STILL DESCRIBES THE TREE, and they
+are the ones that mean a file on disk is now wrong:**
+
+```
+  test_corner_singularity  test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_corner_singularity  test_the_filleted_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_fillet_block        test_the_committed_report_describes_the_geometry_the_tree_BUILDS_TODAY
+  test_fillet_fold         test_the_committed_report_still_describes_this_construction
+  test_junction_fit        test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_tri_block           test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_tri_bend            test_evaluate_reproduces_the_committed_control_at_bend_zero
+  test_mesh                test_fold_margin_on_the_shipped_genome_is_the_recorded_value
+  test_requirements        test_the_calibration_reproduces_the_portfolio_the_plan_states
+```
+
+Six committed `studies/*.json` describe a wheel that no longer ships. This is §25's defect
+class exactly — "seven of the nine drivers wrote artifacts to the CWD, so every committed
+`.jpg` had been stale since 2026-08-03" — and it is the same one the header's own rule
+exists for: *a study commit carries its artifacts.* A promotion is a study commit for every
+driver that defaults to `best_solution.json`, and the checklist in
+`tests/test_promotion.py` does not say so. **Its six items name the banner, the STEP, the
+drivers with pinned constants, `make svk`, the preserved genome and `test_golden.py`. None
+of them is "re-run the suite against the new genome", and none is "regenerate the artifacts
+that read it".**
+
+### 4. AND THE LIGHT TIER'S OWN MEMORY FIGURE IS UNDERSTATED, BY THE SAME MISTAKE §113 MADE
+
+`/usr/bin/time -v` put the light tier's peak at **33.4 GiB**. That is the PARENT's maximum
+resident set and it does not count children — and the light tier spawns them: re-running it
+in a worktree drove the box to **60/61 GiB used, 0 available**, with `pytest` at 27.8 GiB
+and TWO `wheel_pool_worker.py` children at 16.0 GiB each beside it. The run was killed
+before the kernel chose for us.
+
+So the batching rule §115.4 wrote — the four `t3` files never share a process with each
+other or with the light ones — is **necessary but not sufficient**: the light tier alone can
+reach the ceiling, and nothing may run beside it either. This is the fourth pre-§103 memory
+figure to fall over in four days (§113's pool, §115's `test_objective` peak, §115's
+`SVK_WORKERS`, and now this), and the third to fall over because a number was read off one
+process while the work happened in several.
+
+### 5. WHAT THIS SECTION DOES NOT DO
+
+**It does not fix the 62.** They are the tail of §115's promotion — two markers to lift, six
+artifacts to regenerate, one clamp to judge and fifty positions to re-derive — and folding
+them into §116's gate repair would put two unrelated units in one commit against the
+header's own cadence rule. They are
+recorded here, with the mechanism proved and the artifact list named, and ranked below.
+
+**SUCCESSORS.**
+
+0. **THE TWO XPASSES ARE THE CHEAPEST AND SHOULD GO FIRST** — lifting a marker whose own
+   reason says to lift it is minutes, and until it is lifted the suite cannot go green for
+   any other reason. Neither is a judgement call: both reasons pre-committed to the
+   condition, and the condition is met.
+1. **THEN THE NINE ARTIFACT REDS, BECAUSE THEY ARE FILES ON DISK THAT LIE.** Six drivers to
+   re-run and commit with their outputs. Cost is known for one of them — `study_tri_block`
+   was 665.3 s at §114 — and unknown for the rest.
+2. **THEN THE FIFTY POSITION REDS**, each of which is a judgement between re-deriving
+   the recorded number and marking the test `xfail` with a reason, and §103's own precedent
+   (FILLET_PLAN's "SIX TESTS, TWO KINDS OF BREAKAGE") is the template: a moved POSITION gets
+   `xfail(strict=True)` with the paragraph, a changed FORMULA gets corrected. The one clamp
+   refusal belongs here and is the one that may not be a fixture question at all.
+3. **AND THE CHECKLIST GETS THE ITEM IT IS MISSING.** `tests/test_promotion.py`'s
+   `PROMOTION_CHECKLIST` should carry "the suite is re-run against the new genome, and every
+   driver that defaults to `best_solution.json` is re-run and committed with its artifact" —
+   the item whose absence this section is. It is one edit to a docstring constant and it is
+   the cheapest of the three.
