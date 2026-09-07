@@ -5,6 +5,20 @@ build, from the genome alone and with no CAD kernel in the loop.  Stage 3 now be
 claim twice — a barrier pushes `R_hub` under it, and `Kt_hub` is priced on it — so the
 claim needs a measurement behind it rather than one recorded number from one export.
 
+**THE SECOND HALF OF THAT SENTENCE NAMES A DEAD CONSUMER, AND THE LIVE ONE IT MISSES IS
+WORSE — PLAN.md §129.**  `Kt_hub` is still computed on the cap (`wheel_objective._kt_hub`)
+and still reported, but it has not priced anything since §102/§103: `util_j` reads the
+region p-norm now, and `wheel_objective.py:1261` says so in as many words.  What DOES
+believe the cap a second time is `wheel_stage3.selection_key` — an iterate whose
+`cap - R_hub` is under `MIN_CAP_SLACK_MM` (1e-3 mm) drops out of tier 0 and cannot be
+promoted.  That is not a softer consumer than the retired one, it is a harder one, and it
+is the rule §115 selected `b729e86` by.  Measured 2026-09-07 at the shipped genome:
+`R_hub` 0.570995, cap 0.572066, **slack 0.001071 mm — 7.1% over the floor that would have
+vetoed it.**  `BISECT_REL` below resolves the cap to 1% of its own value, 0.0057 mm, which
+is 5.3x that whole slack: this gate's instrument is now coarser than the margin its answer
+decides.  Nothing here is re-tuned for that — it is what the next reader has to know
+before quoting a cap to three decimals.
+
 THREE SECTIONS, AND ONLY THE FIRST TWO ARE GATES.
 
   `void`       The load-bearing one, and it involves no filleting at all.  A ring of points
@@ -16,15 +30,33 @@ THREE SECTIONS, AND ONLY THE FIRST TWO ARE GATES.
 
                NOT by reading the ladder, and that distinction is a measurement rather than
                a preference.  The obvious criterion — "the largest ladder rung below the cap
-               is what gets built" — is FALSE at the shipped genome: `_fillet_ladder(1.5598)`
+               is what gets built" — is FALSE at `36aed36`: `_fillet_ladder(1.5598)`
                is 1.5598, 1.3258, 1.1269, 0.9579, the largest rung under the 1.1057 cap is
                0.9579, and OCC took 1.1269.  The rungs straddle the cap and which side they
                land on is an accident of where `R_hub` happens to start.  So the acceptance
                threshold is measured where it actually is.
 
+               THAT EXAMPLE SAID "at the shipped genome" AND `36aed36` HAS NOT BEEN THE
+               SHIPPED GENOME SINCE §26 — PLAN.md §129.  It is `best_solution_ga_beam.json`
+               today.  The example is kept because it is what falsified the ladder
+               criterion, and it is pinned to the genome it was taken on rather than
+               re-taken: at `b729e86` there is no straddle to see.  Measured 2026-09-07 —
+               `R_hub` 0.570995 against a 0.572066 cap, `_fillet_ladder` = 0.5710, 0.4853,
+               0.4125, 0.3507, 0.2981, 0.2534, 0.25, and the largest rung under the cap is
+               the TOP one, i.e. the requested radius itself.  The rungs no longer straddle
+               anything, so this section's own motivating case is unreachable at the design
+               that ships and the bisection is the only instrument left that can see it.
+
   `sweep`      Reported, never gated: the cap against `R_hub` for every design on disk.
                This is the evidence that a fixed bound would have been right for exactly one
                genome — the caps span 0.99 to 1.53 mm across the 16 Stage-2 elites.
+
+               THOSE TWO BOUNDS ARE FROM 2026-07-31 (`2c2c9a9`) AND THE CAP HAS BEEN
+               RE-MODELLED SINCE — PLAN.md §129.  Re-measured 2026-09-07 at `coarse` over
+               the same sixteen: **0.5939 (elite14) to 0.9159 (elite13)**, a span that no
+               longer overlaps the one recorded above.  The ARGUMENT is untouched — a fixed
+               bound still fits one genome and no other — and only its numbers moved, which
+               is why they are corrected here rather than the claim retired.
 
 TWO FAMILIES, NAMED BY WEDGE ANGLE, AND EITHER CAN BE THE ONE THAT BINDS.  The hub's
 twenty-four corners split into twelve SQUARE-ON ones at a wedge of 266-270 deg, limited by
@@ -212,6 +244,24 @@ def _designs():
     the TIGHTEST cap on disk (0.9898 mm), and elite13 because it is the ONE design whose
     `R_hub` is already under its cap — a design the cap must not bind, which makes it a
     falsifiable negative control rather than a fourth confirmation.
+
+    **TWO OF THOSE THREE REASONS ARE NOW FALSE, AND THE NEGATIVE CONTROL IS INVERTED —
+    PLAN.md §129.**  Re-measured 2026-09-07 over `_designs()` in full, at `coarse`:
+
+      * elite14's cap is **0.5939 mm**, not 0.9898, and it is no longer the tightest on
+        disk — `best_solution` is, at 0.5721.  The 0.9898 was written 2026-07-31
+        (`2c2c9a9`) and `HUB_CAP_ARRIVAL_SLOPE` arrived at `b5c22c9`, 2026-08-12, so the
+        number and the function that produced it have both moved since.
+      * elite13 is **0.2959 mm OVER its cap** (`R_hub` 1.2118, cap 0.9159).  It is not the
+        design the cap must not bind any more; it is a fourth confirmation, which is
+        exactly what it was put here not to be.
+      * `best_solution` is now the ONE design under its cap, by 0.0011 mm — it has taken
+        elite13's old role and its own reason for being here at the same time.
+
+    So the default `--designs` list still samples three designs and no longer samples the
+    two SIDES it was built to sample.  Left as it stands: which genomes this gate should
+    run on is a decision about the gate, not a fact this docstring can correct, and a
+    negative control chosen today would be chosen by the answer.
     """
     out = [("best_solution", _genes(PP.BEST_SOLUTION))]
     with open(PP.STAGE2_ELITES) as fh:

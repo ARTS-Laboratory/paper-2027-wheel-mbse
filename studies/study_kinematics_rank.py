@@ -43,6 +43,19 @@ NOT ALREADY ONE.  De-duplicated by gene vector, not by filename: `best_solution.
 and `stage3_margin_promote_best.json`, and `stage2_elites.json` rank 0 IS
 `best_solution_ga_beam.json`.  A duplicate row would put a tied pair into a rank statistic
 for a reason that is not about the wheel.
+
+ONE OF THOSE THREE ALIASES IS NO LONGER TRUE, AND IT COSTS THE POOL A GENOME — PLAN.md
+§129.  §115 promoted `b729e86` into `best_solution.json` and PRESERVED the outgoing
+`09e8188` as `stage3_knee_best_medium.json` precisely so it would not be lost, which
+turned the two files from one wheel into two.  `COMMITTED` below never listed the knee
+file — it did not need to while the alias held — so the outgoing shipped genome is now
+the one design in the tree this driver cannot see.  Measured 2026-09-07 over every
+tracked file carrying a genome: 39 distinct gene vectors on disk, 36 reachable here, and
+the three that are not are `stage3_knee_best_medium.json`, `defect5_step100.json` and
+`fillet_optimum_b029622.json`.  The other two aliases still hold, checked the same day.
+Whether the missing three belong in the pool is §116's successor 3 — a decision about
+what "the shipped genome and its rivals" means, not a fact this docstring can settle —
+so the list is left as it is and the gap is named instead.
 =============================================================================
 """
 
@@ -97,15 +110,30 @@ COMMITTED = (
     ("e126cc3 margin",       "stage3_margin_best_medium.json"),
     ("promote check",        "stage3_promote_best.json"),
     ("promote2 check",       "stage3_promote2_best.json"),
-    ("09e8188 SHIPPED",      "best_solution.json"),
+    # `b729e86` since §115 (2026-09-06), not `09e8188` — the label is the only thing that
+    # was ever hardcoded here, the genes are read live, and `best_solution.json`'s own
+    # note flagged this label as outstanding at the promotion.  Corrected at PLAN.md §129
+    # rather than left cosmetic: since the promotion the label names a DIFFERENT genome
+    # that is still on disk under another name, so a stale label here and a live read
+    # below no longer disagree about a caption — they disagree about which wheel the row
+    # is.  See the pool note in the header.
+    ("b729e86 SHIPPED",      "best_solution.json"),
 )
 
 # The genomes R3 probes.  Four, not all 36: a value+grad call is the expensive one and the
 # question R3 asks is about the DESCENT, so the points that matter are the ones a descent
 # actually sat on — the shipped genome, the incumbent it replaced, the design the linear
 # ranking prefers, and the GA/beam control whose correction is 5.5x smaller.
+#
+# THAT LINEAGE IS ONE PROMOTION OUT OF DATE — PLAN.md §129.  Row 1 is `b729e86` now, and
+# "the incumbent it replaced" is `09e8188` (`stage3_knee_best_medium.json`), not
+# `e126cc3`, which is two promotions back.  The four ROWS are unchanged: they are still
+# four points a descent sat on, which is the property the list was chosen for, and
+# re-choosing them by today's lineage is a decision about the probe set rather than a
+# correction to it.  What is fixed is the sentence claiming they are something they are
+# not.
 GRAD_PROBES = (
-    ("09e8188 SHIPPED",    "best_solution.json"),
+    ("b729e86 SHIPPED",    "best_solution.json"),
     ("e126cc3 margin",     "stage3_margin_best_medium.json"),
     ("350f4c7 minwall1.2", "stage3_minwall_best_1.2.json"),
     ("36aed36 ga_beam",    "best_solution_ga_beam.json"),
@@ -174,13 +202,30 @@ def run_rank(pool, cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0):
     rows = []
     try:
         for i, (label, genes, aliases) in enumerate(pool):
-            orientation = tuple(float(o) for o in
-                                WW.flank_orientation(genes, WW.get_config(cfg)))
             t0 = time.time()
             wanted = phases[:1] if p is not None else phases
-            meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
-            row = {"genome": label, "aliases": aliases, "gene_key": _key(genes),
-                   "mesh_s": round(time.time() - t0, 1)}
+            row = {"genome": label, "aliases": aliases, "gene_key": _key(genes)}
+            # THE MESH BUILD IS INSIDE THE HANDLER, AND IT WAS NOT — PLAN.md §129.
+            # `_score`'s own refusals have been recorded since this file was written; the
+            # build above them was not, so a genome with NO filleted mesh took the whole
+            # run down and the report is written only after `run_rank` RETURNS — an hour
+            # of scoring and nothing on disk.  That is not hypothetical: measured
+            # 2026-09-07 at this driver's own `coarse` default, `elite11` (`fc7aeb1`)
+            # raises `MeshRefusedError` at the rim, and it is row 32 of 36.
+            try:
+                orientation = tuple(float(o) for o in
+                                    WW.flank_orientation(genes, WW.get_config(cfg)))
+                meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
+            except Exception as exc:                           # noqa: BLE001
+                row["mesh_s"] = round(time.time() - t0, 1)
+                why = f"{type(exc).__name__}: {exc}"
+                for kin in ("linear", "svk"):
+                    row[kin] = {"failed": why}
+                print(f"  [{i + 1}/{len(pool)}] {label:<22} MESH   FAILED {exc}",
+                      flush=True)
+                rows.append(row)
+                continue
+            row["mesh_s"] = round(time.time() - t0, 1)
             for kin in ("linear", "svk"):
                 t1 = time.time()
                 # A genome that will not solve is a finding, not a reason to lose the run:
@@ -300,18 +345,34 @@ def run_gradients(cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0, probes=GRAD_PR
                 continue
             genes = _genes_from_file(path)
             z = (genes - low) / (high - low)
-            orientation = tuple(float(o) for o in
-                                WW.flank_orientation(genes, WW.get_config(cfg)))
-            wanted = phases[:1] if p is not None else phases
-            meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
-            g = {}
-            for kin in ("linear", "svk"):
-                t0 = time.time()
-                val, grad, _ = WO.objective(z, cfg, normalized=True, phases=phases,
-                                            meshes=meshes, pool=p, orientation=orientation,
-                                            kinematics=kin)
-                g[kin] = {"loss": float(val), "grad": np.asarray(grad, dtype=float),
-                          "elapsed_s": round(time.time() - t0, 1)}
+            # SAME HANDLER AS `run_rank`, AND R3 HAD NONE AT ALL — PLAN.md §129.  Both
+            # calls below reach `mesh_coords`, which refuses a mesh the sector-fit clamp
+            # moved off its genes (`clamp_reject`, §108/§110), and `36aed36` is probe 4 of
+            # 4 and does exactly that on the filleted mesh — §116.3 at `medium`, confirmed
+            # 2026-09-07 at this driver's `coarse`.  Unhandled, that killed the run AFTER
+            # `run_rank`'s report was written and BEFORE `registered_criterion` ever was,
+            # so `make kinrank` could not produce a verdict at all.  A refused probe is
+            # recorded and excluded from `r3_pass`, never counted as a cosine of zero:
+            # R3 asks how far apart two gradients point, and "there is no gradient here"
+            # is a different answer from "they point 90 degrees apart".
+            try:
+                orientation = tuple(float(o) for o in
+                                    WW.flank_orientation(genes, WW.get_config(cfg)))
+                wanted = phases[:1] if p is not None else phases
+                meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
+                g = {}
+                for kin in ("linear", "svk"):
+                    t0 = time.time()
+                    val, grad, _ = WO.objective(z, cfg, normalized=True, phases=phases,
+                                                meshes=meshes, pool=p,
+                                                orientation=orientation, kinematics=kin)
+                    g[kin] = {"loss": float(val), "grad": np.asarray(grad, dtype=float),
+                              "elapsed_s": round(time.time() - t0, 1)}
+            except Exception as exc:                           # noqa: BLE001
+                rows.append({"genome": label, "file": path,
+                             "failed": f"{type(exc).__name__}: {exc}"})
+                print(f"  grad {label:<22} FAILED {exc}", flush=True)
+                continue
             a, b = g["linear"]["grad"], g["svk"]["grad"]
             na, nb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
             cos = float(a @ b / (na * nb)) if na > 0 and nb > 0 else float("nan")
@@ -341,9 +402,15 @@ def run_gradients(cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0, probes=GRAD_PR
     finally:
         if p is not None:
             p.close()
+    ok = [r for r in rows if "failed" not in r]
     return {"config": cfg, "n_phase": n_phase, "workers": workers,
             "gate_cosine": GATE_GRAD_COSINE, "rows": rows,
-            "r3_pass": bool(rows) and all(r["r3_pass"] for r in rows)}
+            "n_probes": len(rows), "n_refused": len(rows) - len(ok),
+            # `None`, not `False`, when nothing differentiated: `registered_criterion`
+            # already reads a `None` as not-passing, and the two states have to stay
+            # distinguishable in the artifact — "every probe disagreed" and "no probe
+            # could be taken" are different findings about the same gate.
+            "r3_pass": (bool(all(r["r3_pass"] for r in ok)) if ok else None)}
 
 
 # ---------------------------------------------------------------------------
@@ -393,6 +460,9 @@ def _print(rep):
         print(f"  {'genome':<22} {'cos':>9} {'angle':>8} {'|g| lin':>11} {'|g| svk':>11} "
               f"{'ratio':>7}  sign flips")
         for r in gr["rows"]:
+            if "failed" in r:                       # the refusal handler's row, §129
+                print(f"  {r['genome']:<22} FAILED  {r['failed']}")
+                continue
             print(f"  {r['genome']:<22} {r['cosine']:+9.4f} {r['angle_deg']:7.1f}d "
                   f"{r['grad_norm_linear']:11.3f} {r['grad_norm_svk']:11.3f} "
                   f"{r['grad_norm_ratio']:7.2f}  "

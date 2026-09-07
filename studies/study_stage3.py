@@ -926,11 +926,21 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
     quantity that has no mesh-independent value" are different conclusions with different
     fixes.  So all three are extrapolated and reported side by side.
 
-    THAT IS WHAT HAPPENED, and the constraint moved as a result: `util` is now
+    THAT IS WHAT HAPPENED, and the constraint moved as a result: `util` was then
     `max(Kt_hub, Kt_rim) * pnorm(p=4) / allowable`, with the peak modelled analytically
     instead of measured off the singularity.  The `max` and `c` series stay in the report
     anyway — they are the evidence, and the `util` series only means something next to
     them.
+
+    THAT FORMULA IS A RETIRED CONSTRUCTION AND HAS BEEN SINCE §102/§103 — PLAN.md §129.
+    `util` is `max(hub_region_pnorm, rim_region_pnorm) / allowable` now: no `Kt`, and a
+    p-norm over each junction's own fillet arc rather than one whole-wheel aggregate
+    rescaled.  `tests/test_stage3.py`'s rung test asserts exactly that identity off this
+    function's own row, so the test-side twin has been right about it the whole time and
+    only the prose here was stale.  `kt_hub`/`kt_rim` stay in the row for the geometric
+    `hub_fillet_cap_mm` story (`wheel_objective.py:1261`) and price nothing.  §116.1
+    measured what the retired surrogate is worth if anyone reinstates it: `Kt * nominal`
+    under-reads the region p-norm by 43.0%-65.7% on thirteen of fourteen regions.
 
     The stencil is FIXED and uniform across every row, so the only thing varying down a
     ladder is the mesh.  A row that fails to mesh or solve is recorded and the ladder
@@ -958,7 +968,13 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
                 loss, rep, wall = score(genes, cfg, phases=phases, probe_p=probe_p)
                 rows.append({
                     "config": cfg,
-                    "n_elements": int(WW.build_wheel(genes, cfg).n_elements),
+                    # `fillet=True` BECAUSE THAT IS THE MESH THE ROW WAS MEASURED ON.
+                    # `score` above goes through `S3.Evaluator` -> `WO.phase_meshes`,
+                    # filleted unconditionally since §103, and this column was still
+                    # reporting a bare `build_wheel` — the ladder's own x-axis describing
+                    # a mesh no other number in the row came from.  Understated 20.0% at
+                    # `smoke`, 26.5% at `coarse`, 26.6% at `medium` (PLAN.md §129).
+                    "n_elements": int(WW.build_wheel(genes, cfg, fillet=True).n_elements),
                     "loss": loss,
                     "max_stress_mpa": float(rep["max_stress_mpa"]),
                     "pnorm_stress_agg_mpa": float(rep["pnorm_stress_agg_mpa"]),
