@@ -17406,3 +17406,218 @@ recorded here, with the mechanism proved and the artifact list named, and ranked
    driver that defaults to `best_solution.json` is re-run and committed with its artifact" —
    the item whose absence this section is. It is one edit to a docstring constant and it is
    the cheapest of the three.
+
+---
+
+## §118 — 2026-09-06. §117's SUCCESSORS 0 AND 3, CLOSED: BOTH STRICT XPASSES LIFTED ON THE PROMOTION THEIR OWN REASONS PRE-COMMITTED TO — AND ONLY ONE OF THEM IS GOOD NEWS. THE BARRIER ONE CLEARS BY 29.2% AT `smoke`/2 AND BY 2.77% AT THE FIDELITY THE OBJECTIVE ACTUALLY SOLVES
+
+§117 ranked these first on the grounds that lifting a marker whose own reason says to lift
+it is minutes and that nothing else can go green until they are off. Both halves held. What
+did not hold is the framing that they are the same kind of event: one marker recorded a
+DEFECT that the promotion repaired, the other recorded a MISSING WARRANT that the promotion
+did not supply and could not.
+
+### 1. MEASURED BEFORE LIFTING, NOT INFERRED FROM §117's BATCH
+
+§117's count came from a batched suite run, which tells you a test is an XPASS and nothing
+about the quantity underneath it. Both were re-run alone, at each test's own fidelity, and
+the quantity read directly as well:
+
+```
+  test_wheel_fea::test_the_axle_drop_meets_the_stroke_target      `coarse`, fillet=True
+     xfail marker         XPASS(strict)  ->  reported FAILED, 1.61 s
+     axle_drop_mm         1.843091 mm    band 1.4 < x < 2.0
+
+  test_objective::test_the_margin_term_prices_and_never_gates     `smoke`, 2 phases
+     xfail marker         XPASS(strict)  ->  reported FAILED, 416.67 s
+     stress barrier       0.0            selection_key tier 0
+     util hub             0.667478
+     util rim             0.708341
+```
+
+### 2. THE MARGIN TERM: THE PROMOTION REPAIRED THE THING THE MARKER RECORDED
+
+§103 marked it because the region-p-norm term read the outgoing genome's hub at **1.0557**,
+over the hard `stress` wall at 1.0 — so the barrier stopped reading 0.0 and `selection_key`
+stopped returning tier 0 on the shipped wheel. `b729e86` reads **0.667478** at the hub on
+the same fixture, 36.8% lower, and the barrier and the tier are both back. The marker's
+reason pre-committed to exactly this: *"strict=True, so this reopens itself the day the
+shipped genome (or its replacement) reads back under the wall."* It is off, and nothing
+about the test changed.
+
+**AND THE RIM GOVERNS THERE, 0.708341 AGAINST THE HUB'S 0.667478** — which is the shape
+§115.5 guessed at and §116 measured as explaining nothing about the assertion it was filed
+against. It is recorded here because it is now true on the shipped genome at this fixture,
+not because it rescues that diagnosis.
+
+### 3. THE AXLE-DROP BAND: THE MARKER CAME OFF ON ITS FIRST CONDITION AND THE SECOND IS STILL OPEN
+
+§111's reason named two: *"Clears on a re-promotion (successor 6) or a section that gives
+the band a warrant, not on an edit to this number."* §115 is the re-promotion — §111's own
+successor 6, "re-run Stage 3 and re-promote" — and the quantity moved from **0.961370 mm**
+(below the lower edge) to **1.843091 mm** (inside the band, 73.8% of the way across it from
+the lower edge). The marker is off because its condition is met.
+
+**THAT IS NOT A WARRANT AND THE SECOND CONDITION HAS NOT BEEN MET.** `1.4` was born in
+`f0a9e83` ("fillet tweaks", 2026-07-25, the 4th commit of 157, before PLAN.md existed) and
+has never been justified anywhere in this tree. §111 declined to move it for exactly that
+reason and the reason survives the promotion untouched: the edge is now satisfied rather
+than defended. A green test here says something about `b729e86`, not about the band.
+
+### 4. AND THE PART §117 COULD NOT SEE FROM A PASS/FAIL COUNT: BOTH CLEAR AT A FIDELITY THE OBJECTIVE DOES NOT SOLVE
+
+Each test reads at the fidelity it was built for — `coarse`/linear for one, `smoke`/2 phases
+for the other — and neither is `medium`/8/SVK, which is what `study_svk_rescore.json` scores
+and what the descent runs. **For the barrier this is a like-for-like comparison and it is
+worth having.** `stress_utilisation` is the same construction in both places (the region
+p-norm max out of the same report dict); only the rung, the phase count and the kinematics
+differ:
+
+```
+  stress_utilisation, b729e86      value     clearance under the 1.0 wall
+    smoke,  2 phases, linear      0.708341   0.291659
+    medium, 8 phases, linear      0.955948   0.044052
+    medium, 8 phases, SVK         0.972345   0.027655      <- what ships, 10.5x narrower
+```
+
+So the test that just went green reads 29.2% of clearance on a wheel that has **2.77%** at
+the setting the objective solves. It is a real pass and it is not a comfortable one, and
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be`'s own docstring already
+records this exact failure mode for this exact quantity — DEFECT8_PLAN step 1b, `util` 0.560
+at `smoke`/2 against 0.780 at `medium`/8, "a policy check turned into a fidelity check."
+
+**AND THE GOVERNING REGION IS NOT A PROPERTY OF THE GENOME — IT MOVES WITH THE SETTINGS.**
+§115 already recorded that the rim governs `b729e86` at `medium`/SVK (0.9723 over 0.9545)
+and §116 leaned on it, so that half is not new here. What is new is the OTHER TWO ROWS,
+which say the fact does not travel:
+
+```
+  smoke,  2 phases, linear   hub 0.667478   rim 0.708341   RIM governs
+  medium, 8 phases, linear   hub 0.955948   rim 0.927829   HUB governs
+  medium, 8 phases, SVK      hub 0.954467   rim 0.972345   RIM governs   <- §115's row
+```
+
+Between the two `medium` rows only the kinematics changes: the hub barely moves (-0.15%)
+while the rim moves +4.8%, so it is the rim that SVK loads, and the crossing is not a
+near-tie artefact of a shared rung. But kinematics is not the only axis that moves it either
+— `smoke`/2 is linear and the rim governs there too. **So on one genome, three settings, the
+governing junction is rim, hub, rim.** §115 framed its crossing as a fact about `b729e86`
+("the first genome scored by this gate where that stops being true"); on this evidence it is
+at least as much a fact about where you read. That does not touch §115's conclusion — its
+subject was whether the larger `Kt` sits on the larger raw stress, and it read the gate's own
+row — but any sentence of the form "the hub is the governing junction" now needs its
+settings attached.
+
+**FOR THE AXLE DROP THERE IS NO SUCH COMPARISON AND I AM NOT MAKING ONE.** The gate reports
+`axle_drop_mean_mm`, the mean over eight contact phases; this test reads `axle_drop_mm`, a
+single phase-0 solve. They are DIFFERENT QUANTITIES, not one quantity at two rungs — the
+test's own docstring puts them 22.5% apart and names `axle_drop_mean_mm` as the tree's
+actual `SHOULD-DEFLECTION` conformance gate. What can be said without a run: the `2.0` this
+band borrowed for its upper edge is `TARGET_DEFLECTION_MM`, and the quantity that actually
+answers to that target reads **1.996759 mm at `medium`/SVK, 0.16% under it** (and
+`axle_drop_max_mm` 2.27338 is over it). The phase-0 quantity at `medium` was not measured
+here.
+
+### 5. THE CHECKLIST GETS ITEM 7 — THE ONE WHOSE ABSENCE §117 IS
+
+`tests/test_promotion.py` now carries a seventh item: **re-run the suite AFTER writing the
+new genome, and re-run every driver that defaults to `best_solution.json`, committing its
+artifact.** Items 1-6 name the banner, the STEP, the pinned-constant drivers, `make svk`,
+the preserved genome and `test_golden.py` — §115 walked all six and left the suite 62 red.
+The module docstring's table of instances goes from two to three (§16, §19, §115), and the
+new row is the one this file learned about ITSELF rather than about a driver.
+
+It is a docstring constant and it cannot fail; it is delivered at the moment someone is
+promoting, which the file's own preamble argues is the whole value of it ("the point is not
+the assertion, it is the checklist arriving at the moment someone is promoting rather than
+months later").
+
+### 6. WHAT IS STILL RED — 62 GOES TO 60, AND NEITHER SURVIVOR IN THE FILE I TOUCHED IS A NUMBER TO MOVE
+
+Three files were re-run, which is every file this change touches:
+
+```
+  tests/test_promotion.py + tests/test_wheel_fea.py     26 tests, 1 failed
+  tests/test_objective.py (alone, tmux, 36:54)         126 tests, 2 failed, 2 xfailed
+```
+
+`test_objective.py` was **3 red at §117 and is 2 now** — the lift removed exactly one, which
+is the arithmetic the marker predicted. `test_wheel_fea.py` is down to a single red. So the
+suite total goes **62 -> 60**, and that is arithmetic on two measured endpoints rather than a
+re-run: this change touches three files, all three were re-run after it, and the axle-drop
+XPASS was separately measured as a failure before and a pass after. **The other 60 were not
+re-measured and §117's batch remains the only count of them.**
+
+The three survivors, and two of them are more than positions:
+
+**`test_R_rim_is_still_effectively_inert_and_that_is_recorded` IS A FINDING WITH ITS
+CONSEQUENCE ALREADY FILED.** `d(rim margin)/dR_rim` reads **-7.010e-04** against a `< 1e-4`
+inertness bound. Its docstring pre-committed the reading: *"If this ever starts failing, the
+rim junction geometry has changed and M8b's gene census and the study's verdict both need
+revisiting."* So the rim junction geometry changed at the promotion, and two documented
+verdicts are now owed a re-check. **THIS IS A DIFFERENT `rim` FROM §4's.** §4 is about the
+stress region p-norm; this is `fillet_feasibility`'s GEOMETRIC margin and the near-tangential
+rim arrival that made it stationary. Both moved at the same promotion and it is tempting to
+call that one mechanism — that link is NOT measured here and is not claimed.
+
+**`test_the_thickness_branch_of_the_cap_binds_on_a_thin_root` CARRIES A REAL QUESTION.** It
+probes at `t0 = 2.0` and reads `by_thickness` 1.0051 against `by_slot` 0.9330, so the branch
+under test no longer binds there. Its docstring says `2.0` is "a value chosen to sit near the
+crossover" — a genome-dependent probe — so the cheap repair is to re-choose it. But the
+failure message states the alternative the test exists to catch: *"the crossover is outside
+the box and the min is dead code."* Which of the two it is on `b729e86` is one `t0` sweep
+across the gene box, and until that sweep is run, moving the probe value would be assuming
+the answer.
+
+**`test_peak_stress_diverges_but_the_field_converges` is the ordinary kind**: plain-spoke p99
+still moving 1.39% between the last two rungs against a `< 1%` bound.
+
+### 7. THE CITATION AUDIT §114 MADE ROUTINE — AND IT SEPARATES CLEANLY THIS TIME
+
+Removing a 10-line and a 12-line decorator and adding docstrings moved lines in three files
+(net +6, +6, +12). Five line citations point into them. Diffed against the parent commit
+rather than content-matched, because content-matching cannot tell "already stale" from
+"stale by my delta":
+
+```
+  citation                              site                          verdict
+  test_promotion.py:172-181             test_genome_key_order.py:45   MINE, +12 -> :184-193
+  test_promotion.py:176-181             test_genome_key_order.py:84   MINE, +12 -> :188-193
+  test_objective.py:1257                MBSE_PLAN.md:68               ALREADY STALE
+  test_objective.py:1257                wheel_objective.py:1149       ALREADY STALE
+  test_wheel_fea.py:370, :407           WALLPIN_PLAN.md:111           ALREADY STALE
+```
+
+**The two that are mine are corrected here. The three that are not are recorded and left**,
+per §113's rule about not folding an unrelated repair into a commit — but with their true
+targets named so nobody has to re-find them. Both `:1257` citations mean the
+`monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` line, which sat at **1305 in the
+parent** and 1311 now — already 48 lines off before this change. WALLPIN's pair means the two
+tests `set_min_wall(2.0)` wraps, at **469 and 506 in the parent**, 475 and 512 now — off by
+about 99, and WALLPIN's own paragraph dates itself 2026-09-03, one day before §111 touched
+this file at all, so the drift predates that too.
+
+**SUCCESSORS.**
+
+0. **THE NINE ARTIFACT REDS** — §117's successor 1, unchanged and now the top of the list.
+   Six committed `studies/*.json` describe a wheel that no longer ships; one known cost
+   (`study_tri_block`, 665.3 s at §114) and five unknown.
+1. **THE POSITION REDS**, §117's successor 2 — **but §6 above narrows the claim that they
+   are all positions.** Two of the three seen here are not: one is a finding whose docstring
+   already names what it invalidates, the other hides a dead-code question behind a probe
+   value. Expect the same among the remaining fifty-odd, and read each docstring before
+   re-deriving its number.
+2. **M8b's GENE CENSUS AND `fillet_feasibility`'s VERDICT**, which
+   `test_R_rim_is_still_effectively_inert_and_that_is_recorded` says are owed a re-check now
+   that `R_rim` carries gradient. Filed by that test in advance; this is the day it fired.
+3. **CHEAP, AND IT GATES THE NEXT ONE: READ THE PHASE-0 `axle_drop_mm` AT `medium`.** It is
+   the one number §4 wanted and could not have, and it is a single build and solve.
+4. **THEN DECIDE WHETHER EITHER LIFTED TEST SHOULD READ AT PRODUCTION FIDELITY** (§4 above).
+   Both now pass on a rung the objective does not solve. For the barrier the case is
+   measured — 29.2% of clearance where the shipped setting has 2.77% — and for the drop it
+   is not, which is what successor 3 supplies. Neither move is free: the drop's band has no
+   warrant to transport (§111), and the utilisation's would re-open the `smoke`-vs-`medium`
+   calibration DEFECT8 already fought once. A section's worth of work, not a fixture edit.
+5. **THE `1.4` EDGE STILL HAS NO WARRANT.** §111's second clearing condition is open, and
+   the test being green now makes it less likely anyone looks. Recorded so that the pass is
+   not mistaken for the answer.
