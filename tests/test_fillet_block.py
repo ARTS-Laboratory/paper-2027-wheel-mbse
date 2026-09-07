@@ -87,20 +87,6 @@ def profile_genes():
 
 
 @pytest.fixture(scope="module")
-def junction_genes():
-    """The wheel `study_junction_agreement.json` was measured on, read by FILE.
-
-    That artifact's own `genome_hash` is `09e8188`; §119 found the driver was one of
-    three whose refresh would silently retire nine recorded findings and declined it (§119
-    §3), so the committed report describes `09e8188` and is meant to keep doing so. A test
-    that reads the artifact's numbers must take its geometry from the SAME genome or the
-    comparison is between two wheels — exactly `profile_genes`' and `reconciliation_genes`'
-    reason, copied here for a third artifact.
-    """
-    return fb.load_genes("stage3_knee_best_medium.json")
-
-
-@pytest.fixture(scope="module")
 def report():
     with open(os.path.join(REPO, "studies", "study_fillet_block.json")) as fh:
         return json.load(fh)
@@ -431,7 +417,7 @@ def test_the_working_block_cuts_ACROSS_the_ring_circle(genes, junction):
 
 @pytest.mark.parametrize("junction", ("hub", "rim"))
 def test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces(
-        junction_genes, junction, junction_report):
+        genes, junction, junction_report):
     """`make junction`'s `void_deg` at `P_t` — the number PART 8's re-pricing rests on —
     is the angle to the spoke block's SECOND flank node, not to the flank's tangent.
 
@@ -442,22 +428,31 @@ def test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces(
     because under `uncap` that corner's leg is a straight continuation whose chord and
     tangent are the same direction.
 
-    READS `junction_genes`, NOT `genes` (PLAN §124).  `study_junction_agreement.json`
-    records `genome_hash: 09e8188` and §119 declined to refresh it — one of the three
-    artifact-freshness reds recorded there and left red on purpose.  This test compares
-    the artifact's own number against a live recomputation, so the recomputation has to
-    take the SAME genome or "reproduces" is comparing two wheels; that was silently true
-    before §115's promotion and has to be said explicitly now.
+    §126: READS `genes` AGAIN, NOT A DEDICATED `junction_genes` FIXTURE. §119's decline
+    held while `study_junction_agreement.json` stayed pinned to `09e8188` on purpose;
+    §126 decided its nine dependent findings one at a time and refreshed it onto
+    `b729e86` (`genome_hash` in the artifact now agrees with `best_solution.json`), so
+    the recomputation takes the SAME genome by going back to the shared `genes` fixture
+    — the dedicated loader §124 added for this one consumer is removed with it.
+
+    THE GAP'S SIGN FLIPPED AT THE RIM. At `09e8188` both junctions had chord past
+    tangent by a similar amount (0.805 deg hub, 0.566 rim). On `b729e86` the hub gap
+    has shrunk but kept its sign (0.481); the rim gap changed sign (-0.612) — the chord
+    now lands BEFORE the tangent rather than past it. No verdict in PART 8 moves on
+    this either: it is a reported diagnostic on the mesh geometry, not one of the
+    `P_t`/`P_c` fit numbers PART 8 prices, and both `P_t` rows still clear PART 8's
+    margins by 5-20x (checked in `test_junction_fit.py`, not here).
     """
     row = next(c for c in junction_report["rings"][junction]["corners"]
                if c["name"] == "P_t" and c["source"] == "mesh (uncap=False)")
-    g = fb.junction_geometry(junction_genes, "coarse", junction,
-                             float(junction_genes[12] if junction == "hub"
-                                  else junction_genes[13]))
+    g = fb.junction_geometry(genes, "coarse", junction,
+                             float(genes[12] if junction == "hub" else genes[13]))
     a = fb.region_angles(g)
     assert abs(a["at_P_t_chord_deg"] - row["void_deg"]) < 1e-9, (
         a["at_P_t_chord_deg"], row["void_deg"])
-    assert 0.4 < a["chord_minus_tangent_deg"] < 1.0, a["chord_minus_tangent_deg"]
+    bounds = {"hub": (0.3, 0.7), "rim": (-0.8, -0.4)}
+    lo, hi = bounds[junction]
+    assert lo < a["chord_minus_tangent_deg"] < hi, a["chord_minus_tangent_deg"]
 
 
 # ---------------------------------------------------------------------------

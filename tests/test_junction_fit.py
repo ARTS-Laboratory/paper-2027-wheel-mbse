@@ -122,17 +122,30 @@ def test_the_end_cap_refused_the_fillet_at_both_rings(report):
 
     0.737 mm at the hub and 0.716 at the rim, against tangent lengths of 1.09 and 6.07.
     That geometry is no longer the default and this row is the `uncap=False` control.
+
+    §126: THE HUB HALF IS FALSE ON `b729e86`. `t/2` is a genome quantity and this is a
+    different design point from `09e8188`, the genome the numbers above were measured
+    on — measured directly, both genomes, same driver: the capped leg is now 1.7527 mm
+    at the hub (2.38x) and 1.2274 mm at the rim (1.72x). The hub has grown past where
+    the shipped 0.571 mm fillet fits even WITHOUT uncapping (`T/leg` 0.36, `R_max`
+    1.588 mm — not a near thing). The rim has not: `T/leg` 4.89 against the shipped
+    1.680 mm radius (`R_max` 0.344 mm), still refused, though the margin has shrunk
+    from 8.49 to 4.89.
     """
-    for ring, expect in (("hub", 1.4), ("rim", 8.0)):
-        fit = _corner(report, ring, "mesh (uncap=False)", "P_c")["fillet_fit"]
-        assert fit["fits"] is False
-        assert fit["t_over_leg"] > expect
-        assert fit["spoke_side_leg_mm"] < 0.8
+    hub = _corner(report, "hub", "mesh (uncap=False)", "P_c")["fillet_fit"]
+    assert hub["fits"] is True
+    assert hub["t_over_leg"] < 0.5
+    assert hub["spoke_side_leg_mm"] > 1.5
+
+    rim = _corner(report, "rim", "mesh (uncap=False)", "P_c")["fillet_fit"]
+    assert rim["fits"] is False
+    assert rim["t_over_leg"] > 4.5
+    assert rim["spoke_side_leg_mm"] > 1.0
 
 
 def test_uncapping_FLIPPED_the_hub_verdict_and_did_not_flip_the_rim(report):
-    """THE FINDING. The same change moves the two rings in the same direction by
-    different amounts, and only one of them crosses.
+    """THE FINDING, AS MEASURED AT `09e8188`. The same change moves the two rings in
+    the same direction by different amounts, and only one of them crosses.
 
     Uncapping opens `P_c` from a 63/53 deg void to 92/89, and a wider void needs a
     SHORTER tangent — so the fillet gets easier even though the leg itself got shorter
@@ -140,14 +153,24 @@ def test_uncapping_FLIPPED_the_hub_verdict_and_did_not_flip_the_rim(report):
     `T/leg` falls 1.47 -> 0.98 and the shipped radius fits. At the rim it is not: 8.49 ->
     5.34, and the shipped `R_rim` of 3.0 mm needs a leg five times what is there.
 
-    **The rim is the one that matters**, because the wheel's global peak sits on
+    §126: ON `b729e86` THE HUB HALF IS NO LONGER A FLIP. The sibling test above found
+    the capped hub already fits (`T/leg` 0.36) before uncapping is even applied —
+    uncapping still shortens the void further (84.37 -> 90.78 deg) and the leg by a
+    hair (1.7527 -> 1.7455 mm), so `T/leg` still improves, 0.36 -> 0.32, but from one
+    YES to another, not NO to YES. The rim is the half that still behaves as recorded:
+    still refused both capped and uncapped, `T/leg` still falls with uncapping (4.89 ->
+    2.74), but the margin against the shipped radius has shrunk enough that 2.74 is no
+    longer past 4.0, though it is still past 1 and the verdict itself has not moved.
+
+    **The rim is still the one that matters**, because the wheel's global peak sits on
     `rim:P_c` (FILLET_PLAN PART 4, re-measured in PART 7). Pinned as the pair, since the
-    interesting claim is the contrast rather than either number.
+    interesting claim is the contrast rather than either number, and the *verdict* pair
+    (hub yes, rim no) survives even though the hub is no longer won BY uncapping.
     """
     hub = _corner(report, "hub", "mesh (SHIPPED DEFAULT)", "P_c")["fillet_fit"]
     rim = _corner(report, "rim", "mesh (SHIPPED DEFAULT)", "P_c")["fillet_fit"]
     assert hub["fits"] is True and hub["t_over_leg"] < 1.0
-    assert rim["fits"] is False and rim["t_over_leg"] > 4.0
+    assert rim["fits"] is False and rim["t_over_leg"] > 2.5
 
     capped_hub = _corner(report, "hub", "mesh (uncap=False)", "P_c")["fillet_fit"]
     capped_rim = _corner(report, "rim", "mesh (uncap=False)", "P_c")["fillet_fit"]
@@ -165,16 +188,22 @@ def test_the_faithful_rim_would_buy_a_factor_of_FOUR_on_the_admissible_radius(re
 
     `uncap=True` at the rim is the faithful geometry (1.06 deg of wedge against the part,
     versus 50.61 as built) and it is the one §36 measured as unbuildable without the
-    tri-block, at `min_sj` 0.0072. On that geometry `r_max_on_this_leg_mm` goes from 0.56
-    mm to 2.59 — **a factor of 4.6, and within 14% of the shipped `R_rim` of 3.0.**
+    tri-block, at `min_sj` 0.0072. At `09e8188`, `r_max_on_this_leg_mm` went from 0.56
+    mm to 2.59 mm — a factor of 4.6, and within 14% of that genome's shipped `R_rim` of
+    3.0.
 
-    So the tri-block does buy the fillet at the corner that carries the peak. It does not
-    buy it AT THE SHIPPED RADIUS, and that distinction is the whole of the ranking: see
-    PLAN §46. Pinned as a ratio and a direction, not as millimetres.
+    §126: THE FACTOR IS SMALLER ON `b729e86`, THE CONCLUSION IS NOT. `b729e86` carries a
+    different `R_rim` (1.6802 mm, not 3.0) and different rim geometry throughout:
+    `r_max_on_this_leg_mm` now goes from 0.6126 mm to 1.2416 — a factor of 2.03, and 26%
+    SHORT of the shipped radius rather than within 14% of it (§119's own ninth finding,
+    measured the same way). The tri-block still buys the fillet at the corner that
+    carries the peak; it still does not buy it AT THE SHIPPED RADIUS, and that
+    distinction is still the whole of the ranking: see PLAN §46. Pinned as a ratio and a
+    direction, not as millimetres.
     """
     built = _corner(report, "rim", "mesh (SHIPPED DEFAULT)", "P_c")["fillet_fit"]
     faithful = _corner(report, "rim", "mesh (uncap=True)", "P_c")["fillet_fit"]
-    assert faithful["r_max_on_this_leg_mm"] > 4.0 * built["r_max_on_this_leg_mm"]
+    assert faithful["r_max_on_this_leg_mm"] > 1.9 * built["r_max_on_this_leg_mm"]
     assert faithful["fits"] is False, (
         "the faithful rim now admits the SHIPPED R_rim — that would retire PLAN §46's "
         "central qualifier and the ranking that rests on it")

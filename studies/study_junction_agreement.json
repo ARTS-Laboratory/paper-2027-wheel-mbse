@@ -1,5 +1,5 @@
 {
- "genome_hash": "09e8188",
+ "genome_hash": "b729e86",
  "config": "coarse",
  "crossings_per_spoke": {
   "hub": 2,
@@ -16,17 +16,17 @@
     {
      "source": "mesh (uncap=False)",
      "name": "P_t",
-     "theta_deg": 6.117808424607737,
-     "void_deg": 38.86057256986532,
-     "wedge_deg": 321.1394274301347,
-     "lambda_W": 0.503195174181436,
-     "spoke_side_leg_mm": 41.11821125266144,
+     "theta_deg": 20.714877487878574,
+     "void_deg": 36.4373963635338,
+     "wedge_deg": 323.5626036364662,
+     "lambda_W": 0.502624844204171,
+     "spoke_side_leg_mm": 51.024584416779035,
      "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 1.881236920490942,
-      "spoke_side_leg_mm": 41.11821125266144,
-      "t_over_leg": 0.045751915347951234,
-      "r_max_on_this_leg_mm": 14.504442824954607,
+      "radius_mm": 0.5709952879697059,
+      "tangent_length_mm": 1.7347837755414093,
+      "spoke_side_leg_mm": 51.024584416779035,
+      "t_over_leg": 0.03399897902884123,
+      "r_max_on_this_leg_mm": 16.794483372142803,
       "fits": true
      }
     },
@@ -34,122 +34,104 @@
      "source": "mesh (uncap=False)",
      "name": "P_c",
      "theta_deg": 0.0,
-     "void_deg": 62.82138713631571,
-     "wedge_deg": 297.1786128636843,
-     "lambda_W": 0.5141143756676385,
-     "spoke_side_leg_mm": 0.736915376859436,
+     "void_deg": 84.36839299620499,
+     "wedge_deg": 275.631607003795,
+     "lambda_W": 0.53607320658861,
+     "spoke_side_leg_mm": 1.7527473285666555,
      "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 1.086705088450833,
-      "spoke_side_leg_mm": 0.736915376859436,
-      "t_over_leg": 1.4746674076501434,
-      "r_max_on_this_leg_mm": 0.4500038699261459,
-      "fits": false
+      "radius_mm": 0.5709952879697059,
+      "tangent_length_mm": 0.6300692207380925,
+      "spoke_side_leg_mm": 1.7527473285666555,
+      "t_over_leg": 0.35947521383663683,
+      "r_max_on_this_leg_mm": 1.5884135150113412,
+      "fits": true
      }
     },
     {
      "source": "mesh (SHIPPED DEFAULT)",
      "name": "P_c",
-     "theta_deg": -1.5187317073967834,
-     "void_deg": 91.51873170739678,
-     "wedge_deg": 268.4812682926032,
-     "lambda_W": 0.5469776007718323,
-     "spoke_side_leg_mm": 0.6600116296949956,
+     "theta_deg": -0.775999967675878,
+     "void_deg": 90.77599996767589,
+     "wedge_deg": 269.2240000323241,
+     "lambda_W": 0.5457455374337179,
+     "spoke_side_leg_mm": 1.7454523321995072,
      "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 0.6462449989860823,
-      "spoke_side_leg_mm": 0.6600116296949956,
-      "t_over_leg": 0.979141836159349,
-      "r_max_on_this_leg_mm": 0.6777425044970954,
+      "radius_mm": 0.5709952879697059,
+      "tangent_length_mm": 0.563313768891155,
+      "spoke_side_leg_mm": 1.7454523321995072,
+      "t_over_leg": 0.3227322559885111,
+      "r_max_on_this_leg_mm": 1.7692538547805792,
       "fits": true
      }
     },
     {
      "source": "mesh (uncap=True)",
      "name": "P_c",
-     "theta_deg": -1.5187317073967834,
-     "void_deg": 91.51873170739678,
-     "wedge_deg": 268.4812682926032,
-     "lambda_W": 0.5469776007718323,
-     "spoke_side_leg_mm": 0.6600116296949956,
+     "theta_deg": -0.775999967675878,
+     "void_deg": 90.77599996767589,
+     "wedge_deg": 269.2240000323241,
+     "lambda_W": 0.5457455374337179,
+     "spoke_side_leg_mm": 1.7454523321995072,
      "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 0.6462449989860823,
-      "spoke_side_leg_mm": 0.6600116296949956,
-      "t_over_leg": 0.979141836159349,
-      "r_max_on_this_leg_mm": 0.6777425044970954,
+      "radius_mm": 0.5709952879697059,
+      "tangent_length_mm": 0.563313768891155,
+      "spoke_side_leg_mm": 1.7454523321995072,
+      "t_over_leg": 0.3227322559885111,
+      "r_max_on_this_leg_mm": 1.7692538547805792,
       "fits": true
      }
     },
     {
      "source": "part",
      "name": "top_flank",
-     "theta_deg": 6.117483005665139,
-     "void_deg": 37.981755945851496,
-     "wedge_deg": 322.0182440541485,
-     "lambda_W": 0.5029794476775811,
+     "theta_deg": 20.714056616976492,
+     "void_deg": 35.88433924892111,
+     "wedge_deg": 324.1156607510789,
+     "lambda_W": 0.5025052171654969,
      "spoke_side_leg_mm": null,
      "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 1.9282491124260128
+      "radius_mm": 0.5709952879697059,
+      "tangent_length_mm": 1.7633969383779633
      }
     },
     {
      "source": "part",
      "name": "bot_flank",
-     "theta_deg": -1.5267347137206628,
-     "void_deg": 91.52673471372066,
-     "wedge_deg": 268.47326528627934,
-     "lambda_W": 0.5469910072945032,
+     "theta_deg": -0.7943466454236023,
+     "void_deg": 90.79434664542362,
+     "wedge_deg": 269.2056533545764,
+     "lambda_W": 0.5457756830549847,
      "spoke_side_leg_mm": null,
      "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 0.6461547066736055
+      "radius_mm": 0.5709952879697059,
+      "tangent_length_mm": 0.563133402169269
      }
     },
     {
      "source": "extension",
      "name": "own_tangent",
-     "theta_deg": -8.736841271691086,
-     "void_deg": 161.98061468984287,
-     "wedge_deg": 198.01938531015713,
-     "lambda_W": 0.8335428585387366,
-     "spoke_side_leg_mm": null,
-     "run_mm": 1.7814535259291788,
-     "closest_approach_mm": 12.077089254821878,
-     "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 0.10521995192154426
-     }
+     "reaches": false,
+     "closest_approach_mm": 14.440770532268642
     },
     {
      "source": "extension",
      "name": "shared_tangent",
-     "theta_deg": -7.83823733640949,
-     "void_deg": 158.81309327936123,
-     "wedge_deg": 201.18690672063877,
-     "lambda_W": 0.8100733225521557,
-     "spoke_side_leg_mm": null,
-     "run_mm": 1.5937817396792866,
-     "closest_approach_mm": 11.841561478369039,
-     "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 0.1241120169978651
-     }
+     "reaches": false,
+     "closest_approach_mm": 14.350781290471678
     },
     {
      "source": "extension",
      "name": "radial",
-     "theta_deg": -1.526733497711321,
-     "void_deg": 91.52673349771133,
-     "wedge_deg": 268.47326650228865,
-     "lambda_W": 0.5469910052572486,
+     "theta_deg": -0.7943462265954778,
+     "void_deg": 90.79434622659548,
+     "wedge_deg": 269.2056537734045,
+     "lambda_W": 0.545775682366638,
      "spoke_side_leg_mm": null,
-     "run_mm": 0.6591453532807456,
-     "closest_approach_mm": 0.3383708384877512,
+     "run_mm": 1.7451023131976147,
+     "closest_approach_mm": 0.17606661419694694,
      "fillet_fit": {
-      "radius_mm": 0.6636060402965218,
-      "tangent_length_mm": 0.6461547203920537
+      "radius_mm": 0.5709952879697059,
+      "tangent_length_mm": 0.5631334062861304
      }
     }
    ]
@@ -160,17 +142,17 @@
     {
      "source": "mesh (uncap=False)",
      "name": "P_t",
-     "theta_deg": 1.3607815121320543,
-     "void_deg": 39.45464066055605,
-     "wedge_deg": 320.54535933944396,
-     "lambda_W": 0.5033469089224172,
-     "spoke_side_leg_mm": 41.11821125266144,
+     "theta_deg": 1.6909866515874676,
+     "void_deg": 56.652327478852676,
+     "wedge_deg": 303.34767252114733,
+     "lambda_W": 0.5102158493869444,
+     "spoke_side_leg_mm": 51.024584416779035,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 8.366103147514401,
-      "spoke_side_leg_mm": 41.11821125266144,
-      "t_over_leg": 0.20346466669249608,
-      "r_max_on_this_leg_mm": 14.744574813739108,
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 3.117000414393774,
+      "spoke_side_leg_mm": 51.024584416779035,
+      "t_over_leg": 0.061088207773207705,
+      "r_max_on_this_leg_mm": 27.5039706814075,
       "fits": true
      }
     },
@@ -178,122 +160,122 @@
      "source": "mesh (uncap=False)",
      "name": "P_c",
      "theta_deg": 0.0,
-     "void_deg": 52.57216066709709,
-     "wedge_deg": 307.4278393329029,
-     "lambda_W": 0.5080978937495011,
-     "spoke_side_leg_mm": 0.7156474816644952,
+     "void_deg": 31.28405615100777,
+     "wedge_deg": 328.71594384899225,
+     "lambda_W": 0.5016501787025422,
+     "spoke_side_leg_mm": 1.2273531851890476,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 6.073753181408744,
-      "spoke_side_leg_mm": 0.7156474816644952,
-      "t_over_leg": 8.487074065127777,
-      "r_max_on_this_leg_mm": 0.3534787109171803,
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 6.0006890720669475,
+      "spoke_side_leg_mm": 1.2273531851890476,
+      "t_over_leg": 4.8891298319665575,
+      "r_max_on_this_leg_mm": 0.3436538470687778,
       "fits": false
      }
     },
     {
      "source": "mesh (SHIPPED DEFAULT)",
      "name": "P_c",
-     "theta_deg": -0.5138297395817583,
-     "void_deg": 89.48617026041825,
-     "wedge_deg": 270.51382973958175,
-     "lambda_W": 0.5436623718389806,
-     "spoke_side_leg_mm": 0.5663592532120632,
+     "theta_deg": -1.2392214061657865,
+     "void_deg": 88.76077859383422,
+     "wedge_deg": 271.23922140616577,
+     "lambda_W": 0.5425217682989845,
+     "spoke_side_leg_mm": 0.6259980736966781,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 3.027025425667979,
-      "spoke_side_leg_mm": 0.5663592532120632,
-      "t_over_leg": 5.344709049071656,
-      "r_max_on_this_leg_mm": 0.5613027711061432,
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 1.7169065130691072,
+      "spoke_side_leg_mm": 0.6259980736966781,
+      "t_over_leg": 2.742670601093605,
+      "r_max_on_this_leg_mm": 0.6126030136116559,
       "fits": false
      }
     },
     {
      "source": "mesh (uncap=True)",
      "name": "P_c",
-     "theta_deg": -1.3684591190279563,
-     "void_deg": 141.15902587482626,
-     "wedge_deg": 218.84097412517374,
-     "lambda_W": 0.7029762378549669,
-     "spoke_side_leg_mm": 0.9113975811376216,
+     "theta_deg": -1.6828897307607273,
+     "void_deg": 119.66084516561924,
+     "wedge_deg": 240.33915483438076,
+     "lambda_W": 0.6146226145383356,
+     "spoke_side_leg_mm": 0.7217535637290431,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 1.0576726522077202,
-      "spoke_side_leg_mm": 0.9113975811376216,
-      "t_over_leg": 1.160495347033416,
-      "r_max_on_this_leg_mm": 2.5851029973268957,
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 0.9766873316057184,
+      "spoke_side_leg_mm": 0.7217535637290431,
+      "t_over_leg": 1.3532144220522078,
+      "r_max_on_this_leg_mm": 1.241612746800309,
       "fits": false
      }
     },
     {
      "source": "part",
      "name": "top_flank",
-     "theta_deg": 1.3607590423538924,
-     "void_deg": 38.93461320660966,
-     "wedge_deg": 321.06538679339036,
-     "lambda_W": 0.5032138229595635,
+     "theta_deg": 1.691015887692178,
+     "void_deg": 57.32058587745137,
+     "wedge_deg": 302.6794141225486,
+     "lambda_W": 0.510596185746303,
      "spoke_side_leg_mm": null,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 8.487126174432186
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 3.0739456086161607
      }
     },
     {
      "source": "part",
      "name": "bot_flank",
-     "theta_deg": -1.3158567750193202,
-     "void_deg": 140.09818898984236,
-     "wedge_deg": 219.90181101015764,
-     "lambda_W": 0.697652101121965,
+     "theta_deg": -1.7055123402243386,
+     "void_deg": 121.1033706839894,
+     "wedge_deg": 238.8966293160106,
+     "lambda_W": 0.6193936597912513,
      "spoke_side_leg_mm": null,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 1.0890004918582195
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 0.9485936917484512
      }
     },
     {
      "source": "extension",
      "name": "own_tangent",
-     "theta_deg": -1.3816990866030194,
-     "void_deg": 141.58405581492096,
-     "wedge_deg": 218.41594418507904,
-     "lambda_W": 0.7051410990673608,
+     "theta_deg": -1.717661461964336,
+     "void_deg": 121.60900223732267,
+     "wedge_deg": 238.39099776267733,
+     "lambda_W": 0.6211012750869109,
      "spoke_side_leg_mm": null,
-     "run_mm": 0.9190362074546812,
-     "closest_approach_mm": 38.00074788240956,
+     "run_mm": 0.7393113691845841,
+     "closest_approach_mm": 25.419806503160046,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 1.045178592327418
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 0.9388410971253712
      }
     },
     {
      "source": "extension",
      "name": "shared_tangent",
-     "theta_deg": -1.3359080859040298,
-     "void_deg": 140.07813767895766,
-     "wedge_deg": 219.92186232104234,
-     "lambda_W": 0.6975525463552272,
+     "theta_deg": -1.7084442991706665,
+     "void_deg": 121.10043872504306,
+     "wedge_deg": 238.89956127495694,
+     "lambda_W": 0.6193838118187387,
      "spoke_side_leg_mm": null,
-     "run_mm": 0.8889822425612228,
-     "closest_approach_mm": 37.19563641086241,
+     "run_mm": 0.7352515772493504,
+     "closest_approach_mm": 25.05218444465639,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 1.0895946428519252
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 0.9486503845504346
      }
     },
     {
      "source": "extension",
      "name": "radial",
-     "theta_deg": -0.5148768677418565,
-     "void_deg": 89.48512313225815,
-     "wedge_deg": 270.51487686774186,
-     "lambda_W": 0.5436607094010011,
+     "theta_deg": -1.2376496640301675,
+     "void_deg": 88.76235033596983,
+     "wedge_deg": 271.2376496640302,
+     "lambda_W": 0.5425242159008605,
      "spoke_side_leg_mm": null,
-     "run_mm": 0.5656718563549532,
-     "closest_approach_mm": 0.4358295184955182,
+     "run_mm": 0.6282107751233852,
+     "closest_approach_mm": 1.0475700172540037,
      "fillet_fit": {
-      "radius_mm": 3.0,
-      "tangent_length_mm": 3.027080749817227
+      "radius_mm": 1.6801682755740344,
+      "tangent_length_mm": 1.716859404402451
      }
     }
    ]
@@ -301,75 +283,75 @@
  },
  "fillet_fit_summary": {
   "hub": {
-   "radius_mm": 0.6636060402965218,
+   "radius_mm": 0.5709952879697059,
    "by_corner": {
     "mesh (uncap=False) P_t": {
-     "void_deg": 38.86057256986532,
-     "spoke_side_leg_mm": 41.11821125266144,
-     "tangent_length_mm": 1.881236920490942,
-     "t_over_leg": 0.045751915347951234,
-     "r_max_on_this_leg_mm": 14.504442824954607,
+     "void_deg": 36.4373963635338,
+     "spoke_side_leg_mm": 51.024584416779035,
+     "tangent_length_mm": 1.7347837755414093,
+     "t_over_leg": 0.03399897902884123,
+     "r_max_on_this_leg_mm": 16.794483372142803,
      "fits_at_shipped_radius": true
     },
     "mesh (uncap=False) P_c": {
-     "void_deg": 62.82138713631571,
-     "spoke_side_leg_mm": 0.736915376859436,
-     "tangent_length_mm": 1.086705088450833,
-     "t_over_leg": 1.4746674076501434,
-     "r_max_on_this_leg_mm": 0.4500038699261459,
-     "fits_at_shipped_radius": false
+     "void_deg": 84.36839299620499,
+     "spoke_side_leg_mm": 1.7527473285666555,
+     "tangent_length_mm": 0.6300692207380925,
+     "t_over_leg": 0.35947521383663683,
+     "r_max_on_this_leg_mm": 1.5884135150113412,
+     "fits_at_shipped_radius": true
     },
     "mesh (SHIPPED DEFAULT) P_c": {
-     "void_deg": 91.51873170739678,
-     "spoke_side_leg_mm": 0.6600116296949956,
-     "tangent_length_mm": 0.6462449989860823,
-     "t_over_leg": 0.979141836159349,
-     "r_max_on_this_leg_mm": 0.6777425044970954,
+     "void_deg": 90.77599996767589,
+     "spoke_side_leg_mm": 1.7454523321995072,
+     "tangent_length_mm": 0.563313768891155,
+     "t_over_leg": 0.3227322559885111,
+     "r_max_on_this_leg_mm": 1.7692538547805792,
      "fits_at_shipped_radius": true
     },
     "mesh (uncap=True) P_c": {
-     "void_deg": 91.51873170739678,
-     "spoke_side_leg_mm": 0.6600116296949956,
-     "tangent_length_mm": 0.6462449989860823,
-     "t_over_leg": 0.979141836159349,
-     "r_max_on_this_leg_mm": 0.6777425044970954,
+     "void_deg": 90.77599996767589,
+     "spoke_side_leg_mm": 1.7454523321995072,
+     "tangent_length_mm": 0.563313768891155,
+     "t_over_leg": 0.3227322559885111,
+     "r_max_on_this_leg_mm": 1.7692538547805792,
      "fits_at_shipped_radius": true
     }
    }
   },
   "rim": {
-   "radius_mm": 3.0,
+   "radius_mm": 1.6801682755740344,
    "by_corner": {
     "mesh (uncap=False) P_t": {
-     "void_deg": 39.45464066055605,
-     "spoke_side_leg_mm": 41.11821125266144,
-     "tangent_length_mm": 8.366103147514401,
-     "t_over_leg": 0.20346466669249608,
-     "r_max_on_this_leg_mm": 14.744574813739108,
+     "void_deg": 56.652327478852676,
+     "spoke_side_leg_mm": 51.024584416779035,
+     "tangent_length_mm": 3.117000414393774,
+     "t_over_leg": 0.061088207773207705,
+     "r_max_on_this_leg_mm": 27.5039706814075,
      "fits_at_shipped_radius": true
     },
     "mesh (uncap=False) P_c": {
-     "void_deg": 52.57216066709709,
-     "spoke_side_leg_mm": 0.7156474816644952,
-     "tangent_length_mm": 6.073753181408744,
-     "t_over_leg": 8.487074065127777,
-     "r_max_on_this_leg_mm": 0.3534787109171803,
+     "void_deg": 31.28405615100777,
+     "spoke_side_leg_mm": 1.2273531851890476,
+     "tangent_length_mm": 6.0006890720669475,
+     "t_over_leg": 4.8891298319665575,
+     "r_max_on_this_leg_mm": 0.3436538470687778,
      "fits_at_shipped_radius": false
     },
     "mesh (SHIPPED DEFAULT) P_c": {
-     "void_deg": 89.48617026041825,
-     "spoke_side_leg_mm": 0.5663592532120632,
-     "tangent_length_mm": 3.027025425667979,
-     "t_over_leg": 5.344709049071656,
-     "r_max_on_this_leg_mm": 0.5613027711061432,
+     "void_deg": 88.76077859383422,
+     "spoke_side_leg_mm": 0.6259980736966781,
+     "tangent_length_mm": 1.7169065130691072,
+     "t_over_leg": 2.742670601093605,
+     "r_max_on_this_leg_mm": 0.6126030136116559,
      "fits_at_shipped_radius": false
     },
     "mesh (uncap=True) P_c": {
-     "void_deg": 141.15902587482626,
-     "spoke_side_leg_mm": 0.9113975811376216,
-     "tangent_length_mm": 1.0576726522077202,
-     "t_over_leg": 1.160495347033416,
-     "r_max_on_this_leg_mm": 2.5851029973268957,
+     "void_deg": 119.66084516561924,
+     "spoke_side_leg_mm": 0.7217535637290431,
+     "tangent_length_mm": 0.9766873316057184,
+     "t_over_leg": 1.3532144220522078,
+     "r_max_on_this_leg_mm": 1.241612746800309,
      "fits_at_shipped_radius": false
     }
    }
@@ -383,84 +365,80 @@
  },
  "step1_verdict": {
   "hub": {
-   "truth_theta_deg": -1.5267347137206628,
-   "truth_wedge_deg": 268.47326528627934,
-   "truth_lambda": 0.5469910072945032,
+   "truth_theta_deg": -0.7943466454236023,
+   "truth_wedge_deg": 269.2056533545764,
+   "truth_lambda": 0.5457756830549847,
    "candidates": {
     "end_cap (pre-2026-08-18)": {
-     "wedge_err_deg": 28.70534757740495,
-     "theta_err_deg": 1.5267347137206628,
-     "lambda_err": 0.032876631626864716
+     "wedge_err_deg": 6.425953649218627,
+     "theta_err_deg": 0.7943466454236023,
+     "lambda_err": 0.009702476466374677
     },
     "AS BUILT (the default)": {
-     "wedge_err_deg": 0.008003006323860973,
-     "theta_err_deg": 0.008003006323879402,
-     "lambda_err": 1.3406522670900145e-05
+     "wedge_err_deg": 0.018346677747729245,
+     "theta_err_deg": 0.01834667774772436,
+     "lambda_err": 3.0145621266797207e-05
     },
     "uncap=True (rim not buildable)": {
-     "wedge_err_deg": 0.008003006323860973,
-     "theta_err_deg": 0.008003006323879402,
-     "lambda_err": 1.3406522670900145e-05
+     "wedge_err_deg": 0.018346677747729245,
+     "theta_err_deg": 0.01834667774772436,
+     "lambda_err": 3.0145621266797207e-05
     },
     "own_tangent": {
-     "wedge_err_deg": 70.45387997612221,
-     "theta_err_deg": 7.210106557970423,
-     "lambda_err": 0.2865518512442333
+     "reaches": false
     },
     "shared_tangent": {
-     "wedge_err_deg": 67.28635856564057,
-     "theta_err_deg": 6.311502622688828,
-     "lambda_err": 0.26308231525765247
+     "reaches": false
     },
     "radial": {
-     "wedge_err_deg": 1.2160093092461466e-06,
-     "theta_err_deg": 1.2160093418867035e-06,
-     "lambda_err": 2.037254587250459e-09
+     "wedge_err_deg": 4.1882810819515726e-07,
+     "theta_err_deg": 4.188281245154357e-07,
+     "lambda_err": 6.883467129625842e-10
     }
    },
    "best_on_wedge": "radial",
    "beats_the_end_cap": true,
-   "improvement_deg": 28.70534636139564
+   "improvement_deg": 6.425953230390519
   },
   "rim": {
-   "truth_theta_deg": -1.3158567750193202,
-   "truth_wedge_deg": 219.90181101015764,
-   "truth_lambda": 0.697652101121965,
+   "truth_theta_deg": -1.7055123402243386,
+   "truth_wedge_deg": 238.8966293160106,
+   "truth_lambda": 0.6193936597912513,
    "candidates": {
     "end_cap (pre-2026-08-18)": {
-     "wedge_err_deg": 87.52602832274528,
-     "theta_err_deg": 1.3158567750193202,
-     "lambda_err": 0.18955420737246387
+     "wedge_err_deg": 89.81931453298165,
+     "theta_err_deg": 1.7055123402243386,
+     "lambda_err": 0.11774348108870902
     },
     "AS BUILT (the default)": {
-     "wedge_err_deg": 50.61201872942411,
-     "theta_err_deg": 0.8020270354375619,
-     "lambda_err": 0.15398972928298438
+     "wedge_err_deg": 32.342592090155165,
+     "theta_err_deg": 0.46629093405855215,
+     "lambda_err": 0.07687189149226681
     },
     "uncap=True (rim not buildable)": {
-     "wedge_err_deg": 1.0608368849838996,
-     "theta_err_deg": 0.05260234400863606,
-     "lambda_err": 0.005324136733001916
+     "wedge_err_deg": 1.4425255183701609,
+     "theta_err_deg": 0.022622609463611276,
+     "lambda_err": 0.004771045252915718
     },
     "own_tangent": {
-     "wedge_err_deg": 1.4858668250786025,
-     "theta_err_deg": 0.06584231158369924,
-     "lambda_err": 0.007488997945395814
+     "wedge_err_deg": 0.5056315533332736,
+     "theta_err_deg": 0.012149121739997382,
+     "lambda_err": 0.001707615295659659
     },
     "shared_tangent": {
-     "wedge_err_deg": 0.02005131088469625,
-     "theta_err_deg": 0.020051310884709572,
-     "lambda_err": 9.955476673773056e-05
+     "wedge_err_deg": 0.0029319589463341345,
+     "theta_err_deg": 0.002931958946327917,
+     "lambda_err": 9.84797251257774e-06
     },
     "radial": {
-     "wedge_err_deg": 50.61306585758422,
-     "theta_err_deg": 0.8009799072774637,
-     "lambda_err": 0.15399139172096388
+     "wedge_err_deg": 32.34102034801958,
+     "theta_err_deg": 0.4678626761941711,
+     "lambda_err": 0.07686944389039074
     }
    },
    "best_on_wedge": "shared_tangent",
    "beats_the_end_cap": true,
-   "improvement_deg": 87.50597701186058
+   "improvement_deg": 89.81638257403532
   },
   "go": true,
   "go_rim_only": true
