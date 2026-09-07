@@ -19204,3 +19204,54 @@ arriving through a fourth, previously-unconnected path. Not chased here.
 2. **§4's SIBLING FINDING, THE CONTACT-PATCH SEPARATION LOSING ITS SOLE VARIABLE, IS NOT
    RE-DERIVED INTO A SECOND VARIABLE.** Whoever takes successor 0 should check whether
    identifying that second variable falls out of the same work for free.
+
+## §128 — 2026-09-07. THE RECORD FOR `0dde1a9`: §127's SUCCESSOR 1 CLOSED — THE FOURTH PATH
+   INTO §124's COLLAPSE WAS TWO REDS, NOT ONE
+
+`test_the_filleted_gate_runs_and_inverts_the_census` was the red §127 flagged and declined to
+chase. It turned out to be two independent failures stacked behind one call, the second only
+reachable once the first stopped aborting the function early.
+
+### 1. THE FOURTH PATH ITSELF: A FIXED BUMP WALKED INTO THE COLLAPSE
+
+`study_gradient.run_filleted` builds a second, deliberately-different genome to prove
+`coord_fn`'s cache key still separates two per-genome layer profiles (§88's fix) rather than
+reusing the first genome's trace. That genome is `genes` with `R_hub += 0.2`, a literal
+chosen when the hub `_sector_fit_span` limit had room for it. §124/§127 already measured
+that limit collapsing 3.130 -> 0.743 mm; this is the same number arriving a fourth time, and
+this measurement corroborates it independently — the refused build reports its pulled-back
+radius as 0.706 mm, and `0.706 / SECTOR_FIT_CLAMP(0.95)` is 0.743 mm to four figures. The old
+bump asks for `R_hub` 0.771 mm, past the new ceiling, so `_filleted_gradient_recipe` refuses
+it outright rather than returning a clamped-and-differentiable mesh. The bump was never
+required to be `0.2` specifically — only to land on a second, genuinely different, unclamped
+point. Lowered to `+0.1` (-> `R_hub` 0.671 mm), ~0.035 mm clear of the new ceiling.
+
+### 2. A SECOND, INDEPENDENT RED BEHIND IT: THE NUMPY-PATH IDENTITY WAS NEVER UNIVERSAL
+
+Unblocking §1 reached `pg["numpy_path_max_abs_mm"] == 0.0` — `mesh_coords`'s explicit-numpy
+path compared bit-for-bit against `mesh.coords` — for the first time at this genome, because
+the clamp refusal had always aborted the function before this line ran. It fails at
+7.105e-15 mm, deterministically: two calls in the same process agree to the bit, so this is
+not thread- or BLAS-order nondeterminism. fe8dd88 (§88) already measured this exact
+comparison is not universal — eighteen builds against the old bisection's pair, 11 bit-
+identical, worst 3.553e-14 mm — and shipped anyway, on the reasoning that machine-precision
+noise this small is not the four intended differences. This genome lands in the bucket that
+commit already priced. Gated to `GATE_FILLET_MESH_MM` (1e-9), same as its sibling
+`identity_max_abs_mm` two lines above it, rather than required exact — nothing here found a
+new mechanism, only confirmed the strict equality was never load-bearing.
+
+### 3. `study_gradient.json` IS A THIRD, SEPARATE, ALREADY-STALE ARTIFACT — NOT TOUCHED
+
+`run_filleted`'s output feeds a committed artifact, `study_gradient.json`, last regenerated
+at `fe8dd88` (2026-08-28) — nine days before `best_solution.json` promoted to `b729e86`
+(`cb4e3dd`, 2026-09-06). It was already stale for reasons this section did not cause and does
+not chase; regenerating it is a fourth artifact needing the same one-at-a-time adjudication
+§119's three already got, not a side effect of a two-line test fix.
+
+`make test` on the one file touched: `tests/test_gradient.py`, 24 passed.
+
+**SUCCESSORS.**
+
+0. **`study_gradient.json` NEEDS THE SAME DECISION §119's THREE ARTIFACTS GOT** — refresh
+   against `b729e86` and adjudicate whatever it silently retires, or name why it stays frozen.
+   Nobody has picked this up.
