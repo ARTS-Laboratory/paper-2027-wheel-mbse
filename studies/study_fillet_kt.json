@@ -16,12 +16,12 @@
       "corner_census": {
         "hub:P_t": {
           "unfilleted": {
-            "wedge_deg": 321.1320505418498,
+            "wedge_deg": 323.630995770535,
             "kind": "re_entrant",
-            "lambda": 0.5031970288826322
+            "lambda": 0.5026098440930036
           },
           "filleted": {
-            "wedge_deg": 360.00000000000006,
+            "wedge_deg": 360.0,
             "kind": "interior",
             "lambda": null
           },
@@ -29,25 +29,25 @@
         },
         "hub:P_c": {
           "unfilleted": {
-            "wedge_deg": 268.08192230639156,
+            "wedge_deg": 269.07205364589294,
             "kind": "re_entrant",
-            "lambda": 0.5476500081318947
+            "lambda": 0.545995641035647
           },
           "filleted": {
-            "wedge_deg": 268.209154273554,
+            "wedge_deg": 269.1933432480273,
             "kind": "re_entrant",
-            "lambda": 0.5474350178333569
+            "lambda": 0.5457959180750451
           },
           "resolved_by_the_fillet": false
         },
         "rim:P_t": {
           "unfilleted": {
-            "wedge_deg": 321.3245154644778,
+            "wedge_deg": 303.53386449960993,
             "kind": "re_entrant",
-            "lambda": 0.5031488799745367
+            "lambda": 0.5101116080697827
           },
           "filleted": {
-            "wedge_deg": 360.00000000000006,
+            "wedge_deg": 360.0,
             "kind": "interior",
             "lambda": null
           },
@@ -55,14 +55,14 @@
         },
         "rim:P_c": {
           "unfilleted": {
-            "wedge_deg": 271.0160686370091,
+            "wedge_deg": 271.72261082841146,
             "kind": "re_entrant",
-            "lambda": 0.5428703051810333
+            "lambda": 0.5417738768313773
           },
           "filleted": {
-            "wedge_deg": 270.85291105970776,
+            "wedge_deg": 271.6468074876051,
             "kind": "re_entrant",
-            "lambda": 0.5431264547074095
+            "lambda": 0.5418905183118155
           },
           "resolved_by_the_fillet": false
         }
@@ -70,28 +70,28 @@
       "global_max_vm": {
         "unfilleted": {
           "peak_mpa": [
-            48.20800003211852,
-            73.72816712766468,
-            91.15213388871358,
-            108.56572107954148
+            45.15488643723695,
+            69.43199557146376,
+            85.7786289067103,
+            103.10409688174435
           ],
           "increment_ratios": [
-            0.6827528478091265,
-            0.9994042935019706
+            0.6733352494675907,
+            1.0598798920678647
           ],
           "diverges": true,
           "settled_estimate_mpa": null
         },
         "filleted": {
           "peak_mpa": [
-            29.2224552826479,
-            35.23214474342214,
-            44.4585378090836,
-            55.86645096109661
+            37.02796704577416,
+            57.74424579365933,
+            72.39685201201722,
+            88.64758786457338
           ],
           "increment_ratios": [
-            1.535252882180173,
-            1.236443436869243
+            0.7072991436675714,
+            1.1090679439809155
           ],
           "diverges": true,
           "settled_estimate_mpa": null
@@ -100,31 +100,31 @@
       "fillet_surface": {
         "hub": {
           "peak_mpa": [
-            29.2224552826479,
-            33.05827815418452,
-            35.00036210074709,
-            35.87888418249068
+            17.783979107095437,
+            21.848760177381877,
+            23.4859731274573,
+            24.42248544330408
           ],
           "increment_ratios": [
-            0.5063017797233622,
-            0.4523605085653213
+            0.4027801059307852,
+            0.5720161911763753
           ],
           "diverges": false,
-          "settled_estimate_mpa": 36.60455992702525
+          "settled_estimate_mpa": 25.674168794066556
         },
         "rim": {
           "peak_mpa": [
-            12.888816250379985,
-            14.847668739007315,
-            15.75724707438403,
-            16.05660834264466
+            16.10517856269382,
+            18.52222765111997,
+            19.711947912738754,
+            20.490766302144106
           ],
           "increment_ratios": [
-            0.4643424355113661,
-            0.3291209306745943
+            0.4922201486579924,
+            0.6546231198463897
           ],
           "diverges": false,
-          "settled_estimate_mpa": 16.203469474140295
+          "settled_estimate_mpa": 21.966929164115406
         }
       },
       "objective": {
@@ -253,36 +253,36 @@
         "linear": {
           "hub": {
             "modelled_peak_mpa": 13.443166028022757,
-            "measured_surface_peak_mpa": 36.60455992702525,
-            "measured_over_modelled": 2.722912136227563,
+            "measured_surface_peak_mpa": 25.674168794066556,
+            "measured_over_modelled": 1.9098305221067595,
             "util_modelled": 0.5377266411209103,
-            "util_measured": 1.46418239708101,
+            "util_measured": 1.0269667517626622,
             "model_understates": true
           },
           "rim": {
             "modelled_peak_mpa": 8.938936714124587,
-            "measured_surface_peak_mpa": 16.203469474140295,
-            "measured_over_modelled": 1.8126842142798572,
+            "measured_surface_peak_mpa": 21.966929164115406,
+            "measured_over_modelled": 2.457443191135366,
             "util_modelled": 0.3575574685649835,
-            "util_measured": 0.6481387789656118,
+            "util_measured": 0.8786771665646163,
             "model_understates": true
           }
         },
         "svk": {
           "hub": {
             "modelled_peak_mpa": 14.507373027808107,
-            "measured_surface_peak_mpa": 36.60455992702525,
-            "measured_over_modelled": 2.523169415776425,
+            "measured_surface_peak_mpa": 25.674168794066556,
+            "measured_over_modelled": 1.7697324487937027,
             "util_modelled": 0.5802949211123243,
-            "util_measured": 1.46418239708101,
+            "util_measured": 1.0269667517626622,
             "model_understates": true
           },
           "rim": {
             "modelled_peak_mpa": 9.646573516495375,
-            "measured_surface_peak_mpa": 16.203469474140295,
-            "measured_over_modelled": 1.6797124332731004,
+            "measured_surface_peak_mpa": 21.966929164115406,
+            "measured_over_modelled": 2.277174286450268,
             "util_modelled": 0.38586294065981497,
-            "util_measured": 0.6481387789656118,
+            "util_measured": 0.8786771665646163,
             "model_understates": true
           }
         }
@@ -591,20 +591,20 @@
       ]
     },
     "model_understates_everywhere": true,
-    "measured_over_modelled_min": 1.6797124332731004,
+    "measured_over_modelled_min": 1.7697324487937027,
     "measured_over_modelled_max": 2.9817994171086992,
-    "direction_note": "\u00a793 argued the filleted objective OVERSTATES stress because `Kt > 1`.  Measured against the fillet surface's own converged peak it understates it by 1.68x to 2.98x, because the other factor \u2014 a whole-wheel p=4 p-norm standing in for a local peak \u2014 errs further the other way.  Both scope gaps (one phase vs eight, linear vs SVK) raise the measured side, so these are lower bounds.",
+    "direction_note": "\u00a793 argued the filleted objective OVERSTATES stress because `Kt > 1`.  Measured against the fillet surface's own converged peak it understates it by 1.77x to 2.98x, because the other factor \u2014 a whole-wheel p=4 p-norm standing in for a local peak \u2014 errs further the other way.  Both scope gaps (one phase vs eight, linear vs SVK) raise the measured side, so these are lower bounds.",
     "admissibility": {
       "shipped": {
         "hub": {
           "util_modelled": 0.5802949211123243,
-          "util_measured": 1.46418239708101,
+          "util_measured": 1.0269667517626622,
           "modelled_admissible": true,
           "measured_admissible": false
         },
         "rim": {
           "util_modelled": 0.38586294065981497,
-          "util_measured": 0.6481387789656118,
+          "util_measured": 0.8786771665646163,
           "modelled_admissible": true,
           "measured_admissible": true
         }

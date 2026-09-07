@@ -138,33 +138,17 @@ def test_study_fillet_kt_reproduces_from_its_committed_inputs():
 
 
 def test_study_fillet_wiring_reproduces_from_its_committed_inputs():
-    """RED ON PURPOSE, 2026-09-07 — the committed artifact does not describe this tree.
+    """REFRESHED 2026-09-07 once both frozen inputs were — see PLAN §119 successor 1's
+    corner half and §126 (junction half, peer session).
 
-    Unlike `study_fillet_kt`, this driver makes ONE live read: `build()` loads
-    `best_solution.json` for `mesh_fillet_arcs`, and `what_the_exporter_filleted` prices
-    the shipped radii against it.  So it goes stale from two independent directions, and
-    both have happened.  Measured, ten fields, in two clusters:
-
-        /exchange/weight_today                       325.0    -> 89.21
-        /exchange/.../hub/stress_margin_today   (two rows, the same factor)
-            -- `DEFAULT_WEIGHTS["stress_margin"]`, moved at §103 on 2026-09-03.  This half
-               has been stale since four days BEFORE the promotion.
-
-        /what_the_exporter_filleted/rings/hub/r_requested_mm   0.663606 -> 0.570995
-        /what_the_exporter_filleted/rings/rim/r_requested_mm   3.0      -> 1.680168
-        /what_the_exporter_filleted/rings/hub/r_built_mm       0.663606 -> 0.485346
-        /what_the_exporter_filleted/rings/hub/kt_error_pct     0.0      -> 7.5162
-            -- the live read.  §115 promoted `b729e86` over `09e8188` on 2026-09-06, and
-               at the new genome the exporter no longer builds the hub radius it is asked
-               for.
-
-    THE `verdict` BLOCK IS BIT-IDENTICAL ACROSS THE REBUILD, and that is why this is a
-    plain red rather than an `xfail`: refreshing this artifact retires no finding, so
-    there is nothing here needing the judgement §119 successor 1 reserves.  It is not
-    refreshed in the same breath as installing this test because its OTHER inputs — the
-    corner and junction artifacts — are frozen behind that successor, and an artifact
-    built half from today's tree and half from inputs known to be stale is a worse record
-    than either end.  Refresh it when they are refreshed, and delete this paragraph then.
+    This driver makes ONE live read (`build()` loads `best_solution.json` for
+    `mesh_fillet_arcs`), so refreshing it folds in both the corner/junction artifact
+    updates and that live read at once. Checked before filing, the same way §120 checked
+    the three drivers it pinned: every categorical verdict below survived unchanged —
+    only three numeric wedge-error fields moved, all downstream of the junction refresh
+    (`hub_wedge_err_end_cap_deg` 28.705 -> 6.426, `hub_wedge_err_as_built_deg` 0.0080 ->
+    0.0183, `rim_wedge_err_as_built_deg` 50.612 -> 32.343). `test_the_wiring_verdict_
+    survives_the_rebuild` is the pin on that half; this test is the bookkeeping half.
     """
     rebuilt = fw.build()
     diff = _first_difference(_strip(_committed("study_fillet_wiring.json")),
