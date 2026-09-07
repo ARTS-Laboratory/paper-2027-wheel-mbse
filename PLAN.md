@@ -18607,3 +18607,162 @@ Two closed, none opened, two siblings added and green. Against the board: **30**
 **SUCCESSORS.** §117's successor 2 is now 24 positions across four files rather than five,
 and `test_tri_block` is done. Nothing else moved: §120's successor 1 and §119's successor 1
 are still untouched and still the expensive ones.
+
+---
+
+## §124 — 2026-09-07. `test_fillet_block` AND `test_fillet_fold`, CLOSED: EIGHTEEN REDS, ONE MECHANISM (`_sector_fit_span`'s HUB LIMIT COLLAPSED 4.2x) EXPLAINING FIVE OF THEM, AND A THIRD ARTIFACT PINNED TO THE WRONG GENOME BY THE SAME BUG §120 ALREADY NAMED TWICE
+
+Worked alongside a peer session (`test_tri_block`, `test_filleted_mesh`, `test_corner_
+singularity`) on the same red board — §117's successor 2. This section is `test_fillet_
+block` (15 red) and `test_fillet_fold` (3 red), all 18 closed: thirteen re-derive cleanly,
+five are recorded `xfail(strict=True)` because the claim they made is false on `b729e86`
+and re-deriving a friendlier number would misrepresent that.
+
+### 1. THREE OF `test_fillet_fold`'s READS ARE THE SAME SHAPE AS §120-§123: A NODE-
+ALLOCATION EDGE MEASURED ON 09e8188, ASSERTED AGAINST WHATEVER `genes` READS
+
+`test_build_wheel_accepts_a_mesh_with_inverted_gauss_points`, `test_the_window_closes_
+when_the_arc_claims_a_second_cell` and `test_the_window_opens_when_the_mid_side_node_
+reaches_the_middle` all read the live `genes` fixture (deliberately — the file's own header
+says these are about the construction, not about one pinned wheel) and compare against
+radii or fractions measured on `09e8188`. `sweep_one`'s window is a property of the arc's
+own node allocation (`k0 = clip(round((s_A - s0)/ds), 1, cap)`), which reads `s_A`/`ds` off
+the genome, so it moves when the genome does:
+
+```
+                                      09e8188 (was)      b729e86 (shipped)
+  arc_cells 1->2 step, coarse         0.24 / 0.25 mm     0.27 / 0.28 mm
+  first fold past the window          0.25 mm            0.28 mm
+  mid_frac crossing (window opens)    0.39 / 0.40         0.4085 / 0.4274
+```
+
+All three re-derive: the mechanism (`k0` stepping, the mid-side node crossing the
+element's own middle) is unchanged, only the radii and fractions moved. `test_the_
+committed_report_still_describes_this_construction` and the reconciliation pair were
+already reading a pinned genome (`RECONCILIATION_GENOME`) and were never red.
+
+### 2. `test_fillet_block` HAD A FOURTH INSTANCE OF §120/§122's "STALE GENOME REFERENCE"
+CLASS — A THIRD ARTIFACT §119 DELIBERATELY PINNED, READ AGAINST THE WRONG GENOME
+
+`test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces` compares `fb.region_
+angles` computed from the live `genes` fixture against `studies/study_junction_agreement.
+json`. That artifact's own `genome_hash` field reads `09e8188` — §119 found it was one of
+three drivers ("junction, corner, corner-fillet exit 0") whose refresh would silently
+retire nine recorded findings and explicitly declined to refresh it (§119 §3: "record
+them, do not refresh them mid-arc"). So as of §119 the artifact is INTENTIONALLY stale,
+and this test's live recomputation needed to take the same genome the artifact describes,
+not whatever ships — exactly `profile_genes`' and `test_fillet_fold`'s `reconciliation_
+genes`' reason, on a THIRD artifact. Added `junction_genes` (reads `stage3_knee_best_
+medium.json`, the same file `PROFILE_GENOME`/`RECONCILIATION_GENOME` already point at) and
+switched the test onto it; both junctions reproduce to round-off (7e-15 hub, 0.0 rim)
+against the committed report once genome and recomputation agree.
+
+### 3. FIVE REDS ARE ONE MECHANISM: `_sector_fit_limit(hub)` COLLAPSED FROM 3.13 mm TO
+0.74 mm, MEASURED LIVE AT BOTH GENOMES WITH THE CODE §83 ALREADY FIXED
+
+`test_the_SECTOR_bounds_the_hub_radius_before_the_BLOCK_does` pinned the hub sector-fit
+limit at `3.0 < lim < 3.3`; it now reads 0.743356. Checked before touching anything that
+this is not the pre-§83 defect (`_sector_fit_span` conflating a layer refusal with a
+sector one) coming back: `wheel_wheel._sector_fit_span`'s own docstring records that at
+the shipped PROFILE no layer refusal fires across the whole bracket at any of 64
+junction-pairs, and the "why" strings here are genuine fourth-kind (tangent-past-corner)
+refusals. Measured live, same code, both genomes:
+
+```
+                          09e8188      b729e86
+  sector_fit_limit(hub)   3.129700     0.743356
+```
+
+Headroom above the shipped `R_hub` gene (0.571) is now 0.172 mm, down from 2.56 mm. This
+is a real, reproducible geometric consequence of §115's promotion — independently
+confirmed by the peer session, whose `test_filleted_mesh` board carries the identical
+number in five more places (`sector_fit_clamp`, two cache-key tests that trip
+`FilletClampRefusedError` on a `genes[12] += 0.2` perturbation alone, and two fillet-area-
+share tests).
+
+Four more reds are this same collapse's downstream reach, and three re-derive cleanly
+while one is a genuine finding:
+
+- `test_the_sector_closes_OFF_the_committed_grid_too[0.91-2.37]` and `[3.0-3.0]` — both
+  parametrised `R_hub` values are past the new 0.743 mm limit, so the sector genuinely does
+  not close there any more. `xfail(strict=True)`: re-deriving new "off-grid" radii that
+  still close would answer a different, easier question than the one the test's name asks.
+- `test_the_SHALLOW_cut_lands_tangent_which_is_why_it_cannot_close[hub]` re-derives (12.864
+  -> 16.377 deg, bound loosened 15.0 -> 20.0). The `[rim]` half is `xfail(strict=True)`:
+  `sliver_scaled_jacobian` — `sin()` of the landing angle — crossed `wo.MIN_SJ_TARGET`
+  (0.076395 -> 0.230054 against the floor 0.2), and that floor is a real design constant
+  this test deliberately compares against, not a local tolerance to retune.
+- `test_the_entry_slope_is_what_keeps_the_junction_block_open` re-derives: flat-entry
+  quality is less severe (0.040 -> 0.089, bound loosened 0.05 -> 0.1) and the chosen slope's
+  margin over it narrower (10.68x -> 5.36x, bound loosened accordingly) — same direction,
+  smaller gap.
+
+### 4. ONE MORE REVERSAL, INDEPENDENT OF THE SECTOR-FIT COLLAPSE: THE FILLETED FAITHFUL
+RIM IS NOW VERY SLIGHTLY BETTER THAN THE UNFILLETED ONE, NOT WORSE
+
+`test_the_recut_does_NOT_rescue_the_faithful_rim` asserted `fil_sj < ctl_sj` at both
+configs — §46's finding that the re-cut makes the faithful rim (`uncap` blend 0.0) worse,
+not better. Measured at both genomes, same code:
+
+```
+                    09e8188 (ctl / fil)         b729e86 (ctl / fil)
+  coarse            0.008176 / 0.000343         0.032732 / 0.036481
+  medium             0.008251 / 0.003334         0.032741 / 0.035194
+```
+
+`ctl_sj` matches §121 GROUP 2's independently-measured "blend 0.0, faithful" row exactly —
+same code, same genome, a free cross-check that both sections are reading the same wheel
+correctly. `fil_sj` was ~24x smaller than `ctl_sj` at `09e8188` (filleted much worse, the
+published finding) and is now ~11% LARGER at `b729e86` (filleted marginally better) — the
+ordering this test is named for has reversed. Both numbers stay roughly two orders below
+`wo.MIN_SJ_TARGET` at both genomes, so the faithful rim is unusable either way and nothing
+about §46's actual decision (promote the rim tri-block; the DEFAULT blend is where both
+constructions clear the target) changes. `xfail(strict=True)` at both configs rather than
+re-pinned, because pinning the new ordering would restate a comparison this promotion
+falsified as if it were a fresh fact.
+
+### 5. THE REMAINING SIX RE-DERIVE WITHOUT INCIDENT
+
+`test_the_corner_at_A_is_a_cusp_too_and_it_is_the_flank_s_CURVATURE` (both junctions): the
+band claim (`max - min < 0.25`) is genome-robust and stayed inside it at `b729e86`; only
+the absolute bound (`< 1.0`, sized to 09e8188's 0.42-0.56 deg band) needed loosening to
+`< 4.0` to clear the new 1.99-3.52 deg band. `test_no_quad_block_can_use_this_region[rim]`:
+`A` and `B` are still under a degree and exactly zero; the sum bound (45 -> 65) moved
+because `at_P_t_deg` alone grew 18 deg (38.89 -> 57.26), which the independent `at_P_t_deg
+> 30.0` assertion already covers. `test_PART_3s_collapsed_corner_reproduces_at_coarse`:
+`moved_corner` reads `R_hub`/`R_rim` off the gene box directly, so the published angle and
+cross-section for both junctions simply moved with the promotion (hub 3.601/2.759 ->
+10.116/4.041, rim 8.524/8.596 -> 8.186/5.696) — re-derived, not a structural change.
+`test_the_filleted_sector_costs_the_unfilleted_one_nothing`: `rim_junction`'s min scaled
+Jacobian under the DEFAULT (unfilleted) sector matches §121 GROUP 2's "blend 1.0, shipped"
+row exactly (0.547847/0.547420) — bound loosened `0.7 -> 0.5` to match a finding §121
+already recorded, not re-litigated here.
+
+### 6. WHERE THE COUNT STANDS
+
+Both files run in full, failure list diffed against the top of this section:
+
+```
+                        before      now
+  test_fillet_block       15          0    (5 xfail added, 10 re-derived to pass)
+  test_fillet_fold          3          0    (3 re-derived to pass)
+                          --          --
+                          18          0
+```
+
+Eighteen closed, none opened, five converted to documented `xfail(strict=True)`. §117's
+successor 2 stands at 24 minus these two files' contribution; the peer session's board
+after its own `test_tri_block` work was `test_filleted_mesh` 6, `test_corner_singularity`
+2 — unaffected by this section except that `test_filleted_mesh`'s five `_sector_fit_span`-
+shaped reds now have this section's measurement to cite rather than re-deriving it.
+
+**SUCCESSORS.**
+
+0. **`test_filleted_mesh`'s five `_sector_fit_span` reds** (peer session, in progress) cite
+   §3's `sector_fit_limit(hub)` table directly rather than re-measuring it.
+1. **THE "0.36" PROSE REFERENCE IN `test_the_filleted_sector_costs_the_unfilleted_one_
+   nothing`'s DOCSTRING IS UNVERIFIED AGAINST `b729e86`.** It compares the unfilleted
+   control's SJ against the filleted sector's own, and is not itself asserted anywhere in
+   this file — noted, not chased down, since nothing red depends on it.
+2. **§120's successor 1 and §119's successor 1 are still untouched and still the
+   expensive ones** — unchanged by this section.
