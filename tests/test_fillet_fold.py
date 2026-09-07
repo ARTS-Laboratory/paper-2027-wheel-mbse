@@ -47,6 +47,19 @@ def genes():
 
 
 @pytest.fixture(scope="module")
+def reconciliation_genes():
+    """The wheel PART 3 and PART 5 were measured on, read by FILE rather than by pointer.
+
+    `study_fillet_fold.RECONCILIATION_GENOME` carries the argument and the before/after;
+    this fixture exists so the test side takes the same read as the driver and the two
+    cannot drift apart.  It is deliberately NOT the `genes` fixture above: every other
+    test in this file is about the wheel that ships, and this one is about the
+    instrument.
+    """
+    return ff.load_genes(ff.RECONCILIATION_GENOME)
+
+
+@pytest.fixture(scope="module")
 def report():
     with open(os.path.join(REPO, "studies", "study_fillet_fold.json")) as fh:
         return json.load(fh)
@@ -94,15 +107,38 @@ def test_the_default_wheel_is_clean_under_every_criterion(genes):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("junction", ["hub", "rim"])
-def test_the_two_contested_criteria_both_reproduce_at_coarse(genes, junction):
+def test_the_two_contested_criteria_both_reproduce_at_coarse(reconciliation_genes,
+                                                             junction):
     """PART 3 recorded 0.20 mm; PART 5 recorded 4.00 (hub) / 3.00 (rim).  Both are right.
 
     Measured here on PART 5's own grid so "largest surviving" means what it meant there:
     the largest grid point with no fold at it or below it.  `coarse` only, because the
     claim under test is that the CRITERIA differ, and that does not need a second config
     to demonstrate — `medium` is carried by the committed report.
+
+    ON THE GENOME (§121).  This is a claim about the INSTRUMENT, not about the wheel that
+    ships — the file header is explicit that the reconciliation is pinned hard because a
+    change to `_filleted_spoke` moving either table would put every number measured with
+    it in question.  So it is re-measured on the wheel the two tables were read off.
+    §115's promotion made that a different wheel from `best_solution.json` and turned both
+    parametrisations red without `_filleted_spoke` moving at all; §120 moved the driver's
+    reconciliation onto the file for the same reason.  Same code, both genomes, `coarse`:
+
+        criterion, cell          09e8188 (pinned)     b729e86 (shipped)
+        block_cells largest      hub 0.20  rim 0.20   hub 0.20  rim 0.30
+        build_wheel first fold   hub 4.00  rim 3.00   hub none   rim 4.00
+
+    Three of the four cells move one grid point OUTWARD — the shipped wheel tolerates a
+    slightly larger fillet, and at the hub `build_wheel` accepts the whole legacy grid, so
+    `summarize` reports no first fold at all.  The fourth does not move, which is why the
+    hub row's PART 3 half still agreed at the shipped genome while its PART 5 half did
+    not, and why a pin here restores a measurement rather than choosing a friendlier one.
+
+    The shipped wheel does not stop being measured: `study_fillet_fold.json`'s
+    `reconciliation_shipped` block is these same eight rows on `best_solution.json`,
+    reported and not gated.
     """
-    rows = ff.sweep_one(genes, "coarse", junction, ff.LEGACY_GRID)
+    rows = ff.sweep_one(reconciliation_genes, "coarse", junction, ff.LEGACY_GRID)
     summ = ff.summarize(rows, ff.LEGACY_GRID)
     assert summ["block_cells"]["largest_surviving_mm"] == 0.20
     assert summ["build_wheel"]["first_fold_mm"] == (4.00 if junction == "hub" else 3.00)
