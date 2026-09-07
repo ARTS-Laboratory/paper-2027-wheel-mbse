@@ -17803,3 +17803,308 @@ whose refresh would cost nine findings.
 3. **`studies/study_fillet_kt.json` AND `study_fillet_wiring.json` READ THE CORNER
    ARTIFACTS**, and no test covers that dependency. Whether they describe a mesh that no
    longer exists is unmeasured, and they would inherit §3's whole problem.
+
+---
+
+## §120 — 2026-09-07. §119's SUCCESSORS 0, 2 AND 3, CLOSED. THE GENOME IS THE WHOLE CAUSE FOR ALL THREE DRIVERS — MEASURED BEFORE ANY CODE WAS WRITTEN — AND PROVING THE PIN GREEN FOUND THE SAME DEFECT ONE LEVEL DOWN, IN THREE ARTIFACTS NOTHING WAS WATCHING. THE `corner-fillet` COST LINE WAS NEVER WRONG
+
+§119 filed four successors and declined the expensive one. This section executes the other
+three. **Successor 1 — the nine findings under `study_corner_singularity{,_fillet}.json`
+and `study_junction_agreement.json` — is untouched by design**, and its four freshness reds
+are still red. Nothing here refreshes an artifact whose refresh costs a finding.
+
+### 1. THE DECISION GATE §119 LEFT OPEN, ANSWERED BEFORE ANY CODE CHANGED
+
+§119 wrote that each driver *"needs a decision about WHICH genome its PART constants belong
+to"*, and that only `fillet_fold` had been measured. There is one answer for all three, and
+it is dated rather than argued: every failing self-check traces to a plan-file record from
+**2026-08-17 → 2026-08-23**, a window in which `best_solution.json` held `09e8188`
+throughout (§26, 2026-08-14; replaced by `b729e86` at §115, 2026-09-06). That genome is
+preserved as `stage3_knee_best_medium.json` — §115's own checklist item 5.
+
+Run at that file, same code, scratch `--out`, before anything was edited:
+
+```
+  driver               at b729e86 (defaults)        at 09e8188 (pinned)    wall
+  study_fillet_fold    exit 1, 4 of 8 rows          exit 0, 8 of 8         38.6 s
+  study_tri_block      exit 1, 2 of 20 checks       exit 0, 20 of 20      687.9 s
+  study_fillet_block   exit 1, 4 of 21 checks       exit 0, 21 of 21      596.1 s
+```
+
+**The genome is the whole cause in all three, and §104's live suspicion does not apply.**
+§103 made the tree build the eleven-block filleted sector, so the construction under these
+drivers could have moved too — but `control()` and the sector sweeps here take `uncap=`,
+not `fillet=`, and every check returns True at the outgoing genome with today's code.
+
+### 2. THE PIN
+
+`study_svk_rescore.run_control` (§25) throughout: **the constant stays, the READ moves**
+onto the file the constant was measured on, and rows that characterise the SHIPPED wheel
+keep following `best_solution.json`. Repointing `--genome` was never available —
+`tests/test_tri_block.py:815` asserts `report["genome"] == "best_solution.json"` from the
+other side, two more tests re-measure against a shipped-genome fixture, and `_gate_guard`
+refuses any other genome under a committed artifact's name.
+
+**`study_fillet_fold`** — the reconciliation runs on the pinned genome over `LEGACY_GRID`
+only, the ten radii both tables were read off, and reproduces the committed artifact's
+legacy-grid cells bit for bit. `reconciliation_shipped` carries the same eight rows on
+whatever ships, reported and not gated. 43.5 s against 38.6 s, so the pin is 4.9 s.
+
+`mechanism` survives the promotion, checked rather than assumed: all four
+`(cfg, junction)` keys still report `upper_edge_is_arc_cell_step` and
+`part3_criterion_matches_upper_edge` True at `b729e86`, windows shifted
+(`coarse:hub` 0.12–0.24 → 0.16–0.27 mm).
+
+**`study_tri_block`** — the two published-number checks read a pinned control pair:
+
+```
+                            pinned 09e8188        shipped b729e86      coarse / medium
+  control_shipped (1.0)   0.782735 / 0.782926   0.547847 / 0.547420
+  control_faithful (0.0)  0.008176 / 0.008251   0.032732 / 0.032741
+```
+
+**§51's published 0.008176 reproduces at the pin to the digit**, and §37's `0.7822` is 30%
+away on the wheel that ships — while the collapse the whole arc exists to measure reads
+0.0327 against a `< 0.02` threshold. 11m16.6s against §119's 686 s: free.
+
+**`study_fillet_block`** — `PROFILE_GENOME` pins the PART 13 / PART 16 / PART 20 family.
+9m51.4s against §119's 588 s, so ~3 s.
+
+**AND THE FAMILY HAD TWO MEMBERS THE FOUR RED CHECKS DID NOT NAME.** Pinning only the four
+cells that failed turned `test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined`
+red. §81's `0.5520` is the shipped PROFILE's cliff clearance and
+`sweep_cliff_clamped_profile` puts `shipped_margin` on every row, so `cliff_profile` and
+`cliff_profile_held_out` are PART 20's family too. Half-pinned, that table read **0.7909
+against a 0.5520 bound** — every field present, every verdict computed, and its rows
+describing two different wheels. **A half-pinned comparison is worse than an unpinned one,
+because nothing goes red.** Found by diffing the failure list, not by reading the code.
+
+### 3. WHAT PROVING IT GREEN FOUND: THE SAME DEFECT ONE LEVEL DOWN
+
+`study_tri_block.json` is not only an output. `study_tri_bend.py` and `study_tri_rule.py`
+both call `frozen_cells(TRIBLOCK_ARTIFACT)` and take `sweep.best`'s cell from it. That
+argmax is a characterisation of the SHIPPED wheel — correctly so; keeping it fresh is what
+`..._BUILDS_TODAY` is for — so refreshing the artifact moved it:
+
+```
+  study_tri_block  sweep.best.B     coarse 10 -> 10      medium 18 -> 20
+```
+
+**One consumer had a test and one did not.**
+`test_tri_bend::test_w_is_held_fixed_to_the_tri_blocks_own_published_cell` went red at once
+and named the number. `study_tri_rule.json` has no equivalent check and would have gone
+stale in silence.
+
+Both regenerated at the new cell, **verdicts checked before filing**:
+
+```
+  study_tri_bend   §104's "a genome-dependent bend buys exactly nothing" SURVIVES --
+                   linear still ties constant.  linear_beats_constant_on_holdout
+                   medium [9, 9] -> [5, 5]; COARSE UNCHANGED at [9, 9], which is the
+                   row §104's "nine genomes against the constant's nine" quotes, so
+                   that sentence is intact as written.                        24.3 s
+  study_tri_rule   every self-check unchanged; `coarse` bit-identical, its cell not
+                   having moved.  §104's verdict holds and gets STRONGER: at `medium`
+                   the calibrated rule's holdout accuracy goes 0.800 -> 0.775 forward
+                   and 0.900 -> 0.875 swapped, so it loses to the hand-read 0.850 by
+                   more.                                                    16m39.7s
+```
+
+§104's own record is left as written and scoped to its date. **Both of its headline numbers
+survive**: the bend's "nine against nine" is the `coarse` row, whose cell did not move, and
+`medium` forward still loses to the hand-read `0.850` — by 0.075 now instead of 0.050. What
+is superseded, here and nowhere else, is §104's `medium` hold-out column: `forward` 0.800 →
+0.775 and `swapped` 0.900 → 0.875.
+
+### 4. THE `corner-fillet` COST LINE WAS NEVER WRONG (SUCCESSOR 2)
+
+§119 measured the recipe at 335 s against its own *"~22 s"*, called it 15.2x, and — rightly
+— filed an instruction rather than a fix: *"check whether the filleted ladder got slower for
+a reason before rewriting the number."* **It did not get slower.** One flag at a time, same
+box, same genome:
+
+```
+  `make corner`, unfilleted control                            7.8 s
+  + --fillet genome                                           15.5 s
+  + --continuity coarse                                       20.5 s
+  + --profiles              <- `make corner-fillet`          332.3 s
+```
+
+**"~22 s" is exactly right for `--fillet genome --continuity coarse`, which is the recipe
+the sentence was written against.** `--profiles` joined the recipe afterwards and the cost
+line was not updated. The filleted ladder is **2.0x** the unfilleted one, not 15x.
+`--profiles` is **311.8 s, 94% of the wall**, and it is not a ladder at all: it sweeps the
+deflection's convergence over every pair in `study_fillet_block.LAYER_PROFILE_CANDIDATES` —
+PART 16's two-objective work, whose cost belongs to that question and not to the fillet.
+§119's *"this is the filleted path on `b729e86`"* was half right: it is that path, but
+specifically the half that is not a fillet measurement.
+
+The comment's own sub-figure went with it — `--continuity coarse`'s thirteen extra `coarse`
+solves are **5.0 s**, not the recorded "~8 s of the 22" — and the help text carried a THIRD
+figure, "~110 s", so somebody updated one of the two places when `--profiles` landed.
+
+### 5. THE DERIVED-ARTIFACT CHAIN (SUCCESSOR 3)
+
+§119 filed this as unmeasured. It is worse than a missing dependency check: **neither driver
+had a test file at all.** And the chain is one hop longer than §119 named —
+
+```
+  study_fillet_block.py  LAYER_PROFILE_CANDIDATES
+      -> study_corner_singularity.py  (--profiles imports it as `fbk`)
+      -> study_corner_singularity_fillet.json
+      -> study_fillet_kt.json   and   study_fillet_wiring.json
+  study_junction_agreement.json                -> study_fillet_wiring.json
+```
+
+— so both terminal consumers sit downstream of artifacts successor 1 has frozen, and
+`study_fillet_wiring` reads all three of them. Rebuilt from the tree:
+
+```
+  study_fillet_kt.json       reproduces BIT-IDENTICALLY          0.4 s
+  study_fillet_wiring.json   ten fields differ                   0.7 s
+```
+
+`study_fillet_kt` makes no live read at all, which is the useful half of the answer:
+whatever is stale under it is stale in the corner ladders, not here. `study_fillet_wiring`
+makes one — `build()` loads `best_solution.json` — and is stale from **two independent
+directions**:
+
+```
+  /exchange/weight_today                       325.0    -> 89.21
+  /exchange/.../hub/stress_margin_today   (two rows, the same factor)
+      `DEFAULT_WEIGHTS["stress_margin"]`, moved at §103 on 2026-09-03.  THIS HALF HAS
+      BEEN STALE SINCE FOUR DAYS BEFORE THE PROMOTION, and nothing noticed.
+
+  .../rings/hub/r_requested_mm   0.663606 -> 0.570995
+  .../rings/rim/r_requested_mm   3.0      -> 1.680168
+  .../rings/hub/r_built_mm       0.663606 -> 0.485346
+  .../rings/hub/kt_error_pct     0.0      -> 7.5162
+      the live read.  At `b729e86` the exporter no longer builds the hub radius asked of
+      it.
+```
+
+**The `verdict` block is bit-identical across the rebuild**, pinned separately, and that
+split is the whole point: refreshing this artifact **retires no finding**, so it is not
+successor 1's problem. It is not refreshed here regardless, and the reason is recorded in
+the test: its other inputs are frozen behind that successor, and an artifact built half from
+today's tree and half from inputs known to be stale is a worse record than either end.
+
+`tests/test_fillet_artifact_chain.py` is the tripwire — four green, and
+`test_study_fillet_wiring_reproduces_from_its_committed_inputs` **red on purpose**, naming
+the field it fails on. Plain red rather than `xfail`, matching how this tree already treats
+a stale artifact: an `xfail` would say the staleness is accepted, and it is not.
+
+### 6. THE TEST-SIDE TWINS, WHICH ARE A DIFFERENT BUCKET AND SHOULD NOT BE FIXED HERE
+
+Every constant pinned in §2 has a twin on the TEST side, asserting the same number against a
+live measurement at the shipped genome through a `genes` fixture. **Seven of them, all red,
+all §117 successor 2's:**
+
+```
+  test_fillet_fold    test_the_two_contested_criteria_both_reproduce_at_coarse[hub, rim]
+                          PART3_LARGEST_SURVIVING / PART5_FIRST_FOLD          2
+  test_tri_block      test_the_control_is_the_collapse_section_37_measured
+                          §37's 0.7827 and its < 0.01                         1
+  test_fillet_block   test_the_cliff_column_reproduces_PART_20s_hand_bisections[x4]
+                          CLIFF_PUBLISHED                                     4
+```
+
+They are left red deliberately. §119 ranked the position reds as a bucket of judgements
+between re-deriving a number and marking it `xfail` with the paragraph, and quietly applying
+this section's pin to a test fixture would decide seven of them as a side effect of a
+different successor — which is the failure mode §119's own §3 declined for the nine
+findings. **What this section does give them is a worked pattern and the evidence that it
+restores rather than changes a measurement.**
+
+### 7. THE CHECKLIST LEARNS ABOUT ITSELF A THIRD TIME
+
+`tests/test_promotion.py`'s item 3 said the last three drivers *"still read the shipped
+pointer"*. All four are pinned now, and the sentence goes. **Item 8 is new and is §3 above**:
+a driver's output is another driver's input, none of the four consumers re-derives what it
+reads, so a promotion invalidates them without running them and without any test noticing.
+Re-run the consumers after the producers, in that order. `PROFILE_GENOME_FILE` and a test
+that its hash has not moved mirror §25's `CONTROL_GENOME_FILE` pair — pinning to a file
+makes that file's CONTENT load-bearing, and `stage3_knee_best_medium.json` now carries two
+roles at once, item 5's preserved genome and six recorded constants.
+
+**AND FOUR LINE CITATIONS, SPLIT THE WAY §118 SPLIT ITS FIVE.** Inserting a constant block
+into `study_tri_block.py` and four into `test_promotion.py` moved what three call-outs point
+at. Diffed against the parent rather than content-matched, because content-matching cannot
+tell "already stale" from "stale by my delta":
+
+```
+  UNCAP_PLAN.md x2   study_tri_block.py:228 -> :242   MINE.  Resolved exactly at
+                     `2ce3730` — it quotes the line — and my +14 broke it.
+  test_genome_key_order.py:45   test_promotion.py:184-193 -> :238-247
+  test_genome_key_order.py:84   test_promotion.py:188-193 -> :242-247
+                     PRE-EXISTING.  At `2ce3730` those ranges were already the wrong
+                     block (the `note` assertion, not the genome-file loop, which sat at
+                     203).  My edits moved the real target further; both now resolve.
+```
+
+### 8. WHERE THE COUNT STANDS, AND WHAT WAS ACTUALLY MEASURED
+
+**The blast radius was derived, not guessed**: the ten test files that import a changed
+driver or read a changed artifact (`grep -rln` over `tests/`). `test_stage3.py` names
+`study_fillet_fold` in a string and is not one of them, which is what keeps this from being
+a 110-minute suite run. Both ends run in full, the failure **LIST** diffed — never the
+count, §119's own +3 having hidden 9 opened and 6 closed:
+
+```
+                                  2ce3730      HEAD
+  nine files in the blast radius       46        41
+  tests/test_fillet_artifact_chain.py   -         1     (new file, red on purpose)
+                                     ----      ----
+                                       46        42
+
+  CLOSED  5   test_fillet_block   ..._describes_the_geometry_the_tree_BUILDS_TODAY
+              test_fillet_block   test_the_fold_gate_is_INERT_on_the_shipped_genome
+              test_fillet_fold    test_the_committed_report_still_describes_this_construction
+              test_tri_block      ..._describes_the_mesh_the_tree_BUILDS_TODAY
+              test_tri_bend       test_evaluate_reproduces_the_committed_control_at_bend_zero
+  OPENED  1   test_fillet_artifact_chain  ...wiring_reproduces_from_its_committed_inputs
+```
+
+**No test that was green at `2ce3730` is red at HEAD.** The one opened row is a new test in
+a new file, deliberate, and §5 is its reason. Every close is the same mechanism: an artifact
+that had been describing `09e8188` now describes the wheel that ships.
+
+**Taking §119's 58 at its word, the suite total goes 58 → 54 (five closed, one added).**
+That arithmetic is offered with the same caveat §117 earned: **the 58 has never been
+confirmed by a full run** — it is §117's measured 62 minus §118's two and §119's two, and
+`test_full.log` from 2026-09-06 is a truncated, killed run. What is measured here is the
+46 → 42 above and nothing wider.
+
+Where the 42 sit, and none of these files is a heavy-tier one:
+
+```
+  test_fillet_block   21     test_filleted_mesh    6     test_fillet_fold        5
+  test_corner_sing.    4     test_tri_block        4     test_junction_fit       1
+  test_fillet_artifact_chain  1
+  test_tri_rule 0   test_tri_bend 0   test_promotion 0
+```
+
+**Five of the 42 are §119's declined set and are untouched by construction** — the three
+`..._BUILDS_TODAY` freshness tests (`test_corner_singularity.py` ×2, `test_junction_fit.py`)
+and both parametrisations of
+`test_fillet_block::test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces`. §119
+listed only the `[hub]` one among the four its refresh would have closed, so `[rim]` is red
+for some other reason and that has not been chased here. **Seven more are §6's test-side
+twins.** The remaining thirty are §117 successor 2's position reds and are not this
+section's.
+
+**SUCCESSORS.**
+
+0. **THE SEVEN TEST-SIDE TWINS**, §6. The cheapest surviving work in §117's successor-2
+   bucket and the only part of it with a proven pattern: the driver-side pin restored every
+   one of these constants, so the question per test is only whether the assertion is about
+   the CONSTRUCTION (pin the fixture) or about the WHEEL THAT SHIPS (re-derive, or `xfail`
+   with the paragraph). Do not batch them; the three groups are three different claims.
+1. **REFRESH `study_fillet_wiring.json` WHEN ITS INPUTS ARE REFRESHED**, §5, and not before.
+   Its verdict is invariant today, so this is bookkeeping and stays bookkeeping only while
+   the corner and junction artifacts sit still. `tests/test_fillet_artifact_chain.py` is red
+   until then and that is its job.
+2. **§119's SUCCESSOR 1 IS UNCHANGED AND STILL THE EXPENSIVE ONE.** Four freshness reds,
+   nine findings to decide one at a time. Nothing here has made it cheaper — but §5 has made
+   it bigger by one artifact, since a corner refresh now also owes `study_fillet_kt.json` a
+   rebuild.

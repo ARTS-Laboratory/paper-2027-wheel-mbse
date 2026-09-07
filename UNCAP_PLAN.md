@@ -1804,7 +1804,7 @@ remaining path to a quotable peak" priced.
 **AND THE MESH THE TREE BUILDS IS NOT THE MESH THIS FILE PARTITIONS.**  §103 also made
 `fillet=True` unconditional in `wheel_objective.phase_meshes` and
 `wheel_pool_worker.run_phase`: every mesh the objective solves on is the ELEVEN-block
-filleted sector.  `study_tri_block.region()` (`studies/study_tri_block.py:228`) calls
+filleted sector.  `study_tri_block.region()` (`studies/study_tri_block.py:242`) calls
 `WW.sector_blocks(genes, cfg, uncap=(True, blend), orientation=orientation)` with **no
 `fillet=`** — the unfilleted seven-block one.  Re-measured at the shipped genome on this
 tree, `MIN_SJ_TARGET` = 0.2:
@@ -2006,7 +2006,7 @@ that established them:
    `wheel_wheel.sector_blocks` takes `fillet=None` by default and its own docstring reads
    *"The seven node grids of sector 0 — eleven when the fillet is blocked"*
    (`wheel_wheel.py:2282-2286`). `study_tri_block.region()` calls it with **no `fillet=`**
-   (`studies/study_tri_block.py:228`) — the seven-block sector. Every mesh the objective
+   (`studies/study_tri_block.py:242`) — the seven-block sector. Every mesh the objective
    actually solves passes `fillet=True`: `wheel_objective.py:1015` and
    `wheel_pool_worker.py:63`, unconditional since §103. **The twelve-block Y this file built
    partitions a sector the tree stopped building**, and PART 10 already measured the
