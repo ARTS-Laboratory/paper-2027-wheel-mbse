@@ -18766,3 +18766,135 @@ shaped reds now have this section's measurement to cite rather than re-deriving 
    this file — noted, not chased down, since nothing red depends on it.
 2. **§120's successor 1 and §119's successor 1 are still untouched and still the
    expensive ones** — unchanged by this section.
+
+## §125 — 2026-09-07. `test_filleted_mesh` AND `test_corner_singularity`, CLOSED: EIGHT REDS, THREE MECHANISMS — THE SAME SECTOR-FIT COLLAPSE §124 ALREADY MEASURED, AN OCC FILLET-FIT GAP NOBODY HAD A TEST FOR, AND A THIRD TEST THAT INHERITED §119's DECLINED-FRESHNESS FINDING RATHER THAN DISCOVERING A NEW ONE
+
+Worked alongside a peer session (`test_tri_block`, `test_fillet_block`, `test_fillet_fold`)
+on the same red board — §117's successor 2. This section is `test_filleted_mesh` (6 red)
+and `test_corner_singularity`'s two successor-2 positions (its other two are §119's
+declined-freshness set, untouched). All eight closed: six re-derive or re-scope cleanly,
+two are recorded `xfail(strict=True)` because the claim is false on `b729e86` and neither
+a friendlier number nor a code fix belongs in this section.
+
+### 1. FIVE OF `test_filleted_mesh`'s SIX ARE THE PEER SESSION'S `_sector_fit_span`
+   COLLAPSE, CITED RATHER THAN RE-MEASURED
+
+§124 §3 measured `sector_fit_limit(genes, "coarse", "hub")` live, no artifact involved:
+3.1297 mm at `09e8188`, 0.743356 mm on the wheel that ships — a >4x collapse, confirmed
+independently here before either session had seen the other's number. Headroom over the
+shipped `R_hub` gene (0.571 mm) is now 0.172 mm, down from ~2.56 mm.
+
+Two trace tests (`test_the_filleted_trace_is_SHARED_across_genomes`,
+`test_the_per_genome_trace_is_SHARED_across_genomes`) perturbed `genes[12] += 0.2` purely
+to get "a different genome" for a cache-key check, and that alone now requests past the
+shrunk limit and clamps — reduced to `+0.1`, which stays clear of it and still changes the
+roots/layer-profile the tests need to differ. `test_the_sector_fit_clamp_RESCUES_a_
+genome_that_has_no_room`'s own pinned window on the limit, `(3.12, 3.14)`, is the same
+number and moves to `(0.74, 0.75)`. `test_the_area_reference_takes_the_radii_that_were_
+BUILT`'s `* 1.05` overshoot on the limit used to produce a gap thirty times the
+discretisation residual (~8 mm2, this test's own citation); on the shrunk limit `* 1.05`
+gives 0.7x instead, so the overshoot is `* 1.5` now (gap 8.96 mm2, matching the old
+citation almost exactly — the limit shrank, not the margin the test wants).
+
+`test_the_area_reference_DESCRIBES_the_filleted_region` is a sixth, related but not
+identical: the fillets' area share, pinned as 5-12% ("a large share of the region"),
+measures 1.98%/1.97% (coarse/medium) — small enough that a smaller `R_hub` heads for
+without needing to touch the sector-fit limit specifically, since the genome's own genes
+didn't move, only how much room they have. Widened to 1-3% around the new true value
+rather than re-centred tight, matching how §124 widened its own analogous bound.
+
+### 2. TWO ARE A GENUINELY NEW MECHANISM: OCC CANNOT FIT THE REQUESTED HUB RADIUS, AND
+   NOTHING ON THE MESH SIDE KNOWS IT
+
+`test_the_fillet_reference_agrees_with_the_STEP_MANIFEST` and `test_the_mesh_fillets_the_
+CORNERS_AND_RADII_THE_EXPORTER_ACTUALLY_BUILT` both assert the mesh's hub fillet radius
+equals what `wheel_step_export` actually built. Re-running `make export` (byte-identical
+bar a timestamp, confirming this is not a stale artifact) shows why they now disagree:
+
+```
+  junction    R_req  R_worst   edges   wedge   Kt_model  Kt_built   error
+  hub         0.571   0.485   24/24   324.0      3.073      3.304   +7.5%
+  rim         1.680   1.680   24/24   302.0      1.815      1.815   +0.0%
+```
+
+OCC's fillet operation cannot fit the requested 0.571 mm hub radius against the local
+re-entrant-corner geometry and silently builds 0.4853 mm instead, on all 24 of 24 edges —
+`wheel_step_export`'s own `kt_report` already prices the gap at `kt_error_pct` +7.5%
+(`Kt_model` 3.073 vs `Kt_built` 3.304). `study_corner_singularity.fillet_arcs` fits the
+mesh's OWN fillet nodes and returns the gene's value to twelve digits, because
+`sector_blocks` has no equivalent feasibility check and builds the full requested radius
+regardless of what OCC's kernel could actually cut. **The FEA mesh is a model of the
+request, and not, yet, of the part OCC actually exports.**
+
+Not build-blocking: 7.5% is well inside this project's own historical range for this
+exact metric (`kt_error_pct` has run as high as +111.4% mid-arc; +11.9% is the threshold
+PLAN.md already treats as build-blocking, and `make export` here succeeds cleanly with a
+valid solid). Closing the gap needs a feasibility check in `sector_blocks`/`fillet_arcs`
+that does not exist yet — real geometry work, not a test change — so both consumers are
+recorded `xfail(strict=True)` rather than fixed: a new sibling,
+`test_the_hub_fillet_STILL_MATCHES_what_the_exporter_built`, and the hub half of the
+`CORNERS_AND_RADII` test, split out of its loop. `rim` is unaffected at both and stays
+live. Strict, so a mesh-side fix or a promotion that closes the gap XPASSes and forces
+this record to be revisited.
+
+### 3. ONE MORE HALF-RED IS NOT A THIRD FINDING AT ALL — IT IS §119's, ARRIVING THROUGH A
+   CONSUMER NOBODY HAD WRITTEN YET
+
+`test_the_mesh_fillets_the_CORNERS_AND_RADII_THE_EXPORTER_ACTUALLY_BUILT`'s other half —
+`worst_wedge_deg` against `P_t`, at BOTH junctions, not just `hub` — also failed, and
+chasing it turned up nothing new: it reads `report`, which is `studies/study_corner_
+singularity.json`, the exact artifact §119 measured stale against `b729e86` and
+explicitly declined to refresh, on the record: *"record them, do not refresh them
+mid-arc... the four freshness reds are the tree's honest state"* until the nine findings
+a refresh would retire are decided one at a time. This test is a consumer of that same
+staleness nobody had written when §119 predicted exactly this shape of problem for
+`study_fillet_kt`/`study_fillet_wiring`. Measured, both junctions, fresh manifest against
+the stale artifact: hub 324.0 vs 321.13 deg, rim 302.0 vs 321.32 deg, both well past the
+2 deg rounding band this comparison was calibrated for.
+
+**Not chased further here, and not characterised as a new finding of this section's**:
+fixing it means regenerating the artifact, which is §119/§120's successor 1, already
+named the expensive, untouched one twice over. Split into its own xfail,
+`test_the_manifests_worst_wedge_STILL_MATCHES_P_t`, citing §119 directly. The two checks
+that read no stale artifact — edges filleted, and `P_t`/`P_c` separation — stay live at
+both junctions in the main test.
+
+### 4. AND THE SAME AREA-SHARE SHRINK, A THIRD TIME
+
+`test_the_fillet_reference_agrees_with_the_STEP_MANIFEST`'s own first-order-term band
+(`0.05 < step_mm2/unfilleted_mm2 < 0.15`, "a claim the docstring got wrong") hits §1's
+exact shrink again: measured 0.0207. Widened to 0.015-0.03 the same way as §1's other two
+bounds. Its hub radius-match line is dropped rather than re-asserted — §2's finding
+already carries it, and restating it here would be the same claim twice under two
+names. Its area-agreement check now reads the manifest's BUILT radii for its own
+reference rather than the genome's raw ones, which is the honest version of the
+comparison: the raw-radii version happens to read closer to the manifest (-5.14%) than
+the built-radii one (-8.25%), by comparing two different physical fillets and calling it
+agreement. Widened to 10% for the honest number.
+
+### 5. WHERE THE COUNT STANDS
+
+```
+                          before   now
+  test_filleted_mesh          6     0
+  test_corner_singularity     2     0
+                              --    --
+                              8     0
+```
+
+Eight closed, none opened, two converted to documented `xfail(strict=True)` plus one more
+that was already someone else's documented red wearing a new consumer's name. §117's
+successor 2 stands at 24 minus this section's and the peer session's eighteen — 0
+remaining in either party's assigned files. `make export`'s regenerated artifacts were
+byte-identical bar a timestamp and reverted; nothing committed there.
+
+**SUCCESSORS.**
+
+0. **§120's successor 1 and §119's successor 1 are still untouched and still the
+   expensive ones** — the only unclosed item left in §117's successor 2 lineage, and nothing
+   in either session's work this round makes it any cheaper.
+1. **A FEASIBILITY CHECK FOR THE FILLET RADIUS OCC CAN ACTUALLY CUT DOES NOT EXIST IN
+   `sector_blocks`/`fillet_arcs`.** §2's xfails are the record of that gap, not a fix for
+   it. Whoever picks this up should check whether `sector_fit_limit`'s own re-entrant-
+   corner geometry (already computed for the sector-fit clamp) is the same constraint OCC
+   is hitting, or a genuinely separate one, before writing a predictor.
