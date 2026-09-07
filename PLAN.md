@@ -18519,3 +18519,91 @@ freshness set, 1 is §120's tripwire, and **26** are §117 successor 2's positio
    has no pair with a worked pattern in front of it.
 3. **§120's SUCCESSOR 1 AND §119's SUCCESSOR 1 ARE STILL UNTOUCHED**, and still the
    expensive one.
+
+## §123 — 2026-09-07. §122's SUCCESSOR 0, CLOSED, AND WRONG AS FILED: NEITHER RED WAS THE FOURTH HARDCODED-CELL INSTANCE. BOTH SHARE ONE UNWRITTEN FINDING — A CORNER THIS ARC HAS BEEN CALLING DEGENERATE HAS QUIETLY NARROWED, AND STILL DOES NOT MATTER
+
+§122 named `test_the_faithful_rim_junction_really_is_a_triangle` as a fourth instance of the
+hardcoded-cell defect, comparing against `0.5698029933811283`. Running it before touching
+anything found that wrong: that assertion is `179.0 < turn_at_far_end_deg < 181.0`, nothing
+to do with that number. The test that actually reads `0.5698029933811283` is
+`test_a_generated_interior_cannot_move_it`, and it is not the cell-defect class either —
+the artifact's own `coarse` cell is still `(10, (0.124, 0.751, 0.124))`; only `medium` moved
+under the promotion, and this test never reads `medium`.
+
+### 1. BOTH REDS ARE ONE FINDING: THE FAR-END CORNER NARROWED, AND A GENERATED INTERIOR NOW
+   NOTICES IT
+
+Measured directly rather than assumed, at blend 0, both configs:
+
+```
+                          control_genes (09e8188)   genes (b729e86, shipped)
+  turn_at_far_end_deg      179.511 / 179.510           178.126 / 178.125
+```
+
+UNCAP_PLAN Step 2 measured this vertex at 179.35 deg and called it "within a degree of
+straight" — the premise that lets the region be built as a triangle instead of a
+degenerate quad. The promotion moved it another 1.4 deg past that reading, to 0.87 deg
+outside the file's own `179.0`–`181.0` window. The corner has not become real; it has
+narrowed enough that the file's specific historical number no longer bounds it.
+
+That same narrowing is why `test_a_generated_interior_cannot_move_it` broke. Its worst
+block, `rim_tri_t`, has its raw and Winslow-smoothed `min_scaled_jacobian` bit-identical at
+`control_genes` (0.0 difference — PART 9's route-2 invariance holds exactly there) and
+NOT at the shipped genome:
+
+```
+                    raw          Winslow-smoothed     diff
+  09e8188        0.626233         0.626233            0.0
+  b729e86        0.569803         0.565894            0.003909  (0.7%, DOWN)
+```
+
+The worst node in `rim_tri_t` is no longer purely on a boundary Winslow holds fixed, so a
+generated interior moves it — by 0.7%, and in the direction that makes it worse, not
+better, which rules out reading this as an accidental rescue.
+
+### 2. NEITHER MOVE THREATENS ANYTHING THE FILE CONCLUDES
+
+The only claim that has to survive a promotion is UNCAP_PLAN's actual argument: that
+meshing this junction as a QUAD is indefensible, not that the corner sits at exactly
+179–181 deg. Measured directly off `reg["base"]["rim_junction"]` — the same quad block
+`test_the_three_quads_tile_the_quad_blocks_own_region` already reads for area —
+
+```
+                                 control_genes (09e8188)   genes (b729e86, shipped)
+  quad min scaled Jacobian        0.008176 / 0.008251         0.032732 / 0.032741
+  (coarse / medium)
+```
+
+both readings sit an order of magnitude under `MIN_SJ_TARGET = 0.2`. The shipped pair is
+also exactly the denominator f1bbc0e already named "the faithful": 0.569803 / 0.032732 =
+17.41 and 0.570257 / 0.032741 = 17.42, matching its own ratio-to-the-faithful column to
+four figures — this is not a new quantity, only the first test to assert it directly. And
+the Winslow move costs 0.7% of a cell that clears `MIN_SJ_TARGET` by nearly 3x either way,
+so PART 9's conclusion — the successor is a curved Y, not a better smoother — is if
+anything reinforced: the one interior scheme measured on the shipped genome makes the cell
+worse, not better.
+
+### 3. THE FIX, SAME SHAPE AS f1bbc0e/d1799a1
+
+Both pins keep their exact historical claim on `control_genes`, bit-identical and green.
+Both get a sibling on `genes` that measures what the file's premise actually needs on
+whatever ships: `test_the_DEGENERATE_QUAD_premise_still_holds_on_the_wheel_that_ships` for
+the triangle test, `test_a_generated_interior_DOES_NOT_RESCUE_the_shipped_cell_either` for
+the Winslow one. Neither needed `xfail` — both are currently true, measured, ordinary
+assertions, not a premise the tree is watching go false.
+
+### 4. WHERE THE COUNT STANDS
+
+```
+                        §122        now
+  test_tri_block          2           0
+```
+
+Two closed, none opened, two siblings added and green. Against the board: **30** — 5
+§119 declined-freshness, 1 §120 tripwire, **24** §117 successor 2 positions:
+`test_fillet_block` 13, `test_filleted_mesh` 6, `test_fillet_fold` 3, `test_tri_block` 0,
+`test_corner_singularity` 2.
+
+**SUCCESSORS.** §117's successor 2 is now 24 positions across four files rather than five,
+and `test_tri_block` is done. Nothing else moved: §120's successor 1 and §119's successor 1
+are still untouched and still the expensive ones.
