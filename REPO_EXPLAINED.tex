@@ -1,7 +1,13 @@
 % REPO_EXPLAINED.tex — a technical explanation of the compliant-wheel repository.
-% Compiles with pdflatex (twice, for the table of contents and cross-references):
-%     pdflatex REPO_EXPLAINED.tex && pdflatex REPO_EXPLAINED.tex
-% or simply:  latexmk -pdf REPO_EXPLAINED.tex
+% Compiles with pdflatex, but it needs THREE passes and not two.  The table of
+% contents is long enough that typesetting it shifts the body by a page, so pass 2
+% still carries pass 1's page numbers; pass 3 is the first fixed point.  Measured
+% 2026-09-08: passes 3, 4, 5 and 6 agree, and pass 2 differs from them in 35 lines
+% of the contents.  The committed PDF is the converged one -- a two-pass rebuild
+% will show a spurious 35-line diff against it and is NOT a real change.
+%     pdflatex REPO_EXPLAINED.tex && pdflatex REPO_EXPLAINED.tex \
+%       && pdflatex REPO_EXPLAINED.tex
+% or simply:  latexmk -pdf REPO_EXPLAINED.tex        (runs pdflatex 3 times)
 
 \documentclass[11pt,a4paper]{article}
 
@@ -226,11 +232,14 @@ exactly this reason: ``a docstring here carries the measurement that justifies a
 constant, and deleting it loses evidence, not verbosity.''
 
 \paragraph{The plan files.}
-\code{PLAN.md} is 778\,KB and is the project record, organised into numbered sections
-(\S1\,\ldots\,\S92). Eight sibling \code{*\_PLAN.md} files are open work arcs. Comments
-across the tree cite these by number. Six closed arc files were deleted on 2026-08-16
-and about seventy citations to them remain dangling on purpose---\at{PLAN.md}{53--77}
-is the redirect table.
+\code{PLAN.md} is about 1.4\,MB and is the project record, organised into numbered
+sections (\S1\,\ldots\,\S139 as of 2026-09-08; this paragraph read 778\,KB and \S92 when
+it was written, against a file of 773\,KB). Ten sibling \code{*\_PLAN.md} files sit
+beside it and eight of them are open work arcs---that second figure has not moved since
+\S92, because \code{MBSE\_PLAN.md}
+opened as \code{HUBSHARE\_PLAN.md} closed. Comments across the tree cite these by
+number. Six closed arc files were deleted on 2026-08-16 and about seventy citations to
+them remain dangling on purpose---\at{PLAN.md}{53--77} is the redirect table.
 
 % ===========================================================================
 \section{Mathematical foundations}
@@ -1527,7 +1536,11 @@ src/
   wheel_fea.py       1713        STAGE 1/2.  Constants, GENE_SPACE, Castigliano beam model,
                                   the nine loss terms, the pygad driver, the fillet-arc
                                   plotting helpers, and the CAD hand-off.  numpy only.
-  wheel_wheel.py     3709        THE FULL 360 DEGREE MESH.  Ring geometry, block builders,
+  wheel_requirements.py 1091     MISSION -> CONSTANTS, POINTS -> WEIGHTS.  Derives
+                                  force, stroke, allowable, modulus, wall floor and the
+                                  14-key weight table that `wheel_fea`'s two bare literals
+                                  used to stand for.  numpy + `wheel_fea` only.
+  wheel_wheel.py     3869        THE FULL 360 DEGREE MESH.  Ring geometry, block builders,
                                   Coons patches, the filleted eleven-block sector, seam
                                   tables, union-find assembly, WheelMesh, the differentiable
                                   `mesh_coords` + jitted `coord_fn`, area and quality
@@ -1535,21 +1548,35 @@ src/
   wheel_fem.py       1914        THE FE KERNEL.  Shape functions, energy, autodiff'd force
                                   and tangent, DofMap, penalty contact, linear and Newton
                                   solvers, stress recovery, spoke/wheel/contact problems.
-  wheel_adjoint.py    759        THE GRADIENT.  QoIs, the adjoint solve, load-controlled
+  wheel_adjoint.py    981        THE GRADIENT.  QoIs, the adjoint solve, load-controlled
                                   total derivatives, LOBPCG buckling eigenpair.
-  wheel_objective.py 1461        THE STAGE-3 SCALAR.  Fourteen terms in three tiers, the Kt
+  wheel_objective.py 1683        THE STAGE-3 SCALAR.  Fourteen terms in three tiers, the Kt
                                   stress constraint, the hub fillet cap model, phase
                                   stencils, jit caches, loss breakdown reporting.
-  wheel_stage3.py    1093        THE DRIVER.  Projected Adam (and an L-BFGS-B alternative),
+  wheel_stage3.py    1317        THE DRIVER.  Projected Adam (and an L-BFGS-B alternative),
                                   step-reject policy, selection key, run records, CLI.
-  wheel_pool.py       408        Parent half of the phase worker pool.  stdlib+numpy, NO jax.
-  wheel_pool_worker.py 103       Child.  Pins threads BEFORE its first import.
+  wheel_pool.py       435        Parent half of the phase worker pool.  stdlib+numpy, NO jax.
+  wheel_pool_worker.py 111       Child.  Pins threads BEFORE its first import.
+  wheel_mbse.py       258        THE MBSE FRONT END.  A mission and 100 priority points
+                                  in; a requirement set, a compliance table and optionally
+                                  a warm-started descent out.  `make mbse`.
   wheel_step_export.py 1248      THE EXPORTER (CadQuery env).  Profile construction,
                                   embedding, boolean union, fillet ladder, health checks,
                                   STEP write, manifest.
-studies/              ~19 drivers + their committed .json/.jpg artifacts
-tests/                25 files, 503 test functions
+studies/              38 drivers + their committed .json/.jpg artifacts
+tests/                34 files, 632 test functions
 \end{lstlisting}
+
+Those counts were measured at \S139 (2026-09-08) and they are a claim about their
+instrument as much as about the tree. Lines are \code{wc -l}; drivers are
+\code{ls studies/study\_*.py}; test functions are
+\code{grep -c '\textasciicircum{}def test\_' tests/*.py}, which counts \emph{definitions}
+and not collected cases, so a parametrised test counts once. The same three instruments
+read 26 / 503 / 27 at \S92, when this section was first written---and the figures written
+here then were 25 / 503 / \textasciitilde{}19, so the file count was already one low and
+the driver count last matched the tree on 2026-08-19, ten days before that PDF was built.
+\code{wheel\_requirements} and \code{wheel\_mbse} did not exist yet; both landed on
+2026-08-31, the day after. Re-derive these; do not cite them.
 
 \subsection{The import graph, and the constraint that shapes it}
 
@@ -1559,7 +1586,7 @@ tests/                25 files, 503 test functions
       wheel_geometry --+-- wheel_fea ------> wheel_step_export   [CAD ENV]
        (xp-generic)         (numpy)              (cadquery/OCP)
             |                 |
-        wheel_mesh            |
+        wheel_mesh            +-- wheel_requirements   (numpy)
             |                 |
             +---> wheel_wheel + jax_config
                        |
@@ -1570,6 +1597,8 @@ tests/                25 files, 503 test functions
                 wheel_objective
                        |
                  wheel_stage3 ---- wheel_pool ---- wheel_pool_worker
+                       |
+                  wheel_mbse   (CLI front end; also imports wheel_requirements)
 \end{lstlisting}
 
 The horizontal line matters more than the vertical one. Everything to the left of and
