@@ -891,30 +891,63 @@ $p \le 6$, the ratio $c$ only for $p \ge 24$, and their product at \emph{no} exp
 either design. Here $c$ is anchored to a divergent quantity, and a frozen divergent
 number is still a divergent number.
 
-\paragraph{(c) So the peak is modelled, not measured.}
-The shipped constraint (\at{wheel\_objective.py}{1160--1200}) is
+\paragraph{(c) The peak was modelled---until \S103, when the mesh grew the fillet.}
+For most of this tree's life the constraint was
+$K_t(R, t)\,\sigma_{\text{nominal}}(p{=}4) \le \sigma_{\text{allow}}$, with
+$K_t = 1 + C(t/2R)^{0.65}$, the Peterson factor from \S\ref{sec:castigliano},
+differentiated rather than frozen: an analytic peak standing in for a fillet the
+\emph{unfilleted} mesh did not model. \textbf{That constraint was retired on 2026-09-03
+and this section went on calling it the shipped one for the five days since.} \S93 wired
+\code{fillet=True} in, and on a filleted mesh the surrogate and the thing it stands in
+for are both present at once. \S94 measured that double count at exactly $0.0$ at the
+shipped genome---utilisation sat below the margin knee, where \code{stress\_margin}
+carried the gradient and the wall did not---but \S101 found the disagreement
+\textbf{widens} under refinement rather than closing, so being free once did not earn the
+surrogate a place.
+
+\S102 built the replacement and \S103 wired it. The shipped constraint
+(\at{wheel\_objective.py}{1345--1349}) is now, for each junction
+$j \in \{\text{hub}, \text{rim}\}$,
 %
 \begin{equation}
-  K_t(R, t)\;\cdot\;\sigma_{\text{nominal}}(p{=}4)
-  \;\;\le\;\; \sigma_{\text{allow}} \;=\; 25.0\ \mathrm{MPa},
+  \mathrm{util}_j \;=\;
+  \frac{\sigma^{\text{region}}_j}{\sigma_{\text{allow}}} \;\;\le\;\; 1,
+  \qquad
+  \sigma_{\text{allow}} \;=\; \code{ALLOWABLE\_STRESS\_MPA} \;=\; 25.0\ \mathrm{MPa},
   \label{eq:stressconstraint}
 \end{equation}
 %
-where $\sigma_{\text{allow}}$ is \code{ALLOWABLE\_STRESS\_MPA}. It is
+where $\sigma^{\text{region}}_j$ is a smooth $p$-norm of von Mises stress in a
+bump-kernel tube of radius \code{FILLET\_REGION\_R\_SUP\_MM} $= 0.45$\,mm around
+\emph{that junction's own fillet arc}, $\ell_p$-normed at \code{FILLET\_REGION\_P} $= 16$
+over the arc's twelve rotational copies (\at{wheel\_adjoint.py}{511}), and then
+aggregated across the eight phase samples at \code{stress\_phase\_p} $= 8$. It is still
 one \code{soft\_barrier} per junction, summed---the hub priced on
-$(\code{R\_hub}, t_0)$, the rim on $(\code{R\_rim}, t_3)$. Here
-$\sigma_{\text{nominal}}$ at $p = 4$ is mesh-convergent (GCI 0.45\% / 0.20\%, observed
-order 1.76 / 2.18, comparable to the axle drop's 2.44 / 0.14\%), and
-$K_t = 1 + C(t/2R)^{0.65}$ is the same Peterson factor from \S\ref{sec:castigliano},
-now \textbf{differentiated by \code{jax.grad} rather than frozen}. Two junctions get two
-barriers rather than one aggregated $K_t$, because a hard \code{max} over the two would
-zero the gradient of whichever is not currently worst and reintroduce exactly the
-argmax kink the $p$-norm exists to blur.
+$(\code{R\_hub}, t_0)$, the rim on $(\code{R\_rim}, t_3)$---and still two barriers rather
+than one aggregate, because a hard \code{max} over the two would zero the gradient of
+whichever is not currently worst and reintroduce exactly the argmax kink the $p$-norm
+exists to blur. \textbf{So the peak is measured again, and the thing that changed is that
+the mesh now has the feature it is measured on.}
 
-Note the consequence: \code{STRESS\_NOMINAL\_P = 4.0} (\at{wheel\_objective.py}{147}) is
-the constraint's exponent, while \code{wheel\_adjoint.STRESS\_PNORM\_P = 30.0}
-(\code{:344}) stays the adjoint's documented default so historical records keep their
-meaning. Two exponents, two meanings, both pinned by tests.
+$K_t$ did not leave the file, only the loss. \code{junction\_kt} has exactly one caller in
+\code{src/} (\at{wheel\_objective.py}{1288}), and it, \code{hub\_fillet\_cap\_mm} and
+\code{hub\_fillet\_r\_effective} now answer a purely geometric feasibility question---does
+the requested fillet radius fit the sector the spoke leaves it---that
+\code{wheel\_stage3}'s \code{REPORT\_KEYS} and \code{selection\_key} still read. Nothing
+they compute reaches \code{util}$_j$.
+
+Note the consequence, and note that it is now \textbf{four} exponents rather than two.
+\code{FILLET\_REGION\_P = 16.0} (\at{wheel\_adjoint.py}{436}) is the constraint's, over
+the twelve rotational copies; \code{stress\_phase\_p = 8.0}
+(\at{wheel\_objective.py}{1117}) aggregates the eight phase samples;
+\code{STRESS\_NOMINAL\_P = 4.0} (\at{wheel\_objective.py}{147}) is
+\textbf{no longer the constraint's exponent}---since \S103 it is the volume-weighted
+Gauss-point $p$-norm behind the reported \code{stress\_utilisation} and
+\code{pnorm\_by\_p} diagnostics only, and it is mesh-convergent there (GCI 0.45\% /
+0.20\%, observed order 1.76 / 2.18, comparable to the axle drop's 2.44 / 0.14\%); and
+\code{wheel\_adjoint.STRESS\_PNORM\_P = 30.0} (\code{:344}) stays the adjoint's documented
+default so historical records keep their meaning. Four exponents, four meanings, and the
+one this paragraph used to call ``the constraint's'' is the one that is not.
 
 \subsection{Mesh convergence: Richardson and the GCI}
 \label{sec:gci}
