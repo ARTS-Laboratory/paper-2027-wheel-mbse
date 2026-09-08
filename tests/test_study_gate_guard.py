@@ -8,15 +8,27 @@ RED one.  `study_contact` was the only driver with any guard; the other eight ha
 TWO DIRECTIONS, AND THE FIRST ONE IS THE DANGEROUS TEST TO GET WRONG.  A guard that fires
 on the recipe's own invocation would take `make studies` down — five hours, nine drivers —
 and it would do it at the END of each driver's run, since `make` only sees the exit
-status.  So the recipe's exact argv, as written in the `studies:` target, is asserted to
-pass for all nine.
+status.  So the exact argv of every Makefile target that writes one of these artifacts is
+asserted to pass.
 
 The guard is reached and then execution is stopped, so these cost milliseconds rather than
 the recipe's five hours: `refuse_degraded_out` is wrapped to run for real and then raise.
 That means the REAL conditions are evaluated with the REAL parsed arguments — a test that
 stubbed the guard out would assert nothing.
+
+WHAT §131 CHANGED, AND WHY THIS FILE IS THE REASON THE GAP LASTED FOUR MONTHS.  §129.5
+censused the guard across every driver in `studies/` and found fourteen with none, ten of
+them exposed — `study_m9.py --quick --out study_m9.json` was §41's invocation with §41's
+consequence, unobstructed.  This file could not see any of it, and not because it was
+missing rows: it covered the nine drivers in `make studies` and never passed `--out` at
+all, so it asserted things about DEFAULT names only.  A guard that is wrong about a
+driver's second name is invisible to a test that only ever supplies the first — and the
+drivers here write more names than they have defaults.  The `--out` column is §129's
+successor 2 asking for exactly that, and the mutation catcher below now asserts the whole
+CALL SEQUENCE rather than that some guard fired.
 """
 
+import signal
 import sys
 
 import pytest
@@ -28,31 +40,156 @@ class _GuardPassed(Exception):
     """The real guard was called and did not refuse."""
 
 
-# (module, the `studies:` target's argv, degraded argvs that must be refused)
+_RUNAWAY_S = 20   # far outside any guard-and-stop path, far inside any real study
+
+
+class _DriverRanAway(BaseException):
+    """A driver got past every guard this table knows about.
+
+    A `BaseException` on purpose: several drivers wrap their work in `except Exception`,
+    and a timeout those swallow is a timeout that does not stop anything.
+    """
+
+
+# (module, the committed names it guards IN CALL ORDER, argvs that must PASS, degraded
+#  argvs that must be refused)
 #
-# The recipe argv is copied from the Makefile's `studies:` block.  If that target changes,
-# this table has to change with it, and the first assertion below is what says so.
+# The passing argvs are copied from the Makefile targets that write these artifacts.  If a
+# target changes, this table has to change with it, and the first assertion below is what
+# says so.
+#
+# THE SECOND AND THIRD COLUMNS ARE §131's REPAIR AND THE REASON THIS FILE COULD NOT SEE
+# §129.5's GAP.  Until §131 every row named ONE artifact, passed NO `--out`, and gave one
+# recipe argv — so a guard that was wrong about a driver's SECOND name was invisible to a
+# test that only ever supplied the first, and four of the drivers below have more than one
+# name or more than one gate.  `study_stage3` writes four tracked artifacts from four
+# targets and guarded one of them; `study_corner_singularity` writes two; and three
+# drivers spell their single name two ways (an absolute default, and the `studies/...`
+# the Makefile passes) so a row that exercised only the default could not reach the
+# spelling people actually type.
 DRIVERS = [
-    ("study_mesh_quality",   ["--samples", "2000"],
+    ("study_mesh_quality",   ["study_mesh_quality.json"],
+     [["--samples", "2000"]],
      [["--samples", "500"], ["--config", "smoke"], ["--no-plot"]]),
-    ("study_wheel_mesh",     ["--samples", "200"],
+    ("study_wheel_mesh",     ["study_wheel_mesh.json"],
+     [["--samples", "200"]],
      [["--quick"], ["--samples", "50"], ["--config", "smoke"], ["--no-plot"]]),
-    ("study_beam_agreement", [],
+    ("study_beam_agreement", ["study_beam_agreement.json"],
+     [[]],
      [["--quick"], ["--genome", "stage3_knee_best_medium.json"], ["--no-plot"]]),
-    ("study_wheel_fea",      [],
+    ("study_wheel_fea",      ["study_wheel_fea.json"],
+     [[]],
      [["--quick"], ["--config", "smoke"], ["--no-plot"]]),
-    ("study_gnl",            [],
+    ("study_gnl",            ["study_gnl.json"],
+     [[]],
      [["--quick"], ["--config", "smoke"], ["--no-plot"]]),
-    ("study_contact",        [],
+    ("study_contact",        ["study_contact.json"],
+     [[]],
      [["--quick"], ["--config", "medium"], ["--kinematics", "svk"],
       ["--sections", "penalty"], ["--no-plot"]]),
-    ("study_gradient",       [],
+    ("study_gradient",       ["study_gradient.json"],
+     [[]],
      [["--quick"], ["--config", "smoke"], ["--kinematics", "svk"], ["--no-plot"]]),
-    ("study_objective",      [],
+    ("study_objective",      ["study_objective.json"],
+     [[]],
      [["--quick"], ["--config", "smoke"], ["--elites", "elite10.log"], ["--no-plot"]]),
-    ("study_stage3",         [],
+    # FOUR NAMES, FOUR TARGETS: `studies`, `m8bi5`, `m8bi6`, `m8bii1`.  The three
+    # secondary argvs are what §129.5 measured as accepted — `--sections` is degrading for
+    # `study_stage3.json` and IS the gate for the other three, so each name carries its
+    # own answer and the recipe column has to hold all four.
+    ("study_stage3",         ["study_stage3.json", "study_stage3_m8bi5.json",
+                              "study_stage3_pnorm.json", "study_stage3_pool.json"],
+     [[],
+      ["--sections", "mesh_convergence,multistart", "--out", "study_stage3_m8bi5.json"],
+      ["--sections", "mesh_convergence", "--ladder-p", "1,2,3,4,6,8,12,16,24,30",
+       "--out", "study_stage3_pnorm.json"],
+      ["--sections", "phase_pool", "--out", "study_stage3_pool.json"]],
      [["--quick"], ["--config", "smoke"], ["--sections", "direction"],
-      ["--ladder-p", "1,2,3"], ["--no-plot"]]),
+      ["--ladder-p", "1,2,3"], ["--no-plot"],
+      # The secondary names, which had no guard at all until §131.
+      ["--sections", "mesh_convergence,multistart", "--config", "smoke",
+       "--out", "study_stage3_m8bi5.json"],
+      ["--sections", "mesh_convergence", "--out", "study_stage3_m8bi5.json"],
+      ["--sections", "mesh_convergence", "--ladder-p", "1,2,3",
+       "--out", "study_stage3_pnorm.json"],
+      ["--sections", "phase_pool", "--no-plot", "--out", "study_stage3_pool.json"]]),
+    # §131: the drivers §129.5 censused as EXPOSED — a fidelity or section flag reaching a
+    # tracked artifact with nothing in the way.  `study_kinematics_rank` is the tenth and
+    # is not here: it was being worked in a concurrent session, and its guard waits on
+    # which of its two artifacts is canonical (§130 successor 0).
+    ("study_m9",             ["study_m9.json"],
+     [["--out", "study_m9.json"]],
+     [["--quick", "--out", "study_m9.json"],
+      ["--genome", "best_solution_ga_beam.json", "--out", "study_m9.json"]]),
+    ("study_m9_buckling",    ["study_m9_buckling.json"],
+     [["--out", "study_m9_buckling.json"]],
+     [["--quick", "--out", "study_m9_buckling.json"],
+      ["--config", "smoke", "--out", "study_m9_buckling.json"],
+      ["--genome", "best_solution_ga_beam.json", "--out", "study_m9_buckling.json"]]),
+    ("study_svk_rescore",    ["study_svk_rescore.json"],
+     [["--config", "medium", "--workers", "0", "--out", "study_svk_rescore.json"]],
+     [["--skip-control", "--out", "study_svk_rescore.json"],
+      ["--only", "shipped", "--out", "study_svk_rescore.json"],
+      ["--config", "coarse", "--out", "study_svk_rescore.json"],
+      ["--n-phase", "4", "--out", "study_svk_rescore.json"]]),
+    # THREE targets, ONE name, and all three PASS: the writer merges under a key per arm,
+    # so `--sweep` alone does not drop `rungs`.  The refusals are fidelity INSIDE an arm,
+    # which the merge does not protect.
+    ("study_reds_hub_share", ["study_reds_hub_share.json"],
+     [["--sweep", "--attribute", "--rungs", "--config", "coarse",
+       "--configs", "smoke,coarse,medium,fine,ultra",
+       "--out", "study_reds_hub_share.json"],
+      ["--sweep", "--fillet", "--config", "coarse",
+       "--out", "study_reds_hub_share.json"],
+      ["--rungs", "--fillet", "--kinematics", "linear",
+       "--configs", "smoke,coarse,medium,fine,ultra",
+       "--out", "study_reds_hub_share.json"]],
+     [["--sweep", "--config", "smoke", "--out", "study_reds_hub_share.json"],
+      ["--sweep", "--points", "3", "--out", "study_reds_hub_share.json"],
+      ["--sweep", "--genome", "ga_beam", "--out", "study_reds_hub_share.json"],
+      ["--rungs", "--configs", "smoke,coarse", "--out", "study_reds_hub_share.json"]]),
+    # No Makefile target: the gate is this driver's own defaults, checked against the
+    # committed artifact's two rungs rather than against the five-rung table in its
+    # docstring, which was never filed here.
+    ("study_knee_rungs",     ["study_knee_rungs.json"],
+     [[]],
+     [["--rungs", "smoke"], ["--rungs", "smoke,coarse,medium,fine,ultra"],
+      ["--kinematics", "linear"], ["--phases", "4"],
+      ["--genome", "best_solution_ga_beam.json"]]),
+    ("study_hub_cap",        ["study_hub_cap.json"],
+     [["--out", "study_hub_cap.json"]],
+     [["--sections", "void", "--out", "study_hub_cap.json"],
+      ["--designs", "best_solution", "--out", "study_hub_cap.json"],
+      ["--t0-sweep", "2,3", "--out", "study_hub_cap.json"]]),
+    # TWO artifacts from two targets, and the flags that separate them are degrading for
+    # one and mandatory for the other — the case a per-DRIVER guard cannot express.
+    ("study_corner_singularity",
+     ["studies/study_corner_singularity.json",
+      "studies/study_corner_singularity_fillet.json"],
+     [["--genome", "best_solution.json", "--ladder", "smoke,coarse,medium,fine",
+       "--out", "studies/study_corner_singularity.json"],
+      ["--genome", "best_solution.json", "--ladder", "smoke,coarse,medium,fine",
+       "--fillet", "genome", "--continuity", "coarse", "--profiles",
+       "--out", "studies/study_corner_singularity_fillet.json"]],
+     [["--ladder", "smoke", "--out", "studies/study_corner_singularity.json"],
+      ["--fillet", "genome", "--out", "studies/study_corner_singularity.json"],
+      ["--ladder", "smoke,coarse,medium,fine",
+       "--out", "studies/study_corner_singularity_fillet.json"],
+      ["--fillet", "genome", "--continuity", "coarse",
+       "--out", "studies/study_corner_singularity_fillet.json"]]),
+    ("study_deflection_gci", ["studies/study_deflection_gci.json"],
+     [["--genome", "best_solution.json", "--ladder", "smoke,coarse,medium,fine",
+       "--workers", "0", "--out", "studies/study_deflection_gci.json"]],
+     [["--ladder", "smoke", "--out", "studies/study_deflection_gci.json"],
+      ["--n-phase", "4", "--out", "studies/study_deflection_gci.json"],
+      ["--genome", "best_solution_ga_beam.json",
+       "--out", "studies/study_deflection_gci.json"]]),
+    ("study_junction_agreement", ["studies/study_junction_agreement.json"],
+     [["--genome", "best_solution.json", "--config", "coarse",
+       "--out", "studies/study_junction_agreement.json"]],
+     [["--config", "smoke", "--out", "studies/study_junction_agreement.json"],
+      ["--genome", "best_solution_ga_beam.json",
+       "--out", "studies/study_junction_agreement.json"]]),
 ]
 
 _IDS = [d[0] for d in DRIVERS]
@@ -76,19 +213,66 @@ def guard_stops_here(monkeypatch, tmp_path):
     so pointing that at `tmp_path` bounds the damage to a temp dir no matter how far
     execution gets.  The guard-was-called assertion below then turns "the driver ran"
     from silent corruption into a plain failure.
+
+    §131 ADDED TWO MORE CONTAINMENTS, BOTH BECAUSE THE WRAPPER NO LONGER RAISES ON THE
+    FIRST CALL.  A driver with more than one gate calls the guard once per artifact, and
+    stopping at the first call would leave every later one unexercised — `make m8bi5`'s
+    argv returns early from `study_stage3.json`'s guard, so the m8bi5 guard is the only
+    one that can judge it.  So the wrapper runs them all and raises at the row's LAST
+    name, which widens the window in which a driver that has lost a guard call keeps
+    executing:
+
+    * `chdir(tmp_path)`, with a `studies/` under it.  Three drivers use `args.out` AS
+      GIVEN rather than joining `HERE`, and the Makefile hands them `studies/study_x.json`
+      relative to the repo root — a spelling the `HERE` monkeypatch above cannot reach.
+      Without this the tests would write the real artifacts through the real path.
+    * `signal.alarm`, re-armed per argv.  The full studies behind these drivers are minutes to hours; a
+      driver that never reaches its last guard would otherwise run one for real rather
+      than fail.  Twenty seconds is far outside any guard-and-stop path (the whole file
+      is under a second) and far inside any real study.
     """
     real = _gate_guard.refuse_degraded_out
     calls = []
 
-    def wrapper(ap, args, committed, degraded):
-        calls.append(committed)
-        real(ap, args, committed, degraded)      # SystemExit if this run is degraded
-        raise _GuardPassed                       # allowed — stop before any solving
+    def arm(last_name):
+        """Wrap the guard so the row's LAST name is where execution stops.  Returns
+        `calls`, cleared, so each argv is judged on its own call sequence.
 
-    monkeypatch.setattr(_gate_guard, "refuse_degraded_out", wrapper)
+        The alarm is re-armed here rather than once per test: a row runs several argvs,
+        and an alarm that has already fired on the first would leave the rest unbounded.
+        """
+        del calls[:]
+        signal.alarm(_RUNAWAY_S)
+
+        def wrapper(ap, args, committed, degraded):
+            # `committed` is a name or a tuple of spellings of one name; the first is the
+            # canonical one, which is what the table lists.
+            name = committed if isinstance(committed, str) else committed[0]
+            calls.append(name)
+            real(ap, args, committed, degraded)   # SystemExit if this run is degraded
+            if name == last_name:
+                raise _GuardPassed                # allowed — stop before any solving
+
+        monkeypatch.setattr(_gate_guard, "refuse_degraded_out", wrapper)
+        return calls
+
     for name, *_ in DRIVERS:
         monkeypatch.setattr(__import__(name), "HERE", str(tmp_path))
-    return calls
+    (tmp_path / "studies").mkdir()
+    monkeypatch.chdir(tmp_path)
+
+    def _ran_away(signum, frame):
+        raise _DriverRanAway(
+            f"a driver ran for {_RUNAWAY_S} s without reaching its last guard — it has "
+            f"lost a guard call, and this alarm is all that stopped it running the real "
+            f"study")
+
+    old_handler = signal.signal(signal.SIGALRM, _ran_away)
+    try:
+        yield arm
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 
@@ -97,46 +281,69 @@ def _main(name):
     return __import__(name).main
 
 
-@pytest.mark.parametrize("name, recipe, _degraded", DRIVERS, ids=_IDS)
+@pytest.mark.parametrize("name, names, recipes, _degraded", DRIVERS, ids=_IDS)
 def test_the_recipe_invocation_is_not_refused(monkeypatch, guard_stops_here,
-                                              name, recipe, _degraded):
-    """`make studies`' own argv must reach the work for all nine drivers.
+                                              name, names, recipes, _degraded):
+    """Every Makefile invocation that writes one of these artifacts must reach the work.
 
-    This is the assertion protecting the recipe from its own guard.  It fails loudly if a
-    condition is written against the wrong default — e.g. guarding `--samples != 2000`
+    This is the assertion protecting the recipes from their own guard.  It fails loudly if
+    a condition is written against the wrong default — e.g. guarding `--samples != 2000`
     when the target passes exactly 2000, or comparing `--config` to a literal the driver
     does not actually default to.
+
+    §131: a driver may have several such invocations, and `study_corner_singularity`'s two
+    are the case that makes the point — `--fillet genome --continuity coarse --profiles`
+    is `corner-fillet`'s gate and would be a degraded run under `corner`'s name.  Both
+    must pass here, which is only possible because each artifact carries its own list.
+
+    The `calls` assertion is the mutation catcher, and §131 strengthened it from "the
+    guard was called" to "EVERY name this driver is supposed to guard was reached, in
+    order".  Dropping the second of four calls is exactly §129.5's defect, and the old
+    single-name form could not see it.
     """
-    monkeypatch.setattr(sys, "argv", [f"{name}.py", *recipe])
-    with pytest.raises(_GuardPassed):
-        _main(name)()
-    assert guard_stops_here == [f"{name}.json"], (
-        f"{name} never called the guard — a driver that skips it can overwrite its own "
-        f"committed artifact, which is the whole defect §43 closes")
+    for recipe in recipes:
+        calls = guard_stops_here(names[-1])
+        monkeypatch.setattr(sys, "argv", [f"{name}.py", *recipe])
+        with pytest.raises(_GuardPassed):
+            _main(name)()
+        assert calls == names, (
+            f"{name} {recipe} guarded {calls}, not {names} — a name a driver writes and "
+            f"does not guard can be overwritten by a degraded run, which is the whole "
+            f"defect §43 closes and the gap §129.5 censused")
 
 
-@pytest.mark.parametrize("name, _recipe, degraded", DRIVERS, ids=_IDS)
+@pytest.mark.parametrize("name, _names, _recipes, degraded", DRIVERS, ids=_IDS)
 def test_degraded_runs_are_refused_by_name(monkeypatch, guard_stops_here,
-                                           name, _recipe, degraded):
+                                           name, _names, _recipes, degraded):
     """Each degraded invocation must exit nonzero rather than overwrite the artifact."""
     for argv in degraded:
+        guard_stops_here(_names[-1])
         monkeypatch.setattr(sys, "argv", [f"{name}.py", *argv])
         with pytest.raises(SystemExit) as excinfo:
             _main(name)()
         assert excinfo.value.code != 0, f"{name} {argv} was accepted as the gate"
 
 
-@pytest.mark.parametrize("name, _recipe, degraded", DRIVERS, ids=_IDS)
+@pytest.mark.parametrize("name, names, _recipes, degraded", DRIVERS, ids=_IDS)
 def test_an_explicit_out_lets_a_degraded_run_through(monkeypatch, guard_stops_here,
-                                                     name, _recipe, degraded):
+                                                     name, names, _recipes, degraded):
     """The refusal is about the NAME.  Redirected, every degraded run is allowed.
 
     Pinned because the cheap way to quieten a noisy guard is to widen it until the
     degraded run cannot happen at all — which would take `make m8bi5`, `make m8bi6`,
     `make m8bii1` and `make contact` with it, all four of which are partial or redirected
     runs that pass their own `--out` for exactly this reason.
+
+    §131 gave the first three of those four their own guarded names, which does NOT
+    weaken this test: a redirected run is still allowed, and what changed is that
+    `study_stage3_m8bi5.json` is no longer a redirection — it is a gate with a list of
+    its own.  `make contact`'s case is untouched and is the sharper one: its documented
+    invocation writes a COMMIT-PINNED baseline (`study_contact_e126cc3_svk.json`,
+    Makefile's `contact` block) under four degrading flags, so a guard keyed on "is this
+    name tracked" would refuse the recipe that created the evidence.
     """
     for argv in degraded:
+        guard_stops_here(names[-1])
         monkeypatch.setattr(sys, "argv",
                             [f"{name}.py", *argv, "--out", f"{name}_probe.json"])
         with pytest.raises(_GuardPassed):

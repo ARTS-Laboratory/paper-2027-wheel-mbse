@@ -66,6 +66,7 @@ import os
 
 import numpy as np
 
+import _gate_guard
 import project_paths as PP  # noqa: F401  (puts src/ on the path)
 import wheel_genome as wg
 import wheel_wheel as WW
@@ -541,6 +542,24 @@ def main():
     ap.add_argument("--out",
                     default=os.path.join(HERE, "study_junction_agreement.json"))
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131.  `--genome` IS COMPARED BY BASENAME, and that is not laziness: the
+    # split the `--out` comment above records applies to this flag too, in the opposite
+    # direction.  The default here is ABSOLUTE (`ROOT/best_solution.json`) and the
+    # Makefile's `junction` target passes the BARE `best_solution.json`, so the gate's
+    # own invocation and the bare default are two strings for one file — an `args.genome
+    # != <the default>` test would refuse `make junction` itself, which is the failure
+    # `tests/test_study_gate_guard.py`'s first assertion exists to catch.
+    _gate_guard.refuse_degraded_out(ap, args, (
+        "studies/study_junction_agreement.json",
+        os.path.join(HERE, "study_junction_agreement.json")), [
+        (args.config != "coarse", "--config %s, not the gate's coarse" % args.config),
+        (os.path.basename(args.genome) != "best_solution.json",
+         "--genome %s" % args.genome),
+    ])
 
     with open(args.genome) as fh:
         genes = json.load(fh)["genes"]

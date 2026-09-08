@@ -33,6 +33,7 @@ import argparse, json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(REPO, "src")); sys.path.insert(0, HERE)
+import _gate_guard
 import jax_config  # noqa
 import wheel_genome as wg, wheel_objective as WO, wheel_wheel as WW
 
@@ -52,6 +53,34 @@ def main():
     ap.add_argument("--phases", type=int, default=8)
     ap.add_argument("--out", default="study_knee_rungs.json")
     a = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131.  The gate here is the DEFAULTS — no Makefile target runs this driver,
+    # and the committed `study_knee_rungs.json` holds `smoke` and `coarse` under `svk` at
+    # 8 phases, which is what the bare invocation produces.  Checked 2026-09-07 against
+    # the artifact rather than assumed from the docstring: the five-rung table at the top
+    # of this file is prose evidence from runs whose output was never committed here.
+    #
+    # A LONGER LADDER IS REFUSED TOO, WHICH IS NOT `--samples`' RULE AND IS MEANT NOT TO
+    # BE.  `_gate_guard`'s docstring exempts a stronger statistic — `--samples` above the
+    # default — because it strengthens the SAME quantity in place.  `rows` here is not
+    # accumulated across runs: the loop below rewrites the whole dict, so `--rungs
+    # medium,fine` files an artifact with no `smoke` and no `coarse` in it.  A different
+    # ladder is a different row set replacing this one, not a finer reading of it.
+    #
+    # And the write is INSIDE the rung loop (one `json.dump` per rung, so a kill costs
+    # one rung rather than the run), which means a degraded ladder lands on the committed
+    # file after its FIRST rung — there is no end-of-run moment at which to notice.
+    _gate_guard.refuse_degraded_out(ap, a, "study_knee_rungs.json", [
+        (a.rungs != "smoke,coarse",
+         "--rungs %s, not the gate's smoke,coarse; `rows` is rewritten whole, so this "
+         "files a row set that is not a superset of the committed one" % a.rungs),
+        (a.kinematics != "svk", "--kinematics %s, not the gate's svk" % a.kinematics),
+        (a.phases != 8, "--phases %d, not the gate's 8" % a.phases),
+        (a.genome != "best_solution.json", "--genome %s" % a.genome),
+    ])
 
     g = wg.genes_to_vector(json.load(open(os.path.join(REPO, a.genome)))["genes"])
     ph = WO.phase_stencil(n_phase=a.phases, scheme="uniform")

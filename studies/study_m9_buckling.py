@@ -71,6 +71,7 @@ import project_paths as PP  # noqa: E402
 if PP.SRC not in sys.path:
     sys.path.insert(0, PP.SRC)
 
+import _gate_guard  # noqa: E402
 import jax_config  # noqa: E402,F401  -- x64 before the first trace
 import wheel_fem as fem  # noqa: E402
 import wheel_genome as wg  # noqa: E402
@@ -330,6 +331,21 @@ def main():
     ap.add_argument("--config", default="coarse")
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131.  `--config` is guarded even though `--quick` overrides it three lines
+    # below (`cfg = "smoke" if quick else args.config`): it still selects the rung every
+    # section BUT the ladder is measured at, so `--config smoke` alone — no `--quick` —
+    # files a smoke section set under the gate's name with `settings.section_config`
+    # honestly recording it and every verdict computed anyway.  That is §41's shape.
+    _gate_guard.refuse_degraded_out(ap, args, "study_m9_buckling.json", [
+        (args.quick, "--quick: one design of three, two rungs of three, 3 reference "
+                     "phases of %d, and a two-point load ramp" % REFERENCE_PHASES),
+        (args.config != "coarse", "--config %s, not the gate's coarse" % args.config),
+        (args.genome != PP.BEST_SOLUTION, "--genome %s" % args.genome),
+    ])
 
     t0 = time.time()
     designs = _designs(args.genome)

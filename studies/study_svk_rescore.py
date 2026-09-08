@@ -61,6 +61,7 @@ import time
 
 import numpy as np
 
+import _gate_guard
 import project_paths as PP  # noqa: F401  (puts src/ on the path)
 import wheel_fea as W
 import wheel_fem as fem
@@ -474,6 +475,31 @@ def main():
                          "already passed in the same tree — it is the check that says "
                          "the rest of the table means anything")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131.  `--skip-control` is the entry that matters and it is not a fidelity
+    # dial: it drops §14's reproduction, which is the row that says whether anything
+    # below it may be quoted at all — and §116.4 found that row FAIL.  A
+    # `--skip-control` report is a table with its own licence missing, filed under the
+    # name every reader trusts, with every remaining verdict computed.  That is §41's
+    # failure mode exactly, not a weaker cousin of it.
+    #
+    # `--workers` and `--extra` are NOT guarded, for the two reasons `_gate_guard`'s
+    # docstring already gives.  `--workers` is a scheduling knob — the same measurement
+    # across processes — which is the `--seed` argument; `--extra` only APPENDS genomes,
+    # and its own help text is explicit that the defaults must still reproduce Step 3's
+    # artifact unchanged, so a run with extras is a superset and not a weaker statistic.
+    _gate_guard.refuse_degraded_out(ap, args, "study_svk_rescore.json", [
+        (args.config != DEFAULT_CONFIG,
+         "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.n_phase != N_PHASE,
+         "--n-phase %d, not the gate's %d" % (args.n_phase, N_PHASE)),
+        (bool(args.only), "--only %s, which scores a subset of the genomes" % args.only),
+        (args.skip_control, "--skip-control, which drops §14's reproduction — the row "
+                            "that licenses every other row in the table"),
+    ])
 
     genomes = GENOMES
     if args.only:

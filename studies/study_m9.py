@@ -21,6 +21,7 @@ import project_paths as PP  # noqa: E402
 if PP.SRC not in sys.path:
     sys.path.insert(0, PP.SRC)
 
+import _gate_guard  # noqa: E402
 import wheel_adjoint as WA  # noqa: E402
 import wheel_fem as fem  # noqa: E402
 import wheel_genome as wg  # noqa: E402
@@ -224,6 +225,27 @@ def main():
     ap.add_argument("--out", default="study_m9.json")
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131, and this driver is the one §129.5 named as the cleanest reproducer of
+    # §41 — `--quick --out study_m9.json` had nothing in its way.  Measured 2026-09-07 in
+    # a throwaway worktree, polling the file's size from a thread while `main()` ran and
+    # with the jax import paid first so it is not in the number: the 40262-byte /
+    # 1514-line committed artifact is replaced **1.4 ms after `main()` is entered**, and
+    # before a single solve, by the 219-byte / 13-line `_flush()` stub below.
+    # Worse than §41's false green rather than milder: §41 filed a WEAK measurement under
+    # the gate's name, this files NO measurement at all.  The checkpoint that stops a
+    # partial run being misread as a verdict (`complete: false`, and see `_flush`'s
+    # comment) is exactly what makes the clobber instant and total.
+    _gate_guard.refuse_degraded_out(ap, args, "study_m9.json", [
+        (args.quick, "--quick: one design of three, `smoke` alone of four rungs, "
+                     "2 reference phases of %d, and one force rung of four"
+                     % REFERENCE_PHASES),
+        (args.genome != PP.BEST_SOLUTION, "--genome %s" % args.genome),
+    ])
+
     t0 = time.time()
     designs = _designs(args.genome)
     selected = designs[:1] if args.quick else [designs[i] for i in (0, 1, 2)]

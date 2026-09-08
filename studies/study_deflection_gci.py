@@ -53,6 +53,7 @@ import time
 
 import numpy as np
 
+import _gate_guard
 import project_paths as PP  # noqa: F401  (puts src/ on the path)
 import wheel_objective as WO
 import wheel_pool as WP
@@ -384,6 +385,37 @@ def main():
     ap.add_argument("--reanalyse", metavar="REPORT.json",
                     help="redo the arithmetic on a saved report; runs no FEA")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131.  `--reanalyse` IS DELIBERATELY NOT GUARDED, and it is the flag that
+    # looks most like one that should be.  It runs no FEA, so by every fidelity test it
+    # is the weakest run this driver has — but it does not MEASURE anything: it redoes
+    # the arithmetic on a report that already holds the gate's solves, which is why the
+    # Makefile's own block above `gci` documents
+    # `--reanalyse studies/study_deflection_gci.json` with no `--out` (i.e. onto this
+    # very name) as the repair path, and says two analysis bugs were fixed by it with no
+    # FEA.  Refusing it would refuse the documented fix for the next one.
+    #
+    # WHAT THAT LEAVES OPEN, NAMED RATHER THAN CLOSED: `--reanalyse <a smoke report>`
+    # onto this name is a re-analysis of a degraded run filed as the gate, and the guard
+    # cannot see it because the fidelity is INSIDE the file rather than on the command
+    # line.  Closing it means reading the named report's `settings` before accepting it,
+    # which is a check about a file's contents rather than about an invocation and does
+    # not belong in this helper.
+    #
+    # `--workers` is a scheduling knob, not a fidelity one — `_gate_guard`'s `--seed`
+    # argument.
+    _gate_guard.refuse_degraded_out(ap, args, (
+        "studies/study_deflection_gci.json",
+        os.path.join(HERE, "study_deflection_gci.json")), [
+        (args.ladder != ",".join(LADDER),
+         "--ladder %s, not the gate's %s" % (args.ladder, ",".join(LADDER))),
+        (args.genome != GENOME, "--genome %s" % args.genome),
+        (args.n_phase != N_PHASE,
+         "--n-phase %d, not the gate's %d" % (args.n_phase, N_PHASE)),
+    ])
 
     if args.reanalyse:
         with open(args.reanalyse) as fh:

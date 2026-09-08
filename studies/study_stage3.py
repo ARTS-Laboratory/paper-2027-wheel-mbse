@@ -2120,13 +2120,21 @@ def main():
 
     # A degraded run may not be filed under the committed artifact's name (PLAN.md
     # §43).  Refused at startup, before any solving.  See `_gate_guard`.
-    _gate_guard.refuse_degraded_out(ap, args, "study_stage3.json", [
+    #
+    # FOUR ARTIFACTS, FOUR CALLS, ONE SHARED LIST (§131).  This driver has four Makefile
+    # gates — `studies`, `m8bi5`, `m8bi6`, `m8bii1` — and until §131 the guard named only
+    # the first, so `--sections mesh_convergence --config smoke --out
+    # study_stage3_m8bi5.json` was accepted against a tracked artifact and its tracked
+    # .jpg.  It could not be fixed by adding names to ONE call: `--sections` is degrading
+    # for `study_stage3.json` and IS `m8bi5`'s gate, and `--ladder-p` is degrading for
+    # both of those and IS `m8bi6`'s.  Every artifact needs its own answer to "what is a
+    # full run", so the seven conditions that mean the same thing whatever is being
+    # written are shared and only the two that identify a run are stated per name.
+    _degrades_any_stage3_run = [
         (args.quick, "--quick (reduced fidelity)"),
         (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
         (args.genome != "best_solution.json", "--genome %s" % args.genome),
         (args.elites != "stage2_elites.json", "--elites %s" % args.elites),
-        (args.sections != ",".join(DEFAULT_SECTIONS), "--sections %s, not all %d" % (args.sections, len(DEFAULT_SECTIONS))),
-        (args.ladder_p != "", "--ladder-p %s" % args.ladder_p),
         (args.ladder_configs != ",".join(LADDER_CONFIGS), "--ladder-configs %s" % args.ladder_configs),
         (args.no_plot, "--no-plot, which would refresh the .json and leave the "
                        "committed .jpg stale"),
@@ -2136,6 +2144,40 @@ def main():
         (args.requirements is not None,
          "--requirements %s; every number below then describes a different mission"
          % args.requirements),
+    ]
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != ",".join(DEFAULT_SECTIONS), "--sections %s, not all %d" % (args.sections, len(DEFAULT_SECTIONS))),
+        (args.ladder_p != "", "--ladder-p %s" % args.ladder_p),
+    ])
+    # M8b-i.5.  `make m8bi5`'s own two sections are its gate, and everything else about
+    # the run has to be the gate's — this artifact is where S11's mesh ladder and S12's
+    # multistart live, and §129.3 read both out of it.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3_m8bi5.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != "mesh_convergence,multistart",
+         "--sections %s, not `make m8bi5`'s mesh_convergence,multistart" % args.sections),
+        (args.ladder_p != "", "--ladder-p %s, which is `make m8bi6`'s sweep" % args.ladder_p),
+    ])
+    # M8b-i.6 step 1.  The ten exponents ARE the measurement here: p=1 is the anchor that
+    # must converge and p=30 is the shipped default that must reproduce the constraint's
+    # own series, so a shortened sweep is not a coarser reading of this artifact but a
+    # different one with the bookends missing.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3_pnorm.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != "mesh_convergence",
+         "--sections %s, not `make m8bi6`'s mesh_convergence" % args.sections),
+        (args.ladder_p != "1,2,3,4,6,8,12,16,24,30",
+         "--ladder-p %s, not `make m8bi6`'s ten exponents" % args.ladder_p),
+    ])
+    # M8b-ii item 1.  S13's worker ladder.  `--pool-workers` is NOT guarded: the target
+    # passes none precisely so the ladder is derived from the machine it runs on, and a
+    # named ladder measures the same thing on a host that needs telling.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3_pool.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != "phase_pool",
+         "--sections %s, not `make m8bii1`'s phase_pool" % args.sections),
+        (args.ladder_p != "", "--ladder-p %s, which is `make m8bi6`'s sweep" % args.ladder_p),
     ])
 
     # Loaded before any solving, so a bad path costs a startup and not three hours.

@@ -94,6 +94,7 @@ import project_paths as PP  # noqa: E402
 if PP.SRC not in sys.path:
     sys.path.insert(0, PP.SRC)
 
+import _gate_guard  # noqa: E402
 import wheel_fea as W  # noqa: E402
 import wheel_genome as wg  # noqa: E402
 import wheel_objective as WO  # noqa: E402
@@ -679,6 +680,29 @@ def main():
                          "fitted on [2.0, 2.6] and the shipped floor is 1.2, so pass the "
                          "lower stations explicitly to measure below the fit.")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131.  `--extra` is NOT guarded and the two flags above it ARE, which is the
+    # split the `--extra` comment already argues twenty lines up: both guarded flags
+    # default to exactly what was committed, so naming either is what asks for something
+    # other than the calibration evidence behind HUB_CAP_THICKNESS_SHARE, while `--extra`
+    # only appends.  This guard is that paragraph made enforceable rather than a new
+    # judgement.
+    #
+    # THE .jpg GOES WITH IT.  `main` derives the figure name from `--out` by
+    # `splitext(path)[0] + ".jpg"`, so a degraded run redraws the committed figure in the
+    # same breath — the same coupling `--no-plot` is refused for elsewhere, arriving here
+    # through the output name instead of through a flag.
+    _gate_guard.refuse_degraded_out(ap, args, "study_hub_cap.json", [
+        (args.sections != ",".join(SECTIONS),
+         "--sections %s, not all %d" % (args.sections, len(SECTIONS))),
+        (args.designs != "best_solution,elite14,elite13",
+         "--designs %s, not the committed selection" % args.designs),
+        (args.t0_sweep != ",".join(f"{v:g}" for v in T0_SWEEP),
+         "--t0-sweep %s, not the committed stations" % args.t0_sweep),
+    ])
 
     want = [s.strip() for s in args.sections.split(",") if s.strip()]
     unknown = [s for s in want if s not in SECTIONS]

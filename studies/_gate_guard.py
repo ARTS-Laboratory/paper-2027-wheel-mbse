@@ -19,6 +19,18 @@ lives here and every driver passes its own list.  This is `tests/test_fem.py:298
 argument applied to a guard instead of a check: one definition, so a fix to the wording
 or the failure mode reaches all nine.
 
+ONE CALL PER ARTIFACT, NOT PER DRIVER (§131).  "Nine" above is §43's count and the count
+of `make studies`; today it is 40 call sites across 34 drivers.  More sites than drivers
+because a driver may have more than one gate, and there are two different reasons for
+that.  `study_fillet_condition_a` has had three calls since it was written, all for ONE
+name, because three code paths reach that name — per PATH.  §131 added the other kind:
+`study_stage3` writes four tracked names from four Makefile targets and
+`study_corner_singularity` two, and each NAME has its own idea of what a full run is.
+`make m8bi5` passes `--sections`, which is degrading for `study_stage3.json` and IS the
+gate for `study_stage3_m8bi5.json`; a guard keyed to the driver cannot say both and
+refuses its own recipe.  So a driver with N gates calls this N times, once per name, each
+with that name's own list.
+
 WHY REFUSE RATHER THAN REDIRECT.  `wheel_fea.py --smoke` retargets itself to
 `best_solution_smoke.json`, which is the right call there because a smoke run is a normal
 part of using the optimizer.  A degraded STUDY run is not routine, and `study_contact`'s
@@ -48,8 +60,19 @@ def refuse_degraded_out(ap, args, committed, degraded):
     resolves to the same file — is accepted.  The guard is about not filing a weak run
     under the gate's name BY DEFAULT, not about protecting the inode from someone who
     typed the path deliberately.
+
+    `committed` IS A NAME OR A TUPLE OF SPELLINGS OF ONE NAME, and the tuple is not a
+    convenience (§131).  Three drivers default `--out` to an ABSOLUTE path so a standalone
+    run lands in `studies/` rather than the CWD (§33's path defect) and then use it AS
+    GIVEN, while the Makefile passes the same file as `studies/study_x.json` relative to
+    the repo root — `study_junction_agreement.py`'s own `--out` comment records the split.
+    Two strings, one inode, and BOTH are legitimate gate invocations, so string equality
+    against one literal is blind to the other.  The tuple lists the spellings that reach
+    this artifact; `committed[0]` is the one the refusal message quotes.
     """
-    if args.out != committed:
+    names = (committed,) if isinstance(committed, str) else tuple(committed)
+    committed = names[0]
+    if args.out not in names:
         return
     reasons = [r for is_degraded, r in degraded if is_degraded]
     if not reasons:
