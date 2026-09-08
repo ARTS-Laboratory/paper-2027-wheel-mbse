@@ -20371,3 +20371,296 @@ call — §5, a peer session's claim. `GATE_SPEARMAN` — the bar is not what ch
    second condition cannot fail at the sizes it is actually evaluated at, and the search
    for it is one grep — `min(` inside a slice that then feeds a boolean gate. This section
    fixed the instance §130 found and did not look for siblings.
+
+---
+
+## §133 — 2026-09-08. §132's SUCCESSOR 3, CLOSED: ALL ELEVEN REDS ARE THE PROMOTION AND NOTHING ELSE, MEASURED FOUR WAYS — AND TEN OF THEM PIN A SYMPTOM OF THE OUTGOING GENOME RATHER THAN THE FINDING THEY NAME. THE ONE THAT IS REAL WROTE ITS OWN SUCCESSOR IN ADVANCE, AND THE ONLY NON-ASSERTION RED IS A `smoke`-FIDELITY ARTIFACT THAT CONVERGES AT 3.8e-15 WHERE THE OBJECTIVE SOLVES
+
+§132 §6 took the list of survivors and said, in terms, that it had not diagnosed them: *"the
+presumption that these are promotion casualties is a presumption"*, and *"four of the six
+files are FEA and mesh-kernel, which is a different neighbourhood from every section since
+§118."* Both halves are now measured. The presumption was right and it was worth not
+assuming: what it would have hidden is that the eleven are **not eleven defects**, and the
+count is the least interesting thing about them.
+
+### 1. THE ISOLATION, FOUR RUNS, AND THE FOURTH IS THE ONE THAT SETTLES IT
+
+§117's method is parent-versus-promotion. That was run, and then the experiment §120 used —
+hold the code, move the genome — which is strictly stronger, because parent-versus-promotion
+cannot distinguish the genome from the six other files in `cb4e3dd`:
+
+```
+  96a0ac5   promotion parent                        11 pass
+  cb4e3dd   the promotion                           11 fail
+  ee8f2b2   HEAD, 41 commits later                  11 fail
+  ee8f2b2's code + 96a0ac5's best_solution.json     11 PASS      <- EXIT_0
+```
+
+**`cb4e3dd` IS NOT A ONE-FILE COMMIT, AND I ASSERTED THAT IT WAS BEFORE CHECKING.** Its
+subject reads `best_solution.json: promote b729e86`, and `git show --numstat` reads
+
+```
+  178   2   PLAN.md
+   85  78   best_solution.json
+16210 16377 export/wheel.step
+ 9201 9201  export/wheel_nofillet.step
+   37  37   export/wheel_step_manifest.json
+   87   0   stage3_svk_refillet_shipped_r2_best.json
+    2   2   tests/test_promotion.py
+```
+
+Seven files. The subject line is a description of intent, not of content — which is exactly
+the reason the fourth run exists rather than an argument from blast radius. The mechanism is
+that every one of these tests reads the genome off disk in a module-scope fixture
+(`tests/test_fem.py:33`, `test_contact.py:36`, `test_gnl.py:36`, `test_wheel_fea.py:34`,
+`test_geometry_kernel.py:38`, `test_objective.py:47`), so `best_solution.json` is a global
+input to five test files that name it nowhere in their assertions.
+
+**TWO OF THESE RUNS WERE INITIALLY TAKEN IN THE SHARED WORKING TREE WHILE A PEER SESSION HAD
+UNCOMMITTED EDITS LIVE IN IT** — `studies/study_reds_ratio_stability.py`, which
+`tests/test_gnl.py:28` imports at module level, and which backs one of the eleven. The peer
+flagged it. The HEAD baseline was re-taken in a clean `git worktree add --detach ee8f2b2`
+and came back **11 FAILED, name for name, identical**. The contamination was harmless and it
+is now measured rather than reasoned, which is the form §132 §6 asks for. The lesson is
+§132 §6's own, arriving from the other side: *the tree that matters is the one that will
+exist*, and in a shared checkout that is not the tree you are standing in.
+
+### 2. THIS IS NOT A NUDGED GENOME. TWELVE OF FOURTEEN GENES MOVED AND ONE CAME OFF ITS BOUND
+
+```
+  cx1   4.47796 ->  2.45661   -45.1%      t0    1.47383 ->  3.50549  +137.8%
+  cy1   8.72118 -> 24.91296  +185.7%      t1    1.20000 ->  1.20000    +0.0%
+  cx2  15.00274 -> 19.69000   +31.2%      t2    1.20000 ->  1.20000    +0.0%
+  cy2  11.80879 -> 21.65446   +83.4%      t3    1.43129 ->  2.45471   +71.5%
+  cx3  23.81876 -> 23.13538    -2.9%      R_hub 0.66361 ->  0.57100   -14.0%
+  cy3   9.41908 -> 16.76559   +78.0%      R_rim 3.00000 ->  1.68017   -44.0%
+  cx4  30.87317 -> 25.19880   -18.4%
+  cy4   6.43755 ->  6.44159    +0.1%
+```
+
+**`R_rim`'s bound is `{'low': 0.5, 'high': 3.0}` and the outgoing genome sat EXACTLY on the
+cap.** The incoming one is interior. That single fact is the mechanism behind the one red in
+§4 below, and it is invisible in the percentage: a gene at its bound and a gene near its
+bound are different objects, and only one of them can have had its local geometry chosen by
+the descent. `t0` more than doubling is the mechanism behind two others. **Eleven tests did
+not independently break; one input moved a long way and eleven readings of it moved with it.**
+
+### 3. THE CLASSIFICATION: TEN PINS AND ONE FINDING
+
+**GROUP A — SIX DEMONSTRATIONS WHOSE VEHICLE STOPPED EXHIBITING THE PHENOMENON.** These
+assert that a mechanism is visible *at the shipped genome*. The mechanism is not in question;
+the shipped genome has stopped being a design that displays it. **Two of them say so in their
+own assertion text, which is the tell:**
+
+```
+  test_gnl   the_retired_max_min_gate_is_decided_by_the_sample_size
+      "max/min over the drawn rows read 7.384 at n=4 and 13.550 at n=12 — it no longer
+       brackets the retired 3.0 gate, so the demonstration ... has stopped working"
+      docstring records 2.167 at n=4 and 9.026 at n=12, seed 7.  BOTH readings ROSE.  The
+      finding (no threshold can sit on `iso_rel_diff_ratio`) is if anything STRONGER — the
+      statistic still nearly doubles with n.  It is the 3.0 BRACKET that died, and 3.0 is a
+      property of the retired gate, not of the claim.
+  test_gnl   stress_recovery_follows_the_solves_kinematics
+      "the mis-recovery is only 1.456x here, so this test can no longer tell the two apart
+       and is not guarding anything"  (21.963 / 15.083 against a 1.5x gate)
+      docstring measured +169.5% on the outgoing genome — 46.56 MPa against 17.27.  The
+      §14 footgun is unchanged; the wheel that ships no longer makes it dramatic.
+```
+
+and four more of the same shape:
+
+```
+  test_fem      mesh_resolution_must_scale_with_thickness
+      "expected h~t to read stiff and h=t/8 to read soft, got h~t: +0.0087%, h=t/8: +0.0113%"
+      The demonstration is a SIGN FLIP.  Both readings are now positive and both are ~1e-4.
+  test_fem      the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom
+      filleted offset 0.0413 deg is no longer > 3x the unfilleted 0.0671 deg — it is SMALLER.
+      Both are far inside the test's own 0.10 deg "essentially at the bottom" band, so the
+      second half of the pin has no vehicle: on this genome a node sits at the bottom in BOTH
+      builds, and the contrast the test is built on does not exist to be measured.
+  test_contact  the_sampled_patch_extent_is_biased_not_merely_noisy
+      5.886 > 6.349 fails.  The docstring's "overstates by roughly 3x here" is the quantity
+      that shrank; the direction claim it exists to make is not what is asserted.
+  test_objective the_thickness_branch_of_the_cap_binds_on_a_thin_root
+      "at t0 = 2.0 the thickness limit 1.0051 is still not the smaller (slot 0.9330) — the
+       crossover is outside the box".  t0 went 1.474 -> 3.505, so the probe at 2.0 — chosen,
+      says the docstring, "to sit near the crossover rather than the floor" — now sits BELOW
+      the shipped root rather than beside the crossover.  The probe point was calibrated
+      against a genome that no longer exists.
+```
+
+**GROUP B — THREE TOLERANCE AND EXACTNESS PINS THE NEW NUMBERS BREAK.**
+
+```
+  test_geometry_kernel  thickness_hits_its_nodes_exactly      2.220446049250313e-16 == 0.0
+      ONE ULP.  The docstring's stated defect in the superseded interpolant was 1.2e-11 —
+      54,000x LARGER.  The finding ("the nodes are hit") is intact at machine precision;
+      `== 0.0` is a spelling of it that survives only while the t-vector's magnitudes are
+      small, and t0 just went 1.47 -> 3.51.
+  test_geometry_kernel  analytic_curvature_matches_finite_differences   0.0019556 < 0.0001
+      20x over.  The docstring's warrant is "the FD scheme's own O(h^2) error", which is a
+      property of the CENTERLINE, and seven of eight control points moved by more
+      than 2%.  Whether 1e-4 was
+      ever genome-independent is not recorded anywhere.
+  test_wheel_fea        peak_stress_diverges_but_the_field_converges    p99 moving 1.39%
+      Against a 1% gate.  AND THIS TEST'S OWN DOCSTRING ALREADY NAMES THIS FAILURE MODE, for
+      the PREVIOUS promotion: it records that the old `d2 < 0.3 * d1` form "fires on a wheel
+      that is behaving perfectly" once the quantity has converged, and that §14 measured it
+      "happening one tier UP on the promoted genome, which converges sooner".  The form was
+      changed to an absolute 1% and the same thing has now happened at the next promotion.
+      A test that has been miscalibrated by two consecutive promotions is not unlucky.
+```
+
+**GROUP C — ONE FIDELITY ARTIFACT, AND IT IS THE ONLY RED THAT IS NOT AN ASSERTION.** §4.
+**GROUP D — ONE REAL FINDING.** §5.
+
+### 4. THE ONE RED THAT RAISES INSTEAD OF ASSERTING IS A CLAIM ABOUT `smoke`, NOT ABOUT THE WHEEL
+
+`test_gnl.py::test_the_load_continuation_path_does_not_change_the_equilibrium` does not fail
+an assertion. It raises:
+
+```
+  wheel_fem.NewtonDivergedError: line search failed after 20 backtracks at load step 7/8,
+  iteration 6 (residual 5.051e-06)
+```
+
+which reads, on its face, as the shipped wheel having no converged equilibrium path. It is
+not. `CFG` in `tests/test_gnl.py:32` is **`"smoke"`**. `study_gnl.run_newton_health` run
+directly over both genomes at both fidelities:
+
+```
+  SHIPPED b729e86   smoke    RAISED NewtonDivergedError (line search, 20 backtracks, 7/8)
+  SHIPPED b729e86   coarse   OK   spread 3.775e-15   order  7.210   pass=True
+  pre-promotion     smoke    OK   spread 1.776e-15   order 14.833   pass=True
+  pre-promotion     coarse   OK   spread 1.310e-14   order 269.626  pass=True
+```
+
+**At the fidelity the objective actually solves, the shipped genome's one-increment and
+eight-increment paths agree to 3.8e-15.** The divergence exists only on a mesh the design is
+never evaluated on. This is §118's 29.2%-at-`smoke` / 2.77%-at-what-ships lesson arriving
+from the opposite direction — there a fixture's coarseness flattered the design, here it
+condemns it — and the general form is that **the fixture's fidelity is part of every claim
+the fixture makes.** The residual at which the line search gave up, 5.051e-06, is itself the
+hint: that is not a solver losing its way, it is a solver that has nearly arrived and cannot
+take the last step on too few elements.
+
+Note what this costs: the test as written cannot distinguish "this genome has no equilibrium
+path" from "`smoke` cannot resolve this genome's". Those are opposite verdicts about the
+wheel and it reports them identically.
+
+### 5. THE ONE REAL FINDING PRE-COMMITTED TO ITS OWN SUCCESSOR, IN ITS DOCSTRING, BEFORE IT FAILED
+
+`test_objective.py::test_R_rim_is_still_effectively_inert_and_that_is_recorded`, whose
+docstring opens *"A FINDING, not a passing grade"* and closes:
+
+> *"If this ever starts failing, the rim junction geometry has changed and M8b's gene census
+> and the study's verdict both need revisiting."*
+
+The rim junction geometry has changed: **`R_rim` came off its upper bound, 3.0 -> 1.680.**
+The stated physical reason for the inertness was that *"at the rim the arrival is
+near-tangential, so moving `R_rim` moves the ring locus and the offset point together and the
+margin is stationary"* — a claim about the arrival angle at a design that sat on the cap.
+The condition the test named as its trigger is the condition that occurred.
+
+**This is the §118 shape, and it is the argument for writing tests this way.** §118 recorded
+two strict xpasses lifting *"on the promotion their own reasons pre-committed to"*. Here a
+green test named, in advance, the physical change that would falsify it and the two artifacts
+that would need revisiting — so its failure arrives as an instruction rather than as a
+puzzle. Ten of these eleven reds cost a measurement each to classify; this one classified
+itself. **The difference between the ten and the one is not luck, it is that the one wrote
+down what it was a claim ABOUT.** Compare memory's own rule — pin the finding, not its
+symptom — which is what the other ten did not do.
+
+### 6. §132's COST FOR THIS WORK WAS THREE ORDERS OUT, AND THE ERROR WAS METHODOLOGICAL
+
+§132 §6 established the list by running **the full suite, 943 tests** — the light tier in one
+process and four heavy files one process each, `test_objective` alone taking **35:44**. That
+was the right way to take a census. It is the wrong way to re-check a known node ID, and the
+figure it leaves behind makes the follow-up look expensive:
+
+```
+  test_objective, whole file (§132's route) ............... 35:44
+  the two test_objective node IDs alone ...................  5.05 s
+  all eleven node IDs, one process ........................ 68 s
+```
+
+Which is why §132 successor 3 read as the expensive item on the board and was in fact the
+cheapest. **A census and a re-check are different operations and only one of them has to be
+exhaustive.** The four whole-tree runs behind §1 above cost less together than one of the
+heavy files §132 ran to produce the list.
+
+### 7. WHAT MOVED, AND WHAT DELIBERATELY DID NOT
+
+**WHAT MOVED.** `PLAN.md` only — this section. **No test was touched and no source was
+touched.**
+
+**NOT touched, and the reason is that ten of the eleven are decisions rather than repairs.**
+Each Group A test needs a fixture that exhibits its phenomenon, and choosing one is choosing
+a genome to assert against — the same question §130 successor 0 is stuck on for `kinrank`,
+one level down. Each Group B tolerance needs its warrant re-derived, and in two of three
+cases no warrant is on disk. Group D needs `M8b`'s gene census re-run. Bundling eleven
+judgements into one commit would produce a green suite and eleven unexamined constants,
+which is the failure §121 spent a section unwinding. **A red that has been classified is not
+the same object as a red that has been silenced.**
+
+**ALSO NOT touched:** `studies/study_reds_ratio_stability.py` and
+`tests/test_study_gate_guard.py`, which a peer session was editing concurrently and committed
+at `4911e8e` — §131 successor 3, the eleventh exposed driver, guarded on its collected rows
+rather than on its flags. Its own record is that session's to write. Two notes from it belong
+here because they touch this section's evidence: the driver is imported at module level by
+`tests/test_gnl.py:28` and `tests/test_wheel_fea.py:26`, which is the coupling that
+contaminated the first HEAD baseline in §1; and its census of unguarded drivers by ARTIFACT
+rather than by `make` target found **four** drivers with zero guard calls, not the two named
+in §131 successor 3 — `study_arrival_cap.py` and `study_boundary_waste.py` being the extras,
+both of which turn out to be unguardable by this mechanism because neither has any degrading
+flag at all (zero `add_argument` in the first, one `--out` in the second). §131's count of
+eleven stands, by a route that could have moved it.
+
+**SUCCESSORS.**
+
+0. **THE TEN PINS NEED A DECISION EACH, AND THE DECISION IS THE SAME ONE TEN TIMES: WHAT IS
+   THIS TEST A CLAIM ABOUT?** Every Group A test currently reads the shipped genome from
+   `best_solution.json` through a module-scope fixture. If the claim is about the MECHANISM,
+   the fixture should be a genome chosen to exhibit it and pinned in the test — and then the
+   test never breaks on a promotion again. If the claim is about THE WHEEL THAT SHIPS, then
+   the promotion changed the answer and the docstring's numbers are the thing to update.
+   **These are opposite repairs and picking the wrong one produces a green test that asserts
+   nothing** — precisely what `test_stress_recovery_follows_the_solves_kinematics` says about
+   itself at 1.456x today. Do them one at a time, each with the measurement in the message.
+1. **`test_R_rim_is_still_effectively_inert_and_that_is_recorded` IS THE ONLY ONE THAT IS
+   URGENT, AND IT HAS A WRITTEN SCOPE.** §5. Its docstring names two consumers — M8b's gene
+   census and the study's verdict — and neither has been re-run against a genome whose
+   `R_rim` is interior. Until that is done the tree does not know whether the second fillet
+   gene has a gradient, which is a live question for the objective and not only for a test.
+2. **THE `smoke` FIXTURE IN `tests/test_gnl.py` CANNOT DISTINGUISH TWO OPPOSITE VERDICTS.**
+   §4. `CFG = "smoke"` at `:32` governs every test in that file, not only the one that
+   raised. The cheap fix is not to move the config — `coarse` costs real time across a whole
+   file — but to make the continuation test say which of the two it found, since
+   `run_newton_health` at `coarse` answers it in seconds for one genome. A raise that means
+   "the mesh is too coarse for this design" should not be spelled the same way as "this
+   design has no equilibrium".
+3. **`test_peak_stress_diverges_but_the_field_converges` HAS NOW BEEN MISCALIBRATED BY TWO
+   CONSECUTIVE PROMOTIONS AND THE SECOND FORM FAILED THE SAME WAY AS THE FIRST.** §3, Group
+   B. Its docstring diagnoses the first occurrence correctly and the replacement inherited
+   the defect: an absolute 1% on `d2/p99` is still a claim about how far into convergence
+   this particular wheel is at `fine`. The question worth answering before a third rewrite is
+   whether a convergence test can be written against the SEQUENCE (a fitted order, a
+   Richardson estimate) rather than against a difference, which would make it genome-free.
+4. **NOTHING KNOWS WHICH TESTS READ THE SHIPPED GENOME, AND THE NUMBER IS NOT SMALL.**
+   The eleven reds live in six files, so six is the number this section might have left
+   behind. The census is not six:
+
+   ```
+     git grep -l best_solution.json -- tests/          28 files
+     git grep -ln 'open(.*best_solution.json' tests/   21 files open it directly
+   ```
+
+   **Twenty-one test files read the shipped genome off disk, and no index of that exists** —
+   which is why §117 found 62 reds by running the suite rather than by predicting them, and
+   why §132 had to run 943 tests to take a list. That one-line census belongs in
+   `tests/test_promotion.py`'s checklist — item 9, beside §118's item 7 and §120's item 8 —
+   so a promotion states its blast radius before it lands rather than after. **This is the
+   cheapest item on this list and it is the one that would have prevented the section.**
+   Note also what it says about the other seventeen: they read the same genome and they are
+   GREEN, so the pin-the-symptom defect is not universal, and those seventeen are where the
+   pattern for fixing the ten should be read off rather than invented.
