@@ -272,7 +272,40 @@ def test_numpy_and_jax_agree(vec):
 
 def test_analytic_curvature_matches_finite_differences(g8):
     """The hodograph curvature is independent code from differencing the samples, so
-    agreeing to the FD scheme's own O(h^2) error validates both."""
+    agreeing to the FD scheme's own O(h^2) error validates both.
+
+    THAT CLAIM WAS NEVER WRONG.  THE METRIC COULD NOT SEE IT, AND `b729e86` IS THE FIRST
+    GENOME WHERE THAT SHOWS.  The error was normalised POINTWISE, by `k_an` at each
+    sample — undefined where the curvature passes through zero, which is what an
+    INFLECTION POINT is.  The shipped centerline has one and the outgoing centerline does
+    not:
+
+        genome            sign flip   min|k_an|   max|k_an|   pointwise    scaled
+        b729e86 SHIPS        yes      1.584e-04   1.041e-01   1.956e-03   1.446e-05
+        96a0ac5 outgoing     no       3.868e-02   6.623e-02   7.104e-06   6.170e-06
+
+    The pointwise max is attained AT the smallest |k_an| on every refinement, so it does
+    not measure truncation error, it measures how near a sample happens to land to the
+    zero crossing — and it does not converge: 1.956e-03, 9.053e-03, 9.485e-04, 2.270e-04
+    over n = 600, 1200, 2400, 4800, an "order" of -2.21, 3.25, 2.06.
+
+    NORMALISED BY THE CURVE'S OWN SCALE INSTEAD, BOTH GENOMES ARE EXACTLY SECOND ORDER:
+
+        b729e86    1.446e-05  3.608e-06  9.014e-07  2.257e-07     order 2.00 2.00 2.00
+        96a0ac5    6.170e-06  1.540e-06  3.846e-07  9.613e-08     order 2.00 2.00 2.00
+
+    THE OLD `1e-4` WAS NOT GENOME-INDEPENDENT AND NOTHING RECORDED THAT.  Over 400
+    uniform draws across the eight centerline genes at n = 600, the pointwise metric put
+    **1.8%** under 1e-4, spanning 337262x from 2.883e-05 to 9.725 — a 970% "relative
+    error" on a curve whose curvature simply crosses zero.  The outgoing genome was one
+    of the 1.8%.
+
+    THE NEW BOUND HAS A WARRANT.  The same 400 draws under the scaled metric span **23x**
+    — min 1.147e-05, median 5.456e-05, p99 1.946e-04, max 2.588e-04 — and 400 of 400 sit
+    under 1e-3, the worst by 3.9x.  The order itself is deliberately NOT asserted: its
+    median over those draws is 2.00 but 2.5% land outside [1.8, 2.2], and a pin that is
+    97.5% reliable across the box is the kind of thing this file is currently repairing.
+    """
     c, p = G.bezier_centerline(*g8, span_mm=SPAN, num_points=NPTS)
     k_an = G.bezier_curvature(p, NPTS)
     d1 = np.gradient(c, axis=0)
@@ -280,8 +313,10 @@ def test_analytic_curvature_matches_finite_differences(g8):
     k_fd = ((d1[:, 0] * d2[:, 1] - d1[:, 1] * d2[:, 0])
             / (d1[:, 0] ** 2 + d1[:, 1] ** 2) ** 1.5)
     interior = slice(5, -5)          # np.gradient is one-sided at the ends
-    rel = np.abs((k_an[interior] - k_fd[interior]) / k_an[interior]).max()
-    assert rel < 1e-4
+    k_an, k_fd = k_an[interior], k_fd[interior]
+    # Scaled by max|k_an|, NOT pointwise: see the docstring.  Pointwise is a division by
+    # zero anywhere the curve has an inflection, and the shipped one does.
+    assert np.abs(k_an - k_fd).max() / np.abs(k_an).max() < 1e-3
 
 
 def test_analytic_tangent_is_unit_length(g8):
