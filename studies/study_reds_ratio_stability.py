@@ -31,6 +31,7 @@ import json
 import os
 import time
 
+import _gate_guard
 import project_paths as PP
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -148,6 +149,56 @@ def cell_gnl(seed, n, min_wall=None):
 
 CELLS = {"beam": cell_beam, "gnl": cell_gnl}
 
+# ---------------------------------------------------------------------------
+# WHAT A FULL GRID IS — the degraded-run guard's three conditions (§43, §131)
+# ---------------------------------------------------------------------------
+# THIS DRIVER'S EXPOSURE IS NOT THE ONE EVERY OTHER GUARDED DRIVER HAS, and a guard
+# copied from them would be inert here.  Elsewhere `--out` defaults to the committed name
+# and a fidelity flag on the SAME invocation degrades it, so the guard reads `args`.  Here
+# the fidelity flags — `--seed`, `--n`, `--min-wall` — belong to the CELL invocation,
+# which writes one JSON line to `$(REDS_CELLS)` and never touches the committed name; the
+# only invocation that writes the artifact is `--which collect`, which takes none of them.
+# Measured: `--which collect --n 3 --min-wall 1.2 --seed 999` against a fixed `--glob`
+# reproduces the unflagged output BYTE-FOR-BYTE.  So the degradation vector is the SET OF
+# CELLS THE GLOB FINDS, and the guard has to read the collected rows instead.
+#
+# What that costs when unguarded, measured on a scratch `--out` (the committed name was
+# not touched): a directory holding 3 real cells and 106 EMPTY files — the shape the
+# fan-out leaves when cells die, since `> $(REDS_CELLS)/...json` creates the file before
+# the process runs and `2>/dev/null` hides the reason — collects to a 3-cell artifact,
+# 843 bytes against 31039, EXIT 0, and `_table` still prints
+# "correction_factor_is_defensible true in 0/1 cells  (never — the conclusion holds ...)".
+# The headline survives and every condition under it is destroyed, which is §132 §5's
+# shape.  A TRUNCATED cell file is not this defect: `collect`'s fallback `json.loads(ln)`
+# is outside its `try`, so a half-written line raises and nothing is written at all.  Only
+# the empty file is silent.
+#
+# 66 AND 43 ARE THE MAKEFILE'S OWN ENUMERATION, DEDUPLICATED, not a count read off the
+# artifact.  `reds-ratio` emits 68 beam and 45 gnl cell specs, but seed 7 appears in both
+# the n-sweep group and the s = 0..9 group at n = 12 and 24 (beam) and n = 8 and 16 (gnl),
+# and the fan-out names cell files `$0_s$1_n$2_w$3.json`, so each duplicate pair collapses
+# to one file: 68 - 2 = 66, 45 - 2 = 43.  Re-derived from the recipe and checked against
+# the committed artifact as SETS of `(which, seed, n, min_wall)`, not as counts — identical.
+N_CELLS_BEAM = 66
+N_CELLS_GNL = 43
+
+# WHAT THIS GUARD DOES NOT DEFEND, AND IT IS THE EXPOSURE THAT IS LIVE TODAY.  These three
+# conditions are about FIDELITY — is this the full grid, did every cell draw its rows.
+# They say nothing about WHICH WHEEL the grid was measured on, and both cells depend on
+# the shipped genome: `cell_gnl` opens `best_solution.json` directly and `cell_beam` takes
+# it through `study_wheel_fea.load_genes()`, whose default path is that file.  The
+# committed artifact was last written at `1439ecf` (2026-08-16) and `cb4e3dd` promoted
+# `b729e86` on 2026-09-06, so ITS 109 CELLS DESCRIBE A WHEEL THAT NO LONGER SHIPS — which
+# is why the two tests this driver's table retired a gate for now read 7.384 at n = 4 and
+# 13.550 at n = 12 against the 2.167 and 9.026 recorded above.
+#
+# So a re-run of `make reds-ratio` today would satisfy every condition here at full
+# fidelity and overwrite §31's evidence with numbers about a different genome, and the
+# guard would not say a word.  That is §131 successor 0's category — a commit check, not
+# a fidelity check — and §106 already recorded that no committed artifact stores the
+# command, the date or the genome that produced it.  Not fixed here: the two are separate
+# defects and this one cannot be answered from disk.
+
 
 def collect(pattern):
     """Merge cells from either shape: one-JSON-line-per-cell, or a merged report.
@@ -229,6 +280,31 @@ def main(argv=None):
 
     if args.which == "collect":
         cells = collect(args.glob)
+        # §43's degraded-run guard, keyed on the COLLECTED ROWS rather than on `args` —
+        # see the note above `N_CELLS_BEAM` for why reading the flags here would guard
+        # nothing.  Refused before `_table`, not after: a short grid whose verdict line
+        # has already been printed reads as the gate to whoever is watching the terminal.
+        # `collect` solves nothing — it is a JSON merge over files already on disk — so
+        # this is still a refusal before any work, as at every other call site.
+        n_beam = sum(c["which"] == "beam" for c in cells)
+        n_gnl = sum(c["which"] == "gnl" for c in cells)
+        exhausted = [c for c in cells if c["n_rows"] != c["n"]]
+        _gate_guard.refuse_degraded_out(
+            ap, args,
+            ("studies/study_reds_ratio_stability.json",
+             "study_reds_ratio_stability.json"),
+            [
+                (n_beam < N_CELLS_BEAM,
+                 f"the glob found {n_beam} beam cells, not the gate's {N_CELLS_BEAM}"),
+                (n_gnl < N_CELLS_GNL,
+                 f"the glob found {n_gnl} gnl cells, not the gate's {N_CELLS_GNL}"),
+                (bool(exhausted),
+                 f"{len(exhausted)} cell(s) returned fewer rows than asked for "
+                 f"(first: which={exhausted[0]['which']} seed={exhausted[0]['seed']} "
+                 f"n={exhausted[0]['n']} n_rows={exhausted[0]['n_rows']}) — the report's "
+                 f"own claim is that every cell drew its full n"
+                 if exhausted else ""),
+            ])
         for w in ("beam", "gnl"):
             _table(cells, w)
         if args.out:

@@ -28,12 +28,17 @@ successor 2 asking for exactly that, and the mutation catcher below now asserts 
 CALL SEQUENCE rather than that some guard fired.
 """
 
+import json
+import os
 import signal
 import sys
 
 import pytest
 
 import _gate_guard
+# Cheap at import: the driver's own top level is argparse/glob/json/os/time, and both cell
+# functions import `study_wheel_fea`/`study_gnl` lazily inside themselves.
+import study_reds_ratio_stability as reds
 
 
 class _GuardPassed(Exception):
@@ -385,3 +390,144 @@ def test_the_helper_is_silent_when_out_was_redirected():
 
     _gate_guard.refuse_degraded_out(_AP(), _Args(), "study_x.json",
                                     [(True, "degraded")])
+
+
+# ---------------------------------------------------------------------------
+# `study_reds_ratio_stability` — THE ELEVENTH EXPOSED DRIVER, AND THE ONE THE
+# TABLE ABOVE CANNOT HOLD (§131 successor 3)
+# ---------------------------------------------------------------------------
+# EVERY ROW OF `DRIVERS` ASSERTS A PROPERTY OF AN ARGV.  That works because in every one
+# of those drivers `--out` defaults to the committed name and a fidelity flag on the SAME
+# invocation degrades it, so the guard can read `args` and a test can decide the case from
+# argv alone.  THIS DRIVER IS NOT SHAPED THAT WAY, and putting it in the table would state
+# something false about it.
+#
+# Its fidelity flags — `--seed`, `--n`, `--min-wall` — belong to the CELL invocation,
+# which prints one JSON line into `$(REDS_CELLS)` and never touches a tracked name.  The
+# only invocation that writes the artifact is `--which collect`, which accepts those flags
+# and IGNORES them: measured, `--which collect --n 3 --min-wall 1.2 --seed 999` over a
+# fixed `--glob` reproduces the unflagged output byte-for-byte.  So no argv distinguishes
+# a gate run from a degraded one; what distinguishes them is THE SET OF CELLS THE GLOB
+# FINDS, and `make reds-ratio`'s own collect argv is a gate run or a degraded one
+# depending on whether the fan-out that preceded it left 109 cells in `/tmp` or 3.
+#
+# That is also why the first table test's promise — "every Makefile invocation must reach
+# the work" — cannot be made about this recipe from argv, and why these tests build the
+# cell directory instead of quoting a command line.
+
+
+def _cells():
+    """The committed artifact's own 109 rows, which `collect` accepts as a cell source."""
+    import project_paths as PP
+    with open(os.path.join(PP.ROOT, "studies",
+                           "study_reds_ratio_stability.json")) as fh:
+        return json.load(fh)["cells"]
+
+
+@pytest.fixture
+def reds_cells(tmp_path, monkeypatch):
+    """Write cell files into a temp dir and contain the driver's writes to another.
+
+    Contained the same way the table's fixture is and for the same reason: these tests
+    aim a run at `studies/study_reds_ratio_stability.json`, and if the guard call were
+    ever deleted that run must land in a temp tree rather than on the evidence.  This
+    driver uses `args.out` AS GIVEN — it never joins `HERE` — so `chdir` with a `studies/`
+    beneath it is the containment that matters, not the `HERE` monkeypatch.
+    """
+    def write(cells, name="cells"):
+        d = tmp_path / name
+        d.mkdir()
+        for i, c in enumerate(cells):
+            (d / f"cell{i:03d}.json").write_text(json.dumps(c))
+        return str(d / "*.json")
+
+    (tmp_path / "studies").mkdir()
+    monkeypatch.chdir(tmp_path)
+    return write
+
+
+COMMITTED = "studies/study_reds_ratio_stability.json"
+
+
+def test_a_full_grid_is_filed_under_the_committed_name(reds_cells):
+    """The gate run — 66 beam and 43 gnl cells, every one holding the rows it asked for."""
+    glob_pat = reds_cells(_cells())
+    assert reds.main(["--which", "collect", "--glob", glob_pat,
+                      "--out", COMMITTED]) == 0
+    with open(COMMITTED) as fh:
+        assert len(json.load(fh)["cells"]) == reds.N_CELLS_BEAM + reds.N_CELLS_GNL
+
+
+def test_a_short_glob_may_not_be_filed_under_the_committed_name(reds_cells):
+    """§132 §5's shape, and the defect this guard closes.
+
+    Measured before the guard existed: 3 real cells beside 106 EMPTY files — what the
+    fan-out leaves when cells die, since `> $(REDS_CELLS)/...json` creates the file before
+    the process runs and `2>/dev/null` hides the reason — collected to a 3-cell artifact
+    of 843 bytes against 31039, EXIT 0, with `_table` still printing
+    "correction_factor_is_defensible true in 0/1 cells  (never — the conclusion holds...)".
+    The verdict line survives; every cell under it is gone.
+    """
+    glob_pat = reds_cells(_cells()[:3])
+    with pytest.raises(SystemExit) as excinfo:
+        reds.main(["--which", "collect", "--glob", glob_pat, "--out", COMMITTED])
+    assert excinfo.value.code != 0
+    assert not os.path.exists(COMMITTED), "a short grid was filed as the gate"
+
+
+def test_an_empty_cell_file_is_silent_and_a_truncated_one_is_not(reds_cells):
+    """The two failure shapes are not the same, and only one of them needs the guard.
+
+    `collect` wraps its whole-file `json.loads` in a `try`, but the per-line fallback
+    beneath it is OUTSIDE that `try` — so a half-written cell line RAISES and nothing is
+    written at all, which is already safe.  A zero-byte file has no lines, contributes no
+    cells, and returns cleanly.  The empty file is the one the fan-out actually produces.
+    """
+    d = os.path.dirname(reds_cells(_cells()[:3]))
+    open(os.path.join(d, "empty.json"), "w").close()
+    assert len(reds.collect(os.path.join(d, "*.json"))) == 3, "an empty file was not silent"
+
+    with open(os.path.join(d, "truncated.json"), "w") as fh:
+        fh.write('{"ratio": 1.5, "cv"')
+    with pytest.raises(json.JSONDecodeError):
+        reds.collect(os.path.join(d, "*.json"))
+
+
+def test_a_cell_that_could_not_draw_its_rows_may_not_be_filed(reds_cells):
+    """The report's own claim is that every cell returned exactly the rows it asked for.
+
+    A full 109-cell grid can still be degraded one cell at a time, which is the condition
+    neither of the count checks can see.  `n_drawn` is NOT this quantity — it counts the
+    LHS candidates rejected on the way to `n_rows` and runs 7.5x to 92.5x above it in
+    every committed cell.
+    """
+    cells = [dict(c) for c in _cells()]
+    cells[0]["n_rows"] = cells[0]["n"] - 1
+    glob_pat = reds_cells(cells)
+    with pytest.raises(SystemExit) as excinfo:
+        reds.main(["--which", "collect", "--glob", glob_pat, "--out", COMMITTED])
+    assert excinfo.value.code != 0
+    assert not os.path.exists(COMMITTED)
+
+
+def test_the_cell_flags_are_inert_on_the_collect_path_and_the_guard_must_not_read_them(
+        reds_cells):
+    """THE PIN ON THE GUARD'S SHAPE, not on its symptom.
+
+    `--n`, `--seed` and `--min-wall` degrade a CELL and mean nothing to a collect.  A
+    guard rewritten to read them — the shape every other driver in this file uses — would
+    refuse this run, which is a full grid and IS the gate.  That regression is invisible
+    to every other test here, because the cheap way to write this guard is also the wrong
+    one for this driver alone.
+    """
+    glob_pat = reds_cells(_cells())
+    assert reds.main(["--which", "collect", "--glob", glob_pat,
+                      "--n", "3", "--min-wall", "1.2", "--seed", "999",
+                      "--out", COMMITTED]) == 0
+
+
+def test_a_short_grid_is_allowed_once_it_is_redirected(reds_cells):
+    """The refusal is about the NAME here too: re-tabulating a partial grid is routine."""
+    glob_pat = reds_cells(_cells()[:3])
+    assert reds.main(["--which", "collect", "--glob", glob_pat,
+                      "--out", "studies/reds_ratio_probe.json"]) == 0
