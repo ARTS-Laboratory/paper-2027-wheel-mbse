@@ -21295,3 +21295,264 @@ bearing evidence for §1's dating.
    one that was a question about the objective rather than about a test. The nine are still
    ten-minus-one decisions of the same kind, each needing the item-9 question answered with
    a measurement.
+
+---
+
+## §136 — 2026-09-08. §135's SUCCESSORS 0 AND 2, CLOSED. SUCCESSOR 0 EXPECTED "NO CENSUS THAT SPEAKS ABOUT THE OBJECTIVE STILL CALLS THE PAIR DEAD" AND THE ANSWER IS YES IN FOUR PLACES — NONE OF THEM AN ASSERTION, ALL FOUR FALSE SINCE §103. `fillet=None` DOES NOT MEAN "DECIDE PER GENOME", WHICH IS WHY EVERY GREEN CENSUS IS RIGHT. AND A 22-LINE DOCSTRING MOVED 54 CITATIONS, NINE MORE OF WHICH WERE ALREADY BROKEN BEFORE ANYONE TOUCHED THEM
+
+Two successors, two commits, `8f359bb` and `277a731`. Neither needed a run over four
+minutes, and successor 0 needed no run at all — it is the seventh instance in three days
+of a question the tree could answer by reading, over the same two days §135 §4 counted
+six in. What is new is that reading it produced the OPPOSITE answer to the one the
+successor filed.
+
+### 1. THE QUESTION, AND WHY IT INVERTS
+
+§135 successor 0 narrowed §118/§133's twice-filed "gene census" item to one thing:
+*"whether any census that speaks about the OBJECTIVE still calls this pair insensitive."*
+It filed the census half as **answered in the negative** — two sites, both green, both
+about the mesh — and warned they *"must not be 'fixed'"*.
+
+**THE WARNING IS EXACTLY RIGHT AND THE COUNT IS NOT.** `git grep insensitive_genes --
+tests/` returns **six lines across four files**, and there are TWO instruments, not one:
+
+```
+  wheel_adjoint.py:929   insensitive_genes(genes, mesh)   jacfwd(mesh_coords), tol=0.0
+                         a MESH census.  No solver, no objective, no loss.
+      tests/test_filleted_mesh.py:303   plain["coarse"]        == {R_hub, R_rim}
+      tests/test_filleted_mesh.py:305   filleted_shipped       == []
+      tests/test_gradient.py:248        build_wheel(genes,CFG) == INSENSITIVE_EXPECTED
+      tests/test_objective.py:321       build_wheel(genes,CFG) cols[12] == cols[13] == 0
+
+  study_contact.py:826   an FD census through the FEA, a different instrument
+      tests/test_contact.py:465                                == {R_hub, R_rim}
+```
+
+plus `tests/test_gradient.py:336`, `:354` and `:426`, which assert `INSENSITIVE_EXPECTED`
+without calling the function. **Not one of the eight speaks about the loss, so successor
+0's verdict on the ASSERTIONS holds and is if anything under-stated.** The two it named
+were four call sites in three files.
+
+### 2. `fillet=None` MEANS NO FILLET. IT DOES NOT MEAN "DECIDE PER GENOME", AND THIS ARC HAS BEEN READING IT THE OTHER WAY
+
+This is the fact that makes every green census correct, and it took a measurement to
+believe because §85 is recorded everywhere as *"the `fillet=True` DEFAULT flip"*.
+
+`wheel_wheel.py:2375` is `if fillet is None:` -> the plain spoke grid, no fillet blocks at
+all. What §85 made per-genome is one level in: `wheel_wheel.py:2970`,
+`per_genome = (fillet is True and layer_profile is None and fillet_blocking == "sector")`.
+**The per-genome rule chooses a LAYER PROFILE, and only under an explicit `fillet=True`.**
+So `build_wheel(genes, cfg)` — which is what every census above reads — builds the
+UNFILLETED mesh at every fidelity and every genome, and always has.
+
+Measured, because "always has" is a claim: at the shipped genome
+`insensitive_genes(g, build_wheel(g, cfg))` returns `['R_hub', 'R_rim']` with column norms
+of **exactly 0.0** at `smoke` and at `coarse`. The census is not stale. It is a claim
+about a mesh, and it is exact about that mesh.
+
+### 3. THE MESH THE OBJECTIVE SOLVES, WHICH IS THE OTHER ONE
+
+§103 wired the switch. `wheel_objective.py:1024` `phase_meshes` builds every phase with
+`fillet=True` (`:1037`) and `:1214` hands each one to
+`WA.service_qoi_value_and_grad(..., mesh=meshes[i])`. **`wheel_stage3.py` contains no
+`build_wheel(` call at all** — `WO.phase_meshes` at `:460` is its only mesh source — and
+the pooled path matches deliberately at `wheel_pool_worker.py:62`, whose own comment says
+it must. Serial and pooled, there is no unfilleted mesh anywhere in a Stage 3 evaluation.
+
+On that mesh, at the shipped genome:
+
+```
+  mesh                          dead genes        |dcoords/dR_hub|   |dcoords/dR_rim|
+  phase_meshes, smoke           []                   7.9306e+01         9.4095e+01
+  phase_meshes, coarse          []                   1.7479e+02         2.0694e+02
+  build_wheel(genes, cfg)       [R_hub, R_rim]       0.0                0.0
+```
+
+**`R_rim` ranks FIRST of fourteen by column norm and `R_hub` SECOND, at both fidelities.**
+
+That is §79's result, and it is worth having on the DEFAULT path: §135 §1 dated the mesh
+route to `75bc9d9` using `tests/test_filleted_mesh.py:293`, whose fixture is pinned to
+`FILLET_LAYER_SHIPPED` — **the pair `fillet=True` took BEFORE §85**, named in the fixture's
+own docstring so §79's numbers stay on §79's geometry. That is the right choice for that
+test and it means the green test does not, by itself, say anything about the mesh Stage 3
+builds today. It does now, measured here. §135 §1's dating survives on a second footing
+rather than on the one it was resting on.
+
+### 4. THE FOUR SITES, AND WHY THE ANSWER IS "YES" AFTER ALL
+
+Nothing ASSERTS the pair dead in the loss. Four places SAY it, and every one has been
+false since 2026-09-03:
+
+```
+  wheel_adjoint.py     module header: "everything above about this module is unchanged,
+                       because nothing hands it a filleted mesh.  Stage 3 still builds
+                       the unfilleted one".  Both retired.  Its third clause — the census
+                       gates are still correct and still green — is EXACT, and §2 above
+                       is why.
+  wheel_objective.py   `stress_margin`: "Measured again at the shipped genome on
+                       2026-08-12: `dL/dR_hub` and `dL/dR_rim` are both EXACTLY 0.0.  A
+                       nominally 14-dimensional search was running in 8."  §135 §1
+                       measured 14 of 14 nonzero, `dL/dR_rim` = +36.97 at `coarse`/8.
+  study_gradient.py    printed verdict: "Nothing wires the fillet into the objective" and
+                       "the mesh Stage 3 builds is still the unfilleted one, and is still
+                       blind to them".
+  study_contact.py     printed verdict: "A gradient-based Stage 3 would find them
+                       perfectly flat and never move them."
+```
+
+All four are bracketed with the measurement rather than rewritten. **The two study
+drivers are PRINT statements and none of that text reaches `study_*.json`** — checked, not
+assumed — so the artifacts still describe their drivers and no refresh is owed. That
+matters because §119 established that three of these drivers cannot be refreshed at all.
+
+**THE SHAPE OF THE ERROR IS ONE THE TREE KEEPS MAKING, ONE LEVEL UP FROM §133 §4's.** A
+census is a claim about the mesh it was taken on. Four sites took a true statement about
+the unfilleted mesh and wrote it as a statement about the OPTIMIZER, and when the
+optimizer changed meshes the sentence stayed. The same defect as a threshold that is
+really a claim about its instrument, and as a fixture's fidelity being part of every claim
+the fixture makes.
+
+### 5. SUCCESSOR 2: THE 86x IS `ga_beam` -> OUTGOING, WEARING THE NAME OF THE PROMOTION AFTER IT
+
+§135 successor 2 filed this as *"worse than stale"* and was right. `_fillet_margins`'
+docstring says the margins *"at the current shipped genome"* are `[+4.0271, +10.7491]`
+and that *"the rim figure moves 86x with the promotion"*. Re-derived here rather than
+lifted, all six readings, both fidelities named because §135 §4 is about what happens when
+they are not:
+
+```
+  genome                       smoke                    coarse
+  ga_beam                      [+4.647, +0.125]  as recorded; fidelity NOT stated
+  96a0ac5  outgoing            [+4.0176, +10.7730]      [+4.0271, +10.7491]
+  b729e86  SHIPS               [+3.5522, +22.3147]      [+3.5608, +22.2721]
+```
+
+**Every figure §135 §1 quoted reproduces to the digit.** 10.7491 / 0.125 = **85.99**, so
+the 86x is the `ga_beam` -> outgoing transition; against the rim that ships it is
+**178.52** at `smoke` and **178.18** at `coarse`. Three genomes make two transitions and
+the sentence merges them into one.
+
+**BRACKETED, NOT REWRITTEN, AND THE ARGUMENT GETS STRONGER.** It reasons that both
+readings are feasible either way, so the `fillet` barrier is flat and `d(fillet)/dR_hub`
+is exactly 0.0. At +22.31 mm of rim clearance it is flatter than when that was written.
+The hub margin is the one that NARROWED — 4.0271 -> 3.5608 at `coarse`, **11.58%** — and
+is still feasible by a wide margin. The numbers stay because they are §106's dated record
+and this is the second promotion they have outlived; **a figure re-fitted at every
+promotion stops being evidence of anything.**
+
+### 6. THE CITATION COST WAS 67, OF WHICH 54 CAME FROM ONE DOCSTRING — AND NINE MORE WERE ALREADY BROKEN
+
+§118's lesson at full size. The two commits inserted prose at four points and moved every
+line citation below each:
+
+```
+  8f359bb  four sites, +24/+21/+8/+11        13 citations, 2 files
+  277a731  one docstring at :646, +22        54 citations, 13 files
+```
+
+**EVERY ONE OF THE 67 WAS VERIFIED BYTE-IDENTICAL AGAINST ITS PARENT** — for each `:N`,
+`parent[N] == current[N + shift]` — so the repair preserves what each citation RESOLVED
+to rather than guessing what it meant. That check is what makes a bulk shift safe on a
+pure insertion, and it caught the one thing a bulk shift gets wrong: `MBSE_PLAN.md:499`'s
+bare `` `:2760` `` reads as a `wheel_objective.py` citation by proximity and belongs to
+`wheel_wheel._COORD_FN_CACHE`, named earlier on the same line. **A bare `:N` is owned by
+the nearest filename BEFORE it, not by the nearest one** — and `wheel_objective.py` is
+1683 lines, so the mismatch check refused it rather than the reading.
+
+**NINE CITATIONS INTO `wheel_adjoint.py` WERE ALREADY DANGLING AT `6f1f01e`, AND THEY ARE
+LEFT ALONE.** §118's 2-mine/3-not split, at 13-mine/9-not. Every one of them resolves —
+to the wrong line — and every claim they make is TRUE of a line that exists, so this is
+pure line drift and not a stale finding:
+
+```
+  cited as          claims                                  the real anchor, at HEAD
+  :161 +190 +400    the adjoint kernels dispatch on         :224, :253, :364, :507, ...
+    PLAN.md:2933    `prob.nonlinear`                        (:161 is a BLANK LINE)
+  :537   x3         `delta = float(sec["axle_drop_mm"])`    :868
+    wheel_stage3.py:63 and :301, tests/test_stage3.py:136
+  :553              the `dF_ddelta <= 0` guard              :884
+    wheel_stage3.py:73
+  :644   x2         the same `axle_drop_mm` claim           :868
+    PLAN.md:8968 and :9154
+  :646, :649-662    `service_qoi_value_and_grad` and its    :830 and the docstring
+    MBSE_PLAN.md:153 and :407                               under it
+```
+
+**AND THE FIRST DIAGNOSIS OF THIS WAS WRONG, IN THE WAY A HASTY GREP IS ALWAYS WRONG.**
+`wheel_adjoint.py` holds TWO near-identical functions — `axle_drop_value_and_grad` at
+`:790` and `service_qoi_value_and_grad` at `:830` — and EACH has a
+`delta = float(...["axle_drop_mm"])` line and a `dF_ddelta <= 0` guard: `:814`/`:819`
+reading `res[...]`, `:868`/`:884` reading `sec[...]`. A `grep` that stops at the first
+match lands on `res` and reports the citations as naming a variable the code does not
+have. It does have it, one function further down, and `:868` is inside exactly the
+function all three citing sites are arguing about. **Two anchors that differ by one
+identifier are the same hazard as a sentinel with two meanings — the first match is not
+the match.**
+
+These are left alone because they are somebody's unit of work and not this one's: folding
+a `wheel_adjoint` line-drift repair into a commit about the fillet census would make both
+harder to read. **Note that this commit MOVED them** — `8f359bb` inserted 24 lines at
+`:88` — so their targets shifted like everything else. That is defensible only because a
+stale citation points at arbitrary content either way and the repair is to find the
+anchor, not to preserve the miss; a citation that RESOLVED was never treated that way.
+
+### 7. WHAT MOVED
+
+**`8f359bb`** — `src/wheel_adjoint.py`, `src/wheel_objective.py`,
+`studies/study_gradient.py`, `studies/study_contact.py`, plus 13 citation repairs in
+`PLAN.md` and `UNCAP_PLAN.md`. **`277a731`** — `src/wheel_objective.py`, plus 54 citation
+repairs across 13 files. Prose only in both: no executable line changed, verified by
+diffing the added lines against comment/docstring/print shapes.
+
+**Green.** `8f359bb`: the eight census node IDs across `test_gradient`, `test_contact`,
+`test_filleted_mesh` and `test_objective`, **8 passed**, peak RSS flat at 2.98 GiB —
+§133 §6's point, that a re-check is not a census and does not need the 35-minute file.
+`277a731`: both `_fillet_margins` node IDs, **2 passed**; `test_pool` and
+`test_requirements` collect at 23 and 44. **THE RED LIST WAS NOT RE-TAKEN AND IS NOT
+CLAIMED HERE.** No assertion was touched and no executable line changed, so §135's ten
+should stand — but that is an inference, and §119's rule is that a list is diffed, not
+reasoned about. The next section that runs the suite owns the check.
+
+**NOT touched.** The eight census assertions — §1, and successor 0 was right that they
+must not be "fixed". `INSENSITIVE_EXPECTED` — it is the census of the unfilleted mesh and
+that mesh has not changed. `tests/test_gradient.py:650`'s docstring, which restates the
+2026-08-12 loss reading: it is DATED in place, its next paragraph says the opposite on a
+filleted mesh, and its assertion at `:669` pins that — which is the shape the other four
+should have had.
+
+**SUCCESSORS.**
+
+0. **NINE DANGLING CITATIONS INTO `wheel_adjoint.py`, AND THE ANCHORS ARE ALREADY FOUND.**
+   §6 gives the table: `:868`, `:884`, `:830` and the `prob.nonlinear` list. Every claim
+   is true of a real line, so this is a mechanical repair — but it is NOT a bulk shift,
+   because the deltas differ per citation and none of them is this commit's 24. Do it by
+   anchor, one site at a time, and verify each by content. **The one judgement in it:**
+   `wheel_stage3.py:63`, `:301` and `tests/test_stage3.py:136` all argue that `delta0` and
+   `axle_drop_mm` are the same number — the warm start's whole warrant — and there are now
+   TWO functions that could be meant. Check that all three mean
+   `service_qoi_value_and_grad`'s `:868` and not `axle_drop_value_and_grad`'s `:814`
+   before pointing them anywhere.
+1. **`wheel_adjoint.py`'s HEADER STILL SAYS `wheel_objective` PRICES `R_hub` THROUGH A `Kt`
+   SURROGATE "EXACTLY FLAT OVER HALF ITS FEASIBLE RANGE" (§75), AND THAT CLAUSE WAS NOT
+   MEASURED HERE.** §4 retired the two clauses either side of it and left this one
+   standing because it is a claim about the SURROGATE rather than about the wiring. §135 §1
+   measured `dL/dR_hub` = **+17.36** at the shipped genome, and §75's flat surrogate is
+   the route this clause names for that same gene. Those two have never been put side by
+   side, and §135 §1's own discipline says why it matters: the loss gradient and the
+   surrogate are different quantities and one does not follow from the other. Cheap and
+   solve-free: `stress_concentration_kt` over `R_hub` at fixed `t0`, against
+   `hub_fillet_cap_mm` at the shipped genome — is the shipped `R_hub` above the cap or
+   below it? Above, and the clause survives and the gradient comes from elsewhere;
+   below, and the clause is a third retired sentence in that header.
+2. **NINE REDS REMAIN AND THEY ARE §133 SUCCESSOR 0, UNCHANGED.** §135 successor 3.
+   Nothing in this section touched one, and the item-9 question — what is this test a
+   claim ABOUT — is the same question §2 above answers for the censuses. **The censuses
+   are the worked example**: each one is green through two promotions and a default flip
+   precisely because it names its mesh, and the seventeen green genome-readers §133
+   successor 4 counted are where the pattern for the nine should be read off.
+3. **§135 SUCCESSOR 1 IS NOW WORTH LESS AGAIN.** It offered a 44 GiB / 23-minute
+   `objective()` on the OUTGOING genome to date `dL/dR_rim`. §3 above adds a third
+   bracketing fact — the mesh Stage 3 actually builds has been filleted since §103, on the
+   default path and not only on a pinned fixture — so the transition is bracketed by
+   §79/§85, §102/§103 and §103's wiring, all of them before `cb4e3dd`. **Do not spend the
+   run to confirm a date three committed facts already bracket.**
