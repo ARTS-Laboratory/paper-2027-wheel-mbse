@@ -1048,23 +1048,81 @@ def test_the_fillet_cap_barrier_is_live_on_a_design_over_its_cap(genes_over_cap,
         "penalty charged to a feasible design")
 
 
-def test_R_rim_is_still_effectively_inert_and_that_is_recorded(genes):
-    """A FINDING, not a passing grade.
+def test_R_rim_is_no_longer_inert_and_that_is_the_finding(genes):
+    """A FINDING, not a passing grade — AND IT REVERSED AT `cb4e3dd`.  PLAN.md §135.
 
-    `fillet_feasibility` was built to give both fillet genes a gradient and only `R_hub`
-    got one.  At the rim the arrival is near-tangential, so moving `R_rim` moves the ring
-    locus and the offset point together and the margin is stationary.  If this ever
-    starts failing, the rim junction geometry has changed and M8b's gene census and the
-    study's verdict both need revisiting.
+    THE ORIGINAL FINDING, which stood from M8b until the promotion: `fillet_feasibility`
+    was built to give both fillet genes a gradient and only `R_hub` got one.  At the rim
+    the arrival is near-tangential, so moving `R_rim` moves the ring locus and the offset
+    point together and the margin is stationary.  The old assertion was
+    `abs(J[1, 13]) < 1e-4` and its docstring pre-committed to what a failure would mean:
+    *"the rim junction geometry has changed and M8b's gene census and the study's verdict
+    both need revisiting."*  That is what happened, and §135 is the re-check it asked for.
+
+    WHAT MOVED.  `R_rim` came off its box ceiling at the promotion, 3.0 -> 1.68017
+    (`GENE_SPACE` gives it {0.5, 3.0} and that box is byte-identical across 96a0ac5,
+    cb4e3dd and HEAD, so this is movement and not a remapped range).  The rim arrival is
+    no longer near-tangential, and the margin sensitivity became RESOLVABLE:
+
+        d(rim margin)/dR_rim        smoke (asserted)      coarse
+          outgoing genome             -3.692e-05        -3.048e-05    both under 1e-4
+          b729e86 SHIPPED             -7.010e-04        -6.624e-04    7.0x / 6.6x over
+          growth across the promotion     19.0x             21.7x
+
+    BOTH FIDELITIES ARE GIVEN BECAUSE THE GROWTH FACTOR DEPENDS ON WHICH ONE IS READ —
+    21.7x at `coarse` is 14.5% larger than 19.0x at `smoke`, so neither may be quoted
+    bare.  The asserted row is `smoke`: this file sets `CFG = "smoke"` (line 40) and that
+    is the config the Jacobian below is taken at.  `coarse` is carried because §135's
+    loss-gradient half is measured there, and the two halves must not be read as one
+    number.  The gate is cleared either way; the finding does not turn on the choice.
+
+    WHY `1e-4` AND WHY "RESOLVABLE" RATHER THAN "LIVE".  1e-4 is the precision these
+    margins are QUOTED to (`wheel_wheel.py:1176`, `studies/study_fillet_block.py:1030`),
+    so the gate has always read "a sensitivity below one unit in the last place of how we
+    report margins is indistinguishable from zero".  It is an instrument, not a
+    significance threshold, which is why it is NOT re-tuned here.  Clearing it by 7.0x
+    means the sensitivity can now be seen, and that is all it means.
+
+    THE DEEPER READING IS A DIFFERENT QUANTITY AND IT IS STRONGER — do not conflate them.
+    This test measures a MARGIN Jacobian; the loss gradient is its own question, because
+    the margin reaches the loss only through the fillet_cap barrier and an inactive
+    barrier leaves `dL/dR_rim` at zero however live the margin is.  Measured separately at
+    `coarse` / 8 uniform phases on the shipped genome (PLAN.md §135, 1359.3 s, 44 GiB):
+
+        util rim = 0.90959   ABOVE the 0.80 knee   ->  dL/dR_rim = +3.696881e+01
+        util hub = 0.91093   ABOVE the 0.80 knee   ->  dL/dR_hub = +1.736205e+01
+
+    So the rim is above `MARGIN_KNEE_UTIL` and `dL/dR_rim` is LARGER THAN `dL/dR_hub`.
+    The original premise — both genes were meant to have a gradient and only `R_hub` got
+    one — is not merely retired, it is inverted.  All 14 gradient components are nonzero
+    at the shipped genome; `wheel_objective.py`'s own "a nominally 14-dimensional search
+    was running in 8" is a 2026-08-12 reading and does not describe this tree.
+
+    BUT THE LOSS-GRADIENT HALF IS NOT DATED TO THE PROMOTION, AND THIS TEST DOES NOT
+    CLAIM IT IS.  `test_below_the_knee_the_rim_fillet_radius_is_dead` is `xfail(strict)`
+    and its reason records `genes_over_knee`'s rim at util 1.21257 — above the WALL —
+    since §102/§103's region-p-norm term, on a genome that is neither the shipped one nor
+    the outgoing one.  So the rim was already over the knee before `cb4e3dd`, and the
+    honest dating is: the LOSS gradient most likely went live at the fillet switch, while
+    what the PROMOTION moved is the MARGIN sensitivity this test measures — which is the
+    quantity isolated to the genome by experiment (green at 96a0ac5, red at cb4e3dd, and
+    green again at HEAD's code with the outgoing genome swapped back in, PLAN.md §133).
+    Two quantities, two different causes, and only the second one is pinned here.
+
+    THIS ASSERTION IS GENOME-SPECIFIC ON PURPOSE, and says so per the promotion
+    checklist's item 9: it is a claim about THE WHEEL THAT SHIPS, not about a mechanism,
+    so a promotion is entitled to move it and the next one should re-measure rather than
+    re-tune.
     """
     cfgo = WW.get_config(CFG)
     flanks = WO.fillet_flanks(genes, cfgo)
     J = np.asarray(jax.jacrev(
         lambda v: WO._fillet_margins(v, cfgo, W.S, W.HUB_RADIUS_MM, flanks)
     )(jnp.asarray(genes)))
-    assert abs(J[1, 13]) < 1e-4, (
-        f"d(rim margin)/dR_rim is now {J[1, 13]:.3e}; R_rim has become live, which is "
-        f"good news that invalidates a documented finding")
+    assert abs(J[1, 13]) > 1e-4, (
+        f"d(rim margin)/dR_rim is back to {J[1, 13]:.3e}, under the 1e-4 these margins are "
+        f"quoted to. The rim has gone stationary again — re-measure dL/dR_rim and the rim "
+        f"utilisation against the 0.80 knee before touching this bound")
 
 
 def test_the_smoothness_term_no_longer_counts_anything(genes):
