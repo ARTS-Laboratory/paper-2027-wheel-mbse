@@ -133,7 +133,7 @@ def test_the_rqmc_offset_always_lands_on_the_fixed_lattice(n_phase, n_sub):
 
 
 def test_the_warm_vector_is_the_previous_drops_and_nothing_else():
-    """`delta0` is the secant's indentation and `wheel_adjoint.py:537` makes that the
+    """`delta0` is the secant's indentation and `wheel_adjoint.py:905` makes that the
     same number as `axle_drop_mm`, which is why no change to `wheel_objective` was
     needed to warm-start.  If that identity ever moves, this is what says so."""
     brk = {"report": {"rows": [{"axle_drop_mm": 1.5}, {"axle_drop_mm": 1.6}]}}

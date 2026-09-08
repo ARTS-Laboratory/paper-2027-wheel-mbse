@@ -60,7 +60,7 @@ is the failure mode this project keeps naming and keeps having to catch with a g
 
 4.  WARM STARTING IS FREE AND IS TAKEN.
     `service_qoi_value_and_grad`'s `delta0` is the secant's indentation, and
-    `wheel_adjoint.py:537` shows that is the same number reported as `axle_drop_mm`.
+    `wheel_adjoint.py:905` shows that is the same number reported as `axle_drop_mm`.
     So the next step's warm vector is just the last step's per-phase drops, read off
     `breakdown["report"]["rows"]` and passed back as `warm=`.  `delta0=None` costs an
     extra linear `solve_wheel` per phase to manufacture a starting guess
@@ -70,7 +70,7 @@ is the failure mode this project keeps naming and keeps having to catch with a g
 5.  A FAILED SOLVE IS A STEP REJECT, NOT A CRASH, AND NOT A ZERO.
     `wheel_objective.py` contains no `try`/`except` anywhere, deliberately:
     `NewtonDivergedError` (`wheel_fem.py:1090`) and the `dF/ddelta <= 0` guard
-    (`wheel_adjoint.py:553`) propagate straight out, and the caller owns the policy.
+    (`wheel_adjoint.py:921`) propagate straight out, and the caller owns the policy.
     The policy is here.  A trial step that will not solve is halved and retried, up to
     `--max-rejects`; on exhaustion the iterate is restored and the learning rate decays.
     This matters beyond robustness: `solve_nonlinear` raising because `r @ du >= 0` is
@@ -298,7 +298,7 @@ def warm_from(breakdown):
     """The per-phase indentations to start the next step's secant from.
 
     `service_qoi_value_and_grad` takes `delta0`, the secant's initial indentation, and
-    `wheel_adjoint.py:537` sets `delta = float(sec["axle_drop_mm"])` — the two are the
+    `wheel_adjoint.py:905` sets `delta = float(sec["axle_drop_mm"])` — the two are the
     same number, so the drops already in the report ARE the warm vector.  Returns `None`
     when there is no T3 block to read, which is the correct input for a cold start.
     """

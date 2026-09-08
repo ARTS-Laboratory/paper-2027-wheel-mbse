@@ -2930,7 +2930,7 @@ and its own Record block. This is the summary; that file is the evidence.
 
 The plumbing already existed — `kinematics` rides `**problem_kw` from `Evaluator` all the way
 to `wheel_contact_problem`, the adjoint kernels already dispatch on `prob.nonlinear`
-(`src/wheel_adjoint.py:161, 190, 400`), and `wheel_pool_worker.py:66` already splats it. What
+(`src/wheel_adjoint.py:261, 290, 661`), and `wheel_pool_worker.py:66` already splats it. What
 was missing was a CLI flag.
 
 - **`src/wheel_stage3.py`** — `--kinematics {linear,svk}`, default `linear`, forwarded to
@@ -8965,7 +8965,7 @@ numbers are about 0.1% off, which is why nothing has ever looked wrong — but t
 not design, and the ±0.3% band this project gates on is exceeded by a factor of four
 elsewhere in the box.
 
-**It reaches the optimizer.**  `wheel_adjoint.py:644` takes `delta = float(sec
+**It reaches the optimizer.**  `wheel_adjoint.py:905` takes `delta = float(sec
 ["axle_drop_mm"])` for both the objective value and the quantity whose gradient the
 descent follows.  So the QoI carries a genome-dependent discretisation term of order 0.4%,
 and a design can improve its reading by moving the rim's node phase rather than its
@@ -9151,11 +9151,11 @@ completable piece; executing it needs a session that can finish it.
 ## §65 — 2026-08-23. CORRECTION TO §62 AND §63: THE OPTIMIZER AND THE ±0.3% GATE DO NOT USE THE CONTAMINATED READING. I TRACED A VARIABLE NAME INSTEAD OF THE CALL THAT PRODUCED IT
 
 §62 claimed the nearest-node reading "reaches the optimizer", citing
-`wheel_adjoint.py:644`'s `delta = float(sec["axle_drop_mm"])`.  That line is real.  **What
+`wheel_adjoint.py:905`'s `delta = float(sec["axle_drop_mm"])`.  That line is real.  **What
 `sec` is, I did not check**, and it decides the whole claim:
 
 ```
-  wheel_adjoint:588,643   sec = fem.solve_wheel_contact(mesh, force=..., ...)
+  wheel_adjoint:849,903   sec = fem.solve_wheel_contact(...)  [only :903 is `sec` — §137 s0]
   wheel_fem:1816          _attach_contact_report:  res["axle_drop_mm"] = float(indentation_mm)
 ```
 

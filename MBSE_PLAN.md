@@ -150,7 +150,7 @@ The calibration below is that paragraph, generalised to all five objective terms
   force                 keyword on objective(:1309), t3_terms(:1046);         route it
                         rides to pool workers at :1111-1115
   E, nu                 ride **problem_kw -> service_qoi_value_and_grad       nothing
-                        (wheel_adjoint.py:646) -> wheel_contact_problem;
+                        (wheel_adjoint.py:868) -> wheel_contact_problem;
                         survive the pool (wheel_objective.py:1151)
   min_wall              set_min_wall(wheel_fea.py:852) + --min-wall            route it
   target_deflection     MODULE GLOBAL, read at wheel_objective.py:1177-1179   PLUMB IT
@@ -404,7 +404,7 @@ is a real circularity and it is resolved by ORDERING, stated in the module docst
 left to the reader: field class and a floor set the stroke first, then the load factor
 follows from it. Do not solve the fixed point. A fixed-point stroke would make the load a
 function of the design and this repo loads to a FORCE, not to an indentation — see
-`service_qoi_value_and_grad`'s docstring (`wheel_adjoint.py:649-662`), whose entire subject
+`service_qoi_value_and_grad`'s docstring (`wheel_adjoint.py:871-884`), whose entire subject
 is that the distinction is not a correction but the term.
 
 ---
