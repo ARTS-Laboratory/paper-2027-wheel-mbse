@@ -208,11 +208,11 @@ def test_the_gauss_exponent_reaches_the_qoi_and_the_default_is_the_module_consta
     the `(name, factory)` form, and this is what says it works: a different
     `stress_gauss_p` must produce a different constraint.
 
-    The DEFAULT is now `STRESS_NOMINAL_P` (4.0) and not `WA.STRESS_PNORM_P` (30.0), which
-    is step 2's whole point — the constraint is built on a convergent nominal stress and
-    the peak is restored by `Kt`.  The high leg is pinned to `WA.STRESS_PNORM_P` so the
-    module constant every historical record was measured at is still reachable and still
-    means what it meant.
+    The DEFAULT is now `STRESS_NOMINAL_P` (4.0) and not `WA.STRESS_PNORM_P` (30.0), which is
+    step 2's whole point — the constraint is built on a convergent nominal stress and the
+    peak is restored by `Kt` [RETIRED §103 — see §137 §2].  The high leg is pinned to
+    `WA.STRESS_PNORM_P` so the module constant every historical record was measured at is
+    still reachable and still means what it meant.
     """
     phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
     kw = dict(phases=phases, meshes=WO.phase_meshes(genes, CFG, phases))

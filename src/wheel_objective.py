@@ -1138,10 +1138,10 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     constraint to be NOT MESH-CONVERGENT (GCI 63% on a three-rung ladder whose axle drop
     converges to 0.14% off the same solves) and M8b-i.6 identified the exponent as the
     cause: at p=30 the p-norm is chasing a singular peak.  At p=4 it is a NOMINAL stress
-    that converges (GCI 0.45% / 0.20%), and the peak is restored analytically by `Kt`
-    below.  Reaching `_qoi_pnorm_stress` needs the `(name, factory)` form of
-    `adjoint_grads`' `qois`; the bare string would take the module default and no argument
-    could change it.
+    that converges (GCI 0.45% / 0.20%), and the peak is restored analytically by `Kt` below
+    [RETIRED §103 — see §137 §2].  Reaching `_qoi_pnorm_stress` needs the `(name, factory)`
+    form of `adjoint_grads`' `qois`; the bare string would take the module default and no
+    argument could change it.
 
     `pool` RUNS THE PHASE LOOP IN PARALLEL AND CHANGES NOTHING ELSE.  Given a
     `wheel_pool.PhasePool`, each phase's mesh build, solve and adjoint happen in a worker
