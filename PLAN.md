@@ -21761,3 +21761,187 @@ genome, which is `96a0ac5`, and §3 only says its RANGE fraction was conservativ
    in it that is still true — the census gates — is at the bottom. Worth a decision, not a
    rewrite: is a bracket-only header still readable at four brackets deep, or does the
    retired paragraph become a dated block quote with the live text above it?
+
+---
+
+## §138 — 2026-09-08. §137's SUCCESSOR 0, CLOSED. TEN CITATIONS RE-POINTED AT **ZERO** CITATION COST, BECAUSE THE OBVIOUS WAY TO WRITE THE TENTH WOULD HAVE BROKEN THIRTEEN MORE. RESOLVING EACH ONE AT THE COMMIT THAT WROTE IT — NOT AT HEAD — SETTLED §136's ONE JUDGEMENT OUTRIGHT AND FOUND ITS FILED ANCHOR FOR AN ELEVENTH NAMING THE WRONG THREE LINES
+
+One commit, `c51320e`. No solve, no artifact, ten changed lines and all ten prose. The
+whole finding is method: **a dangling citation is resolved by asking what it pointed at
+WHEN IT WAS WRITTEN**, and the tree has that answer in git for every one of them.
+
+### 1. RESOLVE AT THE WRITING COMMIT, NOT BY GREPPING HEAD FOR THE CLAIM
+
+§136 §6 built its anchor table by finding, at HEAD, a line that matches each citation's
+stated claim. That works when the claim is distinctive and fails quietly when it is not —
+which is the failure it documented for itself, twice, in `wheel_adjoint.py`'s two
+near-identical entry points. The cheaper and stronger move is
+`git log -S'<the citing sentence>' -- <citing file>` for the commit that wrote the
+citation, then `git show <that commit>:<cited file> | sed -n '<N>p'` for the line it
+actually named. Every one of the ten answered on the first try:
+
+```
+  citing site                   cited      written at   the line it named then          now
+  wheel_stage3.py:63            :537       506acfe      delta = float(sec[...])         :905
+  wheel_stage3.py:301           :537       506acfe      same                            :905
+  tests/test_stage3.py:136      :537       4ec1d91      same                            :905
+  PLAN.md:8968   (§62)          :644       a0f9279      same                            :905
+  PLAN.md:9154   (§65)          :644       a0f9279      same                            :905
+  wheel_stage3.py:73            :553       506acfe      the dF_ddelta <= 0 guard        :921
+  MBSE_PLAN.md:153              :646       de67144      service_qoi's signature         :868
+  MBSE_PLAN.md:407         :649-662        de67144      ... and its docstring      :871-884
+  PLAN.md:2933   (§15)     :161,190,400    b5c22c9      three prob.nonlinear calls
+                                                        :261, :290, :661
+  PLAN.md:9158   (§65)       :588,643      a0f9279      the two solve_wheel_contact calls
+                                                        :849 and :903
+```
+
+**`4ec1d91` IS 2026-07-27 AND PREDATES THE `src/` LAYOUT** — the file was `wheel_adjoint.py`
+at the repository root — and `:537` there is the same `delta = float(sec["axle_drop_mm"])`.
+A citation older than a directory move still resolves, because what is being asked is what
+line 537 CONTAINED, not where the file lived.
+
+**[CORRECTION TO `c51320e`'s OWN MESSAGE, WHICH IS WHY THIS TABLE IS HERE.]** That commit's
+table attributes `tests/test_stage3.py:136` to `506acfe` and `PLAN.md:2933` to §46. The
+first is `4ec1d91` — `506acfe` carries the line but did not write it — and the second is
+**§15** (*"STAGE 3 WAS DESCENDING ON THE WRONG PHYSICS"*, 2026-08-10), whose SVK subject is
+what `b5c22c9` is. **Neither correction moves an anchor**: both were derived from the cited
+CONTENT, and the provenance labels were written afterwards from a `git log` I read too
+fast. The anchors in that message and in this table are identical.
+
+### 2. §136's ONE JUDGEMENT, AND IT WAS NEVER CLOSE
+
+§136 successor 0 named one thing that needed deciding rather than mechanising: whether
+`wheel_stage3.py:63`, `:301` and `tests/test_stage3.py:136` mean
+`service_qoi_value_and_grad`'s `delta = float(sec[...])` or
+`axle_drop_value_and_grad`'s `delta = float(res[...])`, since the file holds both.
+
+**All three say so in their own sentence.** `wheel_stage3.py:63` opens
+*"`service_qoi_value_and_grad`'s `delta0` is the secant's indentation"*; `:301` opens
+*"`service_qoi_value_and_grad` takes `delta0`"*; the test's docstring is about `warm_from`,
+which feeds that same call. And structurally there is no second candidate at all:
+`wheel_objective.py:1214` and `wheel_pool_worker.py:68` are the only adjoint entry points
+Stage 3 has, and both are `service_qoi_value_and_grad`. So all five `axle_drop_mm`
+citations are `:905`, never `:851`, and `wheel_stage3.py:73`'s guard is `:921`, never
+`:856`. **The judgement was real and the evidence for it was in the citing sentences,
+which is where a judgement about what a citation MEANS should always be looked for first.**
+
+### 3. AN ELEVENTH ANCHOR: §136's FILED TARGET FOR `PLAN.md:2933` NAMED THE WRONG LINES
+
+§136 §6 filed `:161 +190 +400` as resolving to *"`:224, :253, :364, :507, ...`"* — after
+`322262c` that is `:261, :290, :401, :544`. **Two of those four were never cited and one of
+the three that was is missing.** At `b5c22c9` the three lines are
+
+```
+  :161   Pi, _, _     = _kernels(prob.order, prob.nonlinear, con.n_quad, con.smoothing_mm)
+  :190   e_bulk, _, _ = fem._element_kernels(prob.order, prob.nonlinear)
+  :400   _, grad_u, _ = _kernels(prob.order, prob.nonlinear, con.n_quad, con.smoothing_mm)
+```
+
+and at HEAD they are **`:261`, `:290` and `:661`**. `:401` and `:544` are `_vm_kernel`
+calls. §136's list was the first four `prob.nonlinear` occurrences in FILE ORDER, and its
+own trailing `...` says it was a list rather than a resolution — the entry is honest about
+what it is, and reading it as an anchor table is what would have gone wrong.
+
+**THE DISCRIMINATOR IS THE UNPACKING.** `_kernels(...)` is called three times in
+`wheel_adjoint.py` with identical arguments, at `:261`, `:661` and `:762`; what tells them
+apart is `Pi, _, _` against `_, grad_u, _` against `_, _, mixed`. **A grep for the CALL
+cannot resolve these citations and a grep for the whole LINE can** — the same lesson as
+`res` against `sec` one identifier wide, and this is its third instance in three sections.
+
+### 4. THE TENTH CITATION IS ONE LINE IN AND ONE LINE OUT, AND THAT WAS THE DECISION
+
+`PLAN.md:9158` is §65's evidence table, and §136 §6 diagnosed it exactly: it lists BOTH
+`fem.solve_wheel_contact` calls and spells both `sec =`, because the grep that found them
+did not distinguish them. Confirmed at `a0f9279` — `:588` is `res =` in
+`axle_drop_value_and_grad`, `:642-643` is the `sec =` call in `service_qoi_value_and_grad`,
+and §65 cited the second of that call's two lines. §65's ARGUMENT is unaffected either way:
+`axle_drop_mm` is written by `_attach_contact_report` on both paths, which is the point the
+table is making.
+
+The first draft of the repair was a five-line marking explaining all of that in place. **It
+was thrown away, and the reason is this section's own subject.** Those five lines would
+have shifted every citation into `PLAN.md` below `:9158`:
+
+```
+  PLAN.md:14619 x3, PLAN.md:18056         explicit, in §120 and §129
+  bare `:16795` x3   (:19637 :19688 :19745)
+                                          owned by PLAN.md via §136 §6's rule -- the
+                                          nearest filename BEFORE it, which sits on the
+                                          PREVIOUS LINE at two of the three
+  bare :17573 :17631 :20287 :20384        §135's six deliberate dangles, at :21239-:21240
+       :20570 :20647
+```
+
+**Thirteen citations broken to explain one.** The repair is instead
+`` `wheel_adjoint:849,903   sec = fem.solve_wheel_contact(...)  [only :903 is `sec` — §137 s0]` ``
+— 92 characters, one line for one line — and the explanation lives here, where it is free.
+**All four changed files have byte-for-byte the same line count as their parent.** That is
+checkable in one command and it is now the standard this kind of commit should meet: a
+citation repair that shifts citations has not finished, it has moved.
+
+**AND THE BARE-`:N` ENUMERATION IS WHERE THIS NEARLY WENT WRONG.** A per-line scan for
+"filename, then bare `:N`" finds ONE of the three `` `:16795` `` sites; the other two have
+their owning `PLAN.md:14619` on the previous line. Carrying the owner across the line break
+— resetting only at a blank line or a heading — finds all three and the six at `:21244`.
+**§136 §6 stated the ownership rule and stated it for one line; it holds across a
+paragraph, and a paragraph is how this file is wrapped.**
+
+**AND A FOURTEENTH THAT THE RULE CANNOT SEE AT ALL.** `PLAN.md:20382` cites `` `:17573` ``
+inside a blockquote with no filename anywhere in its paragraph: its owner is written as
+*"§118 §6"*, a SECTION rather than a file. Nearest-filename returns nothing for it and only
+reading the sentence identifies it. It resolves — `:17573` is the survivor-test naming
+inside §118 §6 — so it is a real citation the enumeration silently omits, and it is why the
+count above is thirteen by rule and fourteen in fact.
+
+### 5. FOUND, NOT FIXED, WITH THEIR TRUE ANCHORS
+
+§117's rule, at `PLAN.md:17611`: *"The two that are mine are corrected here. The
+three that are not are recorded and left."* Two dangling citations into OTHER files sit on
+lines this commit edited, and both are one-line repairs for whoever owns those files:
+
+```
+  wheel_stage3.py:63    `wheel_fem.py:1841`  the cold-start `solve_wheel`  -> :1882
+                        -- which §65's own text at PLAN.md:9165 already cites correctly
+  PLAN.md:2933          `wheel_pool_worker.py:66`  "already splats it"     -> :70
+```
+
+### 6. WHAT MOVED
+
+**`c51320e`** — `PLAN.md` (4 citations), `MBSE_PLAN.md` (2), `src/wheel_stage3.py` (3),
+`tests/test_stage3.py` (1). Ten lines, all of them a docstring, a comment or markdown; no
+executable line changed and no file changed length.
+
+**Green.** `tests/test_stage3.py::test_the_warm_vector_is_the_previous_drops_and_nothing_else`
+and `tests/test_import_hygiene.py`, **11 passed**; `tests/test_stage3.py` collects 63.
+**THE RED LIST WAS NOT RE-TAKEN.** §136 and §137 both left the same nine standing and both
+said the next section that runs the suite owns the check; this is the third that is not it.
+
+**NOT touched.** The two citations in §5 — other files' drift. §65's argument and §62's,
+which this changes not at all. `INSENSITIVE_EXPECTED` and the census gates, still §136 §1's.
+`REPO_EXPLAINED.tex` — a concurrent session has §137's successor 2.
+
+**SUCCESSORS.**
+
+0. **NINE REDS, AND THEY ARE STILL §133's SUCCESSOR 0** — §136's successor 2 and §137's
+   successor 1, unchanged and now three sections old. Every section since has declined it
+   on the same grounds (it wants the 35-minute file and a diffed list, not an inference),
+   and each has added a worked example instead: §136 §2's censuses, §137 §5's two-cause
+   assertion. **The examples are now sufficient and the deferral is starting to cost more
+   than the run.** Whoever takes it should budget the suite under `tmux`, one heavy file
+   per process, and diff the list rather than reason about it.
+1. **THE `wheel_fem.py` CITATIONS HAVE NEVER BEEN SWEPT AND `wheel_fem.py` IS 1914 LINES.**
+   §5 found two danglers in four files by accident, one of them into `wheel_fem`. Nobody
+   has enumerated citations into that file the way §136 and this section have for
+   `wheel_adjoint`, and the sweep is now cheap and mechanical: `git grep -nE
+   'wheel_fem(\.py)?:[0-9]+'` for the candidate set — **with the `(\.py)?` optional, which
+   is what hid the tenth citation from §136** — then the writing-commit resolution of §1
+   for each. Do it as its own commit and at zero shift.
+2. **THE BARE-`:N` OWNERSHIP RULE SHOULD BE A SCRIPT, NOT A HABIT.** §136 §6 stated it,
+   §138 §4 extended it across line breaks, and both times it was applied by hand under
+   time pressure — which is exactly when the per-line version silently returns a third of
+   the answer. Fifteen lines of Python that walks every `.md` carrying the owner across
+   the paragraph and reports `(citing site, cited file, cited line, resolves?)` would turn
+   every future insertion's citation audit into one command. It is NOT a test: it would be
+   red for the deliberate dangles §135 records at `:21244` and for anything a section has
+   chosen to leave, so it is a report a human reads, and filing it as a test is the trap.
