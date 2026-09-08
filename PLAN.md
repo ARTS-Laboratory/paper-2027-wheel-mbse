@@ -21945,3 +21945,181 @@ which this changes not at all. `INSENSITIVE_EXPECTED` and the census gates, stil
    every future insertion's citation audit into one command. It is NOT a test: it would be
    red for the deliberate dangles §135 records at `:21244` and for anything a section has
    chosen to leave, so it is a report a human reads, and filing it as a test is the trap.
+
+## §139 — 2026-09-08. §137's SUCCESSOR 2, CLOSED. THE FILE INVENTORY WAS SHORT BY **2,212 LINES — 14.1% OF `src/`** — BECAUSE SIX ROWS DRIFTED *AND TWO MODULES WERE NEVER THERE*. BUT THE TABLE WAS THE SMALLEST OF THE THINGS WRONG WITH THIS FILE: THE BUILD RECIPE IN ITS OWN HEADER **NEVER PRODUCED THE COMMITTED PDF**, 39 OF ITS 145 LINE CITATIONS HAVE MOVED, AND §6.6 STILL DOCUMENTS THE `Kt` CONSTRAINT §103 RETIRED — A FIFTH SITE OF §137 §2's FINDING. AND TWO OF THE THREE AGGREGATES WERE **ALREADY WRONG THE DAY THEY WERE TYPED**
+
+One commit, `REPO_EXPLAINED.tex` + `.pdf`. Nothing in the tree reads this file — no test, no
+Makefile target, `git grep REPO_EXPLAINED` returns only `PLAN.md` and the file itself — so
+every number in it is unguarded by construction, and that is the finding behind all four
+below.
+
+### 1. THE TABLE: SIX STALE ROWS, AND TWO MODULES THAT WERE NEVER IN IT
+
+§137 filed "six of eleven rows wrong". Re-derived at `0b345a0` by `wc -l`, all six reproduce
+exactly, and **all fourteen rows were exact at §92** — so this is pure drift, not a bad
+measurement:
+
+```
+  wheel_wheel.py        3709 -> 3869   +160
+  wheel_adjoint.py       759 ->  981   +222   (37 of it §137's own 322262c)
+  wheel_objective.py    1461 -> 1683   +222
+  wheel_stage3.py       1093 -> 1317   +224
+  wheel_pool.py          408 ->  435    +27
+  wheel_pool_worker.py   103 ->  111     +8
+                                       ----
+                                       +863
+```
+
+**THE BIGGER HALF IS NOT IN THAT LIST.** `wheel_requirements.py` (1091) and `wheel_mbse.py`
+(258) — the MBSE layer, §97, landed `0b8890a`/`b8bede8` on **2026-08-31, the day after this
+section was written** — are absent from the inventory entirely. 1,349 lines, more than the
+863 of drift. The table accounted for 13,489 lines of a `src/` that is **15,701**: short by
+**2,212, or 14.09%**. Both modules are added, and the import graph two paragraphs down —
+which would otherwise have contradicted the table I had just fixed — gets them too:
+`wheel_requirements` hangs off `wheel_fea` on the **numpy** side (it imports numpy and
+`wheel_fea`, nothing else), `wheel_mbse` below `wheel_stage3`.
+
+### 2. A COUNT IS A CLAIM ABOUT ITS INSTRUMENT — AND ONLY ONE OF THE THREE AGGREGATES WAS EVER RIGHT
+
+§137 filed `tests/` and `studies/` as stale. Before writing "stale" I checked whether they
+were the SAME instrument, by re-running each against `e474ea7` itself. They are not the same
+answer:
+
+```
+  quantity                    tex said   at §92 was   at HEAD   verdict
+  test functions                   503          503       632   STALE -- instrument CONFIRMED
+  test files                        25           26        34   WRONG WHEN WRITTEN, and stale
+  studies/ drivers                 ~19           27        38   NEVER RIGHT
+```
+
+**`503` reproduces to the digit** under `grep -c '^def test_' tests/*.py` at `e474ea7`, which
+settles the instrument: it counts DEFINITIONS, not collected cases, and 632 is the same
+instrument at HEAD (+129, +25.6%). Every test function in the tree is module-level — the
+any-indent and `async` variants of the pattern return 632 as well — so the count is not
+hiding class methods.
+
+**`~19` is the interesting one, because it is not stale — it never described this tree.** No
+instrument I could construct returns 19 at §92: `study_*.py` = 27, of those with `__main__` =
+27, named in the Makefile = 25, committed artifacts = 59, Makefile targets = 42. Walking the
+history, `study_*.py` last read 19 on **2026-08-19** and was 21 the next day. The PDF was
+built 2026-08-29. **The figure was ten days stale on the day it was typed**, and §137's
+"stale" was right about the row for the wrong reason.
+
+The repaired listing now states its own instruments and its date in prose beneath the block,
+because a count without one is what produced this section.
+
+### 3. THE BUILD RECIPE IN THE HEADER HAS NEVER REPRODUCED THE COMMITTED PDF
+
+`REPO_EXPLAINED.tex`'s own header said *"Compiles with pdflatex (twice, for the table of
+contents and cross-references)"*. **Two passes is one short.** Built from the UNMODIFIED
+committed `.tex`, before any edit of mine:
+
+```
+  pass 2   md5(pdftotext) 5c905e6b8c97     <- what the documented recipe gives
+  pass 3   md5(pdftotext) 76e2d1d8bad3
+  pass 4   md5(pdftotext) 76e2d1d8bad3
+  pass 5   md5(pdftotext) 76e2d1d8bad3
+  pass 6   md5(pdftotext) 76e2d1d8bad3
+  COMMITTED PDF          76e2d1d8bad3     <- the converged one
+```
+
+The contents is long enough that setting it moves the body by a page, so pass 2 still carries
+pass 1's page numbers; **pass 3 is the first fixed point and the committed artifact is at that
+fixed point.** Pass 2 and the committed PDF differ in **35 lines**, all of them table-of-contents
+page references — body text, font set and page count (34) identical. `latexmk -pdf` runs
+pdflatex exactly 3 times and lands on `76e2d1d8bad3`, so `latexmk` was almost certainly what
+built it. The header now says three passes and says why; anyone following the old line would
+have produced a 35-line diff and had to decide whether it was theirs.
+
+**This is why the rebuild had to be diffed rather than trusted.** Had I rebuilt with the
+documented recipe and committed, the diff would have carried 35 spurious lines and my edit
+would have been indistinguishable from them.
+
+### 4. THE INVENTORY IS NOT THE ONLY DATED SNAPSHOT IN THE FILE
+
+Checked because a table right in fourteen rows and stale two paragraphs down is worse than
+one uniformly old. Also repaired in the same commit: `PLAN.md` is **about 1.4 MB, §1…§139**,
+not the *"778 KB, §1…§92"* the file claimed (the file was in fact 773 KB at `e474ea7` — that
+figure was 0.6% off when written too). **`wheel_geometry.py` "is 436 lines" and
+`wheel_objective`'s "Fourteen terms in three tiers" both re-derive exact** and were left
+alone; `len(TERMS)` is 14 at HEAD and was 14 at §92.
+
+And one that survived by coincidence and must NOT be "corrected": *"Eight sibling `*_PLAN.md`
+files are open work arcs"* is **still true**. There were 9 siblings at §92 with `KINEMATICS`
+closed; there are 10 now with `KINEMATICS` and `HUBSHARE` closed. `MBSE_PLAN.md` opened as
+`HUBSHARE_PLAN.md` closed and the open count never moved. The total did (9 -> 10) and the
+sentence now says both.
+
+### 5. WHAT I DID NOT REPAIR, AND WHY IT IS ONE JOB AND NOT A LOOSE END
+
+**145 line citations, 39 of them measured MOVED.** Two populations:
+
+```
+  \at{file}{N} or {N--M}    80 total   56 unchanged   24 MOVED
+  bare `:N` in prose        65 total   35 unchanged   15 MOVED   15 unclassifiable
+                           ---        ---            ---
+                           145         91             39   (26.9%)
+```
+
+Instrument: a citation is *unchanged* iff `e474ea7:file[N..M]` is byte-identical to
+`HEAD:file[N..M]`. Every MOVED one is in one of the six files that grew. Of the 24 `\at{}`,
+**20 relocate mechanically and verifiably** — the whole cited block still occurs, exactly
+once, contiguously, at a new offset — and I have that table. Four do not, and those four are
+the reason this is filed rather than done: they need reading, not arithmetic.
+
+The 15 unclassifiable bare ones are a limit of the instrument, not of the tree: a bare `:N`'s
+owner is the nearest filename BEFORE it, which can be on a previous line, and 12 resolved to a
+line number past the end of the file the heuristic picked. **That heuristic needs a human pass
+before anyone trusts a count of bare citations** — which is §138's lesson arriving from the
+other side.
+
+**AND ONE OF THE FOUR IS NOT A CITATION PROBLEM AT ALL.** `\at{wheel_objective.py}{1160--1200}`
+is cited as *"The shipped constraint"* under §6.6(c), which then states
+
+```
+  K_t(R, t) * sigma_nominal(p=4)  <=  sigma_allow = 25.0 MPa
+```
+
+and says `Kt` is *"now differentiated by `jax.grad` rather than frozen"*. **That constraint was
+retired at §103 and the block it points at no longer exists.** Verified in code rather than
+from §137's prose: `util_j = agg_j / allowable_stress_mpa` (`wheel_objective.py:1346`) carries
+no `Kt` factor, and `junction_kt` has **exactly one caller in `src/`** — `:1288`, inside the
+report block. So §6.6 is a **fifth** site of §137 §2's finding, after the four `8f359bb`
+fixed, and the first one in a document that no test can reach.
+
+**SUCCESSORS.**
+
+0. **RE-POINT THE 39 MOVED CITATIONS, AND DECIDE WHAT A LINE CITATION INTO `PLAN.md` IS WORTH.**
+   20 of the 24 `\at{}` are mechanical and verified against block content; 3 of the remaining 4
+   need a reading (`wheel_objective.py:1152--1158` -> the two-sided deflection block now at
+   `1250--1253`; `PLAN.md:53--77` -> the redirect table now at `73--105`; `PLAN.md:79--115` ->
+   the *Open arcs* section now at `109--151`). The fourth is successor 1. Note the shape
+   problem before spending the effort: **five of these citations point into `PLAN.md`, which
+   grows by a section a day** — this section moved two of them again. A citation into `PLAN.md`
+   by line is a citation with a half-life; §-number would not move at all.
+
+1. **§6.6(c) DOCUMENTS A CONSTRAINT THE TREE STOPPED SOLVING AT §103.** Not a re-point — a
+   rewrite of the paragraph and the displayed equation, against what `util_j` actually is. It
+   is the same sentence §136 and §137 retired twice in `wheel_adjoint.py`'s header, and the
+   census that found those four sites did not reach this file because the census greps `src/`.
+   **Worth asking whether the census should grep `*.tex` too**; on this evidence it is one
+   more site for one more line of pattern.
+
+2. **NOTHING GATES THIS FILE — SHOULD SOMETHING?** All four findings above have the same cause.
+   The cheap version is not generating the document: it is a test that re-derives the fifteen
+   numbers in the inventory by `wc -l` and asserts, plus a `make repoexplained` that rebuilds
+   the PDF to convergence and fails if the committed one differs. That would have caught §1,
+   §3 and §4 the day each broke and cost one test file. The citations (§5) are the harder half
+   and the same test shape reaches them: the anchor check in this section is 30 lines of Python.
+
+3. **NINE REDS, STILL §133's SUCCESSOR 0** — and **THE SUITE NO LONGER FITS IN ONE PROCESS ON
+   THIS BOX.** The reds are unchanged and untouched here; the light batch ran 720, with 700
+   passed, 11 xfailed and the standing 9 failed, every one already named in this file. But a
+   single-process `pytest` of everything was tried first and was **OOM-KILLED at ~70%** —
+   measured from the kernel, not inferred from the exit code: `oom-kill` at 17:49:56,
+   `anon-rss` **49,948,448 kB** on a 61 GB box, `total-vm` 65,460,544 kB. §135 §2 measured a
+   coarse 8-phase `objective()` call at 44 GiB and this is the same ceiling arriving from the
+   other side. **The four heavy files must be run one process each** — `test_objective`,
+   `test_stage3`, `test_pool`, `test_gradient`, which is exactly the split the committed
+   `test_heavy_*.log` files already use. Worth deciding whether `make test` should encode that
+   split rather than leaving each session to rediscover it by being killed.
