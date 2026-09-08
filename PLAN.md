@@ -22123,3 +22123,148 @@ fixed, and the first one in a document that no test can reach.
    `test_stage3`, `test_pool`, `test_gradient`, which is exactly the split the committed
    `test_heavy_*.log` files already use. Worth deciding whether `make test` should encode that
    split rather than leaving each session to rediscover it by being killed.
+
+## §140 — 2026-09-08. §139's SUCCESSORS 0 AND 1, BOTH CLOSED — AND SUCCESSOR 0's "15 UNCLASSIFIABLE" WAS AN ARTEFACT OF MY OWN INSTRUMENT, NOT A PROPERTY OF THE TREE. THE OWNER OF A BARE `:N` IS WHATEVER **IDENTIFIES** A FILE, AND IN THIS DOCUMENT THAT IS A MODULE OR A SYMBOL, NEVER A PATH: WIDENING THE RULE RECOVERED ALL 65 AND MOVED THE COUNT FROM 39 TO **55 OF 145**. PLUS §6.6(c) STATED A CONSTRAINT §103 RETIRED, AND ITS FOLLOW-UP PARAGRAPH NAMED THE **ONE EXPONENT OF FOUR THAT IS NOT** THE CONSTRAINT'S
+
+Two commits, `bedccc1` and `c94a1ae`. Both are `REPO_EXPLAINED.tex` + `.pdf`. §139 filed
+these and declined to do them; a peer session pushed back on the decline and was right,
+so the reasoning that produced it is recorded here rather than quietly dropped.
+
+### 1. THE DECLINE WAS SOUND REASONING FROM A MEASUREMENT THAT WAS WRONG
+
+§139 §5 stopped at 20 repairable citations of 145, on the argument that fixing 20 while 15
+were **misattributed** was a worse kind of selective freshness than leaving them uniformly
+old. The argument still holds. **The premise under it did not.** §138 had stated the rule
+as *"the owner of a bare citation is the nearest FILENAME before it"*, and §139 applied it
+literally — searching backwards for the nearest `*.py` path. This document almost never
+names a path. It names **modules** (`wheel_geometry.forward_difference_matrix`) and **bare
+symbols** (`element_energy`, `_UnionFind`, `_seam_table`). The 12 that "resolved to a line
+past the end of the file" were resolving against whatever unrelated path happened to
+appear earliest in the paragraph.
+
+**The rule generalises, and this file is the counterexample that forces it: the owner is
+the nearest thing that IDENTIFIES a file.** Three forms, all decidable:
+
+```
+  an \at{file}{N} earlier in the same sentence                       3
+  a module- or class-prefixed token   `wheel_stage3.selection_key`  18
+  a symbol with exactly ONE top-level definition across src/*.py    42
+  neither -- the glossary row has to be read                         2
+                                                                   ---
+                                                                    65   none unclassifiable
+```
+
+Under the widened rule the bare population is **32 moved and 33 correct**, not "15 moved
+and 15 unknown", and the file's total goes from 39 moved to **55 of 145**:
+
+```
+  \at{file}{N} or {N--M}    80 total   57 unchanged   23 re-pointed
+  bare `:N`                 65 total   33 unchanged   32 re-pointed
+                           ---        ---            ---
+                           145         90             55
+```
+
+### 2. EVERY REPAIR VERIFIED BY CONTENT, AND THE THREE THAT COULD NOT BE
+
+**52 of the 55 are mechanical and exact**: `e474ea7:file[old]` byte-identical to
+`HEAD:file[new]`, and for a multi-line `\at{}` the block must occur **exactly once and
+contiguously** at HEAD. 27 of the 32 bare ones carry a second, semantic anchor —
+`e474ea7:file[old]` IS the definition of the token that names the citation, and HEAD holds
+exactly one such definition. The three that are not mechanical are marked as read repairs:
+
+```
+  wheel_objective.py 1152--1158 -> 1250--1253   NOT byte-identical: §97's requirements
+      layer turned TARGET_DEFLECTION_MM into the parameter target_deflection_mm.
+      `deflection = w["deflection"] * err ** 2` is still there and still two-sided,
+      which is the only claim the citation supports.
+  PLAN.md 53--77 -> 73--107   the deleted-arc redirect table; the block GREW, because a
+      dated 2026-09-04 correction was inserted inside it.  Both endpoints checked.
+  PLAN.md 79--115 -> 109--151  the *Open arcs* section; old :115 relocates to :151.
+```
+
+**THE EDITS ARE APPLIED BY BYTE OFFSET, NOT BY STRING REPLACEMENT, AND THAT IS LOAD-BEARING.**
+`\code{:195}` occurs three times under **two different owners**: twice it is
+`wheel_stage3.selection_key`, which moved 195 -> 221, and once it is the glossary's
+*collar* row, which is `wheel_wheel.COLLAR_DEPTH_MM` at `:195` and has **not** moved. Two
+must change and the third must not. `:2209`, `:2583`, `:931`, `:1045` and `:410` have the
+same shape. A global replace corrupts the collar row silently, and the file now contains
+three distinct correct `:221`s owned by three different modules.
+
+**The two that needed the row read are the two worth remembering, and one of them is a
+known trap.** `CONFIGS` is defined in BOTH `wheel_mesh` and `wheel_wheel` — the collision
+that once inflated a convergence order by 25% — and the glossary row for it deliberately
+cites both sides, `\code{:252}` for `wheel_wheel` and `\at{wheel_mesh.py}{123}` for
+`wheel_mesh`. Proximity picks the wrong one. `RIM_OUTER_RADIUS_MM = 50.0` is defined in
+both `wheel_wheel` and `wheel_step_export`; the row's subject is `rim_inner_radius()`,
+which fixes it to `wheel_wheel:177`. **Both are unchanged at HEAD and neither was edited** —
+the ambiguity had to be resolved to establish that nothing was needed.
+
+### 3. §6.6(c) DESCRIBED A CONSTRAINT THE TREE STOPPED SOLVING ON 2026-09-03
+
+The 24th moved `\at{}` would not relocate because the block is gone. §6.6(c) said *"The
+shipped constraint is `Kt(R,t) * sigma_nominal(p=4) <= sigma_allow`"* with `Kt` *"now
+differentiated by `jax.grad` rather than frozen"*. **True when written** — §92 is dated
+2026-08-29 and §93 wired `fillet=True` the following day — **and false since §103, five
+days.** The shipped constraint, re-derived at HEAD rather than copied from §103's own
+prose:
+
+```
+  util_j = sigma_region_j / ALLOWABLE_STRESS_MPA <= 1     one soft_barrier per junction
+                                                          wheel_objective.py:1345--1349
+
+  sigma_region_j   smooth p-norm of von Mises stress in a bump-kernel tube of radius
+                   FILLET_REGION_R_SUP_MM = 0.45 mm (wheel_adjoint.py:435) around THAT
+                   junction's own fillet arc, l_p-normed at FILLET_REGION_P = 16.0 (:436)
+                   over the arc's twelve rotational copies (_qoi_region_pnorm, :511),
+                   then aggregated over eight phase samples at stress_phase_p = 8.0
+  ALLOWABLE        25.0 MPa = ULTIMATE / SAFETY_FACTOR (wheel_fea.py:147)
+```
+
+**The paragraph's heading inverts with the finding.** It read *"So the peak is modelled,
+not measured"*; the peak was modelled **because the unfilleted mesh had no fillet to
+measure**, and §102/§103 measure it again now that the mesh has one. `Kt` left the loss
+and not the file: it, `hub_fillet_cap_mm` and `hub_fillet_r_effective` answer a geometric
+feasibility question `REPORT_KEYS` and `selection_key` still read.
+
+**AND THE FOLLOW-UP PARAGRAPH WAS WRONG THE SAME WAY — I nearly repaired the equation and
+left it.** It said `STRESS_NOMINAL_P = 4.0` *"is the constraint's exponent"*. Traced:
+`stress_gauss_p` (defaulting to it) reaches only the `pnorm_stress` QoI at `:1198`, which
+lands in the reported `stress_utilisation` and `pnorm_by_p`. The section claimed *"two
+exponents, two meanings"* and there are now **four** — **16** over the rotational copies
+(the constraint's), **8** over the phases, **4** for the reported Gauss-point diagnostic,
+**30** for the adjoint's documented default — **and the one it named as the constraint's is
+the only one of the four that is not.** §133's "naming one parameter when the quantity has
+two" at one more level.
+
+### 4. THE `grep` IN THIS ENVIRONMENT RETURNED NOTHING ON A BUILD LOG, AND AN EMPTY-VS-EMPTY CHECK PASSES
+
+My PDF verification compares the overfull-hbox list of the new build against the baseline's
+and reports "no new overfull boxes" when they match. On the `c94a1ae` build the wrapped
+`grep` returned **nothing at all** — not `0` — from the latexmk log, producing an empty
+list on one side. Had the baseline side also been empty the comparison would have **passed
+vacuously**, which is the §129 §7 failure mode arriving through explicit file arguments
+rather than through directory traversal. Re-run with `command grep`, all four builds carry
+the identical four warnings and the three earlier claims were sound. **A check whose pass
+condition is "two lists match" must assert the lists are non-empty**, and the tell here was
+`0` never being printed.
+
+**SUCCESSORS.**
+
+0. **`wheel_objective.py:1136--1143` STILL ENDS "and the peak is restored analytically by
+   `Kt` below".** Found while re-deriving §6.6's exponents; same §103 vintage, same defect
+   class as the four `8f359bb` fixed and the fifth this section fixed, in the docstring
+   that explains why the Gauss exponent is 4. Not touched — it is not my file this session.
+   **That makes SIX known sites of one retirement**, which is the argument for successor 1.
+1. **THE §103 CENSUS SHOULD GREP `*.tex` AND `*.md`, NOT JUST `src/`.** §137 §2's census
+   found four sites; the fifth was in a document it structurally could not reach, and
+   successor 0 is a sixth it could. One line of pattern. Worth doing before the next
+   retirement, not after.
+2. **145 CITATIONS IN ONE HAND-MAINTAINED FILE, AND THE REPAIR TOOL IS 40 LINES.** The
+   anchor check used here — resolve owner, compare `e474ea7:file[old]` to `HEAD:file[new]`,
+   require a unique contiguous block — is mechanical and could run as a test over the
+   `.tex`. §139 successor 2 proposed gating the fifteen inventory numbers; this is the same
+   proposal for the citations, and it is the cheaper half now that the resolver exists.
+   Note the population is **149** after §6.6's rewrite (84 `\at{}` + 65 bare), all in range.
+3. **FIVE CITATIONS POINT INTO `PLAN.md`, WHICH GROWS BY A SECTION A DAY.** This section
+   moved two of them for the second time in one day. A `\at{PLAN.md}{N}` has a half-life;
+   a §-number does not move at all. Worth deciding rather than re-pointing again.
