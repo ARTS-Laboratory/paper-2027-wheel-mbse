@@ -1,0 +1,29 @@
+{
+  "genes": {
+    "cx1": 3.0459367640760777,
+    "cy1": 24.87509181955525,
+    "cx2": 19.69,
+    "cy2": 22.017567420481264,
+    "cx3": 23.64956395113924,
+    "cy3": 16.528003164160253,
+    "cx4": 25.708340247252384,
+    "cy4": 7.09809658272291,
+    "t0": 3.3318333721138247,
+    "t1": 1.2,
+    "t2": 1.2,
+    "t3": 2.538639926028038,
+    "R_hub": 0.6405516613617755,
+    "R_rim": 1.698585511357198
+  },
+  "source": "studies/stage3_resume_genome.py",
+  "resumed_from": {
+    "trajectory": "stage3_svk_refillet_shipped.json",
+    "iterate": "best",
+    "step": 161,
+    "loss": 52.79198884471145,
+    "steps_completed": 178,
+    "steps_remaining": 122,
+    "warm_restart_only": "Adam moments, the secant delta0, n_reject and the decayed lr are not recoverable from a trajectory; this restores position only."
+  },
+  "note": "Warm-restart start point recovered from a Stage-3 trajectory by studies/stage3_resume_genome.py. NOT a promotion candidate and not a descended genome: it is one iterate of an unfinished run."
+}

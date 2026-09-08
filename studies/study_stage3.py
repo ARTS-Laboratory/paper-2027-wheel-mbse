@@ -938,7 +938,7 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
     rescaled.  `tests/test_stage3.py`'s rung test asserts exactly that identity off this
     function's own row, so the test-side twin has been right about it the whole time and
     only the prose here was stale.  `kt_hub`/`kt_rim` stay in the row for the geometric
-    `hub_fillet_cap_mm` story (`wheel_objective.py:1261`) and price nothing.  §116.1
+    `hub_fillet_cap_mm` story (`wheel_objective.py:1283`) and price nothing.  §116.1
     measured what the retired surrogate is worth if anyone reinstates it: `Kt * nominal`
     under-reads the region p-norm by 43.0%-65.7% on thirteen of fourteen regions.
 
@@ -1261,7 +1261,7 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     `req` IS THE ONE ARGUMENT HERE THAT IS NOT ABOUT TIMING.  A requirement set is
     expanded by `S3.Evaluator` into `force`, `E`, `nu`, the two stress/stroke keywords and
     the weight table, and `force`/`E`/`nu` are the three that have to survive being
-    PICKLED INTO A WORKER PROCESS (`wheel_objective.py:1129` ships `problem_kw`).  Run
+    PICKLED INTO A WORKER PROCESS (`wheel_objective.py:1151` ships `problem_kw`).  Run
     with a NON-BASELINE set, `identical` stops being a statement about the transport alone
     and becomes the statement MBSE_PLAN Step 3 asks for: the requirements reach the
     workers and are not silently defaulted there.  Defaulted, the pooled arm would score

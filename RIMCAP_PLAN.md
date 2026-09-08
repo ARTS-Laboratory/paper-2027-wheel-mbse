@@ -111,7 +111,7 @@ PLAN.md §106.  This file's own tripwire — *"If `FILLET_PLAN.md` lands and the
 fillets directly, the reason for a closed-form cap model changes substantially ... Read
 `FILLET_PLAN.md`'s status before starting"* — became true on 2026-09-03 and nothing read it,
 because a parked arc is a file nobody opens.  Every clause of it now holds:
-`wheel_objective.phase_meshes` passes `fillet=True` unconditionally (`:1015`), `util_j` is the
+`wheel_objective.phase_meshes` passes `fillet=True` unconditionally (`:1037`), `util_j` is the
 junction's own region p-norm with `Kt` absent, and §102 gave `R_rim` a nonzero gradient entry
 for the first time.
 
@@ -198,7 +198,7 @@ and they stopped being reachable for different reasons and in different sections
 Step 1 asks for `rim_fillet_cap_mm(t3, arrival_angle)` in `wheel_objective`, differentiable,
 finite-difference validated, *"mirroring the hub"*. The thing it mirrors no longer exists in
 that role: §103 demoted `Kt`, `hub_fillet_cap_mm` and `hub_fillet_r_effective` to **reporting
-only**. Verified in the code as it stands, `src/wheel_objective.py:1261-1265`:
+only**. Verified in the code as it stands, `src/wheel_objective.py:1283-1287`:
 
 > *"`Kt`/`hub_fillet_cap_mm`/`hub_fillet_r_effective` no longer feed `util_j` — kept for
 > REPORTING ONLY. They are a purely geometric feasibility question ... unrelated to and

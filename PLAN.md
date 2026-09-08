@@ -3241,7 +3241,7 @@ all four were deliberately left alone, because acting on any of them mid-arc wou
 re-fitting a gate to the run that breached it.
 
 1. **`stress` HAS ZERO GRADIENT BELOW `util = 1.0`.** It is `soft_barrier(util - 1.0, 4000)`
-   (`src/wheel_objective.py:1027`) and `soft_barrier` is `scale * max(0, v)**2` (`:290`), so
+   (`src/wheel_objective.py:1049`) and `soft_barrier` is `scale * max(0, v)**2` (`:290`), so
    it is identically zero *and identically flat* for every `util <= 1.0`. Below the knee the
    optimizer cannot see stress at all; it sees mass, and it thins the wall. **The barrier is a
    wall to stop at, never a cost to trade against.** Measured: the `stress` term was > 0 on
@@ -12414,7 +12414,7 @@ the record saying so.
 
 **CONDITION B — THE STRESS TERM COUNTS THE FILLET TWICE, AND NOTHING IN THIS TREE RECORDS
 IT.**  Found while drafting this section, by reading the code rather than the plan files.
-`wheel_objective.py:1234`:
+`wheel_objective.py:1256`:
 
 ```
   util_j = kt * agg / ALLOWABLE_STRESS_MPA
@@ -12681,7 +12681,7 @@ at `b029622`.
 ### WHAT REPLACES `Kt * agg`
 
 Keep the shape — a modelled-or-measured peak per junction, two `soft_barrier`s, summed
-rather than `max`ed for the reason `wheel_objective.py:1181` gives — and replace the
+rather than `max`ed for the reason `wheel_objective.py:1203` gives — and replace the
 modelled factor with the measured field:
 
 ```
@@ -13770,7 +13770,7 @@ set, and the bit-identity test is what says so.**
 
 **AND TWO DATED QUOTATIONS OF `wheel_objective` ARE NOW QUOTATIONS OF THE PRE-ARC
 SOURCE, DELIBERATELY LEFT ALONE.** Threading the two requirements moved the deflection
-and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1153`
+and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1175`
 is now :1165 and no longer reads a module global, and :1234 is now :1246 and reads
 `allowable_stress_mpa` where §93 and §94 quote it as `ALLOWABLE_STRESS_MPA`
 (`studies/study_fillet_kt.py:14`, `FILLET_PLAN.md`, `MBSE_PLAN.md` Step 3). Those are
@@ -14396,10 +14396,10 @@ on, the actual arc.
 
 ### WHAT MOVED, MECHANICALLY
 
-`phase_meshes` (`wheel_objective.py:1000`) passes `fillet=True` to every
+`phase_meshes` (`wheel_objective.py:1022`) passes `fillet=True` to every
 `WW.build_wheel` call, unconditionally — the mesh the objective solves on and the mesh the
 report describes are now the same mesh. `t3_terms`'s per-phase loop builds
-`_region_qois(meshes[i])` (`:1055`) — `(hub_qoi, rim_qoi)` as `(name, factory)` pairs from
+`_region_qois(meshes[i])` (`:1077`) — `(hub_qoi, rim_qoi)` as `(name, factory)` pairs from
 `fillet_arc_nodes(mesh, "hub"/"rim")` and `W.NUMBER_OF_SPOKES`, going through
 `adjoint_grads`'s `(name, factory)` door the way `_qoi_buckling_eig` already does, because
 the QoI needs the arc's node ids and is not in the static `QOI` table. Each phase's two
@@ -14601,11 +14601,11 @@ successor 4, and the decision `UNCAP_PLAN.md` deferred twice in identical words 
 
 ### THE PREMISE WAS CHECKED FIRST, AND BOTH HALVES OF IT HAD MOVED UNDER THE ARC
 
-**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1257` now
+**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1279` now
 carries `agg, c = _stress_aggregate(pn, maxes, q)   # whole-wheel pnorm — REPORTING ONLY`,
-and `stress`/`stress_margin` (`:1323-1333`) read the two per-junction region p-norms alone.
+and `stress`/`stress_margin` (`:1345-1355`) read the two per-junction region p-norms alone.
 Verified mechanically rather than off the comment: inside `t3_terms` the bare `agg` is
-assigned at `:1257` and read at exactly ONE place — `:1377`, the report key
+assigned at `:1279` and read at exactly ONE place — `:1399`, the report key
 `pnorm_stress_agg_mpa`.  Every other occurrence in the module is a comment or a different
 function's own local, and the `probe_p` sweep builds its own `a_v` rather than reading this
 one.  **So `rim:P_c` — the corner §46 and §52 built the whole ranking on — feeds no barrier, no
@@ -15248,7 +15248,7 @@ Every clause of that condition is now true, and it went unread for a day because
 parked and nothing reads a parked file:
 
 - the FEA meshes fillets directly — `wheel_objective.phase_meshes` passes `fillet=True`
-  unconditionally (`src/wheel_objective.py:1013`), as does `wheel_pool_worker.run_phase`
+  unconditionally (`src/wheel_objective.py:1035`), as does `wheel_pool_worker.run_phase`
   (`:63`);
 - the objective prices the junctions through the solve — `util_j` is the junction's own
   region p-norm and `Kt` does not appear in it (§103);
@@ -15258,7 +15258,7 @@ parked and nothing reads a parked file:
 `rim_fillet_cap_mm(t3, arrival_angle)` in `wheel_objective`, differentiable, *"mirroring the
 hub"* — but the hub cap's stress-pricing job was retired at §103, which kept `Kt`,
 `hub_fillet_cap_mm` and `hub_fillet_r_effective` as **reporting only**
-(`src/wheel_objective.py:1261`).
+(`src/wheel_objective.py:1283`).
 
 **What the hub cap still does is the half nobody restated, and the rim's guard models a
 DIFFERENT LIMIT from the one the mesh enforces.** There are three separate limits on a
@@ -15558,7 +15558,7 @@ computed at a weight the tree no longer has** — 17 of them, of which exactly o
 
 A second, independent mechanism hits the subset whose drivers do not inject their own
 meshes: `t3_terms` builds via `phase_meshes` only when `meshes is None and pool is None`
-(`src/wheel_objective.py:1168`), so a driver that hands in `meshes=` kept control of the
+(`src/wheel_objective.py:1190`), so a driver that hands in `meshes=` kept control of the
 geometry across §103 and one that did not had the mesh flipped under it.
 
 **AND A GENE BOX MOVED UNDER 13 OF THEM, WHICH IS THE SAME FAILURE ONE LEVEL DOWN.** Stage-3
@@ -16792,7 +16792,7 @@ junction, or a decision that `rim:P_c`'s fidelity is not worth one"* — and ten
 without anyone taking it. **Second branch taken.** Both legs re-verified against the tree
 rather than quoted: `sector_blocks` defaults to `fillet=None` and is *"seven node grids —
 eleven when the fillet is blocked"* (`wheel_wheel.py:2282-2286`), `study_tri_block.region()`
-passes no `fillet=` (`studies/study_tri_block.py:242`) while `wheel_objective.py:1015` and
+passes no `fillet=` (`studies/study_tri_block.py:242`) while `wheel_objective.py:1037` and
 `wheel_pool_worker.py:63` pass `fillet=True` unconditionally; and `grep -rn "rim:P_c" src/`
 returns **zero matches**, the whole-wheel p-norm being assigned once at `:1257` under
 *"REPORTING ONLY"* and read once at `:1377`. **The arc does not stop for the reason it
@@ -16999,7 +16999,7 @@ construction
 reproduces `report["stress_utilisation"]` to 1e-12) failed for `b729e86` specifically. Traced,
 not worked around: `wheel_objective.py`'s REAL constraint has computed per-region since
 §102/§103 — `util = max(agg_hub, agg_rim) / allowable`, each region carrying its own Kt already
-folded in — but the diagnostic `pnorm_by_p` block (`:1357-1364`) still builds
+folded in — but the diagnostic `pnorm_by_p` block (`:1379-1386`) still builds
 `stress_utilisation_kt` from one GLOBAL `kt_max = max(kt_hub, kt_rim)` times one global
 aggregate, a construction that only reproduces the real constraint when the region with the
 larger Kt is also the region with the larger raw stress.
@@ -17019,8 +17019,8 @@ read directly, bypassing the broken assertion: **0.9723 at medium config under S
 feasible.** `wheel_objective.py`'s `pnorm_by_p` construction is left unfixed here — it is
 differentiated code that feeds the optimizer, and a fix deserves its own verification against
 the rest of the tree rather than a rushed edit inside a promotion. Filed here for whoever picks
-it up: fix `stress_utilisation_kt` (`wheel_objective.py:1363`) to use each region's own Kt
-against its own aggregate and take the max of THOSE, matching what `util` (`:1334`) already
+it up: fix `stress_utilisation_kt` (`wheel_objective.py:1385`) to use each region's own Kt
+against its own aggregate and take the max of THOSE, matching what `util` (`:1356`) already
 does, rather than one global `kt_max` times one global aggregate.
 
 **WHAT MOVED.** `best_solution.json` (genes + `note`), `tests/test_promotion.py`
@@ -17044,8 +17044,8 @@ artifact it had been carrying until today was committed on **2026-08-12** (`b5c2
 
 ### 1. §115.5's FILED FIX IS A NO-OP, AND ITS CAUSE IS NOT THE CAUSE
 
-§115.5 filed: *fix `stress_utilisation_kt` (`wheel_objective.py:1363`) to use each region's
-own Kt against its own aggregate and take the max of THOSE, matching what `util` (`:1334`)
+§115.5 filed: *fix `stress_utilisation_kt` (`wheel_objective.py:1385`) to use each region's
+own Kt against its own aggregate and take the max of THOSE, matching what `util` (`:1356`)
 already does.* Read literally against the code, there is no such construction to write:
 
 - **The probe sweep has exactly one aggregate**, `a_v = _stress_aggregate(probe_pn[v],
@@ -17061,7 +17061,7 @@ already does.* Read literally against the code, there is no such construction to
   probe exponent, and therefore cannot live in a per-`p` dict at all.
 
 **And `b729e86` is not why the gate raised.** The assertion held BY CONSTRUCTION until
-§103: `d2cf9fa^:src/wheel_objective.py:1256` reads `util_j = kt * agg / allowable_stress_mpa`
+§103: `d2cf9fa^:src/wheel_objective.py:1278` reads `util_j = kt * agg / allowable_stress_mpa`
 per junction, so `max(utils)` WAS `kt_max * agg / ALLOWABLE`, which is `stress_utilisation_kt`
 at `stress_gauss_p` — the same arithmetic at the same exponent, not two quantities that
 happened to agree. §103 moved `util_j` onto the region p-norm over the junction's own
@@ -17250,7 +17250,7 @@ run above. `MBSE_PLAN.md`, `studies/study_mbse_score.py`, `tests/test_requiremen
 the `study_svk_rescore.py:67` citation, which this section's own docstring edit shifted to
 `:75` (§114's lesson, applied to my own delta rather than rediscovered later).
 
-**NOT touched:** `wheel_objective.py` — §115.5 filed a fix at `:1363` and §116.1 is the
+**NOT touched:** `wheel_objective.py` — §115.5 filed a fix at `:1385` and §116.1 is the
 measurement of why it is not made; the key reports a retired construction accurately, which
 is what `tests/test_stage3.py:1217` already says it survives to do.
 `studies/study_kinematics_rank.py` — repaired by the shared `_score` and not re-run here.
@@ -17604,7 +17604,7 @@ rather than content-matched, because content-matching cannot tell "already stale
   test_promotion.py:172-181             test_genome_key_order.py:45   MINE, +12 -> :184-193
   test_promotion.py:176-181             test_genome_key_order.py:84   MINE, +12 -> :188-193
   test_objective.py:1257                MBSE_PLAN.md:68               ALREADY STALE
-  test_objective.py:1257                wheel_objective.py:1149       ALREADY STALE
+  test_objective.py:1257                wheel_objective.py:1171       ALREADY STALE
   test_wheel_fea.py:370, :407           WALLPIN_PLAN.md:111           ALREADY STALE
 ```
 
@@ -19351,8 +19351,8 @@ been measured on that mesh.
 
 The module docstring's reason for existing is *"Stage 3 now believes that claim twice — a
 barrier pushes `R_hub` under it, and `Kt_hub` is priced on it"*. Half of that is true. The
-`fillet_cap` barrier is live (`wheel_objective.py:863`). **`Kt_hub` has priced nothing
-since §102/§103** — `util_j` reads the region p-norm, and `wheel_objective.py:1261` says so
+`fillet_cap` barrier is live (`wheel_objective.py:885`). **`Kt_hub` has priced nothing
+since §102/§103** — `util_j` reads the region p-norm, and `wheel_objective.py:1283` says so
 in the code.
 
 The second believer it does have is worse than the one it names: **`wheel_stage3.selection_key`**
@@ -20955,7 +20955,7 @@ to the part that is genuinely outstanding.
 ### 1. TWO QUANTITIES, TWO ROUTES, TWO DATES — AND CONFLATING THEM WAS THE AVAILABLE MISTAKE
 
 The test measures `d(rim margin)/dR_rim`, an entry of `jacrev(_fillet_margins)`. The
-`wheel_objective.py:1278-1281` comment that looked like the same claim measures `dL/dR_rim`,
+`wheel_objective.py:1300-1303` comment that looked like the same claim measures `dL/dR_rim`,
 the LOSS gradient. **The margin reaches the loss only through the `fillet_cap` barrier, so
 an inactive barrier leaves `dL/dR_rim` at exactly zero however live the margin is.** They
 are not two readings of one thing, and this section keeps them apart throughout. A peer
@@ -21000,7 +21000,7 @@ phases, the shipped genome, 1359.3 s:
 *"`fillet_feasibility`
 was built to give both fillet genes a gradient and only `R_hub` got one"* — is not retired,
 it is **inverted**: the rim now carries the larger of the two. And
-`wheel_objective.py:1281`'s *"a nominally 14-dimensional search was running in 8"* is a
+`wheel_objective.py:1303`'s *"a nominally 14-dimensional search was running in 8"* is a
 **2026-08-12** reading that does not describe this tree; there is not one exact zero left in
 the gradient.
 
@@ -21024,7 +21024,7 @@ in a test, and §79's body names the very claim it was retiring — `wheel_adjoi
 that *"a gradient-based Stage 3 would optimise 12 of 14 genes and never notice"*.
 
 M7's finding was that the pair is dead because `dcoords/dgene` is identically zero on an
-unfilleted mesh; the fillet switch opened that route. **So `wheel_objective.py:1281`'s
+unfilleted mesh; the fillet switch opened that route. **So `wheel_objective.py:1303`'s
 2026-08-12 "running in 8" was superseded twelve days later by a commit whose SUBJECT LINE
 says so**, and this section's re-measurement of it at 14-of-14 is a third statement of a
 thing the tree has held twice.
@@ -21080,7 +21080,7 @@ memory returned to 2 GiB immediately. The restructured run was one genome, one p
 a watchdog set to kill at 52 GiB.
 
 **IT WAS NOT MISCONFIGURED, WHICH IS THE PART WORTH KEEPING.** `phases=None` resolves at
-`wheel_objective.py:1496` to `phase_stencil(scheme="uniform")`, whose default is
+`wheel_objective.py:1518` to `phase_stencil(scheme="uniform")`, whose default is
 `n_phase=8` — byte-for-byte the stencil `tests/test_objective.py:88`'s `genes_over_knee`
 fixture passes explicitly. **The tree has been paying this cost in every `test_objective.py`
 run all along**, which is why that file measured 35:44 at §132 and why it has to be its own
@@ -21245,7 +21245,7 @@ the test was called when they were written, and a test named `_is_still_effectiv
 that asserts the opposite is the rot this tree removes rather than preserves. The suite goes
 **11 red -> 10**, list verified.
 
-**NOT touched.** `wheel_objective.py:1278-1281`'s stale comment and `_fillet_margins`'
+**NOT touched.** `wheel_objective.py:1300-1303`'s stale comment and `_fillet_margins`'
 docstring pair `[+4.0271, +10.7491]`, which describes the outgoing genome, cites §106, and
 mis-dates its own 86x (successor 2) — both want a bracket, neither is this commit's subject.
 `MARGIN_KNEE_UTIL`, `1e-4`, and

@@ -1784,7 +1784,7 @@ successor whose value rests on a premise is worth exactly what the premise is wo
 
 **THE QUANTITY IT WAS RANKED TO PROTECT IS NO LONGER READ BY ANYTHING THAT DECIDES.**
 §103 replaced `util_j`'s `Kt * agg` surrogate with a per-junction region p-norm on the
-fillet's own arc.  `wheel_objective.py:1257` now reads
+fillet's own arc.  `wheel_objective.py:1279` now reads
 
 ```
     agg, c = _stress_aggregate(pn, maxes, q)          # whole-wheel pnorm — REPORTING ONLY
@@ -2007,7 +2007,7 @@ that established them:
    *"The seven node grids of sector 0 — eleven when the fillet is blocked"*
    (`wheel_wheel.py:2282-2286`). `study_tri_block.region()` calls it with **no `fillet=`**
    (`studies/study_tri_block.py:242`) — the seven-block sector. Every mesh the objective
-   actually solves passes `fillet=True`: `wheel_objective.py:1015` and
+   actually solves passes `fillet=True`: `wheel_objective.py:1037` and
    `wheel_pool_worker.py:63`, unconditional since §103. **The twelve-block Y this file built
    partitions a sector the tree stopped building**, and PART 10 already measured the
    inversion: the faithful rim's worst block goes 23.8x worse at `coarse` and 2.5x at
@@ -2016,9 +2016,9 @@ that established them:
 2. **`rim:P_c` reaches nothing that decides anything.** `grep -rn "rim:P_c" src/` returns
    **zero matches** — the string survives only in `tests/`, in study drivers and in committed
    study artifacts. The quantity it contaminates is assigned once and read once:
-   `agg, c = _stress_aggregate(pn, maxes, q)` at `wheel_objective.py:1257`, carrying the
-   comment *"whole-wheel pnorm — REPORTING ONLY"*, and read at `:1377` into
-   `"pnorm_stress_agg_mpa"`, plus the `stress_utilisation` diagnostic that `:1354` records as
+   `agg, c = _stress_aggregate(pn, maxes, q)` at `wheel_objective.py:1279`, carrying the
+   comment *"whole-wheel pnorm — REPORTING ONLY"*, and read at `:1399` into
+   `"pnorm_stress_agg_mpa"`, plus the `stress_utilisation` diagnostic that `:1376` records as
    *"retained as the diagnostic that shows why it was abandoned"*. Neither `BARRIER_TERMS`
    nor `OBJECTIVE_TERMS` (`:399-401`) names it. What prices stress on the live path is the
    two per-junction region p-norms, `agg_hub`/`agg_rim`.

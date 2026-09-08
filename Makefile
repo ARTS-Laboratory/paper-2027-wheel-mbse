@@ -1046,7 +1046,7 @@ filletoptimum:
 # different instruments on two different ladders, and re-measuring either one here would
 # make it a third.
 #
-# §93 found, by reading `wheel_objective.py:1234` rather than the plan files, that
+# §93 found, by reading `wheel_objective.py:1256` rather than the plan files, that
 # `util_j = kt * agg / ALLOWABLE` applies a surrogate for a fillet on a mesh that has one.
 # It also asserted two things about that finding from inspection, and this recipe checks
 # both:

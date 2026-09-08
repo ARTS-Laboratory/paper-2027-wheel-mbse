@@ -8,7 +8,7 @@ claim needs a measurement behind it rather than one recorded number from one exp
 **THE SECOND HALF OF THAT SENTENCE NAMES A DEAD CONSUMER, AND THE LIVE ONE IT MISSES IS
 WORSE — PLAN.md §129.**  `Kt_hub` is still computed on the cap (`wheel_objective._kt_hub`)
 and still reported, but it has not priced anything since §102/§103: `util_j` reads the
-region p-norm now, and `wheel_objective.py:1261` says so in as many words.  What DOES
+region p-norm now, and `wheel_objective.py:1283` says so in as many words.  What DOES
 believe the cap a second time is `wheel_stage3.selection_key` — an iterate whose
 `cap - R_hub` is under `MIN_CAP_SLACK_MM` (1e-3 mm) drops out of tier 0 and cannot be
 promoted.  That is not a softer consumer than the retired one, it is a harder one, and it
