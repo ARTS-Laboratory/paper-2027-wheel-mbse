@@ -439,9 +439,28 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     the gene box rather than hypothetical.
 
     §13's shipped genome is on the OTHER side of that crossover: at `t0` = 1.2 the
-    thickness branch takes the `min`, which is the branch this test is about.  The 2.0
-    below is now a value chosen to sit near the crossover rather than the floor it used to
-    be — `MIN_WALL_MM` is 1.2.
+    thickness branch takes the `min`, which is the branch this test is about.
+
+    THE PROBE WAS THE HARDCODED `t0` = 2.0 UNTIL 2026-09-08, "chosen to sit near the
+    crossover rather than the floor", AND THE CROSSOVER IS NOT A CONSTANT — it is a
+    function of the SHAPE genes, because thinning the root widens the slot.  Bisected over
+    the `t0` box:
+
+        genome              crossover t0      the old 2.0 probe sat
+        96a0ac5 outgoing      2.634016        0.634 mm INSIDE the thickness branch
+        b729e86 SHIPS         1.908586        0.091 mm OUTSIDE it
+
+    which is the whole of the failure: at 2.0 the shipped genome reads thickness 1.0051
+    against slot 0.9330, so the slot binds and the branch under test is not the live one.
+    The mechanism is untouched — the crossover is still reachable, it moved 27.6% down.
+    So the probe is DERIVED here instead: bisect for the crossover, assert it exists
+    inside the box (which is the claim this docstring actually makes), and probe midway
+    between `MIN_WALL_MM` and it — inside the branch and still not at the floor.
+
+    AND THAT EXISTENCE CLAIM IS NOW MEASURED RATHER THAN ASSERTED FROM ONE DESIGN: over 40
+    uniform draws across the whole gene box, **40 of 40** have a slot/thickness crossover
+    inside the `t0` box.  "Reachable rather than hypothetical" is a property of the model,
+    not of the genome on disk, which is why the bisection can be an assertion.
 
     THE LAST ASSERTION USED TO BE ITS EXACT OPPOSITE, and that is the point of
     BUILD_PLAN.md step 3.  It read `norm(d[:8]) == 0.0` — "the shape genes still move the
@@ -455,7 +474,28 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     """
     cfgo = WW.get_config(CFG)
     g = np.asarray(genes, dtype=float).copy()
-    g[8] = 2.0                                   # near the slot/thickness crossover
+
+    def _limits(t0):
+        gg = g.copy()
+        gg[8] = float(t0)
+        fl = WO.fillet_flanks(gg, cfgo)
+        void = float(WW.hub_void_deg(gg, cfgo, W.S, W.HUB_RADIUS_MM, fl[0]))
+        a = float(WW.arrival_angles(gg, cfgo, span_mm=W.S)[0])
+        return (WO.HUB_CAP_SHARE * W.HUB_RADIUS_MM * np.radians(void),
+                t0 * (WO.HUB_CAP_THICKNESS_SHARE - WO.HUB_CAP_ARRIVAL_SLOPE
+                      * (1.0 - np.cos(np.radians(a)))))
+
+    lo, hi = W.MIN_WALL_MM, W.GENE_SPACE[8]["high"]
+    (s_lo, t_lo), (s_hi, t_hi) = _limits(lo), _limits(hi)
+    assert t_lo < s_lo and t_hi > s_hi, (
+        f"no slot/thickness crossover inside the t0 box [{lo}, {hi}] — thickness/slot is "
+        f"{t_lo:.4f}/{s_lo:.4f} at the floor and {t_hi:.4f}/{s_hi:.4f} at the ceiling, so "
+        f"the min is dead code on this genome and the thickness term could be deleted")
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        s_m, t_m = _limits(mid)
+        lo, hi = (mid, hi) if t_m < s_m else (lo, mid)
+    g[8] = 0.5 * (W.MIN_WALL_MM + 0.5 * (lo + hi))   # inside the branch, not at the floor
     flanks = WO.fillet_flanks(g, cfgo)
     void = float(WW.hub_void_deg(g, cfgo, W.S, W.HUB_RADIUS_MM, flanks[0]))
     a_hub = float(WW.arrival_angles(g, cfgo, span_mm=W.S)[0])
@@ -466,8 +506,10 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     cap = float(WO.hub_fillet_cap_mm(g, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
 
     assert by_thickness < by_slot, (
-        f"at t0 = 2.0 the thickness limit {by_thickness:.4f} is still not the smaller "
-        f"(slot {by_slot:.4f}) — the crossover is outside the box and the min is dead code")
+        f"at t0 = {g[8]:.4f}, midway between MIN_WALL_MM and this genome's crossover at "
+        f"{0.5 * (lo + hi):.4f}, the thickness limit {by_thickness:.4f} is still not the "
+        f"smaller (slot {by_slot:.4f}) — the bisection above found a crossover that the "
+        f"branch does not honour")
     assert cap == pytest.approx(by_thickness)
     # And the gradient has to follow the branch that is live.
     d = np.asarray(jax.grad(
@@ -476,9 +518,29 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     assert d[8] == pytest.approx(WO.HUB_CAP_THICKNESS_SHARE
                                  - WO.HUB_CAP_ARRIVAL_SLOPE
                                  * (1.0 - np.cos(np.radians(a_hub))))
-    assert abs(d[0]) > 1e-3 and abs(d[1]) > 1e-3, (
-        f"the two genes that aim the spoke at the hub do not move the cap on the "
-        f"thickness branch: d(cap)/d(cx1, cy1) = {d[0]:.3e}, {d[1]:.3e}")
+    # AND THE `> 1e-3` THIS REPLACED WAS A CLAIM ABOUT ONE GENOME'S ARRIVAL ANGLE.  The
+    # only route from the shape genes into the thickness branch is `a_hub`, so
+    # `d(cap)/dgene = -t0 * SLOPE * sin(a_hub) * da_hub/dgene` — proportional to
+    # `sin(a_hub)`, which is 0.4592 at `96a0ac5` (27.334 deg) and 0.1005 at `b729e86`
+    # (5.765 deg), a 4.57x drop that takes `d(cap)/dcy1` to 2.997e-04 and under a bound
+    # calibrated on the steeper spoke.  Assert the chain rule instead: it says the route
+    # is live AND says by how much, and it is genome-independent.  Measured over 80
+    # comparisons on 40 uniform draws, |AD/analytic - 1| is median 1.3e-06, max 1.3e-05.
+    a_of = lambda v: float(WW.arrival_angles(v, cfgo, span_mm=W.S)[0])
+    for k, name in ((0, "cx1"), (1, "cy1")):
+        h = 1e-6 * max(1.0, abs(g[k]))
+        gp, gm = g.copy(), g.copy()
+        gp[k] += h
+        gm[k] -= h
+        da = (a_of(gp) - a_of(gm)) / (2.0 * h)           # deg of hub arrival per mm
+        expect = -g[8] * WO.HUB_CAP_ARRIVAL_SLOPE * np.sin(np.radians(a_hub)) * np.radians(da)
+        assert expect != 0.0, (
+            f"{name} does not move the hub arrival at all, so the cap cannot see it — "
+            f"this is the pre-BUILD_PLAN cap's defect, not a tolerance question")
+        assert d[k] == pytest.approx(expect, rel=1e-4), (
+            f"d(cap)/d{name} = {d[k]:.6e} but the thickness branch's chain rule through "
+            f"a_hub gives {expect:.6e} — the cap is not reading the arrival angle the way "
+            f"`hub_fillet_cap_mm` says it does")
 
 
 def test_the_cap_ranks_two_designs_OCC_disagrees_about(genes):

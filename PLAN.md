@@ -15009,7 +15009,7 @@ been run against them.
    call.  §103 opened it (before `d2cf9fa` both tiers were unfilleted and AGREED) and it is
    worth **+3.867 g, +9.78%**, against a `mass` tolerance of 0.365 g — 10.6x.  Nine call
    sites are exposed, three read a t2 quantity: `wheel_requirements.score_record` (so the
-   MBSE gate), `study_mbse_score`, and `test_objective.py:1010`'s exchange rate.
+   MBSE gate), `study_mbse_score`, and `test_objective.py:1072`'s exchange rate.
    **`wheel_stage3.Evaluator` is NOT among them** — it builds `phase_meshes` itself, and
    builds `phases[:1]` even when pooled, for this exact reason and with a comment saying so
    — which is why the descent above can be run before this is settled.  The fix is one line
