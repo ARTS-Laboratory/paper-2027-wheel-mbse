@@ -143,9 +143,38 @@ def test_thickness_tracks_the_superseded_masked_form(i):
 
 def test_thickness_hits_its_nodes_exactly(ts):
     """t(0)=t0, t(1/3)=t1, t(2/3)=t2, t(1)=t3 — the defining property of an
-    interpolant, and the one the superseded version got wrong by 1.2e-11."""
+    interpolant, and the one the superseded version got wrong by 1.2e-11.
+
+    THE BOUND WAS `== 0.0` UNTIL 2026-09-08, AND THAT WAS NEVER THIS CLAIM — it was a
+    rounding accident that held for the genomes this file happened to be run on.  The
+    function is a base value plus three clipped ramps, so `t(bp_k)` is `t0` plus a
+    TELESCOPING SUM of k differences; the sum is exact only when its roundings cancel.
+    Measured over 20000 uniform draws of `(t0, t1, t2, t3)` across `GENE_SPACE`'s own
+    bounds:
+
+        exactly 0.0 ....................  80.09% of draws, NOT 100%
+        worst error ....................  1.332268e-15  =  6 ULP
+        per node, share not exact ......  bp=0: 0.00%   1/3: 7.89%   2/3: 10.10%   1: 13.49%
+
+    The per-node profile IS the mechanism: `t(0)` is `t0` with no sum and never misses,
+    and the miss rate climbs with the number of terms.  So `== 0.0` was a coin this test
+    had won on every genome until `b729e86`, which reads 2.220446e-16 — ONE ULP, on `t1`
+    and `t2` — and lost it.
+
+    §133 §GROUP B's stated reason SURVIVES ITS CONTROL.  It said the exactness "survives
+    only while the t-vector's magnitudes are small".  Drawing all four thicknesses from
+    [1.2, 2.0] instead of the full box gives 20000 of 20000 exact, against 80.09% — so
+    magnitude is the driver, and `t0` going 1.4738 -> 3.5055 is why this one broke now.
+
+    THE BOUND IS THE GEOMETRIC MIDPOINT OF THE TWO THINGS IT MUST SEPARATE, which is the
+    warrant `== 0.0` never had: 75x above the measured worst case over the whole box, and
+    120x below the 1.2e-11 defect this test exists to catch.  The `ts` fixture stays on
+    the shipped genome deliberately — the claim is about the INTERPOLANT and the bound is
+    genome-independent by the sweep above, so reading what ships costs nothing and keeps
+    the test a live check that the shipped design is inside that regime.
+    """
     got = G.thickness_at_arc_length(G.TAPER_BREAKPOINTS, *ts)
-    assert np.abs(got - np.array(ts)).max() == 0.0
+    assert np.abs(got - np.array(ts)).max() < 1e-13
 
 
 def test_thickness_is_monotone_between_nodes(ts):
