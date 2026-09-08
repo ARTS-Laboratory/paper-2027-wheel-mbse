@@ -100,3 +100,45 @@ def test_the_committed_kinrank_artifacts_reproduce_their_own_verdict_block(name)
     rebuilt = KR._verdict(rep["rank"]["rows"])
 
     assert json.dumps(rebuilt, sort_keys=True) == json.dumps(stored, sort_keys=True)
+
+
+@pytest.mark.parametrize("name", COMMITTED_ARTIFACTS)
+def test_exactly_one_block_binds_r2_and_it_is_the_one_the_verdict_took(name):
+    """§132 successor 0: the artifact now says IN PLACE which `r2_pass` decided R2.
+
+    `_rank_block` computes `r2_pass` for both subsets and `_verdict` reads one of them, so
+    `study_kinematics_rank_filleted.json` carries `blocks.full.r2_pass: false` beside
+    `registered_criterion.R2_rank_agreement: true` — both correct, and readable as a
+    contradiction by anyone grepping the field.  The terminal output always drew the
+    distinction ("BINDING for R2" against "diagnostic") and the file never did.
+
+    Pinned as an IDENTITY between the marker and the verdict rather than as
+    `r2_binds == (subset == "feasible")`, which would restate the constant and pass however
+    wrong the wiring got.  If someone re-points `R2_BINDING_SUBSET`, the marker and
+    `r2_rank_agreement` move together or this fails.
+    """
+    with open(os.path.join(STUDIES, name)) as fh:
+        blocks = json.load(fh)["rank"]["verdict"]["blocks"]
+
+    binding = [b for b in blocks.values() if b["r2_binds"]]
+    assert len(binding) == 1, f"{len(binding)} blocks claim to bind R2"
+
+    rebuilt = KR._verdict(json.load(open(os.path.join(STUDIES, name)))["rank"]["rows"])
+    if not binding[0].get("insufficient"):
+        assert rebuilt["r2_rank_agreement"] == binding[0]["r2_pass"]
+
+
+def test_the_diagnostic_blocks_marker_does_not_claim_its_numbers_are_unmeasured():
+    """`r2_binds: false` is about consumption, not about measurement.
+
+    The full pool is NOT purely diagnostic — R1 reads its `argmin_identical` — so the
+    marker had to be named for the one criterion the subset does not decide.  A reader who
+    took it as "this block was not measured" would discard a real statistic, and R1 would
+    then have no full-pool operand at all.
+    """
+    rows = _rows([1, 2, 3, 4, 5, 6], [10, 20, 30, 40, 60, 50])
+    full = KR._rank_block(rows, "full")
+
+    assert full["r2_binds"] is False
+    assert full["spearman_rho"] > 0 and full["n"] == 6
+    assert "argmin_identical" in full, "R1's operand must survive the marker"

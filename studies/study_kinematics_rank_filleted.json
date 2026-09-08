@@ -2101,7 +2101,8 @@
      "discordant_pairs": 5,
      "n_pairs": 171,
      "discordant_fraction": 0.029239766081871343,
-     "r2_pass": false
+     "r2_pass": false,
+     "r2_binds": false
     },
     "feasible": {
      "subset": "feasible",
@@ -2145,7 +2146,8 @@
      "discordant_pairs": 0,
      "n_pairs": 10,
      "discordant_fraction": 0.0,
-     "r2_pass": true
+     "r2_pass": true,
+     "r2_binds": true
     }
    },
    "gate_spearman": 0.9,

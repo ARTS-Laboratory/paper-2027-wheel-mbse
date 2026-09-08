@@ -15,7 +15,9 @@ criterion this arc registered, BEFORE any of this ran (KINEMATICS_PLAN Step 0c),
     R2  Spearman rho >= 0.90 on the FEASIBLE subset (binding) and reported on the full
         pool (diagnostic).  Top-5 sets equal under both orderings — a clause that
         ABSTAINS below n = 6, where the slice is the whole subset and it cannot fail
-        (PLAN.md §130 §3, fixed at §132; `_rank_block`).
+        (PLAN.md §130 §3, fixed at §132; `_rank_block`).  Each block carries `r2_binds`
+        saying whether ITS `r2_pass` is the one the verdict took, because both blocks
+        compute the field and only one is read (§132 successor 0; `R2_BINDING_SUBSET`).
     R3  cos(grad_linear, grad_svk) >= 0.90 in the NORMALIZED gene space the descent steps
         in, at every probed genome.
 
@@ -88,6 +90,24 @@ N_PHASE = 8
 # fit the run: R1 is deliberately binary so there is nothing in it to loosen.
 GATE_SPEARMAN = 0.90
 GATE_GRAD_COSINE = 0.90
+
+# WHICH SUBSET DECIDES R2 — one literal, three readers (§132 successor 0).  `_verdict`
+# consumes only this block's `r2_pass`, but `_rank_block` computes the field for BOTH
+# subsets, so an artifact can carry `blocks.full.r2_pass: false` beside
+# `registered_criterion.R2_rank_agreement: true` — both correct, and grep-readable as a
+# contradiction.  `study_kinematics_rank_filleted.json` does exactly that today.  The
+# terminal output has always disambiguated it ("BINDING for R2" against "diagnostic") and
+# the ARTIFACT never did; `r2_binds` below puts the same sentence in the file, next to the
+# field that provokes the question rather than in a header a grep will not see.
+#
+# WHY THE MARKER RATHER THAN DROPPING THE VERB, which was the other option filed at §132.
+# Removing `r2_pass` from the diagnostic block would subtract a field from
+# `study_kinematics_rank.json`, and that file is §32's evidence — §130's header note is
+# explicit that overwriting it falsifies a closed arc.  An additive marker leaves every
+# recorded number in place.  The full block is not purely diagnostic either: R1 reads its
+# `argmin_identical`, so "the full pool does not bind" would itself be false.  It is R2
+# specifically that this subset does not decide, and that is what the name says.
+R2_BINDING_SUBSET = "feasible"
 
 # Every distinct genome the tree commits to, in the order they were produced.  Files that
 # hold the SAME gene vector are folded together by `_pool` and reported as aliases.
@@ -274,7 +294,8 @@ def _subsets(rows):
 
 def _rank_block(rows, name):
     if len(rows) < 3:
-        return {"subset": name, "n": len(rows), "insufficient": True}
+        return {"subset": name, "n": len(rows), "insufficient": True,
+                "r2_binds": name == R2_BINDING_SUBSET}
     lin = np.array([r["linear"]["loss"] for r in rows])
     svk = np.array([r["svk"]["loss"] for r in rows])
     rho = stats.spearmanr(lin, svk)
@@ -317,12 +338,16 @@ def _rank_block(rows, name):
         # pass it either, so it abstains and rho carries R2 alone.
         "r2_pass": bool(float(rho.statistic) >= GATE_SPEARMAN
                         and sets_equal is not False),
+        # Whether `_verdict` READS the `r2_pass` directly above it.  False here does not
+        # mean the subset was not measured — every statistic in this block is real; it
+        # means R2's registered verdict was not taken from it.
+        "r2_binds": name == R2_BINDING_SUBSET,
     }
 
 
 def _verdict(rows):
     blocks = {name: _rank_block(rs, name) for name, rs in _subsets(rows).items()}
-    binding = blocks["feasible"]
+    binding = blocks[R2_BINDING_SUBSET]
     full = blocks["full"]
     r1 = None
     if not full.get("insufficient"):
@@ -453,7 +478,8 @@ def _print(rep):
         for name in ("full", "feasible"):
             b = rk["verdict"]["blocks"][name]
             print(f"\n  --- {name.upper()} POOL "
-                  f"({'BINDING for R2' if name == 'feasible' else 'diagnostic'}) ---")
+                  f"({'BINDING for R2' if name == R2_BINDING_SUBSET else 'diagnostic'}"
+                  f") ---")
             if b.get("insufficient"):
                 print(f"      only {b['n']} rows — no rank statistic")
                 continue

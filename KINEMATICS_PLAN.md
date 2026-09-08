@@ -254,6 +254,16 @@ Three registered conditions. **R1 is the verdict; R2 and R3 qualify it.**
   recomputes byte-identical under the amendment), and §130's R2 passes on a rho of +1.0000
   with the two orderings identical element for element rather than merely equal as sets.
   `tests/test_kinematics_rank.py` pins both halves.
+
+  **[RECORDED 2026-09-08 — PLAN.md §134. THE CRITERION IS UNCHANGED; THE ARTIFACT NOW SAYS
+  WHICH BLOCK DECIDED IT.]** "Binding case" and "diagnostic" above were stated here and
+  printed to the terminal, and were nowhere in the JSON: `_rank_block` computes `r2_pass`
+  for BOTH subsets and `_verdict` reads one, so `study_kinematics_rank_filleted.json`
+  carried `blocks.full.r2_pass: false` beside `registered_criterion.R2_rank_agreement:
+  true` — both correct, and grep-readable as a contradiction. Each block now carries
+  `r2_binds`. **No bar, no statistic and no recorded verdict moves**, and the marker is
+  named for R2 alone because the full pool is not purely diagnostic — R1 reads its
+  `argmin_identical`.
 - **R3 — DESCENT DIRECTION (supporting, pre-registered bar).** Cosine similarity between
   ∇L(linear) and ∇L(svk), in the NORMALIZED gene space the descent actually steps in,
   ≥ **0.90** at every genome probed. Below cos = 0 the linear gradient is not even a descent
