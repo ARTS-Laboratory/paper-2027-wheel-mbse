@@ -19933,3 +19933,189 @@ now has a companion measurement and does not know it; successor 1 below.
    run is the evidence that decision now needs taking: a criterion carried by a single point
    should be measured at more than one feasible, near-optimal design, and §4 says there are
    four others.
+
+---
+
+## §131 — 2026-09-07. §129's SUCCESSOR 2, CLOSED, AND THE FIX SHAPE FILED THERE WAS WRONG IN BOTH OF ITS OPTIONS: THE GUARD HAD TO BECOME ONE CALL PER ARTIFACT, NOT PER DRIVER. GUARDED NAMES 25 -> 38. `make m9 --quick` REPLACES A 40 kB COMMITTED ARTIFACT WITH A 219-BYTE STUB 1.4 ms AFTER `main()` IS ENTERED, BEFORE ANY SOLVE
+
+§129 filed this successor as a choice between *(a) widen `committed` to a SET per driver*
+and *(b) refuse any `--out` naming a TRACKED file while any degrading flag is set*.
+**Neither survived contact with the Makefile, and for the same reason: both key the
+degraded list to the DRIVER, and the unit that has a notion of "a full run" is the
+ARTIFACT.**
+
+### 1. WHY THE FILED OPTIONS BOTH FAIL, MEASURED RATHER THAN ARGUED
+
+**(a) refuses `make m8bi5`.** `study_stage3.py` writes FOUR tracked names from four
+Makefile targets. `--sections` is degrading for `study_stage3.json` and **is the gate** for
+`study_stage3_m8bi5.json`; `--ladder-p` is degrading for both of those and **is** `m8bi6`'s.
+A single per-driver list cannot say both, so it refuses one of its own recipes whichever
+way it is written. `study_corner_singularity` is the same shape with two names: `--fillet
+--continuity coarse --profiles` is `corner-fillet`'s whole point and would file an
+unfilleted-artifact impostor on `study_corner_singularity.json`.
+
+**(b) refuses the recipe that CREATED the artifacts it protects.** The Makefile documents
+`make contact CONTACT_GENOME=best_solution.json CONTACT_KIN=svk
+CONTACT_OUT=study_contact_e126cc3_svk.json` — four degrading flags, and the `--out` is one
+of §129.5's seven commit-pinned baselines, tracked. **The pins do not need a fidelity check
+at all**: re-writing `study_contact_e126cc3_svk.json` from today's tree is wrong at FULL
+fidelity, because what makes it right is the COMMIT it was taken at. Successor 0.
+
+**And a third case neither option describes.** `study_reds_hub_share` has three targets
+writing ONE name — it merges into the existing artifact on purpose, one key per arm. So
+the mapping is many-to-many in both directions, and the guard call has to sit where the
+name is decided.
+
+### 2. WHAT SHIPPED
+
+`refuse_degraded_out`'s `committed` takes a NAME OR A TUPLE OF SPELLINGS OF ONE NAME, and
+a driver with N gates calls it N times, once per name, with that name's own list.
+
+**The tuple is not a convenience.** Three drivers default `--out` to an ABSOLUTE path so a
+standalone run lands in `studies/` rather than the CWD (§33's path defect) and then use it
+AS GIVEN, while the Makefile passes the same file as `studies/study_x.json` relative to the
+repo root. **Two strings, one inode, both legitimate**, and string equality against one
+literal is blind to the other. `study_junction_agreement.py`'s own `--out` comment already
+recorded the split and nothing had connected it to the guard.
+
+```
+                              BEFORE (5245aee)        AFTER
+  guard call sites                  27                  40
+  drivers carrying one              25                  34
+  tracked NAMES guarded             25                  38
+  tracked studies/*.json
+    named by no guard               34                  21
+```
+
+Counted by AST over the third argument of every `refuse_degraded_out` call, not by grep —
+`study_stage3`'s calls pass `_degrades_any_stage3_run + [...]`, which a regexp anchored on
+`, [` does not see. **The 34 includes `study_kinematics_rank_filleted.json`, which landed
+at `d2937c0` after §129 took its census.**
+
+### 3. THE CLOBBER, MEASURED — AND THE CHECKPOINT DESIGN IS WHAT MAKES IT TOTAL
+
+`study_m9.py --quick --out study_m9.json`, reproduced in a throwaway worktree with the jax
+import paid first and the artifact's size polled from a thread:
+
+```
+  40262 bytes / 1514 lines  ->  219 bytes / 13 lines,  1.4 ms after main() was entered
+```
+
+**Before a single solve**, because `_flush()` writes the checkpoint above the section loop.
+**Worse than §41's false green rather than milder**: §41 filed a WEAK measurement under the
+gate's name; this files NO measurement at all. And the mechanism is a good design working
+as intended — the checkpoint exists so a partial run cannot be misread as a verdict, and
+that is exactly what makes the destruction instant and complete.
+
+### 4. THE TEST FILE WAS THE REASON THE GAP LASTED, AND IT IS WHY IT CAN BE SEEN NOW
+
+`tests/test_study_gate_guard.py` could not detect §129.5's gap: every row named ONE
+artifact, passed NO `--out`, and gave one passing argv. Its table now carries the committed
+names **in call order** and a LIST of passing argvs per driver, so the mutation catcher
+went from *"some guard fired"* to *"every name this driver guards was reached, in order"* —
+which is what makes a DROPPED second call visible. 29 tests -> 56, all green.
+
+**Verified by mutation rather than by reading**: deleting `study_stage3`'s `m8bi5` call
+reds exactly two tests (`test_the_recipe_invocation_is_not_refused[study_stage3]` and
+`test_degraded_runs_are_refused_by_name[study_stage3]`), and the file restores
+byte-identical afterwards.
+
+**And `test_stage3` is green at 63/63**, which is the check this section could most easily
+have skipped: it imports `study_stage3`, so it is the one heavy file that can see the four
+new guard calls. The full suite behind that number, and the eleven reds this tree already
+carried, are recorded once at §132 §6 rather than twice — these changes were run together,
+in one worktree, because they are committed together.
+
+### 5. THE CHECK NO TEST DOES: EVERY RECIPE'S REAL ARGV, FROM `make -n`
+
+The test table's argvs are HAND-COPIED from the Makefile, so a table that agrees with
+itself proves nothing about the recipe people type. Checked separately by expanding every
+guarded target with `make -n` — variables resolved — and running each resulting argv
+through its driver's real parser and real guard, stopping only after that driver's LAST
+guard call:
+
+**29 targets, 37 driver invocations, every guard call reached, not one refusal.**
+`study_stage3` passes 4/4 names from each of its four targets; `study_corner_singularity`
+passes 2/2 from both of its two. This is the assertion that matters — a guard that refuses
+`make studies` would cost five hours and do it at the END of a run — and the tree has
+never had it.
+
+Three invocations are outside the check and each says something. `make filletconda` runs
+past its guards, because `study_fillet_condition_a`'s three calls sit in conditional code
+paths rather than after `parse_args`. `make mbsecal` could not be instrumented at all:
+`study_mbse_calibration` imports `_gate_guard` INSIDE `main()`, so the module attribute
+does not exist to patch — its guard is real and reached, but nothing outside the process
+can see it coming. And `make kinrank` has **zero** references to the guard, which is §132
+§5 arriving from the other direction.
+
+**One thing that check cost, recorded because it is the same class of accident this section
+is about**: the harness ran `study_fillet_condition_a` to completion, which rewrote
+`studies/study_fillet_condition_a.json`. No damage — every cell was cached, and the file
+came back **byte-identical to the committed one**, which is a free determinism check on
+that driver. But nothing in the harness intended to run a driver, and nothing stopped it.
+
+### 6. WHAT IS LEFT UNGUARDED, AND IT IS NOT A REMAINDER
+
+Re-derived here rather than carried, and the last group did not survive it. **The
+partition is five groups, not four, and one of them is a driver nobody has counted:**
+
+```
+   2  study_kinematics_rank{,_filleted}.json   §132 §5; blocked on §130 successor 0
+   7  commit-pinned evidence baselines         successor 0; need a COMMIT check
+   1  study_boundary_waste.json                `make boundarywaste` DOES write it -- but
+                                               its driver's whole argparse is `--out`, so
+                                               a degraded run is not expressible
+   1  study_reds_ratio_stability.json          `make reds-ratio` writes it AND `--n` and
+                                               `--min-wall` degrade it.  THE ELEVENTH
+                                               EXPOSED DRIVER.  Successor 3
+  10  no Makefile recipe writes them at all    7 by-design variants of guarded gates
+                                               (*_quick, *_svk, *_lin_check, the two
+                                               svk_knee rungs) and 3 historical
+                                               (arrival_cap, objective_capcheck, svk_step6)
+```
+
+**"Needs no guard" was doing two different jobs and hiding a finding under one of them.**
+`study_boundary_waste` has a Makefile gate and no guard, and that is FINE — it takes one
+argument and none of it is fidelity, so there is nothing a guard could refuse.
+`study_reds_ratio_stability` has a Makefile gate and no guard and that is NOT fine: `--n`
+is a sample size below its default and `--min-wall` is a physical parameter, so both are
+exactly the surface §129.5 was censusing. §129.5's list of ten was taken from the drivers
+it already knew about; this one writes its artifact through `studies/redsrun.sh`, which is
+why a census that walks `make` targets naming `studies/study_*.py` directly does not see
+it.
+
+**WHAT MOVED.** `studies/_gate_guard.py` — `committed` accepts a tuple of spellings; the
+docstring records the per-artifact rule. Nine drivers gained a guard call
+(`study_corner_singularity` two, `study_stage3` four): `study_corner_singularity`,
+`study_deflection_gci`, `study_hub_cap`, `study_junction_agreement`, `study_knee_rungs`,
+`study_m9`, `study_m9_buckling`, `study_reds_hub_share`, `study_stage3`,
+`study_svk_rescore`. `tests/test_study_gate_guard.py` — two new columns and 27 new tests.
+
+**NOT touched.** `studies/study_kinematics_rank.py` — §132 §5. The seven pins — successor
+0. The Makefile — no recipe changed, and §5 is the evidence that none had to.
+
+**SUCCESSORS.**
+
+0. **THE SEVEN PINS NEED A COMMIT CHECK, NOT A FIDELITY CHECK, AND NOTHING ON DISK CAN
+   ANSWER IT.** §1. `study_contact_e126cc3_svk.json` is right because of the commit it was
+   taken at, so every degraded-run condition is the wrong question about it — and §106
+   already recorded that **no committed artifact stores the command or the date that
+   produced it**. Nothing on disk says that file came from `e126cc3` except its filename.
+   That is also why a guard's name list has to be hand-written per driver and cannot be
+   derived, which is the maintenance failure that produced §129.5's gap in the first place.
+1. **THE TEST TABLE STILL DOES NOT READ THE MAKEFILE.** §5. The check exists now but it
+   lives in a scratch harness, not in `tests/`. It is the only thing standing between a
+   renamed variable and a recipe that refuses itself five hours in, and it should be a
+   test — `make -n <target>` is cheap and the drivers stop at the guard.
+2. **`study_kinematics_rank` IS THE TENTH EXPOSED DRIVER AND IS STILL UNGUARDED.** §132 §5.
+   It writes two tracked names through `KINRANK_OUT` and one of them is §32's evidence;
+   which name the guard defends is §130 successor 0's decision.
+3. **AND `study_reds_ratio_stability` IS THE ELEVENTH, FOUND BY RE-DERIVING §6's LAST
+   GROUP RATHER THAN CARRYING IT.** §6. `make reds-ratio` writes
+   `studies/study_reds_ratio_stability.json`; `--n 3` and `--min-wall 1.2` reach it with
+   nothing in the way. Cheap — one call, three conditions, the shape every driver in this
+   commit already has. **The lesson is the census method, not the driver**: this one is
+   invoked through `studies/redsrun.sh`, so an enumeration that reads `make` targets for
+   a direct `studies/study_*.py` invocation cannot see it, and §129.5's ten were taken
+   that way. Re-run the census by ARTIFACT — `git ls-files studies/*.json` against the
+   AST's guarded names — which is what found it.
