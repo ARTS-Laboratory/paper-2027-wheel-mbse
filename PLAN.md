@@ -17074,7 +17074,7 @@ time it ran was §115's promotion, three days later, and it raised on the first 
 touched.
 
 **AND IT IS TWO DRIVERS, NOT ONE — THE SECOND ONE FAILS QUIETLY.**
-`studies/study_kinematics_rank.py:235` calls the same `SR._score`, inside a deliberate
+`studies/study_kinematics_rank.py:237` calls the same `SR._score`, inside a deliberate
 `except Exception` that records a genome as `failed` rather than losing an hour-long run
 to one divergence. So since §103 `make kinrank` would not have raised: it would have
 returned **all 36 genomes x both kinematics as FAILED**, with the RuntimeError text in
@@ -19868,6 +19868,17 @@ would. Both halves confirmed, and the second is now measured in full:
   new              (1)    b729e86 SHIPPED, util 0.953
 ```
 
+**[CORRECTED 2026-09-07 — SEE §132 §4.  THE `util` COLUMN ABOVE IS TWO DIFFERENT
+COLUMNS.]**  The five `went infeasible` readings are the **LINEAR** `stress_utilisation`
+(1.7000573, 1.3831437, 1.4287270, 1.2378242, 1.6867196 — the quoted 1.700 / 1.383 / 1.429 /
+1.238 / 1.687), and the `new` row's **0.953 is the SVK one**; `b729e86`'s linear reading is
+**0.9109**.  Under SVK the same five read 1.7624 / 1.4003 / 1.4673 / 1.2668 / 1.7560, so
+**the classification is untouched — every one is above 1.0 in both columns and the shipped
+genome below 1.0 in both** — but one row of the block is not measured the same way as the
+other five, and the SVK column is the one the feasibility that names this block is decided
+on.  Corrected rather than left, because 0.953 against 0.911 is 4.7% of margin against
+8.9%: read across the columns, the shipped wheel looks half as tight as it is.
+
 Every one of the four survivors builds and differentiates, exactly as §129 said. **The
 binding subset is now five designs, of which four are stiff-and-heavy rather than efficient**
 — `elite10 prod` and `minwall 2.0` are the pair §116.5 already characterised as 30% heavier
@@ -20119,3 +20130,244 @@ docstring records the per-artifact rule. Nine drivers gained a guard call
    a direct `studies/study_*.py` invocation cannot see it, and §129.5's ten were taken
    that way. Re-run the census by ARTIFACT — `git ls-files studies/*.json` against the
    AST's guarded names — which is what found it.
+
+---
+
+## §132 — 2026-09-07. §130's SUCCESSORS 2 AND 1, CLOSED. R2's SECOND CLAUSE NOW ABSTAINS WHERE IT CANNOT FAIL, AND THE CONTROL THAT SAYS THE FIX IS SAFE IS §32's OWN ARTIFACT COMING BACK BYTE-IDENTICAL. §130 §4's `util` COLUMN IS TWO COLUMNS, AND A DEGRADED `make kinrank` DESTROYS 115 kB IN 0.0 s WHILE LEAVING THE VERDICT FIELD UNCHANGED
+
+Two successors, one commit, no run over a second. §130 filed successor 2 as *"cheap, and it
+is a correctness fix to a registered criterion rather than a preference"*; that is what it
+turned out to be, and the cheapness is the finding's own shape — the quantity is derived
+post-processing over rows a 2 h 42 m run already measured, so nothing had to be re-solved to
+change it or to prove the change safe.
+
+### 1. THE FIX, AND THE PRECEDENT IT COPIES FROM 106 LINES DOWN THE SAME FILE
+
+`_rank_block` slices `k = min(5, len(rows))` and reported
+
+```
+  "top5_sets_equal": bool(set(order_linear[:k]) == set(order_svk[:k]))
+```
+
+At `k == len(rows)` both slices hold every scored genome, so the two sets are equal **by
+construction, for any orderings whatsoever** — exactly reversed ones included. R2's gate is
+`rho >= GATE_SPEARMAN and top5_sets_equal`, so below n = 6 the registered criterion silently
+stopped being two conditions. It now reports **`None`** there and abstains: `r2_pass` reads
+`sets_equal is not False`, so a vacuous clause cannot fail the gate and no longer passes it
+either, and **R2 below n = 6 is the bare Spearman, said out loud**.
+
+**THE SHAPE WAS ALREADY IN THIS FILE — `study_kinematics_rank.py:424`, 106 lines below the
+R2 gate at `:318`.** `run_gradients` returns
+`r3_pass` as `None` rather than `False` when nothing differentiated, with a comment saying
+the artifact has to keep *"every probe disagreed"* and *"no probe could be taken"*
+distinguishable. That is the same distinction one level up, and R2 did not have it. Nothing
+new was invented here; a pattern the driver already argued for was applied to the neighbour
+that lacked it.
+
+**THE VACUOUS RANGE IS EXACTLY THREE SIZES, n ∈ {3, 4, 5}** — `_rank_block` returns
+`insufficient` below 3, and `k` is a proper subset from 6 up. And the clause does not
+switch from useless to strong at 6: at n = 6 it is a **one-bit test** (only the sixth
+element can differ between the slices). Abstention is the right answer only where it cannot
+fail at all; a weak clause is still a clause, and this fix deliberately does not touch it.
+
+### 2. THE CONTROL CAME BACK NULL, AND IT IS §32's EVIDENCE
+
+`_verdict` re-derived over each committed artifact's own stored `rank.rows` — no mesh, no
+solve, milliseconds — and diffed against the verdict block on disk:
+
+```
+  study_kinematics_rank.json            verdict block IDENTICAL       (n feasible = 10)
+  study_kinematics_rank_filleted.json   ONE field                     (n feasible =  5)
+                                        blocks.feasible.top5_sets_equal   true -> null
+```
+
+**`study_kinematics_rank.json` cannot move under this fix and it did not.** Its binding
+subset is ten, where `k = 5` is a proper subset and the clause always bound. That artifact
+is §32's evidence and `KINEMATICS_PLAN.md` step 1's subject, and §130's header note is
+explicit that overwriting it would falsify a closed arc — so the control was not a nicety,
+it was the condition under which the fix was allowed to exist. Measured before the artifact
+half of this commit was written, not after.
+
+### 3. THE FILLETED ARTIFACT WAS RE-DERIVED, NOT REGENERATED, AND THE DIFFERENCE IS PROVABLE
+
+The house rule is that a study commit carries its artifacts, and a 2 h 42 m re-run to move
+one derived boolean is not what that rule is for. **The `verdict` block is a pure function of
+`rank.rows`**, so it was recomputed by the driver's own `_verdict` from the artifact's own
+stored rows and written back. The measured rows were never in the transformation.
+
+**The proof that this is a re-derivation and not a rewrite is a round-trip control**:
+`json.dumps(json.load(f), indent=1, default=float)` reproduces the committed file
+**byte-for-byte, 78220 of 78220 bytes**, so the only bytes that could change are the ones
+`_verdict` returns differently — and `git diff` shows exactly **one line, `true -> null`**.
+`R1`, `R2`, `R3` and `linear_is_acceptable` are unchanged; §130's recorded verdict does not
+move. This is not the §119 pattern of regenerating an artifact under live findings: no
+measurement was re-taken, and the file now agrees with §130 §3's own prose, which already
+said the clause was vacuous.
+
+### 4. §130 §4's `util` COLUMN IS TWO COLUMNS, AND THE ONE ROW IN THE OTHER COLUMN IS THE WHEEL THAT SHIPS
+
+The block classifying the feasible collapse quotes five `went infeasible` utilisations
+(1.700 / 1.383 / 1.429 / 1.238 / 1.687) that are the **LINEAR** `stress_utilisation` to
+every digit, and one `new` row — `b729e86 SHIPPED, util 0.953` — that is the **SVK** one.
+The genome's linear reading is **0.9109**.
+
+**The classification is untouched**: all five are above 1.0 in both columns and the shipped
+genome is below 1.0 in both, and feasibility in this driver is `feasible under BOTH`
+anyway. **What is wrong is the invitation to read across.** 0.953 leaves 4.70% of stress
+margin and 0.911 leaves 8.91% — read in the linear column the wheel that ships looks
+**half as tight as it is**, and the SVK column is the one the block's own subject
+(feasibility under the mesh the objective solves) is decided on. §130 is bracketed in place.
+
+**The instructive part is that the same section gets it right one block later.** §130 §5's
+cross-check table names, for each of three numbers, which driver produced it and to what
+relative agreement. The defect is not carelessness about provenance; it is that a block
+built by reading a table off a run is one keystroke from reading the adjacent column, and
+nothing in the artifact makes the two look different.
+
+### 5. `make kinrank` IS ONE OF §129.5's TEN UNGUARDED DRIVERS, AND ITS CLOBBER IS TOTAL, INSTANT AND SILENT
+
+Measured on a byte-copy of the committed artifact at a scratch name (the two committed
+names were not touched):
+
+```
+  study_kinematics_rank.py --skip-rank --skip-grad --config smoke --out <copy>
+      115063 bytes / 3669 lines  ->  316 bytes / 16 lines,  elapsed_s 0.0,  exit 0
+```
+
+**Sharper than §41's false green and than the `study_m9` stub, in one specific way.** What
+survives the clobber is `registered_criterion`, and it survives reading
+`"linear_is_acceptable": false` — **the same verdict the real artifact carries** — with
+`R1`/`R2`/`R3` all `null` beneath it. The arc's headline is preserved and every condition
+under it is destroyed, so anything reading the verdict field sees no change at all.
+`--skip-rank` alone suffices for the clobber, though not for the 0.0 s (the `rank` key is
+simply absent from `rep`, so the file is destroyed after the gradients rather than before
+them), and `main()` also writes the artifact **early**, as soon as the rank block exists —
+deliberately, because the run is over an hour — so a degraded run that dies in the
+gradients has already overwritten the committed file.
+
+**NOT FIXED HERE, and the reason is that this driver is the per-artifact case.** Since §130
+it writes TWO tracked names from one driver through `KINRANK_OUT`, and the §130 run that
+produced the second was `--config coarse --workers 0` at FULL fidelity — legitimate, not
+degraded. A guard keyed to one `committed` literal per driver is therefore wrong here in
+both directions at once: it would either refuse the run that created
+`study_kinematics_rank_filleted.json` or leave one of the two names unprotected. A third
+spelling too: kinrank's `--out` is joined with `HERE` inside the driver while the Makefile
+passes a bare basename, not the `studies/…`-relative spelling three other drivers take.
+Handed to §129's successor 2 and **closed at §131**, which reached the
+one-guard-per-artifact shape from the other direction — `study_stage3`'s four tracked
+names — and left this driver as the tenth exposed one, deliberately (§131 successor 2).
+Which name its guard should defend is §130 successor 0's decision, not the guard's.
+
+**AND THE MULTI-CALL SHAPE IS NOT NEW TO THE TREE, THOUGH THIS KIND OF IT IS.**
+`study_fillet_condition_a.py` has carried **three** `refuse_degraded_out` calls since it
+was written (`:423`, `:436`, `:464`), and all three name the SAME artifact — it is
+multi-call per code PATH. kinrank is the other kind: one path, two names. A guard design
+that reads the existing precedent as "one artifact, several calls" would still get this
+driver wrong.
+
+### 6. THE TREE CARRIES ELEVEN REDS AT `5245aee`, AND NEITHER THIS CHANGE NOR §131's OPENED ONE OF THEM
+
+Verified the way §119 says to — the failure LIST against a worktree baseline, never the
+count. Two `git worktree add --detach` checkouts of `5245aee`: one carrying **both** this
+section's four files and §131's twelve, the other clean. **The full suite, 943 tests**, in
+the first — the light tier of 706 in one process and `test_gradient`, `test_pool`,
+`test_stage3` and `test_objective` one process each, nothing running beside any of them —
+and every failing node ID re-run in the second:
+
+```
+  test_contact          test_the_sampled_patch_extent_is_biased_not_merely_noisy
+  test_fem              test_mesh_resolution_must_scale_with_thickness
+  test_fem              test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom
+  test_geometry_kernel  test_thickness_hits_its_nodes_exactly
+  test_geometry_kernel  test_analytic_curvature_matches_finite_differences
+  test_gnl              test_the_load_continuation_path_does_not_change_the_equilibrium
+  test_gnl              test_the_retired_max_min_gate_is_decided_by_the_sample_size
+  test_gnl              test_stress_recovery_follows_the_solves_kinematics
+  test_wheel_fea        test_peak_stress_diverges_but_the_field_converges
+  test_objective        test_R_rim_is_still_effectively_inert_and_that_is_recorded
+  test_objective        test_the_thickness_branch_of_the_cap_binds_on_a_thin_root
+```
+
+**Identical at HEAD, name for name: eleven opened by nothing, none closed.**
+`test_gradient`, `test_pool` and `test_stage3` are green — and `test_stage3` is the one
+heavy file that CAN see either change, since it imports `study_stage3`, which §131 gave
+four guard calls.
+
+**The last two are why the heavy tier was run at all.** Neither change can reach
+`wheel_objective` and the light tier had already come back list-identical, so stopping
+there was available and would have been wrong: those two node IDs are in no earlier log
+this tree holds, and the only reason they are now classified rather than presumed is that
+the run was made. **A blast-radius argument tells you what a change CAN break; it does not
+tell you what is already broken, and only one of those is a fact about the tree.**
+
+The isolation was not a formality either — the drivers of §131 were uncommitted in the
+shared checkout while this ran, so a run in the working tree would have measured two
+changes and attributed the result to one. Both were put in the SAME worktree deliberately,
+after `git diff --stat` confirmed it matched the working tree exactly, because they are
+committed together and the tree that matters is the one that will exist.
+
+**THESE ELEVEN ARE THE TAIL OF §117 AND NOBODY HAS COUNTED WHAT IS LEFT.** §117 measured
+§115's promotion leaving the suite **62 red** against a record that said 895 passed / 0
+failed, and §118-§130 have been closing them file by file ever since. The untracked
+`test_light.log` and `test_heavy_*.log` at the repository root are that 895: dated
+**2026-09-06 10:31-11:54**, which is three hours BEFORE `cb4e3dd` promoted `b729e86`, with
+**41 commits** landed since. So this is the first list of survivors taken since the
+closures started, and four of the five files holding them — `test_fem`,
+`test_geometry_kernel`, `test_gnl`, `test_wheel_fea` — are FEA and mesh-kernel tests that
+no section since §118 has named. Successor 4; not diagnosed here.
+
+**WHAT MOVED.** `studies/study_kinematics_rank.py` — `_rank_block`'s clause and `r2_pass`,
+the `_print` line that would otherwise render `None`, and the R2 line of the module
+docstring. `studies/study_kinematics_rank_filleted.json` — one field, §3.
+`tests/test_kinematics_rank.py` — new; three unit pins (abstains at n = 5 on reversed
+orderings, R2 rests on rho alone below 6, binds again at n = 6 where rho = 0.9429 passes
+and the sets differ) and a parametrized pin that each committed artifact reproduces its own
+verdict block. `KINEMATICS_PLAN.md` — step 0c's R2 bullet carries the amendment, step 1
+carries the forward note and the **STEP 1 COMPANION RECORD** (§130 successor 1), beside the
+original rather than instead of it. `PLAN.md` — §130 §4 bracketed, this section, and
+`study_kinematics_rank.py:235` re-pointed to `:237`, **stale by this commit's own delta**
+(the module docstring's R2 line grew by two, and `SR._score` sits below it); it was correct
+at the parent, which is what classifying against `HEAD` rather than by content match is for.
+
+**NOT touched.** `studies/study_kinematics_rank.json` — §2. The Makefile — `KINRANK_OUT`
+still defaults to the committed name and `KINRANK_WORKERS` is still 8; §130 successor 0 is
+the decision that moves either. `studies/_gate_guard.py` and this driver's missing guard
+call — §5, a peer session's claim. `GATE_SPEARMAN` — the bar is not what changed.
+
+**SUCCESSORS.**
+
+0. **`blocks.full.r2_pass` IS A GATE THAT GATES NOTHING, AND IT CURRENTLY READS `false`
+   BESIDE A `true` VERDICT.** `_verdict` consumes only `binding["r2_pass"]`, but
+   `_rank_block` computes the field for both subsets, so the filleted artifact carries
+   `blocks.full.r2_pass: false` and `registered_criterion.R2_rank_agreement: true`
+   together — correct, since the full pool is the declared diagnostic, and readable as a
+   contradiction by anyone grepping the field. Either the diagnostic block reports the
+   Spearman without a pass/fail verb, or the artifact says in place which one binds.
+   Cheap, same shape as the clause just fixed: a field that looks like a decision and is
+   not.
+1. **§130 SUCCESSOR 0 IS UNCHANGED AND IS NOW THE BLOCKER FOR TWO OTHER THINGS.** Which
+   artifact is canonical still needs deciding, and §5 adds a consumer to §130's list: the
+   degraded-run guard cannot be keyed to a name until the tree says which name it is.
+   Still never a one-file change — §32's summary, step 1's quoted internals and
+   `KINRANK_OUT`'s default all describe the old one.
+2. **§130 SUCCESSOR 3 IS UNTOUCHED AND ITS ARGUMENT IS STRONGER AFTER §1.** R3 rests on one
+   probe. Nothing here re-chose `GRAD_PROBES`, and the four candidates §130 §4 offers are
+   worth naming before anyone spends the run on them: `elite9 prod`, `elite10 prod`,
+   `minwall 1.8` and `minwall 2.0` — the survivors, which §130 §4's own reading calls
+   stiff-and-heavy rather than efficient. Probing there would add four R3 points at none of
+   which the FEA term decides the gradient, which is precisely the property §130 §2 says
+   makes `b729e86` the one place the question can still be asked. **A wider probe set is
+   not automatically a stronger R3**; a probe set drawn by the binding criterion is.
+3. **ELEVEN REDS SURVIVE §117's SIXTY-TWO AND NOTHING NAMES THEM.** §6. The list is now
+   taken and classified against `5245aee`; what it is not is diagnosed. Four of the six
+   files are FEA and mesh-kernel (`test_fem`, `test_geometry_kernel`, `test_gnl`,
+   `test_wheel_fea`), which is a different neighbourhood from every section since §118, so
+   the presumption that these are promotion casualties is a presumption. The cheap first
+   move is the one §117 used: run each at the parent of `cb4e3dd` and see which were green
+   before the promotion. **Start with `test_objective`'s two**, which are the only ones
+   here that name a term of the loss the descent minimises — `R_rim`'s inertness and the
+   cap's thickness branch — rather than a kernel the objective calls.
+4. **NO OTHER DRIVER WAS AUDITED FOR A VACUOUS CLAUSE.** The defect class is a gate whose
+   second condition cannot fail at the sizes it is actually evaluated at, and the search
+   for it is one grep — `min(` inside a slice that then feeds a boolean gate. This section
+   fixed the instance §130 found and did not look for siblings.
