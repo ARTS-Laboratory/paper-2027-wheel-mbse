@@ -18,6 +18,14 @@ behind that nothing checked.
              items 1-6 do not include "re-run the suite against the new genome" or
              "regenerate the artifacts that read it".  That is item 7, added at §118 — the
              one this file learned about itself rather than about a driver.
+  PLAN §133  ITEM 7 IS NECESSARY AND IT IS NOT SUFFICIENT.  §115's promotion predates item
+             7, so nothing walked it here; §132 finally did what it asks — ran the suite
+             against the new genome — and §133 classified what came back.  Ten of the
+             eleven survivors were tests pinned to a genome-SPECIFIC quantity through the
+             shipped pointer, which is item 3's defect in the half of the tree item 3 does
+             not mention.  That is item 9.  Item 7 tells you WHICH tests went red; it does
+             not tell you whether a red means the wheel changed or the test was only ever a
+             claim about one wheel, and those call for opposite repairs.
 
 WHAT THIS FILE DOES NOT TRY TO DO.  There are ~100 references to `best_solution.json` across
 `src/`, `studies/` and `tests/`, and almost all of them are correct: they mean "the design we
@@ -124,6 +132,35 @@ PROMOTION_CHECKLIST = f"""
          without any test noticing — `study_tri_rule.json` had no check at all, and
          `tests/test_fillet_artifact_chain.py` was written because neither fillet consumer
          did either.  Re-run the consumers after the producers, in that order.
+      9. AND THE SAME RULE FOR *TESTS*, WHICH IS ITEM 3 ONE NEIGHBOURHOOD OVER AND WAS
+         MISSING UNTIL §133.  Item 3 says: a constant measured on one wheel gets pinned to a
+         FILE, never to the shipped pointer.  Twenty-one test files read
+         `best_solution.json` off disk, and the rule had never been stated for them.  §133
+         walked §117's eleven survivors and found TEN OF THE ELEVEN were tests asserting a
+         genome-SPECIFIC quantity while reading the shipped pointer — the exact defect item
+         3 exists to prevent, in the other half of the tree.  They are not eleven bugs: all
+         eleven pass at HEAD's code with the outgoing genome swapped in.
+         SO BEFORE PROMOTING, FOR EACH TEST THAT GOES RED, ASK WHAT IT IS A CLAIM ABOUT:
+           - about the MECHANISM ("SVK mis-recovery is dangerous", "the max diverges while
+             the p99 converges", "no threshold can sit on this statistic") — then its
+             fixture is a genome CHOSEN to exhibit that, pinned by FILE, and the promotion
+             should never have touched it.
+           - about THE WHEEL THAT SHIPS — then the promotion changed the answer, and the
+             docstring's numbers are what needs updating, deliberately, with the new
+             measurement.
+         THESE ARE OPPOSITE REPAIRS AND THE WRONG ONE GOES GREEN WHILE ASSERTING NOTHING.
+         Two of §133's ten say so in their own assertion text — "this test can no longer
+         tell the two apart and is not guarding anything" — which is what a symptom-pin
+         sounds like the day its symptom moves.  And a demonstration whose vehicle stops
+         demonstrating does not fail loudly: `test_wheel_fea.py`'s
+         `test_peak_stress_diverges_but_the_field_converges` has now been miscalibrated by
+         TWO CONSECUTIVE promotions, and its own docstring diagnoses the first correctly.
+         THE FIDELITY IS PART OF THE CLAIM TOO.  §133's eleventh red raises
+         `NewtonDivergedError` rather than asserting, which reads as the shipped wheel
+         having no equilibrium path; its fixture is `CFG = "smoke"`, and at `coarse` the
+         same genome converges with a continuation spread of 3.775e-15.  A fixture cheap
+         enough to run on every promotion is a fixture that can condemn a design it cannot
+         resolve.
 """
 
 
