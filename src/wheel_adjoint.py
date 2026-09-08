@@ -102,6 +102,43 @@ shipped genome, on what `phase_meshes` actually returns rather than on the froze
 `R_rim` ranks FIRST of fourteen by column norm and `R_hub` SECOND, at both fidelities --
 section 79's result on the default path rather than on the pinned one.
 
+THREE, NOT TWO -- THE `Kt` CLAUSE IS RETIRED AT THE SAME DATE, MEASURED 2026-09-08.  The
+paragraph above left "`wheel_objective` still prices `R_hub` through a `Kt` surrogate that
+is exactly flat over half its feasible range (section 75)" standing, because it reads as a
+claim about the SURROGATE and not about the wiring.  Its VERB is what died: section 103
+wired `util_j` onto the region-p-norm QoI, and `wheel_objective` says so at both ends --
+the weight table's comment ("rather than `Kt * agg`") and the report block's ("`Kt`/
+`hub_fillet_cap_mm`/`hub_fillet_r_effective` no longer feed `util_j` -- kept for REPORTING
+ONLY").  `junction_kt` has exactly ONE caller in `src/` and it is inside that report block.
+The two live routes from `R_hub` into the loss are the filleted mesh above and
+`fillet_cap`'s barrier, which reads 0.0 at the shipped genome.
+
+ITS ADJECTIVE SURVIVES AND WAS UNDERSTATED, which is why unwiring it is not the whole
+answer.  `smooth_min` is exact outside its blend, so "exactly flat" is literal rather than
+"flat to plotting accuracy".  Sweeping `R_hub` across its whole `GENE_SPACE` box at fixed
+everything else, `dKt_hub/dR_hub` is EXACTLY 0.0 outside one live window:
+
+    genome              t0     R_hub     cap    cap-R_hub  clamp edge  cap+k   FLAT % of box
+    ga_beam           2.4774  1.5598   0.6634   -896.3 um   0.302514  0.7630      89.92
+    96a0ac5 outgoing  1.4738  0.6636   0.6657    +2.130 um  0.179971  0.7656      89.84
+    b729e86 SHIPS     3.5055  0.5710   0.5721    +1.071 um  0.428059  0.6579      93.62
+
+93.62% of [0.4, 4.0] and 84.68% of section 75's [0.4, 1.9] "feasible range" -- not half.
+AND THE DEAD REGIONS ARE TWO, NOT ONE.  Section 75 named the upper one, `R_hub >= cap + k`,
+where `smooth_min` returns the cap to the bit.  The lower one is `KT_CLAMP`'s 3.5 ceiling
+at `R_hub <= t0 / (2 * 2.5**(1/0.65))` -- a function of `t0` ALONE, matching a bisection of
+the exact zero to nine digits -- and THE PROMOTION CREATED IT: `t0` went 1.4738 -> 3.5055
+mm (+137.9%), moving that edge from 0.17997, below the box floor and unreachable, to
+0.428059, inside it.
+
+Section 75's "parked at the cap" survives and tightens -- 99.81% of the cap, 1.071 um
+under, against 99.68% outgoing -- and both genomes sit INSIDE the blend, where the
+derivative is live and 2.23x steeper at the one that ships (-1.2706 against -0.5689).
+`ga_beam` is the only one of the three that occupies the flat region at all, 0.896 mm above
+its cap with `dKt_hub/dR_hub` exactly 0.0.  A surrogate being live AT a design says nothing
+about a claim over a RANGE, which is why "is the shipped genome above its cap or below it"
+could not have settled this by itself (PLAN.md section 136 successor 1).
+
 WHAT IS STILL EXACT IS THE LAST CLAUSE, AND IT IS THE REASON NOTHING HERE IS A BUG.  The
 census gates in `study_gradient.py` and `tests/test_gradient.py` read
 `build_wheel(genes, cfg)`, which is the UNFILLETED mesh -- `fillet=None` means no fillet,

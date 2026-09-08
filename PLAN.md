@@ -19427,7 +19427,7 @@ plus `elite11` (`fc7aeb1`), which has no filleted mesh at the rim at all. Confir
 the driver's own call path rather than inferred from the classification:
 `so3.score(elites[13], "smoke")` and `so3.score(elites[0], "smoke")` both raise
 `FilletClampRefusedError` out of `mesh_coords`, which `t3`'s adjoint reaches through
-`wheel_adjoint.py:740`'s `jax.vjp` — `tiers=("t3",)` does not skip the guard, it arrives at
+`wheel_adjoint.py:777`'s `jax.vjp` — `tiers=("t3",)` does not skip the guard, it arrives at
 it by the gradient instead of by `t2`.
 
 So `scored` is empty, `spread` is `{}`, `n_elites_scored` is 0, `ranked[:n_probe]` is
@@ -21317,7 +21317,7 @@ about the mesh — and warned they *"must not be 'fixed'"*.
 tests/` returns **six lines across four files**, and there are TWO instruments, not one:
 
 ```
-  wheel_adjoint.py:929   insensitive_genes(genes, mesh)   jacfwd(mesh_coords), tol=0.0
+  wheel_adjoint.py:966   insensitive_genes(genes, mesh)   jacfwd(mesh_coords), tol=0.0
                          a MESH census.  No solver, no objective, no loss.
       tests/test_filleted_mesh.py:303   plain["coarse"]        == {R_hub, R_rim}
       tests/test_filleted_mesh.py:305   filleted_shipped       == []
