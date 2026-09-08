@@ -957,6 +957,22 @@ def test_the_margin_term_prices_and_never_gates(genes):
     assert brk["terms"]["stress"]["value"] == 0.0, (
         "the shipped genome is under the allowable, so the BARRIER must still read zero — "
         "if it does not, this test is measuring a violation and not the split")
+    # THE TIER ASSERT BELOW HAS A SECOND CAUSE AND IT IS 71 nm AWAY, so it gets its own
+    # assert rather than its own failure being reported as this one's.  `selection_key`
+    # gives a fully feasible iterate tier 1, not tier 0, when its hub-cap slack is under
+    # `MIN_CAP_SLACK_MM` — a purely geometric question with nothing in it about the margin
+    # split.  Measured at the shipped genome 2026-09-08: slack = cap - R_hub = 1.0860e-03
+    # mm here at `smoke` against the 1e-03 threshold (+8.60%), 1.0711e-03 at `coarse`
+    # (+7.11%) and 1.0628e-03 at `fine` (+6.28%), while the cap's own spread across all
+    # four fidelities is 23.1 nm — so the tightest margin is 2.72x the resolution of the
+    # instrument that measures it, and every fidelity clears (PLAN.md §136 successor 1).
+    cfgo = WW.get_config(CFG)
+    flanks = WO.fillet_flanks(genes, cfgo)
+    cap = float(WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
+    assert cap - float(genes[12]) >= S3.MIN_CAP_SLACK_MM, (
+        f"hub-cap slack is {cap - float(genes[12]):.4e} mm, under MIN_CAP_SLACK_MM "
+        f"{S3.MIN_CAP_SLACK_MM} — `selection_key` returns tier 1 here for a geometric "
+        f"reason, and the assert below would blame the margin split for it")
     assert S3.selection_key(brk["total"], brk, genes)[0] == 0, (
         "a live margin term made the shipped genome unpromotable")
 
