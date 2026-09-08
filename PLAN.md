@@ -20376,6 +20376,23 @@ call — §5, a peer session's claim. `GATE_SPEARMAN` — the bar is not what ch
 
 ## §133 — 2026-09-08. §132's SUCCESSOR 3, CLOSED: ALL ELEVEN REDS ARE THE PROMOTION AND NOTHING ELSE, MEASURED FOUR WAYS — AND TEN OF THEM PIN A SYMPTOM OF THE OUTGOING GENOME RATHER THAN THE FINDING THEY NAME. THE ONE THAT IS REAL WROTE ITS OWN SUCCESSOR IN ADVANCE, AND THE ONLY NON-ASSERTION RED IS A `smoke`-FIDELITY ARTIFACT THAT CONVERGES AT 3.8e-15 WHERE THE OBJECTIVE SOLVES
 
+> **BRACKET, added 2026-09-08 with §135.** This section inherited §132 successor 3's title —
+> *"ELEVEN REDS SURVIVE §117's SIXTY-TWO AND NOTHING NAMES THEM"* — and carried the "nothing
+> names them" half without checking it. **It is false for three of the eleven.** §118 §6
+> (`:17573`) names them under *"The three survivors, and two of them are more than
+> positions"*, with readings, and all three reproduce at HEAD to every digit quoted:
+> `test_R_rim_is_still_effectively_inert_and_that_is_recorded` at `-7.010e-04`,
+> `test_the_thickness_branch_of_the_cap_binds_on_a_thin_root` at `1.0051`/`0.9330`, and
+> `test_peak_stress_diverges_but_the_field_converges` at `1.39%`. §118 also already filed
+> the consequence this section's successor 1 re-filed as new — *"two documented verdicts are
+> now owed a re-check"*. **What §1-§3 measured stands, and none of it depends on the
+> inherited premise**: §118 named three and isolated none of them to the genome, and the
+> other eight were genuinely unnamed. What was wrong was carrying a predecessor's negative
+> claim as a starting position instead of as the first thing to test. See §135 §4.
+>
+> Six of §132's own dates were checked here and this one was not, because it arrived as a
+> title rather than as a number — which is the shape the tree keeps missing.
+
 §132 §6 took the list of survivors and said, in terms, that it had not diagnosed them: *"the
 presumption that these are promotion casualties is a presumption"*, and *"four of the six
 files are FEA and mesh-kernel, which is a different neighbourhood from every section since
@@ -20914,3 +20931,367 @@ measured value in both kinrank artifacts.
    `degraded` list NAMES the things that actually degrade that artifact. For the 34
    drivers that carried a guard before today, that judgement has been made once, by
    whoever wrote the call, and never re-checked.
+
+---
+
+## §135 — 2026-09-08. §133's SUCCESSOR 1, ANSWERED AND NARROWED — NOT CLOSED: `R_rim` IS NOT THE INERT GENE OF THE PAIR ANY MORE — IT CARRIES 2.13x `R_hub`'s LOSS GRADIENT AND THE SEARCH RUNS IN 14 OF 14. BUT THE TWO HALVES OF THAT HAVE DIFFERENT CAUSES AND DIFFERENT DATES, AND ONLY ONE OF THEM IS THE PROMOTION. PLUS: A COARSE 8-PHASE `objective()` CALL OWNS THIS BOX AT 44 GiB, AND §132's "NOTHING NAMES THEM" WAS FALSE FOR THREE OF THE ELEVEN
+
+§133 successor 1 was filed as the only urgent item on that list, because
+`test_R_rim_is_still_effectively_inert_and_that_is_recorded`'s docstring pre-committed to
+what its own failure would mean: *"the rim junction geometry has changed and M8b's gene
+census and the study's verdict both need revisiting."* This is that re-check, and it does
+not close the successor the way the successor assumed — or entirely.
+
+**WHAT IS AND IS NOT SETTLED HERE.** Successor 1 asked three things. The GENE question is
+answered by measurement and inverted: `R_rim` is not inert, and it carries the larger of the
+two loss gradients (§1). The GENE CENSUS half is answered without a re-run and in the
+negative — its two sites are `tests/test_contact.py:465` and `tests/test_filleted_mesh.py:304`,
+both GREEN, and both are claims about the MESH, where the pair is dead for a reason that has
+nothing to do with the knee (§5 successor 0). **The STUDY'S VERDICT has not been re-run and
+is still owed.** Calling this successor closed would be the §133 §4 mistake again — reading
+a heading as a result — so it is carried forward at §5 successor 0 with its scope narrowed
+to the part that is genuinely outstanding.
+
+### 1. TWO QUANTITIES, TWO ROUTES, TWO DATES — AND CONFLATING THEM WAS THE AVAILABLE MISTAKE
+
+The test measures `d(rim margin)/dR_rim`, an entry of `jacrev(_fillet_margins)`. The
+`wheel_objective.py:1278-1281` comment that looked like the same claim measures `dL/dR_rim`,
+the LOSS gradient. **The margin reaches the loss only through the `fillet_cap` barrier, so
+an inactive barrier leaves `dL/dR_rim` at exactly zero however live the margin is.** They
+are not two readings of one thing, and this section keeps them apart throughout. A peer
+session flagged the conflation before the expensive run returned; the framing below is the
+better one that came out of it.
+
+**THE MARGIN HALF — CAUSED BY THE PROMOTION, ISOLATED BY EXPERIMENT.**
+
+```
+  d(rim margin)/dR_rim              smoke        coarse
+    outgoing genome (96a0ac5)    -3.692e-05    -3.048e-05     both under the 1e-4 gate
+    b729e86 SHIPPED              -7.010e-04    -6.624e-04     7.0x / 6.6x over it
+    growth across the promotion      19.0x         21.7x
+```
+
+**BOTH ROWS ARE GIVEN BECAUSE THE GROWTH FACTOR IS FIDELITY-DEPENDENT** — 21.7x at `coarse`
+is 14.5% larger than 19.0x at `smoke`. The ASSERTED row is `smoke`, because
+`tests/test_objective.py:40` sets `CFG = "smoke"` and that is the config the test takes its
+Jacobian at; `coarse` is carried because the loss half below is measured there. The gate is
+cleared either way and the finding does not turn on the choice, but neither number may be
+quoted bare. §4 is what happens when one of them is.
+
+`R_rim` came off its box ceiling at the promotion, **3.00000 -> 1.68017**. `GENE_SPACE` is
+byte-identical at `96a0ac5`, `cb4e3dd` and HEAD (md5 `11e2005941440fb2b9373a0c14c2d784`), so
+the box is `{0.5, 3.0}` throughout and the 1.32 mm is movement, not a remapped range —
+control run because a bound is a premise like a name is. §133's genome-swap already isolates
+this half to the genome: green at `96a0ac5`, red at `cb4e3dd`, green again at HEAD's code
+with the outgoing genome swapped back in.
+
+**THE LOSS HALF — MEASURED HERE, AND *NOT* DATED TO THE PROMOTION.** `coarse`, 8 uniform
+phases, the shipped genome, 1359.3 s:
+
+```
+  L = 76.023856
+  util hub = 0.91093     ABOVE the 0.80 knee    dL/dR_hub = +1.736205e+01
+  util rim = 0.90959     ABOVE the 0.80 knee    dL/dR_rim = +3.696881e+01
+  stress_margin = 2.169059
+  nonzero gradient components: 14 of 14         EXACT ZEROS: none
+```
+
+**`dL/dR_rim` IS 2.13x `dL/dR_hub`.** The premise the test was built on —
+*"`fillet_feasibility`
+was built to give both fillet genes a gradient and only `R_hub` got one"* — is not retired,
+it is **inverted**: the rim now carries the larger of the two. And
+`wheel_objective.py:1281`'s *"a nominally 14-dimensional search was running in 8"* is a
+**2026-08-12** reading that does not describe this tree; there is not one exact zero left in
+the gradient.
+
+**THE SIGN CORROBORATES THE TRAJECTORY INDEPENDENTLY.** `dL/dR_rim` is POSITIVE, so descent
+decreases `R_rim` — which is what the run did, off the ceiling to 1.680. `best_solution.json`'s
+search block is `adam`, and Adam cannot move a gene whose gradient is identically zero
+(`m = v = 0`), so the trajectory alone falsifies the comment without any of this.
+
+**WHY THE DATE IS NOT THE PROMOTION — AND THE TREE ALREADY PINS IT, GREEN.**
+`tests/test_filleted_mesh.py:293`,
+`test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh`, asserts both halves in
+one place: `insensitive_genes` on the PLAIN mesh is exactly `{R_hub, R_rim}`, and on the
+FILLETED mesh it is `[]` — with the stronger clause that the two fillet genes each move MORE
+of the mesh per mm than any of the twelve that were already live. **It was added by
+`75bc9d9` on 2026-08-26 (§85, the `fillet=True` default flip), and it has been green ever
+since — but the finding it pins is two days older still.** `4518348`, **2026-08-24**, says
+it in its own subject line: *"the filleted mesh is differentiable -- R_hub and R_rim go
+from an identically zero gradient to the two largest of fourteen"* (§79). So the transition
+is dated **13 days before `cb4e3dd`**, it was recorded in prose at §79 before §85 pinned it
+in a test, and §79's body names the very claim it was retiring — `wheel_adjoint`'s header
+that *"a gradient-based Stage 3 would optimise 12 of 14 genes and never notice"*.
+
+M7's finding was that the pair is dead because `dcoords/dgene` is identically zero on an
+unfilleted mesh; the fillet switch opened that route. **So `wheel_objective.py:1281`'s
+2026-08-12 "running in 8" was superseded twelve days later by a commit whose SUBJECT LINE
+says so**, and this section's re-measurement of it at 14-of-14 is a third statement of a
+thing the tree has held twice.
+
+Corroborating from the other side, `test_below_the_knee_the_rim_fillet_radius_is_dead` is
+`xfail(strict=True)` and its reason records `genes_over_knee`'s rim at **util 1.21257 —
+above the WALL — since §102/§103's region-p-norm term**, so a rim over the knee also
+predates `cb4e3dd`. **The honest split is therefore: the mesh route opened at §85, the knee
+was already cleared by §102/§103, and what `cb4e3dd` moved is the MARGIN sensitivity this
+test measures.** Three dates, none of them the same, and only the third is the promotion.
+
+**THE ROUTE, WHICH THE MARGIN NUMBERS THEMSELVES RULE OUT.** `_fillet_margins` at the
+shipped genome reads `[+3.5522, +22.3147]` at `smoke` and `[+3.5608, +22.2721]` at `coarse`,
+against outgoing's `[+4.0176, +10.7730]` and `[+4.0271, +10.7491]` — the rim margin is
+**2.07x wider** at either fidelity (2.071x smoke, 2.072x coarse) while the hub margin
+NARROWS 11.6%, so the `fillet_cap` barrier built on it is flatter than ever and
+cannot be carrying +36.97. The live path is the stress/`Kt` one the knee gates:
+`_kt_rim` is `stress_concentration_kt(g[13], g[11])`, `R_rim` with `t3`, which is exactly
+what a rim at util 0.90959 above a 0.80 knee predicts. **A margin Jacobian that grew 21.73x
+and a loss gradient that is nonzero are both true, neither is derived from the other, and
+they arrive by different paths.**
+
+### 2. `1e-4` IS AN INSTRUMENT, NOT A SIGNIFICANCE THRESHOLD — SO IT IS NOT RE-TUNED
+
+The gate's warrant exists and had to be found rather than assumed:
+`wheel_wheel.py:1176` and `studies/study_fillet_block.py:1030` both call `1e-4` **the
+precision these margins are QUOTED to**. So the assertion has always read *"a sensitivity
+below one unit in the last place of how we report margins is indistinguishable from zero"*.
+That makes the right conclusion **the sensitivity is now RESOLVABLE** — it clears the
+quoting precision by 7.01x at the fidelity the test asserts at (6.62x at `coarse`) — rather
+than the stronger "the gene is live", which is the
+loss-gradient claim and belongs to §1. It also settles what NOT to do: a gate whose constant
+is an instrument's precision is not a constant to re-fit when a reading crosses it.
+
+**AND THE THIRD GENOME IS NOT EITHER SIDE OF THE PROMOTION.** Three wheels are in play and
+two of them are easy to merge by accident:
+
+```
+  96a0ac5  best_solution.json                   R_hub 0.66361   R_rim 3.00000   outgoing
+  HEAD     best_solution.json                   R_hub 0.57100   R_rim 1.68017   b729e86, ships
+  stage3_buildcap2_slack_medium.json (e4219f3)  R_hub 0.45711   R_rim 2.74947   genes_over_knee
+```
+
+`genes_over_knee` is the wheel that shipped before 2026-08-13 and is neither side of
+`cb4e3dd`. So "two genomes, two answers" — which is what this section nearly said — is
+wrong: it is **three genomes, and the knee explains all three**.
+
+### 3. ONE `coarse` 8-PHASE `objective()` CALL OWNS THIS BOX: 44 GiB, 1359.3 s, MEASURED ON A CALL THAT RETURNED
+
+The first attempt put **two** genomes in one process. It reached RSS 45.5 GB at 22 minutes
+without returning the first, with 15 GiB free, and was killed rather than gambling the box —
+memory returned to 2 GiB immediately. The restructured run was one genome, one process, with
+a watchdog set to kill at 52 GiB.
+
+**IT WAS NOT MISCONFIGURED, WHICH IS THE PART WORTH KEEPING.** `phases=None` resolves at
+`wheel_objective.py:1475` to `phase_stencil(scheme="uniform")`, whose default is
+`n_phase=8` — byte-for-byte the stencil `tests/test_objective.py:88`'s `genes_over_knee`
+fixture passes explicitly. **The tree has been paying this cost in every `test_objective.py`
+run all along**, which is why that file measured 35:44 at §132 and why it has to be its own
+process.
+
+**THE KILLED RUN'S 46 GiB WAS A LOWER BOUND, NOT A PEAK, AND CALLING IT A PLATEAU WAS WRONG.**
+Dedup'd, the series is monotone across 21 minutes:
+
+```
+  2 4 5 7 10 11 12 13 14 15 18 19 20 21 22 23 24 27 28 (27) 28 30 31 33 34 36 38 39 40 42 43 46
+```
+
+The `27 28 27 28` stretch read as a plateau at the time and was sampling noise on a slow
+climb. **A maximum read off a process that never returned is a lower bound** — the rising-
+increment lesson, walked into in the one place it was easy to walk into. The completed
+call's peak is **44 GiB**, which is *below* the unfinished run's reading, so the bad number
+was not even conservative in the useful direction.
+
+**THE RULE THIS REPLACES.** §113's note read "a two-worker pool pushes this box to 60/61 GiB",
+filed as a POOL effect. It is not: one serial call is 44 GiB, ~72% of a 61 GiB box, so two
+copies were never going to fit and the pool was the occasion rather than the mechanism.
+**Nothing may run beside a `coarse` objective call, pool or no pool** — which the old note
+permitted.
+
+**AND A WATCHDOG BELOW THE RUN'S MEASURED PEAK KILLS HEALTHY RUNS — WHICH §115 HAD ALREADY
+WRITTEN DOWN, TWICE.** Guarding `tests/test_objective.py` at 54 GiB tripped at 11:11:48,
+35m48s in, and the run was read as having failed. It had not. `test_heavy_objective.log`
+records this file completing solo on 2026-09-06 at **124 passed, 3 xfailed in 2144.91s
+(35:44)**, its watcher `objective_mem_watch.log` climbing monotonically **5985 -> 59784 MiB
+(5.84 -> 58.38 GiB)** and finishing with 3057 MiB available, swap never rising (484 -> 469
+MiB). **A 54 GiB cap sits four gigabytes UNDER the peak of a run that fits**, so it ends a
+healthy run near the finish line — on the 2026-09-06 curve at about 27m30s of a 35:44 run,
+and today, on a slower climb, at 35m48s.
+
+**AND THE CAP DID NOT NEED MEASURING — IT NEEDED READING.** §115 (`:16963-16969`) already
+records that same run as *"~59.8 GiB used system-wide, ~3 GiB available at the low point"*
+— **and that peak is 1.4 GiB too high, from a MiB-read-as-MB slip**: the watcher's
+`used_MB=59784` is `free -m`, so MiB, and 59784/1000 gives 59.8 where 59784/1024 gives
+**58.38**. The units reconcile only one way: 58.38 + 2.99 = 61.37 GiB, against `free -m`'s
+own total of 62842 MiB = 61.37 GiB. The availability figure survives (2.99 rounds to §115's
+"~3"), and **the error runs in the direction that overstates the near-miss, so §115's
+conclusion is if anything safer than its number** —
+against a `:14673-14681` table (2026-09-03) that gives this file 51.0 GiB, and it draws the
+conclusion in terms: *"the documented figure is no longer a safe margin estimate on this
+box; treat it as a near-miss, not a clean pass."* **54 was chosen without reading either
+number.** §115 also records a real OOM on this box that same morning — `journalctl -k`,
+`Killed process ... python ... anon-rss:53145532kB` at 10:00:39, from the NAIVE un-batched
+invocation, not from the batched per-file run — so the failure it warns about is not
+hypothetical,
+and its own diagnosis of how it got there is the sentence this section has to repeat about
+itself: *"I ran the naive command anyway, without re-reading that table first — the fix is
+not new information, it is a rule I already had and did not check before acting."*
+
+**SO THE OPERATIONAL RULE IS NOT "RAISE THE CAP"** — a cap above a peak that already leaves
+2.99 GiB on a 61.37 GiB box has no room to fire before the kernel does. §5's
+green-before-commit was therefore taken as four chunks of a set-validated split. **AND THE
+MEASUREMENT SAYS THAT WAS A POOR TRADE, WHICH IS THE HONEST RESULT AND NOT THE ONE EXPECTED:**
+
+```
+  solo, 2026-09-06      35m44s     peak 58.38 GiB
+  four chunks           45m39s     peak 52 GiB  (pytest tree 49.9)
+                        +27.7%     bought 6.4 GiB, 11%
+    chunk_00 (29 ids, holds the objective call)  31m00s   52 GiB
+    chunk_01 (33 ids)                             8m56s   24 GiB
+    chunk_02 (34 ids)                             0.49 s   --
+    chunk_03 (31 ids)                             5m27s   18 GiB
+```
+
+**Splitting a module cannot lower a peak that belongs to ONE call.** A peer session
+forecast this before the run — N chunks give N module scopes, so the seven module-scoped
+fixtures are rebuilt per chunk, and no split reaches inside `WO.objective(...)` — and put
+the gain at ~10 GiB. The measured gain is 6.4, so the forecast was right in shape and
+slightly generous in size. **6.4 GiB of margin for ten extra minutes is a bad trade in the
+general case**, and the reason to record it is that it was taken deliberately, on §115's
+near-miss ruling and an explicit instruction not to exhaust the box, and it still did not
+buy much. The useful lever is not the split: it is the fixture. `genes_over_knee` is 44 GiB
+of the 52, and until that call is cheaper this file has no comfortable way to run.
+
+The count reconciles exactly across the era, which is the check that the split was faithful:
+Sep-6's **124 passed, 3 xfailed**, then `12df5e6` lifts one strict XPASS (**125 / 2**), then
+`cb4e3dd` turns two red (**123 / 2 failed / 2**), then §5's change fixes one — **124 passed,
+1 failed, 2 xfailed, 127 collected**, which is what the four chunks returned.
+
+**THE SPLIT WAS VALIDATED BY SET, AND THE FIRST ATTEMPT AT THAT CHECK WAS ITSELF WRONG.**
+A four-way split is only faithful if the union of the manifests IS the collected list — a
+count cannot see a swap, which is §119's lesson exactly (+3 by count, hiding 9 opened and 6
+closed). The set check was run: union == collected, four manifests pairwise disjoint, 127
+each way. **But run under the shell's default locale it reported 127 lines and 126 distinct**,
+i.e. a phantom duplicate. There is none. `en_US.UTF-8` collation ignores punctuation at the
+primary level, so `test_the_jnp_kt_is_the_numpy_kt[10.0-0.5]` and `...[1.0-0.05]` both
+reduce to `1005` and `sort -u` **silently discards one of them**. `LC_ALL=C` gives 127 and
+127. This file is 84/127 parametrisations of a single function, so bracketed IDs that differ
+only in punctuation are the common case here, not a corner: **any set check over pytest node
+IDs must be byte-wise.** A validation step that is itself locale-dependent is not a
+validation step — the same defect as a threshold that depends on its instrument (§2), one
+layer up.
+
+**THE "ANOMALY" THAT PROMPTED THIS DID NOT EXIST.** The trip was investigated against a
+belief that the whole suite had completed twice that morning in ~10 minutes, which made one
+file at 35 minutes impossible and implied a second process on the box. Both of those runs
+begin `FFFFFFFFFFF [100%]`: they were targeted runs of the eleven failing node IDs, timed at
+68 s, read off their TAILS — "11 FAILED across 6 files" — and never off their heads. There
+is no measured whole-suite single-process run in this tree: `test_full.log` stops at a
+`[ 64%]` marker mid-line, with no summary line and no `TESTRUN_DONE`, which is why the
+per-file batching exists at all. **A pass/fail list does not tell you
+what was collected**, and the wall clock said so loudly enough to be worth hearing.
+
+### 4. §132's "NOTHING NAMES THEM" WAS FALSE FOR THREE OF THE ELEVEN, AND §133 INHERITED IT
+
+§132 successor 3 is titled *"ELEVEN REDS SURVIVE §117's SIXTY-TWO AND NOTHING NAMES THEM"*.
+**§118 §6 had already named three of them, with readings**, under the heading "The three
+survivors, and two of them are more than positions":
+
+```
+  test_R_rim_is_still_effectively_inert_and_that_is_recorded   -7.010e-04   EXACT match
+  test_the_thickness_branch_of_the_cap_binds_on_a_thin_root    1.0051 / 0.9330  EXACT match
+  test_peak_stress_diverges_but_the_field_converges            1.39%            EXACT match
+```
+
+**ALL THREE REPRODUCE TO EVERY DIGIT QUOTED.** The R_rim red at HEAD prints
+`-0.0007009684304591923`; §118 wrote `-7.010e-04`. Nothing drifted between 2026-09-06 and
+today, and nothing could have: `best_solution.json` has not been touched since `cb4e3dd`,
+and the only commit to reach `_fillet_margins` since is `89a370e`, which changed two
+docstring figures and no behaviour.
+
+**THIS SECTION FIRST RECORDED A 5.8% DISCREPANCY THAT DOES NOT EXIST, AND THE ERROR IS THE
+ONE §133 §4 IS ABOUT.** The -6.624e-04 it compared against §118 is a standalone probe run at
+`CFG = "coarse"`; the test asserts at `CFG = "smoke"`. Two of my own readings at two
+fidelities were being read as a disagreement between the record and the tree, with fidelity
+offered as the excuse for a gap that was entirely an artefact of my own instrument. **The
+scope of a measurement includes the fidelity it was taken at, and a number lifted out of a
+probe cannot be checked against a number lifted out of a test unless both are named.** §1's
+table now carries both columns for exactly this reason.
+
+§118 also already filed the consequence — *"two documented verdicts are now owed a
+re-check"* — so **§133 successor 1 was a re-filing of an open §118 item, not a discovery**.
+§133 §1-§3 stand: §118 named three and isolated none of them to the genome, and the other
+eight were unnamed. What was wrong is the premise §133 carried over without checking.
+**§133 is bracketed in place.** This is the sixth instance in two days of the tree
+re-finding something it already held: §134 §3's census null, §134's own under-count, §133
+§4's, this one, §1's dating (green in `test_filleted_mesh.py` since 2026-08-26), and §3's
+memory cap (§115, in prose, eleven days old). **Every one of the six was found by READING,
+not by
+measuring** — and what the 35-minute killed run actually bought was not the finding but the
+prompt to go and look. That is a fact about the record's NAVIGABILITY rather than about any
+of the six. A 20,000-line record whose own sections cannot see each other will keep paying
+this, and the going rate here was one wasted run per unread paragraph.
+
+### 5. WHAT MOVED
+
+`tests/test_objective.py` — one test, **renamed**
+`test_R_rim_is_still_effectively_inert_and_that_is_recorded` ->
+`test_R_rim_is_no_longer_inert_and_that_is_the_finding`, its bound flipped to
+`abs(J[1, 13]) > 1e-4`, and its docstring rewritten to carry both quantities, both routes,
+both dates and the original finding verbatim. **The rename dangles six PLAN.md
+citations** — `:17573` and `:17631` in §118, `:20287` in §132, and `:20384`, `:20570`,
+`:20647` in §133, the first of those being the bracket this same commit adds. Nothing
+outside PLAN.md names the test at all (`git grep`, whole tree), so no code moves. The
+dangle is deliberate and recorded here so the sites stay followable: those sections are
+correct about what
+the test was called when they were written, and a test named `_is_still_effectively_inert_`
+that asserts the opposite is the rot this tree removes rather than preserves. The suite goes
+**11 red -> 10**, list verified.
+
+**NOT touched.** `wheel_objective.py:1278-1281`'s stale comment and `_fillet_margins`'
+docstring pair `[+4.0271, +10.7491]`, which describes the outgoing genome, cites §106, and
+mis-dates its own 86x (successor 2) — both want a bracket, neither is this commit's subject.
+`MARGIN_KNEE_UTIL`, `1e-4`, and
+`GATE_*` — §2: nothing here is a threshold to move. `test_below_the_knee_the_rim_fillet_
+radius_is_dead`'s strict xfail — it is correct as it stands and its reason is now load-
+bearing evidence for §1's dating.
+
+**SUCCESSORS.**
+
+0. **THE STUDY'S VERDICT IS STILL OWED; THE GENE CENSUS IS ANSWERED IN THE NEGATIVE AND
+   MUST NOT BE "FIXED".** §118 filed both, §133 re-filed both, and this section resolves
+   one of them by reading rather than by re-running.** The
+   census sites are `tests/test_contact.py:465` (`insensitive_genes == {R_hub, R_rim}`) and
+   `tests/test_filleted_mesh.py:304`. **Both are GREEN, both are about the MESH rather than the
+   loss, and the second one does not merely fail to contradict §1 — it AFFIRMS it.**
+   `tests/test_filleted_mesh.py:304-306` pins `{R_hub, R_rim}` dead on the plain mesh and
+   `[]` dead on the filleted one, so the census has recorded the pair as live on the mesh
+   that ships since 2026-08-26. The `test_contact.py` site is the unfilleted census, where
+   the pair is dead for a reason that has nothing to do with the knee. **Neither is
+   falsified by §1 and neither may be "fixed" to match it** — one agrees already and the
+   other is answering a different question. What is owed is the narrower thing: whether any
+   census that speaks
+   about the OBJECTIVE still calls this pair insensitive.
+1. **`dL/dR_rim`'s DATE IS NOW BRACKETED BY TWO COMMITTED FACTS, AND THE REMAINING GAP IS
+   NARROW.** The mesh route is dated hard — `75bc9d9`, 2026-08-26, by a green test — and
+   the knee is dated to §102/§103. What is still not measured is the LOSS gradient itself
+   at any genome but the shipped one: mesh-liveness is necessary, not sufficient, because
+   the knee gates the stress route. The measurement that would close it is one
+   `objective()` call on the OUTGOING genome at `coarse`/8 — 44 GiB and 23 minutes, the run
+   this section dropped when it narrowed to one genome. **Worth much less than it was
+   before this was found**, since the two bracketing dates already put the transition
+   before `cb4e3dd`, which is the only thing any verdict here rests on.
+2. **THE STALE PAIR IN `_fillet_margins`' DOCSTRING SHOULD BE BRACKETED, NOT REWRITTEN —
+   AND IT IS WORSE THAN "STALE".** `src/wheel_objective.py:641-643` says *"at the current
+   shipped genome they are `[+4.0271, +10.7491]`"*. That is the genome the promotion
+   REPLACED, read at `coarse`; the genome that ships reads `[+3.5522, +22.3147]` at `smoke`.
+   The sentence continues *"the rim figure moves 86x with the promotion"* — and 10.7491 /
+   0.125 = 86.0, so **the 86x is measured across `ga_beam` to the OUTGOING genome while
+   being attributed to the promotion**. Against the rim that actually ships it is 178x. So
+   this is not a figure that went stale beside a correct claim; the claim names the wrong
+   transition. Its ARGUMENT still survives and strengthens — it reasons that both readings
+   are feasible either way so the barrier is flat, and at +22.31 mm of rim clearance it is
+   flatter. Same shape as §130 §4, one step worse: a correct argument standing on a number
+   that has quietly changed meaning, in a sentence that also mis-dates the change.
+3. **NINE OF THE TEN REMAINING REDS ARE §133 SUCCESSOR 0, UNCHANGED.** This section did one
+   of the eleven, and it was the one §133 called the only urgent one because it was the only
+   one that was a question about the objective rather than about a test. The nine are still
+   ten-minus-one decisions of the same kind, each needing the item-9 question answered with
+   a measurement.
