@@ -86,6 +86,30 @@ is exactly flat over half its feasible range (section 75), and the census gates 
 changed is that the gap is now a wiring decision with a measured price rather than a
 missing derivative.
 
+THE GAP WAS CLOSED AT SECTION 103 (2026-09-03) AND THE PARAGRAPH ABOVE HAS BEEN FALSE IN
+TWO OF ITS CLAUSES EVER SINCE.  `wheel_objective.phase_meshes` builds EVERY phase with
+`fillet=True` and hands each one straight to `service_qoi_value_and_grad` as `mesh=`, and
+`wheel_stage3.Evaluator` has no other mesh source, so "nothing hands it a filleted mesh"
+and "Stage 3 still builds the unfilleted one" are both retired.  Measured at HEAD on the
+shipped genome, on what `phase_meshes` actually returns rather than on the frozen
+`FILLET_LAYER_SHIPPED` pair `tests/test_filleted_mesh.py` pins:
+
+    mesh                          dead genes      |dcoords/dR_hub|   |dcoords/dR_rim|
+    phase_meshes, smoke           []                 7.9306e+01         9.4095e+01
+    phase_meshes, coarse          []                 1.7479e+02         2.0694e+02
+    build_wheel(genes, cfg)       [R_hub, R_rim]     0.0               0.0
+
+`R_rim` ranks FIRST of fourteen by column norm and `R_hub` SECOND, at both fidelities --
+section 79's result on the default path rather than on the pinned one.
+
+WHAT IS STILL EXACT IS THE LAST CLAUSE, AND IT IS THE REASON NOTHING HERE IS A BUG.  The
+census gates in `study_gradient.py` and `tests/test_gradient.py` read
+`build_wheel(genes, cfg)`, which is the UNFILLETED mesh -- `fillet=None` means no fillet,
+not "decide per genome"; the per-genome rule chooses a LAYER PROFILE and only under
+`fillet=True`.  Those gates are correct and green about the mesh they are taken on.  A
+census is a claim about one mesh and there are two, which is why they do not contradict
+the table above (PLAN.md section 136).
+
 numpy in, numpy out.  Stage 3's optimizer (projected Adam, `scipy.optimize.minimize`)
 never traces the outer loop, so there is no `custom_vjp` wrapper here — a code path with
 no consumer is exactly what this project's rules reject.  The pieces are separated so

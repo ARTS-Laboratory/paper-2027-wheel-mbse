@@ -1280,6 +1280,27 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     # at the shipped genome on 2026-08-12: `dL/dR_hub` and `dL/dR_rim` are both EXACTLY
     # 0.0.  A nominally 14-dimensional search was running in 8.
     #
+    # THAT LAST SENTENCE IS A 2026-08-12 READING AND IT NO LONGER DESCRIBES THIS TREE —
+    # PLAN.md §135 §1.  §103 wired `fillet=True` into `phase_meshes`, so a fillet radius
+    # now moves the mesh the field is solved on, and the knee this very term introduced
+    # has both junctions above `MARGIN_KNEE_UTIL`.  One `coarse`, 8-uniform-phase
+    # `objective()` at the shipped genome (1359.3 s, L = 76.023856):
+    #
+    #     util hub = 0.91093   above the 0.80 knee   dL/dR_hub = +1.736205e+01
+    #     util rim = 0.90959   above the 0.80 knee   dL/dR_rim = +3.696881e+01
+    #     nonzero gradient components: 14 of 14.  EXACT ZEROS: none.
+    #
+    # So the census is INVERTED, not merely retired: `R_rim` carries 2.13x `R_hub`'s loss
+    # gradient, and the gene this term was built to wake is the one that woke loudest.
+    # THREE DATES, NONE OF THEM THE PROMOTION'S: the mesh route opened at §79/§85
+    # (2026-08-24/26), the knee cleared at §102/§103, and `cb4e3dd` moved neither — what
+    # it moved is `R_rim` off its 3.0 cap to 1.680.  The 602-step count above is the
+    # `ga_beam` era's and is left as the dated record it is.
+    #
+    # NONE OF THIS TOUCHES THE ARGUMENT.  `stress_margin` is here because a barrier is a
+    # wall to stop at and not a price to trade against, which is true whether or not the
+    # two genes it woke are still the two that needed waking.
+    #
     # So: a term that is live everywhere `util > 0`, quadratic, and summed over the same two
     # junctions for the same reason the barrier is (a `max` would zero the gradient of
     # whichever junction is not currently worst).  It is an OBJECTIVE, not a barrier — it

@@ -1484,17 +1484,26 @@ def _print(rep):
               f"{ts['after_a_shipped_pair_mesh']} once a SHIPPED-pair mesh is added")
         print(f"    -> {'PASS' if q['pass'] else 'FAIL'}")
         print()
-        print(f"    *** WHAT THIS DOES AND DOES NOT CHANGE.  Nothing wires the fillet "
-              f"into the")
-        print(f"        objective: `wheel_objective` still prices `R_hub` through a "
-              f"`Kt` surrogate")
-        print(f"        that section 75 measured EXACTLY FLAT above the cap, and section "
-              f"48's")
+        print(f"    *** WHAT THIS DOES AND DOES NOT CHANGE.  WHEN THIS WAS WRITTEN "
+              f"nothing wired")
+        print(f"        the fillet into the objective: `wheel_objective` priced `R_hub` "
+              f"through a `Kt`")
+        print(f"        surrogate that section 75 measured EXACTLY FLAT above the cap, "
+              f"and section 48's")
         print(f"        surviving clause — half of a drawn genome box sits under "
               f"`MIN_SJ_TARGET` —")
-        print(f"        still stands against letting the optimizer take this path.  G8 "
-              f"above is")
-        print(f"        still the census of the mesh Stage 3 actually builds.")
+        print(f"        stood against letting the optimizer take this path.")
+        print(f"        SECTION 103 (2026-09-03) TOOK IT.  `phase_meshes` passes "
+              f"`fillet=True`, so")
+        print(f"        every mesh the objective solves on is the filleted one and both "
+              f"radii are")
+        print(f"        live in the loss (section 135: dL/dR_rim = +36.97 at `coarse`, "
+              f"2.13x dL/dR_hub,")
+        print(f"        14 of 14 components nonzero).  G8 above is EXACT and unchanged — "
+              f"it is the")
+        print(f"        census of `build_wheel(genes, cfg)`, which is UNFILLETED and is "
+              f"not what")
+        print(f"        Stage 3 builds any more.")
 
     head("VERDICT")
     print(f"    the adjoint reproduces brute-force differentiation of the same solve "
@@ -1509,9 +1518,11 @@ def _print(rep):
     if q is not None:
         print(f"    the two genes with no gradient have one on a FILLETED mesh, where "
               f"they rank first")
-        print(f"    and second of fourteen — the mesh Stage 3 builds is still the "
-              f"unfilleted one, and")
-        print(f"    is still blind to them")
+        print(f"    and second of fourteen — and since section 103 that is the ONLY mesh "
+              f"Stage 3")
+        print(f"    builds, so the census above describes a mesh this gate still reads "
+              f"and the")
+        print(f"    optimizer no longer sees (section 135)")
     print(f"\n  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}")
     print(f"\n  NOT DONE: the loss terms.  M7 differentiates SOLVE OUTPUTS; the seven")
     print(f"            objective terms and the p-norm stress are M8's, and")

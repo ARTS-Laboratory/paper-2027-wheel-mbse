@@ -2017,8 +2017,8 @@ that established them:
    **zero matches** — the string survives only in `tests/`, in study drivers and in committed
    study artifacts. The quantity it contaminates is assigned once and read once:
    `agg, c = _stress_aggregate(pn, maxes, q)` at `wheel_objective.py:1257`, carrying the
-   comment *"whole-wheel pnorm — REPORTING ONLY"*, and read at `:1356` into
-   `"pnorm_stress_agg_mpa"`, plus the `stress_utilisation` diagnostic that `:1333` records as
+   comment *"whole-wheel pnorm — REPORTING ONLY"*, and read at `:1377` into
+   `"pnorm_stress_agg_mpa"`, plus the `stress_utilisation` diagnostic that `:1354` records as
    *"retained as the diagnostic that shows why it was abandoned"*. Neither `BARRIER_TERMS`
    nor `OBJECTIVE_TERMS` (`:399-401`) names it. What prices stress on the live path is the
    two per-junction region p-norms, `agg_hub`/`agg_rim`.

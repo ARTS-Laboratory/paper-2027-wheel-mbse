@@ -14603,9 +14603,9 @@ successor 4, and the decision `UNCAP_PLAN.md` deferred twice in identical words 
 
 **§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1257` now
 carries `agg, c = _stress_aggregate(pn, maxes, q)   # whole-wheel pnorm — REPORTING ONLY`,
-and `stress`/`stress_margin` (`:1302-1312`) read the two per-junction region p-norms alone.
+and `stress`/`stress_margin` (`:1323-1333`) read the two per-junction region p-norms alone.
 Verified mechanically rather than off the comment: inside `t3_terms` the bare `agg` is
-assigned at `:1257` and read at exactly ONE place — `:1356`, the report key
+assigned at `:1257` and read at exactly ONE place — `:1377`, the report key
 `pnorm_stress_agg_mpa`.  Every other occurrence in the module is a comment or a different
 function's own local, and the `probe_p` sweep builds its own `a_v` rather than reading this
 one.  **So `rim:P_c` — the corner §46 and §52 built the whole ranking on — feeds no barrier, no
@@ -16795,7 +16795,7 @@ eleven when the fillet is blocked"* (`wheel_wheel.py:2282-2286`), `study_tri_blo
 passes no `fillet=` (`studies/study_tri_block.py:242`) while `wheel_objective.py:1015` and
 `wheel_pool_worker.py:63` pass `fillet=True` unconditionally; and `grep -rn "rim:P_c" src/`
 returns **zero matches**, the whole-wheel p-norm being assigned once at `:1257` under
-*"REPORTING ONLY"* and read once at `:1356`. **The arc does not stop for the reason it
+*"REPORTING ONLY"* and read once at `:1377`. **The arc does not stop for the reason it
 carried:** 3.1's payoff is now a reporting number, 3.2's prediction is **inverted** (the
 faithful rim is 23.8× worse filleted, not better), 3.3 depends on a FILLET step that landed
 without it. Reopens if and only if `rim:P_c` acquires a consumer.
@@ -16999,7 +16999,7 @@ construction
 reproduces `report["stress_utilisation"]` to 1e-12) failed for `b729e86` specifically. Traced,
 not worked around: `wheel_objective.py`'s REAL constraint has computed per-region since
 §102/§103 — `util = max(agg_hub, agg_rim) / allowable`, each region carrying its own Kt already
-folded in — but the diagnostic `pnorm_by_p` block (`:1336-1343`) still builds
+folded in — but the diagnostic `pnorm_by_p` block (`:1357-1364`) still builds
 `stress_utilisation_kt` from one GLOBAL `kt_max = max(kt_hub, kt_rim)` times one global
 aggregate, a construction that only reproduces the real constraint when the region with the
 larger Kt is also the region with the larger raw stress.
@@ -17019,8 +17019,8 @@ read directly, bypassing the broken assertion: **0.9723 at medium config under S
 feasible.** `wheel_objective.py`'s `pnorm_by_p` construction is left unfixed here — it is
 differentiated code that feeds the optimizer, and a fix deserves its own verification against
 the rest of the tree rather than a rushed edit inside a promotion. Filed here for whoever picks
-it up: fix `stress_utilisation_kt` (`wheel_objective.py:1342`) to use each region's own Kt
-against its own aggregate and take the max of THOSE, matching what `util` (`:1313`) already
+it up: fix `stress_utilisation_kt` (`wheel_objective.py:1363`) to use each region's own Kt
+against its own aggregate and take the max of THOSE, matching what `util` (`:1334`) already
 does, rather than one global `kt_max` times one global aggregate.
 
 **WHAT MOVED.** `best_solution.json` (genes + `note`), `tests/test_promotion.py`
@@ -17044,8 +17044,8 @@ artifact it had been carrying until today was committed on **2026-08-12** (`b5c2
 
 ### 1. §115.5's FILED FIX IS A NO-OP, AND ITS CAUSE IS NOT THE CAUSE
 
-§115.5 filed: *fix `stress_utilisation_kt` (`wheel_objective.py:1342`) to use each region's
-own Kt against its own aggregate and take the max of THOSE, matching what `util` (`:1313`)
+§115.5 filed: *fix `stress_utilisation_kt` (`wheel_objective.py:1363`) to use each region's
+own Kt against its own aggregate and take the max of THOSE, matching what `util` (`:1334`)
 already does.* Read literally against the code, there is no such construction to write:
 
 - **The probe sweep has exactly one aggregate**, `a_v = _stress_aggregate(probe_pn[v],
@@ -17250,7 +17250,7 @@ run above. `MBSE_PLAN.md`, `studies/study_mbse_score.py`, `tests/test_requiremen
 the `study_svk_rescore.py:67` citation, which this section's own docstring edit shifted to
 `:75` (§114's lesson, applied to my own delta rather than rediscovered later).
 
-**NOT touched:** `wheel_objective.py` — §115.5 filed a fix at `:1342` and §116.1 is the
+**NOT touched:** `wheel_objective.py` — §115.5 filed a fix at `:1363` and §116.1 is the
 measurement of why it is not made; the key reports a retired construction accurately, which
 is what `tests/test_stage3.py:1217` already says it survives to do.
 `studies/study_kinematics_rank.py` — repaired by the shared `_score` and not re-run here.
@@ -19427,7 +19427,7 @@ plus `elite11` (`fc7aeb1`), which has no filleted mesh at the rim at all. Confir
 the driver's own call path rather than inferred from the classification:
 `so3.score(elites[13], "smoke")` and `so3.score(elites[0], "smoke")` both raise
 `FilletClampRefusedError` out of `mesh_coords`, which `t3`'s adjoint reaches through
-`wheel_adjoint.py:716`'s `jax.vjp` — `tiers=("t3",)` does not skip the guard, it arrives at
+`wheel_adjoint.py:740`'s `jax.vjp` — `tiers=("t3",)` does not skip the guard, it arrives at
 it by the gradient instead of by `t2`.
 
 So `scored` is empty, `spread` is `{}`, `n_elites_scored` is 0, `ranked[:n_probe]` is
@@ -21080,7 +21080,7 @@ memory returned to 2 GiB immediately. The restructured run was one genome, one p
 a watchdog set to kill at 52 GiB.
 
 **IT WAS NOT MISCONFIGURED, WHICH IS THE PART WORTH KEEPING.** `phases=None` resolves at
-`wheel_objective.py:1475` to `phase_stencil(scheme="uniform")`, whose default is
+`wheel_objective.py:1496` to `phase_stencil(scheme="uniform")`, whose default is
 `n_phase=8` — byte-for-byte the stencil `tests/test_objective.py:88`'s `genes_over_knee`
 fixture passes explicitly. **The tree has been paying this cost in every `test_objective.py`
 run all along**, which is why that file measured 35:44 at §132 and why it has to be its own

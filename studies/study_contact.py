@@ -1054,6 +1054,14 @@ def _print(rep):
         print(f"        `stress_concentration_kt`.  A gradient-based Stage 3 would find")
         print(f"        them perfectly flat and never move them.  This is a")
         print(f"        SPECIFICATION for M7, not a defect in the contact model.")
+        print(f"        AND SINCE SECTION 103 STAGE 3 NO LONGER SOLVES ON THIS MESH: "
+              f"`wheel_objective.")
+        print(f"        phase_meshes` passes `fillet=True`, both radii move it, and "
+              f"they are live in")
+        print(f"        the loss (section 135: dL/dR_rim = +36.97 at `coarse`, 14 of "
+              f"14 nonzero).")
+        print(f"        The census above is EXACT and is a claim about the UNFILLETED "
+              f"mesh alone.")
     print(f"    -> {'PASS' if f['pass'] else 'FAIL'}")
 
     head("VERDICT")
