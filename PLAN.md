@@ -22268,3 +22268,228 @@ condition is "two lists match" must assert the lists are non-empty**, and the te
 3. **FIVE CITATIONS POINT INTO `PLAN.md`, WHICH GROWS BY A SECTION A DAY.** This section
    moved two of them for the second time in one day. A `\at{PLAN.md}{N}` has a half-life;
    a §-number does not move at all. Worth deciding rather than re-pointing again.
+
+---
+
+## §141 — 2026-09-08. §133's SUCCESSOR 0, THREE OF NINE CLOSED, AND THE ANSWER IS THE SAME THREE TIMES: THE FINDING WAS INTACT AND A CONSTANT CALIBRATED ON A VANISHED GENOME WAS DOING THE FAILING. ONE OF THEM IS NOT A TOLERANCE AT ALL BUT A METRIC THAT DIVIDES BY ZERO — THE SHIPPED CENTERLINE IS THE FIRST WITH AN INFLECTION POINT. PLUS §140's SIXTH `Kt` SITE IS SEVEN, MARKED AT ZERO CITATION COST
+
+Four commits: `f3cc24d`, `e011809`, `65f45bf` and `ae9a547`. §133 successor 0 has been
+carried by §134, §136, §137 and §138 — five sections of deferral, each adding a worked
+example instead. §138 said *"the deferral is starting to cost more than the run"*. The
+run was three minutes.
+
+### 1. THE RED LIST WAS RE-TAKEN, NOT INHERITED — AND ONE OF THE NINE HAS A GREEN TWIN
+
+A concurrent session ran the light batch and reported the nine standing. **That is a
+report, and §119's rule is that a list is diffed.** All nine node IDs re-run here at
+`e011809`: **nine red, unchanged, and the eight light ones cost three minutes in one
+process.** `test_objective`'s is the ninth and runs alone.
+
+**`test_the_retired_max_min_gate_is_decided_by_the_sample_size` EXISTS IN TWO FILES.**
+`tests/test_gnl.py` and `tests/test_wheel_fea.py` both define a function of that name.
+§133's table attributes the red to `test_gnl` and is right — the `test_wheel_fea` twin is
+**GREEN** and is not one of the nine. A node ID resolved by test name alone would have
+picked whichever pytest reached first. **The same hazard as `res` against `sec` one
+identifier wide, in the one place this arc had not looked for it: the test names.**
+
+### 2. RED 1 — `test_thickness_hits_its_nodes_exactly` WAS A COIN THIS TEST HAD ALWAYS WON
+
+**What is it a claim about? The INTERPOLANT.** `thickness_at_arc_length` never sees a
+genome, only four numbers, and the finding is that the current form hits its nodes where
+the superseded masked form missed them by 1.2e-11.
+
+`== 0.0` is not that claim. The function is a base value plus three clipped ramps, so
+`t(bp_k)` is `t0` plus a TELESCOPING SUM of k differences, exact only when its roundings
+cancel:
+
+```
+  20000 uniform draws of (t0, t1, t2, t3) over GENE_SPACE's own bounds
+    exactly 0.0 ...............  80.09%, NOT 100%
+    worst error ...............  1.332268e-15  =  6 ULP
+    not exact, per node .......  bp=0: 0.00%   1/3: 7.89%   2/3: 10.10%   1: 13.49%
+```
+
+**The per-node profile IS the mechanism showing through**: `t(0)` is `t0` with no sum at
+all and never misses, and the miss rate climbs with the number of terms. `b729e86` reads
+2.220446e-16 — one ULP, on `t1` and `t2`. `96a0ac5` reads exactly 0.0.
+
+**§133's STATED REASON SURVIVES ITS CONTROL**, which is worth recording because this arc
+has had two stated reasons turn out false. It said the exactness *"survives only while the
+t-vector's magnitudes are small"*. Drawing all four thicknesses from [1.2, 2.0] rather
+than the full box gives **20000 of 20000 exact** against 80.09%. Magnitude is the driver.
+
+New bound `1e-13`: the geometric midpoint of the two quantities it must separate, **75x**
+above the measured worst case and **120x** below the 1.2e-11 defect the test exists to
+catch. The fixture stays on the shipped genome on purpose — the bound is genome-
+independent by the sweep, so reading what ships costs nothing and keeps the test a live
+check that the shipped design is inside that regime.
+
+### 3. RED 2 — NOT A TOLERANCE BUT A METRIC THAT DIVIDES BY ZERO, AND `b729e86` IS
+### THE FIRST GENOME WHERE IT SHOWS
+
+`test_analytic_curvature_matches_finite_differences` claims the hodograph curvature and a
+central difference of the samples agree to the FD scheme's own O(h^2) error. **That claim
+was never wrong. The metric could not see it.** The error was normalised POINTWISE, by
+`k_an` at each sample — a division by zero wherever the curvature crosses zero, which is
+what an INFLECTION POINT is:
+
+```
+  genome            sign flip   min|k_an|   max|k_an|   pointwise    scaled
+  b729e86 SHIPS        yes      1.584e-04   1.041e-01   1.956e-03   1.446e-05
+  96a0ac5 outgoing     no       3.868e-02   6.623e-02   7.104e-06   6.170e-06
+```
+
+The pointwise max is attained AT the smallest `|k_an|` on every refinement, so it measures
+how near a sample lands to the zero crossing and not truncation error — and it does not
+converge: 1.956e-03, 9.053e-03, 9.485e-04, 2.270e-04 over n = 600, 1200, 2400, 4800, an
+"order" of **-2.21, 3.25, 2.06**. Normalised by the curve's own scale, **both genomes are
+exactly second order, 2.00 2.00 2.00 across the same three refinements.**
+
+**§133 §GROUP B ASKED WHETHER `1e-4` WAS EVER GENOME-INDEPENDENT. IT WAS NOT.** Over 400
+uniform draws across the eight centerline genes at n = 600 the pointwise metric puts
+**1.8%** under 1e-4 and spans **337262x**, from 2.883e-05 to 9.725 — a 970% "relative
+error" on a curve whose curvature merely crosses zero. The outgoing genome was one of the
+1.8%. The same 400 draws under the scaled metric span **23x** and 400 of 400 sit under
+`1e-3`, the worst by 3.9x.
+
+**THE ORDER ITSELF IS DELIBERATELY NOT ASSERTED.** Its median over those draws is 2.00,
+but 2.5% land outside [1.8, 2.2] and the minimum is 1.45. A pin that is 97.5% reliable
+across the box is the kind of thing this arc is repairing, so the convergence table is the
+docstring's warrant for the metric and not an assertion.
+
+### 4. RED 3 — ONE RED, TWO LAYERS, AND THE SECOND ONE ONLY APPEARS AFTER THE FIRST IS FIXED
+
+`test_the_thickness_branch_of_the_cap_binds_on_a_thin_root` claims
+`hub_fillet_cap_mm`'s `min` has two live branches and the crossover is reachable in the
+box. Intact. Two constants under it were not.
+
+**LAYER 1, THE PROBE.** `t0` hardcoded to 2.0, *"chosen to sit near the crossover rather
+than the floor"*. The crossover is not a constant — thinning the root also WIDENS the
+slot, so it is a function of the SHAPE genes:
+
+```
+  genome              crossover t0      the old 2.0 probe sat
+  96a0ac5 outgoing      2.634016        0.634 mm INSIDE the thickness branch
+  b729e86 SHIPS         1.908586        0.091 mm OUTSIDE it
+```
+
+27.5% down, and the probe fell out of the branch. Now bisected for, probed midway between
+`MIN_WALL_MM` and it, and the EXISTENCE of the crossover — which is what the docstring
+actually claims — is asserted rather than assumed. **Measured across the box rather than
+asserted from one design: 40 of 40 uniform draws have a crossover inside the `t0` box.**
+
+**LAYER 2, THE GRADIENT BOUND, WHICH IS THE SAME DEFECT ONE LEVEL IN.** `abs(d[0]) > 1e-3
+and abs(d[1]) > 1e-3` pinned *"the shape genes MUST move the cap"* against the
+pre-BUILD_PLAN cap where it was exactly 0.0. The only route is the hub arrival angle:
+
+```
+  d(cap)/dgene = -t0 * HUB_CAP_ARRIVAL_SLOPE * sin(a_hub) * da_hub/dgene
+```
+
+— proportional to `sin(a_hub)`, **0.4592 at `96a0ac5` (27.334 deg) against 0.1005 at
+`b729e86` (5.765 deg), a 4.57x drop** that puts `d(cap)/dcy1` at 2.997e-04, under a bound
+calibrated on the steeper spoke. The shipped spoke arrives on a shallower spiral; the
+route is no less live. The chain rule is asserted instead of a magnitude — it says the
+route is live AND by how much, and it is genome-independent. `rel=1e-4`'s warrant: over 80
+comparisons on 40 uniform draws, `|AD/analytic - 1|` is median 1.3e-06, max 1.3e-05.
+
+**AND THE OLD PROBE MADE THE TWO ASSERTIONS AFTER IT VACUOUS.** At `t0` = 2.0 on the
+shipped genome the SLOT binds, so `d[8]` is the slot branch's derivative and
+`cap == approx(by_thickness)` compares against the branch that is not taken. Neither
+failed, because the assertion above them failed first. **A red can hide two more behind
+it, and "the node ID is green now" is not the same as "the red is closed."**
+
+### 5. §140's SIXTH `Kt` SITE IS SEVEN, AND THE MARKER COST NOTHING
+
+A peer session found `wheel_objective.py`'s `t3_terms` docstring still saying *"the peak
+is restored analytically by `Kt` below"* while rewriting `REPO_EXPLAINED.tex` §6.6(c).
+Verified, and `tests/test_objective.py`'s
+`test_the_gauss_exponent_reaches_the_qoi_and_the_default_is_the_module_constant` says the
+same sentence. Traced by CHAIN rather than by constant, which is §137 §2's discipline:
+
+```
+  :1094-1095   _qoi_region_pnorm(prob, hub_ids/rim_ids, n)     p = FILLET_REGION_P = 16
+    -> pn_hub / pn_rim at :1227-1230
+    -> _pnorm_and_grad(pn_hub, pgrads_hub, q) at :1280,        q = stress_phase_p = 8
+    -> util_j = agg_j / allowable_stress_mpa at :1346              NO Kt ANYWHERE
+```
+
+Since §103 the peak is MEASURED, by a p=16 region p-norm over the fillet's own arc, not
+restored analytically from a nominal. **Four exponents, and the prose names as the
+constraint's the only one of the four that is not**: 16 spatial, 8 phases, 4 the reported
+diagnostic (`STRESS_NOMINAL_P`), 30 the adjoint's module default (`WA.STRESS_PNORM_P`).
+
+**SEVEN KNOWN SITES OF ONE RETIREMENT, ACROSS FOUR FILE TYPES** — `src/*.py`,
+`studies/*.py`, `tests/*.py`, `*.tex`. A census that greps `src/` reaches two of the seven.
+
+**ZERO CITATION COST, AND IT DECIDED THE SHAPE OF THE EDIT.** 35 citations point into
+`wheel_objective.py` below `:1141`, and three distinct cited lines (six occurrences) into
+`tests/test_objective.py` below `:213`, one of them `:321` — §136 §1's own census table.
+A bracket carrying the replacement mechanism would have cost 38 repairs to explain two
+sentences. Both markers are instead `[RETIRED §103 — see §137 §2]` **re-wrapped into the
+existing paragraph, five lines in and five lines out**, and both files are byte-identical
+in length to their parent. §138's rule, applied a second time and at four times the scale.
+**The marker points at a numbered section rather than at a section this commit was
+writing, so it could not be invalidated by a concurrent session taking the number.**
+
+### 6. AN INSTRUMENT NOTE, MEASURED BECAUSE A PEER'S DIAGNOSIS WAS ONE STEP SHORT
+
+A concurrent session reported the wrapped `grep` returning *nothing rather than `0`* from
+a build log and read it as §129 §7's ignore-aware failure arriving through explicit file
+arguments. **It is not the wrapper. It is a MISSING FILE**, and both forms agree:
+
+```
+  grep -c zzz present.txt           prints "0",     exit 1
+  command grep -c zzz present.txt   prints "0",     exit 1
+  grep -c zzz absent.log            prints NOTHING, exit 2      <- the symptom
+  grep -hc zzz absent.log present.txt  prints "0",  exit 2   <- worse: value looks fine
+```
+
+The last line is the dangerous one: with two files it prints a plausible `0` from the file
+that exists and only the exit status says one was missing. **A `2>/dev/null` on a grep is
+where a missing file becomes a passing check** — and the peer's own conclusion (a "two
+lists match" comparison passes vacuously on two empty lists) stands and needs BOTH a
+non-empty assertion and an exit-status check, because the two failure modes are different
+and only one of them shows in the output.
+
+### 7. WHAT MOVED
+
+`f3cc24d`, `e011809` — `tests/test_geometry_kernel.py`, both of its reds, **40 passed**,
+the whole file. `65f45bf` — `tests/test_objective.py` plus one citation repair in
+`PLAN.md` (`test_objective.py:1010` -> `:1072`, verified byte-identical; the +62 lines
+shift nothing else that resolves). `ae9a547` — `src/wheel_objective.py` and
+`tests/test_objective.py`, prose only, zero shift.
+
+**Green.** `tests/test_geometry_kernel.py` 40 passed; the three `test_objective` node IDs
+that share the cap fixtures 3 passed, `test_the_margin_term_prices_and_never_gates`
+included, so §137 §5's new assert is re-checked; `tests/test_import_hygiene.py` 10 passed;
+`tests/test_objective.py` collects 127. **The remaining red list is SIX**, and it is
+diffed rather than reasoned about: the nine of §133 minus these three.
+
+**NOT touched.** The six remaining reds — two in `tests/test_fem.py` (handed to the
+concurrent session), two in `tests/test_gnl.py`, one in `tests/test_contact.py`, one in
+`tests/test_wheel_fea.py`. `STRESS_NOMINAL_P`, `FILLET_REGION_P` and every other exponent:
+§5 retires a SENTENCE about them, not a number.
+
+**SUCCESSORS.**
+
+0. **SIX REDS LEFT AND THE PATTERN IS NOW THREE FOR THREE.** Every one so far had the
+   finding intact and a constant — a bound, a probe point, a normalisation — carried over
+   from a genome that no longer exists. **The two in `tests/test_gnl.py` are the ones to
+   take next and they are coupled**: §133 §4 established that `CFG = "smoke"` at `:32`
+   governs the whole file, so the config is a property of the FILE and not of either test,
+   and the cheap repair is to make the continuation test say WHICH of two opposite
+   verdicts it found rather than to move the config. `tests/test_wheel_fea.py`'s is the
+   one with a written history — its own docstring already names its failure mode for the
+   PREVIOUS promotion — and its live assertion, an absolute `d2/p99 < 0.01`, contradicts
+   the dimensionless ratio its own docstring says the fix was.
+1. **THE §103 CENSUS SHOULD GREP `*.tex` AND `*.md`, NOT ONLY `src/`.** §140's successor 1,
+   and §5 is the evidence: seven sites, four file types, two reachable by the census that
+   exists. Cheap, and it is the same shape as §138 successor 1's unswept `wheel_fem.py`
+   citations — an enumeration whose candidate set was drawn too narrowly.
+2. **A RED CAN HIDE ANOTHER BEHIND IT, AND THE LIST DOES NOT KNOW.** §4's layer 2 was
+   invisible until layer 1 was fixed, and the two assertions between them were VACUOUS on
+   the shipped genome without failing. The count "nine reds" is a count of node IDs, not
+   of findings — so when the remaining six are closed, the honest check is to re-run each
+   repaired test's whole FILE, not its node ID, and to say in each message how many
+   assertions in it were reached for the first time.
