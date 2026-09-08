@@ -13,7 +13,9 @@ criterion this arc registered, BEFORE any of this ran (KINEMATICS_PLAN Step 0c),
     R1  ARGMIN IDENTITY, binary and primary.  The lowest-linear-loss genome must be the
         lowest-SVK-loss genome, over the pool AND over its feasible subset.
     R2  Spearman rho >= 0.90 on the FEASIBLE subset (binding) and reported on the full
-        pool (diagnostic).  Top-5 sets equal under both orderings.
+        pool (diagnostic).  Top-5 sets equal under both orderings — a clause that
+        ABSTAINS below n = 6, where the slice is the whole subset and it cannot fail
+        (PLAN.md §130 §3, fixed at §132; `_rank_block`).
     R3  cos(grad_linear, grad_svk) >= 0.90 in the NORMALIZED gene space the descent steps
         in, at every probed genome.
 
@@ -281,6 +283,17 @@ def _rank_block(rows, name):
     order_s = [rows[i]["genome"] for i in np.argsort(svk)]
     k = min(5, len(rows))
     top_l, top_s = order_l[:k], order_s[:k]
+    # `None`, not `True`, WHEN THE SLICE IS THE WHOLE SUBSET.  `k = min(5, n)`, so at
+    # n <= 5 both slices hold every scored genome and the two sets are equal BY
+    # CONSTRUCTION — for any pair of orderings whatsoever, including exactly reversed
+    # ones.  Reporting `True` there made R2's second clause read as a condition that had
+    # been checked and had passed when nothing had been checked at all, and it did:
+    # PLAN.md §130 cleared R2 on a binding subset of five that way.  `r3_pass` below
+    # already takes this shape for the same reason — an artifact has to keep "measured
+    # and agreed" distinguishable from "not measurable here".  Below n = 6 the registered
+    # R2 therefore degrades to the bare Spearman, which is what it has always been; the
+    # change is that it now says so.  §132 and KINEMATICS_PLAN step 0c carry the note.
+    sets_equal = None if k == len(rows) else bool(set(top_l) == set(top_s))
     # THE INVERSION COUNT is over unordered pairs and is the raw form of the same fact rho
     # summarises — reported because "rho = 0.94" and "9 of 120 pairs are the wrong way
     # round" land very differently on a reader deciding whether to trust a search model.
@@ -293,15 +306,17 @@ def _rank_block(rows, name):
         "kendall_tau": float(tau.statistic),
         "order_linear": order_l, "order_svk": order_s,
         "top5_linear": top_l, "top5_svk": top_s,
-        "top5_sets_equal": bool(set(top_l) == set(top_s)),
+        "top5_sets_equal": sets_equal,
         "argmin_linear": order_l[0], "argmin_svk": order_s[0],
         "argmin_identical": bool(order_l[0] == order_s[0]),
         "top2_inverted": bool(len(rows) >= 2 and set(order_l[:2]) == set(order_s[:2])
                               and order_l[:2] != order_s[:2]),
         "discordant_pairs": n_inv, "n_pairs": n_pairs,
         "discordant_fraction": float(n_inv / n_pairs) if n_pairs else 0.0,
+        # `is not False`: a vacuous clause cannot fail the gate and must not silently
+        # pass it either, so it abstains and rho carries R2 alone.
         "r2_pass": bool(float(rho.statistic) >= GATE_SPEARMAN
-                        and set(top_l) == set(top_s)),
+                        and sets_equal is not False),
     }
 
 
@@ -448,7 +463,9 @@ def _print(rep):
                   f"({100 * b['discordant_fraction']:.1f}%)")
             print(f"      top5 linear : {b['top5_linear']}")
             print(f"      top5 svk    : {b['top5_svk']}")
-            print(f"      top5 sets equal: {b['top5_sets_equal']}"
+            eq = b['top5_sets_equal']
+            print(f"      top5 sets equal: "
+                  f"{'n/a — the slice IS the subset' if eq is None else eq}"
                   f"   argmin identical: {b['argmin_identical']}"
                   f"   ({b['argmin_linear']} vs {b['argmin_svk']})")
 

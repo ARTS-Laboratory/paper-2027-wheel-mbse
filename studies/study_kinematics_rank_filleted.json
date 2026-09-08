@@ -2137,7 +2137,7 @@
       "minwall 2.0",
       "elite10 prod"
      ],
-     "top5_sets_equal": true,
+     "top5_sets_equal": null,
      "argmin_linear": "b729e86 SHIPPED",
      "argmin_svk": "b729e86 SHIPPED",
      "argmin_identical": true,
