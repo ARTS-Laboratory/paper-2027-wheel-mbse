@@ -28,14 +28,20 @@ successor 2 asking for exactly that, and the mutation catcher below now asserts 
 CALL SEQUENCE rather than that some guard fired.
 """
 
+import ast
+import glob
 import json
 import os
+import re
+import shlex
 import signal
+import subprocess
 import sys
 
 import pytest
 
 import _gate_guard
+import project_paths as PP
 # Cheap at import: the driver's own top level is argparse/glob/json/os/time, and both cell
 # functions import `study_wheel_fea`/`study_gnl` lazily inside themselves.
 import study_reds_ratio_stability as reds
@@ -531,3 +537,162 @@ def test_a_short_grid_is_allowed_once_it_is_redirected(reds_cells):
     glob_pat = reds_cells(_cells()[:3])
     assert reds.main(["--which", "collect", "--glob", glob_pat,
                       "--out", "studies/reds_ratio_probe.json"]) == 0
+
+
+# ---------------------------------------------------------------------------
+# THE TABLE ABOVE IS HAND-COPIED FROM THE MAKEFILE.  THIS READS THE MAKEFILE.
+# (§131 successor 1 — the check that lived in a scratch harness)
+# ---------------------------------------------------------------------------
+# §131 §5 ran every guarded target's real argv through its real parser and real guard and
+# found 29 targets / 37 invocations, every guard reached, not one refusal — and then the
+# harness was thrown away.  What it was protecting against is a recipe that refuses ITSELF:
+# rename `REDS_RATIO_OUT`, or add a flag to a recipe, and the hand-copied column above still
+# agrees with itself while `make studies` dies five hours in, at the END of a run, because
+# `make` only ever sees the exit status.
+#
+# THIS IS THE CHEAP HALF AND IT DOES NOT RUN A DRIVER.  §131 §5's harness ran
+# `study_fillet_condition_a` to completion and rewrote its artifact — that driver's three
+# guard calls sit in conditional paths, so "stop at the last guard" means "run the study".
+# Nothing here executes a driver: `make -n` resolves the variables, and the argvs are
+# compared against the table, whose own three tests already prove those argvs pass the real
+# guard.  Two cheap assertions composed beat one expensive one that can rewrite evidence.
+
+
+def _make_n_invocations():
+    """Every guarded driver invocation the Makefile's own targets expand to.
+
+    THE CONTINUATION JOIN IS NOT A DETAIL, IT IS THE WHOLE ENUMERATION.  These recipes are
+    written across several physical lines with trailing backslashes, so a scan that reads
+    `make -n` line by line captures `study_contact.py --genome best_solution.json \\` and
+    nothing after it.  Measured while writing this: 20 targets / 34 invocations without the
+    join, 34 targets / 49 with it — §129.5's census defect exactly, an enumeration that
+    silently cannot see half its candidates.
+
+    `shlex.split` IS DELIBERATELY NOT WRAPPED.  A trailing backslash raises there, and the
+    draft of this scan caught that and skipped the invocation — which is how the 20/34
+    reading looked like a complete census instead of a broken one.  Unwrapped, the same
+    breakage is an error rather than a smaller number, and the test below pins the count
+    anyway so neither failure mode is quiet.
+    """
+    phony = subprocess.run(["grep", "-m1", "^.PHONY:", "Makefile"],
+                           cwd=PP.ROOT, capture_output=True, text=True).stdout
+    out = {}
+    for target in phony.split(":", 1)[1].split():
+        r = subprocess.run(["make", "-n", target],
+                           cwd=PP.ROOT, capture_output=True, text=True)
+        if r.returncode:
+            continue
+        for line in r.stdout.replace("\\\n", " ").splitlines():
+            m = re.search(r"studies/(study_[A-Za-z0-9_]+)\.py(.*)$", line)
+            if not m or m.group(1) not in _GUARDED_MODULES:
+                continue
+            # `make reds-ratio`'s fan-out passes `--which $$0` inside `xargs bash -c`: a
+            # shell template, not an argv, and there is nothing for a parser to check.
+            if re.search(r"\$[0-9{(]|\$\$", m.group(2)):
+                continue
+            out.setdefault(m.group(1), set()).add(tuple(shlex.split(m.group(2))))
+    return out
+
+
+def _guarded_names(module_path):
+    """Every committed name this module's `refuse_degraded_out` calls defend, via AST.
+
+    Read statically rather than by importing, because the point is to enumerate without
+    running anything, and `committed` is a name or a tuple of spellings of one name.
+    """
+    names = set()
+    for node in ast.walk(ast.parse(open(module_path).read())):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if (f.id if isinstance(f, ast.Name) else getattr(f, "attr", None)) \
+                != "refuse_degraded_out":
+            continue
+        if len(node.args) < 3:
+            continue
+        names |= {c.value for c in ast.walk(node.args[2])
+                  if isinstance(c, ast.Constant) and isinstance(c.value, str)}
+    return names
+
+
+_GUARDED_MODULES = {
+    os.path.basename(p)[:-3]
+    for p in glob.glob(os.path.join(PP.ROOT, "studies", "study_*.py"))
+    if "refuse_degraded_out" in open(p).read()
+}
+
+# The guarded drivers the Makefile invokes that have NO row above.  FROZEN, and it fails in
+# BOTH directions on purpose: adding a guarded driver to a recipe without a row grows it,
+# and giving one of these a row without deleting it here shrinks it.  §131 successor 1 reads
+# as a formatting complaint — "the check lives in a scratch harness" — and the census behind
+# it is the real finding: HALF the guarded drivers the Makefile invokes (17 of 34) have
+# never had their recipe checked by anything.  `study_reds_ratio_stability` is on this list
+# and stays on it: its guard is keyed on collected rows, so no argv can decide its case and
+# the tests above cover it instead.
+_NO_TABLE_ROW = {
+    "study_fillet_block", "study_fillet_condition_a", "study_fillet_cost",
+    "study_fillet_fold", "study_fillet_kt", "study_fillet_optimum",
+    "study_fillet_pnorm", "study_fillet_pnorm_box", "study_fillet_terms",
+    "study_fillet_wiring", "study_mbse_baseline", "study_mbse_calibration",
+    "study_mbse_score", "study_reds_ratio_stability", "study_tri_bend",
+    "study_tri_block", "study_tri_rule",
+}
+
+
+def test_the_enumeration_can_actually_see_the_makefile():
+    """The anti-vacuity pin, and it exists because this enumeration silently failed once.
+
+    A scan whose regex stops matching finds nothing, and every assertion below then passes
+    over an empty set — the same defect class §132 fixed in `study_kinematics_rank`'s R2:
+    a check that cannot fail at the size it is evaluated at.  These floors are the measured
+    counts less a little slack, so a recipe may be added or retired without touching them
+    but a BROKEN scan cannot pass.
+    """
+    invocations = _make_n_invocations()
+    assert len(invocations) >= 30, (
+        f"only {len(invocations)} guarded modules found in `make -n` output — the scan is "
+        f"broken, not the Makefile (34 when this was written)")
+    assert sum(len(v) for v in invocations.values()) >= 45
+    # The continuation join, pinned by the invocation it was added for: `make contact`
+    # spans four physical lines and carries five flags.
+    assert any(len(argv) >= 8 for argv in invocations["study_contact"]), \
+        "multi-line recipes are being truncated at the backslash again"
+
+
+def test_every_recipe_argv_appears_in_the_table():
+    """What `make` expands must be what the table above claims it expands to.
+
+    The table's argvs are hand-copied, and its own three tests prove those argvs reach the
+    work rather than the guard.  That proves nothing about the command people type unless
+    something checks the two are the same string — which is §131 successor 1.
+
+    ONLY INVOCATIONS AIMED AT A GUARDED NAME ARE COMPARED.  `make contact`'s second
+    invocation redirects to `study_contact_step2.json`, which no guard defends, and the
+    guard's whole design is that a redirected run is allowed — the table does not need to
+    know about it and `test_an_explicit_out_lets_a_degraded_run_through` is where that
+    property is pinned.
+    """
+    invocations = _make_n_invocations()
+    for name, names, recipes, _degraded in DRIVERS:
+        if name not in invocations:
+            continue
+        guarded = _guarded_names(os.path.join(PP.ROOT, "studies", f"{name}.py"))
+        aimed = {argv for argv in invocations[name]
+                 if "--out" not in argv or argv[argv.index("--out") + 1] in guarded}
+        assert aimed == {tuple(r) for r in recipes}, (
+            f"{name}: `make -n` expands to {sorted(aimed)} but the table claims "
+            f"{sorted(tuple(r) for r in recipes)} — one of the two is stale, and if it is "
+            f"the table then this driver's recipe is unchecked")
+
+
+def test_the_set_of_unchecked_recipes_has_not_grown():
+    """Half the guarded drivers the Makefile invokes have no row above.  Pinned, both ways.
+
+    Not a red: it is a census, frozen so it can only be changed deliberately.  A new
+    guarded driver wired into a recipe with no table row fails this, which is the §129.5
+    shape — a maintenance gap that nothing announces.
+    """
+    unchecked = set(_make_n_invocations()) - {d[0] for d in DRIVERS}
+    assert unchecked == _NO_TABLE_ROW, (
+        f"unexpectedly missing a row: {sorted(unchecked - _NO_TABLE_ROW)}; "
+        f"newly covered, delete from _NO_TABLE_ROW: {sorted(_NO_TABLE_ROW - unchecked)}")
