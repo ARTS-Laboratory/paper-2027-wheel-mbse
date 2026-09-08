@@ -21556,3 +21556,208 @@ should have had.
    default path and not only on a pinned fixture — so the transition is bracketed by
    §79/§85, §102/§103 and §103's wiring, all of them before `cb4e3dd`. **Do not spend the
    run to confirm a date three committed facts already bracket.**
+
+---
+
+## §137 — 2026-09-08. §136's SUCCESSOR 1, CLOSED — AND THE TEST IT FILED COULD NOT HAVE SETTLED IT EITHER WAY. THE `Kt` SURROGATE STOPPED PRICING `R_hub` AT §103, SO THE HEADER'S THIRD CLAUSE RETIRES AT THE SAME DATE AS THE OTHER TWO; "FLAT OVER HALF ITS FEASIBLE RANGE" IS 93.62% OF THE BOX ACROSS **TWO** DEAD REGIONS AND THE PROMOTION BUILT THE LOWER ONE. PLUS: THE SHIPPED GENOME CLEARS ITS TIER-0 GATE BY 71 nm UNDER AN ASSERTION MESSAGE THAT BLAMES SOMETHING ELSE, AND §136's NINE DANGLING CITATIONS ARE TEN
+
+Two commits, `322262c` and `800f31a`. Nothing solved except the one node ID that re-runs the
+amended test. §136 opened by calling its successor 0 *"the seventh instance in three days
+of a question the tree could answer by reading"*; this is one more, and again the reading
+inverted what the successor filed.
+
+### 1. THE CLAUSE HAS A VERB AND AN ADJECTIVE. SUCCESSOR 1's TEST ADDRESSED NEITHER
+
+§136 §4 retired two clauses of one paragraph in `wheel_adjoint.py`'s header and left the
+third standing: *"`wheel_objective` still prices `R_hub` through a `Kt` surrogate that is
+exactly flat over half its feasible range (§75)"*. It filed the check as a single
+question — **is the shipped `R_hub` above its cap or below it?** — *"above, and the clause
+survives and the gradient comes from elsewhere; below, and the clause is a third retired
+sentence in that header."*
+
+**THE ANSWER IS BELOW, AND THAT DICHOTOMY DOES NOT DECIDE THE CLAUSE IN EITHER DIRECTION.**
+Where one design sits relative to its cap is a fact about a POINT. *"Exactly flat over half
+its feasible range"* is a claim about a RANGE, and a surrogate that is live AT a design
+says nothing about how much of its domain is flat. So the two halves were measured
+separately, and they answer opposite ways: **the verb is dead and the adjective is true and
+was understated.** §135 §1's own discipline — the loss gradient and the surrogate are
+different quantities and one does not follow from the other — applies one level in, to the
+sentence's own two halves.
+
+### 2. THE VERB: §103 UNWIRED IT, AND `wheel_objective` SAYS SO AT BOTH ENDS
+
+Nothing prices `R_hub` through `Kt` any more, and this needed no measurement at all — it is
+written twice in the file the clause is ABOUT:
+
+```
+  wheel_objective.py, weight table   "...the mesh this term now actually reads, since §103
+                                     wired `util_j` onto the region-p-norm QoI rather than
+                                     `Kt * agg`"
+  wheel_objective.py, report block   "`Kt`/`hub_fillet_cap_mm`/`hub_fillet_r_effective` no
+                                     longer feed `util_j` — kept for REPORTING ONLY"
+```
+
+Checked rather than taken on the comment's word: `util_j` is `agg_j / allowable_stress_mpa`
+with no `Kt` factor, and `junction_kt` has **exactly one caller in `src/`** — inside that
+report block. `kt_hub`/`kt_rim` reach `report`, `REPORT_KEYS` and the
+`stress_utilisation_kt` diagnostic, and stop there. **The two live routes from `R_hub`
+into the loss are the filleted mesh (§135 §1's `dL/dR_hub` = +17.36) and `fillet_cap`'s
+barrier, which reads 0.0 at the shipped genome.** So the clause's date is §103's, the
+same as the two §136 retired, and the header now says THREE where it said two.
+
+### 3. THE ADJECTIVE: 93.62% OF THE BOX, NOT HALF — AND THE DEAD REGIONS ARE TWO
+
+The surrogate still exists and still reports, so "flat over half its feasible range" is
+still a claim worth being right about. **`smooth_min` is exact outside its blend**, so
+"exactly flat" is literal rather than "flat to plotting accuracy" — §75 read its own table
+to four decimals. Sweeping `R_hub` across the whole `GENE_SPACE` box `[0.4, 4.0]` at fixed
+everything else, `dKt_hub/dR_hub` is **EXACTLY 0.0** outside one live window:
+
+```
+  genome              t0     R_hub     cap    cap-R_hub  clamp edge  cap+k   FLAT % of box
+  ga_beam           2.4774  1.5598   0.6634   -896.3 um   0.302514  0.7630      89.92
+  96a0ac5 outgoing  1.4738  0.6636   0.6657    +2.130 um  0.179971  0.7656      89.84
+  b729e86 SHIPS     3.5055  0.5710   0.5721    +1.071 um  0.428059  0.6579      93.62
+```
+
+At the shipped genome the live window is **0.2298 mm wide**: 6.38% of the box, **15.32% of
+§75's `[0.4, 1.9]` "feasible range"**. Flat over 93.62% and 84.68% respectively — not half,
+on either reading of which range is meant.
+
+**AND THERE ARE TWO DEAD REGIONS, NOT ONE.** §75 named the upper one — `R_hub >= cap + k`,
+where `smooth_min` returns the cap to the bit and buying more fillet buys exactly nothing.
+The lower one is `KT_CLAMP`'s 3.5 ceiling, and its edge is
+
+```
+  R_hub <= t0 / (2 * 2.5**(1 / KT_EXPONENT))          KT_EXPONENT = 0.65
+```
+
+— **a function of `t0` ALONE**, reproducing a 60-step bisection of the exact zero to nine
+digits. **THE PROMOTION CREATED IT.** `t0` went 1.4738 -> 3.5055 mm, **+137.9%**, which
+moved that edge from 0.17997 — below the box floor of 0.4, unreachable — to 0.428059,
+inside the box. `junction_kt`'s docstring already said the clamp *"IS reachable in-box
+(`t0=10.0` with `R_hub=0.5`) ... though not at either design of interest"*; the second half
+still holds (`Kt` = 3.1239 at the shipped design, 89.26% of the 3.5 ceiling) and the
+first half no longer needs a `t0` nothing ships.
+
+### 4. §75's "PARKED AT THE CAP" SURVIVES THE PROMOTION AND TIGHTENS
+
+```
+  96a0ac5 outgoing   R_hub 0.6636060403   cap 0.6657364010   99.68%   dKt/dR_hub  -0.5689
+  b729e86 SHIPS      R_hub 0.5709952880   cap 0.5720664371   99.81%   dKt/dR_hub  -1.2706
+```
+
+§75's genome IS the outgoing one — `t0` 1.4738 and `R_hub` 0.6636 reproduce exactly, so
+that record survived unchanged from 2026-08-24 to `cb4e3dd`. Both designs sit **inside the
+blend**, where the derivative is live, and the one that ships is **2.23x steeper**. The one
+design of the three that occupies the flat region at all is `ga_beam`, 0.896 mm above its
+cap with `dKt_hub/dR_hub` exactly 0.0 — so §75's dead half is not hypothetical, it is where
+the shipped line started.
+
+### 5. THE BY-PRODUCT, AND IT IS THE ONE WITH A TEST ON IT: 71 nm
+
+`wheel_stage3.selection_key` gives a fully feasible iterate **tier 1, not tier 0**, when its
+hub-cap slack is under `MIN_CAP_SLACK_MM` = 1e-3 mm. The shipped genome's slack is that
+same quantity §4 measures, and it clears by **71 nanometres**:
+
+```
+  fidelity   cap             slack = cap - R_hub    over MIN_CAP_SLACK_MM
+  smoke      0.5720812549    1.0860e-03 mm            +8.60%
+  coarse     0.5720664371    1.0711e-03 mm            +7.11%
+  medium     0.5720606337    1.0653e-03 mm            +6.53%
+  fine       0.5720581313    1.0628e-03 mm            +6.28%
+```
+
+Every fidelity clears, which is the check `MIN_CAP_SLACK_MM`'s own docstring exists to
+demand — it is there because *"feasibility is FIDELITY-DEPENDENT"*, and the cap's whole
+spread across the four is **23.1 nm**, so the tightest margin is **2.72x the resolution of
+the instrument measuring it**. The recorded `selection` in `best_solution.json` is tier 0,
+and all nine `BARRIER_TERMS` read 0.0 there, so the tier was decided on this branch.
+
+**WHAT MAKES IT WORTH A COMMIT IS THE MESSAGE, NOT THE MARGIN.**
+`tests/test_objective.py` asserts `selection_key(...)[0] == 0` on the shipped genome under
+*"a live margin term made the shipped genome unpromotable"* — and that names ONE of the two
+ways the assert can fail. The other is 71 nm away and has nothing to do with the margin
+split the test is about: a hub that drifts into its cap turns that test red with a message
+pointing at the wrong mechanism. **§133's "pin the finding, not its symptom", seen from the
+other side**: the assertion is right, and its diagnosis is right for only one of its causes.
+The cause now has its own assert immediately above, carrying the four readings.
+
+### 6. THE CITATION COST WAS 3 OF 21, AND §136's NINE ARE TEN
+
+Two pure insertions, both verified `parent[N] == current[N + shift]` for every line below
+them: `+37` at `wheel_adjoint.py:104`, `+16` at `tests/test_objective.py:960`.
+
+```
+  into wheel_adjoint.py     12 lines   2 RESOLVED, repaired (:740 -> :777, :929 -> :966)
+                                       10 dangling, left alone, moved by 37
+  into test_objective.py     9 lines   1 RESOLVED, repaired (:994 -> :1010)
+                                       4 name :1257, dangling and recorded so at §118
+                                       4 sit above the insertion and did not move
+```
+
+**§136 §6 COUNTED NINE DANGLING CITATIONS INTO `wheel_adjoint.py`. THERE ARE TEN, AND THE
+TENTH IS INVISIBLE TO THE PATTERN THAT FOUND THE NINE.** `PLAN.md:9158` writes
+`wheel_adjoint:588,643` — **no `.py`** — so `wheel_adjoint\.py:[0-9]` skips it silently.
+Its claim is `sec = fem.solve_wheel_contact(mesh, force=..., ...)`, and at `322262c`'s
+parent neither line is that: `:588` is a `residual_rel` assignment and `:643` a comment
+rule. **The real anchors are `:812` and `:866` — §136 §6's own two-function hazard, hit
+again one section later** — `axle_drop_value_and_grad` assigns that call to `res` and
+`service_qoi_value_and_grad` assigns it to `sec`, so ONE of the two cited lines can carry
+the `sec` spelling and the citation gives both. At HEAD they are `:849` and `:903`.
+
+**AND §136 §6's ANCHOR TABLE IS NOW +37**, which matters because successor 0 is filed
+against it: its `:868`, `:884`, `:830` and `:224 :253 :364 :507` are **`:905`, `:921`,
+`:867` and `:261 :290 :401 :544`** at HEAD. The table is left as the dated record it is;
+these are the numbers to execute it with.
+
+### 7. WHAT MOVED
+
+**`322262c`** — `src/wheel_adjoint.py`'s header, plus 2 citation repairs in `PLAN.md`.
+**`800f31a`** — `tests/test_objective.py`, plus 1 citation repair in `PLAN.md`. Prose
+only in the first; the second adds one assertion and its three lines of setup, and
+changes no existing assertion.
+
+**Green.** `tests/test_import_hygiene.py`, **10 passed**, for `322262c` — it changes no
+executable line, so the check that matters is that the module still imports and the
+docstring still parses. `800f31a`: `test_the_margin_term_prices_and_never_gates`,
+**1 passed**, ~7 min, peak observed RSS 21.1 GiB.
+**THE RED LIST WAS NOT RE-TAKEN.** §136 left nine reds standing and said the next section
+that runs the suite owns the check; this is not that section either. One existing assertion
+was neither touched nor moved.
+
+**NOT touched.** `wheel_objective`'s `Kt` machinery — §2 retires a SENTENCE about it, not
+the code, and `junction_kt`, `hub_fillet_cap_mm` and `hub_fillet_r_effective` are all still
+read by `REPORT_KEYS` and `selection_key`. `junction_kt`'s "not at either design of
+interest" — measured and still true. §75 itself: its numbers are correct about its own
+genome, which is `96a0ac5`, and §3 only says its RANGE fraction was conservative.
+`REPO_EXPLAINED.tex` — see successor 2.
+
+**SUCCESSORS.**
+
+0. **§136's SUCCESSOR 0, UNCHANGED EXCEPT THAT IT IS TEN CITATIONS AND THE ANCHORS ARE
+   +37.** §6 above gives both. The judgement it names is now sharper rather than harder:
+   `wheel_stage3.py:63`, `:301` and `tests/test_stage3.py:136` all argue `delta0` and
+   `axle_drop_mm` are the same number, and `PLAN.md:9158` cites the SAME pair of functions
+   for the same reason — so the four resolve together, and the discriminator is the
+   variable name — `sec` is `service_qoi_value_and_grad`, `res` is
+   `axle_drop_value_and_grad`.
+1. **§136's SUCCESSOR 2, UNCHANGED: NINE REDS, AND THEY ARE §133's SUCCESSOR 0.** Nothing
+   here touched one. §5 adds a worked example from the opposite direction to §136 §2's
+   censuses: a green assertion whose failure MESSAGE is a claim about only one of its
+   causes.
+2. **`REPO_EXPLAINED.tex`'s FILE INVENTORY IS A DATED SNAPSHOT AND SIX OF ELEVEN ROWS ARE
+   WRONG.** Found while auditing what `wheel_adjoint.py:759` in that table meant — it is a
+   LINE COUNT, not a citation, and the file is 981 lines. Measured at HEAD:
+   `wheel_wheel` +160, `wheel_adjoint` +222 (of which 37 is this arc), `wheel_objective`
+   +222, `wheel_stage3` +224, `wheel_pool` +27, `wheel_pool_worker` +8; five rows are exact.
+   `tests/` says "25 files, 503 test functions" against **34 and 632**; `studies/` says
+   "~19 drivers" against **38**. Nothing generates this file, and `REPO_EXPLAINED.pdf` is
+   committed beside it — so the repair is a `.tex` edit AND a rebuild, and it is the same
+   shape as an artifact refresh: check what else reads those numbers first.
+3. **`wheel_adjoint.py`'s HEADER NOW CARRIES A THREE-CLAUSE RETIREMENT AND THE PARAGRAPH IT
+   RETIRES IS STILL THERE IN FULL.** That is the tree's convention and it is working, but
+   the paragraph plus its brackets is now 74 lines of one docstring, and the ONE sentence
+   in it that is still true — the census gates — is at the bottom. Worth a decision, not a
+   rewrite: is a bracket-only header still readable at four brackets deep, or does the
+   retired paragraph become a dated block quote with the live text above it?
