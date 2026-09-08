@@ -17074,7 +17074,7 @@ time it ran was §115's promotion, three days later, and it raised on the first 
 touched.
 
 **AND IT IS TWO DRIVERS, NOT ONE — THE SECOND ONE FAILS QUIETLY.**
-`studies/study_kinematics_rank.py:237` calls the same `SR._score`, inside a deliberate
+`studies/study_kinematics_rank.py:257` calls the same `SR._score`, inside a deliberate
 `except Exception` that records a genome as `failed` rather than losing an hour-long run
 to one divergence. So since §103 `make kinrank` would not have raised: it would have
 returned **all 36 genomes x both kinematics as FAILED**, with the RuntimeError text in
@@ -20156,8 +20156,8 @@ stopped being two conditions. It now reports **`None`** there and abstains: `r2_
 `sets_equal is not False`, so a vacuous clause cannot fail the gate and no longer passes it
 either, and **R2 below n = 6 is the bare Spearman, said out loud**.
 
-**THE SHAPE WAS ALREADY IN THIS FILE — `study_kinematics_rank.py:424`, 106 lines below the
-R2 gate at `:318`.** `run_gradients` returns
+**THE SHAPE WAS ALREADY IN THIS FILE — `study_kinematics_rank.py:449`, 110 lines below the
+R2 gate at `:339`.** `run_gradients` returns
 `r3_pass` as `None` rather than `False` when nothing differentiated, with a comment saying
 the artifact has to keep *"every probe disagreed"* and *"no probe could be taken"*
 distinguishable. That is the same distinction one level up, and R2 did not have it. Nothing
@@ -20664,3 +20664,253 @@ eleven stands, by a route that could have moved it.
    Note also what it says about the other seventeen: they read the same genome and they are
    GREEN, so the pin-the-symptom defect is not universal, and those seventeen are where the
    pattern for fixing the ten should be read off rather than invented.
+
+---
+
+## §134 — 2026-09-08. §131's SUCCESSORS 3 AND 1 AND §132's SUCCESSOR 0, CLOSED. THE ELEVENTH DRIVER'S GUARD COULD NOT BE THE SHAPE §131 FILED FOR IT: ITS FIDELITY FLAGS AND ITS COMMITTED NAME ARE ON OPPOSITE SIDES OF THE FAN-OUT, SO A FLAG-KEYED GUARD IS A NO-OP THAT READS AS A FIX. AND THE RECIPE TABLE NOW READS THE MAKEFILE, WHICH SAYS 17 OF ITS 34 GUARDED DRIVERS HAVE NEVER HAD A RECIPE CHECKED
+
+Three successors, three commits, no run over a second and a half. Worked concurrently with
+the session that took §133; the split was file-disjoint by agreement and the one shared
+edge — `tests/test_gnl.py` and `tests/test_wheel_fea.py` import
+`study_reds_ratio_stability` at module level — was measured rather than assumed, both ways
+(§6).
+
+### 1. §131 SUCCESSOR 3's FIX SHAPE WAS WRONG, AND WRONG IN THE DIRECTION THAT LOOKS RIGHT
+
+§131 filed it as *"one call, three conditions, the shape every driver in this commit
+already has"*, with `--n 3` and `--min-wall 1.2` named as the flags that *"reach it with
+nothing in the way"*. They reach it. **They do not degrade it**, and a guard written
+against them would have been a no-op wearing the shape of a repair.
+
+In the nine drivers §131 fixed, one invocation carries both halves: `--out` defaults to the
+committed name and a fidelity flag on that same command line degrades the run, so the guard
+can read `args` and refuse. `study_reds_ratio_stability` splits them across two processes:
+
+```
+  --which beam|gnl  + --seed/--n/--min-wall   ->  one JSON line into $(REDS_CELLS)
+                                                  NEVER touches a tracked name
+  --which collect   + --glob/--out            ->  writes the committed artifact
+                                                  takes none of those three flags
+```
+
+**Measured, not read off the source**: `--which collect --n 3 --min-wall 1.2 --seed 999`
+over a fixed `--glob` reproduces the unflagged output **byte-for-byte**. The flags parse,
+bind, and mean nothing. That is §41's false green one level up — the guard would report a
+protection that had never been evaluated.
+
+### 2. THE VECTOR IS THE GLOB, AND THE FAN-OUT MANUFACTURES IT
+
+What decides whether a collect run is the gate is the SET OF CELLS the glob finds.
+Measured on a scratch `--out`, the committed name untouched throughout:
+
+```
+  3 real cells + 106 EMPTY files   ->  3-cell artifact, 843 bytes against 31039, EXIT 0
+```
+
+The empty files are not a contrivance. `make reds-ratio` fans cells out with
+`> $(REDS_CELLS)/$0_s$1_n$2_w$3.json` and `2>/dev/null`, and the shell creates the redirect
+target **before** the process runs — so every cell that dies leaves a zero-byte file and no
+reason. And the report over three cells still prints
+`correction_factor_is_defensible true in 0/1 cells  (never — the conclusion holds on the
+stable statistic in every cell)`. **§132 §5's shape exactly: the headline survives and
+every condition under it is destroyed.**
+
+**A TRUNCATED CELL IS NOT THIS DEFECT, AND THE DIFFERENCE WAS WORTH MEASURING.** `collect`
+wraps its whole-file `json.loads` in a `try` but its per-line fallback sits OUTSIDE that
+`try`, so a half-written line raises and **nothing is written at all**. Only the empty file
+is silent. The first reading of this section had it the other way round.
+
+Three conditions, keyed on the collected rows: `beam < 66`, `gnl < 43`, and any cell with
+`n_rows != n`. **66 and 43 are the recipe's own arithmetic, not a count read off the
+artifact** — `reds-ratio` emits 68 beam and 45 gnl specs, seed 7 collides with the
+`s = 0..9` group at n = 12, 24 (beam) and n = 8, 16 (gnl), and the cell filename carries
+only `$0_s$1_n$2_w$3`, so each duplicate pair collapses to ONE file: 68 − 2 = 66,
+45 − 2 = 43. Checked against the committed artifact as SETS of
+`(which, seed, n, min_wall)`, identical. **`n_drawn` is not the third quantity**: it counts
+LHS candidates rejected on the way to `n_rows` and runs 7.5x to 92.5x above it in every
+committed cell, so a check written against it would fire on all 109.
+
+Four controls, committed artifact byte-unchanged by sha256 throughout: full grid ACCEPTED;
+3-cell grid REFUSED naming both counts; full grid with one `n_rows = n-1` REFUSED; 3-cell
+grid at a scratch name ACCEPTED. §132 §3's round-trip control ran first, so the acceptance
+run was provably a no-op — collect over the artifact's own rows re-dumps it at 31039 of
+31039 bytes.
+
+### 3. THE CENSUS OF ELEVEN STANDS, AND THAT IS NOW A MEASUREMENT RATHER THAN A COUNT
+
+§131 successor 3 named `study_reds_ratio_stability` the eleventh exposed driver. **Four**
+drivers have zero `refuse_degraded_out` calls, not two: `study_arrival_cap`,
+`study_boundary_waste`, `study_kinematics_rank`, `study_reds_ratio_stability` — and the
+first two write TRACKED artifacts, so on the face of it the census was short by two.
+
+It was not, and the reason is structural rather than a judgement call:
+
+```
+  study_arrival_cap.py     ZERO add_argument, no argparse import at all; hardcoded path
+  study_boundary_waste.py  EXACTLY ONE add_argument, `--out`; reads 25 stage3_*.json, solves nothing
+```
+
+The guard's exposure class is *default `--out` is a committed name **and** at least one
+degrading flag exists*. Neither has the second half, so neither is guardable by this
+mechanism at all. Run §131 successor 3's own way — AST-extracted `committed` literals
+against `git ls-files studies/*.json`, never a sweep of `make` targets: **59 tracked
+artifacts, 38 distinct guarded names (as BASENAMES), 40 call sites across 34 drivers, 21
+tracked names unguarded** — the census as it stood BEFORE §1's guard call, which takes it
+to 41 sites across 35 drivers and 20 unguarded. Of the 21, seven are §129/§131 successor 0's commit-pinned baselines and the
+rest are deliberate degraded targets (`*_quick`, `lin_check`) plus the kinrank pair and
+this one. **A null result, and it is the half of the census §131 could not have known it
+was missing.**
+
+### 4. §131 SUCCESSOR 1: THE TABLE READS THE MAKEFILE NOW, AND THE ENUMERATION UNDER-COUNTED BY HALF ON THE FIRST TRY
+
+§131 §5 ran every guarded target's real argv through its real parser and real guard and
+then threw the harness away. Three assertions now live in `tests/`, and **none of them runs
+a driver** — §131 §5's harness ran `study_fillet_condition_a` to completion and rewrote its
+artifact, because that driver's three guard calls sit in conditional paths and "stop at the
+last guard" there means "run the study". `make -n` resolves the variables; the table's own
+three tests already prove its argvs pass the real guard; comparing the two closes the gap
+with nothing executed.
+
+**THE SCAN FAILED SILENTLY BEFORE IT WORKED, AND THAT IS NOW ITS OWN TEST.** These recipes
+span several physical lines with trailing backslashes, so a line-by-line reading of
+`make -n` captures `study_contact.py --genome best_solution.json \` and nothing after it.
+Without the continuation join: **20 targets / 34 invocations**. With it: **34 / 49**. The
+first number looked like a census. `shlex.split` is deliberately left unwrapped in the test
+so the same breakage raises rather than returning a smaller number, and
+`test_the_enumeration_can_actually_see_the_makefile` pins floors under both counts —
+without it every assertion in the file would pass vacuously over an empty scan, which is
+the defect §132 fixed in R2 and §5 below is an audit for.
+
+Of the 17 modules with a table row, **16 expand exactly as the table claims**. The 17th is
+not a defect: `make contact`'s second invocation redirects to `study_contact_step2.json`,
+which no guard defends, and a redirected run is allowed by design — so only invocations
+AIMED at a guarded name are compared.
+
+**AND THE FINDING UNDER THE FORMATTING COMPLAINT.** §131 successor 1 reads as *"the check
+lives in a scratch harness"*. The census behind it is that **17 of the 34 guarded drivers
+the Makefile invokes have no table row and have never had their recipe checked by
+anything** — the whole fillet family (10), all three `mbse` drivers, all three `tri`
+drivers, and `study_reds_ratio_stability`. Frozen in `_NO_TABLE_ROW`, failing in both
+directions. This one stays on the list permanently: its guard is keyed on collected rows,
+so no argv can decide its case, and `make reds-ratio`'s own collect argv is a gate run or a
+degraded one depending on what the fan-out left in `/tmp`.
+
+### 5. §132 SUCCESSOR 0, CLOSED ADDITIVELY — AND WHY THE OTHER OPTION WAS THE WRONG ONE
+
+`_rank_block` computes `r2_pass` for both subsets and `_verdict` reads only the feasible
+one, so the filleted artifact carried `blocks.full.r2_pass: false` beside
+`registered_criterion.R2_rank_agreement: true`. §132 offered two fixes. **The one that
+drops the verb from the diagnostic block would SUBTRACT a field from
+`study_kinematics_rank.json`**, which is §32's evidence and the file §130's header says
+must not be overwritten. Each block now carries `r2_binds` instead, and
+`R2_BINDING_SUBSET` is the single literal `_verdict` and `_print` both take it from —
+`"feasible"` had been hard-coded in each.
+
+**THE MARKER IS NAMED FOR R2 AND NOT FOR THE BLOCK, because the full pool is not purely
+diagnostic**: R1 reads its `argmin_identical`. A blanket "does not bind" would have been
+false, and a reader who took `r2_binds: false` for "not measured" would discard R1's
+operand.
+
+Re-derived by §132 §3's method. Round-trip control on both files first — 115063/115063 and
+78220/78220 bytes byte-identical — then `_verdict` over each artifact's own stored
+`rank.rows`, diffed field by field before writing: **exactly two added keys per file and
+nothing else**, `git diff --numstat` 4/2 on each, both deletions being the `r2_pass` line
+gaining a comma.
+
+**`r2_binds` IS TRUE FOR `feasible` IN BOTH FILES FOR DIFFERENT REASONS**, and a reader
+diffing them must not read the same boolean the same way: §32's binding subset is TEN,
+where `k = 5` is a proper subset and the clause always bound; the filleted one is FIVE and
+binds at all only because §132 made that clause abstain there.
+
+### 6. §132 SUCCESSOR 4: THE VACUOUS-CLAUSE AUDIT IS NOT ONE GREP, AND `min(` IS THE WRONG HANDLE
+
+§132 filed the search as *"one grep — `min(` inside a slice that then feeds a boolean
+gate"*. Run that way (by the §133 session) it returns **only the instance §132 already
+fixed**. That is a probe of one spelling, not a sweep of the class, and the class is *a
+gate clause that cannot fail at the sizes it is actually evaluated at*.
+
+Swept by AST over `studies/` and `src/` for gate-named dict fields — `*pass`, `*_ok`,
+`*valid`, `*agree`, `*equal` — built from `all()` or `any()` over a comprehension. **25
+sites. `all([])` is `True`**, so every one of them reports a passing gate over an empty
+collection.
+
+**THE FIX SHAPE ALREADY EXISTS IN THIS TREE, IN TWO SPELLINGS, AND THREE SITES USE IT:**
+
+```
+  study_kinematics_rank.py:453   "r3_pass": (bool(all(...)) if ok else None)
+  study_stage3.py:1024           "pass": bool(out) and all(...)
+  study_stage3.py:1146           "pass": bool(scored) and all(f["pass"] for f in probes)
+```
+
+The remaining 22 have neither. **This is strictly worse than the R2 defect §132 fixed**: R2
+had a second clause (`rho`) that still bound when the top-5 clause went vacuous, whereas an
+empty `rows` makes the entire gate vacuous with nothing left holding it. `study_m9.py:206`
+and `:219` are the plainest form — `rows` is built by a loop over `designs`, so an empty
+design list returns `"pass": True` having measured nothing. **Whether each of the 22 is
+REACHABLE with an empty collection is per-driver work and is not done here**; what is
+measured is the count, the class, and that the tree already knows the cure.
+
+### 7. THE ELEVEN REDS ARE UNTOUCHED, AND THE ONE SHARED EDGE WAS MEASURED FROM BOTH SIDES
+
+`tests/test_gnl.py:28` and `tests/test_wheel_fea.py:26` import
+`study_reds_ratio_stability` at module level, so §1's change sits in the import path of two
+of §133's six red files while §133 was measuring them. What those tests consume is
+`RS.RETIREMENT_SEEDS` and `RS.GATE_CORRECTION_CV`; this commit's module-level additions are
+one import and two constants, colliding with neither. Re-run isolated, both files returned
+their known 3 and 1 failures and no new ones — and the §133 session independently re-took
+its HEAD baseline in a clean `git worktree add --detach`, name for name identical to the
+run it had taken in the shared tree. **Both directions measured, neither reasoned**, which
+is what §132 §6 asks for and what the shared checkout makes easy to skip.
+
+**WHAT MOVED.** `studies/study_reds_ratio_stability.py` — `import _gate_guard`,
+`N_CELLS_BEAM`/`N_CELLS_GNL` with the derivation, the guard call in the collect branch.
+`tests/test_study_gate_guard.py` — six tests for that driver, deliberately NOT in the
+`DRIVERS` table (§1), plus §4's three Makefile tests and `_NO_TABLE_ROW`.
+`studies/study_kinematics_rank.py` — `R2_BINDING_SUBSET`, `r2_binds` in both `_rank_block`
+returns, `_verdict` and `_print` routed through the constant, the docstring's R2 line.
+Both kinrank artifacts — §5, one key per block. `tests/test_kinematics_rank.py` — three
+pins. `KINEMATICS_PLAN.md` — step 0c's R2 bullet carries the note, beside §132's amendment
+rather than instead of it. `PLAN.md` — this section, and three citations re-pointed,
+**stale by this commit's own delta and correct at the parent**:
+`study_kinematics_rank.py:237` → `:257` and §132's `:424` → `:449` and `:318` → `:339`,
+whose stated gap of "106 lines" is now 110.
+
+**NOT touched.** `studies/_gate_guard.py` — the mechanism was right; only this driver's
+idea of what degrades it was new. `study_kinematics_rank`'s own missing guard call — still
+§130 successor 0's decision, unchanged. The 22 sites in §6. `GATE_SPEARMAN`, and every
+measured value in both kinrank artifacts.
+
+**SUCCESSORS.**
+
+0. **THE REDS-RATIO ARTIFACT DESCRIBES A WHEEL THAT NO LONGER SHIPS, AND §1's GUARD DOES
+   NOT DEFEND AGAINST THAT.** Both cells read the shipped genome — `cell_gnl` opens
+   `best_solution.json`, `cell_beam` takes it through `study_wheel_fea.load_genes()`'s
+   default — and the artifact was last written at `1439ecf` (2026-08-16) while `cb4e3dd`
+   promoted `b729e86` on 2026-09-06. So its 109 cells are pre-promotion, which is why the
+   two tests its table retired a gate for now read 7.384 at n = 4 and 13.550 at n = 12
+   against the 2.167 and 9.026 in its own module comment (§133's red
+   `test_the_retired_max_min_gate_is_decided_by_the_sample_size`). **A re-run today would
+   satisfy every condition §1 added, at full fidelity, and overwrite §31's evidence with
+   numbers about a different genome.** That is §131 successor 0's category — a commit
+   check, not a fidelity check — and §106 already recorded that no committed artifact
+   stores the command, the date or the genome that produced it. **Do not regenerate it to
+   clear §133's red**; the red is the finding.
+1. **THE 22 UNGUARDED VACUOUS GATES, ONE DRIVER AT A TIME.** §6. The count and the class
+   are measured; reachability is not. The cheap first move is the two `study_m9` sites,
+   where the collection is a loop over an argument list and the emptiness question is a
+   read of the caller rather than a run. **The fix is not a new idea** — three sites in
+   this tree already carry it, in two spellings, and `study_stage3`'s
+   `bool(out) and all(...)` is the one that needs no sentinel.
+2. **`_NO_TABLE_ROW` HAS 17 ENTRIES AND SHOULD SHRINK.** §4. Each is a guarded driver whose
+   Makefile recipe nothing has ever checked, and the fillet family is ten of them from one
+   arc. Adding a row is cheap — the row is a name, its guarded names, its recipe argvs and
+   its degraded argvs — and `make -n` now supplies the third column rather than a hand
+   copy. **`study_reds_ratio_stability` is the one entry that must stay**, and the test
+   docstring says why so a later reader does not "fix" it.
+3. **NOTHING AUDITS WHETHER A GUARD'S CONDITIONS ARE THE RIGHT ONES.** §1 is a guard whose
+   filed shape was wrong for its driver, found only because the shape was tested against
+   the driver rather than copied into it. `tests/test_study_gate_guard.py` proves each
+   guard fires on the argvs it was given and stays silent on the recipe; nothing proves the
+   `degraded` list NAMES the things that actually degrade that artifact. For the 34
+   drivers that carried a guard before today, that judgement has been made once, by
+   whoever wrote the call, and never re-checked.
