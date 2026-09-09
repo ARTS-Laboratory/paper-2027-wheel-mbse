@@ -23607,3 +23607,133 @@ and when the row matters most.
    Worth stating in the closing write-up next to §149's rule about successors: **agreement
    between two derivations of an inherited quantity is evidence about the inheritance, not
    about the quantity.**
+
+---
+
+## §152 — 2026-09-08. §133's ELEVEN ROWS, ELEVEN FATES, NO ARITHMETIC IN BETWEEN — AND THE CHECK THAT WOULD HAVE CAUGHT SIX SECTIONS OF WRONG COUNTING IS INSIDE §133's OWN TITLE, WHICH DECLARES **TEN** PINS OVER TABLES THAT PRINT **NINE** AND NAMES THE MISSING ROW'S CATEGORY
+
+No commit but this one. §150 established the count was wrong and §151 established that two
+sessions got there by disjoint routes. **This is the table, in one place, and the reason
+neither of us needed a measurement to find the gap.**
+
+### 1. THE CHECK WAS FREE AND IT IS IN THE TITLE
+
+§133's heading reads, in full:
+
+> *"ALL **ELEVEN** REDS ARE THE PROMOTION AND NOTHING ELSE, MEASURED FOUR WAYS — AND
+> **TEN** OF THEM PIN A SYMPTOM OF THE OUTGOING GENOME RATHER THAN THE FINDING THEY NAME.
+> THE ONE THAT IS REAL WROTE ITS OWN SUCCESSOR IN ADVANCE, AND **THE ONLY NON-ASSERTION
+> RED** IS A `smoke`-FIDELITY ARTIFACT..."*
+
+Its two group tables print **six** and **three**.
+
+```
+  declared in the title    11 total  =  10 pins  +  1 real
+  printed in the tables     9 pins   =   6 (Group A)  +  3 (Group B)
+  difference                1 pin, and the title NAMES ITS CATEGORY: "the only
+                            non-assertion red"
+```
+
+**The tenth pin is the row that raises instead of asserting, and §133's own title says so.**
+I read the tables and not the sentence above them. §151 successor 1 asks for a `wc -l` of a
+source block against its declared length before any measurement; **this is cheaper than
+that** — the section states both numbers itself, four words apart, and they disagree.
+
+### 2. ELEVEN ROWS, ELEVEN FATES
+
+In §133's own printed order. **This supersedes §143 §1 and §150 §1**, both of which were
+short — §143 by two rows, §150 by one.
+
+```
+   #  test                                                            fate
+   1  test_contact  the_sampled_patch_extent_is_biased_not_merely...   GREEN   0a33d46
+   2  test_fem      mesh_resolution_must_scale_with_thickness          GREEN   bb76860
+   3  test_fem      the_interpolated_drop_is_the_same_number_when...   GREEN   ef6c489
+   4  test_geometry_kernel  thickness_hits_its_nodes_exactly           GREEN   f3cc24d
+   5  test_geometry_kernel  analytic_curvature_matches_finite_diff...  GREEN   e011809
+   6  test_gnl      the_load_continuation_path_does_not_change_the...  RED     NEVER CLOSED,
+                    raises NewtonDivergedError at load step 7/8        never touched
+   7  test_gnl      the_retired_max_min_gate_is_decided_by_the_sam...  RED     open
+   8  test_gnl      stress_recovery_follows_the_solves_kinematics      GREEN   a4808b4
+   9  test_wheel_fea  peak_stress_diverges_but_the_field_converges     GREEN   1205064
+  10  test_objective  R_rim_is_still_effectively_inert_and_that_is...  RENAMED a96f1de ->
+                    `test_R_rim_is_no_longer_inert_and_that_is_the_finding`, :1129, GREEN
+  11  test_objective  the_thickness_branch_of_the_cap_binds_on_a_th...  GREEN   65f45bf
+```
+
+**Eight repaired and green, one renamed and green, two red. 8 + 1 + 2 = 11.** No
+subtraction anywhere, which is the point: every count this arc got wrong was a difference
+of two numbers rather than a list of outcomes. Row 6 reads NEVER CLOSED rather than blank,
+because a blank is what let it be absent from a table for six sections.
+
+### 3. THREE WAYS A ROW LEAVES A SWEEP, AND ONLY ONE OF THEM REPORTS ANYTHING
+
+```
+  NOT IN THE SCHEMA   row 6 fits neither group table because it RAISES rather than
+                      asserting.  Cost: my nine.  Visible in §133's title, free.
+  OUT OF THE BATCH    rows 10 and 11 sit in `test_objective.py`, excluded as one of the
+                      four heavy files.  Cost: the concurrent session's nine.  Visible
+                      by comparing the batch's exclusions against the list, free.
+  RENAMED             row 10's node ID does not exist at HEAD.  a96f1de renamed it
+                      BECAUSE the finding inverted.
+```
+
+**The rename is the only one of the three that can lose a row with NO instrument reporting
+a failure.** A node-ID sweep exits with *"no match in any of [<Module ...>]"*, which reads
+as a harness error; a name-keyed table shows a row it cannot find, which reads as an
+oversight; a count-keyed accounting drops it in silence. And it fires exactly when a
+finding INVERTS — which is when the name changes and when the row matters most. Verified
+independently by both sessions, each declining the other's result: 0 occurrences of the old
+name, and the replacement at `:1129` passes.
+
+**HERE IT COST NOTHING BY LUCK.** The rename resolved to a GREEN test, so the missing row
+was a resolved one and the total came out right anyway. Had `a96f1de` renamed a test that
+then went red, all three keys would have hidden it.
+
+### 4. WHY THE COUNTS AGREEING WAS THE WHOLE PROBLEM
+
+§151 has this from the other side and it is the day's strongest finding. Two sessions
+derived a nine from the same eleven-row list by **disjoint** errors — mine dropped row 6,
+the other dropped rows 10 and 11 — and both arrived at nine. Neither set was ever compared
+to the other, because the integers matched. **The evidence was printed in a commit
+message**: row 6 is in that session's nine and absent from mine.
+
+**Agreement between two derivations of an inherited quantity is evidence about the
+INHERITANCE, not about the quantity.** That is §151 successor 2 and it belongs next to
+§149's rule about what a filed successor may assert and §145 §5's rule about guards. Those
+three are what this arc actually produced.
+
+### 5. WHAT MOVED, AND WHAT IS RUNNING
+
+Nothing but this record. **The full suite is running as this is written**, batched the way
+`test_light.log` and the four `test_heavy_*.log` were at §117 — one process for everything
+outside the heavy four, then `test_gradient`, `test_pool`, `test_stage3` and
+`test_objective` one process each, sequential under `tmux`, logs in a scratch directory so
+the committed §117-era logs stay the dated records they are. Sequential because a
+concurrent session measured a real OOM kill today at 49,948,448 kB anon-rss on a 61 GB box,
+which is §135 §2's 44 GiB `objective()` call from the other side.
+
+**That run is the first full-suite measurement since §117's promotion left it 62 red**, and
+§150 successor 2's reason for wanting it is now sharper than "it has not been done": every
+per-file and per-node-ID check this arc ran inherited a short list, and the suite is the
+only instrument that does not take the list as input.
+
+**SUCCESSORS.**
+
+0. **THE SUITE'S RESULT IS OWED ITS OWN SECTION AND MUST BE DIFFED AGAINST §2's ELEVEN**,
+   not against any nine and not against §117's 62 by count. §133's rows are eleven named
+   tests; §117's 62 is a different set measured at a different commit. **Do not subtract
+   one from the other.**
+1. **THE RAISER, ROW 6, HAS NEVER BEEN OPENED BY ANY SECTION.** §133 §4 did the diagnosis —
+   `CFG = "smoke"` cannot distinguish "the mesh is too coarse for this design" from "this
+   design has no equilibrium", and `run_newton_health` at `coarse` answers it in seconds
+   for one genome — and filed the repair as making the test SAY which it found. §150 §2
+   adds one constraint that did not exist then: `smoke` is now measured to be the
+   CONSERVATIVE evaluation point for the OTHER `test_gnl` red, so an argument for moving
+   this one's fidelity has to be made for this test alone and never for the file.
+2. **`test_the_retired_max_min_gate_is_decided_by_the_sample_size`, ROW 7.** §133 records
+   both readings ROSE — 2.167/9.026 to 7.384/13.550 — so the finding is stronger and only
+   the retired `3.0` BRACKET died, and `3.0` is a property of the retired gate rather than
+   of the claim. **Re-derive both readings first**: §145 §4 and §150 §2 are two separate
+   §133 rows whose stated causes did not survive measurement, and this is a third row of
+   the same list.
