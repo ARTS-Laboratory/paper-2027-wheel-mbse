@@ -22735,3 +22735,111 @@ are §14's dated record and both still satisfy the new pin.
    red before this arc started. When the last three close, the honest check is the full
    suite batched — one process per heavy file, `test_objective` alone taking 35:44 — and a
    diff against §133's eleven rather than against this section's nine.
+
+## §144 — 2026-09-08. §142's SUCCESSOR 2, CLOSED: `study_beam_agreement.crossover_h_over_t`. THE MESH-SIZING CROSSOVER WAS A DERIVABLE QUANTITY THAT NOTHING DERIVED, SO A TEST AIMED A PROBE FROM A COMMENT. **AND §142 QUOTED IT TO FOUR DIGITS WHEN `n_span`'s INTEGER STEP GIVES IT THREE** — PLUS `MESH_H_OVER_T`'s OWN WARRANT IS PART-STALE BY THE SAME MECHANISM, ONE LEVEL UP
+
+One commit, `2ab8954`, `studies/study_beam_agreement.py` only. 68 insertions, 0 deletions.
+
+### 1. THE FUNCTION, AND WHAT IT IS A CLAIM ABOUT
+
+§142 repaired a test whose probe was hardcoded at `h/t = 1` beside a zero crossing that is
+a function of the SHAPE genes. Finding where that crossing actually was needed a bisection
+written in a scratch file and thrown away — so the next person would have had to write it
+again, or do what the last one did and trust a comment. `crossover_h_over_t(genes, force)`
+is that bisection, beside `sized_config`.
+
+**The docstring says what it is a claim ABOUT, because inferring that is what went wrong:**
+the mesh-sizing POLICY behind `MESH_H_OVER_T` — span element size scales with the WALL and
+not the part — and *not* the wheel that ships. Below the crossover the FE reads soft (the
+converged discrepancy); above it, coarse, it reads stiff and the sign is wrong. It
+reproduces §142's bisections at `lam = 0.125`, `t_min` 0.15 mm on both genomes:
+
+```
+  genome                   arc length      h*/t     n_span there
+  pre-`cb4e3dd`             41.910 mm      0.947        295
+  shipped (`b729e86`)       54.744 mm      1.80         203
+```
+
+It **raises** rather than returning a number from an unbracketed bisection when there is
+no sign change in `bracket`. That case is real and measured, not defensive coding: the
+pre-`cb4e3dd` genome at `lam = 0.0625` still reads **-0.000595%** at the fine end, because
+at `t = 0.075` mm the converged discrepancy is itself ~1e-5. "This section has no
+crossover to aim at" is a different answer from "the bisection failed", and the caller
+needs to be able to tell them apart.
+
+### 2. **§142 QUOTED FOUR DIGITS OF A QUANTITY THAT HAS THREE. I CORRECT MY OWN RECORD.**
+
+`n_span` is an integer, so `h/t = arc_length / n_span / t_min` is a **step function of
+`k`**, and the reachable values near the crossover are spaced `1/n_span` apart: **0.49%**
+for the shipped genome (`n_span` 203), **0.34%** for the pre-`cb4e3dd` one (`n_span` 295).
+Bisecting to `tol` = 0.005, 0.001 and 0.0002 returns
+
+```
+  1.7978,  1.8067,  1.8067        shipped
+  0.9439,  0.9439,  0.9471        pre-`cb4e3dd`
+```
+
+— **adjacent values of the same step function, not a convergence.** Tightening `tol` below
+the step selects a neighbour rather than a better answer, and I nearly wrote a tighter
+default in believing otherwise. §142's `1.7978` and `0.9471` are each a genuine achieved
+`h/t` and each within one element of the figures above, so the derived claims survive at
+the precision they were stated (90% coarser: 1.80/0.947 = 1.90; probe 5.6% past the old
+crossover: 1.000/0.947). **But they were written as though the fourth digit meant
+something, and it does not.** Recorded on the function so the next reader does not chase
+it.
+
+This is [[a-threshold-is-a-claim-about-its-instrument]] in the resolution rather than the
+value: **a bisection cannot be more precise than the discretisation it bisects over**, and
+nothing in §142 asked what the reachable set of `h/t` was.
+
+### 3. `MESH_H_OVER_T`'s OWN COMMENT IS PART-STALE — THE SAME DEFECT, ONE LEVEL UP
+
+The constant this function is about carries its warrant in a comment: *"Measured at lambda
+= 1/8, the discrepancy moves from -0.52% at h = t*2.7 to +0.0027% at h = t/16 — the coarse
+mesh gets the SIGN wrong."* Re-measured at both genomes:
+
+```
+                        comment      shipped      pre-`cb4e3dd`
+  h = t*2.7             -0.52%      -0.0256%       -0.0631%
+  h = t/16             +0.0027%     +0.0114%       +0.0117%
+```
+
+**The magnitudes are from a genome older than either** — off by 8x to 20x — while the
+SIGN claim the constant rests on holds on both. So `MESH_H_OVER_T = 16` is not in
+question and I did not touch it; the numbers beside it are a dated snapshot of the kind
+§139 found in `REPO_EXPLAINED.tex`, in a docstring instead of a document. **It is also
+exactly the argument for the function**: the alternative to a derivable quantity is a
+third set of frozen numbers in a comment, and this arc now has two examples of what
+happens to those.
+
+### 4. THE ARTIFACT RULE, AND WHY IT DOES NOT BIND HERE
+
+PLAN.md's header requires a study commit to carry its regenerated `.json`/`.jpg`. It does
+not bind, and the claim is checkable rather than asserted: the diff is **68 insertions and
+0 deletions**, `crossover_h_over_t` occurs **exactly once** in the file (its own `def`, no
+call site), and `study_beam_agreement.json` carries no timestamp — its keys are `A1_A2`,
+`A3`, `A4a`, `A4b`, `pass`, `settings`. No existing code path changed, so the driver's
+output cannot have. Green: **114 passed** across every consumer of the module —
+`tests/test_fem.py`, `tests/test_mesh.py`, `tests/test_study_gate_guard.py`.
+`git grep -nE 'study_beam_agreement(\.py)?:[0-9]+'` returns nothing, so the added length
+breaks no citation.
+
+**SUCCESSORS.**
+
+0. **THE RED LIST IS §143's NAME-KEYED TABLE AND THE ORDINALS IN FOUR COMMIT SUBJECTS ARE
+   SESSION-LOCAL.** A concurrent session and I both numbered "red 3 of 9" and "red 4 of 9"
+   without coordinating, so `git log --grep "red 4 of 9"` returns two different tests.
+   §143 carries the authoritative list by test NAME. Nothing to fix in the commits; the
+   names were never ambiguous. Same shape as §138's section-number collision, one level
+   down — **two sessions, one shared ordinal space, and no protocol for it.**
+1. **NOTHING CALLS `crossover_h_over_t` YET, INCLUDING THE TEST THAT MOTIVATED IT.**
+   `test_mesh_resolution_must_scale_with_thickness` still hardcodes `k = 0.25`, chosen at
+   §142 as 2.2x past the then-measured crossover. Wiring the test to the function would
+   make the probe self-aiming, but it would also put ~13 solves into a test that currently
+   costs 2, and it would couple a gate to a bisection that can raise. **Worth deciding
+   rather than doing**: the cheap middle is to keep the hardcoded probe and have the test
+   assert the crossover is where §142 measured it, which is one extra bisection and turns
+   a silent drift into a red.
+2. **`MESH_H_OVER_T`'s COMMENT SHOULD CITE THE FUNCTION RATHER THAN CARRY NUMBERS.** §3
+   above leaves three stale magnitudes in place because re-measuring them is not what this
+   successor was for. They are two genomes old and will be three after the next promotion.
