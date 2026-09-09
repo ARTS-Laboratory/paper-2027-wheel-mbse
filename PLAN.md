@@ -23348,3 +23348,154 @@ checked, and cost nothing to write.
    that argues for the discipline: **a filed successor is a hypothesis with a citation, and
    it is read as a finding.** Whatever rule the write-up states about guards should have a
    companion about what a successor is allowed to assert.
+
+---
+
+## §150 — 2026-09-08. **THE NINE HAS BEEN TEN SINCE §135, AND §143's "AUTHORITATIVE" TABLE IS SHORT A ROW — MINE.** THE MISSING RED IS THE ONE THAT RAISES INSTEAD OF ASSERTING, SO IT IS IN NEITHER OF §133's TWO GROUP TABLES AND I ENUMERATED THE GROUPS RATHER THAN THE LIST. PLUS THE KINEMATICS RED CLOSED: ITS `> 1.5` IS NOT A FENCE, THE FENCE IS 1.0, AND THE BOUND DOES TWO JOBS
+
+Two commits, `2cef108` and `a4808b4`. The second closes a red; the first is §148's
+successor and is recorded in its own message. **The finding this section exists for is
+neither: it is that the count every section since §136 has carried is wrong, and the
+error is in the table I published as authoritative.**
+
+### 1. HOW A MEASURED DIFF OF THE WRONG CANDIDATE SET LOOKED LIKE AN ANSWER
+
+§133 lists **ELEVEN** reds, at `PLAN.md:20278-20289`. Below that it sorts them into
+**GROUP A — six demonstrations whose vehicle stopped exhibiting the phenomenon** and
+**GROUP B — three tolerance and exactness pins**. Six plus three is nine, and §133 §4
+then discusses the eleventh separately, under its own heading, because it does not fit
+either group:
+
+> **`test_gnl.py::test_the_load_continuation_path_does_not_change_the_equilibrium` does
+> not fail an assertion. It raises.**
+
+**I BUILT MY WORKING LIST FROM THE TWO GROUP TABLES AND NOT FROM THE ELEVEN-ROW LIST.**
+Nine node IDs, re-measured at §141 §1 and again at §143 §1, nine confirmed red — and
+§143 called that "diffed, not counted" and published it as the authoritative name-keyed
+table. **It was a measured diff of a candidate set that was already short**, and it
+looked MORE trustworthy for having been measured. Eleven minus `R_rim` (closed at §135,
+renamed at `a96f1de`) is **TEN**, and §136, §137, §138, §141, §143 and §145 all say nine.
+
+**IT SURFACED ONLY BY RUNNING THE WHOLE FILE**, which is §141 successor 2's own rule
+applied to `tests/test_gnl.py` for the kinematics repair below. The node ID passed; the
+file reported two failures. **The rule was written for a different reason — a repair
+breaking its neighbours — and it caught a bookkeeping error instead.**
+
+**THE CORRECTED LIST, BY NAME.** This supersedes §143 §1:
+
+```
+  GREEN  test_geometry_kernel  thickness_hits_its_nodes_exactly                f3cc24d
+  GREEN  test_geometry_kernel  analytic_curvature_matches_finite_differences   e011809
+  GREEN  test_objective        the_thickness_branch_of_the_cap_binds_...       65f45bf
+  GREEN  test_fem              mesh_resolution_must_scale_with_thickness       bb76860
+  GREEN  test_fem              the_interpolated_drop_is_the_same_number_...    ef6c489
+  GREEN  test_wheel_fea        peak_stress_diverges_but_the_field_converges    1205064
+  GREEN  test_contact          the_sampled_patch_extent_is_biased_not_...      0a33d46
+  GREEN  test_gnl              stress_recovery_follows_the_solves_kinematics   a4808b4
+  RED    test_gnl              the_retired_max_min_gate_is_decided_by_...
+  RED    test_gnl              the_load_continuation_path_does_not_change_...   <- MISSING
+                                                                                  FROM §143
+```
+
+**Eight of ten. Two remain and BOTH are in `tests/test_gnl.py`** — the count "two left"
+survives by coincidence, the composition does not. The raiser has been open since §133
+and no section has closed it; it appears in exactly two places in this file, that list
+and §133 §4.
+
+**THE LESSON IS ONE THIS TREE ALREADY HAS AND I APPLIED TO THE WRONG LEVEL.** Enumerate
+the candidate set, do not sample it — and a set assembled from two tables that PARTITION
+part of a list is a sample. §138 §1 says a citation is resolved at the commit that wrote
+it rather than by grepping HEAD for something that matches; the same discipline says a
+list is read from the list.
+
+### 2. THE KINEMATICS RED: `> 1.5` IS NOT A FENCE, AND THE BOUND DOES TWO JOBS
+
+`test_stress_recovery_follows_the_solves_kinematics` pins the §14 footgun —
+`gauss_stresses` defaults to `nonlinear=False`, which is silently wrong on an SVK field.
+The three assertions above the failing line carry that and all pass. The `> 1.5` is a
+non-vacuity guard.
+
+```
+  genome     cfg      drop_mm   right    wrong    ratio
+  shipped    smoke     2.2896  15.0834  21.9627  1.4561   <- what this fixture reads
+  shipped    coarse    2.3757  14.1442  23.1575  1.6372
+  outgoing   smoke     1.8320  18.6072  30.8418  1.6575
+  outgoing   coarse    1.9011  17.6722  32.2086  1.8226
+```
+
+**THE CONTROL IS THE OUTGOING GENOME AT THIS FIXTURE and §133 §4 assumed the other
+answer.** It reads 1.6575, so `smoke` CAN show the footgun and the promotion is the
+cause — by only 10.5% of margin over the old bound, so this guard was thin here before
+the promotion rather than comfortable. §133 §4's *"the cheap fix is not to move the
+config"* is right, and now for a measured reason: `coarse` buys 12.44% against a
+promotion that cost 12.15%.
+
+**NO DERIVABLE FENCE EXISTS, AND THE TABLE ARGUES IT BETTER THAN THE PHYSICS DOES.** The
+FIDELITY axis (+12.44%, +9.96%) is as large as the GENOME axis (−12.15%, −10.17%), and
+refining RAISES the ratio. A quantity whose mesh sensitivity rivals its physical
+sensitivity is not something a bound derives from — it is a p99 of a difference field,
+and §143 §2 is this tree's own record that p99s of sharp fields do not converge. **The
+consequence: `smoke` is the CONSERVATIVE evaluation point**, so this fixture is right for
+a reason rather than by inheritance, which is a better defence of not moving `CFG` than
+the arithmetic above it.
+
+**THE BOUND WAS DOING TWO JOBS AND ITS MESSAGE NAMED THE WRONG ONE.** It said the test
+"is not guarding anything" — false, because assertion 2 compares `stress_report` against
+the explicit recovery at `rel=1e-12` and fails loudly at any ratio meaningfully above 1.
+What the bound guards is:
+
+```
+  (a) the two RECOVERY PATHS are still DISTINCT     fence at 1.0, derivable, CODE DEFECT
+  (b) the footgun is still dramatic enough to test  no fence, a JUDGEMENT
+```
+
+One number served both; the message now branches on the reading and says which. **Same
+one-name-two-quantities shape as §140's two `CONFIGS`, §147's two node spacings and
+§148's three weld arcs — the fourth instance in this arc.**
+
+**THE HEADROOM IS 1.18 PROMOTIONS, NOT 16.49%.** The new bound is `1.25`. Applying the
+measured genome factor 0.8785 once gives 1.4561 -> 1.2792, so **one more promotion of the
+size just measured eats 86% of the margin**. The docstring says so, and says that firing
+means re-examine (b) rather than lower the number. **An arc about margins that decay
+silently should not ship a margin quoted in the units that hide the decay.**
+
+**AND THE DOCSTRING'S OWN +169.5% IS NOT THE OUTGOING GENOME'S**, which is what §133 says
+of it. 46.56/19.75 = 2.357 against 1.4561–1.8226 across both genomes and both fidelities,
+so it belongs to a genome older than `96a0ac5`. It STAYS — §136 §5's rule against
+re-fitting a figure at every promotion — but scoped. **That is the SECOND §133 row found
+to carry the right failure under a wrong attribution**, after the contact one at §145 §4.
+
+### 3. WHAT MOVED
+
+**`a4808b4`** — `tests/test_gnl.py`, one docstring and one assertion. **Green: the node
+ID passes.** Citation cost zero; all three citations into the file are above the edit.
+**Second-read by a concurrent session**, which reproduced the failing cell independently
+to four decimals and contributed the fidelity-axis argument, the two-jobs split and the
+promotions-not-percent framing — all three are improvements on my first draft and are
+marked as such in the commit.
+
+**NOT touched.** `CFG` at `:32`, for the reasons above and §133 §4's. The eleven tests
+sharing it. The docstring's dated figures.
+
+**SUCCESSORS.**
+
+0. **THE RAISER, WHICH IS §133's SUCCESSOR 2 AND HAS NEVER BEEN TOUCHED.**
+   `test_the_load_continuation_path_does_not_change_the_equilibrium` raises
+   `NewtonDivergedError` at load step 7/8 rather than failing an assertion. §133 §4
+   already did the diagnosis — `CFG = "smoke"` cannot distinguish "the mesh is too coarse
+   for this design" from "this design has no equilibrium", and `run_newton_health` at
+   `coarse` answers it in seconds for one genome — and filed the fix as making the test
+   SAY which it found. **§2 above changes one input to that: `smoke` is now known to be
+   the conservative point for the OTHER gnl red, so any argument for moving this one's
+   evaluation must be made for this test alone and not for the file.**
+1. **THE COUNT IN §136, §137, §138, §141, §143 AND §145 IS WRONG BY ONE AND THE SECTIONS
+   ARE LEFT ALONE.** Each was correct about the nine it measured. This section is the
+   correction and §1 is the list; a reader arriving at any of those six should be sent
+   here, but rewriting six dated records to fix a count is the rot this tree removes
+   rather than the repair.
+2. **THE SUITE HAS STILL NOT BEEN RUN, AND §150 §1 IS THE REASON IT MATTERS MORE THAN IT
+   DID.** §143 successor 2 asked for the full suite batched, diffed against §133's
+   eleven. That is now the only instrument that would have caught this by itself — every
+   per-file and per-node-ID check this arc has run inherited the same short list. Nine
+   files have been run whole; §117's promotion left the suite 62 red before any of it
+   started.
