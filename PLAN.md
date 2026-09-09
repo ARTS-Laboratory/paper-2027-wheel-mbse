@@ -24026,3 +24026,163 @@ is worth more than the argument that established it.
    the `(\.py)?` OPTIONAL, then §138 §1's writing-commit resolution for each. The optional
    group is not decoration: it is what hid the tenth `wheel_adjoint` citation from a sweep
    that reported nine.
+
+## §155 — 2026-09-09. §154's SUCCESSOR 2 / §138's SUCCESSOR 1, CLOSED: THE `wheel_fem.py` CITATIONS ARE SWEPT. **THE REGEX §154 FILED FINDS 9 OF 13 — ITS OPTIONAL GROUP IS ONE LEVEL TOO SHALLOW, THE SAME MISTAKE IT WAS WRITTEN TO PREVENT.** TWELVE LIVE CITATIONS, TWELVE RESOLVED AT THEIR WRITING COMMIT ON THE FIRST TRY, THREE DANGLING — AND ALL THREE ARE **ONE COMMIT**, `bf3db90`, WHICH INSERTED 26 LINES AT `:1599` ON 2026-08-23. PLUS §138 §5's FILED TARGET FOR THE ONE DANGLER IT ALREADY KNEW ABOUT IS **WRONG BY FIFTEEN LINES**, BECAUSE IT IMPORTED A CORRECT ANCHOR FROM ANOTHER FILE
+
+One commit. Three changed lines, all prose, at zero line shift. No solve, no artifact.
+
+### 1. THE CANDIDATE SET IS 13, AND THE FILED REGEX SEES 9
+
+§154 successor 2 supplied the enumeration and stressed one detail: run `git grep -nE
+'wheel_fem(\.py)?:[0-9]+'` **with the `(\.py)?` optional**, because that optional group is
+what hid the tenth `wheel_adjoint` citation from §136. It is the right lesson applied one
+level too shallow:
+
+```
+  pattern                                     instances  what the widening adds
+  wheel_fem(\.py)?:[0-9]+       (as filed)             9  --
+  wheel_fem[A-Za-z0-9_.]*:[0-9]+                      11  `wheel_fem.wheel_contact_problem:1717`
+                                                         -- a dotted symbol path, in two files
+  + the §140 symbol-owner rule, per symbol            13  `RigidGroundContact:652`, same two
+                                                         files -- a class with one definition
+```
+
+**`wheel_fem.wheel_contact_problem:1717` is a citation into `wheel_fem.py` that the filed
+pattern cannot match**, because `(\.py)?` admits exactly one optional suffix and this one
+is a dotted symbol path. `[A-Za-z0-9_.]*` admits both and costs nothing. And the last two
+need §140's rule — *the owner of a bare `:N` is whatever IDENTIFIES a file* — turned into a
+mechanical sweep: enumerate the 55 symbols `wheel_fem.py` defines at top level, then `git
+grep -nE '(^|[^A-Za-z0-9_.])<symbol>:[0-9]+'` for each. 55 symbols, **one** hit, in two
+files. Cheap, and not optional: without it the sweep reports 11 and calls itself complete.
+
+13 instances, 4 files: `PLAN.md` 7, `MBSE_PLAN.md` 2, `src/wheel_requirements.py` 2,
+`src/wheel_stage3.py` 2. One of the seven is not a citation but a **quotation** of a broken
+one — §138 §5's own repair table at `PLAN.md:21904` — leaving **12 live**.
+
+### 2. TWELVE OF TWELVE RESOLVED AT THE WRITING COMMIT, AND THE RESULT IS ONE COMMIT WIDE
+
+§138 §1's method, unchanged: `git log -S'<the citing sentence>' -- <citing file>` for the
+commit that wrote the citation, then `git show <that commit>:src/wheel_fem.py | sed -n
+'<N>p'` for the line it named. Twelve for twelve on the first try, matching §138's ten for
+ten.
+
+```
+  citing site                cited   written at            the line it named then      HEAD
+  PLAN.md:1904               :1183   43da58f  2026-08-03   du = spla.spsolve(Kr, -r)   1183
+  PLAN.md:2916               :1693   2cc24d1  2026-08-01   plane="stress", ...,
+                                                           kinematics="linear",        1719  X
+  PLAN.md:3028               :1274   b5c22c9  2026-08-12   if prob.nonlinear or
+                                                           prob.contact is not None:   1274
+  PLAN.md:3157               :1841   b5c22c9  2026-08-12   def solve_wheel_contact(    1867  X
+  PLAN.md:9159    (§65)      :1816   a0f9279  2026-08-23   res["axle_drop_mm"] = ...   1816
+  PLAN.md:9165    (§65)      :1882   a0f9279  2026-08-23   delta0 = solve_wheel(...)   1882
+  MBSE_PLAN.md:208           :1717   0b8890a  2026-08-31   def wheel_contact_problem(  1717
+  MBSE_PLAN.md:208            :652   0b8890a  2026-08-31   class RigidGroundContact:    652
+  wheel_requirements.py:54   :1717   0b8890a  2026-08-31   same                        1717
+  wheel_requirements.py:55    :652   0b8890a  2026-08-31   same                         652
+  wheel_stage3.py:67         :1841   506acfe  2026-07-29   def solve_wheel_contact(    1867  X
+  wheel_stage3.py:72         :1090   506acfe  2026-07-29   class NewtonDivergedError:  1090
+```
+
+**Three dangle, and one commit explains all three.** `bf3db90` (2026-08-23) inserted 26
+lines into `solve_wheel` — its only hunk in this file is `@@ -1599,6 +1599,32 @@` — so
+everything at or above `:1599` is untouched and everything below moves exactly `+26`. `1693
+-> 1719` and `1841 -> 1867`, twice. Nothing else in `wheel_fem.py` has shifted a cited line
+in the six weeks the twelve span.
+
+**That is a self-checking result rather than twelve independent ones.** The nine survivors
+are not luck: `:1183` and `:1274` sit above the hunk, and `:1816`, `:1882`, `:1717` and
+`:652` were all written *after* 2026-08-23 and so were already post-shift. Predicting which
+citations must be broken from the hunk header alone recovers exactly the three, which is
+the check the individual resolutions cannot supply.
+
+### 3. §138 §5 FILED THIS DANGLER'S TARGET AND GOT IT WRONG BY FIFTEEN LINES
+
+`wheel_stage3.py:67` is not a discovery. §138 §5 found it, declined to fix it under §117's
+rule, and filed it with a target:
+
+```
+  wheel_stage3.py:63    `wheel_fem.py:1841`  the cold-start `solve_wheel`  -> :1882
+                        -- which §65's own text at PLAN.md:9165 already cites correctly
+```
+
+**The citation never named the cold-start `solve_wheel`.** At `506acfe`, the commit that
+wrote it, `:1841` was `def solve_wheel_contact(mesh, *, force=TOTAL_FORCE_NEWTONS,
+newton=None,` — and the cold-start line `delta0 = solve_wheel(mesh)["axle_drop_mm"]` was at
+**`:1856`**, fifteen lines below. §138 §5 obtained `:1882` by matching HEAD against the
+claim in the citing sentence, **which is the exact method §138 §1 forbids two paragraphs
+earlier in the same section**, applied to a citation it happened to find on a line it was
+already editing.
+
+**The mechanism is worth more than the correction: a correct citation in another file is
+not a resolution for this one.** §138's stated evidence was that §65 at `PLAN.md:9165`
+"already cites correctly", and it does — `a0f9279` is 2026-08-23, after `bf3db90`, so §65's
+`:1882` is a post-shift anchor and true. But §65 cites `:1882` for a *different claim* (the
+secant's initial guess, reached exactly once). Borrowing it answers "where is that line
+now" only if both citations named the same line, and that is a fact to check, not to
+assume. Here they did not: one named the `def`, the other names the cold solve inside it.
+
+The cross-check that settles it without any judgement: `PLAN.md:3157` cites **the same
+original line** `:1841`, written at `b5c22c9`, resolving to the same `def`. Two citations
+written to one line must resolve to one line. `:1867` does; `:1882` would split them.
+
+### 4. WHAT MOVED
+
+```
+  PLAN.md:2916               src/wheel_fem.py:1693  ->  :1719     87 chars -> 87
+  PLAN.md:3157               src/wheel_fem.py:1841  ->  :1867     79 chars -> 79
+  src/wheel_stage3.py:67     wheel_fem.py:1841      ->  :1867     4 digits -> 4
+```
+
+Three lines, `2 files changed, 3 insertions(+), 3 deletions(-)`, **zero line shift and zero
+character shift** — every replacement is four digits for four, so no citation into
+`PLAN.md` or `wheel_stage3.py` moves and no paragraph re-wraps. §154 §4's self-inflicted
+wrap is the failure this avoids.
+
+Each `sed` was addressed **by line number**, not by the citation string:
+`src/wheel_fem.py:1841` has **two owners in `PLAN.md`** — the live citation at `:3157` and
+§138 §5's quotation of the broken one at `:21904` — and a global substitution would have
+silently rewritten a historical record into a lie about what §138 found.
+
+**Green.** `tests/test_stage3.py` — the file §138 used as its check for the same docstring
+— **63 passed, 0 failed, in 28:12**. No executable line changed, and
+`git grep -nE ':1841|:1693|:1719|:1867' -- tests/` is empty, so no test asserts on any of
+these anchors: the green is a guard against having edited the wrong thing, not evidence
+about the citations.
+
+### 5. THE ADJACENT SWEEP `bf3db90` SUGGESTS IS ALREADY CLEAN
+
+`bf3db90` touched two source files, and the other — `studies/study_corner_singularity.py`,
+`+59/-4` — has never been swept either. It is one candidate: `PLAN.md:23290` cites
+`studies/study_corner_singularity.py:534--536` (§149, 2026-09-08, an em-dashed range the
+same widened pattern catches at its first integer). It **resolves** — `:534-536` is the
+comment §149 was right about — and `:536`'s trailing "See `wheel_fem`" is a bare module
+reference with no line number, so it is not a thirteenth citation. One candidate,
+enumerated, resolves: no work there.
+
+**SUCCESSORS.**
+
+0. **`:1882` IS STILL AVAILABLE FOR `wheel_stage3.py:67`, BUT ONLY AS A RE-AIM.** §3
+   restores what the citation named; it does not claim that is the best anchor. `:1867` is
+   the `def` of `solve_wheel_contact`, `:1882` is the single line that performs the cold
+   solve the sentence describes, and the tighter anchor is defensible. It is a **different
+   decision** from a repair and must be filed as one — and it applies to
+   `wheel_stage3.py:67` alone, because `PLAN.md:3157`'s claim really is about the function,
+   not that line. Whoever takes it breaks the two-citations-one-line cross-check of §3
+   deliberately, and should say so.
+1. **THE SYMBOL-OWNER SWEEP OF §1 IS THE MISSING HALF OF §138's SUCCESSOR 2.** That
+   successor asks for a script that carries a bare `:N`'s owner across a paragraph. §1
+   needed a second pass it does not describe: for each cited FILE, enumerate the symbols
+   that file defines and grep `<symbol>:[0-9]+`. That is what found `RigidGroundContact:652`,
+   and no paragraph-carrying walker would have — the owner is on the same line as the
+   citation and is a class name, not a path. **55 symbols, one hit: the yield is low and
+   the cost is one loop, which is exactly the shape that gets skipped by hand and should
+   not be.**
+2. **THE FILED-REGEX FAILURE IN §1 IS THE THIRD OF ITS KIND AND THE PATTERN IS NOW
+   NAMEABLE.** §136 lost a citation to a missing `(\.py)?`; §154 wrote the optional group
+   into the successor and lost two to a missing `[A-Za-z0-9_.]*`; §140 had already
+   established the symbol-owner rule that finds the remaining two, and it was not carried
+   into the pattern. **Every widening so far has been discovered by the sweep it was too
+   narrow for.** The check that would break the sequence is cheap and was not run either
+   time: compare the pattern's hit count against `git grep -c '<module>'` — 29 mentions in
+   `PLAN.md` against 7 citations is a ratio worth eyeballing once per sweep.
