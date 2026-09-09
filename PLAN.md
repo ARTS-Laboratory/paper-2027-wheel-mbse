@@ -22844,6 +22844,146 @@ breaks no citation.
    above leaves three stale magnitudes in place because re-measuring them is not what this
    successor was for. They are two genomes old and will be three after the next promotion.
 
+---
+
+## §145 — 2026-09-08. §133's SUCCESSOR 0: THE CONTACT RED IS THE FIRST OF THE NINE THAT IS NOT A STALE CONSTANT. `peak(n_quad=20) > peak(n_quad=6)` RESTS ON GAUSS-LEGENDRE POINTS NESTING AND THEY NEVER DO — AT ANY REFINEMENT PAIR, ON ANY GENOME. SECOND SITE IN `wheel_fem`'s OWN COMMENT, AND §133's DIAGNOSIS OF THIS RED NAMED THE WRONG QUANTITY
+
+One commit, `0a33d46`. **WRITTEN AFTER §146 AND PLACED HERE IN NUMERIC ORDER**: a
+concurrent session needed a number while this one was reserved and unwritten, and took
+§146 rather than the next free one. That is the worse half of the collision rule —
+**a reserved-but-unwritten section costs more than an out-of-order append** — and the
+reservation was mine. Inserting here rather than appending costs nothing: no citation
+into `PLAN.md` points below §144.
+
+### 1. SEVEN OF THE NINE HAVE BEEN A STALE VEHICLE. THIS ONE NEVER WORKED
+
+`test_the_sampled_patch_extent_is_biased_not_merely_noisy` asserts that
+`patch_extent`
+earns its existence: the sampled half-angle OVERSTATES the zero-crossing one (a one-signed
+bias) and the sampled peak is a max over samples that must not be quoted. Both claims
+intact.
+
+The failing line compared `peak_pressure_mpa_sampled` at `n_quad` 20 against the same
+quantity at 6, warranted in the comment above it as *"refining the quadrature can only
+find MORE of the true peak, never less"*. **That needs the finer sample set to CONTAIN
+the coarser one.**
+
+```
+  leggauss(6) vs leggauss(20)    shared nodes 0     closest approach 0.010833
+  leggauss(6) vs leggauss(n), n = 2..24, n != 6      shared nodes 0 for EVERY n
+```
+
+Even orders never include 0 and odd ones always do; away from that, the roots of different
+Legendre polynomials simply do not coincide. **So a max over Gauss-Legendre points is
+never a max over a superset, for any refinement pair.** The six reds before this one were
+constants calibrated on a genome that no longer exists; this is a claim that was never
+true, on any genome, at any `n`. **There is nothing to re-aim — the repair shape is
+different and that is the finding.**
+
+**AND `n_quad` IS NOT A SAMPLING DENSITY.** It is the contact integration rule, so raising
+it changes the SOLVED FIELD as well as where that field is read. There is no one fixed
+field being sampled more finely, which is the second and independent reason the sentence
+cannot be rescued.
+
+### 2. WHAT THE PEAK ACTUALLY DOES, MEASURED OVER TWELVE VALUES
+
+```
+  n_quad     4       6       8      10      12      16      20      32      64
+  peak    4.551   6.349   5.380   5.859   5.781   5.703   5.886   5.899   5.874
+  drop   2.0019  2.0025  2.0021  2.0023  2.0022  2.0023  2.0023  2.0023  2.0023
+```
+
+**Four of eleven adjacent steps DECREASE. The maximum over all twelve is at `n = 6`, not
+at `n = 64`.** The sequence settles into a 0.46% band only from `n = 20` up, and the old
+test's `n = 6` reading sits **7.91% ABOVE** that band — so the pair the test chose put its
+larger value first. It was not an unlucky pair; the spread over the whole sweep is 1.395x.
+
+### 3. THE REPAIR IS A CONTRAST, BECAUSE NO LEVEL IS ASSERTABLE HERE
+
+What the docstring actually claims — *"reported as diagnostics and neither may be
+quoted"* — is that the peak is not a converged number. Stated executably against the
+quantity in the same result that IS converged:
+
+```
+  between n_quad 6 and 20     peak moves 7.292%     axle drop moves 0.01129%     646x
+  bound                                                                           10x
+```
+
+65x of headroom, and a failure means the sampled peak has become as quadrature-independent
+as a converged number — a real finding and the right thing to go red on. **Same family as
+`1205064`'s p99 repair: a quantity with no locatable fence gets a quantity-space guard.**
+
+### 4. TWO BY-PRODUCTS
+
+**SECOND SITE.** `wheel_fem.py`'s own comment beside the assignment said *"The peak
+pressure in particular climbs as `n_quad` rises, because more points sample nearer the
+true peak."* Same claim, same absence of a basis. Corrected in place and **re-wrapped into
+the same four lines** — four citations sit below it and not one moved.
+
+**§133's DIAGNOSIS OF THIS RED NAMED THE WRONG QUANTITY.** Its row quotes the right
+failure (`5.886 > 6.349`) and then explains it by the docstring's *"overstates by roughly
+3x here"* — which is the HALF-ANGLE, a different assertion, which PASSES, and whose ratio
+has **grown** to 4.70–5.07x rather than shrunk. Its second clause is exactly right and is
+the finding: *"the direction claim it exists to make is not what is asserted."* **A
+triaged list can carry the right failure under the wrong cause, and the row read
+plausibly enough that five sections cited it without re-deriving it.**
+
+### 5. THE GUARD RULE, WHICH THE ARC NOW HAS ENOUGH INSTANCES TO STATE
+
+A concurrent session's §146 asked for this and it is owed to the closing write-up. Two
+guard shapes have emerged and they are not interchangeable:
+
+```
+  PARAMETER SPACE   "the probe stands 2.2x from the fence"      needs a locatable fence
+  QUANTITY SPACE    "settled OR still contracting"; "the peak    needs none
+                     moves 646x more than the drop"
+```
+
+**Where a fence is locatable, prefer the parameter form, because a probe drifts toward a
+fence long before the quantity it measures changes sign.** The evidence is one row and it
+is the only PREDICTION this arc has produced: on the genome BEFORE `cb4e3dd`, the mesh
+probe already stood at 1.06x of its crossover and the new guard would have been red there
+— while the test it protects was still green. Everything else written in §141–§146 is a
+repair; that line would have spoken first.
+
+The p99 and the sampled peak have no fence — there is no `h` at which a p99 begins to
+diverge, and no `n_quad` at which a sampled max becomes a level — so both take the
+quantity form.
+
+### 6. WHAT MOVED
+
+**`0a33d46`** — `tests/test_contact.py` (docstring and one assertion),
+`src/wheel_fem.py` (four comment lines, same length), `PLAN.md` (three citation repairs).
+**Green: `tests/test_contact.py`, 32 passed, the whole file.** Citations: the +33 lines
+shift `tests/test_contact.py:465` -> `:498`, verified byte-identical and repaired at all
+three of its sites; `wheel_fem.py` and `PLAN.md` are unchanged in length.
+
+**NOT touched.** The half-angle assertion, which passes at 4.70–5.07x against its 2.0x
+bound — its docstring's "roughly 3x" is a dated reading and §136 §5's rule against
+re-fitting a figure at every promotion applies. The first assertion's `coarse` mesh and
+the §14 table justifying it.
+
+**SUCCESSORS.**
+
+0. **TWO REDS LEFT, BOTH IN `tests/test_gnl.py`, AND THEY ARE COUPLED.** §133 §4:
+   `CFG = "smoke"` at `:32` governs the whole FILE, so the config is not a property of
+   either test, and the cheap repair is to make the continuation test say WHICH of two
+   opposite verdicts it found rather than to move the config. The `max/min` one is the
+   §141 §2 shape — §133 records both readings ROSE (2.167/9.026 to 7.384/13.550), so the
+   finding is stronger and only the retired `3.0` BRACKET died, and `3.0` is a property
+   of the retired gate rather than of the claim. **Re-derive both readings before
+   trusting either; §4 above is this section's own reason for saying so.**
+1. **`test_the_interpolated_drop_...` HAS NO POSITIONAL GUARD AND ITS SIBLING NOW DOES**
+   (§146 successor 0). Probably a non-question — `ef6c489` pinned it on a RELATIONSHIP,
+   `gap == off * slope`, which cannot drift the way a probe can — but `|off| / (local
+   spacing / 2)` was measured at up to 1.000, so the offset can sit anywhere in its band
+   and nothing says where. One measurement decides whether there is a fence to be near,
+   and §5's rule says that if there is one, the parameter form is the better guard.
+2. **THE SUITE HAS STILL NOT BEEN RUN.** §143 successor 2, unchanged and now the largest
+   unmeasured thing in this arc: five files have been run whole and §117's promotion left
+   the suite 62 red before any of this started. When the last two close, the check is the
+   full suite batched — one process per heavy file — diffed against §133's ELEVEN.
+
 ## §146 — 2026-09-08. §144's SUCCESSOR 1, CLOSED. THE PROBE NOW ASSERTS **WHERE IT STANDS RELATIVE TO THE SIGN CHANGE**, NOT ONLY HOW BIG ITS READING IS — AND THAT LINE WOULD HAVE BEEN RED ON THE GENOME **BEFORE** THE PROMOTION, WHILE THE TEST WAS STILL GREEN. **MY OWN COST ARGUMENT FOR IT WAS WRONG AND DID NOT DISTINGUISH THE OPTIONS**; THE DECIDING ARGUMENT IS THAT A SELF-AIMING PROBE CANNOT APPROACH FAILURE, IT FOLLOWS FAILURE AROUND
 
 One commit, `8d317ed`, `tests/test_fem.py`. Numbered §146 because a concurrent session had
