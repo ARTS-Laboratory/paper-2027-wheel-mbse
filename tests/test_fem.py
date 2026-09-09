@@ -508,6 +508,24 @@ def test_the_vertical_displacement_runs_MONOTONICALLY_through_the_bottom():
     assert abs(slope) > 0.005, f"slope {slope:.4f} mm/deg — the snap would be harmless"
 
 
+def _uy_slope_through_bottom(mesh, res):
+    """d(uy)/d(theta) [mm/deg] across `theta = -90` on the rim, from the rim nodes.
+
+    The same reading the monotonicity test above takes; needed here three times, once
+    per mesh variant, because the snap error is the offset times THIS mesh's slope.
+    """
+    xy = np.asarray(mesh.coords)
+    disp = res["u"].reshape(-1, 2)
+    pn = np.unique(mesh.edge_sets["rim_outer"])
+    th = np.degrees(np.arctan2(xy[pn, 1], xy[pn, 0]))
+    d = (th + 90.0 + 180.0) % 360.0 - 180.0
+    near = np.abs(d) < 1.0
+    o = np.argsort(d[near])
+    uy = disp[pn][near][o, 1]
+    dd = d[near][o]
+    return (uy[-1] - uy[0]) / (dd[-1] - dd[0])
+
+
 def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom():
     """The correction has to be inert where the artefact is absent, or it is a new bias.
 
@@ -520,37 +538,59 @@ def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom()
     with open(os.path.join(os.path.dirname(os.path.dirname(
             os.path.abspath(__file__))), "best_solution.json")) as fh:
         genes = wg.genes_to_vector(json.load(fh)["genes"])
-    res = fem.solve_wheel(ww.build_wheel(genes, "coarse"))
+    mesh = ww.build_wheel(genes, "coarse")
+    res = fem.solve_wheel(mesh)
     off, gap = res["patch_centre_offset_deg"], (res["axle_drop_mm"]
                                                 - res["axle_drop_interp_mm"])
-    assert abs(off) < 0.10, off          # unfilleted: a node sits essentially at the bottom
+    # A node sits essentially at the bottom.  This is a bound on the MESH and not a
+    # fitted number: the nearest node cannot be further than half the LOCAL rim node
+    # spacing, and the bottom is refined for the contact patch -- 0.1465 deg here at
+    # `coarse` against a 1.3535 deg median around the whole rim, 9.2x coarser.  So `off`
+    # cannot exceed 0.0733 deg by construction and 0.10 has 1.36x on the ceiling, not on
+    # the reading.  Checked as a ceiling and not just as a value: across the 12 solves
+    # tabulated below, `|off| / (local spacing / 2)` never exceeds 1.000.
+    assert abs(off) < 0.10, off
     assert abs(gap) < 0.01 * res["axle_drop_interp_mm"]
 
-    # and on the FILLETED mesh, where the re-cut rim moves the phase, it does not.
-    # Measured at the pair this was written against — §85 moved `fillet=True`'s default
-    # and the factor below is NOT re-fitted to that, it is left exactly where §65 put it.
-    fres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True,
-                                          layer_profile=ww.FILLET_LAYER_SHIPPED))
-    assert abs(fres["patch_centre_offset_deg"]) > 3.0 * abs(off), (
-        off, fres["patch_centre_offset_deg"])
-    fgap = fres["axle_drop_mm"] - fres["axle_drop_interp_mm"]
-    assert abs(fgap) > 3.0 * abs(gap), (gap, fgap)
-
-    # AND ON THE MESH THE TREE BUILDS TODAY, WHICH REACHES IT LESS FAR (PLAN §85).
+    # AND THE CORRECTION IS EXACTLY THE FIRST-ORDER SNAP, WHICH IS THE CLAIM THE
+    # DOCSTRING ABOVE ALREADY MAKES -- "they must differ by roughly the offset times the
+    # slope above".  Until §141 the second half was carried instead by a pair of ratio
+    # proxies: the filleted mesh's offset had to exceed the plain one's by 3x (shipped
+    # layer profile) and 2x (per-genome rule).  Those were calibrated on the genome
+    # before `cb4e3dd` and the promotion took the vehicle away rather than the finding:
     #
-    # The per-genome rule gives this genome `(-0.3629, 0.70)` against the shipped
-    # `(-0.45, 1.60)` — a shallower entry and a much shorter layer — so it perturbs the
-    # rim less and the phase moves less with it: offset -0.1029 deg against -0.1635, gap
-    # 3.76e-03 against 5.81e-03.  The CLAIM still holds — the correction is not inert on a
-    # filleted mesh — and it holds at 2.3x and 2.1x rather than 3.6x and 3.2x.
+    #     coarse mesh          pre-`cb4e3dd`              shipped (`b729e86`)
+    #     plain                off -0.0452               off -0.0671
+    #     fillet SHIPPED       off -0.1635  (3.62x)      off +0.0413  (0.61x)
+    #     fillet per-genome    off -0.1029  (2.28x)      off +0.0920  (1.37x)
     #
-    # Asserted as its own line at its own level rather than by loosening the one above,
-    # because a threshold moved in the same change that reddened it cannot be told apart
-    # from a threshold fitted to the run that breached it.
-    pres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True))
-    assert abs(pres["patch_centre_offset_deg"]) > 2.0 * abs(off), (
-        off, pres["patch_centre_offset_deg"])
-    pgap = pres["axle_drop_mm"] - pres["axle_drop_interp_mm"]
-    assert abs(pgap) > 2.0 * abs(gap), (gap, pgap)
-    # and the rule really is the gentler of the two, which is why it needs its own line
-    assert abs(pres["patch_centre_offset_deg"]) < abs(fres["patch_centre_offset_deg"])
+    # The filleted offsets did not merely shrink, they CHANGED SIGN, and all three now
+    # sit inside the 0.10 deg band the first assertion calls "essentially at the bottom"
+    # -- so there was no longer a not-at-the-bottom case for the ratios to compare, and
+    # a bigger ratio would have been a fitted number with no vehicle under it.
+    #
+    # THE SIGN REVERSAL IS NOT A CHANGE OF MECHANISM, WHICH IS THE ONE READING THAT WOULD
+    # HAVE MADE THIS THE WRONG REPAIR.  `off` is the signed distance from the bottom to
+    # the nearest rim node, so it is bounded by half the local spacing (above) and its
+    # SIGN is only which side of the bottom that node happens to land -- a sub-node-
+    # spacing phase, and the re-cut rim re-places those nodes.  The mechanism is what
+    # survives it: the relationship below holds to 2.52% on BOTH signs of `off`.
+    #
+    # The relationship is the honest pin and it does not rot: `gap` is `off` times the
+    # slope of `uy` through the bottom, measured on the SAME mesh.  Across 2 genomes x
+    # 2 configs (`smoke`, `coarse`) x these 3 mesh variants -- 12 solves, offsets from
+    # -0.172 to +0.513 deg and BOTH signs -- `gap / (off * slope)` lands in
+    # [0.9797, 1.0252], worst deviation 2.52%.  The 10% band below is 4x that.
+    for tag, kw in (("plain", {}),
+                    ("fillet SHIPPED", dict(fillet=True,
+                                            layer_profile=ww.FILLET_LAYER_SHIPPED)),
+                    ("fillet per-genome", dict(fillet=True))):
+        m = ww.build_wheel(genes, "coarse", **kw)
+        r = fem.solve_wheel(m)
+        o = r["patch_centre_offset_deg"]
+        g = r["axle_drop_mm"] - r["axle_drop_interp_mm"]
+        predicted = o * _uy_slope_through_bottom(m, r)
+        assert abs(g - predicted) < 0.10 * abs(predicted), (
+            f"{tag}: gap {g:+.4e} is not the first-order snap {predicted:+.4e} "
+            f"(off {o:+.5f} deg) -- the correction is a different quantity, not a "
+            f"correction")
