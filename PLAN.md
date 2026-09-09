@@ -22614,3 +22614,124 @@ is the one the bound is about — [[state-the-scope-of-a-measurement]] inside a 
    needed a bisection to find `h*/t`, and it is a property of the mesh-sizing policy that
    `study_beam_agreement` could expose directly. Worth a `crossover_h_over_t(genes)` beside
    `sized_config`, so the next probe is aimed from a function rather than from a comment.
+
+---
+
+## §143 — 2026-09-08. §133's SUCCESSOR 0: THE p99 RED CLOSED, THE LIST DIFFED AT SIX OF NINE — AND THE ORDINALS IN FOUR COMMIT SUBJECTS COLLIDE, BECAUSE TWO SESSIONS NUMBERED THE SAME NINE INDEPENDENTLY. `test_peak_stress_diverges_but_the_field_converges` HAS BEEN MISCALIBRATED BY THREE PROMOTIONS AND ITS OWN DOCSTRING DIAGNOSED THE CLASS TWO PARAGRAPHS ABOVE THE LINE THAT REPEATS IT
+
+One commit, `1205064`, and one record correction that is not about it.
+
+### 1. THE AUTHORITATIVE LIST IS BY NAME, BECAUSE THE ORDINALS COLLIDED
+
+Two sessions worked §133's nine from opposite ends and each numbered what it closed.
+**`git log --grep "red 3 of 9"` returns two different tests, and so does `red 4 of 9`.**
+Nobody agreed an index and there was no reason two independent numberings would match.
+Measured at `1205064`, all nine node IDs re-run rather than counted:
+
+```
+  GREEN  test_geometry_kernel  thickness_hits_its_nodes_exactly                f3cc24d
+  GREEN  test_geometry_kernel  analytic_curvature_matches_finite_differences   e011809
+  GREEN  test_objective        the_thickness_branch_of_the_cap_binds_...       65f45bf
+  GREEN  test_fem              mesh_resolution_must_scale_with_thickness       bb76860
+  GREEN  test_fem              the_interpolated_drop_is_the_same_number_...    ef6c489
+  GREEN  test_wheel_fea        peak_stress_diverges_but_the_field_converges    1205064
+  RED    test_gnl              the_retired_max_min_gate_is_decided_by_...
+  RED    test_gnl              stress_recovery_follows_the_solves_kinematics
+  RED    test_contact          the_sampled_patch_extent_is_biased_not_...
+```
+
+**Six of nine. The ordinals in `65f45bf`, `bb76860`, `ef6c489` and `1205064` are
+SESSION-LOCAL and are not a shared index** — read them as "one of the nine", never as a
+position. Names were never ambiguous; ordinals were never shared. §138 recorded the same
+hazard for `PLAN.md` section numbers; this is it one level down, in commit subjects,
+where there is no file to re-grep before writing.
+
+**AND THE COUNT ITSELF WAS WRONG IN BOTH DIRECTIONS UNTIL IT WAS MEASURED.** The
+concurrent session reported five remaining; arithmetic here said three; the diff says
+three, and `1205064` had landed while that message was in flight. §119's rule holds for
+the closing count exactly as it held for the opening one.
+
+### 2. THE RED: THREE PROMOTIONS, AND THE THIRD CONSTANT WAS ADDED BY THE FIX FOR THE SECOND
+
+`test_peak_stress_diverges_but_the_field_converges` claims a CONTRAST — the re-entrant
+corner's pointwise max grows without bound under refinement while the p99 of the same
+field settles. Intact, and by a wide margin.
+
+Its docstring argues the right pin in as many words: the superseded `d2 < 0.3 * d1` form
+had a window that *"had to be hand-picked per design, which is the tell that the statistic
+was wrong rather than the meshes"*, so the fix states the contrast *"as a ratio of
+RELATIVE drifts, which is dimensionless and does not care which tier a given design
+converges on"*. **That assertion passes.** The one that fails is `d2 / plain[2] < 0.01`,
+added underneath it — an ABSOLUTE bound, of exactly the class the paragraph above
+condemns.
+
+```
+  cfg        max_singular    spoke_p99      |d| of p99    as % of fine
+  smoke         26.472946    14.091002
+  coarse        31.501722    12.998846       1.092156          8.22%
+  medium        35.145005    13.465662       0.466817          3.51%
+  fine          40.684846    13.281208       0.184454          1.39%
+```
+
+**THE p99 HAS NOT STOPPED CONVERGING.** Its successive differences contract by 0.4274 then
+0.3951 — about 2.4x per rung, geometric — while the max grows **53.68%** over the four and
+29.15% over the three the test uses. The dimensionless separation the surviving assertion
+demands is 10x and it reads **13.7x**. The 1.39% is where a geometric sequence has got to
+at `fine`. **It is a measurement of how many rungs this design needs, not of whether it
+converges** — which is the same sentence the docstring already wrote about `0.3`.
+
+**THE TWO FAILED FORMS EACH CAPTURED ONE REGIME, SO THE PIN IS THEIR DISJUNCTION.** A p99
+that is not running away is either SETTLED — its last step a small fraction of its value,
+which `0.01` tests and which `350f4c7` (0.094%) and `36aed36` (0.082%) satisfy — or STILL
+CONTRACTING, `d2 < d1`, which `b729e86` satisfies at 0.184454 against 0.466817. A
+genuinely diverging p99 fails BOTH, which is the only outcome this test's argument
+forbids. All three known designs pass, two of them on both branches, and neither branch
+carries a number fitted to a design.
+
+**A RATIO OF SUCCESSIVE DIFFERENCES WAS THE OBVIOUS REPAIR AND IT IS THE ONE THIS TEST
+ALREADY TRIED.** `d2 < d1` is `d2 < 0.3 * d1` with a looser constant, and the docstring's
+objection to it — *"once the quantity has actually converged, `d1` and `d2` are both tail,
+their ratio is arbitrary"* — applies to both. It survives here only as the SECOND branch
+of a disjunction whose first branch covers exactly the regime where that objection bites.
+**Reading the docstring's own history is what stopped the third repetition of the same
+mistake; the numbers alone would have suggested it.**
+
+### 3. WHAT MOVED
+
+**`1205064`** — `tests/test_wheel_fea.py`, one assertion and the docstring paragraph that
+records why. **Green: the whole file, 21 passed**, per §141 successor 2. **Citation cost
+ZERO**: all seven citations into that file (`:26` x2, `:34`, `:41`, `:206`, `:370` x3) are
+above the edit, so the count is incidental rather than earned — but it was checked before
+the prose was written, which is §138's rule and the reason it was safe to write at length.
+
+**NOT touched.** The three remaining reds. The `maxima` assertions, which pass by 53.68%
+and were never in question. `350f4c7`'s and `36aed36`'s numbers in the docstring — they
+are §14's dated record and both still satisfy the new pin.
+
+**SUCCESSORS.**
+
+0. **THREE REDS LEFT AND THEY ARE TWO FILES.** `tests/test_gnl.py`'s pair is coupled:
+   §133 §4 established that `CFG = "smoke"` at `:32` governs the whole file, so the config
+   is a property of the FILE and not of either test, and the cheap repair is to make the
+   continuation test say WHICH of two opposite verdicts it found rather than to move the
+   config. `tests/test_contact.py`'s reads `5.886 > 6.349` and §133 notes the docstring's
+   *"overstates by roughly 3x here"* is the quantity that shrank while the DIRECTION claim
+   it exists to make is not what is asserted — the same shape as the `test_fem`
+   interpolated-drop red the concurrent session closed at `ef6c489` by asserting the
+   relationship its own docstring already stated instead of a ratio proxy for it.
+1. **SIX FOR SIX, THE VEHICLE AND NOT THE FINDING — AND NOTHING WAS WATCHING ANY OF THE
+   SIX APPROACH FAILURE.** Every red so far had its finding intact and a constant, probe
+   point, metric or normalisation carried over from a genome that no longer exists. The
+   concurrent session's §142 successor 1 states the sharper half: **not one of them went
+   red as its margin decayed — each failed only when a sign flipped or a bound was
+   crossed, by which time the probe had been meaningless for some time.** Every re-aimed
+   probe on this list now carries an assertion that it has not drifted BACK toward its
+   fence; `bb76860`'s is the model and this section's disjunction is the same idea for a
+   quantity that has two regimes rather than one.
+2. **THE CLOSING SWEEP IS NOT THE NINE NODE IDS.** §141 successor 2 said a repaired test's
+   whole FILE must be re-run, and four files have now been run whole (`test_geometry_
+   kernel` 40, `test_fem` 21, `test_wheel_fea` 21, plus `test_objective`'s cap
+   neighbours). **What has NOT been re-run is the suite**, and §117's promotion left it 62
+   red before this arc started. When the last three close, the honest check is the full
+   suite batched — one process per heavy file, `test_objective` alone taking 35:44 — and a
+   diff against §133's eleven rather than against this section's nine.
