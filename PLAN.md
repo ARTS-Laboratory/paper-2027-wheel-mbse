@@ -22493,3 +22493,124 @@ concurrent session), two in `tests/test_gnl.py`, one in `tests/test_contact.py`,
    of findings — so when the remaining six are closed, the honest check is to re-run each
    repaired test's whole FILE, not its node ID, and to say in each message how many
    assertions in it were reached for the first time.
+
+## §142 — 2026-09-08. §133's SUCCESSOR 0, REDS 3 AND 4 OF NINE, BOTH CLOSED IN `tests/test_fem.py` — AND BOTH ARE §141's SHAPE ARRIVING FROM THE OTHER END: THE FINDING INTACT, THE **VEHICLE** GONE. RED 3's PROBE SAT **5.6% FROM A CROSSOVER** THAT IS A FUNCTION OF THE SHAPE GENES; RED 4's SECOND HALF WAS TWO RATIO PROXIES WHOSE CONTRAST **REVERSED SIGN**, AND THE REVERSAL IS *NOT* A CHANGE OF MECHANISM. NEITHER REPAIR MOVED A THRESHOLD
+
+Two commits, `bb76860` and `ef6c489`, one per red. Both reds were in one file and the
+second could have broken the first, so the gate is the whole file at 21 passed, not the
+node IDs. A concurrent session is clearing the other seven from the other end and
+independently found the same shape in its red 3; that makes **five of the six repairs so
+far a stale VEHICLE rather than a wrong finding**, which is now the prior worth carrying
+into the remaining reds.
+
+### 1. RED 3 — THE PROBE CLEARED THE CROSSOVER BY 5.6% AND ONE PART IN 1e5
+
+`test_mesh_resolution_must_scale_with_thickness` pins M3's most consequential number for
+M4: the span element size must resolve the `~t` boundary layers, not the part. The
+discrepancy `FE/Castigliano - 1` is **monotone in `h`** — coarse reads stiff (negative),
+refined reads soft (positive) — and crosses zero at one `h/t`. The test probed `h/t = 1`
+and asserted the sign flip against `h = t/8`. **The crossover is a function of the SHAPE
+genes**, and bisection says where the probe actually stood:
+
+```
+  genome                       h*/t      err at the h/t = 1 probe
+  pre-`cb4e3dd`              0.9471            -0.0011%     probe 5.6% past it
+  shipped  (`b729e86`)       1.7978            +0.0087%     probe 44% short
+```
+
+The promotion lengthened the arc **41.910 -> 54.744 mm, +30.6%** at an unchanged
+`t_min = 0.15` mm; the crossover went **90% coarser** and the probe fell out of the stiff
+branch. Re-aimed to `h/t ~ 4` — a mesh sized by the PART, which is what the docstring is
+about — where the margin is **113x** what it replaces:
+
+```
+  k       h/t      shipped        pre-`cb4e3dd`
+  0.25    3.967    -0.125969%     -0.183304%     <- new probe, 2.2x past the crossover
+  0.5     1.994    -0.003732%     -0.029813%
+  1       1.000    +0.008710%     -0.001109%     <- the old probe, on the fence
+  8       0.125    +0.011332%     +0.011553%     <- wall-resolved, essentially unmoved
+```
+
+**AND A GUARD THE OLD TEST DID NOT HAVE, WHICH IS THE TRANSFERABLE PART.**
+`abs(err[0.25]) > 5.0 * abs(err[8])`. Nothing in the old test went red as its margin
+eroded from -0.0011% toward zero — **it only failed once the sign actually flipped, by
+which time the probe had been meaningless for some time.** A sign that holds by 1e-5 is a
+coin, not a demonstration. Measured 11.1x and 15.9x; 5.0 leaves 2.2x. **Every re-aimed
+probe in this arc should carry one of these**, because the failure being repaired is
+precisely a margin that decayed silently.
+
+**Scope stated, not asserted.** Both probes hold their sign across `lam` in 0.0625..0.5
+on both genomes **except** the wall probe at `lam = 0.0625` on the pre-`cb4e3dd` genome
+(-0.000595%): at `t = 0.075` mm the converged discrepancy is itself ~1e-5 and the sign is
+not resolvable, which is why `lam` stays at 0.125. Over **30 genomes drawn uniformly from
+`GENE_SPACE` the two signs hold 29/30 each** — recorded as evidence the effect is generic
+to the geometry, and deliberately NOT asserted. 29/30 is a statistic about the box; this
+test is scoped to the shipped genome, and **the one failing draw is the interesting one
+and nothing names it.**
+
+### 2. RED 4 — A CONTRAST THAT REVERSED, AND WHY THAT IS NOT A CHANGE OF MECHANISM
+
+`test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom` asserts two
+halves: the interpolation is INERT where a node already sits at the bottom, and where one
+does not it differs by *"roughly the offset times the slope above"*. The first half was
+asserted directly. **The second was carried by ratio proxies** — the filleted mesh's
+offset had to exceed the plain mesh's by 3x (shipped layer profile) and 2x (per-genome
+rule) — calibrated on the pre-`cb4e3dd` genome:
+
+```
+  coarse mesh          pre-`cb4e3dd`            shipped (`b729e86`)
+  plain                off -0.0452              off -0.0671
+  fillet SHIPPED       off -0.1635  (3.62x)     off +0.0413  (0.61x)
+  fillet per-genome    off -0.1029  (2.28x)     off +0.0920  (1.37x)
+```
+
+All three filleted offsets now sit **inside the 0.10 deg band the test's own first
+assertion calls "essentially at the bottom"**, so there is no not-at-the-bottom case left
+for a ratio to compare against.
+
+**THE REVERSAL WAS THE THING TO CHECK BEFORE ASSUMING §141's DIAGNOSIS, AND IT SURVIVES
+THE CHECK.** A margin shrinking and a contrast inverting are different events, and an
+inversion can mean the mechanism changed. It does not here. `off` is the **signed distance
+from the bottom to the nearest rim node**, so it is bounded by half the LOCAL spacing and
+its sign is only *which side* that node lands — a sub-node-spacing phase, and the re-cut
+rim re-places those nodes. Measured across 12 solves: **`|off| / (local spacing / 2)`
+never exceeds 1.000.**
+
+So the second half is now pinned on the relationship the docstring already stated. `gap`
+is `off` times the slope of `uy` through the bottom **on the same mesh**, and it survives
+everything the ratios did not — both genomes, `smoke` and `coarse`, all three mesh
+variants, offsets from -0.172 to +0.513 deg and **both signs**:
+
+```
+  gap / (off * slope)   in [0.9797, 1.0252] over 12 solves, worst deviation 2.52%
+```
+
+Asserted at 10%, 4x that. **The ratio proxies were a symptom; this is the finding**, and
+it is §62's first-order snap stated as an equation instead of as a contrast.
+
+### 3. A THRESHOLD THAT LOOKED FITTED AND WAS NOT — CHECKED AGAINST THE WRONG SPACING FIRST
+
+The surviving `abs(off) < 0.10` reads like a fitted number. It is a **ceiling**: the
+nearest node cannot be further than half the local rim spacing. **I first computed that
+spacing over ALL rim nodes and got 1.3535 deg**, which puts the ceiling at 0.677 deg and
+makes 0.10 look like a number someone fitted to a reading. The bottom is **refined for the
+contact patch**: the local spacing at `coarse` is **0.1465 deg**, 9.2x finer, the ceiling
+is **0.0733 deg**, and 0.10 has 1.36x on the ceiling rather than on the reading. Two
+medians of the same quantity over different supports, differing 9.2x, and only one of them
+is the one the bound is about — [[state-the-scope-of-a-measurement]] inside a single array.
+
+**SUCCESSORS.**
+
+0. **FIVE REDS REMAIN**, and the concurrent session holds `test_gnl.py` (two),
+   `test_contact.py` (one), `test_wheel_fea.py` (one) and `test_geometry_kernel.py`'s
+   remainder. Nothing in `tests/test_fem.py` is left from the list.
+1. **THE PRIOR IS NOW STRONG ENOUGH TO STATE AS A RULE: on this list, suspect the vehicle
+   before the finding.** Six repairs, five of them a constant or a probe calibrated on a
+   genome that no longer exists, and in none of the six was the underlying claim wrong.
+   The corollary is the guard in §1 — **a re-aimed probe needs an assertion that it has
+   not drifted BACK toward the fence**, because every one of these failed loudly only long
+   after it stopped demonstrating anything.
+2. **`sized_config`'s CROSSOVER IS A DERIVABLE QUANTITY AND NOTHING DERIVES IT.** Red 3
+   needed a bisection to find `h*/t`, and it is a property of the mesh-sizing policy that
+   `study_beam_agreement` could expose directly. Worth a `crossover_h_over_t(genes)` beside
+   `sized_config`, so the next probe is aimed from a function rather than from a comment.
