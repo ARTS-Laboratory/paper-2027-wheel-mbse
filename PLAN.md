@@ -24186,3 +24186,362 @@ enumerated, resolves: no work there.
    narrow for.** The check that would break the sequence is cheap and was not run either
    time: compare the pattern's hit count against `git grep -c '<module>'` — 29 mentions in
    `PLAN.md` against 7 citations is a ratio worth eyeballing once per sweep.
+
+## §156 — 2026-09-09. §138's SUCCESSOR 2 AND §155's SUCCESSORS 1 AND 2, CLOSED: THE CITATION SWEEP IS A SCRIPT, AND ITS FIRST ANSWER ACROSS EVERY `.md` AND `.py` IS **730 CITATIONS, 203 OF WHICH DO NOT HOLD AT HEAD WHAT THEY HELD AT THEIR CITING LINE'S OWN COMMIT**, IN 2.3 SECONDS. **THE INSTRUMENT'S BLIND SPOT IS 8 ROWS OF 730 — MEASURED, NOT ARGUED — AND TWO OF THE 8 ARE THE DANGLE §137 §6 RECORDED AT §118.** ALL 27 WRONG-OWNER ROWS ARE **ONE** SHAPE, AND §155's SYMBOL PASS OVER ALL 1347 SYMBOLS RATHER THAN ONE FILE'S 55 YIELDS FOUR CITATIONS OF **ONE** SYMBOL
+
+One commit, one new file: `studies/_citation_sweep.py` — 370 lines, the first 151 of them
+the module docstring that carries the measurements below, and 186 non-blank lines of code.
+No artifact: it prints and writes nothing, because `tests/test_cli.py:81`'s rule about not
+writing into the repo applies to an audit too. Nothing imports it, `pytest --collect-only`
+reads 957 before and after, and `studies/` is enumerated by no test
+(`test_fillet_artifact_chain.py:44` binds `STUDIES` and every reader joins a named file into
+it; `make studies` lists nine drivers by name).
+
+### 1. THE REPLAY: §155's THIRTEEN, ALL TWELVE SITES, PLUS THE ONE ITS PATTERN COULD NOT SEE
+
+§155 §1 enumerated the citations into `wheel_fem.py` by hand and by widened `git grep`:
+**13 citations in 4 files.** That is the labelled set this instrument was built against,
+and it is the first thing it was pointed at.
+
+```
+  §155's enumeration            12 sites, 13 citations   ALL FOUND, none missing
+  the sweep at HEAD             22 sites, 28 citations
+  ------------------------------------------------------------------------------
+  the 15 it adds                14   PLAN.md:24030-24176 -- §155's OWN section text,
+                                     written after §155's sweep had run
+                                 1   PLAN.md:21904's bare citation of
+                                     wheel_fem.py:1882, the target half of
+                                     §138 §5's repair row: no identifier, so no pattern
+                                     keyed to `wheel_fem` can reach it
+```
+
+**The replay adds nothing §155 could have found and misses nothing it did find.** That is
+the whole of the validation, and it is worth more than the count: the one citation it adds
+in already-swept text is a BARE `:N`, which is the exact category §138's successor 2 was
+filed to reach and the category every `wheel_fem`-shaped pattern in §136, §154 and §155 was
+structurally blind to. 6 of the file's 28 citations are bare.
+
+### 2. `git blame`, NOT `git log -S` — AND THE TWO DISAGREE ON THREE OF NINE
+
+§138 §1's method for the writing commit is `git log -S'<the citing sentence>' -- <citing
+file>`: one call per citation, and a needle chosen by hand. Blaming the citing line is one
+call per citing FILE — under 0.6 s for all 24188 lines of `PLAN.md` — and needs nothing.
+Replaying §155 §2's nine unrepaired rows, blame agrees on six and differs on three, **in
+both directions and for three unrelated reasons**:
+
+```
+  citing site           §155's log -S   blame     why
+  wheel_stage3.py:72    506acfe         4ec1d91   `log -S -- <path>` cannot see past the
+                        2026-07-29      2026-07-27  `src/` reorg; blame follows the rename
+  MBSE_PLAN.md:208      0b8890a         de67144   the file was UNTRACKED until de67144
+                        2026-08-31      2026-08-31  ("track the two root markdown files")
+  PLAN.md:1904          43da58f         4e4a672   `log -S` finds the introduction, blame
+                        2026-08-03      2026-08-04  the RE-WRAP that carried the citation
+                                                    onto a new line one day later
+```
+
+That third row is not an oddity, it is the mechanism the rest of this section measures:
+`43da58f` wrote the sentence carrying `wheel_fem.py:1183` and `4e4a672` re-flowed the
+paragraph around it the next day, moving the token to a new line without touching it. Here
+it costs nothing, because `:1183` has not moved either — this row is one of the 32 below
+where both readings agree. The eight where they do not are the same mechanism with a moved
+anchor underneath it.
+
+All nine resolve identically either way, so this is not a correction to §155 — but the first
+row is a small strengthening of §155 §3. That section restored `wheel_stage3.py:67` to
+`wheel_fem.py:1867` on the ground that at `506acfe` that line was `def solve_wheel_contact(`,
+the oldest commit its instrument could see. At `4ec1d91`, **two days earlier**, the line is
+the same `def`. §155 §3's anchor is right at both ends of a reorg its own method could not
+look through.
+
+**AND LAST TOUCH IS NOT A COMPROMISE — IT IS THE RIGHT SEMANTICS, BECAUSE A REPAIR RE-DATES
+AN ANCHOR.** When `277a731` re-pointed `MBSE_PLAN.md:66` from `wheel_objective.py:1129` to
+`:1151`, the claim that has to hold at HEAD is the repaired one; resolving that line at its
+first appearance would invent a MOVED. The case blame really cannot see is the other one — a
+citation carried unchanged through a re-wrap, where the wrap is too new and real drift reads
+as OK. `git log -L <n>,<n>:<file> -p` separates the two, at **0.58 s a line against
+`PLAN.md`'s 1.5 MB of history and 0.03 s against a `src/` file** — 2 min 28 s for all 730 —
+so the size of the blind spot is a measurement rather than a caveat:
+
+```
+  730 citations
+    594   the citing line has ONE commit in its lineage -- blame IS the origin
+    136   the line was edited after it first appeared
+           32   both readings give the same verdict
+           96   they differ AND the newest commit WROTE the anchor -- blame is right
+                  72 of the 104 flips are three commits whose JOB was re-pointing
+                  citations: 57 at 277a731 (§136's 54), 12 at c51320e (§138's ten),
+                  3 at 480016a (§155's three, committed this morning)
+            8   they differ and the newest commit left the anchor alone
+                  -- the only rows where this instrument may judge against a version
+                  too new
+```
+
+**So the 203 is short by at most 8, 1.1%, and the 8 are named rather than estimated.** They
+are also not noise: two of them cite `tests/test_objective.py:1257`, which §137 §6 recorded
+as "4 name `:1257`, dangling and recorded so at §118". Of those four sites the sweep already
+reports two as MOVED — `PLAN.md:17606` and `wheel_objective.py:1171` — and to *different*
+targets in `tests/test_objective.py`, `:1393` and `:1447`, because the two citations were
+written at different commits and `:1257` did not mean the same line at both. The other two
+are exactly the two the blame verdict hides. **An instrument whose 1.1% blind spot contains
+a dangle the tree had already written down is one whose error can be read off the record
+instead of guessed at.**
+
+### 3. WHAT THE TWO SCANNED SUFFIXES SAY — AND WHY `REPO_EXPLAINED.tex` IS NOT ONE OF THEM
+
+**The scope is `.md` and `.py`, and stating that is not a formality: the third candidate
+would have reported a silent zero.** `REPO_EXPLAINED.tex` writes a citation as
+`\at{wheel\_wheel.py}{173}`, and `\newcommand{\at}[2]{\code{#1:#2}}` puts the colon in at
+RENDER time — so its 84 `\at{}{}` macros carry no `:N` for any pattern to match. The
+pattern does match 71 further tokens in that file and **every one of them is dropped for
+want of an owner**: ownership is carried by a backticked mention, and this file names its
+files in `\code{}` — its 62 backticks are LaTeX quote marks. §139 counted **145 line
+citations** there, 80 `\at{}` and 65 bare, and §140 measured **55 of them moved**. Scanning
+the file yields **zero**, which is why it is named in `NO_SCAN` rather than scanned and
+silently found empty; it stays in `SCOPE` so it can still own a citation (nothing cites it
+today) and still counts as a mention. **730 is the count for `.md` and `.py`. It is not the
+count for the tree, and a sweep that had not been asked this question would have said it
+was.**
+
+103 scanned `.md`/`.py` files of the 104 tracked, 1713 `:N` tokens, **730 citations**.
+
+```
+  730 citations   527  still name the line they named at the citing line's commit
+                  203  for a human
+  ---------------------------------------------------------------------------------
+  by what supplied the owner        by what the report says about it
+    455  a path on the token          121  MOVED, owner is a path -- drift, no doubt
+      4  a symbol (§140's rule)        55  MOVED, owner was carried -- drift IF the
+    271  an owner carried across            paragraph's owner is the right one
+         the paragraph                 27  anchor out of RANGE -- the owner is wrong
+```
+
+The provenance split is the report's own error bar and the 203 divide along exactly that
+line: a path written onto the token cannot name the wrong file, so the 121 are drift and
+not doubt. Where the rot is concentrated is not where the citations are:
+
+```
+  cited file                 citations   path-owner MOVED
+  src/wheel_step_export.py          20         17     <- 85% of its citations
+  src/wheel_fea.py                  58         30
+  src/wheel_wheel.py                42         12
+  src/wheel_stage3.py               74         10
+  src/wheel_objective.py            94          7
+  src/wheel_fem.py                  28          0     <- swept at §155, and it holds
+  src/wheel_adjoint.py              43          0     <- swept at §136-§138 (see §5)
+```
+
+**"MOVED" IS NOT THE SAME CLAIM AS "DRIFTED", AND THE `THEN` COLUMN IS WHERE THE DIFFERENCE
+LIVES.** What the instrument measures is exact and narrower than the word suggests: the cited
+line's content at HEAD differs from its content at the citing line's own commit. A citation
+that was WRONG THE DAY IT WAS TYPED reports the same way — and 14 of the 176, 8%, carry the
+signature: 6 resolve to a BLANK line and 8 to a bare docstring quote or `# ---` rule, neither
+of which can ever have been the thing the sentence was claiming. `wheel_fea.py:596-598` is
+the case worth naming, because **four separate sites cite it** — `wheel_fea.py:663`,
+`wheel_geometry.py:172`, `:430` and `study_mesh_quality.py:29`, all four for the `smoothness`
+loss term, all four MOVED, and three of the four resolve to a blank line at `8b347a0`. Four
+independent citations of one anchor, none of which ever held: that is corroboration about the
+ANCHOR rather than doubt about the instrument, and the term itself now lives at
+`wheel_fea.py:615` and `:762`. **Whoever repairs a row has to read the `then` column, because
+a delta applied to an anchor that never held moves a wrong citation to a different wrong
+line.**
+
+**The two files this tree has actually swept are the two with no path-owner drift at all** —
+and the ten that DO remain in `wheel_adjoint.py` are every one of them bare (§5). A sweep
+removes exactly what its pattern can see, which is §1's point arriving from the other side:
+the argument for running this one is not that the tree is careless, it is that three hand
+sweeps left 203 rows standing and could not have known.
+
+### 4. THE 27 OUT-OF-RANGE ROWS ARE ONE FAILURE, AND SIX ARE §135's DELIBERATE DANGLES
+
+Every one of the 27 is the same sentence shape: a bare `:N` naming a line of **the file it
+is written in**, inside a paragraph whose subject is a different file, so the carried owner
+wins and cannot hold the line. §138's successor 2 predicted the report would be "red for
+the deliberate dangles §135 records" and it is — all six of them, at `PLAN.md:21239-21240`,
+where §135 lists the six PLAN.md sites its rename dangled (`:17573`, `:17631` in §118,
+`:20287` in §132, `:20384`, `:20570`, `:20647` in §133) in a paragraph about
+`tests/test_objective.py`. The instrument says `no line 17573 in tests/test_objective.py
+-- but PLAN.md:17573 exists`, which is the diagnosis, not the repair.
+
+**THE SHARPEST OF THE 27 IS THIS SUCCESSOR'S OWN TEXT.** `PLAN.md:21946` is a line of
+§138's successor 2 — the request this section answers — and it tells its reader the script
+"would be red for the deliberate dangles §135 records at `:21244`", writing that line
+number with no file on it. The carried owner at that point in the paragraph is
+`wheel_adjoint.py`, so the report answers `no line 21244 in src/wheel_adjoint.py at
+0b345a0 -- but PLAN.md:21244 exists`. **The sentence that asked for this instrument is one
+of the 27 rows the instrument returns**, wrong in exactly the way §140's rule is wrong: the
+line belongs to the file the sentence is written in, and the paragraph is about another.
+
+**§140's carried-owner rule is therefore wrong for 27 of the 271 citations that rely on it,
+10.0%, in a single recognisable shape** — and the obvious fix is deliberately NOT applied.
+Preferring the citing file whenever the carried owner cannot hold the line would silently
+convert a genuinely far-gone anchor into a confident resolution against the wrong file, and
+nothing in this instrument can tell those two apart. The row states both readings and
+stops. Filed as successor 1 with the number attached.
+
+### 5. THE `+37` COMES BACK ON ITS OWN, AND UNIFORM DELTAS ARE A FREE CROSS-CHECK
+
+The second labelled set is `wheel_adjoint.py`: 43 citations, 32 resolving, 1 out of range,
+**10 MOVED and every one of them by +37** — seven with a unique target that is +37 exactly,
+and three whose old text now appears twice, where +37 lands each on a line holding that same
+text. §137 §6 measured the number from the diff — "`+37` at `wheel_adjoint.py:104`", one
+pure insertion — and recorded "10 dangling, left alone, moved by 37". The sweep resolves the
+ten independently, each against its own citing line's commit, and recovers the same single
+integer. Not one of the ten carries a path: all are bare `:N` under a carried owner, which
+is why the pattern §136 and §138 swept this file with could not have found them at all.
+
+Run over the whole report: 176 of the 203 are MOVED and 114 of those propose a unique HEAD
+target, which is the population a delta can be computed for. Grouped by (blame commit ×
+cited file):
+
+```
+  of the 176 MOVED   114  propose a unique HEAD target
+                      62  do not -- the old line's text occurs 0 or many times at HEAD
+
+  the 114 in       46 groups   39 have ONE delta    70 rows -- but 21 of those groups hold
+                                                              a single row and corroborate
+                                                              nothing; 18 groups / 49 rows
+                                                              have a neighbour that agrees
+                               7 have several       44 rows -- several insertions in the
+                                                              elapsed history, e.g. 8b347a0
+                                                              (2026-07-24) into
+                                                              wheel_fea.py:+77/+130/+174/+243
+```
+
+The two checks fail on opposite rows, which is why both are printed. §136's own paragraph
+about `wheel_adjoint`'s two near-identical functions is the case in point: `:819` and `:884`
+are byte-identical `if not np.isfinite(dF_ddelta...` guards, so the content match reports
+"2 matches at HEAD" and refuses to choose — while the +37 its seven unambiguous neighbours
+agree on names the line without ambiguity. **A content proposal and a hunk-shift prediction
+are not two ways of doing the same thing.**
+
+### 6. TWO RULES THAT ARE MEASUREMENTS RATHER THAN CHOICES
+
+**IN CODE, ONLY A TOKEN THAT NAMES A FILE STANDS WITHOUT BACKTICKS.**
+`studies/study_fillet_block.py` carries 102 bare `:N` tokens and **not one is a citation** —
+slices, format specs, dict literals. Backticks separate them perfectly here: 8 backticked
+bare tokens exist across every `.py` file in the tree and all 8 are real, including
+`wheel_objective.py:669-670`, where one owner serves four line numbers across a line break.
+The rule has to cover symbols for the same reason one level up: `wheel_fea.py:1365` prints
+`max_stress` under a `7.2f` format spec, and `max_stress` is a top-level `def` in
+`wheel_adjoint.py:573` — a format spec that §140's symbol rule reads as a citation into
+another module. A path may stand bare (`stage3_resume_genome.py:15` writes
+`(wheel_stage3.py:980-982)`); a symbol may not.
+
+**AND A CARRIED OWNER MAY NOT BE A SYMBOL AT ALL.** `wheel_fea.py:663` reads "``smoothness``
+was only ever an indirect proxy for this (``:596-598`` said so)", and `smoothness` has
+exactly one top-level definition in this tree — in `studies/study_fillet_pnorm.py`, which is
+not the file that sentence is about. An identifier written ONTO a token may be a symbol,
+because it is bound to the citation; an owner carried across a paragraph may not be. So a
+bare `:N` in a source file with no file-identifying mention in its paragraph falls back to
+the citing file, which buys the right KIND of owner and nothing more: that row still comes
+back MOVED, because at `f0a9e83` — the commit that wrote the sentence — `wheel_fea.py:596`
+was a `# ---` divider. Still a question for a human, but now the right question.
+
+**The three widenings this pattern needed were all already in the record.** §136 lost a
+citation to a missing `(\.py)?`; §154 wrote that optional group into its successor and lost
+two to a missing `[A-Za-z0-9_.]*`; §140 had established the symbol rule and neither carried
+it into the pattern. The numeric forms here were counted instead of guessed — of 1713
+tokens, 1571 single lines, 126 `-` ranges, 8 `--` ranges, 8 comma lists
+(`wheel_adjoint:588,643`, the tenth citation §137 §6 found) — and the mention ratio
+§155's successor 2 asked for is a column of the report rather than a habit.
+
+### 7. THE SYMBOL PASS, PRICED
+
+§155's successor 1 called the symbol sweep "55 symbols, one hit ... exactly the shape that
+gets skipped by hand and should not be". Over all 104 files the ratio is starker: **1347
+top-level symbols have exactly one definition, and sweeping every one finds 4 citations —
+all of the same symbol, `RigidGroundContact`, all into `wheel_fem.py`, all four already
+known to §155.** Building the whole owner index — 104 basenames, 104 module stems and the
+1347-symbol table — takes **10 ms**, and enumerating all 730 citations 0.22 s; the 2.3 s is
+almost entirely the `git` calls that resolve them. A yield of 4 in 730 for 10 ms is worth
+having, and is also exactly why no hand sweep will ever run it.
+
+### 8. THE INSTRUMENT'S FIRST FINDING WAS IN ITS OWN DOCSTRING
+
+**AND ITS FIRST ACT WAS TO FIND AN AMBIGUOUS BARE `:N` IN ITS OWN DOCSTRING**, which is
+§153's shape exactly — the collected-count gate caught a bug in the instrument that
+implements the gate, on its first outing. Run over the tree with the new file added to the
+list, 26 citations come back from that docstring and 25 of them own themselves properly;
+the twenty-sixth was `` `:1841` `` written bare in a paragraph whose last file-identifying
+mention had been three sentences and a blank line earlier, so §6's source-file fallback
+claimed it for `_citation_sweep.py` itself. The prose now writes `wheel_fem.py:1841`. **A
+bare `:N` is not a shorthand a reader resolves from context; it is a shorthand that resolves
+against whatever the paragraph last named, and that is a different thing.**
+
+**Green.** The light batch does not fit in one process any more, and the split that made it
+fit is itself a measurement — successor 3 carries it. Three processes instead of §153's one:
+`tests/test_cli.py` through `tests/test_geometry_kernel.py`, **399 passed, 10 xfailed in
+7:45**, peak `VmHWM` 10.30 GiB; that range's other fourteen files, **266 passed, 1 xfailed in
+1:32**, peak 2.68 GiB; and `tests/test_requirements.py` alone, **44 passed in 19:59**, peak
+29.15 GiB. **709 passed, 11 xfailed, 0 failed**, and 409 + 267 + 44 = **720** is §153's light
+count — the check that no file went missing in the re-cutting, because a dropped file makes
+its tests neither pass nor fail and a short list reads as progress. Collection is 957,
+unchanged. The heavy four were not re-run and do not need to be: `testpaths` is `["tests"]`
+so `studies/` is never collected, nothing imports `_citation_sweep`, and the one glob that
+reaches this directory is `studies/study_*.py` — which is why `_gate_guard.py` has always
+been invisible to it, and why an underscore was the right first character here too.
+
+**SUCCESSORS.**
+
+0. **121 CITATIONS HAVE DRIFTED AND THE OWNER IS NOT IN QUESTION FOR ANY OF THEM.** This is
+   the work the report exists to hand over, and it is not one commit: the citing sites are
+   50 in `PLAN.md`, 7 each in `wheel_geometry.py` and `MBSE_PLAN.md`, 6 in `test_golden.py`,
+   5 each in `wheel_genome.py`, `wheel_objective.py` and `test_import_hygiene.py`. Take it
+   by CITED file, not by citing file, because that is how the deltas group and how the
+   cross-check of §5 becomes available: `wheel_step_export.py` is 17 rows and the worst
+   in the tree at 85% of its citations, `wheel_fea.py` is 30. §155's shape — one commit,
+   zero line shift, `sed` addressed by line number and never by the citation string —
+   applies unchanged.
+1. **THE CARRIED-OWNER RULE IS WRONG 10.0% OF THE TIME IN ONE SHAPE, AND THE FIX IS A
+   JUDGEMENT, NOT A PATCH.** §4 has the measurement: 27 of 271, every one a self-citation
+   whose paragraph is about another file. Preferring the citing file when the carried owner
+   cannot hold the line clears all 27 and buys a new silent failure — a far-gone anchor
+   resolved confidently against the wrong file. Whoever takes it should decide with the
+   27/271 in hand and say which failure they are choosing; six of the 27 are §135's
+   deliberate dangles and must stay in the report either way.
+2. **EIGHT NAMED ROWS ARE THE WHOLE OF THE BLIND SPOT, AND THEY ARE A DAY'S WORK, NOT AN
+   ARC.** §2 measured them; they are `MBSE_PLAN.md:68`, `PLAN.md:96`, `:2933`, `:6970`,
+   `:16795`, `:17607`, `:19688` and `tests/test_pool.py:371`. Each reads OK only because
+   the commit that last touched the citing line was not the commit that wrote the anchor,
+   so each needs the `git log -L -p` reading of its own lineage rather than the sweep's.
+   Two are the `test_objective.py:1257` dangle already in the record; `PLAN.md:19688` is
+   the one whose owner is CARRIED as well, so it needs §4's judgement first. Folding the
+   `log -L` pass into the script itself is NOT the successor: the full-tree version of it
+   measured **2 min 28 s against the sweep's 2.3 s**, 65x, for a 1.1% correction — and
+   these eight rows can be settled once by hand and re-found by the same command whenever
+   the count moves.
+3. **ONE TEST NEEDS 26–29 GiB AND ELEVEN MINUTES, AND THAT IS THE WHOLE OF WHY §153's LIGHT
+   BATCH NO LONGER FITS IN ONE PROCESS.** The recipe was OOM-killed on the way to the green
+   above, at 13:44:24: one victim, `python` pid 271812, `total-vm:44802280kB`,
+   **`anon-rss:29061492kB`, 27.7 GiB on a 61.4 GiB box**, `oom_score_adj:200`, oom-killer
+   invoked by `tailscaled`. §153 recorded a run-wide peak under 14 GiB across all five of
+   its batches, so something had moved.
+   THE PROGRESS MARKS ARE AN EXACT TEST CENSUS, WHICH IS WHAT MAKES THE REST CHEAP. Half A
+   printed 409 marks, 399 `.` and 10 `x`, against a summary line reading `399 passed, 10
+   xfailed`; and a live process holds a partial 29-character line in a REDIRECTED file, so
+   pytest flushes per test and not per line. The killed log carries exactly 518 marks, 507
+   `.` and 11 `x` with no `E` or `F`, so 518 tests finished and the kill landed inside test
+   **519**, `test_pooled_equals_serial_under_a_non_baseline_requirement_set`.
+   **AND TEST 519 IS NOT THE ANSWER, WHICH IS THE PART A BRACKET GETS WRONG.** The victim's
+   index names the test that was running when the box ran out, not the test that spent the
+   memory. Run `tests/test_requirements.py` alone in a fresh process and its first 17 tests
+   finish in **5 seconds holding 0.46 GiB between them**; its 18th,
+   `test_req_baseline_is_bit_identical_to_naming_no_requirements` — which spawns nothing and
+   simply calls `_evaluate(genes)` twice and compares a scalar, 14 gradient components and 14
+   breakdown terms with `==` — then runs for **11 minutes** on its own. Twice, in two
+   separate processes: 11:17 reaching 25.8 GiB, and 11:06 reaching 29.0 GiB. **One test costs
+   more wall clock than the 409 tests of half A, which take 7:45 and peak at 10.30 GiB**, and
+   the other fourteen files of half B do 267 tests in 1:32 inside 2.68 GiB. In a fifteen-file
+   process the same test carried the peak to 31.84 GiB over 41 samples with no sample below
+   its predecessor, so nothing is handed back while it runs. That is the mechanism entire:
+   one test wants about 26 to 29 GiB, and any batch also holding a few GiB of another file's
+   residue crosses what the box will give. The `oom_score_adj:200` no longer has to be argued
+   around — the size is measured in three other processes that were the victim of nothing.
+   WHAT IS NOT MEASURED is why one `==` between two objective evaluations costs 26 GiB, and
+   why the same test varies by 3.2 GiB between runs. That is the successor: bisect inside the
+   test, not across the suite, because the suite has already been bisected and answered.
+   Until then the light batch is three processes with this file alone in the third, and
+   §153's recipe should NOT be edited to say so — a batch boundary that exists because of an
+   unexplained 26 GiB is a workaround wearing a measurement's clothes, and the number is now
+   specific enough to fix instead.
