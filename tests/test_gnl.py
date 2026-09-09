@@ -102,6 +102,27 @@ def test_the_load_continuation_path_does_not_change_the_equilibrium(genes):
     would pin a symptom that relocates, which is §141's lesson.  `n = 8` converges at
     `coarse` (spread 0.000e+00, order 7.210), so it does not survive refinement either.
 
+    **AND THE REGION IS NOT CENTRED ON THIS GENOME — THE FRAMING ABOVE IS SCOPED TOO
+    NARROWLY, WIDENED 2026-09-09.**  Six committed genomes at their NATIVE thicknesses,
+    nine step counts each, `smoke`: 54 cells and exactly one failure, this one.  That reads
+    as immunity and it is sampling.  Varying `t0` ALONE at `n = 8` puts **eight of eighteen
+    cells** in divergence, and the OUTGOING genome is in it too:
+
+        96a0ac5 outgoing   t0 = 1.800   RAISED at load step 3/8
+        96a0ac5 outgoing   t0 = 2.800   RAISED at load step 8/8
+        96a0ac5 outgoing   t0 = 1.474   OK          <- its native value, which is why the
+                                                       six-genome sweep found nothing
+        b729e86 shipped    t0 = 2.400   RAISED at load step 7/8
+        b729e86 shipped    t0 = 3.000   OK          <- BETWEEN two failures
+
+    **Non-monotone in `t0` on both bases**, so there is no threshold to state and a
+    structural story — the shipped genome's root-to-wall step is 2.921 against a
+    next-highest of 1.294 — was proposed and killed by that table.  Deterministic: repeated
+    cells reproduce identically, failing load step included.  The failing step itself ranges
+    3/8 to 8/8 across cells, which is the same relocation the ±0.1% perturbation shows, seen
+    in a second parameter.  **A future genome can land in this set without being anywhere
+    near this one.**
+
     WHY CHANGING THE PAIR IS NOT DODGING IT.  This test guards against a path that "looks
     healthy at every step and only the endpoints disagree".  What `n = 8` does is the
     OPPOSITE failure mode: the line search backtracks twenty times and REFUSES.  Meanwhile
