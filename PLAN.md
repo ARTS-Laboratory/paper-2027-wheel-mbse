@@ -23737,3 +23737,118 @@ only instrument that does not take the list as input.
    of the claim. **Re-derive both readings first**: §145 §4 and §150 §2 are two separate
    §133 rows whose stated causes did not survive measurement, and this is a third row of
    the same list.
+
+---
+
+## §153 — 2026-09-09. THE FIRST FULL SUITE SINCE §117: **957 COLLECTED, 942 PASSED, 2 FAILED, 13 XFAILED, 0 XPASSED**, IN 1:52:49. BOTH REDS ARE §152 §2's ROWS 6 AND 7 AND **NOTHING OUTSIDE THE ELEVEN IS RED**. THE COLLECTED-COUNT GATE CAUGHT A BUG IN THE INSTRUMENT THAT IMPLEMENTS THE GATE, ON ITS FIRST OUTING
+
+No source commit. §143 successor 2 asked for this at three sections' distance, §150
+successor 2 sharpened the reason — every per-file and per-node-ID check this arc ran
+inherited a short list, and the suite is the only instrument that does not take the list as
+input — and §152 successor 0 set the protocol. This is the run.
+
+### 1. THE GATE, WHICH WAS THE POINT
+
+A concurrent session's precondition, adopted before any diffing: **sum the batches'
+collected counts and assert the declared 957, because a dropped file makes tests appear
+neither passed nor failed, the red list comes back short, and short reads as progress.**
+That is exactly how a nine survived four commit messages at §151.
+
+```
+  batch             collected   passed  failed  xfailed  xpassed  error  skipped   wall
+  light                   720      707       2       11        0      0        0  29:02
+  heavy_gradient           24       24       0        0        0      0        0   6:37
+  heavy_pool               23       23       0        0        0      0        0  12:11
+  heavy_stage3             63       63       0        0        0      0        0  28:41
+  heavy_objective         127      125       0        2        0      0        0  36:18
+  ------------------------------------------------------------------------------------
+  SUM                     957      942       2       13        0      0        0  1:52:49
+                          ===                                        declared: 957
+```
+
+**957 = 957.** No file dropped, no gap, no overlap. **13 xfailed reconciles against the 13
+`pytest.mark.xfail` marks counted statically in `tests/`**, so §152 §3's fourth bucket is
+populated and accounted for rather than merely acknowledged. **0 xpassed**, which under
+`xfail_strict = true` (`pyproject.toml:38`) would have been failures.
+
+Batched as the §117-era logs were — one process for everything outside the heavy four, then
+`test_gradient`, `test_pool`, `test_stage3`, `test_objective` one process each, SEQUENTIAL
+under `tmux`. Sequential because a concurrent session measured a real OOM kill earlier the
+same day at 49,948,448 kB anon-rss on a 61 GB box; peak here stayed under 14 GiB with 45 GB
+free. Logs written to a scratch directory so the committed `test_light.log` and four
+`test_heavy_*.log` stay the dated §117 records they are.
+
+### 2. THE GATE'S FIRST ACT WAS TO CATCH ITS OWN INSTRUMENT
+
+**The first count read 967 and the gate said FAIL.** The extraction was
+`grep -oE "^[.FExsu]+"` over the logs — and **pytest's traceback detail lines begin with
+`E`**, so ten characters of failure output were counted as ten test outcomes.
+
+```
+  E       assert 7.383620170836557 < 3.0        <- counted as an "error" outcome
+```
+
+Ten too MANY, which is the direction that sends you to re-run a good suite. **Had the
+miscount gone the other way I would have re-run a bad one and been right for the wrong
+reason** — the same shape as §152 §3's rename, where the outcome was right and the
+mechanism that made it right was not chosen. Fixed by matching only true progress lines,
+`^[.FEsxuX]+\s*\[\s*\d+%\]$`. **A gate whose first outing catches a defect in the code
+implementing the gate has earned its place; this one did, and the defect was in the half
+written after the gate was agreed.**
+
+### 3. THE RED SET, BY NAME, AND THE BUCKET THAT MATTERS IS EMPTY
+
+```
+  FAILED tests/test_gnl.py::test_the_load_continuation_path_does_not_change_the_equilibrium
+  FAILED tests/test_gnl.py::test_the_retired_max_min_gate_is_decided_by_the_sample_size
+```
+
+**Both are §152 §2's rows 6 and 7. The third bucket — red but NOT one of the eleven — is
+EMPTY across all 957.** That is the output a subtraction would have hidden entirely, and it
+is what makes the rest of this arc trustworthy: **nothing the nine repairs touched broke
+anything outside the list they were working from.** Nine files were edited across §141-§152
+and the other 25 are untouched and green.
+
+**§117's 62 IS NOT A TERM AND IS NOT SUBTRACTED FROM.** Two facts side by side: §117
+measured 62 red at `cb4e3dd`; this run measures 2 red at `45aa25e`. Different sets,
+different commits, and §152 successor 0 exists because an arithmetic relationship between
+them looks available and is not one.
+
+### 4. FILED, NOT CHASED: THE LOGS CARRY NO SUMMARY LINE
+
+`pytest -q --no-header -rf` wrote no `N passed in Xs` line in any of the five batches, which
+is why §1's counts come from progress characters rather than from a summary. **The committed
+§117-era logs DO carry those lines** — `test_heavy_objective.log` ends
+`124 passed, 3 xfailed in 2144.91s (0:35:44)` — so something differs between `make test`'s
+invocation and this one. Not chased, because guessing at it is exactly what this arc has
+been punishing; recorded so the next full run knows to check rather than assume its
+summary will be there.
+
+### 5. WHAT MOVED
+
+Nothing in the tree. This section is the record; the run's artifacts stay in scratch.
+
+**NOT touched.** The two reds. The 13 xfails, every one of which carries a `reason=` naming
+a PLAN section, per `pyproject.toml`'s policy set at §31 — a policy that has now held
+13 of 13.
+
+**SUCCESSORS.**
+
+0. **ROW 6, THE RAISER, WHICH NO SECTION HAS EVER OPENED.**
+   `test_the_load_continuation_path_does_not_change_the_equilibrium` raises
+   `NewtonDivergedError` at load step 7/8 rather than failing an assertion. §133 §4 did the
+   diagnosis and filed the repair as making the test SAY which of two opposite verdicts it
+   found. **Two constraints now exist that did not when it was filed.** §150 §2 measured
+   `smoke` to be the CONSERVATIVE evaluation point for the other `test_gnl` red, so an
+   argument for moving this one's fidelity must be made for this test alone and never for
+   the file. And `tests/test_gnl.py:230` carries a STRICT xfail — §14 item 4a's
+   pre-registered small-load gate, 0.2007% against 0.1%, whose reason says
+   *"GATE_SMALL_LOAD_REL is NOT to be moved"* — so **a repair that changes the small-load
+   solver path can turn that xfail into a passing test, which under `xfail_strict` is a
+   FAILURE.** Check it before editing the continuation path, not after.
+1. **ROW 7**, unchanged from §152 successor 2: re-derive both readings before trusting
+   §133's row, which is the third row of that list whose stated cause has to be re-measured.
+2. **THIS RUN IS A BASELINE AND SHOULD BE CITED AS ONE.** 957/942/2/13/0 at `45aa25e`,
+   1:52:49, batched as above. The next promotion's checklist has no full-suite item — §115's
+   left the suite 62 red and §117 discovered it afterwards. **A promotion that lands without
+   this measurement taken before and after is a promotion whose red count is an inference.**
