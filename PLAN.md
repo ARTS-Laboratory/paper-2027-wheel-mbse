@@ -2913,7 +2913,7 @@ measuring.
 ### 15. STAGE 3 WAS DESCENDING ON THE WRONG PHYSICS. It can now descend on the right physics, and the wheel that descent finds cannot be built. **NOTHING PROMOTED** (2026-08-10).
 
 **BEFORE THIS MILESTONE, EVERY STAGE-3 NUMBER IN THIS REPO WAS A LINEAR-KINEMATICS NUMBER.**
-`wheel_contact_problem` defaults to `kinematics="linear"` (`src/wheel_fem.py:1693`) and
+`wheel_contact_problem` defaults to `kinematics="linear"` (`src/wheel_fem.py:1719`) and
 nothing in the Stage-3 path had ever overridden it. That is the one sentence to carry out of
 this section. Those numbers are not *wrong* — they are answers to a different question, and
 §14 item 4a is where the question got asked.
@@ -3154,7 +3154,7 @@ Step 3 artifact unchanged): drop 1.9991, util 0.8989, loss 30.8207, every digit.
 Stage-3 run record is not reporting an internal state the saved genome does not encode.
 
 **Run 2 hit one `solve_reject` at step 128, handled, and it is worth a line.**
-`solve_wheel_contact` (`src/wheel_fem.py:1841`) is a secant on indentation with
+`solve_wheel_contact` (`src/wheel_fem.py:1867`) is a secant on indentation with
 `tol_rel=1e-8`; it stalled at 66.723265 N against a 66.7233 N target — a residual of
 **5.2e-7 relative, 52× above the tolerance it is asked to hit**. The load is physically
 reached to within a part in two million. What fails is the *outer* secant's ability to resolve

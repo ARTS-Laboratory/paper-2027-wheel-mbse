@@ -64,7 +64,7 @@ is the failure mode this project keeps naming and keeps having to catch with a g
     So the next step's warm vector is just the last step's per-phase drops, read off
     `breakdown["report"]["rows"]` and passed back as `warm=`.  `delta0=None` costs an
     extra linear `solve_wheel` per phase to manufacture a starting guess
-    (`wheel_fem.py:1841`), and between two Adam steps the design barely moves, so the
+    (`wheel_fem.py:1867`), and between two Adam steps the design barely moves, so the
     previous answer is a far better guess than anything a cold solve can produce.
 
 5.  A FAILED SOLVE IS A STEP REJECT, NOT A CRASH, AND NOT A ZERO.
