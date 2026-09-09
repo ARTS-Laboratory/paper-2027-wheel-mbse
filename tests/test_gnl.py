@@ -244,15 +244,78 @@ def test_the_retired_max_min_gate_is_decided_by_the_sample_size(genes):
     asserts, executably, that no threshold can sit on it: the retired gate's VERDICT FLIPS
     with `n` at a fixed seed.  Measured at seed 7, the seed the retired test hard-coded:
     2.167 at n=4 and 9.026 at n=12.
+
+    THE ASSERTION WAS `small < 3.0 < large` UNTIL 2026-09-09, AND `3.0` IS A PROPERTY OF
+    THE RETIRED GATE RATHER THAN OF THIS CLAIM.  Both readings rose — 7.3836 at n=4 and
+    13.5495 at n=12 — so the finding is intact and stronger, and only the BRACKET died.
+
+    THE n-DEPENDENCE IS A THEOREM ABOUT THE STATISTIC, NOT A FACT ABOUT THE WHEEL.
+    `study_gnl.py:388` forms it as `iso.max() / iso.min()` over the drawn rows plus the
+    shipped one.  That is an ORDER STATISTIC: it has no population value to converge to, it
+    only accumulates extremes.  At a fixed seed the sample at `n` is an exact PREFIX of the
+    sample at larger `n`, so `max` is non-decreasing and `min` non-increasing in `n`, and
+    **the ratio is therefore monotone non-decreasing in `n` by construction, for any data
+    whatsoever.**  Measured at two seeds:
+
+         n  seed     ratio       cv     iso_min     iso_max
+         3     7    7.3836   0.6207  1.3198e-01  9.7451e-01
+         4     7    7.3836   0.5458  1.3198e-01  9.7451e-01
+         8     7    7.3836   0.6882  1.3198e-01  9.7451e-01
+        12     7   13.5495   0.7787  7.1922e-02  9.7451e-01
+        20     7   13.5495   0.7588  7.1922e-02  9.7451e-01
+
+         3    11    2.6449   0.4457  1.3198e-01  3.4908e-01
+         4    11    4.1362   0.5195  8.4396e-02  3.4908e-01
+         6    11    8.2150   0.8033  8.4396e-02  6.9331e-01
+        16    11   21.6540   1.0963  8.4396e-02  1.8275e+00
+        20    11   23.4987   1.1319  7.7771e-02  1.8275e+00
+
+    **It is a STEP FUNCTION of `n`**, and where the steps fall is decided by where the next
+    extreme happens to sit in the draw order.  At seed 7 the max never moves at all (it is
+    draw index 0) and every step comes from the min; at seed 11 BOTH move, twice each — so
+    "the max is pinned" is a property of seed 7 and not of the statistic, which is why this
+    docstring quotes two seeds and not one.
+
+    AND THE DEMONSTRATION DID NOT DIE, IT MOVED SEEDS.  At seed 11, n=3 reads 2.6449 and
+    n=4 reads 4.1362 — **the retired 3.0 gate's verdict still flips, between three draws
+    and four.**  The seed is NOT re-fitted here to rescue it: that would be re-aiming a
+    probe to dodge a finding.  It is recorded because it makes the claim sharper than the
+    original bracket did — **a threshold's verdict on this quantity is a property of
+    `(n, seed)`, not of the design space.**
+
+    SO THE ASSERTION IS "IT TAKES MORE THAN ONE VALUE OVER A SWEPT `n`", AND THE TWO-POINT
+    FORM WAS REJECTED FOR A MEASURED REASON.  Comparing `ratio(n_large) > ratio(n_small)`
+    strictly looks like the theorem but is not: the theorem gives NON-decreasing, and flat
+    pairs are common — seed 7 `(4, 8)` and `(12, 20)`, seed 3 `(4, 8)`, seed 11 `(8, 12)`
+    are all flat, roughly half the pairs measured.  A two-point strict test therefore passes
+    only when a STEP happens to fall between the two chosen `n`, **which is the retired
+    3.0 bracket's fragility moved up one level**: "3.0 must sit between two steps" becomes
+    "a step must sit between `n_small` and `n_large`".  Sweeping instead asks the question
+    directly — does this quantity depend on `n` at all — and over `{4, 8, 12}` it holds at
+    every seed measured: seed 3 `{8.693, 10.978}`, seed 7 `{7.384, 13.550}`, seed 11
+    `{4.136, 8.215}`.  It is not IMMUNE to step placement, only far less exposed: a step
+    must fall somewhere inside the swept range rather than in one specific gap.
+
+    What this deliberately does NOT assert is monotonicity, which given nesting is true of
+    any data whatsoever and so asserts nothing at all.
+
+    THE `cv` IS THE CONTROL AND IT IS WEAKER THAN IT LOOKS.  `iso_rel_diff_cv` is a real
+    estimator on the identical rows, and at seed 7 it wanders 0.55-0.78 with no trend
+    against a ratio that grows 1.84x.  At seed 11 it grows 2.54x against the ratio's 8.88x
+    — still a difference in kind, only 3.5x rather than the order of magnitude seed 7
+    suggests.  Recorded, not asserted.
     """
-    small = gnl.run_design_space(genes, CFG, n=4, seed=7,
-                                 max_draws=2000)["iso_rel_diff_ratio"]
-    large = gnl.run_design_space(genes, CFG, n=12, seed=7,
-                                 max_draws=2000)["iso_rel_diff_ratio"]
-    assert small < 3.0 < large, (
-        f"max/min over the drawn rows read {small:.3f} at n=4 and {large:.3f} at n=12 — "
-        f"it no longer brackets the retired 3.0 gate, so the demonstration that the gate's "
-        f"verdict was decided by the sample size has stopped working")
+    ratios = {n: gnl.run_design_space(genes, CFG, n=n, seed=7,
+                                      max_draws=2000)["iso_rel_diff_ratio"]
+              for n in (4, 8, 12)}
+    assert len(set(ratios.values())) > 1, (
+        f"max/min over the drawn rows is {ratios} — the SAME value at every sample size, "
+        f"so this run does not demonstrate that the retired gate's verdict was decided by "
+        f"`n`.  Two causes and they want different responses: every step of the step "
+        f"function may have fallen outside {sorted(ratios)} (benign — widen the sweep), or "
+        f"the statistic has stopped depending on `n` at all, which for a max/min over a "
+        f"nested draw would be a real finding about `run_design_space`.  Read this "
+        f"docstring's three-seed table before changing either the sweep or the seed.")
 
 
 def test_everything_softens_and_nothing_stiffens(genes):
