@@ -541,18 +541,30 @@ def test_the_vertical_displacement_runs_MONOTONICALLY_through_the_bottom():
     assert abs(slope) > 0.005, f"slope {slope:.4f} mm/deg — the snap would be harmless"
 
 
-def _rim_node_spacing_at_bottom(mesh):
-    """Median spacing [deg] of the rim nodes within 1 deg of `theta = -90`.
+def _gap_straddling_the_bottom(mesh):
+    """The angular gap [deg] between the two rim nodes either side of `theta = -90`.
 
-    Not the spacing around the whole rim: the bottom is refined for the contact patch and
-    the two differ by 9.2x at `coarse`, which is the difference between a bound with 1.36x
-    on its ceiling and one that looks nine times looser than it is (PLAN.md §142 §3).
+    HALF OF THIS IS THE EXACT CEILING on `patch_centre_offset_deg`, which is the distance
+    from the bottom to the NEAREST of those two.  Measured as the straddling gap and not
+    as a median over a window, for two reasons found in §148:
+
+    - The rim is not uniformly discretised.  It is 12 fine blocks of 10 quadratic
+      elements, one per 30 deg sector, separated by a single coarse element: at `coarse`
+      the two gaps are 0.1465 and 1.3535 deg, 9.2x apart.  A median over the whole rim
+      returns the coarse one and would put the ceiling at 0.677 instead of 0.073.
+    - A window is undefined exactly where it matters.  If the bottom ever falls between
+      the fine blocks the coarse gap is 1.3535 deg, a +/-1 deg window then holds 0 or 1
+      nodes, and `median(diff(...))` is `nan` -- which still fails the assertion, but
+      reports the failure as a nan rather than as the 9.2x jump it is.
+
+    The straddling gap is exact, always defined, and needs no window.
     """
     xy = np.asarray(mesh.coords)
     pn = np.unique(mesh.edge_sets["rim_outer"])
     th = np.degrees(np.arctan2(xy[pn, 1], xy[pn, 0]))
     d = np.sort((th + 90.0 + 180.0) % 360.0 - 180.0)
-    return float(np.median(np.diff(d[np.abs(d) < 1.0])))
+    i = int(np.searchsorted(d, 0.0))
+    return float(d[i] - d[i - 1])
 
 
 def _uy_slope_through_bottom(mesh, res):
@@ -620,7 +632,7 @@ def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom()
     # off = -0.1404, which fails the line above outright.  So this is not a hypothetical
     # fence: a coarser rim near the bottom is exactly what removes this test's premise,
     # and one more promotion of that size reaches it.
-    ceiling = _rim_node_spacing_at_bottom(mesh) / 2.0
+    ceiling = _gap_straddling_the_bottom(mesh) / 2.0
     assert ceiling < 0.10, (
         f"the nearest rim node can be up to {ceiling:.4f} deg from the bottom, so "
         f"`abs(off) < 0.10` above is no longer guaranteed -- it now passes with "
