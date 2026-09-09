@@ -420,21 +420,58 @@ def test_mesh_resolution_must_scale_with_thickness():
     """The span element size has to resolve the ~t boundary layers, not the part.
 
     This is the most consequential number M3 produced for M4, so it is pinned: on the
-    thinnest section in the A4 sweep, a mesh with h ~ t gets the SIGN of the
-    beam-model discrepancy wrong, while h = t/8 does not.  A future mesh-config table
-    that sizes elements by the part rather than by the wall will fail here.
+    thinnest section in the A4 sweep, a mesh sized by the PART reads the sign of the
+    beam-model discrepancy wrong, while one sized by the WALL does not.  A future
+    mesh-config table that sizes elements by the part will fail here.
+
+    THE PROBE IS AIMED FROM A MEASURED CROSSOVER, AND IT DID NOT USED TO BE (§141).
+    The discrepancy is monotone in `h`: coarse reads stiff (negative), refined reads
+    soft (positive), and it crosses zero at one `h/t`.  That crossover is a function of
+    the SHAPE genes, so a probe pinned near it stops demonstrating anything the moment
+    the shipped genome moves.  This test used to probe `h/t = 1`, and bisection puts the
+    crossover at:
+
+        genome                       h*/t      err at the h/t = 1 probe
+        pre-`cb4e3dd`              0.9471            -0.0011%     (probe 5.6% past it)
+        shipped (`b729e86`)        1.7978            +0.0087%     (probe 44% short)
+
+    So `h/t = 1` sat five percent from the crossover and the promotion moved the
+    crossover 90% coarser, taking the probe with it -- the demonstration was intact the
+    whole time and the vehicle had fallen out of the branch.  The probe is now
+    `h/t ~ 4`, which is 2.2x past the crossover, and the measured margin there is 113x
+    the one it replaces:
+
+        k       h/t      shipped        pre-`cb4e3dd`
+        0.25    3.967    -0.125969%     -0.183304%     <- part-sized, reads STIFF
+        0.5     1.994    -0.003732%     -0.029813%
+        1       1.000    +0.008710%     -0.001109%     <- the old probe, on the fence
+        8       0.125    +0.011332%     +0.011553%     <- wall-resolved, reads SOFT
+
+    Measured 2026-09-08 at `lam = 0.125` (`t_min` 0.15 mm).  Both probes hold their sign
+    across `lam` in 0.0625..0.5 on both genomes, EXCEPT the wall probe at `lam = 0.0625`
+    on the pre-`cb4e3dd` genome (-0.000595%): at `t = 0.075` mm the converged discrepancy
+    is itself ~1e-5 and the sign is not resolvable, which is why `lam` stays at 0.125.
+    Over 30 genomes drawn uniformly from `GENE_SPACE` the two signs hold 29/30 each, so
+    this is generic to the geometry and not a property of the shipped design -- but it is
+    not universal, and this test is scoped to the shipped genome.
     """
     g = sba.scale_thickness(sba.load_genes(os.path.join(REPO, "best_solution.json")),
                             0.125)
     F = wf.FORCE_PER_SPOKE_NEWTONS * sba.PROBE_FORCE_FRACTION * 0.125 ** 3
     ref = sba.castigliano(g, "fixed_guided", F)
     err = {}
-    for k in (1, 8):
+    for k in (0.25, 8):
         cfg = sba.sized_config(g, k=k)
         err[k] = fem.spoke_deflection(g, cfg, root_bc="plane", force=F) / ref - 1.0
-    assert err[1] < 0 < err[8], (
-        f"expected h~t to read stiff and h=t/8 to read soft, got "
-        f"h~t: {err[1]:+.4%}, h=t/8: {err[8]:+.4%}")
+    assert err[0.25] < 0 < err[8], (
+        f"expected a part-sized mesh (h/t~4) to read stiff and a wall-resolved one "
+        f"(h=t/8) to read soft, got h/t~4: {err[0.25]:+.4%}, h=t/8: {err[8]:+.4%}")
+    # AND THE COARSE READING MUST NOT DRIFT BACK ONTO THE FENCE.  This is the guard the
+    # old probe lacked: a sign that holds by 1e-5 is a coin, not a demonstration.
+    # Measured 11.1x (shipped) and 15.9x (pre-`cb4e3dd`); 5.0 leaves 2.2x of headroom.
+    assert abs(err[0.25]) > 5.0 * abs(err[8]), (
+        f"part-sized error {err[0.25]:+.4%} is not clear of the wall-resolved "
+        f"{err[8]:+.4%} -- the probe has drifted toward the crossover again")
 
 
 # ---------------------------------------------------------------------------
