@@ -541,6 +541,20 @@ def test_the_vertical_displacement_runs_MONOTONICALLY_through_the_bottom():
     assert abs(slope) > 0.005, f"slope {slope:.4f} mm/deg — the snap would be harmless"
 
 
+def _rim_node_spacing_at_bottom(mesh):
+    """Median spacing [deg] of the rim nodes within 1 deg of `theta = -90`.
+
+    Not the spacing around the whole rim: the bottom is refined for the contact patch and
+    the two differ by 9.2x at `coarse`, which is the difference between a bound with 1.36x
+    on its ceiling and one that looks nine times looser than it is (PLAN.md §142 §3).
+    """
+    xy = np.asarray(mesh.coords)
+    pn = np.unique(mesh.edge_sets["rim_outer"])
+    th = np.degrees(np.arctan2(xy[pn, 1], xy[pn, 0]))
+    d = np.sort((th + 90.0 + 180.0) % 360.0 - 180.0)
+    return float(np.median(np.diff(d[np.abs(d) < 1.0])))
+
+
 def _uy_slope_through_bottom(mesh, res):
     """d(uy)/d(theta) [mm/deg] across `theta = -90` on the rim, from the rim nodes.
 
@@ -583,6 +597,36 @@ def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom()
     # the reading.  Checked as a ceiling and not just as a value: across the 12 solves
     # tabulated below, `|off| / (local spacing / 2)` never exceeds 1.000.
     assert abs(off) < 0.10, off
+
+    # AND THAT CEILING IS ASSERTED, NOT ASSUMED -- THE POSITIONAL GUARD FOR THIS TEST.
+    # `off` is a PHASE: where the bottom happens to fall between two rim nodes, uniform in
+    # [0, spacing/2].  So the line above can pass on LUCK once the ceiling rises past
+    # 0.10, with probability 0.10/ceiling, and it would keep passing for a while after the
+    # premise "a node sits essentially at the bottom" had stopped being true.  Asserting
+    # the ceiling instead makes it a theorem: `ceiling < 0.10` implies `abs(off) < 0.10`
+    # for every phase, so this fires the moment the guarantee is lost rather than the
+    # moment the coin lands badly.  §146 successor 0; the rule is §145 §5 -- where a fence
+    # is locatable, prefer the parameter form.
+    #
+    # THE FENCE IS LOCATABLE AND THE TEST IS MOVING TOWARD IT.  The guarantee holds iff
+    # the local spacing is under 0.20 deg, and at `coarse`:
+    #
+    #     genome              spacing   ceiling   margin to the fence
+    #     pre-`cb4e3dd`        0.0937    0.0469         2.134x
+    #     shipped              0.1465    0.0733         1.365x
+    #
+    # One promotion cost 36% of the margin.  At `smoke` it is already gone -- spacing
+    # 0.3663, ceiling 0.1831, margin 0.546x -- and the plain mesh there reads
+    # off = -0.1404, which fails the line above outright.  So this is not a hypothetical
+    # fence: a coarser rim near the bottom is exactly what removes this test's premise,
+    # and one more promotion of that size reaches it.
+    ceiling = _rim_node_spacing_at_bottom(mesh) / 2.0
+    assert ceiling < 0.10, (
+        f"the nearest rim node can be up to {ceiling:.4f} deg from the bottom, so "
+        f"`abs(off) < 0.10` above is no longer guaranteed -- it now passes with "
+        f"probability {min(1.0, 0.10 / ceiling):.2f} on where the phase happens to land. "
+        f"Refine the rim near the contact patch, or move this test to a config that "
+        f"still has a node essentially at the bottom.  Do not raise the 0.10.")
     assert abs(gap) < 0.01 * res["axle_drop_interp_mm"]
 
     # AND THE CORRECTION IS EXACTLY THE FIRST-ORDER SNAP, WHICH IS THE CLAIM THE
