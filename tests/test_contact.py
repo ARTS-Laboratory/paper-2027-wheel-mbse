@@ -399,6 +399,32 @@ def test_the_sampled_patch_extent_is_biased_not_merely_noisy(genes):
     sampled maximum can only miss the true peak.  Both are reported as diagnostics and
     neither may be quoted.
 
+    THE PEAK USED TO BE PINNED AS `peak(20) > peak(6)`, ON THE REASONING THAT "REFINING
+    THE QUADRATURE CAN ONLY FIND MORE OF THE TRUE PEAK".  That reasoning needs the finer
+    sample set to CONTAIN the coarser one, and Gauss-Legendre never does: `leggauss(6)`
+    shares no node with `leggauss(n)` for any other `n` in 2..24, closest approach 0.0108
+    in reference coordinates.  **This is not a bound that went stale — there is no `n`
+    pair at which it held.**  And `n_quad` is the contact integration rule, not a
+    post-processing density, so raising it changes the SOLVED FIELD as well as where it
+    is sampled; there is no one fixed field being sampled more finely.  Measured on this
+    mesh, 2026-09-08 (PLAN.md §145):
+
+        n_quad     4       6       8      10      12      16      20      32      64
+        peak    4.551   6.349   5.380   5.859   5.781   5.703   5.886   5.899   5.874
+        drop   2.0019  2.0025  2.0021  2.0023  2.0022  2.0023  2.0023  2.0023  2.0023
+
+    Four of eleven adjacent steps DECREASE, the maximum over all twelve values measured
+    is at `n = 6` and not at `n = 64`, and the sequence settles into a 0.46% band only
+    from `n = 20` up — with the old test's `n = 6` reading sitting 7.91% ABOVE that band.
+    The 6-versus-20 pair the test used was not unlucky; it was one of many.
+
+    WHAT IS ASSERTED INSTEAD IS THE "MAY NOT BE QUOTED" CLAIM ITSELF, which is a contrast
+    and not a level: the peak MOVES with the quadrature and the axle drop does not.
+    Between `n_quad` 6 and 20 the peak moves 7.292% and the drop 0.01129%, a separation
+    of 646x against a bound of 10x.  If that ever falls under 10x the sampled peak has
+    become as quadrature-independent as a converged number and this diagnostic's warning
+    label needs re-earning — which is a real finding and the right thing to go red on.
+
     THIS ONE TEST BUILDS ITS OWN `coarse` MESH INSTEAD OF TAKING THE MODULE'S `smoke`
     FIXTURE, and the reason is the first assertion.  "The converged answer does not care
     about the quadrature" is only true once the patch is resolved, and on `smoke` the
@@ -424,8 +450,15 @@ def test_the_sampled_patch_extent_is_biased_not_merely_noisy(genes):
         assert r["patch_half_deg_sampled"] > 2.0 * r["patch_half_deg"], (
             f"the sampled extent ({r['patch_half_deg_sampled']:.3f}) no longer "
             f"overstates the zero-crossing one ({r['patch_half_deg']:.3f})")
-    # Refining the quadrature can only find MORE of the true peak, never less.
-    assert b["peak_pressure_mpa_sampled"] > a["peak_pressure_mpa_sampled"]
+    # The peak is QUADRATURE-DEPENDENT and the axle drop is not.  That contrast is the
+    # "may not be quoted" claim stated executably; a level is not assertable here at all.
+    peak_rel = abs(b["peak_pressure_mpa_sampled"] / a["peak_pressure_mpa_sampled"] - 1.0)
+    drop_rel = abs(b["axle_drop_mm"] / a["axle_drop_mm"] - 1.0)
+    assert peak_rel > 10.0 * drop_rel, (
+        f"the sampled peak moved {peak_rel:.3%} between n_quad 6 and 20 against the axle "
+        f"drop's {drop_rel:.5%} — under a 10x separation it has become as "
+        f"quadrature-independent as a converged number, and this diagnostic's whole "
+        f"warning label is that it is not one")
 
 
 # ---------------------------------------------------------------------------

@@ -20945,7 +20945,7 @@ not close the successor the way the successor assumed — or entirely.
 **WHAT IS AND IS NOT SETTLED HERE.** Successor 1 asked three things. The GENE question is
 answered by measurement and inverted: `R_rim` is not inert, and it carries the larger of the
 two loss gradients (§1). The GENE CENSUS half is answered without a re-run and in the
-negative — its two sites are `tests/test_contact.py:465` and `tests/test_filleted_mesh.py:304`,
+negative — its two sites are `tests/test_contact.py:498` and `tests/test_filleted_mesh.py:304`,
 both GREEN, and both are claims about the MESH, where the pair is dead for a reason that has
 nothing to do with the knee (§5 successor 0). **The STUDY'S VERDICT has not been re-run and
 is still owed.** Calling this successor closed would be the §133 §4 mistake again — reading
@@ -21258,7 +21258,7 @@ bearing evidence for §1's dating.
 0. **THE STUDY'S VERDICT IS STILL OWED; THE GENE CENSUS IS ANSWERED IN THE NEGATIVE AND
    MUST NOT BE "FIXED".** §118 filed both, §133 re-filed both, and this section resolves
    one of them by reading rather than by re-running.** The
-   census sites are `tests/test_contact.py:465` (`insensitive_genes == {R_hub, R_rim}`) and
+   census sites are `tests/test_contact.py:498` (`insensitive_genes == {R_hub, R_rim}`) and
    `tests/test_filleted_mesh.py:304`. **Both are GREEN, both are about the MESH rather than the
    loss, and the second one does not merely fail to contradict §1 — it AFFIRMS it.**
    `tests/test_filleted_mesh.py:304-306` pins `{R_hub, R_rim}` dead on the plain mesh and
@@ -21325,7 +21325,7 @@ tests/` returns **six lines across four files**, and there are TWO instruments, 
       tests/test_objective.py:321       build_wheel(genes,CFG) cols[12] == cols[13] == 0
 
   study_contact.py:826   an FD census through the FEA, a different instrument
-      tests/test_contact.py:465                                == {R_hub, R_rim}
+      tests/test_contact.py:498                                == {R_hub, R_rim}
 ```
 
 plus `tests/test_gradient.py:336`, `:354` and `:426`, which assert `INSENSITIVE_EXPECTED`
