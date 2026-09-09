@@ -23171,3 +23171,100 @@ not a property, and nothing beside those numbers says so.
 2. **A COMMITTED PHASE IS NOT A COMMITTED MEASUREMENT** (from §4). Two study artifacts
    record `patch_centre_offset_deg` as if it were a property of the design. It is a
    property of where the mesh's nodes happened to land. Neither driver's prose says so.
+
+## §148 — 2026-09-08. §147's SUCCESSOR 0, ANSWERED. THE 1.56311 IS THE **MESHED WELD BLOCK'S ANGULAR WIDTH OVER A FIXED ELEMENT BUDGET** — 10 QUADRATIC ELEMENTS PER BLOCK, WHATEVER THE BLOCK'S WIDTH. AND `weld_footprints_deg`'s RIM VALUE IS **NOT** THAT WIDTH: IT IS THE BLOCK'S UPPER EDGE, WHICH IS WHY ELIMINATING IT AT 1.2427 DID NOT ELIMINATE THE WELD. PLUS: THE RIM IS 12 FINE BLOCKS AND 12 COARSE GAPS, SO THE OFFSET'S REAL EXPOSURE IS A **9.2x DISCONTINUITY**, NOT THE SMOOTH DRIFT §147 DESCRIBED
+
+One commit, `d2b0458`, `tests/test_fem.py`. A concurrent session had eliminated the rim
+free arc (ratio 0.98847) and the rim weld footprint (1.2427) as candidates and suggested
+checking which BLOCK the bottom falls in. That was the right instruction and it led
+straight here.
+
+### 1. THE RIM'S ACTUAL DISCRETISATION, WHICH NEITHER OF US HAD LOOKED AT
+
+At `coarse` the 480 `rim_outer` nodes carry **exactly two gaps**:
+
+```
+  0.1465 deg  x239        1.3535 deg  x240        (shipped; sum per pair = 1.5000 deg)
+  0.0937 deg  x239        1.4063 deg  x240        (pre-`cb4e3dd`; same 1.5000)
+```
+
+They are not interleaved. They form **12 contiguous fine runs of 20 gaps** — `n_weld = 10`
+quadratic elements, two gaps each — **spaced exactly 30.000 deg apart**, one per
+`SECTOR_DEG`, each separated by a single coarse element. The bottom sits *inside* one of
+those runs, at 42.3% of its width on the shipped genome and 27.4% on the outgoing one.
+
+### 2. THE FACTOR IS THE BLOCK WIDTH, AND THE NODE BUDGET IS FIXED
+
+```
+  meshed fine-run width      1.8746 -> 2.9302 deg      ratio 1.56310
+  gaps per run                    20 -> 20             FIXED (n_weld = 10, order 2)
+  therefore spacing          0.093731 -> 0.146510      ratio 1.56310
+```
+
+**The block widened and its element count did not, so the spacing scaled by exactly the
+block ratio.** That is the whole of §147's 1.56311, and it explains why the ratio was
+identical at `smoke`, `coarse` and `medium` to 0.0035%: every config holds its own fixed
+`n_weld`, so every config inherits the same width ratio.
+
+**AND THIS IS WHY THE ELIMINATION MISSED IT.** `weld_footprints_deg(genes, cfg)` returns
+`(20.7149, 1.6910)` shipped and `(6.1178, 1.3608)` outgoing, and its rim value moved only
+1.2427x — correctly eliminated as not being the factor. But **1.6910 and 1.3608 are
+exactly the upper EDGE of the meshed fine run** — the runs span `(-1.2392, +1.6910)` and
+`(-0.5138, +1.3608)` — not its width, which is 2.9302 and 1.8746. Two quantities, one
+name, one of them ratio 1.2427 and the other 1.5631. **The reported rim weld footprint is
+a part of the meshed weld block, so eliminating the footprint did not eliminate the
+block.** Same family as §140's two `CONFIGS` and §142's two node spacings.
+
+**What sets the block WIDTH is still not named.** It is not `t3` alone (2.4547/1.4313 =
+1.7151 against 1.5631) and the block's arc length does not equal `t3` at any fixed radius
+(implied R of 47.99 and 43.74). It is `t3` projected through the ring crossing angle, and
+naming it exactly needs the block builder rather than the mesh. Filed below rather than
+guessed.
+
+### 3. THE REAL EXPOSURE IS A DISCONTINUITY, AND §147 DESCRIBED A SMOOTH DRIFT
+
+§147 predicted "one more promotion of that size gives 0.873x, under the fence." That
+extrapolation is still right on its own terms. **But the fine runs are ~2.9 deg of every
+30**, so the bottom sits in a 10% window, and the failure that matters is not the window
+widening — it is the bottom **leaving** it. If it does, the straddling gap jumps from
+0.1465 to 1.3535 deg, the ceiling from 0.073 to **0.677**, and the bound is exceeded by
+6.8x in a single step.
+
+**The guard as committed at §147 already catches that** — `ceiling < 0.10` fails either
+way — so nothing was wrong with it. But the margin to that edge is a different and
+un-monitored number: the bottom is **1.2392 deg** from its run's lower edge on the shipped
+genome, **up** from 0.5138 on the outgoing one. On this axis the promotion made the test
+*safer*, which is the opposite of §147's headline and worth having on the record beside it.
+
+### 4. SO THE INSTRUMENT WAS RIGHT BY LUCK OF THE WINDOW, AND IS NOW EXACT
+
+`_rim_node_spacing_at_bottom` took a median over `|d| < 1.0`. That lands inside the fine
+run and returns the right number **today**. Two ways it breaks, both reachable:
+
+- A median over the whole rim returns the COARSE gap — ceiling 0.677 instead of 0.073.
+  That is exactly the §142 §3 error, which I caught by hand once already.
+- **In the discontinuity of §3 the window is undefined.** With a 1.3535 deg gap, a
+  +/-1 deg window holds 0 or 1 nodes and `median(diff(...))` is `nan`. The assertion still
+  fails — `nan < 0.10` is False — so the guard holds, but it reports a nan instead of the
+  9.2x jump that IS the finding.
+
+Replaced by `_gap_straddling_the_bottom`: the gap between the two nodes either side of
+`theta = -90`, whose half is the exact ceiling **by definition**. No window, no median,
+always defined, no assumption about how the rim is discretised. It reproduces every §147
+number to five digits (0.07326, 0.04687, 0.18314, 0.11716, 0.04578, 0.02929) and every
+verdict is unchanged.
+
+**SUCCESSORS.**
+
+0. **NAME WHAT SETS THE WELD BLOCK'S MESHED WIDTH.** §2 narrowed it to `t3` through the
+   ring crossing angle and stopped. It is the quantity that decides how many promotions
+   this test has left, and with it the guard could be stated against a cause instead of a
+   measured band. One read of the rim weld block builder.
+1. **NOTHING MONITORS THE BOTTOM'S DISTANCE TO ITS BLOCK EDGE** (§3), which is the
+   discontinuous mode. `ceiling < 0.10` catches the jump AFTER it happens; 1.2392 deg of
+   margin is what says it has not. Whether that deserves its own line is a judgement — it
+   is a phase, so it does not drift monotonically, and a guard on a phase may just be
+   noise. Measure its spread across genomes before adding one.
+2. **`weld_footprints_deg` RETURNS AN EDGE AND IS READ AS A WIDTH.** It cost a correct
+   elimination here. Worth checking its other callers — `studies/` and any test — before
+   assuming this section is the only place the two were confused.
