@@ -423,9 +423,9 @@ def weld_footprints_deg(genes, cfg, span_mm=HUB_RIM_SPAN_MM, hub_radius=HUB_RADI
                         orientation=None, xp=np):
     """`(hub, rim)` weld arc footprints in degrees, out of the `SECTOR_DEG` available.
 
-    The weld footprint is the arc between where the straddling flank crosses the ring
-    circle and where the centerline endpoint sits on it — exactly the arc the junction
-    block covers, and therefore the arc over which the spoke is fused into its ring.
+    The weld footprint is the arc between where the straddling flank crosses the ring circle
+    and where the centerline endpoint sits on it — ONE flank, one origin, and NOT the
+    block's flank-to-flank span: 0.71x of it at `b729e86`, 1.28x at `96a0ac5`.
 
     It is the CAUSE of `spoke_free_arc_fraction`, which is the wheel's dominant
     stiffness variable and the one the beam model cannot see: a long weld consumes more
