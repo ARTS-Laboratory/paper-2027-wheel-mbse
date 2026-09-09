@@ -23499,3 +23499,111 @@ sharing it. The docstring's dated figures.
    per-file and per-node-ID check this arc has run inherited the same short list. Nine
    files have been run whole; §117's promotion left the suite 62 red before any of it
    started.
+
+## §151 — 2026-09-08. §150 IS RIGHT AND I CORROBORATE IT FROM THE OPPOSITE ERROR: **MY "NINE" WAS A DIFFERENT NINE.** §133's ROWS 1–9 EXACTLY, WHILE §150's WAS ROWS 1–5, 7, 8, 9, 11. TWO DISJOINT SAMPLING MISTAKES, **BOTH LANDING ON NINE**, EACH CORROBORATING THE OTHER FOR SIX SECTIONS. FOUR OF MY COMMIT MESSAGES ASSERT SET IDENTITY THAT WAS NEVER CHECKED
+
+No code. A correction of my own record, filed beside §150 rather than folded into it —
+§143's table is that session's to repair and this half is mine.
+
+### 1. THE FULL ELEVEN, ENUMERATED RATHER THAN DIFFED, AT `a4808b4`
+
+```
+   1  test_contact::test_the_sampled_patch_extent_is_biased_not_merely_noisy   GREEN  0a33d46
+   2  test_fem::test_mesh_resolution_must_scale_with_thickness                 GREEN  bb76860
+   3  test_fem::test_the_interpolated_drop_is_the_same_number_when_a_node...   GREEN  ef6c489
+   4  test_geometry_kernel::test_thickness_hits_its_nodes_exactly              GREEN  f3cc24d
+   5  test_geometry_kernel::test_analytic_curvature_matches_finite_differences GREEN  e011809
+   6  test_gnl::test_the_load_continuation_path_does_not_change_the_equilibrium  RED   never closed
+   7  test_gnl::test_the_retired_max_min_gate_is_decided_by_the_sample_size      RED
+   8  test_gnl::test_stress_recovery_follows_the_solves_kinematics             GREEN  a4808b4
+   9  test_wheel_fea::test_peak_stress_diverges_but_the_field_converges        GREEN  1205064
+  10  test_objective::test_R_rim_is_still_effectively_inert_and_that_is_recorded  RENAMED a96f1de
+        -> test_R_rim_is_no_longer_inert_and_that_is_the_finding  :1129            GREEN
+  11  test_objective::test_the_thickness_branch_of_the_cap_binds_on_a_thin_root GREEN  65f45bf
+```
+
+Ten live rows, eight closed, **two remain and both are in `tests/test_gnl.py`.** §150's
+accounting is confirmed independently.
+
+### 2. THE TWO NINES WERE DIFFERENT SETS AND THE MATCHING COUNT IS WHY NOBODY LOOKED
+
+**§150's nine** was rows 1–5, 7, 8, 9, 11: built from §133's Group A and Group B tables,
+which partition ten of the eleven, missing **row 6** because the raiser is in neither — it
+raises instead of asserting and §133 discusses it separately in §4.
+
+**My nine** — the one in `f164153`'s green block — was rows **1 through 9, in order**. I
+ran the light batch with `--ignore` on the four heavy files, and **both rows I missed are
+in `test_objective.py`**, one of the four. My set contains the raiser; §150's does not.
+§150's contains row 11; mine does not.
+
+**Two sampling errors, disjoint, both arriving at nine.** Then each of us re-measured our
+own nine, found nine red, and reported it as confirmation. §150 names its own version of
+this — *"a measured diff of the wrong candidate set is still the wrong answer, and it
+looked more trustworthy for having been measured."* The companion is worse: **two measured
+diffs of two different wrong candidate sets can agree on the count, and then corroborate
+each other.** Six sections carried "nine" and every one of them had a measurement behind it.
+
+### 3. WHAT I ASSERTED, AND THAT IT WAS NEVER CHECKED
+
+`f164153`, `4debd05`, `bedccc1` and `c94a1ae` all carry:
+
+> *"The nine are exactly §133's successor 0's standing nine, every one of them named in
+> PLAN.md already"*
+
+The second clause I did check — I grepped each of the nine and every one appears in this
+file. **The first clause I did not.** "Exactly ... the standing nine" is a claim of SET
+IDENTITY, and what I had was a count of nine matching a count of nine that I had inherited
+from §136 onward. I read agreement of cardinality as agreement of membership, and wrote it
+as a verified statement beside a measurement that was real.
+
+**The evidence was in my own commit message.** Row 6 is printed in `f164153`'s list of
+nine and is absent from §143's table. Either document, read against the other, shows the
+lists differ. Neither of us read them against each other, because both said nine.
+
+**Those four messages are left exactly as written.** They were correct about the nine each
+of them measured, and every test named in them was red when named. What was never checked
+is the set-identity sentence, and this section is its bracket — the same treatment §136 §5
+gave `_fillet_margins` and §150 successor 1 gives the six sections carrying the count.
+Rewriting six commit messages to repair a number is the rot this tree removes.
+
+### 4. AND A THIRD WAY A ROW LEAVES AN ACCOUNTING, WHICH A NAME-KEYED TABLE STILL MISSES
+
+Row 10's node ID does not exist at HEAD: pytest returns *"not found: ...
+test_R_rim_is_still_effectively_inert_and_that_is_recorded (no match in any of [<Module
+test_objective.py>])"*. §135 did not repair that test, it **renamed** it — `a96f1de` made it
+`test_R_rim_is_no_longer_inert_and_that_is_the_finding`, because the finding inverted. So
+the row did not go green and did not go red; **it stopped existing.** A node-ID sweep
+reports an ERROR (exit 4, not a failure), a name-keyed table reports a row it cannot find,
+and a count-keyed accounting drops it silently. §143's move to name keys was the right
+direction and it is still not enough here, **because the name changed WITH the finding —
+which is exactly the case where the link most needs preserving.**
+
+**AND THE COUNT SURVIVED BY LUCK OF WHAT THE RENAME DID.** Measured independently in both
+sessions: the old node ID has **0 occurrences** in `tests/test_objective.py`, and the
+replacement at `:1129` **passes**. So §135 did close that row — by inverting the finding
+and renaming the test to match — and §150's "eleven minus R_rim = ten" is right in
+substance. **But it is right because the renamed test happens to be green.** Had `a96f1de`
+renamed a test that then went red, all three of our keys would have hidden it: a node-ID
+sweep returns *"no match in any of [<Module>]"* at **exit 4**, which reads as a harness
+error rather than a failure; a name-keyed table shows a row it cannot find, which reads as
+an oversight; and a count-keyed accounting drops it in silence. **The rename is the only
+one of the three vanishing modes that can lose a row with NO instrument reporting a
+failure** — and it happens exactly when a finding inverts, which is when the name changes
+and when the row matters most.
+
+**SUCCESSORS.**
+
+0. **THE AUTHORITATIVE LIST NEEDS A "CLOSED BY" COLUMN THAT CAN HOLD A RENAME.** §143's
+   table keys on test name and §150 corrects its membership; neither can express "row 10
+   became this other node ID at `a96f1de`". One column, three kinds of entry: a commit, a
+   rename-to, or open. Cheap, and it is the only form that survives a finding inverting.
+1. **A LIST WITH A STATED LENGTH SHOULD BE CHECKED AGAINST ITS LENGTH, NOT ITS CONTENT.**
+   §133 says eleven and prints eleven rows. Both of us derived a nine and neither compared
+   it to the eleven the source declares. The check that would have caught this in either
+   session is `wc -l` on the source block against the length of the derived set — before
+   any measurement, and cheaper than one solve.
+2. **TWO SESSIONS AGREEING IS NOT INDEPENDENT CONFIRMATION WHEN BOTH INHERITED THE SAME
+   NUMBER.** We each measured, each got nine, and each read the other's nine as support.
+   Worth stating in the closing write-up next to §149's rule about successors: **agreement
+   between two derivations of an inherited quantity is evidence about the inheritance, not
+   about the quantity.**
