@@ -22843,3 +22843,95 @@ breaks no citation.
 2. **`MESH_H_OVER_T`'s COMMENT SHOULD CITE THE FUNCTION RATHER THAN CARRY NUMBERS.** §3
    above leaves three stale magnitudes in place because re-measuring them is not what this
    successor was for. They are two genomes old and will be three after the next promotion.
+
+## §146 — 2026-09-08. §144's SUCCESSOR 1, CLOSED. THE PROBE NOW ASSERTS **WHERE IT STANDS RELATIVE TO THE SIGN CHANGE**, NOT ONLY HOW BIG ITS READING IS — AND THAT LINE WOULD HAVE BEEN RED ON THE GENOME **BEFORE** THE PROMOTION, WHILE THE TEST WAS STILL GREEN. **MY OWN COST ARGUMENT FOR IT WAS WRONG AND DID NOT DISTINGUISH THE OPTIONS**; THE DECIDING ARGUMENT IS THAT A SELF-AIMING PROBE CANNOT APPROACH FAILURE, IT FOLLOWS FAILURE AROUND
+
+One commit, `8d317ed`, `tests/test_fem.py`. Numbered §146 because a concurrent session had
+already reserved §145; PLAN.md's highest heading at the moment of appending was §144, so
+this section sits above a §145 that does not exist yet. Deferring to the other session's
+claim, per [[plan-section-numbers-collide]]'s own rule, costs one out-of-order append.
+
+### 1. THE GUARD, AND IT WAS VALIDATED BY FIRING IT
+
+§142 re-aimed this probe and guarded it **in the quantity** — the coarse reading must be
+5x the wall-resolved one, so a sign holding by 1e-5 cannot pass for a demonstration. That
+is necessary and it is not where the defect lived. The defect was **positional**: a probe
+at a fixed `h/t` beside a crossover that moves with the shape genes. So:
+
+```
+  h_probe > 1.5 * crossover_h_over_t(g, F)
+```
+
+**A guard that has never been observed to fail is not a guard**, so it was checked by
+standing it in front of the failure it is for:
+
+```
+  genome           probe        h/t      h*/t     margin
+  shipped          k=1  (old)   0.9999   1.7978   0.556x   RED   <- the actual failure
+  shipped          k=0.25       3.9669   1.7978   2.207x   pass
+  pre-`cb4e3dd`    k=1  (old)   0.9978   0.9439   1.057x   RED   <- ONE PROMOTION EARLY
+  pre-`cb4e3dd`    k=0.25       3.9914   0.9439   4.229x   pass
+```
+
+**The third row is the whole point.** On the genome BEFORE the promotion, the old probe
+already stood at a 1.06x margin and this line would have been red there — while the test
+was green and the sign had not flipped. §142 successor 1's complaint was that nothing was
+watching any of §133's nine approach failure. This is that watch for one of them, and it
+is the first assertion in the arc demonstrated to fire *early* rather than *correctly*.
+
+### 2. I HAD THE COST ARGUMENT WRONG, AND IT WAS THE ARGUMENT I LED WITH
+
+§144 successor 1 offered this guard as the **cheaper middle** against wiring the probe to
+`crossover_h_over_t`, on the grounds that self-aiming "puts ~13 solves into a test that
+costs 2". **The guard bisects too** — 2 bracket evaluations plus ~11 steps, the same ~13
+solves, measured at 4.3 s. The test goes **2.2 s -> 6.52 s**. A concurrent session read the
+function and pointed this out; it is right, and the number was in the function I had
+written that morning.
+
+**The argument that actually decides it is principle, not price.** A probe read off
+`crossover_h_over_t()` is green *no matter how far the crossover moves*: it cannot approach
+failure, it follows failure around. That deletes precisely the signal §1 above exists to
+add. Recorded in the test itself so the next reader does not helpfully "improve" it into a
+self-aiming one — which is the shape of change that would look like a cleanup.
+
+### 3. THE CHEAP FORM IS A COIN FLIP, AND THIS TEST'S OWN TABLE SAYS SO
+
+The obvious way to avoid the bisection: do not FIND the crossover, BRACKET it — two
+evaluations straddling the recorded value with opposite signs, 2 solves instead of 13.
+**It is wrong near the crossover and the reason is already printed in this test.** The
+discrepancy is zero AT the crossover by definition, and the table reads **-0.003732% at
+`h/t` 1.994** and **+0.008710% at 1.000**. A +/-5% bracket sits strictly inside those, so it
+would assert the sign of a quantity of order 1e-5 — the same quantity §142 showed is not
+resolvable on a thin section (the pre-`cb4e3dd` genome at `lam = 0.0625` reads -0.000595%
+at the fine end and has no crossover at all). **A tight bracket is a coin flip dressed as
+a guard**, which is the exact failure mode this list is made of. A wide bracket (+/-50%)
+would work and would need its own resolvability measurement; the bisection is the honest
+instrument and it is what is committed.
+
+### 4. THE BOUND IS TIED TO THE QUANTISATION — §144 §2 APPLIED TO ITSELF
+
+`h/t` is `arc_length / n_span / t_min` with `n_span` an INTEGER, so **both** terms of the
+ratio step: 1/92 at the probe, 1/203 at the crossover, **~1.6% on the ratio**. A guard
+written tighter than that reddens on an adjacent element count and teaches everyone to
+loosen it. **1.5x is ~30x the step**, and the measured margins clear it by 47% (shipped)
+and 182% (pre-`cb4e3dd`). The assertion message states the step width and says to re-aim
+the probe rather than lower the bound — because the next person to see this red will have
+the same two options I did, and one of them is wrong.
+
+**SUCCESSORS.**
+
+0. **`test_the_interpolated_drop...` HAS NO POSITIONAL GUARD AND ITS SIBLING NOW DOES.**
+   §142 pinned it on `gap == off * slope`, which is a relationship and cannot drift the way
+   a probe can — so this may be a non-question. But the analogous quantity exists: `|off| /
+   (local spacing / 2)` was measured at up to 1.000, i.e. the offset can sit anywhere in its
+   band, and nothing asserts where. Worth one measurement to decide whether there is a fence
+   to be near.
+1. **THE ARC HAS TWO GUARD SHAPES NOW AND NEITHER IS WRITTEN DOWN AS A RULE.** In the
+   quantity (`|coarse| > 5x |fine|`) and in the parameter (`probe > 1.5x fence`). Six
+   repairs in §141–§146 all failed the same way and only two carry either guard. When the
+   nine are closed, the write-up should say which shape applies when — the parameter form
+   needs a locatable fence, the quantity form does not.
+2. **`crossover_h_over_t` HAS ONE CALLER AND IT IS A TEST.** That is the right first caller,
+   but `MESH_H_OVER_T`'s comment (§144 §3) is still three frozen magnitudes that the
+   function could replace with a citation. Unchanged from §144 successor 2 and still not
+   urgent: the sign claim holds on both genomes, so the constant is not in question.
