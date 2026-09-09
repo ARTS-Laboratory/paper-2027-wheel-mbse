@@ -23824,6 +23824,34 @@ invocation and this one. Not chased, because guessing at it is exactly what this
 been punishing; recorded so the next full run knows to check rather than assume its
 summary will be there.
 
+**[ANSWERED SAME DAY, 2026-09-09, BY A CONCURRENT SESSION AND VERIFIED HERE. IT IS `-qq`,
+AND IT IS THE CAUSE OF §2's BUG.]** `pyproject.toml:18` sets `addopts = "-q"`. Adding `-q`
+on the command line makes it **`-qq`**, and pytest suppresses the summary at two.
+Demonstrated on a 61-test file:
+
+```
+  pytest tests/test_genome_key_order.py        ->  "61 passed in 0.32s"
+  pytest -q tests/test_genome_key_order.py     ->  no summary line at all
+```
+
+The `Makefile`'s `test:` target is bare `$(PY_OPT) -m pytest` — ONE `-q`, from `addopts` —
+which is why every committed §117-era log ends in a totals line and all five of these end
+in nothing. **THE TWO FINDINGS ARE ONE CAUSAL CHAIN**: the redundant `-q` removed the
+authoritative count, that forced the counts out of progress characters, and THAT is what let
+ten traceback `E` lines be counted as ten outcomes. Drop the CLI `-q` and both defects
+disappear. **A flag that looked idempotent with the config file was not**, and the cost was
+not a missing convenience line but a hand-rolled parser standing in for it.
+
+**AND THE `heavy_objective` ROW MOVED SINCE THE COMMITTED LOG, WITH A COMMIT BEHIND IT.**
+This run reads `127 = 125p + 2xf`; `test_heavy_objective.log` reads `127 = 124p + 3xf`. One
+test left the xfail bucket. That is `12df5e6` (2026-09-06 22:59:26, *"lift the two strict
+XPASSes"*), and the committed log is 2026-09-06 11:27 — **eleven and a half hours
+earlier**. `tests/test_objective.py` carries 2 marks today, verified. So the transition is a
+commit and not an unexplained fate — **which is §152 §3's fourth bucket changing membership
+mid-arc, exactly the motion the bucket exists to make visible, and the mechanism that
+surfaced it was `xfail_strict` turning the xpasses into failures: the §31 policy working as
+designed.**
+
 ### 5. WHAT MOVED
 
 Nothing in the tree. This section is the record; the run's artifacts stay in scratch.
