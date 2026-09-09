@@ -23075,3 +23075,99 @@ the same two options I did, and one of them is wrong.
    but `MESH_H_OVER_T`'s comment (§144 §3) is still three frozen magnitudes that the
    function could replace with a citation. Unchanged from §144 successor 2 and still not
    urgent: the sign claim holds on both genomes, so the constant is not in question.
+
+## §147 — 2026-09-08. §146's SUCCESSOR 0, ANSWERED: THE OFFSET **DOES** HAVE A LOCATABLE FENCE, SO IT GETS THE PARAMETER-SPACE GUARD. `abs(off) < 0.10` IS A THEOREM WHILE THE RIM STAYS FINE AND A **COIN** ONCE IT DOES NOT — AND THE MARGIN FELL **36% IN ONE PROMOTION**, BY A SINGLE GEOMETRIC FACTOR OF 1.56311 THAT IS THE SAME AT EVERY CONFIG TO 0.0035%. ONE MORE PROMOTION OF THAT SIZE PUTS IT **UNDER** THE FENCE
+
+One commit, `150d70f`, `tests/test_fem.py`, 44 insertions and 0 deletions. **Numbered §147
+and not the §148 a concurrent session offered**: that session's own instruction was to take
+the next free number rather than leave a reserved gap, §145 had landed by the time I
+appended, and §147 was free. §148 is theirs.
+
+### 1. THE QUESTION WAS WHETHER THERE IS A FENCE AT ALL
+
+§146 successor 0 asked one thing and allowed for either answer: `test_the_interpolated_
+drop...` is pinned on a RELATIONSHIP (`gap == off * slope`), which cannot drift the way a
+probe can, so the parameter-space guard might simply not apply. **It applies.** The first
+assertion is not the relationship, it is `abs(off) < 0.10` — *a node sits essentially at
+the bottom* — and that one has a fence.
+
+**`off` is a PHASE.** It is where the bottom falls between two rim nodes, so it is bounded
+by half the local spacing and otherwise uniform in that band. §142 measured
+`|off| / (spacing/2)` reaching **1.000** across 12 solves, which is exactly what "uniform
+in the band" looks like. That makes the assertion a **theorem** while the ceiling is under
+0.10 and a **coin** the moment it is not — passing with probability `0.10/ceiling` for as
+long as luck holds, while the premise it encodes has already stopped being true.
+
+So the ceiling is asserted rather than assumed. `ceiling < 0.10` implies `abs(off) < 0.10`
+for every phase, and it fires when the GUARANTEE is lost rather than when the coin lands
+badly. This is §145 §5's rule — where a fence is locatable, prefer the parameter form —
+and the reason it fires earlier is the same one: the phase can keep passing long after the
+band has grown.
+
+### 2. THE FENCE IS MOVING, AND BY A SINGLE FACTOR RATHER THAN BY NOISE
+
+The guarantee holds iff the local spacing is under 0.20 deg. Measured on the plain mesh:
+
+```
+  config    pre-`cb4e3dd`   shipped    ratio      shipped ceiling   margin to fence
+  smoke        0.234323    0.366279   1.56314          0.1831           0.546x
+  coarse       0.093731    0.146510   1.56310          0.0733           1.365x
+  medium       0.058582    0.091569   1.56309          0.0458           2.184x
+```
+
+**The ratio is 1.56311 at all three configs, spread 0.0035%.** That is one geometric factor
+and not three samples, which is what turns two data points into a trend: the promotion did
+not perturb the rim discretisation, it SCALED it. So the prediction is quantitative rather
+than rhetorical — the shipped margin at `coarse` is 1.365x, and one more promotion of that
+size gives **1.365 / 1.563 = 0.873x, under the fence.**
+
+**AND THE FENCE IS ALREADY CROSSED AT `smoke` ON BOTH GENOMES** (0.546x and 0.854x). The
+plain mesh there reads `off = -0.1404`, which fails the existing line outright. This test
+runs at `coarse` so nothing is red — but "a coarser rim near the bottom removes this test's
+premise" is not a hypothetical, it is a config away.
+
+### 3. VALIDATED BY FIRING IT, AND IT COSTS NOTHING
+
+Per §146 §1, a guard that has only been seen to pass is not yet a guard:
+
+```
+  genome           cfg      ceiling   margin
+  shipped          smoke     0.1831   0.546x   RED
+  shipped          coarse    0.0733   1.365x   pass
+  shipped          medium    0.0458   2.184x   pass
+  pre-`cb4e3dd`    smoke     0.1172   0.854x   RED
+  pre-`cb4e3dd`    coarse    0.0469   2.134x   pass
+  pre-`cb4e3dd`    medium    0.0293   3.414x   pass
+```
+
+Unlike §146's guard this one is **free**: the ceiling is a pure mesh property read off a
+mesh the test already builds, so no extra solve and the file's timings are unchanged
+within noise. `_rim_node_spacing_at_bottom` reads the LOCAL spacing — nodes within 1 deg of
+the bottom — and its docstring says why, because the median around the whole rim is 9.2x
+coarser and using it would put the ceiling at 0.677 deg and make the 0.10 bound look nine
+times looser than it is (§142 §3).
+
+### 4. NOTHING ELSE SHARES THIS FENCE
+
+Checked before filing it as a pattern: `patch_centre_offset_deg` is read by
+`study_corner_singularity` and `study_wheel_fea`, which RECORD it, and by no other test.
+`tests/test_fem.py` is the only place it is asserted on, so the guard does not need
+replicating. **The two study artifacts do carry phase-dependent offsets**, which is not a
+defect — but it does mean a committed `patch_centre_offset_deg` is a sample of a phase and
+not a property, and nothing beside those numbers says so.
+
+**SUCCESSORS.**
+
+0. **THE 1.56311 FACTOR IS UNEXPLAINED AND IT IS THE PREDICTIVE PART.** I measured that the
+   local rim spacing scaled by one factor at every config and did NOT find what set it. It
+   is not the axle drop (1.346x) and not the arc length (1.306x). Whatever it is, it is the
+   quantity that decides how many promotions this test has left, and it would let the guard
+   be stated against a cause rather than against a measured band. Worth one grep of how the
+   contact-patch refinement chooses its angular extent.
+1. **`abs(gap) < 0.01 * drop` IS THE THIRD ASSERTION AND IT HAS NOT BEEN AUDITED.** §142
+   re-derived the first and replaced the second; this one was carried unchanged. It reads
+   0.121% against a 1% bound at the shipped genome, so it is not close — but "not close"
+   is what `abs(off) < 0.10` looked like before anyone computed its ceiling.
+2. **A COMMITTED PHASE IS NOT A COMMITTED MEASUREMENT** (from §4). Two study artifacts
+   record `patch_centre_offset_deg` as if it were a property of the design. It is a
+   property of where the mesh's nodes happened to land. Neither driver's prose says so.
