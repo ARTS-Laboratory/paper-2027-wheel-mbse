@@ -23880,3 +23880,148 @@ a PLAN section, per `pyproject.toml`'s policy set at §31 — a policy that has 
    1:52:49, batched as above. The next promotion's checklist has no full-suite item — §115's
    left the suite 62 red and §117 discovered it afterwards. **A promotion that lands without
    this measurement taken before and after is a promotion whose red count is an inference.**
+
+---
+
+## §154 — 2026-09-09. **ALL ELEVEN OF §133's ROWS ARE CLOSED AND THE SUITE HAS NO FAILURES: 957 COLLECTED, 944 PASSED, 0 FAILED, 13 XFAILED.** THE 944 WAS ARITHMETIC WHEN I FIRST REPORTED IT AND IS A MEASUREMENT NOW, IN 29 MINUTES RATHER THAN TWO HOURS. AND §133 IS 11-FOR-11 ON THE FAILURES IT NAMED WHILE 3-OF-4 WRONG ON THE CAUSES IT STATED
+
+The close of the arc §133 opened. Two commits since §153's suite —
+`d6c89ee`/`e573509` and `28b91f6` — plus `aaafc34`, which is not one of the eleven and is
+the sharpest live finding of the stretch.
+
+### 1. THE MEASUREMENT
+
+```
+  batch                              collected   passed  failed  xfailed   wall
+  light   (re-run 03:21-03:51 today)       720      709       0       11  28:55
+  heavy4  (measured at 45aa25e)            237      235       0        2   1:23
+  ------------------------------------------------------------------------------
+  TOTAL                                    957      944       0       13
+                              944 + 0 + 13 = 957 = collected      GATE PASSES
+```
+
+**No `FAILED` and no `ERROR` line anywhere in the logs.** The 13 xfails reconcile against
+the 13 static marks, and 0 xpassed — nothing crossed under `xfail_strict`, including
+`aaafc34`'s small-load gate, still xfailed at its 17.15% margin.
+
+**I REPORTED 944 AS ARITHMETIC BEFORE MEASURING IT, WHICH §153 SUCCESSOR 2 EXISTS TO
+FORBID.** 942 + the 2 now closed is a prediction, and a concurrent session pointed my own
+rule at me four sections after I wrote it. **The re-measure cost 29 minutes rather than two
+hours, and the method is the transferable half:**
+
+```
+  1.  git diff <baseline>..HEAD --name-only   filtered to ^(src|studies)/  ->  NONE
+      so the four heavy batches' counts remain measurements at byte-identical inputs
+  2.  only tests/test_gnl.py changed, and it lives in the light batch  ->  re-run that one
+  3.  the edited file's COLLECTED count, before and after:  12 and 12
+      without this, "709 of 720" compares two different denominators
+```
+
+Step 3 is the one I did not think of and the other session did. **A denominator is the
+thing that goes wrong quietly** — the same class as counting 967 outcomes from a log, or
+nine rows from an eleven-row list.
+
+### 2. ELEVEN OF ELEVEN
+
+```
+   #  test                                                     fate
+   1  test_contact  the_sampled_patch_extent_...               GREEN   0a33d46
+   2  test_fem      mesh_resolution_must_scale_with_thickness  GREEN   bb76860
+   3  test_fem      the_interpolated_drop_...                  GREEN   ef6c489
+   4  test_geometry_kernel  thickness_hits_its_nodes_exactly   GREEN   f3cc24d
+   5  test_geometry_kernel  analytic_curvature_matches_...     GREEN   e011809
+   6  test_gnl      the_load_continuation_path_...             GREEN   d6c89ee
+   7  test_gnl      the_retired_max_min_gate_...               GREEN   28b91f6
+   8  test_gnl      stress_recovery_follows_the_solves_...     GREEN   a4808b4
+   9  test_wheel_fea  peak_stress_diverges_but_the_field_...   GREEN   1205064
+  10  test_objective  R_rim_is_still_effectively_inert_...     RENAMED a96f1de, GREEN
+  11  test_objective  the_thickness_branch_of_the_cap_...      GREEN   65f45bf
+```
+
+Ten repaired, one renamed-with-its-finding, all green. Two sessions: eight rows and two.
+
+**AND THE THING WORTH INHERITING IS NOT "THE LIST WAS BAD".** Four of §133's stated causes
+were examined closely enough to test:
+
+```
+  contact row (§145 §4)     names the HALF-ANGLE for a failure in the PEAK assertion,
+                            and its ratio GREW rather than shrank              WRONG
+  kinematics row (§150 §2)  attributes the docstring's +169.5% to the outgoing
+                            genome; it reproduces on neither, at either fidelity  WRONG
+  the raiser (d6c89ee)      calls an isolated n=8 divergence a "smoke-FIDELITY
+                            ARTIFACT"; eleven other step counts converge there    WRONG
+  max/min gate (28b91f6)    "the finding is stronger and only the 3.0 bracket
+                            died" — exactly right                                RIGHT
+```
+
+**11-for-11 on the failures it named, 3-of-4 wrong on the causes it stated.** That is a
+specific object and a much more useful thing to inherit than distrust: it says which half
+of the record to re-derive. It only reads that way because the survivor is named beside the
+three.
+
+### 3. THE FOUR RULES THIS ARC ACTUALLY PRODUCED
+
+0. **A MECHANISM THAT FITS IS STILL AN ATTRIBUTION UNTIL SOMEONE PERTURBS IT.** Three
+   stories were proposed here and all three looked equally good: floppiness driving the
+   small-load correction SURVIVED a controlled six-point sweep; "the max is pinned at draw
+   index 0" DIED at two other seeds; a root-to-wall outlier of 2.921 against 1.294 DIED in
+   the same table built to test it. The fit is not the evidence — the perturbation is.
+1. **WHERE A FENCE IS LOCATABLE, PREFER THE PARAMETER-SPACE GUARD**, because a probe drifts
+   toward a fence long before the quantity it measures changes sign. The evidence is one
+   row: on the genome BEFORE `cb4e3dd`, `8d317ed`'s guard would already have been red at
+   1.06x while the test it protects was still green. Where no fence exists — a p99 with no
+   `h` at which it starts diverging, a sampled peak with no `n_quad` at which it becomes a
+   level — the quantity-space form is what is available.
+2. **A FILED SUCCESSOR MAY ASSERT WHAT WAS MEASURED AND MUST MARK WHAT WAS INFERRED — AND A
+   NEGATIVE IS INFERRED UNLESS THE SEARCH THAT ESTABLISHED IT IS NAMED.** Three successors
+   were closed by refutation rather than execution, and all three failures were negatives:
+   "no census speaks about the objective", "neither driver's prose says so", "13 solves
+   against 2". A negative is the cheapest sentence to write and the most expensive to
+   inherit.
+3. **AGREEMENT BETWEEN TWO DERIVATIONS OF AN INHERITED QUANTITY IS EVIDENCE ABOUT THE
+   INHERITANCE, NOT ABOUT THE QUANTITY.** Two sessions derived "nine" from the same
+   eleven-row list by DISJOINT errors — one dropped the row that fits no group table, the
+   other dropped a whole heavy file — and the matching integers are what stopped either of
+   us looking, for six sections.
+
+### 4. THE LIVE FINDING THAT IS NOT ONE OF THE ELEVEN
+
+`aaafc34`. A **strict** xfail —
+`test_the_gnl_correction_is_small_at_one_percent_of_service_load` — whose reason text claimed `small_load_rel_diff = 0.2007%` while the shipped wheel reads
+**0.117153%**, a figure 1.71x the reality on a gate whose text says
+`GATE_SMALL_LOAD_REL` is not to be moved. **The margin went 95.8% -> 17.15% at `cb4e3dd`
+and nothing was watching it.** Under `xfail_strict` an xpass is a suite FAILURE, so §31's
+mechanism will reopen this by itself.
+
+It is now dated, flat under refinement (under 3.1%, four genomes), measured at the
+conservative fidelity (`smoke` reads lowest 4 of 4), and given a cause: the quantity is
+**monotone in wall thickness** over six controlled points, a uniform **+15.4%** crosses the
+gate, and 70.5% of the promotion's drop is `t0` and `t3` alone. **That converts a warning
+into a pre-flight check — whether the next promotion reopens this is knowable before it
+lands rather than after.**
+
+### 5. AN UNPLANNED DEMONSTRATION
+
+The waiter process watching tonight's light batch was **OOM-killed mid-run**. The batch
+itself, launched under `tmux new-session -d`, carried on and finished clean: **the parent
+died and the run did not.** That is what the `tmux` discipline is for, observed rather than
+cited, on the same night the sequential batching exists because of a measured OOM kill at
+49,948,448 kB anon-rss. A discipline adopted for one reason paying off for an adjacent one
+is worth more than the argument that established it.
+
+**SUCCESSORS.**
+
+0. **THE SMALL-LOAD GATE IS THE ONE NUMBER TO RE-READ AFTER THE NEXT PROMOTION.** §4. It is
+   17.15% from reopening, the mechanism is known, and the check is `+15.4% of uniform
+   thickness`. Nothing else in the tree is that close to changing a verdict by itself.
+1. **§153 SUCCESSOR 2 STANDS AND IS NOW CHEAPER THAN IT LOOKED.** A promotion landing
+   without a full-suite measurement before and after has an inferred red count — that is
+   how §115 left the suite 62 red and §117 found out afterwards. **§1's method makes the
+   "after" affordable**: re-run only the batch whose files changed, prove the rest with
+   `git diff --name-only`, and check the collected counts. Two hours becomes minutes
+   whenever a promotion touches few files.
+2. **THE `wheel_fem.py` CITATIONS HAVE STILL NEVER BEEN SWEPT** — §138 successor 1,
+   unchanged and now the oldest open item. `git grep -nE 'wheel_fem(\.py)?:[0-9]+'` with
+   the `(\.py)?` OPTIONAL, then §138 §1's writing-commit resolution for each. The optional
+   group is not decoration: it is what hid the tenth `wheel_adjoint` citation from a sweep
+   that reported nine.
