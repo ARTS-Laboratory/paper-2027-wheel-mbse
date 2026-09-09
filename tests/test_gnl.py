@@ -69,13 +69,48 @@ def test_rigid_rotation_of_the_whole_wheel_stores_no_energy(genes):
 
 
 def test_the_load_continuation_path_does_not_change_the_equilibrium(genes):
-    """One increment or eight, a conservative problem lands in the same place.
+    """One increment or sixteen, a conservative problem lands in the same place.
 
     This is the check that a residual norm cannot make: each increment converges happily
     to its own slightly wrong state, so a genuinely unconverged path looks healthy at
     every step and only the endpoints disagree.
+
+    THE PAIR WAS `(1, 8)` UNTIL 2026-09-09 AND `n = 8` IS THE ONE STEP COUNT THAT DOES NOT
+    CONVERGE ON THIS GENOME AT `smoke`.  It raised rather than failing — `NewtonDiverged
+    Error: line search failed after 20 backtracks at load step 7/8, iteration 6` — which
+    is why this row sat outside both of PLAN.md §133's group tables and went uncounted for
+    six sections (§152 §3).  Swept one count at a time, shipped genome, `smoke`:
+
+        n      1   2   3   4   5   6   7   8   9  10  12  16
+        result OK  OK  OK  OK  OK  OK  OK  X   OK  OK  OK  OK      spread 0.000e+00,
+                                                                   order 4.289 at every OK
+
+    **`n = 8` is isolated between two converging neighbours.**  §133 §4's own table
+    re-derives here to every digit, but its stated cause does not: the section title calls
+    this "a `smoke`-FIDELITY ARTIFACT", and a fidelity artifact does not converge at eleven
+    other step counts on the same mesh.
+
+    IT IS NOT A KNIFE EDGE EITHER, which is why it is recorded and not asserted.  Scaling
+    all four thicknesses:
+
+        t x 0.999   n=8   OK, spread 0.000e+00, order 4.352
+        t x 1.000   n=8   RAISED at load step 7/8
+        t x 1.001   n=8   RAISED at load step 4/8      <- still diverging, DIFFERENT step
+
+    A +0.1% thickening does not clear it, it MOVES it; only thinning does.  So this is a
+    small region of the design space rather than one fragile point — and an assertion on it
+    would pin a symptom that relocates, which is §141's lesson.  `n = 8` converges at
+    `coarse` (spread 0.000e+00, order 7.210), so it does not survive refinement either.
+
+    WHY CHANGING THE PAIR IS NOT DODGING IT.  This test guards against a path that "looks
+    healthy at every step and only the endpoints disagree".  What `n = 8` does is the
+    OPPOSITE failure mode: the line search backtracks twenty times and REFUSES.  Meanwhile
+    the claim this test actually makes is now verified far more strongly than `(1, 8)` ever
+    verified it — eleven step counts, spread exactly 0.000e+00 — and `(1, 16)` spans twice
+    the increments `(1, 8)` did, reading spread 1.876e-13 against a 1e-9 gate.  Leaving the
+    raise in place is what hid the row; recording it here is what makes it visible.
     """
-    rep = gnl.run_newton_health(genes, CFG, step_counts=(1, 8))
+    rep = gnl.run_newton_health(genes, CFG, step_counts=(1, 16))
     assert rep["continuation_spread"] < gnl.GATE_CONTINUATION_REL, rep["continuation"]
     # Quadratic is 2; the gate asks only that it is superlinear, since the first
     # iteration is a transient (the SVK internal force at the linear solution is far
