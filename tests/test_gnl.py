@@ -229,10 +229,13 @@ def test_the_correction_enters_at_first_order_in_the_load(genes):
 
 @pytest.mark.xfail(reason=(
     "PLAN.md §14 item 4a decided this pre-registered gate STANDS; SVK_PLAN Step 0, §31 "
-    "(REDS Step 4) and §32 re-declared it.  small_load_rel_diff = 0.2007% against a 0.1% "
-    "gate — a true statement about a 1.2 mm wall, not a defect.  GATE_SMALL_LOAD_REL is "
-    "NOT to be moved.  strict=True via pyproject.toml, so this reopens itself if the "
-    "wheel ever passes it.  §32 ANSWERED THE QUESTION THIS WAS WAITING ON AND THE GATE "
+    "(REDS Step 4) and §32 re-declared it.  small_load_rel_diff = 0.117153% at `smoke` "
+    "against a 0.1% gate — a true statement about a 1.2 mm wall, not a defect.  THE "
+    "MARGIN IS 17.15% AND WAS 95.8% BEFORE `cb4e3dd`; the 0.2007% this text carried "
+    "until 2026-09-09 is §31's dated reading and reproduces on neither genome measured "
+    "since.  GATE_SMALL_LOAD_REL is NOT to be moved.  strict=True via pyproject.toml, so "
+    "this reopens itself if the wheel ever passes it — see the docstring for how close "
+    "that now is.  §32 ANSWERED THE QUESTION THIS WAS WAITING ON AND THE GATE "
     "STILL STAYS RED — the answer was 'no, linear is not an acceptable default for "
     "search', the fix went into wheel_stage3's CLI default, and this gate measures the "
     "KERNEL default, which §32 deliberately did not move.  See the docstring."))
@@ -248,6 +251,65 @@ def test_the_gnl_correction_is_small_at_one_percent_of_service_load(genes):
     Converged by `coarse` on both, and mesh-independent to three digits.  The promoted
     1.2 mm wheel is **5.5x more geometrically nonlinear** than the GA/beam one it
     replaced, which is what a thinner, floppier part does.
+
+    THE MARGIN WENT 95.8% -> 17.15% AT `cb4e3dd` AND NOTHING WAS WATCHING IT.  Measured
+    2026-09-09 across four genomes and three fidelities, the two upper rows being §14's
+    own and the two lower ones new:
+
+        genome                   smoke     coarse    medium   spread   margin@smoke
+        350f4c7  (§14)          0.2050%   0.2081%   0.2089%   1.019x     +105.0%
+        36aed36  (§14, GA/beam) 0.0373%   0.0382%   0.0384%   1.030x      -62.7%
+        96a0ac5  outgoing       0.1958%   0.1983%   0.1988%   1.015x      +95.8%
+        b729e86  SHIPPED        0.1172%   0.1207%   0.1206%   1.030x      +17.15%
+
+    **FLAT UNDER REFINEMENT, RE-DERIVED RATHER THAN INHERITED**: every genome varies by
+    under 3.1% across the three, the shipped one at 1.030x sitting between §14's own two,
+    and `coarse` -> `medium` moves it 0.08% — converged, not still drifting.  So §14's
+    flatness claim survives the promotion with four genomes behind it rather than two.
+
+    **AND `smoke` IS THE CONSERVATIVE FIDELITY, 4 OF 4.** Every genome reads LOWEST at
+    `smoke` and rises slightly with refinement, and this is a gate the quantity must
+    EXCEED — so the fixture measures at its own tightest margin.  17.15% is the number to
+    state; `coarse` and `medium` give 20.7% and 20.6%.
+
+    **THE MECHANISM IS THE ONE THIS DOCSTRING ALREADY NAMES, AND IT IS MEASURED HERE
+    RATHER THAN ATTRIBUTED.**  Scaling all four thicknesses of the shipped genome by
+    `lam`, every other gene fixed, at `smoke`:
+
+        lam      0.80      0.90      1.00      1.15      1.30      1.50
+        t0     2.8044    3.1549    3.5055    4.0313    4.5571    5.2582
+        rel    0.1554%   0.1331%   0.1172%   0.1003%   0.0883%   0.0757%
+
+    **Strictly monotone decreasing.**  Thinner reads higher — "what a thinner, floppier
+    part does", turned into a measurement on this genome instead of an attribution.  And
+    it puts the fence in units someone can act on: **a uniform +15.4% of thickness crosses
+    the gate** (`lam*` = 1.1535, and `lam` = 1.15 reads 1.0028x).
+
+    THE PROMOTION'S DROP DECOMPOSES, WITH THE ROOT AND RIM DOMINANT.  Taking the outgoing
+    genome and substituting ONLY the shipped `t0` and `t3` — a synthetic probe; no such
+    design exists:
+
+        96a0ac5 outgoing                  0.195821%
+          + shipped t0 and t3 only        0.140381%    <- synthetic
+        b729e86 shipped                   0.117153%
+
+        root/rim thickening   0.055440 pp = 70.5% of the drop
+        the other ten genes   0.023228 pp = 29.5%
+
+    So `t0` 1.4738 -> 3.5055 and `t3` 1.4313 -> 2.4547 are the DOMINANT term in the margin
+    going 95.8% -> 17.15%, not merely its direction.  **Whether the next promotion reopens
+    this xfail is therefore knowable BEFORE it lands rather than after: look at what it
+    does to the wall.**  The four genomes range 5.50x with no monotone ORDER
+    (0.2050 -> 0.0373 -> 0.1958 -> 0.1172) because they differ in stiffness, not because
+    the quantity wanders — 5.496x at `smoke` against 5.448x at `coarse` says that spread
+    belongs to the genomes and not to where anyone looked.
+
+    **WHAT THAT MEANS FOR THIS `xfail`, WHICH IS STRICT.**  It is one promotion of
+    ordinary size from becoming an XPASS, and an xpass here is a suite FAILURE — which is
+    §31's mechanism working exactly as designed, not a defect.  A repair anywhere in this
+    file that touches the load-continuation path can move this quantity; take a before and
+    after reading of it, and compare the movement against the 17.15% rather than against
+    zero.
 
     THE EXPONENT IS FINE, which is what says this is a real result and not a broken solve.
     `test_the_correction_enters_at_first_order_in_the_load` above passes at 1.0393 inside
