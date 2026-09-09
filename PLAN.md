@@ -23987,11 +23987,12 @@ three.
 ### 4. THE LIVE FINDING THAT IS NOT ONE OF THE ELEVEN
 
 `aaafc34`. A **strict** xfail —
-`test_the_gnl_correction_is_small_at_one_percent_of_service_load` — whose reason text claimed `small_load_rel_diff = 0.2007%` while the shipped wheel reads
-**0.117153%**, a figure 1.71x the reality on a gate whose text says
-`GATE_SMALL_LOAD_REL` is not to be moved. **The margin went 95.8% -> 17.15% at `cb4e3dd`
-and nothing was watching it.** Under `xfail_strict` an xpass is a suite FAILURE, so §31's
-mechanism will reopen this by itself.
+`test_the_gnl_correction_is_small_at_one_percent_of_service_load` — whose reason text
+claimed `small_load_rel_diff = 0.2007%` while the shipped wheel reads **0.117153%**, a
+figure 1.71x the reality on a gate whose text says `GATE_SMALL_LOAD_REL` is not to be
+moved.  **The margin went 95.8% -> 17.15% at `cb4e3dd` and nothing was watching it.**
+Under `xfail_strict` an xpass is a suite FAILURE, so §31's mechanism will reopen this by
+itself.
 
 It is now dated, flat under refinement (under 3.1%, four genomes), measured at the
 conservative fidelity (`smoke` reads lowest 4 of 4), and given a cause: the quantity is
