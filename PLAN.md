@@ -23268,3 +23268,83 @@ verdict is unchanged.
 2. **`weld_footprints_deg` RETURNS AN EDGE AND IS READ AS A WIDTH.** It cost a correct
    elimination here. Worth checking its other callers — `studies/` and any test — before
    assuming this section is the only place the two were confused.
+
+## §149 — 2026-09-08. §147's SUCCESSOR 2 IS **CLOSED AS A NON-DEFECT, AND ITS PREMISE WAS MINE AND WAS FALSE.** I FILED "TWO STUDY ARTIFACTS RECORD A PHASE AS A DESIGN PROPERTY AND NEITHER DRIVER'S PROSE SAYS SO" WITHOUT READING EITHER DRIVER'S PROSE. ONE OF THEM SAYS IT IN THE COMMENT DIRECTLY ABOVE THE LINE THAT RECORDS IT. **NO CODE CHANGE**
+
+Numbered §149 because it was the next free heading when I appended — a concurrent session
+had claimed it, and that session's own standing instruction is to take the next free
+number rather than leave a reserved gap. Nothing committed but this record.
+
+### 1. WHAT I FILED, AND WHY IT WAS WRONG
+
+§147 §4 established correctly that `patch_centre_offset_deg` is a **phase** — where the
+bottom happens to fall between two rim nodes — and not a property of the design. It then
+observed that `study_corner_singularity` and `study_wheel_fea` both record it, and filed
+successor 2: *"two committed artifacts carry a phase as though it were a property of the
+design, and neither driver's prose says so."*
+
+**The first half is true and the second half I did not check.** I verified the value is a
+phase, saw two drivers recording it, and inferred what their prose must be missing. That
+inference went into the record as a finding.
+
+`studies/study_corner_singularity.py:534--536`, the comment **directly above the line that
+records it**:
+
+```
+  # above snap to nodes -- one to the nearest, one to a count inside a fixed
+  # window -- and the layer profile moves the rim's circumferential PHASE, so
+  # both carry a term that is about the blocking rather than the solution.
+```
+
+That is the finding I filed, already written, in the file I filed it against.
+
+### 2. THE FULL AUDIT, SINCE THE POINT OF CHECKING IS TO CHECK ALL OF IT
+
+- **`study_corner_singularity`** says it explicitly (above), and its report column is
+  labelled `centre offset, deg` — a neutral label for a diagnostic, claiming nothing.
+- **`study_wheel_fea:232`** records it with no prose of its own, but the comment
+  immediately above at `:223--230` explains the mechanism it belongs to: *"`axle_drop_mm`
+  is `uy` at whichever `rim_outer` node is nearest theta = -90 ... that makes the reading
+  first-order in how far the nearest node happens to sit from the ground."* A reader
+  reaches the offset through that sentence. Weaker than the other driver, and not wrong.
+- **No claim anywhere rests on the value.** Enumerated all five sites: two appends, two
+  dict entries, one print. Nothing thresholds it, aggregates it, or derives from it. It is
+  a recorded diagnostic in both artifacts, which is exactly what a phase should be.
+
+So there is nothing to repair. The artifacts are right, the labels are right, and one of
+the two drivers documents the mechanism better than my successor claimed either did.
+
+### 3. THE RENAME WAS DECLINED, ON THE OFFERING SESSION'S OWN CONDITION
+
+§148 successor 2's audit found `study_wheel_fea._blindness_row`'s locals `hub_w`/`rim_w`
+hold `weld_footprints_deg`'s return, which `2cef108` has now documented as **one flank
+from one origin** and not a width. The offering session's condition was explicit: a free
+ride *if* I were in that file for successor 2 anyway, and *"not worth a commit of its own"*
+otherwise. Successor 2 turned out to need no edit, so I am not in the file, so the rename
+does not happen. The artifact KEYS (`weld_hub_deg`/`weld_rim_deg`) are accurate and the
+docstring at the source is now correct, so the residual confusion is two local names in one
+function, reachable from a corrected docstring.
+
+### 4. THIS IS THE THIRD FILED SUCCESSOR TODAY CLOSED BY MEASURING ITS PREMISE
+
+§137's opened by finding a filed test that could not settle its own claim either way.
+§144 successor 1 was filed by me with a cost argument that did not distinguish its two
+options, corrected at §146 §2. This one was filed by me on an unread premise. **In all
+three the successor's AUTHOR had done real work and then written one sentence they had not
+measured** — and in all three the next session's correct move was to re-derive the premise
+before executing.
+
+The generalisation §148 §2 reached from the other direction applies here too: **a clean
+statement is not evidence.** "Neither driver's prose says so" reads exactly like something
+checked, and cost nothing to write.
+
+**SUCCESSORS.**
+
+0. **NONE FROM THIS SECTION.** §147 successor 2 is closed and there is no remaining work in
+   `studies/` from the §147/§148 line. The two local names in §3 are recorded here so that
+   whoever next edits `study_wheel_fea._blindness_row` for another reason can take them.
+1. **THE CLOSING WRITE-UP SHOULD COUNT THE PREMISE-WRONG SUCCESSORS, NOT JUST THE REPAIRS.**
+   Six reds closed and three successors closed by refutation. The second number is the one
+   that argues for the discipline: **a filed successor is a hypothesis with a citation, and
+   it is read as a finding.** Whatever rule the write-up states about guards should have a
+   companion about what a successor is allowed to assert.
