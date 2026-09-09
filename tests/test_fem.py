@@ -459,9 +459,10 @@ def test_mesh_resolution_must_scale_with_thickness():
                             0.125)
     F = wf.FORCE_PER_SPOKE_NEWTONS * sba.PROBE_FORCE_FRACTION * 0.125 ** 3
     ref = sba.castigliano(g, "fixed_guided", F)
-    err = {}
+    err, span = {}, {}
     for k in (0.25, 8):
         cfg = sba.sized_config(g, k=k)
+        span[k] = cfg.n_span
         err[k] = fem.spoke_deflection(g, cfg, root_bc="plane", force=F) / ref - 1.0
     assert err[0.25] < 0 < err[8], (
         f"expected a part-sized mesh (h/t~4) to read stiff and a wall-resolved one "
@@ -472,6 +473,38 @@ def test_mesh_resolution_must_scale_with_thickness():
     assert abs(err[0.25]) > 5.0 * abs(err[8]), (
         f"part-sized error {err[0.25]:+.4%} is not clear of the wall-resolved "
         f"{err[8]:+.4%} -- the probe has drifted toward the crossover again")
+
+    # AND THE SAME GUARD IN THE MESH PARAMETER RATHER THAN IN THE QUANTITY, WHICH IS THE
+    # ONE THAT WOULD HAVE CAUGHT THIS BEFORE THE PROMOTION DID.  The assertion above is
+    # about how big the coarse reading is; this one is about WHERE THE PROBE STANDS
+    # relative to the sign change, which is what actually went wrong (§142).
+    #
+    # It bisects, so it costs about 13 solves -- roughly 4.3 s, against 2 solves for
+    # everything above.  That is not the cheap option and it is not meant to be: what it
+    # buys is that the failure names the fence instead of the symptom, and it fires while
+    # the test is still green.  ON THE PRE-`cb4e3dd` GENOME THE OLD PROBE STOOD AT
+    # h/t 0.998 AGAINST A CROSSOVER OF 0.944 -- A MARGIN OF 1.06x -- SO THIS LINE WOULD
+    # HAVE BEEN RED THERE, ONE PROMOTION BEFORE THE SIGN ACTUALLY FLIPPED.  Nothing was
+    # watching any of §133's nine approach failure; this is that watch, for this one.
+    #
+    # A self-aiming probe read off `crossover_h_over_t` was the other option and is worse
+    # at any price: it is green however far the crossover moves, so it follows the failure
+    # around instead of reporting it.
+    #
+    # The bound is 1.5x.  Measured margins are 2.207x (shipped) and 4.229x
+    # (pre-`cb4e3dd`), i.e. 47% and 182% of headroom, against a ratio quantisation of
+    # about 1.6% -- `h/t` is `arc_length / n_span / t_min` with `n_span` an INTEGER, so
+    # both terms step, by 1/92 at the probe and 1/203 at the crossover (PLAN.md §144 §2).
+    # 1.5 is ~30x that step, so an adjacent element count cannot redden it.
+    h_probe = (sba.arc_length(g) / span[0.25]
+               / float(np.min(np.asarray(g)[8:12])))
+    h_star = sba.crossover_h_over_t(g, F)
+    assert h_probe > 1.5 * h_star, (
+        f"the part-sized probe sits at h/t = {h_probe:.4f} against a sign change at "
+        f"{h_star:.4f} -- a margin of {h_probe / h_star:.3f}x, under the 1.5x this test "
+        f"needs to keep demonstrating anything.  Re-aim the probe coarser (both figures "
+        f"are quantised by the integer n_span, ~1.6% on this ratio), do not lower this "
+        f"bound and do not read the probe off the crossover.")
 
 
 # ---------------------------------------------------------------------------
