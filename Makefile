@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs boundarywaste stage3-resume mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs boundarywaste stage3-resume mbse mbsebase mbsecal mbsescore studies clean-pyc gui gui-browser gui-dist
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -59,6 +59,13 @@ help:
 	@echo "              requirement profiles, with a compliance table each.  Gates"
 	@echo "              that req=baseline() is bit-identical to naming nothing AND"
 	@echo "              that at least one profile comes back NON-COMPLIANT"
+	@echo "make gui      the optional control surface as a DESKTOP APP: the"
+	@echo "              mission/requirements layer, a live preview of the wheel,"
+	@echo "              and detached runs with progress.  Nothing else needs it"
+	@echo "              and nothing else imports it -- see gui/README.md"
+	@echo "make gui-browser  the same server, opened in a browser instead.  No"
+	@echo "              node, no npm -- stdlib Python and nothing else"
+	@echo "make gui-dist the installer for THIS platform, into gui/desktop/dist"
 	@echo "make studies  the verification gates: spoke-mesh validity (M2a),"
 	@echo "              full-wheel mesh (M2b), beam agreement (M3), full-wheel"
 	@echo "              FEA (M4), geometric nonlinearity (M5), real contact"
@@ -739,6 +746,41 @@ studies:
 	$(PY_OPT) studies/study_gradient.py
 	$(PY_OPT) studies/study_objective.py
 	$(PY_OPT) studies/study_stage3.py
+
+# OPTIONAL AND SAID SO IN THE RECIPE.  `gui/` adds nothing to either requirements file and
+# nothing in src/, studies/ or tests/ imports it, so deleting the directory is a supported
+# state rather than a broken install -- these targets degrade to a message instead of a
+# missing-file error when it is gone.
+#
+# TWO WAYS IN, ONE SERVER.  `gui` opens the desktop window and `gui-browser` opens a tab,
+# and both are looking at the same `gui/server.py` -- the Electron shell starts that
+# server on an OS-chosen port and points a window at it.  The browser route is the one
+# that needs no node and no npm, so it stays the fallback rather than becoming legacy.
+GUI_ARGS ?= --open
+
+gui:
+	@test -d gui/desktop/node_modules || { \
+	    echo "The desktop shell's dependencies are not installed.  Once:"; \
+	    echo ""; \
+	    echo "    cd gui/desktop && npm install"; \
+	    echo ""; \
+	    echo "Or use \`make gui-browser\`, which needs neither node nor npm."; \
+	    exit 1; }
+	@cd gui/desktop && npm start
+
+gui-browser:
+	@test -x gui/wheelgui || { \
+	    echo "gui/ is not present.  It is optional; the pipeline does not need it."; \
+	    exit 1; }
+	@gui/wheelgui $(GUI_ARGS)
+
+# Builds for the platform you are ON.  Cross-building is the exception, not the rule: a
+# Windows installer from Linux needs wine on the PATH, and a macOS .dmg needs macOS --
+# electron-builder cannot fake either one.
+gui-dist:
+	@test -d gui/desktop/node_modules || { \
+	    echo "Run \`cd gui/desktop && npm install\` first."; exit 1; }
+	@cd gui/desktop && npm run dist
 
 clean-pyc:
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +

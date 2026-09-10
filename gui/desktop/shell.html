@@ -1,0 +1,97 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Wheel</title>
+<!-- The window's first paint, and its last resort.
+     Two states, chosen by whether the location carries a hash: no hash is the splash
+     shown while gui/server.py binds a port; a hash is a URI-encoded failure message.
+     It repeats the palette from static/style.css rather than linking it, because this
+     page has to render before there is a server to serve that file from -- which is
+     exactly the case where it is showing an error about there being no server. -->
+<style>
+  :root {
+    --ground:#faf9f7; --surface:#fff; --sunk:#f2f0ec; --ink:#1a1a18;
+    --muted:#6b6862; --faint:#97938c; --rule:#ddd9d2; --rule-strong:#c6c1b8;
+    --accent:#2f5d8a; --fail:#8a3f3f; --fail-soft:#f5eaea;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --sans: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:#16161a; --surface:#1d1d22; --sunk:#131317; --ink:#e8e6e1;
+      --muted:#9d9a94; --faint:#6e6b66; --rule:#2e2e34; --rule-strong:#3f3f47;
+      --accent:#7fa8cf; --fail:#cf8b8b; --fail-soft:#271a1a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin:0; background:var(--ground); color:var(--ink);
+    font:13px/1.55 var(--sans); display:flex; flex-direction:column;
+    user-select:none; -webkit-user-select:none;
+  }
+  /* THE WHOLE STRIP IS THE DRAG HANDLE. The window is frameless; without this there is
+     no way to move it, and the error state is precisely when someone wants to. */
+  .bar { height:42px; flex:0 0 42px; -webkit-app-region:drag; }
+  main { flex:1; display:flex; align-items:center; justify-content:center; padding:0 34px 42px; }
+  .box { max-width:560px; width:100%; }
+
+  .mark { display:block; margin:0 auto 22px; width:76px; height:76px; }
+  .mark .ring { fill:none; stroke:var(--rule-strong); stroke-width:1.6; }
+  .mark .spoke { fill:none; stroke:var(--accent); stroke-width:2.4; stroke-linecap:round; }
+  .spin { transform-origin:50% 50%; animation:turn 5.5s linear infinite; }
+  @keyframes turn { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation:none; } }
+
+  h1 { font-size:15px; font-weight:600; letter-spacing:-.01em; margin:0 0 6px; text-align:center; }
+  p.sub { color:var(--muted); text-align:center; margin:0; }
+
+  .fail h1 { text-align:left; color:var(--fail); }
+  .fail p.sub { text-align:left; }
+  pre {
+    margin:14px 0 0; padding:11px 13px; background:var(--sunk);
+    border:1px solid var(--rule); border-left:2px solid var(--fail); border-radius:0 2px 2px 0;
+    font:11.5px/1.5 var(--mono); white-space:pre-wrap; word-break:break-word;
+    max-height:46vh; overflow:auto; user-select:text; -webkit-user-select:text;
+  }
+  .hint { margin-top:16px; color:var(--faint); font-size:11.5px; }
+  .hint code { font-family:var(--mono); color:var(--muted); }
+</style>
+
+<div class="bar"></div>
+<main><div class="box" id="box"></div></main>
+
+<script>
+  /* RENDERED ON `hashchange` AS WELL AS ON LOAD, and that is a bug fix rather than
+     thoroughness.  main.js moves between the two states with `loadFile(shell.html,
+     {hash})`, and a navigation to the same document with only a different fragment is
+     not a load at all -- the browser fires `hashchange` and leaves the DOM alone. Render
+     once at the bottom of this script and the splash would sit there spinning forever
+     while the failure it was replaced by was never drawn. */
+  const svgMark = spin => `
+    <svg class="mark ${spin ? 'spin' : ''}" viewBox="-50 -50 100 100" aria-hidden="true">
+      <circle class="ring" r="46"/><circle class="ring" r="14"/>
+      ${Array.from({length:12}, (_, i) =>
+        `<path class="spoke" transform="rotate(${i*30})"
+               d="M0 -14 C 10 -24, 14 -34, 6 -45"/>`).join('')}
+    </svg>`;
+
+  function render() {
+    const msg = decodeURIComponent(location.hash.slice(1));
+    document.getElementById('box').innerHTML = msg
+      ? `<div class="fail">
+           <h1>The control surface could not start.</h1>
+           <p class="sub">Nothing was launched, and no running job was affected.</p>
+           <pre></pre>
+           <p class="hint">Retry with <code>View → Reload</code>, or point the app at a
+              different checkout with <code>File → Choose checkout…</code>.</p>
+         </div>`
+      : `${svgMark(true)}
+         <h1>Wheel</h1>
+         <p class="sub">Starting the control surface…</p>`;
+    /* textContent, not innerHTML: the message carries a subprocess's stderr, and a
+       traceback holding a `<` is not markup. */
+    if (msg) document.querySelector('pre').textContent = msg;
+  }
+  addEventListener('hashchange', render);
+  render();
+</script>

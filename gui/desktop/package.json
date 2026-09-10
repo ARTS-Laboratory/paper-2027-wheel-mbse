@@ -1,0 +1,54 @@
+{
+  "name": "wheel-control-surface",
+  "productName": "Wheel",
+  "desktopName": "wheel-control-surface.desktop",
+  "version": "2.1.0",
+  "description": "Desktop control surface for the compliant PLA UAV landing wheel pipeline",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:linux": "electron-builder --linux",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^44.3.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "org.wheel.controlsurface",
+    "productName": "Wheel",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "menu.js",
+      "preload.js",
+      "shell.html",
+      "build/icon.png"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Science",
+      "syncDesktopName": true
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  }
+}

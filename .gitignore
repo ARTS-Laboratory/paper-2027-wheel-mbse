@@ -12,3 +12,15 @@ __pycache__/
 best_solution_smoke.json
 *_summary.jpg
 .aider*
+
+# The GUI's job registry: one directory per run, holding that run's log, its exit code,
+# and whatever it was pointed at instead of the repo's default output names.  Local
+# bookkeeping about THIS machine's runs, not provenance -- the artifacts a run is meant to
+# contribute are committed by the driver that files them, deliberately and by hand.
+gui/runs/
+
+# The desktop shell's toolchain and its output. `gui/desktop/` is source -- four small
+# files and an icon -- but Electron itself is ~150 MB restored by `npm install`, and the
+# installers it builds are the same bytes again per platform.
+gui/desktop/node_modules/
+gui/desktop/dist/
