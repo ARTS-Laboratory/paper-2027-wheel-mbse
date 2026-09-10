@@ -27,12 +27,10 @@ module.exports = function buildMenu(on) {
     {
       label: 'File',
       submenu: [
-        /* Greyed in attach mode: the checkout is on another machine, and a file dialog
-         * that can only ever open the wrong directory is worse than a disabled item. */
-        { label: 'Choose checkout…', click: on.onChooseRepo, enabled: !on.attached },
+        { label: 'Choose checkout…', click: on.onChooseRepo },
         { type: 'separator' },
-        { label: 'Open runs folder', click: on.onOpenRuns, enabled: !on.attached },
-        { label: 'Open checkout', click: on.onOpenRepo, enabled: !on.attached },
+        { label: 'Open runs folder', click: on.onOpenRuns },
+        { label: 'Open checkout', click: on.onOpenRepo },
         { type: 'separator' },
         IS_MAC ? { role: 'close' } : { role: 'quit' },
       ],
@@ -68,9 +66,8 @@ module.exports = function buildMenu(on) {
   app.setAboutPanelOptions({
     applicationName: 'Wheel',
     applicationVersion: app.getVersion(),
-    copyright: 'A control surface over the compliant-wheel pipeline.\n' +
-               'Runs launched here are detached: closing this app does not stop them.' +
-               (on.attached ? '\n\nAttached to a server on another machine.' : ''),
+    copyright: 'A control surface over the compliant-wheel pipeline, on this machine.\n' +
+               'Runs launched here are detached: closing this app does not stop them.',
   });
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 };
