@@ -442,7 +442,11 @@ def test_the_filleted_gate_runs_and_inverts_the_census(genes):
 
     pg = rep["per_genome"]
     assert pg["ok"], pg
-    assert pg["numpy_path_max_abs_mm"] == 0.0, pg["numpy_path_max_abs_mm"]
+    # §128: was `== 0.0`. Not bit-identical at every genome -- fe8dd88 already measured
+    # this (11 of 18 builds bit-identical, worst 3.553e-14 mm) and shipped anyway; the
+    # current genome lands in the other bucket, deterministically, at 7.105e-15 mm. Gated
+    # like `identity_max_abs_mm` rather than required exact for the same reason.
+    assert pg["numpy_path_max_abs_mm"] < sg.GATE_FILLET_MESH_MM, pg["numpy_path_max_abs_mm"]
     assert pg["identity_max_abs_mm"] < sg.GATE_FILLET_MESH_MM, pg
     assert pg["worst_rel_rule"] < sg.GATE_FILLET_JAC_REL, pg["rows"]
     assert pg["pair"][0] == pytest.approx(

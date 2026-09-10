@@ -1,8 +1,15 @@
 # MBSE_PLAN.md — a requirements layer: what is this wheel for?
 
 **Open arc #9. Created 2026-08-31, carried forward from nothing — this is the first arc in
-the tree that is about the PROBLEM STATEMENT rather than about the solution. Nothing
-started.**
+the tree that is about the PROBLEM STATEMENT rather than about the solution. ~~Nothing
+started.~~**
+
+**STATUS CORRECTED 2026-09-05 — PLAN §114. STEPS 0-8 ARE DONE (§97), and `PLAN.md`'s own
+open-arcs table has said so since §97 — this file and the index have contradicted each other
+for eight days.** See `THE RECORD — 2026-08-31` below. The weight portfolio quoted in that
+record was re-derived at §103 (`DEFAULT_WEIGHTS["stress_margin"]` 325.0→89.21, `p_cal` to
+53.51/44.60/1.59/0.30/0.00). What is left is not the arc: it is a re-optimisation under a
+failing profile, which costs a `medium` descent this arc was forbidden to spend.
 
 **VERSION CONTROL IS PART OF THIS PROJECT'S WORKFLOW — CHANGED 2026-08-19.** The rule that
 stood here read *"Ignore version control entirely. Do not commit, branch, stage, revert or
@@ -47,8 +54,8 @@ Four consequences, each of which this arc is meant to end:
    'temperatur|thermal|celsius|glass.trans|\bTg\b|ambient|anneal|creep'` over `src/`
    returns **zero hits — not one**. Over `studies/`, `tests/`, the `Makefile` and the other
    ten `.md` files it returns **four lines, every one a false positive**: a cosine LR
-   schedule that "anneals" (`study_stage3.py:2109-2110`, two lines), "import creep"
-   (`test_pool.py:286`), and "creeping to ~0.808" (`PLAN.md:6579`).
+   schedule that "anneals" (`study_stage3.py:2125-2126`, two lines), "import creep"
+   (`test_pool.py:286`), and "creeping to ~0.808" (`PLAN.md:6599`).
    `YOUNGS_MODULUS_PLA_MPA = 2300.0` and `ULTIMATE_STRESS_MPA = 40.0` are
    single-point values at an **unstated** temperature. A PLA part is a thermoplastic part:
    its modulus is a strong function of ambient well below Tg, and this tree models a
@@ -56,9 +63,9 @@ Four consequences, each of which this arc is meant to end:
 
 3. **`ALLOWABLE_STRESS_MPA`, `TARGET_DEFLECTION_MM` and the weight table cannot be varied
    at all.** `force`, `E` and `nu` already thread as keywords through the whole solve path
-   and even survive the process pool (`wheel_objective.py:1127` ships `problem_kw`). The
-   other three are read as module globals inside the loss — `wheel_objective.py:1153`
-   (target), `:1234-1235` and `:1272-1273` (allowable). `tests/test_objective.py:1257` has
+   and even survive the process pool (`wheel_objective.py:1151` ships `problem_kw`). The
+   other three are read as module globals inside the loss — `wheel_objective.py:1177`
+   (target), `:1258-1259` and `:1296-1297` (allowable). `tests/test_objective.py:1257` has
    to `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move it, which is the tell.
    Only `MIN_WALL_MM` and `CY_BOUND_MM` have setters (`wheel_fea.py:840`, `:852`) and only
    they are recorded into a genome record's `search` block.
@@ -143,10 +150,10 @@ The calibration below is that paragraph, generalised to all five objective terms
   force                 keyword on objective(:1309), t3_terms(:1046);         route it
                         rides to pool workers at :1111-1115
   E, nu                 ride **problem_kw -> service_qoi_value_and_grad       nothing
-                        (wheel_adjoint.py:646) -> wheel_contact_problem;
-                        survive the pool (wheel_objective.py:1127)
+                        (wheel_adjoint.py:868) -> wheel_contact_problem;
+                        survive the pool (wheel_objective.py:1151)
   min_wall              set_min_wall(wheel_fea.py:852) + --min-wall            route it
-  target_deflection     MODULE GLOBAL, read at wheel_objective.py:1153-1155   PLUMB IT
+  target_deflection     MODULE GLOBAL, read at wheel_objective.py:1177-1179   PLUMB IT
   allowable_stress      MODULE GLOBAL, read at :1234-1235 and :1272-1273      PLUMB IT
 ```
 
@@ -311,6 +318,28 @@ RE-MEASURED AT PLAN.md §103, same reason as the table above: `stress_margin`'s 
 fell 5.56 -> 1.59 and the freed points landed on `mass`/`deflection`, which is the same
 100-point budget redistributing under one weight change, not a second finding.
 
+**AND RE-MEASURED AGAIN AT PLAN.md §119, WHERE A PROMOTION MOVED IT RATHER THAN A WEIGHT.**
+Four of the five `c_T` come from `DEFAULT_WEIGHTS` and are genome-independent; `smoothness`'s
+is `0.01 *` the SHIPPED GENOME's own `loss_terms["smoothness"]`, so `best_solution.json`
+moving re-derives the whole column. §115's `b729e86` carries smoothness **4.871578951506198**
+against the outgoing genome's implied ~0.168:
+
+```
+  term             c_T (§103)   c_T (§119)     p_cal (§103)   p_cal (§119)
+  --------------  ----------   ----------     ------------   ------------
+  mass              0.300000     0.300000            53.51          49.37
+  deflection        0.250000     0.250000            44.60          41.14
+  stress_margin     0.008921     0.008921             1.59           1.47
+  smoothness        0.001678     0.048716             0.30           8.02
+  phase_ripple      0.000000     0.000000             0.00           0.00
+  --------------------------------------------------------------------
+  sum c             0.560599     0.607637              100            100
+```
+
+`c_smoothness` moves **29x** and every other share falls to pay for it. Smoothness was a
+rounding error in this portfolio at §103 and is now its third-largest axis — the same
+100-point redistribution, driven from the genome side instead of the weight side.
+
 **THIS IS THE ARC'S FIRST REAL FINDING AND IT IS AVAILABLE BEFORE ANY CODE IS WRITTEN.**
 The shipped weight table is a **51/43/6/0.3/0** portfolio — roughly half on mass, roughly
 half on stroke, a twentieth on durability, and nothing at all on rolling or print finish.
@@ -375,7 +404,7 @@ is a real circularity and it is resolved by ORDERING, stated in the module docst
 left to the reader: field class and a floor set the stroke first, then the load factor
 follows from it. Do not solve the fixed point. A fixed-point stroke would make the load a
 function of the design and this repo loads to a FORCE, not to an indentation — see
-`service_qoi_value_and_grad`'s docstring (`wheel_adjoint.py:649-662`), whose entire subject
+`service_qoi_value_and_grad`'s docstring (`wheel_adjoint.py:871-884`), whose entire subject
 is that the distinction is not a correction but the term.
 
 ---
@@ -464,9 +493,9 @@ constants; everything else already threads.
   for bit. A default that moved is a silent re-interpretation of every committed artifact
   and of the five study files that re-alias `SERVICE_FORCE_N` (`study_gnl.py:106`,
   `study_contact.py:94`, `study_gradient.py:120`, `study_fillet_cost.py:115`,
-  `study_svk_rescore.py:67`).
+  `study_svk_rescore.py:75`).
 - **CHECK — the cache audit, BY TEST AND NOT BY READING.** `_T1_CACHE` keys on
-  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:908`);
+  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:932`);
   `_KT_CACHE` keys without weights (`:533`); `wheel_wheel._COORD_FN_CACHE` (`:2760`) keys on the
   static mesh recipe. Two requirement sets differing **only** in `allowable_stress_mpa`
   must give different `stress`/`stress_margin` **in the same interpreter**. A stale jit
@@ -484,9 +513,12 @@ derive `p^cal`, implement `weights_from_priorities`, and anchor `phase_ripple` f
   point. The map must be an identity at its own calibration point or it is not a
   re-parameterisation, it is a change.
 - **CHECK — the table above is reproduced from `src/`**, not copied from this file. If
-  `p_cal` does not come back as 53.51 / 44.60 / 1.59 / 0.30 / 0.00 (RE-MEASURED AT PLAN.md
-  §103, after the fillet switch re-derived `DEFAULT_WEIGHTS["stress_margin"]`; it was
-  51.35 / 42.80 / 5.56 / 0.29 / 0.00 before), this file is wrong and the driver is right.
+  `p_cal` does not come back as 49.37 / 41.14 / 1.47 / 8.02 / 0.00 (RE-MEASURED AT PLAN.md
+  §119, after §115's promotion moved the shipped genome's `smoothness` loss term; it was
+  53.51 / 44.60 / 1.59 / 0.30 / 0.00 at §103 and 51.35 / 42.80 / 5.56 / 0.29 / 0.00 before
+  that), this file is wrong and the driver is right. **THIS CHECK RE-DERIVES AT EVERY
+  PROMOTION**, because `c_smoothness` reads the shipped genome — expect to update it in the
+  same change that moves `best_solution.json`.
 - **CHECK — conservation:** total exchange-rate pressure is invariant under any
   reallocation summing to 100, to floating point.
 - **CHECK — ripple:** its anchor is a measured number filed beside the shipped

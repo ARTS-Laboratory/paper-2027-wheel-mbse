@@ -18,13 +18,35 @@ the most negative mu, hence `which="SA"`.
 
 THE STATE MUST BE SOLVED UNDER SVK TOO, AND THAT IS NOT A DETAIL.  Assembling an SVK
 stiffness at a displacement that was converged under LINEAR kinematics gives a different
-and larger answer -- measured, on `best_solution` at phase 0:
+and larger answer -- measured 2026-08-03 at phase 0, ON `best_solution_ga_beam.json`
+(`36aed36`) AND ON A CAPPED WHEEL (`uncap=False`):
 
     smoke   linear state 1.800046   svk state 1.378129
     coarse  linear state 1.785253   svk state 1.359846
 
 The svk-state column is the one that converges under refinement and the one every number
 in PLAN.md refers to.  Using the linear state is the same class of error `study_m9` made.
+
+THAT ATTRIBUTION IS A PIN, NOT A CAPTION -- PLAN.md §129, and it is §25's fix for §25's
+reason.  This table said "on `best_solution`", which `_designs` and `--genome` still read
+LIVE from `PP.BEST_SOLUTION`; that file has changed genome FIVE times since (`350f4c7`,
+`e4219f3`, `e126cc3`, `09e8188`, `b729e86`) and holds one no gene of which is within 10%
+of the one above (`R_hub` -63.4%, `cy4` -78.0%).
+Re-measured 2026-09-07, same phase, same `measure()`:
+
+    both pins           smoke 1.378129 (-0.000%)   coarse 1.359846 (-0.000%)
+    genome pin only     smoke 1.382440 (+0.313%)   coarse 1.362729 (+0.212%)
+    what `make m9buck`  smoke 1.098719 (-20.275%)  coarse 1.090341 (-19.819%)
+    measures today
+
+So the table reproduces to all seven digits under both pins, and the ~20% the bare driver
+is out by is the PROMOTION, not the `UNCAP_DEFAULT` flip (§36/§38) that cost
+`study_svk_rescore.py`'s control -4.13%/-4.78% -- that flip is worth 0.2-0.3 points of it
+here.  The target is not re-derived: a reproduction anchor re-measured on today's wheel is
+not an anchor.  What `measure()` builds is unchanged and still `fillet=None`, which is the
+OTHER half of the distance to the objective -- §103 made every mesh `wheel_objective`
+solves a filleted one (+26.5% elements at `coarse`) and nothing here has been measured on
+that construction.
 
 STILL MEASUREMENT-ONLY.  Nothing here is added to the Stage-3 objective, `buckling` stays
 inert, and no threshold is invented -- `LOBPCG_RESIDUAL_REL` is deliberately left alone.
@@ -49,6 +71,7 @@ import project_paths as PP  # noqa: E402
 if PP.SRC not in sys.path:
     sys.path.insert(0, PP.SRC)
 
+import _gate_guard  # noqa: E402
 import jax_config  # noqa: E402,F401  -- x64 before the first trace
 import wheel_fem as fem  # noqa: E402
 import wheel_genome as wg  # noqa: E402
@@ -308,6 +331,21 @@ def main():
     ap.add_argument("--config", default="coarse")
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args()
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131.  `--config` is guarded even though `--quick` overrides it three lines
+    # below (`cfg = "smoke" if quick else args.config`): it still selects the rung every
+    # section BUT the ladder is measured at, so `--config smoke` alone — no `--quick` —
+    # files a smoke section set under the gate's name with `settings.section_config`
+    # honestly recording it and every verdict computed anyway.  That is §41's shape.
+    _gate_guard.refuse_degraded_out(ap, args, "study_m9_buckling.json", [
+        (args.quick, "--quick: one design of three, two rungs of three, 3 reference "
+                     "phases of %d, and a two-point load ramp" % REFERENCE_PHASES),
+        (args.config != "coarse", "--config %s, not the gate's coarse" % args.config),
+        (args.genome != PP.BEST_SOLUTION, "--genome %s" % args.genome),
+    ])
 
     t0 = time.time()
     designs = _designs(args.genome)

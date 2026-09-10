@@ -1,0 +1,2252 @@
+{
+ "rank": {
+  "config": "coarse",
+  "n_phase": 8,
+  "scheme": "uniform",
+  "workers": 0,
+  "rows": [
+   {
+    "genome": "36aed36 ga_beam",
+    "aliases": [
+     "best_solution_ga_beam.json",
+     "stage2 elite 0"
+    ],
+    "gene_key": "b7d0d16",
+    "mesh_s": 42.8,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.6670072222404212, 0.8952484646638628) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.6670072222404212, 0.8952484646638628) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite9 prod",
+    "aliases": [
+     "stage3_prod_best_elite9.json"
+    ],
+    "gene_key": "36d7154",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 1337.4926153864164,
+     "axle_drop_mean_mm": 0.5686796950065113,
+     "axle_drop_min_mm": 0.47812964703195315,
+     "axle_drop_max_mm": 0.7031681655222286,
+     "deflection_error_mm": -1.4313203049934886,
+     "deflection_error_pct": -71.56601524967444,
+     "kt_hub": 2.067284884080867,
+     "kt_rim": 1.5756189137412524,
+     "pnorm_stress_agg_mpa": 4.147032533020893,
+     "stress_utilisation": 0.7821546983859065,
+     "stress_utilisation_hub": 0.6717649330273943,
+     "stress_utilisation_rim": 0.7821546983859065,
+     "pnorm_p30_utilisation_kt": 2.2141211409135657,
+     "pnorm_p30_agg_mpa": 26.775713859800018,
+     "max_stress_mpa": 38.08566564674656,
+     "mass_g": 67.6201975748743,
+     "phase_ripple_std_over_mean": 0.1381517426445896,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 1.4907361251697513,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 55.57824458208846,
+      "min_sj": 0.0,
+      "deflection": 1280.4236346791583,
+      "stress": 0.0,
+      "stress_margin": 0.0,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 1254.5
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 1307.5612365404213,
+     "axle_drop_mean_mm": 0.5855080030862454,
+     "axle_drop_min_mm": 0.4923966444008882,
+     "axle_drop_max_mm": 0.7222328036239114,
+     "deflection_error_mm": -1.4144919969137546,
+     "deflection_error_pct": -70.72459984568773,
+     "kt_hub": 2.067284884080867,
+     "kt_rim": 1.5756189137412524,
+     "pnorm_stress_agg_mpa": 4.227452406445528,
+     "stress_utilisation": 0.789116234069314,
+     "stress_utilisation_hub": 0.6742928396875041,
+     "stress_utilisation_rim": 0.789116234069314,
+     "pnorm_p30_utilisation_kt": 2.2846712468636348,
+     "pnorm_p30_agg_mpa": 27.628887344661006,
+     "max_stress_mpa": 39.32207340870587,
+     "mass_g": 67.6201975748743,
+     "phase_ripple_std_over_mean": 0.13793971610204353,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 1.4907361251697513,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 55.57824458208846,
+      "min_sj": 0.0,
+      "deflection": 1250.4922558331632,
+      "stress": 0.0,
+      "stress_margin": 0.0,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 136.4
+    },
+    "loss_rel_diff": -0.022378724563909214,
+    "drop_rel_diff": 0.029591891934072745
+   },
+   {
+    "genome": "elite10 prod",
+    "aliases": [
+     "stage3_prod_best_elite10.json"
+    ],
+    "gene_key": "c2d5abd",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 1594.3560290576977,
+     "axle_drop_mean_mm": 0.43287085210261755,
+     "axle_drop_min_mm": 0.3642022655479289,
+     "axle_drop_max_mm": 0.5385300800444892,
+     "deflection_error_mm": -1.5671291478973823,
+     "deflection_error_pct": -78.35645739486911,
+     "kt_hub": 2.0328503782223306,
+     "kt_rim": 1.5181892482582784,
+     "pnorm_stress_agg_mpa": 3.5879673999095925,
+     "stress_utilisation": 0.7003731096672422,
+     "stress_utilisation_hub": 0.5988686741792552,
+     "stress_utilisation_rim": 0.7003731096672422,
+     "pnorm_p30_utilisation_kt": 2.05903752934373,
+     "pnorm_p30_agg_mpa": 25.322049662409235,
+     "max_stress_mpa": 36.473058741547746,
+     "mass_g": 70.47016017068997,
+     "phase_ripple_std_over_mean": 0.13587781370248037,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 1.501745596865119,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 57.920679592347916,
+      "min_sj": 0.0,
+      "deflection": 1534.9336038684846,
+      "stress": 0.0,
+      "stress_margin": 0.0,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 99.2
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 1572.1274856276673,
+     "axle_drop_mean_mm": 0.4442596306897712,
+     "axle_drop_min_mm": 0.3731901862884937,
+     "axle_drop_max_mm": 0.5520505302699475,
+     "deflection_error_mm": -1.5557403693102287,
+     "deflection_error_pct": -77.78701846551144,
+     "kt_hub": 2.0328503782223306,
+     "kt_rim": 1.5181892482582784,
+     "pnorm_stress_agg_mpa": 3.6497554965725243,
+     "stress_utilisation": 0.7061642007646306,
+     "stress_utilisation_hub": 0.6014381204911615,
+     "stress_utilisation_rim": 0.7061642007646306,
+     "pnorm_p30_utilisation_kt": 2.11525695416857,
+     "pnorm_p30_agg_mpa": 26.01343631618257,
+     "max_stress_mpa": 37.49619421536395,
+     "mass_g": 70.47016017068997,
+     "phase_ripple_std_over_mean": 0.13659719220522448,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 1.501745596865119,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 57.920679592347916,
+      "min_sj": 0.0,
+      "deflection": 1512.7050604384542,
+      "stress": 0.0,
+      "stress_margin": 0.0,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 127.9
+    },
+    "loss_rel_diff": -0.01394201986564314,
+    "drop_rel_diff": 0.02630987633340065
+   },
+   {
+    "genome": "minwall 0.8",
+    "aliases": [
+     "stage3_minwall_best_0.8.json"
+    ],
+    "gene_key": "5006276",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2443.329840517977,
+     "axle_drop_mean_mm": 1.3563654216151864,
+     "axle_drop_min_mm": 1.1247757902819744,
+     "axle_drop_max_mm": 1.6574750008512962,
+     "deflection_error_mm": -0.6436345783848136,
+     "deflection_error_pct": -32.18172891924068,
+     "kt_hub": 2.0678409047159576,
+     "kt_rim": 1.449573616957394,
+     "pnorm_stress_agg_mpa": 8.189953616362017,
+     "stress_utilisation": 1.7000573126475853,
+     "stress_utilisation_hub": 1.7000573126475853,
+     "stress_utilisation_rim": 1.1641481246166838,
+     "pnorm_p30_utilisation_kt": 2.924445596881733,
+     "pnorm_p30_agg_mpa": 35.3562693122593,
+     "max_stress_mpa": 43.04125075892885,
+     "mass_g": 38.486611117411115,
+     "phase_ripple_std_over_mean": 0.14126778265644258,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.5828056824052518,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 31.632831055406395,
+      "min_sj": 0.0,
+      "deflection": 258.915919057873,
+      "stress": 2068.0993912261333,
+      "stress_margin": 84.098893496159,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 2068.0993912261333
+     },
+     "worst_barrier": 2068.0993912261333,
+     "feasible": false,
+     "elapsed_s": 183.4
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 2717.0770541073584,
+     "axle_drop_mean_mm": 1.7568456753244246,
+     "axle_drop_min_mm": 1.5105637194939254,
+     "axle_drop_max_mm": 2.0865327751230094,
+     "deflection_error_mm": -0.2431543246755754,
+     "deflection_error_pct": -12.157716233778771,
+     "kt_hub": 2.0678409047159576,
+     "kt_rim": 1.449573616957394,
+     "pnorm_stress_agg_mpa": 9.462793665390295,
+     "stress_utilisation": 1.7624229228213506,
+     "stress_utilisation_hub": 1.7624229228213506,
+     "stress_utilisation_rim": 1.2361932889841305,
+     "pnorm_p30_utilisation_kt": 3.2040849747653897,
+     "pnorm_p30_agg_mpa": 38.73708281253761,
+     "max_stress_mpa": 50.888880759787426,
+     "mass_g": 38.486611117411115,
+     "phase_ripple_std_over_mean": 0.11712708177611929,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.5828056824052518,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 31.632831055406395,
+      "min_sj": 0.0,
+      "deflection": 36.95251600527196,
+      "stress": 2548.3039320183684,
+      "stress_margin": 99.60496934590643,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 2548.3039320183684
+     },
+     "worst_barrier": 2548.3039320183684,
+     "feasible": false,
+     "elapsed_s": 273.7
+    },
+    "loss_rel_diff": 0.11203858318668414,
+    "drop_rel_diff": 0.2952598520480849
+   },
+   {
+    "genome": "minwall 1.0",
+    "aliases": [
+     "stage3_minwall_best_1.0.json"
+    ],
+    "gene_key": "18e9a0d",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2278.4559402949567,
+     "axle_drop_mean_mm": 1.2403570111350775,
+     "axle_drop_min_mm": 1.0154889606714945,
+     "axle_drop_max_mm": 1.5335685817737879,
+     "deflection_error_mm": -0.7596429888649225,
+     "deflection_error_pct": -37.98214944324613,
+     "kt_hub": 2.040397631819602,
+     "kt_rim": 1.4462983764717265,
+     "pnorm_stress_agg_mpa": 7.654852504894669,
+     "stress_utilisation": 1.6475901950635568,
+     "stress_utilisation_hub": 1.6475901950635568,
+     "stress_utilisation_rim": 1.179557020296955,
+     "pnorm_p30_utilisation_kt": 2.7979469444573284,
+     "pnorm_p30_agg_mpa": 34.281883354791894,
+     "max_stress_mpa": 41.92207303627807,
+     "mass_g": 40.92048064578893,
+     "phase_ripple_std_over_mean": 0.148940323775835,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.39010536740039325,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.3753200315403433,
+      "buckling": 0.0,
+      "mass": 33.63327176366213,
+      "min_sj": 0.0,
+      "deflection": 360.6609190822705,
+      "stress": 1806.4551371215064,
+      "stress_margin": 76.94118692857688,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.3753200315403433,
+      "stress": 1806.4551371215064
+     },
+     "worst_barrier": 1806.4551371215064,
+     "feasible": false,
+     "elapsed_s": 177.4
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 2452.248857090422,
+     "axle_drop_mean_mm": 1.4829907252281203,
+     "axle_drop_min_mm": 1.2426249691559714,
+     "axle_drop_max_mm": 1.7969215072621703,
+     "deflection_error_mm": -0.5170092747718797,
+     "deflection_error_pct": -25.850463738593987,
+     "kt_hub": 2.040397631819602,
+     "kt_rim": 1.4462983764717265,
+     "pnorm_stress_agg_mpa": 8.457899604545542,
+     "stress_utilisation": 1.6938222686921431,
+     "stress_utilisation_hub": 1.6938222686921431,
+     "stress_utilisation_rim": 1.2431266624055979,
+     "pnorm_p30_utilisation_kt": 2.945123397097615,
+     "pnorm_p30_agg_mpa": 36.08516486160579,
+     "max_stress_mpa": 46.24260732959407,
+     "mass_g": 40.92048064578893,
+     "phase_ripple_std_over_mean": 0.13381154902946982,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.39010536740039325,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.3753200315403433,
+      "buckling": 0.0,
+      "mass": 33.63327176366213,
+      "min_sj": 0.0,
+      "deflection": 167.06161887509066,
+      "stress": 2161.9996580223924,
+      "stress_margin": 88.78888303033618,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.3753200315403433,
+      "stress": 2161.9996580223924
+     },
+     "worst_barrier": 2161.9996580223924,
+     "feasible": false,
+     "elapsed_s": 238.5
+    },
+    "loss_rel_diff": 0.0762766194956428,
+    "drop_rel_diff": 0.19561602983241366
+   },
+   {
+    "genome": "350f4c7 minwall1.2",
+    "aliases": [
+     "stage3_minwall_best_1.2.json"
+    ],
+    "gene_key": "d3e3533",
+    "mesh_s": 2.3,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2930.708268573978,
+     "axle_drop_mean_mm": 1.1620680355265027,
+     "axle_drop_min_mm": 0.9431993770083513,
+     "axle_drop_max_mm": 1.4402612917935411,
+     "deflection_error_mm": -0.8379319644734973,
+     "deflection_error_pct": -41.896598223674864,
+     "kt_hub": 2.053131231021239,
+     "kt_rim": 1.422586739769776,
+     "pnorm_stress_agg_mpa": 7.362141841816026,
+     "stress_utilisation": 1.7440481195419446,
+     "stress_utilisation_hub": 1.7440481195419446,
+     "stress_utilisation_rim": 1.1930222785202245,
+     "pnorm_p30_utilisation_kt": 2.970492883998946,
+     "pnorm_p30_agg_mpa": 36.17027542025902,
+     "max_stress_mpa": 44.89581825401903,
+     "mass_g": 42.36198559570696,
+     "phase_ripple_std_over_mean": 0.1545223082251402,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.29015351752061114,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.021687277593706603,
+      "buckling": 0.0,
+      "mass": 34.81807035263586,
+      "min_sj": 0.0,
+      "deflection": 438.83123567900896,
+      "stress": 2363.460816796172,
+      "stress_margin": 93.28630495104704,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.021687277593706603,
+      "stress": 2363.460816796172
+     },
+     "worst_barrier": 2363.460816796172,
+     "feasible": false,
+     "elapsed_s": 169.7
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 3107.080192226511,
+     "axle_drop_mean_mm": 1.3383006260793657,
+     "axle_drop_min_mm": 1.1069723433476837,
+     "axle_drop_max_mm": 1.6313432891741158,
+     "deflection_error_mm": -0.6616993739206343,
+     "deflection_error_pct": -33.084968696031716,
+     "kt_hub": 2.053131231021239,
+     "kt_rim": 1.422586739769776,
+     "pnorm_stress_agg_mpa": 7.96642037986318,
+     "stress_utilisation": 1.781659098850873,
+     "stress_utilisation_hub": 1.781659098850873,
+     "stress_utilisation_rim": 1.250144196183816,
+     "pnorm_p30_utilisation_kt": 3.044192092874703,
+     "pnorm_p30_agg_mpa": 37.067675544545004,
+     "max_stress_mpa": 45.673184629715045,
+     "mass_g": 42.36198559570696,
+     "phase_ripple_std_over_mean": 0.14361262110899012,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.29015351752061114,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.021687277593706603,
+      "buckling": 0.0,
+      "mass": 34.81807035263586,
+      "min_sj": 0.0,
+      "deflection": 273.6537884043496,
+      "stress": 2694.2522628032243,
+      "stress_margin": 104.04422987118674,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.021687277593706603,
+      "stress": 2694.2522628032243
+     },
+     "worst_barrier": 2694.2522628032243,
+     "feasible": false,
+     "elapsed_s": 220.0
+    },
+    "loss_rel_diff": 0.06018064832442427,
+    "drop_rel_diff": 0.1516542794097393
+   },
+   {
+    "genome": "minwall 1.4",
+    "aliases": [
+     "stage3_minwall_best_1.4.json"
+    ],
+    "gene_key": "f4f4ab8",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 1333.7618061841335,
+     "axle_drop_mean_mm": 1.0035599439262979,
+     "axle_drop_min_mm": 0.8122150553945138,
+     "axle_drop_max_mm": 1.2863195663605287,
+     "deflection_error_mm": -0.9964400560737021,
+     "deflection_error_pct": -49.82200280368511,
+     "kt_hub": 2.075665400985004,
+     "kt_rim": 1.4317015845213317,
+     "pnorm_stress_agg_mpa": 6.477748172212637,
+     "stress_utilisation": 1.3831437178340502,
+     "stress_utilisation_hub": 1.3831437178340502,
+     "stress_utilisation_rim": 1.109690534867391,
+     "pnorm_p30_utilisation_kt": 2.4435992107599,
+     "pnorm_p30_agg_mpa": 29.431516389880244,
+     "max_stress_mpa": 37.89420780755948,
+     "mass_g": 47.21508543440566,
+     "phase_ripple_std_over_mean": 0.16546120226596106,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.17998612261256267,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 38.80691953512794,
+      "min_sj": 0.0,
+      "deflection": 620.5579908426016,
+      "stress": 635.3244878207704,
+      "stress_margin": 38.89242186302096,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 635.3244878207704
+     },
+     "worst_barrier": 635.3244878207704,
+     "feasible": false,
+     "elapsed_s": 163.9
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 1314.024341378126,
+     "axle_drop_mean_mm": 1.1029103771190298,
+     "axle_drop_min_mm": 0.901174755166143,
+     "axle_drop_max_mm": 1.410668169224395,
+     "deflection_error_mm": -0.8970896228809702,
+     "deflection_error_pct": -44.854481144048506,
+     "kt_hub": 2.075665400985004,
+     "kt_rim": 1.4317015845213317,
+     "pnorm_stress_agg_mpa": 6.852784438140587,
+     "stress_utilisation": 1.4002767040838753,
+     "stress_utilisation_hub": 1.4002767040838753,
+     "stress_utilisation_rim": 1.148485259754356,
+     "pnorm_p30_utilisation_kt": 2.544984111666568,
+     "pnorm_p30_agg_mpa": 30.65262963937792,
+     "max_stress_mpa": 40.751682300722614,
+     "mass_g": 47.21508543440566,
+     "phase_ripple_std_over_mean": 0.1601940759179394,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.17998612261256267,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 38.80691953512794,
+      "min_sj": 0.0,
+      "deflection": 502.98111967545077,
+      "stress": 729.0772487862754,
+      "stress_margin": 42.979067258659335,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 729.0772487862754
+     },
+     "worst_barrier": 729.0772487862754,
+     "feasible": false,
+     "elapsed_s": 200.2
+    },
+    "loss_rel_diff": -0.014798343088317956,
+    "drop_rel_diff": 0.09899800584311524
+   },
+   {
+    "genome": "minwall 1.6",
+    "aliases": [
+     "stage3_minwall_best_1.6.json"
+    ],
+    "gene_key": "641f847",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 959.5837265571064,
+     "axle_drop_mean_mm": 0.7968617922219978,
+     "axle_drop_min_mm": 0.6351156579341969,
+     "axle_drop_max_mm": 1.049160761245342,
+     "deflection_error_mm": -1.2031382077780022,
+     "deflection_error_pct": -60.15691038890011,
+     "kt_hub": 2.0278276620906213,
+     "kt_rim": 1.4482258394499192,
+     "pnorm_stress_agg_mpa": 5.512021559064401,
+     "stress_utilisation": 1.0267857318007163,
+     "stress_utilisation_hub": 1.0267857318007163,
+     "stress_utilisation_rim": 0.9798907940385786,
+     "pnorm_p30_utilisation_kt": 2.1219618703346588,
+     "pnorm_p30_agg_mpa": 26.16053018217273,
+     "max_stress_mpa": 34.946717361736276,
+     "mass_g": 53.18324867019724,
+     "phase_ripple_std_over_mean": 0.1743478333912128,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.3533301732304555,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.45964272049659266,
+      "buckling": 0.0,
+      "mass": 43.71225918098403,
+      "min_sj": 0.0,
+      "deflection": 904.7134668845395,
+      "stress": 2.8699017123996193,
+      "stress_margin": 7.475125885456212,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.45964272049659266,
+      "stress": 2.8699017123996193
+     },
+     "worst_barrier": 2.8699017123996193,
+     "feasible": false,
+     "elapsed_s": 151.8
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 887.503577563372,
+     "axle_drop_mean_mm": 0.8481029970884932,
+     "axle_drop_min_mm": 0.679296643345363,
+     "axle_drop_max_mm": 1.1139322445650461,
+     "deflection_error_mm": -1.1518970029115068,
+     "deflection_error_pct": -57.594850145575336,
+     "kt_hub": 2.0278276620906213,
+     "kt_rim": 1.4482258394499192,
+     "pnorm_stress_agg_mpa": 5.731609347084778,
+     "stress_utilisation": 1.0353791102421344,
+     "stress_utilisation_hub": 1.0353791102421344,
+     "stress_utilisation_rim": 1.0034063190047584,
+     "pnorm_p30_utilisation_kt": 2.2215607779832744,
+     "pnorm_p30_agg_mpa": 27.388431713335553,
+     "max_stress_mpa": 36.93849383799918,
+     "mass_g": 53.18324867019724,
+     "phase_ripple_std_over_mean": 0.17131780225571736,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.3533301732304555,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.45964272049659266,
+      "buckling": 0.0,
+      "mass": 43.71225918098403,
+      "min_sj": 0.0,
+      "deflection": 829.2916908228199,
+      "stress": 5.053137802749099,
+      "stress_margin": 8.633516863091929,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.45964272049659266,
+      "stress": 5.053137802749099
+     },
+     "worst_barrier": 5.053137802749099,
+     "feasible": false,
+     "elapsed_s": 172.0
+    },
+    "loss_rel_diff": -0.07511606022368778,
+    "drop_rel_diff": 0.06430375426033752
+   },
+   {
+    "genome": "minwall 1.8",
+    "aliases": [
+     "stage3_minwall_best_1.8.json"
+    ],
+    "gene_key": "b45cba7",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 1258.154084789196,
+     "axle_drop_mean_mm": 0.6102877654603529,
+     "axle_drop_min_mm": 0.5010125473743449,
+     "axle_drop_max_mm": 0.7609692640389856,
+     "deflection_error_mm": -1.389712234539647,
+     "deflection_error_pct": -69.48561172698236,
+     "kt_hub": 2.0734177623121512,
+     "kt_rim": 1.4838893111002975,
+     "pnorm_stress_agg_mpa": 4.569733988975562,
+     "stress_utilisation": 0.8368320600810862,
+     "stress_utilisation_hub": 0.793861555819252,
+     "stress_utilisation_rim": 0.8368320600810862,
+     "pnorm_p30_utilisation_kt": 2.2214905587023765,
+     "pnorm_p30_agg_mpa": 26.785370983620584,
+     "max_stress_mpa": 37.78834392573303,
+     "mass_g": 60.96757840191233,
+     "phase_ripple_std_over_mean": 0.16010199774401127,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.8601647644581595,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 50.11033841253068,
+      "min_sj": 0.0,
+      "deflection": 1207.062559268237,
+      "stress": 0.0,
+      "stress_margin": 0.12102234397015164,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 127.2
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 1215.396569031457,
+     "axle_drop_mean_mm": 0.635177858991907,
+     "axle_drop_min_mm": 0.5225565790162016,
+     "axle_drop_max_mm": 0.7884482617827776,
+     "deflection_error_mm": -1.364822141008093,
+     "deflection_error_pct": -68.24110705040465,
+     "kt_hub": 2.0734177623121512,
+     "kt_rim": 1.4838893111002975,
+     "pnorm_stress_agg_mpa": 4.687033685550478,
+     "stress_utilisation": 0.8489656477832369,
+     "stress_utilisation_hub": 0.7981808227446128,
+     "stress_utilisation_rim": 0.8489656477832369,
+     "pnorm_p30_utilisation_kt": 2.305276325617024,
+     "pnorm_p30_agg_mpa": 27.795608385334727,
+     "max_stress_mpa": 39.243162805358345,
+     "mass_g": 60.96757840191233,
+     "phase_ripple_std_over_mean": 0.15875393001474092,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.8601647644581595,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 50.11033841253068,
+      "min_sj": 0.0,
+      "deflection": 1164.2121728661969,
+      "stress": 0.0,
+      "stress_margin": 0.21389298827124353,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 152.5
+    },
+    "loss_rel_diff": -0.033984323760235746,
+    "drop_rel_diff": 0.04078419221263441
+   },
+   {
+    "genome": "minwall 2.0",
+    "aliases": [
+     "stage3_minwall_best_2.0.json"
+    ],
+    "gene_key": "c996305",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 1592.711995280138,
+     "axle_drop_mean_mm": 0.43371538313793495,
+     "axle_drop_min_mm": 0.3643049560474718,
+     "axle_drop_max_mm": 0.5406934822042082,
+     "deflection_error_mm": -1.566284616862065,
+     "deflection_error_pct": -78.31423084310325,
+     "kt_hub": 2.0332317838294225,
+     "kt_rim": 1.5181892482582784,
+     "pnorm_stress_agg_mpa": 3.6004188892021736,
+     "stress_utilisation": 0.7005583915984035,
+     "stress_utilisation_hub": 0.5978465523063694,
+     "stress_utilisation_rim": 0.7005583915984035,
+     "pnorm_p30_utilisation_kt": 2.064640801832916,
+     "pnorm_p30_agg_mpa": 25.386195738396548,
+     "max_stress_mpa": 36.558379224177514,
+     "mass_g": 70.39273106005298,
+     "phase_ripple_std_over_mean": 0.13732311590107807,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 1.5752679159811165,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 57.8570392274408,
+      "min_sj": 0.0,
+      "deflection": 1533.279688136716,
+      "stress": 0.0,
+      "stress_margin": 0.0,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 102.9
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 1570.4047185336708,
+     "axle_drop_mean_mm": 0.4451508567631397,
+     "axle_drop_min_mm": 0.37337547879328553,
+     "axle_drop_max_mm": 0.554233573828877,
+     "deflection_error_mm": -1.5548491432368603,
+     "deflection_error_pct": -77.74245716184302,
+     "kt_hub": 2.0332317838294225,
+     "kt_rim": 1.5181892482582784,
+     "pnorm_stress_agg_mpa": 3.6624166356641434,
+     "stress_utilisation": 0.7063722576758066,
+     "stress_utilisation_hub": 0.6004105289900977,
+     "stress_utilisation_rim": 0.7063722576758066,
+     "pnorm_p30_utilisation_kt": 2.121362364814605,
+     "pnorm_p30_agg_mpa": 26.08362683593304,
+     "max_stress_mpa": 37.5898365051577,
+     "mass_g": 70.39273106005298,
+     "phase_ripple_std_over_mean": 0.1379631278901647,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 1.5752679159811165,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 57.8570392274408,
+      "min_sj": 0.0,
+      "deflection": 1510.972411390249,
+      "stress": 0.0,
+      "stress_margin": 0.0,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 130.4
+    },
+    "loss_rel_diff": -0.014005844630148312,
+    "drop_rel_diff": 0.026366308574228947
+   },
+   {
+    "genome": "minwall 2.2",
+    "aliases": [
+     "stage3_minwall_best_2.2.json"
+    ],
+    "gene_key": "a085bb3",
+    "mesh_s": 23.0,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at hub, so the radii it was built at (0.8376583973443018, 2.749467679981976) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at hub, so the radii it was built at (0.8376583973443018, 2.749467679981976) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "svk-shipped",
+    "aliases": [
+     "stage3_svk_best_shipped.json"
+    ],
+    "gene_key": "7ea499a",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2148.711227762307,
+     "axle_drop_mean_mm": 0.9129238504280708,
+     "axle_drop_min_mm": 0.679891999035004,
+     "axle_drop_max_mm": 1.2143486563294967,
+     "deflection_error_mm": -1.0870761495719292,
+     "deflection_error_pct": -54.35380747859646,
+     "kt_hub": 2.275875081468163,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 6.852364572551298,
+     "stress_utilisation": 1.518903286789292,
+     "stress_utilisation_hub": 1.518903286789292,
+     "stress_utilisation_rim": 1.2362114597990588,
+     "pnorm_p30_utilisation_kt": 2.9106929673949495,
+     "pnorm_p30_agg_mpa": 31.973338421514622,
+     "max_stress_mpa": 39.31251688008133,
+     "mass_g": 40.05378041685487,
+     "phase_ripple_std_over_mean": 0.20880759821677203,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.03819783816771559,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 13.861515800929272,
+      "buckling": 0.0,
+      "mass": 32.92091541111359,
+      "min_sj": 0.0,
+      "deflection": 738.5840968550822,
+      "stress": 1300.2258991245305,
+      "stress_margin": 63.08060273248354,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 13.861515800929272,
+      "stress": 1300.2258991245305
+     },
+     "worst_barrier": 1300.2258991245305,
+     "feasible": false,
+     "elapsed_s": 161.4
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 2425.733079601912,
+     "axle_drop_mean_mm": 1.075828497387577,
+     "axle_drop_min_mm": 0.8300517559900092,
+     "axle_drop_max_mm": 1.39643579832807,
+     "deflection_error_mm": -0.9241715026124231,
+     "deflection_error_pct": -46.208575130621156,
+     "kt_hub": 2.275875081468163,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 7.517718802707011,
+     "stress_utilisation": 1.5905123496523874,
+     "stress_utilisation_hub": 1.5905123496523874,
+     "stress_utilisation_rim": 1.304875879321833,
+     "pnorm_p30_utilisation_kt": 3.068127284272359,
+     "pnorm_p30_agg_mpa": 33.702720650787164,
+     "max_stress_mpa": 42.71533436377533,
+     "mass_g": 40.05378041685487,
+     "phase_ripple_std_over_mean": 0.1876898778221017,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.03819783816771559,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 13.861515800929272,
+      "buckling": 0.0,
+      "mass": 32.92091541111359,
+      "min_sj": 0.0,
+      "deflection": 533.8081039005649,
+      "stress": 1766.6165475369771,
+      "stress_margin": 78.48779911415949,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 13.861515800929272,
+      "stress": 1766.6165475369771
+     },
+     "worst_barrier": 1766.6165475369771,
+     "feasible": false,
+     "elapsed_s": 207.9
+    },
+    "loss_rel_diff": 0.12892465411841258,
+    "drop_rel_diff": 0.17844275498237883
+   },
+   {
+    "genome": "svk-elite10",
+    "aliases": [
+     "stage3_svk_best_elite10.json"
+    ],
+    "gene_key": "e836f03",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2200.570239669243,
+     "axle_drop_mean_mm": 0.9164211503615594,
+     "axle_drop_min_mm": 0.6835080279643594,
+     "axle_drop_max_mm": 1.21765552233682,
+     "deflection_error_mm": -1.0835788496384406,
+     "deflection_error_pct": -54.178942481922036,
+     "kt_hub": 2.2773114972124264,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 6.864364962572017,
+     "stress_utilisation": 1.532049814556499,
+     "stress_utilisation_hub": 1.532049814556499,
+     "stress_utilisation_rim": 1.2376447034323148,
+     "pnorm_p30_utilisation_kt": 2.931529228052732,
+     "pnorm_p30_agg_mpa": 32.181908707275106,
+     "max_stress_mpa": 39.65610482815338,
+     "mass_g": 40.03777886908073,
+     "phase_ripple_std_over_mean": 0.2079393978847967,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.04442397557474976,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 10.67654515528737,
+      "buckling": 0.0,
+      "mass": 32.90776345403896,
+      "min_sj": 0.0,
+      "deflection": 733.8394521148539,
+      "stress": 1358.2080409561509,
+      "stress_margin": 64.89401401333737,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 10.67654515528737,
+      "stress": 1358.2080409561509
+     },
+     "worst_barrier": 1358.2080409561509,
+     "feasible": false,
+     "elapsed_s": 162.2
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 2486.873777074832,
+     "axle_drop_mean_mm": 1.0802017975179798,
+     "axle_drop_min_mm": 0.8345573909066808,
+     "axle_drop_max_mm": 1.400688114797406,
+     "deflection_error_mm": -0.9197982024820202,
+     "deflection_error_pct": -45.98991012410101,
+     "kt_hub": 2.2773114972124264,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 7.531448930485837,
+     "stress_utilisation": 1.6038074113111775,
+     "stress_utilisation_hub": 1.6038074113111775,
+     "stress_utilisation_rim": 1.306440697052092,
+     "pnorm_p30_utilisation_kt": 3.0870731868598824,
+     "pnorm_p30_agg_mpa": 33.889448046947635,
+     "max_stress_mpa": 42.82280724509464,
+     "mass_g": 40.03777886908073,
+     "phase_ripple_std_over_mean": 0.18683959862538127,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.04442397557474976,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 10.67654515528737,
+      "buckling": 0.0,
+      "mass": 32.90776345403896,
+      "min_sj": 0.0,
+      "deflection": 528.7679583057221,
+      "stress": 1833.9571630563105,
+      "stress_margin": 80.51992312789827,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 10.67654515528737,
+      "stress": 1833.9571630563105
+     },
+     "worst_barrier": 1833.9571630563105,
+     "feasible": false,
+     "elapsed_s": 209.8
+    },
+    "loss_rel_diff": 0.13010424854633218,
+    "drop_rel_diff": 0.178717663916643
+   },
+   {
+    "genome": "bc77614 svk-medium",
+    "aliases": [
+     "stage3_svk_best_medium.json"
+    ],
+    "gene_key": "5807c88",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2121.1830761730535,
+     "axle_drop_mean_mm": 0.8991881213735926,
+     "axle_drop_min_mm": 0.6661259255824911,
+     "axle_drop_max_mm": 1.200562884956494,
+     "deflection_error_mm": -1.1008118786264074,
+     "deflection_error_pct": -55.04059393132037,
+     "kt_hub": 2.283356083651111,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 6.8147371791536235,
+     "stress_utilisation": 1.5111076689413239,
+     "stress_utilisation_hub": 1.5111076689413239,
+     "stress_utilisation_rim": 1.2291170050160054,
+     "pnorm_p30_utilisation_kt": 2.905215333331426,
+     "pnorm_p30_agg_mpa": 31.8086100776489,
+     "max_stress_mpa": 39.193403109087924,
+     "mass_g": 39.98008578072678,
+     "phase_ripple_std_over_mean": 0.21227124527275334,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.031701291892645436,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 14.483237760725613,
+      "buckling": 0.0,
+      "mass": 32.86034447730968,
+      "min_sj": 0.0,
+      "deflection": 757.3667450781252,
+      "stress": 1254.9026049525526,
+      "stress_margin": 61.53844261244763,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 14.483237760725613,
+      "stress": 1254.9026049525526
+     },
+     "worst_barrier": 1254.9026049525526,
+     "feasible": false,
+     "elapsed_s": 156.7
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 2396.4056459956937,
+     "axle_drop_mean_mm": 1.0605923703395943,
+     "axle_drop_min_mm": 0.814322932346878,
+     "axle_drop_max_mm": 1.382268957742397,
+     "deflection_error_mm": -0.9394076296604057,
+     "deflection_error_pct": -46.97038148302028,
+     "kt_hub": 2.283356083651111,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 7.480572213969683,
+     "stress_utilisation": 1.5843255613103921,
+     "stress_utilisation_hub": 1.5843255613103921,
+     "stress_utilisation_rim": 1.297802302893858,
+     "pnorm_p30_utilisation_kt": 3.0642008823507307,
+     "pnorm_p30_agg_mpa": 33.54931042392478,
+     "max_stress_mpa": 42.429969983253415,
+     "mass_g": 39.98008578072678,
+     "phase_ripple_std_over_mean": 0.19072038298413,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.031701291892645436,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 14.483237760725613,
+      "buckling": 0.0,
+      "mass": 32.86034447730968,
+      "min_sj": 0.0,
+      "deflection": 551.5541841651137,
+      "stress": 1720.49029283836,
+      "stress_margin": 76.98588546229196,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 14.483237760725613,
+      "stress": 1720.49029283836
+     },
+     "worst_barrier": 1720.49029283836,
+     "feasible": false,
+     "elapsed_s": 206.8
+    },
+    "loss_rel_diff": 0.1297495595331568,
+    "drop_rel_diff": 0.17949997906938742
+   },
+   {
+    "genome": "e4219f3 buildcap",
+    "aliases": [
+     "stage3_buildcap_best_medium.json"
+    ],
+    "gene_key": "b5af1c2",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2522.173122060109,
+     "axle_drop_mean_mm": 0.9493419186784404,
+     "axle_drop_min_mm": 0.7252073872196101,
+     "axle_drop_max_mm": 1.2382072742078254,
+     "deflection_error_mm": -1.0506580813215596,
+     "deflection_error_pct": -52.532904066077975,
+     "kt_hub": 2.2018870058057196,
+     "kt_rim": 1.3736881446884956,
+     "pnorm_stress_agg_mpa": 6.927879076370464,
+     "stress_utilisation": 1.6199272498869781,
+     "stress_utilisation_hub": 1.6199272498869781,
+     "stress_utilisation_rim": 1.2158821274195701,
+     "pnorm_p30_utilisation_kt": 2.9585131218969467,
+     "pnorm_p30_agg_mpa": 33.590655584235584,
+     "max_stress_mpa": 41.87770689502264,
+     "mass_g": 40.279935838613355,
+     "phase_ripple_std_over_mean": 0.19478188486298778,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06584719544985575,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.010684528052711487,
+      "buckling": 0.0,
+      "mass": 33.10679657968221,
+      "min_sj": 0.0,
+      "deflection": 689.926502403938,
+      "stress": 1723.659552366525,
+      "stress_margin": 75.40373898646128,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.010684528052711487,
+      "stress": 1723.659552366525
+     },
+     "worst_barrier": 1723.659552366525,
+     "feasible": false,
+     "elapsed_s": 156.6
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 2806.942722331155,
+     "axle_drop_mean_mm": 1.1153753340359511,
+     "axle_drop_min_mm": 0.8761015260350453,
+     "axle_drop_max_mm": 1.4291437506130444,
+     "deflection_error_mm": -0.8846246659640489,
+     "deflection_error_pct": -44.23123329820244,
+     "kt_hub": 2.2018870058057196,
+     "kt_rim": 1.3736881446884956,
+     "pnorm_stress_agg_mpa": 7.589266452060372,
+     "stress_utilisation": 1.6845251636617917,
+     "stress_utilisation_hub": 1.6845251636617917,
+     "stress_utilisation_rim": 1.2827428144389303,
+     "pnorm_p30_utilisation_kt": 3.0832130848324124,
+     "pnorm_p30_agg_mpa": 35.00648621730927,
+     "max_stress_mpa": 43.22066832108271,
+     "mass_g": 40.279935838613355,
+     "phase_ripple_std_over_mean": 0.17682508516652642,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06584719544985575,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.010684528052711487,
+      "buckling": 0.0,
+      "mass": 33.10679657968221,
+      "min_sj": 0.0,
+      "deflection": 489.1004997700032,
+      "stress": 2194.0727952122006,
+      "stress_margin": 90.58609904576625,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.010684528052711487,
+      "stress": 2194.0727952122006
+     },
+     "worst_barrier": 2194.0727952122006,
+     "feasible": false,
+     "elapsed_s": 207.4
+    },
+    "loss_rel_diff": 0.11290644475603884,
+    "drop_rel_diff": 0.17489316766781182
+   },
+   {
+    "genome": "buildcap2",
+    "aliases": [
+     "stage3_buildcap2_best_medium.json"
+    ],
+    "gene_key": "64b7034",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2902.1860375204083,
+     "axle_drop_mean_mm": 0.9385240224942595,
+     "axle_drop_min_mm": 0.7112438341222972,
+     "axle_drop_max_mm": 1.2313428427297208,
+     "deflection_error_mm": -1.0614759775057405,
+     "deflection_error_pct": -53.073798875287025,
+     "kt_hub": 2.2176075262490764,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 6.948314150808987,
+     "stress_utilisation": 1.6874770415803182,
+     "stress_utilisation_hub": 1.6874770415803182,
+     "stress_utilisation_rim": 1.217225464348288,
+     "pnorm_p30_utilisation_kt": 3.0959948980557463,
+     "pnorm_p30_agg_mpa": 34.902421431762534,
+     "max_stress_mpa": 43.83653953785111,
+     "mass_g": 39.999428974377665,
+     "phase_ripple_std_over_mean": 0.19945893117504154,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06311805110507286,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0007087427559078699,
+      "buckling": 0.0,
+      "mass": 32.87624299263918,
+      "min_sj": 0.0,
+      "deflection": 704.2070317636045,
+      "stress": 2079.2463402454237,
+      "stress_margin": 85.79259572487993,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.0007087427559078699,
+      "stress": 2079.2463402454237
+     },
+     "worst_barrier": 2079.2463402454237,
+     "feasible": false,
+     "elapsed_s": 156.5
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 3260.516348721276,
+     "axle_drop_mean_mm": 1.1082625602855047,
+     "axle_drop_min_mm": 0.8664310565735244,
+     "axle_drop_max_mm": 1.4245033111952745,
+     "deflection_error_mm": -0.8917374397144953,
+     "deflection_error_pct": -44.58687198572476,
+     "kt_hub": 2.2176075262490764,
+     "kt_rim": 1.3717805884310321,
+     "pnorm_stress_agg_mpa": 7.628377229968957,
+     "stress_utilisation": 1.7583345443582021,
+     "stress_utilisation_hub": 1.7583345443582021,
+     "stress_utilisation_rim": 1.2860454343173309,
+     "pnorm_p30_utilisation_kt": 3.2285834428244464,
+     "pnorm_p30_agg_mpa": 36.39714652625394,
+     "max_stress_mpa": 45.420266701443765,
+     "mass_g": 39.999428974377665,
+     "phase_ripple_std_over_mean": 0.17956132282338116,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06311805110507286,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0007087427559078699,
+      "buckling": 0.0,
+      "mass": 32.87624299263918,
+      "min_sj": 0.0,
+      "deflection": 496.997288367852,
+      "stress": 2627.5730866430104,
+      "stress_margin": 103.00590392391344,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 0.0007087427559078699,
+      "stress": 2627.5730866430104
+     },
+     "worst_barrier": 2627.5730866430104,
+     "feasible": false,
+     "elapsed_s": 207.3
+    },
+    "loss_rel_diff": 0.12346910451923354,
+    "drop_rel_diff": 0.18085689201661692
+   },
+   {
+    "genome": "margin probe",
+    "aliases": [
+     "stage3_margin_probe_best.json"
+    ],
+    "gene_key": "92e729f",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 1679.40276183097,
+     "axle_drop_mean_mm": 0.8475619141725946,
+     "axle_drop_min_mm": 0.6322419158630188,
+     "axle_drop_max_mm": 1.1078219553619086,
+     "deflection_error_mm": -1.1524380858274053,
+     "deflection_error_pct": -57.621904291370264,
+     "kt_hub": 2.0831907293298215,
+     "kt_rim": 1.374811534468003,
+     "pnorm_stress_agg_mpa": 6.384143951132037,
+     "stress_utilisation": 1.4287270128013116,
+     "stress_utilisation_hub": 1.4287270128013116,
+     "stress_utilisation_rim": 1.0935376062183486,
+     "pnorm_p30_utilisation_kt": 2.4791525185379983,
+     "pnorm_p30_agg_mpa": 29.751866735404022,
+     "max_stress_mpa": 36.41796836229378,
+     "mass_g": 43.3524602075024,
+     "phase_ripple_std_over_mean": 0.20720488358664965,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.523874591314114,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 35.632159074659505,
+      "min_sj": 0.0,
+      "deflection": 830.0709635409587,
+      "stress": 770.2245411303796,
+      "stress_margin": 42.951223493657835,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 770.2245411303796
+     },
+     "worst_barrier": 770.2245411303796,
+     "feasible": false,
+     "elapsed_s": 161.0
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 1713.3166245556647,
+     "axle_drop_mean_mm": 0.9657241504012566,
+     "axle_drop_min_mm": 0.7377247584009614,
+     "axle_drop_max_mm": 1.2487089832952791,
+     "deflection_error_mm": -1.0342758495987434,
+     "deflection_error_pct": -51.71379247993717,
+     "kt_hub": 2.0831907293298215,
+     "kt_rim": 1.374811534468003,
+     "pnorm_stress_agg_mpa": 6.881624619159075,
+     "stress_utilisation": 1.4672505990815707,
+     "stress_utilisation_hub": 1.4672505990815707,
+     "stress_utilisation_rim": 1.145696194659882,
+     "pnorm_p30_utilisation_kt": 2.5643941920767372,
+     "pnorm_p30_agg_mpa": 30.77483684009244,
+     "max_stress_mpa": 37.88768069154657,
+     "mass_g": 43.3524602075024,
+     "phase_ripple_std_over_mean": 0.194601159862154,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.523874591314114,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 35.632159074659505,
+      "min_sj": 0.0,
+      "deflection": 668.5790831645015,
+      "stress": 958.202013921828,
+      "stress_margin": 50.379493803361555,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 958.202013921828
+     },
+     "worst_barrier": 958.202013921828,
+     "feasible": false,
+     "elapsed_s": 202.7
+    },
+    "loss_rel_diff": 0.02019400199611443,
+    "drop_rel_diff": 0.1394142826061433
+   },
+   {
+    "genome": "e126cc3 margin",
+    "aliases": [
+     "stage3_margin_best_medium.json"
+    ],
+    "gene_key": "17b882d",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 1176.856401608423,
+     "axle_drop_mean_mm": 0.815477887390293,
+     "axle_drop_min_mm": 0.6144338001364048,
+     "axle_drop_max_mm": 1.0935943461365045,
+     "deflection_error_mm": -1.184522112609707,
+     "deflection_error_pct": -59.22610563048535,
+     "kt_hub": 2.0688459088128166,
+     "kt_rim": 1.3995868220108076,
+     "pnorm_stress_agg_mpa": 6.140122265835018,
+     "stress_utilisation": 1.2378241740900613,
+     "stress_utilisation_hub": 1.2378241740900613,
+     "stress_utilisation_rim": 1.0576470963676,
+     "pnorm_p30_utilisation_kt": 2.2273080542043604,
+     "pnorm_p30_agg_mpa": 26.914861623049486,
+     "max_stress_mpa": 33.832207119696534,
+     "mass_g": 45.05218834893184,
+     "phase_ripple_std_over_mean": 0.20867330175117282,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.33760053692248376,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 37.02919590323165,
+      "min_sj": 0.0,
+      "deflection": 876.932897038352,
+      "stress": 239.5341020049405,
+      "stress_margin": 23.022606124976363,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 239.5341020049405
+     },
+     "worst_barrier": 239.5341020049405,
+     "feasible": false,
+     "elapsed_s": 157.3
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 1125.5729462122558,
+     "axle_drop_mean_mm": 0.9169572031998028,
+     "axle_drop_min_mm": 0.7042385676270196,
+     "axle_drop_max_mm": 1.2215782193207894,
+     "deflection_error_mm": -1.0830427968001972,
+     "deflection_error_pct": -54.15213984000986,
+     "kt_hub": 2.0688459088128166,
+     "kt_rim": 1.3995868220108076,
+     "pnorm_stress_agg_mpa": 6.571861308144863,
+     "stress_utilisation": 1.2668215646127317,
+     "stress_utilisation_hub": 1.2668215646127317,
+     "stress_utilisation_rim": 1.103284866743753,
+     "pnorm_p30_utilisation_kt": 2.3474334148288367,
+     "pnorm_p30_agg_mpa": 28.366460315257175,
+     "max_stress_mpa": 36.77625534601674,
+     "mass_g": 45.05218834893184,
+     "phase_ripple_std_over_mean": 0.1975945973351764,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.33760053692248376,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 37.02919590323165,
+      "min_sj": 0.0,
+      "deflection": 733.1135623129959,
+      "stress": 327.4460441626437,
+      "stress_margin": 27.64654329646215,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 327.4460441626437
+     },
+     "worst_barrier": 327.4460441626437,
+     "feasible": false,
+     "elapsed_s": 202.1
+    },
+    "loss_rel_diff": -0.04357664650171211,
+    "drop_rel_diff": 0.12444152978110257
+   },
+   {
+    "genome": "promote check",
+    "aliases": [
+     "stage3_promote_best.json"
+    ],
+    "gene_key": "62dc2a6",
+    "mesh_s": 2.1,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2895.6933649475304,
+     "axle_drop_mean_mm": 0.9391296207628769,
+     "axle_drop_min_mm": 0.711576533175261,
+     "axle_drop_max_mm": 1.232404527478886,
+     "deflection_error_mm": -1.060870379237123,
+     "deflection_error_pct": -53.04351896185615,
+     "kt_hub": 2.218946551055307,
+     "kt_rim": 1.3725399282877577,
+     "pnorm_stress_agg_mpa": 6.9475403004896465,
+     "stress_utilisation": 1.686635561405578,
+     "stress_utilisation_hub": 1.686635561405578,
+     "stress_utilisation_rim": 1.2167016450528747,
+     "pnorm_p30_utilisation_kt": 3.0961237272912836,
+     "pnorm_p30_agg_mpa": 34.88281101023818,
+     "max_stress_mpa": 43.799011039286185,
+     "mass_g": 40.02211809731066,
+     "phase_ripple_std_over_mean": 0.19940070608878088,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06230791890960379,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 4.354596244968084e-06,
+      "buckling": 0.0,
+      "mass": 32.894891586830674,
+      "min_sj": 0.0,
+      "deflection": 703.4037259641983,
+      "stress": 2073.711988621501,
+      "stress_margin": 85.62044650149443,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 4.354596244968084e-06,
+      "stress": 2073.711988621501
+     },
+     "worst_barrier": 2073.711988621501,
+     "feasible": false,
+     "elapsed_s": 154.6
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 3250.7136882040086,
+     "axle_drop_mean_mm": 1.1085994836373716,
+     "axle_drop_min_mm": 0.8666416829296386,
+     "axle_drop_max_mm": 1.4248861560489539,
+     "deflection_error_mm": -0.8914005163626284,
+     "deflection_error_pct": -44.57002581813142,
+     "kt_hub": 2.218946551055307,
+     "kt_rim": 1.3725399282877577,
+     "pnorm_stress_agg_mpa": 7.626000978052105,
+     "stress_utilisation": 1.757097886731281,
+     "stress_utilisation_hub": 1.757097886731281,
+     "stress_utilisation_rim": 1.2853132919250638,
+     "pnorm_p30_utilisation_kt": 3.2281337953161526,
+     "pnorm_p30_agg_mpa": 36.37011664139552,
+     "max_stress_mpa": 45.393483024026,
+     "mass_g": 40.02211809731066,
+     "phase_ripple_std_over_mean": 0.17955391820188513,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06230791890960379,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 4.354596244968084e-06,
+      "buckling": 0.0,
+      "mass": 32.894891586830674,
+      "min_sj": 0.0,
+      "deflection": 496.62180035722537,
+      "stress": 2618.403538568353,
+      "stress_margin": 102.73114541809369,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "fillet_cap": 4.354596244968084e-06,
+      "stress": 2618.403538568353
+     },
+     "worst_barrier": 2618.403538568353,
+     "feasible": false,
+     "elapsed_s": 207.8
+    },
+    "loss_rel_diff": 0.1226028720975818,
+    "drop_rel_diff": 0.18045417706751743
+   },
+   {
+    "genome": "promote2 check",
+    "aliases": [
+     "stage3_promote2_best.json"
+    ],
+    "gene_key": "c86a839",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 2884.739645878761,
+     "axle_drop_mean_mm": 0.9422108961607912,
+     "axle_drop_min_mm": 0.7144389776249811,
+     "axle_drop_max_mm": 1.2359678792355908,
+     "deflection_error_mm": -1.0577891038392089,
+     "deflection_error_pct": -52.889455191960444,
+     "kt_hub": 2.2215672508904127,
+     "kt_rim": 1.3755959243139548,
+     "pnorm_stress_agg_mpa": 6.948916493742652,
+     "stress_utilisation": 1.6867196059697245,
+     "stress_utilisation_hub": 1.6867196059697245,
+     "stress_utilisation_rim": 1.2125709572399281,
+     "pnorm_p30_utilisation_kt": 3.0988510766129713,
+     "pnorm_p30_agg_mpa": 34.87235278800293,
+     "max_stress_mpa": 43.7746069387887,
+     "mass_g": 40.08002901294322,
+     "phase_ripple_std_over_mean": 0.19865488123666608,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06446571877583039,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 32.942489599679355,
+      "min_sj": 0.0,
+      "deflection": 699.3236176255979,
+      "stress": 2067.080916340452,
+      "stress_margin": 85.32815659425617,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 2067.080916340452
+     },
+     "worst_barrier": 2067.080916340452,
+     "feasible": false,
+     "elapsed_s": 158.3
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 3229.869952843316,
+     "axle_drop_mean_mm": 1.1111162796403633,
+     "axle_drop_min_mm": 0.8691630507339,
+     "axle_drop_max_mm": 1.4272530997111106,
+     "deflection_error_mm": -0.8888837203596367,
+     "deflection_error_pct": -44.444186017981835,
+     "kt_hub": 2.2215672508904127,
+     "kt_rim": 1.3755959243139548,
+     "pnorm_stress_agg_mpa": 7.623210335767077,
+     "stress_utilisation": 1.7560463859644622,
+     "stress_utilisation_hub": 1.7560463859644622,
+     "stress_utilisation_rim": 1.2803965611249577,
+     "pnorm_p30_utilisation_kt": 3.229028372580974,
+     "pnorm_p30_agg_mpa": 36.337279135785415,
+     "max_stress_mpa": 45.37331480522549,
+     "mass_g": 40.08002901294322,
+     "phase_ripple_std_over_mean": 0.1790971906859516,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 0.06446571877583039,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 32.942489599679355,
+      "min_sj": 0.0,
+      "deflection": 493.821417700243,
+      "stress": 2600.9134768825065,
+      "stress_margin": 102.12810294211094,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {
+      "stress": 2600.9134768825065
+     },
+     "worst_barrier": 2600.9134768825065,
+     "feasible": false,
+     "elapsed_s": 208.0
+    },
+    "loss_rel_diff": 0.11964001931946266,
+    "drop_rel_diff": 0.17926494393962922
+   },
+   {
+    "genome": "b729e86 SHIPPED",
+    "aliases": [
+     "best_solution.json"
+    ],
+    "gene_key": "2c5e38d",
+    "mesh_s": 2.2,
+    "linear": {
+     "kinematics": "linear",
+     "loss": 76.02385612583252,
+     "axle_drop_mean_mm": 1.8019902936241827,
+     "axle_drop_min_mm": 1.6212274032045957,
+     "axle_drop_max_mm": 2.0402327625052403,
+     "deflection_error_mm": -0.19800970637581727,
+     "deflection_error_pct": -9.900485318790864,
+     "kt_hub": 3.123945162322076,
+     "kt_rim": 1.8153628179850143,
+     "pnorm_stress_agg_mpa": 7.078194304405558,
+     "stress_utilisation": 0.9109281772856953,
+     "stress_utilisation_hub": 0.9109281772856953,
+     "stress_utilisation_rim": 0.9095856833805225,
+     "pnorm_p30_utilisation_kt": 4.8772601957965325,
+     "pnorm_p30_agg_mpa": 39.031256491160605,
+     "max_stress_mpa": 55.72463626441969,
+     "mass_g": 54.115283841307146,
+     "phase_ripple_std_over_mean": 0.08408447181781169,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 4.871578951506198,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 44.47831548600587,
+      "min_sj": 0.0,
+      "deflection": 24.504902386898358,
+      "stress": 0.0,
+      "stress_margin": 2.169059301422104,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 184.7
+    },
+    "svk": {
+     "kinematics": "svk",
+     "loss": 52.56615068117939,
+     "axle_drop_mean_mm": 1.9920260083894532,
+     "axle_drop_min_mm": 1.7897499791699936,
+     "axle_drop_max_mm": 2.269685753355756,
+     "deflection_error_mm": -0.007973991610546793,
+     "deflection_error_pct": -0.39869958052733967,
+     "kt_hub": 3.123945162322076,
+     "kt_rim": 1.8153628179850143,
+     "pnorm_stress_agg_mpa": 7.601737740687436,
+     "stress_utilisation": 0.9530146334989034,
+     "stress_utilisation_hub": 0.9104250648700405,
+     "stress_utilisation_rim": 0.9530146334989034,
+     "pnorm_p30_utilisation_kt": 5.504861376708091,
+     "pnorm_p30_agg_mpa": 44.053761275183874,
+     "max_stress_mpa": 61.592910703178546,
+     "mass_g": 54.115283841307146,
+     "phase_ripple_std_over_mean": 0.08664379864414797,
+     "terms": {
+      "x_order": 0.0,
+      "hub_overlap": 0.0,
+      "smoothness": 4.871578951506198,
+      "fold": 0.0,
+      "arrival": 0.0,
+      "fillet": 0.0,
+      "fillet_cap": 0.0,
+      "buckling": 0.0,
+      "mass": 44.47831548600587,
+      "min_sj": 0.0,
+      "deflection": 0.03974033887816915,
+      "stress": 0.0,
+      "stress_margin": 3.1765159047891496,
+      "phase_ripple": 0.0
+     },
+     "barriers_breached": {},
+     "worst_barrier": 0.0,
+     "feasible": true,
+     "elapsed_s": 229.3
+    },
+    "loss_rel_diff": -0.3085571640279152,
+    "drop_rel_diff": 0.10545878933846442
+   },
+   {
+    "genome": "elite1 f37478e",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "0e33187",
+    "mesh_s": 43.7,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.771974275237495, 0.9885037577479685) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.771974275237495, 0.9885037577479685) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite2 626476c",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "13f8d5c",
+    "mesh_s": 43.8,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7230991155461911, 1.0111581847109556) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7230991155461911, 1.0111581847109556) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite3 805964a",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "32f9ba3",
+    "mesh_s": 43.8,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7230548417207465, 0.9603547153948613) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7230548417207465, 0.9603547153948613) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite4 d71b6cb",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "5970278",
+    "mesh_s": 43.8,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7768509883959098, 1.0788656787650244) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7768509883959098, 1.0788656787650244) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite5 f52bec3",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "561fad7",
+    "mesh_s": 43.4,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7985170080940894, 0.7280713451339386) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7985170080940894, 0.7280713451339386) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite6 3fc5f3d",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "efc3b4b",
+    "mesh_s": 43.6,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (1.0062046657890107, 0.865608702697053) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (1.0062046657890107, 0.865608702697053) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite7 6441e01",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "6d91601",
+    "mesh_s": 43.6,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7110173528102987, 0.3184387941884314) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7110173528102987, 0.3184387941884314) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite8 c21c6fd",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "8be06c1",
+    "mesh_s": 43.6,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7726042256228208, 0.7099774609069721) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7726042256228208, 0.7099774609069721) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite9 5b02ca6",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "13e4fde",
+    "mesh_s": 43.5,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.6611127634091449, 0.4148964548941661) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.6611127634091449, 0.4148964548941661) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite10 1f76aab",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "23663f3",
+    "mesh_s": 43.7,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7766403987943192, 0.3668190619570589) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7766403987943192, 0.3668190619570589) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite11 fc7aeb1",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "68c593f",
+    "mesh_s": 3.0,
+    "linear": {
+     "failed": "MeshRefusedError: no filleted blocking exists at the rim: the fillet's tangent point has passed the next sector's corner (-2.685 deg of free ring left).  See FILLET_PLAN.md PART 10."
+    },
+    "svk": {
+     "failed": "MeshRefusedError: no filleted blocking exists at the rim: the fillet's tangent point has passed the next sector's corner (-2.685 deg of free ring left).  See FILLET_PLAN.md PART 10."
+    }
+   },
+   {
+    "genome": "elite12 a738892",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "8b26f40",
+    "mesh_s": 43.5,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7863954698352346, 0.92305550141043) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.7863954698352346, 0.92305550141043) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite13 c9c0a3e",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "2cfd983",
+    "mesh_s": 43.6,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (1.0544242192662234, 0.5718242163341358) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (1.0544242192662234, 0.5718242163341358) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite14 b2a0f88",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "9d03685",
+    "mesh_s": 43.5,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.5856365736650138, 0.9684790230546366) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.5856365736650138, 0.9684790230546366) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   },
+   {
+    "genome": "elite15 7cd8b8e",
+    "aliases": [
+     "stage2_elites.json"
+    ],
+    "gene_key": "8aaeeab",
+    "mesh_s": 43.6,
+    "linear": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.9211208810603113, 0.7580686536027849) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    },
+    "svk": {
+     "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.9211208810603113, 0.7580686536027849) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+    }
+   }
+  ],
+  "verdict": {
+   "blocks": {
+    "full": {
+     "subset": "full",
+     "n": 19,
+     "spearman_rho": 0.9859649122807018,
+     "spearman_p": 1.1746402861484323e-14,
+     "kendall_tau": 0.9415204678362572,
+     "order_linear": [
+      "b729e86 SHIPPED",
+      "minwall 1.6",
+      "e126cc3 margin",
+      "minwall 1.8",
+      "minwall 1.4",
+      "elite9 prod",
+      "minwall 2.0",
+      "elite10 prod",
+      "margin probe",
+      "bc77614 svk-medium",
+      "svk-shipped",
+      "svk-elite10",
+      "minwall 1.0",
+      "minwall 0.8",
+      "e4219f3 buildcap",
+      "promote2 check",
+      "promote check",
+      "buildcap2",
+      "350f4c7 minwall1.2"
+     ],
+     "order_svk": [
+      "b729e86 SHIPPED",
+      "minwall 1.6",
+      "e126cc3 margin",
+      "minwall 1.8",
+      "elite9 prod",
+      "minwall 1.4",
+      "minwall 2.0",
+      "elite10 prod",
+      "margin probe",
+      "bc77614 svk-medium",
+      "svk-shipped",
+      "minwall 1.0",
+      "svk-elite10",
+      "minwall 0.8",
+      "e4219f3 buildcap",
+      "350f4c7 minwall1.2",
+      "promote2 check",
+      "promote check",
+      "buildcap2"
+     ],
+     "top5_linear": [
+      "b729e86 SHIPPED",
+      "minwall 1.6",
+      "e126cc3 margin",
+      "minwall 1.8",
+      "minwall 1.4"
+     ],
+     "top5_svk": [
+      "b729e86 SHIPPED",
+      "minwall 1.6",
+      "e126cc3 margin",
+      "minwall 1.8",
+      "elite9 prod"
+     ],
+     "top5_sets_equal": false,
+     "argmin_linear": "b729e86 SHIPPED",
+     "argmin_svk": "b729e86 SHIPPED",
+     "argmin_identical": true,
+     "top2_inverted": false,
+     "discordant_pairs": 5,
+     "n_pairs": 171,
+     "discordant_fraction": 0.029239766081871343,
+     "r2_pass": false,
+     "r2_binds": false
+    },
+    "feasible": {
+     "subset": "feasible",
+     "n": 5,
+     "spearman_rho": 0.9999999999999999,
+     "spearman_p": 1.4042654220543602e-24,
+     "kendall_tau": 0.9999999999999999,
+     "order_linear": [
+      "b729e86 SHIPPED",
+      "minwall 1.8",
+      "elite9 prod",
+      "minwall 2.0",
+      "elite10 prod"
+     ],
+     "order_svk": [
+      "b729e86 SHIPPED",
+      "minwall 1.8",
+      "elite9 prod",
+      "minwall 2.0",
+      "elite10 prod"
+     ],
+     "top5_linear": [
+      "b729e86 SHIPPED",
+      "minwall 1.8",
+      "elite9 prod",
+      "minwall 2.0",
+      "elite10 prod"
+     ],
+     "top5_svk": [
+      "b729e86 SHIPPED",
+      "minwall 1.8",
+      "elite9 prod",
+      "minwall 2.0",
+      "elite10 prod"
+     ],
+     "top5_sets_equal": null,
+     "argmin_linear": "b729e86 SHIPPED",
+     "argmin_svk": "b729e86 SHIPPED",
+     "argmin_identical": true,
+     "top2_inverted": false,
+     "discordant_pairs": 0,
+     "n_pairs": 10,
+     "discordant_fraction": 0.0,
+     "r2_pass": true,
+     "r2_binds": true
+    }
+   },
+   "gate_spearman": 0.9,
+   "r1_argmin_identity": true,
+   "r2_rank_agreement": true
+  }
+ },
+ "gradients": {
+  "config": "coarse",
+  "n_phase": 8,
+  "workers": 0,
+  "gate_cosine": 0.9,
+  "rows": [
+   {
+    "genome": "b729e86 SHIPPED",
+    "file": "best_solution.json",
+    "loss_linear": 76.02385612583252,
+    "loss_svk": 52.56615068117939,
+    "grad_norm_linear": 2532.7518764410534,
+    "grad_norm_svk": 123.99707113063499,
+    "grad_norm_ratio": 0.048957449122443035,
+    "cosine": 0.7877780699342072,
+    "angle_deg": 38.021649185844254,
+    "linear_step_descends_svk": true,
+    "sign_flips": [
+     "cx1",
+     "cy2",
+     "cy3",
+     "cy4",
+     "t0",
+     "t3",
+     "R_hub",
+     "R_rim"
+    ],
+    "elapsed_s": {
+     "linear": 184.0,
+     "svk": 227.8
+    },
+    "r3_pass": false
+   },
+   {
+    "genome": "e126cc3 margin",
+    "file": "stage3_margin_best_medium.json",
+    "loss_linear": 1176.856401608423,
+    "loss_svk": 1125.5729462122558,
+    "grad_norm_linear": 8296.425546311984,
+    "grad_norm_svk": 10027.227729249025,
+    "grad_norm_ratio": 1.2086202272623823,
+    "cosine": 0.9826914893456169,
+    "angle_deg": 10.675688500847661,
+    "linear_step_descends_svk": true,
+    "sign_flips": [],
+    "elapsed_s": {
+     "linear": 156.1,
+     "svk": 201.1
+    },
+    "r3_pass": true
+   },
+   {
+    "genome": "350f4c7 minwall1.2",
+    "file": "stage3_minwall_best_1.2.json",
+    "loss_linear": 2930.708268573978,
+    "loss_svk": 3107.080192226511,
+    "grad_norm_linear": 58119.641787584675,
+    "grad_norm_svk": 64064.86395608827,
+    "grad_norm_ratio": 1.102292821938445,
+    "cosine": 0.9989120774023422,
+    "angle_deg": 2.6728587597371365,
+    "linear_step_descends_svk": true,
+    "sign_flips": [],
+    "elapsed_s": {
+     "linear": 164.8,
+     "svk": 218.5
+    },
+    "r3_pass": true
+   },
+   {
+    "genome": "36aed36 ga_beam",
+    "file": "best_solution_ga_beam.json",
+    "failed": "FilletClampRefusedError: mesh_coords: the sector-fit clamp moved this mesh's fillet radius at huband rim, so the radii it was built at (0.6670072222404212, 0.8952484646638628) are not the genes' and do not follow them.  The differentiable path would return a gradient that is plausible and wrong; see `_filleted_gradient_recipe` and PLAN.md \u00a779."
+   }
+  ],
+  "n_probes": 4,
+  "n_refused": 1,
+  "r3_pass": false
+ },
+ "registered_criterion": {
+  "R1_argmin_identity": true,
+  "R2_rank_agreement": true,
+  "R3_descent_direction": false,
+  "linear_is_acceptable": false,
+  "gate_spearman": 0.9,
+  "gate_grad_cosine": 0.9
+ },
+ "settings": {
+  "config": "coarse",
+  "n_phase": 8,
+  "workers": 0,
+  "elites": true,
+  "elapsed_s": 9736.6
+ }
+}

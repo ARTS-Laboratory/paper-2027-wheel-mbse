@@ -1,6 +1,12 @@
 # MESHSTEP_PLAN.md — the 16.8–30.3× element-size step on the rim OD
 
-**Open arc #6. Created 2026-08-16, carried forward from PLAN §20. Small. Nothing started.**
+**Open arc #6. Created 2026-08-16, carried forward from PLAN §20. Small. ~~Nothing started.~~**
+
+**STATUS CORRECTED 2026-09-05 — PLAN §114.** Step 1 **is already done, by accident**: §103's
+fillet switch re-cut the rim OD and the step fell from 16.8–30.3× to **2.650×** without this
+arc spending anything on it. See `RE-MEASURED ON THE FILLETED MESH — 2026-09-03` below,
+recorded at §106 and corrected at §108. What remains is Steps 0.2 and 2, and Step 2's patch
+margin cannot be carried forward — the weld/free boundary moved from +0.9373° to +4.1093°.
 
 **VERSION CONTROL IS PART OF THIS PROJECT'S WORKFLOW — CHANGED 2026-08-19.** The rule that
 stood here read *"Ignore version control entirely. Do not commit, branch, stage, revert or

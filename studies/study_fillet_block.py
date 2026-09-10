@@ -1146,6 +1146,28 @@ def sweep_layer_profile(genes, cfg, entries, ends, box):
 GENOME_PROFILE_ENTRIES = (-0.30, -0.45, -0.60, -0.70, -0.75, -0.80, -0.90)
 GENOME_PROFILE_ENDS = (0.50, 0.60, 0.70, 0.80, 1.00, 1.30, 1.60)
 
+# THE GENOME THE PROFILE FAMILY'S PUBLISHED CONSTANTS WERE MEASURED ON, PINNED BY FILE.
+# PART 13 and PART 20 both ran 2026-08-23, when `best_solution.json` held `09e8188` (§26,
+# 2026-08-14); §115 promoted `b729e86` over it on 2026-09-06.  Four self-checks compare a
+# recorded constant against a surface measured on whatever ships -- `GENOME_ROBUST_*`
+# (PART 13's argmax), `LAYER_PROFILE_CANDIDATES` and `LAYER_PROFILE_FINE_CANDIDATES` (the
+# candidate surfaces), and `CLIFF_PUBLISHED` (PART 20's four hand bisections) -- and the
+# shipped genome is one of the fifteen the argmax is fitted over as well as the wheel the
+# cliff column is measured at.  Measured 2026-09-07, same code, both genomes: at `09e8188`
+# all twenty-one self-checks return True; at `b729e86` those four are the ones that fail.
+# Pinning the FILE restores PART 13's and PART 20's measurement rather than changing it --
+# `study_svk_rescore.run_control`'s fix (§25) for the same defect: the constant stays, the
+# READ moves.
+#
+# THE WHOLE PROFILE FAMILY MOVES TOGETHER, not just the four cells that go red.  The
+# candidate rows, the cliff column and the shipped profile's own margin are compared
+# against EACH OTHER -- `the_shipped_profile_is_farthest_from_the_cliff` is that
+# comparison -- so measuring half of them on one wheel and half on another would leave a
+# coherent-looking table whose rows do not describe the same thing.  Everything outside
+# that family (`shipped`, `box`, `fit_limit`, `landing`, `uncap`, `profile`) still follows
+# `best_solution.json`, and `tests/test_fillet_block.py` re-measures those against it.
+PROFILE_GENOME = "stage3_knee_best_medium.json"
+
 # The argmax of `sweep_layer_profile_genomes`' own grid (FILLET_PLAN.md PART 13).
 # MEASURED, NOT ADOPTED as `WW.FILLET_LAYER_ENTRY_SLOPE` / `FILLET_LAYER_END_OFFSET`:
 # it clears `MIN_SJ_TARGET` for nine of the ten non-pathological genomes PART 13 drew
@@ -2275,11 +2297,17 @@ def sweep_barrier_control(cfg, genome_rows, samples=BARRIER_FOLD_SAMPLES):
 
 def build_sector_section(genes, configs, junctions):
     """The whole-sector measurement, per config."""
+    # The PART 13 / PART 16 / PART 20 profile family is measured here, on the genome its
+    # published constants belong to.  See `PROFILE_GENOME`.
+    pgenes = load_genes(PROFILE_GENOME)
     box_h = tuple(sorted({0.40, 0.60, float(genes[12]), 1.00, 1.50, 2.00, 2.50, 3.00}))
     box_r = tuple(sorted({0.50, 1.00, 1.50, 2.00, 2.50, float(genes[13])}))
     profile_box = ((0.40, 0.50), (float(genes[12]), float(genes[13])),
                    (1.50, 1.50), (3.00, 3.00), (0.40, 3.00), (3.00, 0.50))
     out = {"entry_slope": LAYER_ENTRY_SLOPE, "end_offset": LAYER_END_OFFSET,
+           # Which wheel the `profile_*`, `_cliff_audit` and `shipped_profile_cliff`
+           # rows below describe.  Everything else in this section is the shipped one.
+           "profile_genome": PROFILE_GENOME,
            "seam_tol_mm": SEAM_TOL_MM,
            "block_order": list(SECTOR_BLOCK_ORDER),
            "block_region": dict(SECTOR_BLOCK_REGION),
@@ -2344,7 +2372,7 @@ def build_sector_section(genes, configs, junctions):
             # at the first config, reusing the genomes `sweep_genomes` already drew
             # rather than drawing a second set.
             "profile_genomes": (sweep_layer_profile_genomes(
-                genes, cfg,
+                pgenes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows])
                 if cfg == configs[0] else None),
             # The SAME derivation over the cells §57 and §58 added: every drawn genome
@@ -2353,7 +2381,7 @@ def build_sector_section(genes, configs, junctions):
             # and one was thrown out by hand; this one is fitted to fifteen, and whether
             # the pair moves is the cheap half of PLAN.md's item 1.
             "profile_genomes_buildable": (sweep_layer_profile_genomes(
-                genes, cfg,
+                pgenes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows],
                 clamp=SECTOR_FIT_CLAMP, fold_gate=True)
                 if cfg == configs[0] else None),
@@ -2361,7 +2389,7 @@ def build_sector_section(genes, configs, junctions):
             # PART 17: whether the two-objective cell PART 16 named is the best point of
             # the region or just the first grid point inside it.
             "profile_genomes_fine": (sweep_layer_profile_genomes(
-                genes, cfg,
+                pgenes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows],
                 entries=LAYER_PROFILE_FINE_ENTRIES, ends=LAYER_PROFILE_FINE_ENDS,
                 clamp=SECTOR_FIT_CLAMP, fold_gate=True)
@@ -2396,12 +2424,19 @@ def build_sector_section(genes, configs, junctions):
             # THE BARRIER HALF, priced against a per-genome entry rather than a global
             # pair, on both boxes.  See `sweep_cliff_clamped_profile`: this is the half
             # §74 left open and the half §68's declined profile would have closed.
+            # Both carry `shipped_margin`, which is the cliff clearance of the shipped
+            # PROFILE, so they are PART 20's family and pin with it -- see
+            # `PROFILE_GENOME`.  Found by measurement rather than by reading: pinning the
+            # four cells that went red and leaving these two turned
+            # `test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined` red,
+            # because §81's `0.5520` is the shipped pair's clearance AT THE SAME GENOME
+            # the rows it is compared against are measured at.
             "cliff_profile": (sweep_cliff_clamped_profile(
-                genes, cfg,
+                pgenes, cfg,
                 [r for rows in out["genomes"]["groups"].values() for r in rows])
                 if cfg == configs[0] else None),
             "cliff_profile_held_out": (sweep_cliff_clamped_profile(
-                genes, cfg,
+                pgenes, cfg,
                 [r for rows in out["genomes_held_out"]["groups"].values()
                  for r in rows])
                 if cfg == configs[0] else None),
@@ -2441,10 +2476,10 @@ def build_sector_section(genes, configs, junctions):
         # distance to that edge was never a column in any table."  Alongside the pair
         # lists rather than inside them, because those are consumed as pairs.
         per["profile_candidate_rows_fine"] = (
-            profile_candidate_rows(per["profile_genomes_fine"], genes, cfg)
+            profile_candidate_rows(per["profile_genomes_fine"], pgenes, cfg)
             if per["profile_genomes_fine"] else None)
         per["profile_candidate_rows"] = (
-            profile_candidate_rows(per["profile_genomes_buildable"], genes, cfg)
+            profile_candidate_rows(per["profile_genomes_buildable"], pgenes, cfg)
             if per["profile_genomes_buildable"] else None)
         # The shipped pair's own margin, which is what every candidate above is measured
         # AGAINST.  It is not a candidate -- it does not clear the box floor -- so it
@@ -2455,10 +2490,14 @@ def build_sector_section(genes, configs, junctions):
         # itself.  Cheap: four bisections, and two of the ends are already cached above.
         per["_cliff_audit"] = ([
             {"end": end, "published": pub,
-             "got": cliff_entry(genes, cfg, end)["entry"]}
+             "got": cliff_entry(pgenes, cfg, end)["entry"]}
             for end, pub in CLIFF_PUBLISHED]
             if cfg == configs[0] else None)
-        _cliff_shipped = cliff_entry(genes, cfg, LAYER_END_OFFSET)
+        # "shipped" here is the shipped PROFILE -- `LAYER_ENTRY_SLOPE` / `LAYER_END_OFFSET`,
+        # the two constants `wheel_wheel` builds with -- and not the shipped genome.  It is
+        # measured at `PROFILE_GENOME` with the candidate rows and the cliff column above,
+        # because `the_shipped_profile_is_farthest_from_the_cliff` compares it against them.
+        _cliff_shipped = cliff_entry(pgenes, cfg, LAYER_END_OFFSET)
         per["shipped_profile_cliff"] = {
             "entry": LAYER_ENTRY_SLOPE, "end": LAYER_END_OFFSET,
             "cliff_entry": _cliff_shipped["entry"],

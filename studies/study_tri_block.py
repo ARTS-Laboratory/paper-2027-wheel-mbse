@@ -91,6 +91,20 @@ DEFAULT_CONFIGS = ("coarse", "medium")
 # to `UNCAP_DEFAULT` cannot silently re-aim this file at a different geometry.
 FAITHFUL = (True, 0.0)
 
+# THE GENOME §37 AND §51 PUBLISHED THEIR TWO CONTROL NUMBERS ON, PINNED BY FILE.  §37 ran
+# 2026-08-18 and §51 on 2026-08-23; across that window `best_solution.json` held `09e8188`
+# (§26, 2026-08-14), and §115 promoted `b729e86` over it on 2026-09-06.  `self_checks`
+# compares the two controls against `0.7822` and `< 0.02` -- constants measured on that
+# wheel -- while `control()` read whatever shipped, so from the promotion onward the driver
+# was checking a different wheel against 09e8188's numbers and exiting 1.  Measured
+# 2026-09-07, same code, both genomes: at `09e8188` all twenty self-checks return True; at
+# `b729e86` `control_reproduces_the_collapse` and `shipped_control_is_the_published_0.78`
+# are the two that fail.  Pinning the FILE restores §37's measurement rather than changing
+# it -- `study_svk_rescore.run_control`'s fix (§25) for the same defect: the constant stays,
+# the READ moves.  The shipped wheel keeps its own control rows below, reported and not
+# gated, because `tests/test_tri_block.py` re-measures those against `best_solution.json`.
+CONTROL_GENOME = "stage3_knee_best_medium.json"
+
 # The barycentric grid for the interior point, in weights on (P_t, Q, B*).  Two of the
 # three are swept and the third closes to 1, so this is a triangle of cells rather than a
 # square; `X_GRID_N` sets the spacing on each axis.
@@ -1362,7 +1376,9 @@ def sweep_bend_genomes(cfg_name, B, genome_rows, shipped_genes, current_w,
 def build(genes, configs, genome_sweep=True):
     rec = {"configs": list(configs), "faithful_rim_blend": FAITHFUL[1],
            "min_sj_target": MIN_SJ_TARGET, "x_grid_n": X_GRID_N,
+           "control_genome": CONTROL_GENOME,
            "algebra": algebra_section(configs), "per_config": {}}
+    pinned = load_genes(CONTROL_GENOME)
     grid = x_grid()
     for name in configs:
         reg = region(genes, name, blend=FAITHFUL[1])
@@ -1386,6 +1402,11 @@ def build(genes, configs, genome_sweep=True):
         per = {"region": region_report(reg),
                "control_faithful": control(genes, name, 0.0),
                "control_shipped": control(genes, name, 1.0),
+               # The same two controls on the genome §37 and §51 measured them on.  These
+               # are what `self_checks` gates; the two above are the shipped wheel's own
+               # and are reported.  One `sector_blocks` call each, so the pin is free.
+               "control_faithful_pinned": control(pinned, name, 0.0),
+               "control_shipped_pinned": control(pinned, name, 1.0),
                "sweep": sw}
         if chosen is not None:
             per["sector"] = sector_verdict(reg, chosen["B"], chosen["w"])
@@ -1471,12 +1492,15 @@ def self_checks(rec):
     """
     out = {}
     cs = rec["per_config"]
+    # BOTH READ THE PINNED CONTROLS, not the shipped ones: `0.7822` and `< 0.02` are
+    # §37's and §51's numbers and belong to the wheel they were measured on.  See
+    # `CONTROL_GENOME`.
     out["control_reproduces_the_collapse"] = all(
-        c["control_faithful"]["worst_block"] == "rim_junction"
-        and c["control_faithful"]["min_scaled_jacobian"] < 0.02
+        c["control_faithful_pinned"]["worst_block"] == "rim_junction"
+        and c["control_faithful_pinned"]["min_scaled_jacobian"] < 0.02
         for c in cs.values())
     out["shipped_control_is_the_published_0.78"] = all(
-        abs(c["control_shipped"]["min_scaled_jacobian"] - 0.7822) < 0.02
+        abs(c["control_shipped_pinned"]["min_scaled_jacobian"] - 0.7822) < 0.02
         for c in cs.values())
     out["every_config_found_a_valid_cell"] = all("sector" in c for c in cs.values())
     out["all_seams_close"] = all(c["sector"]["seams_close"]
@@ -1627,6 +1651,17 @@ def _print(rec):
               f"{s['min_scaled_jacobian'] / f0:6.1f}x "
               f"{str(s['clears_min_sj_target']):>11s} "
               f"{sum(1 for x in s['seams'] if x['closes'])}/{s['n_seams']} close")
+    # The two GATED controls beside the two shipped ones, because the gap between them is
+    # §119's finding rather than a formatting detail: §37's 0.7822 is a statement about
+    # `CONTROL_GENOME`, and the wheel that ships today does not reproduce it.
+    print(f"\n    the two controls the self-checks GATE on, at {rec['control_genome']}")
+    print(f"    {'config':8s} {'shipped (1.0)':>14s} {'faithful (0.0)':>14s}"
+          f"   vs the wheel that ships")
+    for name, c in rec["per_config"].items():
+        print(f"    {name:8s} {c['control_shipped_pinned']['min_scaled_jacobian']:14.6f} "
+              f"{c['control_faithful_pinned']['min_scaled_jacobian']:14.6f}"
+              f"   {c['control_shipped']['min_scaled_jacobian']:.6f} / "
+              f"{c['control_faithful']['min_scaled_jacobian']:.6f}")
     for name, c in rec["per_config"].items():
         if "sector" not in c:
             continue

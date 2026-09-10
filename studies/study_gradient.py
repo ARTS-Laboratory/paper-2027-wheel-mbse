@@ -1104,7 +1104,12 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
     np.asarray(WW.coord_fn(m_first)(genes))
     n_after_first = len(WW._COORD_FN_CACHE)
     other = genes.copy()
-    other[12] += 0.2
+    # §128: was `+= 0.2`.  §124's hub `_sector_fit_span` collapse (4.2x) shrank the room a
+    # bumped `R_hub` has to fall in before `SECTOR_FIT_CLAMP` pulls it back; at the shipped
+    # genome the limit is now ~0.743 mm, so +0.2 (-> 0.771) is refused and +0.1 (-> 0.671)
+    # is not. Only the margin changed -- this genome only ever had to be a genuinely
+    # different, unclamped second point, not this specific one.
+    other[12] += 0.1
     other[3] += 0.05
     m_other = WW.build_wheel(other, cfg, fillet=True)
     got = np.asarray(WW.coord_fn(m_other)(other))
@@ -1122,6 +1127,11 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
         "identity_max_abs_mm": float(np.abs(
             np.asarray(WW.mesh_coords(jnp.asarray(genes), mp))
             - np.asarray(mp.coords)).max()),
+        # §128: NOT bit-identical at every genome -- fe8dd88 already measured this (18
+        # builds against the old bisection's pair, 11 bit-identical, worst 3.553e-14 mm)
+        # and shipped anyway. `mesh_coords`'s numpy path lands in the same bucket at the
+        # current genome: deterministic run to run, worst 7.105e-15 mm. Gated like
+        # `identity_max_abs_mm` rather than required exact for the same reason.
         "numpy_path_max_abs_mm": float(np.abs(
             np.asarray(WW.mesh_coords(genes, mp, xp=np))
             - np.asarray(mp.coords)).max()),
@@ -1140,7 +1150,7 @@ def run_filleted(genes, cfg=DEFAULT_CONFIG, configs=("smoke", "coarse"),
     out["per_genome"]["ok"] = bool(
         out["per_genome"]["worst_rel_rule"] < GATE_FILLET_JAC_REL
         and out["per_genome"]["identity_max_abs_mm"] < GATE_FILLET_MESH_MM
-        and out["per_genome"]["numpy_path_max_abs_mm"] == 0.0
+        and out["per_genome"]["numpy_path_max_abs_mm"] < GATE_FILLET_MESH_MM
         and n_after_first == 1 and n_after_second == 1
         and out["per_genome"]["trace_shared"]["after_a_shipped_pair_mesh"] == 2)
 
@@ -1474,17 +1484,26 @@ def _print(rep):
               f"{ts['after_a_shipped_pair_mesh']} once a SHIPPED-pair mesh is added")
         print(f"    -> {'PASS' if q['pass'] else 'FAIL'}")
         print()
-        print(f"    *** WHAT THIS DOES AND DOES NOT CHANGE.  Nothing wires the fillet "
-              f"into the")
-        print(f"        objective: `wheel_objective` still prices `R_hub` through a "
-              f"`Kt` surrogate")
-        print(f"        that section 75 measured EXACTLY FLAT above the cap, and section "
-              f"48's")
+        print(f"    *** WHAT THIS DOES AND DOES NOT CHANGE.  WHEN THIS WAS WRITTEN "
+              f"nothing wired")
+        print(f"        the fillet into the objective: `wheel_objective` priced `R_hub` "
+              f"through a `Kt`")
+        print(f"        surrogate that section 75 measured EXACTLY FLAT above the cap, "
+              f"and section 48's")
         print(f"        surviving clause — half of a drawn genome box sits under "
               f"`MIN_SJ_TARGET` —")
-        print(f"        still stands against letting the optimizer take this path.  G8 "
-              f"above is")
-        print(f"        still the census of the mesh Stage 3 actually builds.")
+        print(f"        stood against letting the optimizer take this path.")
+        print(f"        SECTION 103 (2026-09-03) TOOK IT.  `phase_meshes` passes "
+              f"`fillet=True`, so")
+        print(f"        every mesh the objective solves on is the filleted one and both "
+              f"radii are")
+        print(f"        live in the loss (section 135: dL/dR_rim = +36.97 at `coarse`, "
+              f"2.13x dL/dR_hub,")
+        print(f"        14 of 14 components nonzero).  G8 above is EXACT and unchanged — "
+              f"it is the")
+        print(f"        census of `build_wheel(genes, cfg)`, which is UNFILLETED and is "
+              f"not what")
+        print(f"        Stage 3 builds any more.")
 
     head("VERDICT")
     print(f"    the adjoint reproduces brute-force differentiation of the same solve "
@@ -1499,9 +1518,11 @@ def _print(rep):
     if q is not None:
         print(f"    the two genes with no gradient have one on a FILLETED mesh, where "
               f"they rank first")
-        print(f"    and second of fourteen — the mesh Stage 3 builds is still the "
-              f"unfilleted one, and")
-        print(f"    is still blind to them")
+        print(f"    and second of fourteen — and since section 103 that is the ONLY mesh "
+              f"Stage 3")
+        print(f"    builds, so the census above describes a mesh this gate still reads "
+              f"and the")
+        print(f"    optimizer no longer sees (section 135)")
     print(f"\n  OVERALL: {'PASS' if rep['pass'] else 'FAIL'}")
     print(f"\n  NOT DONE: the loss terms.  M7 differentiates SOLVE OUTPUTS; the seven")
     print(f"            objective terms and the p-norm stress are M8's, and")

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Start the GUI under the interpreter that can import the pipeline.
+#
+# .venv-opt and not .venv-cad: the panels import wheel_requirements, wheel_geometry and
+# wheel_fea, and the CAD env has no jax.  The one thing that runs in .venv-cad -- the STEP
+# exporter -- is launched as a subprocess by the catalog, exactly as `make export` does.
+cd "$(dirname "$0")/.." || exit 1
+exec .venv-opt/bin/python gui/server.py "$@"

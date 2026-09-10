@@ -60,17 +60,17 @@ is the failure mode this project keeps naming and keeps having to catch with a g
 
 4.  WARM STARTING IS FREE AND IS TAKEN.
     `service_qoi_value_and_grad`'s `delta0` is the secant's indentation, and
-    `wheel_adjoint.py:537` shows that is the same number reported as `axle_drop_mm`.
+    `wheel_adjoint.py:905` shows that is the same number reported as `axle_drop_mm`.
     So the next step's warm vector is just the last step's per-phase drops, read off
     `breakdown["report"]["rows"]` and passed back as `warm=`.  `delta0=None` costs an
     extra linear `solve_wheel` per phase to manufacture a starting guess
-    (`wheel_fem.py:1841`), and between two Adam steps the design barely moves, so the
+    (`wheel_fem.py:1867`), and between two Adam steps the design barely moves, so the
     previous answer is a far better guess than anything a cold solve can produce.
 
 5.  A FAILED SOLVE IS A STEP REJECT, NOT A CRASH, AND NOT A ZERO.
     `wheel_objective.py` contains no `try`/`except` anywhere, deliberately:
     `NewtonDivergedError` (`wheel_fem.py:1090`) and the `dF/ddelta <= 0` guard
-    (`wheel_adjoint.py:553`) propagate straight out, and the caller owns the policy.
+    (`wheel_adjoint.py:921`) propagate straight out, and the caller owns the policy.
     The policy is here.  A trial step that will not solve is halved and retried, up to
     `--max-rejects`; on exhaustion the iterate is restored and the learning rate decays.
     This matters beyond robustness: `solve_nonlinear` raising because `r @ du >= 0` is
@@ -194,6 +194,30 @@ REPORT_KEYS = ("axle_drop_mean_mm", "max_stress_mpa", "stress_utilisation",
 MIN_CAP_SLACK_MM = 1e-3
 
 
+def _reject_kind(err):
+    """Which of the THREE refusals this is -- the label, not the response (§110).
+
+    The response to all three is identical (shorten the step), so this exists only so the
+    event record can be counted.  Kept in one function because there are two catch sites --
+    `descend`'s trial loop and the L-BFGS-B `fun` -- and a classification that disagreed
+    between them would be worse than one that was wrong in both.
+
+      `mesh_reject`   `MeshRefusedError`: this genome has no filleted mesh at all.
+      `clamp_reject`  `FilletClampRefusedError`: the mesh exists and solves; the sector-fit
+                      clamp moved its radii off the genes', so only the GRADIENT is
+                      refused.  Split out at §110 -- it had been counted as `solve_reject`,
+                      which S5 calibrates against a known count of INJECTED solver
+                      failures.
+      `solve_reject`  everything else: NewtonDivergedError, the secant's stall,
+                      dF/ddelta <= 0.  A real failure to solve.
+    """
+    if isinstance(err, WW.MeshRefusedError):
+        return "mesh_reject"
+    if isinstance(err, WW.FilletClampRefusedError):
+        return "clamp_reject"
+    return "solve_reject"
+
+
 def selection_key(loss, breakdown, genes):
     """Sort key for "which iterate of this run should be promoted" — DEFECT 6.
 
@@ -274,7 +298,7 @@ def warm_from(breakdown):
     """The per-phase indentations to start the next step's secant from.
 
     `service_qoi_value_and_grad` takes `delta0`, the secant's initial indentation, and
-    `wheel_adjoint.py:537` sets `delta = float(sec["axle_drop_mm"])` — the two are the
+    `wheel_adjoint.py:905` sets `delta = float(sec["axle_drop_mm"])` — the two are the
     same number, so the drops already in the report ARE the warm vector.  Returns `None`
     when there is no T3 block to read, which is the correct input for a cold start.
     """
@@ -614,10 +638,17 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
                     # INJECTED SOLVER failures.  One kind for both would make that count
                     # mean two things at once -- §84's error, and the reason §106 could not
                     # see these refusals in 25 committed runs.
+                    #
+                    # AND THERE ARE THREE, NOT TWO (§110).  The sector-fit clamp is a third
+                    # cause and was landing in `solve_reject` with the Newton failures --
+                    # the same conflation this comment already forbids, one level down.  It
+                    # is not a failed solve: the mesh exists and solves, and only the
+                    # GRADIENT is unavailable because the radii built are not the genome's.
+                    # `FilletClampRefusedError` subclasses `NotImplementedError` and so is
+                    # still a `RuntimeError`, which is why the catch above is unchanged.
                     events.append({
                         "step": i, "attempt": attempt,
-                        "kind": ("mesh_reject" if isinstance(err, WW.MeshRefusedError)
-                                 else "solve_reject"),
+                        "kind": _reject_kind(err),
                         "scale": scale, "error": type(err).__name__, "message": str(err)[:400],
                         "n_newton_records": len(getattr(err, "history", []) or [])})
                     scale *= 0.5
@@ -910,9 +941,7 @@ def descend_lbfgsb(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, weights=None,
             # A refused filleted mesh takes the same route and the same separate kind
             # `descend` gives it -- see the trial loop for why the two are not one kind.
             events.append({"step": len(step_rows),
-                           "kind": ("mesh_reject"
-                                    if isinstance(err, WW.MeshRefusedError)
-                                    else "solve_reject"),
+                           "kind": _reject_kind(err),
                            "error": type(err).__name__, "message": str(err)[:400]})
             state["warm"] = None
             return 1e12, np.zeros_like(np.asarray(z, dtype=float))

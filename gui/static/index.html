@@ -1,0 +1,184 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wheel — control surface</title>
+<link rel="stylesheet" href="/static/style.css">
+<script>
+  /* BEFORE FIRST LAYOUT, not in app.js at the end of the body. Under the desktop shell
+     the OS draws its window controls ON TOP of the header below, and the padding that
+     leaves room for them cannot arrive a frame late without the title visibly jumping.
+     `window.wheel` is the preload's bridge and its absence is the browser route. */
+  if (window.wheel) document.documentElement.classList.add(
+    'desktop', 'os-' + window.wheel.platform);
+</script>
+
+<!-- Under the desktop shell this strip IS the title bar: it is the drag region, the
+     window controls are painted over its ends, and it is why `titleBarOverlay.height`
+     in main.js and `--titlebar` in style.css have to hold the same number. -->
+<header>
+  <div class="title">wheel <span>— compliant PLA UAV landing wheel</span></div>
+  <div class="spacer"></div>
+  <div class="stat">genome <b id="hd-genome">—</b></div>
+  <div class="stat">free <b id="hd-mem">—</b></div>
+  <div class="stat">jobs <b id="hd-jobs">0</b></div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="mission" aria-selected="true">Mission &amp; Requirements</button>
+  <button data-tab="design">Design &amp; Preview</button>
+  <button data-tab="run">Run</button>
+  <button data-tab="status">Status</button>
+</nav>
+
+<main>
+  <!-- ================= MISSION ================= -->
+  <section class="panel" id="p-mission">
+    <div class="cols c-side">
+      <div>
+        <div class="card">
+          <h2>Mission</h2>
+          <p class="hint">The absolute facts about the vehicle and how it arrives. Every
+            field reaches at least one constant the optimiser uses.</p>
+          <div id="mission-form"></div>
+        </div>
+
+        <div class="card">
+          <h2>Priorities</h2>
+          <p class="hint">A 100-point zero-sum allocation over the five <code>should</code>s.
+            The budget is a conservation law, not a UI convention: weights are not
+            scale-free here, so buying more of everything would quietly weaken every
+            <code>shall</code>. Points can never reach a barrier.</p>
+          <div class="pts" id="points"></div>
+          <div class="total"><span class="muted">allocated</span><b id="pts-total">100.0</b></div>
+          <div class="actions">
+            <button class="act ghost" id="pts-calibrated">Reset to what ships</button>
+            <button class="act ghost" id="pts-off">Leave weights untouched</button>
+          </div>
+          <p class="hint" style="margin:10px 0 0" id="pts-state"></p>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Derivation</h2>
+          <p class="hint">The load path, forward. Recomputed as you type; no solve.</p>
+          <div class="scroll-x"><table id="derivations"></table></div>
+        </div>
+
+        <div class="cols c2">
+          <div class="card">
+            <h2>Requirements</h2>
+            <p class="hint">Six numbers, in the objective's own units.
+              <span id="req-hash" class="num"></span></p>
+            <div class="scroll-x"><table id="requirements"></table></div>
+            <div id="thermal"></div>
+          </div>
+          <div class="card">
+            <h2>Weight table</h2>
+            <p class="hint">Fourteen keys. Rows that moved from <code>DEFAULT_WEIGHTS</code>
+              are marked; barriers are never re-priced.</p>
+            <div class="scroll-x" style="max-height:330px;overflow-y:auto">
+              <table id="weights"></table></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Compliance</h2>
+          <p class="hint">Nine <code>shall</code> rows from the barrier terms and five
+            <code>should</code>s from the objective terms — read from
+            <code>wheel_objective</code> rather than retyped, so the taxonomy cannot drift
+            from the one the optimiser enforces. A missed <code>should</code> never makes a
+            design non-compliant.</p>
+          <div id="compliance-note"></div>
+          <div class="actions" style="margin:0 0 12px">
+            <button class="act ghost" id="btn-verify">Verify shipped genome</button>
+            <button class="act ghost" id="btn-save-req">Write requirements.json</button>
+            <button class="act" id="btn-descend">Descend under these requirements…</button>
+          </div>
+          <div class="scroll-x"><table id="compliance"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DESIGN ================= -->
+  <section class="panel" id="p-design" hidden>
+    <div class="cols c-side">
+      <div>
+        <div class="card">
+          <h2>Genome</h2>
+          <p class="hint">Fourteen genes: eight Bézier control coordinates, four taper
+            thicknesses, two fillet radii. Bounds are read live — a run that moves the wall
+            floor moves these sliders.</p>
+          <div class="genes" id="genes"></div>
+          <div class="actions">
+            <button class="act ghost" id="btn-reload-genome">Reload shipped</button>
+            <span class="tiny muted" id="preview-timing"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Taper t(s)</h2>
+          <p class="hint">What <code>t0..t3</code> mean: wall thickness along the spoke's
+            arc length, three linear zones.</p>
+          <svg class="spark" id="taper" viewBox="0 0 100 30" preserveAspectRatio="none"></svg>
+          <div class="legend"><span id="taper-range"></span></div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="stage">
+            <svg class="wheel" id="wheel" viewBox="-54 -54 108 108"></svg>
+          </div>
+        </div>
+        <div class="card">
+          <div class="legend">
+            <span><i style="border-color:var(--accent)"></i>spoke outline &amp; centerline</span>
+            <span><i style="border-color:var(--rule-strong)"></i>hub / rim rings</span>
+            <span><i style="border-color:var(--ink)"></i>Ø100 ground contact</span>
+            <span><i style="border-color:var(--warn)"></i>Bézier control polygon</span>
+            <span><i style="border-color:var(--fail)"></i>junction fillets, as the exporter builds them</span>
+          </div>
+          <div id="sat-note"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RUN ================= -->
+  <section class="panel" id="p-run" hidden>
+    <div class="cols c-side">
+      <div>
+        <div class="card">
+          <h2>Launch</h2>
+          <p class="hint">Jobs run detached. Closing this page — or stopping the server —
+            does not stop them.</p>
+          <div id="target-list"></div>
+        </div>
+        <div class="card">
+          <h2>Any make target</h2>
+          <p class="hint">The escape hatch. No progress model and no estimate; read the
+            recipe comment before starting a long one.</p>
+          <div style="display:flex;gap:8px">
+            <input id="any-target" style="flex:1;text-align:left;width:auto" placeholder="corner">
+            <button class="act ghost" id="btn-any">Run</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Jobs</h2>
+          <div class="joblist" id="joblist"></div>
+        </div>
+        <div id="job-detail"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STATUS ================= -->
+  <section class="panel" id="p-status" hidden>
+    <div class="cols c2"><div id="status-left"></div><div id="status-right"></div></div>
+  </section>
+</main>
+
+<div id="modal-root"></div>
+<script src="/static/app.js"></script>

@@ -86,6 +86,7 @@ import os
 
 import numpy as np
 
+import _gate_guard
 import project_paths as PP  # noqa: F401  (puts src/ on the path)
 import wheel_fem as fem
 import wheel_genome as wg
@@ -1081,6 +1082,48 @@ def main():
                          "(FILLET_PLAN PART 16); filleted runs only, ~80 s")
     ap.add_argument("--out", default=os.path.join(HERE, "study_corner_singularity.json"))
     args = ap.parse_args()
+
+    # A degraded run may not be filed under a committed artifact's name (PLAN.md §43).
+    # Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131, AND THIS DRIVER IS WHY THE GUARD IS PER ARTIFACT RATHER THAN PER
+    # DRIVER.  It has TWO Makefile gates writing TWO tracked names — `corner` and
+    # `corner-fillet` — and the flags that separate them are degrading for one artifact
+    # and mandatory for the other.  `--fillet genome --continuity coarse --profiles` is
+    # `corner-fillet`'s whole point and would file an unfilleted-artifact impostor if it
+    # landed on `study_corner_singularity.json`; dropping the same three is what would
+    # hollow out `study_corner_singularity_fillet.json`.  One list cannot say both, so
+    # there are two calls and each names the run its own artifact is.
+    #
+    # TWO SPELLINGS PER NAME, and both are legitimate: `--out` defaults to an ABSOLUTE
+    # path (so a standalone run lands in `studies/` rather than the CWD) and is then used
+    # AS GIVEN, while the Makefile passes `studies/study_corner_singularity*.json`
+    # relative to the repo root.  Same file, different strings, and a guard that knew
+    # only one of them would be blind to the invocation people actually type.
+    _gate_guard.refuse_degraded_out(ap, args, (
+        "studies/study_corner_singularity.json",
+        os.path.join(HERE, "study_corner_singularity.json")), [
+        (args.ladder != ",".join(LADDER),
+         "--ladder %s, not the gate's %s" % (args.ladder, ",".join(LADDER))),
+        (args.genome != GENOME, "--genome %s" % args.genome),
+        (args.fillet is not None,
+         "--fillet, whose artifact is study_corner_singularity_fillet.json — an "
+         "unfilleted name over filleted rows is a mesh change filed as a ladder"),
+    ])
+    _gate_guard.refuse_degraded_out(ap, args, (
+        "studies/study_corner_singularity_fillet.json",
+        os.path.join(HERE, "study_corner_singularity_fillet.json")), [
+        (args.ladder != ",".join(LADDER),
+         "--ladder %s, not the gate's %s" % (args.ladder, ",".join(LADDER))),
+        (args.genome != GENOME, "--genome %s" % args.genome),
+        (args.fillet is not True,
+         "--fillet %s, not `make corner-fillet`'s `genome`" % (args.fillet,)),
+        (args.continuity != "coarse",
+         "--continuity %s, not the gate's coarse — the R -> 0 control" % args.continuity),
+        (not args.profiles, "no --profiles, which drops FILLET_PLAN PART 16's "
+                            "layer-profile convergence pricing"),
+    ])
+
     rep = run(args.genome, tuple(args.ladder.split(",")),
               fillet=args.fillet, continuity=args.continuity, profiles=args.profiles)
     _print(rep)

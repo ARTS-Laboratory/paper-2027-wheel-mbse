@@ -14,47 +14,47 @@
     "hub": {
       "ring_r_mm": 12.7,
       "part_second_crossing": {
-        "theta_deg": -1.5267347137206628,
-        "wedge_deg": 268.47326528627934,
-        "lambda_W": 0.5469910072945032
+        "theta_deg": -0.7943466454236023,
+        "wedge_deg": 269.2056533545764,
+        "lambda_W": 0.5457756830549847
       },
       "mesh_P_c_as_built": {
-        "theta_deg": -1.5187317073967834,
-        "wedge_deg": 268.4812682926032,
-        "lambda_W": 0.5469776007718323
+        "theta_deg": -0.775999967675878,
+        "wedge_deg": 269.2240000323241,
+        "lambda_W": 0.5457455374337179
       },
       "mesh_P_c_end_cap": {
         "theta_deg": 0.0,
-        "wedge_deg": 297.1786128636843,
-        "lambda_W": 0.5141143756676385
+        "wedge_deg": 275.631607003795,
+        "lambda_W": 0.53607320658861
       },
-      "wedge_err_as_built_deg": 0.008003006323860973,
-      "wedge_err_end_cap_deg": 28.70534757740495,
-      "lambda_err_as_built": 1.3406522670900145e-05,
-      "P_t_wedge_err_deg": 0.8788166240138366,
+      "wedge_err_as_built_deg": 0.018346677747729245,
+      "wedge_err_end_cap_deg": 6.425953649218627,
+      "lambda_err_as_built": 3.0145621266797207e-05,
+      "P_t_wedge_err_deg": 0.5530571146127272,
       "P_c_is_the_parts_corner": true
     },
     "rim": {
       "ring_r_mm": 48.5,
       "part_second_crossing": {
-        "theta_deg": -1.3158567750193202,
-        "wedge_deg": 219.90181101015764,
-        "lambda_W": 0.697652101121965
+        "theta_deg": -1.7055123402243386,
+        "wedge_deg": 238.8966293160106,
+        "lambda_W": 0.6193936597912513
       },
       "mesh_P_c_as_built": {
-        "theta_deg": -0.5138297395817583,
-        "wedge_deg": 270.51382973958175,
-        "lambda_W": 0.5436623718389806
+        "theta_deg": -1.2392214061657865,
+        "wedge_deg": 271.23922140616577,
+        "lambda_W": 0.5425217682989845
       },
       "mesh_P_c_end_cap": {
         "theta_deg": 0.0,
-        "wedge_deg": 307.4278393329029,
-        "lambda_W": 0.5080978937495011
+        "wedge_deg": 328.71594384899225,
+        "lambda_W": 0.5016501787025422
       },
-      "wedge_err_as_built_deg": 50.61201872942411,
-      "wedge_err_end_cap_deg": 87.52602832274528,
-      "lambda_err_as_built": 0.15398972928298438,
-      "P_t_wedge_err_deg": 0.5200274539463976,
+      "wedge_err_as_built_deg": 32.342592090155165,
+      "wedge_err_end_cap_deg": 89.81931453298165,
+      "lambda_err_as_built": 0.07687189149226681,
+      "P_t_wedge_err_deg": 0.6682583985987094,
       "P_c_is_the_parts_corner": false
     }
   },
@@ -90,10 +90,10 @@
       "hub": {
         "part_edges_found": 24,
         "part_edges_filleted": 24,
-        "r_requested_mm": 0.6636060402965218,
-        "r_built_mm": 0.6636060402965218,
-        "kt_error_pct": 0.0,
-        "worst_wedge_deg": 322.0,
+        "r_requested_mm": 0.5709952879697059,
+        "r_built_mm": 0.48534599477425,
+        "kt_error_pct": 7.516179253828437,
+        "worst_wedge_deg": 324.0,
         "mesh_fillet_arcs": 12,
         "mesh_fillet_blocks_per_sector": [
           "hub_fillet_a",
@@ -104,10 +104,10 @@
       "rim": {
         "part_edges_found": 24,
         "part_edges_filleted": 24,
-        "r_requested_mm": 3.0,
-        "r_built_mm": 3.0,
+        "r_requested_mm": 1.6801682755740344,
+        "r_built_mm": 1.6801682755740344,
         "kt_error_pct": 0.0,
-        "worst_wedge_deg": 320.0,
+        "worst_wedge_deg": 302.0,
         "mesh_fillet_arcs": 12,
         "mesh_fillet_blocks_per_sector": [
           "rim_fillet_a",
@@ -121,25 +121,25 @@
     "shipped": {
       "hub:P_c": {
         "peak_mpa": [
-          9.95664887648691,
-          15.005264576432989,
-          18.45694449045355,
-          22.194787658934267
+          4.729962230522224,
+          7.13777052504878,
+          8.811070584244613,
+          10.636654121300221
         ],
-        "wedge_deg": 268.209154273554,
+        "wedge_deg": 269.1933432480273,
         "kind": "re_entrant",
-        "lambda": 0.5474350178333569,
-        "util_at_fine": 0.8877915063573707,
+        "lambda": 0.5457959180750451,
+        "util_at_fine": 0.42546616485200883,
         "is_the_parts_corner": true,
-        "wedge_err_vs_part_deg": 0.008003006323860973,
+        "wedge_err_vs_part_deg": 0.018346677747729245,
         "increments": [
-          5.04861569994608,
-          3.4516799140205627,
-          3.7378431684807154
+          2.407808294526556,
+          1.6733000591958325,
+          1.8255835370556088
         ],
         "increment_ratios": [
-          0.6836883849284523,
-          1.0829055015494835
+          0.6949473772474278,
+          1.0910078721523275
         ],
         "diverges": true,
         "excluded_because": "C1 \u2014 the peak diverges, so it cannot be a constraint; and this IS the part's corner, so the exclusion leaves a real riser unpriced",
@@ -147,28 +147,28 @@
       },
       "rim:P_c": {
         "peak_mpa": [
-          22.2075499713721,
-          35.23214474342214,
-          44.4585378090836,
-          55.86645096109661
+          37.02796704577416,
+          57.74424579365933,
+          72.39685201201722,
+          88.64758786457338
         ],
-        "wedge_deg": 270.85291105970776,
+        "wedge_deg": 271.6468074876051,
         "kind": "re_entrant",
-        "lambda": 0.5431264547074095,
-        "util_at_fine": 2.2346580384438646,
+        "lambda": 0.5418905183118155,
+        "util_at_fine": 3.5459035145829354,
         "is_the_parts_corner": false,
-        "wedge_err_vs_part_deg": 50.61201872942411,
+        "wedge_err_vs_part_deg": 32.342592090155165,
         "increments": [
-          13.02459477205004,
-          9.226393065661462,
-          11.407913152013009
+          20.71627874788517,
+          14.652606218357889,
+          16.25073585255616
         ],
         "increment_ratios": [
-          0.708382351016457,
-          1.236443436869243
+          0.7072991436675714,
+          1.1090679439809155
         ],
         "diverges": true,
-        "excluded_because": "FIDELITY \u2014 the mesh's corner is 50.6 deg of wedge from the part's, so the field here is the mesh's and not the wheel's",
+        "excluded_because": "FIDELITY \u2014 the mesh's corner is 32.3 deg of wedge from the part's, so the field here is the mesh's and not the wheel's",
         "carries_global_max": true
       }
     },
@@ -185,7 +185,7 @@
         "lambda": 0.54660541864697,
         "util_at_fine": 0.9202621191825052,
         "is_the_parts_corner": true,
-        "wedge_err_vs_part_deg": 0.008003006323860973,
+        "wedge_err_vs_part_deg": 0.018346677747729245,
         "increments": [
           5.406603663626138,
           3.6475201035958413,
@@ -211,7 +211,7 @@
         "lambda": 0.5430647753013043,
         "util_at_fine": 3.048940022962792,
         "is_the_parts_corner": false,
-        "wedge_err_vs_part_deg": 50.61201872942411,
+        "wedge_err_vs_part_deg": 32.342592090155165,
         "increments": [
           17.691543704379608,
           12.123501839502772,
@@ -222,7 +222,7 @@
           1.3230609775780326
         ],
         "diverges": true,
-        "excluded_because": "FIDELITY \u2014 the mesh's corner is 50.6 deg of wedge from the part's, so the field here is the mesh's and not the wheel's",
+        "excluded_because": "FIDELITY \u2014 the mesh's corner is 32.3 deg of wedge from the part's, so the field here is the mesh's and not the wheel's",
         "carries_global_max": true
       }
     }
@@ -230,7 +230,7 @@
   "exchange": {
     "knee": 0.8,
     "wall": 1.0,
-    "weight_today": 325.0,
+    "weight_today": 89.21,
     "stress_weight": 4000.0,
     "allowable_stress_mpa": 25.0,
     "recommended": {
@@ -311,7 +311,7 @@
           "hub": {
             "util": 1.141538154985518,
             "stress": 80.13219726681795,
-            "stress_margin_today": 37.910701176046274
+            "stress_margin_today": 10.406195852046425
           },
           "rim": {
             "util": 0.5067130268573102,
@@ -386,7 +386,7 @@
           "hub": {
             "util": 1.6759955966587774,
             "stress": 1827.8801868082257,
-            "stress_margin_today": 249.39469274380937
+            "stress_margin_today": 68.45692473746226
           },
           "rim": {
             "util": 0.784460052659671,
@@ -413,9 +413,9 @@
     "end_cap_justification_is_stale": true,
     "hub_P_c_is_the_parts_corner": true,
     "rim_P_c_is_the_parts_corner": false,
-    "hub_wedge_err_as_built_deg": 0.008003006323860973,
-    "hub_wedge_err_end_cap_deg": 28.70534757740495,
-    "rim_wedge_err_as_built_deg": 50.61201872942411,
+    "hub_wedge_err_as_built_deg": 0.018346677747729245,
+    "hub_wedge_err_end_cap_deg": 6.425953649218627,
+    "rim_wedge_err_as_built_deg": 32.342592090155165,
     "both_P_c_diverge_on_the_filleted_mesh": true,
     "the_part_fillets_what_the_mesh_does_not": true,
     "weight_is_invariant_to_how_util_is_computed": true,

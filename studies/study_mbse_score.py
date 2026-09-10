@@ -27,7 +27,7 @@ driver gates TWO things at once:
      moved would be a silent re-interpretation of every committed artifact and of the
      five study drivers that re-alias `SERVICE_FORCE_N` (`study_gnl.py:106`,
      `study_contact.py:94`, `study_gradient.py:120`, `study_fillet_cost.py:115`,
-     `study_svk_rescore.py:67`).
+     `study_svk_rescore.py:75`).
 
   2  **at least one other profile comes back NON-COMPLIANT, naming a binding
      requirement.**  The shipped design has essentially no headroom — `stress_utilisation

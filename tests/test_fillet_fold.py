@@ -47,6 +47,19 @@ def genes():
 
 
 @pytest.fixture(scope="module")
+def reconciliation_genes():
+    """The wheel PART 3 and PART 5 were measured on, read by FILE rather than by pointer.
+
+    `study_fillet_fold.RECONCILIATION_GENOME` carries the argument and the before/after;
+    this fixture exists so the test side takes the same read as the driver and the two
+    cannot drift apart.  It is deliberately NOT the `genes` fixture above: every other
+    test in this file is about the wheel that ships, and this one is about the
+    instrument.
+    """
+    return ff.load_genes(ff.RECONCILIATION_GENOME)
+
+
+@pytest.fixture(scope="module")
 def report():
     with open(os.path.join(REPO, "studies", "study_fillet_fold.json")) as fh:
         return json.load(fh)
@@ -94,15 +107,38 @@ def test_the_default_wheel_is_clean_under_every_criterion(genes):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("junction", ["hub", "rim"])
-def test_the_two_contested_criteria_both_reproduce_at_coarse(genes, junction):
+def test_the_two_contested_criteria_both_reproduce_at_coarse(reconciliation_genes,
+                                                             junction):
     """PART 3 recorded 0.20 mm; PART 5 recorded 4.00 (hub) / 3.00 (rim).  Both are right.
 
     Measured here on PART 5's own grid so "largest surviving" means what it meant there:
     the largest grid point with no fold at it or below it.  `coarse` only, because the
     claim under test is that the CRITERIA differ, and that does not need a second config
     to demonstrate — `medium` is carried by the committed report.
+
+    ON THE GENOME (§121).  This is a claim about the INSTRUMENT, not about the wheel that
+    ships — the file header is explicit that the reconciliation is pinned hard because a
+    change to `_filleted_spoke` moving either table would put every number measured with
+    it in question.  So it is re-measured on the wheel the two tables were read off.
+    §115's promotion made that a different wheel from `best_solution.json` and turned both
+    parametrisations red without `_filleted_spoke` moving at all; §120 moved the driver's
+    reconciliation onto the file for the same reason.  Same code, both genomes, `coarse`:
+
+        criterion, cell          09e8188 (pinned)     b729e86 (shipped)
+        block_cells largest      hub 0.20  rim 0.20   hub 0.20  rim 0.30
+        build_wheel first fold   hub 4.00  rim 3.00   hub none   rim 4.00
+
+    Three of the four cells move one grid point OUTWARD — the shipped wheel tolerates a
+    slightly larger fillet, and at the hub `build_wheel` accepts the whole legacy grid, so
+    `summarize` reports no first fold at all.  The fourth does not move, which is why the
+    hub row's PART 3 half still agreed at the shipped genome while its PART 5 half did
+    not, and why a pin here restores a measurement rather than choosing a friendlier one.
+
+    The shipped wheel does not stop being measured: `study_fillet_fold.json`'s
+    `reconciliation_shipped` block is these same eight rows on `best_solution.json`,
+    reported and not gated.
     """
-    rows = ff.sweep_one(genes, "coarse", junction, ff.LEGACY_GRID)
+    rows = ff.sweep_one(reconciliation_genes, "coarse", junction, ff.LEGACY_GRID)
     summ = ff.summarize(rows, ff.LEGACY_GRID)
     assert summ["block_cells"]["largest_surviving_mm"] == 0.20
     assert summ["build_wheel"]["first_fold_mm"] == (4.00 if junction == "hub" else 3.00)
@@ -142,8 +178,14 @@ def test_build_wheel_accepts_a_mesh_with_inverted_gauss_points(genes):
     the guard is ever strengthened this test is the one that should be updated, WITH the
     new measurement — the same rule FILLET_PLAN.md sets for
     `test_peak_stress_diverges_but_the_field_converges`.
+
+    THE RADIUS IS GENOME-DEPENDENT (PLAN §123).  0.25 mm was the first fold past the
+    09e8188 window's upper edge, at 0.24 mm.  §115's promotion moved that edge to
+    0.27 mm without changing the mechanism — 0.28 mm is the new first fold, same
+    `arc_cells` step from 1 to 2 that `test_the_window_closes_when_the_arc_claims_a_
+    second_cell` pins directly.
     """
-    mesh = ww.build_wheel(genes, "coarse", fillet=(0.25, 0.0),      # does NOT raise
+    mesh = ww.build_wheel(genes, "coarse", fillet=(0.28, 0.0),      # does NOT raise
                           fillet_blocking="spoke")
     bad = ff.mesh_gauss_verdict(mesh)
     assert bad["non_positive_elements"] > 0
@@ -169,19 +211,24 @@ def test_the_shipped_radii_are_far_outside_anything_usable(genes):
 # ---------------------------------------------------------------------------
 
 def test_the_window_closes_when_the_arc_claims_a_second_cell(genes):
-    """0.24 mm is usable at `coarse` and 0.25 is not, and the difference is one node.
+    """0.27 mm is usable at `coarse` and 0.28 is not, and the difference is one node.
 
     `k0 = clip(round((s_A - s0) / ds), 1, cap)` steps from 1 to 2 between them.  Nothing
     geometric happens there — the notch, the tangent length and the end cross-section all
     move by about a percent across that step — which is the evidence that the limit
     belongs to the construction and not to the fillet.
+
+    THE EDGE ITSELF IS GENOME-DEPENDENT (PLAN §123).  09e8188 stepped between 0.24 and
+    0.25; §115's promotion moved `s_A` and the step now falls between 0.27 and 0.28.  The
+    mechanism (`k0` stepping 1 -> 2) and the "barely moved" ratio are unchanged — only the
+    two radii that straddle the step are.
     """
     rows = {r["radius_mm"]: r for r in ff.sweep_one(genes, "coarse", "hub",
-                                                    (0.24, 0.25))}
-    assert rows[0.24]["arc_cells"] == 1 and rows[0.25]["arc_cells"] == 2
-    assert not rows[0.24]["folds"]["mesh_gauss"]
-    assert rows[0.25]["folds"]["mesh_gauss"]
-    ratio = rows[0.25]["end_cross_section_ratio"] / rows[0.24]["end_cross_section_ratio"]
+                                                    (0.27, 0.28))}
+    assert rows[0.27]["arc_cells"] == 1 and rows[0.28]["arc_cells"] == 2
+    assert not rows[0.27]["folds"]["mesh_gauss"]
+    assert rows[0.28]["folds"]["mesh_gauss"]
+    ratio = rows[0.28]["end_cross_section_ratio"] / rows[0.27]["end_cross_section_ratio"]
     assert ratio == pytest.approx(1.0, abs=0.02), "the geometry barely moved"
 
 
@@ -191,16 +238,21 @@ def test_the_window_opens_when_the_mid_side_node_reaches_the_middle(genes):
     With the tangent point nearer than one station, `k0` is held at 1 and the first Q9
     element's mid-side node is dragged toward its own end.  A quadratic edge is singular
     at its end once that fraction leaves (0.25, 0.75); measured, the window opens as it
-    climbs back through ~0.4.  Pinned as the correlation rather than as a threshold,
+    climbs back through ~0.42.  Pinned as the correlation rather than as a threshold,
     because the exact crossing depends on the other direction's distortion too.
+
+    THE CROSSING MOVED WITH THE PROMOTION (PLAN §123): 09e8188 crossed between 0.39 and
+    0.40, `b729e86` crosses between 0.4085 (still folded) and 0.4274 (clean) — same
+    correlation, same direction, a wider gap because §115 moved the genome the fraction
+    is measured on, not because the mechanism changed.
     """
     rows = [r for r in ff.sweep_one(genes, "coarse", "hub", ff.FINE_GRID)
             if "folds" in r and r["arc_cells"] == 1]
     folded = [r for r in rows if r["folds"]["mesh_gauss"]]
     clean = [r for r in rows if not r["folds"]["mesh_gauss"]]
     assert folded and clean
-    assert max(r["mid_frac_fillet_flank"] for r in folded) < 0.40
-    assert min(r["mid_frac_fillet_flank"] for r in clean) > 0.39
+    assert max(r["mid_frac_fillet_flank"] for r in folded) < 0.41
+    assert min(r["mid_frac_fillet_flank"] for r in clean) > 0.42
     # every radius below the window folds — there is no usable fillet however small
     assert min(r["radius_mm"] for r in rows) in [r["radius_mm"] for r in folded]
 

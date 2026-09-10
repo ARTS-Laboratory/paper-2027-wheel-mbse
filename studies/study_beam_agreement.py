@@ -133,6 +133,74 @@ def sized_config(genes, k=MESH_H_OVER_T, n_thick=MESH_N_THICK):
                          n_curve=max(BEAM_N_CURVE, 4 * n_span))
 
 
+def crossover_h_over_t(genes, force, bc="fixed_guided", root_bc="plane",
+                       bracket=(0.125, 8.0), tol=0.005):
+    """The `h/t` at which the FE-vs-Castigliano discrepancy changes SIGN.
+
+    WHAT THIS IS A CLAIM ABOUT: the mesh-sizing POLICY that `MESH_H_OVER_T` encodes --
+    that the span element size scales with the WALL and not with the part -- and not
+    about the wheel that ships.  The discrepancy `fe/castigliano - 1` is monotone in `h`.
+    A coarse span mesh does not resolve the root and tip boundary layers, which decay
+    over a length ~t, so it reads STIFF (negative).  Refine it and the reading crosses
+    zero once and settles on the converged discrepancy, which is positive and small.
+    That single crossing is what this returns, as a multiple of the wall thickness.
+
+    IT IS A FUNCTION AND NOT A COMMENT BECAUSE THE CROSSOVER MOVES WITH THE SHAPE GENES.
+    Measured 2026-09-08 at `lam = 0.125`, the same `t_min` of 0.15 mm on both:
+
+        genome                   arc length      h*/t     n_span there
+        pre-`cb4e3dd`             41.910 mm      0.947        295
+        shipped (`b729e86`)       54.744 mm      1.80         203
+
+    A 30.6% longer arc moved the crossover 90% coarser.  THE RETURN IS QUANTISED and the
+    digits above are all the real ones: `n_span` is an integer, so the reachable `h/t`
+    near the crossover steps by `1/n_span` -- 0.49% for the shipped genome, 0.34% for the
+    pre-`cb4e3dd` one -- and `tol` below that just selects an adjacent step rather than a
+    better answer.  Bisecting to `tol = 0.005`, `0.001` and `0.0002` returns 1.7978,
+    1.8067 and 1.8067 for the shipped genome, which are two neighbouring values of
+    `arc_length / n_span / t_min` and not a convergence.  `tests/test_fem.py::
+    test_mesh_resolution_must_scale_with_thickness` had a probe hardcoded at `h/t = 1`,
+    which cleared the old crossover by 5.6% and by one part in 1e5 of the quantity; the
+    promotion moved the crossover past it and the probe stopped demonstrating anything.
+    PLAN.md §142.  Aim a probe from this function, and leave headroom against it.
+
+    NOTE THAT `MESH_H_OVER_T`'s OWN COMMENT ABOVE IS ALREADY PART-STALE, which is the
+    same defect one level up: it reports -0.52% at `h = t*2.7`, and that reads -0.0256%
+    at the shipped genome and -0.0631% at the pre-`cb4e3dd` one.  The SIGN claim it rests
+    on -- the coarse mesh gets the sign wrong -- holds on both, so the constant 16 is not
+    in question; the magnitudes are from a genome older than either.
+
+    `bracket` is in `sized_config`'s `k` (elements per wall thickness), so its low end is
+    the COARSE side.  Raises `ValueError` if the discrepancy does not change sign inside
+    it rather than returning a number from an unbracketed bisection: on a thin enough
+    section the converged discrepancy is itself ~1e-5 and has not turned positive by
+    `k = 8` (measured: the pre-`cb4e3dd` genome at `lam = 0.0625` reads -0.000595% there).
+    Costs about 13 solves.
+    """
+    ref = castigliano(genes, bc, force)
+
+    def err(k):
+        cfg = sized_config(genes, k=k)
+        return fem.spoke_deflection(genes, cfg, bc=bc, root_bc=root_bc,
+                                    force=force) / ref - 1.0
+
+    lo, hi = float(bracket[0]), float(bracket[1])
+    e_lo, e_hi = err(lo), err(hi)
+    if not (e_lo < 0.0 < e_hi):
+        raise ValueError(
+            f"no sign change in k = [{lo}, {hi}]: the discrepancy reads "
+            f"{e_lo:+.6%} at the coarse end and {e_hi:+.6%} at the fine end. "
+            f"Widen the bracket, or accept that this section has no crossover to aim at.")
+    while hi - lo > tol:
+        mid = 0.5 * (lo + hi)
+        if err(mid) < 0.0:
+            lo = mid
+        else:
+            hi = mid
+    cfg = sized_config(genes, k=0.5 * (lo + hi))
+    return arc_length(genes) / cfg.n_span / float(np.min(np.asarray(genes)[8:12]))
+
+
 def castigliano(genes, bc, force, clip=(0.01, 20.0)):
     curve, _ = wf.generate_bezier_centerline(*[genes[i] for i in range(8)],
                                              num_points=BEAM_N_CURVE)

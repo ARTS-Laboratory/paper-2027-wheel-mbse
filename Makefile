@@ -37,7 +37,7 @@ export OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS 
 # pattern rule search, so listing the four arms would silently disable the rule that builds
 # them ("Nothing to be done for 'minwall-1.6'").  Nothing on disk is named `minwall-1.6` —
 # the arms write `stage3_minwall_<floor>.json` — so the rule fires without it.
-.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs mbse mbsebase mbsecal mbsescore studies clean-pyc
+.PHONY: help env env-opt env-cad test smoke ga elites stage3 m8bi5 m8bi6 m8bii1 m9 m9buck hubcap prod9 prod10 export svk svk-shipped svk-elite10 svk-medium buildcap knee kinrank contact gci corner corner-fillet junction fillet filletblock filletcost filletterms filletoptimum filletkt filletpnorm filletpnormbox filletconda filletwiring triblock trirule tribend reds reds-ratio reds-hub reds-hub-fillet reds-hub-fillet-rungs boundarywaste stage3-resume mbse mbsebase mbsecal mbsescore studies clean-pyc gui gui-browser gui-dist
 
 help:
 	@echo "make env      build both virtualenvs"
@@ -59,6 +59,13 @@ help:
 	@echo "              requirement profiles, with a compliance table each.  Gates"
 	@echo "              that req=baseline() is bit-identical to naming nothing AND"
 	@echo "              that at least one profile comes back NON-COMPLIANT"
+	@echo "make gui      the optional control surface as a DESKTOP APP: the"
+	@echo "              mission/requirements layer, a live preview of the wheel,"
+	@echo "              and detached runs with progress.  Nothing else needs it"
+	@echo "              and nothing else imports it -- see gui/README.md"
+	@echo "make gui-browser  the same server, opened in a browser instead.  No"
+	@echo "              node, no npm -- stdlib Python and nothing else"
+	@echo "make gui-dist the installer for THIS platform, into gui/desktop/dist"
 	@echo "make studies  the verification gates: spoke-mesh validity (M2a),"
 	@echo "              full-wheel mesh (M2b), beam agreement (M3), full-wheel"
 	@echo "              FEA (M4), geometric nonlinearity (M5), real contact"
@@ -126,7 +133,8 @@ help:
 	@echo "              R -> 0 control that says it is the same wheel, and what"
 	@echo "              each candidate LAYER PROFILE costs the deflection's"
 	@echo "              convergence — the two-objective half of PART 13's"
-	@echo "              declined call. ~110 s"
+	@echo "              declined call. ~5 m 30 s, and the LAYER PROFILE half is"
+	@echo "              312 s of it — see the recipe's own comment"
 	@echo "make filletblock  can the fillet BE a block, and can the sector be"
 	@echo "              blocked around it? the region PART 3 named has two cusps;"
 	@echo "              the boundary-layer block that meshes; and the whole"
@@ -215,6 +223,15 @@ help:
 	@echo "              the gate's own quantity, which no target could produce"
 	@echo "              until §109. five rungs x two genomes, linear so the only"
 	@echo "              difference from reds-hub's ladder is the mesh. ~35 s"
+	@echo "make stage3-resume TRAJ=f.json   recover a killed descent's best iterate"
+	@echo "              into a genome file --genome can read, and print the restart"
+	@echo "              command. --best-out is only written when a descent COMPLETES,"
+	@echo "              so a kill leaves a full trajectory and nothing to restart from."
+	@echo "              WARM restart: position only, Adam's moments start from zero"
+	@echo "make boundarywaste  BOUNDARY_PLAN Step 0: does defect 5's wasted-descent"
+	@echo "              ratio generalise across the 25 committed Stage-3 runs?"
+	@echo "              solves nothing — reads each run's own steps array. Four"
+	@echo "              of 25 bite, all medium+SVK, 17.5-42.8% each (§112)"
 	@echo "make fillet   at what radius does the filleted spoke block fold? sweeps"
 	@echo "              both junctions under three criteria — the two that"
 	@echo "              FILLET_PLAN.md's PART 3 and PART 5 disagreed by 20x on,"
@@ -463,7 +480,13 @@ export:
 # it is the better part of an hour at `medium`, and a gate nobody can afford to run stops
 # being run.  SVK_WORKERS is the memory cap and nothing else sizes it — see PLAN.md §1.
 SVK_CONFIG ?= medium
-SVK_WORKERS ?= 4
+# 4 UNTIL 2026-09-06, AND IT NO LONGER FITS THIS BOX — PLAN.md §115.4/§116.  On the
+# filleted mesh §103 made unconditional, four workers read 11.5–12.7 GiB RSS each beside a
+# 10.8 GiB parent and had available memory at 1.4 GiB with swap growing, fifteen minutes in
+# and still inside JIT compilation, before the solve loop was reached at all.  Serial is
+# the configuration §105/§113 measured safe for the same box on the same mesh, and it is
+# what the committed artifact was regenerated with; 2 workers has never been measured here.
+SVK_WORKERS ?= 0
 # Step 6 re-scores the descent winner at `medium` before promoting it, because Step 5
 # descended at `coarse` and the two rungs differ by ~1.1% on this wheel.  SVK_EXTRA is
 # additive (`label=path,...`) and SVK_ONLY narrows the built-in set, so the winner can be
@@ -724,6 +747,41 @@ studies:
 	$(PY_OPT) studies/study_objective.py
 	$(PY_OPT) studies/study_stage3.py
 
+# OPTIONAL AND SAID SO IN THE RECIPE.  `gui/` adds nothing to either requirements file and
+# nothing in src/, studies/ or tests/ imports it, so deleting the directory is a supported
+# state rather than a broken install -- these targets degrade to a message instead of a
+# missing-file error when it is gone.
+#
+# TWO WAYS IN, ONE SERVER.  `gui` opens the desktop window and `gui-browser` opens a tab,
+# and both are looking at the same `gui/server.py` -- the Electron shell starts that
+# server on an OS-chosen port and points a window at it.  The browser route is the one
+# that needs no node and no npm, so it stays the fallback rather than becoming legacy.
+GUI_ARGS ?= --open
+
+gui:
+	@test -d gui/desktop/node_modules || { \
+	    echo "The desktop shell's dependencies are not installed.  Once:"; \
+	    echo ""; \
+	    echo "    cd gui/desktop && npm install"; \
+	    echo ""; \
+	    echo "Or use \`make gui-browser\`, which needs neither node nor npm."; \
+	    exit 1; }
+	@cd gui/desktop && npm start
+
+gui-browser:
+	@test -x gui/wheelgui || { \
+	    echo "gui/ is not present.  It is optional; the pipeline does not need it."; \
+	    exit 1; }
+	@gui/wheelgui $(GUI_ARGS)
+
+# Builds for the platform you are ON.  Cross-building is the exception, not the rule: a
+# Windows installer from Linux needs wine on the PATH, and a macOS .dmg needs macOS --
+# electron-builder cannot fake either one.
+gui-dist:
+	@test -d gui/desktop/node_modules || { \
+	    echo "Run \`cd gui/desktop && npm install\` first."; exit 1; }
+	@cd gui/desktop && npm run dist
+
 clean-pyc:
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +
 
@@ -782,16 +840,34 @@ corner:
 
 # THE SAME LADDER ON A FILLETED MESH.  FILLET_PLAN.md Step 2, reachable since PART 11.
 #
-# ~22 s and it is the same driver — one flag — which is the point: a filleted "before and
+# It is the same driver — three flags — which is the point: a filleted "before and
 # after" measured by two scripts is two instruments, and this arc has already been bitten
 # once by exactly that (PART 6, two recorded fold tables disagreeing 20x with neither
 # criterion written down).  `--fillet genome` takes genes 12 and 13.
+#
+# THE WALL IS 5 m 32 s AND ALMOST ALL OF IT IS `--profiles`.  This line read "~22 s" and
+# §119 measured the recipe at 335 s — 15.2x — and read that as the filleted path having
+# got slower.  It has not.  Decomposed 2026-09-07 on `b729e86`, same box, one flag at a
+# time (PLAN.md §120):
+#
+#     `make corner`, unfilleted control                                    7.8 s
+#     + --fillet genome                                                   15.5 s
+#     + --continuity coarse                                               20.5 s
+#     + --profiles                       <- `make corner-fillet`         332.3 s
+#
+# So "~22 s" was EXACTLY RIGHT for the recipe it was written against, and stayed on the
+# line after `--profiles` was added to it.  The filleted ladder itself is 2.0x the
+# unfilleted one, not 15x.  `--profiles` is 312 s — 94% of the wall — and it is not a
+# ladder at all: it sweeps the deflection's convergence over every pair in
+# `study_fillet_block.LAYER_PROFILE_CANDIDATES`, PART 16's two-objective work, whose cost
+# belongs to that question and not to the fillet.  (The help text above said "~110 s",
+# which is a third figure and also wrong: somebody updated one of the two places.)
 #
 # `--continuity coarse` is NOT decoration.  The filleted ladder reports an axle drop 38%
 # below the unfilleted one, and one ladder cannot tell the fillet's stiffness from a
 # different model.  The control drives the radius pair toward zero and asks the filleted
 # blocking to reproduce the unfilleted wheel; it does, to -0.17% at R = 0.05 mm.  Thirteen
-# extra `coarse` solves, ~8 s of the 22.
+# extra `coarse` solves, 5.0 s of the 20.5 above.
 #
 # SCOPE, WHICH IS PART 10's AND HAS NOT MOVED: `fillet=` is a MEASUREMENT INSTRUMENT for
 # one genome.  6 of 16 feasible genomes refuse it at their own radii.  Nothing on this
@@ -1012,7 +1088,7 @@ filletoptimum:
 # different instruments on two different ladders, and re-measuring either one here would
 # make it a third.
 #
-# §93 found, by reading `wheel_objective.py:1234` rather than the plan files, that
+# §93 found, by reading `wheel_objective.py:1256` rather than the plan files, that
 # `util_j = kt * agg / ALLOWABLE` applies a surrogate for a fillet on a mesh that has one.
 # It also asserted two things about that finding from inspection, and this recipe checks
 # both:
@@ -1278,6 +1354,14 @@ tribend:
 # evidence has to be re-runnable by whoever doubts them rather than quoted from a plan
 # file.  `reds-ratio` is ~4 min wall across $(REDS_JOBS) processes; `reds-hub` is ~50 s.
 #
+# `reds-hub` MEASURED 2026-09-05 (PLAN §114): wall 44.3 s, PEAK RSS 3.05 GiB, in one process.
+# The wall figure had been on file since §31 and the memory figure never had been, which made
+# "CHEAP" a claim about time only -- the distinction that matters when something else already
+# holds the box.  It is unfilleted, linear, single-phase, no gradient and no `wheel_objective`,
+# so the 41.6-43.7 GB filleted-cell figure at :1124-1130 does NOT apply to it: that measures an
+# 8-phase SVK objective cell WITH a gradient, and residency tracks phases held, not the compile
+# (PLAN.md §105, :14798-14812).  `ultra` here is 70080 elements at 587208 dofs and costs 8.9 s.
+#
 # `reds-ratio` fans one cell per process because a cell is 2-6 s and the box has 24 cores,
 # but every cell runs under the same five thread pins as `make test` (`studies/redsrun.sh`
 # exports `wheel_pool.PINNED_ENV`) — a number quoted against a test's value has to be taken
@@ -1357,6 +1441,30 @@ reds-hub-fillet-rungs:
 	    --out $(notdir $(REDS_HUB_OUT))
 
 reds: reds-ratio reds-hub
+
+# BOUNDARY_PLAN Step 0 (PLAN.md §112) — does defect 5's wasted-descent ratio generalise
+# across the 25 committed Stage-3 runs, or was §19's run the outlier?  SOLVES NOTHING: it
+# reads `terms.<name>.value` and `wall_s` off each run's own `steps` array, already on disk.
+# Well under a second.  The answer is four of the 25, all `medium`+SVK, 17.5-42.8% each —
+# not a property of the descent in general, so the arc stays at #8.
+boundarywaste:
+	$(PY_OPT) studies/study_boundary_waste.py
+
+# THE RECOVERY PATH FOR A KILLED DESCENT (PLAN.md §114).  `wheel_stage3` persists its
+# trajectory after every step, atomically, so that a long run survives a kill (`_persist`/
+# `_write`, wheel_stage3.py:875-896) — but it writes the GENOME only after the whole descent
+# returns (`:1299-1310`).  A run killed at step 299 of 300 therefore leaves a complete history
+# and nothing promotable, and the history is not in the shape `--genome` reads: `load_genes`
+# wants a TOP-LEVEL `genes` (`:980`) and a trajectory nests them under `best`/`final`.  This
+# is that adapter.  SOLVES NOTHING: one JSON in, one JSON out, measured 0.11 s at 34 MB.
+#
+# A WARM RESTART, NOT A RESUME.  Adam's moments (`:589-590`), the secant `delta0`, `n_reject`
+# and the decayed cosine lr (`:595`) are not recorded in a trajectory and cannot be recovered
+# from one, so the restart recovers POSITION only.  The driver prints the restart command and
+# names what it is assuming.
+stage3-resume:
+	@test -n "$(TRAJ)" || { echo "usage: make stage3-resume TRAJ=stage3_run.json"; exit 2; }
+	$(PY_OPT) studies/stage3_resume_genome.py $(TRAJ)
 
 # ---------------------------------------------------------------------------
 # THE REQUIREMENTS LAYER (PLAN.md §97 — MBSE_PLAN Steps 0, 4, 5, 7)

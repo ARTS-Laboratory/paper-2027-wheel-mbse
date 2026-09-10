@@ -1,0 +1,114 @@
+.venv-opt/bin/python -u studies/study_svk_rescore.py --config medium \
+    --workers 0 --out study_svk_rescore.json \
+     
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+control ...
+re-score ...
+E0906 16:46:42.549941   50019 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 16:46:44.861052   49969 slow_operation_alarm.cc:140] The operation took 2m2.311228124s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:01:23.268783   50019 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:03:00.328798   49969 slow_operation_alarm.cc:140] The operation took 3m37.060170351s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:12:13.951941   50019 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:13:53.517859   49969 slow_operation_alarm.cc:140] The operation took 3m39.565985754s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:17:38.395020   50019 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:19:15.380185   49969 slow_operation_alarm.cc:140] The operation took 3m36.985303355s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:22:51.222374   50019 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 17:24:24.857823   49969 slow_operation_alarm.cc:140] The operation took 3m33.63551027s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+  shipped (best_solution.json) linear drop  1.8060 util  0.956 loss    76.4903 FEASIBLE (2752.5 s)
+  shipped (best_solution.json) svk    drop  1.9968 util  0.972 loss    54.1355 FEASIBLE (922.3 s)
+  36aed36 GA/beam  REFUSED  clamp_reject — the sector-fit clamp moved this genome's fillet radii off its genes; not scoreable on the filleted mesh
+  elite10          linear drop  0.4354 util  0.715 loss  1589.3793 FEASIBLE (360.8 s)
+  elite10          svk    drop  0.4469 util  0.721 loss  1566.9504 FEASIBLE (415.7 s)
+  minwall 1.2      linear drop  1.1659 util  1.789 loss  3252.6978 INFEASIBLE (638.8 s)
+  minwall 1.2      svk    drop  1.3433 util  1.825 loss  3458.4430 INFEASIBLE (803.1 s)
+  minwall 1.4      linear drop  1.0075 util  1.421 loss  1482.7412 INFEASIBLE (558.8 s)
+  minwall 1.4      svk    drop  1.1076 util  1.438 loss  1478.3443 INFEASIBLE (670.0 s)
+  minwall 1.6      linear drop  0.8004 util  1.053 loss   964.7066 INFEASIBLE (509.0 s)
+  minwall 1.6      svk    drop  0.8521 util  1.062 loss   896.9765 INFEASIBLE (585.1 s)
+  minwall 2.0      linear drop  0.4362 util  0.715 loss  1587.7665 FEASIBLE (372.8 s)
+  minwall 2.0      svk    drop  0.4478 util  0.722 loss  1565.2147 FEASIBLE (428.4 s)
+
+============================================================================================
+  CONTROL — §14's force-controlled service point reproduced at coarse
+============================================================================================
+  genome            linear mm     svk mm       rel       §14      err  
+  350f4c7 §14 control   1.952966   2.408898   23.346%   23.346%    0.00%  PASS
+  36aed36 GA/beam    1.666633   1.732517    3.953%    3.953%    0.00%  PASS
+  control: PASS   (gate: within 2% of §14's correction)
+
+============================================================================================
+  RE-SCORE — the objective's own quantities, medium, 8 phases, target 2.0 mm
+============================================================================================
+  genome           kin      drop mm    err %    util  p30 Kt*agg   mass g        loss  barriers
+  shipped (best_solution.json) linear    1.8060   -9.70%   0.956       5.897    54.12     76.4903  -
+  shipped (best_solution.json) svk       1.9968   -0.16%   0.972       6.698    54.12     54.1355  -
+                   Δsvk     10.560%            1.72%
+  36aed36 GA/beam  REFUSED  clamp_reject — no score on the filleted mesh
+  elite10          linear    0.4354  -78.23%   0.715       2.441    70.47   1589.3793  -
+  elite10          svk       0.4469  -77.65%   0.721       2.515    70.47   1566.9504  -
+                   Δsvk      2.644%            0.89%
+  minwall 1.2      linear    1.1659  -41.70%   1.789       3.114    42.36   3252.6978  fillet_cap=0.0206,stress=2.68e+03
+  minwall 1.2      svk       1.3433  -32.84%   1.825       3.327    42.36   3458.4430  fillet_cap=0.0206,stress=3.04e+03
+                   Δsvk     15.210%            2.06%
+  minwall 1.4      linear    1.0075  -49.62%   1.421       2.731    47.21   1482.7412  stress=784
+  minwall 1.4      svk       1.1076  -44.62%   1.438       2.907    47.21   1478.3443  stress=893
+                   Δsvk      9.926%            1.17%
+  minwall 1.6      linear    0.8004  -59.98%   1.053       2.431    53.18    964.7066  fillet_cap=0.455,stress=11.4
+  minwall 1.6      svk       0.8521  -57.40%   1.062       2.556    53.18    896.9765  fillet_cap=0.455,stress=18.1
+                   Δsvk      6.458%            0.78%
+  minwall 2.0      linear    0.4362  -78.19%   0.715       2.446    70.39   1587.7665  -
+  minwall 2.0      svk       0.4478  -77.61%   0.722       2.520    70.39   1565.2147  -
+                   Δsvk      2.655%            0.90%
+
+  THE QUESTION THIS FILE EXISTS TO ANSWER
+    shipped (best_solution.json) linear FEASIBLE   util 0.9559  worst barrier 0
+    shipped (best_solution.json) svk    FEASIBLE   util 0.9723  worst barrier 0
+    36aed36 GA/beam  both   NOT SCOREABLE  clamp_reject
+    elite10          linear FEASIBLE   util 0.7150  worst barrier 0
+    elite10          svk    FEASIBLE   util 0.7214  worst barrier 0
+    minwall 1.2      linear INFEASIBLE util 1.7886  worst barrier 2680
+    minwall 1.2      svk    INFEASIBLE util 1.8254  worst barrier 3039
+    minwall 1.4      linear INFEASIBLE util 1.4215  worst barrier 783.7
+    minwall 1.4      svk    INFEASIBLE util 1.4381  worst barrier 892.6
+    minwall 1.6      linear INFEASIBLE util 1.0533  worst barrier 11.38
+    minwall 1.6      svk    INFEASIBLE util 1.0615  worst barrier 18.14
+    minwall 2.0      linear FEASIBLE   util 0.7153  worst barrier 0
+    minwall 2.0      svk    FEASIBLE   util 0.7217  worst barrier 0
+
+wrote /home/eric-bodhi/github/wheel/studies/study_svk_rescore.json  (9085.4 s)
+EXIT=0

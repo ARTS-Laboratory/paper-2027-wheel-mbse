@@ -153,8 +153,15 @@ def default_workers(n_phase):
     on.  `wheel_stage3.py --workers` defaults to `0` (serial), so nothing reaches this by
     default and it is a hazard for `-1` rather than a live bug; but `-1` is documented as
     "size the pool to the machine", and on memory it does not.  §105's successor 4 is a
-    RAM-aware cap or an outright refusal here; until then an explicit integer is the only
-    safe way to ask for a pool, and 2 is the largest that fits a 61 GB box.
+    RAM-aware cap or an outright refusal here.
+
+    [CORRECTED PLAN.md §113 -- "2 is the largest that fits a 61 GB box" WAS AN ESTIMATE
+    STATED AS A MEASUREMENT, AND A LIVE POOL SHOWED IT WRONG.  --workers 2 on the Stage-3
+    re-run (4 phases held per worker) measured 27.6 / 26.0 GiB RSS per worker -- not the
+    ~20.7 GiB the RSS-vs-phases fit above predicts -- and pushed a 61 GB box to 60/61 GiB
+    used and 7.4/8 GiB swap within ~14 minutes.  Killed before it OOM'd.  No pooled worker
+    count is confirmed safe on this box for the filleted mesh; `--workers 0` (serial, 43.4
+    GiB peak, PLAN.md §105) is the only one actually measured to fit.]
     """
     return max(1, min(int(n_phase), os.cpu_count() or 1))
 

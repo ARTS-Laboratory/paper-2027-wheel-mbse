@@ -926,11 +926,21 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
     quantity that has no mesh-independent value" are different conclusions with different
     fixes.  So all three are extrapolated and reported side by side.
 
-    THAT IS WHAT HAPPENED, and the constraint moved as a result: `util` is now
+    THAT IS WHAT HAPPENED, and the constraint moved as a result: `util` was then
     `max(Kt_hub, Kt_rim) * pnorm(p=4) / allowable`, with the peak modelled analytically
     instead of measured off the singularity.  The `max` and `c` series stay in the report
     anyway — they are the evidence, and the `util` series only means something next to
     them.
+
+    THAT FORMULA IS A RETIRED CONSTRUCTION AND HAS BEEN SINCE §102/§103 — PLAN.md §129.
+    `util` is `max(hub_region_pnorm, rim_region_pnorm) / allowable` now: no `Kt`, and a
+    p-norm over each junction's own fillet arc rather than one whole-wheel aggregate
+    rescaled.  `tests/test_stage3.py`'s rung test asserts exactly that identity off this
+    function's own row, so the test-side twin has been right about it the whole time and
+    only the prose here was stale.  `kt_hub`/`kt_rim` stay in the row for the geometric
+    `hub_fillet_cap_mm` story (`wheel_objective.py:1283`) and price nothing.  §116.1
+    measured what the retired surrogate is worth if anyone reinstates it: `Kt * nominal`
+    under-reads the region p-norm by 43.0%-65.7% on thirteen of fourteen regions.
 
     The stencil is FIXED and uniform across every row, so the only thing varying down a
     ladder is the mesh.  A row that fails to mesh or solve is recorded and the ladder
@@ -958,7 +968,13 @@ def run_mesh_convergence(designs, configs=LADDER_CONFIGS, n_phase=4, probe_p=())
                 loss, rep, wall = score(genes, cfg, phases=phases, probe_p=probe_p)
                 rows.append({
                     "config": cfg,
-                    "n_elements": int(WW.build_wheel(genes, cfg).n_elements),
+                    # `fillet=True` BECAUSE THAT IS THE MESH THE ROW WAS MEASURED ON.
+                    # `score` above goes through `S3.Evaluator` -> `WO.phase_meshes`,
+                    # filleted unconditionally since §103, and this column was still
+                    # reporting a bare `build_wheel` — the ladder's own x-axis describing
+                    # a mesh no other number in the row came from.  Understated 20.0% at
+                    # `smoke`, 26.5% at `coarse`, 26.6% at `medium` (PLAN.md §129).
+                    "n_elements": int(WW.build_wheel(genes, cfg, fillet=True).n_elements),
                     "loss": loss,
                     "max_stress_mpa": float(rep["max_stress_mpa"]),
                     "pnorm_stress_agg_mpa": float(rep["pnorm_stress_agg_mpa"]),
@@ -1245,7 +1261,7 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     `req` IS THE ONE ARGUMENT HERE THAT IS NOT ABOUT TIMING.  A requirement set is
     expanded by `S3.Evaluator` into `force`, `E`, `nu`, the two stress/stroke keywords and
     the weight table, and `force`/`E`/`nu` are the three that have to survive being
-    PICKLED INTO A WORKER PROCESS (`wheel_objective.py:1127` ships `problem_kw`).  Run
+    PICKLED INTO A WORKER PROCESS (`wheel_objective.py:1151` ships `problem_kw`).  Run
     with a NON-BASELINE set, `identical` stops being a statement about the transport alone
     and becomes the statement MBSE_PLAN Step 3 asks for: the requirements reach the
     workers and are not silently defaulted there.  Defaulted, the pooled arm would score
@@ -2104,13 +2120,21 @@ def main():
 
     # A degraded run may not be filed under the committed artifact's name (PLAN.md
     # §43).  Refused at startup, before any solving.  See `_gate_guard`.
-    _gate_guard.refuse_degraded_out(ap, args, "study_stage3.json", [
+    #
+    # FOUR ARTIFACTS, FOUR CALLS, ONE SHARED LIST (§131).  This driver has four Makefile
+    # gates — `studies`, `m8bi5`, `m8bi6`, `m8bii1` — and until §131 the guard named only
+    # the first, so `--sections mesh_convergence --config smoke --out
+    # study_stage3_m8bi5.json` was accepted against a tracked artifact and its tracked
+    # .jpg.  It could not be fixed by adding names to ONE call: `--sections` is degrading
+    # for `study_stage3.json` and IS `m8bi5`'s gate, and `--ladder-p` is degrading for
+    # both of those and IS `m8bi6`'s.  Every artifact needs its own answer to "what is a
+    # full run", so the seven conditions that mean the same thing whatever is being
+    # written are shared and only the two that identify a run are stated per name.
+    _degrades_any_stage3_run = [
         (args.quick, "--quick (reduced fidelity)"),
         (args.config != DEFAULT_CONFIG, "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
         (args.genome != "best_solution.json", "--genome %s" % args.genome),
         (args.elites != "stage2_elites.json", "--elites %s" % args.elites),
-        (args.sections != ",".join(DEFAULT_SECTIONS), "--sections %s, not all %d" % (args.sections, len(DEFAULT_SECTIONS))),
-        (args.ladder_p != "", "--ladder-p %s" % args.ladder_p),
         (args.ladder_configs != ",".join(LADDER_CONFIGS), "--ladder-configs %s" % args.ladder_configs),
         (args.no_plot, "--no-plot, which would refresh the .json and leave the "
                        "committed .jpg stale"),
@@ -2120,6 +2144,40 @@ def main():
         (args.requirements is not None,
          "--requirements %s; every number below then describes a different mission"
          % args.requirements),
+    ]
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != ",".join(DEFAULT_SECTIONS), "--sections %s, not all %d" % (args.sections, len(DEFAULT_SECTIONS))),
+        (args.ladder_p != "", "--ladder-p %s" % args.ladder_p),
+    ])
+    # M8b-i.5.  `make m8bi5`'s own two sections are its gate, and everything else about
+    # the run has to be the gate's — this artifact is where S11's mesh ladder and S12's
+    # multistart live, and §129.3 read both out of it.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3_m8bi5.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != "mesh_convergence,multistart",
+         "--sections %s, not `make m8bi5`'s mesh_convergence,multistart" % args.sections),
+        (args.ladder_p != "", "--ladder-p %s, which is `make m8bi6`'s sweep" % args.ladder_p),
+    ])
+    # M8b-i.6 step 1.  The ten exponents ARE the measurement here: p=1 is the anchor that
+    # must converge and p=30 is the shipped default that must reproduce the constraint's
+    # own series, so a shortened sweep is not a coarser reading of this artifact but a
+    # different one with the bookends missing.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3_pnorm.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != "mesh_convergence",
+         "--sections %s, not `make m8bi6`'s mesh_convergence" % args.sections),
+        (args.ladder_p != "1,2,3,4,6,8,12,16,24,30",
+         "--ladder-p %s, not `make m8bi6`'s ten exponents" % args.ladder_p),
+    ])
+    # M8b-ii item 1.  S13's worker ladder.  `--pool-workers` is NOT guarded: the target
+    # passes none precisely so the ladder is derived from the machine it runs on, and a
+    # named ladder measures the same thing on a host that needs telling.
+    _gate_guard.refuse_degraded_out(ap, args, "study_stage3_pool.json",
+                                    _degrades_any_stage3_run + [
+        (args.sections != "phase_pool",
+         "--sections %s, not `make m8bii1`'s phase_pool" % args.sections),
+        (args.ladder_p != "", "--ladder-p %s, which is `make m8bi6`'s sweep" % args.ladder_p),
     ])
 
     # Loaded before any solving, so a bad path costs a startup and not three hours.

@@ -143,9 +143,38 @@ def test_thickness_tracks_the_superseded_masked_form(i):
 
 def test_thickness_hits_its_nodes_exactly(ts):
     """t(0)=t0, t(1/3)=t1, t(2/3)=t2, t(1)=t3 — the defining property of an
-    interpolant, and the one the superseded version got wrong by 1.2e-11."""
+    interpolant, and the one the superseded version got wrong by 1.2e-11.
+
+    THE BOUND WAS `== 0.0` UNTIL 2026-09-08, AND THAT WAS NEVER THIS CLAIM — it was a
+    rounding accident that held for the genomes this file happened to be run on.  The
+    function is a base value plus three clipped ramps, so `t(bp_k)` is `t0` plus a
+    TELESCOPING SUM of k differences; the sum is exact only when its roundings cancel.
+    Measured over 20000 uniform draws of `(t0, t1, t2, t3)` across `GENE_SPACE`'s own
+    bounds:
+
+        exactly 0.0 ....................  80.09% of draws, NOT 100%
+        worst error ....................  1.332268e-15  =  6 ULP
+        per node, share not exact ......  bp=0: 0.00%   1/3: 7.89%   2/3: 10.10%   1: 13.49%
+
+    The per-node profile IS the mechanism: `t(0)` is `t0` with no sum and never misses,
+    and the miss rate climbs with the number of terms.  So `== 0.0` was a coin this test
+    had won on every genome until `b729e86`, which reads 2.220446e-16 — ONE ULP, on `t1`
+    and `t2` — and lost it.
+
+    §133 §GROUP B's stated reason SURVIVES ITS CONTROL.  It said the exactness "survives
+    only while the t-vector's magnitudes are small".  Drawing all four thicknesses from
+    [1.2, 2.0] instead of the full box gives 20000 of 20000 exact, against 80.09% — so
+    magnitude is the driver, and `t0` going 1.4738 -> 3.5055 is why this one broke now.
+
+    THE BOUND IS THE GEOMETRIC MIDPOINT OF THE TWO THINGS IT MUST SEPARATE, which is the
+    warrant `== 0.0` never had: 75x above the measured worst case over the whole box, and
+    120x below the 1.2e-11 defect this test exists to catch.  The `ts` fixture stays on
+    the shipped genome deliberately — the claim is about the INTERPOLANT and the bound is
+    genome-independent by the sweep above, so reading what ships costs nothing and keeps
+    the test a live check that the shipped design is inside that regime.
+    """
     got = G.thickness_at_arc_length(G.TAPER_BREAKPOINTS, *ts)
-    assert np.abs(got - np.array(ts)).max() == 0.0
+    assert np.abs(got - np.array(ts)).max() < 1e-13
 
 
 def test_thickness_is_monotone_between_nodes(ts):
@@ -243,7 +272,40 @@ def test_numpy_and_jax_agree(vec):
 
 def test_analytic_curvature_matches_finite_differences(g8):
     """The hodograph curvature is independent code from differencing the samples, so
-    agreeing to the FD scheme's own O(h^2) error validates both."""
+    agreeing to the FD scheme's own O(h^2) error validates both.
+
+    THAT CLAIM WAS NEVER WRONG.  THE METRIC COULD NOT SEE IT, AND `b729e86` IS THE FIRST
+    GENOME WHERE THAT SHOWS.  The error was normalised POINTWISE, by `k_an` at each
+    sample — undefined where the curvature passes through zero, which is what an
+    INFLECTION POINT is.  The shipped centerline has one and the outgoing centerline does
+    not:
+
+        genome            sign flip   min|k_an|   max|k_an|   pointwise    scaled
+        b729e86 SHIPS        yes      1.584e-04   1.041e-01   1.956e-03   1.446e-05
+        96a0ac5 outgoing     no       3.868e-02   6.623e-02   7.104e-06   6.170e-06
+
+    The pointwise max is attained AT the smallest |k_an| on every refinement, so it does
+    not measure truncation error, it measures how near a sample happens to land to the
+    zero crossing — and it does not converge: 1.956e-03, 9.053e-03, 9.485e-04, 2.270e-04
+    over n = 600, 1200, 2400, 4800, an "order" of -2.21, 3.25, 2.06.
+
+    NORMALISED BY THE CURVE'S OWN SCALE INSTEAD, BOTH GENOMES ARE EXACTLY SECOND ORDER:
+
+        b729e86    1.446e-05  3.608e-06  9.014e-07  2.257e-07     order 2.00 2.00 2.00
+        96a0ac5    6.170e-06  1.540e-06  3.846e-07  9.613e-08     order 2.00 2.00 2.00
+
+    THE OLD `1e-4` WAS NOT GENOME-INDEPENDENT AND NOTHING RECORDED THAT.  Over 400
+    uniform draws across the eight centerline genes at n = 600, the pointwise metric put
+    **1.8%** under 1e-4, spanning 337262x from 2.883e-05 to 9.725 — a 970% "relative
+    error" on a curve whose curvature simply crosses zero.  The outgoing genome was one
+    of the 1.8%.
+
+    THE NEW BOUND HAS A WARRANT.  The same 400 draws under the scaled metric span **23x**
+    — min 1.147e-05, median 5.456e-05, p99 1.946e-04, max 2.588e-04 — and 400 of 400 sit
+    under 1e-3, the worst by 3.9x.  The order itself is deliberately NOT asserted: its
+    median over those draws is 2.00 but 2.5% land outside [1.8, 2.2], and a pin that is
+    97.5% reliable across the box is the kind of thing this file is currently repairing.
+    """
     c, p = G.bezier_centerline(*g8, span_mm=SPAN, num_points=NPTS)
     k_an = G.bezier_curvature(p, NPTS)
     d1 = np.gradient(c, axis=0)
@@ -251,8 +313,10 @@ def test_analytic_curvature_matches_finite_differences(g8):
     k_fd = ((d1[:, 0] * d2[:, 1] - d1[:, 1] * d2[:, 0])
             / (d1[:, 0] ** 2 + d1[:, 1] ** 2) ** 1.5)
     interior = slice(5, -5)          # np.gradient is one-sided at the ends
-    rel = np.abs((k_an[interior] - k_fd[interior]) / k_an[interior]).max()
-    assert rel < 1e-4
+    k_an, k_fd = k_an[interior], k_fd[interior]
+    # Scaled by max|k_an|, NOT pointwise: see the docstring.  Pointwise is a division by
+    # zero anywhere the curve has an inflection, and the shipped one does.
+    assert np.abs(k_an - k_fd).max() / np.abs(k_an).max() < 1e-3
 
 
 def test_analytic_tangent_is_unit_length(g8):

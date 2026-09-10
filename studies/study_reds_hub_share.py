@@ -56,6 +56,7 @@ import time
 
 import numpy as np
 
+import _gate_guard
 import project_paths as PP
 import wheel_fea as W
 import wheel_fem as fem
@@ -366,6 +367,36 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if not (args.sweep or args.rungs or args.attribute):
         ap.error("pick at least one of --sweep / --rungs / --attribute")
+
+    # A degraded run may not be filed under the committed artifact's name (PLAN.md
+    # §43).  Refused at startup, before any solving.  See `_gate_guard`.
+    #
+    # ADDED §131, AND THE ARM FLAGS ARE DELIBERATELY NOT IN THE LIST.  §129.5 read
+    # section-dropping flags as the dominant degrading surface across the unguarded
+    # drivers, and for this one that is FALSE — the exception, measured, not assumed.
+    # Three Makefile targets (`reds-hub`, `reds-hub-fillet`, `reds-hub-fillet-rungs`)
+    # all write this one name, each contributing one arm, and the writer MERGES into the
+    # existing artifact under a key per arm for exactly that reason (see the `sweep` and
+    # `rungs` key comments below).  So `--sweep` alone does not drop `rungs`; it leaves
+    # it where the other target put it.  Guarding the arm flags would refuse two of this
+    # driver's own three recipes.
+    #
+    # WHAT THE MERGE DOES NOT PROTECT is the fidelity INSIDE an arm.  `--config smoke`
+    # writes the `sweep` key — the same key `--config coarse` writes — with smoke data,
+    # and the merge then hands back a file where every other arm is still the gate's.
+    # That is §41's failure mode with the blast radius of one key.  `--configs` is
+    # guarded only under `--rungs` because it is the ladder arm's parameter and nothing
+    # else reads it: `reds-hub-fillet` passes no `--configs` at all and must not be
+    # refused for taking the default it never uses.
+    _gate_guard.refuse_degraded_out(ap, args, "study_reds_hub_share.json", [
+        (args.config != "coarse",
+         "--config %s, not the gate's coarse" % args.config),
+        (args.points != 13, "--points %d, not the gate's 13" % args.points),
+        (args.genome != "shipped", "--genome %s, not the shipped design" % args.genome),
+        (args.rungs and args.configs != "smoke,coarse,medium,fine,ultra",
+         "--configs %s under --rungs, not the ladder target's "
+         "smoke,coarse,medium,fine,ultra" % args.configs),
+    ])
 
     t0, rep = time.time(), {}
     if args.sweep:

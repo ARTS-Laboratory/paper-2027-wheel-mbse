@@ -1,0 +1,66 @@
+.venv-opt/bin/python -u studies/study_svk_rescore.py --config medium \
+    --workers 0 --out study_svk_rescore.json \
+     
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+control ...
+re-score ...
+E0906 12:19:01.270067   41983 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:20:33.529812   41933 slow_operation_alarm.cc:140] The operation took 3m32.259852337s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:35:24.430497   41983 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:37:01.780440   41933 slow_operation_alarm.cc:140] The operation took 3m37.350079999s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:45:55.964602   41983 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:47:33.966791   41933 slow_operation_alarm.cc:140] The operation took 3m38.002292493s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:51:06.231352   41983 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:52:42.055646   41933 slow_operation_alarm.cc:140] The operation took 3m35.82439781s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:56:12.602618   41983 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0906 12:57:42.623232   41933 slow_operation_alarm.cc:140] The operation took 3m30.020717779s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+Traceback (most recent call last):
+  File "/home/eric-bodhi/github/wheel/studies/study_svk_rescore.py", line 423, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/eric-bodhi/github/wheel/studies/study_svk_rescore.py", line 402, in main
+    "rescore": run_rescore(genomes, args.config, args.n_phase, args.workers)}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/eric-bodhi/github/wheel/studies/study_svk_rescore.py", line 278, in run_rescore
+    row[kin] = _score(genes, cfg, phases, meshes, kin,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/eric-bodhi/github/wheel/studies/study_svk_rescore.py", line 219, in _score
+    raise RuntimeError(
+RuntimeError: the p=4.0 probe (0.886982395352275) does not reproduce the constraint's utilisation (0.9559481412419902); the probe and the constraint are no longer the same construction
+make: *** [Makefile:485: svk] Error 1
+TESTRUN_DONE_0

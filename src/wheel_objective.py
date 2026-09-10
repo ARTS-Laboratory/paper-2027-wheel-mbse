@@ -638,9 +638,33 @@ def _fillet_margins(genes, cfg, span_mm, hub_radius, flanks, xp=jnp):
 
     THIS TERM IS NOT WHERE `R_hub`'S LOSS GRADIENT ACTUALLY COMES FROM, and the claim that
     it is has been on file (here and in PLAN.md) since M8b-i.6 without being measured.  At
-    the shipped genome the margins are `[+4.647, +0.125]`, both feasible, so the barrier
-    built on them is FLAT and `d(fillet)/dR_hub` is exactly 0.0.  The +645.8 adjoint
-    belongs to `hub_overlap`, every unit of it.  See `t1_vector`.
+    `ga_beam`, shipped when this was written, the margins were `[+4.647, +0.125]`; at the
+    current shipped genome they are `[+4.0271, +10.7491]` (PLAN.md §106 -- the rim figure
+    moves 86x with the promotion), both readings feasible either way, so the barrier built
+    on them is FLAT and `d(fillet)/dR_hub` is exactly 0.0.  The +645.8 adjoint belongs to
+    `hub_overlap`, every unit of it.  See `t1_vector`.
+
+    [BRACKETED 2026-09-08 — PLAN.md §136 §5.  THE PAIR ABOVE IS THE OUTGOING GENOME'S AND
+    THE 86x NAMES THE WRONG TRANSITION.  `[+4.0271, +10.7491]` is `96a0ac5`, read at
+    `coarse` — the wheel `cb4e3dd` REPLACED, not the one that ships.  And 10.7491 / 0.125
+    = 86.0, so the 86x is measured from `ga_beam` TO that genome and then attributed to
+    the promotion that came after it.  Three genomes make two transitions and the sentence
+    merges them into one.  Re-measured at HEAD, both fidelities:
+
+        genome                      smoke                  coarse
+        ga_beam                     [+4.647, +0.125] as recorded, fidelity not stated
+        96a0ac5   outgoing          [+4.0176, +10.7730]    [+4.0271, +10.7491]
+        b729e86   SHIPS             [+3.5522, +22.3147]    [+3.5608, +22.2721]
+
+    Against the rim that actually ships the factor is 178x — 178.5 at `smoke`, 178.2 at
+    `coarse` — not 86x.  THE ARGUMENT IS UNTOUCHED, AND IT IS STRONGER THAN WHEN IT WAS
+    WRITTEN: every one of those readings is feasible at both junctions, so the `fillet`
+    barrier is flat and `d(fillet)/dR_hub` is still exactly 0.0, and at +22.31 mm of rim
+    clearance it is flatter than it was.  The hub margin is the one that NARROWED — 4.0271
+    -> 3.5608 at `coarse`, 11.6% — and it is still feasible by a wide margin.  Left in
+    place rather than rewritten: the numbers above are §106's dated record, this is the
+    second promotion they have outlived, and a figure that is re-fitted every promotion
+    stops being evidence of anything.]
 
     `tangent_fillet_arc` refuses a radius at four places (`wheel_fea.py:948`, `:955`,
     `:959`, `:964`) and `fillet_junctions` then walks the radius ladder DOWN, so the
@@ -1114,10 +1138,10 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     constraint to be NOT MESH-CONVERGENT (GCI 63% on a three-rung ladder whose axle drop
     converges to 0.14% off the same solves) and M8b-i.6 identified the exponent as the
     cause: at p=30 the p-norm is chasing a singular peak.  At p=4 it is a NOMINAL stress
-    that converges (GCI 0.45% / 0.20%), and the peak is restored analytically by `Kt`
-    below.  Reaching `_qoi_pnorm_stress` needs the `(name, factory)` form of
-    `adjoint_grads`' `qois`; the bare string would take the module default and no argument
-    could change it.
+    that converges (GCI 0.45% / 0.20%), and the peak is restored analytically by `Kt` below
+    [RETIRED §103 — see §137 §2].  Reaching `_qoi_pnorm_stress` needs the `(name, factory)`
+    form of `adjoint_grads`' `qois`; the bare string would take the module default and no
+    argument could change it.
 
     `pool` RUNS THE PHASE LOOP IN PARALLEL AND CHANGES NOTHING ELSE.  Given a
     `wheel_pool.PhasePool`, each phase's mesh build, solve and adjoint happen in a worker
@@ -1142,7 +1166,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     asserting `0 == 0`.  A module global read at call time keeps working; one captured
     in a signature does not.  They are keywords rather than reads
     because `force`, `E` and `nu` already thread — `force` here, the other two on
-    `**problem_kw` and through the process pool (`wheel_objective.py:1127`) — and the
+    `**problem_kw` and through the process pool (`wheel_objective.py:1151`) — and the
     asymmetry was arbitrary: three of the five quantities a MISSION sets could be varied
     inside one interpreter and two could not.  `tests/test_objective.py:1257` had to
     `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move one of them, which is
@@ -1277,6 +1301,27 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     # steps and `R_hub` on 2 — exactly the two where `fillet_cap` was live.  Measured again
     # at the shipped genome on 2026-08-12: `dL/dR_hub` and `dL/dR_rim` are both EXACTLY
     # 0.0.  A nominally 14-dimensional search was running in 8.
+    #
+    # THAT LAST SENTENCE IS A 2026-08-12 READING AND IT NO LONGER DESCRIBES THIS TREE —
+    # PLAN.md §135 §1.  §103 wired `fillet=True` into `phase_meshes`, so a fillet radius
+    # now moves the mesh the field is solved on, and the knee this very term introduced
+    # has both junctions above `MARGIN_KNEE_UTIL`.  One `coarse`, 8-uniform-phase
+    # `objective()` at the shipped genome (1359.3 s, L = 76.023856):
+    #
+    #     util hub = 0.91093   above the 0.80 knee   dL/dR_hub = +1.736205e+01
+    #     util rim = 0.90959   above the 0.80 knee   dL/dR_rim = +3.696881e+01
+    #     nonzero gradient components: 14 of 14.  EXACT ZEROS: none.
+    #
+    # So the census is INVERTED, not merely retired: `R_rim` carries 2.13x `R_hub`'s loss
+    # gradient, and the gene this term was built to wake is the one that woke loudest.
+    # THREE DATES, NONE OF THEM THE PROMOTION'S: the mesh route opened at §79/§85
+    # (2026-08-24/26), the knee cleared at §102/§103, and `cb4e3dd` moved neither — what
+    # it moved is `R_rim` off its 3.0 cap to 1.680.  The 602-step count above is the
+    # `ga_beam` era's and is left as the dated record it is.
+    #
+    # NONE OF THIS TOUCHES THE ARGUMENT.  `stress_margin` is here because a barrier is a
+    # wall to stop at and not a price to trade against, which is true whether or not the
+    # two genes it woke are still the two that needed waking.
     #
     # So: a term that is live everywhere `util > 0`, quadratic, and summed over the same two
     # junctions for the same reason the barrier is (a `max` would zero the gradient of

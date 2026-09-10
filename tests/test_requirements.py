@@ -9,13 +9,13 @@ TWO CLAIMS THAT PULL IN OPPOSITE DIRECTIONS, AND BOTH ARE GATED HERE.
      14 breakdown terms.  A default that moved is a silent re-interpretation of every
      committed artifact on disk and of the five study drivers that re-alias
      `SERVICE_FORCE_N` (`study_gnl.py:106`, `study_contact.py:94`,
-     `study_gradient.py:120`, `study_fillet_cost.py:115`, `study_svk_rescore.py:67`).
+     `study_gradient.py:120`, `study_fillet_cost.py:115`, `study_svk_rescore.py:75`).
 
   2  **AND YET IT REACHES.**  Two requirement sets differing ONLY in
      `allowable_stress_mpa` must give different `stress`/`stress_margin` IN THE SAME
      INTERPRETER, and likewise for `target_deflection_mm` and `deflection`.  This is a
      CACHE AUDIT BY TEST AND NOT BY READING: `_T1_CACHE` keys on
-     `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:908`),
+     `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:932`),
      `_KT_CACHE` keys without weights (:533) and `wheel_wheel._COORD_FN_CACHE` (:2760)
      keys on the static mesh recipe.  A stale jit trace returning the old answer is
      exactly the failure these two tests exist for, and it is invisible to inspection.
@@ -290,7 +290,7 @@ def test_pooled_equals_serial_under_a_non_baseline_requirement_set(genes):
     """MBSE_PLAN Step 3's third check, as a test rather than as a `make` invocation.
 
     `force`, `E` and `nu` are the three routed quantities that must survive being PICKLED
-    into a worker process (`wheel_objective.py:1127` ships `problem_kw`).  Defaulted
+    into a worker process (`wheel_objective.py:1151` ships `problem_kw`).  Defaulted
     there, the pooled arm would score the shipped mission while the serial arm scored the
     given one — and this comparison is exact, not to a tolerance, which is what
     `wheel_pool.PINNED_ENV` and the Makefile's `XLA_FLAGS` line buy.
@@ -344,7 +344,7 @@ def test_the_map_is_an_identity_at_its_own_calibration_point(shipped_record):
 
 
 def test_the_calibration_reproduces_the_portfolio_the_plan_states(shipped_record):
-    """53.51 / 44.60 / 1.59 / 0.30 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
+    """49.37 / 41.14 / 1.47 / 8.02 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
     code is right — but somebody has to be told.
 
     RECALIBRATED AT PLAN.md §103: `calibrated_priorities` derives its points from
@@ -353,12 +353,22 @@ def test_the_calibration_reproduces_the_portfolio_the_plan_states(shipped_record
     — `stress_margin`'s point share fell 5.56 -> 1.59 and the freed points landed on
     `mass`/`deflection`, which is the same 100-point budget redistributing, not a second
     change. The old numbers (51.35 / 42.80 / 5.56 / 0.29 / 0.00) were §99's own
-    predecessor's, not an independent MBSE_PLAN.md derivation."""
+    predecessor's, not an independent MBSE_PLAN.md derivation.
+
+    RE-DERIVED AGAIN AT §119, AND THIS TIME THE GENOME MOVED IT, NOT A WEIGHT.  The
+    portfolio reads `DEFAULT_WEIGHTS` for four axes and the SHIPPED GENOME's own
+    `loss_terms["smoothness"]` for the fifth, so a promotion re-derives it.  §115's
+    `b729e86` carries smoothness 4.871578951506198 where the outgoing genome's reference
+    cost implied ~0.168, which takes `c_smoothness` 0.001678 -> 0.048716 (**29x**) and
+    `sum c` 0.560599 -> 0.607637.  Every share falls except smoothness, which goes
+    0.30 -> 8.02 points and becomes the third-largest axis in the budget: the same
+    100-point redistribution as §103, driven from the other side.  MBSE_PLAN.md's table
+    and its own CHECK line are updated to match, as that file's tripwire instructs."""
     p, _ = R.calibrated_priorities(shipped_record["loss_terms"]["smoothness"])
-    assert p.points["mass"] == pytest.approx(53.51, abs=0.01)
-    assert p.points["deflection"] == pytest.approx(44.60, abs=0.01)
-    assert p.points["stress_margin"] == pytest.approx(1.59, abs=0.01)
-    assert p.points["smoothness"] == pytest.approx(0.30, abs=0.01)
+    assert p.points["mass"] == pytest.approx(49.37, abs=0.01)
+    assert p.points["deflection"] == pytest.approx(41.14, abs=0.01)
+    assert p.points["stress_margin"] == pytest.approx(1.47, abs=0.01)
+    assert p.points["smoothness"] == pytest.approx(8.02, abs=0.01)
     assert p.points["phase_ripple"] == 0.0
 
 

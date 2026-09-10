@@ -1,0 +1,93 @@
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+
+==============================================================================
+  STAGE 3 — best_solution  (adam, coarse, 122 steps, uniform, svk)
+==============================================================================
+  gene        value       low      high    frac
+  cx1        3.0459     1.790    10.740   0.140
+  cy1       24.8751   -32.000    32.000   0.889
+  cx2       19.6900     7.876    19.690   1.000  <- pinned high
+  cy2       22.0176   -32.000    32.000   0.844
+  cx3       23.6496    16.110    27.924   0.638
+  cy3       16.5280   -32.000    32.000   0.758
+  cx4       25.7083    25.060    34.010   0.072
+  cy4        7.0981   -32.000    32.000   0.611
+  t0         3.3318     1.200    10.000   0.242
+  t1         1.2000     1.200     8.000   0.000  <- pinned low
+  t2         1.2000     1.200     8.000   0.000  <- pinned low
+  t3         2.5386     1.200     6.000   0.279
+  R_hub      0.6406     0.400     4.000   0.067
+  R_rim      1.6986     0.500     3.000   0.479
+E0905 18:02:30.265658   11705 slow_operation_alarm.cc:73] 
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+E0905 18:02:31.637601   11654 slow_operation_alarm.cc:140] The operation took 2m1.372051198s
+
+********************************
+[Compiling module jit_traced for CPU] Very slow compile? If you want to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+********************************
+[step    0] loss      52.7920  |grad|      142.2  lr  0.01000  drop  1.990 mm  util  0.965  1391.02 s
+
+STAGE 3 — START
+---------------
+    term                 value    share       |grad|  grad share
+    mass               44.5964    84.5%        58.49       18.3%
+    smoothness          4.6080     8.7%        37.41       11.7%
+    stress_margin       3.5281     6.7%        75.14       23.5%
+    deflection          0.0595     0.1%        148.3       46.4%
+    x_order             0.0000     0.0%            0        0.0%
+    hub_overlap         0.0000     0.0%            0        0.0%
+    fold                0.0000     0.0%            0        0.0%
+    arrival             0.0000     0.0%            0        0.0%
+    fillet              0.0000     0.0%            0        0.0%
+    fillet_cap          0.0000     0.0%            0        0.0%
+    buckling            0.0000     0.0%            0        0.0%
+    min_sj              0.0000     0.0%            0        0.0%
+    stress              0.0000     0.0%            0        0.0%
+    phase_ripple        0.0000     0.0%            0        0.0%
+    TOTAL              52.7920
+
+    axle_drop_mean_mm                    1.99025
+    phase_ripple_std_over_mean           0.08924
+    max_stress_mpa                      59.13277
+    stress_utilisation                   0.96504
+    mesh_mass_g                         54.25901
+    min_scaled_jacobian                  0.40432
+    buckling_ratio                       0.15495
+[step   10] loss      53.3318  |grad|      386.4  lr  0.00987  drop  1.973 mm  util  0.960  215.94 s
+[step   20] loss      52.8833  |grad|        105  lr  0.00941  drop  2.002 mm  util  0.962  209.83 s
+[step   30] loss      52.7311  |grad|      271.2  lr  0.00867  drop  1.982 mm  util  0.957  218.63 s
+[step   40] loss      52.6298  |grad|      89.05  lr  0.00768  drop  1.995 mm  util  0.959  213.68 s
+[step   50] loss      52.5968  |grad|      147.8  lr  0.00652  drop  1.990 mm  util  0.955  218.84 s
+[step   60] loss      52.5529  |grad|      142.2  lr  0.00526  drop  1.991 mm  util  0.953  211.81 s
+[step   70] loss      52.5341  |grad|      141.9  lr  0.00398  drop  1.991 mm  util  0.952  211.35 s
+[step   80] loss      52.5300  |grad|      135.8  lr  0.00276  drop  1.991 mm  util  0.952  214.01 s
+[step   90] loss      52.5179  |grad|      124.7  lr  0.00170  drop  1.992 mm  util  0.952  210.56 s
+[step  100] loss      52.5151  |grad|        124  lr  0.00085  drop  1.992 mm  util  0.952  210.46 s
+[step  110] loss      52.5142  |grad|      127.4  lr  0.00028  drop  1.992 mm  util  0.952  210.49 s
+[step  120] loss      52.5139  |grad|        126  lr  0.00001  drop  1.992 mm  util  0.952  196.22 s
+[step  122] loss      52.5139  |grad|        126  lr  0.00000  drop  1.992 mm  util  0.952  206.14 s
+
+wrote stage3_svk_refillet_shipped_r2.json  (27430.4 s, 123 objective calls)
+
+==============================================================================
+  BEST OVER 1 START(S): best_solution at step 58, loss 52.5662, selection tier 0
+==============================================================================
+  gene        value       low      high    frac
+  cx1        2.4566     1.790    10.740   0.074
+  cy1       24.9130   -32.000    32.000   0.889
+  cx2       19.6900     7.876    19.690   1.000  <- pinned high
+  cy2       21.6545   -32.000    32.000   0.838
+  cx3       23.1354    16.110    27.924   0.595
+  cy3       16.7656   -32.000    32.000   0.762
+  cx4       25.1988    25.060    34.010   0.016
+  cy4        6.4416   -32.000    32.000   0.601
+  t0         3.5055     1.200    10.000   0.262
+  t1         1.2000     1.200     8.000   0.000  <- pinned low
+  t2         1.2000     1.200     8.000   0.000  <- pinned low
+  t3         2.4547     1.200     6.000   0.261
+  R_hub      0.5710     0.400     4.000   0.047
+  R_rim      1.6802     0.500     3.000   0.472
+
+wrote /home/eric-bodhi/github/wheel/stage3_svk_refillet_shipped_r2_best.json  (genome_hash b729e86)

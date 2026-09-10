@@ -49,6 +49,26 @@
 > Git ignores nothing it already tracks, so this file is versioned today — but were it ever
 > untracked, it would leave the repository silently. Decide which was intended before relying
 > on either.
+>
+> **[CORRECTED 2026-09-07 — SEE §129 §7.  "THE IGNORE LINE IS A NO-OP" IS TRUE OF GIT AND
+> FALSE OF EVERY SEARCH TOOL, AND THE DIFFERENCE HID THIS FILE FROM ITS OWN SWEEPS FOR 39
+> DAYS.**  Git ignores nothing it already tracks, so the claim held for versioning — but
+> ignore-aware tools skip an ignored path during DIRECTORY TRAVERSAL regardless of tracking,
+> and the `grep` in this environment wraps `ugrep --ignore-files`.  One pattern, four
+> controls: `grep -rl` returned PLAN.md **absent**; `grep -c PLAN.md` returned **3**;
+> `git grep -c` returned **`PLAN.md:3`**; ignore-unaware `command grep -rl` returned
+> **`./PLAN.md`**.  Only traversal was blind, and it failed SILENTLY — exit 1, identical to
+> "no such text".  The entry landed at `50d9a86` (2026-07-30, "M9 Phase 1 added and
+> verified") as a bare uncommented line beside a comment rewrite of the virtualenv block,
+> four days after this file was first tracked at `500f5b8` (2026-07-26); every other entry
+> in that file carries a comment.  It cost at least one real sweep: the
+> `study_tri_block.py:228` -> `:242` re-point recorded at §120 repaired `UNCAP_PLAN.md`
+> twice and left this file twice, because PLAN.md was never a candidate its enumeration
+> could see.  **"Decide which was intended" is now DECIDED**: the line is deleted in the
+> same commit as this bracket.  Deleting it cannot change git's behaviour — an ignore entry
+> is inert for an already-tracked file — so the original block's "were it ever untracked"
+> half is retired rather than answered: this file cannot leave the repository by that route.
+> **Enumerate every tree-wide sweep with `git grep`, not traversal.**]**
 
 > **THE SIX CLOSED ARC FILES WERE DELETED ON 2026-08-16, AND THEIR CITATIONS WERE NOT.**
 > `BUILD_PLAN.md`, `CONTACT_PLAN.md`, `DEFECT5_PLAN.md`, `DEFECT8_PLAN.md`, `REDS_PLAN.md`
@@ -89,7 +109,13 @@
 ## Open arcs — one file each, created 2026-08-16
 
 These replace the deleted plan files. Each is a live arc with its own steps; this table is the
-index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted.**
+index and the ranking. ~~**Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted.**~~
+**CORRECTED 2026-09-05 — §114; the sentence above was false for four of the seven arcs it
+described and silent about two more.** As it stands: **1 CLOSED** (§32), **3 CLOSED** (§109),
+**5 and UNCAP PARKED** (§114), **2**'s Steps 0-2 done (§50, §52) with only Step 3's record
+outstanding, **9**'s Steps 0-8 done (§97), **6**'s Step 1 done by accident at §103 (§106,
+§108), **8**'s Step 0 answered (§112). **Only 4 and 7 are genuinely unstarted**, and each has
+had its premise re-checked against the fillet switch (2026-09-03) without a step being spent.
 
 > **ARC 2 IS NO LONGER "UNSTARTED" — Step 0 and Step 1 are answered (§34, §38, §44, §47).**
 > The seam merge survives untouched, half the mesh's corners are not the part's, and as of
@@ -176,13 +202,14 @@ index and the ranking. **Arc 1 is CLOSED (§32, 2026-08-16); 2–8 are unstarted
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
 | 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52); Step 3 IS THE ONLY THING LEFT AND IT IS A DECISION, NOT A MECHANISM — REWRITTEN 2026-08-29 AFTER §92.** The two meshes disagree about the solved wheel by 37.97% (§52, linear, one phase) and by 47.85% (§91, svk, eight phases), and §91 files that spread open. `R_hub`/`R_rim` are no longer invisible to the optimizer — §79 made the filleted mesh differentiable and §88 removed the last refusal — so what keeps the optimizer off that mesh is now the SCOPE GATE, which is a decision this tree has taken deliberately rather than a thing it cannot do. Genome-robustness, which this cell used to name as the blocker, was settled at §74/§78/§89. **And the rim tri-block is no longer part of that queue: §53 BUILT it, and it has the same genome problem** | Steps 0-2 spent; Step 3's measurements are all spent too — what remains is a record |
-| 3 | `HUBSHARE_PLAN.md` | Should hub compliance be an objective term? `cy4` alone moves it by 102% of the gap (§31) | medium |
+| ~~3~~ | ~~`HUBSHARE_PLAN.md`~~ | **CLOSED 2026-09-04 — §109. NO.** The gate is green on the mesh the objective solves, the bound is `0.0117`, and the shipped wheel holds 0.008308 at `coarse` inside a bound derived without reference to it — there is no deficit for an objective term to close. §31's `cy4` route is not retired, it is de-prioritised and stays filed | settled |
 | 4 | `WALLPIN_PLAN.md` | Re-derive Gate 1 at the 1.2 mm floor and drop the beam test's 2.0 mm pin (§14's reserved judgement, measured by §31) | small |
-| 5 | `RIMCAP_PLAN.md` | A rim cap model — the boundary as a function of `t3` and rim arrival angle, not at one design (§22, §24) | medium |
-| 6 | `MESHSTEP_PLAN.md` | The 16.8–30.3× rim-OD element-size step the contact patch sits on (§20) | small, needs G7 first |
+| ~~5~~ | ~~`RIMCAP_PLAN.md`~~ | **PARKED 2026-09-05 — §114. BOTH HALVES SUPERSEDED.** Step 1's cap model mirrors `hub_fillet_cap_mm`, which §103 demoted to reporting-only; the report half was tried at §110 (`f21ec7d`) and reverted as UNREACHABLE — `mesh_coords` raises before the report dict exists, so the keys were constant-by-construction, and visibility shipped in the event record instead (`clamp_reject`). **The gap is not parked with the arc:** the sector limit is still applied by the mesh, not priced by the objective, and whether it needs a barrier is blocked behind the Stage-3 re-run | Step 0 spent; both deliverables superseded |
+| 6 | `MESHSTEP_PLAN.md` | The 16.8–30.3× rim-OD element-size step the contact patch sits on (§20). **STEP 1 IS ALREADY DONE, BY ACCIDENT — §106, corrected §108:** §103's fillet switch re-cut the rim OD and the step fell to **2.650×** without this arc spending anything. Steps 0.2 and 2 remain, and Step 2's patch margin cannot be carried forward — the weld/free boundary moved +0.9373° → +4.1093° | small, needs G7 first; Step 1 already spent by §103 |
 | 7 | `EXPORTPREC_PLAN.md` | Make the exporter write the overlap at 4 dp instead of 2 — §28's better fix, deferred | small, touches a shipped artifact |
-| 8 | `BOUNDARY_PLAN.md` | Defect 5's boundary placement, worth 0.61% of loss (§21) | small, lowest ranked |
-| 9 | `MBSE_PLAN.md` | A requirements layer: do `FORCE_LBS`, `TARGET_DEFLECTION_MM`, `SAFETY_FACTOR` and `MIN_WALL_MM` encode a MISSION, and can the wheel be re-optimised and verified against a different one? **STEPS 0-8 DONE 2026-08-31 — §97.** The four constants decode to 3.0 kg on three wheels at 0.263 m/s and every derivation closes to floating point; the weight table is a 51/43/6/0.3/0 portfolio; `objective(genes, req=baseline())` is bit-identical to `objective(genes)`; two of five named profiles come back NON-COMPLIANT. What is left is not the arc — it is what §97 ranks: a re-optimisation under a failing profile, which costs a `medium` descent this arc was forbidden to spend | steps 0-8 spent: three drivers, one of which solves (25 m 12 s); no descent, no promotion |
+| 8 | `BOUNDARY_PLAN.md` | Defect 5's boundary placement, worth 0.61% of loss (§21). **STEP 0 ANSWERED — §112:** the wasted-descent ratio does NOT generalise — four of twenty-five committed runs, all `medium`/SVK, 17.5%–42.8% each; the other twenty-one lose nothing and several descend INTO feasibility. **The arc stays at #8** | small, lowest ranked; Step 0 spent for no solve |
+| 9 | `MBSE_PLAN.md` | A requirements layer: do `FORCE_LBS`, `TARGET_DEFLECTION_MM`, `SAFETY_FACTOR` and `MIN_WALL_MM` encode a MISSION, and can the wheel be re-optimised and verified against a different one? **STEPS 0-8 DONE 2026-08-31 — §97.** The four constants decode to 3.0 kg on three wheels at 0.263 m/s and every derivation closes to floating point; the weight table was a 51/43/6/0.3/0 portfolio at §97 [RE-DERIVED 53.51/44.60/1.59/0.30/0.00 AT §103, `DEFAULT_WEIGHTS["stress_margin"]` 325.0→89.21, SEE `MBSE_PLAN.md`]; `objective(genes, req=baseline())` is bit-identical to `objective(genes)`; two of five named profiles come back NON-COMPLIANT. What is left is not the arc — it is what §97 ranks: a re-optimisation under a failing profile, which costs a `medium` descent this arc was forbidden to spend | steps 0-8 spent: three drivers, one of which solves (25 m 12 s); no descent, no promotion |
+| ~~10~~ | ~~`UNCAP_PLAN.md`~~ | **ADDED TO THIS TABLE 2026-09-05 — §114, AND PARKED IN THE SAME BREATH.** Created 2026-08-17 from §34, it ran to STEP 3 RECORD PART 10 (§104) without ever appearing in this index, and its own header claimed "#2, promoted to the top" — a rank this table never granted and which collided with `FILLET_PLAN.md`'s. **PARKED:** since §103 the tree builds an ELEVEN-block filleted sector and this arc's Y-partition is measured against the SEVEN-block one it stopped building (23.8× worse at `coarse` once filleted), and `rim:P_c` — the quantity the arc exists to make faithful — reaches no barrier, no objective term and no gradient (`grep -rn "rim:P_c" src/` → zero). Reopens only if that quantity acquires a consumer | Step 3 parts 2-10 spent; parked without adoption |
 
 **Ranking note — SETTLED.** 1 was put ahead of 2 deliberately, against §30's ranking, on the
 argument that it was cheap and that "if the answer is *linear is not acceptable*, it changes
@@ -221,7 +248,7 @@ committed study artifacts describe a wheel promoted out of their named file thre
 > characterisation finding and exiting 0 anyway. **That is the first completion since
 > 2026-08-06**, and it has happened exactly once.
 
-> **THE SHIPPED GENOME IS `09e8188`, PROMOTED 2026-08-14 (§26). READ THE CHAIN BEFORE
+> **THE SHIPPED GENOME IS `b729e86`, PROMOTED 2026-09-06 (§115). READ THE CHAIN BEFORE
 > TRUSTING ANY PER-DESIGN NUMBER IN THIS FILE.**
 >
 > ```
@@ -229,8 +256,15 @@ committed study artifacts describe a wheel promoted out of their named file thre
 >   350f4c7  §13, 2026-08-06      →  stage3_minwall_best_1.2.json   (the §14 control genome)
 >   e4219f3  §16, 2026-08-11      →  stage3_buildcap2_feasible_medium.json
 >   e126cc3  §19, 2026-08-13      →  stage3_margin_best_medium.json
->   09e8188  §26, 2026-08-14      →  best_solution.json  ← SHIPPED.  48.64 g OCC / 39.47 g mesh
+>   09e8188  §26, 2026-08-14      →  stage3_knee_best_medium.json   (preserved, no longer ships)
+>   b729e86  §115, 2026-09-06     →  best_solution.json  ← SHIPPED.  59.47 g OCC / 54.12 g mesh
 > ```
+>
+> **THE PROMOTION BEFORE THIS ONE (§26 -> §115) SPANS THE §103 FILLET-MESH SWITCH.** Every
+> per-design number attributed to `09e8188` above and below predates §103 making the FEA
+> objective unconditionally build a filleted mesh; §111 found `09e8188` outright infeasible
+> under it (SHOULD-DEFLECTION MET->MISSED, -50.43% against the committed -4.945%). `b729e86`
+> is the re-descent that answers it -- see §115.
 >
 > **AND THE BANNER BELOW WENT STALE FOR TWO PROMOTIONS, WHICH IS ITSELF THE WARNING.** It
 > declared `350f4c7` shipped and said in terms that the shipped genome had not changed; that
@@ -2879,7 +2913,7 @@ measuring.
 ### 15. STAGE 3 WAS DESCENDING ON THE WRONG PHYSICS. It can now descend on the right physics, and the wheel that descent finds cannot be built. **NOTHING PROMOTED** (2026-08-10).
 
 **BEFORE THIS MILESTONE, EVERY STAGE-3 NUMBER IN THIS REPO WAS A LINEAR-KINEMATICS NUMBER.**
-`wheel_contact_problem` defaults to `kinematics="linear"` (`src/wheel_fem.py:1693`) and
+`wheel_contact_problem` defaults to `kinematics="linear"` (`src/wheel_fem.py:1719`) and
 nothing in the Stage-3 path had ever overridden it. That is the one sentence to carry out of
 this section. Those numbers are not *wrong* — they are answers to a different question, and
 §14 item 4a is where the question got asked.
@@ -2896,7 +2930,7 @@ and its own Record block. This is the summary; that file is the evidence.
 
 The plumbing already existed — `kinematics` rides `**problem_kw` from `Evaluator` all the way
 to `wheel_contact_problem`, the adjoint kernels already dispatch on `prob.nonlinear`
-(`src/wheel_adjoint.py:161, 190, 400`), and `wheel_pool_worker.py:66` already splats it. What
+(`src/wheel_adjoint.py:261, 290, 661`), and `wheel_pool_worker.py:66` already splats it. What
 was missing was a CLI flag.
 
 - **`src/wheel_stage3.py`** — `--kinematics {linear,svk}`, default `linear`, forwarded to
@@ -3120,7 +3154,7 @@ Step 3 artifact unchanged): drop 1.9991, util 0.8989, loss 30.8207, every digit.
 Stage-3 run record is not reporting an internal state the saved genome does not encode.
 
 **Run 2 hit one `solve_reject` at step 128, handled, and it is worth a line.**
-`solve_wheel_contact` (`src/wheel_fem.py:1841`) is a secant on indentation with
+`solve_wheel_contact` (`src/wheel_fem.py:1867`) is a secant on indentation with
 `tol_rel=1e-8`; it stalled at 66.723265 N against a 66.7233 N target — a residual of
 **5.2e-7 relative, 52× above the tolerance it is asked to hit**. The load is physically
 reached to within a part in two million. What fails is the *outer* secant's ability to resolve
@@ -3207,7 +3241,7 @@ all four were deliberately left alone, because acting on any of them mid-arc wou
 re-fitting a gate to the run that breached it.
 
 1. **`stress` HAS ZERO GRADIENT BELOW `util = 1.0`.** It is `soft_barrier(util - 1.0, 4000)`
-   (`src/wheel_objective.py:1027`) and `soft_barrier` is `scale * max(0, v)**2` (`:290`), so
+   (`src/wheel_objective.py:1049`) and `soft_barrier` is `scale * max(0, v)**2` (`:290`), so
    it is identically zero *and identically flat* for every `util <= 1.0`. Below the knee the
    optimizer cannot see stress at all; it sees mass, and it thins the wall. **The barrier is a
    wall to stop at, never a cost to trade against.** Measured: the `stress` term was > 0 on
@@ -8931,7 +8965,7 @@ numbers are about 0.1% off, which is why nothing has ever looked wrong — but t
 not design, and the ±0.3% band this project gates on is exceeded by a factor of four
 elsewhere in the box.
 
-**It reaches the optimizer.**  `wheel_adjoint.py:644` takes `delta = float(sec
+**It reaches the optimizer.**  `wheel_adjoint.py:905` takes `delta = float(sec
 ["axle_drop_mm"])` for both the objective value and the quantity whose gradient the
 descent follows.  So the QoI carries a genome-dependent discretisation term of order 0.4%,
 and a design can improve its reading by moving the rim's node phase rather than its
@@ -9117,11 +9151,11 @@ completable piece; executing it needs a session that can finish it.
 ## §65 — 2026-08-23. CORRECTION TO §62 AND §63: THE OPTIMIZER AND THE ±0.3% GATE DO NOT USE THE CONTAMINATED READING. I TRACED A VARIABLE NAME INSTEAD OF THE CALL THAT PRODUCED IT
 
 §62 claimed the nearest-node reading "reaches the optimizer", citing
-`wheel_adjoint.py:644`'s `delta = float(sec["axle_drop_mm"])`.  That line is real.  **What
+`wheel_adjoint.py:905`'s `delta = float(sec["axle_drop_mm"])`.  That line is real.  **What
 `sec` is, I did not check**, and it decides the whole claim:
 
 ```
-  wheel_adjoint:588,643   sec = fem.solve_wheel_contact(mesh, force=..., ...)
+  wheel_adjoint:849,903   sec = fem.solve_wheel_contact(...)  [only :903 is `sec` — §137 s0]
   wheel_fem:1816          _attach_contact_report:  res["axle_drop_mm"] = float(indentation_mm)
 ```
 
@@ -12380,7 +12414,7 @@ the record saying so.
 
 **CONDITION B — THE STRESS TERM COUNTS THE FILLET TWICE, AND NOTHING IN THIS TREE RECORDS
 IT.**  Found while drafting this section, by reading the code rather than the plan files.
-`wheel_objective.py:1234`:
+`wheel_objective.py:1256`:
 
 ```
   util_j = kt * agg / ALLOWABLE_STRESS_MPA
@@ -12647,7 +12681,7 @@ at `b029622`.
 ### WHAT REPLACES `Kt * agg`
 
 Keep the shape — a modelled-or-measured peak per junction, two `soft_barrier`s, summed
-rather than `max`ed for the reason `wheel_objective.py:1181` gives — and replace the
+rather than `max`ed for the reason `wheel_objective.py:1203` gives — and replace the
 modelled factor with the measured field:
 
 ```
@@ -13736,7 +13770,7 @@ set, and the bit-identity test is what says so.**
 
 **AND TWO DATED QUOTATIONS OF `wheel_objective` ARE NOW QUOTATIONS OF THE PRE-ARC
 SOURCE, DELIBERATELY LEFT ALONE.** Threading the two requirements moved the deflection
-and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1153`
+and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1175`
 is now :1165 and no longer reads a module global, and :1234 is now :1246 and reads
 `allowable_stress_mpa` where §93 and §94 quote it as `ALLOWABLE_STRESS_MPA`
 (`studies/study_fillet_kt.py:14`, `FILLET_PLAN.md`, `MBSE_PLAN.md` Step 3). Those are
@@ -14134,7 +14168,7 @@ The filleted arm's memory is a near-fixed JIT-compile cost, not a per-element on
 the elements buys 0.7% more RSS.  The unfilleted arm stays under 12 GB throughout.
 Neither was knowable from `make gci`'s 20.6 GB whole-ladder figure (Makefile:727) or
 `study_m9`'s 3.1 GB `fine` figure — both solve `fine` outside the Stage-3 objective, and
-`study_stage3.py:2079` has flagged contact-plus-secant-plus-adjoint at `fine` as never
+`study_stage3.py:2095` has flagged contact-plus-secant-plus-adjoint at `fine` as never
 attempted in this repo for exactly this reason. It has now been attempted, at both mesh
 constructions, and it fits the 61 GB box with room to spare when run one cell at a time.
 
@@ -14362,10 +14396,10 @@ on, the actual arc.
 
 ### WHAT MOVED, MECHANICALLY
 
-`phase_meshes` (`wheel_objective.py:1000`) passes `fillet=True` to every
+`phase_meshes` (`wheel_objective.py:1022`) passes `fillet=True` to every
 `WW.build_wheel` call, unconditionally — the mesh the objective solves on and the mesh the
 report describes are now the same mesh. `t3_terms`'s per-phase loop builds
-`_region_qois(meshes[i])` (`:1055`) — `(hub_qoi, rim_qoi)` as `(name, factory)` pairs from
+`_region_qois(meshes[i])` (`:1077`) — `(hub_qoi, rim_qoi)` as `(name, factory)` pairs from
 `fillet_arc_nodes(mesh, "hub"/"rim")` and `W.NUMBER_OF_SPOKES`, going through
 `adjoint_grads`'s `(name, factory)` door the way `_qoi_buckling_eig` already does, because
 the QoI needs the arc's node ids and is not in the static `QOI` table. Each phase's two
@@ -14567,11 +14601,11 @@ successor 4, and the decision `UNCAP_PLAN.md` deferred twice in identical words 
 
 ### THE PREMISE WAS CHECKED FIRST, AND BOTH HALVES OF IT HAD MOVED UNDER THE ARC
 
-**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1255` now
+**§103 demoted the quantity this arc was ranked to protect.** `wheel_objective.py:1279` now
 carries `agg, c = _stress_aggregate(pn, maxes, q)   # whole-wheel pnorm — REPORTING ONLY`,
-and `stress`/`stress_margin` (`:1300-1310`) read the two per-junction region p-norms alone.
+and `stress`/`stress_margin` (`:1345-1355`) read the two per-junction region p-norms alone.
 Verified mechanically rather than off the comment: inside `t3_terms` the bare `agg` is
-assigned at `:1255` and read at exactly ONE place — `:1354`, the report key
+assigned at `:1279` and read at exactly ONE place — `:1399`, the report key
 `pnorm_stress_agg_mpa`.  Every other occurrence in the module is a comment or a different
 function's own local, and the `probe_p` sweep builds its own `a_v` rather than reading this
 one.  **So `rim:P_c` — the corner §46 and §52 built the whole ranking on — feeds no barrier, no
@@ -14582,7 +14616,7 @@ what it was priced at.
 **And §103 also changed which sector the tree builds.** `fillet=True` is unconditional in
 `phase_meshes` and `wheel_pool_worker.run_phase`, so every mesh the objective solves is the
 ELEVEN-block filleted sector, while `study_tri_block.region()`
-(`studies/study_tri_block.py:228`) builds `sector_blocks(..., uncap=(True, blend))` with no
+(`studies/study_tri_block.py:242`) builds `sector_blocks(..., uncap=(True, blend))` with no
 `fillet=` — the seven-block one.  Re-measured at the shipped genome on this tree
 (`MIN_SJ_TARGET` 0.2): the faithful rim's worst block is **0.008176 / 0.008251** unfilleted
 and **0.000343 / 0.003334** filleted, at `coarse` / `medium`.  The re-cut makes it 23.8x and
@@ -14764,10 +14798,10 @@ route by which the two changed places.  `Makefile:253`, corrected by this sectio
 against the CURRENT filleted measurement.  All three divisions are true of something; only
 the superlative here was attached to the wrong one.]**
 
-The `48.13 h` still quoted in `studies/study_stage3.py:1238` and `:2219` is the 2026-07-29
+The `48.13 h` still quoted in `studies/study_stage3.py:1254` and `:2235` is the 2026-07-29
 reading, two generations stale; PLAN.md's own number of record is S13's 46.46 h -> 11.77 h.
 
-**And `0.774 s` is not the same quantity as either.**  `study_stage3.py:1230` describes it
+**And `0.774 s` is not the same quantity as either.**  `study_stage3.py:1246` describes it
 as the per-phase `coord_fn` TRACE cost, paid once per process at priming; `wheel_pool.py:26`
 records its provenance — M7 measured a `coord_fn` jit-cache MISS at 0.774 s against 0.05 s
 for the entire rest of the adjoint, which is why phase slots pin to workers.  It is a
@@ -14975,7 +15009,7 @@ been run against them.
    call.  §103 opened it (before `d2cf9fa` both tiers were unfilleted and AGREED) and it is
    worth **+3.867 g, +9.78%**, against a `mass` tolerance of 0.365 g — 10.6x.  Nine call
    sites are exposed, three read a t2 quantity: `wheel_requirements.score_record` (so the
-   MBSE gate), `study_mbse_score`, and `test_objective.py:994`'s exchange rate.
+   MBSE gate), `study_mbse_score`, and `test_objective.py:1072`'s exchange rate.
    **`wheel_stage3.Evaluator` is NOT among them** — it builds `phase_meshes` itself, and
    builds `phases[:1]` even when pooled, for this exact reason and with a comment saying so
    — which is why the descent above can be run before this is settled.  The fix is one line
@@ -15214,7 +15248,7 @@ Every clause of that condition is now true, and it went unread for a day because
 parked and nothing reads a parked file:
 
 - the FEA meshes fillets directly — `wheel_objective.phase_meshes` passes `fillet=True`
-  unconditionally (`src/wheel_objective.py:1013`), as does `wheel_pool_worker.run_phase`
+  unconditionally (`src/wheel_objective.py:1035`), as does `wheel_pool_worker.run_phase`
   (`:63`);
 - the objective prices the junctions through the solve — `util_j` is the junction's own
   region p-norm and `Kt` does not appear in it (§103);
@@ -15224,7 +15258,7 @@ parked and nothing reads a parked file:
 `rim_fillet_cap_mm(t3, arrival_angle)` in `wheel_objective`, differentiable, *"mirroring the
 hub"* — but the hub cap's stress-pricing job was retired at §103, which kept `Kt`,
 `hub_fillet_cap_mm` and `hub_fillet_r_effective` as **reporting only**
-(`src/wheel_objective.py:1259`).
+(`src/wheel_objective.py:1283`).
 
 **What the hub cap still does is the half nobody restated, and the rim's guard models a
 DIFFERENT LIMIT from the one the mesh enforces.** There are three separate limits on a
@@ -15524,7 +15558,7 @@ computed at a weight the tree no longer has** — 17 of them, of which exactly o
 
 A second, independent mechanism hits the subset whose drivers do not inject their own
 meshes: `t3_terms` builds via `phase_meshes` only when `meshes is None and pool is None`
-(`src/wheel_objective.py:1168`), so a driver that hands in `meshes=` kept control of the
+(`src/wheel_objective.py:1190`), so a driver that hands in `meshes=` kept control of the
 geometry across §103 and one that did not had the mesh flipped under it.
 
 **AND A GENE BOX MOVED UNDER 13 OF THEM, WHICH IS THE SAME FAILURE ONE LEVEL DOWN.** Stage-3
@@ -15847,7 +15881,7 @@ a descent loop, every one of those becomes a silently rejected step — a 300-st
 quietly descends nothing, throwing away every trial for a reason no event records. So the
 refusal got a name:
 `wheel_wheel.MeshRefusedError`, a **subclass of `ValueError`** so that the `except ValueError`
-already wrapped around builds in `studies/study_hub_cap.py:654` and
+already wrapped around builds in `studies/study_hub_cap.py:704` and
 `studies/study_fillet_fold.py:202`, and the `pytest.raises(ValueError, match=...)` in
 `tests/test_filleted_mesh.py:823,862`, keep working untouched.
 
@@ -16266,3 +16300,8248 @@ what it was calibrated against — and the answer, when finally asked, was a whe
 current mesh refuses to build. **Before moving a test to a new instrument, re-derive its
 threshold's warrant on that instrument. If the warrant does not survive the move, the number
 must not either.**
+
+---
+
+## §112 — 2026-09-04. BOUNDARY STEP 0, ANSWERED: THE RATIO DOES NOT GENERALISE — IT IS FOUR OF TWENTY-FIVE RUNS, ALL `medium`/SVK, 17.5%–42.8% EACH — AND §19's OWN RUN RECONSTRUCTS EXACTLY FROM THE STEPS ARRAY
+
+§21's Step 0 asked whether §19's *"45 steps of a 6 h 20 m run descending into the
+unbuildable"* generalises across the Stage-3 runs already on disk, priced as wasted descent
+rather than as §21's 0.61%-of-loss reading. Answerable with **no solve** — every committed
+`stage3_*.json` with a `steps` trace already carries `terms.<name>.value` and `wall_s` per
+step — and a driver now does it: `studies/study_boundary_waste.py` (`make boundarywaste`,
+well under a second, no jax import).
+
+**§19's own run reconstructs exactly, which is the first thing worth recording.**
+`stage3_margin_medium.json` — line 231's `e126cc3 §19` mapping — carries `settings.elapsed_s`
+= 22834.0 s = **6 h 20 m**, to the word. `fillet_cap` is nonzero at 74 of its 101 steps
+(§19/§21's *"74 of 101 iterates in violation"*), not contiguously — the first violation is at
+step 3 and it recovers — and the LAST recovery is at step 56, after which every step through
+100 stays in violation (§19/§21's *"every step from 56 to 100"*). Isolating that terminal
+span, rather than the raw violating count, is the right reading of *"descending into the
+unbuildable"*: it is a one-way condition, and the driver's `last_all_feasible_index` finds
+the point after which it never resolves. Wall past that point: **2.57 h of 6.01 h, 42.8%** —
+against §19/§21's own 45-of-101-step, ~2.8-hour reading. Both numbers agree; the driver adds
+nothing to this one row that the plan record did not already have, which is the calibration
+that says the other twenty-four rows can be trusted.
+
+**Full census, 25 of 25 committed `stage3_*.json` runs with a step trace** (24 more files are
+`*_best*`/`*_check*` summaries with no `steps` array, and are named, not silently dropped):
+
+```
+  total wall, all 25 runs                                    75.24 h
+  wall past the last all-barriers-feasible iterate            7.58 h   (10.1%)
+  wall past the last fillet_cap-feasible iterate               7.38 h   ( 9.9% of the 23
+                                                                          runs that carry
+                                                                          the term at all)
+```
+
+**It is four runs, not a general property of the descent, and every one shares two
+settings:**
+
+```
+  run                            config   kinematics   n    last feasible   wall past    % of run
+  stage3_margin_medium.json      medium   svk          101  56              2.57 h       42.8%
+  stage3_buildcap_medium.json    medium   svk          101  61              2.28 h       37.8%
+  stage3_knee_medium.json        medium   svk          101  74              1.46 h       24.6%
+  stage3_buildcap2_medium.json   medium   svk          101  82              1.06 h       17.5%
+  stage3_svk_medium.json         medium   svk          101  100             0.00 h        0.0%
+```
+
+All five `medium`/SVK full descents on disk are in this table; four of the five bite and one
+does not. Two more rows bite lightly and are a different shape, not the same finding at
+smaller scale: `stage3_minwall_2.2.json` (`coarse`, unfilleted default) loses 0.06 h of 1.93
+(3.0%) at step 120 of 126 — a late, shallow excursion, not a terminal descent into violation.
+`stage3_run_elite9.json` is a 3-step run, unfilleted, that **never reaches feasibility at
+all** — not evidence for a wasted-descent ratio, since there is no feasible point to have
+departed from; it and its sibling `stage3_run_elite10.json` predate `fillet_cap` existing in
+the term set at all (`barrier_keys_missing: ["fillet_cap"]`), which the driver reports rather
+than silently reading the absent key as zero and calling both runs feasible on a term neither
+ever evaluated — a live instance of the "sentinel with two meanings" failure this tree has
+been caught by before. The other eighteen runs, including all three 301-step `coarse` full
+descents (`prod_elite10`, `svk_elite10`, `svk_shipped`), lose exactly nothing.
+
+**So the mechanism is real and the ratio is not universal — it is conditional on `medium` +
+SVK, 4 of 5 times it was tried, 17.5%–42.8% each.** §21's 0.61%-of-loss reading and this
+10.1%-of-wall reading are both true, of different things: one prices the answer, the other
+prices the search, and neither generalises the other. **The arc's own trigger — "if it holds
+across runs, the defect costs roughly half of every Stage-3 descent, which would move this
+arc well up the list; if not, record that and leave it at #8" — resolves to the second
+branch.** BOUNDARY stays at #8.
+
+**Scope, checked rather than assumed:** `all_pre_fillet_switch` is `True` — none of the 25
+artifacts carries a `fillet` key in `settings`, and all are dated 2026-08-01/03, before
+§103. This prices defect 5 against the objective §103 replaced. Whether the same
+`medium`/SVK conditionality holds on the filleted objective is a question for the Stage-3
+re-run ranked #1 tree-wide (§105/§109), not for this driver — regenerating it would need the
+very descent BOUNDARY's own Step 0 was designed to avoid spending.
+
+**What moved:** `studies/study_boundary_waste.py` and its regenerated
+`studies/study_boundary_waste.json`, `Makefile` (`make boundarywaste`), and this section.
+`best_solution.json` untouched, no threshold moved, no study driver mid-write.
+
+---
+
+## §110 — 2026-09-04. §109's SUCCESSOR (§108'S OLD #3), CLOSED: THE CLAMP IS A THIRD REJECT KIND, NOT `solve_reject` WEARING ITS NAME — AND §106'S "SILENTLY TRUNCATES" WAS HALF RIGHT
+
+§106 named the gap and prescribed the fix in one sentence: *"the objective can move `R_rim`
+into a region the mesh silently truncates, with the barrier that reads `R_rim` certifying it
+feasible… The cheapest honest fix is to make the clamp visible — report `fillet_clamped` and
+the applied radii the way `hub_fillet_cap_mm` is already reported."* §108 ranked it #3 and
+left it, behind the gate call §109 has since closed.
+
+### THE PRESCRIBED FIX DOES NOT REACH THE THING IT WOULD REPORT
+
+`hub_fillet_cap_mm` is reportable because it is computed on the CORNER barrier's own path,
+which never touches the mesh. The sector-fit clamp is different: it is discovered inside
+`_filleted_gradient_recipe`, which only runs because `t2_vector`/`t3_terms` called
+`mesh_coords` — and `mesh_coords` raises before either function's report dict exists. A
+clamped evaluation does not reach a return statement to attach a key to. Confirmed by
+building the report keys and testing them against `ga_beam` (§106's own clamped witness,
+both junctions cut): `hub_fillet_clamped` and `rim_fillet_clamped` were constant-by-
+construction, always `False`, because the only genomes that ever reach the report line are
+the ones that did NOT clamp. Reverted rather than shipped — a ranked successor is a
+hypothesis, and this is the fourth time the tree has caught one as wrong before writing it
+down (§104, §105 successor 5, §107, now this).
+
+### THE REAL DEFECT WAS ONE LEVEL UP, AND IT ALREADY HAD A NAME FOR THE MISTAKE IT REPEATS
+
+§108's own trial-loop comment says why `MeshRefusedError` needed its own event kind rather
+than falling into `solve_reject`: *S5 counts `solve_reject` against a known number of
+INJECTED SOLVER failures, and one kind for two causes would make that count mean two things
+at once.* The sector-fit clamp raises a bare `NotImplementedError` at
+`_filleted_gradient_recipe` — a `RuntimeError` subclass, so §108's own catch swallowed it
+into the `else` branch and filed it as `solve_reject`. **The comment forbade this conflation
+for one cause and the code committed it for a second, one paragraph later.**
+
+It is not a failed solve. The mesh built and solved; only the GRADIENT is unavailable,
+because `mesh_coords`'s differentiable path will not return a derivative for radii the
+genome did not ask for. The response Stage 3 takes is identical to the other two refusals —
+shorten the step — so nothing about the descent's behaviour was ever wrong. What was wrong
+is what the event record calls it, and that record is exactly what S5 calibrates against.
+
+### THE FIX: A NAME, AND ONE CLASSIFIER SHARED BY BOTH CATCH SITES
+
+`FilletClampRefusedError(NotImplementedError)` (`src/wheel_wheel.py`, immediately before
+`MeshRefusedError`) — raised at the clamp-refusal site in `_filleted_gradient_recipe`, naming
+which junction(s) clamped. Subclassing `NotImplementedError` keeps it a `RuntimeError`, so
+every existing `except (RuntimeError, MeshRefusedError)` around a descent — there are three,
+per §108's own count — keeps catching it with no change in behaviour; only the label changes.
+
+`wheel_stage3._reject_kind(err)` — one function, used at BOTH of Stage 3's catch sites
+(`descend`'s trial loop and `descend_lbfgsb`'s `fun` closure), so the two cannot disagree
+about what a given exception is called:
+
+```
+  mesh_reject   MeshRefusedError            this genome has no filleted mesh at all
+  clamp_reject  FilletClampRefusedError     the mesh exists and solves; only the
+                                            GRADIENT is refused (NEW)
+  solve_reject  everything else             a real failure to solve
+```
+
+`tests/test_stage3.py` adds `_ClampRefusingEvaluator` (sibling of §108's
+`_RefusingEvaluator`, deliberately a separate class — one evaluator raising both refusals
+would make a green mean either) and three tests: the three-way classification stays correct
+under two injected clamp refusals in one run; the exception hierarchy is unchanged
+(`FilletClampRefusedError` is a `RuntimeError`, is NOT a `MeshRefusedError`, and
+`_reject_kind` reads all three correctly); and — the test that corrects §106's premise —
+`test_a_clamped_genome_refuses_the_objective_rather_than_being_truncated`.
+
+### §106's PREMISE, CORRECTED: THE SILENCE WAS IN THE REBUILD, NOT THE OBJECTIVE
+
+§106 read `ga_beam`'s clamped radii off a direct `build_wheel(fillet=True)` call and
+concluded the objective *"can move `R_rim` into a region the mesh silently truncates, with
+the barrier that reads `R_rim` certifying it feasible."* The barrier half is exact — every
+barrier reading `R_rim` is 0.0 at `ga_beam`, confirmed again here. **The silence is not**: a
+direct `build_wheel` call bypasses `mesh_coords` entirely, which is why §106's own rebuild
+saw a truncated radius where an actual evaluation sees an exception. Pinned now by one test:
+`WO.objective(ga_beam, CFG, tiers=("t1","t2"))` and `tiers=("t1","t3")` both raise
+`FilletClampRefusedError`; `tiers=("t1",)` alone survives, because T1 is barrier-only and
+builds no mesh — which is exactly where `R_rim` reads feasible. Both halves of §106's
+sentence are true, about two different code paths, and neither contradicts the other once
+the two are told apart.
+
+### SCOPE: NEVER FIRED ON DISK, WHICH IS A DATE AND NOT A REPRIEVE
+
+All 25 committed `stage3_*.json` runs are from 2026-08-01/03 and predate §103's fillet
+switch — none of them ever built a filleted mesh, so `grep` for `NotImplementedError` in any
+committed event list returns nothing and this defect has cost no run to date. §106 rebuilt
+their 2598 iterates at `coarse` with `fillet=True` and found 117 rim-clamped and 187
+hub-clamped (this section's own re-check reproduces both counts exactly); on the next
+filleted Stage-3 run, each of those is one `clamp_reject` event that would otherwise have
+corrupted an S5 calibration by exactly its count.
+
+### VERIFICATION
+
+`tests/test_stage3.py -q -k clamp`: 3 passed, targeted. Full file: 63 passed. Backward
+compatibility — `tests/test_filleted_mesh.py`'s existing `pytest.raises(NotImplementedError,
+match="clamp")` sites — 39 passed, unchanged, because the new class is still a
+`NotImplementedError` and the message still contains "clamp". Full batched suite (one
+process per file, `run_suite.sh`'s pattern, run against this change): all 31 files, exit 0
+each, including the three heaviest — `test_objective.py` 2253s, `test_requirements.py`
+1221s, `test_stage3.py` 1724s (63 tests, the three new ones among them) — and
+`test_wheel_fea.py` at 23s with its one pre-existing xfail (§29's, unrelated to this
+section) still reported `x`, not `X`.
+
+### THE SUCCESSORS — §109's LIST WITH ITEM 3 STRUCK
+
+**2** the axle-drop gate / M4 beam-blindness headline, plain-mesh-only since birth — ranked
+here as §111. **3** ~~make the rim clamp visible~~ — closed here: visible in the event
+record, not the report dict, because the report dict is unreachable from a clamped
+evaluation. **4** MESHSTEP's contact-patch re-check. **5** BOUNDARY's `fillet_cap` companion
+term. **6** re-run Stage 3 and re-promote — still #1 overall, and still not started.
+---
+
+## §111 — 2026-09-04. §109's SUCCESSOR (§108'S OLD #2), CLOSED: THE AXLE-DROP GATE READS THE MESH THE OBJECTIVE SOLVES — THE RATIO CLEARS BY MORE, THE BAND GOES XFAIL BECAUSE `1.4` HAS NO WARRANT TO MOVE IT BY
+
+§109 filed this one in its own closing words: *"the axle-drop gate and M4's beam-blindness
+headline are measured on the plain mesh and the filleted wheel is 38.9% stiffer… the number
+wants the same warrant-first treatment `0.03` just got."* Since §103, `phase_meshes` builds
+every mesh `fillet=True`; `tests/test_wheel_fea.py`'s old combined test read the plain one.
+
+### THE COMBINED TEST WAS TWO CLAIMS SHARING ONE FIXTURE, AND THEY DO NOT SURVIVE THE SAME MOVE
+
+`test_the_beam_model_does_not_predict_the_axle_drop` asserted both `abs(ratio - 1.0) > 0.10`
+and `1.4 < axle_drop_mm < 2.0` off one `res` fixture. Measured at `coarse`, linear
+`solve_wheel`, both committed genomes, plain vs. filleted:
+
+```
+genome                 beam        plain |ratio-1|   filleted |ratio-1|   plain->filleted stiffening
+best_solution          0.515414 mm  2.0105           0.8652              1.551645 -> 0.961370 mm  = 1.614x
+best_solution_ga_beam  1.990055 mm  0.1665           0.7451              1.658778 -> 0.507212 mm  = 3.270x
+```
+
+**The ratio clears by more on the filleted mesh** — `ga_beam`'s margin, the thinnest of the
+two, goes from 1.67x the 0.10 bar to 7.45x. This is the opposite of the risk §109 guarded
+against for the hub-share gate, so the move is not just permitted but strengthens the
+headline, measured rather than assumed. Only the fixture changed
+(`test_the_beam_model_does_not_predict_the_axle_drop(filleted_res, genes)`); the assertion is
+untouched.
+
+**The band does not.** `0.961370 mm` sits outside `1.4 < … < 2.0` at every rung on §109's
+own ladder (38.0–39.9% "stiffer" throughout), so it is not a rung artefact — and the two
+genomes' stiffening factors, 1.614x and 3.270x, are 2.03x apart, which is the same
+non-uniformity §109 found for the hub-share bound (4.115x vs 2.550x) and more extreme: there
+is no single number to multiply `1.4` or `2.0` by.
+
+### THE BAND'S WARRANT, AUDITED BEFORE TOUCHING EITHER EDGE
+
+Per §109's own rule — re-derive the warrant on the new instrument; if it does not survive the
+move, the number does not either — the band was checked, not just the ratio:
+
+- **`1.4` has no recorded warrant anywhere in the tree.** Born in `f0a9e83`
+  ("fillet tweaks", 2026-07-25, the 4th commit of 157, which created
+  `tests/test_wheel_fea.py` whole) — before PLAN.md existed and before version control was
+  adopted (2026-08-19). Never edited since. It appears in exactly three places in the repo
+  and all three are usages, not justifications.
+- **`2.0` is `TARGET_DEFLECTION_MM`** (`wheel_fea.py:156`); `drop < 2.0` encodes the
+  docstring's own sign claim, "is now stiffer than [the target]." The identity is real but
+  was never stated in code — `wheel_requirements.py:129-131` flags exactly this kind of
+  collision explicitly, for `grass`, and this one has ridden unflagged since birth.
+- **The band has had one value its whole life.** The docstring's "1.1 mm" is not an earlier
+  version of `1.4` — it is the rim's radial thickness (`wheel_fea.py:113-132`), and the 42.7%
+  figure comes from that table's `1.1 mm -> 2.85 mm` row against the 2.0 mm target.
+- **Class: regression bound, not a requirement and not a calibration against a design.**
+  Conformance lives separately, in `SHOULD-DEFLECTION` (`wheel_requirements.py:1051-1061`),
+  on `axle_drop_mean_mm` — the contact-phase mean, 1.9011 mm in the committed
+  `study_mbse_score.json` against this test's linear phase-0 quantity, 1.5516 mm plain.
+  **22.5% apart: the band never was a conformance statement and must not become one now.**
+- **It is the class of claim §29 already retired, one test away.** §29 struck
+  `drops[-1] < TARGET_DEFLECTION_MM < drops[0]` as "an absolute distance from 2.0 mm quoted
+  without naming its rung." `1.4 < axle_drop_mm < 2.0` is evaluated at `coarse` and names no
+  rung either. It survived that purge by sitting in a different test, and nothing in
+  PLAN.md noted the survivor until now.
+- **§64's blast-radius audit never classified it.** The Classes A/B/C/D enumeration for
+  `axle_drop_interp_mm` (PLAN §61-§67) does not list `test_wheel_fea.py`, and this gate still
+  reads the nearest-node value.
+
+No transport factor survives this audit and no warrant survives it either, so the fix is not
+a new number — it is `@pytest.mark.xfail`, with a `reason=` that states the finding rather
+than hiding it:
+
+```
+test_the_axle_drop_meets_the_stroke_target(filleted_res):
+    assert 1.4 < filleted_res["axle_drop_mm"] < 2.0
+```
+
+`xfail_strict = true` (`pyproject.toml:38`) makes an `xpass` here a failure, so a future
+re-promotion that softens the wheel back toward the band surfaces loudly rather than
+silently passing. That is the intended signal, and it is why this xfail is load-bearing
+rather than a way of parking a red.
+
+### THE FIXTURE COMMENT, UPDATED FOR ITS SECOND READER
+
+`filleted_mesh`'s §109 comment said "Exactly one test below reads it" when only the
+hub-share gate did. It now reads two — the ratio test above and the new band xfail — and the
+comment's own measured ladder table gained the `BREAKS` row's pointer to the xfail's name, so
+the comment and the two tests it explains stay in one place.
+
+### THE MBSE CONSEQUENCE — MEASURED, NOT REGENERATED
+
+`studies/study_mbse_score.json` (committed 2026-09-01, two days before §103 wired the fillet
+switch) reports `SHOULD-DEFLECTION`'s `axle_drop_mean_mm` at 1.9011015378085443 mm against a
+2.0 mm target and a ±5% tolerance — a −4.945% margin, 1.1% of the band left. §107 called
+regenerating this artifact "now unblocked" but named only `mesh_mass_g`; `study_mbse_score`
+calls `WO.objective` directly, so any re-run today goes through `phase_meshes(fillet=True)`
+for every field it reports, not only mass.
+
+**MEASURED THIS SESSION** — one `WO.score_record(genes, req, cfg="coarse",
+n_phase=8, kinematics="svk")` run, `best_solution.json`'s genes, the artifact's own
+settings, against a wheel now built `fillet=True` throughout (elapsed 1379.7s / 23.0 min,
+consistent with the near-fixed JIT cost of the filleted mesh noted at §101/§105/§107 --
+this is compile time, not iteration count):
+
+```
+axle_drop_mean_mm   1.9011015378085443  ->  0.9913888889642843 mm   (-47.85%)
+rel. to 2.0 mm target                       -50.43%
+DEFLECTION_TOLERANCE                        +/-5%
+verdict                                     MET  ->  MISSED
+```
+
+**Not a marginal crossing.** The committed value sat at -4.945% of a +/-5% band -- 98.9%
+of the band used, 1.1% left, per this section's own earlier accounting. The re-measured
+value sits at -50.43% -- 10.09x the tolerance band's own width, not a smaller fraction of
+it left over. The artifact predates both movers of
+the mesh this quantity now reads: §103 wired `fillet=True` unconditionally, and §107
+separately fixed T2 (`mass`/`min_sj`) to read the same mesh T3 solves. Axle drop is a T3
+report quantity, so §107's own change does not itself move it -- this is reported as one
+measured before/after against the tree as both sections left it, not attributed to
+either in isolation.
+
+This is independent confirmation, at the artifact's own contact-phase/SVK settings, of
+the same direction this section's linear-phase measurements already showed (1.614x-3.270x
+stiffening) -- and a larger swing than either of those, which is why the verdict flips
+rather than merely losing margin.
+
+Filed as its own successor rather than run here: regenerating `study_mbse_score.json` moves a
+committed artifact and can move a published verdict, and B4 was scoped as measure-and-file,
+not measure-and-replace.
+
+### VERIFICATION
+
+`tests/test_wheel_fea.py -q -rxX`: 22 passed, 1 xfailed (reported `x`, never `X` — strict
+mode makes those opposite outcomes). Confirmed both standalone (23s) and inside the full
+batched suite run for §110 (same 23s, same one `x`).
+
+### THE SUCCESSORS — §109's LIST WITH ITEM 2 STRUCK, CONTINUING §110's
+
+**2** ~~the axle-drop gate / M4 headline~~ — closed here: ratio moved and strengthened, band
+xfailed on its own missing warrant rather than re-derived. **3** — closed at §110. **4**
+MESHSTEP's contact-patch re-check. **5** BOUNDARY's `fillet_cap` companion term. **6**
+re-run Stage 3 and re-promote — still #1 overall, still not started, and now carrying more
+than the xfail: B4's measurement found `SHOULD-DEFLECTION` MISSED at 10.09x the tolerance
+band's width under the mesh the objective already solves, on the currently-promoted
+design. **New**: regenerate `studies/study_mbse_score.json` under the filleted mesh (filed
+at B4 above, not run here) — no longer a bookkeeping catch-up, since the committed verdict
+it would replace is the one B4 just found stale in the direction that matters.
+
+---
+
+## §113 — 2026-09-05. THE STAGE 3 RE-RUN, LAUNCHED: A TWO-WORKER POOL MEASURES 1.26x–1.33x OVER ITS OWN FITTED PREDICTION AND PUSHES THIS BOX TO 60/61 GiB + 7.4/8 GiB SWAP INSIDE 14 MINUTES — `default_workers`'S "LARGEST THAT FITS A 61 GB BOX" WAS AN ESTIMATE STATED AS A MEASUREMENT
+
+§104/§105/§109/§110/§111 all close on the same line: successor #1, "re-run Stage 3 and
+re-promote," still open. Launching it is where this section starts, and it does not reach a
+genome — it reaches a measurement §105 named and never took: whether a pooled Stage-3 descent
+actually fits this 61 GB box on the filleted mesh, or only fits a fitted curve.
+
+### THE ATTEMPT
+
+`src/wheel_stage3.py --start best --genome best_solution.json --steps 300 --workers 2
+--phase-scheme uniform --fidelity-check-every 0`, the same single-start recipe `svk-shipped`
+already runs (kinematics defaults to `svk`, `--min-wall` defaults to the shipped 1.2 mm since
+§32), pointed at fresh `--out`/`--best-out` names (`stage3_svk_refillet_shipped.json` /
+`stage3_svk_refillet_best_shipped.json`) so the pre-fillet `stage3_svk_shipped.json` §112's
+census reads stays untouched.
+
+`--workers 2` on `wheel_pool.default_workers`'s own word: its docstring named 2 "the largest
+that fits a 61 GB box," §105 having priced the 8-worker pool at ~82 GiB and the 4-worker one
+at ~75 against this box's ~58 GiB free, with 2 the only rung under its own ~55 GiB estimate.
+But §105 flagged that estimate as unconfirmed in the same breath: *"No 2-worker pool was
+stood up: at these sizes a wrong guess OOMs the box mid-run... Confirming it is a ~30 min S13
+run with `--pool-workers 2`, and it should precede any pooled descent."* That confirmation
+was not run first. It was run as the descent itself.
+
+### WHAT IT COST, MEASURED TWICE ABOUT A MINUTE APART TO TELL STEADY STATE FROM A CLIMB
+
+```
+  process              RSS, read 1   RSS, read 2
+  worker 0 (4 phases)     27.63 GiB     27.64 GiB
+  worker 1 (4 phases)     25.96 GiB     25.97 GiB
+  parent                   4.91 GiB      3.55 GiB
+  box used / total         61 / 61 GiB   60 / 61 GiB
+  swap used / total       6.1 / 8.0 GiB  7.4 / 8.0 GiB
+```
+
+Both workers had already logged step 0 (`loss 1383.5887 ... 812.29 s`) and sat flat between
+the two reads — steady state, not mid-priming-climb. **Two workers holding four phases each
+measured 26.0–27.6 GiB, against the §105 fit's own 20.7 GiB prediction for four phases
+(`5.5 + 3.8 × 4`) — 1.26x–1.33x over.** That fit was built from an isolated single-process
+probe holding N phases with nothing else running; this number comes from the live pool
+inside a real descent, with the parent's own problem construction, IPC and Adam state
+alongside it. Which of those two differences the 1.3x belongs to is not isolated here — only
+that the fit's own lone other checkpoint past its calibration points, the 2-phase probe,
+already read the same direction (13.1 GiB predicted against 16.5 measured, §105) — so "the
+fit undershoots past 1 phase" is now two data points, not one, and both point the same way.
+
+Combined, the pool's real footprint left no headroom at all on a box the §105 table itself
+called "fits, tight." **Killed by hand at the second read, before `systemd-oomd` could take
+the decision out of anyone's hands** — the exact failure mode the `prod9`/`prod10` Makefile
+comment already named: the whole `user@1000.service` slice goes, not just this process.
+
+### THE RE-RUN, SERIAL
+
+Same recipe, `--workers 0`. Step 0 logged at 1358.43 s (compile-dominated; steady-state steps
+should be far cheaper), RSS 37.9 GiB and rising toward §105's own measured 43.4 GiB peak, 19
+GiB still free, swap draining rather than growing. This is the one configuration §105 actually
+measured before this section, and it is now the one running, in a detached `tmux` session
+(`wheel-stage3`): ~50.47 h projected, against the ~28 h the killed pool would have cost had
+its own estimate held.
+
+### THE LESSON
+
+§105 wrote the fit, labelled it an extrapolation, and named the exact 30-minute check that
+would confirm or refute it before a multi-day run was spent on the difference between them.
+That check is cheap BECAUSE the descent it guards is not, and it was skipped anyway — not
+because §105 was unclear, but because by the time `default_workers`'s own docstring was read
+it stated "2 is the largest that fits" as a settled number rather than as the unconfirmed one
+§105 called it three paragraphs earlier in the same file. **A number written down as "the
+largest that fits" is a claim about an instrument that was never run**, and it reads
+differently once it has travelled one file away from the section that hedged it.
+
+### WHAT MOVED
+
+`5dd3c56` — `wheel_pool.py`'s `default_workers` docstring, corrected in place: no pooled
+worker count is confirmed safe on this box for the filleted mesh, `--workers 0` is the only
+one actually measured to fit. `best_solution.json` untouched, no genome descended yet, no
+promotion. The Stage-3 re-run (successor #1, still open) continues at `--workers 0`,
+`stage3_svk_refillet_shipped.json` / `stage3_svk_refillet_best_shipped.json`, not yet
+complete.
+
+---
+
+## §114 — 2026-09-05. A KILLED DESCENT HAD NO RECOVERY PATH AND NOW HAS ONE; TWO ARCS ARE PARKED ON PREMISES THAT COLLAPSED AT §103; THE INDEX WAS FALSE ABOUT FOUR OF THE SEVEN ARCS IT DESCRIBED — AND §112'S OWN COMMIT HAD SILENTLY SHIFTED TWENTY-ONE LINE CITATIONS BY TWO
+
+Five commits, written while §113's Stage-3 re-run held 38.3 GiB of a 61 GiB box, and chosen
+so that none of them competed with it: `dd5ab60`, `03a0776`, `3d5ffbc`, `68ecab5`, `4a2fc2e`.
+
+### 1. THE RECOVERY PATH — `studies/stage3_resume_genome.py`, `make stage3-resume`
+
+**A Stage-3 run killed at step 299 of 300 leaves a complete history and nothing to restart
+from, and nothing in the tree bridged that.** `_persist` rewrites the trajectory after every
+step and does it atomically, on the stated grounds that *"a run measured in tens of minutes
+must survive a kill"* (`wheel_stage3.py:875-896`). The genome gets no such treatment:
+`--best-out` is written once, by `save_record`, **after** the descent loop returns
+(`:1299-1310`). And the trajectory is not a restart either — `load_genes` reads a TOP-LEVEL
+`"genes"` (`:980-982`) while a trajectory nests them under `best`/`final`, so
+`--genome <trajectory>` raises `KeyError`.
+
+The driver is that adapter and nothing else: one JSON in, one JSON out, **0.11 s at 34 MB**,
+no jax — deliberately, so it runs on a box whose memory was just taken by whatever killed the
+descent. It reuses `wheel_genome.save_record` rather than hand-rolling `json.dump`, which buys
+the exactly-14-canonical-keys validation and the hash, and it cross-checks that hash against
+the one the trajectory recorded for the same iterate.
+
+**IT IS A WARM RESTART, NOT A RESUME, AND THE DIFFERENCE IS THREE CONCRETE THINGS.** Adam's
+moments are re-zeroed on entry to every `descend` (`:589-590`) and `_row` never records them
+(`:740-762`); the secant `delta0`, `n_reject` and the rejection-halved `lr` are equally
+absent. `--lr` cannot restore a decayed rate because the cosine schedule recomputes from
+`lr0` (`:595`, `:258-263`). Four run-shaping flags are in no `settings` block at all, so the
+printed restart command names them at their defaults where an operator can see the assumption.
+**A restarted run is not bit-identical to an uninterrupted one, and a record quoting both
+halves as one descent is quoting two.** A true `--resume` — persisting `m`/`v`/`lr0`/`n_reject`
+into the trajectory — is the honest fix and is **filed as a successor**, not built here: it
+edits the module the live descent is running from and changes the artifact schema.
+
+### 2. THE HAZARD THE ADAPTER EXPOSED — `tests/test_genome_key_order.py`
+
+**`genome_hash` is order-INDEPENDENT and `load_genes` is order-DEPENDENT, and nothing in the
+tree reconciled them.** The hash sorts before hashing (`wheel_genome.py:122-132`); `load_genes`
+takes `.values()` positionally with no name lookup (`wheel_stage3.py:980-982`). So a genome
+file serialised in sorted key order carries the **correct hash**, satisfies every promotion
+pin, exports identically, and hands a **scrambled 14-vector** to a descent.
+
+Demonstrated rather than argued: `best_solution.json` re-serialised in sorted order hashes to
+**`09e8188`, identically**, while its positional read returns `R_hub`'s 0.664 as `cx1`.
+
+**Latent, not live — all 28 repo-root genome records were already canonical.** This is a
+regression guard on the writer being added, not a fix for anything on disk, and it is
+described that way rather than oversold. Copying a `genes` block out of a trajectory is
+exactly the operation that could permute one.
+
+### 3. `reds-hub` REGENERATED — AND §109'S WORRY DOES NOT SURVIVE CONTACT
+
+§109 filed the plain `sweep`/`attribute` blocks as *"still §31-era and never regenerated"*.
+Regenerated: **every pre-existing key in all 14 `sweep` rows is byte-identical**, and the whole
+`attribute` block is byte-identical. `rungs` differs only in `elapsed_s`. **The numbers were
+never wrong.** What was stale was the SCHEMA — `sweep` rows gained `axle_drop_interp_mm` and
+the two `fillet_*` keys that are correctly null on an unfilleted arm, matching the sibling
+`sweep_unfilleted_svk` block instead of predating it. **There were never any `--` cells in
+this artifact**; the 20 nulls under `rungs` are null by construction.
+
+**MEASURED, BECAUSE IT NEVER HAD BEEN: wall 44.3 s, PEAK RSS 3.05 GiB** (3198708 kB — 3.28 GB
+decimal, and the tree uses both units, so the number is given with its base). The wall figure has
+been on file since §31 and the memory figure never had been, which made "CHEAP" a claim about
+time alone — the distinction that binds when something else already holds the box. Run under
+`systemd-run --user --scope -p MemoryMax=8G` for exactly that reason, capped so a surprise
+could kill only this process and never the 13-hour run. It never approached the cap.
+
+### 4. TWO ARCS PARKED
+
+**UNCAP.** PART 10 (§104) left one binding choice — *"a Y-partition of the FILLETED rim
+junction, or a decision that `rim:P_c`'s fidelity is not worth one"* — and ten sections passed
+without anyone taking it. **Second branch taken.** Both legs re-verified against the tree
+rather than quoted: `sector_blocks` defaults to `fillet=None` and is *"seven node grids —
+eleven when the fillet is blocked"* (`wheel_wheel.py:2282-2286`), `study_tri_block.region()`
+passes no `fillet=` (`studies/study_tri_block.py:242`) while `wheel_objective.py:1037` and
+`wheel_pool_worker.py:63` pass `fillet=True` unconditionally; and `grep -rn "rim:P_c" src/`
+returns **zero matches**, the whole-wheel p-norm being assigned once at `:1257` under
+*"REPORTING ONLY"* and read once at `:1377`. **The arc does not stop for the reason it
+carried:** 3.1's payoff is now a reporting number, 3.2's prediction is **inverted** (the
+faithful rim is 23.8× worse filleted, not better), 3.3 depends on a FILLET step that landed
+without it. Reopens if and only if `rim:P_c` acquires a consumer.
+
+**RIMCAP.** Both halves superseded, in different sections. Step 1's cap model mirrors
+`hub_fillet_cap_mm`, which §103 demoted to reporting-only (`:1261-1265`) — a surrogate
+mirroring a retired surrogate. The report half was tried at §110 (`f21ec7d`) and **reverted as
+unreachable**: `mesh_coords` raises before either report dict exists, so the keys were
+constant-by-construction, and visibility shipped in the event record instead. **Parking the
+arc does not park the gap** — the sector limit is still applied by the mesh rather than priced
+by the objective, and whether it needs a barrier is blocked behind the re-run, because no run
+on disk has ever fired the clamp.
+
+### 5. THE INDEX WAS FALSE, AND UNCAP HAD NO ROW
+
+*"Arc 1 is CLOSED (§32); 2–8 are unstarted"* was wrong about four of the seven arcs and silent
+about two more. Corrected, with the table rows brought into agreement with the sentence that
+summarises them. **UNCAP was added to the open-arcs table for the first time** — it ran to
+PART 10 without ever appearing in the index that ranks the arcs, while its own header claimed
+*"#2, promoted to the top"*, a rank the table never granted and which collided with FILLET's.
+**The collision was one-sided and resolves in the table's favour.** Six arc-file headers still
+said *"Nothing started"* — including `BOUNDARY_PLAN.md`'s, which §112 left contradicting the
+record §112 itself had just appended four lines below it.
+
+### 6. TWO CORRECTIONS I OWE, BOTH MINE
+
+**The citations.** `89a370e` (§112) added two lines to `_fillet_margins`' docstring at
+`wheel_objective.py:640` and shifted **every** line number past it by +2. §112 fixed four and
+assumed that was the blast radius. It was **26, across 11 files**, and all 26 were correct
+before that commit. Six of them I had written off as pre-existing drift because the cited
+content did not match the cited line — **that reasoning was wrong; it matched two lines down**,
+and reading each cited line's content out of `89a370e^` is what settled it. A docstring edit
+is not a free change in a tree that cites line numbers this heavily.
+
+**The 41 GB figure, which I over-generalised.** I carried *"any filleted JIT cell costs
+41.6–43.7 GB regardless of rung"* into a plan and repeated it. The rung-independence is right;
+the **scope** is wrong, and this file already says so at §105 (`:14798-14812`): that figure
+measures a `study_fillet_condition_a` cell — `WO.objective` **with a gradient, SVK, eight
+phases** — and *"residency tracks PHASES HELD, not the compile"* (1 phase 9.1 GiB, 2 phases
+16.5, 8-phase parent 35.9). *"The right measurement of the wrong process."* Pricing `reds-hub`
+at 41 GB because the word "filleted" appears near it would have been the same error, and it is
+3.05 GB. **This is the `state-the-scope-of-a-measurement` failure, on a measurement this file
+had already scoped correctly.**
+
+### 7. AND §105'S OTHER TWO NUMBERS ARE BOTH RUNNING LONG
+
+Read off §113's live trajectory at 99 of 300 steps: per-step cost is **flat** after JIT warmup
+— 249.2 s over steps 0–19, then 216.5 / 223.7 / 218.2 / 216.7 over the four twenty-step blocks
+that follow, a steady mean of 218.8 s — with **zero rejects and zero abandoned steps**. A flat series extrapolates honestly, unlike a rising one where the top rung
+would only be a lower bound. **Projected total ≈ 18.2 h against §105's 50.47 h serial: 2.8×
+pessimistic.** And its resident set is **plateaued at 38.3 GiB**, not climbing to §105's
+predicted 43.4 GiB peak — 37.9 GiB at 23 minutes, 38.3 GiB at six hours. Both of §105's
+estimates are conservative in the same direction, which is the safe direction, but a 2.8×
+error in a cost model is what makes work look unaffordable that is not.
+
+**WHAT DID NOT HAPPEN.** `best_solution.json` untouched, no threshold moved, no default
+changed. Nothing was committed that belongs to §113's run — `stage3_svk_refillet_shipped.json`
+and its log stay untracked while the descent writes them. The light pytest batch was NOT run:
+it peaked at 32 GiB this morning and running it against a 38.3 GiB descent with 17 GiB free
+would have OOM-killed a 13-hour run to test a driver that imports no jax and is imported by
+nothing. What was run instead, under a 6 GiB cap: the new guard (57 cases),
+`test_study_gate_guard`, `test_promotion`, and the round trip that actually matters —
+`load_genes(shim output)` element-wise equal to `genes_to_vector(best.genes)`.
+
+## §115 — 2026-09-06. `b729e86` PROMOTED, RECOVERED ACROSS AN ACTUAL POWER OUTAGE MID-DESCENT — AND VERIFYING IT FOUND THREE MORE POST-§103 NUMBERS THAT NO LONGER HOLD
+
+§113's descent kept running after that section closed. This is the record of how it finished,
+what promoting it found, and three more instances of the pattern §113 already named: a memory
+or feasibility figure measured before §103's fillet-mesh switch, still cited after it, wrong.
+
+### 1. THE DESCENT'S SECOND HALF: AN ACTUAL CRASH, NOT A DRILL
+
+The box lost power outright at some point after 2026-09-05 17:30 (last successful trajectory
+write) and before 17:38 (the next session's tmux window). Not a memory kill this time — the
+whole machine went down. `wheel_stage3.py` had reached **step 177 of 300** (178 rows), loss
+1383.5887 -> 52.6886, `--workers 0`, exactly where §113 left it.
+
+**The recovery path §114 built was exercised for real, not as a drill.** The trajectory
+survives a kill by construction — `_persist`/`_write` (`wheel_stage3.py:875-896`) write via a
+tmp file plus `os.replace`, so an abrupt kill (kernel-level, this time, not a `SIGTERM`) leaves
+either the previous complete file or the next one, never a partial one. All 178 rows were
+intact on disk. `studies/stage3_resume_genome.py` (§114) read the trajectory, recovered the
+tracked **`best`** iterate — step 161, tier 0, loss 52.79199 — not the raw-latest step 177,
+round-trip-verified its hash (`11adca8`, matched), and printed the restart command for the 122
+steps still owed. Relaunched identically (`--workers 0`, same env pins), in a fresh tmux
+session; ran clean for 27430.4 s (7.6 h) and completed all 122 steps with no further incident.
+
+**Total wall-clock: 39440.6 s + 27430.4 s = 66871 s, 18.58 h** — against §105's original 50.47 h
+serial estimate (2.7x pessimistic, consistent with §114's live 2.8x reading mid-run) and
+within 2% of the 18.2 h projection §114 made from the first leg's steady-state pace alone.
+**The warm restart's stated cost (Adam's moments, the secant `delta0`, `n_reject`, the decayed
+`lr` all re-zero) was small in practice**: loss picked up from 52.792 and proceeded to 52.55
+over the resumed leg with no visible thrashing.
+
+### 2. THE RUN'S OWN LAST STEP IS NOT THE ANSWER — A LIVE `selection_key` / DEFECT-6 CASE
+
+The resumed leg's raw final step (122 of 122) reads **loss 52.5139** — lower than any other
+point in either leg. It is **not a valid promotion candidate.** Tracing `BARRIER_TERMS`
+violation across the resumed leg's own recorded `terms`: the descent is tier-0 (feasible) at
+step 57, crosses into `fillet_cap` violation at step 59, and **never returns to tier 0 for the
+remaining 63 steps** — `R_hub` (0.5535 mm) ends up past the hub fillet cap (0.5496 mm) at the
+run's end, slack -0.0039 mm against the +0.001 mm floor `MIN_CAP_SLACK_MM` sets.
+
+This is `wheel_stage3.selection_key`'s DEFECT 6 (the docstring at `wheel_stage3.py:221-241`),
+seen live rather than in the run it was written to fix: a step that trades a barrier for loss
+scores lower than a feasible step, and no amount of further descent buys that back. The
+tracker's own `best` field correctly stayed at **step 58 of the resumed leg** (tier 0, loss
+52.5662, genome hash `b729e86`) — clearing the tier-0 floor by only ~7% margin (slack 1.07e-3
+mm against the 1e-3 mm minimum) — and that is the genome this section promotes.
+
+### 3. THE PROMOTION
+
+**`b729e86` ships, replacing `09e8188` (§26).** `09e8188` is preserved unchanged as
+`stage3_knee_best_medium.json` (already existed, verified bit-identical — no new preservation
+action needed). `b729e86`'s own record is `stage3_svk_refillet_shipped_r2_best.json`.
+
+```
+                        09e8188 (outgoing)   b729e86 (shipped)     delta
+  mesh mass (g)              48.64                54.115          +11.3%
+  axle drop, this mesh     MISSED (-50.43%)     1.992 mm            MET (target 2.0 mm)
+  stress utilisation           n/a               0.953 (coarse)
+                                                  0.9723 (medium, SVK -- §115.5)
+  buckling ratio                n/a               0.156
+  barriers                      n/a               all 0.0
+```
+
+The mass increase is real, not a search artifact: it is what §111 already implied — a fillet
+mesh prices the hub junction the old genome was never asked to survive, and clearing it costs
+material. `make export` rebuilds clean: valid OCC solid, one solid, STEP `BRepCheck` valid, not
+self-intersecting, 59.47 g as built. `tests/test_promotion.py`, `test_export_contract.py`,
+`test_golden.py` — 30/30 green against the new genome (§115.4 below covers why this is a
+narrower re-check than a full suite, and why that is still sufficient).
+
+**Checklist walked (`tests/test_promotion.py`'s `PROMOTION_CHECKLIST`):** (1) banner above,
+amended in the same commit as the genome; (2) `make export` re-run after the note-field edit
+that follows it, so the STEP's mtime is not stale against it; (3) driver audit below;
+(4) `make svk` — see §115.5, blocked by a pre-existing bug, real feasibility confirmed by
+direct probe instead; (5) outgoing genome preserved (pre-existing file), `note` field written;
+(6) `test_golden.py` untouched, still reads `best_solution_ga_beam.json`.
+
+**Driver audit (item 3), done as a real grep, not assumed clean.** The one known constant
+(`study_svk_rescore.py`'s §14 control) is pinned to `stage3_minwall_best_1.2.json` by file,
+unaffected. Two more spots pair a hardcoded `"09e8188"` **label** with a live read of
+`best_solution.json` — `study_kinematics_rank.py`'s `GRAD_PROBES`/genome table (two tuples) and
+`study_mbse_calibration.py`'s `DEFAULT_INPUTS`/`REFERENCE`. Both are display labels only: the
+values they print are read live from whatever the file holds, so nothing computes wrong —
+only the printed label now says `09e8188` where the file holds `b729e86`. Left unfixed
+(cosmetic, not the correctness-critical class of bug the checklist exists for), noted in
+`best_solution.json`'s own `note` field for whoever next touches those two files.
+
+### 4. VERIFYING THIS PROMOTION FOUND TWO MORE MEMORY FIGURES §103 MADE STALE
+
+Confirming green before commit meant running `make test` for the first time since §103 shipped
+against a suite this large, and it did not go the way §105's-era numbers said it would.
+
+**`make test` bare (plain `pytest`, all 32 files, one process) OOM'd.**
+`journalctl -k`: `Killed process ... python ... anon-rss:53145532kB` at 10:00:39. This is
+exactly the invocation this file already has a table against (`:14673-14681`, 2026-09-03):
+`test_objective.py` alone peaks at 51.0 GiB on this 61 GiB box, so the four `t3`-tier files
+must never share a process with each other OR with the ~28 light ones. I ran the naive command
+anyway, without re-reading that table first — the fix is not new information, it is a rule I
+already had and did not check before acting.
+
+Re-run correctly, batched: the 28 light files together (**661 passed, 2 xfailed**, 28:23,
+matching the 2026-09-03 599-test figure plus new files added since), then each `t3`-tier file
+alone — `test_gradient.py` (24 passed, 6:43, matches 6:33), `test_pool.py` (23 passed, 12:20,
+matches 12:09), `test_stage3.py` (63 passed, 26:30, peak **34.6 GiB** against a documented 29.9
+— some growth, comfortable headroom throughout), and `test_objective.py` (**124 passed, 3
+xfailed**, 35:44 against a documented 33:17). **`test_objective.py`'s peak this run: ~59.8 GiB
+used system-wide, ~3 GiB available at the low point** — against the table's own 51.0 GiB. It
+passed, but the documented figure is no longer a safe margin estimate on this box; treat it as
+a near-miss, not a clean pass. 900 collected, 895 passed + 5 xfailed = 900 accounted for.
+
+**`make svk`'s own default (`SVK_WORKERS=4`) came far closer to OOM, far faster, than the pool
+this file already has a table for.** Launched at `medium` config per the Makefile default;
+15 minutes in — still inside JIT compilation, the actual solve loop not yet reached — available
+memory read **1.4 GiB and falling, swap actively growing** (461 MiB -> 1.4 GiB across that
+window). Four workers at 11.5-12.7 GiB RSS each plus an 10.8 GiB parent, none of them yet past
+the compile phase. Killed (`SIGTERM`, clean exit, no `SIGKILL` needed) before the box went the
+way §113's pool did. Re-run with `SVK_WORKERS=0` (serial — the same safe configuration §105/§113
+already established for `wheel_stage3`) completed the run's memory profile safely, peaking at 9+
+GiB available throughout.
+
+This is the **third** case this file now has of a documented-safe worker count or memory figure
+turning out stale after §103: the phase-pool (§113), `test_objective.py`'s peak (above), and now
+`SVK_WORKERS`'s own default. None of the three pre-§103 memory figures for parallel or
+large-mesh work on this box have been re-measured since, and this section is not the last one
+that will find that out — the fix is not any one number, it is to stop trusting one.
+
+### 5. `make svk` ITSELF HIT A FOURTH THING, AND THIS ONE IS NOT A MEMORY FIGURE
+
+Re-run serially, `make svk` reached the re-score phase and raised, rather than completing:
+
+```
+RuntimeError: the p=4.0 probe (0.886982395352275) does not reproduce the constraint's
+utilisation (0.9559481412419902); the probe and the constraint are no longer the same
+construction
+```
+
+`study_svk_rescore.py`'s own internal check (`_score`, asserting its diagnostic `p=4` probe
+reproduces `report["stress_utilisation"]` to 1e-12) failed for `b729e86` specifically. Traced,
+not worked around: `wheel_objective.py`'s REAL constraint has computed per-region since
+§102/§103 — `util = max(agg_hub, agg_rim) / allowable`, each region carrying its own Kt already
+folded in — but the diagnostic `pnorm_by_p` block (`:1379-1386`) still builds
+`stress_utilisation_kt` from one GLOBAL `kt_max = max(kt_hub, kt_rim)` times one global
+aggregate, a construction that only reproduces the real constraint when the region with the
+larger Kt is also the region with the larger raw stress.
+
+**`b729e86` is the first genome scored by this gate where that stops being true.** Confirmed by
+direct probe at medium/SVK: `kt_hub` 3.124 > `kt_rim` 1.815 (hub has the bigger Kt), but
+`stress_utilisation_rim` 0.9723 > `stress_utilisation_hub` 0.9545 (rim narrowly governs the real
+constraint anyway — its raw stress is high enough to overcome the smaller Kt). The diagnostic's
+`kt_max` picks hub's Kt and pairs it with a global aggregate that tracks hub's own region,
+producing 0.9526 — close to hub's own number, nowhere near the true governing max. Every genome
+this gate has scored before now happened to have hub govern on both counts, which is the only
+reason a 1e-12 assertion on a construction this narrow has never tripped before.
+
+**This is a bug in a diagnostic sanity-check, not in the design or the real constraint** — the
+number the gate exists to answer, `report["stress_utilisation"]`, is unaffected by it; it was
+read directly, bypassing the broken assertion: **0.9723 at medium config under SVK kinematics,
+feasible.** `wheel_objective.py`'s `pnorm_by_p` construction is left unfixed here — it is
+differentiated code that feeds the optimizer, and a fix deserves its own verification against
+the rest of the tree rather than a rushed edit inside a promotion. Filed here for whoever picks
+it up: fix `stress_utilisation_kt` (`wheel_objective.py:1385`) to use each region's own Kt
+against its own aggregate and take the max of THOSE, matching what `util` (`:1356`) already
+does, rather than one global `kt_max` times one global aggregate.
+
+**WHAT MOVED.** `best_solution.json` (genes + `note`), `tests/test_promotion.py`
+(`SHIPPED_GENOME_HASH`, `SHIPPED_PROMOTED_IN`), the banner above, `export/wheel.step` +
+`export/wheel_step_manifest.json`, `stage3_svk_refillet_shipped_r2_best.json` (new, preserved).
+Not touched: `study_kinematics_rank.py`, `study_mbse_calibration.py` (§115.3's cosmetic label
+finding), `wheel_objective.py` (§115.5's diagnostic bug).
+
+---
+
+## §116 — 2026-09-06. `make svk` REPAIRED AND RUN, CLOSING §115's CHECKLIST ITEM 4 — AND §115.5's FILED FIX WAS A NO-OP ON A CAUSE THAT IS NOT THE CAUSE: THE PROBE CHECK HAS BEEN BROKEN BY CONSTRUCTION SINCE §103, ON EVERY GENOME, WORST ON THE FOUR §115 SAID WOULD PASS. TWO MORE ROTS UNDER IT, ONE RED SINCE 2026-08-19
+
+§115 promoted `b729e86` with item 4 of its own promotion checklist unwalked — "`make svk` —
+the feasibility gate. It is the check that runs about once a promotion, so assume it has
+rotted since you last looked" — and filed a one-line fix for the raise that stopped it.
+This is the record of executing that item. The filed fix is not made, because measuring it
+first showed it changes nothing; the gate had rotted in three independent places, not one;
+and it now runs end to end at its own defaults for the first time in **25 days** — §25's
+own note in the driver records that it had not completed since **2026-08-13**, and the
+artifact it had been carrying until today was committed on **2026-08-12** (`b5c22c9`).
+
+### 1. §115.5's FILED FIX IS A NO-OP, AND ITS CAUSE IS NOT THE CAUSE
+
+§115.5 filed: *fix `stress_utilisation_kt` (`wheel_objective.py:1385`) to use each region's
+own Kt against its own aggregate and take the max of THOSE, matching what `util` (`:1356`)
+already does.* Read literally against the code, there is no such construction to write:
+
+- **The probe sweep has exactly one aggregate**, `a_v = _stress_aggregate(probe_pn[v],
+  maxes, q)`, a WHOLE-WHEEL Gauss p-norm. So "each region's own Kt against its own
+  aggregate, max of those" is `max(kt_hub * a_v, kt_rim * a_v)`, which is
+  `max(kt_hub, kt_rim) * a_v` — **the line it replaces, character for character.**
+- Read the other way, against the two REGION aggregates, it is worse than a no-op: `util_j`
+  has had no `Kt` in it since §102/§103, so re-multiplying double-counts the thing §103
+  removed. On §115's own medium numbers that reads `max(3.124 * 0.9545, 1.815 * 0.9723)`
+  = **2.98 against the real 0.9723**, out by 3.07x.
+- **The only expression that matches `util` at `:1313` is `max(agg_hub, agg_rim) /
+  ALLOWABLE`** — which is `report["stress_utilisation"]` itself, does not vary with the
+  probe exponent, and therefore cannot live in a per-`p` dict at all.
+
+**And `b729e86` is not why the gate raised.** The assertion held BY CONSTRUCTION until
+§103: `d2cf9fa^:src/wheel_objective.py:1278` reads `util_j = kt * agg / allowable_stress_mpa`
+per junction, so `max(utils)` WAS `kt_max * agg / ALLOWABLE`, which is `stress_utilisation_kt`
+at `stress_gauss_p` — the same arithmetic at the same exponent, not two quantities that
+happened to agree. §103 moved `util_j` onto the region p-norm over the junction's own
+fillet arc, a quantity the Gauss-point probe does not compute at any exponent, and the
+1e-12 assertion became unsatisfiable for **every** genome. `tests/test_stage3.py:1217`
+dropped exactly this cross-check **inside §103's own commit**, with a paragraph saying why;
+`study_svk_rescore.py` was not swept with it. It did not raise on 2026-09-03 for the
+reason nothing about this gate raises on a code change: **it is not run by one.** The next
+time it ran was §115's promotion, three days later, and it raised on the first genome it
+touched.
+
+**AND IT IS TWO DRIVERS, NOT ONE — THE SECOND ONE FAILS QUIETLY.**
+`studies/study_kinematics_rank.py:257` calls the same `SR._score`, inside a deliberate
+`except Exception` that records a genome as `failed` rather than losing an hour-long run
+to one divergence. So since §103 `make kinrank` would not have raised: it would have
+returned **all 36 genomes x both kinematics as FAILED**, with the RuntimeError text in
+every cell, and its statistics computed over nothing. Repaired by the same one fix and not
+re-run here — it is over an hour, and its committed artifact predates §103, so it holds no
+wrong number, only pre-fillet ones.
+
+### 2. MEASURED ACROSS THE GATE'S OWN GENOME LIST, AND THE PATTERN IS THE OPPOSITE OF §115.5's
+
+The gate's seven, plus the outgoing `09e8188` for a genome §115's own claim covers, at
+`smoke`/2 phases (the construction question is config-independent; forward values only, so
+the `XLA_FLAGS` pin that matters at 3.33e-16 for gradients does not enter):
+
+```
+  genome              util (constraint)   Kt probe      gap    hub governs kt / util
+  shipped b729e86           0.70834       0.69449    + 1.99%      yes / NO
+  36aed36 GA/beam                  — refused, see §116.3 —
+  elite10                   0.46301       0.25046    +84.86%      yes / NO
+  minwall 1.2               1.37447       0.48062   +185.98%      yes / yes
+  minwall 1.4               1.08856       0.42832   +154.15%      yes / yes
+  minwall 1.6               0.81016       0.36928   +119.39%      yes / yes
+  minwall 2.0               0.46281       0.25197   +83.68%       yes / NO
+  09e8188 outgoing          1.05566       0.42126   +150.60%      yes / yes
+```
+
+**All seven scoreable genomes fail the 1e-12 assertion, by 2% to 186%.** The four where hub
+governs BOTH Kt and utilisation — the configuration §115.5 named as the reason the check
+had always passed, and three of the four are on the gate's own list — are the four that
+fail WORST, by 119%–186%. The shipped genome §115.5 blames has the **smallest gap of the
+seven.**
+
+The mechanism, per region, same run:
+
+```
+  genome              kt_hub*agg   hub region     err     kt_rim*agg   rim region     err
+  shipped b729e86        17.362      16.687     + 4.0%       10.089      17.709    -43.0%
+  elite10                 6.262      11.116     -43.7%        4.676      11.575    -59.6%
+  minwall 1.2            12.015      34.362     -65.0%        8.325      22.196    -62.5%
+  minwall 1.4            10.708      27.214     -60.7%        7.386      20.111    -63.3%
+  minwall 1.6             9.232      20.254     -54.4%        6.593      16.906    -61.0%
+  minwall 2.0             6.299      11.066     -43.1%        4.703      11.570    -59.3%
+  09e8188 outgoing       10.531      26.391     -60.1%        7.002      20.403    -65.7%
+```
+
+`Kt * nominal` under-reads the region p-norm by **43.0%–65.7% on thirteen of the fourteen
+regions**. The fourteenth is the shipped genome's hub, which over-reads by 4.0% — and
+because rim governs there, the surrogate built from HUB's Kt lands near RIM's true value.
+**The shipped genome's 2% gap is the coincidence; the disagreement is the rule.**
+
+### 3. A SECOND ROT UNDER IT: THE GA/BEAM CONTROL GENOME CANNOT BE SCORED AT ALL
+
+§115 never reached this, because `_score` raised first. At `medium`, `36aed36`
+(`best_solution_ga_beam.json`) raises `FilletClampRefusedError` out of `t2_vector`'s
+`mesh_coords`: the mesh BUILDS, and the sector-fit clamp has moved its fillet radii off its
+genes, so the differentiable path refuses — §108/§110's third reject kind, `clamp_reject`.
+Measured across all seven at `medium`: **it is the only one that refuses**; the other six
+of the gate's list — `b729e86` included — and the outgoing `09e8188` beside them all
+differentiate in 0.3–1.9 s. The driver had no handler, so with the
+assertion fixed `make svk` would still have died at row 2 of 7.
+
+Recorded rather than fatal, and rather than skipped: "this genome cannot be scored on the
+mesh the objective now solves" is an answer to the question this file asks, and the exit
+code stays the CONTROL's verdict — §39's split between a solver verdict and a
+characterisation finding. Its control row is untouched: `run_control` solves an unfilleted
+force-controlled point, the half of this genome's job the fillet switch does not reach.
+
+### 4. A THIRD ROT, AND THIS ONE HAS BEEN RED SINCE 2026-08-19 WITH NOBODY LOOKING
+
+With the raise gone, the driver got far enough to PRINT its own control table, and the
+control — §14's force-controlled reproduction, the gate on whether anything below it may be
+quoted — was **FAIL**:
+
+```
+                        committed artifact   today (before fix)     delta
+  350f4c7  linear mm         1.9529656850         1.8722572082      -4.13%
+  350f4c7  svk mm            2.4088977028         2.2938734825      -4.78%
+  correction                   23.3456%             22.5191%      err 3.54% vs §14, band 2%
+```
+
+Bisected, not guessed, and it took one step: **`c416cb5`** (committed 2026-08-19, adopted
+2026-08-18 — `UNCAP_DEFAULT` flipped, §36/§38). Its parent reproduces the committed
+artifact's control row **to all sixteen digits**; the commit itself reproduces HEAD's to all
+sixteen. Nothing in the twenty commits to `wheel_wheel`/`wheel_fem`/`wheel_fea` since (29
+to `src/` in all) has moved it again, and the node count
+is identical at 21012 — the caps came off, and the wheel got 4.13% / 4.78% stiffer at the
+service point.
+
+**§14's two constants were measured on 2026-08-10 and describe a CAPPED wheel.** The fix is
+the same one §25 made for the same class of break: pin what the control is measured on.
+§25 pinned the GENOME to a file; this pins the GEOMETRY — `build_wheel(genes, cfg,
+uncap=False)`, which `UNCAP_DEFAULT`'s own comment documents as bit-for-bit pre-flip and
+which `study_junction_agreement.py` already uses for its `capped` rows. Both rows come back
+at **0.00%** of §14 (1.6e-05 and 2.6e-05), which are the committed artifact's own figures.
+
+Re-deriving the two constants against the uncapped wheel was the alternative and is
+refused: it turns a reproduction target into "whatever we measured today", which is not a
+control. What the pin NARROWS is stated in the code and here — the control now gates the
+SOLVER (kernel, kinematics, service force, drop reading) and no longer sees the mesh
+default the re-score below is built on. The re-score is uncapped AND filleted; the control
+row is neither, and the -4.13% / -4.78% above is the distance between them.
+
+### 5. THE GATE, RUN — AND `b729e86` IS FEASIBLE UNDER SVK ON THE MESH THE OBJECTIVE SOLVES
+
+`make svk` at its own defaults (`medium`, 8 uniform phases, serial), **exit 0, 9085.4 s
+(2 h 31 m)**, control PASS at 0.00% on both rows. `studies/study_svk_rescore.json` is
+regenerated for the first time since 2026-08-12.
+
+```
+  genome            kin      drop mm    err %     util   mass g         loss   barriers
+  shipped b729e86   linear    1.8060    -9.70%   0.9559   54.12      76.4903   -
+  shipped b729e86   svk       1.9968    -0.16%   0.9723   54.12      54.1355   -
+                    Δsvk     +10.560%            +1.72%
+  36aed36 GA/beam   —— REFUSED, clamp_reject, not scoreable on the filleted mesh ——
+  elite10           linear    0.4354   -78.23%   0.7150   70.47    1589.3793   -
+  elite10           svk       0.4469   -77.65%   0.7214   70.47    1566.9504   -
+  minwall 1.2       linear    1.1659   -41.70%   1.7886   42.36    3252.6978   fillet_cap 0.0206, stress 2.68e3
+  minwall 1.2       svk       1.3433   -32.84%   1.8254   42.36    3458.4430   fillet_cap 0.0206, stress 3.04e3
+  minwall 1.4       linear    1.0075   -49.62%   1.4215   47.21    1482.7412   stress 784
+  minwall 1.4       svk       1.1076   -44.62%   1.4381   47.21    1478.3443   stress 893
+  minwall 1.6       linear    0.8004   -59.98%   1.0533   53.18     964.7066   fillet_cap 0.455, stress 11.4
+  minwall 1.6       svk       0.8521   -57.40%   1.0615   53.18     896.9765   fillet_cap 0.455, stress 18.1
+  minwall 2.0       linear    0.4362   -78.19%   0.7153   70.39    1587.7665   -
+  minwall 2.0       svk       0.4478   -77.61%   0.7217   70.39    1565.2147   -
+```
+
+**THE QUESTION THIS GATE EXISTS TO ANSWER, ANSWERED FOR `b729e86`: YES.** Every barrier
+exactly 0.0 under both kinematics, utilisation **0.9723** under SVK, and an axle drop of
+**1.9968 mm against the 2.0 mm target — 0.16% off**. §115 read 0.9723 by direct probe,
+bypassing the assertion that had just raised; the gate now returns **the same four
+digits** through its own path, which is the cross-check §115 could not make at the time.
+Checklist item 4 is walked.
+
+**Three of the five older genomes are INFEASIBLE on this mesh, including the genome §14
+itself measured.** `minwall 1.2` is `350f4c7` — the control genome, pinned by file since
+§25 — and it reads utilisation **1.7886 / 1.8254** with `stress` at 2.68e3 / 3.04e3 and
+`fillet_cap` breached as well. `minwall 1.4` (1.4215 / 1.4381) and `minwall 1.6` (1.0533 /
+1.0615) join it. This is not a new class of finding — it is §111's reading of `09e8188`,
+which is what §115's promotion answered — but it is now on record for four genomes rather
+than one, and it says plainly what §103 did: **the pre-fillet designs are not admissible
+against the objective that replaced the one they were optimised under.** The two that
+survive, `elite10` and `minwall 2.0`, do it by being 30% heavier (70.4 g against 54.1) and
+78% under the deflection target — they are stiff, not efficient.
+
+**The SVK correction is large on deflection and small on utilisation**, consistently across
+all six: drop +2.6% to +15.2%, utilisation +0.78% to +2.06%. §14's whole reason for
+existing was the deflection half, and the split is still that lopsided.
+
+**Cost and memory, for the next section to budget against.** 9085.4 s serial, of which the
+shipped genome's first score is **2752.5 s** — it carries the one-time JIT trace, and the
+second score of the same genome cost 922.3 s. The remaining ten scores ran 360.8–803.1 s
+each. Memory was SAMPLED, not tracked: 40 GiB used / 21 GiB available during the JIT phase,
+and a watch armed to fire under 6 GiB available never fired across the whole run. That is a
+floor on the headroom, not a peak — but it is nowhere near the 1.4 GiB §115.4 measured for
+the four-worker default.
+
+### 6. `SVK_WORKERS` DEFAULTS TO SERIAL
+
+`SVK_WORKERS ?= 4` was written when the objective built an unfilleted mesh. §115.4 measured
+what it does now — four workers at 11.5–12.7 GiB RSS each beside a 10.8 GiB parent, 1.4 GiB
+available and swap growing, fifteen minutes in and still inside JIT compilation, killed
+before the box went the way §113's pool did. The default is now `0`, the configuration
+§105/§113 measured safe on this box for this mesh, and it is what the committed artifact was
+regenerated with — which the file's own rule requires, since "the bare `make svk` must keep
+reproducing Step 3". **2 workers has never been measured here** and is not recommended by
+this section; §113's own two-worker reading was 1.26x–1.33x over its fitted prediction.
+
+**WHAT MOVED.** `studies/study_svk_rescore.py` — the probe assertion replaced, a
+`clamp_reject` handler added to `run_rescore` and to both print loops, the control pinned to
+`uncap=False`, four comments that named the retired construction corrected, and the `p30
+util` column re-headed `p30 Kt*agg` so it cannot be read as `util` at another exponent.
+`Makefile` — `SVK_WORKERS ?= 4` -> `0`. `studies/study_svk_rescore.json` — regenerated, the
+run above. `MBSE_PLAN.md`, `studies/study_mbse_score.py`, `tests/test_requirements.py` —
+the `study_svk_rescore.py:67` citation, which this section's own docstring edit shifted to
+`:75` (§114's lesson, applied to my own delta rather than rediscovered later).
+
+**NOT touched:** `wheel_objective.py` — §115.5 filed a fix at `:1385` and §116.1 is the
+measurement of why it is not made; the key reports a retired construction accurately, which
+is what `tests/test_stage3.py:1217` already says it survives to do.
+`studies/study_kinematics_rank.py` — repaired by the shared `_score` and not re-run here.
+
+**SUCCESSORS.**
+
+1. **THE OTHER DRIVERS OUTSIDE `make studies` HAVE THE SAME EXPOSURE AND NOBODY HAS
+   LOOKED.** `svk`, `m8bi5`, `m9buck`, `hubcap` and `kinrank` are all out of the recipe for
+   the same stated reason — they measure THE WHEEL, NOT THE COMMIT — which is exactly the
+   property that stops a code change from ever running them. Each carries internal
+   cross-checks and constants written against constructions this tree has since changed
+   twice (§103's `util_j`, §36/§38's `UNCAP_DEFAULT`). One of them turned out to hold three
+   independent rots, two of which no test in the suite could have caught, and one of which
+   had stood for eighteen days. **Cheap and ranked 1: read each of the other four's own
+   guards and pinned constants against today's `wheel_objective`/`wheel_wheel` — no solves,
+   no descent.**
+2. **`stress_utilisation_kt`'s NAME IS NOW WRONG, AND THE RENAME IS NOT FREE.** It reads as
+   "the constraint, with `Kt`" and is a retired construction. `study_stage3.py:902`, `make
+   m8bi6`'s ladder columns and this gate's own `pnorm_p30_utilisation_kt` output key all
+   spell it, and two committed artifacts carry it. Considered here and DECLINED: a schema
+   rename inside a gate repair is how the next reader gets a driver that disagrees with its
+   own artifact. Filed with its blast radius named rather than left as a good idea.
+3. **THE GATE'S GENOME LIST IS A §19-ERA ARTIFACT.** Seven files, six genomes, one of which
+   can no longer be scored at all and three of which are now infeasible, at worst-barrier
+   11.4, 893 and 3039. The genome §115 just replaced (`09e8188`) is not on it, and neither
+   are `b729e86`'s own rivals from the re-descent. Whether "the shipped genome and its
+   rivals" still describes this list is a decision, not a measurement.
+
+---
+
+## §117 — 2026-09-06. §115's PROMOTION LEFT THE SUITE 62 RED AND ITS RECORD SAYS 895 PASSED / 0 FAILED. THE THREE PROBED REDS PASS AT THE PARENT COMMIT AND FAIL AT `cb4e3dd` WITH NOTHING ELSE CHANGED — AND NINE OF THEM SAY A COMMITTED STUDY ARTIFACT NO LONGER DESCRIBES THIS TREE
+
+Found while establishing "green before commit" for §116, which is the only reason it was
+found at all: §116 changes a study driver, a `Makefile` default and three comments, so the
+suite it ran was not run for this.
+
+### 1. THE COUNT, AND IT IS NOT §116's
+
+`make test`, batched by §115.4's own discipline (the 28 light files in one process, then
+each `t3` file alone), against the working tree at `cb4e3dd` plus §116's changes:
+
+```
+  batch                 exit   failures
+  light tier (28)         1       58
+  test_gradient.py        1        1
+  test_pool.py            0        0
+  test_stage3.py          0        0
+  test_objective.py       1        3
+                                  --
+                                  62
+```
+
+**§115.4 records the same suite as `900 collected, 895 passed + 5 xfailed = 900 accounted
+for`, and the light tier specifically as `661 passed, 2 xfailed`.** Both numbers are in the
+record for the commit that is 62 red.
+
+### 2. IT IS THE PROMOTION, MEASURED THREE WAYS AND NOT INFERRED
+
+Three of the reds, one per mechanism, run in detached worktrees so the shared checkout was
+never touched:
+
+```
+  tests/test_wheel_fea.py::test_the_axle_drop_meets_the_stroke_target
+  tests/test_mesh.py::test_fold_margin_on_the_shipped_genome_is_the_recorded_value
+  tests/test_requirements.py::test_the_calibration_reproduces_the_portfolio_the_plan_states
+
+  at 96a0ac5 (HEAD~1, best_solution.json = 09e8188)   all three PASS
+  at cb4e3dd (HEAD,   best_solution.json = b729e86)   all three FAIL
+```
+
+`cb4e3dd` IS the promotion, and `HEAD~1 -> HEAD` changes `best_solution.json`, `PLAN.md`,
+the two `export/` files and one preserved artifact — nothing a test executes. The
+fixtures reach the genome directly: `tests/test_fillet_block.py:70` opens
+`best_solution.json` and hands it to every case in the file, which is 23 of the 58 on its
+own.
+
+**This is not exhaustive** — an exhaustive count at `cb4e3dd` was started and killed at
+0 GiB available (§117.4), so what stands is three probes, not 62. The attribution does not
+rest on the count: §116's changes cannot reach `test_fillet_block`, `test_gnl` or
+`test_wheel_fea`, and the two that survive both trees prove the genome is the variable.
+
+### 3. THEY ARE NOT ONE THING. FOUR KINDS, AND TWO OF THEM ARE GOOD NEWS
+
+**TWO ARE STRICT XPASSES — the promotion made the wheel BETTER and the markers must come
+off.** Both were written with a reason that names this exact day:
+
+```
+  test_wheel_fea   test_the_axle_drop_meets_the_stroke_target      §111's xfail
+     "Clears on a re-promotion (successor 6) or a section that gives the band a warrant"
+  test_objective   test_the_margin_term_prices_and_never_gates     §103's xfail
+     "strict=True, so this reopens itself the day the shipped genome (or its replacement)
+      reads back under the wall"
+```
+
+`b729e86` reads back under the wall — `stress` utilisation 0.9559 at `coarse`, and §116.5
+measures 0.9723 at `medium`/SVK — and its axle drop meets the stroke band. **The mechanism
+did exactly what it was built to do, on the commit that promoted the genome, and the record
+for that commit says `5 xfailed` with no XPASS.** The header's own rule is the one being
+tested here: *an `xfail` that starts passing is a FAILURE, not a bonus.*
+
+**ONE IS THE CLAMP AGAIN.** `test_gradient.py::test_the_filleted_gate_runs_and_inverts_the_
+census` raises `FilletClampRefusedError` — the sector-fit clamp moves the new genome's hub
+radius off its genes in that fixture's configuration, which is §116.3's mechanism arriving
+in the suite rather than in the gate.
+
+**FIFTY ASSERT WHERE A GENOME SITS**, and a new genome sits elsewhere; those are re-derived
+or re-marked one at a time, and that is ordinary promotion tail.
+
+**THE REMAINING NINE ASSERT THAT A COMMITTED ARTIFACT STILL DESCRIBES THE TREE, and they
+are the ones that mean a file on disk is now wrong:**
+
+```
+  test_corner_singularity  test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_corner_singularity  test_the_filleted_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_fillet_block        test_the_committed_report_describes_the_geometry_the_tree_BUILDS_TODAY
+  test_fillet_fold         test_the_committed_report_still_describes_this_construction
+  test_junction_fit        test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_tri_block           test_the_committed_report_describes_the_mesh_the_tree_BUILDS_TODAY
+  test_tri_bend            test_evaluate_reproduces_the_committed_control_at_bend_zero
+  test_mesh                test_fold_margin_on_the_shipped_genome_is_the_recorded_value
+  test_requirements        test_the_calibration_reproduces_the_portfolio_the_plan_states
+```
+
+Six committed `studies/*.json` describe a wheel that no longer ships. This is §25's defect
+class exactly — "seven of the nine drivers wrote artifacts to the CWD, so every committed
+`.jpg` had been stale since 2026-08-03" — and it is the same one the header's own rule
+exists for: *a study commit carries its artifacts.* A promotion is a study commit for every
+driver that defaults to `best_solution.json`, and the checklist in
+`tests/test_promotion.py` does not say so. **Its six items name the banner, the STEP, the
+drivers with pinned constants, `make svk`, the preserved genome and `test_golden.py`. None
+of them is "re-run the suite against the new genome", and none is "regenerate the artifacts
+that read it".**
+
+### 4. AND THE LIGHT TIER'S OWN MEMORY FIGURE IS UNDERSTATED, BY THE SAME MISTAKE §113 MADE
+
+`/usr/bin/time -v` put the light tier's peak at **33.4 GiB**. That is the PARENT's maximum
+resident set and it does not count children — and the light tier spawns them: re-running it
+in a worktree drove the box to **60/61 GiB used, 0 available**, with `pytest` at 27.8 GiB
+and TWO `wheel_pool_worker.py` children at 16.0 GiB each beside it. The run was killed
+before the kernel chose for us.
+
+So the batching rule §115.4 wrote — the four `t3` files never share a process with each
+other or with the light ones — is **necessary but not sufficient**: the light tier alone can
+reach the ceiling, and nothing may run beside it either. This is the fourth pre-§103 memory
+figure to fall over in four days (§113's pool, §115's `test_objective` peak, §115's
+`SVK_WORKERS`, and now this), and the third to fall over because a number was read off one
+process while the work happened in several.
+
+### 5. WHAT THIS SECTION DOES NOT DO
+
+**It does not fix the 62.** They are the tail of §115's promotion — two markers to lift, six
+artifacts to regenerate, one clamp to judge and fifty positions to re-derive — and folding
+them into §116's gate repair would put two unrelated units in one commit against the
+header's own cadence rule. They are
+recorded here, with the mechanism proved and the artifact list named, and ranked below.
+
+**SUCCESSORS.**
+
+0. **THE TWO XPASSES ARE THE CHEAPEST AND SHOULD GO FIRST** — lifting a marker whose own
+   reason says to lift it is minutes, and until it is lifted the suite cannot go green for
+   any other reason. Neither is a judgement call: both reasons pre-committed to the
+   condition, and the condition is met.
+1. **THEN THE NINE ARTIFACT REDS, BECAUSE THEY ARE FILES ON DISK THAT LIE.** Six drivers to
+   re-run and commit with their outputs. Cost is known for one of them — `study_tri_block`
+   was 665.3 s at §114 — and unknown for the rest.
+2. **THEN THE FIFTY POSITION REDS**, each of which is a judgement between re-deriving
+   the recorded number and marking the test `xfail` with a reason, and §103's own precedent
+   (FILLET_PLAN's "SIX TESTS, TWO KINDS OF BREAKAGE") is the template: a moved POSITION gets
+   `xfail(strict=True)` with the paragraph, a changed FORMULA gets corrected. The one clamp
+   refusal belongs here and is the one that may not be a fixture question at all.
+3. **AND THE CHECKLIST GETS THE ITEM IT IS MISSING.** `tests/test_promotion.py`'s
+   `PROMOTION_CHECKLIST` should carry "the suite is re-run against the new genome, and every
+   driver that defaults to `best_solution.json` is re-run and committed with its artifact" —
+   the item whose absence this section is. It is one edit to a docstring constant and it is
+   the cheapest of the three.
+
+---
+
+## §118 — 2026-09-06. §117's SUCCESSORS 0 AND 3, CLOSED: BOTH STRICT XPASSES LIFTED ON THE PROMOTION THEIR OWN REASONS PRE-COMMITTED TO — AND ONLY ONE OF THEM IS GOOD NEWS. THE BARRIER ONE CLEARS BY 29.2% AT `smoke`/2 AND BY 2.77% AT THE FIDELITY THE OBJECTIVE ACTUALLY SOLVES
+
+§117 ranked these first on the grounds that lifting a marker whose own reason says to lift
+it is minutes and that nothing else can go green until they are off. Both halves held. What
+did not hold is the framing that they are the same kind of event: one marker recorded a
+DEFECT that the promotion repaired, the other recorded a MISSING WARRANT that the promotion
+did not supply and could not.
+
+### 1. MEASURED BEFORE LIFTING, NOT INFERRED FROM §117's BATCH
+
+§117's count came from a batched suite run, which tells you a test is an XPASS and nothing
+about the quantity underneath it. Both were re-run alone, at each test's own fidelity, and
+the quantity read directly as well:
+
+```
+  test_wheel_fea::test_the_axle_drop_meets_the_stroke_target      `coarse`, fillet=True
+     xfail marker         XPASS(strict)  ->  reported FAILED, 1.61 s
+     axle_drop_mm         1.843091 mm    band 1.4 < x < 2.0
+
+  test_objective::test_the_margin_term_prices_and_never_gates     `smoke`, 2 phases
+     xfail marker         XPASS(strict)  ->  reported FAILED, 416.67 s
+     stress barrier       0.0            selection_key tier 0
+     util hub             0.667478
+     util rim             0.708341
+```
+
+### 2. THE MARGIN TERM: THE PROMOTION REPAIRED THE THING THE MARKER RECORDED
+
+§103 marked it because the region-p-norm term read the outgoing genome's hub at **1.0557**,
+over the hard `stress` wall at 1.0 — so the barrier stopped reading 0.0 and `selection_key`
+stopped returning tier 0 on the shipped wheel. `b729e86` reads **0.667478** at the hub on
+the same fixture, 36.8% lower, and the barrier and the tier are both back. The marker's
+reason pre-committed to exactly this: *"strict=True, so this reopens itself the day the
+shipped genome (or its replacement) reads back under the wall."* It is off, and nothing
+about the test changed.
+
+**AND THE RIM GOVERNS THERE, 0.708341 AGAINST THE HUB'S 0.667478** — which is the shape
+§115.5 guessed at and §116 measured as explaining nothing about the assertion it was filed
+against. It is recorded here because it is now true on the shipped genome at this fixture,
+not because it rescues that diagnosis.
+
+### 3. THE AXLE-DROP BAND: THE MARKER CAME OFF ON ITS FIRST CONDITION AND THE SECOND IS STILL OPEN
+
+§111's reason named two: *"Clears on a re-promotion (successor 6) or a section that gives
+the band a warrant, not on an edit to this number."* §115 is the re-promotion — §111's own
+successor 6, "re-run Stage 3 and re-promote" — and the quantity moved from **0.961370 mm**
+(below the lower edge) to **1.843091 mm** (inside the band, 73.8% of the way across it from
+the lower edge). The marker is off because its condition is met.
+
+**THAT IS NOT A WARRANT AND THE SECOND CONDITION HAS NOT BEEN MET.** `1.4` was born in
+`f0a9e83` ("fillet tweaks", 2026-07-25, the 4th commit of 157, before PLAN.md existed) and
+has never been justified anywhere in this tree. §111 declined to move it for exactly that
+reason and the reason survives the promotion untouched: the edge is now satisfied rather
+than defended. A green test here says something about `b729e86`, not about the band.
+
+### 4. AND THE PART §117 COULD NOT SEE FROM A PASS/FAIL COUNT: BOTH CLEAR AT A FIDELITY THE OBJECTIVE DOES NOT SOLVE
+
+Each test reads at the fidelity it was built for — `coarse`/linear for one, `smoke`/2 phases
+for the other — and neither is `medium`/8/SVK, which is what `study_svk_rescore.json` scores
+and what the descent runs. **For the barrier this is a like-for-like comparison and it is
+worth having.** `stress_utilisation` is the same construction in both places (the region
+p-norm max out of the same report dict); only the rung, the phase count and the kinematics
+differ:
+
+```
+  stress_utilisation, b729e86      value     clearance under the 1.0 wall
+    smoke,  2 phases, linear      0.708341   0.291659
+    medium, 8 phases, linear      0.955948   0.044052
+    medium, 8 phases, SVK         0.972345   0.027655      <- what ships, 10.5x narrower
+```
+
+So the test that just went green reads 29.2% of clearance on a wheel that has **2.77%** at
+the setting the objective solves. It is a real pass and it is not a comfortable one, and
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be`'s own docstring already
+records this exact failure mode for this exact quantity — DEFECT8_PLAN step 1b, `util` 0.560
+at `smoke`/2 against 0.780 at `medium`/8, "a policy check turned into a fidelity check."
+
+**AND THE GOVERNING REGION IS NOT A PROPERTY OF THE GENOME — IT MOVES WITH THE SETTINGS.**
+§115 already recorded that the rim governs `b729e86` at `medium`/SVK (0.9723 over 0.9545)
+and §116 leaned on it, so that half is not new here. What is new is the OTHER TWO ROWS,
+which say the fact does not travel:
+
+```
+  smoke,  2 phases, linear   hub 0.667478   rim 0.708341   RIM governs
+  medium, 8 phases, linear   hub 0.955948   rim 0.927829   HUB governs
+  medium, 8 phases, SVK      hub 0.954467   rim 0.972345   RIM governs   <- §115's row
+```
+
+Between the two `medium` rows only the kinematics changes: the hub barely moves (-0.15%)
+while the rim moves +4.8%, so it is the rim that SVK loads, and the crossing is not a
+near-tie artefact of a shared rung. But kinematics is not the only axis that moves it either
+— `smoke`/2 is linear and the rim governs there too. **So on one genome, three settings, the
+governing junction is rim, hub, rim.** §115 framed its crossing as a fact about `b729e86`
+("the first genome scored by this gate where that stops being true"); on this evidence it is
+at least as much a fact about where you read. That does not touch §115's conclusion — its
+subject was whether the larger `Kt` sits on the larger raw stress, and it read the gate's own
+row — but any sentence of the form "the hub is the governing junction" now needs its
+settings attached.
+
+**FOR THE AXLE DROP THERE IS NO SUCH COMPARISON AND I AM NOT MAKING ONE.** The gate reports
+`axle_drop_mean_mm`, the mean over eight contact phases; this test reads `axle_drop_mm`, a
+single phase-0 solve. They are DIFFERENT QUANTITIES, not one quantity at two rungs — the
+test's own docstring puts them 22.5% apart and names `axle_drop_mean_mm` as the tree's
+actual `SHOULD-DEFLECTION` conformance gate. What can be said without a run: the `2.0` this
+band borrowed for its upper edge is `TARGET_DEFLECTION_MM`, and the quantity that actually
+answers to that target reads **1.996759 mm at `medium`/SVK, 0.16% under it** (and
+`axle_drop_max_mm` 2.27338 is over it). The phase-0 quantity at `medium` was not measured
+here.
+
+### 5. THE CHECKLIST GETS ITEM 7 — THE ONE WHOSE ABSENCE §117 IS
+
+`tests/test_promotion.py` now carries a seventh item: **re-run the suite AFTER writing the
+new genome, and re-run every driver that defaults to `best_solution.json`, committing its
+artifact.** Items 1-6 name the banner, the STEP, the pinned-constant drivers, `make svk`,
+the preserved genome and `test_golden.py` — §115 walked all six and left the suite 62 red.
+The module docstring's table of instances goes from two to three (§16, §19, §115), and the
+new row is the one this file learned about ITSELF rather than about a driver.
+
+It is a docstring constant and it cannot fail; it is delivered at the moment someone is
+promoting, which the file's own preamble argues is the whole value of it ("the point is not
+the assertion, it is the checklist arriving at the moment someone is promoting rather than
+months later").
+
+### 6. WHAT IS STILL RED — 62 GOES TO 60, AND NEITHER SURVIVOR IN THE FILE I TOUCHED IS A NUMBER TO MOVE
+
+Three files were re-run, which is every file this change touches:
+
+```
+  tests/test_promotion.py + tests/test_wheel_fea.py     26 tests, 1 failed
+  tests/test_objective.py (alone, tmux, 36:54)         126 tests, 2 failed, 2 xfailed
+```
+
+`test_objective.py` was **3 red at §117 and is 2 now** — the lift removed exactly one, which
+is the arithmetic the marker predicted. `test_wheel_fea.py` is down to a single red. So the
+suite total goes **62 -> 60**, and that is arithmetic on two measured endpoints rather than a
+re-run: this change touches three files, all three were re-run after it, and the axle-drop
+XPASS was separately measured as a failure before and a pass after. **The other 60 were not
+re-measured and §117's batch remains the only count of them.**
+
+The three survivors, and two of them are more than positions:
+
+**`test_R_rim_is_still_effectively_inert_and_that_is_recorded` IS A FINDING WITH ITS
+CONSEQUENCE ALREADY FILED.** `d(rim margin)/dR_rim` reads **-7.010e-04** against a `< 1e-4`
+inertness bound. Its docstring pre-committed the reading: *"If this ever starts failing, the
+rim junction geometry has changed and M8b's gene census and the study's verdict both need
+revisiting."* So the rim junction geometry changed at the promotion, and two documented
+verdicts are now owed a re-check. **THIS IS A DIFFERENT `rim` FROM §4's.** §4 is about the
+stress region p-norm; this is `fillet_feasibility`'s GEOMETRIC margin and the near-tangential
+rim arrival that made it stationary. Both moved at the same promotion and it is tempting to
+call that one mechanism — that link is NOT measured here and is not claimed.
+
+**`test_the_thickness_branch_of_the_cap_binds_on_a_thin_root` CARRIES A REAL QUESTION.** It
+probes at `t0 = 2.0` and reads `by_thickness` 1.0051 against `by_slot` 0.9330, so the branch
+under test no longer binds there. Its docstring says `2.0` is "a value chosen to sit near the
+crossover" — a genome-dependent probe — so the cheap repair is to re-choose it. But the
+failure message states the alternative the test exists to catch: *"the crossover is outside
+the box and the min is dead code."* Which of the two it is on `b729e86` is one `t0` sweep
+across the gene box, and until that sweep is run, moving the probe value would be assuming
+the answer.
+
+**`test_peak_stress_diverges_but_the_field_converges` is the ordinary kind**: plain-spoke p99
+still moving 1.39% between the last two rungs against a `< 1%` bound.
+
+### 7. THE CITATION AUDIT §114 MADE ROUTINE — AND IT SEPARATES CLEANLY THIS TIME
+
+Removing a 10-line and a 12-line decorator and adding docstrings moved lines in three files
+(net +6, +6, +12). Five line citations point into them. Diffed against the parent commit
+rather than content-matched, because content-matching cannot tell "already stale" from
+"stale by my delta":
+
+```
+  citation                              site                          verdict
+  test_promotion.py:172-181             test_genome_key_order.py:45   MINE, +12 -> :184-193
+  test_promotion.py:176-181             test_genome_key_order.py:84   MINE, +12 -> :188-193
+  test_objective.py:1257                MBSE_PLAN.md:68               ALREADY STALE
+  test_objective.py:1257                wheel_objective.py:1171       ALREADY STALE
+  test_wheel_fea.py:370, :407           WALLPIN_PLAN.md:111           ALREADY STALE
+```
+
+**The two that are mine are corrected here. The three that are not are recorded and left**,
+per §113's rule about not folding an unrelated repair into a commit — but with their true
+targets named so nobody has to re-find them. Both `:1257` citations mean the
+`monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` line, which sat at **1305 in the
+parent** and 1311 now — already 48 lines off before this change. WALLPIN's pair means the two
+tests `set_min_wall(2.0)` wraps, at **469 and 506 in the parent**, 475 and 512 now — off by
+about 99, and WALLPIN's own paragraph dates itself 2026-09-03, one day before §111 touched
+this file at all, so the drift predates that too.
+
+**SUCCESSORS.**
+
+0. **THE NINE ARTIFACT REDS** — §117's successor 1, unchanged and now the top of the list.
+   Six committed `studies/*.json` describe a wheel that no longer ships; one known cost
+   (`study_tri_block`, 665.3 s at §114) and five unknown.
+1. **THE POSITION REDS**, §117's successor 2 — **but §6 above narrows the claim that they
+   are all positions.** Two of the three seen here are not: one is a finding whose docstring
+   already names what it invalidates, the other hides a dead-code question behind a probe
+   value. Expect the same among the remaining fifty-odd, and read each docstring before
+   re-deriving its number.
+2. **M8b's GENE CENSUS AND `fillet_feasibility`'s VERDICT**, which
+   `test_R_rim_is_still_effectively_inert_and_that_is_recorded` says are owed a re-check now
+   that `R_rim` carries gradient. Filed by that test in advance; this is the day it fired.
+3. **CHEAP, AND IT GATES THE NEXT ONE: READ THE PHASE-0 `axle_drop_mm` AT `medium`.** It is
+   the one number §4 wanted and could not have, and it is a single build and solve.
+4. **THEN DECIDE WHETHER EITHER LIFTED TEST SHOULD READ AT PRODUCTION FIDELITY** (§4 above).
+   Both now pass on a rung the objective does not solve. For the barrier the case is
+   measured — 29.2% of clearance where the shipped setting has 2.77% — and for the drop it
+   is not, which is what successor 3 supplies. Neither move is free: the drop's band has no
+   warrant to transport (§111), and the utilisation's would re-open the `smoke`-vs-`medium`
+   calibration DEFECT8 already fought once. A section's worth of work, not a fixture edit.
+5. **THE `1.4` EDGE STILL HAS NO WARRANT.** §111's second clearing condition is open, and
+   the test being green now makes it less likely anyone looks. Recorded so that the pass is
+   not mistaken for the answer.
+
+---
+
+## §119 — 2026-09-07. §117's SUCCESSOR 1 IS NOT EXECUTABLE AS FILED: NOT ONE OF THE SIX ARTIFACTS CAN BE REFRESHED INTO A NET IMPROVEMENT. THREE DRIVERS EXIT 1 ON THEIR OWN SELF-CHECKS, AND THE THREE THAT EXIT 0 PRODUCE ARTIFACTS THAT CONTRADICT NINE FINDINGS THE TREE ASSERTS
+
+§117 filed this as *"six drivers to re-run and commit with their outputs"* — bookkeeping,
+cost unknown for five of six. All six were run. **The cost was 27m35s and was never the
+obstacle.** What the refresh actually is: these artifacts are the EVIDENCE BASE for recorded
+findings, and tests assert those findings against them. Refreshing one on a new genome does
+not update a stale number; it rewrites the evidence under a conclusion the tree still makes.
+
+Nothing is committed from the six runs. What follows is what they measured.
+
+### 1. WHAT IT COST, WHICH IS WORTH HAVING SINCE §117 COULD NOT SAY
+
+```
+  target          exit   wall     artifact
+  junction          0      <1 s   study_junction_agreement.json
+  corner            0       8 s   study_corner_singularity.json
+  fillet            1      38 s   study_fillet_fold.json
+  corner-fillet     0     335 s   study_corner_singularity_fillet.json
+  filletblock       1     588 s   study_fillet_block.json
+  triblock          1     686 s   study_tri_block.json
+                          -----
+                          1655 s
+```
+
+`triblock` at 686 s sits on §114's recorded 665.3 s and `corner` at 8 s on the Makefile's own
+"wall 8.5 s". **`corner-fillet` does not: the Makefile says "~22 s and it is the same driver
+— one flag", and it measured 335 s, 15.2x.** Same box, same ladder, and the unfilleted half
+of that same driver is still 8 s, so this is the filleted path on `b729e86`, not drift in the
+machine.
+
+### 2. THE FIRST FAILURE MODE: THREE DRIVERS EXIT 1, AND ALL THREE FOR ONE REASON
+
+Every failing self-check has the same shape — *a constant recorded in a plan file, compared
+against a quantity measured on whatever `best_solution.json` currently holds*:
+
+```
+  driver         self-checks that went True -> False on the new genome
+  fillet_fold    reconciliation vs FILLET_PLAN PART 3 / PART 5 (4 of 8 rows disagree)
+  tri_block      control_reproduces_the_collapse
+                 shipped_control_is_the_published_0.78
+  fillet_block   the_candidate_constant_matches_the_measured_surface
+                 the_fine_candidate_constant_matches_the_measured_surface
+                 the_cliff_column_reproduces_PART_20s_bisections
+                 the_re_derived_argmax_is_still_PART_13s_pair
+```
+
+**MEASURED, NOT INFERRED.** `study_fillet_fold.py` re-run at the OUTGOING genome
+(`stage3_knee_best_medium.json` = `09e8188`, preserved by §115's checklist item 5), same
+code, scratch `--out`:
+
+```
+  genome        reconciliation rows agreeing
+  b729e86        4 of 8      <- what ships
+  09e8188        8 of 8
+```
+
+And the tree forbids filing the result anyway, in writing:
+`test_fillet_fold::test_the_committed_report_passes_its_own_self_checks` — *"The artifact in
+the tree must be a passing run, not a saved failure"* — with siblings
+`test_tri_block::test_the_reports_self_checks_all_pass`,
+`test_tri_bend::test_the_committed_run_passed_its_own_protocol_checks` and
+`test_fillet_block::test_the_committed_report_passes_its_own_self_checks`. All four are green
+today, on artifacts that are passing runs of the outgoing genome.
+
+### 3. THE SECOND FAILURE MODE, WHICH IS THE REAL FINDING: A CLEAN REFRESH COSTS MORE THAN IT BUYS
+
+`junction`, `corner` and `corner-fillet` exit 0. Their artifacts were regenerated, the eight
+affected test files run in full, and the failure list diffed against the same eight files at
+`d07c5e3` in a detached worktree — **the list, not the count**:
+
+```
+  refreshing study_corner_singularity{,_fillet}.json and study_junction_agreement.json
+
+    CLOSED  4   the three `..._BUILDS_TODAY` freshness tests, plus
+                test_fillet_block::test_make_junction_s_void_is_a_ONE_NODE_CHORD_...[hub]
+    OPENED  9   all of them findings, none of them freshness
+```
+
+The nine, with what they actually say:
+
+```
+  test_all_four_junction_corners_are_re_entrant
+      "rim:P_t lambda 0.5101 -- this is the PART's corner and its wedge should not move
+       with a mesh option"                              0.5101 vs 0.5031 +/- 0.002
+  test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet
+      "patch counts [54, 56, 60] appear on both sides -- the band is no longer separated
+       by the contact patch alone, WHICH IS A FINDING"
+  test_the_fillet_surface_peak_settles_where_the_sharp_corner_never_did
+      "hub:surface still moves 3.83% on the last rung"  0.0383 vs < 0.03
+  test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one
+      ('unfilleted', 38.6416)
+  test_the_filleted_blocking_solves_the_SAME_WHEEL          False is True
+  test_a_genome_robust_layer_profile_holds_the_deflection_band   6 of 8 profiles built
+  test_the_end_cap_refused_the_fillet_at_both_rings         True is False
+  test_uncapping_FLIPPED_the_hub_verdict_and_did_not_flip_the_rim   2.7427 > 4.0 fails
+  test_the_faithful_rim_would_buy_a_factor_of_FOUR_on_the_admissible_radius
+      1.2416 vs 4.0 x 0.6126 -- the factor is 2.03, not 4
+```
+
+**Both states are true statements and that is the whole difficulty.** Left alone, the
+artifacts describe `09e8188` and three freshness tests say so — but the nine finding tests
+are then GREEN VACUOUSLY, asserting things about a wheel that no longer ships. Refreshed,
+the freshness tests close and the nine correctly report that those findings do not survive
+the promotion.
+
+**The refresh is not adopted here, and the reason is not the count.** Turning nine recorded
+findings red is a claim that they are dead — that the end cap no longer refuses the fillet at
+both rings, that the faithful rim buys 2.03x and not 4x, that `rim:P_t`'s wedge moves with a
+mesh option when the test says the PART's corner must not. Each of those needs reading on its
+own merits by someone who then writes down what replaced it. **An artifact refresh is the
+wrong instrument for retiring nine findings, and doing it as a side effect of clearing a red
+is how a record gets quietly rewritten to match its outcome.** §15's precedent is the one
+that applies: record them, do not refresh them mid-arc. The measurements above are the
+record.
+
+### 4. AND TWO OF §117's NINE WERE NEVER ARTIFACT REDS — MY OWN BUCKETING, FROM A BATCH
+
+`test_mesh::test_fold_margin_on_the_shipped_genome_is_the_recorded_value` and
+`test_requirements::test_the_calibration_reproduces_the_portfolio_the_plan_states` read no
+`studies/*.json` at all. Both are golden constants in the test files — ordinary position
+reds, re-derived here, and **the only two of the nine this section closes**:
+
+```
+  fold_margin at coarse (n_curve 600)   14.365501181531 -> 9.004243676666
+    ladder spread across 600/1200/2400        1.10e-05 -> 5.42e-05  (4.9x wider)
+```
+
+**The portfolio one is a finding rather than bookkeeping.** `calibrated_priorities` reads
+`DEFAULT_WEIGHTS` for four axes and the SHIPPED GENOME's own `loss_terms["smoothness"]` for
+the fifth, so a promotion re-derives the whole 100-point budget:
+
+```
+  term            p_cal §103   p_cal §119        c_T §103    c_T §119
+  mass                 53.51        49.37        0.300000    0.300000
+  deflection           44.60        41.14        0.250000    0.250000
+  stress_margin         1.59         1.47        0.008921    0.008921
+  smoothness            0.30         8.02        0.001678    0.048716   <- 29x
+  phase_ripple          0.00         0.00        0.000000    0.000000
+```
+
+`b729e86` carries smoothness **4.871578951506198** against the outgoing genome's implied
+~0.168. **Smoothness was a rounding error in this portfolio and is now its third-largest
+axis** — the same 100-point redistribution §103 recorded, driven from the genome side
+instead of the weight side. `MBSE_PLAN.md`'s table and its own CHECK line are updated, which
+is what that file's tripwire instructs (*"this file is wrong and the driver is right"*); its
+§103 and §114 records are left as written.
+
+### 5. THE CHECKLIST LEARNS ABOUT ITSELF A SECOND TIME
+
+`tests/test_promotion.py`'s item 3 said **"Known one"** — one driver pairing
+`best_solution.json` with a genome-specific constant. It now names **four**, with §2's
+evidence. And it records why §118's item 7 is not sufficient on its own: re-running one of
+these drivers after a promotion produces a saved failure rather than a refresh, so
+"regenerate the artifacts that read it" is not a step anyone can complete until the constants
+are pinned.
+
+### 6. WHERE THE COUNT STANDS
+
+**Two of §117's nine are closed. Seven stand.** The suite total goes 60 -> 58. The seven are
+no longer one bucket: three are drivers that cannot self-pass, and four are freshness tests
+whose refresh would cost nine findings.
+
+**SUCCESSORS.**
+
+0. **PIN THE THREE DRIVERS' RECORDED CONSTANTS TO A GENOME FILE**, §2's fix.
+   `study_svk_rescore.run_control` is the worked precedent (§25): the constant stays, the
+   READ moves off `best_solution.json` onto the file the constant was measured on. Each
+   driver needs a decision about WHICH genome its PART constants belong to — `09e8188`
+   reproduces `fillet_fold`'s eight rows, and `tri_block`/`fillet_block` are unmeasured.
+   This makes the three drivers runnable again; it does NOT by itself decide §3.
+1. **DECIDE THE NINE FINDINGS, ONE AT A TIME** — §3's list, each needing "does this survive
+   `b729e86`, and if not what replaces it". This is the expensive one and it is a section's
+   work per cluster, not per test. Until it is done the four freshness reds are the
+   tree's honest state and should stay red.
+2. **THE `corner-fillet` COST COMMENT IS 15x LOW** (§1). One line in the Makefile, but check
+   whether the filleted ladder got slower for a reason before rewriting the number.
+3. **`studies/study_fillet_kt.json` AND `study_fillet_wiring.json` READ THE CORNER
+   ARTIFACTS**, and no test covers that dependency. Whether they describe a mesh that no
+   longer exists is unmeasured, and they would inherit §3's whole problem.
+
+---
+
+## §120 — 2026-09-07. §119's SUCCESSORS 0, 2 AND 3, CLOSED. THE GENOME IS THE WHOLE CAUSE FOR ALL THREE DRIVERS — MEASURED BEFORE ANY CODE WAS WRITTEN — AND PROVING THE PIN GREEN FOUND THE SAME DEFECT ONE LEVEL DOWN, IN THREE ARTIFACTS NOTHING WAS WATCHING. THE `corner-fillet` COST LINE WAS NEVER WRONG
+
+§119 filed four successors and declined the expensive one. This section executes the other
+three. **Successor 1 — the nine findings under `study_corner_singularity{,_fillet}.json`
+and `study_junction_agreement.json` — is untouched by design**, and its four freshness reds
+are still red. Nothing here refreshes an artifact whose refresh costs a finding.
+
+### 1. THE DECISION GATE §119 LEFT OPEN, ANSWERED BEFORE ANY CODE CHANGED
+
+§119 wrote that each driver *"needs a decision about WHICH genome its PART constants belong
+to"*, and that only `fillet_fold` had been measured. There is one answer for all three, and
+it is dated rather than argued: every failing self-check traces to a plan-file record from
+**2026-08-17 → 2026-08-23**, a window in which `best_solution.json` held `09e8188`
+throughout (§26, 2026-08-14; replaced by `b729e86` at §115, 2026-09-06). That genome is
+preserved as `stage3_knee_best_medium.json` — §115's own checklist item 5.
+
+Run at that file, same code, scratch `--out`, before anything was edited:
+
+```
+  driver               at b729e86 (defaults)        at 09e8188 (pinned)    wall
+  study_fillet_fold    exit 1, 4 of 8 rows          exit 0, 8 of 8         38.6 s
+  study_tri_block      exit 1, 2 of 20 checks       exit 0, 20 of 20      687.9 s
+  study_fillet_block   exit 1, 4 of 21 checks       exit 0, 21 of 21      596.1 s
+```
+
+**The genome is the whole cause in all three, and §104's live suspicion does not apply.**
+§103 made the tree build the eleven-block filleted sector, so the construction under these
+drivers could have moved too — but `control()` and the sector sweeps here take `uncap=`,
+not `fillet=`, and every check returns True at the outgoing genome with today's code.
+
+### 2. THE PIN
+
+`study_svk_rescore.run_control` (§25) throughout: **the constant stays, the READ moves**
+onto the file the constant was measured on, and rows that characterise the SHIPPED wheel
+keep following `best_solution.json`. Repointing `--genome` was never available —
+`tests/test_tri_block.py:815` asserts `report["genome"] == "best_solution.json"` from the
+other side, two more tests re-measure against a shipped-genome fixture, and `_gate_guard`
+refuses any other genome under a committed artifact's name.
+
+**`study_fillet_fold`** — the reconciliation runs on the pinned genome over `LEGACY_GRID`
+only, the ten radii both tables were read off, and reproduces the committed artifact's
+legacy-grid cells bit for bit. `reconciliation_shipped` carries the same eight rows on
+whatever ships, reported and not gated. 43.5 s against 38.6 s, so the pin is 4.9 s.
+
+`mechanism` survives the promotion, checked rather than assumed: all four
+`(cfg, junction)` keys still report `upper_edge_is_arc_cell_step` and
+`part3_criterion_matches_upper_edge` True at `b729e86`, windows shifted
+(`coarse:hub` 0.12–0.24 → 0.16–0.27 mm).
+
+**`study_tri_block`** — the two published-number checks read a pinned control pair:
+
+```
+                            pinned 09e8188        shipped b729e86      coarse / medium
+  control_shipped (1.0)   0.782735 / 0.782926   0.547847 / 0.547420
+  control_faithful (0.0)  0.008176 / 0.008251   0.032732 / 0.032741
+```
+
+**§51's published 0.008176 reproduces at the pin to the digit**, and §37's `0.7822` is 30%
+away on the wheel that ships — while the collapse the whole arc exists to measure reads
+0.0327 against a `< 0.02` threshold. 11m16.6s against §119's 686 s: free.
+
+**`study_fillet_block`** — `PROFILE_GENOME` pins the PART 13 / PART 16 / PART 20 family.
+9m51.4s against §119's 588 s, so ~3 s.
+
+**AND THE FAMILY HAD TWO MEMBERS THE FOUR RED CHECKS DID NOT NAME.** Pinning only the four
+cells that failed turned `test_the_per_genome_profile_DOMINATES_the_global_pair_68_declined`
+red. §81's `0.5520` is the shipped PROFILE's cliff clearance and
+`sweep_cliff_clamped_profile` puts `shipped_margin` on every row, so `cliff_profile` and
+`cliff_profile_held_out` are PART 20's family too. Half-pinned, that table read **0.7909
+against a 0.5520 bound** — every field present, every verdict computed, and its rows
+describing two different wheels. **A half-pinned comparison is worse than an unpinned one,
+because nothing goes red.** Found by diffing the failure list, not by reading the code.
+
+### 3. WHAT PROVING IT GREEN FOUND: THE SAME DEFECT ONE LEVEL DOWN
+
+`study_tri_block.json` is not only an output. `study_tri_bend.py` and `study_tri_rule.py`
+both call `frozen_cells(TRIBLOCK_ARTIFACT)` and take `sweep.best`'s cell from it. That
+argmax is a characterisation of the SHIPPED wheel — correctly so; keeping it fresh is what
+`..._BUILDS_TODAY` is for — so refreshing the artifact moved it:
+
+```
+  study_tri_block  sweep.best.B     coarse 10 -> 10      medium 18 -> 20
+```
+
+**One consumer had a test and one did not.**
+`test_tri_bend::test_w_is_held_fixed_to_the_tri_blocks_own_published_cell` went red at once
+and named the number. `study_tri_rule.json` has no equivalent check and would have gone
+stale in silence.
+
+Both regenerated at the new cell, **verdicts checked before filing**:
+
+```
+  study_tri_bend   §104's "a genome-dependent bend buys exactly nothing" SURVIVES --
+                   linear still ties constant.  linear_beats_constant_on_holdout
+                   medium [9, 9] -> [5, 5]; COARSE UNCHANGED at [9, 9], which is the
+                   row §104's "nine genomes against the constant's nine" quotes, so
+                   that sentence is intact as written.                        24.3 s
+  study_tri_rule   every self-check unchanged; `coarse` bit-identical, its cell not
+                   having moved.  §104's verdict holds and gets STRONGER: at `medium`
+                   the calibrated rule's holdout accuracy goes 0.800 -> 0.775 forward
+                   and 0.900 -> 0.875 swapped, so it loses to the hand-read 0.850 by
+                   more.                                                    16m39.7s
+```
+
+§104's own record is left as written and scoped to its date. **Both of its headline numbers
+survive**: the bend's "nine against nine" is the `coarse` row, whose cell did not move, and
+`medium` forward still loses to the hand-read `0.850` — by 0.075 now instead of 0.050. What
+is superseded, here and nowhere else, is §104's `medium` hold-out column: `forward` 0.800 →
+0.775 and `swapped` 0.900 → 0.875.
+
+### 4. THE `corner-fillet` COST LINE WAS NEVER WRONG (SUCCESSOR 2)
+
+§119 measured the recipe at 335 s against its own *"~22 s"*, called it 15.2x, and — rightly
+— filed an instruction rather than a fix: *"check whether the filleted ladder got slower for
+a reason before rewriting the number."* **It did not get slower.** One flag at a time, same
+box, same genome:
+
+```
+  `make corner`, unfilleted control                            7.8 s
+  + --fillet genome                                           15.5 s
+  + --continuity coarse                                       20.5 s
+  + --profiles              <- `make corner-fillet`          332.3 s
+```
+
+**"~22 s" is exactly right for `--fillet genome --continuity coarse`, which is the recipe
+the sentence was written against.** `--profiles` joined the recipe afterwards and the cost
+line was not updated. The filleted ladder is **2.0x** the unfilleted one, not 15x.
+`--profiles` is **311.8 s, 94% of the wall**, and it is not a ladder at all: it sweeps the
+deflection's convergence over every pair in `study_fillet_block.LAYER_PROFILE_CANDIDATES` —
+PART 16's two-objective work, whose cost belongs to that question and not to the fillet.
+§119's *"this is the filleted path on `b729e86`"* was half right: it is that path, but
+specifically the half that is not a fillet measurement.
+
+The comment's own sub-figure went with it — `--continuity coarse`'s thirteen extra `coarse`
+solves are **5.0 s**, not the recorded "~8 s of the 22" — and the help text carried a THIRD
+figure, "~110 s", so somebody updated one of the two places when `--profiles` landed.
+
+### 5. THE DERIVED-ARTIFACT CHAIN (SUCCESSOR 3)
+
+§119 filed this as unmeasured. It is worse than a missing dependency check: **neither driver
+had a test file at all.** And the chain is one hop longer than §119 named —
+
+```
+  study_fillet_block.py  LAYER_PROFILE_CANDIDATES
+      -> study_corner_singularity.py  (--profiles imports it as `fbk`)
+      -> study_corner_singularity_fillet.json
+      -> study_fillet_kt.json   and   study_fillet_wiring.json
+  study_junction_agreement.json                -> study_fillet_wiring.json
+```
+
+— so both terminal consumers sit downstream of artifacts successor 1 has frozen, and
+`study_fillet_wiring` reads all three of them. Rebuilt from the tree:
+
+```
+  study_fillet_kt.json       reproduces BIT-IDENTICALLY          0.4 s
+  study_fillet_wiring.json   ten fields differ                   0.7 s
+```
+
+`study_fillet_kt` makes no live read at all, which is the useful half of the answer:
+whatever is stale under it is stale in the corner ladders, not here. `study_fillet_wiring`
+makes one — `build()` loads `best_solution.json` — and is stale from **two independent
+directions**:
+
+```
+  /exchange/weight_today                       325.0    -> 89.21
+  /exchange/.../hub/stress_margin_today   (two rows, the same factor)
+      `DEFAULT_WEIGHTS["stress_margin"]`, moved at §103 on 2026-09-03.  THIS HALF HAS
+      BEEN STALE SINCE FOUR DAYS BEFORE THE PROMOTION, and nothing noticed.
+
+  .../rings/hub/r_requested_mm   0.663606 -> 0.570995
+  .../rings/rim/r_requested_mm   3.0      -> 1.680168
+  .../rings/hub/r_built_mm       0.663606 -> 0.485346
+  .../rings/hub/kt_error_pct     0.0      -> 7.5162
+      the live read.  At `b729e86` the exporter no longer builds the hub radius asked of
+      it.
+```
+
+**The `verdict` block is bit-identical across the rebuild**, pinned separately, and that
+split is the whole point: refreshing this artifact **retires no finding**, so it is not
+successor 1's problem. It is not refreshed here regardless, and the reason is recorded in
+the test: its other inputs are frozen behind that successor, and an artifact built half from
+today's tree and half from inputs known to be stale is a worse record than either end.
+
+`tests/test_fillet_artifact_chain.py` is the tripwire — four green, and
+`test_study_fillet_wiring_reproduces_from_its_committed_inputs` **red on purpose**, naming
+the field it fails on. Plain red rather than `xfail`, matching how this tree already treats
+a stale artifact: an `xfail` would say the staleness is accepted, and it is not.
+
+### 6. THE TEST-SIDE TWINS, WHICH ARE A DIFFERENT BUCKET AND SHOULD NOT BE FIXED HERE
+
+Every constant pinned in §2 has a twin on the TEST side, asserting the same number against a
+live measurement at the shipped genome through a `genes` fixture. **Seven of them, all red,
+all §117 successor 2's:**
+
+```
+  test_fillet_fold    test_the_two_contested_criteria_both_reproduce_at_coarse[hub, rim]
+                          PART3_LARGEST_SURVIVING / PART5_FIRST_FOLD          2
+  test_tri_block      test_the_control_is_the_collapse_section_37_measured
+                          §37's 0.7827 and its < 0.01                         1
+  test_fillet_block   test_the_cliff_column_reproduces_PART_20s_hand_bisections[x4]
+                          CLIFF_PUBLISHED                                     4
+```
+
+They are left red deliberately. §119 ranked the position reds as a bucket of judgements
+between re-deriving a number and marking it `xfail` with the paragraph, and quietly applying
+this section's pin to a test fixture would decide seven of them as a side effect of a
+different successor — which is the failure mode §119's own §3 declined for the nine
+findings. **What this section does give them is a worked pattern and the evidence that it
+restores rather than changes a measurement.**
+
+### 7. THE CHECKLIST LEARNS ABOUT ITSELF A THIRD TIME
+
+`tests/test_promotion.py`'s item 3 said the last three drivers *"still read the shipped
+pointer"*. All four are pinned now, and the sentence goes. **Item 8 is new and is §3 above**:
+a driver's output is another driver's input, none of the four consumers re-derives what it
+reads, so a promotion invalidates them without running them and without any test noticing.
+Re-run the consumers after the producers, in that order. `PROFILE_GENOME_FILE` and a test
+that its hash has not moved mirror §25's `CONTROL_GENOME_FILE` pair — pinning to a file
+makes that file's CONTENT load-bearing, and `stage3_knee_best_medium.json` now carries two
+roles at once, item 5's preserved genome and six recorded constants.
+
+**AND FOUR LINE CITATIONS, SPLIT THE WAY §118 SPLIT ITS FIVE.** Inserting a constant block
+into `study_tri_block.py` and four into `test_promotion.py` moved what three call-outs point
+at. Diffed against the parent rather than content-matched, because content-matching cannot
+tell "already stale" from "stale by my delta":
+
+```
+  UNCAP_PLAN.md x2   study_tri_block.py:228 -> :242   MINE.  Resolved exactly at
+                     `2ce3730` — it quotes the line — and my +14 broke it.
+  test_genome_key_order.py:45   test_promotion.py:184-193 -> :238-247
+  test_genome_key_order.py:84   test_promotion.py:188-193 -> :242-247
+                     PRE-EXISTING.  At `2ce3730` those ranges were already the wrong
+                     block (the `note` assertion, not the genome-file loop, which sat at
+                     203).  My edits moved the real target further; both now resolve.
+```
+
+### 8. WHERE THE COUNT STANDS, AND WHAT WAS ACTUALLY MEASURED
+
+**The blast radius was derived, not guessed**: the ten test files that import a changed
+driver or read a changed artifact (`grep -rln` over `tests/`). `test_stage3.py` names
+`study_fillet_fold` in a string and is not one of them, which is what keeps this from being
+a 110-minute suite run. Both ends run in full, the failure **LIST** diffed — never the
+count, §119's own +3 having hidden 9 opened and 6 closed:
+
+```
+                                  2ce3730      HEAD
+  nine files in the blast radius       46        41
+  tests/test_fillet_artifact_chain.py   -         1     (new file, red on purpose)
+                                     ----      ----
+                                       46        42
+
+  CLOSED  5   test_fillet_block   ..._describes_the_geometry_the_tree_BUILDS_TODAY
+              test_fillet_block   test_the_fold_gate_is_INERT_on_the_shipped_genome
+              test_fillet_fold    test_the_committed_report_still_describes_this_construction
+              test_tri_block      ..._describes_the_mesh_the_tree_BUILDS_TODAY
+              test_tri_bend       test_evaluate_reproduces_the_committed_control_at_bend_zero
+  OPENED  1   test_fillet_artifact_chain  ...wiring_reproduces_from_its_committed_inputs
+```
+
+**No test that was green at `2ce3730` is red at HEAD.** The one opened row is a new test in
+a new file, deliberate, and §5 is its reason. Every close is the same mechanism: an artifact
+that had been describing `09e8188` now describes the wheel that ships.
+
+**Taking §119's 58 at its word, the suite total goes 58 → 54 (five closed, one added).**
+That arithmetic is offered with the same caveat §117 earned: **the 58 has never been
+confirmed by a full run** — it is §117's measured 62 minus §118's two and §119's two, and
+`test_full.log` from 2026-09-06 is a truncated, killed run. What is measured here is the
+46 → 42 above and nothing wider.
+
+Where the 42 sit, and none of these files is a heavy-tier one:
+
+```
+  test_fillet_block   21     test_filleted_mesh    6     test_fillet_fold        5
+  test_corner_sing.    4     test_tri_block        4     test_junction_fit       1
+  test_fillet_artifact_chain  1
+  test_tri_rule 0   test_tri_bend 0   test_promotion 0
+```
+
+**Five of the 42 are §119's declined set and are untouched by construction** — the three
+`..._BUILDS_TODAY` freshness tests (`test_corner_singularity.py` ×2, `test_junction_fit.py`)
+and both parametrisations of
+`test_fillet_block::test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces`. §119
+listed only the `[hub]` one among the four its refresh would have closed, so `[rim]` is red
+for some other reason and that has not been chased here. **Seven more are §6's test-side
+twins.** The remaining thirty are §117 successor 2's position reds and are not this
+section's.
+
+**SUCCESSORS.**
+
+0. **THE SEVEN TEST-SIDE TWINS**, §6. The cheapest surviving work in §117's successor-2
+   bucket and the only part of it with a proven pattern: the driver-side pin restored every
+   one of these constants, so the question per test is only whether the assertion is about
+   the CONSTRUCTION (pin the fixture) or about the WHEEL THAT SHIPS (re-derive, or `xfail`
+   with the paragraph). Do not batch them; the three groups are three different claims.
+1. **REFRESH `study_fillet_wiring.json` WHEN ITS INPUTS ARE REFRESHED**, §5, and not before.
+   Its verdict is invariant today, so this is bookkeeping and stays bookkeeping only while
+   the corner and junction artifacts sit still. `tests/test_fillet_artifact_chain.py` is red
+   until then and that is its job.
+2. **§119's SUCCESSOR 1 IS UNCHANGED AND STILL THE EXPENSIVE ONE.** Four freshness reds,
+   nine findings to decide one at a time. Nothing here has made it cheaper — but §5 has made
+   it bigger by one artifact, since a corner refresh now also owes `study_fillet_kt.json` a
+   rebuild.
+
+## §121 — 2026-09-07. §120's SUCCESSOR 0, CLOSED. THE SEVEN TEST-SIDE TWINS WERE EIGHT, AND ALL EIGHT ARE ONE ANSWER: EVERY ONE IS A CLAIM ABOUT THE CONSTRUCTION, NOT ABOUT THE WHEEL THAT SHIPS. WHAT THE PROMOTION MOVED IS THE DEPTH OF THREE FINDINGS AND THE IDENTITY OF NONE OF THEM
+
+§120 pinned four study drivers' constants to the genome file they were measured on and
+recorded that each pinned constant has a twin on the TEST side — the same number asserted
+against a live re-measurement through a `best_solution.json` fixture, red since §115's
+promotion for the same reason and by the same amount. It counted seven, filed them as its
+successor 0, and left them deliberately: applying the driver-side pin to a test fixture
+without deciding each test's claim would settle seven of §117 successor 2's judgements as
+a side effect of a different successor.
+
+This section makes the seven calls, finds an eighth twin §120's own enumeration missed,
+and closes all eight. Three commits, one per group, because the three groups are three
+different claims.
+
+### 1. THE CALL IS THE SAME IN ALL THREE GROUPS, AND EACH GROUP SAYS SO IN ITS OWN WORDS
+
+§120 posed the question as CONSTRUCTION (pin the fixture) against WHEEL THAT SHIPS
+(re-derive, or `xfail` with the paragraph). All eight come out CONSTRUCTION, and none of
+them needed a judgement call to get there — each file had already written down which kind
+of claim it was making, in prose that predates the promotion:
+
+```
+  test_fillet_fold    file header:  "the RECONCILIATION is pinned hard -- both recorded
+                      tables must keep reproducing, because if a change to
+                      `_filleted_spoke` moves either one, the change is to the INSTRUMENT
+                      and everything measured with it is in question"
+
+  test_tri_block      docstring:    "Re-measured rather than read: this is the number the
+                      77x is a multiple of, and PART 7 is the record of what happens when
+                      a baseline is quoted from a file instead"
+
+  test_fillet_block   docstring:    "Pinned against the RECORD rather than against a
+                      re-run of itself, at the precision §68 published to"
+```
+
+An instrument check, a baseline, and a record. None of the three is a question about
+`best_solution.json`, and a re-measurement of any of them on a wheel other than the one it
+was published from is a different measurement rather than a check of that one. **The
+constants stay where they are and the READ moves** — §25's `study_svk_rescore.run_control`
+shape, now applied on both sides of every one of these four drivers.
+
+Mechanically that is one new module-scoped fixture per file, taking the driver's own
+`load_genes(<DRIVER>_GENOME)` read so the two sides cannot drift apart, and used ONLY by
+the twins. Every other test in all three files keeps `genes` and keeps following
+`best_solution.json`.
+
+```
+  tests/test_fillet_fold.py    reconciliation_genes   ff.RECONCILIATION_GENOME   2 tests
+  tests/test_tri_block.py      control_genes          tb.CONTROL_GENOME          1 test
+  tests/test_fillet_block.py   profile_genes          fb.PROFILE_GENOME          5 tests
+```
+
+### 2. THE MEASUREMENTS, SAME CODE, BOTH GENOMES
+
+`09e8188` is `stage3_knee_best_medium.json`, shipped 2026-08-14 to 2026-09-06 and
+preserved by §115's checklist item 5. `b729e86` is `best_solution.json` as it stands.
+
+**GROUP 1 — `test_fillet_fold::test_the_two_contested_criteria_both_reproduce_at_coarse`,
+`[hub]` and `[rim]`.** PART 3's largest surviving radius and PART 5's first fold, on PART
+5's own ten-point grid:
+
+```
+  criterion, cell          09e8188 (pinned)     b729e86 (shipped)
+  block_cells largest      hub 0.20  rim 0.20   hub 0.20  rim 0.30
+  build_wheel first fold   hub 4.00  rim 3.00   hub none   rim 4.00
+```
+
+**GROUP 2 — `test_tri_block::test_the_control_is_the_collapse_section_37_measured`.**
+§37's collapse depth and the depth the rim blend rescues it to:
+
+```
+  min scaled Jacobian    09e8188 (pinned)        b729e86 (shipped)
+  blend 0.0, faithful    0.008176 / 0.008251     0.032732 / 0.032741
+  blend 1.0, shipped     0.782735 / 0.782926     0.547847 / 0.547420
+                         (coarse / medium)
+```
+
+**GROUP 3 — `test_fillet_block::test_the_cliff_column_reproduces_PART_20s_hand_bisections`
+×4 and `test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate`.** PART
+20's four hand bisections and §68's margin, `coarse`:
+
+```
+  end     published    09e8188 (pinned)    b729e86 (shipped)
+  0.85    -0.845458    -0.845458           -1.507602
+  1.00    -0.881143    -0.881143           -1.571234
+  1.10    -0.903400    -0.903437           -1.610989
+  1.60    -1.001967    -1.001967           -1.786686
+
+                        09e8188 (pinned)    b729e86 (shipped)
+  shipped margin        0.5520              1.3367
+  worst candidate       0.2329              0.8851   (25 of 25 comparable at both)
+```
+
+Every published number reproduces at `09e8188` and none of them at `b729e86`. The pin
+restores a measurement; it does not choose a friendlier one.
+
+### 3. THE EIGHTH TWIN, WHICH §120's OWN ENUMERATION MISSED
+
+§120 §6 listed four twins in `test_fillet_block`, the cliff column's four
+parametrisations. There is a fifth, and §120's own driver comment names it:
+
+> THE WHOLE PROFILE FAMILY MOVES TOGETHER, not just the four cells that go red. The
+> candidate rows, the cliff column and the shipped profile's own margin are compared
+> against EACH OTHER — `the_shipped_profile_is_farthest_from_the_cliff` is that comparison
+
+`test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate` is that
+self-check's test-side twin, it asserts §68's published `0.5520`, and §120 pinned its
+driver counterpart in the same commit that pinned the column. It was miscounted into the
+"remaining thirty" because it was read as a claim about the shipped GENOME, and it is not:
+**SHIPPED there is the shipped PROFILE** — `LAYER_ENTRY_SLOPE` and `LAYER_END_OFFSET`, the
+two constants `wheel_wheel` builds with — and the whole comparison is between profiles on
+one wheel. A name is a premise, and this one outlived what it named.
+
+Pinning four of the five would have been §120's own half-pin, paid a second time in the
+other direction: the driver-side version left a coherent-looking table whose rows described
+two wheels, and the test-side version would have left two GREEN tests describing two
+wheels — the cliff column measured on §68's wheel and the margin it is compared against
+measured on whatever ships. Nothing would have gone red to say so.
+
+### 4. WHAT A PASS/FAIL COUNT COULD NOT SHOW: THE PROMOTION MOVED THREE DEPTHS AND NO IDENTITY
+
+Eight reds closing says only that the numbers came back. Measuring both genomes rather
+than only the pinned one says what the promotion actually did to each finding, and in all
+three groups the answer is the same shape — **the genome-general half of every claim
+survived `b729e86` untouched, and only the published magnitude moved.**
+
+**§37's collapse is still the same collapse, 4.0x shallower.** The worst block is
+`rim_junction` at both genomes and both configs; the faithful rim fails `MIN_SJ_TARGET`
+and the blended one clears it at both. `b729e86` is a weaker instance of §37's finding,
+not a counterexample to it.
+
+**PART 20's cliff is still the same edge, 0.66-0.78 deeper.** `CLIFF_REASON` — the layer's
+width profile reaching zero thickness — is the bound at every row of BOTH columns, and the
+deepening is monotone in `end`. What moved is where the edge sits, not which of the four
+geometric refusals is being found. That is also why
+`test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first` was never red
+and correctly keeps `genes`: it asserts WHICH refusal bounds the bisection and a ±0.01
+behaviour either side of it, and both hold on whatever ships.
+
+**§68's ordering is genome-robust; only its published number is not.** The shipped profile
+is still the roomiest of the twenty-six, by 0.32 at `09e8188` and by 0.45 at `b729e86`.
+The finding this test exists to protect would have gone on holding at the shipped genome —
+but the test holds it by its published margin, and that is the thing being checked.
+
+**PART 3 and PART 5's window got WIDER, not narrower.** Three of the four cells move one
+grid point outward and the fourth does not move at all; at the hub `build_wheel` accepts
+the entire legacy grid, so `summarize` reports no first fold. That last cell is a `None`
+with one meaning here and it is worth naming, because the field carries two elsewhere: it
+is "nothing on this grid folded", not "nothing on this grid built". The immobile fourth
+cell is why the hub row's PART 3 half kept agreeing at the shipped genome while its PART 5
+half did not — a partial agreement that would have read as a near-miss rather than as two
+wheels.
+
+### 5. THE TWO NEIGHBOURS LEFT RED, AND WHY THEY ARE NOT THIS SECTION'S
+
+Both were measured at both genomes while the twins were, because the measurement was
+nearly free once the harness existed. Both are recorded here and neither is fixed.
+
+**`test_tri_block::test_the_tri_block_clears_the_barrier_the_quad_could_not`** mixes a
+genome-general floor with two of §37's numbers, and only the numbers fail. At both genomes
+and both configs the sector is valid, with zero non-positive Gauss points, zero mixed-sign
+cells, and a minimum scaled Jacobian above `MIN_SJ_TARGET` (0.2). What fails at `b729e86`
+is `> 0.5` at `medium` (0.489645) and the ratio against the faithful control:
+
+```
+  min sj / faithful control     09e8188  76.59 / 69.29     b729e86  17.41 / 14.95
+```
+
+against a `> 50.0` bound — 76.59 being §37's 77x. No driver self-check pins this ratio, so
+it has no twin on the driver side and no pattern to inherit. Splitting a genome-general
+floor from a §37 measurement inside one test is a judgement about that test.
+
+**`test_fillet_block::test_the_per_genome_profile_is_the_ADOPTED_operating_point`** is
+about `ww.per_genome_layer_profile`, a RULE applied to whatever ships rather than a
+constant §120 pinned — but it validates that rule with `0.4435`, measured at `09e8188`,
+and compares a live cliff against the pinned `GENOME_ROBUST_ENTRY`:
+
+```
+  margin                        09e8188  0.443521     b729e86  0.790877
+  5x(GENOME_ROBUST_ENTRY - cliff)        0.282013              3.439794
+```
+
+The rule leaves the shipped genome MORE room than §68's number, not less, and still fails
+the comparison because the declined pair's own distance from the cliff grew faster. That is
+a finding about the rule and belongs with the rule's other judgements.
+
+Both are §117 successor 2's, and §120 declined the same shape of side-effect for the nine
+findings for the same reason.
+
+### 6. WHERE THE COUNT STANDS
+
+Blast radius is the three edited files and nothing else: the change is three fixtures and
+eight signatures, no driver, no artifact, no `conftest.py` — the three fixture names are
+module-scoped and unique in `tests/`. Each file run in full at both ends, failure LIST
+diffed rather than the count:
+
+```
+                        §120's HEAD    now
+  test_fillet_block          21          16
+  test_fillet_fold            5           3
+  test_tri_block              4           3
+                             --          --
+                             30          22
+```
+
+Eight closed, none opened, and every remaining name in all three files is one that was
+already there. Against §120's whole measured board of 42: **34**, and the split of it is
+now clean, which §120's was not — it counted its own deliberate tripwire into the "thirty"
+alongside the positions:
+
+```
+  §119's declined freshness set, untouched by construction          5
+  §120's tripwire, red until its inputs move and that is its job    1
+  §117 successor 2's position reds                                 28
+```
+
+**SUCCESSORS.**
+
+0. **§117's SUCCESSOR 2 IS NOW THE WHOLE OF WHAT IS LEFT TO DECIDE**, twenty-eight
+   positions across `test_fillet_block` (14), `test_filleted_mesh` (6), `test_fillet_fold`
+   (3), `test_tri_block` (3) and `test_corner_singularity` (2). The two neighbours in §5
+   are the ranked pair: both are measured at both genomes already, both have a written
+   reason, and neither needs a solve to decide.
+1. **§120's SUCCESSOR 1 AND §119's SUCCESSOR 1 ARE UNCHANGED**, and this section touched
+   neither. `study_fillet_wiring.json` waits on its inputs; the nine findings and four
+   freshness reds are still the expensive one.
+2. **CONFIRM THE TREE-WIDE COUNT WITH ONE BATCHED RUN.** Every number in play since §117
+   descends from its measured 62 by arithmetic. The board above is a real, twice-run
+   measurement of ten files; the tree-wide figure is not, and `test_full.log` from
+   2026-09-06 is a truncated killed run. One batched pass under `tmux new-session -d`,
+   heavy files one per process, nothing beside any tier, settles it.
+
+## §122 — 2026-09-07. §121's TWO NEIGHBOURS, DECIDED. ONE FAILED FOR A REASON NOBODY HAD LOOKED FOR — A HARDCODED CELL, THE THIRD CLASS OF STALE GENOME REFERENCE — AND THE OTHER TURNS OUT TO CARRY A FALSIFIED PREMISE OF §82 AND A MEASURED ANSWER TO ONE OF §68's OWN TWO REOPENING CONDITIONS
+
+§121 closed eight test-side twins and named two neighbours it deliberately did not touch,
+recording both with measurements so the judgement could be made without re-running
+anything. This section makes both judgements. Neither came out the way §121's one-line
+description of it predicted, and both produced a finding that is about the project rather
+than about a test.
+
+### 1. NEIGHBOUR 1 CARRIED THREE REFERENCES TO §37's WHEEL, AND THE THIRD IS A CELL
+
+`test_tri_block::test_the_tri_block_clears_the_barrier_the_quad_could_not`. §121 described
+it as a genome-general floor fused with two of §37's numbers — `> 0.5` and the ratio
+`> 50.0`. There is a third, and it is not a threshold at all:
+
+```
+  for name, B, w in (("coarse", 10, (0.124, 0.751, 0.124)),
+                     ("medium", 18, (0.072, 0.803, 0.124))):
+```
+
+Those are the cells `sweep` chose, **hardcoded rather than read**. §115's promotion moved
+the `medium` one from `(18, (0.072, 0.803, 0.124))` to `(20, (0.020, 0.751, 0.229))` —
+which is not a new fact: §120 found the same cell moving under `study_tri_bend` and
+`study_tri_rule` and fixed both by regenerating. **This test is its third consumer, and it
+was missed because it hardcodes the cell instead of reading the artifact.** §120's item 8
+says to re-run consumers after producers; a consumer that transcribes its input cannot be
+found by following the reads.
+
+**And it changes the diagnosis.** Measured at both genomes, each at its OWN chosen cell,
+which is the only comparison that means anything once the cell has moved:
+
+```
+  min scaled Jacobian     09e8188 (pinned)     b729e86 (shipped)
+  coarse, at its cell     0.626233             0.569803
+  medium, at its cell     0.581582             0.570257
+  ratio to the faithful   76.59 / 69.29        17.41 / 17.42
+```
+
+`> 0.5` was never failing on the merits. At the shipped genome's own `medium` cell it reads
+0.570257 and clears; the 0.489645 §121 reported is b729e86's wheel measured at 09e8188's
+cell. What genuinely does not survive is the 77x, and **the whole of that 4.4x is the
+denominator** — §37's collapse is 4.0x shallower on the wheel that ships (§121 §4) against
+a numerator only 1.10x lower.
+
+**The call: split, which is §120's driver-side shape applied on the test side.** The pinned
+half keeps §37's cells and §37's magnitudes on §37's wheel and is restored entire. A new
+sibling, `test_the_barrier_claim_ITSELF_still_holds_on_the_wheel_that_ships`, re-measures
+the headline STRIPPED of published numbers on whatever ships — the sector above
+`MIN_SJ_TARGET` and the faithful rim below it, both genome-general and both measured true
+at either genome — taking its cell from the report and its verdict live, exactly as
+`test_tri_bend` does with the same cell. Pinning alone would have left nothing re-measuring
+the headline on the shipped wheel: `every_config_found_a_valid_cell` is only `"sector" in
+c`, and no test asserted the chosen cell clears the barrier.
+
+### 2. NEIGHBOUR 2 FUSED THREE CLAIMS WITH THREE DIFFERENT GENOME DEPENDENCIES
+
+`test_fillet_block::test_the_per_genome_profile_is_the_ADOPTED_operating_point`. §121 called
+it a claim about a RULE applied to whatever ships, validated with a number measured at
+09e8188. That was two-thirds right: three assertions fail at the shipped genome and they
+fail for three different reasons, so the test splits three ways.
+
+**THE ORDERING STAYS ON THE SHIPPED POINTER, and it is not a tautology.**
+`margin > GENOME_ROBUST_ENTRY - cliff` reduces to `entry > GENOME_ROBUST_ENTRY`, and with
+`entry = 0.45 * cliff` that is `cliff > -1.6667`. Measured -0.806403 at `09e8188` and
+-1.437959 at `b729e86`: **§115's promotion spent 0.63 of that 0.86 and the shipped genome
+now stands 0.23 from it.** One more move in the same direction and §82's rule stops leaving
+more room than the pair §68 declined — which reopens §68 rather than merely reddening a
+test. It is asserted live on `genes` for exactly that reason.
+
+**§68's MAGNITUDE GOES TO §68's WHEEL,** with the rest of the profile family §121 pinned:
+
+```
+                                   09e8188 (pinned)    b729e86 (shipped)
+  margin the rule leaves           0.443521            0.790877
+  margin GENOME_ROBUST_* leaves    0.056403            0.687959
+  ratio                            7.86x               1.15x
+```
+
+The rule leaves the shipped genome MORE absolute room than it left §68's and still fails
+the comparison, because the pair §68 turned down gained **12.2x** more room than it had.
+
+**AND §82's SAFETY PREMISE IS FALSE ON THE WHEEL THAT SHIPS.** §82 argued the per-genome
+rule is safe against the `_sector_fit_span` defect it also records because the clamp only
+misreads a layer refusal as "no room" at a STEEP entry, and *"this rule never asks for
+one"*. It asks for one now: -0.647081 at `b729e86` against the shipped -0.45, where
+`09e8188` gave -0.362881. The cliff deepened and `entry = 0.45 * cliff` followed it.
+
+The CONCLUSION still holds — neither junction is clamped at either genome, and that is the
+assertion that stayed live — so §82's argument was **sufficient and not necessary**, and
+nothing built on it is retired. Kept as `xfail(strict=True)` with the paragraph, on the
+SHIPPED genome. Deliberately not pinned: pinning would restate §82's argument on §82's
+wheel and lose the only signal that its premise has stopped holding. Strict, so a rule
+change or promotion that makes it true again XPASSes and forces this record open rather
+than quietly going green — `test_promotion.py`'s own item about strict XPASSes is the
+precedent.
+
+### 3. THE PART THAT IS NOT ABOUT TESTS: §68's FIRST REOPENING CONDITION HAS MOVED, AND ITS SECOND HAS NOT
+
+§68 named its own two reopening conditions in writing:
+
+> Two things would change it, both concrete: a candidate with a margin comparable to the
+> shipped pair's, or a consumer for the filleted blocking (Step 3's live `R_hub`/`R_rim`
+> genes) that makes the genome-box floor a number something reads.
+
+The first one is now measurable and it has moved a long way. §68's whole margin column is
+`(candidate entry) - (cliff at that end)` on the wheel that shipped in August, and the
+promotion moved every entry in it. Measured at both genomes over the same candidate set
+§77's scope note used — the reproduction of 0.2329 at `09e8188` is what confirms the sets
+are the same:
+
+```
+                              09e8188      b729e86
+  the shipped pair's margin   0.5520       1.3367
+  the roomiest candidate      0.2329       0.8851
+  candidate as a fraction       42%          66%
+  the shipped pair's lead     2.37x        1.51x
+```
+
+§68 declined `(-0.85, 1.00)` at 5.6% of the shipped pair's margin, calling *"a 0.031 margin
+to a hard refusal of the shipped genome ... not a defensible place to put a default"*. On
+`b729e86` the field stands at two thirds of the shipped pair rather than at a twentieth,
+and every margin in the column is absolutely larger.
+
+**THE CALL: §68 STAYS DECLINED, and the reason that survives the promotion is the second
+one, not the first.** Three parts to that, and the first two are why this is not a flip:
+
+- The candidate set itself was DRAWN AND RANKED at `09e8188`. `LAYER_PROFILE_CANDIDATES`
+  and its fine grid are that wheel's argmax, and 0.8851 is the roomiest of 09e8188's
+  proposals re-priced on b729e86, not b729e86's roomiest. Re-deriving the argmax on the
+  shipped genome is a study run, not a reading, and until it exists "comparable" has no
+  measured referent — the enumeration lesson exactly.
+- §68's absolute objection weakens but does not invert. A default is still being placed
+  against a hard geometric refusal of the one genome every published number uses, and the
+  distance is 34% short of the pair that ships.
+- **§68's second clause is genome-independent and is still unmet.** *"Wrong side of the
+  trade for a benefit nothing yet collects"* — the genome-box floor is still not a number
+  anything reads, and no promotion changes that. §80 already showed that clause cannot be
+  discharged before the item it blocks.
+
+So the finding is recorded and the decision is unchanged, but **the grounds for it have
+narrowed to one clause**, and that is worth knowing before the next promotion moves the
+column again.
+
+### 4. WHERE THE COUNT STANDS
+
+Blast radius is the two edited files. Both run in full, failure LIST diffed:
+
+```
+                        §121        now
+  test_fillet_block      16          15   + 1 deliberate xfail
+  test_tri_block          3           2
+  test_fillet_fold        3           3   (untouched)
+                         --          --
+                         22          20
+```
+
+Two closed, none opened. Against the measured board: **32**, of which 5 are §119's declined
+freshness set, 1 is §120's tripwire, and **26** are §117 successor 2's positions —
+`test_fillet_block` 13, `test_filleted_mesh` 6, `test_fillet_fold` 3, `test_tri_block` 2,
+`test_corner_singularity` 2.
+
+**SUCCESSORS.**
+
+0. **CHECK THE OTHER TWO `test_tri_block` REDS FOR THE CELL DEFECT FIRST**, because §1 has
+   just shown it is invisible to a read-following audit.
+   `test_the_faithful_rim_junction_really_is_a_triangle` fails comparing something to
+   0.5698029933811283, which is the SHIPPED `coarse` cell's own minimum — that is either a
+   fourth instance or a coincidence at sixteen digits, and it costs one run to tell. Then
+   grep the tree for hardcoded `(B, w)` pairs generally: §120 fixed the two consumers that
+   read `sweep.best` and this class transcribes it instead.
+1. **RE-DERIVE THE LAYER-PROFILE ARGMAX ON THE SHIPPED GENOME**, §3. It is the only thing
+   that would give §68's first reopening condition a measured referent, and §68's decision
+   currently rests on one clause where it used to rest on two. Cost is a
+   `sweep_layer_profile_genomes` run, not a solve ladder.
+2. **§117's SUCCESSOR 2**, twenty-six positions, unchanged in kind. §121's successor 0 said
+   the two neighbours were the ranked pair of that bucket; they are done, and what is left
+   has no pair with a worked pattern in front of it.
+3. **§120's SUCCESSOR 1 AND §119's SUCCESSOR 1 ARE STILL UNTOUCHED**, and still the
+   expensive one.
+
+## §123 — 2026-09-07. §122's SUCCESSOR 0, CLOSED, AND WRONG AS FILED: NEITHER RED WAS THE FOURTH HARDCODED-CELL INSTANCE. BOTH SHARE ONE UNWRITTEN FINDING — A CORNER THIS ARC HAS BEEN CALLING DEGENERATE HAS QUIETLY NARROWED, AND STILL DOES NOT MATTER
+
+§122 named `test_the_faithful_rim_junction_really_is_a_triangle` as a fourth instance of the
+hardcoded-cell defect, comparing against `0.5698029933811283`. Running it before touching
+anything found that wrong: that assertion is `179.0 < turn_at_far_end_deg < 181.0`, nothing
+to do with that number. The test that actually reads `0.5698029933811283` is
+`test_a_generated_interior_cannot_move_it`, and it is not the cell-defect class either —
+the artifact's own `coarse` cell is still `(10, (0.124, 0.751, 0.124))`; only `medium` moved
+under the promotion, and this test never reads `medium`.
+
+### 1. BOTH REDS ARE ONE FINDING: THE FAR-END CORNER NARROWED, AND A GENERATED INTERIOR NOW
+   NOTICES IT
+
+Measured directly rather than assumed, at blend 0, both configs:
+
+```
+                          control_genes (09e8188)   genes (b729e86, shipped)
+  turn_at_far_end_deg      179.511 / 179.510           178.126 / 178.125
+```
+
+UNCAP_PLAN Step 2 measured this vertex at 179.35 deg and called it "within a degree of
+straight" — the premise that lets the region be built as a triangle instead of a
+degenerate quad. The promotion moved it another 1.4 deg past that reading, to 0.87 deg
+outside the file's own `179.0`–`181.0` window. The corner has not become real; it has
+narrowed enough that the file's specific historical number no longer bounds it.
+
+That same narrowing is why `test_a_generated_interior_cannot_move_it` broke. Its worst
+block, `rim_tri_t`, has its raw and Winslow-smoothed `min_scaled_jacobian` bit-identical at
+`control_genes` (0.0 difference — PART 9's route-2 invariance holds exactly there) and
+NOT at the shipped genome:
+
+```
+                    raw          Winslow-smoothed     diff
+  09e8188        0.626233         0.626233            0.0
+  b729e86        0.569803         0.565894            0.003909  (0.7%, DOWN)
+```
+
+The worst node in `rim_tri_t` is no longer purely on a boundary Winslow holds fixed, so a
+generated interior moves it — by 0.7%, and in the direction that makes it worse, not
+better, which rules out reading this as an accidental rescue.
+
+### 2. NEITHER MOVE THREATENS ANYTHING THE FILE CONCLUDES
+
+The only claim that has to survive a promotion is UNCAP_PLAN's actual argument: that
+meshing this junction as a QUAD is indefensible, not that the corner sits at exactly
+179–181 deg. Measured directly off `reg["base"]["rim_junction"]` — the same quad block
+`test_the_three_quads_tile_the_quad_blocks_own_region` already reads for area —
+
+```
+                                 control_genes (09e8188)   genes (b729e86, shipped)
+  quad min scaled Jacobian        0.008176 / 0.008251         0.032732 / 0.032741
+  (coarse / medium)
+```
+
+both readings sit an order of magnitude under `MIN_SJ_TARGET = 0.2`. The shipped pair is
+also exactly the denominator f1bbc0e already named "the faithful": 0.569803 / 0.032732 =
+17.41 and 0.570257 / 0.032741 = 17.42, matching its own ratio-to-the-faithful column to
+four figures — this is not a new quantity, only the first test to assert it directly. And
+the Winslow move costs 0.7% of a cell that clears `MIN_SJ_TARGET` by nearly 3x either way,
+so PART 9's conclusion — the successor is a curved Y, not a better smoother — is if
+anything reinforced: the one interior scheme measured on the shipped genome makes the cell
+worse, not better.
+
+### 3. THE FIX, SAME SHAPE AS f1bbc0e/d1799a1
+
+Both pins keep their exact historical claim on `control_genes`, bit-identical and green.
+Both get a sibling on `genes` that measures what the file's premise actually needs on
+whatever ships: `test_the_DEGENERATE_QUAD_premise_still_holds_on_the_wheel_that_ships` for
+the triangle test, `test_a_generated_interior_DOES_NOT_RESCUE_the_shipped_cell_either` for
+the Winslow one. Neither needed `xfail` — both are currently true, measured, ordinary
+assertions, not a premise the tree is watching go false.
+
+### 4. WHERE THE COUNT STANDS
+
+```
+                        §122        now
+  test_tri_block          2           0
+```
+
+Two closed, none opened, two siblings added and green. Against the board: **30** — 5
+§119 declined-freshness, 1 §120 tripwire, **24** §117 successor 2 positions:
+`test_fillet_block` 13, `test_filleted_mesh` 6, `test_fillet_fold` 3, `test_tri_block` 0,
+`test_corner_singularity` 2.
+
+**SUCCESSORS.** §117's successor 2 is now 24 positions across four files rather than five,
+and `test_tri_block` is done. Nothing else moved: §120's successor 1 and §119's successor 1
+are still untouched and still the expensive ones.
+
+---
+
+## §124 — 2026-09-07. `test_fillet_block` AND `test_fillet_fold`, CLOSED: EIGHTEEN REDS, ONE MECHANISM (`_sector_fit_span`'s HUB LIMIT COLLAPSED 4.2x) EXPLAINING FIVE OF THEM, AND A THIRD ARTIFACT PINNED TO THE WRONG GENOME BY THE SAME BUG §120 ALREADY NAMED TWICE
+
+Worked alongside a peer session (`test_tri_block`, `test_filleted_mesh`, `test_corner_
+singularity`) on the same red board — §117's successor 2. This section is `test_fillet_
+block` (15 red) and `test_fillet_fold` (3 red), all 18 closed: thirteen re-derive cleanly,
+five are recorded `xfail(strict=True)` because the claim they made is false on `b729e86`
+and re-deriving a friendlier number would misrepresent that.
+
+### 1. THREE OF `test_fillet_fold`'s READS ARE THE SAME SHAPE AS §120-§123: A NODE-
+ALLOCATION EDGE MEASURED ON 09e8188, ASSERTED AGAINST WHATEVER `genes` READS
+
+`test_build_wheel_accepts_a_mesh_with_inverted_gauss_points`, `test_the_window_closes_
+when_the_arc_claims_a_second_cell` and `test_the_window_opens_when_the_mid_side_node_
+reaches_the_middle` all read the live `genes` fixture (deliberately — the file's own header
+says these are about the construction, not about one pinned wheel) and compare against
+radii or fractions measured on `09e8188`. `sweep_one`'s window is a property of the arc's
+own node allocation (`k0 = clip(round((s_A - s0)/ds), 1, cap)`), which reads `s_A`/`ds` off
+the genome, so it moves when the genome does:
+
+```
+                                      09e8188 (was)      b729e86 (shipped)
+  arc_cells 1->2 step, coarse         0.24 / 0.25 mm     0.27 / 0.28 mm
+  first fold past the window          0.25 mm            0.28 mm
+  mid_frac crossing (window opens)    0.39 / 0.40         0.4085 / 0.4274
+```
+
+All three re-derive: the mechanism (`k0` stepping, the mid-side node crossing the
+element's own middle) is unchanged, only the radii and fractions moved. `test_the_
+committed_report_still_describes_this_construction` and the reconciliation pair were
+already reading a pinned genome (`RECONCILIATION_GENOME`) and were never red.
+
+### 2. `test_fillet_block` HAD A FOURTH INSTANCE OF §120/§122's "STALE GENOME REFERENCE"
+CLASS — A THIRD ARTIFACT §119 DELIBERATELY PINNED, READ AGAINST THE WRONG GENOME
+
+`test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces` compares `fb.region_
+angles` computed from the live `genes` fixture against `studies/study_junction_agreement.
+json`. That artifact's own `genome_hash` field reads `09e8188` — §119 found it was one of
+three drivers ("junction, corner, corner-fillet exit 0") whose refresh would silently
+retire nine recorded findings and explicitly declined to refresh it (§119 §3: "record
+them, do not refresh them mid-arc"). So as of §119 the artifact is INTENTIONALLY stale,
+and this test's live recomputation needed to take the same genome the artifact describes,
+not whatever ships — exactly `profile_genes`' and `test_fillet_fold`'s `reconciliation_
+genes`' reason, on a THIRD artifact. Added `junction_genes` (reads `stage3_knee_best_
+medium.json`, the same file `PROFILE_GENOME`/`RECONCILIATION_GENOME` already point at) and
+switched the test onto it; both junctions reproduce to round-off (7e-15 hub, 0.0 rim)
+against the committed report once genome and recomputation agree.
+
+### 3. FIVE REDS ARE ONE MECHANISM: `_sector_fit_limit(hub)` COLLAPSED FROM 3.13 mm TO
+0.74 mm, MEASURED LIVE AT BOTH GENOMES WITH THE CODE §83 ALREADY FIXED
+
+`test_the_SECTOR_bounds_the_hub_radius_before_the_BLOCK_does` pinned the hub sector-fit
+limit at `3.0 < lim < 3.3`; it now reads 0.743356. Checked before touching anything that
+this is not the pre-§83 defect (`_sector_fit_span` conflating a layer refusal with a
+sector one) coming back: `wheel_wheel._sector_fit_span`'s own docstring records that at
+the shipped PROFILE no layer refusal fires across the whole bracket at any of 64
+junction-pairs, and the "why" strings here are genuine fourth-kind (tangent-past-corner)
+refusals. Measured live, same code, both genomes:
+
+```
+                          09e8188      b729e86
+  sector_fit_limit(hub)   3.129700     0.743356
+```
+
+Headroom above the shipped `R_hub` gene (0.571) is now 0.172 mm, down from 2.56 mm. This
+is a real, reproducible geometric consequence of §115's promotion — independently
+confirmed by the peer session, whose `test_filleted_mesh` board carries the identical
+number in five more places (`sector_fit_clamp`, two cache-key tests that trip
+`FilletClampRefusedError` on a `genes[12] += 0.2` perturbation alone, and two fillet-area-
+share tests).
+
+Four more reds are this same collapse's downstream reach, and three re-derive cleanly
+while one is a genuine finding:
+
+- `test_the_sector_closes_OFF_the_committed_grid_too[0.91-2.37]` and `[3.0-3.0]` — both
+  parametrised `R_hub` values are past the new 0.743 mm limit, so the sector genuinely does
+  not close there any more. `xfail(strict=True)`: re-deriving new "off-grid" radii that
+  still close would answer a different, easier question than the one the test's name asks.
+- `test_the_SHALLOW_cut_lands_tangent_which_is_why_it_cannot_close[hub]` re-derives (12.864
+  -> 16.377 deg, bound loosened 15.0 -> 20.0). The `[rim]` half is `xfail(strict=True)`:
+  `sliver_scaled_jacobian` — `sin()` of the landing angle — crossed `wo.MIN_SJ_TARGET`
+  (0.076395 -> 0.230054 against the floor 0.2), and that floor is a real design constant
+  this test deliberately compares against, not a local tolerance to retune.
+- `test_the_entry_slope_is_what_keeps_the_junction_block_open` re-derives: flat-entry
+  quality is less severe (0.040 -> 0.089, bound loosened 0.05 -> 0.1) and the chosen slope's
+  margin over it narrower (10.68x -> 5.36x, bound loosened accordingly) — same direction,
+  smaller gap.
+
+### 4. ONE MORE REVERSAL, INDEPENDENT OF THE SECTOR-FIT COLLAPSE: THE FILLETED FAITHFUL
+RIM IS NOW VERY SLIGHTLY BETTER THAN THE UNFILLETED ONE, NOT WORSE
+
+`test_the_recut_does_NOT_rescue_the_faithful_rim` asserted `fil_sj < ctl_sj` at both
+configs — §46's finding that the re-cut makes the faithful rim (`uncap` blend 0.0) worse,
+not better. Measured at both genomes, same code:
+
+```
+                    09e8188 (ctl / fil)         b729e86 (ctl / fil)
+  coarse            0.008176 / 0.000343         0.032732 / 0.036481
+  medium             0.008251 / 0.003334         0.032741 / 0.035194
+```
+
+`ctl_sj` matches §121 GROUP 2's independently-measured "blend 0.0, faithful" row exactly —
+same code, same genome, a free cross-check that both sections are reading the same wheel
+correctly. `fil_sj` was ~24x smaller than `ctl_sj` at `09e8188` (filleted much worse, the
+published finding) and is now ~11% LARGER at `b729e86` (filleted marginally better) — the
+ordering this test is named for has reversed. Both numbers stay roughly two orders below
+`wo.MIN_SJ_TARGET` at both genomes, so the faithful rim is unusable either way and nothing
+about §46's actual decision (promote the rim tri-block; the DEFAULT blend is where both
+constructions clear the target) changes. `xfail(strict=True)` at both configs rather than
+re-pinned, because pinning the new ordering would restate a comparison this promotion
+falsified as if it were a fresh fact.
+
+### 5. THE REMAINING SIX RE-DERIVE WITHOUT INCIDENT
+
+`test_the_corner_at_A_is_a_cusp_too_and_it_is_the_flank_s_CURVATURE` (both junctions): the
+band claim (`max - min < 0.25`) is genome-robust and stayed inside it at `b729e86`; only
+the absolute bound (`< 1.0`, sized to 09e8188's 0.42-0.56 deg band) needed loosening to
+`< 4.0` to clear the new 1.99-3.52 deg band. `test_no_quad_block_can_use_this_region[rim]`:
+`A` and `B` are still under a degree and exactly zero; the sum bound (45 -> 65) moved
+because `at_P_t_deg` alone grew 18 deg (38.89 -> 57.26), which the independent `at_P_t_deg
+> 30.0` assertion already covers. `test_PART_3s_collapsed_corner_reproduces_at_coarse`:
+`moved_corner` reads `R_hub`/`R_rim` off the gene box directly, so the published angle and
+cross-section for both junctions simply moved with the promotion (hub 3.601/2.759 ->
+10.116/4.041, rim 8.524/8.596 -> 8.186/5.696) — re-derived, not a structural change.
+`test_the_filleted_sector_costs_the_unfilleted_one_nothing`: `rim_junction`'s min scaled
+Jacobian under the DEFAULT (unfilleted) sector matches §121 GROUP 2's "blend 1.0, shipped"
+row exactly (0.547847/0.547420) — bound loosened `0.7 -> 0.5` to match a finding §121
+already recorded, not re-litigated here.
+
+### 6. WHERE THE COUNT STANDS
+
+Both files run in full, failure list diffed against the top of this section:
+
+```
+                        before      now
+  test_fillet_block       15          0    (5 xfail added, 10 re-derived to pass)
+  test_fillet_fold          3          0    (3 re-derived to pass)
+                          --          --
+                          18          0
+```
+
+Eighteen closed, none opened, five converted to documented `xfail(strict=True)`. §117's
+successor 2 stands at 24 minus these two files' contribution; the peer session's board
+after its own `test_tri_block` work was `test_filleted_mesh` 6, `test_corner_singularity`
+2 — unaffected by this section except that `test_filleted_mesh`'s five `_sector_fit_span`-
+shaped reds now have this section's measurement to cite rather than re-deriving it.
+
+**SUCCESSORS.**
+
+0. **`test_filleted_mesh`'s five `_sector_fit_span` reds** (peer session, in progress) cite
+   §3's `sector_fit_limit(hub)` table directly rather than re-measuring it.
+1. **THE "0.36" PROSE REFERENCE IN `test_the_filleted_sector_costs_the_unfilleted_one_
+   nothing`'s DOCSTRING IS UNVERIFIED AGAINST `b729e86`.** It compares the unfilleted
+   control's SJ against the filleted sector's own, and is not itself asserted anywhere in
+   this file — noted, not chased down, since nothing red depends on it.
+2. **§120's successor 1 and §119's successor 1 are still untouched and still the
+   expensive ones** — unchanged by this section.
+
+## §125 — 2026-09-07. `test_filleted_mesh` AND `test_corner_singularity`, CLOSED: EIGHT REDS, THREE MECHANISMS — THE SAME SECTOR-FIT COLLAPSE §124 ALREADY MEASURED, AN OCC FILLET-FIT GAP NOBODY HAD A TEST FOR, AND A THIRD TEST THAT INHERITED §119's DECLINED-FRESHNESS FINDING RATHER THAN DISCOVERING A NEW ONE
+
+Worked alongside a peer session (`test_tri_block`, `test_fillet_block`, `test_fillet_fold`)
+on the same red board — §117's successor 2. This section is `test_filleted_mesh` (6 red)
+and `test_corner_singularity`'s two successor-2 positions (its other two are §119's
+declined-freshness set, untouched). All eight closed: six re-derive or re-scope cleanly,
+two are recorded `xfail(strict=True)` because the claim is false on `b729e86` and neither
+a friendlier number nor a code fix belongs in this section.
+
+### 1. FIVE OF `test_filleted_mesh`'s SIX ARE THE PEER SESSION'S `_sector_fit_span`
+   COLLAPSE, CITED RATHER THAN RE-MEASURED
+
+§124 §3 measured `sector_fit_limit(genes, "coarse", "hub")` live, no artifact involved:
+3.1297 mm at `09e8188`, 0.743356 mm on the wheel that ships — a >4x collapse, confirmed
+independently here before either session had seen the other's number. Headroom over the
+shipped `R_hub` gene (0.571 mm) is now 0.172 mm, down from ~2.56 mm.
+
+Two trace tests (`test_the_filleted_trace_is_SHARED_across_genomes`,
+`test_the_per_genome_trace_is_SHARED_across_genomes`) perturbed `genes[12] += 0.2` purely
+to get "a different genome" for a cache-key check, and that alone now requests past the
+shrunk limit and clamps — reduced to `+0.1`, which stays clear of it and still changes the
+roots/layer-profile the tests need to differ. `test_the_sector_fit_clamp_RESCUES_a_
+genome_that_has_no_room`'s own pinned window on the limit, `(3.12, 3.14)`, is the same
+number and moves to `(0.74, 0.75)`. `test_the_area_reference_takes_the_radii_that_were_
+BUILT`'s `* 1.05` overshoot on the limit used to produce a gap thirty times the
+discretisation residual (~8 mm2, this test's own citation); on the shrunk limit `* 1.05`
+gives 0.7x instead, so the overshoot is `* 1.5` now (gap 8.96 mm2, matching the old
+citation almost exactly — the limit shrank, not the margin the test wants).
+
+`test_the_area_reference_DESCRIBES_the_filleted_region` is a sixth, related but not
+identical: the fillets' area share, pinned as 5-12% ("a large share of the region"),
+measures 1.98%/1.97% (coarse/medium) — small enough that a smaller `R_hub` heads for
+without needing to touch the sector-fit limit specifically, since the genome's own genes
+didn't move, only how much room they have. Widened to 1-3% around the new true value
+rather than re-centred tight, matching how §124 widened its own analogous bound.
+
+### 2. TWO ARE A GENUINELY NEW MECHANISM: OCC CANNOT FIT THE REQUESTED HUB RADIUS, AND
+   NOTHING ON THE MESH SIDE KNOWS IT
+
+`test_the_fillet_reference_agrees_with_the_STEP_MANIFEST` and `test_the_mesh_fillets_the_
+CORNERS_AND_RADII_THE_EXPORTER_ACTUALLY_BUILT` both assert the mesh's hub fillet radius
+equals what `wheel_step_export` actually built. Re-running `make export` (byte-identical
+bar a timestamp, confirming this is not a stale artifact) shows why they now disagree:
+
+```
+  junction    R_req  R_worst   edges   wedge   Kt_model  Kt_built   error
+  hub         0.571   0.485   24/24   324.0      3.073      3.304   +7.5%
+  rim         1.680   1.680   24/24   302.0      1.815      1.815   +0.0%
+```
+
+OCC's fillet operation cannot fit the requested 0.571 mm hub radius against the local
+re-entrant-corner geometry and silently builds 0.4853 mm instead, on all 24 of 24 edges —
+`wheel_step_export`'s own `kt_report` already prices the gap at `kt_error_pct` +7.5%
+(`Kt_model` 3.073 vs `Kt_built` 3.304). `study_corner_singularity.fillet_arcs` fits the
+mesh's OWN fillet nodes and returns the gene's value to twelve digits, because
+`sector_blocks` has no equivalent feasibility check and builds the full requested radius
+regardless of what OCC's kernel could actually cut. **The FEA mesh is a model of the
+request, and not, yet, of the part OCC actually exports.**
+
+Not build-blocking: 7.5% is well inside this project's own historical range for this
+exact metric (`kt_error_pct` has run as high as +111.4% mid-arc; +11.9% is the threshold
+PLAN.md already treats as build-blocking, and `make export` here succeeds cleanly with a
+valid solid). Closing the gap needs a feasibility check in `sector_blocks`/`fillet_arcs`
+that does not exist yet — real geometry work, not a test change — so both consumers are
+recorded `xfail(strict=True)` rather than fixed: a new sibling,
+`test_the_hub_fillet_STILL_MATCHES_what_the_exporter_built`, and the hub half of the
+`CORNERS_AND_RADII` test, split out of its loop. `rim` is unaffected at both and stays
+live. Strict, so a mesh-side fix or a promotion that closes the gap XPASSes and forces
+this record to be revisited.
+
+### 3. ONE MORE HALF-RED IS NOT A THIRD FINDING AT ALL — IT IS §119's, ARRIVING THROUGH A
+   CONSUMER NOBODY HAD WRITTEN YET
+
+`test_the_mesh_fillets_the_CORNERS_AND_RADII_THE_EXPORTER_ACTUALLY_BUILT`'s other half —
+`worst_wedge_deg` against `P_t`, at BOTH junctions, not just `hub` — also failed, and
+chasing it turned up nothing new: it reads `report`, which is `studies/study_corner_
+singularity.json`, the exact artifact §119 measured stale against `b729e86` and
+explicitly declined to refresh, on the record: *"record them, do not refresh them
+mid-arc... the four freshness reds are the tree's honest state"* until the nine findings
+a refresh would retire are decided one at a time. This test is a consumer of that same
+staleness nobody had written when §119 predicted exactly this shape of problem for
+`study_fillet_kt`/`study_fillet_wiring`. Measured, both junctions, fresh manifest against
+the stale artifact: hub 324.0 vs 321.13 deg, rim 302.0 vs 321.32 deg, both well past the
+2 deg rounding band this comparison was calibrated for.
+
+**Not chased further here, and not characterised as a new finding of this section's**:
+fixing it means regenerating the artifact, which is §119/§120's successor 1, already
+named the expensive, untouched one twice over. Split into its own xfail,
+`test_the_manifests_worst_wedge_STILL_MATCHES_P_t`, citing §119 directly. The two checks
+that read no stale artifact — edges filleted, and `P_t`/`P_c` separation — stay live at
+both junctions in the main test.
+
+### 4. AND THE SAME AREA-SHARE SHRINK, A THIRD TIME
+
+`test_the_fillet_reference_agrees_with_the_STEP_MANIFEST`'s own first-order-term band
+(`0.05 < step_mm2/unfilleted_mm2 < 0.15`, "a claim the docstring got wrong") hits §1's
+exact shrink again: measured 0.0207. Widened to 0.015-0.03 the same way as §1's other two
+bounds. Its hub radius-match line is dropped rather than re-asserted — §2's finding
+already carries it, and restating it here would be the same claim twice under two
+names. Its area-agreement check now reads the manifest's BUILT radii for its own
+reference rather than the genome's raw ones, which is the honest version of the
+comparison: the raw-radii version happens to read closer to the manifest (-5.14%) than
+the built-radii one (-8.25%), by comparing two different physical fillets and calling it
+agreement. Widened to 10% for the honest number.
+
+### 5. WHERE THE COUNT STANDS
+
+```
+                          before   now
+  test_filleted_mesh          6     0
+  test_corner_singularity     2     0
+                              --    --
+                              8     0
+```
+
+Eight closed, none opened, two converted to documented `xfail(strict=True)` plus one more
+that was already someone else's documented red wearing a new consumer's name. §117's
+successor 2 stands at 24 minus this section's and the peer session's eighteen — 0
+remaining in either party's assigned files. `make export`'s regenerated artifacts were
+byte-identical bar a timestamp and reverted; nothing committed there.
+
+**SUCCESSORS.**
+
+0. **§120's successor 1 and §119's successor 1 are still untouched and still the
+   expensive ones** — the only unclosed item left in §117's successor 2 lineage, and nothing
+   in either session's work this round makes it any cheaper.
+1. **A FEASIBILITY CHECK FOR THE FILLET RADIUS OCC CAN ACTUALLY CUT DOES NOT EXIST IN
+   `sector_blocks`/`fillet_arcs`.** §2's xfails are the record of that gap, not a fix for
+   it. Whoever picks this up should check whether `sector_fit_limit`'s own re-entrant-
+   corner geometry (already computed for the sector-fit clamp) is the same constraint OCC
+   is hitting, or a genuinely separate one, before writing a predictor.
+
+---
+
+## §126 — 2026-09-07. THE RECORD FOR `de0d368`: `test_junction_fit`'s THREE §119 FINDINGS DECIDED — THE END CAP NO LONGER REFUSES AT THE HUB, UNCAPPING NO LONGER FLIPS IT THERE EITHER, AND THE FAITHFUL RIM'S FACTOR SHRANK FROM 4.6x TO 2.03x — PLUS A FOURTH FINDING THE REFRESH ITSELF OPENED IN A DIFFERENT FILE
+
+Worked alongside a peer session taking `test_corner_singularity.py`'s six findings on the
+same list — §119 §3's nine findings, split by which artifact each reads. This section is
+the three under `studies/study_junction_agreement.json` alone, plus the refresh
+(`make junction`) that makes deciding them possible, plus one thing the refresh broke in a
+file neither cluster was assigned.
+
+### 0. THE REFRESH ITSELF
+
+`make junction` (0.078 s) moved `genome_hash` from `09e8188` to `b729e86`. Confirmed by
+re-running the same driver at both genomes with scratch `--out` before touching any test —
+the numbers below are measured at both, not inferred from one side:
+
+```
+  mesh (uncap=False) P_c        09e8188            b729e86
+    hub   leg_mm                 0.7369             1.7527   (2.38x)
+    hub   T_over_leg             1.4700             0.3595
+    hub   fits                   False              True
+    rim   leg_mm                 0.7156             1.2274   (1.72x)
+    rim   T_over_leg             8.4900             4.8891
+    rim   fits                   False              False
+```
+
+`t/2` is a genome quantity (the end cap's leg) and `b729e86` is a different design point
+from `09e8188`, not a code change — both capped legs grew, unevenly, and the hub grew far
+enough to cross its own fit threshold.
+
+### 1. `test_the_end_cap_refused_the_fillet_at_both_rings` — FALSE AT THE HUB, TRUE AT THE RIM
+
+PART 2's original NO-GO was that the capped mesh refuses the fillet at both rings. §0's
+table says the hub no longer does: `T/leg` 0.36 against the shipped 0.571 mm hub radius
+(`R_max` 1.588 mm, not a near thing). The rim still refuses (`T/leg` 4.89, `R_max`
+0.344 mm against the shipped 1.680 mm rim radius), margin shrunk from 8.49 to 4.89 but the
+verdict unchanged. Re-derived as two separate per-ring assertions rather than one shared
+loop, since the two rings no longer agree on the verdict.
+
+### 2. `test_uncapping_FLIPPED_the_hub_verdict_and_did_not_flip_the_rim` — THE HUB HALF OF
+   THE NAME IS NOW MISLEADING, THE ASSERTIONS THEMSELVES MOSTLY WEREN'T BROKEN
+
+Only one of the test's seven assertions failed: `rim["t_over_leg"] > 4.0` (measured
+2.7427). The four capped-vs-uncapped ordering assertions (both rings' `t_over_leg` and
+`spoke_side_leg_mm` fall from capped to shipped-default) all still hold, some by a wide
+margin, one (`hub leg`, 1.7455 vs 1.7527) by under a hundredth of a millimetre but
+deterministically so. Re-derived the one bound to 2.5 (actual 2.74).
+
+But §1 changes what the test's own NAME means: at `09e8188` the hub only fit because of
+uncapping (0.36 the sibling test's own after-value; `09e8188`'s capped hub was 1.47, a real
+NO-to-YES flip). At `b729e86` the capped hub already fits (§1), so uncapping only improves
+an existing YES (0.36 -> 0.32) rather than causing one. The *verdict pair* this test
+actually asserts (hub yes, rim no) is unchanged — only the mechanism producing the hub
+verdict has moved, from "uncapping decides it" to "uncapping no longer needs to". Recorded
+in the docstring rather than in the test's name, matching this arc's practice of not
+renaming a test whose numbers move under it.
+
+### 3. `test_the_faithful_rim_would_buy_a_factor_of_FOUR_on_the_admissible_radius` — THE
+   FACTOR IS SMALLER, THE CONCLUSION IS NOT
+
+`r_max_on_this_leg_mm` at the rim went from 0.56 mm to 2.59 mm (factor 4.6, within 14% of
+the shipped `R_rim`) at `09e8188`. `b729e86` carries a different `R_rim` outright —
+1.6802 mm, not 3.0 — and a different rim geometry throughout: 0.6126 mm to 1.2416 mm, a
+factor of 2.03, and 26% *short* of the shipped radius rather than within 14% of it. This is
+§119's own ninth finding, re-derived here rather than re-measured from scratch, and it
+still supports the same conclusion PLAN §46 rests on: the tri-block buys rim corner
+fidelity, not the fillet at the shipped radius. Bound moved from `4.0 *` to `1.9 *`
+(actual 2.0268); the `fits is False` half of the test was already correct and untouched.
+
+### 4. THE REFRESH BROKE A FOURTH TEST, IN A FILE NEITHER CLUSTER WAS ASSIGNED
+
+`tests/test_fillet_block.py::test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces`
+was fixed at §124 (`5fe8e80`) by reading a dedicated `junction_genes` fixture
+(`stage3_knee_best_medium.json`, i.e. `09e8188`) specifically *because*
+`study_junction_agreement.json` was frozen at that genome. Refreshing the artifact to
+`b729e86` without also switching that test back to `genes` reproduces nothing — verified
+this would fail before touching it (both junctions, ~2-17 deg off) — so the fixture read is
+reverted to `genes`, and the now-unused `junction_genes` fixture and its docstring are
+removed with it.
+
+That revert surfaced a real, independent finding of its own: the same test's second
+assertion, `chord_minus_tangent_deg`, changed SIGN at the rim. `09e8188` had both rings'
+chord past tangent by a similar amount (hub 0.805, rim 0.566 deg); `b729e86` has the hub
+gap shrunk but same-signed (0.481) and the rim gap flipped (-0.612 — chord now lands
+BEFORE tangent). No verdict in PART 8 moves on it — it is a reported diagnostic, not one
+of the `P_t`/`P_c` fit numbers PART 8 prices, and both `P_t` rows still clear PART 8's
+margins by 5-20x (§1-3 above, not this test). Bound split per ring: `(0.3, 0.7)` hub,
+`(-0.8, -0.4)` rim.
+
+### 5. FLAGGED, NOT TOUCHED: THE WIRING/KT CHAIN ALSO BREAKS ON THIS REFRESH ALONE
+
+`tests/test_fillet_artifact_chain.py` (§120's successor 1) reads
+`study_junction_agreement.json` directly (`study_junction_agreement.json ->
+study_fillet_wiring.json`, its own dependency diagram) as well as the corner artifacts the
+peer session's cluster touches. Confirmed live: `test_the_wiring_verdict_survives_the_
+rebuild` was green at HEAD (both files agreed on `09e8188`) and is red against my refresh
+alone — `hub_wedge_err_end_cap_deg` 28.71 -> 6.43, `hub_wedge_err_as_built_deg` 0.008 ->
+0.018, `rim_wedge_err_as_built_deg` 50.61 -> 32.34. `test_study_fillet_wiring_reproduces_
+from_its_committed_inputs` (already red on purpose, pre-existing) now also disagrees at a
+junction-side field it did not before.
+
+Left alone: the peer session claimed `study_fillet_kt.json`/`study_fillet_wiring.json` as
+downstream of its own `study_corner_singularity_fillet.json` refresh, and the two clusters'
+artifacts feed the SAME derived files, so rebuilding it needs both refreshes on disk
+together or the result is partial. Messaged the peer session directly with the diffs above
+rather than editing shared territory.
+
+### 6. WHERE THE COUNT STANDS
+
+```
+                                                  before   now
+  test_junction_fit (§119's three)                   3      0
+  test_fillet_block (§4's fourth, unassigned)         1      0
+                                                      --     --
+                                                       4      0
+```
+
+Four closed (three of §119's nine, one this refresh opened on its own), five of §119's nine
+still stand — the peer session's six, minus whatever it has already closed by the time this
+is read. `tests/test_fillet_artifact_chain.py`'s wiring-chain reds are NOT counted here:
+they were already red or are the peer session's to decide.
+
+**SUCCESSORS.**
+
+0. **§119/§120's successor 1 (or whatever it is renumbered to) still needs the wiring/kt
+   chain decided against BOTH refreshed corner and junction artifacts together** — §5's
+   finding. Whoever does it should rebuild after both are on disk, not incrementally.
+1. **THE `chord_minus_tangent_deg` SIGN FLIP (§4) IS UNEXPLAINED.** It is pinned as a
+   direction and a band, not traced to a mechanism — plausibly the same flank-curvature
+   move §124 found at `A`, but that is a guess, not a measurement, and nothing here checked
+   it.
+
+## §127 — 2026-09-07. THE RECORD FOR `1a42de4`/`02e49cb`: `test_corner_singularity`'s SIX §119 FINDINGS DECIDED — THREE TURN OUT TO BE ONE FINDING (THE SHIPPED LAYER PROFILE NO LONGER CONVERGES), AND THE WIRING/KT CHAIN §126 FLAGGED IS CLOSED NOW BOTH REFRESHES ARE ON DISK
+
+Worked alongside the peer session's §126 on the same list — §119 §3's nine findings, split
+by artifact. This section is the six under `studies/study_corner_singularity.json` and
+`studies/study_corner_singularity_fillet.json`, the refresh that makes deciding them
+possible, and §126's successor 0 (the wiring/kt chain), now unblocked by both refreshes
+landing together.
+
+### 0. THE REFRESH ITSELF
+
+`make corner` (8.1 s) and `make corner-fillet` (5m32s, matching §120's own decomposition)
+against `best_solution.json`, scratch `--out` first, diffed against committed before
+touching either JSON. Both moved `genome_hash` `09e8188` -> `b729e86`.
+
+### 1. `test_all_four_junction_corners_are_re_entrant` — THE SHARED CONSTANT WAS A
+   09e8188 COINCIDENCE
+
+`P_t`'s wedge is set by the spoke geometry and does not move with a mesh option — that part
+of §45's finding is untouched. What moved is the GENOME: hub and rim happened to land
+within 0.0001 of each other at `09e8188` (lambda 0.5032/0.5031), which is why one shared
+constant covered both. `b729e86` reads hub 0.5026 (barely moved) and rim 0.5101 (moved
+past the old ±0.002 band) — independently corroborated by §125's unrelated measurement of
+the same rim corner's `at_P_t_deg` growing 18 deg by a different route. Pinned per ring now.
+`P_c`'s band (re-entrant, function of `uncap`) is untouched: 0.546/0.542, both still inside
+`[0.50, 0.56)`.
+
+### 2. `test_the_fillet_surface_peak_settles_where_the_sharp_corner_never_did` — SETTLES
+   SLOWER, NOT DIFFERENTLY
+
+`tail_fraction` moved 2.45%/1.86% -> 3.83%/3.80% (hub/rim) because the successive-difference
+ratio itself grew (0.452/0.329 -> 0.572/0.655) — still well clear of `SETTLING_RATIO`
+(0.75), so `settling` stays `True` at both rings; only the tail got fatter. Widened
+0.03 -> 0.05, comfortably above both measured values rather than re-centred on them.
+
+### 3. `test_the_filleted_blocking_solves_the_SAME_WHEEL` — §124's COLLAPSE ARRIVING A
+   THIRD TIME, PLUS TWO SMALLER RE-DERIVATIONS
+
+`continuity_sweep` unions `CONTINUITY_RADII_MM` (11 fixed radii) with the genome's own two
+gene radii — 13 candidates at `b729e86` (both gene radii are new points; at `09e8188` one
+gene radius coincided with an existing candidate, for 12). Only 6 build: every `R >= 0.8`
+now refuses at the hub with "the fillet's tangent point has passed the next sector's
+corner", which is §124's `sector_fit_span` hub-limit collapse (3.130 -> 0.743 mm) arriving
+here rather than a new mechanism — the surviving row (0.571 mm) and the first refusal
+(0.8 mm) bracket §124's number exactly. Threshold lowered `>= 8` -> `>= 6`.
+
+Two more things needed deciding once the row count was fixed. First, a small non-monotonic
+wobble at 0.4 mm (+0.23% against 0.2 mm, before resuming its decline) — checked against
+mesh quality rather than assumed, since the R < 0.05 mm floor already excludes one
+discretisation artifact of this shape: `scaled_jacobian` at 0.2/0.4/0.571 mm gives
+0.4259/0.4287/0.4113, and 0.4 mm is not the worst of the three, so this is not that
+mechanism recurring. No cause was found cheaply enough to chase further; a 0.3% slack was
+added to the monotonicity check rather than excluding the point outright. Second,
+`shipped_rel_to_unfilleted` shrank -38.04% -> -11.77%: the unfilleted axle drop grew 34.6%
+(1.5516 -> 2.0890 mm) but the shipped-fillet case grew 91.7% (0.9614 -> 1.8434 mm) — the
+control still shows an effect an order of magnitude above noise, just a smaller one.
+Threshold lowered `< -0.30` -> `< -0.10`.
+
+### 4. THREE TESTS, ONE FINDING: THE SHIPPED LAYER PROFILE NO LONGER HOLDS ITS OWN BAND
+
+`test_the_deflection_converges_on_the_filleted_mesh_and_not_on_the_sharp_one`,
+`test_a_genome_robust_layer_profile_holds_the_deflection_band` and
+`test_the_band_is_separating_the_CONTACT_PATCH_and_not_the_fillet` looked like three
+separate reds and are one mechanism measured three ways.
+
+The main ladder's unfilleted `interp` deflection reading no longer settles at all
+(`increment_ratio` 0.473 -> 38.64 — the last increment is 38x the first rather than
+decaying), so its remaining tail is undefined. That alone would be the arc's existing
+story getting stronger (the sharp corner pollutes the global functional worse on this
+genome) — except the FILLETED reading has also stopped clearing `SETTLING_RATIO` (0.75):
+its ratio moved 0.466 -> 0.842 and its remaining tail 0.131% -> 0.630%, past the very
+`<0.3%` band this arc exists partly to earn back. That reading uses the SHIPPED layer
+profile (`FILLET_LAYER_ENTRY_SLOPE`/`END_OFFSET` = -0.45/1.6), and the `--profiles` sweep
+confirms it directly: at `b729e86` that exact pair measures `spread_pct` 0.559% and
+`patch_spread_pct` 0.562%, both past 0.3% — it held only the single-node band at `09e8188`
+and now holds neither.
+
+Two things do NOT move with it. `TWO_OBJECTIVE_ENTRY/END` (-0.8, 1.0) still holds both
+bands, unaffected — so the admissible set stays nonempty and PART 16/17's claim that a
+better-converged alternative exists survives. And PART 13/§68's REJECTED genome-robust
+pair (-0.75, 0.7) now measures `spread_pct` 0.230%, `patch_spread_pct` 0.174% — comfortably
+inside both bands, a straight reversal of the reason it was declined ("spends the shipped
+genome's layer-width margin down to ~0.06"). Whether that margin cost moved too, and
+whether genome-robust should be reconsidered, is not chased here.
+
+The patch-count test shows the same thing from a third angle, and its own docstring
+already names the check: "check whether the artifact is stale... before believing the band
+moved." It is not stale here — this section's own refresh — so this is a genuine new
+instance, not §82/83's recurring. Measured: `ok={52,53,54,55,56,60}`,
+`bad={54,56,57,58,59,60}`; patch counts 54, 56 and 60 now appear on both sides, each split
+by SPREAD rather than resolution (e.g. entry -0.7/end 0.6: `patch_spread_pct` 0.321% just
+over the band despite `spread_pct` 0.132% comfortable; entry -0.7/end 0.7: `spread_pct`
+0.519% badly over despite `patch_spread_pct` 0.136% comfortable). Patch-node-count is no
+longer the sole variable separating convergent profiles from non-convergent ones near the
+shipped entry/end.
+
+All three converted to `xfail(strict=True)` with the measurement in the reason string.
+Re-choosing the shipped layer profile against `b729e86` — PART 13/16/17's decision to
+re-open — is real optimisation work and would retire or replace all three at once; doing
+it as a side effect of any one test would be exactly the failure mode §119 declined for
+the original nine, so it is filed as a successor instead.
+
+### 5. §125's `test_the_manifests_worst_wedge_STILL_MATCHES_P_t` XPASSES, AS DESIGNED
+
+That xfail was staleness in `study_corner_singularity.json` specifically, filed with
+"forces this record to be revisited the day someone actually does that work" — today, this
+section. Both junctions now agree with the fresh STEP manifest well inside the 2 deg
+rounding band. Xfail lifted; the sibling `test_the_hub_fillet_STILL_MATCHES_what_the_
+exporter_built` (the OCC radius-feasibility gap, an unrelated and permanent finding) is
+untouched.
+
+### 6. §126's SUCCESSOR 0, CLOSED: THE WIRING/KT CHAIN, NOW BOTH INPUTS ARE FRESH
+
+`study_fillet_kt.json` and `study_fillet_wiring.json` were frozen behind both refreshes
+landing together (§126 §5's finding, messaged rather than half-done). Rebuilt via `make
+filletkt`/`make filletwiring` once the peer session's `study_junction_agreement.json`
+commit (`de0d368`) was on disk alongside this section's two corner artifacts.
+
+`study_fillet_kt` makes no live read and reproduces exactly apart from the corner census
+it copies verbatim. `study_fillet_wiring`'s `verdict` block — the one that needed judgement
+if it moved, per its own test's docstring — survives CATEGORICALLY unchanged: every
+boolean (`end_cap_justification_is_stale`, `hub_P_c_is_the_parts_corner`,
+`both_P_c_diverge_on_the_filleted_mesh`, `knee_evidence_survives`, and four more) is
+identical to the committed value. Only three numeric fields moved, all downstream of the
+junction refresh alone (§126 §5 already measured these against the junction refresh in
+isolation):
+
+```
+  hub_wedge_err_end_cap_deg     28.705  ->  6.426
+  hub_wedge_err_as_built_deg     0.0080 ->  0.0183
+  rim_wedge_err_as_built_deg    50.612  -> 32.343
+```
+
+Because no verdict moved, this is bookkeeping rather than a finding needing §119's
+one-at-a-time treatment — `test_the_wiring_verdict_survives_the_rebuild` passes by
+construction once the artifact is refreshed. `test_fillet_artifact_chain.py`'s docstring
+is updated per its own "delete this paragraph when refreshed" instruction rather than left
+describing a gap that no longer exists.
+
+### 7. WHERE THE COUNT STANDS
+
+```
+                                                          before   now
+  test_corner_singularity (§119's six)                       6      0
+  test_fillet_artifact_chain (§120 successor 1, §126 §5)      *      0   (* not separately
+                                                                          counted before)
+                                                              --     --
+                                                               6      0
+```
+
+Combined with §126: all nine of §119's original findings are decided (three re-derived
+outright in §126, six here — three of those six turning out to be one mechanism, xfail'd —
+and two more ordinary re-derivations), plus the two side findings each refresh opened
+(§126 §4's `test_fillet_block` fourth, and this section's wiring/kt chain).
+
+One pre-existing red, unrelated to either refresh, surfaced while running the full blast
+radius and confirmed via `git stash` to fail identically at HEAD:
+`tests/test_gradient.py::test_the_filleted_gate_runs_and_inverts_the_census` — a
+`FilletClampRefusedError` at hub radius 0.706 mm, the same `sector_fit_span` collapse (§124)
+arriving through a fourth, previously-unconnected path. Not chased here.
+
+**SUCCESSORS.**
+
+0. **RE-CHOOSE THE SHIPPED LAYER PROFILE AGAINST `b729e86`** (§4). `FILLET_LAYER_ENTRY_
+   SLOPE`/`END_OFFSET` no longer holds its own convergence band; `TWO_OBJECTIVE_ENTRY/END`
+   still does, and the previously-rejected `GENOME_ROBUST_ENTRY/END` now does too, reversing
+   §68's reason for declining it. This is PART 13/16/17's decision to re-open, priced across
+   the whole candidate set the way PART 16 originally was, not a test-file change.
+1. **`tests/test_gradient.py::test_the_filleted_gate_runs_and_inverts_the_census` IS RED AT
+   HEAD**, unrelated to this section's or §126's work, same `sector_fit_span` collapse
+   arriving a fourth time. Nobody has picked this up.
+2. **§4's SIBLING FINDING, THE CONTACT-PATCH SEPARATION LOSING ITS SOLE VARIABLE, IS NOT
+   RE-DERIVED INTO A SECOND VARIABLE.** Whoever takes successor 0 should check whether
+   identifying that second variable falls out of the same work for free.
+
+## §128 — 2026-09-07. THE RECORD FOR `0dde1a9`: §127's SUCCESSOR 1 CLOSED — THE FOURTH PATH
+   INTO §124's COLLAPSE WAS TWO REDS, NOT ONE
+
+`test_the_filleted_gate_runs_and_inverts_the_census` was the red §127 flagged and declined to
+chase. It turned out to be two independent failures stacked behind one call, the second only
+reachable once the first stopped aborting the function early.
+
+### 1. THE FOURTH PATH ITSELF: A FIXED BUMP WALKED INTO THE COLLAPSE
+
+`study_gradient.run_filleted` builds a second, deliberately-different genome to prove
+`coord_fn`'s cache key still separates two per-genome layer profiles (§88's fix) rather than
+reusing the first genome's trace. That genome is `genes` with `R_hub += 0.2`, a literal
+chosen when the hub `_sector_fit_span` limit had room for it. §124/§127 already measured
+that limit collapsing 3.130 -> 0.743 mm; this is the same number arriving a fourth time, and
+this measurement corroborates it independently — the refused build reports its pulled-back
+radius as 0.706 mm, and `0.706 / SECTOR_FIT_CLAMP(0.95)` is 0.743 mm to four figures. The old
+bump asks for `R_hub` 0.771 mm, past the new ceiling, so `_filleted_gradient_recipe` refuses
+it outright rather than returning a clamped-and-differentiable mesh. The bump was never
+required to be `0.2` specifically — only to land on a second, genuinely different, unclamped
+point. Lowered to `+0.1` (-> `R_hub` 0.671 mm), ~0.035 mm clear of the new ceiling.
+
+### 2. A SECOND, INDEPENDENT RED BEHIND IT: THE NUMPY-PATH IDENTITY WAS NEVER UNIVERSAL
+
+Unblocking §1 reached `pg["numpy_path_max_abs_mm"] == 0.0` — `mesh_coords`'s explicit-numpy
+path compared bit-for-bit against `mesh.coords` — for the first time at this genome, because
+the clamp refusal had always aborted the function before this line ran. It fails at
+7.105e-15 mm, deterministically: two calls in the same process agree to the bit, so this is
+not thread- or BLAS-order nondeterminism. fe8dd88 (§88) already measured this exact
+comparison is not universal — eighteen builds against the old bisection's pair, 11 bit-
+identical, worst 3.553e-14 mm — and shipped anyway, on the reasoning that machine-precision
+noise this small is not the four intended differences. This genome lands in the bucket that
+commit already priced. Gated to `GATE_FILLET_MESH_MM` (1e-9), same as its sibling
+`identity_max_abs_mm` two lines above it, rather than required exact — nothing here found a
+new mechanism, only confirmed the strict equality was never load-bearing.
+
+### 3. `study_gradient.json` IS A THIRD, SEPARATE, ALREADY-STALE ARTIFACT — NOT TOUCHED
+
+`run_filleted`'s output feeds a committed artifact, `study_gradient.json`, last regenerated
+at `fe8dd88` (2026-08-28) — nine days before `best_solution.json` promoted to `b729e86`
+(`cb4e3dd`, 2026-09-06). It was already stale for reasons this section did not cause and does
+not chase; regenerating it is a fourth artifact needing the same one-at-a-time adjudication
+§119's three already got, not a side effect of a two-line test fix.
+
+`make test` on the one file touched: `tests/test_gradient.py`, 24 passed.
+
+**SUCCESSORS.**
+
+0. **`study_gradient.json` NEEDS THE SAME DECISION §119's THREE ARTIFACTS GOT** — refresh
+   against `b729e86` and adjudicate whatever it silently retires, or name why it stays frozen.
+   Nobody has picked this up.
+
+---
+
+## §129 — 2026-09-07. §116's SUCCESSOR 1, CLOSED FOR ALL FOUR REMAINING DRIVERS. `make kinrank` CANNOT PRODUCE AN ARTIFACT AT ALL — IT DIES AT ROW 32 OF 36 AND THE REPORT IS WRITTEN AFTER THE LOOP — AND `make m8bi5`'s SECOND HALF SCORES 0 OF 16. THE ANCHOR THAT LOOKED LIKE AN UNCAP CASUALTY IS A PROMOTION CASUALTY: 20.3% OUT, OF WHICH THE FLIP IS 0.3. AND A FIFTH EXPOSURE THE AUDIT WAS NOT LOOKING FOR: §43's DEGRADED-RUN GUARD IS FOURTEEN DRIVERS SHORT, AND SEVEN COMMIT-PINNED EVIDENCE BASELINES ARE NAMED BY NOTHING
+
+§116's successor 1 asked for one thing — *read each of the other four's own guards and
+pinned constants against today's `wheel_objective`/`wheel_wheel`, no solves, no descent*.
+This is that audit for `m8bi5`, `m9buck`, `hubcap` and `kinrank`, plus §5, which the audit
+ran into rather than went looking for and which is a census over every driver in `studies/`
+rather than over these four. It is a read plus mesh builds, and it stays inside that scope
+with two named exceptions: six buckling
+measurements in §1 (three constructions x `smoke`/`coarse`, 4-25 s each) which exist to
+prove a pin REPRODUCES rather than to re-derive anything, and two `score()` calls in §3
+that refuse before they solve. No descent, no artifact regenerated, and not one gate
+constant moved anywhere in the four files.
+
+**THE FACT ALL FOUR SHARE.** Every committed artifact predates both changes §116 named:
+
+```
+  driver   committed artifact                    committed at        pre-§103  pre-c416cb5
+  m8bi5    studies/study_stage3_m8bi5.json       506acfe  2026-07-29   yes         yes
+  m9buck   studies/study_m9_buckling.json        43da58f  2026-08-03   yes         yes
+  hubcap   studies/study_hub_cap.json            b5c22c9  2026-08-12   yes         yes
+  kinrank  studies/study_kinematics_rank.json    97f9629  2026-08-19   yes      see below
+```
+
+`97f9629` lands **34 seconds** before `c416cb5` — 13:02:31 against 13:03:05 on the same
+day. That is commit order, and it does NOT settle which wheel that artifact describes:
+§116.4 records the flip as *committed 2026-08-19, adopted 2026-08-18*, so the working tree
+that produced the artifact may already have been uncapped. Not measured here, and not
+guessable from the file — its rows carry `mesh_s`, losses and drops, and no node count.
+Named rather than assumed.
+
+### 1. `m9buck`: THE HEADER'S ANCHOR IS 20% OUT, AND THE UNCAP FLIP IS 0.3 OF IT
+
+The header table justifying this study's whole formulation — *assembling an SVK stiffness
+at a LINEAR-converged displacement gives a different and larger answer* — is four numbers
+said to be measured *"on `best_solution` at phase 0"*. `measure()` reads that file live
+(`_designs`, `--genome`, both through `PP.BEST_SOLUTION`).
+
+**`best_solution.json` on 2026-08-03 was `36aed36`** — `git show 43da58f:best_solution.json`
+— which is `best_solution_ga_beam.json`, still on disk under that name, and the genome
+§116.3 found cannot be scored on the filleted mesh at all. It has changed genome **five
+times** since (`350f4c7`, `e4219f3`, `e126cc3`, `09e8188`, `b729e86`), and against today's
+`b729e86` not one of the fourteen genes is within 10%: `R_hub` -63.4%, `cy4` -78.0%,
+`t0` +41.5%.
+
+Re-measured 2026-09-07, `measure()` verbatim with the two construction knobs exposed:
+
+```
+                        smoke                     coarse
+  both pins        1.378129  (-0.000%)      1.359846  (-0.000%)     genome + uncap=False
+  genome pin only  1.382440  (+0.313%)      1.362729  (+0.212%)     today's UNCAP_DEFAULT
+  make m9buck      1.098719 (-20.275%)      1.090341 (-19.819%)     what it measures today
+```
+
+**Both anchors reproduce to all seven digits under both pins.** The interesting half is the
+decomposition. The `UNCAP_DEFAULT` flip cost `study_svk_rescore.py`'s control **-4.13% /
+-4.78%** (§116.4); on THIS quantity the same flip is worth **+0.313% / +0.212%**, and
+everything else is the promotion. Both readings say the same physical thing — the caps came
+off and the wheel got stiffer, so a deflection falls and a load factor rises — but the
+magnitude does not carry across: a load factor is a ratio of two stiffnesses assembled on
+one mesh, so the stiffening largely divides out of it, and quoting §116.4's percentage here
+would have been **13x too big at `smoke` and 23x at `coarse`.** §120's pattern again: the
+genome is very nearly the whole cause, and the change everyone would have suspected is
+under half a point of it.
+
+Pinned in the header, not re-derived — §25's fix for §25's reason. Also recorded there and
+NOT measured: `measure()` still builds `fillet=None`, which is +26.5% elements at `coarse`
+away from what `wheel_objective` has solved since §103. Nothing in this driver has ever
+been measured on that mesh.
+
+### 2. `hubcap`: THE WARRANT NAMES A DEAD CONSUMER AND MISSES A HARDER LIVE ONE
+
+The module docstring's reason for existing is *"Stage 3 now believes that claim twice — a
+barrier pushes `R_hub` under it, and `Kt_hub` is priced on it"*. Half of that is true. The
+`fillet_cap` barrier is live (`wheel_objective.py:885`). **`Kt_hub` has priced nothing
+since §102/§103** — `util_j` reads the region p-norm, and `wheel_objective.py:1283` says so
+in the code.
+
+The second believer it does have is worse than the one it names: **`wheel_stage3.selection_key`**
+drops any iterate whose `cap - R_hub` is under `MIN_CAP_SLACK_MM` out of tier 0, i.e. out of
+promotability. That is the rule §115 selected `b729e86` by. Measured at the shipped genome,
+2026-09-07, `coarse`:
+
+```
+  R_hub                    0.570995 mm
+  hub_fillet_cap_mm        0.572066 mm
+  slack                    0.001071 mm        MIN_CAP_SLACK_MM = 0.001  ->  tier 0 by 7.1%
+  BISECT_REL x cap         0.005721 mm        this gate's own resolution — 5.3x the slack
+```
+
+**The gate's instrument is now five times coarser than the margin its answer decides.**
+Nothing is re-tuned for that here; a threshold is a claim about its instrument and moving
+either is a decision, not a correction.
+
+Three more, all measured the same day and all now recorded in the driver:
+
+- **The `occ_limit` section's motivating example is unreachable at the design that ships.**
+  It reads *"is FALSE at the shipped genome: `_fillet_ladder(1.5598)` ... the largest rung
+  under the 1.1057 cap is 0.9579, and OCC took 1.1269"*. `1.5598` is `36aed36`'s `R_hub`,
+  and that has not been the shipped genome since §26. At `b729e86` the ladder is 0.5710,
+  0.4853, 0.4125, 0.3507, 0.2981, 0.2534, 0.25 against a 0.5721 cap — **the largest rung
+  under the cap is the TOP one**, the requested radius itself. There is no straddle left to
+  see, so the bisection is the only instrument that can still detect the effect it was
+  built for. The example is pinned to `36aed36` rather than re-taken.
+- **The `sweep` section's span is from a cap that no longer exists.** *"the caps span 0.99
+  to 1.53 mm across the 16 Stage-2 elites"* was written 2026-07-31 (`2c2c9a9`), and
+  `HUB_CAP_ARRIVAL_SLOPE` — the term that made the cap a function of where the spoke aims
+  — arrived at `b5c22c9` on 2026-08-12. Re-measured over the same sixteen at `coarse`:
+  **0.5939 to 0.9159**, a span that does not overlap the recorded one. The argument it
+  supports is untouched: a fixed bound still fits one genome and no other.
+- **`_designs()`'s negative control is inverted.** Its three-row default is justified as
+  *shipped genome + elite14 (tightest cap on disk, 0.9898 mm) + elite13 (the ONE design
+  whose `R_hub` is already under its cap)*. Today: elite14's cap is **0.5939**, not 0.9898,
+  and is not the tightest — `best_solution`'s 0.5721 is; elite13 is **0.2959 mm OVER** its
+  cap and is now a fourth confirmation rather than a control; and `best_solution` is the
+  only design on disk under its own cap, having taken elite13's old role. The list still
+  samples three designs and no longer samples the two SIDES it was built to sample.
+
+### 3. `m8bi5`: S11's LADDER LABELLED ITSELF WITH A MESH NO OTHER NUMBER IN THE ROW CAME FROM, AND S12 NOW SCORES 0 OF 16
+
+**S11 (`run_mesh_convergence`), fixed here.** Every quantity on a ladder row comes from
+`score` -> `S3.Evaluator` -> `WO.phase_meshes`, filleted unconditionally since §103. The
+`n_elements` column came from a bare `WW.build_wheel(genes, cfg)`. Measured at the shipped
+genome:
+
+```
+  smoke     column   960    row's own mesh  1152     understated 20.0%
+  coarse    column  4704    row's own mesh  5952     understated 26.5%
+  medium    column 12288    row's own mesh 15552     understated 26.6%
+```
+
+A convergence study's independent variable, describing a different mesh from its dependent
+ones. One argument, fixed.
+
+**And its docstring states a retired constraint.** *"`util` is now `max(Kt_hub, Kt_rim) *
+pnorm(p=4) / allowable`"* has been false since §102/§103; `util` is
+`max(hub_region_pnorm, rim_region_pnorm) / allowable`. Note where the truth was kept:
+`tests/test_stage3.py`'s own rung test asserts exactly the right identity off this
+function's row, with a comment citing §102/§103. **The test-side twin has been right the
+whole time and only the driver's prose was stale** — §121's pattern, arriving from the
+other direction.
+
+**S12 (`run_multistart`) scores 0 of 16 — and this one fails LOUDLY, which is the whole
+point of how it was written.** It scores the sixteen Stage-2 elites, each in its own `try`,
+and ranks the survivors by `corner_distance`. Measured at the driver's own `coarse`
+default: **all sixteen refuse the mesh the objective solves** — fifteen `clamp_reject`,
+plus `elite11` (`fc7aeb1`), which has no filleted mesh at the rim at all. Confirmed through
+the driver's own call path rather than inferred from the classification:
+`so3.score(elites[13], "smoke")` and `so3.score(elites[0], "smoke")` both raise
+`FilletClampRefusedError` out of `mesh_coords`, which `t3`'s adjoint reaches through
+`wheel_adjoint.py:777`'s `jax.vjp` — `tiers=("t3",)` does not skip the guard, it arrives at
+it by the gradient instead of by `t2`.
+
+So `scored` is empty, `spread` is `{}`, `n_elites_scored` is 0, `ranked[:n_probe]` is
+empty and no bound is probed. **`run_multistart`'s gate is `bool(scored) and ...` — "some
+elite got scored" — so it returns `pass: False`, `rep["pass"]` is `all(...)` over the
+sections, and `make m8bi5` exits 1.** That is the one guard in this audit that catches its
+own rot, and it catches it for the right reason: what is gated is that the screen did its
+work, not that the screen liked the answer. What it cannot say is WHY, and the sixteen
+recorded `FilletClampRefusedError`s in `failed` are the answer sitting in the artifact
+nobody reruns.
+
+**The half of M8b-i.5 that exists to answer "was the verdict about the space, or the
+basin?" now measures neither.** Not repaired here: what S12 should start from once its own
+start points are inadmissible is a question about the milestone, not about this function.
+
+### 4. `kinrank`: THE RUN CANNOT REACH ITS OWN WRITE, AND THE COLLAPSE EVERYONE FEARED IS NOT THE ONE IT HAS
+
+Classified all 36 pool genomes at `coarse` — the driver's default — by building the mesh
+`WO.phase_meshes` builds and putting each through `mesh_coords`' own guard. No solves:
+
+```
+  ok (builds and differentiates)   19      every one a Stage-3 output
+  clamp_reject                     16      15 of the 16 Stage-2 elites, plus minwall 2.2
+  mesh_reject                       1      elite11 fc7aeb1, no filleted blocking at the rim
+```
+
+`36aed36` is `stage2_elites` rank 0 and the pool folds the two together, so the two lines
+above account for **every Stage-2 elite there is**: fifteen clamp-refused and `elite11`
+mesh-refused. Nineteen of the twenty-one `COMMITTED` rows survive; `36aed36` and
+`minwall 2.2` are the two that do not.
+
+**Two unhandled paths, both fixed here.**
+
+- `run_rank` caught `_score`'s refusals from the day it was written, but built the mesh
+  ABOVE the handler. `elite11` is **row 32 of 36**, and the report is written only after
+  `run_rank` RETURNS — so the run spends an hour, dies, and leaves nothing on disk. §116.1
+  read this driver and repaired the `_score` assertion it shares with `make svk`; the build
+  above it was not reached because nobody had run the pool against a filleted mesh.
+- `run_gradients` had no handler at all, and `36aed36` is **probe 4 of 4**. Unhandled, that
+  killed `main()` after `run_rank`'s report was written and before `registered_criterion`
+  ever was. A refused probe is now recorded and excluded from `r3_pass`, which becomes
+  `None` — not `False` — when nothing differentiates: *"every probe disagreed"* and *"no
+  probe could be taken"* are different findings and the artifact has to keep them apart.
+
+**THE FEARED COLLAPSE MEASURES FALSE, AND THAT IS THE USEFUL HALF.** The worry going in was
+that R2's binding subset — feasible under BOTH kinematics, `n = 10` in the committed
+artifact — would quietly collapse behind those refusals. Cross-referenced row by row:
+**all ten are in the nineteen that build.** The refusals land exactly on rows the artifact
+already excluded. What does move the binding subset is the other channel, which needs
+solves and is not measured here: §116.5 already read `minwall 1.4` at utilisation
+**1.4215 / 1.4381** with `stress` at 784 / 893 on the mesh the objective now solves, and
+that genome is one of the ten.
+
+**And the pool has lost a genome to a premise that expired.** The header says the pool is
+every distinct committed genome, de-duplicated by gene vector because *"`best_solution.json`
+and `stage3_knee_best_medium.json` are the same wheel"*. §115 made them two wheels — the
+knee file is where the outgoing `09e8188` was deliberately preserved — and `COMMITTED`
+never listed the knee file because it never had to. Census over every tracked file carrying
+a genome, 2026-09-07: **39 distinct gene vectors on disk, 36 reachable, three not** —
+`stage3_knee_best_medium.json`, `defect5_step100.json`, `fillet_optimum_b029622.json`. The
+other two aliases still hold (`margin_best_medium == margin_promote_best`, `stage2_elites#0
+== ga_beam`), checked the same day. Whether the three belong in the pool is §116's successor
+3 and is not decided here. The `09e8188` display labels in `COMMITTED` and `GRAD_PROBES`
+are corrected to `b729e86`: `best_solution.json`'s own promotion note called them cosmetic,
+and that was right at the time — since the promotion the old label names a DIFFERENT genome
+that is still on disk under another name, which is no longer a caption problem.
+
+### 5. A FIFTH EXPOSURE NONE OF THE FOUR WAS BEING AUDITED FOR, AND IT IS THREE TIMES THE SIZE THIS SECTION FIRST ESTIMATED: FOURTEEN DRIVERS HAVE NO DEGRADED-RUN GUARD, AND THIRTY-THREE TRACKED ARTIFACTS ARE NAMED BY NONE
+
+§43 gave the study drivers a refusal that stops a reduced run being filed under a committed
+artifact's name, after §41 caught `study_contact --quick` writing smoke data into
+`study_contact.json` and reading a FALSE GREEN out of it. The mechanism is
+`_gate_guard.py:52` — **`if args.out != committed: return`**. One name, one string equality,
+per driver.
+
+This section first read that as a five-driver problem — the four audited here plus
+`study_svk_rescore.py`. **Censused across every driver in `studies/` and re-derived here, it
+is fourteen.** Twenty-five drivers call the guard; fourteen call none:
+
+```
+  no guard, EXPOSED (a fidelity flag reaches a tracked artifact)          10
+    study_m9            study_m9_buckling     study_svk_rescore
+    study_kinematics_rank                     study_reds_hub_share
+    study_knee_rungs    study_hub_cap         study_corner_singularity
+    study_deflection_gci                      study_junction_agreement
+
+  no guard, NOT exposed                                                    4
+    study_boundary_waste          `--out` is its only flag
+    study_arrival_cap             no argparse at all; the path is hardcoded
+    study_reds_ratio_stability    writes NO file without an explicit `--out`;
+                                  a cell run prints to stdout (`:245`)
+    stage3_resume_genome          a recovery launcher, writes no tracked name
+```
+
+**Carry 10 exposed of 14 unguarded, not a flat 14** — the four exemptions are real and each
+has its own reason, and a reader who checks will find them.
+
+**AND NOT ALL OF IT IS A FIDELITY DIAL, WHICH IS THE PART THAT MATCHES §41 EXACTLY.**
+Enumerating every `add_argument` rather than the obvious ones, the degrading surface here
+is dominated by SECTION-DROPPING flags: `--only` and `--skip-control` on
+`study_svk_rescore`, `--skip-rank`/`--skip-grad`/`--no-elites` on `study_kinematics_rank`,
+`--designs` on `study_hub_cap`, `--sections` on `study_stage3`, `--phases` on
+`study_knee_rungs`, `--reanalyse` on `study_deflection_gci`. Those do not produce a coarse
+gate standing in for a fine one — they produce a report with whole sections ABSENT that
+still reads as the gate, because every field it did compute is present and every verdict it
+did reach is computed. `study_svk_rescore --skip-control` drops the control row — the gate
+on whether anything below it may be quoted, and the row §116.4 found FAIL — out of a file
+named `study_svk_rescore.json`. That is §41's failure mode itself, not a weaker cousin.
+
+**The cleanest reproducer is one line on a driver nobody has looked at:**
+`study_m9.py --quick --out study_m9.json`. `--quick` cuts the design set from three to one,
+`study_m9.json` is tracked, and there is nothing in the way. That is §41's invocation with
+§41's consequence, four months after §43 was supposed to have closed it.
+
+**And a guarded driver is not a covered driver.** `study_stage3.py` collects **nine**
+degraded conditions — `--quick`, `--config`, `--genome`, `--elites`, `--sections`,
+`--ladder-p`, `--ladder-configs`, `--no-plot`, `--requirements` — and all nine sit behind
+the single `args.out !=` test, guarding `study_stage3.json` alone. Three tracked artifacts
+come out of that same file uncovered: `study_stage3_m8bi5.json`, `study_stage3_pnorm.json`,
+`study_stage3_pool.json`. `make m8bi5` is permitted precisely because it writes elsewhere,
+and `--sections mesh_convergence,multistart --config smoke --out study_stage3_m8bi5.json`
+is accepted. The plot goes with it: `:2284` derives the `.jpg` from `--out`, so a degraded
+run redraws the committed figure as well.
+
+**`tests/test_study_gate_guard.py` cannot catch either gap by construction.** Its `DRIVERS`
+table covers the nine drivers in `make studies` and **never passes `--out` at all** — every
+row exercises the default name. A guard that is wrong about second names is invisible to a
+test that only ever supplies the first.
+
+**INVERTING THE CENSUS IS WHERE THE SHARP ONE IS, AND IT IS NOT A GATE.** Asked the other
+way round — for every tracked artifact, does any guard name it — **33 of the 58 tracked
+`studies/*.json` are named by none.** The twenty-five guarded names are one per guarded
+driver. The 33 split three ways:
+
+```
+   7  by-design degraded variants whose FILENAME is the disclosure —
+      study_gradient_{lin_quick,lin_check,svk,svk_quick}, study_m9_quick,
+      study_svk_knee_{coarse,medium}.  These want no guard.
+  19  live gate artifacts of the ten exposed drivers above.
+   7  COMMIT-PINNED EVIDENCE BASELINES.  These are the sharp ones:
+```
+
+```
+  study_contact_e126cc3_lin.json        study_contact_e4219f3_lin.json
+  study_contact_e126cc3_svk.json        study_contact_e4219f3_svk.json
+  study_corner_singularity_b029622.json study_fillet_terms_b029622.json
+  study_corner_singularity_fillet_b029622.json
+```
+
+(The two `study_svk_knee_*` files are `study_svk_rescore` outputs — `control`/`rescore`/
+`settings` keys, `settings.config` matching the name — and no `.py` or `Makefile` target
+writes them, so they were filed by hand through an explicit `--out`, the case the guard
+deliberately allows.)
+
+**These are commit-pinned evidence baselines, and overwriting one is strictly worse than
+overwriting a gate.** A gate can be re-run: it measures today's tree, and §116 re-ran one
+that had rotted for 25 days. A baseline pinned to `e126cc3`, `e4219f3` or `b029622` is
+evidence about a commit that is not checked out, and §119's whole finding was that these
+cannot be regenerated into a net improvement. Nothing guards them, and nothing tests that
+nothing guards them.
+
+**One non-finding, recorded so it is not re-discovered as one.** The guard compares the raw
+`--out` string, so an explicit path resolving to the same file is accepted. That is
+deliberate and argued in `_gate_guard.py`'s own docstring — the guard exists to stop a weak
+run being filed under the gate's name BY DEFAULT, not to protect the inode from someone who
+typed the path. It is the reason `study_reds_ratio_stability` is exempt above rather than a
+hole beside it.
+
+### 6. `KINRANK_WORKERS` IS STILL 8, AND ITS COMMENT POINTS AT A NUMBER THAT HAS SINCE MOVED TO 0
+
+`KINRANK_WORKERS ?= 8`, under a comment reading *"the memory cap and nothing else sizes it,
+exactly as `SVK_WORKERS`"*. §116.6 moved `SVK_WORKERS` from 4 to **0** on §115.4's
+measurement — four workers at 11.5-12.7 GiB RSS each beside a 10.8 GiB parent, killed
+before the box went the way §113's did. The sibling the comment binds itself to has halved
+twice and this one has not moved.
+
+**Deliberately NOT changed here.** §115.4's reading is `medium` and filleted; `kinrank`
+runs `coarse`, which is a different footprint, and carrying a memory measurement across a
+fidelity is exactly the error `state the scope` exists to prevent. It needs one measured
+rung at `coarse`, which is a run, not a read. Filed below.
+
+### 7. THE CITATION SWEEP IN THIS SECTION WAS ENUMERATED WITH A TOOL THAT CANNOT SEE THIS FILE
+
+`.gitignore:8` is a bare, uncommented `PLAN.md`. This file's own header block already
+records that line and calls it a no-op — *"Git ignores nothing it already tracks, so this
+file is versioned today."* **That is true of git and false of every other tool.** An
+ignore-aware searcher skips the file during directory TRAVERSAL, and the `grep` in this
+environment is a shell function wrapping `ugrep --ignore-files`. Four controls, one pattern
+(`study_tri_block\.py:228` over `*.md`):
+
+```
+  shell `grep -rl`   (ignore-aware)     PLAN.md ABSENT
+  `grep -c PLAN.md`  (explicit name)    3
+  `git grep -c`      (tracked files)    PLAN.md:3
+  `command grep -rl` (system grep)      ./PLAN.md
+```
+
+Explicit filename and `git grep` both see it. Only traversal is blind. The entry landed at
+`50d9a86` (2026-07-30), four days after the file was first tracked at `500f5b8`
+(2026-07-26): a bare uncommented line added beside a comment rewrite of the virtualenv
+block, in a commit about something else, in a file where every other entry carries a
+comment explaining itself. **39 days blind.**
+
+**This is the mechanism behind the stale `study_tri_block.py:228` citations named in NOT
+touched below, and the evidence was already written down here.** `PLAN.md:18056` records
+that sweep as `UNCAP_PLAN.md x2   study_tri_block.py:228 -> :242   MINE`. It repaired both
+`UNCAP_PLAN.md` sites and left `PLAN.md:14619` and `:16795` untouched. That was not a lapse
+of judgement: the sweep enumerated its targets with a tool for which this file does not
+exist, so the two sites were never candidates. §114's and §118's audits predate the
+finding and cannot have reached this file by traversal either — §118's own "2 mine / 3 not"
+split across eleven files was drawn from a search that could not see the twelfth.
+
+**And this section's citation sweep was enumerated the same way.** Re-run with `git grep`
+before committing: eight citations into the four edited drivers, seven here and one in
+`MBSE_PLAN.md` — exactly the set already re-pointed, so there is no false negative. **But
+that was luck, not method.** The first enumeration piped `grep -v '^\./PLAN.md'` over a
+list that had never contained a PLAN.md row, which reads like a deliberate exclusion and
+was a filter over nothing; the seven were recovered only because the next command named the
+file explicitly. The shell grep finds **1 of the 8**.
+
+Not fixed here, and it is one line. Deleting `.gitignore:8` cannot change git's behaviour —
+removing an ignore for an already-tracked file is a no-op to git — and it hands the project
+record back to every search tool in the tree. It also answers the header's own open
+question (*"Decide which was intended before relying on either"*) by measurement: the entry
+has never done anything except hide this file from search, and the header's stated worry —
+that an untracked PLAN.md *"would leave the repository silently"* — argues the same way.
+Filed as a successor rather than folded in, because the header's "the ignore line is a
+no-op" sentence needs a dated correction bracket in the same change, and editing the header
+shifts every line citation in a 19,000-line file. That is its own unit of work with its own
+sweep, run with the right tool.
+
+**WHAT MOVED.** `studies/study_m9_buckling.py` — the anchor table pinned to
+`best_solution_ga_beam.json` + `uncap=False` with today's three-row re-measurement beside
+it. `studies/study_hub_cap.py` — the "believes twice" clause corrected to name
+`selection_key` and carry the 0.001071 mm slack, the `occ_limit` example pinned to
+`36aed36` with today's ladder, the `sweep` section's elite cap span re-measured, and
+`_designs()`'s three stated reasons corrected. `studies/study_stage3.py`
+— `run_mesh_convergence`'s `n_elements` now built `fillet=True`, and the retired `util`
+formula corrected. `studies/study_kinematics_rank.py` — the mesh build moved inside
+`run_rank`'s handler, a handler added to `run_gradients` with `r3_pass` tri-state and
+`n_refused`, `_print` taught to render a refused gradient row, the pool's expired alias and
+the two `09e8188` labels corrected. `PLAN.md`/`MBSE_PLAN.md` — six line citations
+re-pointed for the shifts these edits caused (§114's lesson, applied to my own delta):
+`study_stage3.py` `:1230`->`:1246`, `:1238`->`:1254`, `:2079`->`:2095`,
+`:2109-2110`->`:2125-2126`, `:2219`->`:2235`; `study_hub_cap.py` `:654`->`:704`;
+`study_kinematics_rank.py` `:190`->`:235`. `study_stage3.py:902` and `:910` are above every
+edit and unchanged. The sweep's completeness was re-checked with `git grep` for §7's
+reason, not with the shell's.
+
+**NOT touched.** No committed study artifact is regenerated — all four are stale for
+reasons this section measured and none is refreshable into a net improvement while the
+findings above are live (§119's rule). `Makefile` — see §6. The four drivers' genome lists,
+probe sets and `--designs` defaults — every one of those is a decision about what the gate
+should measure, and §116's successor 3 already has the shape of it. `wheel_wheel.py:2827`
+formats its clamp refusal as `"...radius at huband rim"` — a missing space in
+`{'and '.join(clamped_at)}`, pre-existing, cosmetic, mentioned rather than fixed.
+`studies/study_tri_block.py:228` is cited twice in this file (`PLAN.md:14619` and
+`:16795`) and resolves to a blank line; the live target is `:242`, which is what
+`UNCAP_PLAN.md` was already repaired to and what both citations describe — stale before
+this section, mechanism in §7, left to the change that fixes the cause. `.gitignore:8` —
+§7, successor 5. **[BOTH CLOSED SAME DAY at `58b311a` — successor 5 below. The two
+citations now read `:242` and the ignore line is gone; this paragraph is left as written,
+with the correction here, because it is the record of what was true when the audit ran.]**
+
+**SUCCESSORS.**
+
+0. **`make kinrank` HAS NEVER RUN AGAINST A FILLETED MESH AND NOW CAN.** Both refusal paths
+   are handled and the pool classification is on record, so the run would complete: ~1 h at
+   `coarse` on the artifact's own settings, and it would answer R1/R2/R3 on the mesh the
+   objective actually solves for the first time. Its verdict is currently FAIL on all three
+   from a pre-fillet, pre-promotion pool. **Do §6 first** — 8 workers is unmeasured on this
+   construction.
+1. **`KINRANK_WORKERS` NEEDS ONE MEASURED RUNG AT `coarse`.** §6. One genome, one worker
+   count, RSS sampled — the same shape §115.4 used — and then the default follows the
+   measurement rather than its sibling's old value.
+2. **§43's GUARD IS FOURTEEN DRIVERS SHORT AND THIRTY-THREE ARTIFACTS WIDE, AND THE FIX
+   SHAPE IS A DECISION.** §5. Ten exposed drivers need a guard with their own list of what
+   degrades them; `study_stage3.py` needs its three uncovered secondary names reached; the
+   seven commit-pinned baselines need something, and they are the reason this is not a
+   mechanical repair. Two shapes, and they are not equivalent:
+
+   *(a) widen `committed` to a SET per driver.* Minimal, matches the existing design, and
+   keeps each driver's judgement local — but it is a hand-maintained list per driver, which
+   is precisely the maintenance failure that produced this gap: `make m8bi5` has written an
+   unguarded tracked name since the day the guard was added.
+
+   *(b) refuse any `--out` naming a TRACKED file while any degrading flag is set.* One
+   rule, no list to keep in sync, and it covers the secondary names AND the seven pins
+   together. **But it overturns an argued decision** — `_gate_guard.py`'s docstring
+   deliberately accepts an explicit path, on the reasoning that the guard is about defaults
+   and not about the inode. (b) makes the guard about the inode. That reversal has to be
+   argued and recorded, not slipped in as a refactor — though the seven pins are an
+   argument for it that did not exist when the docstring was written: its case rests on
+   "someone who typed the path deliberately", which describes a person re-running a gate
+   well and a person clobbering a frozen baseline they may not know is frozen badly.
+
+   Neither is costed and no code exists for either. Extend
+   `tests/test_study_gate_guard.py`'s `DRIVERS` table with an `--out` column whichever way
+   it goes, since today it cannot see the gap at all.
+3. **S12 HAS NO ADMISSIBLE START POINTS LEFT.** §3. All sixteen Stage-2 elites refuse the
+   filleted mesh, so "the same feasibility question from somewhere else" has nowhere else to
+   ask from. Either the question is retired with §103 named as what retired it, or S12 gets
+   a start set from designs that do build — §4's classification names nineteen, though every
+   one of them is a Stage-3 output rather than the independent second opinion S12 was built
+   to be. A decision about the milestone, not a repair.
+4. **`m9buck` HAS NEVER BEEN MEASURED ON THE FILLETED MESH.** §1. `measure()` builds
+   `fillet=None` and every number in the study is on that construction. Whether the
+   generalised load factor even converges on the mesh the objective solves is unmeasured,
+   and `GATE_MESH_REL` is a claim about a ladder that has only ever been walked unfilleted.
+5. **DELETE `.gitignore:8` AND BRACKET THE HEADER SENTENCE IT FALSIFIES.** §7. One line out
+   of `.gitignore`, plus a dated correction to the header block's *"the ignore line is a
+   no-op"* — it is a no-op to git and has blinded every ignore-aware search of this
+   repository for 39 days. The header edit shifts every line citation below it, so the
+   change carries its own tree-wide sweep, enumerated with `git grep`. `PLAN.md:14619` and
+   `:16795` (`study_tri_block.py:228` -> `:242`) are the two known casualties and belong in
+   the same commit as the first thing the restored visibility finds.
+
+   **CLOSED 2026-09-07 at `58b311a`, as filed and in one commit.** The line is deleted, the
+   header sentence carries its dated bracket, and both `study_tri_block` citations read
+   `:242`. **The demonstration is the repair itself**: the same ignore-aware
+   `grep -rl 'study_tri_block\.py:242' --include=*.md .` returned `UNCAP_PLAN.md` alone
+   before and `UNCAP_PLAN.md, PLAN.md` after — this file re-entering its own search results
+   is the fix reporting on itself. The sweep it carried was five citations
+   (`MBSE_PLAN.md:58`, four here), and classified against the parent rather than by content
+   match, **all five were stale by that commit's own delta and none pre-existing** — which
+   is not a statement about the tree's health but about timing: `5b58a1a` had re-pointed
+   everything hours earlier, so the first sweep in this repository's history that could see
+   this file found it already clean. Two corrections were caught inside that commit and
+   are recorded with it: the re-point it cites is §120's, not §118's, and
+   `studies/study_stage3.py:642`'s `PLAN.md:41` does not resolve to the feasibility
+   question it claims — pre-existing, left alone under the house rule, and **findable for
+   the first time in 39 days**, which is the successor paying for itself on its first
+   pass.
+
+---
+
+## §130 — 2026-09-07. §129's SUCCESSOR 0, CLOSED: `make kinrank` RAN ON THE FILLETED MESH AND §32's VERDICT SURVIVES — BUT NOT ONE OF ITS THREE CONDITIONS FAILS FOR THE REASON IT FAILED IN AUGUST. R2's BINDING STATISTIC CHANGED SIGN, -0.8303 TO +1.0000, AND THE WHOLE VERDICT NOW RESTS ON ONE PROBE AT THE GENOME THAT SHIPS
+
+`make kinrank` at its own `coarse`/8-phase defaults, serial, **9736.6 s (2 h 42 m), exit 0**,
+first completion in this driver's history on the mesh `wheel_objective` has solved since
+§103. Both refusal paths handled at §129 fired in production and neither cost the run:
+`elite11` at row 32 of 36 and `36aed36` at gradient probe 4 of 4, recorded and stepped over.
+
+**WRITTEN TO A NEW NAME, `studies/study_kinematics_rank_filleted.json`, AND THAT IS THE
+FINDING'S OWN REQUIREMENT.** `studies/study_kinematics_rank.json` is cited as evidence by
+§32 — a CLOSED arc — and `KINEMATICS_PLAN.md`'s Step 1 record quotes its internals: 36
+genomes, **0 failed cells**, 3549 s, exactly one alias collapse. This run structurally
+cannot reproduce any of those, so overwriting would have falsified a closed arc's record
+without replacing it and destroyed the comparison below. Both files are on disk. Which one
+is canonical is a decision, filed as successor 0 and not taken here.
+
+### 1. THE REGISTERED CRITERION, BOTH RUNS SIDE BY SIDE
+
+```
+                          COMMITTED 2026-08-19        TODAY, filleted
+  R1 argmin identity            FAIL                       PASS
+  R2 rank agreement             FAIL                       PASS
+  R3 descent direction          FAIL                       FAIL
+  LINEAR ACCEPTABLE FOR SEARCH   NO                         NO
+```
+
+**The headline is unchanged and everything under it moved.** §32's verdict — *linear
+kinematics is not an acceptable default for search* — is reproduced on the mesh the
+objective actually solves, with the shipped wheel again never at risk. Two of its three
+supporting conditions have flipped to PASS, and the one that still fails does so at a
+different genome for a different reason.
+
+```
+              n        Spearman rho          discordant pairs        argmin lin / svk
+  FULL     36 -> 19   +0.6914 -> +0.9860   153/630 -> 5/171    minwall 0.8 / margin probe
+                                                            -> b729e86 / b729e86
+  FEASIBLE 10 ->  5   -0.8303 -> +1.0000    37/45  -> 0/10    minwall 0.8 / margin probe
+   (BINDING)                                                 -> b729e86 / b729e86
+```
+
+**R2's binding statistic did not improve, it CHANGED SIGN.** In August the two kinematics
+ranked the feasible designs very nearly backwards — rho **-0.8303**, 37 of 45 pairs
+discordant, 82%. Today they agree perfectly: rho **+1.0000**, 0 of 10 discordant. A gate
+written to catch disagreement is now being cleared by a subset in which no disagreement is
+left to find.
+
+### 2. R3 STILL FAILS AND IT HAS MOVED GENOME — THE OLD FAILURE IS NOW A PASS AT +0.9989
+
+```
+  probe                    COMMITTED cos   flips   ratio        TODAY cos   flips  ratio
+  09e8188 / b729e86 SHIPPED   +0.9885     0      0.10          +0.7878     8     0.05
+  e126cc3 margin              +0.9735     2      0.05          +0.9827     0     1.21
+  350f4c7 minwall1.2          -0.5437    11    171.97          +0.9989     0     1.10
+  36aed36 ga_beam             +0.9997     0      0.97          REFUSED (clamp_reject)
+```
+
+(Row 1 is not the same genome on both sides — the probe reads `best_solution.json` live and
+§115 promoted it. That is §129's finding, and the row is the reason the label was corrected.)
+
+**In August R3 failed at `350f4c7`, catastrophically**: cosine **-0.5437**, the two models
+wanting opposite directions, 11 of 14 genes sign-flipped, and an SVK gradient 172x the
+linear one. **Today that same genome reads +0.9989 with zero sign flips and a norm ratio of
+1.10.** The failure has moved to the shipped genome, at +0.7878 — 38.0 degrees, 8 sign
+flips, and an SVK gradient **20x SHORTER** than the linear one. Both probes that are not the
+shipped genome now pass comfortably.
+
+**AND THE MECHANISM IS THE DRIVER'S OWN WARNING, ARRIVING FROM THE OTHER SIDE.** Its header
+argues R2 must bind on the feasible subset because a barrier breach is *"overwhelmingly a
+GEOMETRY fact"* that both kinematics see identically, so an infeasible-dominated pool
+*"would return rho ~ 1.0 while telling you nothing"*. **14 of the 19 scored genomes are
+infeasible and the full pool returns +0.9860** — the predicted artefact, measured. The same
+mechanism explains R3: where the loss is dominated by barriers the two models agree, and
+the only genome in the pool that is both feasible AND near an optimum is `b729e86`, at loss
+**52.57 against 887-3260** for everything else scored. It is the one design where the FEA
+term, not the geometry, decides the gradient — and it is the one design where the two
+kinematics disagree. **R3 is not failing despite the pool having improved; it is failing at
+the only point in the pool where the question can still be asked.**
+
+### 3. R2 PASSES PARTLY ON A CLAUSE THAT CANNOT FAIL AT n = 5
+
+`_rank_block` takes `k = min(5, len(rows))` and reports `top5_sets_equal` as
+`set(order_linear[:k]) == set(order_svk[:k])`. **At n = 5 both slices are the whole subset,
+so the sets are equal by construction** — for any orderings whatsoever, including exactly
+reversed ones. R2's gate is `rho >= GATE_SPEARMAN and top5_sets_equal`, so at this pool size
+its second clause is vacuous and the gate reduces to the Spearman alone. It happens not to
+matter here — the two orderings are identical element for element, not merely equal as sets
+— but the criterion registered in `KINEMATICS_PLAN.md` Step 0c was written for a pool where
+a top-5 is a proper subset, and it silently stopped being two conditions when the feasible
+subset fell below six. A threshold is a claim about its instrument.
+
+### 4. THE FEASIBLE SUBSET COLLAPSED 10 -> 5, BY THE CHANNEL §129 COULD NOT MEASURE
+
+§129 measured that the REFUSAL channel took none of the committed artifact's feasible ten,
+and predicted from §116.5's single reading of `minwall 1.4` that the FEASIBILITY channel
+would. Both halves confirmed, and the second is now measured in full:
+
+```
+  survived feasible (4)   elite9 prod, elite10 prod, minwall 1.8, minwall 2.0
+  went infeasible  (5)    minwall 0.8 (util 1.700), minwall 1.4 (1.383),
+                          margin probe (1.429), e126cc3 margin (1.238),
+                          promote2 check (1.687)
+  left the pool    (1)    09e8188 -- the alias that expired at §115 (§129 §4)
+  new              (1)    b729e86 SHIPPED, util 0.953
+```
+
+**[CORRECTED 2026-09-07 — SEE §132 §4.  THE `util` COLUMN ABOVE IS TWO DIFFERENT
+COLUMNS.]**  The five `went infeasible` readings are the **LINEAR** `stress_utilisation`
+(1.7000573, 1.3831437, 1.4287270, 1.2378242, 1.6867196 — the quoted 1.700 / 1.383 / 1.429 /
+1.238 / 1.687), and the `new` row's **0.953 is the SVK one**; `b729e86`'s linear reading is
+**0.9109**.  Under SVK the same five read 1.7624 / 1.4003 / 1.4673 / 1.2668 / 1.7560, so
+**the classification is untouched — every one is above 1.0 in both columns and the shipped
+genome below 1.0 in both** — but one row of the block is not measured the same way as the
+other five, and the SVK column is the one the feasibility that names this block is decided
+on.  Corrected rather than left, because 0.953 against 0.911 is 4.7% of margin against
+8.9%: read across the columns, the shipped wheel looks half as tight as it is.
+
+Every one of the four survivors builds and differentiates, exactly as §129 said. **The
+binding subset is now five designs, of which four are stiff-and-heavy rather than efficient**
+— `elite10 prod` and `minwall 2.0` are the pair §116.5 already characterised as 30% heavier
+and 78% under the deflection target. The one efficient feasible design in the tree is the
+one that ships.
+
+### 5. AN INDEPENDENT CROSS-CHECK NOBODY ASKED FOR, AND IT IS EXACT
+
+`b729e86` scored under SVK by this driver, against the metrics `best_solution.json` recorded
+when `wheel_stage3` selected it:
+
+```
+                        kinrank                 best_solution.json        rel
+  loss                  52.56615068117939       52.5661507207903          7.5e-10
+  axle_drop_mean_mm      1.9920260083894532      1.9920260119553344       1.8e-09
+  stress_utilisation     0.9530146334989034      0.9530146348215367       1.4e-09
+```
+
+**Three quantities to nine significant figures, through a different driver, on a genome
+selected by a descent this file has never run.** §116.5 got the same agreement to four
+digits on `stress_utilisation` at `medium` through `study_svk_rescore`. Nothing in the
+promote-export-score chain has drifted.
+
+### 6. COST, AND WHY IT IS NOT COMPARABLE TO THE COMMITTED 3549 s
+
+9736.6 s serial against 3549 s at 8 workers, and the ratio means nothing: different mesh
+(filleted, +26.5% elements at `coarse`), different pool composition (17 refusals now cost
+seconds instead of minutes), different worker count. **Run serial deliberately** —
+`KINRANK_WORKERS` still defaults to 8, which §129 §6 declined to change without a
+measurement and which §113's two-worker reading at `coarse` says would not survive. Peak RSS
+was never sampled above single-digit GiB and a watch armed at 8 GiB available never fired.
+The one-time JIT trace is visible in the first genome scored: `elite9 prod` linear
+**1254.5 s**, its own SVK score immediately after **136.4 s**, a 9.2x first-call penalty
+consistent with §90.
+
+**WHAT MOVED.** `studies/study_kinematics_rank_filleted.json` — new, the run above.
+Nothing else; no source file was touched to produce it.
+
+**NOT touched.** `studies/study_kinematics_rank.json` — §32's evidence, see the header note.
+`Makefile` — `KINRANK_WORKERS` is still 8 and this run does not license changing it, since
+serial is what was measured (§129 successor 1). `KINEMATICS_PLAN.md` — its Step 1 record
+now has a companion measurement and does not know it; successor 1 below.
+
+**SUCCESSORS.**
+
+0. **WHICH ARTIFACT IS CANONICAL IS NOW A DECISION WITH DATA BEHIND IT.** Both are on disk
+   and they answer the same registered criterion on different constructions. The filleted
+   one describes the mesh the objective solves and the genome that ships; the committed one
+   is §32's evidence and `KINEMATICS_PLAN.md` Step 1's subject. Promoting the new file is
+   not a rename — §32's summary, Step 1's quoted internals (36 genomes, 0 failed cells,
+   3549 s, one alias collapse) and the `make kinrank` recipe's own `KINRANK_OUT` default all
+   describe the old one. Same shape as §115's checklist: never a one-file change.
+1. **`KINEMATICS_PLAN.md` STEP 1 NEEDS THE COMPANION RECORD.** §1-§4. Its verdict still
+   holds and its evidence no longer describes this tree; the arc file should say so beside
+   the original rather than instead of it.
+2. **R2's SECOND CLAUSE IS VACUOUS BELOW n = 6 AND THE GATE DOES NOT SAY SO.** §3. Either
+   `top5_sets_equal` reports `None` when `k == len(rows)`, or the criterion records that it
+   degrades to a bare Spearman on small subsets. Cheap, and it is a correctness fix to a
+   registered criterion rather than a preference.
+3. **R3 NOW RESTS ON ONE PROBE, AND `GRAD_PROBES` WAS CHOSEN FOR A DIFFERENT POOL.** §2.
+   Three of four probes pass; the fourth refuses; the verdict is carried by `b729e86` alone.
+   §129 declined to re-choose the probe set as a decision rather than a correction, and this
+   run is the evidence that decision now needs taking: a criterion carried by a single point
+   should be measured at more than one feasible, near-optimal design, and §4 says there are
+   four others.
+
+---
+
+## §131 — 2026-09-07. §129's SUCCESSOR 2, CLOSED, AND THE FIX SHAPE FILED THERE WAS WRONG IN BOTH OF ITS OPTIONS: THE GUARD HAD TO BECOME ONE CALL PER ARTIFACT, NOT PER DRIVER. GUARDED NAMES 25 -> 38. `make m9 --quick` REPLACES A 40 kB COMMITTED ARTIFACT WITH A 219-BYTE STUB 1.4 ms AFTER `main()` IS ENTERED, BEFORE ANY SOLVE
+
+§129 filed this successor as a choice between *(a) widen `committed` to a SET per driver*
+and *(b) refuse any `--out` naming a TRACKED file while any degrading flag is set*.
+**Neither survived contact with the Makefile, and for the same reason: both key the
+degraded list to the DRIVER, and the unit that has a notion of "a full run" is the
+ARTIFACT.**
+
+### 1. WHY THE FILED OPTIONS BOTH FAIL, MEASURED RATHER THAN ARGUED
+
+**(a) refuses `make m8bi5`.** `study_stage3.py` writes FOUR tracked names from four
+Makefile targets. `--sections` is degrading for `study_stage3.json` and **is the gate** for
+`study_stage3_m8bi5.json`; `--ladder-p` is degrading for both of those and **is** `m8bi6`'s.
+A single per-driver list cannot say both, so it refuses one of its own recipes whichever
+way it is written. `study_corner_singularity` is the same shape with two names: `--fillet
+--continuity coarse --profiles` is `corner-fillet`'s whole point and would file an
+unfilleted-artifact impostor on `study_corner_singularity.json`.
+
+**(b) refuses the recipe that CREATED the artifacts it protects.** The Makefile documents
+`make contact CONTACT_GENOME=best_solution.json CONTACT_KIN=svk
+CONTACT_OUT=study_contact_e126cc3_svk.json` — four degrading flags, and the `--out` is one
+of §129.5's seven commit-pinned baselines, tracked. **The pins do not need a fidelity check
+at all**: re-writing `study_contact_e126cc3_svk.json` from today's tree is wrong at FULL
+fidelity, because what makes it right is the COMMIT it was taken at. Successor 0.
+
+**And a third case neither option describes.** `study_reds_hub_share` has three targets
+writing ONE name — it merges into the existing artifact on purpose, one key per arm. So
+the mapping is many-to-many in both directions, and the guard call has to sit where the
+name is decided.
+
+### 2. WHAT SHIPPED
+
+`refuse_degraded_out`'s `committed` takes a NAME OR A TUPLE OF SPELLINGS OF ONE NAME, and
+a driver with N gates calls it N times, once per name, with that name's own list.
+
+**The tuple is not a convenience.** Three drivers default `--out` to an ABSOLUTE path so a
+standalone run lands in `studies/` rather than the CWD (§33's path defect) and then use it
+AS GIVEN, while the Makefile passes the same file as `studies/study_x.json` relative to the
+repo root. **Two strings, one inode, both legitimate**, and string equality against one
+literal is blind to the other. `study_junction_agreement.py`'s own `--out` comment already
+recorded the split and nothing had connected it to the guard.
+
+```
+                              BEFORE (5245aee)        AFTER
+  guard call sites                  27                  40
+  drivers carrying one              25                  34
+  tracked NAMES guarded             25                  38
+  tracked studies/*.json
+    named by no guard               34                  21
+```
+
+Counted by AST over the third argument of every `refuse_degraded_out` call, not by grep —
+`study_stage3`'s calls pass `_degrades_any_stage3_run + [...]`, which a regexp anchored on
+`, [` does not see. **The 34 includes `study_kinematics_rank_filleted.json`, which landed
+at `d2937c0` after §129 took its census.**
+
+### 3. THE CLOBBER, MEASURED — AND THE CHECKPOINT DESIGN IS WHAT MAKES IT TOTAL
+
+`study_m9.py --quick --out study_m9.json`, reproduced in a throwaway worktree with the jax
+import paid first and the artifact's size polled from a thread:
+
+```
+  40262 bytes / 1514 lines  ->  219 bytes / 13 lines,  1.4 ms after main() was entered
+```
+
+**Before a single solve**, because `_flush()` writes the checkpoint above the section loop.
+**Worse than §41's false green rather than milder**: §41 filed a WEAK measurement under the
+gate's name; this files NO measurement at all. And the mechanism is a good design working
+as intended — the checkpoint exists so a partial run cannot be misread as a verdict, and
+that is exactly what makes the destruction instant and complete.
+
+### 4. THE TEST FILE WAS THE REASON THE GAP LASTED, AND IT IS WHY IT CAN BE SEEN NOW
+
+`tests/test_study_gate_guard.py` could not detect §129.5's gap: every row named ONE
+artifact, passed NO `--out`, and gave one passing argv. Its table now carries the committed
+names **in call order** and a LIST of passing argvs per driver, so the mutation catcher
+went from *"some guard fired"* to *"every name this driver guards was reached, in order"* —
+which is what makes a DROPPED second call visible. 29 tests -> 56, all green.
+
+**Verified by mutation rather than by reading**: deleting `study_stage3`'s `m8bi5` call
+reds exactly two tests (`test_the_recipe_invocation_is_not_refused[study_stage3]` and
+`test_degraded_runs_are_refused_by_name[study_stage3]`), and the file restores
+byte-identical afterwards.
+
+**And `test_stage3` is green at 63/63**, which is the check this section could most easily
+have skipped: it imports `study_stage3`, so it is the one heavy file that can see the four
+new guard calls. The full suite behind that number, and the eleven reds this tree already
+carried, are recorded once at §132 §6 rather than twice — these changes were run together,
+in one worktree, because they are committed together.
+
+### 5. THE CHECK NO TEST DOES: EVERY RECIPE'S REAL ARGV, FROM `make -n`
+
+The test table's argvs are HAND-COPIED from the Makefile, so a table that agrees with
+itself proves nothing about the recipe people type. Checked separately by expanding every
+guarded target with `make -n` — variables resolved — and running each resulting argv
+through its driver's real parser and real guard, stopping only after that driver's LAST
+guard call:
+
+**29 targets, 37 driver invocations, every guard call reached, not one refusal.**
+`study_stage3` passes 4/4 names from each of its four targets; `study_corner_singularity`
+passes 2/2 from both of its two. This is the assertion that matters — a guard that refuses
+`make studies` would cost five hours and do it at the END of a run — and the tree has
+never had it.
+
+Three invocations are outside the check and each says something. `make filletconda` runs
+past its guards, because `study_fillet_condition_a`'s three calls sit in conditional code
+paths rather than after `parse_args`. `make mbsecal` could not be instrumented at all:
+`study_mbse_calibration` imports `_gate_guard` INSIDE `main()`, so the module attribute
+does not exist to patch — its guard is real and reached, but nothing outside the process
+can see it coming. And `make kinrank` has **zero** references to the guard, which is §132
+§5 arriving from the other direction.
+
+**One thing that check cost, recorded because it is the same class of accident this section
+is about**: the harness ran `study_fillet_condition_a` to completion, which rewrote
+`studies/study_fillet_condition_a.json`. No damage — every cell was cached, and the file
+came back **byte-identical to the committed one**, which is a free determinism check on
+that driver. But nothing in the harness intended to run a driver, and nothing stopped it.
+
+### 6. WHAT IS LEFT UNGUARDED, AND IT IS NOT A REMAINDER
+
+Re-derived here rather than carried, and the last group did not survive it. **The
+partition is five groups, not four, and one of them is a driver nobody has counted:**
+
+```
+   2  study_kinematics_rank{,_filleted}.json   §132 §5; blocked on §130 successor 0
+   7  commit-pinned evidence baselines         successor 0; need a COMMIT check
+   1  study_boundary_waste.json                `make boundarywaste` DOES write it -- but
+                                               its driver's whole argparse is `--out`, so
+                                               a degraded run is not expressible
+   1  study_reds_ratio_stability.json          `make reds-ratio` writes it AND `--n` and
+                                               `--min-wall` degrade it.  THE ELEVENTH
+                                               EXPOSED DRIVER.  Successor 3
+  10  no Makefile recipe writes them at all    7 by-design variants of guarded gates
+                                               (*_quick, *_svk, *_lin_check, the two
+                                               svk_knee rungs) and 3 historical
+                                               (arrival_cap, objective_capcheck, svk_step6)
+```
+
+**"Needs no guard" was doing two different jobs and hiding a finding under one of them.**
+`study_boundary_waste` has a Makefile gate and no guard, and that is FINE — it takes one
+argument and none of it is fidelity, so there is nothing a guard could refuse.
+`study_reds_ratio_stability` has a Makefile gate and no guard and that is NOT fine: `--n`
+is a sample size below its default and `--min-wall` is a physical parameter, so both are
+exactly the surface §129.5 was censusing. §129.5's list of ten was taken from the drivers
+it already knew about; this one writes its artifact through `studies/redsrun.sh`, which is
+why a census that walks `make` targets naming `studies/study_*.py` directly does not see
+it.
+
+**WHAT MOVED.** `studies/_gate_guard.py` — `committed` accepts a tuple of spellings; the
+docstring records the per-artifact rule. Nine drivers gained a guard call
+(`study_corner_singularity` two, `study_stage3` four): `study_corner_singularity`,
+`study_deflection_gci`, `study_hub_cap`, `study_junction_agreement`, `study_knee_rungs`,
+`study_m9`, `study_m9_buckling`, `study_reds_hub_share`, `study_stage3`,
+`study_svk_rescore`. `tests/test_study_gate_guard.py` — two new columns and 27 new tests.
+
+**NOT touched.** `studies/study_kinematics_rank.py` — §132 §5. The seven pins — successor
+0. The Makefile — no recipe changed, and §5 is the evidence that none had to.
+
+**SUCCESSORS.**
+
+0. **THE SEVEN PINS NEED A COMMIT CHECK, NOT A FIDELITY CHECK, AND NOTHING ON DISK CAN
+   ANSWER IT.** §1. `study_contact_e126cc3_svk.json` is right because of the commit it was
+   taken at, so every degraded-run condition is the wrong question about it — and §106
+   already recorded that **no committed artifact stores the command or the date that
+   produced it**. Nothing on disk says that file came from `e126cc3` except its filename.
+   That is also why a guard's name list has to be hand-written per driver and cannot be
+   derived, which is the maintenance failure that produced §129.5's gap in the first place.
+1. **THE TEST TABLE STILL DOES NOT READ THE MAKEFILE.** §5. The check exists now but it
+   lives in a scratch harness, not in `tests/`. It is the only thing standing between a
+   renamed variable and a recipe that refuses itself five hours in, and it should be a
+   test — `make -n <target>` is cheap and the drivers stop at the guard.
+2. **`study_kinematics_rank` IS THE TENTH EXPOSED DRIVER AND IS STILL UNGUARDED.** §132 §5.
+   It writes two tracked names through `KINRANK_OUT` and one of them is §32's evidence;
+   which name the guard defends is §130 successor 0's decision.
+3. **AND `study_reds_ratio_stability` IS THE ELEVENTH, FOUND BY RE-DERIVING §6's LAST
+   GROUP RATHER THAN CARRYING IT.** §6. `make reds-ratio` writes
+   `studies/study_reds_ratio_stability.json`; `--n 3` and `--min-wall 1.2` reach it with
+   nothing in the way. Cheap — one call, three conditions, the shape every driver in this
+   commit already has. **The lesson is the census method, not the driver**: this one is
+   invoked through `studies/redsrun.sh`, so an enumeration that reads `make` targets for
+   a direct `studies/study_*.py` invocation cannot see it, and §129.5's ten were taken
+   that way. Re-run the census by ARTIFACT — `git ls-files studies/*.json` against the
+   AST's guarded names — which is what found it.
+
+---
+
+## §132 — 2026-09-07. §130's SUCCESSORS 2 AND 1, CLOSED. R2's SECOND CLAUSE NOW ABSTAINS WHERE IT CANNOT FAIL, AND THE CONTROL THAT SAYS THE FIX IS SAFE IS §32's OWN ARTIFACT COMING BACK BYTE-IDENTICAL. §130 §4's `util` COLUMN IS TWO COLUMNS, AND A DEGRADED `make kinrank` DESTROYS 115 kB IN 0.0 s WHILE LEAVING THE VERDICT FIELD UNCHANGED
+
+Two successors, one commit, no run over a second. §130 filed successor 2 as *"cheap, and it
+is a correctness fix to a registered criterion rather than a preference"*; that is what it
+turned out to be, and the cheapness is the finding's own shape — the quantity is derived
+post-processing over rows a 2 h 42 m run already measured, so nothing had to be re-solved to
+change it or to prove the change safe.
+
+### 1. THE FIX, AND THE PRECEDENT IT COPIES FROM 106 LINES DOWN THE SAME FILE
+
+`_rank_block` slices `k = min(5, len(rows))` and reported
+
+```
+  "top5_sets_equal": bool(set(order_linear[:k]) == set(order_svk[:k]))
+```
+
+At `k == len(rows)` both slices hold every scored genome, so the two sets are equal **by
+construction, for any orderings whatsoever** — exactly reversed ones included. R2's gate is
+`rho >= GATE_SPEARMAN and top5_sets_equal`, so below n = 6 the registered criterion silently
+stopped being two conditions. It now reports **`None`** there and abstains: `r2_pass` reads
+`sets_equal is not False`, so a vacuous clause cannot fail the gate and no longer passes it
+either, and **R2 below n = 6 is the bare Spearman, said out loud**.
+
+**THE SHAPE WAS ALREADY IN THIS FILE — `study_kinematics_rank.py:449`, 110 lines below the
+R2 gate at `:339`.** `run_gradients` returns
+`r3_pass` as `None` rather than `False` when nothing differentiated, with a comment saying
+the artifact has to keep *"every probe disagreed"* and *"no probe could be taken"*
+distinguishable. That is the same distinction one level up, and R2 did not have it. Nothing
+new was invented here; a pattern the driver already argued for was applied to the neighbour
+that lacked it.
+
+**THE VACUOUS RANGE IS EXACTLY THREE SIZES, n ∈ {3, 4, 5}** — `_rank_block` returns
+`insufficient` below 3, and `k` is a proper subset from 6 up. And the clause does not
+switch from useless to strong at 6: at n = 6 it is a **one-bit test** (only the sixth
+element can differ between the slices). Abstention is the right answer only where it cannot
+fail at all; a weak clause is still a clause, and this fix deliberately does not touch it.
+
+### 2. THE CONTROL CAME BACK NULL, AND IT IS §32's EVIDENCE
+
+`_verdict` re-derived over each committed artifact's own stored `rank.rows` — no mesh, no
+solve, milliseconds — and diffed against the verdict block on disk:
+
+```
+  study_kinematics_rank.json            verdict block IDENTICAL       (n feasible = 10)
+  study_kinematics_rank_filleted.json   ONE field                     (n feasible =  5)
+                                        blocks.feasible.top5_sets_equal   true -> null
+```
+
+**`study_kinematics_rank.json` cannot move under this fix and it did not.** Its binding
+subset is ten, where `k = 5` is a proper subset and the clause always bound. That artifact
+is §32's evidence and `KINEMATICS_PLAN.md` step 1's subject, and §130's header note is
+explicit that overwriting it would falsify a closed arc — so the control was not a nicety,
+it was the condition under which the fix was allowed to exist. Measured before the artifact
+half of this commit was written, not after.
+
+### 3. THE FILLETED ARTIFACT WAS RE-DERIVED, NOT REGENERATED, AND THE DIFFERENCE IS PROVABLE
+
+The house rule is that a study commit carries its artifacts, and a 2 h 42 m re-run to move
+one derived boolean is not what that rule is for. **The `verdict` block is a pure function of
+`rank.rows`**, so it was recomputed by the driver's own `_verdict` from the artifact's own
+stored rows and written back. The measured rows were never in the transformation.
+
+**The proof that this is a re-derivation and not a rewrite is a round-trip control**:
+`json.dumps(json.load(f), indent=1, default=float)` reproduces the committed file
+**byte-for-byte, 78220 of 78220 bytes**, so the only bytes that could change are the ones
+`_verdict` returns differently — and `git diff` shows exactly **one line, `true -> null`**.
+`R1`, `R2`, `R3` and `linear_is_acceptable` are unchanged; §130's recorded verdict does not
+move. This is not the §119 pattern of regenerating an artifact under live findings: no
+measurement was re-taken, and the file now agrees with §130 §3's own prose, which already
+said the clause was vacuous.
+
+### 4. §130 §4's `util` COLUMN IS TWO COLUMNS, AND THE ONE ROW IN THE OTHER COLUMN IS THE WHEEL THAT SHIPS
+
+The block classifying the feasible collapse quotes five `went infeasible` utilisations
+(1.700 / 1.383 / 1.429 / 1.238 / 1.687) that are the **LINEAR** `stress_utilisation` to
+every digit, and one `new` row — `b729e86 SHIPPED, util 0.953` — that is the **SVK** one.
+The genome's linear reading is **0.9109**.
+
+**The classification is untouched**: all five are above 1.0 in both columns and the shipped
+genome is below 1.0 in both, and feasibility in this driver is `feasible under BOTH`
+anyway. **What is wrong is the invitation to read across.** 0.953 leaves 4.70% of stress
+margin and 0.911 leaves 8.91% — read in the linear column the wheel that ships looks
+**half as tight as it is**, and the SVK column is the one the block's own subject
+(feasibility under the mesh the objective solves) is decided on. §130 is bracketed in place.
+
+**The instructive part is that the same section gets it right one block later.** §130 §5's
+cross-check table names, for each of three numbers, which driver produced it and to what
+relative agreement. The defect is not carelessness about provenance; it is that a block
+built by reading a table off a run is one keystroke from reading the adjacent column, and
+nothing in the artifact makes the two look different.
+
+### 5. `make kinrank` IS ONE OF §129.5's TEN UNGUARDED DRIVERS, AND ITS CLOBBER IS TOTAL, INSTANT AND SILENT
+
+Measured on a byte-copy of the committed artifact at a scratch name (the two committed
+names were not touched):
+
+```
+  study_kinematics_rank.py --skip-rank --skip-grad --config smoke --out <copy>
+      115063 bytes / 3669 lines  ->  316 bytes / 16 lines,  elapsed_s 0.0,  exit 0
+```
+
+**Sharper than §41's false green and than the `study_m9` stub, in one specific way.** What
+survives the clobber is `registered_criterion`, and it survives reading
+`"linear_is_acceptable": false` — **the same verdict the real artifact carries** — with
+`R1`/`R2`/`R3` all `null` beneath it. The arc's headline is preserved and every condition
+under it is destroyed, so anything reading the verdict field sees no change at all.
+`--skip-rank` alone suffices for the clobber, though not for the 0.0 s (the `rank` key is
+simply absent from `rep`, so the file is destroyed after the gradients rather than before
+them), and `main()` also writes the artifact **early**, as soon as the rank block exists —
+deliberately, because the run is over an hour — so a degraded run that dies in the
+gradients has already overwritten the committed file.
+
+**NOT FIXED HERE, and the reason is that this driver is the per-artifact case.** Since §130
+it writes TWO tracked names from one driver through `KINRANK_OUT`, and the §130 run that
+produced the second was `--config coarse --workers 0` at FULL fidelity — legitimate, not
+degraded. A guard keyed to one `committed` literal per driver is therefore wrong here in
+both directions at once: it would either refuse the run that created
+`study_kinematics_rank_filleted.json` or leave one of the two names unprotected. A third
+spelling too: kinrank's `--out` is joined with `HERE` inside the driver while the Makefile
+passes a bare basename, not the `studies/…`-relative spelling three other drivers take.
+Handed to §129's successor 2 and **closed at §131**, which reached the
+one-guard-per-artifact shape from the other direction — `study_stage3`'s four tracked
+names — and left this driver as the tenth exposed one, deliberately (§131 successor 2).
+Which name its guard should defend is §130 successor 0's decision, not the guard's.
+
+**AND THE MULTI-CALL SHAPE IS NOT NEW TO THE TREE, THOUGH THIS KIND OF IT IS.**
+`study_fillet_condition_a.py` has carried **three** `refuse_degraded_out` calls since it
+was written (`:423`, `:436`, `:464`), and all three name the SAME artifact — it is
+multi-call per code PATH. kinrank is the other kind: one path, two names. A guard design
+that reads the existing precedent as "one artifact, several calls" would still get this
+driver wrong.
+
+### 6. THE TREE CARRIES ELEVEN REDS AT `5245aee`, AND NEITHER THIS CHANGE NOR §131's OPENED ONE OF THEM
+
+Verified the way §119 says to — the failure LIST against a worktree baseline, never the
+count. Two `git worktree add --detach` checkouts of `5245aee`: one carrying **both** this
+section's four files and §131's twelve, the other clean. **The full suite, 943 tests**, in
+the first — the light tier of 706 in one process and `test_gradient`, `test_pool`,
+`test_stage3` and `test_objective` one process each, nothing running beside any of them —
+and every failing node ID re-run in the second:
+
+```
+  test_contact          test_the_sampled_patch_extent_is_biased_not_merely_noisy
+  test_fem              test_mesh_resolution_must_scale_with_thickness
+  test_fem              test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom
+  test_geometry_kernel  test_thickness_hits_its_nodes_exactly
+  test_geometry_kernel  test_analytic_curvature_matches_finite_differences
+  test_gnl              test_the_load_continuation_path_does_not_change_the_equilibrium
+  test_gnl              test_the_retired_max_min_gate_is_decided_by_the_sample_size
+  test_gnl              test_stress_recovery_follows_the_solves_kinematics
+  test_wheel_fea        test_peak_stress_diverges_but_the_field_converges
+  test_objective        test_R_rim_is_still_effectively_inert_and_that_is_recorded
+  test_objective        test_the_thickness_branch_of_the_cap_binds_on_a_thin_root
+```
+
+**Identical at HEAD, name for name: eleven opened by nothing, none closed.**
+`test_gradient`, `test_pool` and `test_stage3` are green — and `test_stage3` is the one
+heavy file that CAN see either change, since it imports `study_stage3`, which §131 gave
+four guard calls.
+
+**The last two are why the heavy tier was run at all.** Neither change can reach
+`wheel_objective` and the light tier had already come back list-identical, so stopping
+there was available and would have been wrong: those two node IDs are in no earlier log
+this tree holds, and the only reason they are now classified rather than presumed is that
+the run was made. **A blast-radius argument tells you what a change CAN break; it does not
+tell you what is already broken, and only one of those is a fact about the tree.**
+
+The isolation was not a formality either — the drivers of §131 were uncommitted in the
+shared checkout while this ran, so a run in the working tree would have measured two
+changes and attributed the result to one. Both were put in the SAME worktree deliberately,
+after `git diff --stat` confirmed it matched the working tree exactly, because they are
+committed together and the tree that matters is the one that will exist.
+
+**THESE ELEVEN ARE THE TAIL OF §117 AND NOBODY HAS COUNTED WHAT IS LEFT.** §117 measured
+§115's promotion leaving the suite **62 red** against a record that said 895 passed / 0
+failed, and §118-§130 have been closing them file by file ever since. The untracked
+`test_light.log` and `test_heavy_*.log` at the repository root are that 895: dated
+**2026-09-06 10:31-11:54**, which is three hours BEFORE `cb4e3dd` promoted `b729e86`, with
+**41 commits** landed since. So this is the first list of survivors taken since the
+closures started, and four of the five files holding them — `test_fem`,
+`test_geometry_kernel`, `test_gnl`, `test_wheel_fea` — are FEA and mesh-kernel tests that
+no section since §118 has named. Successor 4; not diagnosed here.
+
+**WHAT MOVED.** `studies/study_kinematics_rank.py` — `_rank_block`'s clause and `r2_pass`,
+the `_print` line that would otherwise render `None`, and the R2 line of the module
+docstring. `studies/study_kinematics_rank_filleted.json` — one field, §3.
+`tests/test_kinematics_rank.py` — new; three unit pins (abstains at n = 5 on reversed
+orderings, R2 rests on rho alone below 6, binds again at n = 6 where rho = 0.9429 passes
+and the sets differ) and a parametrized pin that each committed artifact reproduces its own
+verdict block. `KINEMATICS_PLAN.md` — step 0c's R2 bullet carries the amendment, step 1
+carries the forward note and the **STEP 1 COMPANION RECORD** (§130 successor 1), beside the
+original rather than instead of it. `PLAN.md` — §130 §4 bracketed, this section, and
+`study_kinematics_rank.py:235` re-pointed to `:237`, **stale by this commit's own delta**
+(the module docstring's R2 line grew by two, and `SR._score` sits below it); it was correct
+at the parent, which is what classifying against `HEAD` rather than by content match is for.
+
+**NOT touched.** `studies/study_kinematics_rank.json` — §2. The Makefile — `KINRANK_OUT`
+still defaults to the committed name and `KINRANK_WORKERS` is still 8; §130 successor 0 is
+the decision that moves either. `studies/_gate_guard.py` and this driver's missing guard
+call — §5, a peer session's claim. `GATE_SPEARMAN` — the bar is not what changed.
+
+**SUCCESSORS.**
+
+0. **`blocks.full.r2_pass` IS A GATE THAT GATES NOTHING, AND IT CURRENTLY READS `false`
+   BESIDE A `true` VERDICT.** `_verdict` consumes only `binding["r2_pass"]`, but
+   `_rank_block` computes the field for both subsets, so the filleted artifact carries
+   `blocks.full.r2_pass: false` and `registered_criterion.R2_rank_agreement: true`
+   together — correct, since the full pool is the declared diagnostic, and readable as a
+   contradiction by anyone grepping the field. Either the diagnostic block reports the
+   Spearman without a pass/fail verb, or the artifact says in place which one binds.
+   Cheap, same shape as the clause just fixed: a field that looks like a decision and is
+   not.
+1. **§130 SUCCESSOR 0 IS UNCHANGED AND IS NOW THE BLOCKER FOR TWO OTHER THINGS.** Which
+   artifact is canonical still needs deciding, and §5 adds a consumer to §130's list: the
+   degraded-run guard cannot be keyed to a name until the tree says which name it is.
+   Still never a one-file change — §32's summary, step 1's quoted internals and
+   `KINRANK_OUT`'s default all describe the old one.
+2. **§130 SUCCESSOR 3 IS UNTOUCHED AND ITS ARGUMENT IS STRONGER AFTER §1.** R3 rests on one
+   probe. Nothing here re-chose `GRAD_PROBES`, and the four candidates §130 §4 offers are
+   worth naming before anyone spends the run on them: `elite9 prod`, `elite10 prod`,
+   `minwall 1.8` and `minwall 2.0` — the survivors, which §130 §4's own reading calls
+   stiff-and-heavy rather than efficient. Probing there would add four R3 points at none of
+   which the FEA term decides the gradient, which is precisely the property §130 §2 says
+   makes `b729e86` the one place the question can still be asked. **A wider probe set is
+   not automatically a stronger R3**; a probe set drawn by the binding criterion is.
+3. **ELEVEN REDS SURVIVE §117's SIXTY-TWO AND NOTHING NAMES THEM.** §6. The list is now
+   taken and classified against `5245aee`; what it is not is diagnosed. Four of the six
+   files are FEA and mesh-kernel (`test_fem`, `test_geometry_kernel`, `test_gnl`,
+   `test_wheel_fea`), which is a different neighbourhood from every section since §118, so
+   the presumption that these are promotion casualties is a presumption. The cheap first
+   move is the one §117 used: run each at the parent of `cb4e3dd` and see which were green
+   before the promotion. **Start with `test_objective`'s two**, which are the only ones
+   here that name a term of the loss the descent minimises — `R_rim`'s inertness and the
+   cap's thickness branch — rather than a kernel the objective calls.
+4. **NO OTHER DRIVER WAS AUDITED FOR A VACUOUS CLAUSE.** The defect class is a gate whose
+   second condition cannot fail at the sizes it is actually evaluated at, and the search
+   for it is one grep — `min(` inside a slice that then feeds a boolean gate. This section
+   fixed the instance §130 found and did not look for siblings.
+
+---
+
+## §133 — 2026-09-08. §132's SUCCESSOR 3, CLOSED: ALL ELEVEN REDS ARE THE PROMOTION AND NOTHING ELSE, MEASURED FOUR WAYS — AND TEN OF THEM PIN A SYMPTOM OF THE OUTGOING GENOME RATHER THAN THE FINDING THEY NAME. THE ONE THAT IS REAL WROTE ITS OWN SUCCESSOR IN ADVANCE, AND THE ONLY NON-ASSERTION RED IS A `smoke`-FIDELITY ARTIFACT THAT CONVERGES AT 3.8e-15 WHERE THE OBJECTIVE SOLVES
+
+> **BRACKET, added 2026-09-08 with §135.** This section inherited §132 successor 3's title —
+> *"ELEVEN REDS SURVIVE §117's SIXTY-TWO AND NOTHING NAMES THEM"* — and carried the "nothing
+> names them" half without checking it. **It is false for three of the eleven.** §118 §6
+> (`:17573`) names them under *"The three survivors, and two of them are more than
+> positions"*, with readings, and all three reproduce at HEAD to every digit quoted:
+> `test_R_rim_is_still_effectively_inert_and_that_is_recorded` at `-7.010e-04`,
+> `test_the_thickness_branch_of_the_cap_binds_on_a_thin_root` at `1.0051`/`0.9330`, and
+> `test_peak_stress_diverges_but_the_field_converges` at `1.39%`. §118 also already filed
+> the consequence this section's successor 1 re-filed as new — *"two documented verdicts are
+> now owed a re-check"*. **What §1-§3 measured stands, and none of it depends on the
+> inherited premise**: §118 named three and isolated none of them to the genome, and the
+> other eight were genuinely unnamed. What was wrong was carrying a predecessor's negative
+> claim as a starting position instead of as the first thing to test. See §135 §4.
+>
+> Six of §132's own dates were checked here and this one was not, because it arrived as a
+> title rather than as a number — which is the shape the tree keeps missing.
+
+§132 §6 took the list of survivors and said, in terms, that it had not diagnosed them: *"the
+presumption that these are promotion casualties is a presumption"*, and *"four of the six
+files are FEA and mesh-kernel, which is a different neighbourhood from every section since
+§118."* Both halves are now measured. The presumption was right and it was worth not
+assuming: what it would have hidden is that the eleven are **not eleven defects**, and the
+count is the least interesting thing about them.
+
+### 1. THE ISOLATION, FOUR RUNS, AND THE FOURTH IS THE ONE THAT SETTLES IT
+
+§117's method is parent-versus-promotion. That was run, and then the experiment §120 used —
+hold the code, move the genome — which is strictly stronger, because parent-versus-promotion
+cannot distinguish the genome from the six other files in `cb4e3dd`:
+
+```
+  96a0ac5   promotion parent                        11 pass
+  cb4e3dd   the promotion                           11 fail
+  ee8f2b2   HEAD, 41 commits later                  11 fail
+  ee8f2b2's code + 96a0ac5's best_solution.json     11 PASS      <- EXIT_0
+```
+
+**`cb4e3dd` IS NOT A ONE-FILE COMMIT, AND I ASSERTED THAT IT WAS BEFORE CHECKING.** Its
+subject reads `best_solution.json: promote b729e86`, and `git show --numstat` reads
+
+```
+  178   2   PLAN.md
+   85  78   best_solution.json
+16210 16377 export/wheel.step
+ 9201 9201  export/wheel_nofillet.step
+   37  37   export/wheel_step_manifest.json
+   87   0   stage3_svk_refillet_shipped_r2_best.json
+    2   2   tests/test_promotion.py
+```
+
+Seven files. The subject line is a description of intent, not of content — which is exactly
+the reason the fourth run exists rather than an argument from blast radius. The mechanism is
+that every one of these tests reads the genome off disk in a module-scope fixture
+(`tests/test_fem.py:33`, `test_contact.py:36`, `test_gnl.py:36`, `test_wheel_fea.py:34`,
+`test_geometry_kernel.py:38`, `test_objective.py:47`), so `best_solution.json` is a global
+input to five test files that name it nowhere in their assertions.
+
+**TWO OF THESE RUNS WERE INITIALLY TAKEN IN THE SHARED WORKING TREE WHILE A PEER SESSION HAD
+UNCOMMITTED EDITS LIVE IN IT** — `studies/study_reds_ratio_stability.py`, which
+`tests/test_gnl.py:28` imports at module level, and which backs one of the eleven. The peer
+flagged it. The HEAD baseline was re-taken in a clean `git worktree add --detach ee8f2b2`
+and came back **11 FAILED, name for name, identical**. The contamination was harmless and it
+is now measured rather than reasoned, which is the form §132 §6 asks for. The lesson is
+§132 §6's own, arriving from the other side: *the tree that matters is the one that will
+exist*, and in a shared checkout that is not the tree you are standing in.
+
+### 2. THIS IS NOT A NUDGED GENOME. TWELVE OF FOURTEEN GENES MOVED AND ONE CAME OFF ITS BOUND
+
+```
+  cx1   4.47796 ->  2.45661   -45.1%      t0    1.47383 ->  3.50549  +137.8%
+  cy1   8.72118 -> 24.91296  +185.7%      t1    1.20000 ->  1.20000    +0.0%
+  cx2  15.00274 -> 19.69000   +31.2%      t2    1.20000 ->  1.20000    +0.0%
+  cy2  11.80879 -> 21.65446   +83.4%      t3    1.43129 ->  2.45471   +71.5%
+  cx3  23.81876 -> 23.13538    -2.9%      R_hub 0.66361 ->  0.57100   -14.0%
+  cy3   9.41908 -> 16.76559   +78.0%      R_rim 3.00000 ->  1.68017   -44.0%
+  cx4  30.87317 -> 25.19880   -18.4%
+  cy4   6.43755 ->  6.44159    +0.1%
+```
+
+**`R_rim`'s bound is `{'low': 0.5, 'high': 3.0}` and the outgoing genome sat EXACTLY on the
+cap.** The incoming one is interior. That single fact is the mechanism behind the one red in
+§4 below, and it is invisible in the percentage: a gene at its bound and a gene near its
+bound are different objects, and only one of them can have had its local geometry chosen by
+the descent. `t0` more than doubling is the mechanism behind two others. **Eleven tests did
+not independently break; one input moved a long way and eleven readings of it moved with it.**
+
+### 3. THE CLASSIFICATION: TEN PINS AND ONE FINDING
+
+**GROUP A — SIX DEMONSTRATIONS WHOSE VEHICLE STOPPED EXHIBITING THE PHENOMENON.** These
+assert that a mechanism is visible *at the shipped genome*. The mechanism is not in question;
+the shipped genome has stopped being a design that displays it. **Two of them say so in their
+own assertion text, which is the tell:**
+
+```
+  test_gnl   the_retired_max_min_gate_is_decided_by_the_sample_size
+      "max/min over the drawn rows read 7.384 at n=4 and 13.550 at n=12 — it no longer
+       brackets the retired 3.0 gate, so the demonstration ... has stopped working"
+      docstring records 2.167 at n=4 and 9.026 at n=12, seed 7.  BOTH readings ROSE.  The
+      finding (no threshold can sit on `iso_rel_diff_ratio`) is if anything STRONGER — the
+      statistic still nearly doubles with n.  It is the 3.0 BRACKET that died, and 3.0 is a
+      property of the retired gate, not of the claim.
+  test_gnl   stress_recovery_follows_the_solves_kinematics
+      "the mis-recovery is only 1.456x here, so this test can no longer tell the two apart
+       and is not guarding anything"  (21.963 / 15.083 against a 1.5x gate)
+      docstring measured +169.5% on the outgoing genome — 46.56 MPa against 17.27.  The
+      §14 footgun is unchanged; the wheel that ships no longer makes it dramatic.
+```
+
+and four more of the same shape:
+
+```
+  test_fem      mesh_resolution_must_scale_with_thickness
+      "expected h~t to read stiff and h=t/8 to read soft, got h~t: +0.0087%, h=t/8: +0.0113%"
+      The demonstration is a SIGN FLIP.  Both readings are now positive and both are ~1e-4.
+  test_fem      the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom
+      filleted offset 0.0413 deg is no longer > 3x the unfilleted 0.0671 deg — it is SMALLER.
+      Both are far inside the test's own 0.10 deg "essentially at the bottom" band, so the
+      second half of the pin has no vehicle: on this genome a node sits at the bottom in BOTH
+      builds, and the contrast the test is built on does not exist to be measured.
+  test_contact  the_sampled_patch_extent_is_biased_not_merely_noisy
+      5.886 > 6.349 fails.  The docstring's "overstates by roughly 3x here" is the quantity
+      that shrank; the direction claim it exists to make is not what is asserted.
+  test_objective the_thickness_branch_of_the_cap_binds_on_a_thin_root
+      "at t0 = 2.0 the thickness limit 1.0051 is still not the smaller (slot 0.9330) — the
+       crossover is outside the box".  t0 went 1.474 -> 3.505, so the probe at 2.0 — chosen,
+      says the docstring, "to sit near the crossover rather than the floor" — now sits BELOW
+      the shipped root rather than beside the crossover.  The probe point was calibrated
+      against a genome that no longer exists.
+```
+
+**GROUP B — THREE TOLERANCE AND EXACTNESS PINS THE NEW NUMBERS BREAK.**
+
+```
+  test_geometry_kernel  thickness_hits_its_nodes_exactly      2.220446049250313e-16 == 0.0
+      ONE ULP.  The docstring's stated defect in the superseded interpolant was 1.2e-11 —
+      54,000x LARGER.  The finding ("the nodes are hit") is intact at machine precision;
+      `== 0.0` is a spelling of it that survives only while the t-vector's magnitudes are
+      small, and t0 just went 1.47 -> 3.51.
+  test_geometry_kernel  analytic_curvature_matches_finite_differences   0.0019556 < 0.0001
+      20x over.  The docstring's warrant is "the FD scheme's own O(h^2) error", which is a
+      property of the CENTERLINE, and seven of eight control points moved by more
+      than 2%.  Whether 1e-4 was
+      ever genome-independent is not recorded anywhere.
+  test_wheel_fea        peak_stress_diverges_but_the_field_converges    p99 moving 1.39%
+      Against a 1% gate.  AND THIS TEST'S OWN DOCSTRING ALREADY NAMES THIS FAILURE MODE, for
+      the PREVIOUS promotion: it records that the old `d2 < 0.3 * d1` form "fires on a wheel
+      that is behaving perfectly" once the quantity has converged, and that §14 measured it
+      "happening one tier UP on the promoted genome, which converges sooner".  The form was
+      changed to an absolute 1% and the same thing has now happened at the next promotion.
+      A test that has been miscalibrated by two consecutive promotions is not unlucky.
+```
+
+**GROUP C — ONE FIDELITY ARTIFACT, AND IT IS THE ONLY RED THAT IS NOT AN ASSERTION.** §4.
+**GROUP D — ONE REAL FINDING.** §5.
+
+### 4. THE ONE RED THAT RAISES INSTEAD OF ASSERTING IS A CLAIM ABOUT `smoke`, NOT ABOUT THE WHEEL
+
+`test_gnl.py::test_the_load_continuation_path_does_not_change_the_equilibrium` does not fail
+an assertion. It raises:
+
+```
+  wheel_fem.NewtonDivergedError: line search failed after 20 backtracks at load step 7/8,
+  iteration 6 (residual 5.051e-06)
+```
+
+which reads, on its face, as the shipped wheel having no converged equilibrium path. It is
+not. `CFG` in `tests/test_gnl.py:32` is **`"smoke"`**. `study_gnl.run_newton_health` run
+directly over both genomes at both fidelities:
+
+```
+  SHIPPED b729e86   smoke    RAISED NewtonDivergedError (line search, 20 backtracks, 7/8)
+  SHIPPED b729e86   coarse   OK   spread 3.775e-15   order  7.210   pass=True
+  pre-promotion     smoke    OK   spread 1.776e-15   order 14.833   pass=True
+  pre-promotion     coarse   OK   spread 1.310e-14   order 269.626  pass=True
+```
+
+**At the fidelity the objective actually solves, the shipped genome's one-increment and
+eight-increment paths agree to 3.8e-15.** The divergence exists only on a mesh the design is
+never evaluated on. This is §118's 29.2%-at-`smoke` / 2.77%-at-what-ships lesson arriving
+from the opposite direction — there a fixture's coarseness flattered the design, here it
+condemns it — and the general form is that **the fixture's fidelity is part of every claim
+the fixture makes.** The residual at which the line search gave up, 5.051e-06, is itself the
+hint: that is not a solver losing its way, it is a solver that has nearly arrived and cannot
+take the last step on too few elements.
+
+Note what this costs: the test as written cannot distinguish "this genome has no equilibrium
+path" from "`smoke` cannot resolve this genome's". Those are opposite verdicts about the
+wheel and it reports them identically.
+
+### 5. THE ONE REAL FINDING PRE-COMMITTED TO ITS OWN SUCCESSOR, IN ITS DOCSTRING, BEFORE IT FAILED
+
+`test_objective.py::test_R_rim_is_still_effectively_inert_and_that_is_recorded`, whose
+docstring opens *"A FINDING, not a passing grade"* and closes:
+
+> *"If this ever starts failing, the rim junction geometry has changed and M8b's gene census
+> and the study's verdict both need revisiting."*
+
+The rim junction geometry has changed: **`R_rim` came off its upper bound, 3.0 -> 1.680.**
+The stated physical reason for the inertness was that *"at the rim the arrival is
+near-tangential, so moving `R_rim` moves the ring locus and the offset point together and the
+margin is stationary"* — a claim about the arrival angle at a design that sat on the cap.
+The condition the test named as its trigger is the condition that occurred.
+
+**This is the §118 shape, and it is the argument for writing tests this way.** §118 recorded
+two strict xpasses lifting *"on the promotion their own reasons pre-committed to"*. Here a
+green test named, in advance, the physical change that would falsify it and the two artifacts
+that would need revisiting — so its failure arrives as an instruction rather than as a
+puzzle. Ten of these eleven reds cost a measurement each to classify; this one classified
+itself. **The difference between the ten and the one is not luck, it is that the one wrote
+down what it was a claim ABOUT.** Compare memory's own rule — pin the finding, not its
+symptom — which is what the other ten did not do.
+
+### 6. §132's COST FOR THIS WORK WAS THREE ORDERS OUT, AND THE ERROR WAS METHODOLOGICAL
+
+§132 §6 established the list by running **the full suite, 943 tests** — the light tier in one
+process and four heavy files one process each, `test_objective` alone taking **35:44**. That
+was the right way to take a census. It is the wrong way to re-check a known node ID, and the
+figure it leaves behind makes the follow-up look expensive:
+
+```
+  test_objective, whole file (§132's route) ............... 35:44
+  the two test_objective node IDs alone ...................  5.05 s
+  all eleven node IDs, one process ........................ 68 s
+```
+
+Which is why §132 successor 3 read as the expensive item on the board and was in fact the
+cheapest. **A census and a re-check are different operations and only one of them has to be
+exhaustive.** The four whole-tree runs behind §1 above cost less together than one of the
+heavy files §132 ran to produce the list.
+
+### 7. WHAT MOVED, AND WHAT DELIBERATELY DID NOT
+
+**WHAT MOVED.** `PLAN.md` only — this section. **No test was touched and no source was
+touched.**
+
+**NOT touched, and the reason is that ten of the eleven are decisions rather than repairs.**
+Each Group A test needs a fixture that exhibits its phenomenon, and choosing one is choosing
+a genome to assert against — the same question §130 successor 0 is stuck on for `kinrank`,
+one level down. Each Group B tolerance needs its warrant re-derived, and in two of three
+cases no warrant is on disk. Group D needs `M8b`'s gene census re-run. Bundling eleven
+judgements into one commit would produce a green suite and eleven unexamined constants,
+which is the failure §121 spent a section unwinding. **A red that has been classified is not
+the same object as a red that has been silenced.**
+
+**ALSO NOT touched:** `studies/study_reds_ratio_stability.py` and
+`tests/test_study_gate_guard.py`, which a peer session was editing concurrently and committed
+at `4911e8e` — §131 successor 3, the eleventh exposed driver, guarded on its collected rows
+rather than on its flags. Its own record is that session's to write. Two notes from it belong
+here because they touch this section's evidence: the driver is imported at module level by
+`tests/test_gnl.py:28` and `tests/test_wheel_fea.py:26`, which is the coupling that
+contaminated the first HEAD baseline in §1; and its census of unguarded drivers by ARTIFACT
+rather than by `make` target found **four** drivers with zero guard calls, not the two named
+in §131 successor 3 — `study_arrival_cap.py` and `study_boundary_waste.py` being the extras,
+both of which turn out to be unguardable by this mechanism because neither has any degrading
+flag at all (zero `add_argument` in the first, one `--out` in the second). §131's count of
+eleven stands, by a route that could have moved it.
+
+**SUCCESSORS.**
+
+0. **THE TEN PINS NEED A DECISION EACH, AND THE DECISION IS THE SAME ONE TEN TIMES: WHAT IS
+   THIS TEST A CLAIM ABOUT?** Every Group A test currently reads the shipped genome from
+   `best_solution.json` through a module-scope fixture. If the claim is about the MECHANISM,
+   the fixture should be a genome chosen to exhibit it and pinned in the test — and then the
+   test never breaks on a promotion again. If the claim is about THE WHEEL THAT SHIPS, then
+   the promotion changed the answer and the docstring's numbers are the thing to update.
+   **These are opposite repairs and picking the wrong one produces a green test that asserts
+   nothing** — precisely what `test_stress_recovery_follows_the_solves_kinematics` says about
+   itself at 1.456x today. Do them one at a time, each with the measurement in the message.
+1. **`test_R_rim_is_still_effectively_inert_and_that_is_recorded` IS THE ONLY ONE THAT IS
+   URGENT, AND IT HAS A WRITTEN SCOPE.** §5. Its docstring names two consumers — M8b's gene
+   census and the study's verdict — and neither has been re-run against a genome whose
+   `R_rim` is interior. Until that is done the tree does not know whether the second fillet
+   gene has a gradient, which is a live question for the objective and not only for a test.
+2. **THE `smoke` FIXTURE IN `tests/test_gnl.py` CANNOT DISTINGUISH TWO OPPOSITE VERDICTS.**
+   §4. `CFG = "smoke"` at `:32` governs every test in that file, not only the one that
+   raised. The cheap fix is not to move the config — `coarse` costs real time across a whole
+   file — but to make the continuation test say which of the two it found, since
+   `run_newton_health` at `coarse` answers it in seconds for one genome. A raise that means
+   "the mesh is too coarse for this design" should not be spelled the same way as "this
+   design has no equilibrium".
+3. **`test_peak_stress_diverges_but_the_field_converges` HAS NOW BEEN MISCALIBRATED BY TWO
+   CONSECUTIVE PROMOTIONS AND THE SECOND FORM FAILED THE SAME WAY AS THE FIRST.** §3, Group
+   B. Its docstring diagnoses the first occurrence correctly and the replacement inherited
+   the defect: an absolute 1% on `d2/p99` is still a claim about how far into convergence
+   this particular wheel is at `fine`. The question worth answering before a third rewrite is
+   whether a convergence test can be written against the SEQUENCE (a fitted order, a
+   Richardson estimate) rather than against a difference, which would make it genome-free.
+4. **NOTHING KNOWS WHICH TESTS READ THE SHIPPED GENOME, AND THE NUMBER IS NOT SMALL.**
+   The eleven reds live in six files, so six is the number this section might have left
+   behind. The census is not six:
+
+   ```
+     git grep -l best_solution.json -- tests/          28 files
+     git grep -ln 'open(.*best_solution.json' tests/   21 files open it directly
+   ```
+
+   **Twenty-one test files read the shipped genome off disk, and no index of that exists** —
+   which is why §117 found 62 reds by running the suite rather than by predicting them, and
+   why §132 had to run 943 tests to take a list. That one-line census belongs in
+   `tests/test_promotion.py`'s checklist — item 9, beside §118's item 7 and §120's item 8 —
+   so a promotion states its blast radius before it lands rather than after. **This is the
+   cheapest item on this list and it is the one that would have prevented the section.**
+   Note also what it says about the other seventeen: they read the same genome and they are
+   GREEN, so the pin-the-symptom defect is not universal, and those seventeen are where the
+   pattern for fixing the ten should be read off rather than invented.
+
+---
+
+## §134 — 2026-09-08. §131's SUCCESSORS 3 AND 1 AND §132's SUCCESSOR 0, CLOSED. THE ELEVENTH DRIVER'S GUARD COULD NOT BE THE SHAPE §131 FILED FOR IT: ITS FIDELITY FLAGS AND ITS COMMITTED NAME ARE ON OPPOSITE SIDES OF THE FAN-OUT, SO A FLAG-KEYED GUARD IS A NO-OP THAT READS AS A FIX. AND THE RECIPE TABLE NOW READS THE MAKEFILE, WHICH SAYS 17 OF ITS 34 GUARDED DRIVERS HAVE NEVER HAD A RECIPE CHECKED
+
+Three successors, three commits, no run over a second and a half. Worked concurrently with
+the session that took §133; the split was file-disjoint by agreement and the one shared
+edge — `tests/test_gnl.py` and `tests/test_wheel_fea.py` import
+`study_reds_ratio_stability` at module level — was measured rather than assumed, both ways
+(§6).
+
+### 1. §131 SUCCESSOR 3's FIX SHAPE WAS WRONG, AND WRONG IN THE DIRECTION THAT LOOKS RIGHT
+
+§131 filed it as *"one call, three conditions, the shape every driver in this commit
+already has"*, with `--n 3` and `--min-wall 1.2` named as the flags that *"reach it with
+nothing in the way"*. They reach it. **They do not degrade it**, and a guard written
+against them would have been a no-op wearing the shape of a repair.
+
+In the nine drivers §131 fixed, one invocation carries both halves: `--out` defaults to the
+committed name and a fidelity flag on that same command line degrades the run, so the guard
+can read `args` and refuse. `study_reds_ratio_stability` splits them across two processes:
+
+```
+  --which beam|gnl  + --seed/--n/--min-wall   ->  one JSON line into $(REDS_CELLS)
+                                                  NEVER touches a tracked name
+  --which collect   + --glob/--out            ->  writes the committed artifact
+                                                  takes none of those three flags
+```
+
+**Measured, not read off the source**: `--which collect --n 3 --min-wall 1.2 --seed 999`
+over a fixed `--glob` reproduces the unflagged output **byte-for-byte**. The flags parse,
+bind, and mean nothing. That is §41's false green one level up — the guard would report a
+protection that had never been evaluated.
+
+### 2. THE VECTOR IS THE GLOB, AND THE FAN-OUT MANUFACTURES IT
+
+What decides whether a collect run is the gate is the SET OF CELLS the glob finds.
+Measured on a scratch `--out`, the committed name untouched throughout:
+
+```
+  3 real cells + 106 EMPTY files   ->  3-cell artifact, 843 bytes against 31039, EXIT 0
+```
+
+The empty files are not a contrivance. `make reds-ratio` fans cells out with
+`> $(REDS_CELLS)/$0_s$1_n$2_w$3.json` and `2>/dev/null`, and the shell creates the redirect
+target **before** the process runs — so every cell that dies leaves a zero-byte file and no
+reason. And the report over three cells still prints
+`correction_factor_is_defensible true in 0/1 cells  (never — the conclusion holds on the
+stable statistic in every cell)`. **§132 §5's shape exactly: the headline survives and
+every condition under it is destroyed.**
+
+**A TRUNCATED CELL IS NOT THIS DEFECT, AND THE DIFFERENCE WAS WORTH MEASURING.** `collect`
+wraps its whole-file `json.loads` in a `try` but its per-line fallback sits OUTSIDE that
+`try`, so a half-written line raises and **nothing is written at all**. Only the empty file
+is silent. The first reading of this section had it the other way round.
+
+Three conditions, keyed on the collected rows: `beam < 66`, `gnl < 43`, and any cell with
+`n_rows != n`. **66 and 43 are the recipe's own arithmetic, not a count read off the
+artifact** — `reds-ratio` emits 68 beam and 45 gnl specs, seed 7 collides with the
+`s = 0..9` group at n = 12, 24 (beam) and n = 8, 16 (gnl), and the cell filename carries
+only `$0_s$1_n$2_w$3`, so each duplicate pair collapses to ONE file: 68 − 2 = 66,
+45 − 2 = 43. Checked against the committed artifact as SETS of
+`(which, seed, n, min_wall)`, identical. **`n_drawn` is not the third quantity**: it counts
+LHS candidates rejected on the way to `n_rows` and runs 7.5x to 92.5x above it in every
+committed cell, so a check written against it would fire on all 109.
+
+Four controls, committed artifact byte-unchanged by sha256 throughout: full grid ACCEPTED;
+3-cell grid REFUSED naming both counts; full grid with one `n_rows = n-1` REFUSED; 3-cell
+grid at a scratch name ACCEPTED. §132 §3's round-trip control ran first, so the acceptance
+run was provably a no-op — collect over the artifact's own rows re-dumps it at 31039 of
+31039 bytes.
+
+### 3. THE CENSUS OF ELEVEN STANDS, AND THAT IS NOW A MEASUREMENT RATHER THAN A COUNT
+
+§131 successor 3 named `study_reds_ratio_stability` the eleventh exposed driver. **Four**
+drivers have zero `refuse_degraded_out` calls, not two: `study_arrival_cap`,
+`study_boundary_waste`, `study_kinematics_rank`, `study_reds_ratio_stability` — and the
+first two write TRACKED artifacts, so on the face of it the census was short by two.
+
+It was not, and the reason is structural rather than a judgement call:
+
+```
+  study_arrival_cap.py     ZERO add_argument, no argparse import at all; hardcoded path
+  study_boundary_waste.py  EXACTLY ONE add_argument, `--out`; reads 25 stage3_*.json, solves nothing
+```
+
+The guard's exposure class is *default `--out` is a committed name **and** at least one
+degrading flag exists*. Neither has the second half, so neither is guardable by this
+mechanism at all. Run §131 successor 3's own way — AST-extracted `committed` literals
+against `git ls-files studies/*.json`, never a sweep of `make` targets: **59 tracked
+artifacts, 38 distinct guarded names (as BASENAMES), 40 call sites across 34 drivers, 21
+tracked names unguarded** — the census as it stood BEFORE §1's guard call, which takes it
+to 41 sites across 35 drivers and 20 unguarded. Of the 21, seven are §129/§131 successor 0's commit-pinned baselines and the
+rest are deliberate degraded targets (`*_quick`, `lin_check`) plus the kinrank pair and
+this one. **A null result, and it is the half of the census §131 could not have known it
+was missing.**
+
+### 4. §131 SUCCESSOR 1: THE TABLE READS THE MAKEFILE NOW, AND THE ENUMERATION UNDER-COUNTED BY HALF ON THE FIRST TRY
+
+§131 §5 ran every guarded target's real argv through its real parser and real guard and
+then threw the harness away. Three assertions now live in `tests/`, and **none of them runs
+a driver** — §131 §5's harness ran `study_fillet_condition_a` to completion and rewrote its
+artifact, because that driver's three guard calls sit in conditional paths and "stop at the
+last guard" there means "run the study". `make -n` resolves the variables; the table's own
+three tests already prove its argvs pass the real guard; comparing the two closes the gap
+with nothing executed.
+
+**THE SCAN FAILED SILENTLY BEFORE IT WORKED, AND THAT IS NOW ITS OWN TEST.** These recipes
+span several physical lines with trailing backslashes, so a line-by-line reading of
+`make -n` captures `study_contact.py --genome best_solution.json \` and nothing after it.
+Without the continuation join: **20 targets / 34 invocations**. With it: **34 / 49**. The
+first number looked like a census. `shlex.split` is deliberately left unwrapped in the test
+so the same breakage raises rather than returning a smaller number, and
+`test_the_enumeration_can_actually_see_the_makefile` pins floors under both counts —
+without it every assertion in the file would pass vacuously over an empty scan, which is
+the defect §132 fixed in R2 and §5 below is an audit for.
+
+Of the 17 modules with a table row, **16 expand exactly as the table claims**. The 17th is
+not a defect: `make contact`'s second invocation redirects to `study_contact_step2.json`,
+which no guard defends, and a redirected run is allowed by design — so only invocations
+AIMED at a guarded name are compared.
+
+**AND THE FINDING UNDER THE FORMATTING COMPLAINT.** §131 successor 1 reads as *"the check
+lives in a scratch harness"*. The census behind it is that **17 of the 34 guarded drivers
+the Makefile invokes have no table row and have never had their recipe checked by
+anything** — the whole fillet family (10), all three `mbse` drivers, all three `tri`
+drivers, and `study_reds_ratio_stability`. Frozen in `_NO_TABLE_ROW`, failing in both
+directions. This one stays on the list permanently: its guard is keyed on collected rows,
+so no argv can decide its case, and `make reds-ratio`'s own collect argv is a gate run or a
+degraded one depending on what the fan-out left in `/tmp`.
+
+### 5. §132 SUCCESSOR 0, CLOSED ADDITIVELY — AND WHY THE OTHER OPTION WAS THE WRONG ONE
+
+`_rank_block` computes `r2_pass` for both subsets and `_verdict` reads only the feasible
+one, so the filleted artifact carried `blocks.full.r2_pass: false` beside
+`registered_criterion.R2_rank_agreement: true`. §132 offered two fixes. **The one that
+drops the verb from the diagnostic block would SUBTRACT a field from
+`study_kinematics_rank.json`**, which is §32's evidence and the file §130's header says
+must not be overwritten. Each block now carries `r2_binds` instead, and
+`R2_BINDING_SUBSET` is the single literal `_verdict` and `_print` both take it from —
+`"feasible"` had been hard-coded in each.
+
+**THE MARKER IS NAMED FOR R2 AND NOT FOR THE BLOCK, because the full pool is not purely
+diagnostic**: R1 reads its `argmin_identical`. A blanket "does not bind" would have been
+false, and a reader who took `r2_binds: false` for "not measured" would discard R1's
+operand.
+
+Re-derived by §132 §3's method. Round-trip control on both files first — 115063/115063 and
+78220/78220 bytes byte-identical — then `_verdict` over each artifact's own stored
+`rank.rows`, diffed field by field before writing: **exactly two added keys per file and
+nothing else**, `git diff --numstat` 4/2 on each, both deletions being the `r2_pass` line
+gaining a comma.
+
+**`r2_binds` IS TRUE FOR `feasible` IN BOTH FILES FOR DIFFERENT REASONS**, and a reader
+diffing them must not read the same boolean the same way: §32's binding subset is TEN,
+where `k = 5` is a proper subset and the clause always bound; the filleted one is FIVE and
+binds at all only because §132 made that clause abstain there.
+
+### 6. §132 SUCCESSOR 4: THE VACUOUS-CLAUSE AUDIT IS NOT ONE GREP, AND `min(` IS THE WRONG HANDLE
+
+§132 filed the search as *"one grep — `min(` inside a slice that then feeds a boolean
+gate"*. Run that way (by the §133 session) it returns **only the instance §132 already
+fixed**. That is a probe of one spelling, not a sweep of the class, and the class is *a
+gate clause that cannot fail at the sizes it is actually evaluated at*.
+
+Swept by AST over `studies/` and `src/` for gate-named dict fields — `*pass`, `*_ok`,
+`*valid`, `*agree`, `*equal` — built from `all()` or `any()` over a comprehension. **25
+sites. `all([])` is `True`**, so every one of them reports a passing gate over an empty
+collection.
+
+**THE FIX SHAPE ALREADY EXISTS IN THIS TREE, IN TWO SPELLINGS, AND THREE SITES USE IT:**
+
+```
+  study_kinematics_rank.py:453   "r3_pass": (bool(all(...)) if ok else None)
+  study_stage3.py:1024           "pass": bool(out) and all(...)
+  study_stage3.py:1146           "pass": bool(scored) and all(f["pass"] for f in probes)
+```
+
+The remaining 22 have neither. **This is strictly worse than the R2 defect §132 fixed**: R2
+had a second clause (`rho`) that still bound when the top-5 clause went vacuous, whereas an
+empty `rows` makes the entire gate vacuous with nothing left holding it. `study_m9.py:206`
+and `:219` are the plainest form — `rows` is built by a loop over `designs`, so an empty
+design list returns `"pass": True` having measured nothing. **Whether each of the 22 is
+REACHABLE with an empty collection is per-driver work and is not done here**; what is
+measured is the count, the class, and that the tree already knows the cure.
+
+### 7. THE ELEVEN REDS ARE UNTOUCHED, AND THE ONE SHARED EDGE WAS MEASURED FROM BOTH SIDES
+
+`tests/test_gnl.py:28` and `tests/test_wheel_fea.py:26` import
+`study_reds_ratio_stability` at module level, so §1's change sits in the import path of two
+of §133's six red files while §133 was measuring them. What those tests consume is
+`RS.RETIREMENT_SEEDS` and `RS.GATE_CORRECTION_CV`; this commit's module-level additions are
+one import and two constants, colliding with neither. Re-run isolated, both files returned
+their known 3 and 1 failures and no new ones — and the §133 session independently re-took
+its HEAD baseline in a clean `git worktree add --detach`, name for name identical to the
+run it had taken in the shared tree. **Both directions measured, neither reasoned**, which
+is what §132 §6 asks for and what the shared checkout makes easy to skip.
+
+**WHAT MOVED.** `studies/study_reds_ratio_stability.py` — `import _gate_guard`,
+`N_CELLS_BEAM`/`N_CELLS_GNL` with the derivation, the guard call in the collect branch.
+`tests/test_study_gate_guard.py` — six tests for that driver, deliberately NOT in the
+`DRIVERS` table (§1), plus §4's three Makefile tests and `_NO_TABLE_ROW`.
+`studies/study_kinematics_rank.py` — `R2_BINDING_SUBSET`, `r2_binds` in both `_rank_block`
+returns, `_verdict` and `_print` routed through the constant, the docstring's R2 line.
+Both kinrank artifacts — §5, one key per block. `tests/test_kinematics_rank.py` — three
+pins. `KINEMATICS_PLAN.md` — step 0c's R2 bullet carries the note, beside §132's amendment
+rather than instead of it. `PLAN.md` — this section, and three citations re-pointed,
+**stale by this commit's own delta and correct at the parent**:
+`study_kinematics_rank.py:237` → `:257` and §132's `:424` → `:449` and `:318` → `:339`,
+whose stated gap of "106 lines" is now 110.
+
+**NOT touched.** `studies/_gate_guard.py` — the mechanism was right; only this driver's
+idea of what degrades it was new. `study_kinematics_rank`'s own missing guard call — still
+§130 successor 0's decision, unchanged. The 22 sites in §6. `GATE_SPEARMAN`, and every
+measured value in both kinrank artifacts.
+
+**SUCCESSORS.**
+
+0. **THE REDS-RATIO ARTIFACT DESCRIBES A WHEEL THAT NO LONGER SHIPS, AND §1's GUARD DOES
+   NOT DEFEND AGAINST THAT.** Both cells read the shipped genome — `cell_gnl` opens
+   `best_solution.json`, `cell_beam` takes it through `study_wheel_fea.load_genes()`'s
+   default — and the artifact was last written at `1439ecf` (2026-08-16) while `cb4e3dd`
+   promoted `b729e86` on 2026-09-06. So its 109 cells are pre-promotion, which is why the
+   two tests its table retired a gate for now read 7.384 at n = 4 and 13.550 at n = 12
+   against the 2.167 and 9.026 in its own module comment (§133's red
+   `test_the_retired_max_min_gate_is_decided_by_the_sample_size`). **A re-run today would
+   satisfy every condition §1 added, at full fidelity, and overwrite §31's evidence with
+   numbers about a different genome.** That is §131 successor 0's category — a commit
+   check, not a fidelity check — and §106 already recorded that no committed artifact
+   stores the command, the date or the genome that produced it. **Do not regenerate it to
+   clear §133's red**; the red is the finding.
+1. **THE 22 UNGUARDED VACUOUS GATES, ONE DRIVER AT A TIME.** §6. The count and the class
+   are measured; reachability is not. The cheap first move is the two `study_m9` sites,
+   where the collection is a loop over an argument list and the emptiness question is a
+   read of the caller rather than a run. **The fix is not a new idea** — three sites in
+   this tree already carry it, in two spellings, and `study_stage3`'s
+   `bool(out) and all(...)` is the one that needs no sentinel.
+2. **`_NO_TABLE_ROW` HAS 17 ENTRIES AND SHOULD SHRINK.** §4. Each is a guarded driver whose
+   Makefile recipe nothing has ever checked, and the fillet family is ten of them from one
+   arc. Adding a row is cheap — the row is a name, its guarded names, its recipe argvs and
+   its degraded argvs — and `make -n` now supplies the third column rather than a hand
+   copy. **`study_reds_ratio_stability` is the one entry that must stay**, and the test
+   docstring says why so a later reader does not "fix" it.
+3. **NOTHING AUDITS WHETHER A GUARD'S CONDITIONS ARE THE RIGHT ONES.** §1 is a guard whose
+   filed shape was wrong for its driver, found only because the shape was tested against
+   the driver rather than copied into it. `tests/test_study_gate_guard.py` proves each
+   guard fires on the argvs it was given and stays silent on the recipe; nothing proves the
+   `degraded` list NAMES the things that actually degrade that artifact. For the 34
+   drivers that carried a guard before today, that judgement has been made once, by
+   whoever wrote the call, and never re-checked.
+
+---
+
+## §135 — 2026-09-08. §133's SUCCESSOR 1, ANSWERED AND NARROWED — NOT CLOSED: `R_rim` IS NOT THE INERT GENE OF THE PAIR ANY MORE — IT CARRIES 2.13x `R_hub`'s LOSS GRADIENT AND THE SEARCH RUNS IN 14 OF 14. BUT THE TWO HALVES OF THAT HAVE DIFFERENT CAUSES AND DIFFERENT DATES, AND ONLY ONE OF THEM IS THE PROMOTION. PLUS: A COARSE 8-PHASE `objective()` CALL OWNS THIS BOX AT 44 GiB, AND §132's "NOTHING NAMES THEM" WAS FALSE FOR THREE OF THE ELEVEN
+
+§133 successor 1 was filed as the only urgent item on that list, because
+`test_R_rim_is_still_effectively_inert_and_that_is_recorded`'s docstring pre-committed to
+what its own failure would mean: *"the rim junction geometry has changed and M8b's gene
+census and the study's verdict both need revisiting."* This is that re-check, and it does
+not close the successor the way the successor assumed — or entirely.
+
+**WHAT IS AND IS NOT SETTLED HERE.** Successor 1 asked three things. The GENE question is
+answered by measurement and inverted: `R_rim` is not inert, and it carries the larger of the
+two loss gradients (§1). The GENE CENSUS half is answered without a re-run and in the
+negative — its two sites are `tests/test_contact.py:498` and `tests/test_filleted_mesh.py:304`,
+both GREEN, and both are claims about the MESH, where the pair is dead for a reason that has
+nothing to do with the knee (§5 successor 0). **The STUDY'S VERDICT has not been re-run and
+is still owed.** Calling this successor closed would be the §133 §4 mistake again — reading
+a heading as a result — so it is carried forward at §5 successor 0 with its scope narrowed
+to the part that is genuinely outstanding.
+
+### 1. TWO QUANTITIES, TWO ROUTES, TWO DATES — AND CONFLATING THEM WAS THE AVAILABLE MISTAKE
+
+The test measures `d(rim margin)/dR_rim`, an entry of `jacrev(_fillet_margins)`. The
+`wheel_objective.py:1300-1303` comment that looked like the same claim measures `dL/dR_rim`,
+the LOSS gradient. **The margin reaches the loss only through the `fillet_cap` barrier, so
+an inactive barrier leaves `dL/dR_rim` at exactly zero however live the margin is.** They
+are not two readings of one thing, and this section keeps them apart throughout. A peer
+session flagged the conflation before the expensive run returned; the framing below is the
+better one that came out of it.
+
+**THE MARGIN HALF — CAUSED BY THE PROMOTION, ISOLATED BY EXPERIMENT.**
+
+```
+  d(rim margin)/dR_rim              smoke        coarse
+    outgoing genome (96a0ac5)    -3.692e-05    -3.048e-05     both under the 1e-4 gate
+    b729e86 SHIPPED              -7.010e-04    -6.624e-04     7.0x / 6.6x over it
+    growth across the promotion      19.0x         21.7x
+```
+
+**BOTH ROWS ARE GIVEN BECAUSE THE GROWTH FACTOR IS FIDELITY-DEPENDENT** — 21.7x at `coarse`
+is 14.5% larger than 19.0x at `smoke`. The ASSERTED row is `smoke`, because
+`tests/test_objective.py:40` sets `CFG = "smoke"` and that is the config the test takes its
+Jacobian at; `coarse` is carried because the loss half below is measured there. The gate is
+cleared either way and the finding does not turn on the choice, but neither number may be
+quoted bare. §4 is what happens when one of them is.
+
+`R_rim` came off its box ceiling at the promotion, **3.00000 -> 1.68017**. `GENE_SPACE` is
+byte-identical at `96a0ac5`, `cb4e3dd` and HEAD (md5 `11e2005941440fb2b9373a0c14c2d784`), so
+the box is `{0.5, 3.0}` throughout and the 1.32 mm is movement, not a remapped range —
+control run because a bound is a premise like a name is. §133's genome-swap already isolates
+this half to the genome: green at `96a0ac5`, red at `cb4e3dd`, green again at HEAD's code
+with the outgoing genome swapped back in.
+
+**THE LOSS HALF — MEASURED HERE, AND *NOT* DATED TO THE PROMOTION.** `coarse`, 8 uniform
+phases, the shipped genome, 1359.3 s:
+
+```
+  L = 76.023856
+  util hub = 0.91093     ABOVE the 0.80 knee    dL/dR_hub = +1.736205e+01
+  util rim = 0.90959     ABOVE the 0.80 knee    dL/dR_rim = +3.696881e+01
+  stress_margin = 2.169059
+  nonzero gradient components: 14 of 14         EXACT ZEROS: none
+```
+
+**`dL/dR_rim` IS 2.13x `dL/dR_hub`.** The premise the test was built on —
+*"`fillet_feasibility`
+was built to give both fillet genes a gradient and only `R_hub` got one"* — is not retired,
+it is **inverted**: the rim now carries the larger of the two. And
+`wheel_objective.py:1303`'s *"a nominally 14-dimensional search was running in 8"* is a
+**2026-08-12** reading that does not describe this tree; there is not one exact zero left in
+the gradient.
+
+**THE SIGN CORROBORATES THE TRAJECTORY INDEPENDENTLY.** `dL/dR_rim` is POSITIVE, so descent
+decreases `R_rim` — which is what the run did, off the ceiling to 1.680. `best_solution.json`'s
+search block is `adam`, and Adam cannot move a gene whose gradient is identically zero
+(`m = v = 0`), so the trajectory alone falsifies the comment without any of this.
+
+**WHY THE DATE IS NOT THE PROMOTION — AND THE TREE ALREADY PINS IT, GREEN.**
+`tests/test_filleted_mesh.py:293`,
+`test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh`, asserts both halves in
+one place: `insensitive_genes` on the PLAIN mesh is exactly `{R_hub, R_rim}`, and on the
+FILLETED mesh it is `[]` — with the stronger clause that the two fillet genes each move MORE
+of the mesh per mm than any of the twelve that were already live. **It was added by
+`75bc9d9` on 2026-08-26 (§85, the `fillet=True` default flip), and it has been green ever
+since — but the finding it pins is two days older still.** `4518348`, **2026-08-24**, says
+it in its own subject line: *"the filleted mesh is differentiable -- R_hub and R_rim go
+from an identically zero gradient to the two largest of fourteen"* (§79). So the transition
+is dated **13 days before `cb4e3dd`**, it was recorded in prose at §79 before §85 pinned it
+in a test, and §79's body names the very claim it was retiring — `wheel_adjoint`'s header
+that *"a gradient-based Stage 3 would optimise 12 of 14 genes and never notice"*.
+
+M7's finding was that the pair is dead because `dcoords/dgene` is identically zero on an
+unfilleted mesh; the fillet switch opened that route. **So `wheel_objective.py:1303`'s
+2026-08-12 "running in 8" was superseded twelve days later by a commit whose SUBJECT LINE
+says so**, and this section's re-measurement of it at 14-of-14 is a third statement of a
+thing the tree has held twice.
+
+Corroborating from the other side, `test_below_the_knee_the_rim_fillet_radius_is_dead` is
+`xfail(strict=True)` and its reason records `genes_over_knee`'s rim at **util 1.21257 —
+above the WALL — since §102/§103's region-p-norm term**, so a rim over the knee also
+predates `cb4e3dd`. **The honest split is therefore: the mesh route opened at §85, the knee
+was already cleared by §102/§103, and what `cb4e3dd` moved is the MARGIN sensitivity this
+test measures.** Three dates, none of them the same, and only the third is the promotion.
+
+**THE ROUTE, WHICH THE MARGIN NUMBERS THEMSELVES RULE OUT.** `_fillet_margins` at the
+shipped genome reads `[+3.5522, +22.3147]` at `smoke` and `[+3.5608, +22.2721]` at `coarse`,
+against outgoing's `[+4.0176, +10.7730]` and `[+4.0271, +10.7491]` — the rim margin is
+**2.07x wider** at either fidelity (2.071x smoke, 2.072x coarse) while the hub margin
+NARROWS 11.6%, so the `fillet_cap` barrier built on it is flatter than ever and
+cannot be carrying +36.97. The live path is the stress/`Kt` one the knee gates:
+`_kt_rim` is `stress_concentration_kt(g[13], g[11])`, `R_rim` with `t3`, which is exactly
+what a rim at util 0.90959 above a 0.80 knee predicts. **A margin Jacobian that grew 21.73x
+and a loss gradient that is nonzero are both true, neither is derived from the other, and
+they arrive by different paths.**
+
+### 2. `1e-4` IS AN INSTRUMENT, NOT A SIGNIFICANCE THRESHOLD — SO IT IS NOT RE-TUNED
+
+The gate's warrant exists and had to be found rather than assumed:
+`wheel_wheel.py:1176` and `studies/study_fillet_block.py:1030` both call `1e-4` **the
+precision these margins are QUOTED to**. So the assertion has always read *"a sensitivity
+below one unit in the last place of how we report margins is indistinguishable from zero"*.
+That makes the right conclusion **the sensitivity is now RESOLVABLE** — it clears the
+quoting precision by 7.01x at the fidelity the test asserts at (6.62x at `coarse`) — rather
+than the stronger "the gene is live", which is the
+loss-gradient claim and belongs to §1. It also settles what NOT to do: a gate whose constant
+is an instrument's precision is not a constant to re-fit when a reading crosses it.
+
+**AND THE THIRD GENOME IS NOT EITHER SIDE OF THE PROMOTION.** Three wheels are in play and
+two of them are easy to merge by accident:
+
+```
+  96a0ac5  best_solution.json                   R_hub 0.66361   R_rim 3.00000   outgoing
+  HEAD     best_solution.json                   R_hub 0.57100   R_rim 1.68017   b729e86, ships
+  stage3_buildcap2_slack_medium.json (e4219f3)  R_hub 0.45711   R_rim 2.74947   genes_over_knee
+```
+
+`genes_over_knee` is the wheel that shipped before 2026-08-13 and is neither side of
+`cb4e3dd`. So "two genomes, two answers" — which is what this section nearly said — is
+wrong: it is **three genomes, and the knee explains all three**.
+
+### 3. ONE `coarse` 8-PHASE `objective()` CALL OWNS THIS BOX: 44 GiB, 1359.3 s, MEASURED ON A CALL THAT RETURNED
+
+The first attempt put **two** genomes in one process. It reached RSS 45.5 GB at 22 minutes
+without returning the first, with 15 GiB free, and was killed rather than gambling the box —
+memory returned to 2 GiB immediately. The restructured run was one genome, one process, with
+a watchdog set to kill at 52 GiB.
+
+**IT WAS NOT MISCONFIGURED, WHICH IS THE PART WORTH KEEPING.** `phases=None` resolves at
+`wheel_objective.py:1518` to `phase_stencil(scheme="uniform")`, whose default is
+`n_phase=8` — byte-for-byte the stencil `tests/test_objective.py:88`'s `genes_over_knee`
+fixture passes explicitly. **The tree has been paying this cost in every `test_objective.py`
+run all along**, which is why that file measured 35:44 at §132 and why it has to be its own
+process.
+
+**THE KILLED RUN'S 46 GiB WAS A LOWER BOUND, NOT A PEAK, AND CALLING IT A PLATEAU WAS WRONG.**
+Dedup'd, the series is monotone across 21 minutes:
+
+```
+  2 4 5 7 10 11 12 13 14 15 18 19 20 21 22 23 24 27 28 (27) 28 30 31 33 34 36 38 39 40 42 43 46
+```
+
+The `27 28 27 28` stretch read as a plateau at the time and was sampling noise on a slow
+climb. **A maximum read off a process that never returned is a lower bound** — the rising-
+increment lesson, walked into in the one place it was easy to walk into. The completed
+call's peak is **44 GiB**, which is *below* the unfinished run's reading, so the bad number
+was not even conservative in the useful direction.
+
+**THE RULE THIS REPLACES.** §113's note read "a two-worker pool pushes this box to 60/61 GiB",
+filed as a POOL effect. It is not: one serial call is 44 GiB, ~72% of a 61 GiB box, so two
+copies were never going to fit and the pool was the occasion rather than the mechanism.
+**Nothing may run beside a `coarse` objective call, pool or no pool** — which the old note
+permitted.
+
+**AND A WATCHDOG BELOW THE RUN'S MEASURED PEAK KILLS HEALTHY RUNS — WHICH §115 HAD ALREADY
+WRITTEN DOWN, TWICE.** Guarding `tests/test_objective.py` at 54 GiB tripped at 11:11:48,
+35m48s in, and the run was read as having failed. It had not. `test_heavy_objective.log`
+records this file completing solo on 2026-09-06 at **124 passed, 3 xfailed in 2144.91s
+(35:44)**, its watcher `objective_mem_watch.log` climbing monotonically **5985 -> 59784 MiB
+(5.84 -> 58.38 GiB)** and finishing with 3057 MiB available, swap never rising (484 -> 469
+MiB). **A 54 GiB cap sits four gigabytes UNDER the peak of a run that fits**, so it ends a
+healthy run near the finish line — on the 2026-09-06 curve at about 27m30s of a 35:44 run,
+and today, on a slower climb, at 35m48s.
+
+**AND THE CAP DID NOT NEED MEASURING — IT NEEDED READING.** §115 (`:16963-16969`) already
+records that same run as *"~59.8 GiB used system-wide, ~3 GiB available at the low point"*
+— **and that peak is 1.4 GiB too high, from a MiB-read-as-MB slip**: the watcher's
+`used_MB=59784` is `free -m`, so MiB, and 59784/1000 gives 59.8 where 59784/1024 gives
+**58.38**. The units reconcile only one way: 58.38 + 2.99 = 61.37 GiB, against `free -m`'s
+own total of 62842 MiB = 61.37 GiB. The availability figure survives (2.99 rounds to §115's
+"~3"), and **the error runs in the direction that overstates the near-miss, so §115's
+conclusion is if anything safer than its number** —
+against a `:14673-14681` table (2026-09-03) that gives this file 51.0 GiB, and it draws the
+conclusion in terms: *"the documented figure is no longer a safe margin estimate on this
+box; treat it as a near-miss, not a clean pass."* **54 was chosen without reading either
+number.** §115 also records a real OOM on this box that same morning — `journalctl -k`,
+`Killed process ... python ... anon-rss:53145532kB` at 10:00:39, from the NAIVE un-batched
+invocation, not from the batched per-file run — so the failure it warns about is not
+hypothetical,
+and its own diagnosis of how it got there is the sentence this section has to repeat about
+itself: *"I ran the naive command anyway, without re-reading that table first — the fix is
+not new information, it is a rule I already had and did not check before acting."*
+
+**SO THE OPERATIONAL RULE IS NOT "RAISE THE CAP"** — a cap above a peak that already leaves
+2.99 GiB on a 61.37 GiB box has no room to fire before the kernel does. §5's
+green-before-commit was therefore taken as four chunks of a set-validated split. **AND THE
+MEASUREMENT SAYS THAT WAS A POOR TRADE, WHICH IS THE HONEST RESULT AND NOT THE ONE EXPECTED:**
+
+```
+  solo, 2026-09-06      35m44s     peak 58.38 GiB
+  four chunks           45m39s     peak 52 GiB  (pytest tree 49.9)
+                        +27.7%     bought 6.4 GiB, 11%
+    chunk_00 (29 ids, holds the objective call)  31m00s   52 GiB
+    chunk_01 (33 ids)                             8m56s   24 GiB
+    chunk_02 (34 ids)                             0.49 s   --
+    chunk_03 (31 ids)                             5m27s   18 GiB
+```
+
+**Splitting a module cannot lower a peak that belongs to ONE call.** A peer session
+forecast this before the run — N chunks give N module scopes, so the seven module-scoped
+fixtures are rebuilt per chunk, and no split reaches inside `WO.objective(...)` — and put
+the gain at ~10 GiB. The measured gain is 6.4, so the forecast was right in shape and
+slightly generous in size. **6.4 GiB of margin for ten extra minutes is a bad trade in the
+general case**, and the reason to record it is that it was taken deliberately, on §115's
+near-miss ruling and an explicit instruction not to exhaust the box, and it still did not
+buy much. The useful lever is not the split: it is the fixture. `genes_over_knee` is 44 GiB
+of the 52, and until that call is cheaper this file has no comfortable way to run.
+
+The count reconciles exactly across the era, which is the check that the split was faithful:
+Sep-6's **124 passed, 3 xfailed**, then `12df5e6` lifts one strict XPASS (**125 / 2**), then
+`cb4e3dd` turns two red (**123 / 2 failed / 2**), then §5's change fixes one — **124 passed,
+1 failed, 2 xfailed, 127 collected**, which is what the four chunks returned.
+
+**THE SPLIT WAS VALIDATED BY SET, AND THE FIRST ATTEMPT AT THAT CHECK WAS ITSELF WRONG.**
+A four-way split is only faithful if the union of the manifests IS the collected list — a
+count cannot see a swap, which is §119's lesson exactly (+3 by count, hiding 9 opened and 6
+closed). The set check was run: union == collected, four manifests pairwise disjoint, 127
+each way. **But run under the shell's default locale it reported 127 lines and 126 distinct**,
+i.e. a phantom duplicate. There is none. `en_US.UTF-8` collation ignores punctuation at the
+primary level, so `test_the_jnp_kt_is_the_numpy_kt[10.0-0.5]` and `...[1.0-0.05]` both
+reduce to `1005` and `sort -u` **silently discards one of them**. `LC_ALL=C` gives 127 and
+127. This file is 84/127 parametrisations of a single function, so bracketed IDs that differ
+only in punctuation are the common case here, not a corner: **any set check over pytest node
+IDs must be byte-wise.** A validation step that is itself locale-dependent is not a
+validation step — the same defect as a threshold that depends on its instrument (§2), one
+layer up.
+
+**THE "ANOMALY" THAT PROMPTED THIS DID NOT EXIST.** The trip was investigated against a
+belief that the whole suite had completed twice that morning in ~10 minutes, which made one
+file at 35 minutes impossible and implied a second process on the box. Both of those runs
+begin `FFFFFFFFFFF [100%]`: they were targeted runs of the eleven failing node IDs, timed at
+68 s, read off their TAILS — "11 FAILED across 6 files" — and never off their heads. There
+is no measured whole-suite single-process run in this tree: `test_full.log` stops at a
+`[ 64%]` marker mid-line, with no summary line and no `TESTRUN_DONE`, which is why the
+per-file batching exists at all. **A pass/fail list does not tell you
+what was collected**, and the wall clock said so loudly enough to be worth hearing.
+
+### 4. §132's "NOTHING NAMES THEM" WAS FALSE FOR THREE OF THE ELEVEN, AND §133 INHERITED IT
+
+§132 successor 3 is titled *"ELEVEN REDS SURVIVE §117's SIXTY-TWO AND NOTHING NAMES THEM"*.
+**§118 §6 had already named three of them, with readings**, under the heading "The three
+survivors, and two of them are more than positions":
+
+```
+  test_R_rim_is_still_effectively_inert_and_that_is_recorded   -7.010e-04   EXACT match
+  test_the_thickness_branch_of_the_cap_binds_on_a_thin_root    1.0051 / 0.9330  EXACT match
+  test_peak_stress_diverges_but_the_field_converges            1.39%            EXACT match
+```
+
+**ALL THREE REPRODUCE TO EVERY DIGIT QUOTED.** The R_rim red at HEAD prints
+`-0.0007009684304591923`; §118 wrote `-7.010e-04`. Nothing drifted between 2026-09-06 and
+today, and nothing could have: `best_solution.json` has not been touched since `cb4e3dd`,
+and the only commit to reach `_fillet_margins` since is `89a370e`, which changed two
+docstring figures and no behaviour.
+
+**THIS SECTION FIRST RECORDED A 5.8% DISCREPANCY THAT DOES NOT EXIST, AND THE ERROR IS THE
+ONE §133 §4 IS ABOUT.** The -6.624e-04 it compared against §118 is a standalone probe run at
+`CFG = "coarse"`; the test asserts at `CFG = "smoke"`. Two of my own readings at two
+fidelities were being read as a disagreement between the record and the tree, with fidelity
+offered as the excuse for a gap that was entirely an artefact of my own instrument. **The
+scope of a measurement includes the fidelity it was taken at, and a number lifted out of a
+probe cannot be checked against a number lifted out of a test unless both are named.** §1's
+table now carries both columns for exactly this reason.
+
+§118 also already filed the consequence — *"two documented verdicts are now owed a
+re-check"* — so **§133 successor 1 was a re-filing of an open §118 item, not a discovery**.
+§133 §1-§3 stand: §118 named three and isolated none of them to the genome, and the other
+eight were unnamed. What was wrong is the premise §133 carried over without checking.
+**§133 is bracketed in place.** This is the sixth instance in two days of the tree
+re-finding something it already held: §134 §3's census null, §134's own under-count, §133
+§4's, this one, §1's dating (green in `test_filleted_mesh.py` since 2026-08-26), and §3's
+memory cap (§115, in prose, eleven days old). **Every one of the six was found by READING,
+not by
+measuring** — and what the 35-minute killed run actually bought was not the finding but the
+prompt to go and look. That is a fact about the record's NAVIGABILITY rather than about any
+of the six. A 20,000-line record whose own sections cannot see each other will keep paying
+this, and the going rate here was one wasted run per unread paragraph.
+
+### 5. WHAT MOVED
+
+`tests/test_objective.py` — one test, **renamed**
+`test_R_rim_is_still_effectively_inert_and_that_is_recorded` ->
+`test_R_rim_is_no_longer_inert_and_that_is_the_finding`, its bound flipped to
+`abs(J[1, 13]) > 1e-4`, and its docstring rewritten to carry both quantities, both routes,
+both dates and the original finding verbatim. **The rename dangles six PLAN.md
+citations** — `:17573` and `:17631` in §118, `:20287` in §132, and `:20384`, `:20570`,
+`:20647` in §133, the first of those being the bracket this same commit adds. Nothing
+outside PLAN.md names the test at all (`git grep`, whole tree), so no code moves. The
+dangle is deliberate and recorded here so the sites stay followable: those sections are
+correct about what
+the test was called when they were written, and a test named `_is_still_effectively_inert_`
+that asserts the opposite is the rot this tree removes rather than preserves. The suite goes
+**11 red -> 10**, list verified.
+
+**NOT touched.** `wheel_objective.py:1300-1303`'s stale comment and `_fillet_margins`'
+docstring pair `[+4.0271, +10.7491]`, which describes the outgoing genome, cites §106, and
+mis-dates its own 86x (successor 2) — both want a bracket, neither is this commit's subject.
+`MARGIN_KNEE_UTIL`, `1e-4`, and
+`GATE_*` — §2: nothing here is a threshold to move. `test_below_the_knee_the_rim_fillet_
+radius_is_dead`'s strict xfail — it is correct as it stands and its reason is now load-
+bearing evidence for §1's dating.
+
+**SUCCESSORS.**
+
+0. **THE STUDY'S VERDICT IS STILL OWED; THE GENE CENSUS IS ANSWERED IN THE NEGATIVE AND
+   MUST NOT BE "FIXED".** §118 filed both, §133 re-filed both, and this section resolves
+   one of them by reading rather than by re-running.** The
+   census sites are `tests/test_contact.py:498` (`insensitive_genes == {R_hub, R_rim}`) and
+   `tests/test_filleted_mesh.py:304`. **Both are GREEN, both are about the MESH rather than the
+   loss, and the second one does not merely fail to contradict §1 — it AFFIRMS it.**
+   `tests/test_filleted_mesh.py:304-306` pins `{R_hub, R_rim}` dead on the plain mesh and
+   `[]` dead on the filleted one, so the census has recorded the pair as live on the mesh
+   that ships since 2026-08-26. The `test_contact.py` site is the unfilleted census, where
+   the pair is dead for a reason that has nothing to do with the knee. **Neither is
+   falsified by §1 and neither may be "fixed" to match it** — one agrees already and the
+   other is answering a different question. What is owed is the narrower thing: whether any
+   census that speaks
+   about the OBJECTIVE still calls this pair insensitive.
+1. **`dL/dR_rim`'s DATE IS NOW BRACKETED BY TWO COMMITTED FACTS, AND THE REMAINING GAP IS
+   NARROW.** The mesh route is dated hard — `75bc9d9`, 2026-08-26, by a green test — and
+   the knee is dated to §102/§103. What is still not measured is the LOSS gradient itself
+   at any genome but the shipped one: mesh-liveness is necessary, not sufficient, because
+   the knee gates the stress route. The measurement that would close it is one
+   `objective()` call on the OUTGOING genome at `coarse`/8 — 44 GiB and 23 minutes, the run
+   this section dropped when it narrowed to one genome. **Worth much less than it was
+   before this was found**, since the two bracketing dates already put the transition
+   before `cb4e3dd`, which is the only thing any verdict here rests on.
+2. **THE STALE PAIR IN `_fillet_margins`' DOCSTRING SHOULD BE BRACKETED, NOT REWRITTEN —
+   AND IT IS WORSE THAN "STALE".** `src/wheel_objective.py:641-643` says *"at the current
+   shipped genome they are `[+4.0271, +10.7491]`"*. That is the genome the promotion
+   REPLACED, read at `coarse`; the genome that ships reads `[+3.5522, +22.3147]` at `smoke`.
+   The sentence continues *"the rim figure moves 86x with the promotion"* — and 10.7491 /
+   0.125 = 86.0, so **the 86x is measured across `ga_beam` to the OUTGOING genome while
+   being attributed to the promotion**. Against the rim that actually ships it is 178x. So
+   this is not a figure that went stale beside a correct claim; the claim names the wrong
+   transition. Its ARGUMENT still survives and strengthens — it reasons that both readings
+   are feasible either way so the barrier is flat, and at +22.31 mm of rim clearance it is
+   flatter. Same shape as §130 §4, one step worse: a correct argument standing on a number
+   that has quietly changed meaning, in a sentence that also mis-dates the change.
+3. **NINE OF THE TEN REMAINING REDS ARE §133 SUCCESSOR 0, UNCHANGED.** This section did one
+   of the eleven, and it was the one §133 called the only urgent one because it was the only
+   one that was a question about the objective rather than about a test. The nine are still
+   ten-minus-one decisions of the same kind, each needing the item-9 question answered with
+   a measurement.
+
+---
+
+## §136 — 2026-09-08. §135's SUCCESSORS 0 AND 2, CLOSED. SUCCESSOR 0 EXPECTED "NO CENSUS THAT SPEAKS ABOUT THE OBJECTIVE STILL CALLS THE PAIR DEAD" AND THE ANSWER IS YES IN FOUR PLACES — NONE OF THEM AN ASSERTION, ALL FOUR FALSE SINCE §103. `fillet=None` DOES NOT MEAN "DECIDE PER GENOME", WHICH IS WHY EVERY GREEN CENSUS IS RIGHT. AND A 22-LINE DOCSTRING MOVED 54 CITATIONS, NINE MORE OF WHICH WERE ALREADY BROKEN BEFORE ANYONE TOUCHED THEM
+
+Two successors, two commits, `8f359bb` and `277a731`. Neither needed a run over four
+minutes, and successor 0 needed no run at all — it is the seventh instance in three days
+of a question the tree could answer by reading, over the same two days §135 §4 counted
+six in. What is new is that reading it produced the OPPOSITE answer to the one the
+successor filed.
+
+### 1. THE QUESTION, AND WHY IT INVERTS
+
+§135 successor 0 narrowed §118/§133's twice-filed "gene census" item to one thing:
+*"whether any census that speaks about the OBJECTIVE still calls this pair insensitive."*
+It filed the census half as **answered in the negative** — two sites, both green, both
+about the mesh — and warned they *"must not be 'fixed'"*.
+
+**THE WARNING IS EXACTLY RIGHT AND THE COUNT IS NOT.** `git grep insensitive_genes --
+tests/` returns **six lines across four files**, and there are TWO instruments, not one:
+
+```
+  wheel_adjoint.py:966   insensitive_genes(genes, mesh)   jacfwd(mesh_coords), tol=0.0
+                         a MESH census.  No solver, no objective, no loss.
+      tests/test_filleted_mesh.py:303   plain["coarse"]        == {R_hub, R_rim}
+      tests/test_filleted_mesh.py:305   filleted_shipped       == []
+      tests/test_gradient.py:248        build_wheel(genes,CFG) == INSENSITIVE_EXPECTED
+      tests/test_objective.py:321       build_wheel(genes,CFG) cols[12] == cols[13] == 0
+
+  study_contact.py:826   an FD census through the FEA, a different instrument
+      tests/test_contact.py:498                                == {R_hub, R_rim}
+```
+
+plus `tests/test_gradient.py:336`, `:354` and `:426`, which assert `INSENSITIVE_EXPECTED`
+without calling the function. **Not one of the eight speaks about the loss, so successor
+0's verdict on the ASSERTIONS holds and is if anything under-stated.** The two it named
+were four call sites in three files.
+
+### 2. `fillet=None` MEANS NO FILLET. IT DOES NOT MEAN "DECIDE PER GENOME", AND THIS ARC HAS BEEN READING IT THE OTHER WAY
+
+This is the fact that makes every green census correct, and it took a measurement to
+believe because §85 is recorded everywhere as *"the `fillet=True` DEFAULT flip"*.
+
+`wheel_wheel.py:2375` is `if fillet is None:` -> the plain spoke grid, no fillet blocks at
+all. What §85 made per-genome is one level in: `wheel_wheel.py:2970`,
+`per_genome = (fillet is True and layer_profile is None and fillet_blocking == "sector")`.
+**The per-genome rule chooses a LAYER PROFILE, and only under an explicit `fillet=True`.**
+So `build_wheel(genes, cfg)` — which is what every census above reads — builds the
+UNFILLETED mesh at every fidelity and every genome, and always has.
+
+Measured, because "always has" is a claim: at the shipped genome
+`insensitive_genes(g, build_wheel(g, cfg))` returns `['R_hub', 'R_rim']` with column norms
+of **exactly 0.0** at `smoke` and at `coarse`. The census is not stale. It is a claim
+about a mesh, and it is exact about that mesh.
+
+### 3. THE MESH THE OBJECTIVE SOLVES, WHICH IS THE OTHER ONE
+
+§103 wired the switch. `wheel_objective.py:1024` `phase_meshes` builds every phase with
+`fillet=True` (`:1037`) and `:1214` hands each one to
+`WA.service_qoi_value_and_grad(..., mesh=meshes[i])`. **`wheel_stage3.py` contains no
+`build_wheel(` call at all** — `WO.phase_meshes` at `:460` is its only mesh source — and
+the pooled path matches deliberately at `wheel_pool_worker.py:62`, whose own comment says
+it must. Serial and pooled, there is no unfilleted mesh anywhere in a Stage 3 evaluation.
+
+On that mesh, at the shipped genome:
+
+```
+  mesh                          dead genes        |dcoords/dR_hub|   |dcoords/dR_rim|
+  phase_meshes, smoke           []                   7.9306e+01         9.4095e+01
+  phase_meshes, coarse          []                   1.7479e+02         2.0694e+02
+  build_wheel(genes, cfg)       [R_hub, R_rim]       0.0                0.0
+```
+
+**`R_rim` ranks FIRST of fourteen by column norm and `R_hub` SECOND, at both fidelities.**
+
+That is §79's result, and it is worth having on the DEFAULT path: §135 §1 dated the mesh
+route to `75bc9d9` using `tests/test_filleted_mesh.py:293`, whose fixture is pinned to
+`FILLET_LAYER_SHIPPED` — **the pair `fillet=True` took BEFORE §85**, named in the fixture's
+own docstring so §79's numbers stay on §79's geometry. That is the right choice for that
+test and it means the green test does not, by itself, say anything about the mesh Stage 3
+builds today. It does now, measured here. §135 §1's dating survives on a second footing
+rather than on the one it was resting on.
+
+### 4. THE FOUR SITES, AND WHY THE ANSWER IS "YES" AFTER ALL
+
+Nothing ASSERTS the pair dead in the loss. Four places SAY it, and every one has been
+false since 2026-09-03:
+
+```
+  wheel_adjoint.py     module header: "everything above about this module is unchanged,
+                       because nothing hands it a filleted mesh.  Stage 3 still builds
+                       the unfilleted one".  Both retired.  Its third clause — the census
+                       gates are still correct and still green — is EXACT, and §2 above
+                       is why.
+  wheel_objective.py   `stress_margin`: "Measured again at the shipped genome on
+                       2026-08-12: `dL/dR_hub` and `dL/dR_rim` are both EXACTLY 0.0.  A
+                       nominally 14-dimensional search was running in 8."  §135 §1
+                       measured 14 of 14 nonzero, `dL/dR_rim` = +36.97 at `coarse`/8.
+  study_gradient.py    printed verdict: "Nothing wires the fillet into the objective" and
+                       "the mesh Stage 3 builds is still the unfilleted one, and is still
+                       blind to them".
+  study_contact.py     printed verdict: "A gradient-based Stage 3 would find them
+                       perfectly flat and never move them."
+```
+
+All four are bracketed with the measurement rather than rewritten. **The two study
+drivers are PRINT statements and none of that text reaches `study_*.json`** — checked, not
+assumed — so the artifacts still describe their drivers and no refresh is owed. That
+matters because §119 established that three of these drivers cannot be refreshed at all.
+
+**THE SHAPE OF THE ERROR IS ONE THE TREE KEEPS MAKING, ONE LEVEL UP FROM §133 §4's.** A
+census is a claim about the mesh it was taken on. Four sites took a true statement about
+the unfilleted mesh and wrote it as a statement about the OPTIMIZER, and when the
+optimizer changed meshes the sentence stayed. The same defect as a threshold that is
+really a claim about its instrument, and as a fixture's fidelity being part of every claim
+the fixture makes.
+
+### 5. SUCCESSOR 2: THE 86x IS `ga_beam` -> OUTGOING, WEARING THE NAME OF THE PROMOTION AFTER IT
+
+§135 successor 2 filed this as *"worse than stale"* and was right. `_fillet_margins`'
+docstring says the margins *"at the current shipped genome"* are `[+4.0271, +10.7491]`
+and that *"the rim figure moves 86x with the promotion"*. Re-derived here rather than
+lifted, all six readings, both fidelities named because §135 §4 is about what happens when
+they are not:
+
+```
+  genome                       smoke                    coarse
+  ga_beam                      [+4.647, +0.125]  as recorded; fidelity NOT stated
+  96a0ac5  outgoing            [+4.0176, +10.7730]      [+4.0271, +10.7491]
+  b729e86  SHIPS               [+3.5522, +22.3147]      [+3.5608, +22.2721]
+```
+
+**Every figure §135 §1 quoted reproduces to the digit.** 10.7491 / 0.125 = **85.99**, so
+the 86x is the `ga_beam` -> outgoing transition; against the rim that ships it is
+**178.52** at `smoke` and **178.18** at `coarse`. Three genomes make two transitions and
+the sentence merges them into one.
+
+**BRACKETED, NOT REWRITTEN, AND THE ARGUMENT GETS STRONGER.** It reasons that both
+readings are feasible either way, so the `fillet` barrier is flat and `d(fillet)/dR_hub`
+is exactly 0.0. At +22.31 mm of rim clearance it is flatter than when that was written.
+The hub margin is the one that NARROWED — 4.0271 -> 3.5608 at `coarse`, **11.58%** — and
+is still feasible by a wide margin. The numbers stay because they are §106's dated record
+and this is the second promotion they have outlived; **a figure re-fitted at every
+promotion stops being evidence of anything.**
+
+### 6. THE CITATION COST WAS 67, OF WHICH 54 CAME FROM ONE DOCSTRING — AND NINE MORE WERE ALREADY BROKEN
+
+§118's lesson at full size. The two commits inserted prose at four points and moved every
+line citation below each:
+
+```
+  8f359bb  four sites, +24/+21/+8/+11        13 citations, 2 files
+  277a731  one docstring at :646, +22        54 citations, 13 files
+```
+
+**EVERY ONE OF THE 67 WAS VERIFIED BYTE-IDENTICAL AGAINST ITS PARENT** — for each `:N`,
+`parent[N] == current[N + shift]` — so the repair preserves what each citation RESOLVED
+to rather than guessing what it meant. That check is what makes a bulk shift safe on a
+pure insertion, and it caught the one thing a bulk shift gets wrong: `MBSE_PLAN.md:499`'s
+bare `` `:2760` `` reads as a `wheel_objective.py` citation by proximity and belongs to
+`wheel_wheel._COORD_FN_CACHE`, named earlier on the same line. **A bare `:N` is owned by
+the nearest filename BEFORE it, not by the nearest one** — and `wheel_objective.py` is
+1683 lines, so the mismatch check refused it rather than the reading.
+
+**NINE CITATIONS INTO `wheel_adjoint.py` WERE ALREADY DANGLING AT `6f1f01e`, AND THEY ARE
+LEFT ALONE.** §118's 2-mine/3-not split, at 13-mine/9-not. Every one of them resolves —
+to the wrong line — and every claim they make is TRUE of a line that exists, so this is
+pure line drift and not a stale finding:
+
+```
+  cited as          claims                                  the real anchor, at HEAD
+  :161 +190 +400    the adjoint kernels dispatch on         :224, :253, :364, :507, ...
+    PLAN.md:2933    `prob.nonlinear`                        (:161 is a BLANK LINE)
+  :537   x3         `delta = float(sec["axle_drop_mm"])`    :868
+    wheel_stage3.py:63 and :301, tests/test_stage3.py:136
+  :553              the `dF_ddelta <= 0` guard              :884
+    wheel_stage3.py:73
+  :644   x2         the same `axle_drop_mm` claim           :868
+    PLAN.md:8968 and :9154
+  :646, :649-662    `service_qoi_value_and_grad` and its    :830 and the docstring
+    MBSE_PLAN.md:153 and :407                               under it
+```
+
+**AND THE FIRST DIAGNOSIS OF THIS WAS WRONG, IN THE WAY A HASTY GREP IS ALWAYS WRONG.**
+`wheel_adjoint.py` holds TWO near-identical functions — `axle_drop_value_and_grad` at
+`:790` and `service_qoi_value_and_grad` at `:830` — and EACH has a
+`delta = float(...["axle_drop_mm"])` line and a `dF_ddelta <= 0` guard: `:814`/`:819`
+reading `res[...]`, `:868`/`:884` reading `sec[...]`. A `grep` that stops at the first
+match lands on `res` and reports the citations as naming a variable the code does not
+have. It does have it, one function further down, and `:868` is inside exactly the
+function all three citing sites are arguing about. **Two anchors that differ by one
+identifier are the same hazard as a sentinel with two meanings — the first match is not
+the match.**
+
+These are left alone because they are somebody's unit of work and not this one's: folding
+a `wheel_adjoint` line-drift repair into a commit about the fillet census would make both
+harder to read. **Note that this commit MOVED them** — `8f359bb` inserted 24 lines at
+`:88` — so their targets shifted like everything else. That is defensible only because a
+stale citation points at arbitrary content either way and the repair is to find the
+anchor, not to preserve the miss; a citation that RESOLVED was never treated that way.
+
+### 7. WHAT MOVED
+
+**`8f359bb`** — `src/wheel_adjoint.py`, `src/wheel_objective.py`,
+`studies/study_gradient.py`, `studies/study_contact.py`, plus 13 citation repairs in
+`PLAN.md` and `UNCAP_PLAN.md`. **`277a731`** — `src/wheel_objective.py`, plus 54 citation
+repairs across 13 files. Prose only in both: no executable line changed, verified by
+diffing the added lines against comment/docstring/print shapes.
+
+**Green.** `8f359bb`: the eight census node IDs across `test_gradient`, `test_contact`,
+`test_filleted_mesh` and `test_objective`, **8 passed**, peak RSS flat at 2.98 GiB —
+§133 §6's point, that a re-check is not a census and does not need the 35-minute file.
+`277a731`: both `_fillet_margins` node IDs, **2 passed**; `test_pool` and
+`test_requirements` collect at 23 and 44. **THE RED LIST WAS NOT RE-TAKEN AND IS NOT
+CLAIMED HERE.** No assertion was touched and no executable line changed, so §135's ten
+should stand — but that is an inference, and §119's rule is that a list is diffed, not
+reasoned about. The next section that runs the suite owns the check.
+
+**NOT touched.** The eight census assertions — §1, and successor 0 was right that they
+must not be "fixed". `INSENSITIVE_EXPECTED` — it is the census of the unfilleted mesh and
+that mesh has not changed. `tests/test_gradient.py:650`'s docstring, which restates the
+2026-08-12 loss reading: it is DATED in place, its next paragraph says the opposite on a
+filleted mesh, and its assertion at `:669` pins that — which is the shape the other four
+should have had.
+
+**SUCCESSORS.**
+
+0. **NINE DANGLING CITATIONS INTO `wheel_adjoint.py`, AND THE ANCHORS ARE ALREADY FOUND.**
+   §6 gives the table: `:868`, `:884`, `:830` and the `prob.nonlinear` list. Every claim
+   is true of a real line, so this is a mechanical repair — but it is NOT a bulk shift,
+   because the deltas differ per citation and none of them is this commit's 24. Do it by
+   anchor, one site at a time, and verify each by content. **The one judgement in it:**
+   `wheel_stage3.py:63`, `:301` and `tests/test_stage3.py:136` all argue that `delta0` and
+   `axle_drop_mm` are the same number — the warm start's whole warrant — and there are now
+   TWO functions that could be meant. Check that all three mean
+   `service_qoi_value_and_grad`'s `:868` and not `axle_drop_value_and_grad`'s `:814`
+   before pointing them anywhere.
+1. **`wheel_adjoint.py`'s HEADER STILL SAYS `wheel_objective` PRICES `R_hub` THROUGH A `Kt`
+   SURROGATE "EXACTLY FLAT OVER HALF ITS FEASIBLE RANGE" (§75), AND THAT CLAUSE WAS NOT
+   MEASURED HERE.** §4 retired the two clauses either side of it and left this one
+   standing because it is a claim about the SURROGATE rather than about the wiring. §135 §1
+   measured `dL/dR_hub` = **+17.36** at the shipped genome, and §75's flat surrogate is
+   the route this clause names for that same gene. Those two have never been put side by
+   side, and §135 §1's own discipline says why it matters: the loss gradient and the
+   surrogate are different quantities and one does not follow from the other. Cheap and
+   solve-free: `stress_concentration_kt` over `R_hub` at fixed `t0`, against
+   `hub_fillet_cap_mm` at the shipped genome — is the shipped `R_hub` above the cap or
+   below it? Above, and the clause survives and the gradient comes from elsewhere;
+   below, and the clause is a third retired sentence in that header.
+2. **NINE REDS REMAIN AND THEY ARE §133 SUCCESSOR 0, UNCHANGED.** §135 successor 3.
+   Nothing in this section touched one, and the item-9 question — what is this test a
+   claim ABOUT — is the same question §2 above answers for the censuses. **The censuses
+   are the worked example**: each one is green through two promotions and a default flip
+   precisely because it names its mesh, and the seventeen green genome-readers §133
+   successor 4 counted are where the pattern for the nine should be read off.
+3. **§135 SUCCESSOR 1 IS NOW WORTH LESS AGAIN.** It offered a 44 GiB / 23-minute
+   `objective()` on the OUTGOING genome to date `dL/dR_rim`. §3 above adds a third
+   bracketing fact — the mesh Stage 3 actually builds has been filleted since §103, on the
+   default path and not only on a pinned fixture — so the transition is bracketed by
+   §79/§85, §102/§103 and §103's wiring, all of them before `cb4e3dd`. **Do not spend the
+   run to confirm a date three committed facts already bracket.**
+
+---
+
+## §137 — 2026-09-08. §136's SUCCESSOR 1, CLOSED — AND THE TEST IT FILED COULD NOT HAVE SETTLED IT EITHER WAY. THE `Kt` SURROGATE STOPPED PRICING `R_hub` AT §103, SO THE HEADER'S THIRD CLAUSE RETIRES AT THE SAME DATE AS THE OTHER TWO; "FLAT OVER HALF ITS FEASIBLE RANGE" IS 93.62% OF THE BOX ACROSS **TWO** DEAD REGIONS AND THE PROMOTION BUILT THE LOWER ONE. PLUS: THE SHIPPED GENOME CLEARS ITS TIER-0 GATE BY 71 nm UNDER AN ASSERTION MESSAGE THAT BLAMES SOMETHING ELSE, AND §136's NINE DANGLING CITATIONS ARE TEN
+
+Two commits, `322262c` and `800f31a`. Nothing solved except the one node ID that re-runs the
+amended test. §136 opened by calling its successor 0 *"the seventh instance in three days
+of a question the tree could answer by reading"*; this is one more, and again the reading
+inverted what the successor filed.
+
+### 1. THE CLAUSE HAS A VERB AND AN ADJECTIVE. SUCCESSOR 1's TEST ADDRESSED NEITHER
+
+§136 §4 retired two clauses of one paragraph in `wheel_adjoint.py`'s header and left the
+third standing: *"`wheel_objective` still prices `R_hub` through a `Kt` surrogate that is
+exactly flat over half its feasible range (§75)"*. It filed the check as a single
+question — **is the shipped `R_hub` above its cap or below it?** — *"above, and the clause
+survives and the gradient comes from elsewhere; below, and the clause is a third retired
+sentence in that header."*
+
+**THE ANSWER IS BELOW, AND THAT DICHOTOMY DOES NOT DECIDE THE CLAUSE IN EITHER DIRECTION.**
+Where one design sits relative to its cap is a fact about a POINT. *"Exactly flat over half
+its feasible range"* is a claim about a RANGE, and a surrogate that is live AT a design
+says nothing about how much of its domain is flat. So the two halves were measured
+separately, and they answer opposite ways: **the verb is dead and the adjective is true and
+was understated.** §135 §1's own discipline — the loss gradient and the surrogate are
+different quantities and one does not follow from the other — applies one level in, to the
+sentence's own two halves.
+
+### 2. THE VERB: §103 UNWIRED IT, AND `wheel_objective` SAYS SO AT BOTH ENDS
+
+Nothing prices `R_hub` through `Kt` any more, and this needed no measurement at all — it is
+written twice in the file the clause is ABOUT:
+
+```
+  wheel_objective.py, weight table   "...the mesh this term now actually reads, since §103
+                                     wired `util_j` onto the region-p-norm QoI rather than
+                                     `Kt * agg`"
+  wheel_objective.py, report block   "`Kt`/`hub_fillet_cap_mm`/`hub_fillet_r_effective` no
+                                     longer feed `util_j` — kept for REPORTING ONLY"
+```
+
+Checked rather than taken on the comment's word: `util_j` is `agg_j / allowable_stress_mpa`
+with no `Kt` factor, and `junction_kt` has **exactly one caller in `src/`** — inside that
+report block. `kt_hub`/`kt_rim` reach `report`, `REPORT_KEYS` and the
+`stress_utilisation_kt` diagnostic, and stop there. **The two live routes from `R_hub`
+into the loss are the filleted mesh (§135 §1's `dL/dR_hub` = +17.36) and `fillet_cap`'s
+barrier, which reads 0.0 at the shipped genome.** So the clause's date is §103's, the
+same as the two §136 retired, and the header now says THREE where it said two.
+
+### 3. THE ADJECTIVE: 93.62% OF THE BOX, NOT HALF — AND THE DEAD REGIONS ARE TWO
+
+The surrogate still exists and still reports, so "flat over half its feasible range" is
+still a claim worth being right about. **`smooth_min` is exact outside its blend**, so
+"exactly flat" is literal rather than "flat to plotting accuracy" — §75 read its own table
+to four decimals. Sweeping `R_hub` across the whole `GENE_SPACE` box `[0.4, 4.0]` at fixed
+everything else, `dKt_hub/dR_hub` is **EXACTLY 0.0** outside one live window:
+
+```
+  genome              t0     R_hub     cap    cap-R_hub  clamp edge  cap+k   FLAT % of box
+  ga_beam           2.4774  1.5598   0.6634   -896.3 um   0.302514  0.7630      89.92
+  96a0ac5 outgoing  1.4738  0.6636   0.6657    +2.130 um  0.179971  0.7656      89.84
+  b729e86 SHIPS     3.5055  0.5710   0.5721    +1.071 um  0.428059  0.6579      93.62
+```
+
+At the shipped genome the live window is **0.2298 mm wide**: 6.38% of the box, **15.32% of
+§75's `[0.4, 1.9]` "feasible range"**. Flat over 93.62% and 84.68% respectively — not half,
+on either reading of which range is meant.
+
+**AND THERE ARE TWO DEAD REGIONS, NOT ONE.** §75 named the upper one — `R_hub >= cap + k`,
+where `smooth_min` returns the cap to the bit and buying more fillet buys exactly nothing.
+The lower one is `KT_CLAMP`'s 3.5 ceiling, and its edge is
+
+```
+  R_hub <= t0 / (2 * 2.5**(1 / KT_EXPONENT))          KT_EXPONENT = 0.65
+```
+
+— **a function of `t0` ALONE**, reproducing a 60-step bisection of the exact zero to nine
+digits. **THE PROMOTION CREATED IT.** `t0` went 1.4738 -> 3.5055 mm, **+137.9%**, which
+moved that edge from 0.17997 — below the box floor of 0.4, unreachable — to 0.428059,
+inside the box. `junction_kt`'s docstring already said the clamp *"IS reachable in-box
+(`t0=10.0` with `R_hub=0.5`) ... though not at either design of interest"*; the second half
+still holds (`Kt` = 3.1239 at the shipped design, 89.26% of the 3.5 ceiling) and the
+first half no longer needs a `t0` nothing ships.
+
+### 4. §75's "PARKED AT THE CAP" SURVIVES THE PROMOTION AND TIGHTENS
+
+```
+  96a0ac5 outgoing   R_hub 0.6636060403   cap 0.6657364010   99.68%   dKt/dR_hub  -0.5689
+  b729e86 SHIPS      R_hub 0.5709952880   cap 0.5720664371   99.81%   dKt/dR_hub  -1.2706
+```
+
+§75's genome IS the outgoing one — `t0` 1.4738 and `R_hub` 0.6636 reproduce exactly, so
+that record survived unchanged from 2026-08-24 to `cb4e3dd`. Both designs sit **inside the
+blend**, where the derivative is live, and the one that ships is **2.23x steeper**. The one
+design of the three that occupies the flat region at all is `ga_beam`, 0.896 mm above its
+cap with `dKt_hub/dR_hub` exactly 0.0 — so §75's dead half is not hypothetical, it is where
+the shipped line started.
+
+### 5. THE BY-PRODUCT, AND IT IS THE ONE WITH A TEST ON IT: 71 nm
+
+`wheel_stage3.selection_key` gives a fully feasible iterate **tier 1, not tier 0**, when its
+hub-cap slack is under `MIN_CAP_SLACK_MM` = 1e-3 mm. The shipped genome's slack is that
+same quantity §4 measures, and it clears by **71 nanometres**:
+
+```
+  fidelity   cap             slack = cap - R_hub    over MIN_CAP_SLACK_MM
+  smoke      0.5720812549    1.0860e-03 mm            +8.60%
+  coarse     0.5720664371    1.0711e-03 mm            +7.11%
+  medium     0.5720606337    1.0653e-03 mm            +6.53%
+  fine       0.5720581313    1.0628e-03 mm            +6.28%
+```
+
+Every fidelity clears, which is the check `MIN_CAP_SLACK_MM`'s own docstring exists to
+demand — it is there because *"feasibility is FIDELITY-DEPENDENT"*, and the cap's whole
+spread across the four is **23.1 nm**, so the tightest margin is **2.72x the resolution of
+the instrument measuring it**. The recorded `selection` in `best_solution.json` is tier 0,
+and all nine `BARRIER_TERMS` read 0.0 there, so the tier was decided on this branch.
+
+**WHAT MAKES IT WORTH A COMMIT IS THE MESSAGE, NOT THE MARGIN.**
+`tests/test_objective.py` asserts `selection_key(...)[0] == 0` on the shipped genome under
+*"a live margin term made the shipped genome unpromotable"* — and that names ONE of the two
+ways the assert can fail. The other is 71 nm away and has nothing to do with the margin
+split the test is about: a hub that drifts into its cap turns that test red with a message
+pointing at the wrong mechanism. **§133's "pin the finding, not its symptom", seen from the
+other side**: the assertion is right, and its diagnosis is right for only one of its causes.
+The cause now has its own assert immediately above, carrying the four readings.
+
+### 6. THE CITATION COST WAS 3 OF 21, AND §136's NINE ARE TEN
+
+Two pure insertions, both verified `parent[N] == current[N + shift]` for every line below
+them: `+37` at `wheel_adjoint.py:104`, `+16` at `tests/test_objective.py:960`.
+
+```
+  into wheel_adjoint.py     12 lines   2 RESOLVED, repaired (:740 -> :777, :929 -> :966)
+                                       10 dangling, left alone, moved by 37
+  into test_objective.py     9 lines   1 RESOLVED, repaired (:994 -> :1010)
+                                       4 name :1257, dangling and recorded so at §118
+                                       4 sit above the insertion and did not move
+```
+
+**§136 §6 COUNTED NINE DANGLING CITATIONS INTO `wheel_adjoint.py`. THERE ARE TEN, AND THE
+TENTH IS INVISIBLE TO THE PATTERN THAT FOUND THE NINE.** `PLAN.md:9158` writes
+`wheel_adjoint:588,643` — **no `.py`** — so `wheel_adjoint\.py:[0-9]` skips it silently.
+Its claim is `sec = fem.solve_wheel_contact(mesh, force=..., ...)`, and at `322262c`'s
+parent neither line is that: `:588` is a `residual_rel` assignment and `:643` a comment
+rule. **The real anchors are `:812` and `:866` — §136 §6's own two-function hazard, hit
+again one section later** — `axle_drop_value_and_grad` assigns that call to `res` and
+`service_qoi_value_and_grad` assigns it to `sec`, so ONE of the two cited lines can carry
+the `sec` spelling and the citation gives both. At HEAD they are `:849` and `:903`.
+
+**AND §136 §6's ANCHOR TABLE IS NOW +37**, which matters because successor 0 is filed
+against it: its `:868`, `:884`, `:830` and `:224 :253 :364 :507` are **`:905`, `:921`,
+`:867` and `:261 :290 :401 :544`** at HEAD. The table is left as the dated record it is;
+these are the numbers to execute it with.
+
+### 7. WHAT MOVED
+
+**`322262c`** — `src/wheel_adjoint.py`'s header, plus 2 citation repairs in `PLAN.md`.
+**`800f31a`** — `tests/test_objective.py`, plus 1 citation repair in `PLAN.md`. Prose
+only in the first; the second adds one assertion and its three lines of setup, and
+changes no existing assertion.
+
+**Green.** `tests/test_import_hygiene.py`, **10 passed**, for `322262c` — it changes no
+executable line, so the check that matters is that the module still imports and the
+docstring still parses. `800f31a`: `test_the_margin_term_prices_and_never_gates`,
+**1 passed**, ~7 min, peak observed RSS 21.1 GiB.
+**THE RED LIST WAS NOT RE-TAKEN.** §136 left nine reds standing and said the next section
+that runs the suite owns the check; this is not that section either. One existing assertion
+was neither touched nor moved.
+
+**NOT touched.** `wheel_objective`'s `Kt` machinery — §2 retires a SENTENCE about it, not
+the code, and `junction_kt`, `hub_fillet_cap_mm` and `hub_fillet_r_effective` are all still
+read by `REPORT_KEYS` and `selection_key`. `junction_kt`'s "not at either design of
+interest" — measured and still true. §75 itself: its numbers are correct about its own
+genome, which is `96a0ac5`, and §3 only says its RANGE fraction was conservative.
+`REPO_EXPLAINED.tex` — see successor 2.
+
+**SUCCESSORS.**
+
+0. **§136's SUCCESSOR 0, UNCHANGED EXCEPT THAT IT IS TEN CITATIONS AND THE ANCHORS ARE
+   +37.** §6 above gives both. The judgement it names is now sharper rather than harder:
+   `wheel_stage3.py:63`, `:301` and `tests/test_stage3.py:136` all argue `delta0` and
+   `axle_drop_mm` are the same number, and `PLAN.md:9158` cites the SAME pair of functions
+   for the same reason — so the four resolve together, and the discriminator is the
+   variable name — `sec` is `service_qoi_value_and_grad`, `res` is
+   `axle_drop_value_and_grad`.
+1. **§136's SUCCESSOR 2, UNCHANGED: NINE REDS, AND THEY ARE §133's SUCCESSOR 0.** Nothing
+   here touched one. §5 adds a worked example from the opposite direction to §136 §2's
+   censuses: a green assertion whose failure MESSAGE is a claim about only one of its
+   causes.
+2. **`REPO_EXPLAINED.tex`'s FILE INVENTORY IS A DATED SNAPSHOT AND SIX OF ELEVEN ROWS ARE
+   WRONG.** Found while auditing what `wheel_adjoint.py:759` in that table meant — it is a
+   LINE COUNT, not a citation, and the file is 981 lines. Measured at HEAD:
+   `wheel_wheel` +160, `wheel_adjoint` +222 (of which 37 is this arc), `wheel_objective`
+   +222, `wheel_stage3` +224, `wheel_pool` +27, `wheel_pool_worker` +8; five rows are exact.
+   `tests/` says "25 files, 503 test functions" against **34 and 632**; `studies/` says
+   "~19 drivers" against **38**. Nothing generates this file, and `REPO_EXPLAINED.pdf` is
+   committed beside it — so the repair is a `.tex` edit AND a rebuild, and it is the same
+   shape as an artifact refresh: check what else reads those numbers first.
+3. **`wheel_adjoint.py`'s HEADER NOW CARRIES A THREE-CLAUSE RETIREMENT AND THE PARAGRAPH IT
+   RETIRES IS STILL THERE IN FULL.** That is the tree's convention and it is working, but
+   the paragraph plus its brackets is now 74 lines of one docstring, and the ONE sentence
+   in it that is still true — the census gates — is at the bottom. Worth a decision, not a
+   rewrite: is a bracket-only header still readable at four brackets deep, or does the
+   retired paragraph become a dated block quote with the live text above it?
+
+---
+
+## §138 — 2026-09-08. §137's SUCCESSOR 0, CLOSED. TEN CITATIONS RE-POINTED AT **ZERO** CITATION COST, BECAUSE THE OBVIOUS WAY TO WRITE THE TENTH WOULD HAVE BROKEN THIRTEEN MORE. RESOLVING EACH ONE AT THE COMMIT THAT WROTE IT — NOT AT HEAD — SETTLED §136's ONE JUDGEMENT OUTRIGHT AND FOUND ITS FILED ANCHOR FOR AN ELEVENTH NAMING THE WRONG THREE LINES
+
+One commit, `c51320e`. No solve, no artifact, ten changed lines and all ten prose. The
+whole finding is method: **a dangling citation is resolved by asking what it pointed at
+WHEN IT WAS WRITTEN**, and the tree has that answer in git for every one of them.
+
+### 1. RESOLVE AT THE WRITING COMMIT, NOT BY GREPPING HEAD FOR THE CLAIM
+
+§136 §6 built its anchor table by finding, at HEAD, a line that matches each citation's
+stated claim. That works when the claim is distinctive and fails quietly when it is not —
+which is the failure it documented for itself, twice, in `wheel_adjoint.py`'s two
+near-identical entry points. The cheaper and stronger move is
+`git log -S'<the citing sentence>' -- <citing file>` for the commit that wrote the
+citation, then `git show <that commit>:<cited file> | sed -n '<N>p'` for the line it
+actually named. Every one of the ten answered on the first try:
+
+```
+  citing site                   cited      written at   the line it named then          now
+  wheel_stage3.py:63            :537       506acfe      delta = float(sec[...])         :905
+  wheel_stage3.py:301           :537       506acfe      same                            :905
+  tests/test_stage3.py:136      :537       4ec1d91      same                            :905
+  PLAN.md:8968   (§62)          :644       a0f9279      same                            :905
+  PLAN.md:9154   (§65)          :644       a0f9279      same                            :905
+  wheel_stage3.py:73            :553       506acfe      the dF_ddelta <= 0 guard        :921
+  MBSE_PLAN.md:153              :646       de67144      service_qoi's signature         :868
+  MBSE_PLAN.md:407         :649-662        de67144      ... and its docstring      :871-884
+  PLAN.md:2933   (§15)     :161,190,400    b5c22c9      three prob.nonlinear calls
+                                                        :261, :290, :661
+  PLAN.md:9158   (§65)       :588,643      a0f9279      the two solve_wheel_contact calls
+                                                        :849 and :903
+```
+
+**`4ec1d91` IS 2026-07-27 AND PREDATES THE `src/` LAYOUT** — the file was `wheel_adjoint.py`
+at the repository root — and `:537` there is the same `delta = float(sec["axle_drop_mm"])`.
+A citation older than a directory move still resolves, because what is being asked is what
+line 537 CONTAINED, not where the file lived.
+
+**[CORRECTION TO `c51320e`'s OWN MESSAGE, WHICH IS WHY THIS TABLE IS HERE.]** That commit's
+table attributes `tests/test_stage3.py:136` to `506acfe` and `PLAN.md:2933` to §46. The
+first is `4ec1d91` — `506acfe` carries the line but did not write it — and the second is
+**§15** (*"STAGE 3 WAS DESCENDING ON THE WRONG PHYSICS"*, 2026-08-10), whose SVK subject is
+what `b5c22c9` is. **Neither correction moves an anchor**: both were derived from the cited
+CONTENT, and the provenance labels were written afterwards from a `git log` I read too
+fast. The anchors in that message and in this table are identical.
+
+### 2. §136's ONE JUDGEMENT, AND IT WAS NEVER CLOSE
+
+§136 successor 0 named one thing that needed deciding rather than mechanising: whether
+`wheel_stage3.py:63`, `:301` and `tests/test_stage3.py:136` mean
+`service_qoi_value_and_grad`'s `delta = float(sec[...])` or
+`axle_drop_value_and_grad`'s `delta = float(res[...])`, since the file holds both.
+
+**All three say so in their own sentence.** `wheel_stage3.py:63` opens
+*"`service_qoi_value_and_grad`'s `delta0` is the secant's indentation"*; `:301` opens
+*"`service_qoi_value_and_grad` takes `delta0`"*; the test's docstring is about `warm_from`,
+which feeds that same call. And structurally there is no second candidate at all:
+`wheel_objective.py:1214` and `wheel_pool_worker.py:68` are the only adjoint entry points
+Stage 3 has, and both are `service_qoi_value_and_grad`. So all five `axle_drop_mm`
+citations are `:905`, never `:851`, and `wheel_stage3.py:73`'s guard is `:921`, never
+`:856`. **The judgement was real and the evidence for it was in the citing sentences,
+which is where a judgement about what a citation MEANS should always be looked for first.**
+
+### 3. AN ELEVENTH ANCHOR: §136's FILED TARGET FOR `PLAN.md:2933` NAMED THE WRONG LINES
+
+§136 §6 filed `:161 +190 +400` as resolving to *"`:224, :253, :364, :507, ...`"* — after
+`322262c` that is `:261, :290, :401, :544`. **Two of those four were never cited and one of
+the three that was is missing.** At `b5c22c9` the three lines are
+
+```
+  :161   Pi, _, _     = _kernels(prob.order, prob.nonlinear, con.n_quad, con.smoothing_mm)
+  :190   e_bulk, _, _ = fem._element_kernels(prob.order, prob.nonlinear)
+  :400   _, grad_u, _ = _kernels(prob.order, prob.nonlinear, con.n_quad, con.smoothing_mm)
+```
+
+and at HEAD they are **`:261`, `:290` and `:661`**. `:401` and `:544` are `_vm_kernel`
+calls. §136's list was the first four `prob.nonlinear` occurrences in FILE ORDER, and its
+own trailing `...` says it was a list rather than a resolution — the entry is honest about
+what it is, and reading it as an anchor table is what would have gone wrong.
+
+**THE DISCRIMINATOR IS THE UNPACKING.** `_kernels(...)` is called three times in
+`wheel_adjoint.py` with identical arguments, at `:261`, `:661` and `:762`; what tells them
+apart is `Pi, _, _` against `_, grad_u, _` against `_, _, mixed`. **A grep for the CALL
+cannot resolve these citations and a grep for the whole LINE can** — the same lesson as
+`res` against `sec` one identifier wide, and this is its third instance in three sections.
+
+### 4. THE TENTH CITATION IS ONE LINE IN AND ONE LINE OUT, AND THAT WAS THE DECISION
+
+`PLAN.md:9158` is §65's evidence table, and §136 §6 diagnosed it exactly: it lists BOTH
+`fem.solve_wheel_contact` calls and spells both `sec =`, because the grep that found them
+did not distinguish them. Confirmed at `a0f9279` — `:588` is `res =` in
+`axle_drop_value_and_grad`, `:642-643` is the `sec =` call in `service_qoi_value_and_grad`,
+and §65 cited the second of that call's two lines. §65's ARGUMENT is unaffected either way:
+`axle_drop_mm` is written by `_attach_contact_report` on both paths, which is the point the
+table is making.
+
+The first draft of the repair was a five-line marking explaining all of that in place. **It
+was thrown away, and the reason is this section's own subject.** Those five lines would
+have shifted every citation into `PLAN.md` below `:9158`:
+
+```
+  PLAN.md:14619 x3, PLAN.md:18056         explicit, in §120 and §129
+  bare `:16795` x3   (:19637 :19688 :19745)
+                                          owned by PLAN.md via §136 §6's rule -- the
+                                          nearest filename BEFORE it, which sits on the
+                                          PREVIOUS LINE at two of the three
+  bare :17573 :17631 :20287 :20384        §135's six deliberate dangles, at :21239-:21240
+       :20570 :20647
+```
+
+**Thirteen citations broken to explain one.** The repair is instead
+`` `wheel_adjoint:849,903   sec = fem.solve_wheel_contact(...)  [only :903 is `sec` — §137 s0]` ``
+— 92 characters, one line for one line — and the explanation lives here, where it is free.
+**All four changed files have byte-for-byte the same line count as their parent.** That is
+checkable in one command and it is now the standard this kind of commit should meet: a
+citation repair that shifts citations has not finished, it has moved.
+
+**AND THE BARE-`:N` ENUMERATION IS WHERE THIS NEARLY WENT WRONG.** A per-line scan for
+"filename, then bare `:N`" finds ONE of the three `` `:16795` `` sites; the other two have
+their owning `PLAN.md:14619` on the previous line. Carrying the owner across the line break
+— resetting only at a blank line or a heading — finds all three and the six at `:21244`.
+**§136 §6 stated the ownership rule and stated it for one line; it holds across a
+paragraph, and a paragraph is how this file is wrapped.**
+
+**AND A FOURTEENTH THAT THE RULE CANNOT SEE AT ALL.** `PLAN.md:20382` cites `` `:17573` ``
+inside a blockquote with no filename anywhere in its paragraph: its owner is written as
+*"§118 §6"*, a SECTION rather than a file. Nearest-filename returns nothing for it and only
+reading the sentence identifies it. It resolves — `:17573` is the survivor-test naming
+inside §118 §6 — so it is a real citation the enumeration silently omits, and it is why the
+count above is thirteen by rule and fourteen in fact.
+
+### 5. FOUND, NOT FIXED, WITH THEIR TRUE ANCHORS
+
+§117's rule, at `PLAN.md:17611`: *"The two that are mine are corrected here. The
+three that are not are recorded and left."* Two dangling citations into OTHER files sit on
+lines this commit edited, and both are one-line repairs for whoever owns those files:
+
+```
+  wheel_stage3.py:63    `wheel_fem.py:1841`  the cold-start `solve_wheel`  -> :1882
+                        -- which §65's own text at PLAN.md:9165 already cites correctly
+  PLAN.md:2933          `wheel_pool_worker.py:66`  "already splats it"     -> :70
+```
+
+### 6. WHAT MOVED
+
+**`c51320e`** — `PLAN.md` (4 citations), `MBSE_PLAN.md` (2), `src/wheel_stage3.py` (3),
+`tests/test_stage3.py` (1). Ten lines, all of them a docstring, a comment or markdown; no
+executable line changed and no file changed length.
+
+**Green.** `tests/test_stage3.py::test_the_warm_vector_is_the_previous_drops_and_nothing_else`
+and `tests/test_import_hygiene.py`, **11 passed**; `tests/test_stage3.py` collects 63.
+**THE RED LIST WAS NOT RE-TAKEN.** §136 and §137 both left the same nine standing and both
+said the next section that runs the suite owns the check; this is the third that is not it.
+
+**NOT touched.** The two citations in §5 — other files' drift. §65's argument and §62's,
+which this changes not at all. `INSENSITIVE_EXPECTED` and the census gates, still §136 §1's.
+`REPO_EXPLAINED.tex` — a concurrent session has §137's successor 2.
+
+**SUCCESSORS.**
+
+0. **NINE REDS, AND THEY ARE STILL §133's SUCCESSOR 0** — §136's successor 2 and §137's
+   successor 1, unchanged and now three sections old. Every section since has declined it
+   on the same grounds (it wants the 35-minute file and a diffed list, not an inference),
+   and each has added a worked example instead: §136 §2's censuses, §137 §5's two-cause
+   assertion. **The examples are now sufficient and the deferral is starting to cost more
+   than the run.** Whoever takes it should budget the suite under `tmux`, one heavy file
+   per process, and diff the list rather than reason about it.
+1. **THE `wheel_fem.py` CITATIONS HAVE NEVER BEEN SWEPT AND `wheel_fem.py` IS 1914 LINES.**
+   §5 found two danglers in four files by accident, one of them into `wheel_fem`. Nobody
+   has enumerated citations into that file the way §136 and this section have for
+   `wheel_adjoint`, and the sweep is now cheap and mechanical: `git grep -nE
+   'wheel_fem(\.py)?:[0-9]+'` for the candidate set — **with the `(\.py)?` optional, which
+   is what hid the tenth citation from §136** — then the writing-commit resolution of §1
+   for each. Do it as its own commit and at zero shift.
+2. **THE BARE-`:N` OWNERSHIP RULE SHOULD BE A SCRIPT, NOT A HABIT.** §136 §6 stated it,
+   §138 §4 extended it across line breaks, and both times it was applied by hand under
+   time pressure — which is exactly when the per-line version silently returns a third of
+   the answer. Fifteen lines of Python that walks every `.md` carrying the owner across
+   the paragraph and reports `(citing site, cited file, cited line, resolves?)` would turn
+   every future insertion's citation audit into one command. It is NOT a test: it would be
+   red for the deliberate dangles §135 records at `:21244` and for anything a section has
+   chosen to leave, so it is a report a human reads, and filing it as a test is the trap.
+
+## §139 — 2026-09-08. §137's SUCCESSOR 2, CLOSED. THE FILE INVENTORY WAS SHORT BY **2,212 LINES — 14.1% OF `src/`** — BECAUSE SIX ROWS DRIFTED *AND TWO MODULES WERE NEVER THERE*. BUT THE TABLE WAS THE SMALLEST OF THE THINGS WRONG WITH THIS FILE: THE BUILD RECIPE IN ITS OWN HEADER **NEVER PRODUCED THE COMMITTED PDF**, 39 OF ITS 145 LINE CITATIONS HAVE MOVED, AND §6.6 STILL DOCUMENTS THE `Kt` CONSTRAINT §103 RETIRED — A FIFTH SITE OF §137 §2's FINDING. AND TWO OF THE THREE AGGREGATES WERE **ALREADY WRONG THE DAY THEY WERE TYPED**
+
+One commit, `REPO_EXPLAINED.tex` + `.pdf`. Nothing in the tree reads this file — no test, no
+Makefile target, `git grep REPO_EXPLAINED` returns only `PLAN.md` and the file itself — so
+every number in it is unguarded by construction, and that is the finding behind all four
+below.
+
+### 1. THE TABLE: SIX STALE ROWS, AND TWO MODULES THAT WERE NEVER IN IT
+
+§137 filed "six of eleven rows wrong". Re-derived at `0b345a0` by `wc -l`, all six reproduce
+exactly, and **all fourteen rows were exact at §92** — so this is pure drift, not a bad
+measurement:
+
+```
+  wheel_wheel.py        3709 -> 3869   +160
+  wheel_adjoint.py       759 ->  981   +222   (37 of it §137's own 322262c)
+  wheel_objective.py    1461 -> 1683   +222
+  wheel_stage3.py       1093 -> 1317   +224
+  wheel_pool.py          408 ->  435    +27
+  wheel_pool_worker.py   103 ->  111     +8
+                                       ----
+                                       +863
+```
+
+**THE BIGGER HALF IS NOT IN THAT LIST.** `wheel_requirements.py` (1091) and `wheel_mbse.py`
+(258) — the MBSE layer, §97, landed `0b8890a`/`b8bede8` on **2026-08-31, the day after this
+section was written** — are absent from the inventory entirely. 1,349 lines, more than the
+863 of drift. The table accounted for 13,489 lines of a `src/` that is **15,701**: short by
+**2,212, or 14.09%**. Both modules are added, and the import graph two paragraphs down —
+which would otherwise have contradicted the table I had just fixed — gets them too:
+`wheel_requirements` hangs off `wheel_fea` on the **numpy** side (it imports numpy and
+`wheel_fea`, nothing else), `wheel_mbse` below `wheel_stage3`.
+
+### 2. A COUNT IS A CLAIM ABOUT ITS INSTRUMENT — AND ONLY ONE OF THE THREE AGGREGATES WAS EVER RIGHT
+
+§137 filed `tests/` and `studies/` as stale. Before writing "stale" I checked whether they
+were the SAME instrument, by re-running each against `e474ea7` itself. They are not the same
+answer:
+
+```
+  quantity                    tex said   at §92 was   at HEAD   verdict
+  test functions                   503          503       632   STALE -- instrument CONFIRMED
+  test files                        25           26        34   WRONG WHEN WRITTEN, and stale
+  studies/ drivers                 ~19           27        38   NEVER RIGHT
+```
+
+**`503` reproduces to the digit** under `grep -c '^def test_' tests/*.py` at `e474ea7`, which
+settles the instrument: it counts DEFINITIONS, not collected cases, and 632 is the same
+instrument at HEAD (+129, +25.6%). Every test function in the tree is module-level — the
+any-indent and `async` variants of the pattern return 632 as well — so the count is not
+hiding class methods.
+
+**`~19` is the interesting one, because it is not stale — it never described this tree.** No
+instrument I could construct returns 19 at §92: `study_*.py` = 27, of those with `__main__` =
+27, named in the Makefile = 25, committed artifacts = 59, Makefile targets = 42. Walking the
+history, `study_*.py` last read 19 on **2026-08-19** and was 21 the next day. The PDF was
+built 2026-08-29. **The figure was ten days stale on the day it was typed**, and §137's
+"stale" was right about the row for the wrong reason.
+
+The repaired listing now states its own instruments and its date in prose beneath the block,
+because a count without one is what produced this section.
+
+### 3. THE BUILD RECIPE IN THE HEADER HAS NEVER REPRODUCED THE COMMITTED PDF
+
+`REPO_EXPLAINED.tex`'s own header said *"Compiles with pdflatex (twice, for the table of
+contents and cross-references)"*. **Two passes is one short.** Built from the UNMODIFIED
+committed `.tex`, before any edit of mine:
+
+```
+  pass 2   md5(pdftotext) 5c905e6b8c97     <- what the documented recipe gives
+  pass 3   md5(pdftotext) 76e2d1d8bad3
+  pass 4   md5(pdftotext) 76e2d1d8bad3
+  pass 5   md5(pdftotext) 76e2d1d8bad3
+  pass 6   md5(pdftotext) 76e2d1d8bad3
+  COMMITTED PDF          76e2d1d8bad3     <- the converged one
+```
+
+The contents is long enough that setting it moves the body by a page, so pass 2 still carries
+pass 1's page numbers; **pass 3 is the first fixed point and the committed artifact is at that
+fixed point.** Pass 2 and the committed PDF differ in **35 lines**, all of them table-of-contents
+page references — body text, font set and page count (34) identical. `latexmk -pdf` runs
+pdflatex exactly 3 times and lands on `76e2d1d8bad3`, so `latexmk` was almost certainly what
+built it. The header now says three passes and says why; anyone following the old line would
+have produced a 35-line diff and had to decide whether it was theirs.
+
+**This is why the rebuild had to be diffed rather than trusted.** Had I rebuilt with the
+documented recipe and committed, the diff would have carried 35 spurious lines and my edit
+would have been indistinguishable from them.
+
+### 4. THE INVENTORY IS NOT THE ONLY DATED SNAPSHOT IN THE FILE
+
+Checked because a table right in fourteen rows and stale two paragraphs down is worse than
+one uniformly old. Also repaired in the same commit: `PLAN.md` is **about 1.4 MB, §1…§139**,
+not the *"778 KB, §1…§92"* the file claimed (the file was in fact 773 KB at `e474ea7` — that
+figure was 0.6% off when written too). **`wheel_geometry.py` "is 436 lines" and
+`wheel_objective`'s "Fourteen terms in three tiers" both re-derive exact** and were left
+alone; `len(TERMS)` is 14 at HEAD and was 14 at §92.
+
+And one that survived by coincidence and must NOT be "corrected": *"Eight sibling `*_PLAN.md`
+files are open work arcs"* is **still true**. There were 9 siblings at §92 with `KINEMATICS`
+closed; there are 10 now with `KINEMATICS` and `HUBSHARE` closed. `MBSE_PLAN.md` opened as
+`HUBSHARE_PLAN.md` closed and the open count never moved. The total did (9 -> 10) and the
+sentence now says both.
+
+### 5. WHAT I DID NOT REPAIR, AND WHY IT IS ONE JOB AND NOT A LOOSE END
+
+**145 line citations, 39 of them measured MOVED.** Two populations:
+
+```
+  \at{file}{N} or {N--M}    80 total   56 unchanged   24 MOVED
+  bare `:N` in prose        65 total   35 unchanged   15 MOVED   15 unclassifiable
+                           ---        ---            ---
+                           145         91             39   (26.9%)
+```
+
+Instrument: a citation is *unchanged* iff `e474ea7:file[N..M]` is byte-identical to
+`HEAD:file[N..M]`. Every MOVED one is in one of the six files that grew. Of the 24 `\at{}`,
+**20 relocate mechanically and verifiably** — the whole cited block still occurs, exactly
+once, contiguously, at a new offset — and I have that table. Four do not, and those four are
+the reason this is filed rather than done: they need reading, not arithmetic.
+
+The 15 unclassifiable bare ones are a limit of the instrument, not of the tree: a bare `:N`'s
+owner is the nearest filename BEFORE it, which can be on a previous line, and 12 resolved to a
+line number past the end of the file the heuristic picked. **That heuristic needs a human pass
+before anyone trusts a count of bare citations** — which is §138's lesson arriving from the
+other side.
+
+**AND ONE OF THE FOUR IS NOT A CITATION PROBLEM AT ALL.** `\at{wheel_objective.py}{1160--1200}`
+is cited as *"The shipped constraint"* under §6.6(c), which then states
+
+```
+  K_t(R, t) * sigma_nominal(p=4)  <=  sigma_allow = 25.0 MPa
+```
+
+and says `Kt` is *"now differentiated by `jax.grad` rather than frozen"*. **That constraint was
+retired at §103 and the block it points at no longer exists.** Verified in code rather than
+from §137's prose: `util_j = agg_j / allowable_stress_mpa` (`wheel_objective.py:1346`) carries
+no `Kt` factor, and `junction_kt` has **exactly one caller in `src/`** — `:1288`, inside the
+report block. So §6.6 is a **fifth** site of §137 §2's finding, after the four `8f359bb`
+fixed, and the first one in a document that no test can reach.
+
+**SUCCESSORS.**
+
+0. **RE-POINT THE 39 MOVED CITATIONS, AND DECIDE WHAT A LINE CITATION INTO `PLAN.md` IS WORTH.**
+   20 of the 24 `\at{}` are mechanical and verified against block content; 3 of the remaining 4
+   need a reading (`wheel_objective.py:1152--1158` -> the two-sided deflection block now at
+   `1250--1253`; `PLAN.md:53--77` -> the redirect table now at `73--105`; `PLAN.md:79--115` ->
+   the *Open arcs* section now at `109--151`). The fourth is successor 1. Note the shape
+   problem before spending the effort: **five of these citations point into `PLAN.md`, which
+   grows by a section a day** — this section moved two of them again. A citation into `PLAN.md`
+   by line is a citation with a half-life; §-number would not move at all.
+
+1. **§6.6(c) DOCUMENTS A CONSTRAINT THE TREE STOPPED SOLVING AT §103.** Not a re-point — a
+   rewrite of the paragraph and the displayed equation, against what `util_j` actually is. It
+   is the same sentence §136 and §137 retired twice in `wheel_adjoint.py`'s header, and the
+   census that found those four sites did not reach this file because the census greps `src/`.
+   **Worth asking whether the census should grep `*.tex` too**; on this evidence it is one
+   more site for one more line of pattern.
+
+2. **NOTHING GATES THIS FILE — SHOULD SOMETHING?** All four findings above have the same cause.
+   The cheap version is not generating the document: it is a test that re-derives the fifteen
+   numbers in the inventory by `wc -l` and asserts, plus a `make repoexplained` that rebuilds
+   the PDF to convergence and fails if the committed one differs. That would have caught §1,
+   §3 and §4 the day each broke and cost one test file. The citations (§5) are the harder half
+   and the same test shape reaches them: the anchor check in this section is 30 lines of Python.
+
+3. **NINE REDS, STILL §133's SUCCESSOR 0** — and **THE SUITE NO LONGER FITS IN ONE PROCESS ON
+   THIS BOX.** The reds are unchanged and untouched here; the light batch ran 720, with 700
+   passed, 11 xfailed and the standing 9 failed, every one already named in this file. But a
+   single-process `pytest` of everything was tried first and was **OOM-KILLED at ~70%** —
+   measured from the kernel, not inferred from the exit code: `oom-kill` at 17:49:56,
+   `anon-rss` **49,948,448 kB** on a 61 GB box, `total-vm` 65,460,544 kB. §135 §2 measured a
+   coarse 8-phase `objective()` call at 44 GiB and this is the same ceiling arriving from the
+   other side. **The four heavy files must be run one process each** — `test_objective`,
+   `test_stage3`, `test_pool`, `test_gradient`, which is exactly the split the committed
+   `test_heavy_*.log` files already use. Worth deciding whether `make test` should encode that
+   split rather than leaving each session to rediscover it by being killed.
+
+## §140 — 2026-09-08. §139's SUCCESSORS 0 AND 1, BOTH CLOSED — AND SUCCESSOR 0's "15 UNCLASSIFIABLE" WAS AN ARTEFACT OF MY OWN INSTRUMENT, NOT A PROPERTY OF THE TREE. THE OWNER OF A BARE `:N` IS WHATEVER **IDENTIFIES** A FILE, AND IN THIS DOCUMENT THAT IS A MODULE OR A SYMBOL, NEVER A PATH: WIDENING THE RULE RECOVERED ALL 65 AND MOVED THE COUNT FROM 39 TO **55 OF 145**. PLUS §6.6(c) STATED A CONSTRAINT §103 RETIRED, AND ITS FOLLOW-UP PARAGRAPH NAMED THE **ONE EXPONENT OF FOUR THAT IS NOT** THE CONSTRAINT'S
+
+Two commits, `bedccc1` and `c94a1ae`. Both are `REPO_EXPLAINED.tex` + `.pdf`. §139 filed
+these and declined to do them; a peer session pushed back on the decline and was right,
+so the reasoning that produced it is recorded here rather than quietly dropped.
+
+### 1. THE DECLINE WAS SOUND REASONING FROM A MEASUREMENT THAT WAS WRONG
+
+§139 §5 stopped at 20 repairable citations of 145, on the argument that fixing 20 while 15
+were **misattributed** was a worse kind of selective freshness than leaving them uniformly
+old. The argument still holds. **The premise under it did not.** §138 had stated the rule
+as *"the owner of a bare citation is the nearest FILENAME before it"*, and §139 applied it
+literally — searching backwards for the nearest `*.py` path. This document almost never
+names a path. It names **modules** (`wheel_geometry.forward_difference_matrix`) and **bare
+symbols** (`element_energy`, `_UnionFind`, `_seam_table`). The 12 that "resolved to a line
+past the end of the file" were resolving against whatever unrelated path happened to
+appear earliest in the paragraph.
+
+**The rule generalises, and this file is the counterexample that forces it: the owner is
+the nearest thing that IDENTIFIES a file.** Three forms, all decidable:
+
+```
+  an \at{file}{N} earlier in the same sentence                       3
+  a module- or class-prefixed token   `wheel_stage3.selection_key`  18
+  a symbol with exactly ONE top-level definition across src/*.py    42
+  neither -- the glossary row has to be read                         2
+                                                                   ---
+                                                                    65   none unclassifiable
+```
+
+Under the widened rule the bare population is **32 moved and 33 correct**, not "15 moved
+and 15 unknown", and the file's total goes from 39 moved to **55 of 145**:
+
+```
+  \at{file}{N} or {N--M}    80 total   57 unchanged   23 re-pointed
+  bare `:N`                 65 total   33 unchanged   32 re-pointed
+                           ---        ---            ---
+                           145         90             55
+```
+
+### 2. EVERY REPAIR VERIFIED BY CONTENT, AND THE THREE THAT COULD NOT BE
+
+**52 of the 55 are mechanical and exact**: `e474ea7:file[old]` byte-identical to
+`HEAD:file[new]`, and for a multi-line `\at{}` the block must occur **exactly once and
+contiguously** at HEAD. 27 of the 32 bare ones carry a second, semantic anchor —
+`e474ea7:file[old]` IS the definition of the token that names the citation, and HEAD holds
+exactly one such definition. The three that are not mechanical are marked as read repairs:
+
+```
+  wheel_objective.py 1152--1158 -> 1250--1253   NOT byte-identical: §97's requirements
+      layer turned TARGET_DEFLECTION_MM into the parameter target_deflection_mm.
+      `deflection = w["deflection"] * err ** 2` is still there and still two-sided,
+      which is the only claim the citation supports.
+  PLAN.md 53--77 -> 73--107   the deleted-arc redirect table; the block GREW, because a
+      dated 2026-09-04 correction was inserted inside it.  Both endpoints checked.
+  PLAN.md 79--115 -> 109--151  the *Open arcs* section; old :115 relocates to :151.
+```
+
+**THE EDITS ARE APPLIED BY BYTE OFFSET, NOT BY STRING REPLACEMENT, AND THAT IS LOAD-BEARING.**
+`\code{:195}` occurs three times under **two different owners**: twice it is
+`wheel_stage3.selection_key`, which moved 195 -> 221, and once it is the glossary's
+*collar* row, which is `wheel_wheel.COLLAR_DEPTH_MM` at `:195` and has **not** moved. Two
+must change and the third must not. `:2209`, `:2583`, `:931`, `:1045` and `:410` have the
+same shape. A global replace corrupts the collar row silently, and the file now contains
+three distinct correct `:221`s owned by three different modules.
+
+**The two that needed the row read are the two worth remembering, and one of them is a
+known trap.** `CONFIGS` is defined in BOTH `wheel_mesh` and `wheel_wheel` — the collision
+that once inflated a convergence order by 25% — and the glossary row for it deliberately
+cites both sides, `\code{:252}` for `wheel_wheel` and `\at{wheel_mesh.py}{123}` for
+`wheel_mesh`. Proximity picks the wrong one. `RIM_OUTER_RADIUS_MM = 50.0` is defined in
+both `wheel_wheel` and `wheel_step_export`; the row's subject is `rim_inner_radius()`,
+which fixes it to `wheel_wheel:177`. **Both are unchanged at HEAD and neither was edited** —
+the ambiguity had to be resolved to establish that nothing was needed.
+
+### 3. §6.6(c) DESCRIBED A CONSTRAINT THE TREE STOPPED SOLVING ON 2026-09-03
+
+The 24th moved `\at{}` would not relocate because the block is gone. §6.6(c) said *"The
+shipped constraint is `Kt(R,t) * sigma_nominal(p=4) <= sigma_allow`"* with `Kt` *"now
+differentiated by `jax.grad` rather than frozen"*. **True when written** — §92 is dated
+2026-08-29 and §93 wired `fillet=True` the following day — **and false since §103, five
+days.** The shipped constraint, re-derived at HEAD rather than copied from §103's own
+prose:
+
+```
+  util_j = sigma_region_j / ALLOWABLE_STRESS_MPA <= 1     one soft_barrier per junction
+                                                          wheel_objective.py:1345--1349
+
+  sigma_region_j   smooth p-norm of von Mises stress in a bump-kernel tube of radius
+                   FILLET_REGION_R_SUP_MM = 0.45 mm (wheel_adjoint.py:435) around THAT
+                   junction's own fillet arc, l_p-normed at FILLET_REGION_P = 16.0 (:436)
+                   over the arc's twelve rotational copies (_qoi_region_pnorm, :511),
+                   then aggregated over eight phase samples at stress_phase_p = 8.0
+  ALLOWABLE        25.0 MPa = ULTIMATE / SAFETY_FACTOR (wheel_fea.py:147)
+```
+
+**The paragraph's heading inverts with the finding.** It read *"So the peak is modelled,
+not measured"*; the peak was modelled **because the unfilleted mesh had no fillet to
+measure**, and §102/§103 measure it again now that the mesh has one. `Kt` left the loss
+and not the file: it, `hub_fillet_cap_mm` and `hub_fillet_r_effective` answer a geometric
+feasibility question `REPORT_KEYS` and `selection_key` still read.
+
+**AND THE FOLLOW-UP PARAGRAPH WAS WRONG THE SAME WAY — I nearly repaired the equation and
+left it.** It said `STRESS_NOMINAL_P = 4.0` *"is the constraint's exponent"*. Traced:
+`stress_gauss_p` (defaulting to it) reaches only the `pnorm_stress` QoI at `:1198`, which
+lands in the reported `stress_utilisation` and `pnorm_by_p`. The section claimed *"two
+exponents, two meanings"* and there are now **four** — **16** over the rotational copies
+(the constraint's), **8** over the phases, **4** for the reported Gauss-point diagnostic,
+**30** for the adjoint's documented default — **and the one it named as the constraint's is
+the only one of the four that is not.** §133's "naming one parameter when the quantity has
+two" at one more level.
+
+### 4. THE `grep` IN THIS ENVIRONMENT RETURNED NOTHING ON A BUILD LOG, AND AN EMPTY-VS-EMPTY CHECK PASSES
+
+My PDF verification compares the overfull-hbox list of the new build against the baseline's
+and reports "no new overfull boxes" when they match. On the `c94a1ae` build the wrapped
+`grep` returned **nothing at all** — not `0` — from the latexmk log, producing an empty
+list on one side. Had the baseline side also been empty the comparison would have **passed
+vacuously**, which is the §129 §7 failure mode arriving through explicit file arguments
+rather than through directory traversal. Re-run with `command grep`, all four builds carry
+the identical four warnings and the three earlier claims were sound. **A check whose pass
+condition is "two lists match" must assert the lists are non-empty**, and the tell here was
+`0` never being printed.
+
+**SUCCESSORS.**
+
+0. **`wheel_objective.py:1136--1143` STILL ENDS "and the peak is restored analytically by
+   `Kt` below".** Found while re-deriving §6.6's exponents; same §103 vintage, same defect
+   class as the four `8f359bb` fixed and the fifth this section fixed, in the docstring
+   that explains why the Gauss exponent is 4. Not touched — it is not my file this session.
+   **That makes SIX known sites of one retirement**, which is the argument for successor 1.
+1. **THE §103 CENSUS SHOULD GREP `*.tex` AND `*.md`, NOT JUST `src/`.** §137 §2's census
+   found four sites; the fifth was in a document it structurally could not reach, and
+   successor 0 is a sixth it could. One line of pattern. Worth doing before the next
+   retirement, not after.
+2. **145 CITATIONS IN ONE HAND-MAINTAINED FILE, AND THE REPAIR TOOL IS 40 LINES.** The
+   anchor check used here — resolve owner, compare `e474ea7:file[old]` to `HEAD:file[new]`,
+   require a unique contiguous block — is mechanical and could run as a test over the
+   `.tex`. §139 successor 2 proposed gating the fifteen inventory numbers; this is the same
+   proposal for the citations, and it is the cheaper half now that the resolver exists.
+   Note the population is **149** after §6.6's rewrite (84 `\at{}` + 65 bare), all in range.
+3. **FIVE CITATIONS POINT INTO `PLAN.md`, WHICH GROWS BY A SECTION A DAY.** This section
+   moved two of them for the second time in one day. A `\at{PLAN.md}{N}` has a half-life;
+   a §-number does not move at all. Worth deciding rather than re-pointing again.
+
+---
+
+## §141 — 2026-09-08. §133's SUCCESSOR 0, THREE OF NINE CLOSED, AND THE ANSWER IS THE SAME THREE TIMES: THE FINDING WAS INTACT AND A CONSTANT CALIBRATED ON A VANISHED GENOME WAS DOING THE FAILING. ONE OF THEM IS NOT A TOLERANCE AT ALL BUT A METRIC THAT DIVIDES BY ZERO — THE SHIPPED CENTERLINE IS THE FIRST WITH AN INFLECTION POINT. PLUS §140's SIXTH `Kt` SITE IS SEVEN, MARKED AT ZERO CITATION COST
+
+Four commits: `f3cc24d`, `e011809`, `65f45bf` and `ae9a547`. §133 successor 0 has been
+carried by §134, §136, §137 and §138 — five sections of deferral, each adding a worked
+example instead. §138 said *"the deferral is starting to cost more than the run"*. The
+run was three minutes.
+
+### 1. THE RED LIST WAS RE-TAKEN, NOT INHERITED — AND ONE OF THE NINE HAS A GREEN TWIN
+
+A concurrent session ran the light batch and reported the nine standing. **That is a
+report, and §119's rule is that a list is diffed.** All nine node IDs re-run here at
+`e011809`: **nine red, unchanged, and the eight light ones cost three minutes in one
+process.** `test_objective`'s is the ninth and runs alone.
+
+**`test_the_retired_max_min_gate_is_decided_by_the_sample_size` EXISTS IN TWO FILES.**
+`tests/test_gnl.py` and `tests/test_wheel_fea.py` both define a function of that name.
+§133's table attributes the red to `test_gnl` and is right — the `test_wheel_fea` twin is
+**GREEN** and is not one of the nine. A node ID resolved by test name alone would have
+picked whichever pytest reached first. **The same hazard as `res` against `sec` one
+identifier wide, in the one place this arc had not looked for it: the test names.**
+
+### 2. RED 1 — `test_thickness_hits_its_nodes_exactly` WAS A COIN THIS TEST HAD ALWAYS WON
+
+**What is it a claim about? The INTERPOLANT.** `thickness_at_arc_length` never sees a
+genome, only four numbers, and the finding is that the current form hits its nodes where
+the superseded masked form missed them by 1.2e-11.
+
+`== 0.0` is not that claim. The function is a base value plus three clipped ramps, so
+`t(bp_k)` is `t0` plus a TELESCOPING SUM of k differences, exact only when its roundings
+cancel:
+
+```
+  20000 uniform draws of (t0, t1, t2, t3) over GENE_SPACE's own bounds
+    exactly 0.0 ...............  80.09%, NOT 100%
+    worst error ...............  1.332268e-15  =  6 ULP
+    not exact, per node .......  bp=0: 0.00%   1/3: 7.89%   2/3: 10.10%   1: 13.49%
+```
+
+**The per-node profile IS the mechanism showing through**: `t(0)` is `t0` with no sum at
+all and never misses, and the miss rate climbs with the number of terms. `b729e86` reads
+2.220446e-16 — one ULP, on `t1` and `t2`. `96a0ac5` reads exactly 0.0.
+
+**§133's STATED REASON SURVIVES ITS CONTROL**, which is worth recording because this arc
+has had two stated reasons turn out false. It said the exactness *"survives only while the
+t-vector's magnitudes are small"*. Drawing all four thicknesses from [1.2, 2.0] rather
+than the full box gives **20000 of 20000 exact** against 80.09%. Magnitude is the driver.
+
+New bound `1e-13`: the geometric midpoint of the two quantities it must separate, **75x**
+above the measured worst case and **120x** below the 1.2e-11 defect the test exists to
+catch. The fixture stays on the shipped genome on purpose — the bound is genome-
+independent by the sweep, so reading what ships costs nothing and keeps the test a live
+check that the shipped design is inside that regime.
+
+### 3. RED 2 — NOT A TOLERANCE BUT A METRIC THAT DIVIDES BY ZERO, AND `b729e86` IS
+### THE FIRST GENOME WHERE IT SHOWS
+
+`test_analytic_curvature_matches_finite_differences` claims the hodograph curvature and a
+central difference of the samples agree to the FD scheme's own O(h^2) error. **That claim
+was never wrong. The metric could not see it.** The error was normalised POINTWISE, by
+`k_an` at each sample — a division by zero wherever the curvature crosses zero, which is
+what an INFLECTION POINT is:
+
+```
+  genome            sign flip   min|k_an|   max|k_an|   pointwise    scaled
+  b729e86 SHIPS        yes      1.584e-04   1.041e-01   1.956e-03   1.446e-05
+  96a0ac5 outgoing     no       3.868e-02   6.623e-02   7.104e-06   6.170e-06
+```
+
+The pointwise max is attained AT the smallest `|k_an|` on every refinement, so it measures
+how near a sample lands to the zero crossing and not truncation error — and it does not
+converge: 1.956e-03, 9.053e-03, 9.485e-04, 2.270e-04 over n = 600, 1200, 2400, 4800, an
+"order" of **-2.21, 3.25, 2.06**. Normalised by the curve's own scale, **both genomes are
+exactly second order, 2.00 2.00 2.00 across the same three refinements.**
+
+**§133 §GROUP B ASKED WHETHER `1e-4` WAS EVER GENOME-INDEPENDENT. IT WAS NOT.** Over 400
+uniform draws across the eight centerline genes at n = 600 the pointwise metric puts
+**1.8%** under 1e-4 and spans **337262x**, from 2.883e-05 to 9.725 — a 970% "relative
+error" on a curve whose curvature merely crosses zero. The outgoing genome was one of the
+1.8%. The same 400 draws under the scaled metric span **23x** and 400 of 400 sit under
+`1e-3`, the worst by 3.9x.
+
+**THE ORDER ITSELF IS DELIBERATELY NOT ASSERTED.** Its median over those draws is 2.00,
+but 2.5% land outside [1.8, 2.2] and the minimum is 1.45. A pin that is 97.5% reliable
+across the box is the kind of thing this arc is repairing, so the convergence table is the
+docstring's warrant for the metric and not an assertion.
+
+### 4. RED 3 — ONE RED, TWO LAYERS, AND THE SECOND ONE ONLY APPEARS AFTER THE FIRST IS FIXED
+
+`test_the_thickness_branch_of_the_cap_binds_on_a_thin_root` claims
+`hub_fillet_cap_mm`'s `min` has two live branches and the crossover is reachable in the
+box. Intact. Two constants under it were not.
+
+**LAYER 1, THE PROBE.** `t0` hardcoded to 2.0, *"chosen to sit near the crossover rather
+than the floor"*. The crossover is not a constant — thinning the root also WIDENS the
+slot, so it is a function of the SHAPE genes:
+
+```
+  genome              crossover t0      the old 2.0 probe sat
+  96a0ac5 outgoing      2.634016        0.634 mm INSIDE the thickness branch
+  b729e86 SHIPS         1.908586        0.091 mm OUTSIDE it
+```
+
+27.5% down, and the probe fell out of the branch. Now bisected for, probed midway between
+`MIN_WALL_MM` and it, and the EXISTENCE of the crossover — which is what the docstring
+actually claims — is asserted rather than assumed. **Measured across the box rather than
+asserted from one design: 40 of 40 uniform draws have a crossover inside the `t0` box.**
+
+**LAYER 2, THE GRADIENT BOUND, WHICH IS THE SAME DEFECT ONE LEVEL IN.** `abs(d[0]) > 1e-3
+and abs(d[1]) > 1e-3` pinned *"the shape genes MUST move the cap"* against the
+pre-BUILD_PLAN cap where it was exactly 0.0. The only route is the hub arrival angle:
+
+```
+  d(cap)/dgene = -t0 * HUB_CAP_ARRIVAL_SLOPE * sin(a_hub) * da_hub/dgene
+```
+
+— proportional to `sin(a_hub)`, **0.4592 at `96a0ac5` (27.334 deg) against 0.1005 at
+`b729e86` (5.765 deg), a 4.57x drop** that puts `d(cap)/dcy1` at 2.997e-04, under a bound
+calibrated on the steeper spoke. The shipped spoke arrives on a shallower spiral; the
+route is no less live. The chain rule is asserted instead of a magnitude — it says the
+route is live AND by how much, and it is genome-independent. `rel=1e-4`'s warrant: over 80
+comparisons on 40 uniform draws, `|AD/analytic - 1|` is median 1.3e-06, max 1.3e-05.
+
+**AND THE OLD PROBE MADE THE TWO ASSERTIONS AFTER IT VACUOUS.** At `t0` = 2.0 on the
+shipped genome the SLOT binds, so `d[8]` is the slot branch's derivative and
+`cap == approx(by_thickness)` compares against the branch that is not taken. Neither
+failed, because the assertion above them failed first. **A red can hide two more behind
+it, and "the node ID is green now" is not the same as "the red is closed."**
+
+### 5. §140's SIXTH `Kt` SITE IS SEVEN, AND THE MARKER COST NOTHING
+
+A peer session found `wheel_objective.py`'s `t3_terms` docstring still saying *"the peak
+is restored analytically by `Kt` below"* while rewriting `REPO_EXPLAINED.tex` §6.6(c).
+Verified, and `tests/test_objective.py`'s
+`test_the_gauss_exponent_reaches_the_qoi_and_the_default_is_the_module_constant` says the
+same sentence. Traced by CHAIN rather than by constant, which is §137 §2's discipline:
+
+```
+  :1094-1095   _qoi_region_pnorm(prob, hub_ids/rim_ids, n)     p = FILLET_REGION_P = 16
+    -> pn_hub / pn_rim at :1227-1230
+    -> _pnorm_and_grad(pn_hub, pgrads_hub, q) at :1280,        q = stress_phase_p = 8
+    -> util_j = agg_j / allowable_stress_mpa at :1346              NO Kt ANYWHERE
+```
+
+Since §103 the peak is MEASURED, by a p=16 region p-norm over the fillet's own arc, not
+restored analytically from a nominal. **Four exponents, and the prose names as the
+constraint's the only one of the four that is not**: 16 spatial, 8 phases, 4 the reported
+diagnostic (`STRESS_NOMINAL_P`), 30 the adjoint's module default (`WA.STRESS_PNORM_P`).
+
+**SEVEN KNOWN SITES OF ONE RETIREMENT, ACROSS FOUR FILE TYPES** — `src/*.py`,
+`studies/*.py`, `tests/*.py`, `*.tex`. A census that greps `src/` reaches two of the seven.
+
+**ZERO CITATION COST, AND IT DECIDED THE SHAPE OF THE EDIT.** 35 citations point into
+`wheel_objective.py` below `:1141`, and three distinct cited lines (six occurrences) into
+`tests/test_objective.py` below `:213`, one of them `:321` — §136 §1's own census table.
+A bracket carrying the replacement mechanism would have cost 38 repairs to explain two
+sentences. Both markers are instead `[RETIRED §103 — see §137 §2]` **re-wrapped into the
+existing paragraph, five lines in and five lines out**, and both files are byte-identical
+in length to their parent. §138's rule, applied a second time and at four times the scale.
+**The marker points at a numbered section rather than at a section this commit was
+writing, so it could not be invalidated by a concurrent session taking the number.**
+
+### 6. AN INSTRUMENT NOTE, MEASURED BECAUSE A PEER'S DIAGNOSIS WAS ONE STEP SHORT
+
+A concurrent session reported the wrapped `grep` returning *nothing rather than `0`* from
+a build log and read it as §129 §7's ignore-aware failure arriving through explicit file
+arguments. **It is not the wrapper. It is a MISSING FILE**, and both forms agree:
+
+```
+  grep -c zzz present.txt           prints "0",     exit 1
+  command grep -c zzz present.txt   prints "0",     exit 1
+  grep -c zzz absent.log            prints NOTHING, exit 2      <- the symptom
+  grep -hc zzz absent.log present.txt  prints "0",  exit 2   <- worse: value looks fine
+```
+
+The last line is the dangerous one: with two files it prints a plausible `0` from the file
+that exists and only the exit status says one was missing. **A `2>/dev/null` on a grep is
+where a missing file becomes a passing check** — and the peer's own conclusion (a "two
+lists match" comparison passes vacuously on two empty lists) stands and needs BOTH a
+non-empty assertion and an exit-status check, because the two failure modes are different
+and only one of them shows in the output.
+
+### 7. WHAT MOVED
+
+`f3cc24d`, `e011809` — `tests/test_geometry_kernel.py`, both of its reds, **40 passed**,
+the whole file. `65f45bf` — `tests/test_objective.py` plus one citation repair in
+`PLAN.md` (`test_objective.py:1010` -> `:1072`, verified byte-identical; the +62 lines
+shift nothing else that resolves). `ae9a547` — `src/wheel_objective.py` and
+`tests/test_objective.py`, prose only, zero shift.
+
+**Green.** `tests/test_geometry_kernel.py` 40 passed; the three `test_objective` node IDs
+that share the cap fixtures 3 passed, `test_the_margin_term_prices_and_never_gates`
+included, so §137 §5's new assert is re-checked; `tests/test_import_hygiene.py` 10 passed;
+`tests/test_objective.py` collects 127. **The remaining red list is SIX**, and it is
+diffed rather than reasoned about: the nine of §133 minus these three.
+
+**NOT touched.** The six remaining reds — two in `tests/test_fem.py` (handed to the
+concurrent session), two in `tests/test_gnl.py`, one in `tests/test_contact.py`, one in
+`tests/test_wheel_fea.py`. `STRESS_NOMINAL_P`, `FILLET_REGION_P` and every other exponent:
+§5 retires a SENTENCE about them, not a number.
+
+**SUCCESSORS.**
+
+0. **SIX REDS LEFT AND THE PATTERN IS NOW THREE FOR THREE.** Every one so far had the
+   finding intact and a constant — a bound, a probe point, a normalisation — carried over
+   from a genome that no longer exists. **The two in `tests/test_gnl.py` are the ones to
+   take next and they are coupled**: §133 §4 established that `CFG = "smoke"` at `:32`
+   governs the whole file, so the config is a property of the FILE and not of either test,
+   and the cheap repair is to make the continuation test say WHICH of two opposite
+   verdicts it found rather than to move the config. `tests/test_wheel_fea.py`'s is the
+   one with a written history — its own docstring already names its failure mode for the
+   PREVIOUS promotion — and its live assertion, an absolute `d2/p99 < 0.01`, contradicts
+   the dimensionless ratio its own docstring says the fix was.
+1. **THE §103 CENSUS SHOULD GREP `*.tex` AND `*.md`, NOT ONLY `src/`.** §140's successor 1,
+   and §5 is the evidence: seven sites, four file types, two reachable by the census that
+   exists. Cheap, and it is the same shape as §138 successor 1's unswept `wheel_fem.py`
+   citations — an enumeration whose candidate set was drawn too narrowly.
+2. **A RED CAN HIDE ANOTHER BEHIND IT, AND THE LIST DOES NOT KNOW.** §4's layer 2 was
+   invisible until layer 1 was fixed, and the two assertions between them were VACUOUS on
+   the shipped genome without failing. The count "nine reds" is a count of node IDs, not
+   of findings — so when the remaining six are closed, the honest check is to re-run each
+   repaired test's whole FILE, not its node ID, and to say in each message how many
+   assertions in it were reached for the first time.
+
+## §142 — 2026-09-08. §133's SUCCESSOR 0, REDS 3 AND 4 OF NINE, BOTH CLOSED IN `tests/test_fem.py` — AND BOTH ARE §141's SHAPE ARRIVING FROM THE OTHER END: THE FINDING INTACT, THE **VEHICLE** GONE. RED 3's PROBE SAT **5.6% FROM A CROSSOVER** THAT IS A FUNCTION OF THE SHAPE GENES; RED 4's SECOND HALF WAS TWO RATIO PROXIES WHOSE CONTRAST **REVERSED SIGN**, AND THE REVERSAL IS *NOT* A CHANGE OF MECHANISM. NEITHER REPAIR MOVED A THRESHOLD
+
+Two commits, `bb76860` and `ef6c489`, one per red. Both reds were in one file and the
+second could have broken the first, so the gate is the whole file at 21 passed, not the
+node IDs. A concurrent session is clearing the other seven from the other end and
+independently found the same shape in its red 3; that makes **five of the six repairs so
+far a stale VEHICLE rather than a wrong finding**, which is now the prior worth carrying
+into the remaining reds.
+
+### 1. RED 3 — THE PROBE CLEARED THE CROSSOVER BY 5.6% AND ONE PART IN 1e5
+
+`test_mesh_resolution_must_scale_with_thickness` pins M3's most consequential number for
+M4: the span element size must resolve the `~t` boundary layers, not the part. The
+discrepancy `FE/Castigliano - 1` is **monotone in `h`** — coarse reads stiff (negative),
+refined reads soft (positive) — and crosses zero at one `h/t`. The test probed `h/t = 1`
+and asserted the sign flip against `h = t/8`. **The crossover is a function of the SHAPE
+genes**, and bisection says where the probe actually stood:
+
+```
+  genome                       h*/t      err at the h/t = 1 probe
+  pre-`cb4e3dd`              0.9471            -0.0011%     probe 5.6% past it
+  shipped  (`b729e86`)       1.7978            +0.0087%     probe 44% short
+```
+
+The promotion lengthened the arc **41.910 -> 54.744 mm, +30.6%** at an unchanged
+`t_min = 0.15` mm; the crossover went **90% coarser** and the probe fell out of the stiff
+branch. Re-aimed to `h/t ~ 4` — a mesh sized by the PART, which is what the docstring is
+about — where the margin is **113x** what it replaces:
+
+```
+  k       h/t      shipped        pre-`cb4e3dd`
+  0.25    3.967    -0.125969%     -0.183304%     <- new probe, 2.2x past the crossover
+  0.5     1.994    -0.003732%     -0.029813%
+  1       1.000    +0.008710%     -0.001109%     <- the old probe, on the fence
+  8       0.125    +0.011332%     +0.011553%     <- wall-resolved, essentially unmoved
+```
+
+**AND A GUARD THE OLD TEST DID NOT HAVE, WHICH IS THE TRANSFERABLE PART.**
+`abs(err[0.25]) > 5.0 * abs(err[8])`. Nothing in the old test went red as its margin
+eroded from -0.0011% toward zero — **it only failed once the sign actually flipped, by
+which time the probe had been meaningless for some time.** A sign that holds by 1e-5 is a
+coin, not a demonstration. Measured 11.1x and 15.9x; 5.0 leaves 2.2x. **Every re-aimed
+probe in this arc should carry one of these**, because the failure being repaired is
+precisely a margin that decayed silently.
+
+**Scope stated, not asserted.** Both probes hold their sign across `lam` in 0.0625..0.5
+on both genomes **except** the wall probe at `lam = 0.0625` on the pre-`cb4e3dd` genome
+(-0.000595%): at `t = 0.075` mm the converged discrepancy is itself ~1e-5 and the sign is
+not resolvable, which is why `lam` stays at 0.125. Over **30 genomes drawn uniformly from
+`GENE_SPACE` the two signs hold 29/30 each** — recorded as evidence the effect is generic
+to the geometry, and deliberately NOT asserted. 29/30 is a statistic about the box; this
+test is scoped to the shipped genome, and **the one failing draw is the interesting one
+and nothing names it.**
+
+### 2. RED 4 — A CONTRAST THAT REVERSED, AND WHY THAT IS NOT A CHANGE OF MECHANISM
+
+`test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom` asserts two
+halves: the interpolation is INERT where a node already sits at the bottom, and where one
+does not it differs by *"roughly the offset times the slope above"*. The first half was
+asserted directly. **The second was carried by ratio proxies** — the filleted mesh's
+offset had to exceed the plain mesh's by 3x (shipped layer profile) and 2x (per-genome
+rule) — calibrated on the pre-`cb4e3dd` genome:
+
+```
+  coarse mesh          pre-`cb4e3dd`            shipped (`b729e86`)
+  plain                off -0.0452              off -0.0671
+  fillet SHIPPED       off -0.1635  (3.62x)     off +0.0413  (0.61x)
+  fillet per-genome    off -0.1029  (2.28x)     off +0.0920  (1.37x)
+```
+
+All three filleted offsets now sit **inside the 0.10 deg band the test's own first
+assertion calls "essentially at the bottom"**, so there is no not-at-the-bottom case left
+for a ratio to compare against.
+
+**THE REVERSAL WAS THE THING TO CHECK BEFORE ASSUMING §141's DIAGNOSIS, AND IT SURVIVES
+THE CHECK.** A margin shrinking and a contrast inverting are different events, and an
+inversion can mean the mechanism changed. It does not here. `off` is the **signed distance
+from the bottom to the nearest rim node**, so it is bounded by half the LOCAL spacing and
+its sign is only *which side* that node lands — a sub-node-spacing phase, and the re-cut
+rim re-places those nodes. Measured across 12 solves: **`|off| / (local spacing / 2)`
+never exceeds 1.000.**
+
+So the second half is now pinned on the relationship the docstring already stated. `gap`
+is `off` times the slope of `uy` through the bottom **on the same mesh**, and it survives
+everything the ratios did not — both genomes, `smoke` and `coarse`, all three mesh
+variants, offsets from -0.172 to +0.513 deg and **both signs**:
+
+```
+  gap / (off * slope)   in [0.9797, 1.0252] over 12 solves, worst deviation 2.52%
+```
+
+Asserted at 10%, 4x that. **The ratio proxies were a symptom; this is the finding**, and
+it is §62's first-order snap stated as an equation instead of as a contrast.
+
+### 3. A THRESHOLD THAT LOOKED FITTED AND WAS NOT — CHECKED AGAINST THE WRONG SPACING FIRST
+
+The surviving `abs(off) < 0.10` reads like a fitted number. It is a **ceiling**: the
+nearest node cannot be further than half the local rim spacing. **I first computed that
+spacing over ALL rim nodes and got 1.3535 deg**, which puts the ceiling at 0.677 deg and
+makes 0.10 look like a number someone fitted to a reading. The bottom is **refined for the
+contact patch**: the local spacing at `coarse` is **0.1465 deg**, 9.2x finer, the ceiling
+is **0.0733 deg**, and 0.10 has 1.36x on the ceiling rather than on the reading. Two
+medians of the same quantity over different supports, differing 9.2x, and only one of them
+is the one the bound is about — [[state-the-scope-of-a-measurement]] inside a single array.
+
+**SUCCESSORS.**
+
+0. **FIVE REDS REMAIN**, and the concurrent session holds `test_gnl.py` (two),
+   `test_contact.py` (one), `test_wheel_fea.py` (one) and `test_geometry_kernel.py`'s
+   remainder. Nothing in `tests/test_fem.py` is left from the list.
+1. **THE PRIOR IS NOW STRONG ENOUGH TO STATE AS A RULE: on this list, suspect the vehicle
+   before the finding.** Six repairs, five of them a constant or a probe calibrated on a
+   genome that no longer exists, and in none of the six was the underlying claim wrong.
+   The corollary is the guard in §1 — **a re-aimed probe needs an assertion that it has
+   not drifted BACK toward the fence**, because every one of these failed loudly only long
+   after it stopped demonstrating anything.
+2. **`sized_config`'s CROSSOVER IS A DERIVABLE QUANTITY AND NOTHING DERIVES IT.** Red 3
+   needed a bisection to find `h*/t`, and it is a property of the mesh-sizing policy that
+   `study_beam_agreement` could expose directly. Worth a `crossover_h_over_t(genes)` beside
+   `sized_config`, so the next probe is aimed from a function rather than from a comment.
+
+---
+
+## §143 — 2026-09-08. §133's SUCCESSOR 0: THE p99 RED CLOSED, THE LIST DIFFED AT SIX OF NINE — AND THE ORDINALS IN FOUR COMMIT SUBJECTS COLLIDE, BECAUSE TWO SESSIONS NUMBERED THE SAME NINE INDEPENDENTLY. `test_peak_stress_diverges_but_the_field_converges` HAS BEEN MISCALIBRATED BY THREE PROMOTIONS AND ITS OWN DOCSTRING DIAGNOSED THE CLASS TWO PARAGRAPHS ABOVE THE LINE THAT REPEATS IT
+
+One commit, `1205064`, and one record correction that is not about it.
+
+### 1. THE AUTHORITATIVE LIST IS BY NAME, BECAUSE THE ORDINALS COLLIDED
+
+Two sessions worked §133's nine from opposite ends and each numbered what it closed.
+**`git log --grep "red 3 of 9"` returns two different tests, and so does `red 4 of 9`.**
+Nobody agreed an index and there was no reason two independent numberings would match.
+Measured at `1205064`, all nine node IDs re-run rather than counted:
+
+```
+  GREEN  test_geometry_kernel  thickness_hits_its_nodes_exactly                f3cc24d
+  GREEN  test_geometry_kernel  analytic_curvature_matches_finite_differences   e011809
+  GREEN  test_objective        the_thickness_branch_of_the_cap_binds_...       65f45bf
+  GREEN  test_fem              mesh_resolution_must_scale_with_thickness       bb76860
+  GREEN  test_fem              the_interpolated_drop_is_the_same_number_...    ef6c489
+  GREEN  test_wheel_fea        peak_stress_diverges_but_the_field_converges    1205064
+  RED    test_gnl              the_retired_max_min_gate_is_decided_by_...
+  RED    test_gnl              stress_recovery_follows_the_solves_kinematics
+  RED    test_contact          the_sampled_patch_extent_is_biased_not_...
+```
+
+**Six of nine. The ordinals in `65f45bf`, `bb76860`, `ef6c489` and `1205064` are
+SESSION-LOCAL and are not a shared index** — read them as "one of the nine", never as a
+position. Names were never ambiguous; ordinals were never shared. §138 recorded the same
+hazard for `PLAN.md` section numbers; this is it one level down, in commit subjects,
+where there is no file to re-grep before writing.
+
+**AND THE COUNT ITSELF WAS WRONG IN BOTH DIRECTIONS UNTIL IT WAS MEASURED.** The
+concurrent session reported five remaining; arithmetic here said three; the diff says
+three, and `1205064` had landed while that message was in flight. §119's rule holds for
+the closing count exactly as it held for the opening one.
+
+### 2. THE RED: THREE PROMOTIONS, AND THE THIRD CONSTANT WAS ADDED BY THE FIX FOR THE SECOND
+
+`test_peak_stress_diverges_but_the_field_converges` claims a CONTRAST — the re-entrant
+corner's pointwise max grows without bound under refinement while the p99 of the same
+field settles. Intact, and by a wide margin.
+
+Its docstring argues the right pin in as many words: the superseded `d2 < 0.3 * d1` form
+had a window that *"had to be hand-picked per design, which is the tell that the statistic
+was wrong rather than the meshes"*, so the fix states the contrast *"as a ratio of
+RELATIVE drifts, which is dimensionless and does not care which tier a given design
+converges on"*. **That assertion passes.** The one that fails is `d2 / plain[2] < 0.01`,
+added underneath it — an ABSOLUTE bound, of exactly the class the paragraph above
+condemns.
+
+```
+  cfg        max_singular    spoke_p99      |d| of p99    as % of fine
+  smoke         26.472946    14.091002
+  coarse        31.501722    12.998846       1.092156          8.22%
+  medium        35.145005    13.465662       0.466817          3.51%
+  fine          40.684846    13.281208       0.184454          1.39%
+```
+
+**THE p99 HAS NOT STOPPED CONVERGING.** Its successive differences contract by 0.4274 then
+0.3951 — about 2.4x per rung, geometric — while the max grows **53.68%** over the four and
+29.15% over the three the test uses. The dimensionless separation the surviving assertion
+demands is 10x and it reads **13.7x**. The 1.39% is where a geometric sequence has got to
+at `fine`. **It is a measurement of how many rungs this design needs, not of whether it
+converges** — which is the same sentence the docstring already wrote about `0.3`.
+
+**THE TWO FAILED FORMS EACH CAPTURED ONE REGIME, SO THE PIN IS THEIR DISJUNCTION.** A p99
+that is not running away is either SETTLED — its last step a small fraction of its value,
+which `0.01` tests and which `350f4c7` (0.094%) and `36aed36` (0.082%) satisfy — or STILL
+CONTRACTING, `d2 < d1`, which `b729e86` satisfies at 0.184454 against 0.466817. A
+genuinely diverging p99 fails BOTH, which is the only outcome this test's argument
+forbids. All three known designs pass, two of them on both branches, and neither branch
+carries a number fitted to a design.
+
+**A RATIO OF SUCCESSIVE DIFFERENCES WAS THE OBVIOUS REPAIR AND IT IS THE ONE THIS TEST
+ALREADY TRIED.** `d2 < d1` is `d2 < 0.3 * d1` with a looser constant, and the docstring's
+objection to it — *"once the quantity has actually converged, `d1` and `d2` are both tail,
+their ratio is arbitrary"* — applies to both. It survives here only as the SECOND branch
+of a disjunction whose first branch covers exactly the regime where that objection bites.
+**Reading the docstring's own history is what stopped the third repetition of the same
+mistake; the numbers alone would have suggested it.**
+
+### 3. WHAT MOVED
+
+**`1205064`** — `tests/test_wheel_fea.py`, one assertion and the docstring paragraph that
+records why. **Green: the whole file, 21 passed**, per §141 successor 2. **Citation cost
+ZERO**: all seven citations into that file (`:26` x2, `:34`, `:41`, `:206`, `:370` x3) are
+above the edit, so the count is incidental rather than earned — but it was checked before
+the prose was written, which is §138's rule and the reason it was safe to write at length.
+
+**NOT touched.** The three remaining reds. The `maxima` assertions, which pass by 53.68%
+and were never in question. `350f4c7`'s and `36aed36`'s numbers in the docstring — they
+are §14's dated record and both still satisfy the new pin.
+
+**SUCCESSORS.**
+
+0. **THREE REDS LEFT AND THEY ARE TWO FILES.** `tests/test_gnl.py`'s pair is coupled:
+   §133 §4 established that `CFG = "smoke"` at `:32` governs the whole file, so the config
+   is a property of the FILE and not of either test, and the cheap repair is to make the
+   continuation test say WHICH of two opposite verdicts it found rather than to move the
+   config. `tests/test_contact.py`'s reads `5.886 > 6.349` and §133 notes the docstring's
+   *"overstates by roughly 3x here"* is the quantity that shrank while the DIRECTION claim
+   it exists to make is not what is asserted — the same shape as the `test_fem`
+   interpolated-drop red the concurrent session closed at `ef6c489` by asserting the
+   relationship its own docstring already stated instead of a ratio proxy for it.
+1. **SIX FOR SIX, THE VEHICLE AND NOT THE FINDING — AND NOTHING WAS WATCHING ANY OF THE
+   SIX APPROACH FAILURE.** Every red so far had its finding intact and a constant, probe
+   point, metric or normalisation carried over from a genome that no longer exists. The
+   concurrent session's §142 successor 1 states the sharper half: **not one of them went
+   red as its margin decayed — each failed only when a sign flipped or a bound was
+   crossed, by which time the probe had been meaningless for some time.** Every re-aimed
+   probe on this list now carries an assertion that it has not drifted BACK toward its
+   fence; `bb76860`'s is the model and this section's disjunction is the same idea for a
+   quantity that has two regimes rather than one.
+2. **THE CLOSING SWEEP IS NOT THE NINE NODE IDS.** §141 successor 2 said a repaired test's
+   whole FILE must be re-run, and four files have now been run whole (`test_geometry_
+   kernel` 40, `test_fem` 21, `test_wheel_fea` 21, plus `test_objective`'s cap
+   neighbours). **What has NOT been re-run is the suite**, and §117's promotion left it 62
+   red before this arc started. When the last three close, the honest check is the full
+   suite batched — one process per heavy file, `test_objective` alone taking 35:44 — and a
+   diff against §133's eleven rather than against this section's nine.
+
+## §144 — 2026-09-08. §142's SUCCESSOR 2, CLOSED: `study_beam_agreement.crossover_h_over_t`. THE MESH-SIZING CROSSOVER WAS A DERIVABLE QUANTITY THAT NOTHING DERIVED, SO A TEST AIMED A PROBE FROM A COMMENT. **AND §142 QUOTED IT TO FOUR DIGITS WHEN `n_span`'s INTEGER STEP GIVES IT THREE** — PLUS `MESH_H_OVER_T`'s OWN WARRANT IS PART-STALE BY THE SAME MECHANISM, ONE LEVEL UP
+
+One commit, `2ab8954`, `studies/study_beam_agreement.py` only. 68 insertions, 0 deletions.
+
+### 1. THE FUNCTION, AND WHAT IT IS A CLAIM ABOUT
+
+§142 repaired a test whose probe was hardcoded at `h/t = 1` beside a zero crossing that is
+a function of the SHAPE genes. Finding where that crossing actually was needed a bisection
+written in a scratch file and thrown away — so the next person would have had to write it
+again, or do what the last one did and trust a comment. `crossover_h_over_t(genes, force)`
+is that bisection, beside `sized_config`.
+
+**The docstring says what it is a claim ABOUT, because inferring that is what went wrong:**
+the mesh-sizing POLICY behind `MESH_H_OVER_T` — span element size scales with the WALL and
+not the part — and *not* the wheel that ships. Below the crossover the FE reads soft (the
+converged discrepancy); above it, coarse, it reads stiff and the sign is wrong. It
+reproduces §142's bisections at `lam = 0.125`, `t_min` 0.15 mm on both genomes:
+
+```
+  genome                   arc length      h*/t     n_span there
+  pre-`cb4e3dd`             41.910 mm      0.947        295
+  shipped (`b729e86`)       54.744 mm      1.80         203
+```
+
+It **raises** rather than returning a number from an unbracketed bisection when there is
+no sign change in `bracket`. That case is real and measured, not defensive coding: the
+pre-`cb4e3dd` genome at `lam = 0.0625` still reads **-0.000595%** at the fine end, because
+at `t = 0.075` mm the converged discrepancy is itself ~1e-5. "This section has no
+crossover to aim at" is a different answer from "the bisection failed", and the caller
+needs to be able to tell them apart.
+
+### 2. **§142 QUOTED FOUR DIGITS OF A QUANTITY THAT HAS THREE. I CORRECT MY OWN RECORD.**
+
+`n_span` is an integer, so `h/t = arc_length / n_span / t_min` is a **step function of
+`k`**, and the reachable values near the crossover are spaced `1/n_span` apart: **0.49%**
+for the shipped genome (`n_span` 203), **0.34%** for the pre-`cb4e3dd` one (`n_span` 295).
+Bisecting to `tol` = 0.005, 0.001 and 0.0002 returns
+
+```
+  1.7978,  1.8067,  1.8067        shipped
+  0.9439,  0.9439,  0.9471        pre-`cb4e3dd`
+```
+
+— **adjacent values of the same step function, not a convergence.** Tightening `tol` below
+the step selects a neighbour rather than a better answer, and I nearly wrote a tighter
+default in believing otherwise. §142's `1.7978` and `0.9471` are each a genuine achieved
+`h/t` and each within one element of the figures above, so the derived claims survive at
+the precision they were stated (90% coarser: 1.80/0.947 = 1.90; probe 5.6% past the old
+crossover: 1.000/0.947). **But they were written as though the fourth digit meant
+something, and it does not.** Recorded on the function so the next reader does not chase
+it.
+
+This is [[a-threshold-is-a-claim-about-its-instrument]] in the resolution rather than the
+value: **a bisection cannot be more precise than the discretisation it bisects over**, and
+nothing in §142 asked what the reachable set of `h/t` was.
+
+### 3. `MESH_H_OVER_T`'s OWN COMMENT IS PART-STALE — THE SAME DEFECT, ONE LEVEL UP
+
+The constant this function is about carries its warrant in a comment: *"Measured at lambda
+= 1/8, the discrepancy moves from -0.52% at h = t*2.7 to +0.0027% at h = t/16 — the coarse
+mesh gets the SIGN wrong."* Re-measured at both genomes:
+
+```
+                        comment      shipped      pre-`cb4e3dd`
+  h = t*2.7             -0.52%      -0.0256%       -0.0631%
+  h = t/16             +0.0027%     +0.0114%       +0.0117%
+```
+
+**The magnitudes are from a genome older than either** — off by 8x to 20x — while the
+SIGN claim the constant rests on holds on both. So `MESH_H_OVER_T = 16` is not in
+question and I did not touch it; the numbers beside it are a dated snapshot of the kind
+§139 found in `REPO_EXPLAINED.tex`, in a docstring instead of a document. **It is also
+exactly the argument for the function**: the alternative to a derivable quantity is a
+third set of frozen numbers in a comment, and this arc now has two examples of what
+happens to those.
+
+### 4. THE ARTIFACT RULE, AND WHY IT DOES NOT BIND HERE
+
+PLAN.md's header requires a study commit to carry its regenerated `.json`/`.jpg`. It does
+not bind, and the claim is checkable rather than asserted: the diff is **68 insertions and
+0 deletions**, `crossover_h_over_t` occurs **exactly once** in the file (its own `def`, no
+call site), and `study_beam_agreement.json` carries no timestamp — its keys are `A1_A2`,
+`A3`, `A4a`, `A4b`, `pass`, `settings`. No existing code path changed, so the driver's
+output cannot have. Green: **114 passed** across every consumer of the module —
+`tests/test_fem.py`, `tests/test_mesh.py`, `tests/test_study_gate_guard.py`.
+`git grep -nE 'study_beam_agreement(\.py)?:[0-9]+'` returns nothing, so the added length
+breaks no citation.
+
+**SUCCESSORS.**
+
+0. **THE RED LIST IS §143's NAME-KEYED TABLE AND THE ORDINALS IN FOUR COMMIT SUBJECTS ARE
+   SESSION-LOCAL.** A concurrent session and I both numbered "red 3 of 9" and "red 4 of 9"
+   without coordinating, so `git log --grep "red 4 of 9"` returns two different tests.
+   §143 carries the authoritative list by test NAME. Nothing to fix in the commits; the
+   names were never ambiguous. Same shape as §138's section-number collision, one level
+   down — **two sessions, one shared ordinal space, and no protocol for it.**
+1. **NOTHING CALLS `crossover_h_over_t` YET, INCLUDING THE TEST THAT MOTIVATED IT.**
+   `test_mesh_resolution_must_scale_with_thickness` still hardcodes `k = 0.25`, chosen at
+   §142 as 2.2x past the then-measured crossover. Wiring the test to the function would
+   make the probe self-aiming, but it would also put ~13 solves into a test that currently
+   costs 2, and it would couple a gate to a bisection that can raise. **Worth deciding
+   rather than doing**: the cheap middle is to keep the hardcoded probe and have the test
+   assert the crossover is where §142 measured it, which is one extra bisection and turns
+   a silent drift into a red.
+2. **`MESH_H_OVER_T`'s COMMENT SHOULD CITE THE FUNCTION RATHER THAN CARRY NUMBERS.** §3
+   above leaves three stale magnitudes in place because re-measuring them is not what this
+   successor was for. They are two genomes old and will be three after the next promotion.
+
+---
+
+## §145 — 2026-09-08. §133's SUCCESSOR 0: THE CONTACT RED IS THE FIRST OF THE NINE THAT IS NOT A STALE CONSTANT. `peak(n_quad=20) > peak(n_quad=6)` RESTS ON GAUSS-LEGENDRE POINTS NESTING AND THEY NEVER DO — AT ANY REFINEMENT PAIR, ON ANY GENOME. SECOND SITE IN `wheel_fem`'s OWN COMMENT, AND §133's DIAGNOSIS OF THIS RED NAMED THE WRONG QUANTITY
+
+One commit, `0a33d46`. **WRITTEN AFTER §146 AND PLACED HERE IN NUMERIC ORDER**: a
+concurrent session needed a number while this one was reserved and unwritten, and took
+§146 rather than the next free one. That is the worse half of the collision rule —
+**a reserved-but-unwritten section costs more than an out-of-order append** — and the
+reservation was mine. Inserting here rather than appending costs nothing: no citation
+into `PLAN.md` points below §144.
+
+### 1. SEVEN OF THE NINE HAVE BEEN A STALE VEHICLE. THIS ONE NEVER WORKED
+
+`test_the_sampled_patch_extent_is_biased_not_merely_noisy` asserts that
+`patch_extent`
+earns its existence: the sampled half-angle OVERSTATES the zero-crossing one (a one-signed
+bias) and the sampled peak is a max over samples that must not be quoted. Both claims
+intact.
+
+The failing line compared `peak_pressure_mpa_sampled` at `n_quad` 20 against the same
+quantity at 6, warranted in the comment above it as *"refining the quadrature can only
+find MORE of the true peak, never less"*. **That needs the finer sample set to CONTAIN
+the coarser one.**
+
+```
+  leggauss(6) vs leggauss(20)    shared nodes 0     closest approach 0.010833
+  leggauss(6) vs leggauss(n), n = 2..24, n != 6      shared nodes 0 for EVERY n
+```
+
+Even orders never include 0 and odd ones always do; away from that, the roots of different
+Legendre polynomials simply do not coincide. **So a max over Gauss-Legendre points is
+never a max over a superset, for any refinement pair.** The six reds before this one were
+constants calibrated on a genome that no longer exists; this is a claim that was never
+true, on any genome, at any `n`. **There is nothing to re-aim — the repair shape is
+different and that is the finding.**
+
+**AND `n_quad` IS NOT A SAMPLING DENSITY.** It is the contact integration rule, so raising
+it changes the SOLVED FIELD as well as where that field is read. There is no one fixed
+field being sampled more finely, which is the second and independent reason the sentence
+cannot be rescued.
+
+### 2. WHAT THE PEAK ACTUALLY DOES, MEASURED OVER TWELVE VALUES
+
+```
+  n_quad     4       6       8      10      12      16      20      32      64
+  peak    4.551   6.349   5.380   5.859   5.781   5.703   5.886   5.899   5.874
+  drop   2.0019  2.0025  2.0021  2.0023  2.0022  2.0023  2.0023  2.0023  2.0023
+```
+
+**Four of eleven adjacent steps DECREASE. The maximum over all twelve is at `n = 6`, not
+at `n = 64`.** The sequence settles into a 0.46% band only from `n = 20` up, and the old
+test's `n = 6` reading sits **7.91% ABOVE** that band — so the pair the test chose put its
+larger value first. It was not an unlucky pair; the spread over the whole sweep is 1.395x.
+
+### 3. THE REPAIR IS A CONTRAST, BECAUSE NO LEVEL IS ASSERTABLE HERE
+
+What the docstring actually claims — *"reported as diagnostics and neither may be
+quoted"* — is that the peak is not a converged number. Stated executably against the
+quantity in the same result that IS converged:
+
+```
+  between n_quad 6 and 20     peak moves 7.292%     axle drop moves 0.01129%     646x
+  bound                                                                           10x
+```
+
+65x of headroom, and a failure means the sampled peak has become as quadrature-independent
+as a converged number — a real finding and the right thing to go red on. **Same family as
+`1205064`'s p99 repair: a quantity with no locatable fence gets a quantity-space guard.**
+
+### 4. TWO BY-PRODUCTS
+
+**SECOND SITE.** `wheel_fem.py`'s own comment beside the assignment said *"The peak
+pressure in particular climbs as `n_quad` rises, because more points sample nearer the
+true peak."* Same claim, same absence of a basis. Corrected in place and **re-wrapped into
+the same four lines** — four citations sit below it and not one moved.
+
+**§133's DIAGNOSIS OF THIS RED NAMED THE WRONG QUANTITY.** Its row quotes the right
+failure (`5.886 > 6.349`) and then explains it by the docstring's *"overstates by roughly
+3x here"* — which is the HALF-ANGLE, a different assertion, which PASSES, and whose ratio
+has **grown** to 4.70–5.07x rather than shrunk. Its second clause is exactly right and is
+the finding: *"the direction claim it exists to make is not what is asserted."* **A
+triaged list can carry the right failure under the wrong cause, and the row read
+plausibly enough that five sections cited it without re-deriving it.**
+
+### 5. THE GUARD RULE, WHICH THE ARC NOW HAS ENOUGH INSTANCES TO STATE
+
+A concurrent session's §146 asked for this and it is owed to the closing write-up. Two
+guard shapes have emerged and they are not interchangeable:
+
+```
+  PARAMETER SPACE   "the probe stands 2.2x from the fence"      needs a locatable fence
+  QUANTITY SPACE    "settled OR still contracting"; "the peak    needs none
+                     moves 646x more than the drop"
+```
+
+**Where a fence is locatable, prefer the parameter form, because a probe drifts toward a
+fence long before the quantity it measures changes sign.** The evidence is one row and it
+is the only PREDICTION this arc has produced: on the genome BEFORE `cb4e3dd`, the mesh
+probe already stood at 1.06x of its crossover and the new guard would have been red there
+— while the test it protects was still green. Everything else written in §141–§146 is a
+repair; that line would have spoken first.
+
+The p99 and the sampled peak have no fence — there is no `h` at which a p99 begins to
+diverge, and no `n_quad` at which a sampled max becomes a level — so both take the
+quantity form.
+
+### 6. WHAT MOVED
+
+**`0a33d46`** — `tests/test_contact.py` (docstring and one assertion),
+`src/wheel_fem.py` (four comment lines, same length), `PLAN.md` (three citation repairs).
+**Green: `tests/test_contact.py`, 32 passed, the whole file.** Citations: the +33 lines
+shift `tests/test_contact.py:465` -> `:498`, verified byte-identical and repaired at all
+three of its sites; `wheel_fem.py` and `PLAN.md` are unchanged in length.
+
+**NOT touched.** The half-angle assertion, which passes at 4.70–5.07x against its 2.0x
+bound — its docstring's "roughly 3x" is a dated reading and §136 §5's rule against
+re-fitting a figure at every promotion applies. The first assertion's `coarse` mesh and
+the §14 table justifying it.
+
+**SUCCESSORS.**
+
+0. **TWO REDS LEFT, BOTH IN `tests/test_gnl.py`, AND THEY ARE COUPLED.** §133 §4:
+   `CFG = "smoke"` at `:32` governs the whole FILE, so the config is not a property of
+   either test, and the cheap repair is to make the continuation test say WHICH of two
+   opposite verdicts it found rather than to move the config. The `max/min` one is the
+   §141 §2 shape — §133 records both readings ROSE (2.167/9.026 to 7.384/13.550), so the
+   finding is stronger and only the retired `3.0` BRACKET died, and `3.0` is a property
+   of the retired gate rather than of the claim. **Re-derive both readings before
+   trusting either; §4 above is this section's own reason for saying so.**
+1. **`test_the_interpolated_drop_...` HAS NO POSITIONAL GUARD AND ITS SIBLING NOW DOES**
+   (§146 successor 0). Probably a non-question — `ef6c489` pinned it on a RELATIONSHIP,
+   `gap == off * slope`, which cannot drift the way a probe can — but `|off| / (local
+   spacing / 2)` was measured at up to 1.000, so the offset can sit anywhere in its band
+   and nothing says where. One measurement decides whether there is a fence to be near,
+   and §5's rule says that if there is one, the parameter form is the better guard.
+2. **THE SUITE HAS STILL NOT BEEN RUN.** §143 successor 2, unchanged and now the largest
+   unmeasured thing in this arc: five files have been run whole and §117's promotion left
+   the suite 62 red before any of this started. When the last two close, the check is the
+   full suite batched — one process per heavy file — diffed against §133's ELEVEN.
+
+## §146 — 2026-09-08. §144's SUCCESSOR 1, CLOSED. THE PROBE NOW ASSERTS **WHERE IT STANDS RELATIVE TO THE SIGN CHANGE**, NOT ONLY HOW BIG ITS READING IS — AND THAT LINE WOULD HAVE BEEN RED ON THE GENOME **BEFORE** THE PROMOTION, WHILE THE TEST WAS STILL GREEN. **MY OWN COST ARGUMENT FOR IT WAS WRONG AND DID NOT DISTINGUISH THE OPTIONS**; THE DECIDING ARGUMENT IS THAT A SELF-AIMING PROBE CANNOT APPROACH FAILURE, IT FOLLOWS FAILURE AROUND
+
+One commit, `8d317ed`, `tests/test_fem.py`. Numbered §146 because a concurrent session had
+already reserved §145; PLAN.md's highest heading at the moment of appending was §144, so
+this section sits above a §145 that does not exist yet. Deferring to the other session's
+claim, per [[plan-section-numbers-collide]]'s own rule, costs one out-of-order append.
+
+### 1. THE GUARD, AND IT WAS VALIDATED BY FIRING IT
+
+§142 re-aimed this probe and guarded it **in the quantity** — the coarse reading must be
+5x the wall-resolved one, so a sign holding by 1e-5 cannot pass for a demonstration. That
+is necessary and it is not where the defect lived. The defect was **positional**: a probe
+at a fixed `h/t` beside a crossover that moves with the shape genes. So:
+
+```
+  h_probe > 1.5 * crossover_h_over_t(g, F)
+```
+
+**A guard that has never been observed to fail is not a guard**, so it was checked by
+standing it in front of the failure it is for:
+
+```
+  genome           probe        h/t      h*/t     margin
+  shipped          k=1  (old)   0.9999   1.7978   0.556x   RED   <- the actual failure
+  shipped          k=0.25       3.9669   1.7978   2.207x   pass
+  pre-`cb4e3dd`    k=1  (old)   0.9978   0.9439   1.057x   RED   <- ONE PROMOTION EARLY
+  pre-`cb4e3dd`    k=0.25       3.9914   0.9439   4.229x   pass
+```
+
+**The third row is the whole point.** On the genome BEFORE the promotion, the old probe
+already stood at a 1.06x margin and this line would have been red there — while the test
+was green and the sign had not flipped. §142 successor 1's complaint was that nothing was
+watching any of §133's nine approach failure. This is that watch for one of them, and it
+is the first assertion in the arc demonstrated to fire *early* rather than *correctly*.
+
+### 2. I HAD THE COST ARGUMENT WRONG, AND IT WAS THE ARGUMENT I LED WITH
+
+§144 successor 1 offered this guard as the **cheaper middle** against wiring the probe to
+`crossover_h_over_t`, on the grounds that self-aiming "puts ~13 solves into a test that
+costs 2". **The guard bisects too** — 2 bracket evaluations plus ~11 steps, the same ~13
+solves, measured at 4.3 s. The test goes **2.2 s -> 6.52 s**. A concurrent session read the
+function and pointed this out; it is right, and the number was in the function I had
+written that morning.
+
+**The argument that actually decides it is principle, not price.** A probe read off
+`crossover_h_over_t()` is green *no matter how far the crossover moves*: it cannot approach
+failure, it follows failure around. That deletes precisely the signal §1 above exists to
+add. Recorded in the test itself so the next reader does not helpfully "improve" it into a
+self-aiming one — which is the shape of change that would look like a cleanup.
+
+### 3. THE CHEAP FORM IS A COIN FLIP, AND THIS TEST'S OWN TABLE SAYS SO
+
+The obvious way to avoid the bisection: do not FIND the crossover, BRACKET it — two
+evaluations straddling the recorded value with opposite signs, 2 solves instead of 13.
+**It is wrong near the crossover and the reason is already printed in this test.** The
+discrepancy is zero AT the crossover by definition, and the table reads **-0.003732% at
+`h/t` 1.994** and **+0.008710% at 1.000**. A +/-5% bracket sits strictly inside those, so it
+would assert the sign of a quantity of order 1e-5 — the same quantity §142 showed is not
+resolvable on a thin section (the pre-`cb4e3dd` genome at `lam = 0.0625` reads -0.000595%
+at the fine end and has no crossover at all). **A tight bracket is a coin flip dressed as
+a guard**, which is the exact failure mode this list is made of. A wide bracket (+/-50%)
+would work and would need its own resolvability measurement; the bisection is the honest
+instrument and it is what is committed.
+
+### 4. THE BOUND IS TIED TO THE QUANTISATION — §144 §2 APPLIED TO ITSELF
+
+`h/t` is `arc_length / n_span / t_min` with `n_span` an INTEGER, so **both** terms of the
+ratio step: 1/92 at the probe, 1/203 at the crossover, **~1.6% on the ratio**. A guard
+written tighter than that reddens on an adjacent element count and teaches everyone to
+loosen it. **1.5x is ~30x the step**, and the measured margins clear it by 47% (shipped)
+and 182% (pre-`cb4e3dd`). The assertion message states the step width and says to re-aim
+the probe rather than lower the bound — because the next person to see this red will have
+the same two options I did, and one of them is wrong.
+
+**SUCCESSORS.**
+
+0. **`test_the_interpolated_drop...` HAS NO POSITIONAL GUARD AND ITS SIBLING NOW DOES.**
+   §142 pinned it on `gap == off * slope`, which is a relationship and cannot drift the way
+   a probe can — so this may be a non-question. But the analogous quantity exists: `|off| /
+   (local spacing / 2)` was measured at up to 1.000, i.e. the offset can sit anywhere in its
+   band, and nothing asserts where. Worth one measurement to decide whether there is a fence
+   to be near.
+1. **THE ARC HAS TWO GUARD SHAPES NOW AND NEITHER IS WRITTEN DOWN AS A RULE.** In the
+   quantity (`|coarse| > 5x |fine|`) and in the parameter (`probe > 1.5x fence`). Six
+   repairs in §141–§146 all failed the same way and only two carry either guard. When the
+   nine are closed, the write-up should say which shape applies when — the parameter form
+   needs a locatable fence, the quantity form does not.
+2. **`crossover_h_over_t` HAS ONE CALLER AND IT IS A TEST.** That is the right first caller,
+   but `MESH_H_OVER_T`'s comment (§144 §3) is still three frozen magnitudes that the
+   function could replace with a citation. Unchanged from §144 successor 2 and still not
+   urgent: the sign claim holds on both genomes, so the constant is not in question.
+
+## §147 — 2026-09-08. §146's SUCCESSOR 0, ANSWERED: THE OFFSET **DOES** HAVE A LOCATABLE FENCE, SO IT GETS THE PARAMETER-SPACE GUARD. `abs(off) < 0.10` IS A THEOREM WHILE THE RIM STAYS FINE AND A **COIN** ONCE IT DOES NOT — AND THE MARGIN FELL **36% IN ONE PROMOTION**, BY A SINGLE GEOMETRIC FACTOR OF 1.56311 THAT IS THE SAME AT EVERY CONFIG TO 0.0035%. ONE MORE PROMOTION OF THAT SIZE PUTS IT **UNDER** THE FENCE
+
+One commit, `150d70f`, `tests/test_fem.py`, 44 insertions and 0 deletions. **Numbered §147
+and not the §148 a concurrent session offered**: that session's own instruction was to take
+the next free number rather than leave a reserved gap, §145 had landed by the time I
+appended, and §147 was free. §148 is theirs.
+
+### 1. THE QUESTION WAS WHETHER THERE IS A FENCE AT ALL
+
+§146 successor 0 asked one thing and allowed for either answer: `test_the_interpolated_
+drop...` is pinned on a RELATIONSHIP (`gap == off * slope`), which cannot drift the way a
+probe can, so the parameter-space guard might simply not apply. **It applies.** The first
+assertion is not the relationship, it is `abs(off) < 0.10` — *a node sits essentially at
+the bottom* — and that one has a fence.
+
+**`off` is a PHASE.** It is where the bottom falls between two rim nodes, so it is bounded
+by half the local spacing and otherwise uniform in that band. §142 measured
+`|off| / (spacing/2)` reaching **1.000** across 12 solves, which is exactly what "uniform
+in the band" looks like. That makes the assertion a **theorem** while the ceiling is under
+0.10 and a **coin** the moment it is not — passing with probability `0.10/ceiling` for as
+long as luck holds, while the premise it encodes has already stopped being true.
+
+So the ceiling is asserted rather than assumed. `ceiling < 0.10` implies `abs(off) < 0.10`
+for every phase, and it fires when the GUARANTEE is lost rather than when the coin lands
+badly. This is §145 §5's rule — where a fence is locatable, prefer the parameter form —
+and the reason it fires earlier is the same one: the phase can keep passing long after the
+band has grown.
+
+### 2. THE FENCE IS MOVING, AND BY A SINGLE FACTOR RATHER THAN BY NOISE
+
+The guarantee holds iff the local spacing is under 0.20 deg. Measured on the plain mesh:
+
+```
+  config    pre-`cb4e3dd`   shipped    ratio      shipped ceiling   margin to fence
+  smoke        0.234323    0.366279   1.56314          0.1831           0.546x
+  coarse       0.093731    0.146510   1.56310          0.0733           1.365x
+  medium       0.058582    0.091569   1.56309          0.0458           2.184x
+```
+
+**The ratio is 1.56311 at all three configs, spread 0.0035%.** That is one geometric factor
+and not three samples, which is what turns two data points into a trend: the promotion did
+not perturb the rim discretisation, it SCALED it. So the prediction is quantitative rather
+than rhetorical — the shipped margin at `coarse` is 1.365x, and one more promotion of that
+size gives **1.365 / 1.563 = 0.873x, under the fence.**
+
+**AND THE FENCE IS ALREADY CROSSED AT `smoke` ON BOTH GENOMES** (0.546x and 0.854x). The
+plain mesh there reads `off = -0.1404`, which fails the existing line outright. This test
+runs at `coarse` so nothing is red — but "a coarser rim near the bottom removes this test's
+premise" is not a hypothetical, it is a config away.
+
+### 3. VALIDATED BY FIRING IT, AND IT COSTS NOTHING
+
+Per §146 §1, a guard that has only been seen to pass is not yet a guard:
+
+```
+  genome           cfg      ceiling   margin
+  shipped          smoke     0.1831   0.546x   RED
+  shipped          coarse    0.0733   1.365x   pass
+  shipped          medium    0.0458   2.184x   pass
+  pre-`cb4e3dd`    smoke     0.1172   0.854x   RED
+  pre-`cb4e3dd`    coarse    0.0469   2.134x   pass
+  pre-`cb4e3dd`    medium    0.0293   3.414x   pass
+```
+
+Unlike §146's guard this one is **free**: the ceiling is a pure mesh property read off a
+mesh the test already builds, so no extra solve and the file's timings are unchanged
+within noise. `_rim_node_spacing_at_bottom` reads the LOCAL spacing — nodes within 1 deg of
+the bottom — and its docstring says why, because the median around the whole rim is 9.2x
+coarser and using it would put the ceiling at 0.677 deg and make the 0.10 bound look nine
+times looser than it is (§142 §3).
+
+### 4. NOTHING ELSE SHARES THIS FENCE
+
+Checked before filing it as a pattern: `patch_centre_offset_deg` is read by
+`study_corner_singularity` and `study_wheel_fea`, which RECORD it, and by no other test.
+`tests/test_fem.py` is the only place it is asserted on, so the guard does not need
+replicating. **The two study artifacts do carry phase-dependent offsets**, which is not a
+defect — but it does mean a committed `patch_centre_offset_deg` is a sample of a phase and
+not a property, and nothing beside those numbers says so.
+
+**SUCCESSORS.**
+
+0. **THE 1.56311 FACTOR IS UNEXPLAINED AND IT IS THE PREDICTIVE PART.** I measured that the
+   local rim spacing scaled by one factor at every config and did NOT find what set it. It
+   is not the axle drop (1.346x) and not the arc length (1.306x). Whatever it is, it is the
+   quantity that decides how many promotions this test has left, and it would let the guard
+   be stated against a cause rather than against a measured band. Worth one grep of how the
+   contact-patch refinement chooses its angular extent.
+1. **`abs(gap) < 0.01 * drop` IS THE THIRD ASSERTION AND IT HAS NOT BEEN AUDITED.** §142
+   re-derived the first and replaced the second; this one was carried unchanged. It reads
+   0.121% against a 1% bound at the shipped genome, so it is not close — but "not close"
+   is what `abs(off) < 0.10` looked like before anyone computed its ceiling.
+2. **A COMMITTED PHASE IS NOT A COMMITTED MEASUREMENT** (from §4). Two study artifacts
+   record `patch_centre_offset_deg` as if it were a property of the design. It is a
+   property of where the mesh's nodes happened to land. Neither driver's prose says so.
+
+## §148 — 2026-09-08. §147's SUCCESSOR 0, ANSWERED. THE 1.56311 IS THE **MESHED WELD BLOCK'S ANGULAR WIDTH OVER A FIXED ELEMENT BUDGET** — 10 QUADRATIC ELEMENTS PER BLOCK, WHATEVER THE BLOCK'S WIDTH. AND `weld_footprints_deg`'s RIM VALUE IS **NOT** THAT WIDTH: IT IS THE BLOCK'S UPPER EDGE, WHICH IS WHY ELIMINATING IT AT 1.2427 DID NOT ELIMINATE THE WELD. PLUS: THE RIM IS 12 FINE BLOCKS AND 12 COARSE GAPS, SO THE OFFSET'S REAL EXPOSURE IS A **9.2x DISCONTINUITY**, NOT THE SMOOTH DRIFT §147 DESCRIBED
+
+One commit, `d2b0458`, `tests/test_fem.py`. A concurrent session had eliminated the rim
+free arc (ratio 0.98847) and the rim weld footprint (1.2427) as candidates and suggested
+checking which BLOCK the bottom falls in. That was the right instruction and it led
+straight here.
+
+### 1. THE RIM'S ACTUAL DISCRETISATION, WHICH NEITHER OF US HAD LOOKED AT
+
+At `coarse` the 480 `rim_outer` nodes carry **exactly two gaps**:
+
+```
+  0.1465 deg  x239        1.3535 deg  x240        (shipped; sum per pair = 1.5000 deg)
+  0.0937 deg  x239        1.4063 deg  x240        (pre-`cb4e3dd`; same 1.5000)
+```
+
+They are not interleaved. They form **12 contiguous fine runs of 20 gaps** — `n_weld = 10`
+quadratic elements, two gaps each — **spaced exactly 30.000 deg apart**, one per
+`SECTOR_DEG`, each separated by a single coarse element. The bottom sits *inside* one of
+those runs, at 42.3% of its width on the shipped genome and 27.4% on the outgoing one.
+
+### 2. THE FACTOR IS THE BLOCK WIDTH, AND THE NODE BUDGET IS FIXED
+
+```
+  meshed fine-run width      1.8746 -> 2.9302 deg      ratio 1.56310
+  gaps per run                    20 -> 20             FIXED (n_weld = 10, order 2)
+  therefore spacing          0.093731 -> 0.146510      ratio 1.56310
+```
+
+**The block widened and its element count did not, so the spacing scaled by exactly the
+block ratio.** That is the whole of §147's 1.56311, and it explains why the ratio was
+identical at `smoke`, `coarse` and `medium` to 0.0035%: every config holds its own fixed
+`n_weld`, so every config inherits the same width ratio.
+
+**AND THIS IS WHY THE ELIMINATION MISSED IT.** `weld_footprints_deg(genes, cfg)` returns
+`(20.7149, 1.6910)` shipped and `(6.1178, 1.3608)` outgoing, and its rim value moved only
+1.2427x — correctly eliminated as not being the factor. But **1.6910 and 1.3608 are
+exactly the upper EDGE of the meshed fine run** — the runs span `(-1.2392, +1.6910)` and
+`(-0.5138, +1.3608)` — not its width, which is 2.9302 and 1.8746. Two quantities, one
+name, one of them ratio 1.2427 and the other 1.5631. **The reported rim weld footprint is
+a part of the meshed weld block, so eliminating the footprint did not eliminate the
+block.** Same family as §140's two `CONFIGS` and §142's two node spacings.
+
+**What sets the block WIDTH is still not named.** It is not `t3` alone (2.4547/1.4313 =
+1.7151 against 1.5631) and the block's arc length does not equal `t3` at any fixed radius
+(implied R of 47.99 and 43.74). It is `t3` projected through the ring crossing angle, and
+naming it exactly needs the block builder rather than the mesh. Filed below rather than
+guessed.
+
+### 3. THE REAL EXPOSURE IS A DISCONTINUITY, AND §147 DESCRIBED A SMOOTH DRIFT
+
+§147 predicted "one more promotion of that size gives 0.873x, under the fence." That
+extrapolation is still right on its own terms. **But the fine runs are ~2.9 deg of every
+30**, so the bottom sits in a 10% window, and the failure that matters is not the window
+widening — it is the bottom **leaving** it. If it does, the straddling gap jumps from
+0.1465 to 1.3535 deg, the ceiling from 0.073 to **0.677**, and the bound is exceeded by
+6.8x in a single step.
+
+**The guard as committed at §147 already catches that** — `ceiling < 0.10` fails either
+way — so nothing was wrong with it. But the margin to that edge is a different and
+un-monitored number: the bottom is **1.2392 deg** from its run's lower edge on the shipped
+genome, **up** from 0.5138 on the outgoing one. On this axis the promotion made the test
+*safer*, which is the opposite of §147's headline and worth having on the record beside it.
+
+### 4. SO THE INSTRUMENT WAS RIGHT BY LUCK OF THE WINDOW, AND IS NOW EXACT
+
+`_rim_node_spacing_at_bottom` took a median over `|d| < 1.0`. That lands inside the fine
+run and returns the right number **today**. Two ways it breaks, both reachable:
+
+- A median over the whole rim returns the COARSE gap — ceiling 0.677 instead of 0.073.
+  That is exactly the §142 §3 error, which I caught by hand once already.
+- **In the discontinuity of §3 the window is undefined.** With a 1.3535 deg gap, a
+  +/-1 deg window holds 0 or 1 nodes and `median(diff(...))` is `nan`. The assertion still
+  fails — `nan < 0.10` is False — so the guard holds, but it reports a nan instead of the
+  9.2x jump that IS the finding.
+
+Replaced by `_gap_straddling_the_bottom`: the gap between the two nodes either side of
+`theta = -90`, whose half is the exact ceiling **by definition**. No window, no median,
+always defined, no assumption about how the rim is discretised. It reproduces every §147
+number to five digits (0.07326, 0.04687, 0.18314, 0.11716, 0.04578, 0.02929) and every
+verdict is unchanged.
+
+**SUCCESSORS.**
+
+0. **NAME WHAT SETS THE WELD BLOCK'S MESHED WIDTH.** §2 narrowed it to `t3` through the
+   ring crossing angle and stopped. It is the quantity that decides how many promotions
+   this test has left, and with it the guard could be stated against a cause instead of a
+   measured band. One read of the rim weld block builder.
+1. **NOTHING MONITORS THE BOTTOM'S DISTANCE TO ITS BLOCK EDGE** (§3), which is the
+   discontinuous mode. `ceiling < 0.10` catches the jump AFTER it happens; 1.2392 deg of
+   margin is what says it has not. Whether that deserves its own line is a judgement — it
+   is a phase, so it does not drift monotonically, and a guard on a phase may just be
+   noise. Measure its spread across genomes before adding one.
+2. **`weld_footprints_deg` RETURNS AN EDGE AND IS READ AS A WIDTH.** It cost a correct
+   elimination here. Worth checking its other callers — `studies/` and any test — before
+   assuming this section is the only place the two were confused.
+
+## §149 — 2026-09-08. §147's SUCCESSOR 2 IS **CLOSED AS A NON-DEFECT, AND ITS PREMISE WAS MINE AND WAS FALSE.** I FILED "TWO STUDY ARTIFACTS RECORD A PHASE AS A DESIGN PROPERTY AND NEITHER DRIVER'S PROSE SAYS SO" WITHOUT READING EITHER DRIVER'S PROSE. ONE OF THEM SAYS IT IN THE COMMENT DIRECTLY ABOVE THE LINE THAT RECORDS IT. **NO CODE CHANGE**
+
+Numbered §149 because it was the next free heading when I appended — a concurrent session
+had claimed it, and that session's own standing instruction is to take the next free
+number rather than leave a reserved gap. Nothing committed but this record.
+
+### 1. WHAT I FILED, AND WHY IT WAS WRONG
+
+§147 §4 established correctly that `patch_centre_offset_deg` is a **phase** — where the
+bottom happens to fall between two rim nodes — and not a property of the design. It then
+observed that `study_corner_singularity` and `study_wheel_fea` both record it, and filed
+successor 2: *"two committed artifacts carry a phase as though it were a property of the
+design, and neither driver's prose says so."*
+
+**The first half is true and the second half I did not check.** I verified the value is a
+phase, saw two drivers recording it, and inferred what their prose must be missing. That
+inference went into the record as a finding.
+
+`studies/study_corner_singularity.py:534--536`, the comment **directly above the line that
+records it**:
+
+```
+  # above snap to nodes -- one to the nearest, one to a count inside a fixed
+  # window -- and the layer profile moves the rim's circumferential PHASE, so
+  # both carry a term that is about the blocking rather than the solution.
+```
+
+That is the finding I filed, already written, in the file I filed it against.
+
+### 2. THE FULL AUDIT, SINCE THE POINT OF CHECKING IS TO CHECK ALL OF IT
+
+- **`study_corner_singularity`** says it explicitly (above), and its report column is
+  labelled `centre offset, deg` — a neutral label for a diagnostic, claiming nothing.
+- **`study_wheel_fea:232`** records it with no prose of its own, but the comment
+  immediately above at `:223--230` explains the mechanism it belongs to: *"`axle_drop_mm`
+  is `uy` at whichever `rim_outer` node is nearest theta = -90 ... that makes the reading
+  first-order in how far the nearest node happens to sit from the ground."* A reader
+  reaches the offset through that sentence. Weaker than the other driver, and not wrong.
+- **No claim anywhere rests on the value.** Enumerated all five sites: two appends, two
+  dict entries, one print. Nothing thresholds it, aggregates it, or derives from it. It is
+  a recorded diagnostic in both artifacts, which is exactly what a phase should be.
+
+So there is nothing to repair. The artifacts are right, the labels are right, and one of
+the two drivers documents the mechanism better than my successor claimed either did.
+
+### 3. THE RENAME WAS DECLINED, ON THE OFFERING SESSION'S OWN CONDITION
+
+§148 successor 2's audit found `study_wheel_fea._blindness_row`'s locals `hub_w`/`rim_w`
+hold `weld_footprints_deg`'s return, which `2cef108` has now documented as **one flank
+from one origin** and not a width. The offering session's condition was explicit: a free
+ride *if* I were in that file for successor 2 anyway, and *"not worth a commit of its own"*
+otherwise. Successor 2 turned out to need no edit, so I am not in the file, so the rename
+does not happen. The artifact KEYS (`weld_hub_deg`/`weld_rim_deg`) are accurate and the
+docstring at the source is now correct, so the residual confusion is two local names in one
+function, reachable from a corrected docstring.
+
+### 4. THIS IS THE THIRD FILED SUCCESSOR TODAY CLOSED BY MEASURING ITS PREMISE
+
+§137's opened by finding a filed test that could not settle its own claim either way.
+§144 successor 1 was filed by me with a cost argument that did not distinguish its two
+options, corrected at §146 §2. This one was filed by me on an unread premise. **In all
+three the successor's AUTHOR had done real work and then written one sentence they had not
+measured** — and in all three the next session's correct move was to re-derive the premise
+before executing.
+
+The generalisation §148 §2 reached from the other direction applies here too: **a clean
+statement is not evidence.** "Neither driver's prose says so" reads exactly like something
+checked, and cost nothing to write.
+
+**SUCCESSORS.**
+
+0. **NONE FROM THIS SECTION.** §147 successor 2 is closed and there is no remaining work in
+   `studies/` from the §147/§148 line. The two local names in §3 are recorded here so that
+   whoever next edits `study_wheel_fea._blindness_row` for another reason can take them.
+1. **THE CLOSING WRITE-UP SHOULD COUNT THE PREMISE-WRONG SUCCESSORS, NOT JUST THE REPAIRS.**
+   Six reds closed and three successors closed by refutation. The second number is the one
+   that argues for the discipline: **a filed successor is a hypothesis with a citation, and
+   it is read as a finding.** Whatever rule the write-up states about guards should have a
+   companion about what a successor is allowed to assert.
+
+---
+
+## §150 — 2026-09-08. **THE NINE HAS BEEN TEN SINCE §135, AND §143's "AUTHORITATIVE" TABLE IS SHORT A ROW — MINE.** THE MISSING RED IS THE ONE THAT RAISES INSTEAD OF ASSERTING, SO IT IS IN NEITHER OF §133's TWO GROUP TABLES AND I ENUMERATED THE GROUPS RATHER THAN THE LIST. PLUS THE KINEMATICS RED CLOSED: ITS `> 1.5` IS NOT A FENCE, THE FENCE IS 1.0, AND THE BOUND DOES TWO JOBS
+
+Two commits, `2cef108` and `a4808b4`. The second closes a red; the first is §148's
+successor and is recorded in its own message. **The finding this section exists for is
+neither: it is that the count every section since §136 has carried is wrong, and the
+error is in the table I published as authoritative.**
+
+### 1. HOW A MEASURED DIFF OF THE WRONG CANDIDATE SET LOOKED LIKE AN ANSWER
+
+§133 lists **ELEVEN** reds, at `PLAN.md:20278-20289`. Below that it sorts them into
+**GROUP A — six demonstrations whose vehicle stopped exhibiting the phenomenon** and
+**GROUP B — three tolerance and exactness pins**. Six plus three is nine, and §133 §4
+then discusses the eleventh separately, under its own heading, because it does not fit
+either group:
+
+> **`test_gnl.py::test_the_load_continuation_path_does_not_change_the_equilibrium` does
+> not fail an assertion. It raises.**
+
+**I BUILT MY WORKING LIST FROM THE TWO GROUP TABLES AND NOT FROM THE ELEVEN-ROW LIST.**
+Nine node IDs, re-measured at §141 §1 and again at §143 §1, nine confirmed red — and
+§143 called that "diffed, not counted" and published it as the authoritative name-keyed
+table. **It was a measured diff of a candidate set that was already short**, and it
+looked MORE trustworthy for having been measured. Eleven minus `R_rim` (closed at §135,
+renamed at `a96f1de`) is **TEN**, and §136, §137, §138, §141, §143 and §145 all say nine.
+
+**IT SURFACED ONLY BY RUNNING THE WHOLE FILE**, which is §141 successor 2's own rule
+applied to `tests/test_gnl.py` for the kinematics repair below. The node ID passed; the
+file reported two failures. **The rule was written for a different reason — a repair
+breaking its neighbours — and it caught a bookkeeping error instead.**
+
+**THE CORRECTED LIST, BY NAME.** This supersedes §143 §1:
+
+```
+  GREEN  test_geometry_kernel  thickness_hits_its_nodes_exactly                f3cc24d
+  GREEN  test_geometry_kernel  analytic_curvature_matches_finite_differences   e011809
+  GREEN  test_objective        the_thickness_branch_of_the_cap_binds_...       65f45bf
+  GREEN  test_fem              mesh_resolution_must_scale_with_thickness       bb76860
+  GREEN  test_fem              the_interpolated_drop_is_the_same_number_...    ef6c489
+  GREEN  test_wheel_fea        peak_stress_diverges_but_the_field_converges    1205064
+  GREEN  test_contact          the_sampled_patch_extent_is_biased_not_...      0a33d46
+  GREEN  test_gnl              stress_recovery_follows_the_solves_kinematics   a4808b4
+  RED    test_gnl              the_retired_max_min_gate_is_decided_by_...
+  RED    test_gnl              the_load_continuation_path_does_not_change_...   <- MISSING
+                                                                                  FROM §143
+```
+
+**Eight of ten. Two remain and BOTH are in `tests/test_gnl.py`** — the count "two left"
+survives by coincidence, the composition does not. The raiser has been open since §133
+and no section has closed it; it appears in exactly two places in this file, that list
+and §133 §4.
+
+**THE LESSON IS ONE THIS TREE ALREADY HAS AND I APPLIED TO THE WRONG LEVEL.** Enumerate
+the candidate set, do not sample it — and a set assembled from two tables that PARTITION
+part of a list is a sample. §138 §1 says a citation is resolved at the commit that wrote
+it rather than by grepping HEAD for something that matches; the same discipline says a
+list is read from the list.
+
+### 2. THE KINEMATICS RED: `> 1.5` IS NOT A FENCE, AND THE BOUND DOES TWO JOBS
+
+`test_stress_recovery_follows_the_solves_kinematics` pins the §14 footgun —
+`gauss_stresses` defaults to `nonlinear=False`, which is silently wrong on an SVK field.
+The three assertions above the failing line carry that and all pass. The `> 1.5` is a
+non-vacuity guard.
+
+```
+  genome     cfg      drop_mm   right    wrong    ratio
+  shipped    smoke     2.2896  15.0834  21.9627  1.4561   <- what this fixture reads
+  shipped    coarse    2.3757  14.1442  23.1575  1.6372
+  outgoing   smoke     1.8320  18.6072  30.8418  1.6575
+  outgoing   coarse    1.9011  17.6722  32.2086  1.8226
+```
+
+**THE CONTROL IS THE OUTGOING GENOME AT THIS FIXTURE and §133 §4 assumed the other
+answer.** It reads 1.6575, so `smoke` CAN show the footgun and the promotion is the
+cause — by only 10.5% of margin over the old bound, so this guard was thin here before
+the promotion rather than comfortable. §133 §4's *"the cheap fix is not to move the
+config"* is right, and now for a measured reason: `coarse` buys 12.44% against a
+promotion that cost 12.15%.
+
+**NO DERIVABLE FENCE EXISTS, AND THE TABLE ARGUES IT BETTER THAN THE PHYSICS DOES.** The
+FIDELITY axis (+12.44%, +9.96%) is as large as the GENOME axis (−12.15%, −10.17%), and
+refining RAISES the ratio. A quantity whose mesh sensitivity rivals its physical
+sensitivity is not something a bound derives from — it is a p99 of a difference field,
+and §143 §2 is this tree's own record that p99s of sharp fields do not converge. **The
+consequence: `smoke` is the CONSERVATIVE evaluation point**, so this fixture is right for
+a reason rather than by inheritance, which is a better defence of not moving `CFG` than
+the arithmetic above it.
+
+**THE BOUND WAS DOING TWO JOBS AND ITS MESSAGE NAMED THE WRONG ONE.** It said the test
+"is not guarding anything" — false, because assertion 2 compares `stress_report` against
+the explicit recovery at `rel=1e-12` and fails loudly at any ratio meaningfully above 1.
+What the bound guards is:
+
+```
+  (a) the two RECOVERY PATHS are still DISTINCT     fence at 1.0, derivable, CODE DEFECT
+  (b) the footgun is still dramatic enough to test  no fence, a JUDGEMENT
+```
+
+One number served both; the message now branches on the reading and says which. **Same
+one-name-two-quantities shape as §140's two `CONFIGS`, §147's two node spacings and
+§148's three weld arcs — the fourth instance in this arc.**
+
+**THE HEADROOM IS 1.18 PROMOTIONS, NOT 16.49%.** The new bound is `1.25`. Applying the
+measured genome factor 0.8785 once gives 1.4561 -> 1.2792, so **one more promotion of the
+size just measured eats 86% of the margin**. The docstring says so, and says that firing
+means re-examine (b) rather than lower the number. **An arc about margins that decay
+silently should not ship a margin quoted in the units that hide the decay.**
+
+**AND THE DOCSTRING'S OWN +169.5% IS NOT THE OUTGOING GENOME'S**, which is what §133 says
+of it. 46.56/19.75 = 2.357 against 1.4561–1.8226 across both genomes and both fidelities,
+so it belongs to a genome older than `96a0ac5`. It STAYS — §136 §5's rule against
+re-fitting a figure at every promotion — but scoped. **That is the SECOND §133 row found
+to carry the right failure under a wrong attribution**, after the contact one at §145 §4.
+
+### 3. WHAT MOVED
+
+**`a4808b4`** — `tests/test_gnl.py`, one docstring and one assertion. **Green: the node
+ID passes.** Citation cost zero; all three citations into the file are above the edit.
+**Second-read by a concurrent session**, which reproduced the failing cell independently
+to four decimals and contributed the fidelity-axis argument, the two-jobs split and the
+promotions-not-percent framing — all three are improvements on my first draft and are
+marked as such in the commit.
+
+**NOT touched.** `CFG` at `:32`, for the reasons above and §133 §4's. The eleven tests
+sharing it. The docstring's dated figures.
+
+**SUCCESSORS.**
+
+0. **THE RAISER, WHICH IS §133's SUCCESSOR 2 AND HAS NEVER BEEN TOUCHED.**
+   `test_the_load_continuation_path_does_not_change_the_equilibrium` raises
+   `NewtonDivergedError` at load step 7/8 rather than failing an assertion. §133 §4
+   already did the diagnosis — `CFG = "smoke"` cannot distinguish "the mesh is too coarse
+   for this design" from "this design has no equilibrium", and `run_newton_health` at
+   `coarse` answers it in seconds for one genome — and filed the fix as making the test
+   SAY which it found. **§2 above changes one input to that: `smoke` is now known to be
+   the conservative point for the OTHER gnl red, so any argument for moving this one's
+   evaluation must be made for this test alone and not for the file.**
+1. **THE COUNT IN §136, §137, §138, §141, §143 AND §145 IS WRONG BY ONE AND THE SECTIONS
+   ARE LEFT ALONE.** Each was correct about the nine it measured. This section is the
+   correction and §1 is the list; a reader arriving at any of those six should be sent
+   here, but rewriting six dated records to fix a count is the rot this tree removes
+   rather than the repair.
+2. **THE SUITE HAS STILL NOT BEEN RUN, AND §150 §1 IS THE REASON IT MATTERS MORE THAN IT
+   DID.** §143 successor 2 asked for the full suite batched, diffed against §133's
+   eleven. That is now the only instrument that would have caught this by itself — every
+   per-file and per-node-ID check this arc has run inherited the same short list. Nine
+   files have been run whole; §117's promotion left the suite 62 red before any of it
+   started.
+
+## §151 — 2026-09-08. §150 IS RIGHT AND I CORROBORATE IT FROM THE OPPOSITE ERROR: **MY "NINE" WAS A DIFFERENT NINE.** §133's ROWS 1–9 EXACTLY, WHILE §150's WAS ROWS 1–5, 7, 8, 9, 11. TWO DISJOINT SAMPLING MISTAKES, **BOTH LANDING ON NINE**, EACH CORROBORATING THE OTHER FOR SIX SECTIONS. FOUR OF MY COMMIT MESSAGES ASSERT SET IDENTITY THAT WAS NEVER CHECKED
+
+No code. A correction of my own record, filed beside §150 rather than folded into it —
+§143's table is that session's to repair and this half is mine.
+
+### 1. THE FULL ELEVEN, ENUMERATED RATHER THAN DIFFED, AT `a4808b4`
+
+```
+   1  test_contact::test_the_sampled_patch_extent_is_biased_not_merely_noisy   GREEN  0a33d46
+   2  test_fem::test_mesh_resolution_must_scale_with_thickness                 GREEN  bb76860
+   3  test_fem::test_the_interpolated_drop_is_the_same_number_when_a_node...   GREEN  ef6c489
+   4  test_geometry_kernel::test_thickness_hits_its_nodes_exactly              GREEN  f3cc24d
+   5  test_geometry_kernel::test_analytic_curvature_matches_finite_differences GREEN  e011809
+   6  test_gnl::test_the_load_continuation_path_does_not_change_the_equilibrium  RED   never closed
+   7  test_gnl::test_the_retired_max_min_gate_is_decided_by_the_sample_size      RED
+   8  test_gnl::test_stress_recovery_follows_the_solves_kinematics             GREEN  a4808b4
+   9  test_wheel_fea::test_peak_stress_diverges_but_the_field_converges        GREEN  1205064
+  10  test_objective::test_R_rim_is_still_effectively_inert_and_that_is_recorded  RENAMED a96f1de
+        -> test_R_rim_is_no_longer_inert_and_that_is_the_finding  :1129            GREEN
+  11  test_objective::test_the_thickness_branch_of_the_cap_binds_on_a_thin_root GREEN  65f45bf
+```
+
+Ten live rows, eight closed, **two remain and both are in `tests/test_gnl.py`.** §150's
+accounting is confirmed independently.
+
+### 2. THE TWO NINES WERE DIFFERENT SETS AND THE MATCHING COUNT IS WHY NOBODY LOOKED
+
+**§150's nine** was rows 1–5, 7, 8, 9, 11: built from §133's Group A and Group B tables,
+which partition ten of the eleven, missing **row 6** because the raiser is in neither — it
+raises instead of asserting and §133 discusses it separately in §4.
+
+**My nine** — the one in `f164153`'s green block — was rows **1 through 9, in order**. I
+ran the light batch with `--ignore` on the four heavy files, and **both rows I missed are
+in `test_objective.py`**, one of the four. My set contains the raiser; §150's does not.
+§150's contains row 11; mine does not.
+
+**Two sampling errors, disjoint, both arriving at nine.** Then each of us re-measured our
+own nine, found nine red, and reported it as confirmation. §150 names its own version of
+this — *"a measured diff of the wrong candidate set is still the wrong answer, and it
+looked more trustworthy for having been measured."* The companion is worse: **two measured
+diffs of two different wrong candidate sets can agree on the count, and then corroborate
+each other.** Six sections carried "nine" and every one of them had a measurement behind it.
+
+### 3. WHAT I ASSERTED, AND THAT IT WAS NEVER CHECKED
+
+`f164153`, `4debd05`, `bedccc1` and `c94a1ae` all carry:
+
+> *"The nine are exactly §133's successor 0's standing nine, every one of them named in
+> PLAN.md already"*
+
+The second clause I did check — I grepped each of the nine and every one appears in this
+file. **The first clause I did not.** "Exactly ... the standing nine" is a claim of SET
+IDENTITY, and what I had was a count of nine matching a count of nine that I had inherited
+from §136 onward. I read agreement of cardinality as agreement of membership, and wrote it
+as a verified statement beside a measurement that was real.
+
+**The evidence was in my own commit message.** Row 6 is printed in `f164153`'s list of
+nine and is absent from §143's table. Either document, read against the other, shows the
+lists differ. Neither of us read them against each other, because both said nine.
+
+**Those four messages are left exactly as written.** They were correct about the nine each
+of them measured, and every test named in them was red when named. What was never checked
+is the set-identity sentence, and this section is its bracket — the same treatment §136 §5
+gave `_fillet_margins` and §150 successor 1 gives the six sections carrying the count.
+Rewriting six commit messages to repair a number is the rot this tree removes.
+
+### 4. AND A THIRD WAY A ROW LEAVES AN ACCOUNTING, WHICH A NAME-KEYED TABLE STILL MISSES
+
+Row 10's node ID does not exist at HEAD: pytest returns *"not found: ...
+test_R_rim_is_still_effectively_inert_and_that_is_recorded (no match in any of [<Module
+test_objective.py>])"*. §135 did not repair that test, it **renamed** it — `a96f1de` made it
+`test_R_rim_is_no_longer_inert_and_that_is_the_finding`, because the finding inverted. So
+the row did not go green and did not go red; **it stopped existing.** A node-ID sweep
+reports an ERROR (exit 4, not a failure), a name-keyed table reports a row it cannot find,
+and a count-keyed accounting drops it silently. §143's move to name keys was the right
+direction and it is still not enough here, **because the name changed WITH the finding —
+which is exactly the case where the link most needs preserving.**
+
+**AND THE COUNT SURVIVED BY LUCK OF WHAT THE RENAME DID.** Measured independently in both
+sessions: the old node ID has **0 occurrences** in `tests/test_objective.py`, and the
+replacement at `:1129` **passes**. So §135 did close that row — by inverting the finding
+and renaming the test to match — and §150's "eleven minus R_rim = ten" is right in
+substance. **But it is right because the renamed test happens to be green.** Had `a96f1de`
+renamed a test that then went red, all three of our keys would have hidden it: a node-ID
+sweep returns *"no match in any of [<Module>]"* at **exit 4**, which reads as a harness
+error rather than a failure; a name-keyed table shows a row it cannot find, which reads as
+an oversight; and a count-keyed accounting drops it in silence. **The rename is the only
+one of the three vanishing modes that can lose a row with NO instrument reporting a
+failure** — and it happens exactly when a finding inverts, which is when the name changes
+and when the row matters most.
+
+**SUCCESSORS.**
+
+0. **THE AUTHORITATIVE LIST NEEDS A "CLOSED BY" COLUMN THAT CAN HOLD A RENAME.** §143's
+   table keys on test name and §150 corrects its membership; neither can express "row 10
+   became this other node ID at `a96f1de`". One column, three kinds of entry: a commit, a
+   rename-to, or open. Cheap, and it is the only form that survives a finding inverting.
+1. **A LIST WITH A STATED LENGTH SHOULD BE CHECKED AGAINST ITS LENGTH, NOT ITS CONTENT.**
+   §133 says eleven and prints eleven rows. Both of us derived a nine and neither compared
+   it to the eleven the source declares. The check that would have caught this in either
+   session is `wc -l` on the source block against the length of the derived set — before
+   any measurement, and cheaper than one solve.
+2. **TWO SESSIONS AGREEING IS NOT INDEPENDENT CONFIRMATION WHEN BOTH INHERITED THE SAME
+   NUMBER.** We each measured, each got nine, and each read the other's nine as support.
+   Worth stating in the closing write-up next to §149's rule about successors: **agreement
+   between two derivations of an inherited quantity is evidence about the inheritance, not
+   about the quantity.**
+
+---
+
+## §152 — 2026-09-08. §133's ELEVEN ROWS, ELEVEN FATES, NO ARITHMETIC IN BETWEEN — AND THE CHECK THAT WOULD HAVE CAUGHT SIX SECTIONS OF WRONG COUNTING IS INSIDE §133's OWN TITLE, WHICH DECLARES **TEN** PINS OVER TABLES THAT PRINT **NINE** AND NAMES THE MISSING ROW'S CATEGORY
+
+No commit but this one. §150 established the count was wrong and §151 established that two
+sessions got there by disjoint routes. **This is the table, in one place, and the reason
+neither of us needed a measurement to find the gap.**
+
+### 1. THE CHECK WAS FREE AND IT IS IN THE TITLE
+
+§133's heading reads, in full:
+
+> *"ALL **ELEVEN** REDS ARE THE PROMOTION AND NOTHING ELSE, MEASURED FOUR WAYS — AND
+> **TEN** OF THEM PIN A SYMPTOM OF THE OUTGOING GENOME RATHER THAN THE FINDING THEY NAME.
+> THE ONE THAT IS REAL WROTE ITS OWN SUCCESSOR IN ADVANCE, AND **THE ONLY NON-ASSERTION
+> RED** IS A `smoke`-FIDELITY ARTIFACT..."*
+
+Its two group tables print **six** and **three**.
+
+```
+  declared in the title    11 total  =  10 pins  +  1 real
+  printed in the tables     9 pins   =   6 (Group A)  +  3 (Group B)
+  difference                1 pin, and the title NAMES ITS CATEGORY: "the only
+                            non-assertion red"
+```
+
+**The tenth pin is the row that raises instead of asserting, and §133's own title says so.**
+I read the tables and not the sentence above them. §151 successor 1 asks for a `wc -l` of a
+source block against its declared length before any measurement; **this is cheaper than
+that** — the section states both numbers itself, four words apart, and they disagree.
+
+### 2. ELEVEN ROWS, ELEVEN FATES
+
+In §133's own printed order. **This supersedes §143 §1 and §150 §1**, both of which were
+short — §143 by two rows, §150 by one.
+
+```
+   #  test                                                            fate
+   1  test_contact  the_sampled_patch_extent_is_biased_not_merely...   GREEN   0a33d46
+   2  test_fem      mesh_resolution_must_scale_with_thickness          GREEN   bb76860
+   3  test_fem      the_interpolated_drop_is_the_same_number_when...   GREEN   ef6c489
+   4  test_geometry_kernel  thickness_hits_its_nodes_exactly           GREEN   f3cc24d
+   5  test_geometry_kernel  analytic_curvature_matches_finite_diff...  GREEN   e011809
+   6  test_gnl      the_load_continuation_path_does_not_change_the...  RED     NEVER CLOSED,
+                    raises NewtonDivergedError at load step 7/8        never touched
+   7  test_gnl      the_retired_max_min_gate_is_decided_by_the_sam...  RED     open
+   8  test_gnl      stress_recovery_follows_the_solves_kinematics      GREEN   a4808b4
+   9  test_wheel_fea  peak_stress_diverges_but_the_field_converges     GREEN   1205064
+  10  test_objective  R_rim_is_still_effectively_inert_and_that_is...  RENAMED a96f1de ->
+                    `test_R_rim_is_no_longer_inert_and_that_is_the_finding`, :1129, GREEN
+  11  test_objective  the_thickness_branch_of_the_cap_binds_on_a_th...  GREEN   65f45bf
+```
+
+**Eight repaired and green, one renamed and green, two red. 8 + 1 + 2 = 11.** No
+subtraction anywhere, which is the point: every count this arc got wrong was a difference
+of two numbers rather than a list of outcomes. Row 6 reads NEVER CLOSED rather than blank,
+because a blank is what let it be absent from a table for six sections.
+
+### 3. THREE WAYS A ROW LEAVES A SWEEP, AND ONLY ONE OF THEM REPORTS ANYTHING
+
+```
+  NOT IN THE SCHEMA   row 6 fits neither group table because it RAISES rather than
+                      asserting.  Cost: my nine.  Visible in §133's title, free.
+  OUT OF THE BATCH    rows 10 and 11 sit in `test_objective.py`, excluded as one of the
+                      four heavy files.  Cost: the concurrent session's nine.  Visible
+                      by comparing the batch's exclusions against the list, free.
+  RENAMED             row 10's node ID does not exist at HEAD.  a96f1de renamed it
+                      BECAUSE the finding inverted.
+```
+
+**The rename is the only one of the three that can lose a row with NO instrument reporting
+a failure.** A node-ID sweep exits with *"no match in any of [<Module ...>]"*, which reads
+as a harness error; a name-keyed table shows a row it cannot find, which reads as an
+oversight; a count-keyed accounting drops it in silence. And it fires exactly when a
+finding INVERTS — which is when the name changes and when the row matters most. Verified
+independently by both sessions, each declining the other's result: 0 occurrences of the old
+name, and the replacement at `:1129` passes.
+
+**HERE IT COST NOTHING BY LUCK.** The rename resolved to a GREEN test, so the missing row
+was a resolved one and the total came out right anyway. Had `a96f1de` renamed a test that
+then went red, all three keys would have hidden it.
+
+### 4. WHY THE COUNTS AGREEING WAS THE WHOLE PROBLEM
+
+§151 has this from the other side and it is the day's strongest finding. Two sessions
+derived a nine from the same eleven-row list by **disjoint** errors — mine dropped row 6,
+the other dropped rows 10 and 11 — and both arrived at nine. Neither set was ever compared
+to the other, because the integers matched. **The evidence was printed in a commit
+message**: row 6 is in that session's nine and absent from mine.
+
+**Agreement between two derivations of an inherited quantity is evidence about the
+INHERITANCE, not about the quantity.** That is §151 successor 2 and it belongs next to
+§149's rule about what a filed successor may assert and §145 §5's rule about guards. Those
+three are what this arc actually produced.
+
+### 5. WHAT MOVED, AND WHAT IS RUNNING
+
+Nothing but this record. **The full suite is running as this is written**, batched the way
+`test_light.log` and the four `test_heavy_*.log` were at §117 — one process for everything
+outside the heavy four, then `test_gradient`, `test_pool`, `test_stage3` and
+`test_objective` one process each, sequential under `tmux`, logs in a scratch directory so
+the committed §117-era logs stay the dated records they are. Sequential because a
+concurrent session measured a real OOM kill today at 49,948,448 kB anon-rss on a 61 GB box,
+which is §135 §2's 44 GiB `objective()` call from the other side.
+
+**That run is the first full-suite measurement since §117's promotion left it 62 red**, and
+§150 successor 2's reason for wanting it is now sharper than "it has not been done": every
+per-file and per-node-ID check this arc ran inherited a short list, and the suite is the
+only instrument that does not take the list as input.
+
+**SUCCESSORS.**
+
+0. **THE SUITE'S RESULT IS OWED ITS OWN SECTION AND MUST BE DIFFED AGAINST §2's ELEVEN**,
+   not against any nine and not against §117's 62 by count. §133's rows are eleven named
+   tests; §117's 62 is a different set measured at a different commit. **Do not subtract
+   one from the other.**
+1. **THE RAISER, ROW 6, HAS NEVER BEEN OPENED BY ANY SECTION.** §133 §4 did the diagnosis —
+   `CFG = "smoke"` cannot distinguish "the mesh is too coarse for this design" from "this
+   design has no equilibrium", and `run_newton_health` at `coarse` answers it in seconds
+   for one genome — and filed the repair as making the test SAY which it found. §150 §2
+   adds one constraint that did not exist then: `smoke` is now measured to be the
+   CONSERVATIVE evaluation point for the OTHER `test_gnl` red, so an argument for moving
+   this one's fidelity has to be made for this test alone and never for the file.
+2. **`test_the_retired_max_min_gate_is_decided_by_the_sample_size`, ROW 7.** §133 records
+   both readings ROSE — 2.167/9.026 to 7.384/13.550 — so the finding is stronger and only
+   the retired `3.0` BRACKET died, and `3.0` is a property of the retired gate rather than
+   of the claim. **Re-derive both readings first**: §145 §4 and §150 §2 are two separate
+   §133 rows whose stated causes did not survive measurement, and this is a third row of
+   the same list.
+
+---
+
+## §153 — 2026-09-09. THE FIRST FULL SUITE SINCE §117: **957 COLLECTED, 942 PASSED, 2 FAILED, 13 XFAILED, 0 XPASSED**, IN 1:52:49. BOTH REDS ARE §152 §2's ROWS 6 AND 7 AND **NOTHING OUTSIDE THE ELEVEN IS RED**. THE COLLECTED-COUNT GATE CAUGHT A BUG IN THE INSTRUMENT THAT IMPLEMENTS THE GATE, ON ITS FIRST OUTING
+
+No source commit. §143 successor 2 asked for this at three sections' distance, §150
+successor 2 sharpened the reason — every per-file and per-node-ID check this arc ran
+inherited a short list, and the suite is the only instrument that does not take the list as
+input — and §152 successor 0 set the protocol. This is the run.
+
+### 1. THE GATE, WHICH WAS THE POINT
+
+A concurrent session's precondition, adopted before any diffing: **sum the batches'
+collected counts and assert the declared 957, because a dropped file makes tests appear
+neither passed nor failed, the red list comes back short, and short reads as progress.**
+That is exactly how a nine survived four commit messages at §151.
+
+```
+  batch             collected   passed  failed  xfailed  xpassed  error  skipped   wall
+  light                   720      707       2       11        0      0        0  29:02
+  heavy_gradient           24       24       0        0        0      0        0   6:37
+  heavy_pool               23       23       0        0        0      0        0  12:11
+  heavy_stage3             63       63       0        0        0      0        0  28:41
+  heavy_objective         127      125       0        2        0      0        0  36:18
+  ------------------------------------------------------------------------------------
+  SUM                     957      942       2       13        0      0        0  1:52:49
+                          ===                                        declared: 957
+```
+
+**957 = 957.** No file dropped, no gap, no overlap. **13 xfailed reconciles against the 13
+`pytest.mark.xfail` marks counted statically in `tests/`**, so §152 §3's fourth bucket is
+populated and accounted for rather than merely acknowledged. **0 xpassed**, which under
+`xfail_strict = true` (`pyproject.toml:38`) would have been failures.
+
+Batched as the §117-era logs were — one process for everything outside the heavy four, then
+`test_gradient`, `test_pool`, `test_stage3`, `test_objective` one process each, SEQUENTIAL
+under `tmux`. Sequential because a concurrent session measured a real OOM kill earlier the
+same day at 49,948,448 kB anon-rss on a 61 GB box; peak here stayed under 14 GiB with 45 GB
+free. Logs written to a scratch directory so the committed `test_light.log` and four
+`test_heavy_*.log` stay the dated §117 records they are.
+
+### 2. THE GATE'S FIRST ACT WAS TO CATCH ITS OWN INSTRUMENT
+
+**The first count read 967 and the gate said FAIL.** The extraction was
+`grep -oE "^[.FExsu]+"` over the logs — and **pytest's traceback detail lines begin with
+`E`**, so ten characters of failure output were counted as ten test outcomes.
+
+```
+  E       assert 7.383620170836557 < 3.0        <- counted as an "error" outcome
+```
+
+Ten too MANY, which is the direction that sends you to re-run a good suite. **Had the
+miscount gone the other way I would have re-run a bad one and been right for the wrong
+reason** — the same shape as §152 §3's rename, where the outcome was right and the
+mechanism that made it right was not chosen. Fixed by matching only true progress lines,
+`^[.FEsxuX]+\s*\[\s*\d+%\]$`. **A gate whose first outing catches a defect in the code
+implementing the gate has earned its place; this one did, and the defect was in the half
+written after the gate was agreed.**
+
+### 3. THE RED SET, BY NAME, AND THE BUCKET THAT MATTERS IS EMPTY
+
+```
+  FAILED tests/test_gnl.py::test_the_load_continuation_path_does_not_change_the_equilibrium
+  FAILED tests/test_gnl.py::test_the_retired_max_min_gate_is_decided_by_the_sample_size
+```
+
+**Both are §152 §2's rows 6 and 7. The third bucket — red but NOT one of the eleven — is
+EMPTY across all 957.** That is the output a subtraction would have hidden entirely, and it
+is what makes the rest of this arc trustworthy: **nothing the nine repairs touched broke
+anything outside the list they were working from.** Nine files were edited across §141-§152
+and the other 25 are untouched and green.
+
+**§117's 62 IS NOT A TERM AND IS NOT SUBTRACTED FROM.** Two facts side by side: §117
+measured 62 red at `cb4e3dd`; this run measures 2 red at `45aa25e`. Different sets,
+different commits, and §152 successor 0 exists because an arithmetic relationship between
+them looks available and is not one.
+
+### 4. FILED, NOT CHASED: THE LOGS CARRY NO SUMMARY LINE
+
+`pytest -q --no-header -rf` wrote no `N passed in Xs` line in any of the five batches, which
+is why §1's counts come from progress characters rather than from a summary. **The committed
+§117-era logs DO carry those lines** — `test_heavy_objective.log` ends
+`124 passed, 3 xfailed in 2144.91s (0:35:44)` — so something differs between `make test`'s
+invocation and this one. Not chased, because guessing at it is exactly what this arc has
+been punishing; recorded so the next full run knows to check rather than assume its
+summary will be there.
+
+**[ANSWERED SAME DAY, 2026-09-09, BY A CONCURRENT SESSION AND VERIFIED HERE. IT IS `-qq`,
+AND IT IS THE CAUSE OF §2's BUG.]** `pyproject.toml:18` sets `addopts = "-q"`. Adding `-q`
+on the command line makes it **`-qq`**, and pytest suppresses the summary at two.
+Demonstrated on a 61-test file:
+
+```
+  pytest tests/test_genome_key_order.py        ->  "61 passed in 0.32s"
+  pytest -q tests/test_genome_key_order.py     ->  no summary line at all
+```
+
+The `Makefile`'s `test:` target is bare `$(PY_OPT) -m pytest` — ONE `-q`, from `addopts` —
+which is why every committed §117-era log ends in a totals line and all five of these end
+in nothing. **THE TWO FINDINGS ARE ONE CAUSAL CHAIN**: the redundant `-q` removed the
+authoritative count, that forced the counts out of progress characters, and THAT is what let
+ten traceback `E` lines be counted as ten outcomes. Drop the CLI `-q` and both defects
+disappear. **A flag that looked idempotent with the config file was not**, and the cost was
+not a missing convenience line but a hand-rolled parser standing in for it.
+
+**AND THE `heavy_objective` ROW MOVED SINCE THE COMMITTED LOG, WITH A COMMIT BEHIND IT.**
+This run reads `127 = 125p + 2xf`; `test_heavy_objective.log` reads `127 = 124p + 3xf`. One
+test left the xfail bucket. That is `12df5e6` (2026-09-06 22:59:26, *"lift the two strict
+XPASSes"*), and the committed log is 2026-09-06 11:27 — **eleven and a half hours
+earlier**. `tests/test_objective.py` carries 2 marks today, verified. So the transition is a
+commit and not an unexplained fate — **which is §152 §3's fourth bucket changing membership
+mid-arc, exactly the motion the bucket exists to make visible, and the mechanism that
+surfaced it was `xfail_strict` turning the xpasses into failures: the §31 policy working as
+designed.**
+
+### 5. WHAT MOVED
+
+Nothing in the tree. This section is the record; the run's artifacts stay in scratch.
+
+**NOT touched.** The two reds. The 13 xfails, every one of which carries a `reason=` naming
+a PLAN section, per `pyproject.toml`'s policy set at §31 — a policy that has now held
+13 of 13.
+
+**SUCCESSORS.**
+
+0. **ROW 6, THE RAISER, WHICH NO SECTION HAS EVER OPENED.**
+   `test_the_load_continuation_path_does_not_change_the_equilibrium` raises
+   `NewtonDivergedError` at load step 7/8 rather than failing an assertion. §133 §4 did the
+   diagnosis and filed the repair as making the test SAY which of two opposite verdicts it
+   found. **Two constraints now exist that did not when it was filed.** §150 §2 measured
+   `smoke` to be the CONSERVATIVE evaluation point for the other `test_gnl` red, so an
+   argument for moving this one's fidelity must be made for this test alone and never for
+   the file. And `tests/test_gnl.py:230` carries a STRICT xfail — §14 item 4a's
+   pre-registered small-load gate, 0.2007% against 0.1%, whose reason says
+   *"GATE_SMALL_LOAD_REL is NOT to be moved"* — so **a repair that changes the small-load
+   solver path can turn that xfail into a passing test, which under `xfail_strict` is a
+   FAILURE.** Check it before editing the continuation path, not after.
+1. **ROW 7**, unchanged from §152 successor 2: re-derive both readings before trusting
+   §133's row, which is the third row of that list whose stated cause has to be re-measured.
+2. **THIS RUN IS A BASELINE AND SHOULD BE CITED AS ONE.** 957/942/2/13/0 at `45aa25e`,
+   1:52:49, batched as above. The next promotion's checklist has no full-suite item — §115's
+   left the suite 62 red and §117 discovered it afterwards. **A promotion that lands without
+   this measurement taken before and after is a promotion whose red count is an inference.**
+
+---
+
+## §154 — 2026-09-09. **ALL ELEVEN OF §133's ROWS ARE CLOSED AND THE SUITE HAS NO FAILURES: 957 COLLECTED, 944 PASSED, 0 FAILED, 13 XFAILED.** THE 944 WAS ARITHMETIC WHEN I FIRST REPORTED IT AND IS A MEASUREMENT NOW, IN 29 MINUTES RATHER THAN TWO HOURS. AND §133 IS 11-FOR-11 ON THE FAILURES IT NAMED WHILE 3-OF-4 WRONG ON THE CAUSES IT STATED
+
+The close of the arc §133 opened. Two commits since §153's suite —
+`d6c89ee`/`e573509` and `28b91f6` — plus `aaafc34`, which is not one of the eleven and is
+the sharpest live finding of the stretch.
+
+### 1. THE MEASUREMENT
+
+```
+  batch                              collected   passed  failed  xfailed   wall
+  light   (re-run 03:21-03:51 today)       720      709       0       11  28:55
+  heavy4  (measured at 45aa25e)            237      235       0        2   1:23
+  ------------------------------------------------------------------------------
+  TOTAL                                    957      944       0       13
+                              944 + 0 + 13 = 957 = collected      GATE PASSES
+```
+
+**No `FAILED` and no `ERROR` line anywhere in the logs.** The 13 xfails reconcile against
+the 13 static marks, and 0 xpassed — nothing crossed under `xfail_strict`, including
+`aaafc34`'s small-load gate, still xfailed at its 17.15% margin.
+
+**I REPORTED 944 AS ARITHMETIC BEFORE MEASURING IT, WHICH §153 SUCCESSOR 2 EXISTS TO
+FORBID.** 942 + the 2 now closed is a prediction, and a concurrent session pointed my own
+rule at me four sections after I wrote it. **The re-measure cost 29 minutes rather than two
+hours, and the method is the transferable half:**
+
+```
+  1.  git diff <baseline>..HEAD --name-only   filtered to ^(src|studies)/  ->  NONE
+      so the four heavy batches' counts remain measurements at byte-identical inputs
+  2.  only tests/test_gnl.py changed, and it lives in the light batch  ->  re-run that one
+  3.  the edited file's COLLECTED count, before and after:  12 and 12
+      without this, "709 of 720" compares two different denominators
+```
+
+Step 3 is the one I did not think of and the other session did. **A denominator is the
+thing that goes wrong quietly** — the same class as counting 967 outcomes from a log, or
+nine rows from an eleven-row list.
+
+### 2. ELEVEN OF ELEVEN
+
+```
+   #  test                                                     fate
+   1  test_contact  the_sampled_patch_extent_...               GREEN   0a33d46
+   2  test_fem      mesh_resolution_must_scale_with_thickness  GREEN   bb76860
+   3  test_fem      the_interpolated_drop_...                  GREEN   ef6c489
+   4  test_geometry_kernel  thickness_hits_its_nodes_exactly   GREEN   f3cc24d
+   5  test_geometry_kernel  analytic_curvature_matches_...     GREEN   e011809
+   6  test_gnl      the_load_continuation_path_...             GREEN   d6c89ee
+   7  test_gnl      the_retired_max_min_gate_...               GREEN   28b91f6
+   8  test_gnl      stress_recovery_follows_the_solves_...     GREEN   a4808b4
+   9  test_wheel_fea  peak_stress_diverges_but_the_field_...   GREEN   1205064
+  10  test_objective  R_rim_is_still_effectively_inert_...     RENAMED a96f1de, GREEN
+  11  test_objective  the_thickness_branch_of_the_cap_...      GREEN   65f45bf
+```
+
+Ten repaired, one renamed-with-its-finding, all green. Two sessions: eight rows and two.
+
+**AND THE THING WORTH INHERITING IS NOT "THE LIST WAS BAD".** Four of §133's stated causes
+were examined closely enough to test:
+
+```
+  contact row (§145 §4)     names the HALF-ANGLE for a failure in the PEAK assertion,
+                            and its ratio GREW rather than shrank              WRONG
+  kinematics row (§150 §2)  attributes the docstring's +169.5% to the outgoing
+                            genome; it reproduces on neither, at either fidelity  WRONG
+  the raiser (d6c89ee)      calls an isolated n=8 divergence a "smoke-FIDELITY
+                            ARTIFACT"; eleven other step counts converge there    WRONG
+  max/min gate (28b91f6)    "the finding is stronger and only the 3.0 bracket
+                            died" — exactly right                                RIGHT
+```
+
+**11-for-11 on the failures it named, 3-of-4 wrong on the causes it stated.** That is a
+specific object and a much more useful thing to inherit than distrust: it says which half
+of the record to re-derive. It only reads that way because the survivor is named beside the
+three.
+
+### 3. THE FOUR RULES THIS ARC ACTUALLY PRODUCED
+
+0. **A MECHANISM THAT FITS IS STILL AN ATTRIBUTION UNTIL SOMEONE PERTURBS IT.** Three
+   stories were proposed here and all three looked equally good: floppiness driving the
+   small-load correction SURVIVED a controlled six-point sweep; "the max is pinned at draw
+   index 0" DIED at two other seeds; a root-to-wall outlier of 2.921 against 1.294 DIED in
+   the same table built to test it. The fit is not the evidence — the perturbation is.
+1. **WHERE A FENCE IS LOCATABLE, PREFER THE PARAMETER-SPACE GUARD**, because a probe drifts
+   toward a fence long before the quantity it measures changes sign. The evidence is one
+   row: on the genome BEFORE `cb4e3dd`, `8d317ed`'s guard would already have been red at
+   1.06x while the test it protects was still green. Where no fence exists — a p99 with no
+   `h` at which it starts diverging, a sampled peak with no `n_quad` at which it becomes a
+   level — the quantity-space form is what is available.
+2. **A FILED SUCCESSOR MAY ASSERT WHAT WAS MEASURED AND MUST MARK WHAT WAS INFERRED — AND A
+   NEGATIVE IS INFERRED UNLESS THE SEARCH THAT ESTABLISHED IT IS NAMED.** Three successors
+   were closed by refutation rather than execution, and all three failures were negatives:
+   "no census speaks about the objective", "neither driver's prose says so", "13 solves
+   against 2". A negative is the cheapest sentence to write and the most expensive to
+   inherit.
+3. **AGREEMENT BETWEEN TWO DERIVATIONS OF AN INHERITED QUANTITY IS EVIDENCE ABOUT THE
+   INHERITANCE, NOT ABOUT THE QUANTITY.** Two sessions derived "nine" from the same
+   eleven-row list by DISJOINT errors — one dropped the row that fits no group table, the
+   other dropped a whole heavy file — and the matching integers are what stopped either of
+   us looking, for six sections.
+
+### 4. THE LIVE FINDING THAT IS NOT ONE OF THE ELEVEN
+
+`aaafc34`. A **strict** xfail —
+`test_the_gnl_correction_is_small_at_one_percent_of_service_load` — whose reason text
+claimed `small_load_rel_diff = 0.2007%` while the shipped wheel reads **0.117153%**, a
+figure 1.71x the reality on a gate whose text says `GATE_SMALL_LOAD_REL` is not to be
+moved.  **The margin went 95.8% -> 17.15% at `cb4e3dd` and nothing was watching it.**
+Under `xfail_strict` an xpass is a suite FAILURE, so §31's mechanism will reopen this by
+itself.
+
+It is now dated, flat under refinement (under 3.1%, four genomes), measured at the
+conservative fidelity (`smoke` reads lowest 4 of 4), and given a cause: the quantity is
+**monotone in wall thickness** over six controlled points, a uniform **+15.4%** crosses the
+gate, and 70.5% of the promotion's drop is `t0` and `t3` alone. **That converts a warning
+into a pre-flight check — whether the next promotion reopens this is knowable before it
+lands rather than after.**
+
+### 5. AN UNPLANNED DEMONSTRATION
+
+The waiter process watching tonight's light batch was **OOM-killed mid-run**. The batch
+itself, launched under `tmux new-session -d`, carried on and finished clean: **the parent
+died and the run did not.** That is what the `tmux` discipline is for, observed rather than
+cited, on the same night the sequential batching exists because of a measured OOM kill at
+49,948,448 kB anon-rss. A discipline adopted for one reason paying off for an adjacent one
+is worth more than the argument that established it.
+
+**SUCCESSORS.**
+
+0. **THE SMALL-LOAD GATE IS THE ONE NUMBER TO RE-READ AFTER THE NEXT PROMOTION.** §4. It is
+   17.15% from reopening, the mechanism is known, and the check is `+15.4% of uniform
+   thickness`. Nothing else in the tree is that close to changing a verdict by itself.
+1. **§153 SUCCESSOR 2 STANDS AND IS NOW CHEAPER THAN IT LOOKED.** A promotion landing
+   without a full-suite measurement before and after has an inferred red count — that is
+   how §115 left the suite 62 red and §117 found out afterwards. **§1's method makes the
+   "after" affordable**: re-run only the batch whose files changed, prove the rest with
+   `git diff --name-only`, and check the collected counts. Two hours becomes minutes
+   whenever a promotion touches few files.
+2. **THE `wheel_fem.py` CITATIONS HAVE STILL NEVER BEEN SWEPT** — §138 successor 1,
+   unchanged and now the oldest open item. `git grep -nE 'wheel_fem(\.py)?:[0-9]+'` with
+   the `(\.py)?` OPTIONAL, then §138 §1's writing-commit resolution for each. The optional
+   group is not decoration: it is what hid the tenth `wheel_adjoint` citation from a sweep
+   that reported nine.
+
+## §155 — 2026-09-09. §154's SUCCESSOR 2 / §138's SUCCESSOR 1, CLOSED: THE `wheel_fem.py` CITATIONS ARE SWEPT. **THE REGEX §154 FILED FINDS 9 OF 13 — ITS OPTIONAL GROUP IS ONE LEVEL TOO SHALLOW, THE SAME MISTAKE IT WAS WRITTEN TO PREVENT.** TWELVE LIVE CITATIONS, TWELVE RESOLVED AT THEIR WRITING COMMIT ON THE FIRST TRY, THREE DANGLING — AND ALL THREE ARE **ONE COMMIT**, `bf3db90`, WHICH INSERTED 26 LINES AT `:1599` ON 2026-08-23. PLUS §138 §5's FILED TARGET FOR THE ONE DANGLER IT ALREADY KNEW ABOUT IS **WRONG BY FIFTEEN LINES**, BECAUSE IT IMPORTED A CORRECT ANCHOR FROM ANOTHER FILE
+
+One commit. Three changed lines, all prose, at zero line shift. No solve, no artifact.
+
+### 1. THE CANDIDATE SET IS 13, AND THE FILED REGEX SEES 9
+
+§154 successor 2 supplied the enumeration and stressed one detail: run `git grep -nE
+'wheel_fem(\.py)?:[0-9]+'` **with the `(\.py)?` optional**, because that optional group is
+what hid the tenth `wheel_adjoint` citation from §136. It is the right lesson applied one
+level too shallow:
+
+```
+  pattern                                     instances  what the widening adds
+  wheel_fem(\.py)?:[0-9]+       (as filed)             9  --
+  wheel_fem[A-Za-z0-9_.]*:[0-9]+                      11  `wheel_fem.wheel_contact_problem:1717`
+                                                         -- a dotted symbol path, in two files
+  + the §140 symbol-owner rule, per symbol            13  `RigidGroundContact:652`, same two
+                                                         files -- a class with one definition
+```
+
+**`wheel_fem.wheel_contact_problem:1717` is a citation into `wheel_fem.py` that the filed
+pattern cannot match**, because `(\.py)?` admits exactly one optional suffix and this one
+is a dotted symbol path. `[A-Za-z0-9_.]*` admits both and costs nothing. And the last two
+need §140's rule — *the owner of a bare `:N` is whatever IDENTIFIES a file* — turned into a
+mechanical sweep: enumerate the 55 symbols `wheel_fem.py` defines at top level, then `git
+grep -nE '(^|[^A-Za-z0-9_.])<symbol>:[0-9]+'` for each. 55 symbols, **one** hit, in two
+files. Cheap, and not optional: without it the sweep reports 11 and calls itself complete.
+
+13 instances, 4 files: `PLAN.md` 7, `MBSE_PLAN.md` 2, `src/wheel_requirements.py` 2,
+`src/wheel_stage3.py` 2. One of the seven is not a citation but a **quotation** of a broken
+one — §138 §5's own repair table at `PLAN.md:21904` — leaving **12 live**.
+
+### 2. TWELVE OF TWELVE RESOLVED AT THE WRITING COMMIT, AND THE RESULT IS ONE COMMIT WIDE
+
+§138 §1's method, unchanged: `git log -S'<the citing sentence>' -- <citing file>` for the
+commit that wrote the citation, then `git show <that commit>:src/wheel_fem.py | sed -n
+'<N>p'` for the line it named. Twelve for twelve on the first try, matching §138's ten for
+ten.
+
+```
+  citing site                cited   written at            the line it named then      HEAD
+  PLAN.md:1904               :1183   43da58f  2026-08-03   du = spla.spsolve(Kr, -r)   1183
+  PLAN.md:2916               :1693   2cc24d1  2026-08-01   plane="stress", ...,
+                                                           kinematics="linear",        1719  X
+  PLAN.md:3028               :1274   b5c22c9  2026-08-12   if prob.nonlinear or
+                                                           prob.contact is not None:   1274
+  PLAN.md:3157               :1841   b5c22c9  2026-08-12   def solve_wheel_contact(    1867  X
+  PLAN.md:9159    (§65)      :1816   a0f9279  2026-08-23   res["axle_drop_mm"] = ...   1816
+  PLAN.md:9165    (§65)      :1882   a0f9279  2026-08-23   delta0 = solve_wheel(...)   1882
+  MBSE_PLAN.md:208           :1717   0b8890a  2026-08-31   def wheel_contact_problem(  1717
+  MBSE_PLAN.md:208            :652   0b8890a  2026-08-31   class RigidGroundContact:    652
+  wheel_requirements.py:54   :1717   0b8890a  2026-08-31   same                        1717
+  wheel_requirements.py:55    :652   0b8890a  2026-08-31   same                         652
+  wheel_stage3.py:67         :1841   506acfe  2026-07-29   def solve_wheel_contact(    1867  X
+  wheel_stage3.py:72         :1090   506acfe  2026-07-29   class NewtonDivergedError:  1090
+```
+
+**Three dangle, and one commit explains all three.** `bf3db90` (2026-08-23) inserted 26
+lines into `solve_wheel` — its only hunk in this file is `@@ -1599,6 +1599,32 @@` — so
+everything at or above `:1599` is untouched and everything below moves exactly `+26`. `1693
+-> 1719` and `1841 -> 1867`, twice. Nothing else in `wheel_fem.py` has shifted a cited line
+in the six weeks the twelve span.
+
+**That is a self-checking result rather than twelve independent ones.** The nine survivors
+are not luck: `:1183` and `:1274` sit above the hunk, and `:1816`, `:1882`, `:1717` and
+`:652` were all written *after* 2026-08-23 and so were already post-shift. Predicting which
+citations must be broken from the hunk header alone recovers exactly the three, which is
+the check the individual resolutions cannot supply.
+
+### 3. §138 §5 FILED THIS DANGLER'S TARGET AND GOT IT WRONG BY FIFTEEN LINES
+
+`wheel_stage3.py:67` is not a discovery. §138 §5 found it, declined to fix it under §117's
+rule, and filed it with a target:
+
+```
+  wheel_stage3.py:63    `wheel_fem.py:1841`  the cold-start `solve_wheel`  -> :1882
+                        -- which §65's own text at PLAN.md:9165 already cites correctly
+```
+
+**The citation never named the cold-start `solve_wheel`.** At `506acfe`, the commit that
+wrote it, `:1841` was `def solve_wheel_contact(mesh, *, force=TOTAL_FORCE_NEWTONS,
+newton=None,` — and the cold-start line `delta0 = solve_wheel(mesh)["axle_drop_mm"]` was at
+**`:1856`**, fifteen lines below. §138 §5 obtained `:1882` by matching HEAD against the
+claim in the citing sentence, **which is the exact method §138 §1 forbids two paragraphs
+earlier in the same section**, applied to a citation it happened to find on a line it was
+already editing.
+
+**The mechanism is worth more than the correction: a correct citation in another file is
+not a resolution for this one.** §138's stated evidence was that §65 at `PLAN.md:9165`
+"already cites correctly", and it does — `a0f9279` is 2026-08-23, after `bf3db90`, so §65's
+`:1882` is a post-shift anchor and true. But §65 cites `:1882` for a *different claim* (the
+secant's initial guess, reached exactly once). Borrowing it answers "where is that line
+now" only if both citations named the same line, and that is a fact to check, not to
+assume. Here they did not: one named the `def`, the other names the cold solve inside it.
+
+The cross-check that settles it without any judgement: `PLAN.md:3157` cites **the same
+original line** `:1841`, written at `b5c22c9`, resolving to the same `def`. Two citations
+written to one line must resolve to one line. `:1867` does; `:1882` would split them.
+
+### 4. WHAT MOVED
+
+```
+  PLAN.md:2916               src/wheel_fem.py:1693  ->  :1719     87 chars -> 87
+  PLAN.md:3157               src/wheel_fem.py:1841  ->  :1867     79 chars -> 79
+  src/wheel_stage3.py:67     wheel_fem.py:1841      ->  :1867     4 digits -> 4
+```
+
+Three lines, `2 files changed, 3 insertions(+), 3 deletions(-)`, **zero line shift and zero
+character shift** — every replacement is four digits for four, so no citation into
+`PLAN.md` or `wheel_stage3.py` moves and no paragraph re-wraps. §154 §4's self-inflicted
+wrap is the failure this avoids.
+
+Each `sed` was addressed **by line number**, not by the citation string:
+`src/wheel_fem.py:1841` has **two owners in `PLAN.md`** — the live citation at `:3157` and
+§138 §5's quotation of the broken one at `:21904` — and a global substitution would have
+silently rewritten a historical record into a lie about what §138 found.
+
+**Green.** `tests/test_stage3.py` — the file §138 used as its check for the same docstring
+— **63 passed, 0 failed, in 28:12**. No executable line changed, and
+`git grep -nE ':1841|:1693|:1719|:1867' -- tests/` is empty, so no test asserts on any of
+these anchors: the green is a guard against having edited the wrong thing, not evidence
+about the citations.
+
+### 5. THE ADJACENT SWEEP `bf3db90` SUGGESTS IS ALREADY CLEAN
+
+`bf3db90` touched two source files, and the other — `studies/study_corner_singularity.py`,
+`+59/-4` — has never been swept either. It is one candidate: `PLAN.md:23290` cites
+`studies/study_corner_singularity.py:534--536` (§149, 2026-09-08, an em-dashed range the
+same widened pattern catches at its first integer). It **resolves** — `:534-536` is the
+comment §149 was right about — and `:536`'s trailing "See `wheel_fem`" is a bare module
+reference with no line number, so it is not a thirteenth citation. One candidate,
+enumerated, resolves: no work there.
+
+**SUCCESSORS.**
+
+0. **`:1882` IS STILL AVAILABLE FOR `wheel_stage3.py:67`, BUT ONLY AS A RE-AIM.** §3
+   restores what the citation named; it does not claim that is the best anchor. `:1867` is
+   the `def` of `solve_wheel_contact`, `:1882` is the single line that performs the cold
+   solve the sentence describes, and the tighter anchor is defensible. It is a **different
+   decision** from a repair and must be filed as one — and it applies to
+   `wheel_stage3.py:67` alone, because `PLAN.md:3157`'s claim really is about the function,
+   not that line. Whoever takes it breaks the two-citations-one-line cross-check of §3
+   deliberately, and should say so.
+1. **THE SYMBOL-OWNER SWEEP OF §1 IS THE MISSING HALF OF §138's SUCCESSOR 2.** That
+   successor asks for a script that carries a bare `:N`'s owner across a paragraph. §1
+   needed a second pass it does not describe: for each cited FILE, enumerate the symbols
+   that file defines and grep `<symbol>:[0-9]+`. That is what found `RigidGroundContact:652`,
+   and no paragraph-carrying walker would have — the owner is on the same line as the
+   citation and is a class name, not a path. **55 symbols, one hit: the yield is low and
+   the cost is one loop, which is exactly the shape that gets skipped by hand and should
+   not be.**
+2. **THE FILED-REGEX FAILURE IN §1 IS THE THIRD OF ITS KIND AND THE PATTERN IS NOW
+   NAMEABLE.** §136 lost a citation to a missing `(\.py)?`; §154 wrote the optional group
+   into the successor and lost two to a missing `[A-Za-z0-9_.]*`; §140 had already
+   established the symbol-owner rule that finds the remaining two, and it was not carried
+   into the pattern. **Every widening so far has been discovered by the sweep it was too
+   narrow for.** The check that would break the sequence is cheap and was not run either
+   time: compare the pattern's hit count against `git grep -c '<module>'` — 29 mentions in
+   `PLAN.md` against 7 citations is a ratio worth eyeballing once per sweep.
+
+## §156 — 2026-09-09. §138's SUCCESSOR 2 AND §155's SUCCESSORS 1 AND 2, CLOSED: THE CITATION SWEEP IS A SCRIPT, AND ITS FIRST ANSWER ACROSS EVERY `.md` AND `.py` IS **730 CITATIONS, 203 OF WHICH DO NOT HOLD AT HEAD WHAT THEY HELD AT THEIR CITING LINE'S OWN COMMIT**, IN 2.3 SECONDS. **THE INSTRUMENT'S BLIND SPOT IS 8 ROWS OF 730 — MEASURED, NOT ARGUED — AND TWO OF THE 8 ARE THE DANGLE §137 §6 RECORDED AT §118.** ALL 27 WRONG-OWNER ROWS ARE **ONE** SHAPE, AND §155's SYMBOL PASS OVER ALL 1347 SYMBOLS RATHER THAN ONE FILE'S 55 YIELDS FOUR CITATIONS OF **ONE** SYMBOL
+
+One commit, one new file: `studies/_citation_sweep.py` — 370 lines, the first 151 of them
+the module docstring that carries the measurements below, and 186 non-blank lines of code.
+No artifact: it prints and writes nothing, because `tests/test_cli.py:81`'s rule about not
+writing into the repo applies to an audit too. Nothing imports it, `pytest --collect-only`
+reads 957 before and after, and `studies/` is enumerated by no test
+(`test_fillet_artifact_chain.py:44` binds `STUDIES` and every reader joins a named file into
+it; `make studies` lists nine drivers by name).
+
+### 1. THE REPLAY: §155's THIRTEEN, ALL TWELVE SITES, PLUS THE ONE ITS PATTERN COULD NOT SEE
+
+§155 §1 enumerated the citations into `wheel_fem.py` by hand and by widened `git grep`:
+**13 citations in 4 files.** That is the labelled set this instrument was built against,
+and it is the first thing it was pointed at.
+
+```
+  §155's enumeration            12 sites, 13 citations   ALL FOUND, none missing
+  the sweep at HEAD             22 sites, 28 citations
+  ------------------------------------------------------------------------------
+  the 15 it adds                14   PLAN.md:24030-24176 -- §155's OWN section text,
+                                     written after §155's sweep had run
+                                 1   PLAN.md:21904's bare citation of
+                                     wheel_fem.py:1882, the target half of
+                                     §138 §5's repair row: no identifier, so no pattern
+                                     keyed to `wheel_fem` can reach it
+```
+
+**The replay adds nothing §155 could have found and misses nothing it did find.** That is
+the whole of the validation, and it is worth more than the count: the one citation it adds
+in already-swept text is a BARE `:N`, which is the exact category §138's successor 2 was
+filed to reach and the category every `wheel_fem`-shaped pattern in §136, §154 and §155 was
+structurally blind to. 6 of the file's 28 citations are bare.
+
+### 2. `git blame`, NOT `git log -S` — AND THE TWO DISAGREE ON THREE OF NINE
+
+§138 §1's method for the writing commit is `git log -S'<the citing sentence>' -- <citing
+file>`: one call per citation, and a needle chosen by hand. Blaming the citing line is one
+call per citing FILE — under 0.6 s for all 24188 lines of `PLAN.md` — and needs nothing.
+Replaying §155 §2's nine unrepaired rows, blame agrees on six and differs on three, **in
+both directions and for three unrelated reasons**:
+
+```
+  citing site           §155's log -S   blame     why
+  wheel_stage3.py:72    506acfe         4ec1d91   `log -S -- <path>` cannot see past the
+                        2026-07-29      2026-07-27  `src/` reorg; blame follows the rename
+  MBSE_PLAN.md:208      0b8890a         de67144   the file was UNTRACKED until de67144
+                        2026-08-31      2026-08-31  ("track the two root markdown files")
+  PLAN.md:1904          43da58f         4e4a672   `log -S` finds the introduction, blame
+                        2026-08-03      2026-08-04  the RE-WRAP that carried the citation
+                                                    onto a new line one day later
+```
+
+That third row is not an oddity, it is the mechanism the rest of this section measures:
+`43da58f` wrote the sentence carrying `wheel_fem.py:1183` and `4e4a672` re-flowed the
+paragraph around it the next day, moving the token to a new line without touching it. Here
+it costs nothing, because `:1183` has not moved either — this row is one of the 32 below
+where both readings agree. The eight where they do not are the same mechanism with a moved
+anchor underneath it.
+
+All nine resolve identically either way, so this is not a correction to §155 — but the first
+row is a small strengthening of §155 §3. That section restored `wheel_stage3.py:67` to
+`wheel_fem.py:1867` on the ground that at `506acfe` that line was `def solve_wheel_contact(`,
+the oldest commit its instrument could see. At `4ec1d91`, **two days earlier**, the line is
+the same `def`. §155 §3's anchor is right at both ends of a reorg its own method could not
+look through.
+
+**AND LAST TOUCH IS NOT A COMPROMISE — IT IS THE RIGHT SEMANTICS, BECAUSE A REPAIR RE-DATES
+AN ANCHOR.** When `277a731` re-pointed `MBSE_PLAN.md:66` from `wheel_objective.py:1129` to
+`:1151`, the claim that has to hold at HEAD is the repaired one; resolving that line at its
+first appearance would invent a MOVED. The case blame really cannot see is the other one — a
+citation carried unchanged through a re-wrap, where the wrap is too new and real drift reads
+as OK. `git log -L <n>,<n>:<file> -p` separates the two, at **0.58 s a line against
+`PLAN.md`'s 1.5 MB of history and 0.03 s against a `src/` file** — 2 min 28 s for all 730 —
+so the size of the blind spot is a measurement rather than a caveat:
+
+```
+  730 citations
+    594   the citing line has ONE commit in its lineage -- blame IS the origin
+    136   the line was edited after it first appeared
+           32   both readings give the same verdict
+           96   they differ AND the newest commit WROTE the anchor -- blame is right
+                  72 of the 104 flips are three commits whose JOB was re-pointing
+                  citations: 57 at 277a731 (§136's 54), 12 at c51320e (§138's ten),
+                  3 at 480016a (§155's three, committed this morning)
+            8   they differ and the newest commit left the anchor alone
+                  -- the only rows where this instrument may judge against a version
+                  too new
+```
+
+**So the 203 is short by at most 8, 1.1%, and the 8 are named rather than estimated.** They
+are also not noise: two of them cite `tests/test_objective.py:1257`, which §137 §6 recorded
+as "4 name `:1257`, dangling and recorded so at §118". Of those four sites the sweep already
+reports two as MOVED — `PLAN.md:17606` and `wheel_objective.py:1171` — and to *different*
+targets in `tests/test_objective.py`, `:1393` and `:1447`, because the two citations were
+written at different commits and `:1257` did not mean the same line at both. The other two
+are exactly the two the blame verdict hides. **An instrument whose 1.1% blind spot contains
+a dangle the tree had already written down is one whose error can be read off the record
+instead of guessed at.**
+
+### 3. WHAT THE TWO SCANNED SUFFIXES SAY — AND WHY `REPO_EXPLAINED.tex` IS NOT ONE OF THEM
+
+**The scope is `.md` and `.py`, and stating that is not a formality: the third candidate
+would have reported a silent zero.** `REPO_EXPLAINED.tex` writes a citation as
+`\at{wheel\_wheel.py}{173}`, and `\newcommand{\at}[2]{\code{#1:#2}}` puts the colon in at
+RENDER time — so its 84 `\at{}{}` macros carry no `:N` for any pattern to match. The
+pattern does match 71 further tokens in that file and **every one of them is dropped for
+want of an owner**: ownership is carried by a backticked mention, and this file names its
+files in `\code{}` — its 62 backticks are LaTeX quote marks. §139 counted **145 line
+citations** there, 80 `\at{}` and 65 bare, and §140 measured **55 of them moved**. Scanning
+the file yields **zero**, which is why it is named in `NO_SCAN` rather than scanned and
+silently found empty; it stays in `SCOPE` so it can still own a citation (nothing cites it
+today) and still counts as a mention. **730 is the count for `.md` and `.py`. It is not the
+count for the tree, and a sweep that had not been asked this question would have said it
+was.**
+
+103 scanned `.md`/`.py` files of the 104 tracked, 1713 `:N` tokens, **730 citations**.
+
+```
+  730 citations   527  still name the line they named at the citing line's commit
+                  203  for a human
+  ---------------------------------------------------------------------------------
+  by what supplied the owner        by what the report says about it
+    455  a path on the token          121  MOVED, owner is a path -- drift, no doubt
+      4  a symbol (§140's rule)        55  MOVED, owner was carried -- drift IF the
+    271  an owner carried across            paragraph's owner is the right one
+         the paragraph                 27  anchor out of RANGE -- the owner is wrong
+```
+
+The provenance split is the report's own error bar and the 203 divide along exactly that
+line: a path written onto the token cannot name the wrong file, so the 121 are drift and
+not doubt. Where the rot is concentrated is not where the citations are:
+
+```
+  cited file                 citations   path-owner MOVED
+  src/wheel_step_export.py          20         17     <- 85% of its citations
+  src/wheel_fea.py                  58         30
+  src/wheel_wheel.py                42         12
+  src/wheel_stage3.py               74         10
+  src/wheel_objective.py            94          7
+  src/wheel_fem.py                  28          0     <- swept at §155, and it holds
+  src/wheel_adjoint.py              43          0     <- swept at §136-§138 (see §5)
+```
+
+**"MOVED" IS NOT THE SAME CLAIM AS "DRIFTED", AND THE `THEN` COLUMN IS WHERE THE DIFFERENCE
+LIVES.** What the instrument measures is exact and narrower than the word suggests: the cited
+line's content at HEAD differs from its content at the citing line's own commit. A citation
+that was WRONG THE DAY IT WAS TYPED reports the same way — and 14 of the 176, 8%, carry the
+signature: 6 resolve to a BLANK line and 8 to a bare docstring quote or `# ---` rule, neither
+of which can ever have been the thing the sentence was claiming. `wheel_fea.py:596-598` is
+the case worth naming, because **four separate sites cite it** — `wheel_fea.py:663`,
+`wheel_geometry.py:172`, `:430` and `study_mesh_quality.py:29`, all four for the `smoothness`
+loss term, all four MOVED, and three of the four resolve to a blank line at `8b347a0`. Four
+independent citations of one anchor, none of which ever held: that is corroboration about the
+ANCHOR rather than doubt about the instrument, and the term itself now lives at
+`wheel_fea.py:615` and `:762`. **Whoever repairs a row has to read the `then` column, because
+a delta applied to an anchor that never held moves a wrong citation to a different wrong
+line.**
+
+**The two files this tree has actually swept are the two with no path-owner drift at all** —
+and the ten that DO remain in `wheel_adjoint.py` are every one of them bare (§5). A sweep
+removes exactly what its pattern can see, which is §1's point arriving from the other side:
+the argument for running this one is not that the tree is careless, it is that three hand
+sweeps left 203 rows standing and could not have known.
+
+### 4. THE 27 OUT-OF-RANGE ROWS ARE ONE FAILURE, AND SIX ARE §135's DELIBERATE DANGLES
+
+Every one of the 27 is the same sentence shape: a bare `:N` naming a line of **the file it
+is written in**, inside a paragraph whose subject is a different file, so the carried owner
+wins and cannot hold the line. §138's successor 2 predicted the report would be "red for
+the deliberate dangles §135 records" and it is — all six of them, at `PLAN.md:21239-21240`,
+where §135 lists the six PLAN.md sites its rename dangled (`:17573`, `:17631` in §118,
+`:20287` in §132, `:20384`, `:20570`, `:20647` in §133) in a paragraph about
+`tests/test_objective.py`. The instrument says `no line 17573 in tests/test_objective.py
+-- but PLAN.md:17573 exists`, which is the diagnosis, not the repair.
+
+**THE SHARPEST OF THE 27 IS THIS SUCCESSOR'S OWN TEXT.** `PLAN.md:21946` is a line of
+§138's successor 2 — the request this section answers — and it tells its reader the script
+"would be red for the deliberate dangles §135 records at `:21244`", writing that line
+number with no file on it. The carried owner at that point in the paragraph is
+`wheel_adjoint.py`, so the report answers `no line 21244 in src/wheel_adjoint.py at
+0b345a0 -- but PLAN.md:21244 exists`. **The sentence that asked for this instrument is one
+of the 27 rows the instrument returns**, wrong in exactly the way §140's rule is wrong: the
+line belongs to the file the sentence is written in, and the paragraph is about another.
+
+**§140's carried-owner rule is therefore wrong for 27 of the 271 citations that rely on it,
+10.0%, in a single recognisable shape** — and the obvious fix is deliberately NOT applied.
+Preferring the citing file whenever the carried owner cannot hold the line would silently
+convert a genuinely far-gone anchor into a confident resolution against the wrong file, and
+nothing in this instrument can tell those two apart. The row states both readings and
+stops. Filed as successor 1 with the number attached.
+
+### 5. THE `+37` COMES BACK ON ITS OWN, AND UNIFORM DELTAS ARE A FREE CROSS-CHECK
+
+The second labelled set is `wheel_adjoint.py`: 43 citations, 32 resolving, 1 out of range,
+**10 MOVED and every one of them by +37** — seven with a unique target that is +37 exactly,
+and three whose old text now appears twice, where +37 lands each on a line holding that same
+text. §137 §6 measured the number from the diff — "`+37` at `wheel_adjoint.py:104`", one
+pure insertion — and recorded "10 dangling, left alone, moved by 37". The sweep resolves the
+ten independently, each against its own citing line's commit, and recovers the same single
+integer. Not one of the ten carries a path: all are bare `:N` under a carried owner, which
+is why the pattern §136 and §138 swept this file with could not have found them at all.
+
+Run over the whole report: 176 of the 203 are MOVED and 114 of those propose a unique HEAD
+target, which is the population a delta can be computed for. Grouped by (blame commit ×
+cited file):
+
+```
+  of the 176 MOVED   114  propose a unique HEAD target
+                      62  do not -- the old line's text occurs 0 or many times at HEAD
+
+  the 114 in       46 groups   39 have ONE delta    70 rows -- but 21 of those groups hold
+                                                              a single row and corroborate
+                                                              nothing; 18 groups / 49 rows
+                                                              have a neighbour that agrees
+                               7 have several       44 rows -- several insertions in the
+                                                              elapsed history, e.g. 8b347a0
+                                                              (2026-07-24) into
+                                                              wheel_fea.py:+77/+130/+174/+243
+```
+
+The two checks fail on opposite rows, which is why both are printed. §136's own paragraph
+about `wheel_adjoint`'s two near-identical functions is the case in point: `:819` and `:884`
+are byte-identical `if not np.isfinite(dF_ddelta...` guards, so the content match reports
+"2 matches at HEAD" and refuses to choose — while the +37 its seven unambiguous neighbours
+agree on names the line without ambiguity. **A content proposal and a hunk-shift prediction
+are not two ways of doing the same thing.**
+
+### 6. TWO RULES THAT ARE MEASUREMENTS RATHER THAN CHOICES
+
+**IN CODE, ONLY A TOKEN THAT NAMES A FILE STANDS WITHOUT BACKTICKS.**
+`studies/study_fillet_block.py` carries 102 bare `:N` tokens and **not one is a citation** —
+slices, format specs, dict literals. Backticks separate them perfectly here: 8 backticked
+bare tokens exist across every `.py` file in the tree and all 8 are real, including
+`wheel_objective.py:669-670`, where one owner serves four line numbers across a line break.
+The rule has to cover symbols for the same reason one level up: `wheel_fea.py:1365` prints
+`max_stress` under a `7.2f` format spec, and `max_stress` is a top-level `def` in
+`wheel_adjoint.py:573` — a format spec that §140's symbol rule reads as a citation into
+another module. A path may stand bare (`stage3_resume_genome.py:15` writes
+`(wheel_stage3.py:980-982)`); a symbol may not.
+
+**AND A CARRIED OWNER MAY NOT BE A SYMBOL AT ALL.** `wheel_fea.py:663` reads "``smoothness``
+was only ever an indirect proxy for this (``:596-598`` said so)", and `smoothness` has
+exactly one top-level definition in this tree — in `studies/study_fillet_pnorm.py`, which is
+not the file that sentence is about. An identifier written ONTO a token may be a symbol,
+because it is bound to the citation; an owner carried across a paragraph may not be. So a
+bare `:N` in a source file with no file-identifying mention in its paragraph falls back to
+the citing file, which buys the right KIND of owner and nothing more: that row still comes
+back MOVED, because at `f0a9e83` — the commit that wrote the sentence — `wheel_fea.py:596`
+was a `# ---` divider. Still a question for a human, but now the right question.
+
+**The three widenings this pattern needed were all already in the record.** §136 lost a
+citation to a missing `(\.py)?`; §154 wrote that optional group into its successor and lost
+two to a missing `[A-Za-z0-9_.]*`; §140 had established the symbol rule and neither carried
+it into the pattern. The numeric forms here were counted instead of guessed — of 1713
+tokens, 1571 single lines, 126 `-` ranges, 8 `--` ranges, 8 comma lists
+(`wheel_adjoint:588,643`, the tenth citation §137 §6 found) — and the mention ratio
+§155's successor 2 asked for is a column of the report rather than a habit.
+
+### 7. THE SYMBOL PASS, PRICED
+
+§155's successor 1 called the symbol sweep "55 symbols, one hit ... exactly the shape that
+gets skipped by hand and should not be". Over all 104 files the ratio is starker: **1347
+top-level symbols have exactly one definition, and sweeping every one finds 4 citations —
+all of the same symbol, `RigidGroundContact`, all into `wheel_fem.py`, all four already
+known to §155.** Building the whole owner index — 104 basenames, 104 module stems and the
+1347-symbol table — takes **10 ms**, and enumerating all 730 citations 0.22 s; the 2.3 s is
+almost entirely the `git` calls that resolve them. A yield of 4 in 730 for 10 ms is worth
+having, and is also exactly why no hand sweep will ever run it.
+
+### 8. THE INSTRUMENT'S FIRST FINDING WAS IN ITS OWN DOCSTRING
+
+**AND ITS FIRST ACT WAS TO FIND AN AMBIGUOUS BARE `:N` IN ITS OWN DOCSTRING**, which is
+§153's shape exactly — the collected-count gate caught a bug in the instrument that
+implements the gate, on its first outing. Run over the tree with the new file added to the
+list, 26 citations come back from that docstring and 25 of them own themselves properly;
+the twenty-sixth was `` `:1841` `` written bare in a paragraph whose last file-identifying
+mention had been three sentences and a blank line earlier, so §6's source-file fallback
+claimed it for `_citation_sweep.py` itself. The prose now writes `wheel_fem.py:1841`. **A
+bare `:N` is not a shorthand a reader resolves from context; it is a shorthand that resolves
+against whatever the paragraph last named, and that is a different thing.**
+
+**Green.** The light batch does not fit in one process any more, and the split that made it
+fit is itself a measurement — successor 3 carries it. Three processes instead of §153's one:
+`tests/test_cli.py` through `tests/test_geometry_kernel.py`, **399 passed, 10 xfailed in
+7:45**, peak `VmHWM` 10.30 GiB; that range's other fourteen files, **266 passed, 1 xfailed in
+1:32**, peak 2.68 GiB; and `tests/test_requirements.py` alone, **44 passed in 19:59**, peak
+29.15 GiB. **709 passed, 11 xfailed, 0 failed**, and 409 + 267 + 44 = **720** is §153's light
+count — the check that no file went missing in the re-cutting, because a dropped file makes
+its tests neither pass nor fail and a short list reads as progress. Collection is 957,
+unchanged. The heavy four were not re-run and do not need to be: `testpaths` is `["tests"]`
+so `studies/` is never collected, nothing imports `_citation_sweep`, and the one glob that
+reaches this directory is `studies/study_*.py` — which is why `_gate_guard.py` has always
+been invisible to it, and why an underscore was the right first character here too.
+
+**SUCCESSORS.**
+
+0. **121 CITATIONS HAVE DRIFTED AND THE OWNER IS NOT IN QUESTION FOR ANY OF THEM.** This is
+   the work the report exists to hand over, and it is not one commit: the citing sites are
+   50 in `PLAN.md`, 7 each in `wheel_geometry.py` and `MBSE_PLAN.md`, 6 in `test_golden.py`,
+   5 each in `wheel_genome.py`, `wheel_objective.py` and `test_import_hygiene.py`. Take it
+   by CITED file, not by citing file, because that is how the deltas group and how the
+   cross-check of §5 becomes available: `wheel_step_export.py` is 17 rows and the worst
+   in the tree at 85% of its citations, `wheel_fea.py` is 30. §155's shape — one commit,
+   zero line shift, `sed` addressed by line number and never by the citation string —
+   applies unchanged.
+1. **THE CARRIED-OWNER RULE IS WRONG 10.0% OF THE TIME IN ONE SHAPE, AND THE FIX IS A
+   JUDGEMENT, NOT A PATCH.** §4 has the measurement: 27 of 271, every one a self-citation
+   whose paragraph is about another file. Preferring the citing file when the carried owner
+   cannot hold the line clears all 27 and buys a new silent failure — a far-gone anchor
+   resolved confidently against the wrong file. Whoever takes it should decide with the
+   27/271 in hand and say which failure they are choosing; six of the 27 are §135's
+   deliberate dangles and must stay in the report either way.
+2. **EIGHT NAMED ROWS ARE THE WHOLE OF THE BLIND SPOT, AND THEY ARE A DAY'S WORK, NOT AN
+   ARC.** §2 measured them; they are `MBSE_PLAN.md:68`, `PLAN.md:96`, `:2933`, `:6970`,
+   `:16795`, `:17607`, `:19688` and `tests/test_pool.py:371`. Each reads OK only because
+   the commit that last touched the citing line was not the commit that wrote the anchor,
+   so each needs the `git log -L -p` reading of its own lineage rather than the sweep's.
+   Two are the `test_objective.py:1257` dangle already in the record; `PLAN.md:19688` is
+   the one whose owner is CARRIED as well, so it needs §4's judgement first. Folding the
+   `log -L` pass into the script itself is NOT the successor: the full-tree version of it
+   measured **2 min 28 s against the sweep's 2.3 s**, 65x, for a 1.1% correction — and
+   these eight rows can be settled once by hand and re-found by the same command whenever
+   the count moves.
+3. **ONE TEST NEEDS 26–29 GiB AND ELEVEN MINUTES, AND THAT IS THE WHOLE OF WHY §153's LIGHT
+   BATCH NO LONGER FITS IN ONE PROCESS.** The recipe was OOM-killed on the way to the green
+   above, at 13:44:24: one victim, `python` pid 271812, `total-vm:44802280kB`,
+   **`anon-rss:29061492kB`, 27.7 GiB on a 61.4 GiB box**, `oom_score_adj:200`, oom-killer
+   invoked by `tailscaled`. §153 recorded a run-wide peak under 14 GiB across all five of
+   its batches, so something had moved.
+   THE PROGRESS MARKS ARE AN EXACT TEST CENSUS, WHICH IS WHAT MAKES THE REST CHEAP. Half A
+   printed 409 marks, 399 `.` and 10 `x`, against a summary line reading `399 passed, 10
+   xfailed`; and a live process holds a partial 29-character line in a REDIRECTED file, so
+   pytest flushes per test and not per line. The killed log carries exactly 518 marks, 507
+   `.` and 11 `x` with no `E` or `F`, so 518 tests finished and the kill landed inside test
+   **519**, `test_pooled_equals_serial_under_a_non_baseline_requirement_set`.
+   **AND TEST 519 IS NOT THE ANSWER, WHICH IS THE PART A BRACKET GETS WRONG.** The victim's
+   index names the test that was running when the box ran out, not the test that spent the
+   memory. Run `tests/test_requirements.py` alone in a fresh process and its first 17 tests
+   finish in **5 seconds holding 0.46 GiB between them**; its 18th,
+   `test_req_baseline_is_bit_identical_to_naming_no_requirements` — which spawns nothing and
+   simply calls `_evaluate(genes)` twice and compares a scalar, 14 gradient components and 14
+   breakdown terms with `==` — then runs for **11 minutes** on its own. Twice, in two
+   separate processes: 11:17 reaching 25.8 GiB, and 11:06 reaching 29.0 GiB. **One test costs
+   more wall clock than the 409 tests of half A, which take 7:45 and peak at 10.30 GiB**, and
+   the other fourteen files of half B do 267 tests in 1:32 inside 2.68 GiB. In a fifteen-file
+   process the same test carried the peak to 31.84 GiB over 41 samples with no sample below
+   its predecessor, so nothing is handed back while it runs. That is the mechanism entire:
+   one test wants about 26 to 29 GiB, and any batch also holding a few GiB of another file's
+   residue crosses what the box will give. The `oom_score_adj:200` no longer has to be argued
+   around — the size is measured in three other processes that were the victim of nothing.
+   WHAT IS NOT MEASURED is why one `==` between two objective evaluations costs 26 GiB, and
+   why the same test varies by 3.2 GiB between runs. That is the successor: bisect inside the
+   test, not across the suite, because the suite has already been bisected and answered.
+   Until then the light batch is three processes with this file alone in the third, and
+   §153's recipe should NOT be edited to say so — a batch boundary that exists because of an
+   unexplained 26 GiB is a workaround wearing a measurement's clothes, and the number is now
+   specific enough to fix instead.

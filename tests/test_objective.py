@@ -208,11 +208,11 @@ def test_the_gauss_exponent_reaches_the_qoi_and_the_default_is_the_module_consta
     the `(name, factory)` form, and this is what says it works: a different
     `stress_gauss_p` must produce a different constraint.
 
-    The DEFAULT is now `STRESS_NOMINAL_P` (4.0) and not `WA.STRESS_PNORM_P` (30.0), which
-    is step 2's whole point — the constraint is built on a convergent nominal stress and
-    the peak is restored by `Kt`.  The high leg is pinned to `WA.STRESS_PNORM_P` so the
-    module constant every historical record was measured at is still reachable and still
-    means what it meant.
+    The DEFAULT is now `STRESS_NOMINAL_P` (4.0) and not `WA.STRESS_PNORM_P` (30.0), which is
+    step 2's whole point — the constraint is built on a convergent nominal stress and the
+    peak is restored by `Kt` [RETIRED §103 — see §137 §2].  The high leg is pinned to
+    `WA.STRESS_PNORM_P` so the module constant every historical record was measured at is
+    still reachable and still means what it meant.
     """
     phases = WO.phase_stencil(n_phase=N_PHASE, scheme="uniform")
     kw = dict(phases=phases, meshes=WO.phase_meshes(genes, CFG, phases))
@@ -439,9 +439,28 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     the gene box rather than hypothetical.
 
     §13's shipped genome is on the OTHER side of that crossover: at `t0` = 1.2 the
-    thickness branch takes the `min`, which is the branch this test is about.  The 2.0
-    below is now a value chosen to sit near the crossover rather than the floor it used to
-    be — `MIN_WALL_MM` is 1.2.
+    thickness branch takes the `min`, which is the branch this test is about.
+
+    THE PROBE WAS THE HARDCODED `t0` = 2.0 UNTIL 2026-09-08, "chosen to sit near the
+    crossover rather than the floor", AND THE CROSSOVER IS NOT A CONSTANT — it is a
+    function of the SHAPE genes, because thinning the root widens the slot.  Bisected over
+    the `t0` box:
+
+        genome              crossover t0      the old 2.0 probe sat
+        96a0ac5 outgoing      2.634016        0.634 mm INSIDE the thickness branch
+        b729e86 SHIPS         1.908586        0.091 mm OUTSIDE it
+
+    which is the whole of the failure: at 2.0 the shipped genome reads thickness 1.0051
+    against slot 0.9330, so the slot binds and the branch under test is not the live one.
+    The mechanism is untouched — the crossover is still reachable, it moved 27.6% down.
+    So the probe is DERIVED here instead: bisect for the crossover, assert it exists
+    inside the box (which is the claim this docstring actually makes), and probe midway
+    between `MIN_WALL_MM` and it — inside the branch and still not at the floor.
+
+    AND THAT EXISTENCE CLAIM IS NOW MEASURED RATHER THAN ASSERTED FROM ONE DESIGN: over 40
+    uniform draws across the whole gene box, **40 of 40** have a slot/thickness crossover
+    inside the `t0` box.  "Reachable rather than hypothetical" is a property of the model,
+    not of the genome on disk, which is why the bisection can be an assertion.
 
     THE LAST ASSERTION USED TO BE ITS EXACT OPPOSITE, and that is the point of
     BUILD_PLAN.md step 3.  It read `norm(d[:8]) == 0.0` — "the shape genes still move the
@@ -455,7 +474,28 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     """
     cfgo = WW.get_config(CFG)
     g = np.asarray(genes, dtype=float).copy()
-    g[8] = 2.0                                   # near the slot/thickness crossover
+
+    def _limits(t0):
+        gg = g.copy()
+        gg[8] = float(t0)
+        fl = WO.fillet_flanks(gg, cfgo)
+        void = float(WW.hub_void_deg(gg, cfgo, W.S, W.HUB_RADIUS_MM, fl[0]))
+        a = float(WW.arrival_angles(gg, cfgo, span_mm=W.S)[0])
+        return (WO.HUB_CAP_SHARE * W.HUB_RADIUS_MM * np.radians(void),
+                t0 * (WO.HUB_CAP_THICKNESS_SHARE - WO.HUB_CAP_ARRIVAL_SLOPE
+                      * (1.0 - np.cos(np.radians(a)))))
+
+    lo, hi = W.MIN_WALL_MM, W.GENE_SPACE[8]["high"]
+    (s_lo, t_lo), (s_hi, t_hi) = _limits(lo), _limits(hi)
+    assert t_lo < s_lo and t_hi > s_hi, (
+        f"no slot/thickness crossover inside the t0 box [{lo}, {hi}] — thickness/slot is "
+        f"{t_lo:.4f}/{s_lo:.4f} at the floor and {t_hi:.4f}/{s_hi:.4f} at the ceiling, so "
+        f"the min is dead code on this genome and the thickness term could be deleted")
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        s_m, t_m = _limits(mid)
+        lo, hi = (mid, hi) if t_m < s_m else (lo, mid)
+    g[8] = 0.5 * (W.MIN_WALL_MM + 0.5 * (lo + hi))   # inside the branch, not at the floor
     flanks = WO.fillet_flanks(g, cfgo)
     void = float(WW.hub_void_deg(g, cfgo, W.S, W.HUB_RADIUS_MM, flanks[0]))
     a_hub = float(WW.arrival_angles(g, cfgo, span_mm=W.S)[0])
@@ -466,8 +506,10 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     cap = float(WO.hub_fillet_cap_mm(g, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
 
     assert by_thickness < by_slot, (
-        f"at t0 = 2.0 the thickness limit {by_thickness:.4f} is still not the smaller "
-        f"(slot {by_slot:.4f}) — the crossover is outside the box and the min is dead code")
+        f"at t0 = {g[8]:.4f}, midway between MIN_WALL_MM and this genome's crossover at "
+        f"{0.5 * (lo + hi):.4f}, the thickness limit {by_thickness:.4f} is still not the "
+        f"smaller (slot {by_slot:.4f}) — the bisection above found a crossover that the "
+        f"branch does not honour")
     assert cap == pytest.approx(by_thickness)
     # And the gradient has to follow the branch that is live.
     d = np.asarray(jax.grad(
@@ -476,9 +518,29 @@ def test_the_thickness_branch_of_the_cap_binds_on_a_thin_root(genes):
     assert d[8] == pytest.approx(WO.HUB_CAP_THICKNESS_SHARE
                                  - WO.HUB_CAP_ARRIVAL_SLOPE
                                  * (1.0 - np.cos(np.radians(a_hub))))
-    assert abs(d[0]) > 1e-3 and abs(d[1]) > 1e-3, (
-        f"the two genes that aim the spoke at the hub do not move the cap on the "
-        f"thickness branch: d(cap)/d(cx1, cy1) = {d[0]:.3e}, {d[1]:.3e}")
+    # AND THE `> 1e-3` THIS REPLACED WAS A CLAIM ABOUT ONE GENOME'S ARRIVAL ANGLE.  The
+    # only route from the shape genes into the thickness branch is `a_hub`, so
+    # `d(cap)/dgene = -t0 * SLOPE * sin(a_hub) * da_hub/dgene` — proportional to
+    # `sin(a_hub)`, which is 0.4592 at `96a0ac5` (27.334 deg) and 0.1005 at `b729e86`
+    # (5.765 deg), a 4.57x drop that takes `d(cap)/dcy1` to 2.997e-04 and under a bound
+    # calibrated on the steeper spoke.  Assert the chain rule instead: it says the route
+    # is live AND says by how much, and it is genome-independent.  Measured over 80
+    # comparisons on 40 uniform draws, |AD/analytic - 1| is median 1.3e-06, max 1.3e-05.
+    a_of = lambda v: float(WW.arrival_angles(v, cfgo, span_mm=W.S)[0])
+    for k, name in ((0, "cx1"), (1, "cy1")):
+        h = 1e-6 * max(1.0, abs(g[k]))
+        gp, gm = g.copy(), g.copy()
+        gp[k] += h
+        gm[k] -= h
+        da = (a_of(gp) - a_of(gm)) / (2.0 * h)           # deg of hub arrival per mm
+        expect = -g[8] * WO.HUB_CAP_ARRIVAL_SLOPE * np.sin(np.radians(a_hub)) * np.radians(da)
+        assert expect != 0.0, (
+            f"{name} does not move the hub arrival at all, so the cap cannot see it — "
+            f"this is the pre-BUILD_PLAN cap's defect, not a tolerance question")
+        assert d[k] == pytest.approx(expect, rel=1e-4), (
+            f"d(cap)/d{name} = {d[k]:.6e} but the thickness branch's chain rule through "
+            f"a_hub gives {expect:.6e} — the cap is not reading the arrival angle the way "
+            f"`hub_fillet_cap_mm` says it does")
 
 
 def test_the_cap_ranks_two_designs_OCC_disagrees_about(genes):
@@ -923,18 +985,6 @@ def test_but_above_the_knee_the_fillet_radii_are_live(genes_over_knee):
     assert g[12] < 0.0, f"dL/dR_hub is {g[12]:+.3e} — the hub fillet is dead above the knee"
 
 
-@pytest.mark.xfail(reason=(
-    "PLAN.md §102/§103: the region-p-norm term reads the shipped genome's hub at util "
-    "1.0557, over the hard `stress` wall at 1.0 -- so `stress` no longer reads 0.0 on it "
-    "and `selection_key` no longer calls it tier 0. The SPLIT this test names (an "
-    "OBJECTIVE that only prices margin, never gates, versus the BARRIER that still does) "
-    "is untouched -- the classification asserts above this comment all still hold -- what "
-    "broke is the incidental live check that the shipped genome happens to sit under the "
-    "wall, which the more faithful term now says it does not (§99 already forecast this: "
-    "\"the true fillet stress runs 1.68x-2.76x over what Kt*agg reported\"). Re-promotion "
-    "under the new term is PLAN.md §102 successor 2, explicitly deferred -- this is not "
-    "that. strict=True, so this reopens itself the day the shipped genome (or its "
-    "replacement) reads back under the wall."))
 def test_the_margin_term_prices_and_never_gates(genes):
     """It is an OBJECTIVE, and the distinction is the whole design of it.
 
@@ -943,6 +993,24 @@ def test_the_margin_term_prices_and_never_gates(genes):
     ever landed in `BARRIER_TERMS` it would start vetoing promotion candidates for having
     any stress at all, which every real design does — `selection_key` would return tier 2
     on the shipped wheel.
+
+    XFAILED AT §102/§103, LIFTED AT §118 BY THE RE-PROMOTION ITS OWN REASON PRE-COMMITTED
+    TO. The region-p-norm term read the then-shipped genome's hub at util 1.0557, over the
+    hard `stress` wall at 1.0, so the barrier stopped reading 0.0 on it and `selection_key`
+    stopped calling it tier 0. The SPLIT this test is about was never what broke — the
+    classification asserts above held throughout — only the incidental live check that the
+    shipped genome happens to sit UNDER the wall, which §99 had already forecast ("the true
+    fillet stress runs 1.68x-2.76x over what Kt*agg reported"). The marker was `strict=True`
+    exactly so it would reopen "the day the shipped genome (or its replacement) reads back
+    under the wall"; §115's `b729e86` is that replacement, and on this fixture (`smoke`,
+    2 phases) it reads hub 0.667478 and rim 0.708341 — both under 1.0, barrier 0.0, tier 0.
+
+    READ THE CLEARANCE AT THIS FIDELITY AS A FIDELITY FACT, NOT A SAFETY ONE. The same
+    quantity on the same genome is 0.955948 at `medium`/8/linear and 0.972345 at
+    `medium`/8/SVK, which is what ships — 2.77% under the wall against the 29.2% this
+    fixture reads (§118, table). The rim governs here and at `medium`/SVK but the HUB
+    governs at `medium`/8/linear, so which junction is critical does not travel between
+    settings either.
     """
     assert "stress_margin" in WO.OBJECTIVE_TERMS
     assert "stress_margin" not in WO.BARRIER_TERMS
@@ -951,6 +1019,22 @@ def test_the_margin_term_prices_and_never_gates(genes):
     assert brk["terms"]["stress"]["value"] == 0.0, (
         "the shipped genome is under the allowable, so the BARRIER must still read zero — "
         "if it does not, this test is measuring a violation and not the split")
+    # THE TIER ASSERT BELOW HAS A SECOND CAUSE AND IT IS 71 nm AWAY, so it gets its own
+    # assert rather than its own failure being reported as this one's.  `selection_key`
+    # gives a fully feasible iterate tier 1, not tier 0, when its hub-cap slack is under
+    # `MIN_CAP_SLACK_MM` — a purely geometric question with nothing in it about the margin
+    # split.  Measured at the shipped genome 2026-09-08: slack = cap - R_hub = 1.0860e-03
+    # mm here at `smoke` against the 1e-03 threshold (+8.60%), 1.0711e-03 at `coarse`
+    # (+7.11%) and 1.0628e-03 at `fine` (+6.28%), while the cap's own spread across all
+    # four fidelities is 23.1 nm — so the tightest margin is 2.72x the resolution of the
+    # instrument that measures it, and every fidelity clears (PLAN.md §136 successor 1).
+    cfgo = WW.get_config(CFG)
+    flanks = WO.fillet_flanks(genes, cfgo)
+    cap = float(WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
+    assert cap - float(genes[12]) >= S3.MIN_CAP_SLACK_MM, (
+        f"hub-cap slack is {cap - float(genes[12]):.4e} mm, under MIN_CAP_SLACK_MM "
+        f"{S3.MIN_CAP_SLACK_MM} — `selection_key` returns tier 1 here for a geometric "
+        f"reason, and the assert below would blame the margin split for it")
     assert S3.selection_key(brk["total"], brk, genes)[0] == 0, (
         "a live margin term made the shipped genome unpromotable")
 
@@ -1042,23 +1126,81 @@ def test_the_fillet_cap_barrier_is_live_on_a_design_over_its_cap(genes_over_cap,
         "penalty charged to a feasible design")
 
 
-def test_R_rim_is_still_effectively_inert_and_that_is_recorded(genes):
-    """A FINDING, not a passing grade.
+def test_R_rim_is_no_longer_inert_and_that_is_the_finding(genes):
+    """A FINDING, not a passing grade — AND IT REVERSED AT `cb4e3dd`.  PLAN.md §135.
 
-    `fillet_feasibility` was built to give both fillet genes a gradient and only `R_hub`
-    got one.  At the rim the arrival is near-tangential, so moving `R_rim` moves the ring
-    locus and the offset point together and the margin is stationary.  If this ever
-    starts failing, the rim junction geometry has changed and M8b's gene census and the
-    study's verdict both need revisiting.
+    THE ORIGINAL FINDING, which stood from M8b until the promotion: `fillet_feasibility`
+    was built to give both fillet genes a gradient and only `R_hub` got one.  At the rim
+    the arrival is near-tangential, so moving `R_rim` moves the ring locus and the offset
+    point together and the margin is stationary.  The old assertion was
+    `abs(J[1, 13]) < 1e-4` and its docstring pre-committed to what a failure would mean:
+    *"the rim junction geometry has changed and M8b's gene census and the study's verdict
+    both need revisiting."*  That is what happened, and §135 is the re-check it asked for.
+
+    WHAT MOVED.  `R_rim` came off its box ceiling at the promotion, 3.0 -> 1.68017
+    (`GENE_SPACE` gives it {0.5, 3.0} and that box is byte-identical across 96a0ac5,
+    cb4e3dd and HEAD, so this is movement and not a remapped range).  The rim arrival is
+    no longer near-tangential, and the margin sensitivity became RESOLVABLE:
+
+        d(rim margin)/dR_rim        smoke (asserted)      coarse
+          outgoing genome             -3.692e-05        -3.048e-05    both under 1e-4
+          b729e86 SHIPPED             -7.010e-04        -6.624e-04    7.0x / 6.6x over
+          growth across the promotion     19.0x             21.7x
+
+    BOTH FIDELITIES ARE GIVEN BECAUSE THE GROWTH FACTOR DEPENDS ON WHICH ONE IS READ —
+    21.7x at `coarse` is 14.5% larger than 19.0x at `smoke`, so neither may be quoted
+    bare.  The asserted row is `smoke`: this file sets `CFG = "smoke"` (line 40) and that
+    is the config the Jacobian below is taken at.  `coarse` is carried because §135's
+    loss-gradient half is measured there, and the two halves must not be read as one
+    number.  The gate is cleared either way; the finding does not turn on the choice.
+
+    WHY `1e-4` AND WHY "RESOLVABLE" RATHER THAN "LIVE".  1e-4 is the precision these
+    margins are QUOTED to (`wheel_wheel.py:1176`, `studies/study_fillet_block.py:1030`),
+    so the gate has always read "a sensitivity below one unit in the last place of how we
+    report margins is indistinguishable from zero".  It is an instrument, not a
+    significance threshold, which is why it is NOT re-tuned here.  Clearing it by 7.0x
+    means the sensitivity can now be seen, and that is all it means.
+
+    THE DEEPER READING IS A DIFFERENT QUANTITY AND IT IS STRONGER — do not conflate them.
+    This test measures a MARGIN Jacobian; the loss gradient is its own question, because
+    the margin reaches the loss only through the fillet_cap barrier and an inactive
+    barrier leaves `dL/dR_rim` at zero however live the margin is.  Measured separately at
+    `coarse` / 8 uniform phases on the shipped genome (PLAN.md §135, 1359.3 s, 44 GiB):
+
+        util rim = 0.90959   ABOVE the 0.80 knee   ->  dL/dR_rim = +3.696881e+01
+        util hub = 0.91093   ABOVE the 0.80 knee   ->  dL/dR_hub = +1.736205e+01
+
+    So the rim is above `MARGIN_KNEE_UTIL` and `dL/dR_rim` is LARGER THAN `dL/dR_hub`.
+    The original premise — both genes were meant to have a gradient and only `R_hub` got
+    one — is not merely retired, it is inverted.  All 14 gradient components are nonzero
+    at the shipped genome; `wheel_objective.py`'s own "a nominally 14-dimensional search
+    was running in 8" is a 2026-08-12 reading and does not describe this tree.
+
+    BUT THE LOSS-GRADIENT HALF IS NOT DATED TO THE PROMOTION, AND THIS TEST DOES NOT
+    CLAIM IT IS.  `test_below_the_knee_the_rim_fillet_radius_is_dead` is `xfail(strict)`
+    and its reason records `genes_over_knee`'s rim at util 1.21257 — above the WALL —
+    since §102/§103's region-p-norm term, on a genome that is neither the shipped one nor
+    the outgoing one.  So the rim was already over the knee before `cb4e3dd`, and the
+    honest dating is: the LOSS gradient most likely went live at the fillet switch, while
+    what the PROMOTION moved is the MARGIN sensitivity this test measures — which is the
+    quantity isolated to the genome by experiment (green at 96a0ac5, red at cb4e3dd, and
+    green again at HEAD's code with the outgoing genome swapped back in, PLAN.md §133).
+    Two quantities, two different causes, and only the second one is pinned here.
+
+    THIS ASSERTION IS GENOME-SPECIFIC ON PURPOSE, and says so per the promotion
+    checklist's item 9: it is a claim about THE WHEEL THAT SHIPS, not about a mechanism,
+    so a promotion is entitled to move it and the next one should re-measure rather than
+    re-tune.
     """
     cfgo = WW.get_config(CFG)
     flanks = WO.fillet_flanks(genes, cfgo)
     J = np.asarray(jax.jacrev(
         lambda v: WO._fillet_margins(v, cfgo, W.S, W.HUB_RADIUS_MM, flanks)
     )(jnp.asarray(genes)))
-    assert abs(J[1, 13]) < 1e-4, (
-        f"d(rim margin)/dR_rim is now {J[1, 13]:.3e}; R_rim has become live, which is "
-        f"good news that invalidates a documented finding")
+    assert abs(J[1, 13]) > 1e-4, (
+        f"d(rim margin)/dR_rim is back to {J[1, 13]:.3e}, under the 1e-4 these margins are "
+        f"quoted to. The rim has gone stationary again — re-measure dL/dR_rim and the rim "
+        f"utilisation against the 0.80 knee before touching this bound")
 
 
 def test_the_smoothness_term_no_longer_counts_anything(genes):

@@ -72,6 +72,21 @@ def genes():
 
 
 @pytest.fixture(scope="module")
+def profile_genes():
+    """The wheel PART 20 and §68 measured the layer profile on, read by FILE.
+
+    `study_fillet_block.PROFILE_GENOME` carries the argument and the before/after; this
+    fixture exists so the test side takes the same read as the driver's `_cliff_audit`,
+    `shipped_profile_cliff` and candidate rows, and the two cannot drift apart.  The
+    whole profile family uses it or none of it does — the cliff column and the shipped
+    profile's own margin are compared against each other, so half of each would leave a
+    coherent-looking pair of tests describing two different wheels.  Everything else in
+    this file keeps `genes`.
+    """
+    return fb.load_genes(fb.PROFILE_GENOME)
+
+
+@pytest.fixture(scope="module")
 def report():
     with open(os.path.join(REPO, "studies", "study_fillet_block.json")) as fh:
         return json.load(fh)
@@ -133,12 +148,19 @@ def test_the_corner_at_A_is_a_cusp_too_and_it_is_the_flank_s_CURVATURE(genes, ju
     two-tenths-of-a-degree band, which is what a curvature term looks like and what a
     convergence residue does not.  This is the test that says "cusp" is a statement about
     the geometry and not about `_fillet_tangency`'s bisection.
+
+    THE BAND IS GENOME-ROBUST; THE ABSOLUTE BOUND WAS NOT (PLAN §124).  09e8188 held both
+    junctions under a degree (hub 0.52-0.56, rim 0.42-0.49); §115's promotion moved the
+    flank curvature at `A` and `b729e86` reads hub 3.41-3.52, rim 1.99-2.12 — still a
+    band under 0.15 deg, at both junctions, just centred higher.  The curvature claim is
+    the band; the "<1.0" bound was sized to 09e8188's band and is loosened rather than
+    removed.
     """
     got = []
     for R in OFF_GRID_RADII:
         g = fb.junction_geometry(genes, "coarse", junction, R)
         got.append(fb.region_angles(g)["at_A_deg"])
-    assert max(got) < 1.0, got
+    assert max(got) < 4.0, got
     assert max(got) - min(got) < 0.25, got
 
 
@@ -150,15 +172,21 @@ def test_no_quad_block_can_use_this_region(genes, junction):
     A tri-block SUBDIVIDES a region's corners — its three quads inherit the region's
     three vertices, one each.  So the smallest corner any decomposition of `A - P_t - B`
     can offer is the region's own smallest corner, and that is `B`'s zero.  The assertion
-    is on the SUM: 38 + 0.6 + 0 is not a triangle anybody meshes, and the two small ones
-    are the two nobody had measured.
+    is on the SUM: `A` and `B` stay small at either genome, so the sum tracks `P_t` alone.
+
+    THE SUM BOUND MOVED WITH `P_t`, NOT WITH `A` OR `B` (PLAN §124).  09e8188 read
+    hub 38.66, rim 39.34 (`P_t` 38.06 / 38.89 of it); `b729e86` reads hub 39.35, rim
+    59.29 (`P_t` 35.96 / 57.26).  `A` and `B` are still under a degree and exactly zero
+    respectively at both junctions — the rim sum crossed 45 because `P_t` itself grew by
+    18 deg, which the `at_P_t_deg > 30.0` line already covers on its own; the sum bound is
+    loosened to stay above both genomes rather than dropped.
     """
     g = fb.junction_geometry(genes, "coarse", junction,
                              float(genes[12] if junction == "hub" else genes[13]))
     a = fb.region_angles(g)
     assert a["at_P_t_deg"] > 30.0
     assert min(a["at_A_deg"], a["at_B_deg"]) < 1.0
-    assert sum((a["at_A_deg"], a["at_B_deg"], a["at_P_t_deg"])) < 45.0
+    assert sum((a["at_A_deg"], a["at_B_deg"], a["at_P_t_deg"])) < 65.0
 
 
 # ---------------------------------------------------------------------------
@@ -189,8 +217,20 @@ def test_PART_3s_collapsed_corner_reproduces_at_coarse(genes):
     the fillet is at `P_t`, whose geometry §38's flip left alone to 0.01 deg (PART 7).
     That is worth pinning rather than assuming — it is the one place in this arc where a
     pre-flip number may be quoted forward, and the reason is specific to `P_t`.
+
+    "REPRODUCES" IS ABOUT CAP vs UNCAP, NOT ABOUT WHICH GENOME SHIPS (PLAN §124).  The
+    published numbers were read off `genes` before §115's promotion moved `R_hub` and
+    `R_rim`, and `moved_corner` takes both from the gene box, so they moved with it:
+
+    ```
+                     09e8188 (published)      b729e86 (shipped)
+      hub   angle     3.601                    10.115877
+      hub   xs        2.759                     4.041122
+      rim   angle     8.524                      8.185779
+      rim   xs        8.596                      5.696027
+    ```
     """
-    want = {"hub": (3.601, 2.759), "rim": (8.524, 8.596)}
+    want = {"hub": (10.115877, 4.041122), "rim": (8.185779, 5.696027)}
     for junction, (ang, xs) in want.items():
         R = float(genes[12] if junction == "hub" else genes[13])
         row = fb.moved_corner(genes, "coarse", junction, R)
@@ -387,6 +427,21 @@ def test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces(
     PART 8 moves on it: both `P_t` rows clear by 5-20x, and the `P_c` rows are unaffected
     because under `uncap` that corner's leg is a straight continuation whose chord and
     tangent are the same direction.
+
+    §126: READS `genes` AGAIN, NOT A DEDICATED `junction_genes` FIXTURE. §119's decline
+    held while `study_junction_agreement.json` stayed pinned to `09e8188` on purpose;
+    §126 decided its nine dependent findings one at a time and refreshed it onto
+    `b729e86` (`genome_hash` in the artifact now agrees with `best_solution.json`), so
+    the recomputation takes the SAME genome by going back to the shared `genes` fixture
+    — the dedicated loader §124 added for this one consumer is removed with it.
+
+    THE GAP'S SIGN FLIPPED AT THE RIM. At `09e8188` both junctions had chord past
+    tangent by a similar amount (0.805 deg hub, 0.566 rim). On `b729e86` the hub gap
+    has shrunk but kept its sign (0.481); the rim gap changed sign (-0.612) — the chord
+    now lands BEFORE the tangent rather than past it. No verdict in PART 8 moves on
+    this either: it is a reported diagnostic on the mesh geometry, not one of the
+    `P_t`/`P_c` fit numbers PART 8 prices, and both `P_t` rows still clear PART 8's
+    margins by 5-20x (checked in `test_junction_fit.py`, not here).
     """
     row = next(c for c in junction_report["rings"][junction]["corners"]
                if c["name"] == "P_t" and c["source"] == "mesh (uncap=False)")
@@ -395,7 +450,9 @@ def test_make_junction_s_void_is_a_ONE_NODE_CHORD_and_it_reproduces(
     a = fb.region_angles(g)
     assert abs(a["at_P_t_chord_deg"] - row["void_deg"]) < 1e-9, (
         a["at_P_t_chord_deg"], row["void_deg"])
-    assert 0.4 < a["chord_minus_tangent_deg"] < 1.0, a["chord_minus_tangent_deg"]
+    bounds = {"hub": (0.3, 0.7), "rim": (-0.8, -0.4)}
+    lo, hi = bounds[junction]
+    assert lo < a["chord_minus_tangent_deg"] < hi, a["chord_minus_tangent_deg"]
 
 
 # ---------------------------------------------------------------------------
@@ -467,13 +524,32 @@ def test_every_block_of_the_filleted_sector_INTEGRATES(genes, cfg):
         assert q["min_scaled_jacobian"] > wo.MIN_SJ_TARGET, (name, q)
 
 
-@pytest.mark.parametrize("R_hub,R_rim", [(0.40, 0.50), (0.91, 2.37), (3.00, 3.00)])
+@pytest.mark.parametrize("R_hub,R_rim", [
+    (0.40, 0.50),
+    pytest.param(0.91, 2.37, marks=pytest.mark.xfail(strict=True, reason=(
+        "PLAN §124: FALSE ON THE WHEEL THAT SHIPS.  wheel_wheel._sector_fit_limit(hub) "
+        "collapsed from 3.1297 mm (09e8188) to 0.7434 mm (b729e86) -- a real, "
+        "reproducible geometric consequence of §115's promotion, confirmed live at both "
+        "genomes with the current (post-§83) _sector_fit_span, which no longer conflates "
+        "a layer refusal with a sector one.  R_hub=0.91 is past the new limit, so the "
+        "sector genuinely does not close there any more; it is not a stale reference and "
+        "not a code defect."))),
+    pytest.param(3.00, 3.00, marks=pytest.mark.xfail(strict=True, reason=(
+        "PLAN §124: same cause as the (0.91, 2.37) case -- R_hub=3.00 is far past the "
+        "collapsed 0.7434 mm hub sector-fit limit."))),
+])
 def test_the_sector_closes_OFF_the_committed_grid_too(genes, R_hub, R_rim):
     """Including at the gene box's own two floors, which is where the blocking is worst.
 
     `R_hub = 0.4` is the floor, and it is the cell that ruled out the alternative inner
     edge: an offset carried to the ring's full depth folds the weld block there, because
     an offset of `w >> R` is a spiral of radius `R + w` about the arc's centre.
+
+    THE OTHER TWO CASES NO LONGER CLOSE ON THE SHIPPED GENOME (PLAN §124).  They were
+    never "the floor" — they were interior/upper points chosen when the hub sector-fit
+    limit was 3.13 mm (09e8188).  `test_the_SECTOR_bounds_the_hub_radius_before_the_
+    BLOCK_does` measures the same limit directly at 0.7434 mm on `b729e86`; both
+    `R_hub`s here (0.91, 3.00) are past it, so `built` is genuinely `False` now.
     """
     v = fb.sector_verdict(genes, "coarse", R_hub, R_rim)
     assert v["built"], v.get("why")
@@ -499,7 +575,18 @@ def test_the_cut_at_B_reaches_the_rings_FAR_boundary_exactly(genes, junction):
     assert abs(cross) < 1e-9, cross
 
 
-@pytest.mark.parametrize("junction", ("hub", "rim"))
+@pytest.mark.parametrize("junction", (
+    "hub",
+    pytest.param("rim", marks=pytest.mark.xfail(strict=True, reason=(
+        "PLAN §124: FALSE ON THE WHEEL THAT SHIPS.  The rim landing angle grew from "
+        "4.381 deg (09e8188) to 13.300275 deg (b729e86) with §115's promotion, and "
+        "sliver_scaled_jacobian -- sin() of it -- crossed wo.MIN_SJ_TARGET: 0.230054 "
+        "against the floor 0.2, where 09e8188 read 0.076395.  The mechanism (the offset "
+        "lands tangent to the ring circle, so the block between the two is a sliver) is "
+        "unchanged and 13.3 deg is still far from the ~90 deg a real block would need --"
+        " but the specific claim this test makes, that the rim residual clears the "
+        "solver's own quality floor, no longer holds.")))
+))
 def test_the_SHALLOW_cut_lands_tangent_which_is_why_it_cannot_close(genes, junction):
     """PART 9's own block, re-measured for the reason it cannot be the sector's.
 
@@ -508,9 +595,14 @@ def test_the_SHALLOW_cut_lands_tangent_which_is_why_it_cannot_close(genes, junct
     two is a sliver.  Pinned as a bound rather than a value: whatever the width profile
     does, the residual has to stay small enough that the sliver is unusable, and at the
     rim it is under `MIN_SJ_TARGET` outright.
+
+    THE HUB BOUND MOVED WITH THE SAME PROMOTION (PLAN §124): 09e8188 read 12.864 deg,
+    comfortably under the old 15.0 deg bound; `b729e86` reads 16.377, so the bound is
+    loosened to stay a comfortable margin above both.  The rim half is now an `xfail` —
+    see its own reason.
     """
     row = fb.landing_angles(genes, "coarse", (junction,))[junction]
-    assert row["landing_angle_deg"] < 15.0, row
+    assert row["landing_angle_deg"] < 20.0, row
     if junction == "rim":
         assert row["sliver_scaled_jacobian"] < wo.MIN_SJ_TARGET, row
 
@@ -519,14 +611,27 @@ def test_the_SECTOR_bounds_the_hub_radius_before_the_BLOCK_does(genes):
     """The limit moved, and it is worth knowing which limit it is.
 
     PART 9 measured the boundary-layer block clean out to 4.00 mm and it still is.  What
-    runs out first is the ring's FREE block: past ~3.13 mm the fillet's tangent point has
+    runs out first is the ring's FREE block: past the limit the fillet's tangent point has
     swept past the next sector's corner, and there is no free ring left to block.  A
     geometric statement about the sector, not a mesh-quality one — so both halves are
     asserted here, in one test, so neither can be quoted without the other.
+
+    THE LIMIT ITSELF COLLAPSED WITH §115's PROMOTION (PLAN §124), FROM ~3.13 MM TO
+    ~0.74 MM.  Measured live at both genomes with the current (post-§83) `_sector_fit_
+    span`, which no longer conflates a layer refusal with a sector one — this is not the
+    old defect resurfacing:
+
+    ```
+                              09e8188      b729e86
+      sector_fit_limit(hub)   3.129700     0.743356
+    ```
+
+    The BLOCK's own limit is unaffected — still clean at 4.00 mm, asserted below — so the
+    SECTOR is still what bounds the hub radius first; it just bounds it much sooner.
     """
     lim = fb.sector_fit_limit(genes, "coarse", "hub")
     assert lim["limited"]
-    assert 3.0 < lim["radius_mm"] < 3.3, lim
+    assert 0.74 < lim["radius_mm"] < 0.75, lim
     # the BLOCK alone, at a radius the sector cannot take
     g = fb.junction_geometry(genes, "coarse", "hub", 4.0)
     n_th = ww.get_config("coarse").nn(ww.get_config("coarse").n_thick)
@@ -588,14 +693,28 @@ def test_the_entry_slope_is_what_keeps_the_junction_block_open(genes):
     tangent to the flank — which is the junction block's own top edge — and the junction
     block is a cusp.  Re-measured: the chosen slope must beat it by a wide margin, and
     the block that improves must be the junction.
+
+    BOTH BOUNDS MOVED WITH §115's PROMOTION (PLAN §124), SAME DIRECTION, SAME MECHANISM:
+
+    ```
+                        09e8188      b729e86
+      flat (entry 0)    0.040005     0.089104
+      chosen            0.427215     0.477861
+      ratio             10.68x       5.36x
+    ```
+
+    The junction block at entry 0 is a genuinely less severe cusp on the shipped genome —
+    still poor, just not as poor — so the margin the chosen slope wins by is narrower too.
+    Both bounds are loosened to stay a comfortable margin outside the new numbers; the
+    direction of the claim (flat is bad, chosen fixes it by a wide margin) is unchanged.
     """
     ship = (float(genes[12]), float(genes[13]))
     chosen = fb.sector_verdict(genes, "coarse", *ship)
     flat = fb.sector_verdict(genes, "coarse", *ship, entry=0.0,
                              end=fb.LAYER_END_OFFSET)
     assert flat["built"] and chosen["built"]
-    assert flat["blocks"]["hub_junction"]["min_scaled_jacobian"] < 0.05, flat
-    assert chosen["blocks"]["hub_junction"]["min_scaled_jacobian"] > 10.0 * flat[
+    assert flat["blocks"]["hub_junction"]["min_scaled_jacobian"] < 0.1, flat
+    assert chosen["blocks"]["hub_junction"]["min_scaled_jacobian"] > 5.0 * flat[
         "blocks"]["hub_junction"]["min_scaled_jacobian"]
 
 
@@ -1038,7 +1157,21 @@ def test_the_gate_costs_the_box_two_genomes_and_buys_the_one_defect(report):
     assert row(fc, "genome_robust", k)["min_scaled_jacobian_range"][0] < 0.0
 
 
-@pytest.mark.parametrize("cfg", SECTOR_CFGS)
+@pytest.mark.parametrize("cfg", (
+    pytest.param("coarse", marks=pytest.mark.xfail(strict=True, reason=(
+        "PLAN §124: FALSE ON THE WHEEL THAT SHIPS.  09e8188 had fil_sj 0.000343 far "
+        "below ctl_sj 0.008176 (filleted ~24x worse); b729e86 measures fil_sj 0.036481 "
+        "against ctl_sj 0.032732 -- filleted is now ~11% BETTER, the ordering this test "
+        "is named for has reversed.  Both numbers stayed roughly two orders below "
+        "wo.MIN_SJ_TARGET at both genomes (the faithful rim is unusable either way, "
+        "which is what the third assertion and the default-blend check still protect) "
+        "-- what changed is which of two comparably-bad numbers is smaller, not whether "
+        "the faithful rim is viable.  Not pinned: that would restate a now-false "
+        "ordering on the wheel that falsifies it."))),
+    pytest.param("medium", marks=pytest.mark.xfail(strict=True, reason=(
+        "PLAN §124: same reversal as `coarse` -- b729e86 fil_sj 0.035194 against ctl_sj "
+        "0.032741, both still ~2 orders below wo.MIN_SJ_TARGET."))),
+))
 def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
     """The tri-block's question, asked from the fillet's side and answered against it.
 
@@ -1050,6 +1183,12 @@ def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
     corner dominates more of it.  Re-measured rather than read, and asserted as the
     ORDERING — filleted below unfilleted below the barrier — so a future construction that
     fixed it would go red here and reopen the tri-block's ranking.
+
+    THAT ORDERING NO LONGER HOLDS ON THE SHIPPED GENOME (PLAN §124) — see the per-case
+    `xfail` reasons above for the measured table.  `ctl_sj`'s own value matches §121 GROUP
+    2's "blend 0.0, faithful" row exactly (same code, same genome, independent
+    cross-check).  The bottom assertion — the DEFAULT blend clears `MIN_SJ_TARGET` — is
+    unaffected and still real: measured 0.329 (coarse) / 0.333 (medium) on `b729e86`.
     """
     ctl = ww.sector_blocks(genes, cfg, uncap=(True, 0.0))
     ctl_sj = min(fb.block_quality(np.asarray(v, float))["min_scaled_jacobian"]
@@ -1072,11 +1211,27 @@ def test_the_filleted_sector_costs_the_unfilleted_one_nothing(genes):
     the seven-block sector the tree ships has to come back exactly as clean as it was —
     and the number it is clean AT is what the filleted sector's 0.36 is a degradation
     from, so it is asserted rather than remembered.
+
+    THE NUMBER MOVED WITH §115's PROMOTION, NOT WITH THIS ARC (PLAN §124).  `worst_block`
+    is `rim_junction` at both genomes and both configs, matching §121 GROUP 2's
+    independent measurement of the same "blend 1.0, shipped" quantity via `test_tri_block`
+    exactly (0.547847 / 0.547420, same code, same genome):
+
+    ```
+                              09e8188      b729e86
+      rim_junction min_sj     0.782735     0.547847   (coarse)
+                               0.782926     0.547420   (medium)
+    ```
+
+    §121 already recorded this as §37's finding holding at a shallower depth, not a
+    counterexample to it; the bound here is loosened to match rather than re-litigated.
+    The "0.36" comparison above is prose from before this promotion and is not itself
+    asserted anywhere in this file — left as found rather than re-derived here.
     """
     for cfg in SECTOR_CFGS:
         ctl = fb.sector_control(genes, cfg)
         assert ctl["n_blocks"] == 7 and ctl["all_valid"]
-        assert ctl["min_scaled_jacobian"] > 0.7, ctl
+        assert ctl["min_scaled_jacobian"] > 0.5, ctl
 
 
 # ---------------------------------------------------------------------------
@@ -1148,15 +1303,35 @@ def test_a_degraded_run_may_not_be_filed_as_the_committed_artifact():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("end,published", fb.CLIFF_PUBLISHED)
-def test_the_cliff_column_reproduces_PART_20s_hand_bisections(genes, end, published):
+def test_the_cliff_column_reproduces_PART_20s_hand_bisections(profile_genes, end,
+                                                              published):
     """The automated column has to land on the four numbers the record was written from.
 
     PLAN §68 and FILLET_PLAN PART 20 declined the genome-robust layer profile on these
     four bisections and the margins they imply, so a column that disagreed with them
     would mean either the decision or the code is wrong.  Pinned against the RECORD
     rather than against a re-run of itself, at the precision §68 published to.
+
+    ON THE GENOME (§121).  Against the record means on the record's own wheel: these are
+    four hand bisections of one genome, and re-running them on another produces four
+    different numbers rather than a check of these.  §115's promotion made that a
+    different wheel and turned all four red; §120 pinned the driver's `_cliff_audit` to
+    the same file.  Measured, same code, both genomes, `coarse`:
+
+        end     published    09e8188 (pinned)    b729e86 (shipped)
+        0.85    -0.845458    -0.845458           -1.507602
+        1.00    -0.881143    -0.881143           -1.571234
+        1.10    -0.903400    -0.903437           -1.610989
+        1.60    -1.001967    -1.001967           -1.786686
+
+    The cliff sits 0.66-0.78 DEEPER on the wheel that ships, monotonically in `end`, and
+    `CLIFF_REASON` is the bound at every row of both columns — so what the promotion moved
+    is the depth of the edge, not which edge is being found.  That second half is the
+    reason `test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first`
+    below stays on `genes`: it asserts WHICH refusal bounds the bisection and a ±0.01
+    behaviour either side of it, and both hold on whatever ships.
     """
-    got = fb.cliff_entry(genes, "coarse", end)
+    got = fb.cliff_entry(profile_genes, "coarse", end)
     assert got["entry"] is not None, got["why"]
     assert abs(got["entry"] - published) < 1e-4, (end, got["entry"], published)
     assert fb.CLIFF_REASON in got["why"], got["why"]
@@ -1183,7 +1358,8 @@ def test_the_cliff_is_the_WIDTH_PROFILE_refusal_and_not_whichever_comes_first(ge
     assert v["built"], v
 
 
-def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(genes):
+def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(
+        profile_genes):
     """§68's finding, as a check: the arc's candidates are all closer to the edge.
 
     Every pair this arc proposed stands within 0.08 of a hard refusal of the shipped
@@ -1191,13 +1367,30 @@ def test_the_SHIPPED_profile_stands_farther_from_the_cliff_than_any_candidate(ge
     profile is measured and not adopted.  A future grid that produced a roomier candidate
     would go red here, and that is the outcome that should reopen the call rather than a
     line in a plan file nobody re-reads.
+
+    ON THE GENOME (§121).  SHIPPED here is the shipped PROFILE — `LAYER_ENTRY_SLOPE` and
+    `LAYER_END_OFFSET`, the two constants `wheel_wheel` builds with — and not the shipped
+    genome; the whole comparison is between profiles on one wheel.  It reads
+    `PROFILE_GENOME` for the same reason the driver's `shipped_profile_cliff` does: this
+    margin and the cliff column above are compared against each other, so measuring one
+    on §68's wheel and the other on whatever ships would leave two green tests describing
+    two different wheels.  Measured, `coarse`, 25 of 25 candidates comparable at both:
+
+                              09e8188 (pinned)    b729e86 (shipped)
+        shipped margin        0.5520              1.3367
+        worst candidate       0.2329              0.8851
+
+    §68's ORDERING survives the promotion — the shipped pair is still the roomiest, by
+    0.32 pinned and 0.45 shipped — but the 0.5520 it was published with does not, and it
+    is the published number this test exists to hold.  The finding being genome-robust is
+    a fact about §68 worth having; it is not a reason to check it against the wrong wheel.
     """
-    shipped = fb.cliff_entry(genes, "coarse", fb.LAYER_END_OFFSET)
+    shipped = fb.cliff_entry(profile_genes, "coarse", fb.LAYER_END_OFFSET)
     shipped_margin = fb.LAYER_ENTRY_SLOPE - shipped["entry"]
     assert shipped_margin == pytest.approx(0.5520, abs=1e-3), shipped_margin
     compared = 0
     for entry, end in fb.LAYER_PROFILE_FINE_CANDIDATES + fb.LAYER_PROFILE_CANDIDATES:
-        c = fb.cliff_entry(genes, "coarse", end)
+        c = fb.cliff_entry(profile_genes, "coarse", end)
         if c["entry"] is None:
             continue
         compared += 1
@@ -1422,26 +1615,94 @@ def test_the_layer_cliff_has_a_CLOSED_FORM_that_reproduces_the_bisection(genes):
 
 
 def test_the_per_genome_profile_is_the_ADOPTED_operating_point(genes):
-    """The rule, its factor, and the margin it leaves the genome every number is at."""
+    """The rule, its factor, and that it still leaves more room than the pair §68 declined.
+
+    THREE CLAIMS WERE FUSED HERE AND §122 SPLIT THEM, because they have three different
+    genome dependencies and only one of them belongs on the shipped pointer.  What stays
+    is the part that is about the RULE applied to whatever ships: its own algebra, that it
+    asks the clamp for nothing, and the ORDERING §68's first reason rests on.  §68's
+    MAGNITUDE for that ordering went to the sibling on `profile_genes` below, and the
+    premise §82 argued the rule's safety from is now an `xfail` two tests down, because it
+    is false on the wheel that ships.
+
+    The ordering below is not a tautology and it has a measurable distance to failure.
+    `margin > GENOME_ROBUST_ENTRY - cliff` reduces to `entry > GENOME_ROBUST_ENTRY`, and
+    with `entry = 0.45 * cliff` that is `cliff > -1.6667`.  Measured: -0.806403 at
+    `09e8188` and -1.437959 at `b729e86`.  **§115's promotion spent 0.63 of that 0.86 and
+    the shipped genome now stands 0.23 from it** — one more move in the same direction and
+    §82's rule stops leaving more room than the global pair §68 turned down, which reopens
+    §68 rather than merely reddening a test.  That is what this assertion is for.
+    """
     cfg = "coarse"
     entry, end = ww.per_genome_layer_profile(genes, cfg)
     cliff = ww.layer_cliff_entry(genes, cfg, end=ww.FILLET_LAYER_CLIFF_END)["entry"]
     assert end == ww.FILLET_LAYER_CLIFF_END
     assert entry == pytest.approx(ww.FILLET_LAYER_CLIFF_FACTOR * cliff)
 
-    # what §68's first reason asked for: the rule leaves the shipped genome several
-    # times what the global pair it declined would have left it
+    # what §68's first reason asked for, as the ORDERING alone: the rule leaves this
+    # genome more room than the global pair it declined would have left it
+    margin = entry - cliff
+    assert margin > fb.GENOME_ROBUST_ENTRY - cliff, (margin, cliff)
+
+    per = ww.layer_cliff_entry(genes, cfg)["per_junction"]
+    assert not any(per[j].get("clamped") for j in ("hub", "rim")), per
+
+
+def test_the_rule_leaves_SEVERAL_TIMES_the_room_the_pair_68_declined_would_have(
+        profile_genes):
+    """§68's first reason at its published size, on the wheel §68 measured it on.
+
+    §68 declined `GENOME_ROBUST_*` in part for standing 0.056 from a hard refusal of the
+    genome that shipped then, against 0.4435 for the rule it adopted — a factor of 7.9,
+    and `> 5.0` is where that was pinned.  Both numbers are `09e8188`'s, so this reads
+    `profile_genes` for the same reason the cliff column and §68's margin above do.
+
+    Measured, same code, both genomes, `coarse`:
+
+                                       09e8188 (pinned)    b729e86 (shipped)
+        margin the rule leaves         0.443521            0.790877
+        margin GENOME_ROBUST_* leaves  0.056403            0.687959
+        ratio                          7.86x               1.15x
+
+    The rule leaves the shipped genome MORE absolute room than it left §68's, and still
+    fails the comparison, because the pair §68 declined gained 12.2x more room than it had.
+    The ordering survives — the sibling above holds it on whatever ships — but "several
+    times" is a fact about `09e8188` and it is checked here.
+    """
+    cfg = "coarse"
+    entry, end = ww.per_genome_layer_profile(profile_genes, cfg)
+    cliff = ww.layer_cliff_entry(profile_genes, cfg,
+                                 end=ww.FILLET_LAYER_CLIFF_END)["entry"]
+    assert end == ww.FILLET_LAYER_CLIFF_END
     margin = entry - cliff
     assert margin == pytest.approx(0.4435, abs=5e-4), margin
     assert margin > 5.0 * (fb.GENOME_ROBUST_ENTRY - cliff)
 
-    # AND THE OPERATING POINT IS SHALLOWER THAN THE SHIPPED ENTRY, which is the whole
-    # reason §82's rule is safe against the `_sector_fit_span` defect it also records:
-    # the clamp only misreads a layer refusal as "no room" at a STEEP entry, and this
-    # rule never asks for one.
+
+@pytest.mark.xfail(strict=True, reason=(
+    "§122: FALSE ON THE WHEEL THAT SHIPS, and it is the PREMISE of §82's safety argument "
+    "rather than its conclusion.  §82 argued the per-genome rule is safe against the "
+    "`_sector_fit_span` defect it also records because the clamp only misreads a layer "
+    "refusal as 'no room' at a STEEP entry and the rule never asks for one.  Measured at "
+    "`coarse`: the rule returns -0.362881 at 09e8188, shallower than the shipped "
+    "-0.45, and -0.647081 at b729e86, steeper than it.  §115's promotion deepened the "
+    "cliff from -0.806403 to -1.437959 and `entry = 0.45 * cliff` followed it.  The "
+    "CONCLUSION still holds and is asserted live two tests up -- neither junction is "
+    "clamped at either genome -- so the argument was sufficient and not necessary, and "
+    "nothing built on it has been retired.  Strict, so that a future rule or promotion "
+    "that makes the premise true again XPASSes and forces this record to be revisited "
+    "rather than silently going green."))
+def test_the_operating_point_is_SHALLOWER_than_the_shipped_entry(genes):
+    """§82's safety premise, kept as a tripwire on the shipped genome rather than pinned.
+
+    Deliberately NOT moved to `profile_genes`, where it passes: pinning it would restate
+    §82's argument on the wheel §82 was written for and lose the only signal that the
+    argument's premise has stopped holding.  This is a claim about whatever ships, it is
+    false there, and that is the finding.
+    """
+    cfg = "coarse"
+    entry, _ = ww.per_genome_layer_profile(genes, cfg)
     assert entry > ww.FILLET_LAYER_ENTRY_SLOPE, (entry, ww.FILLET_LAYER_ENTRY_SLOPE)
-    per = ww.layer_cliff_entry(genes, cfg)["per_junction"]
-    assert not any(per[j].get("clamped") for j in ("hub", "rim")), per
 
 
 def test_the_cliff_bracket_the_study_uses_is_TOO_NARROW_and_the_module_says_so(genes):

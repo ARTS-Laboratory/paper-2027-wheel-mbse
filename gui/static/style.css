@@ -1,0 +1,311 @@
+/* An instrument, not a dashboard.
+ *
+ * The figure this repo already draws is dark navy with neon cyan and neon green; the
+ * brief for this panel was explicitly not that. So: paper ground, ink text, hairline
+ * rules, one muted accent, and colour spent ONLY where it carries meaning -- a verdict,
+ * a saturated bound, a job state. Nothing here glows, and nothing is coloured to be
+ * lively. Someone reads this for an hour while a descent runs.
+ *
+ * Numbers are set with tabular figures throughout, because a compliance table whose
+ * columns do not line up is harder to scan than the terminal output it replaces. */
+
+:root {
+  --ground: #faf9f7;
+  --surface: #ffffff;
+  --sunk: #f2f0ec;
+  --ink: #1a1a18;
+  --muted: #6b6862;
+  --faint: #97938c;
+  --rule: #ddd9d2;
+  --rule-strong: #c6c1b8;
+  --accent: #2f5d8a;
+  --accent-soft: #e8eef4;
+  --pass: #3f6b4a;
+  --warn: #8a6d2f;
+  --fail: #8a3f3f;
+  --pass-soft: #eaf0eb;
+  --warn-soft: #f5efe2;
+  --fail-soft: #f5eaea;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #16161a;
+    --surface: #1d1d22;
+    --sunk: #131317;
+    --ink: #e8e6e1;
+    --muted: #9d9a94;
+    --faint: #6e6b66;
+    --rule: #2e2e34;
+    --rule-strong: #3f3f47;
+    --accent: #7fa8cf;
+    --accent-soft: #1e2a36;
+    --pass: #7fb08c;
+    --warn: #ccab6a;
+    --fail: #cf8b8b;
+    --pass-soft: #1b241d;
+    --warn-soft: #262015;
+    --fail-soft: #271a1a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 13px/1.5 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+h1, h2, h3 { font-weight: 600; margin: 0; }
+h2 { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+h3 { font-size: 13px; }
+p { margin: 0 0 8px; }
+a { color: var(--accent); }
+
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.small { font-size: 12px; }
+.tiny { font-size: 11px; }
+
+/* ---- frame ---- */
+header {
+  display: flex; align-items: baseline; gap: 20px;
+  padding: 10px 20px; background: var(--surface);
+  border-bottom: 1px solid var(--rule); position: sticky; top: 0; z-index: 20;
+}
+header .title { font-weight: 600; letter-spacing: -.01em; }
+header .title span { color: var(--muted); font-weight: 400; }
+header .spacer { flex: 1; }
+header .stat { font-size: 12px; color: var(--muted); }
+header .stat b { font-weight: 600; color: var(--ink); font-family: var(--mono); }
+
+nav { display: flex; gap: 2px; padding: 0 20px; background: var(--surface);
+      border-bottom: 1px solid var(--rule); position: sticky; top: 41px; z-index: 19; }
+nav button {
+  border: 0; background: none; color: var(--muted); cursor: pointer;
+  font: inherit; padding: 9px 14px; border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+nav button:hover { color: var(--ink); }
+nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+main { padding: 20px; max-width: 1500px; }
+.panel[hidden] { display: none; }
+
+/* ---- cards ---- */
+.card {
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 3px; padding: 14px 16px; margin-bottom: 16px;
+}
+.card > h2 { margin-bottom: 10px; }
+.card .hint { color: var(--muted); font-size: 12px; margin: -4px 0 12px; }
+.cols { display: grid; gap: 16px; align-items: start; }
+.c2 { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+.c3 { grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); }
+.c-side { grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); }
+@media (max-width: 1100px) { .cols { grid-template-columns: 1fr !important; } }
+
+/* ---- forms ---- */
+label.field { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
+              align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--rule); }
+label.field:last-child { border-bottom: 0; }
+label.field .name { font-weight: 500; }
+label.field .unit { color: var(--faint); font-size: 11px; }
+label.field .help { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+input, select, textarea {
+  font: inherit; font-family: var(--mono); font-size: 12px;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--rule-strong); border-radius: 2px; padding: 3px 6px;
+  width: 110px; text-align: right;
+}
+select { text-align: left; width: 130px; }
+input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); padding: 0; border: 0; }
+
+button.act {
+  font: inherit; font-weight: 500; cursor: pointer;
+  background: var(--accent); color: #fff; border: 1px solid transparent;
+  border-radius: 2px; padding: 5px 12px;
+}
+button.act.ghost { background: var(--surface); color: var(--ink); border-color: var(--rule-strong); }
+button.act.danger { background: var(--surface); color: var(--fail); border-color: var(--rule-strong); }
+button.act:hover { filter: brightness(1.06); }
+button.act:disabled { opacity: .45; cursor: not-allowed; filter: none; }
+.actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+
+/* ---- tables ---- */
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 11px;
+     letter-spacing: .03em; text-transform: uppercase;
+     padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule-strong); }
+td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; font-family: var(--mono); padding-right: 14px; }
+.scroll-x { overflow-x: auto; }
+
+/* ---- verdicts. the only place colour is allowed to mean something ---- */
+.verdict { display: inline-block; padding: 1px 7px; border-radius: 2px;
+           font-size: 11px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
+.v-PASS, .v-MET, .v-finished { background: var(--pass-soft); color: var(--pass); }
+.v-FAIL, .v-failed, .v-interrupted { background: var(--fail-soft); color: var(--fail); }
+.v-MISSED, .v-cancelled { background: var(--warn-soft); color: var(--warn); }
+.v-running, .v-queued { background: var(--accent-soft); color: var(--accent); }
+.v-none { background: var(--sunk); color: var(--faint); }
+
+.shall td { background: transparent; }
+.should td { color: var(--muted); }
+.kind { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+
+/* ---- progress ---- */
+.bar { height: 6px; background: var(--sunk); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); transition: width .4s ease; }
+.bar.done > i { background: var(--pass); }
+.bar.bad  > i { background: var(--fail); }
+.bar.indet > i { width: 30% !important; animation: slide 1.6s ease-in-out infinite; }
+@keyframes slide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+
+.joblist { display: flex; flex-direction: column; gap: 0; }
+.job { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px;
+       padding: 11px 0; border-bottom: 1px solid var(--rule); cursor: pointer; }
+.job:last-child { border-bottom: 0; }
+.job:hover .jl { color: var(--accent); }
+.job .jl { font-weight: 500; }
+.job .meta { grid-column: 1 / -1; display: flex; gap: 14px; color: var(--muted); font-size: 11px; }
+.job .bar { grid-column: 1 / -1; margin-top: 2px; }
+.job.sel { background: var(--sunk); }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; font-size: 12px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--mono); }
+
+pre.log {
+  background: var(--sunk); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 10px 12px; font-family: var(--mono); font-size: 11.5px; line-height: 1.45;
+  max-height: 440px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  margin: 0; color: var(--ink);
+}
+
+/* ---- notices ---- */
+.note { border-left: 2px solid var(--rule-strong); padding: 8px 12px; margin: 10px 0;
+        background: var(--sunk); font-size: 12px; border-radius: 0 2px 2px 0; }
+.note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.note.bad  { border-left-color: var(--fail); background: var(--fail-soft); }
+.note.ok   { border-left-color: var(--pass); background: var(--pass-soft); }
+.note b { font-weight: 600; }
+
+/* ---- the wheel ---- */
+.stage { background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; }
+svg.wheel { display: block; width: 100%; height: auto; }
+.w-spoke  { fill: var(--accent); fill-opacity: .16; stroke: var(--accent); stroke-width: .35; }
+.w-ring   { fill: none; stroke: var(--rule-strong); stroke-width: .4; }
+.w-ground { fill: none; stroke: var(--ink); stroke-width: .5; stroke-opacity: .55; }
+.w-centre { fill: none; stroke: var(--accent); stroke-width: .35; stroke-dasharray: 1.2 1.2; stroke-opacity: .8; }
+.w-hull   { fill: none; stroke: var(--warn); stroke-width: .3; stroke-dasharray: .8 .8; }
+.w-cp     { fill: var(--warn); }
+.w-fillet { fill: none; stroke: var(--fail); stroke-width: .7; }
+.w-label  { font: 2.2px var(--mono); fill: var(--faint); }
+
+.genes { display: grid; gap: 0; }
+.gene { display: grid; grid-template-columns: 42px 1fr 74px; gap: 10px;
+        align-items: center; padding: 3px 0; }
+.gene > .g-name { font-family: var(--mono); font-size: 11.5px; }
+.gene > .g-val  { font-family: var(--mono); font-size: 11.5px; text-align: right; color: var(--muted); }
+.gene.sat > .g-name { color: var(--warn); font-weight: 600; }
+.gene.sat > .g-val  { color: var(--warn); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--muted);
+          margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.legend i { display: inline-block; width: 16px; height: 0; vertical-align: middle;
+            border-top-width: 2px; border-top-style: solid; margin-right: 5px; }
+
+/* ---- points allocator ---- */
+.pts { display: grid; grid-template-columns: 108px 1fr 58px; gap: 8px 12px; align-items: center; }
+.pts .pn { font-size: 12px; }
+.pts .pv { font-family: var(--mono); font-size: 12px; text-align: right; }
+.total { display: flex; justify-content: space-between; align-items: baseline;
+         margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule-strong); }
+.total b { font-family: var(--mono); font-size: 15px; }
+
+/* ---- modal ---- */
+.scrim { position: fixed; inset: 0; background: rgba(20,20,18,.42);
+         display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+.modal { background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 4px;
+         padding: 18px 20px; max-width: 560px; width: 100%; max-height: 88vh; overflow: auto; }
+.modal h3 { margin-bottom: 10px; }
+.modal pre { background: var(--sunk); padding: 9px 11px; border-radius: 2px; font-size: 11.5px;
+             overflow-x: auto; margin: 10px 0; font-family: var(--mono); }
+
+.spark { display: block; width: 100%; height: 56px; }
+.spark path { fill: none; stroke: var(--accent); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+
+/* ---- the desktop shell -------------------------------------------------
+ *
+ * EVERY RULE HERE IS SCOPED TO `html.desktop`, which the inline script in index.html
+ * sets only when the preload bridge is present. The browser route renders byte-identical
+ * CSS and none of it applies -- `gui/wheelgui --open` has to keep working, because the
+ * server is the product and the window is a way of looking at it.
+ *
+ * What changes is only what a window needs and a tab does not: the header becomes the
+ * title bar, and it has to leave room at whichever end the OS paints its controls. */
+
+:root { --titlebar: 42px; }   /* == titleBarOverlay.height in gui/desktop/main.js */
+
+html.desktop header {
+  height: var(--titlebar);
+  padding: 0 20px;
+  align-items: center;
+  /* The whole strip drags the window. Safe because nothing in it is interactive; a
+     button added here later would need `-webkit-app-region: no-drag` to stay clickable. */
+  -webkit-app-region: drag;
+}
+
+/* ROOM FOR CONTROLS THIS PAGE DOES NOT DRAW.  macOS insets the traffic lights at the
+ * left (trafficLightPosition x:16 in main.js, three 12px lights); Windows and Linux
+ * overlay minimise/maximise/close at the right. Neither is in the layout, so the space
+ * has to be reserved or the title sits underneath them. */
+html.desktop.os-darwin header { padding-left: 78px; }
+html.desktop:not(.os-darwin) header { padding-right: 146px; }
+
+html.desktop nav { top: var(--titlebar); }
+html.desktop main { margin: 0 auto; }
+
+/* Chrome is not text. Selecting the tab strip by dragging across it is a web habit that
+ * reads as a bug in a window -- but a log, a table and a genome hash are all things
+ * someone copies out, so those stay selectable. */
+html.desktop body { user-select: none; -webkit-user-select: none; }
+html.desktop table, html.desktop pre, html.desktop .kv, html.desktop .num,
+html.desktop .note, html.desktop input, html.desktop textarea, html.desktop .modal p {
+  user-select: text; -webkit-user-select: text;
+}
+
+/* The overlay scrollbar a browser draws over the page belongs to the browser. */
+html.desktop * { scrollbar-width: thin; scrollbar-color: var(--rule-strong) transparent; }
+html.desktop ::-webkit-scrollbar { width: 10px; height: 10px; }
+html.desktop ::-webkit-scrollbar-track { background: transparent; }
+html.desktop ::-webkit-scrollbar-thumb {
+  background: var(--rule-strong); border-radius: 5px;
+  border: 3px solid var(--ground); background-clip: padding-box;
+}
+html.desktop ::-webkit-scrollbar-thumb:hover { background: var(--faint); background-clip: padding-box; }
+
+/* A ring on a button someone just clicked is noise; a ring on a button someone tabbed to
+ * is the only way they know where they are. */
+html.desktop button.act:focus:not(:focus-visible) { outline: none; }
+html.desktop button.act:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* A WINDOW HAS A HEIGHT AND A PAGE DOES NOT.  `svg.wheel` is `width:100%` on a square
+ * viewBox, so on a wide window the preview is as tall as the column is wide -- 1030 px in
+ * a 1000 px window -- and the one panel someone opens to LOOK at something arrives
+ * scrolled past its own subject. In a browser tab that is ordinary; here it is the bug.
+ * Sized from the viewport instead, less the 42 px title bar, the tab strip, and the
+ * padding either side of the card. */
+html.desktop .stage { display: flex; align-items: center; justify-content: center; }
+html.desktop svg.wheel {
+  width: auto; max-width: 100%; height: calc(100vh - 130px); min-height: 320px;
+}

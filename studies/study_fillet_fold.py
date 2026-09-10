@@ -134,6 +134,30 @@ PART3_LARGEST_SURVIVING = {("coarse", "hub"): 0.20, ("coarse", "rim"): 0.20,
 PART5_FIRST_FOLD = {("coarse", "hub"): 4.00, ("coarse", "rim"): 3.00,
                     ("medium", "hub"): 0.40, ("medium", "rim"): 0.40}
 
+# AND THE GENOME THOSE EIGHT NUMBERS WERE MEASURED ON, PINNED BY FILE.  PART 3 ran
+# 2026-08-17 and PART 5 on 2026-08-21; across that whole window `best_solution.json` held
+# `09e8188` (§26, 2026-08-14), and §115 promoted `b729e86` over it on 2026-09-06.  The
+# reconciliation read `best_solution.json` because at PART 3 and PART 5 those were the same
+# wheel, and from the promotion onward it has been comparing a different wheel against
+# 09e8188's numbers -- measured 2026-09-07, same code, both genomes:
+#
+#     09e8188  (stage3_knee_best_medium.json)   8 of 8 rows agree   PASS
+#     b729e86  (best_solution.json, shipped)    4 of 8 rows agree   FAIL
+#
+# So the driver had stopped being able to exit 0 at its own defaults, and
+# `test_fillet_fold::test_the_committed_report_passes_its_own_self_checks` forbids filing
+# the failure -- "the artifact in the tree must be a passing run, not a saved failure" --
+# which left it with no committable output at all.  Pinning the FILE restores PART 3's and
+# PART 5's measurement rather than changing it, and makes the reconciliation what it was
+# always for: a check that `_filleted_spoke` still reproduces the two contested tables,
+# which no future promotion can silently turn red.  This is `study_svk_rescore.run_control`'s
+# fix (§25) applied to the same defect: the constant stays, the READ moves.
+#
+# The SHIPPED genome does not stop being measured -- `reconciliation_shipped` below carries
+# the same eight rows on whatever `best_solution.json` holds, reported and not gated, which
+# is where the 4-of-8 above is read off.
+RECONCILIATION_GENOME = "stage3_knee_best_medium.json"
+
 CRITERIA = ("block_cells", "build_wheel", "gauss", "mesh_gauss")
 
 
@@ -391,15 +415,19 @@ def controls(genes, configs):
     return out
 
 
-def reconcile(rec):
+def reconcile(summary):
     """Reproduce both contested tables, and state which criterion each one was.
 
     This is the whole point of the file, so it is computed and checked rather than
     written into the prose: if a future change to `_filleted_spoke` moves either row,
     this driver goes red and says which one moved.
+
+    Takes the SUMMARY mapping rather than the whole record, because it is now called
+    twice -- once on the pinned genome the two tables were measured on, which gates, and
+    once on whatever ships, which is reported.  See `RECONCILIATION_GENOME`.
     """
     part3, part5, ok = {}, {}, True
-    for key, summ in rec["summary"].items():
+    for key, summ in summary.items():
         cfg, junction = key.split(":")
         got3 = summ["legacy_grid"]["block_cells"]["largest_surviving_mm"]
         got5 = summ["legacy_grid"]["build_wheel"]["first_fold_mm"]
@@ -417,6 +445,26 @@ def reconcile(rec):
         "part5_first_fold": part5,
         "pass": bool(ok),
     }
+
+
+def pinned_reconciliation(configs, junctions):
+    """`reconcile` on `RECONCILIATION_GENOME`, over the legacy grid only.
+
+    The legacy grid is the ten radii both contested tables were read off, so it is the
+    only part of the sweep the reconciliation consumes -- ten radii against the full
+    run's fifty-nine, which is why pinning costs seconds rather than a second run.
+    """
+    genes = load_genes(RECONCILIATION_GENOME)
+    summary = {}
+    for cfg in configs:
+        for junction in junctions:
+            rows = sweep_one(genes, cfg, junction, LEGACY_GRID)
+            summary[f"{cfg}:{junction}"] = {
+                "legacy_grid": summarize(rows, LEGACY_GRID)}
+    out = reconcile(summary)
+    out["genome"] = RECONCILIATION_GENOME
+    out["grid_mm"] = list(LEGACY_GRID)
+    return out
 
 
 def mechanism(rec):
@@ -593,14 +641,18 @@ def _print(rec):
         print(f"    {key:16s} {g3 if g3 is not None else 'none':>22} "
               f"{g5 if g5 is not None else 'none':>22} {wtxt:>24s}")
 
-    rc = rec["reconciliation"]
-    print("\n  RECONCILIATION (FILLET_PLAN.md PART 5's open discrepancy)")
-    for key in rec["summary"]:
-        a, b = rc["part3_largest_surviving"][key], rc["part5_first_fold"][key]
-        print(f"    {key:16s} PART 3 recorded {a['recorded_mm']}, measured "
-              f"{a['measured_mm']}  {'OK' if a['agrees'] else 'DISAGREES'}"
-              f"   |   PART 5 recorded {b['recorded_mm']}, measured "
-              f"{b['measured_mm']}  {'OK' if b['agrees'] else 'DISAGREES'}")
+    for label, rc in (("GATED", rec["reconciliation"]),
+                      ("REPORTED", rec["reconciliation_shipped"])):
+        n = sum(v["agrees"] for v in rc["part3_largest_surviving"].values()) + sum(
+            v["agrees"] for v in rc["part5_first_fold"].values())
+        print(f"\n  RECONCILIATION (FILLET_PLAN.md PART 5's open discrepancy)"
+              f"   [{label}, genome {rc['genome']}, {n} of 8 rows agree]")
+        for key in sorted(rc["part3_largest_surviving"]):
+            a, b = rc["part3_largest_surviving"][key], rc["part5_first_fold"][key]
+            print(f"    {key:16s} PART 3 recorded {a['recorded_mm']}, measured "
+                  f"{a['measured_mm']}  {'OK' if a['agrees'] else 'DISAGREES'}"
+                  f"   |   PART 5 recorded {b['recorded_mm']}, measured "
+                  f"{b['measured_mm']}  {'OK' if b['agrees'] else 'DISAGREES'}")
 
     print("\n  BOTH EDGES OF THE USABLE WINDOW ARE NODE ALLOCATION, NOT GEOMETRY")
     for key, m in rec["mechanism"].items():
@@ -688,7 +740,11 @@ def main():
     t0 = time.time()
     rec = build(genes, configs, junctions, radii)
     rec["controls"] = controls(genes, configs)
-    rec["reconciliation"] = reconcile(rec)
+    # GATED on the genome the two tables were measured on; REPORTED on whatever ships.
+    # Both are the same eight rows and the same code -- the only difference is the wheel.
+    rec["reconciliation"] = pinned_reconciliation(configs, junctions)
+    rec["reconciliation_shipped"] = reconcile(rec["summary"])
+    rec["reconciliation_shipped"]["genome"] = args.genome
     rec["mechanism"] = mechanism(rec)
     rec["guard_blindness"] = guard_blindness(rec)
     rec["default_path_blindness"] = default_path_blindness(args.draws, configs[0])

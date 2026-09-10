@@ -1828,10 +1828,10 @@ def _attach_contact_report(res, mesh, prob, indentation_mm):
     res["patch_half_deg"] = half
     res["patch_centre_deg"] = centre
 
-    # Both of these are SAMPLED maxima over the quadrature points, so they are reported
-    # as diagnostics and must not be quoted as converged numbers — the same status the
-    # unfilleted junction's peak stress has in M4.  The peak pressure in particular
-    # climbs as `n_quad` rises, because more points sample nearer the true peak.
+    # Both of these are SAMPLED maxima over the quadrature points, so they are reported as
+    # diagnostics and must not be quoted as converged numbers — the same status the
+    # unfilleted junction's peak stress has in M4.  The peak pressure does NOT climb
+    # monotonically with `n_quad` (PLAN.md §145).
     res["peak_pressure_mpa_sampled"] = float(p["pressure_mpa"].max())
     res["patch_half_deg_sampled"] = (
         float(np.abs((p["theta_deg"][live] + 90.0 + 180.0) % 360.0 - 180.0).max())

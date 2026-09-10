@@ -49,19 +49,29 @@ def res(mesh):
 # A SECOND MESH, AND DELIBERATELY NOT A CHANGE TO THE ONE ABOVE (PLAN.md §109).
 #
 # `fillet=True` is what `wheel_objective.phase_meshes` and `wheel_pool_worker.run_phase`
-# pass unconditionally, so this is the wheel the optimizer actually solves.  Exactly one
-# test below reads it, and the temptation is to give `mesh` the flag instead and let the
-# whole file follow -- which would silently re-aim the ELEVEN other tests that read them at
-# a mesh none of them was calibrated on.  MEASURED RATHER THAN ASSERTED (§109, from the two ladders in
-# `studies/study_reds_hub_share.json` at the shipped genome, `coarse`):
+# pass unconditionally, so this is the wheel the optimizer actually solves.  Two tests below
+# read it now -- §109 closed the hub-share gate on it, and §111 moved the beam-blindness
+# ratio and its band here too -- and the temptation is still to give `mesh` the flag instead
+# and let the whole file follow, which would silently re-aim the TEN other tests that read
+# `mesh`/`res` at a mesh none of them was calibrated on.  MEASURED RATHER THAN ASSERTED
+# (§109, from the two ladders in `studies/study_reds_hub_share.json` at the shipped genome,
+# `coarse`):
 #
 #   `0.25 < rim   < 0.40`   0.3113 -> 0.3781   holds, but eats 44.6% of the band
 #   `0.58 < spoke < 0.72`   0.6545 -> 0.6136   holds, but eats 29.3% of the band
-#   `1.4  < drop  < 2.0`    1.5516 -> 0.9614   BREAKS, and at every rung on the ladder
+#   `1.4  < drop  < 2.0`    1.5516 -> 0.9614   BROKE on the genome shipped then, at every
+#                                              rung -- `test_the_axle_drop_meets_the_stroke_
+#                                              target` below, xfailed at §111 rather than
+#                                              silently inherited by a shared fixture.
+#                                              §115's promotion cleared it (1.8431 on
+#                                              `b729e86`) and §118 lifted the marker; the
+#                                              three numbers in this table are still the
+#                                              ones §109 measured, on the outgoing genome
 #
 # So a shared fixture would not have re-aimed six gates quietly; it would have turned one
-# of them red on the spot and moved two others most of the way to their edges.  Moving one
-# gate is the judgement §109 made.  Moving twelve is not, and one flag on `mesh` would have
+# of them red on the spot and moved two others most of the way to their edges.  Moving two
+# gates onto this fixture is the judgement §109 and §111 made, one at a time and each
+# measured.  Moving all twelve tests onto it in one flag on `mesh` is not, and would have
 # made it look like one edit.
 #
 # Module-scoped and therefore lazy: costs a build and a ~1.1 s solve only on the runs that
@@ -319,8 +329,22 @@ def test_the_hub_junction_holds_a_small_minority_of_the_compliance(filleted_res)
         filleted_res["compliance_split"])
 
 
-def test_the_beam_model_does_not_predict_the_axle_drop(res, genes):
+def test_the_beam_model_does_not_predict_the_axle_drop(filleted_res, genes):
     """THE M4 HEADLINE: the beam model's 2.0 mm target is not what the part does.
+
+    ON THE FILLETED MESH NOW, NOT THE PLAIN ONE (PLAN.md §111) — the mesh
+    `wheel_objective.phase_meshes` has built unconditionally since §103, so this is the wheel
+    the beam-blindness claim is actually about. The move STRENGTHENS the claim rather than
+    weakening it, which is the opposite of the risk §109 was guarding against for the
+    hub-share gate and is why it can just move, measured rather than assumed:
+
+        genome              beam       plain |ratio-1|   filleted |ratio-1|
+        best_solution        0.515414 mm      2.0105          0.8652
+        best_solution_ga_beam 1.990055 mm     0.1665          0.7451
+
+    `ga_beam` is the design the beam model was optimised against, and even it clears the
+    0.10 bar on the filleted mesh by 7.45x — up from 1.67x on the plain one, where the
+    margin was thinnest.
 
     The sign of this has flipped once already — the wheel was 42.7% SOFTER than the
     target with the 1.1 mm band and is now stiffer than it — so the test pins the
@@ -329,13 +353,52 @@ def test_the_beam_model_does_not_predict_the_axle_drop(res, genes):
     as a failure to be looked at rather than passing unnoticed.
     """
     beam = wf.evaluate_design(genes)[0]["deflection_mm"]
-    ratio = res["axle_drop_mm"] / beam
+    ratio = filleted_res["axle_drop_mm"] / beam
     assert abs(ratio - 1.0) > 0.10, (
-        f"axle drop {res['axle_drop_mm']:.4f} mm vs beam {beam:.4f} mm — the beam model "
-        f"has become predictive on this genome, which would be news; check whether "
+        f"axle drop {filleted_res['axle_drop_mm']:.4f} mm vs beam {beam:.4f} mm — the beam "
+        f"model has become predictive on this genome, which would be news; check whether "
         f"study_wheel_fea.run_beam_blindness still finds a spread across genomes before "
         f"believing it")
-    assert 1.4 < res["axle_drop_mm"] < 2.0, res["axle_drop_mm"]
+
+
+def test_the_axle_drop_meets_the_stroke_target(filleted_res):
+    """The band half of the old combined gate, split out and read on the filleted mesh.
+
+    XFAILED AT §111, LIFTED AT §118 BY THE PROMOTION ITS OWN REASON NAMED. §111 read
+    0.961370 mm here on the then-shipped genome — 38.0-39.9% "stiffer" than the plain mesh
+    at every rung of §109's ladder, so not a rung artefact — and marked this
+    `xfail(strict=True)` rather than move `1.4`, because that edge has no warrant to
+    re-derive a new value from: it was born in `f0a9e83` ("fillet tweaks", 2026-07-25, the
+    4th commit of 157, before PLAN.md existed) and was never edited afterwards. The marker
+    named two clearing conditions, "a re-promotion (successor 6) or a section that gives the
+    band a warrant", and §115 delivered the FIRST OF THEM AND NOT THE SECOND: `b729e86`
+    reads **1.843091 mm** on this fixture. So the lower edge is exactly as unwarranted today
+    as §111 found it, and this test passing is a fact about the genome rather than a
+    justification for the band — read the paragraphs below unchanged.
+
+    THIS IS A DIFFERENT CLAIM FROM THE RATIO ABOVE, AND IT DOES NOT SURVIVE THE SAME MOVE.
+    The ratio is a statement about whether the beam model predicts the wheel and gets
+    stronger on the mesh the objective solves. This is an absolute distance from a 2.0 mm
+    target, and PLAN §29 already retired exactly that class of claim once, for the same
+    reason: "an absolute distance from 2.0 mm quoted without naming its rung"
+    (`test_wheel_fea.py`, `drops[-1] < TARGET_DEFLECTION_MM < drops[0]`). This band is
+    evaluated at `coarse` and has never named its rung either — it survived that purge by
+    sitting in a different test.
+
+    NOT A CONFORMANCE CLAIM. `wheel_requirements.SHOULD-DEFLECTION` is the tree's actual
+    stroke-conformance gate, on `axle_drop_mean_mm` (the contact-phase mean, 1.9011 mm in
+    the committed `studies/study_mbse_score.json`) — 22.5% away from the linear phase-0
+    quantity this test reads (1.5516 mm plain). This band is a regression bound that has
+    ridden alongside the ratio assertion since the test was written; it never was a
+    requirement and moving it to look like one would be inventing a warrant, not finding
+    one.
+
+    NO TRANSPORT FACTOR EXISTS TO MOVE THE EDGES BY, PER §109's OWN CHECK 3 -- measured
+    fillet stiffening is 1.614x for the shipped genome and 3.270x for `ga_beam` (which
+    both fillet junctions clamp), 2.03x apart. A per-design factor this wide is the same
+    finding §109 made for the hub-share bound, more extreme.
+    """
+    assert 1.4 < filleted_res["axle_drop_mm"] < 2.0, filleted_res["axle_drop_mm"]
 
 
 def test_the_beam_to_wheel_ratio_is_not_a_constant(genes):
@@ -575,6 +638,34 @@ def test_peak_stress_diverges_but_the_field_converges(genes):
     So this now pins the CONTRAST the docstring is actually about — one quantity running
     away while the other stands still — as a ratio of RELATIVE drifts, which is
     dimensionless and does not care which tier a given design converges on.
+
+    AND THEN A THIRD PER-DESIGN CONSTANT WAS ADDED UNDERNEATH IT, WHICH IS WHY THIS TEST
+    HAS NOW BEEN MISCALIBRATED BY THREE CONSECUTIVE PROMOTIONS AND NOT TWO.  The
+    dimensionless ratio above is the pin this docstring argues for; `d2 / p99 < 0.01`
+    beneath it is an absolute bound, and it encodes HOW FAR ALONG ITS CONVERGENCE a
+    particular design happens to be at the top rung — the same class of number as the
+    `0.3` it replaced.  Measured at `b729e86`, 2026-09-08:
+
+        cfg        max_singular    spoke_p99      |d| of p99    as % of fine
+        smoke         26.472946    14.091002
+        coarse        31.501722    12.998846       1.092156          8.22%
+        medium        35.145005    13.465662       0.466817          3.51%
+        fine          40.684846    13.281208       0.184454          1.39%
+
+    **THE p99 HAS NOT STOPPED CONVERGING.**  Its successive differences contract by
+    0.4274 then 0.3951 — about 2.4x per rung, geometric — while the max grows 53.68% over
+    the same four and 29.15% over the three this test uses.  The separation the assertion
+    above demands is 10x and it reads 13.7x.  The 1.39% is where a geometric sequence has
+    got to at `fine`, not evidence that it is running away.
+
+    THE TWO FAILED FORMS EACH CAPTURED ONE REGIME, SO THE PIN IS THEIR DISJUNCTION.  A
+    p99 that is not running away is either SETTLED (its last step is a small fraction of
+    its value, which is what `0.01` tests, and what 350f4c7's 0.094% and 36aed36's 0.082%
+    satisfy) or STILL CONTRACTING (`d2 < d1`, which is what `b729e86` satisfies at
+    0.1845 against 0.4668).  A genuinely diverging p99 fails BOTH and is the one outcome
+    this test's whole argument forbids.  All three known designs pass, two of them on
+    both branches — and no branch carries a number fitted to a design: `0.01` is the
+    settled-regime threshold this test already had, and `d2 < d1` has no constant at all.
     """
     maxima, plain = [], []
     for cfg in ("coarse", "medium", "fine"):
@@ -602,8 +693,13 @@ def test_peak_stress_diverges_but_the_field_converges(genes):
         f"plain-spoke p99 drifted {p99_drift:.2%} over coarse..fine {plain} against the "
         f"max's {max_drift:.1%} — less than the 10x separation that makes one of these a "
         f"converged number and the other a mesh artifact")
+    d1 = abs(plain[1] - plain[0])
     d2 = abs(plain[2] - plain[1])
-    assert d2 / plain[2] < 0.01, f"plain-spoke p99 still moving {d2 / plain[2]:.2%}"
+    assert d2 / plain[2] < 0.01 or d2 < d1, (
+        f"the plain-spoke p99 is neither SETTLED ({d2 / plain[2]:.2%} of its value over "
+        f"the last rung, against 1%) nor still CONTRACTING (d2 {d2:.6f} against d1 "
+        f"{d1:.6f}) on {plain} — it is running away like the max, which is the one "
+        f"outcome this test's argument forbids")
 
 
 def test_the_junction_is_re_entrant_enough_to_be_singular(genes):

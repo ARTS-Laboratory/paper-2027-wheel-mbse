@@ -420,21 +420,91 @@ def test_mesh_resolution_must_scale_with_thickness():
     """The span element size has to resolve the ~t boundary layers, not the part.
 
     This is the most consequential number M3 produced for M4, so it is pinned: on the
-    thinnest section in the A4 sweep, a mesh with h ~ t gets the SIGN of the
-    beam-model discrepancy wrong, while h = t/8 does not.  A future mesh-config table
-    that sizes elements by the part rather than by the wall will fail here.
+    thinnest section in the A4 sweep, a mesh sized by the PART reads the sign of the
+    beam-model discrepancy wrong, while one sized by the WALL does not.  A future
+    mesh-config table that sizes elements by the part will fail here.
+
+    THE PROBE IS AIMED FROM A MEASURED CROSSOVER, AND IT DID NOT USED TO BE (§141).
+    The discrepancy is monotone in `h`: coarse reads stiff (negative), refined reads
+    soft (positive), and it crosses zero at one `h/t`.  That crossover is a function of
+    the SHAPE genes, so a probe pinned near it stops demonstrating anything the moment
+    the shipped genome moves.  This test used to probe `h/t = 1`, and bisection puts the
+    crossover at:
+
+        genome                       h*/t      err at the h/t = 1 probe
+        pre-`cb4e3dd`              0.9471            -0.0011%     (probe 5.6% past it)
+        shipped (`b729e86`)        1.7978            +0.0087%     (probe 44% short)
+
+    So `h/t = 1` sat five percent from the crossover and the promotion moved the
+    crossover 90% coarser, taking the probe with it -- the demonstration was intact the
+    whole time and the vehicle had fallen out of the branch.  The probe is now
+    `h/t ~ 4`, which is 2.2x past the crossover, and the measured margin there is 113x
+    the one it replaces:
+
+        k       h/t      shipped        pre-`cb4e3dd`
+        0.25    3.967    -0.125969%     -0.183304%     <- part-sized, reads STIFF
+        0.5     1.994    -0.003732%     -0.029813%
+        1       1.000    +0.008710%     -0.001109%     <- the old probe, on the fence
+        8       0.125    +0.011332%     +0.011553%     <- wall-resolved, reads SOFT
+
+    Measured 2026-09-08 at `lam = 0.125` (`t_min` 0.15 mm).  Both probes hold their sign
+    across `lam` in 0.0625..0.5 on both genomes, EXCEPT the wall probe at `lam = 0.0625`
+    on the pre-`cb4e3dd` genome (-0.000595%): at `t = 0.075` mm the converged discrepancy
+    is itself ~1e-5 and the sign is not resolvable, which is why `lam` stays at 0.125.
+    Over 30 genomes drawn uniformly from `GENE_SPACE` the two signs hold 29/30 each, so
+    this is generic to the geometry and not a property of the shipped design -- but it is
+    not universal, and this test is scoped to the shipped genome.
     """
     g = sba.scale_thickness(sba.load_genes(os.path.join(REPO, "best_solution.json")),
                             0.125)
     F = wf.FORCE_PER_SPOKE_NEWTONS * sba.PROBE_FORCE_FRACTION * 0.125 ** 3
     ref = sba.castigliano(g, "fixed_guided", F)
-    err = {}
-    for k in (1, 8):
+    err, span = {}, {}
+    for k in (0.25, 8):
         cfg = sba.sized_config(g, k=k)
+        span[k] = cfg.n_span
         err[k] = fem.spoke_deflection(g, cfg, root_bc="plane", force=F) / ref - 1.0
-    assert err[1] < 0 < err[8], (
-        f"expected h~t to read stiff and h=t/8 to read soft, got "
-        f"h~t: {err[1]:+.4%}, h=t/8: {err[8]:+.4%}")
+    assert err[0.25] < 0 < err[8], (
+        f"expected a part-sized mesh (h/t~4) to read stiff and a wall-resolved one "
+        f"(h=t/8) to read soft, got h/t~4: {err[0.25]:+.4%}, h=t/8: {err[8]:+.4%}")
+    # AND THE COARSE READING MUST NOT DRIFT BACK ONTO THE FENCE.  This is the guard the
+    # old probe lacked: a sign that holds by 1e-5 is a coin, not a demonstration.
+    # Measured 11.1x (shipped) and 15.9x (pre-`cb4e3dd`); 5.0 leaves 2.2x of headroom.
+    assert abs(err[0.25]) > 5.0 * abs(err[8]), (
+        f"part-sized error {err[0.25]:+.4%} is not clear of the wall-resolved "
+        f"{err[8]:+.4%} -- the probe has drifted toward the crossover again")
+
+    # AND THE SAME GUARD IN THE MESH PARAMETER RATHER THAN IN THE QUANTITY, WHICH IS THE
+    # ONE THAT WOULD HAVE CAUGHT THIS BEFORE THE PROMOTION DID.  The assertion above is
+    # about how big the coarse reading is; this one is about WHERE THE PROBE STANDS
+    # relative to the sign change, which is what actually went wrong (§142).
+    #
+    # It bisects, so it costs about 13 solves -- roughly 4.3 s, against 2 solves for
+    # everything above.  That is not the cheap option and it is not meant to be: what it
+    # buys is that the failure names the fence instead of the symptom, and it fires while
+    # the test is still green.  ON THE PRE-`cb4e3dd` GENOME THE OLD PROBE STOOD AT
+    # h/t 0.998 AGAINST A CROSSOVER OF 0.944 -- A MARGIN OF 1.06x -- SO THIS LINE WOULD
+    # HAVE BEEN RED THERE, ONE PROMOTION BEFORE THE SIGN ACTUALLY FLIPPED.  Nothing was
+    # watching any of §133's nine approach failure; this is that watch, for this one.
+    #
+    # A self-aiming probe read off `crossover_h_over_t` was the other option and is worse
+    # at any price: it is green however far the crossover moves, so it follows the failure
+    # around instead of reporting it.
+    #
+    # The bound is 1.5x.  Measured margins are 2.207x (shipped) and 4.229x
+    # (pre-`cb4e3dd`), i.e. 47% and 182% of headroom, against a ratio quantisation of
+    # about 1.6% -- `h/t` is `arc_length / n_span / t_min` with `n_span` an INTEGER, so
+    # both terms step, by 1/92 at the probe and 1/203 at the crossover (PLAN.md §144 §2).
+    # 1.5 is ~30x that step, so an adjacent element count cannot redden it.
+    h_probe = (sba.arc_length(g) / span[0.25]
+               / float(np.min(np.asarray(g)[8:12])))
+    h_star = sba.crossover_h_over_t(g, F)
+    assert h_probe > 1.5 * h_star, (
+        f"the part-sized probe sits at h/t = {h_probe:.4f} against a sign change at "
+        f"{h_star:.4f} -- a margin of {h_probe / h_star:.3f}x, under the 1.5x this test "
+        f"needs to keep demonstrating anything.  Re-aim the probe coarser (both figures "
+        f"are quantised by the integer n_span, ~1.6% on this ratio), do not lower this "
+        f"bound and do not read the probe off the crossover.")
 
 
 # ---------------------------------------------------------------------------
@@ -471,6 +541,50 @@ def test_the_vertical_displacement_runs_MONOTONICALLY_through_the_bottom():
     assert abs(slope) > 0.005, f"slope {slope:.4f} mm/deg — the snap would be harmless"
 
 
+def _gap_straddling_the_bottom(mesh):
+    """The angular gap [deg] between the two rim nodes either side of `theta = -90`.
+
+    HALF OF THIS IS THE EXACT CEILING on `patch_centre_offset_deg`, which is the distance
+    from the bottom to the NEAREST of those two.  Measured as the straddling gap and not
+    as a median over a window, for two reasons found in §148:
+
+    - The rim is not uniformly discretised.  It is 12 fine blocks of 10 quadratic
+      elements, one per 30 deg sector, separated by a single coarse element: at `coarse`
+      the two gaps are 0.1465 and 1.3535 deg, 9.2x apart.  A median over the whole rim
+      returns the coarse one and would put the ceiling at 0.677 instead of 0.073.
+    - A window is undefined exactly where it matters.  If the bottom ever falls between
+      the fine blocks the coarse gap is 1.3535 deg, a +/-1 deg window then holds 0 or 1
+      nodes, and `median(diff(...))` is `nan` -- which still fails the assertion, but
+      reports the failure as a nan rather than as the 9.2x jump it is.
+
+    The straddling gap is exact, always defined, and needs no window.
+    """
+    xy = np.asarray(mesh.coords)
+    pn = np.unique(mesh.edge_sets["rim_outer"])
+    th = np.degrees(np.arctan2(xy[pn, 1], xy[pn, 0]))
+    d = np.sort((th + 90.0 + 180.0) % 360.0 - 180.0)
+    i = int(np.searchsorted(d, 0.0))
+    return float(d[i] - d[i - 1])
+
+
+def _uy_slope_through_bottom(mesh, res):
+    """d(uy)/d(theta) [mm/deg] across `theta = -90` on the rim, from the rim nodes.
+
+    The same reading the monotonicity test above takes; needed here three times, once
+    per mesh variant, because the snap error is the offset times THIS mesh's slope.
+    """
+    xy = np.asarray(mesh.coords)
+    disp = res["u"].reshape(-1, 2)
+    pn = np.unique(mesh.edge_sets["rim_outer"])
+    th = np.degrees(np.arctan2(xy[pn, 1], xy[pn, 0]))
+    d = (th + 90.0 + 180.0) % 360.0 - 180.0
+    near = np.abs(d) < 1.0
+    o = np.argsort(d[near])
+    uy = disp[pn][near][o, 1]
+    dd = d[near][o]
+    return (uy[-1] - uy[0]) / (dd[-1] - dd[0])
+
+
 def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom():
     """The correction has to be inert where the artefact is absent, or it is a new bias.
 
@@ -483,37 +597,89 @@ def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom()
     with open(os.path.join(os.path.dirname(os.path.dirname(
             os.path.abspath(__file__))), "best_solution.json")) as fh:
         genes = wg.genes_to_vector(json.load(fh)["genes"])
-    res = fem.solve_wheel(ww.build_wheel(genes, "coarse"))
+    mesh = ww.build_wheel(genes, "coarse")
+    res = fem.solve_wheel(mesh)
     off, gap = res["patch_centre_offset_deg"], (res["axle_drop_mm"]
                                                 - res["axle_drop_interp_mm"])
-    assert abs(off) < 0.10, off          # unfilleted: a node sits essentially at the bottom
+    # A node sits essentially at the bottom.  This is a bound on the MESH and not a
+    # fitted number: the nearest node cannot be further than half the LOCAL rim node
+    # spacing, and the bottom is refined for the contact patch -- 0.1465 deg here at
+    # `coarse` against a 1.3535 deg median around the whole rim, 9.2x coarser.  So `off`
+    # cannot exceed 0.0733 deg by construction and 0.10 has 1.36x on the ceiling, not on
+    # the reading.  Checked as a ceiling and not just as a value: across the 12 solves
+    # tabulated below, `|off| / (local spacing / 2)` never exceeds 1.000.
+    assert abs(off) < 0.10, off
+
+    # AND THAT CEILING IS ASSERTED, NOT ASSUMED -- THE POSITIONAL GUARD FOR THIS TEST.
+    # `off` is a PHASE: where the bottom happens to fall between two rim nodes, uniform in
+    # [0, spacing/2].  So the line above can pass on LUCK once the ceiling rises past
+    # 0.10, with probability 0.10/ceiling, and it would keep passing for a while after the
+    # premise "a node sits essentially at the bottom" had stopped being true.  Asserting
+    # the ceiling instead makes it a theorem: `ceiling < 0.10` implies `abs(off) < 0.10`
+    # for every phase, so this fires the moment the guarantee is lost rather than the
+    # moment the coin lands badly.  §146 successor 0; the rule is §145 §5 -- where a fence
+    # is locatable, prefer the parameter form.
+    #
+    # THE FENCE IS LOCATABLE AND THE TEST IS MOVING TOWARD IT.  The guarantee holds iff
+    # the local spacing is under 0.20 deg, and at `coarse`:
+    #
+    #     genome              spacing   ceiling   margin to the fence
+    #     pre-`cb4e3dd`        0.0937    0.0469         2.134x
+    #     shipped              0.1465    0.0733         1.365x
+    #
+    # One promotion cost 36% of the margin.  At `smoke` it is already gone -- spacing
+    # 0.3663, ceiling 0.1831, margin 0.546x -- and the plain mesh there reads
+    # off = -0.1404, which fails the line above outright.  So this is not a hypothetical
+    # fence: a coarser rim near the bottom is exactly what removes this test's premise,
+    # and one more promotion of that size reaches it.
+    ceiling = _gap_straddling_the_bottom(mesh) / 2.0
+    assert ceiling < 0.10, (
+        f"the nearest rim node can be up to {ceiling:.4f} deg from the bottom, so "
+        f"`abs(off) < 0.10` above is no longer guaranteed -- it now passes with "
+        f"probability {min(1.0, 0.10 / ceiling):.2f} on where the phase happens to land. "
+        f"Refine the rim near the contact patch, or move this test to a config that "
+        f"still has a node essentially at the bottom.  Do not raise the 0.10.")
     assert abs(gap) < 0.01 * res["axle_drop_interp_mm"]
 
-    # and on the FILLETED mesh, where the re-cut rim moves the phase, it does not.
-    # Measured at the pair this was written against — §85 moved `fillet=True`'s default
-    # and the factor below is NOT re-fitted to that, it is left exactly where §65 put it.
-    fres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True,
-                                          layer_profile=ww.FILLET_LAYER_SHIPPED))
-    assert abs(fres["patch_centre_offset_deg"]) > 3.0 * abs(off), (
-        off, fres["patch_centre_offset_deg"])
-    fgap = fres["axle_drop_mm"] - fres["axle_drop_interp_mm"]
-    assert abs(fgap) > 3.0 * abs(gap), (gap, fgap)
-
-    # AND ON THE MESH THE TREE BUILDS TODAY, WHICH REACHES IT LESS FAR (PLAN §85).
+    # AND THE CORRECTION IS EXACTLY THE FIRST-ORDER SNAP, WHICH IS THE CLAIM THE
+    # DOCSTRING ABOVE ALREADY MAKES -- "they must differ by roughly the offset times the
+    # slope above".  Until §141 the second half was carried instead by a pair of ratio
+    # proxies: the filleted mesh's offset had to exceed the plain one's by 3x (shipped
+    # layer profile) and 2x (per-genome rule).  Those were calibrated on the genome
+    # before `cb4e3dd` and the promotion took the vehicle away rather than the finding:
     #
-    # The per-genome rule gives this genome `(-0.3629, 0.70)` against the shipped
-    # `(-0.45, 1.60)` — a shallower entry and a much shorter layer — so it perturbs the
-    # rim less and the phase moves less with it: offset -0.1029 deg against -0.1635, gap
-    # 3.76e-03 against 5.81e-03.  The CLAIM still holds — the correction is not inert on a
-    # filleted mesh — and it holds at 2.3x and 2.1x rather than 3.6x and 3.2x.
+    #     coarse mesh          pre-`cb4e3dd`              shipped (`b729e86`)
+    #     plain                off -0.0452               off -0.0671
+    #     fillet SHIPPED       off -0.1635  (3.62x)      off +0.0413  (0.61x)
+    #     fillet per-genome    off -0.1029  (2.28x)      off +0.0920  (1.37x)
     #
-    # Asserted as its own line at its own level rather than by loosening the one above,
-    # because a threshold moved in the same change that reddened it cannot be told apart
-    # from a threshold fitted to the run that breached it.
-    pres = fem.solve_wheel(ww.build_wheel(genes, "coarse", fillet=True))
-    assert abs(pres["patch_centre_offset_deg"]) > 2.0 * abs(off), (
-        off, pres["patch_centre_offset_deg"])
-    pgap = pres["axle_drop_mm"] - pres["axle_drop_interp_mm"]
-    assert abs(pgap) > 2.0 * abs(gap), (gap, pgap)
-    # and the rule really is the gentler of the two, which is why it needs its own line
-    assert abs(pres["patch_centre_offset_deg"]) < abs(fres["patch_centre_offset_deg"])
+    # The filleted offsets did not merely shrink, they CHANGED SIGN, and all three now
+    # sit inside the 0.10 deg band the first assertion calls "essentially at the bottom"
+    # -- so there was no longer a not-at-the-bottom case for the ratios to compare, and
+    # a bigger ratio would have been a fitted number with no vehicle under it.
+    #
+    # THE SIGN REVERSAL IS NOT A CHANGE OF MECHANISM, WHICH IS THE ONE READING THAT WOULD
+    # HAVE MADE THIS THE WRONG REPAIR.  `off` is the signed distance from the bottom to
+    # the nearest rim node, so it is bounded by half the local spacing (above) and its
+    # SIGN is only which side of the bottom that node happens to land -- a sub-node-
+    # spacing phase, and the re-cut rim re-places those nodes.  The mechanism is what
+    # survives it: the relationship below holds to 2.52% on BOTH signs of `off`.
+    #
+    # The relationship is the honest pin and it does not rot: `gap` is `off` times the
+    # slope of `uy` through the bottom, measured on the SAME mesh.  Across 2 genomes x
+    # 2 configs (`smoke`, `coarse`) x these 3 mesh variants -- 12 solves, offsets from
+    # -0.172 to +0.513 deg and BOTH signs -- `gap / (off * slope)` lands in
+    # [0.9797, 1.0252], worst deviation 2.52%.  The 10% band below is 4x that.
+    for tag, kw in (("plain", {}),
+                    ("fillet SHIPPED", dict(fillet=True,
+                                            layer_profile=ww.FILLET_LAYER_SHIPPED)),
+                    ("fillet per-genome", dict(fillet=True))):
+        m = ww.build_wheel(genes, "coarse", **kw)
+        r = fem.solve_wheel(m)
+        o = r["patch_centre_offset_deg"]
+        g = r["axle_drop_mm"] - r["axle_drop_interp_mm"]
+        predicted = o * _uy_slope_through_bottom(m, r)
+        assert abs(g - predicted) < 0.10 * abs(predicted), (
+            f"{tag}: gap {g:+.4e} is not the first-order snap {predicted:+.4e} "
+            f"(off {o:+.5f} deg) -- the correction is a different quantity, not a "
+            f"correction")

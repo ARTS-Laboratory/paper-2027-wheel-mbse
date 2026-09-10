@@ -1,0 +1,65 @@
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+
+==============================================================================
+  STAGE 3 — best_solution  (adam, coarse, 300 steps, uniform, svk)
+==============================================================================
+  gene        value       low      high    frac
+  cx1        4.4780     1.790    10.740   0.300
+  cy1        8.7212   -32.000    32.000   0.636
+  cx2       15.0027     7.876    19.690   0.603
+  cy2       11.8088   -32.000    32.000   0.685
+  cx3       23.8188    16.110    27.924   0.653
+  cy3        9.4191   -32.000    32.000   0.647
+  cx4       30.8732    25.060    34.010   0.650
+  cy4        6.4375   -32.000    32.000   0.601
+  t0         1.4738     1.200    10.000   0.031
+  t1         1.2000     1.200     8.000   0.000  <- pinned low
+  t2         1.2000     1.200     8.000   0.000  <- pinned low
+  t3         1.4313     1.200     6.000   0.048
+  R_hub      0.6636     0.400     4.000   0.073
+  R_rim      3.0000     0.500     3.000   1.000  <- pinned high
+[step    0] loss    1383.5887  |grad|  1.943e+04  lr  0.01000  drop  0.991 mm  util  1.383  1358.43 s
+
+STAGE 3 — START
+---------------
+    term                 value    share       |grad|  grad share
+    stress            670.9929    48.5%    2.651e+04       70.0%
+    deflection        635.8102    46.0%    1.034e+04       27.3%
+    stress_margin      40.9355     3.0%        974.7        2.6%
+    mass               35.6822     2.6%         49.9        0.1%
+    smoothness          0.1678     0.0%         10.5        0.0%
+    x_order             0.0000     0.0%            0        0.0%
+    hub_overlap         0.0000     0.0%            0        0.0%
+    fold                0.0000     0.0%            0        0.0%
+    arrival             0.0000     0.0%            0        0.0%
+    fillet              0.0000     0.0%            0        0.0%
+    fillet_cap          0.0000     0.0%            0        0.0%
+    buckling            0.0000     0.0%            0        0.0%
+    min_sj              0.0000     0.0%            0        0.0%
+    phase_ripple        0.0000     0.0%            0        0.0%
+    TOTAL            1383.5887
+
+    axle_drop_mean_mm                    0.99139
+    phase_ripple_std_over_mean           0.19118
+    max_stress_mpa                      38.37090
+    stress_utilisation                   1.38320
+    mesh_mass_g                         43.41335
+    min_scaled_jacobian                  0.28772
+    buckling_ratio                       0.13949
+[step   10] loss     550.3611  |grad|       3394  lr  0.00998  drop  1.238 mm  util  1.150  190.27 s
+[step   20] loss     183.5628  |grad|       3819  lr  0.00990  drop  1.611 mm  util  1.061  213.15 s
+[step   30] loss      66.6526  |grad|      260.8  lr  0.00977  drop  1.983 mm  util  0.980  212.62 s
+[step   40] loss      62.2372  |grad|      242.8  lr  0.00959  drop  1.982 mm  util  0.960  221.46 s
+[step   50] loss      57.6920  |grad|      233.1  lr  0.00936  drop  1.982 mm  util  0.975  226.14 s
+[step   60] loss      55.3562  |grad|      159.9  lr  0.00908  drop  1.990 mm  util  0.975  222.68 s
+[step   70] loss      54.7400  |grad|      89.41  lr  0.00875  drop  1.995 mm  util  0.994  219.42 s
+[step   80] loss      54.2724  |grad|      251.7  lr  0.00838  drop  1.982 mm  util  0.996  216.94 s
+[step   90] loss      53.9479  |grad|      147.2  lr  0.00798  drop  1.990 mm  util  0.992  217.49 s
+[step  100] loss      53.6823  |grad|      117.4  lr  0.00755  drop  1.992 mm  util  0.990  216.31 s
+[step  110] loss      53.4501  |grad|      139.8  lr  0.00708  drop  1.990 mm  util  0.985  211.92 s
+[step  120] loss      53.2812  |grad|      162.3  lr  0.00659  drop  1.989 mm  util  0.981  218.39 s
+[step  130] loss      53.1024  |grad|      151.1  lr  0.00609  drop  1.989 mm  util  0.976  212.66 s
+[step  140] loss      52.9966  |grad|      155.1  lr  0.00557  drop  1.989 mm  util  0.972  218.32 s
+[step  150] loss      52.8878  |grad|      156.3  lr  0.00505  drop  1.989 mm  util  0.970  212.22 s
+[step  160] loss      52.8012  |grad|      160.1  lr  0.00453  drop  1.989 mm  util  0.966  220.81 s
+[step  170] loss      52.7215  |grad|      139.2  lr  0.00401  drop  1.991 mm  util  0.959  220.89 s

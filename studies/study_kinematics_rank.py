@@ -13,7 +13,11 @@ criterion this arc registered, BEFORE any of this ran (KINEMATICS_PLAN Step 0c),
     R1  ARGMIN IDENTITY, binary and primary.  The lowest-linear-loss genome must be the
         lowest-SVK-loss genome, over the pool AND over its feasible subset.
     R2  Spearman rho >= 0.90 on the FEASIBLE subset (binding) and reported on the full
-        pool (diagnostic).  Top-5 sets equal under both orderings.
+        pool (diagnostic).  Top-5 sets equal under both orderings — a clause that
+        ABSTAINS below n = 6, where the slice is the whole subset and it cannot fail
+        (PLAN.md §130 §3, fixed at §132; `_rank_block`).  Each block carries `r2_binds`
+        saying whether ITS `r2_pass` is the one the verdict took, because both blocks
+        compute the field and only one is read (§132 successor 0; `R2_BINDING_SUBSET`).
     R3  cos(grad_linear, grad_svk) >= 0.90 in the NORMALIZED gene space the descent steps
         in, at every probed genome.
 
@@ -43,6 +47,19 @@ NOT ALREADY ONE.  De-duplicated by gene vector, not by filename: `best_solution.
 and `stage3_margin_promote_best.json`, and `stage2_elites.json` rank 0 IS
 `best_solution_ga_beam.json`.  A duplicate row would put a tied pair into a rank statistic
 for a reason that is not about the wheel.
+
+ONE OF THOSE THREE ALIASES IS NO LONGER TRUE, AND IT COSTS THE POOL A GENOME — PLAN.md
+§129.  §115 promoted `b729e86` into `best_solution.json` and PRESERVED the outgoing
+`09e8188` as `stage3_knee_best_medium.json` precisely so it would not be lost, which
+turned the two files from one wheel into two.  `COMMITTED` below never listed the knee
+file — it did not need to while the alias held — so the outgoing shipped genome is now
+the one design in the tree this driver cannot see.  Measured 2026-09-07 over every
+tracked file carrying a genome: 39 distinct gene vectors on disk, 36 reachable here, and
+the three that are not are `stage3_knee_best_medium.json`, `defect5_step100.json` and
+`fillet_optimum_b029622.json`.  The other two aliases still hold, checked the same day.
+Whether the missing three belong in the pool is §116's successor 3 — a decision about
+what "the shipped genome and its rivals" means, not a fact this docstring can settle —
+so the list is left as it is and the gap is named instead.
 =============================================================================
 """
 
@@ -74,6 +91,24 @@ N_PHASE = 8
 GATE_SPEARMAN = 0.90
 GATE_GRAD_COSINE = 0.90
 
+# WHICH SUBSET DECIDES R2 — one literal, three readers (§132 successor 0).  `_verdict`
+# consumes only this block's `r2_pass`, but `_rank_block` computes the field for BOTH
+# subsets, so an artifact can carry `blocks.full.r2_pass: false` beside
+# `registered_criterion.R2_rank_agreement: true` — both correct, and grep-readable as a
+# contradiction.  `study_kinematics_rank_filleted.json` does exactly that today.  The
+# terminal output has always disambiguated it ("BINDING for R2" against "diagnostic") and
+# the ARTIFACT never did; `r2_binds` below puts the same sentence in the file, next to the
+# field that provokes the question rather than in a header a grep will not see.
+#
+# WHY THE MARKER RATHER THAN DROPPING THE VERB, which was the other option filed at §132.
+# Removing `r2_pass` from the diagnostic block would subtract a field from
+# `study_kinematics_rank.json`, and that file is §32's evidence — §130's header note is
+# explicit that overwriting it falsifies a closed arc.  An additive marker leaves every
+# recorded number in place.  The full block is not purely diagnostic either: R1 reads its
+# `argmin_identical`, so "the full pool does not bind" would itself be false.  It is R2
+# specifically that this subset does not decide, and that is what the name says.
+R2_BINDING_SUBSET = "feasible"
+
 # Every distinct genome the tree commits to, in the order they were produced.  Files that
 # hold the SAME gene vector are folded together by `_pool` and reported as aliases.
 COMMITTED = (
@@ -97,15 +132,30 @@ COMMITTED = (
     ("e126cc3 margin",       "stage3_margin_best_medium.json"),
     ("promote check",        "stage3_promote_best.json"),
     ("promote2 check",       "stage3_promote2_best.json"),
-    ("09e8188 SHIPPED",      "best_solution.json"),
+    # `b729e86` since §115 (2026-09-06), not `09e8188` — the label is the only thing that
+    # was ever hardcoded here, the genes are read live, and `best_solution.json`'s own
+    # note flagged this label as outstanding at the promotion.  Corrected at PLAN.md §129
+    # rather than left cosmetic: since the promotion the label names a DIFFERENT genome
+    # that is still on disk under another name, so a stale label here and a live read
+    # below no longer disagree about a caption — they disagree about which wheel the row
+    # is.  See the pool note in the header.
+    ("b729e86 SHIPPED",      "best_solution.json"),
 )
 
 # The genomes R3 probes.  Four, not all 36: a value+grad call is the expensive one and the
 # question R3 asks is about the DESCENT, so the points that matter are the ones a descent
 # actually sat on — the shipped genome, the incumbent it replaced, the design the linear
 # ranking prefers, and the GA/beam control whose correction is 5.5x smaller.
+#
+# THAT LINEAGE IS ONE PROMOTION OUT OF DATE — PLAN.md §129.  Row 1 is `b729e86` now, and
+# "the incumbent it replaced" is `09e8188` (`stage3_knee_best_medium.json`), not
+# `e126cc3`, which is two promotions back.  The four ROWS are unchanged: they are still
+# four points a descent sat on, which is the property the list was chosen for, and
+# re-choosing them by today's lineage is a decision about the probe set rather than a
+# correction to it.  What is fixed is the sentence claiming they are something they are
+# not.
 GRAD_PROBES = (
-    ("09e8188 SHIPPED",    "best_solution.json"),
+    ("b729e86 SHIPPED",    "best_solution.json"),
     ("e126cc3 margin",     "stage3_margin_best_medium.json"),
     ("350f4c7 minwall1.2", "stage3_minwall_best_1.2.json"),
     ("36aed36 ga_beam",    "best_solution_ga_beam.json"),
@@ -174,13 +224,30 @@ def run_rank(pool, cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0):
     rows = []
     try:
         for i, (label, genes, aliases) in enumerate(pool):
-            orientation = tuple(float(o) for o in
-                                WW.flank_orientation(genes, WW.get_config(cfg)))
             t0 = time.time()
             wanted = phases[:1] if p is not None else phases
-            meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
-            row = {"genome": label, "aliases": aliases, "gene_key": _key(genes),
-                   "mesh_s": round(time.time() - t0, 1)}
+            row = {"genome": label, "aliases": aliases, "gene_key": _key(genes)}
+            # THE MESH BUILD IS INSIDE THE HANDLER, AND IT WAS NOT — PLAN.md §129.
+            # `_score`'s own refusals have been recorded since this file was written; the
+            # build above them was not, so a genome with NO filleted mesh took the whole
+            # run down and the report is written only after `run_rank` RETURNS — an hour
+            # of scoring and nothing on disk.  That is not hypothetical: measured
+            # 2026-09-07 at this driver's own `coarse` default, `elite11` (`fc7aeb1`)
+            # raises `MeshRefusedError` at the rim, and it is row 32 of 36.
+            try:
+                orientation = tuple(float(o) for o in
+                                    WW.flank_orientation(genes, WW.get_config(cfg)))
+                meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
+            except Exception as exc:                           # noqa: BLE001
+                row["mesh_s"] = round(time.time() - t0, 1)
+                why = f"{type(exc).__name__}: {exc}"
+                for kin in ("linear", "svk"):
+                    row[kin] = {"failed": why}
+                print(f"  [{i + 1}/{len(pool)}] {label:<22} MESH   FAILED {exc}",
+                      flush=True)
+                rows.append(row)
+                continue
+            row["mesh_s"] = round(time.time() - t0, 1)
             for kin in ("linear", "svk"):
                 t1 = time.time()
                 # A genome that will not solve is a finding, not a reason to lose the run:
@@ -227,7 +294,8 @@ def _subsets(rows):
 
 def _rank_block(rows, name):
     if len(rows) < 3:
-        return {"subset": name, "n": len(rows), "insufficient": True}
+        return {"subset": name, "n": len(rows), "insufficient": True,
+                "r2_binds": name == R2_BINDING_SUBSET}
     lin = np.array([r["linear"]["loss"] for r in rows])
     svk = np.array([r["svk"]["loss"] for r in rows])
     rho = stats.spearmanr(lin, svk)
@@ -236,6 +304,17 @@ def _rank_block(rows, name):
     order_s = [rows[i]["genome"] for i in np.argsort(svk)]
     k = min(5, len(rows))
     top_l, top_s = order_l[:k], order_s[:k]
+    # `None`, not `True`, WHEN THE SLICE IS THE WHOLE SUBSET.  `k = min(5, n)`, so at
+    # n <= 5 both slices hold every scored genome and the two sets are equal BY
+    # CONSTRUCTION — for any pair of orderings whatsoever, including exactly reversed
+    # ones.  Reporting `True` there made R2's second clause read as a condition that had
+    # been checked and had passed when nothing had been checked at all, and it did:
+    # PLAN.md §130 cleared R2 on a binding subset of five that way.  `r3_pass` below
+    # already takes this shape for the same reason — an artifact has to keep "measured
+    # and agreed" distinguishable from "not measurable here".  Below n = 6 the registered
+    # R2 therefore degrades to the bare Spearman, which is what it has always been; the
+    # change is that it now says so.  §132 and KINEMATICS_PLAN step 0c carry the note.
+    sets_equal = None if k == len(rows) else bool(set(top_l) == set(top_s))
     # THE INVERSION COUNT is over unordered pairs and is the raw form of the same fact rho
     # summarises — reported because "rho = 0.94" and "9 of 120 pairs are the wrong way
     # round" land very differently on a reader deciding whether to trust a search model.
@@ -248,21 +327,27 @@ def _rank_block(rows, name):
         "kendall_tau": float(tau.statistic),
         "order_linear": order_l, "order_svk": order_s,
         "top5_linear": top_l, "top5_svk": top_s,
-        "top5_sets_equal": bool(set(top_l) == set(top_s)),
+        "top5_sets_equal": sets_equal,
         "argmin_linear": order_l[0], "argmin_svk": order_s[0],
         "argmin_identical": bool(order_l[0] == order_s[0]),
         "top2_inverted": bool(len(rows) >= 2 and set(order_l[:2]) == set(order_s[:2])
                               and order_l[:2] != order_s[:2]),
         "discordant_pairs": n_inv, "n_pairs": n_pairs,
         "discordant_fraction": float(n_inv / n_pairs) if n_pairs else 0.0,
+        # `is not False`: a vacuous clause cannot fail the gate and must not silently
+        # pass it either, so it abstains and rho carries R2 alone.
         "r2_pass": bool(float(rho.statistic) >= GATE_SPEARMAN
-                        and set(top_l) == set(top_s)),
+                        and sets_equal is not False),
+        # Whether `_verdict` READS the `r2_pass` directly above it.  False here does not
+        # mean the subset was not measured — every statistic in this block is real; it
+        # means R2's registered verdict was not taken from it.
+        "r2_binds": name == R2_BINDING_SUBSET,
     }
 
 
 def _verdict(rows):
     blocks = {name: _rank_block(rs, name) for name, rs in _subsets(rows).items()}
-    binding = blocks["feasible"]
+    binding = blocks[R2_BINDING_SUBSET]
     full = blocks["full"]
     r1 = None
     if not full.get("insufficient"):
@@ -300,18 +385,34 @@ def run_gradients(cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0, probes=GRAD_PR
                 continue
             genes = _genes_from_file(path)
             z = (genes - low) / (high - low)
-            orientation = tuple(float(o) for o in
-                                WW.flank_orientation(genes, WW.get_config(cfg)))
-            wanted = phases[:1] if p is not None else phases
-            meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
-            g = {}
-            for kin in ("linear", "svk"):
-                t0 = time.time()
-                val, grad, _ = WO.objective(z, cfg, normalized=True, phases=phases,
-                                            meshes=meshes, pool=p, orientation=orientation,
-                                            kinematics=kin)
-                g[kin] = {"loss": float(val), "grad": np.asarray(grad, dtype=float),
-                          "elapsed_s": round(time.time() - t0, 1)}
+            # SAME HANDLER AS `run_rank`, AND R3 HAD NONE AT ALL — PLAN.md §129.  Both
+            # calls below reach `mesh_coords`, which refuses a mesh the sector-fit clamp
+            # moved off its genes (`clamp_reject`, §108/§110), and `36aed36` is probe 4 of
+            # 4 and does exactly that on the filleted mesh — §116.3 at `medium`, confirmed
+            # 2026-09-07 at this driver's `coarse`.  Unhandled, that killed the run AFTER
+            # `run_rank`'s report was written and BEFORE `registered_criterion` ever was,
+            # so `make kinrank` could not produce a verdict at all.  A refused probe is
+            # recorded and excluded from `r3_pass`, never counted as a cosine of zero:
+            # R3 asks how far apart two gradients point, and "there is no gradient here"
+            # is a different answer from "they point 90 degrees apart".
+            try:
+                orientation = tuple(float(o) for o in
+                                    WW.flank_orientation(genes, WW.get_config(cfg)))
+                wanted = phases[:1] if p is not None else phases
+                meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
+                g = {}
+                for kin in ("linear", "svk"):
+                    t0 = time.time()
+                    val, grad, _ = WO.objective(z, cfg, normalized=True, phases=phases,
+                                                meshes=meshes, pool=p,
+                                                orientation=orientation, kinematics=kin)
+                    g[kin] = {"loss": float(val), "grad": np.asarray(grad, dtype=float),
+                              "elapsed_s": round(time.time() - t0, 1)}
+            except Exception as exc:                           # noqa: BLE001
+                rows.append({"genome": label, "file": path,
+                             "failed": f"{type(exc).__name__}: {exc}"})
+                print(f"  grad {label:<22} FAILED {exc}", flush=True)
+                continue
             a, b = g["linear"]["grad"], g["svk"]["grad"]
             na, nb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
             cos = float(a @ b / (na * nb)) if na > 0 and nb > 0 else float("nan")
@@ -341,9 +442,15 @@ def run_gradients(cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0, probes=GRAD_PR
     finally:
         if p is not None:
             p.close()
+    ok = [r for r in rows if "failed" not in r]
     return {"config": cfg, "n_phase": n_phase, "workers": workers,
             "gate_cosine": GATE_GRAD_COSINE, "rows": rows,
-            "r3_pass": bool(rows) and all(r["r3_pass"] for r in rows)}
+            "n_probes": len(rows), "n_refused": len(rows) - len(ok),
+            # `None`, not `False`, when nothing differentiated: `registered_criterion`
+            # already reads a `None` as not-passing, and the two states have to stay
+            # distinguishable in the artifact — "every probe disagreed" and "no probe
+            # could be taken" are different findings about the same gate.
+            "r3_pass": (bool(all(r["r3_pass"] for r in ok)) if ok else None)}
 
 
 # ---------------------------------------------------------------------------
@@ -371,7 +478,8 @@ def _print(rep):
         for name in ("full", "feasible"):
             b = rk["verdict"]["blocks"][name]
             print(f"\n  --- {name.upper()} POOL "
-                  f"({'BINDING for R2' if name == 'feasible' else 'diagnostic'}) ---")
+                  f"({'BINDING for R2' if name == R2_BINDING_SUBSET else 'diagnostic'}"
+                  f") ---")
             if b.get("insufficient"):
                 print(f"      only {b['n']} rows — no rank statistic")
                 continue
@@ -381,7 +489,9 @@ def _print(rep):
                   f"({100 * b['discordant_fraction']:.1f}%)")
             print(f"      top5 linear : {b['top5_linear']}")
             print(f"      top5 svk    : {b['top5_svk']}")
-            print(f"      top5 sets equal: {b['top5_sets_equal']}"
+            eq = b['top5_sets_equal']
+            print(f"      top5 sets equal: "
+                  f"{'n/a — the slice IS the subset' if eq is None else eq}"
                   f"   argmin identical: {b['argmin_identical']}"
                   f"   ({b['argmin_linear']} vs {b['argmin_svk']})")
 
@@ -393,6 +503,9 @@ def _print(rep):
         print(f"  {'genome':<22} {'cos':>9} {'angle':>8} {'|g| lin':>11} {'|g| svk':>11} "
               f"{'ratio':>7}  sign flips")
         for r in gr["rows"]:
+            if "failed" in r:                       # the refusal handler's row, §129
+                print(f"  {r['genome']:<22} FAILED  {r['failed']}")
+                continue
             print(f"  {r['genome']:<22} {r['cosine']:+9.4f} {r['angle_deg']:7.1f}d "
                   f"{r['grad_norm_linear']:11.3f} {r['grad_norm_svk']:11.3f} "
                   f"{r['grad_norm_ratio']:7.2f}  "
