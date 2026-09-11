@@ -24545,3 +24545,259 @@ been invisible to it, and why an underscore was the right first character here t
    §153's recipe should NOT be edited to say so — a batch boundary that exists because of an
    unexplained 26 GiB is a workaround wearing a measurement's clothes, and the number is now
    specific enough to fix instead.
+
+---
+
+## §157 — 2026-09-11. §156's SUCCESSOR 0, TWO CITED FILES CLOSED AND 51 CITATIONS RE-POINTED — AND THE `then` COLUMN THE SUCCESSOR TELLS A REPAIRER TO READ WAS THE **WRONG TREE** FOR 36 OF 159 MOVED ROWS, 22.6%. AN AUTHOR WRITES AGAINST THE CITING COMMIT'S **PRE**-IMAGE; THE SWEEP READ ITS POST-IMAGE. **§156 §3's OWN NAMED EXAMPLE IS OVERTURNED BY IT: THREE OF THE FOUR CITATIONS OF `wheel_fea.py:596-598` DID HOLD, AND THE THING THEY CLAIM IS SITTING IN THE PRE-IMAGE WORD FOR WORD.** THE CONTROL THAT SAYS DO NOT TAKE THE PRE-IMAGE BLINDLY COMES BACK **67 TO 1** THE OTHER WAY
+
+Three commits: `cdfc545` (18 repairs into `wheel_step_export.py`), `df1168b` (the
+instrument), `641ce0f` (33 into `wheel_fea.py`). Plus this record. No artifact, no study
+driver, no threshold moved; 957 collected at every step.
+
+**THE COUNTS, AND THE BASELINE THEY ARE AGAINST.** §156's headline reads "730 citations,
+203 for a human" and that was measured before the instrument's own file was tracked — the
+committed state at `1c98a70` is **756 / 203**, and §8's "26 citations come back from that
+docstring" is the difference exactly. Re-run at `7a60002`: **819 / 203**, and the 203-row
+list is **byte-identical** to `1c98a70`'s. So the two `gui` commits and §156's own 358 lines
+of section text added 63 citations and not one finding, which is the check §156 §1 ran
+against §155 arriving one section later.
+
+```
+                          citations   resolve   for a human   path-owner MOVED
+  1c98a70  §156's record        756       553           203                121
+  7a60002  + gui, + §156        819       616           203                121
+  cdfc545  wheel_step_export    819       633           186                104
+  df1168b  the pre-image        823       637           186                104
+  641ce0f  wheel_fea            822       664           158                 78
+```
+
+**43 of §156 successor 0's 121 are closed, 35.5%**, and the two files that were its named
+worst — `wheel_step_export.py` at 85% of its citations and `wheel_fea.py` at 30 rows — are
+both at zero but for one deliberate row. `--into src/wheel_step_export.py` reports **20
+citations, 20 resolve**; `--into src/wheel_fea.py` reports **70, 69 resolve, 1 for a human**.
+
+### 1. THE `then` COLUMN WAS ONE TREE TOO LATE, AND THAT IS WHAT SUCCESSOR 0 HANDED OVER
+
+§156 successor 0's instruction is *"Whoever repairs a row has to read the `then` column,
+because a delta applied to an anchor that never held moves a wrong citation to a different
+wrong line."* The instruction is right and the column was wrong. A sentence is written
+against the tree its author is READING — the citing commit's **pre-image** — while
+`resolve()` read the cited file at that commit's **post-image**. The two agree unless the
+same commit also moved the anchor, and over all 819 citations as the arc opened:
+
+```
+  159 MOVED rows    36   `then` shows a content-bearing line the author never saw  22.6%
+                     4   the same with a blank or `# ---` pre-image -- no better
+                     1   pre == HEAD, but blank == blank -- the content guard rejects it
+                   118   the two readings agree
+```
+
+Most of the 118 agree because the citing commit never touched the cited file at all, and a
+minority because it did and missed the anchor; at HEAD, after this arc, that split reads
+**107 and 9** of 116. The distinction matters only for where to look next, not for the
+verdict — the instrument prints `(pre: ...)` on the rows where the readings differ and
+nothing on the rows where they do not.
+
+Concentrated, not spread: **22 of `wheel_fea.py`'s 30 path-owner rows**, because `8b347a0`
+wrote many of those sentences and edited `wheel_fea.py` in the same commit. The clearest
+single case is not in that file at all — `PLAN.md:3196` cites `src/wheel_stage3.py:384` for
+`fidelity_check_every` and `:272` for `_fidelity_check`, and at `b5c22c9^` those two lines
+are that prose and that `def` exactly, while at `b5c22c9` they are a pooling comment and an
+unrelated docstring. Two citations, one sentence, both unresolvable from the column as it
+stood.
+
+**AND THE FIRST TWO INSTANCES WERE FOUND BY HAND, BEFORE THE MECHANISM HAD A NAME.**
+`wheel_wheel.py:169` and `:2603` both call `wheel_step_export.py:74` "the one user-decided
+solid parameter", and at `f0a9e83` that line is `HERE = os.path.dirname(...)`. At `f0a9e83^`
+it is `RIM_OUTER_RADIUS_MM = 50.0`, and `f0a9e83` itself inserted the three lines that moved
+it. Same shape at `wheel_objective.py:558`, whose `:810-812` names the `(R_hub,t0)/(R_rim,t3)`
+pairing: right at `506acfe^`, four lines off at `506acfe`, and the post-image line then
+changed its own text as well, so the report said **"0 matches at HEAD"** and offered no
+target at all. Both lines have a single-commit lineage, so neither is in §156 §2's named
+8-row blind spot. It is a second class, and the 8 did not predict it.
+
+### 2. THE CONTROL SAYS 67 TO 1, WHICH IS WHY THE FIX IS ONE-DIRECTIONAL
+
+A blanket pre-image would be far worse than the bug. Cross-tabulating both readings over
+every citation:
+
+```
+  post-image says   pre-image says    rows
+  ok                ok                 565
+  MOVED             MOVED              158
+  ok                MOVED               67   <- would become false findings
+  out of range      out of range        27
+  MOVED             ok                   1   <- and it is a blank matching a blank
+  ok                out of range         1
+```
+
+**57 of the 67 are `277a731` alone** — §136's commit, whose JOB was re-pointing citations
+onto lines it moved in the same breath. §156 §2 had already stated the principle ("a repair
+re-dates an anchor") without noticing it cuts the other way too. So the rule is: **only ever
+upgrade a MOVED row, never downgrade an ok one.** `resolve()` appends `(pre: ...)` where the
+readings differ and otherwise says nothing.
+
+`pre-ok` — the pre-image line IS the HEAD line, so the citation names at HEAD exactly the
+text its author was looking at — is **sound rather than heuristic**, and it is printed rather
+than folded into the resolved count so the number stays auditable. It reads **0** today
+because the three rows that had it were repaired by hand at `cdfc545` first. **The content
+guard is load-bearing**: without `ALNUM`, `tests/test_golden.py:36` -> `wheel_fea.py:998`
+"rescues" on blank == blank, and §156 §3's 14 never-held rows all come back as resolutions.
+
+**PRICED AGAINST THE PASS §156 DECLINED TO FOLD IN.** One extra `git show <commit>^:<cited>`
+per MOVED row and none for the other 664: **0.17 s**, 1.90 s -> 2.07 s on the resolve pass,
+9%, for a 22.6% correction. §156 successor 2 measured its `git log -L` pass at 2 min 28 s
+against 2.3 s — **65x for 1.1%** — and ruled it out on exactly that arithmetic. The same
+arithmetic rules this one in.
+
+### 3. §156 §3's NAMED EXAMPLE, OVERTURNED — AND IT WAS THE LOAD-BEARING ONE
+
+§156 §3 reads: *"`wheel_fea.py:596-598` is the case worth naming, because **four separate
+sites cite it** ... all four for the `smoothness` loss term, all four MOVED, and three of the
+four resolve to a blank line at `8b347a0`. Four independent citations of one anchor, none of
+which ever held: that is corroboration about the ANCHOR rather than doubt about the
+instrument."* At `8b347a0^` those three lines are:
+
+```
+  596      #  deflection target.  Secondary benefit: it suppresses tight local curvature,
+  597      #  which is what keeps thicken_3taper_curve's naive normal offset from
+  598      #  self-intersecting where R drops below t/2.
+```
+
+which is the smoothness term, word for word, and the three sites now name `wheel_fea.py:745-747`
+where that comment lives. **The corroboration was real and pointed the other way**: four
+sites agreeing is evidence the anchor was right, and the instrument was the thing in doubt.
+Same shape at `wheel_objective.py:480`, whose sentence calls the original "untraceable three
+ways — a data-dependent `if`, `np.clip`, and a `float()` cast": the post-image range loses the
+`float(np.clip(...))` line, the pre-image carries all eleven. `:315-325` -> `:360-370`.
+
+### 4. SIX OF THIRTY-FOUR ARE NOT RE-POINTS, IN FOUR DISTINCT WAYS
+
+§156 successor 0's premise is *"the owner is not in question for any of them ... §155's shape
+— one commit, zero line shift, `sed` addressed by line number — applies unchanged."* True
+for 28 of `wheel_fea.py`'s 34. The other six:
+
+```
+  THE REFERENT LEFT THE CITED FILE (3)
+    tests/test_golden.py:55    `GENE_NAMES` is imported from `wheel_genome` now
+                               (`wheel_fea.py:905`), so the cited FILE changes:
+                               wheel_fea.py:682 -> wheel_genome.py:35
+    wheel_geometry.py:200      `thicken_3taper_curve` is three delegating lines now
+    wheel_geometry.py:264      and the node sampling and normals these cite are in
+                               the CITING file.  Both -> `wheel_fea.py:1037-1039`
+  WRONG WHEN TYPED (1)
+    wheel_wheel.py:191         `:134` is `MASS_WEIGHT = 30.0` in BOTH images; the
+                               clamped-hub assumption it claims is five lines below
+                               at `f0a9e83^:139`.  -> `:169`
+  THE ANCHOR RE-POINTS, HALF THE CLAIM DOES NOT (1)
+    tests/test_fem.py:324      `:326-331` -> `:403-408`, the same anchor in
+                               `generalized_spoke_mechanics`' BOUNDARY CONDITIONS
+                               docstring -- but the 4x regression it calls "the
+                               repo's own documented regression" is at
+                               `wheel_fea.py:172-175`, and that half is successor 2
+  REPAIRING IT COSTS MORE THAN IT BUYS (1)
+    wheel_fea.py:663           -> `:745-747` by §3's reading, NOT APPLIED: three
+                               sites quote that line verbatim as §156 §6's worked
+                               example of a carried owner
+```
+
+The last is §138's rule applied rather than restated — *"the obvious way to write the tenth
+would have broken thirteen more"*. One repair for three breakages is not a repair, so the row
+stays in the report and its answer is in `641ce0f`'s message instead. **It is the single row
+`--into src/wheel_fea.py` still returns.**
+
+### 5. THE CITATION COST IS FIVE ROWS, MEASURED, AND THE INSTRUMENT CITES ITS OWN DATA
+
+Zero line shift does not mean zero cost: five repaired lines are themselves cited, so
+changing their CONTENT breaks the citations OF them. Measured by diffing the report rather
+than predicted:
+
+```
+  33 rows left the report      5 rows entered it
+                               PLAN.md:24341   -> wheel_geometry.py:172, :430,
+                                                  study_mesh_quality.py:29   (3 rows)
+                               PLAN.md:24424   -> wheel_objective.py:669-670
+                               _citation_sweep.py:61 -> wheel_objective.py:669-670
+```
+
+All five are prose ABOUT the rows this arc repaired — §156's own §3 and §6, and the
+instrument's docstring. The `PLAN.md` pair are left as the dated record they are, per this
+file's 2026-09-04 precedent for its own drifted sub-counts. **And the last one is a category
+the instrument cannot judge**: `_citation_sweep.py:61` says `wheel_objective.py:669-670` is
+where "one owner serves four line numbers across a line break", which is STILL TRUE — the
+four numbers are `:1101`, `:1108`, `:1112`, `:1117` now instead of `:948`, `:955`, `:959`,
+`:964`. A claim about a line's STRUCTURE survives a change to its CONTENT, and MOVED is a
+content test. One row of 158 today; it has no fix and it does have a name.
+
+**Green.** §156's three-process light tier, re-cut from the file list rather than copied:
+the `test_cli.py` -> `test_geometry_kernel.py` range (15 files), the 14 files after it that
+are not one of the heavy four, and `test_requirements.py` alone. **399 passed, 10 xfailed in
+8:01** at 10.75 GiB peak RSS; **266 passed, 1 xfailed in 1:34** at 2.73 GiB; **44 passed in
+20:56** at 30.00 GiB. **709 passed, 11 xfailed, 0 failed**, and 409 + 267 + 44 = 720 is §153's
+light count, so nothing went missing in the splitting. All three reproduce §156's counts
+exactly and its timings and peaks within 4.8% (7:45 / 10.30 GiB, 1:32 / 2.68 GiB, 19:59 /
+29.15 GiB) on a tree 51 citations different. Before the tier, every test file touched and
+every test that reads a touched source as TEXT: **117 passed** across the six, plus
+`test_corner_singularity.py::test_the_objective_builds_the_filleted_mesh`, which `ast.parse`s
+five of the edited modules — comments and docstrings are not in an AST, which is why that gate
+cannot see this arc at all. 957 collected at every commit.
+
+**SUCCESSORS.**
+
+0. **78 PATH-OWNER ROWS LEFT AND THE `then` COLUMN IS NOW RIGHT FOR ALL OF THEM**, which is
+   the only reason to take them in this order: `src/wheel_wheel.py` 12, `src/wheel_stage3.py`
+   10, `src/wheel_objective.py` 9, `PLAN.md` 5, `tests/test_promotion.py` 5, then a long tail
+   of 1-4. 11 rows still carry a `(pre: ...)` reading, so 11 of the 78 would be repaired
+   against the wrong tree by anyone working from §156's report instead of this one. Take it
+   by CITED file, and check before each repair whether the line being edited is itself cited
+   — §5 measured that cost at 5 rows for 33 repairs, and §4's last row is where it decides
+   the question.
+1. **THE `log -L` PASS IS NOW THE ONLY UNMEASURED READING, AND ITS 8 ROWS SHOULD BE RE-COUNTED
+   BEFORE ANYONE SPENDS A DAY ON THEM.** §156 successor 2 named eight rows as the whole blind
+   spot — `MBSE_PLAN.md:68`, `PLAN.md:96`, `:2933`, `:6970`, `:16795`, `:17607`, `:19688`,
+   `tests/test_pool.py:371`. That census was taken with the post-image reading, and §1 has
+   since shown the post-image was wrong for 36 rows; a row whose blame commit ALSO moved the
+   anchor may be in or out of the eight for a reason that no longer applies. Re-run the
+   `log -L` pass, which is 2 min 28 s, before treating the list as a list.
+2. **`tests/test_fem.py:324` CLAIMS A 4x REGRESSION AND CITES THE BOUNDARY-CONDITION
+   DOCSTRING, WHICH DOES NOT STATE IT.** §4 re-pointed the anchor and deliberately did not
+   re-aim the claim. The 4x is documented at `wheel_fea.py:172-175` ("over-predicts
+   compliance by ~4x (straight beam: FL^3/3EI vs FL^3/12EI)") and the test computes it rather
+   than assuming it, so the sentence is true and its evidence is one citation short. Decide
+   whether a sentence may carry two anchors before adding one.
+3. **§156 SUCCESSOR 3 IS UNTOUCHED, AND THIS ARC'S TIER GAVE IT ONE FREE DATA POINT: THE
+   PEAK IS 30.00 GiB, THE HIGHEST OF THE FOUR MEASURED.** One test wants one `==` between two
+   objective evaluations and it costs 26 to 30 GiB and eleven minutes; the bisect is inside
+   the test rather than across the suite. The four readings are now 25.8 and 29.0 GiB in
+   isolated processes, 31.84 GiB in a fifteen-file one, and **30.00 GiB here with the file
+   alone** — so the 3.2 GiB run-to-run spread §156 could not explain is **4.2 GiB across the
+   three runs that had the file to themselves** (25.8, 29.0, 30.00), and it is therefore not
+   an artefact of what else is in the process. Nothing else in this arc
+   informs it; it is named here only so the ranking does not lose it behind four citation
+   rows.
+
+---
+
+## §158 — 2026-09-11. `gui/` IS **DONE, AND IT IS A FOR-FUN PORTION OF THIS PROJECT** — NOT AN ARC, NOT RANKED, AND NOTHING IN `src/`, `studies/` OR `tests/` DEPENDS ON IT
+
+Closed at `b69ff09` and `7a60002`. It is the first mention of `gui/` anywhere in this file and
+it is deliberately the last: an optional control surface — the mission/requirements layer, a
+live preview, and detached runs with progress bars — behind `make gui` and `make gui-browser`,
+with a cross-platform desktop shell over the same stdlib server.
+
+**It is finished and it is not part of the measurement record.** No successor is filed for it,
+it takes no place in the *Open arcs* ranking, and a session picking up "the next thing" should
+read §157's successors and skip this section. Its own documentation is `gui/README.md`, which
+carries the design constraints, the three detach mechanisms, the cost model's two measured
+constants, and the one honest Windows gap.
+
+What the rest of this record needs to know about it, and nothing more:
+
+- **The dependency arrow points one way.** `gui/` imports *from* `src/`; nothing in `src/`,
+  `studies/` or `tests/` imports `gui/`. It adds nothing to either requirements file — the
+  server is stdlib only and the frontend has no build step.
+- **`pytest` does not see it.** `testpaths` is `["tests"]`, so collection is 957 with or
+  without the directory, and `rm -rf gui/` is a supported state rather than a broken install.
+- **It never promotes and never commits.** Promotion is the multi-file atomic act
+  `tests/test_promotion.py` prints a checklist for; the panel surfaces that checklist instead
+  of performing it, and defaults to not overwriting committed study artifacts.

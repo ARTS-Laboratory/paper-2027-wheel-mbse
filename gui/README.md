@@ -1,5 +1,9 @@
 # `gui/` — an optional control surface
 
+> **DONE — and a for-fun portion of this project.** It is finished, it is not an arc, and
+> it is not in any successor ranking; `PLAN.md` §158 says so and says nothing else about
+> it. The pipeline does not depend on it in either direction.
+
     make gui                 # the desktop app
     make gui-browser         # the same thing in a browser, on http://127.0.0.1:8731/
 
