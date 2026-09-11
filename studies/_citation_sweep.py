@@ -167,6 +167,9 @@ TOKEN = re.compile(r"(?<![A-Za-z0-9_.])([A-Za-z0-9_./]*[A-Za-z0-9_])?"
 BACKTICKED = re.compile(r"`([^`]+)`")
 TOPLEVEL = re.compile(r"^(?:def|class)\s+([A-Za-z_][A-Za-z0-9_]*)")
 BLAME_HDR = re.compile(r"^([0-9a-f]{40}) [0-9]+ ([0-9]+)(?: ([0-9]+))?$")
+# A blank line, a bare `"""` or a `# ---` rule can never have held a claim, so a
+# pre-image that matches HEAD on one is a coincidence and not a resolution.
+ALNUM = re.compile(r"[A-Za-z0-9]")
 
 
 def git(*args):
@@ -298,6 +301,35 @@ def resolve(citing, citing_line, cited, anchor):
     176 name a blank line or a bare `# ---` rule and so can never have held the claim at all
     -- `wheel_fea.py:596-598`, cited from four separate sites, is the example.  A delta
     applied to an anchor that never held moves a wrong citation to a different wrong line.
+
+    AND `then` IS READ ONE TREE TOO LATE WHENEVER THE CITING COMMIT ALSO EDITED THE CITED
+    FILE -- 36 of 159 MOVED rows, 22.6%, measured.  An author writes a sentence against the
+    tree they are READING, which is the citing commit's pre-image; this resolves the cited
+    file at its post-image.  The two agree unless that same commit moved the anchor, and
+    where they disagree the pre-image is the better `then`: `PLAN.md:3196` cites
+    `wheel_stage3.py:384` for `fidelity_check_every` and `:272` for `_fidelity_check`, and at
+    `b5c22c9^` those two lines are exactly that prose and exactly that `def`, while at
+    `b5c22c9` they are a pooling comment and an unrelated docstring.  So `(pre: ...)` is
+    appended wherever the readings differ, and a repairer reads THAT column.
+
+    **A PRE-IMAGE THAT EQUALS HEAD SETTLES THE ROW, AND THAT IS SOUND RATHER THAN HEURISTIC**
+    -- the citation then names at HEAD exactly the text its author was looking at, so it
+    holds and the row is not for a human at all (`pre-ok`).  It is printed rather than
+    dropped, because a count that silently absorbed it could not be audited.  THREE SUCH ROWS
+    EXISTED THIS MORNING and were repaired by hand at §157 before this check was written;
+    today the tree has **0**, plus one blank-on-blank coincidence at `test_golden.py:36` that
+    the content guard rejects -- `ALNUM`, and without it §156 §3's 14 never-held rows come
+    back as rescues.  The OPPOSITE reading is what must not be taken: 67 rows the report
+    calls ok would turn MOVED under a blanket pre-image, 57 of them at `277a731` alone, whose
+    job was re-pointing citations onto lines the SAME commit moved.  A repair re-dates an
+    anchor (§156 §2), so the post-image is right for a repair commit and wrong only for a
+    commit that moved the anchor incidentally.  Never downgrade an ok row; only upgrade a
+    MOVED one.
+
+    The price is one extra `git show <commit>^:<cited>` per MOVED row and nothing for the
+    other 660: **0.17 s** on the resolve pass, 1.90 s -> 2.07 s.  §156 successor 2's
+    `git log -L` pass buys a 1.1% correction for 2 min 28 s, 65x; this buys a 22.6% one for
+    9%, which is why it is folded in here and that one is not.
     """
     commit = blame(citing).get(citing_line)
     if commit is None:
@@ -313,9 +345,15 @@ def resolve(citing, citing_line, cited, anchor):
         return "unknown", commit, "no line %d in %s at %s%s" % (anchor, cited, commit, also)
     if then == now:
         return "ok", commit, then.strip()[:60]
+    was = line_at(commit + "^", cited, anchor)
+    if was == now and ALNUM.search(now):
+        return "pre-ok", commit, "%-28s written against %s^" % (now.strip()[:28], commit)
     hits = [i for i, l in enumerate(blob("HEAD", cited) or [], 1) if l == then]
     where = "-> :%d" % hits[0] if len(hits) == 1 else "%d matches at HEAD" % len(hits)
-    return "MOVED", commit, "%-28s %s" % (then.strip()[:28], where)
+    reading = "%-28s %s" % (then.strip()[:28], where)
+    if was is not None and was != then and ALNUM.search(was):
+        reading += "  (pre: %s)" % was.strip()[:40]
+    return "MOVED", commit, reading
 
 
 def main():
@@ -351,19 +389,20 @@ def main():
 
     print("\nCITING SITE                    CITED                            OWNER    THEN "
           "(at the citing line's commit)")
-    n_ok = 0
+    n_ok = n_pre = 0
     for cited in sorted(found):
         for f, lineno, anchor, extra, how in sorted(found[cited]):
             status, commit, detail = resolve(f, lineno, cited, anchor)
             if status == "ok":
                 n_ok += 1
                 continue
+            n_pre += status == "pre-ok"
             print("%-30s %-32s %-8s %-7s %s %s"
                   % ("%s:%d" % (f, lineno), "%s:%d%s" % (cited, anchor, extra),
                      how, status, commit, detail))
     total = sum(len(v) for v in found.values())
-    print("\n%d citations, %d resolve at their citing line's commit, %d for a human."
-          % (total, n_ok, total - n_ok))
+    print("\n%d citations, %d resolve at their citing line's commit, %d more against its "
+          "pre-image, %d for a human." % (total, n_ok, n_pre, total - n_ok - n_pre))
 
 
 if __name__ == "__main__":
