@@ -1,7 +1,7 @@
 """The import contract that makes the two-interpreter pipeline work.
 
 `wheel_step_export.py` runs in the CadQuery env and does
-`from wheel_fea import generate_bezier_centerline, ...` (wheel_step_export.py:60-69).
+`from wheel_fea import generate_bezier_centerline, ...` (wheel_step_export.py:72-81).
 That env has numpy and cadquery but NOT pygad, matplotlib, or jax.  `wheel_fea.py` keeps
 itself importable there by lazy-importing its heavy dependencies inside `__main__`
 (wheel_fea.py:948).
@@ -46,13 +46,13 @@ def test_wheel_fea_imports_with_numpy_only():
     leaked = proc.stdout.strip().removeprefix("LEAKED:")
     assert leaked == "", (
         f"`import wheel_fea` pulled in {leaked}. The CadQuery env does not have these, "
-        f"so wheel_step_export.py:60-69 would fail. Move the import into __main__ or "
+        f"so wheel_step_export.py:72-81 would fail. Move the import into __main__ or "
         f"make it lazy."
     )
 
 
 @pytest.mark.parametrize("name", [
-    # exactly the symbols wheel_step_export.py:60-69 imports
+    # exactly the symbols wheel_step_export.py:72-81 imports
     "generate_bezier_centerline", "thicken_3taper_curve", "stress_concentration_kt",
     "HUB_RADIUS_MM", "RIM_RADIUS_MM", "SPOKE_WIDTH_MM", "NUMBER_OF_SPOKES",
     "DENSITY_PLA",
@@ -67,7 +67,7 @@ def test_exporter_import_surface_is_intact(name):
 
 
 def test_thicken_returns_edges_for_exporter():
-    """`spoke_edges_global` (wheel_step_export.py:153) depends on the return_edges=True
+    """`spoke_edges_global` (wheel_step_export.py:216) depends on the return_edges=True
     contract returning two hub->rim arrays of matching length.  A refactor that changed
     the return shape would only surface in the CAD env."""
     import numpy as np

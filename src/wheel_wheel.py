@@ -166,7 +166,7 @@ import wheel_mesh as _mesh
 
 # Ring radii.  These are the exporter's, and they are the contract: `HUB_RADIUS_MM`
 # and `RIM_RADIUS_MM` come from `wheel_fea`, `RIM_OUTER_RADIUS_MM` is the one
-# user-decided solid parameter (`wheel_step_export.py:74`) that the M4 rim study will
+# user-decided solid parameter (`wheel_step_export.py:91`) that the M4 rim study will
 # sweep.
 from wheel_fea import HUB_RADIUS_MM, RIM_RADIUS_MM, HUB_RIM_SPAN_MM, NUMBER_OF_SPOKES  # noqa: F401
 
@@ -2600,7 +2600,7 @@ class WheelMesh:
         self.edge_sets = edge_sets
         self.seam_error_mm = seam_error_mm
         self.n_merged = n_merged
-        # The one user-decided solid parameter (`wheel_step_export.py:74`), carried on
+        # The one user-decided solid parameter (`wheel_step_export.py:91`), carried on
         # the mesh so a swept value cannot be lost between build and report.
         self.rim_outer = float(rim_outer)
         # The genome and frame this mesh is OF.  Carried so that `area_report` can derive

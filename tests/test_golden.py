@@ -2,7 +2,7 @@
 
 These lock down the CURRENT behaviour of `wheel_fea.evaluate_design` before any of the
 three-stage refactor touches it.  `wheel_fea.py` is 1310 lines with no other tests and a
-load-bearing import contract (`wheel_step_export.py:60-69` imports from it across an
+load-bearing import contract (`wheel_step_export.py:72-81` imports from it across an
 interpreter boundary), so this file is the safety net for every later milestone.
 
 The expected values are not hand-transcribed — they are read back out of
@@ -125,7 +125,7 @@ def test_fitness_is_negative_total_loss(record, scored):
 
 
 def _genome_hash(genes):
-    """Byte-identical copy of wheel_step_export.py:117.
+    """Byte-identical copy of wheel_step_export.py:154.
 
     Deliberately duplicated rather than imported: that module needs CadQuery and runs in
     a different interpreter, so importing it here would make this test unrunnable in

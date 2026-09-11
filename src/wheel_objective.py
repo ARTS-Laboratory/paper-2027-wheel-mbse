@@ -555,7 +555,7 @@ def junction_kt(genes, cfg="coarse", span_mm=W.S, flanks=None):
 
     The pairing — `R_hub` with `t0`, `R_rim` with `t3` — is not a choice made here.  It is
     asserted in three independent places already: `wheel_fea.py:494-495` (the beam model),
-    `wheel_step_export.py:810-812` (the built-geometry report) and `tests/test_golden.py`.
+    `wheel_step_export.py:979-980` (the built-geometry report) and `tests/test_golden.py`.
 
     `jax.grad` rather than a hand-written derivative gets the clamp's zero-gradient region
     right for free, and the clamp IS reachable in-box (`t0=10.0` with `R_hub=0.5` gives

@@ -98,7 +98,7 @@ import numpy as np
 
 # The shared geometry kernel.  numpy-only at import (it takes its array module as an
 # argument rather than importing jax), which is what keeps this file importable from
-# the CadQuery environment — see wheel_step_export.py:60-69.
+# the CadQuery environment — see wheel_step_export.py:72-81.
 import wheel_geometry as _geom
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -1680,7 +1680,7 @@ if __name__ == "__main__":
     sys.stdout.flush()
     if args.no_export or args.smoke:
         # The exporter reads best_solution.json unconditionally (load_genome,
-        # wheel_step_export.py:125).  A smoke run wrote its genome elsewhere, so
+        # wheel_step_export.py:162).  A smoke run wrote its genome elsewhere, so
         # exporting here would rebuild the STEP from the *previous* real genome and
         # stamp it with a fresh timestamp — destroying exactly the staleness signal
         # warn_if_stale() exists to give.

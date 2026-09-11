@@ -314,7 +314,7 @@ def outline_edges(curve, t0, t1, t2, t3, xp=np, normals=None):
     """(top, bot) flank point arrays, each [N,2] running hub->rim.
 
     The exact contract `wheel_fea.thicken_3taper_curve(..., return_edges=True)` and
-    `wheel_step_export.spoke_edges_global` (wheel_step_export.py:153) depend on.
+    `wheel_step_export.spoke_edges_global` (wheel_step_export.py:216) depend on.
     """
     band = offset_band(curve, t0, t1, t2, t3, n_across=1, xp=xp, normals=normals)
     return band[:, 1, :], band[:, 0, :]

@@ -187,7 +187,7 @@ def test_thickness_is_monotone_between_nodes(ts):
 
 def test_offset_band_at_one_reproduces_thicken_3taper(curve, ts):
     """n_across=1 must give back exactly the outline the exporter builds splines
-    through (wheel_step_export.py:153)."""
+    through (wheel_step_export.py:216)."""
     top, bot = G.outline_edges(curve, *ts)
     band = G.offset_band(curve, *ts, n_across=1)
     assert np.abs(band[:, 1, :] - top).max() == 0.0

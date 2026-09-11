@@ -15,7 +15,7 @@ THE CONTRACT THIS FILE PROTECTS
 hashes `sorted(genes.items())`, so **adding even one key inside `genes` changes the
 hash of every genome ever recorded** and silently breaks every staleness comparison in
 the repo.  New information belongs in new TOP-LEVEL keys of the record, which
-`wheel_step_export.load_genome` (wheel_step_export.py:125) and `main` (:807)
+`wheel_step_export.load_genome` (wheel_step_export.py:162) and `main` (:1108)
 demonstrably ignore.
 
 numpy + stdlib only.  This module is imported by the numpy-side tooling and must never
@@ -122,7 +122,7 @@ def clip_to_bounds(vec, low, high, xp=np):
 def genome_hash(genes):
     """Short stable fingerprint of a gene dict.
 
-    Byte-identical to `wheel_step_export.genome_hash` (wheel_step_export.py:117), and
+    Byte-identical to `wheel_step_export.genome_hash` (wheel_step_export.py:154), and
     deliberately DUPLICATED rather than imported: that module needs CadQuery and runs in
     a different interpreter, so importing it here would make this module unusable in
     env-opt.  `tests/test_golden.py` pins the result against the value recorded in
