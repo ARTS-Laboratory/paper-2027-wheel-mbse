@@ -1021,7 +1021,7 @@ def search_block(args, label, at_step, selection=None, req=None,
     """Search provenance for the `--best-out` record: which run produced this genome,
     and inside WHAT BOX.
 
-    `min_wall_mm` and `cy_bound_mm` mirror the GA writer (wheel_fea.py:1393) for the same
+    `min_wall_mm` and `cy_bound_mm` mirror the GA writer (wheel_fea.py:1436) for the same
     reason, and it bites harder here, because this is the file a promotion reads.  A
     descent drives all four thickness genes onto the wall floor and leaves them there, so
     every genome written through this path is a boundary optimum whose mass is a statement

@@ -18,7 +18,7 @@ Two definitions are reported side by side, because which one is right is the que
 this study answers rather than assumes:
 
   `feasible_geom`  what `evaluate_design` already enforces — x-ordering and hub
-                   crowding (wheel_fea.py:550).
+                   crowding (wheel_fea.py:699).
   `meshable`       that, plus a positive fold margin: min(R_curvature - t/2) > 0.
 
 Under the first definition the gate fails outright — roughly half of the genomes the
@@ -26,7 +26,7 @@ existing constraints admit have inverted elements.  That is not a meshing defect
 offset band genuinely turns inside out when the outward offset passes the centre of
 curvature, and the mesh is faithfully reporting it.  The existing constraint set is
 simply incomplete, and `wheel_fea`'s `smoothness` term was only ever an indirect proxy
-for the missing one (wheel_fea.py:596-598 says as much).
+for the missing one (wheel_fea.py:745-747 says as much).
 
 So the study also measures whether the closed-form margin PREDICTS inversion.  If it
 does, the optimizer can be kept out of the folded region by an analytic barrier costing
@@ -98,7 +98,7 @@ def evaluate_one(vec, cfg, conn):
     Two notions of feasible, kept separate on purpose:
 
     `feasible_geom` is what `evaluate_design` already enforces — x-ordering and hub
-    crowding (wheel_fea.py:550).  `meshable` adds the fold constraint.  Reporting both
+    crowding (wheel_fea.py:699).  `meshable` adds the fold constraint.  Reporting both
     is what shows whether the existing constraint set is sufficient, which is the
     question this study actually exists to answer.
     """

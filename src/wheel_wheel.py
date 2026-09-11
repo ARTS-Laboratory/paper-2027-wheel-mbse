@@ -188,7 +188,7 @@ def rim_inner_radius(span_mm=HUB_RIM_SPAN_MM, hub_radius=HUB_RADIUS_MM):
     return hub_radius + span_mm
 
 # Depth of the meshed hub collar.  Inside this radius the hub is treated as a rigid
-# body, which is the assumption the beam model already makes (`wheel_fea.py:134`); the
+# body, which is the assumption the beam model already makes (`wheel_fea.py:169`); the
 # meshed annulus is what preserves root compliance and root fillet stress.  A full disk
 # cannot be one structured quad block — a polar grid degenerates at r=0 — and the
 # butterfly/O-grid that would fix that buys nothing here.

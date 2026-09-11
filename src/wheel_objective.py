@@ -419,7 +419,7 @@ SMOOTHNESS_REVERSAL_W = 60.0
 def soft_barrier(violation, scale=1.0):
     """`wheel_fea.soft_barrier` in jnp.
 
-    The original uses the Python builtin `max` (`wheel_fea.py:538`) and so cannot be
+    The original uses the Python builtin `max` (`wheel_fea.py:584`) and so cannot be
     traced.  Same function, C^1 at the knee — which is what an FD plateau needs, and why
     the barrier is quadratic rather than linear in the first place.
     """
@@ -477,7 +477,7 @@ KT_DEGENERATE_R_MM = 0.1
 def stress_concentration_kt(fillet_radius_mm, thickness_mm, c_factor=1.0):
     """`wheel_fea.stress_concentration_kt` in jnp.  Kt = 1 + C*(t/2R)^0.65, clamped.
 
-    The original (`wheel_fea.py:315-325`) is untraceable three ways — a data-dependent
+    The original (`wheel_fea.py:360-370`) is untraceable three ways — a data-dependent
     `if fillet_radius_mm < 0.1`, `np.clip`, and a `float()` cast — and `wheel_fea` must
     stay numpy-only, because `tests/test_import_hygiene.py` imports it in an interpreter
     with no jax (the CadQuery env has none).  So the twin lives here, for the same reason
@@ -666,8 +666,8 @@ def _fillet_margins(genes, cfg, span_mm, hub_radius, flanks, xp=jnp):
     second promotion they have outlived, and a figure that is re-fitted every promotion
     stops being evidence of anything.]
 
-    `tangent_fillet_arc` refuses a radius at four places (`wheel_fea.py:948`, `:955`,
-    `:959`, `:964`) and `fillet_junctions` then walks the radius ladder DOWN, so the
+    `tangent_fillet_arc` refuses a radius at four places (`wheel_fea.py:1101`, `:1108`,
+    `:1112`, `:1117`) and `fillet_junctions` then walks the radius ladder DOWN, so the
     optimizer silently receives a smaller fillet than it asked for and is never told —
     the discrepancy `kt_report` prices.  Measured since the hub fillet milestone: the
     void between adjacent spokes at the hub circle is 2.196 mm of arc, so ANY hub fillet

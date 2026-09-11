@@ -169,7 +169,7 @@ def bezier_curvature(ctrl_pts, num_points, xp=np):
     The mesh needs this: the offset band self-intersects where the radius of curvature
     |1/kappa| drops below half the local thickness, which is the dominant way a genome
     produces an inverted element.  `wheel_fea`'s `smoothness` loss term was an implicit
-    and rather indirect guard against the same thing (wheel_fea.py:596-598).
+    and rather indirect guard against the same thing (wheel_fea.py:745-747).
     """
     D1 = xp.asarray(forward_difference_matrix(BEZIER_DEGREE, 1))
     D2 = xp.asarray(forward_difference_matrix(BEZIER_DEGREE, 2))
@@ -197,8 +197,8 @@ def arc_fractions(curve, xp=np, at="nodes"):
 
     Both exist because the two callers genuinely need different ones, and conflating
     them silently shifts the taper by half a segment: `thicken_3taper_curve` samples
-    thickness at nodes (wheel_fea.py:746) while `generalized_spoke_mechanics` samples
-    at segment midpoints (wheel_fea.py:355).
+    thickness at nodes (wheel_fea.py:1037-1039) while `generalized_spoke_mechanics` samples
+    at segment midpoints (wheel_fea.py:446).
     """
     seg = segment_lengths(curve, xp=xp)
     cum = xp.concatenate([xp.zeros(1, dtype=seg.dtype), xp.cumsum(seg)])
@@ -217,7 +217,7 @@ def arc_fractions(curve, xp=np, at="nodes"):
 def thickness_at_arc_length(s, t0, t1, t2, t3, xp=np):
     """Piecewise-linear thickness over three taper zones, branch-free.
 
-    The original (wheel_fea.py:252) selected each zone with a boolean mask and wrote
+    The original (wheel_fea.py:344) selected each zone with a boolean mask and wrote
     through it.  That has no JAX equivalent — `s[mask]` has a data-dependent shape —
     so the same function is written as a base value plus three clipped ramps:
 
@@ -261,7 +261,7 @@ def thickness_at_arc_length(s, t0, t1, t2, t3, xp=np):
 def offset_normals(curve, xp=np):
     """Unit normals from finite differences of the sampled centerline.
 
-    This is exactly what `thicken_3taper_curve` does (wheel_fea.py:750-752), kept
+    This is exactly what `thicken_3taper_curve` does (wheel_fea.py:1037-1039), kept
     bit-for-bit because the STEP on disk was built from it.
 
     NOT suitable for the mesh — see `normals_from_tangents`.  `xp.gradient` is
@@ -427,7 +427,7 @@ def self_intersection_margin(curve, ctrl_pts, t0, t1, t2, t3, num_points, xp=np)
     a barrier term rather than discovered as a crash.
 
     This is the explicit form of what the `smoothness` loss term was implicitly
-    protecting (wheel_fea.py:596-598).
+    protecting (wheel_fea.py:745-747).
     """
     kappa = bezier_curvature(ctrl_pts, num_points, xp=xp)
     radius = 1.0 / (xp.abs(kappa) + 1e-30)

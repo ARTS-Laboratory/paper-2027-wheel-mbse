@@ -321,7 +321,7 @@ def test_a1_a2_straight_beam_against_closed_form(quick):
     At L/t = 50 the shear correction is 0.81 (t/L)^2 = 0.032%, so the closed form is
     essentially exact and 1% is a loose bound on the FE error alone.  The 4x ratio
     between the two boundary conditions is the repo's own documented regression
-    (`wheel_fea.py:326-331`), computed here rather than assumed.
+    (`wheel_fea.py:403-408`), computed here rather than assumed.
     """
     r = sba.run_a1_a2()
     for case in r["cases"]:

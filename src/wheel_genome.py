@@ -31,7 +31,7 @@ import numpy as np
 
 # Ordering contract between the flat 14-vector the GA and SGD work in, and the dict the
 # exporter reads.  `evaluate_design` unpacks positionally in exactly this order
-# (wheel_fea.py:560), so the two must never drift.
+# (wheel_fea.py:709), so the two must never drift.
 GENE_NAMES = [
     "cx1", "cy1", "cx2", "cy2", "cx3", "cy3", "cx4", "cy4",
     "t0", "t1", "t2", "t3",
@@ -108,9 +108,9 @@ def bound_saturation(vec, low, high, tol_frac=0.01):
 
 
 def clip_to_bounds(vec, low, high, xp=np):
-    """Project into the box.  `evaluate_design` does NOT clip (wheel_fea.py:550), so a
+    """Project into the box.  `evaluate_design` does NOT clip (wheel_fea.py:699), so a
     gradient step that leaves the box is scored without complaint and the thickness is
-    then silently clamped deep inside the physics (wheel_fea.py:359).  Stage 3 projects
+    then silently clamped deep inside the physics (wheel_fea.py:455).  Stage 3 projects
     explicitly instead."""
     return xp.clip(vec, low, high)
 

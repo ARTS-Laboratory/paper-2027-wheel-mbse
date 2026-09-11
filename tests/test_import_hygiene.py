@@ -4,7 +4,7 @@
 `from wheel_fea import generate_bezier_centerline, ...` (wheel_step_export.py:72-81).
 That env has numpy and cadquery but NOT pygad, matplotlib, or jax.  `wheel_fea.py` keeps
 itself importable there by lazy-importing its heavy dependencies inside `__main__`
-(wheel_fea.py:948).
+(wheel_fea.py:1293).
 
 This is easy to break by accident — one convenience import at module scope and the STEP
 exporter dies in an environment nobody runs tests in.  These tests are the tripwire.

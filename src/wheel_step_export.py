@@ -466,7 +466,7 @@ def check_junction_overlap(spoke_face, hub_face, rim_face, genes):
     `wheel_geometry.thickness_at_arc_length` returns t0 at s=0 and t3 at s=1.
 
     Returns {"hub": {...}, "rim": {...}} and WARNS below the floor without raising: this
-    runs inside the GA's export hand-off (wheel_fea.py:1658), which only checks the
+    runs inside the GA's export hand-off (wheel_fea.py:1701), which only checks the
     return code, so raising here would throw away a finished optimization run over a
     heuristic.  The number is written to the manifest instead, where a test can see it.
     """
@@ -1036,7 +1036,7 @@ def optimizer_spoke_mass(metrics):
     """The optimizer's own spoke mass, and WHICH optimizer said so.
 
     Returns `(grams, source_key)`.  The two producers name this differently: the GA/beam
-    path writes `total_mass_g` (wheel_fea.py:1393) and a Stage-3 descent writes
+    path writes `total_mass_g` (wheel_fea.py:1436) and a Stage-3 descent writes
     `mesh_mass_g`.  They are the same ROLE — spoke material as the optimizer costed it —
     but not the same MEASUREMENT: one is the beam surrogate's analytic area, the other is
     integrated over the FEA mesh.  So the key is reported alongside the number rather

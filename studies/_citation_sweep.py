@@ -317,8 +317,8 @@ def resolve(citing, citing_line, cited, anchor):
     holds and the row is not for a human at all (`pre-ok`).  It is printed rather than
     dropped, because a count that silently absorbed it could not be audited.  THREE SUCH ROWS
     EXISTED THIS MORNING and were repaired by hand at §157 before this check was written;
-    today the tree has **0**, plus one blank-on-blank coincidence at `test_golden.py:36` that
-    the content guard rejects -- `ALNUM`, and without it §156 §3's 14 never-held rows come
+    today the tree has **0**, plus the blank-on-blank coincidences the content guard rejects
+    -- `ALNUM`, and without it §156 §3's 14 never-held rows come
     back as rescues.  The OPPOSITE reading is what must not be taken: 67 rows the report
     calls ok would turn MOVED under a blanket pre-image, 57 of them at `277a731` alone, whose
     job was re-pointing citations onto lines the SAME commit moved.  A repair re-dates an

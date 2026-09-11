@@ -757,8 +757,8 @@ which is not a decidable state.
   floor come down?" into "0.2 mm of floor buys N grams."
 
   **`MIN_WALL_MM` is NOT a parameter, and this is a code change before it is a run.** It is
-  `src/wheel_fea.py:219`, and it is consumed at **import time** by the `GENE_BOUNDS` list
-  literal at lines 259–262 (`t0`/`t1`/`t2`/`t3` low bounds). So it cannot be varied inside one
+  `src/wheel_fea.py:236`, and it is consumed at **import time** by the `GENE_BOUNDS` list
+  literal at lines 276–279 (`t0`/`t1`/`t2`/`t3` low bounds). So it cannot be varied inside one
   interpreter without rebuilding the bounds; the sweep is either four separate processes with
   the constant overridden per process, or a small change making the floor an argument that
   `GENE_BOUNDS` is built from. **Prefer the latter and drive the sweep from one place** —
@@ -2067,7 +2067,7 @@ that small next to a 1.2 mm wall. **Export the candidate before trusting its mas
 would have failed SILENTLY rather than loudly, which is why they were worth catching first:
 
 - **`--best-out` records did not carry the box they were descended in.** The GA writer
-  records `min_wall_mm`/`cy_bound_mm` (`wheel_fea.py:1393`) and the Stage-3 writer did
+  records `min_wall_mm`/`cy_bound_mm` (`wheel_fea.py:1436`) and the Stage-3 writer did
   not — so the eight sweep genomes, every one of them a boundary optimum, were
   distinguishable only by reading their own pinned `t` values back out. Now
   `wheel_stage3.search_block()`, split out of `main()` so it is testable without a solve
@@ -2215,7 +2215,7 @@ genome, which keeps `wheel.step` / `wheel_nofillet.step` / `wheel_step_manifest.
 exactly as they were. **A candidate cannot overwrite the shipped STEP**, which would have
 recreated on purpose the failure this file was audited for. `--out-prefix` overrides.
 `make export EXPORT_GENOME=stage3_minwall_best_1.2.json` drives it. No arguments is
-byte-identical behaviour to before, which is what the GA hand-off (`wheel_fea.py:1658`)
+byte-identical behaviour to before, which is what the GA hand-off (`wheel_fea.py:1701`)
 still calls.
 
 `warn_if_stale` takes the step path it is actually about and prints the real source name,
@@ -2288,7 +2288,7 @@ that actually failed, so there is no negative example to fit against. 0.25 is ha
 every measured design achieves. Replace it the moment a real failure turns up.
 
 `check_junction_overlap` **still only warns, and must keep only warning.** It runs inside the
-GA's export hand-off (`wheel_fea.py:1658`), which checks nothing but the return code — so
+GA's export hand-off (`wheel_fea.py:1701`), which checks nothing but the return code — so
 raising there would throw away a finished optimization run over a heuristic. The number goes
 to the manifest instead, where a test can see it. The warning text also stopped advising
 "deepen `HUB_EMBED_RADIUS_MM`", which §11 measured and ruled out.
