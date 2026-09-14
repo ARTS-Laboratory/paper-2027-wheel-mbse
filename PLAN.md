@@ -25969,3 +25969,144 @@ new shape rather than inherited from §162.
    two points and a factor of 1.67. If it is array shapes entering the compiler's cost, `fine`
    should be worse again and the `smoke`≈`coarse` agreement is the special case rather than the
    rule — which would make §164's headline a statement about small meshes, not about compiles.
+
+---
+
+## §167 — 2026-09-14. §105's SUCCESSOR 4, CLOSED ELEVEN DAYS AFTER IT WAS FILED: **`default_workers` IS CAPPED BY MEASURED MEMORY AND REFUSES THE CONFIGS NOBODY MEASURED.** ON A LIVE POOL A `coarse` WORKER IS **9.44 GiB AT MOST**, NOT §166's 17.54 — THAT WAS A SERIAL PROCESS RUNNING THE WHOLE OBJECTIVE — AND SUMMING PER-PROCESS KERNEL HIGH-WATER MARKS BOUNDS THE SIMULTANEOUS PEAK **TO WITHIN 1.2%**, SO THE CAP PAYS NOTHING FOR BEING AN UPPER BOUND. THE MODEL PREDICTED 47.4 GiB AT FOUR WORKERS AND THE BOX MEASURED 47.0
+
+`ce19197` — `src/wheel_pool.py` (the cap), `src/wheel_stage3.py` and
+`studies/study_stage3.py` (the two callers pass the config, in place), `tests/test_pool.py`
+and `tests/test_stage3.py` (the pins) — plus this record.
+
+### 1. WHAT A POOL WORKER COSTS, MEASURED ON A LIVE POOL
+
+§105 filed the hazard: `default_workers` counted cores only, returned 8 for an 8-phase stencil
+on any 8+ core box, and 8 filleted workers wanted ~73 GiB of a 61 GB machine. §113's live pool
+at `--workers 2` measured 27.6 / 26.0 GiB a worker and was killed at 60/61 GiB. §164 collapsed
+the per-phase compile, so every figure behind the hazard moved and none could be reused.
+
+**The instrument.** An outside watcher polled `/proc/<pid>/status` `VmHWM` — the kernel's own
+high-water mark, which no sampling rate can miss — for the launched process and every pid ever
+observed beneath it, exited or respawned, plus `/proc/meminfo`, every 0.5 s. No worker code
+changed. `coarse`, 8-phase uniform stencil, the shipped genome, a worktree at `2fb869f`:
+
+```
+  run                        parent    workers (GiB)                   SUM     tree peak  ratio  system
+  pooled test, smoke, w=2     16.114   8.727  8.805                    33.646   33.616    1.001  1.011
+  coarse objective, w=2        9.829   9.440  9.346                    28.614   28.338    1.010  0.996
+  coarse objective, w=2        9.944   9.361  8.740                    28.045   27.726    1.012  1.008
+  coarse objective, w=4       10.271   9.172  9.180  9.111  9.261      46.996   46.551    1.010  1.004
+```
+
+`tree peak` is the largest simultaneous sum of VmRSS across the tree at one sample; `system`
+is SUM over the rise in `MemTotal - MemAvailable` above the pre-launch baseline. Every run saw
+exactly its `w` workers — no respawn. All three `coarse` runs returned `76.02385612583252`,
+bit-identical across pool sizes.
+
+**Three results.** (a) **Summing marks is tight**: 1.0-1.2% over the simultaneous peak in the
+three `coarse` runs and 0.1% in the `smoke` one, so a
+cap built on the sum refuses almost nothing that would have fit. (b) **A worker is flat in the
+phases it holds**: 2-phase workers mean 9.181 GiB, 4-phase 9.222, eight marks, sd 0.217 —
+§166 §4's flatness, confirmed at the worker level by an instrument not used to fit it.
+(c) **The model predicts the next size**: parent 9.83 + 4 x 9.4 = 47.4 GiB at `w=4`, measured
+47.0 (-0.9%). The parent grows a little with the pool (9.83 / 9.94 at two, 10.27 at four).
+
+**§166's 17.542 GiB is not a worker's cost, and the second session amended §166 to say so.**
+That sweep ran `WO.objective` in a fresh process — the SERIAL path, all three tiers over every
+phase in one address space. A pool worker runs the phase loop and not the tiers around it. The
+flatness RESULT transfers; the NUMBER does not.
+
+### 2. THE CAP
+
+```
+POOL_GIB = {"coarse": (10.0, 11.0), "smoke": (10.0, 11.0)}      # (worker, parent), whole GiB
+
+default_workers(n_phase, cfg=None):
+    cores = max(1, min(n_phase, cpu_count or 1))
+    no /proc/meminfo           -> 1                          (serial; see below)
+    cfg not in POOL_GIB        -> ValueError: pass an explicit --workers N
+    otherwise                  -> max(1, min(cores, (MemAvailable - parent) // worker))
+```
+
+Whole GiB above the largest mark: worker 9.44 -> 10 (+2.6 sd), parent 10.27 -> 11. `smoke`
+carries `coarse`'s pair as an upper bound; every `smoke` figure measured sits below `coarse`'s.
+**`medium`, `fine` and `cfg=None` are refused** wherever memory can be read — the second
+session's point, adopted: `medium`'s compile took 213 s against `coarse`'s 128 (§166), nobody
+has measured a `medium` worker, and `coarse` numbers applied there would under-count, which is
+the direction that fills a box silently. `wheel_stage3.descend` passes its resolved `wcfg`;
+`study_stage3._worker_ladder` takes `cfg=DEFAULT_CONFIG` and `run_phase_pool` passes its own.
+
+**A machine that cannot report free memory gets ONE worker, not its cores**, the second
+session's question, decided on the module's own precedent: an unanswerable core count is
+already `os.cpu_count() or 1`, "a one-worker answer rather than a crash". And one worker is
+not a degraded pool: it fails `wheel_stage3.py:535`'s `n_workers > 1` guard, so no pool is
+built and the run is SERIAL — the one worker count §113 records as ever measured to fit. The
+fallback is the only path with a measurement behind it. An unmeasured CONFIG raises instead,
+because its caller can act on it and a platform without `/proc/meminfo` cannot.
+
+**`MemAvailable`, not `MemTotal`, and the comment says why**: five `coarse` workers want
+11 + 5 x 10 = 61 GiB against a 61.4 GiB box, which only memory other processes hold keeps
+out. On this box at commit: `MemAvailable` 58.41 GiB, `default_workers(8, "coarse")` = 4 —
+the size §1 measured at 47.0 GiB.
+
+### 3. THE PINS
+
+`test_default_workers_is_capped_by_measured_memory_and_refuses_unmeasured_configs` sets its
+own memory reading: memory binds below the cores, too little for one worker is serial and
+never zero, cores and phases still bind with memory to spare, `medium`, `fine` and `None`
+raise, and no reading at all is one worker. **Mutated before being trusted (§146), twice**:
+with the memory term removed it fails at `AssertionError: memory must bind below the core
+count` (`assert 8 == 4`); with the no-reading fallback put back to cores it fails at
+`AssertionError: no memory reading is serial, not cores` (`assert 4 == 1`).
+
+The older sizing tests assert what cores and phases allow and would otherwise answer to
+whatever this box has free, so `tests/test_pool.py` gains an end-of-file autouse fixture that
+reports memory to spare, and their four calls now name `"coarse"` in place — without it the
+refusal fires, which is how the first run of them after the fallback change went red, 2 of 4. It sits at the END, and the two new tests with it, because
+`test_pool.py:286` and `:371` are cited from this file and `MBSE_PLAN.md`; nothing above the
+append moved. `tests/test_stage3.py`'s ladder test takes a local fixture instead — no citation
+lands below it.
+
+**Green.** 959 collected — 958 plus the new cap test. `tests/test_pool.py` whole, 24 passed in
+9:57, twice from the worktree (the second after the fallback change); `test_study_gate_guard.py`
+65, the AST gate and the ladder test in the shared checkout at commit, with the committed diff
+checked identical to the tested one. The study's own call was also made for real outside
+pytest. Citation report unchanged at 105 for a human, measured in a throwaway worktree commit.
+
+### 4. WHAT IT DOES NOT DO
+
+**Explicit `--workers N` stays literal.** §105 named it a hazard too; it is now documented as
+the caller's, and the refusal message is where a caller at an unmeasured config is sent.
+**The committed `studies/study_stage3_pool.json` recorded S13 at `worker_counts [1, 2, 4, 8]`**,
+and a re-run now derives its ladder from memory at the moment of the call as well as from the
+host: `[1, 2, 4]` with ~58 GiB free, and `[1, 2, 3]` measured while a test held ~10 GiB. The
+artifact is not regenerated (§119): it is the record of the run that produced it. And
+`study_stage3 --config medium` asking for S13's host-derived ladder now refuses instead of
+deriving one — the intended failure, for the same reason as `-1`.
+
+**The suite could not have caught a caller the change missed in `studies/`**, and the second
+session named the gap before commit: `testpaths = ["tests"]`, so `study_stage3._worker_ladder`
+— S13's live "ask the machine" path — is exercised by one test only because that test imports
+it, and a raise inside the study's own call would have gone green. It was threaded in place
+and then called for real, outside pytest, before commit. Same shape as §156's `_gate_guard`
+outside the `study_*.py` glob: an instrument's coverage is its glob, not its intent.
+**The `Makefile`'s pool figures** (~2 GiB a worker on a 31 GB box) predate the fillet switch and
+are left as the dated record they are.
+
+**SUCCESSORS.**
+
+0. **S13'S LADDER IS AN UNRECORDED FUNCTION OF LOAD FROM THIS COMMIT UNTIL IT IS FIXED — NAME THE
+   WINDOW.** From §167, `_worker_ladder` sizes on `MemAvailable` at call time, and nothing writes
+   that reading into the artifact. `make m8bii1` (`Makefile:316`) runs S13 straight into the
+   committed `studies/study_stage3_pool.json`, so anyone typing one target produces an artifact
+   whose ladder cannot be compared with an earlier or later one — `[1, 2, 3]` and `[1, 2, 4]`
+   from the same box, one busy and one idle. §38's shape: numbers silently a function of
+   something unrecorded. Fix by writing the reading beside the ladder, or by pinning
+   `worker_counts` for recorded runs; either changes the study's output and so carries a
+   regenerated artifact. **Any S13 artifact dated after §167 and before that fix is not
+   comparable on its ladder.**
+1. **MEASURE A `medium` WORKER, AND ADD ITS PAIR ONLY THEN.** One live pool at `medium` under
+   the same watcher. Until then `-1` at `medium` refuses, which is the intended failure.
+2. **THE PARENT GROWS WITH THE POOL** — 9.83 / 9.94 at two workers, 10.27 at four. `11 GiB`
+   covers what was measured; a pool past four on a larger box is extrapolation, and the next
+   box with the memory to try it should record the parent at that size.
