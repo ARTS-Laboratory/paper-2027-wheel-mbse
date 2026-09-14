@@ -25283,3 +25283,80 @@ measured wrongly.
    each of the five rows at `eea048c`. Whoever takes this should decide whether the sweep's
    job stops at drift — which it does honestly and in 2.3 s — rather than growing a second
    instrument that is right once.
+
+---
+
+## §161 — 2026-09-13. §159's SUCCESSOR 2 / §156's SUCCESSOR 1, DECIDED: THE CITING-FILE FALLBACK STAYS UNAPPLIED, AND NOW FOR A MEASURED REASON — **§156's "ALL 27 OUT-OF-RANGE ROWS ARE A SELF-CITATION" IS 7 OF 27**. SIXTEEN ARE CITATIONS INTO ANOTHER FILE THE CARRIED RULE NEVER SAW, AND FOUR ARE NOT CITATIONS AT ALL; THE FALLBACK WOULD BE 7 RIGHT AND 20 WRONG. ONE FREE RULE LANDED: A TOKEN TOUCHING `|` IS A REGEX ALTERNATION
+
+One commit, `5dab282`, `studies/_citation_sweep.py`, plus this record. Report 1035 -> 1033
+citations and 107 -> 103 for a human, exactly four rows out, measured in a throwaway worktree
+commit before the real one. Zero line shift in the instrument: its corrected docstring
+paragraph is 13 lines for 13, so the `_citation_sweep.py:61` and `:309` citations in this file
+still hold.
+
+§156 successor 1 asked for a judgement, not a patch: *"Whoever takes it should decide with the
+27/271 in hand and say which failure they are choosing."* The 27 in hand are the same 27 —
+the site/cited list at `1c98a70` and at `3c39b23` is byte-identical — and reading them row by
+row, rather than reading the report's `-- but PLAN.md:N exists` hint, gives three shapes:
+
+```
+   7  SELF-CITATION under a paragraph about another file      what §156 said all 27 were
+        PLAN.md:21239 x5, :21240     §135's six deliberate dangles
+        PLAN.md:21946                §138's successor 2, the request for the instrument
+  16  A CITATION INTO ANOTHER FILE the carried rule never saw
+        a table column names it      PLAN.md:17604-17605 (test_promotion.py),
+                                     :21791-21792 (wheel_adjoint.py), :24079, :24081,
+                                     :24083 (wheel_fem.py)
+        named AFTER the token        PLAN.md:21457 (`wheel_wheel._COORD_FN_CACHE`)
+        never named on the line      PLAN.md:13780 x2 (wheel_objective.py's pool
+                                     `problem_kw` line), :16797-16798
+                                     (wheel_objective.py), :21825 x2 (wheel_adjoint.py),
+                                     :24166-24167 (wheel_fem.py)
+   4  NOT A CITATION                 PLAN.md:24149, `git grep -nE ':1841|:1693|:1719|:1867'`
+```
+
+**The seven are the seven §156 named.** Its §4 checked §135's six dangles and its own
+successor's line, found both to be self-citations, and wrote "every one of the 27 is the same
+sentence shape". So its successor priced the fallback as "clears all 27", and the docstring
+carried the same sentence for four days.
+
+**MAGNITUDE CANNOT SEPARATE THE SHAPES EITHER.** The out-of-range ratio, anchor over the carried
+file's length at the citing commit, runs 1.1x to 21.7x. The 16 wrong-file rows span 1.2x to
+12.4x (the `wheel_fem.py` rows carried to `wheel_stage3.py`, `wheel_requirements.py` and
+`MBSE_PLAN.md` at 1.4x to 2.4x; the ones carried to `wheel_pool_worker.py` at 7.7x to 12.4x);
+the self-citations span 11.8x to 21.7x (the dangles 11.8x to 13.8x, `PLAN.md:21946` at 21.7x);
+the regex tokens sit at 1.1x to 1.2x. The two main classes overlap, so no threshold separates
+self from other.
+
+**THE DECISION.** Preferring the citing file whenever the carried owner cannot hold the line
+resolves 7 rows correctly and **16 confidently against the wrong file** — `PLAN.md:24083`'s
+`wheel_fem.py` line would be judged as `PLAN.md:1841` and read `ok` — and reads the four regex
+tokens as PLAN.md lines. The failure chosen is the current one: 23 rows that say both readings
+and stop, costing a read each time, over 16 rows that would be silently wrong forever.
+
+**THE RULE THAT WAS FREE.** Every `:N` token in the tree touching a `|` — four, all in that one
+regex, none a citation — is skipped by one condition on the existing `if owner is None:` line.
+No citation in the tree has a `|` adjacent to its token, including those inside markdown
+tables, where the cell border is separated by a backtick or a space.
+
+**Green.** No test imports `_citation_sweep.py`; it compiles, and `--into src/wheel_fem.py`
+reports 36 of 36 resolving. The second session's `studies/_citation_lineage.py` (§160) was told
+that `citations()` at HEAD returns four fewer rows than at its `7a28091` pin.
+
+**AND ONE CORRECTION TO §159's OWN FRAMING, FROM THE SECOND SESSION'S BISECT.** §159 successor
+3 said §156 successor 3's premise was "half the size of the problem" because
+`test_requirements.py` alone reached 60.43 GiB system-wide. The bisect running now (its record
+is that session's to write) measured the `==` test's own system-wide peak at 32.60 GiB — so the
+per-test figure in §156's premise stands, and the 60.43 GiB belongs to a later test in the same
+file stacking on the first one's unreturned memory, which is what §159's green paragraph
+guessed and its successor line then overstated. The same run moves the cost itself: the `==`
+and the requirement set are free, and the 26–30 GiB and 11 minutes are `t3`'s cold first call
+in the process.
+
+**SUCCESSORS.**
+
+0. **THE 23 ARE §159 SUCCESSOR 1's LEDGER, AND THE LEDGER'S KEY IS THE HARD PART.** A list of
+   `(citing site, cited anchor, reason)` keyed on a line number goes stale the first time the
+   citing file moves, which is this arc's whole subject. Key it on something that survives a
+   shift — the cited file, the anchor, and the citing line's text — and measure how many of
+   §159's 43 and this section's 23 would survive the last month of commits before building it.
