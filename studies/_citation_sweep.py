@@ -124,17 +124,17 @@ while a carried owner can.  The 203 divide along exactly that line:
 
   121   MOVED, owner is a path      drift, and the owner is not in question
    55   MOVED, owner was carried    drift, if the paragraph's owner is the right one
-   27   anchor out of range         the OWNER is wrong: all 27 are a self-citation
+   27   anchor out of range         the OWNER is wrong -- in three ways, not one
 
-**All 27 out-of-range rows are one failure, not twenty-seven.**  Each is a bare `:N` naming
-a line of the file it is written in, inside a paragraph whose subject is a different file —
-§135's six deliberate dangles are six of them, `PLAN.md:21239-21240` citing PLAN.md's own
-§118 and §133 in a paragraph about `tests/test_objective.py`.  So §140's carried-owner rule
-is wrong for 27 of the 271 citations that rely on it, 10.0%, in a single recognisable shape.
-The obvious repair — prefer the citing file when the carried owner cannot hold the line — is
-NOT applied here, because it would silently convert a genuine far-gone anchor into a
-confident resolution against the wrong file, and this instrument has no way to tell those
-apart.  The row says which two readings are available and stops.
+**The 27 out-of-range rows are THREE failures, and this paragraph first called them one.**
+7 are a bare `:N` naming the file it is written in, under a paragraph about another file:
+§135's six deliberate dangles at `PLAN.md:21239-21240`, and `PLAN.md:21946`.  16 name another
+file the carried rule never saw -- a table column, a module named after the token, or no
+mention at all (`PLAN.md:24083`'s is a `wheel_fem.py` line).  4 are not citations but the
+alternation in `git grep -nE ':1841|:1693|...'`, so a token touching `|` is now skipped
+(PLAN.md §159 successor 2; those 4 were every such token in the tree).  "Prefer the citing
+file" stays NOT applied, for a measured reason now: it would resolve 7 rows correctly and 16
+confidently against the wrong file.  The row says which two readings are available and stops.
 
 TWO PROPERTIES OF "SINCE IT WAS WRITTEN" THAT ARE WORTH STATING BEFORE ANYONE ACTS ON A ROW.
 A quotation of an already-broken citation — §155 §4 found one at `PLAN.md:21904`, and §136's
@@ -251,7 +251,7 @@ def citations(path, owners):
             ident, anchor, extra = payload.group(1), int(payload.group(2)), payload.group(3)
             named = owners.names_file(ident) if ident else None
             owner = named or (owners.owner(ident) if ident else carried)
-            if owner is None:
+            if owner is None or "|" in line[max(payload.start() - 1, 0):payload.end() + 1]:
                 continue
             # In code, only a token that NAMES a file stands without backticks: a bare
             # `:N` is a slice or a format spec, and a symbol is a variable.
