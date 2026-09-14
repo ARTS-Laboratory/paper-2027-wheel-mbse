@@ -25587,3 +25587,200 @@ know what produced it.
    sentence to add costs nothing at that moment: the boundary exists because one test pays a
    per-phase XLA compile in the parent and again in every pool worker, which is a cause and no
    longer a workaround.
+
+---
+
+## §164 — 2026-09-14. §162's SUCCESSOR 1, CLOSED: **THE PHASE IS A TRACED ARGUMENT AND ONE COMPILE SERVES EVERY PHASE, WITH 0 DIFFERING BITS** IN 12 ARRAYS AT `coarse` — COORDINATES AND THE VJP THE ADJOINT TAKES, FILLETED AND PLAIN. THE ~128 s PER PHASE IS THE **VJP** COMPILE; THE FORWARD IS 1.7 s. `test_requirements.py` ALONE GOES FROM 60.43 GiB USED AND 958 MiB FREE TO **35.38 GiB AND 25.99 GiB FREE**, AND THE SUITE IS GREEN AT **958 COLLECTED** — ONE NEW TEST, WHICH GOES RED ON THE OLD CODE AT ITS ASSERTION
+
+`6aa84ca` — `src/wheel_wheel.py` (the change), `tests/test_filleted_mesh.py` (the pin),
+and seven files of prose that described the phase-keyed cache as live — plus this record.
+Zero line shift in every file: the edits are same-line-count rewrites, so the nine live
+citations below the change in `wheel_wheel.py`, `wheel_pool.py:25-26` and
+`wheel_stage3.py:45` still hold.
+
+### 1. THE CHANGE, AND WHY THE ANGLES ARE COMPUTED OUTSIDE THE TRACE
+
+§162 successor 1 named the obstacle: `phase_deg` was read in Python control flow —
+`g = _rotate(sector0[name], angle, xp) if (k or phase_deg) else sector0[name]` — so sector 0
+at phase 0 skipped the rotation and the phase decided the jaxpr. `coord_fn` now computes the
+twelve sector angles in numpy, `np.radians(SECTOR_DEG * k + phase)`, and passes them to the
+jitted closure; `_sector_coords` rotates every sector when handed them. `float(phase)` left the
+key. The eager path (`build_wheel`, `mesh_coords(..., xp=np)`) is untouched.
+
+**Computing the angles in numpy is what keeps the bits.** A traced phase would have XLA
+evaluate `radians(30k + phase)`, which is not guaranteed to round like numpy's; passing the
+numpy result means XLA only ever sees the same twelve float64 constants the old closures baked
+in. The one new operation is a rotation by exactly 0 at sector 0, phase 0 — cos 0 = 1 and
+sin 0 = 0 are exact, so it is the identity unless a coordinate is a signed zero. §162 successor
+1 asked for that to be MEASURED before the change, not after.
+
+### 2. THE GATE, IN ORDER, EACH STEP BEFORE THE NEXT
+
+```
+  smoke, numpy     _rotate(block, exact 0) == block over sector 0's 11 filleted blocks:
+                   1070 values, 0 bit differences, 0 zeros of either sign          0.40 s
+  smoke, jitted    owners and orientation identical across phases 0/3.75/13.7/26.25;
+                   a closure taking the 12 angles traced reproduced today's per-phase
+                   closures with 0 bit differences at all four (5508 nodes); 1 compile
+                   in 1.82 s against 4 in 7.47 s
+  coarse, jitted   OLD code from a worktree at fa9c9c4 vs the patched worktree, pinned XLA
+                   env, 6 cases x (coords, vjp w.r.t. the genes under a seeded cotangent):
+                   12 arrays, 0 bit differences, 0 value differences
+  smoke, jitted    the same script at `smoke`: 12 arrays, 0 bit differences
+```
+
+```
+  coarse                 OLD (one closure per phase)       NEW (one per recipe)
+  filleted phase 0       coords 1.67 s   vjp 128.00 s      coords 1.68 s   vjp 127.10 s
+  filleted 3.75 / 13.7   1.74 / 1.77     126.59 / 128.79   0.00 / 0.00     0.05 / 0.10
+  filleted 26.25         1.72            128.52            0.00            0.05
+  plain 0 / 13.7         1.37 / 1.33     25.16 / 24.97     1.40 / 0.00     25.19 / 0.05
+  total                  572.8 s, parent 27.35 GiB,        156.7 s, parent 9.15 GiB,
+                         system 30.2 GiB used              system 11.9 GiB used
+```
+
+**The per-phase cost is the vjp compile, 127.97 s mean on the filleted mesh, and the forward
+is 1.7 s.** `wheel_wheel.py:2851-2855` already records why the vjp is where it lands: "`jax.vjp`
+on an untraced closure re-traces on EVERY call". 572.8 s closes to 571.6 s as four filleted
+vjps (511.9) + two plain (50.1) + six forwards (9.6), and 156.7 s to 155.6 s the same way.
+
+**A PREDICTION WITH TWO HALVES, SCORED: TIME CONFIRMED, MEMORY REFUTED.** Before the `smoke`
+run, the second session registered that 127.97 s at `coarse` against §162's 128.3 s at `smoke`
+was not a coincidence: compile TIME is set by the graph's structure, which the config does not
+change, while compile MEMORY is set by array shapes, which it does. Same script, same case
+order, old code:
+
+```
+  case         vjp coarse   vjp smoke   smoke/coarse   retained GiB coarse | smoke
+  fil 0          128.00      129.13        1.009               8.35 | 8.36
+  fil 3.75       126.59      131.16        1.036               6.92 | 6.32
+  fil 13.7       128.79      125.01        0.971               6.08 | 6.37
+  fil 26.25      128.52      126.50        0.984               5.76 | 3.89
+  plain 0         25.16       25.17        1.000               0.05 | 0.11
+  plain 13.7      24.97       25.11        1.006               0.13 | 0.54
+  filleted sum   511.90      511.80        0.9998    parent peak 27.35 | 25.67 GiB
+```
+
+Retained is the change in system-wide used memory across each case's window, from a 5-second
+sampler with windows reconstructed from the logged durations; the transient (peak minus end)
+was 0.00-0.08 GiB in every window. **Time is config-invariant across all six cases,** at half
+the curve stations and 21% of the nodes (5508 against 26196). **Memory is not shape-dominated:**
+retained per case agrees to 0.12% at phase 0, and the configs differ only by ~6% at process
+level, which fits array-sized state beside a config-invariant compile. The double dissociation
+predicted does not exist; the time half stands on its own.
+
+**Within one run the retained cost FALLS phase by phase** — 8.35, 6.92, 6.08, 5.76 GiB at
+`coarse` — which is §162's sublinear curve (9.00, 16.39, 25.86 GiB at 1, 2, 4 phases) arriving
+in a third instrument. A hand-back from one phase spilling into the next window would fake the
+same fall, and 5-second windows cannot rule that out; §162's 0.5-second trace of the t3 tier
+does, for its own workload — zero falls over 50 MiB across all four compiles, and its single
+hand-back (-2.517 GiB) at the cell's end, after the last compile. That makes the artefact
+unlikely here rather than impossible. `smoke`'s 6.32 -> 6.37 uptick is unexplained by anything
+either session measured, and is left in the table as it came.
+
+### 3. THE SUITE, FROM THE PATCHED WORKTREE, SEVEN PROCESSES, ONE AT A TIME
+
+958 collected — §154's 957 plus `test_ONE_trace_serves_every_phase` — **943 passed, 2 skipped,
+13 xfailed, 0 failed**, under a watchdog at 512 MiB available that never fired. The 2 skips are
+`test_export_contract.py`'s CAD pair, `skipif` on `.venv-cad`, which is git-ignored and so
+absent from a worktree; they were run from the shared checkout at commit and passed. 943 + 2
+= 944 + 1: nothing moved but the new test.
+
+```
+  process         result                 wall     before (source)
+  light A         398 p, 2 s, 10 x       7:17     399 p, 10 x, 8:00 (§159, same evening)
+  light B         266 p, 1 x             1:32     266 p, 1 x, 1:34 (§159)
+  C requirements   44 p                  11:20    44 p, 20:18 (§159)
+  gradient         24 p                   6:35    24 p, 6:37 (§153)
+  pool             23 p                   9:59    23 p, 12:11 (§153)
+  stage3           63 p                  23:57    63 p, 28:41 (§153)
+  objective       125 p, 2 x             17:29    125 p, 2 x, 36:18 (§153)
+```
+
+**`test_requirements.py` alone, same recipe as §159, same evening, old code against new:**
+
+```
+                          §159 (old)                  now (patched)       ratio
+  wall                    20:18                       11:20               1.79
+  parent max RSS          28.89 GiB                   16.60 GiB           1.74
+  system used peak        60.43 GiB, 958 MiB free     35.38 GiB, 25.99 free   1.71
+  == test plateau         32.6 GiB                    18.6 GiB            1.75
+  pooled second climb     +27.88 GiB                  +16.8 GiB           1.66
+```
+
+The second session's closure, re-derived here: the file's cache is shared across its tests, so
+before the change the `==` test paid four compiles and the pooled test's two workers paid two
+each in parallel; after, one and one each. Predicted wall saving 3 x 128.3 + 128.3 = 513 s,
+measured 538 s. The pooled climb decomposes onto §162's fresh-process curve: 27.88 / 4 = 6.97
+GiB a compile before, 16.8 / 2 = 8.40 after, against §162's 6.46 at four and 8.20 at two — a
+live pool worker and a fresh single process are different instruments, and they agree to 7.5%
+and 2.5%. **The file that §156 had to split into its own process for memory now peaks with 26
+GiB free.**
+
+**`test_objective.py`, read against a prediction registered before it ran.** The second
+session predicted `genes_over_knee` — one serial `coarse` 8-phase full objective call — would
+fall from ~44 GiB to 10-18 GiB (point 12.8), with a file-level rule: parent peak under 25 GiB
+consistent, 25-40 ambiguous, above 40 undecidable from the maximum alone. Measured, with a
+5-second watcher of free memory and the log's progress count:
+
+```
+  parent max RSS 25.37 GiB     system peak 28.45 GiB used, 32.91 GiB free, at 23:58:19
+  progress 4-18   ~11.6-11.8 GiB used         progress 20   18.13 GiB
+  progress 21     29.14 GiB max, 23:52:04-23:59:00   = test 22, the first genes_over_knee user
+```
+
+**By the rule, 25.37 GiB is AMBIGUOUS, just over its lower edge.** The timeline resolves which
+test holds the peak — the fixture call — but not how large that call is alone: the plateau
+before it is ~18 GiB of residue, not the ~7 GiB the file-level rule assumed, and the call's
+increment over it (~10.3 GiB) is not its standalone peak. So the falsifier, a call above ~25
+GiB, is neither triggered nor cleared at this resolution. The comparison figures for this file
+are also DATED: 51.0 GiB parent (2026-09-03) and 58.4 GiB system-wide (2026-09-06) are older
+trees; only the wall time, 36:18 at §153, is recent.
+
+### 4. THE PIN, AND THE REGRESSION IT CAN SEE
+
+`test_ONE_trace_serves_every_phase` asserts the PROPERTY — one cache entry per recipe across
+phases 0, 3.75 and 13.7, filleted and plain, each phase reproducing its own eager mesh to 1e-9
+mm — rather than a timing, which would go green on a slower box. **Run against the old code
+before being trusted (§146's rule): a fresh worktree at `fa9c9c4` with only the patched test
+file, `-k` that test, 1 failed in 4.07 s at the assertion** — `AssertionError: fillet=True phase
+3.75 compiled its own trace`, `assert 2 == 1` — and 1 passed in 4.09 s on the patched code.
+
+### 5. WHAT IT DOES NOT CLOSE
+
+**§105 successor 4 (a RAM-aware worker cap) stays open, orthogonally.** The change makes a
+worker holding N phases cost what a worker holding one costs; it does not make that one
+cheaper — the patched `coarse` gate peaked 9.15 GiB, the class of §105's 9.1 GiB one-phase
+worker. `default_workers` returns `min(n_phase, cpu_count)`, which at an 8-phase stencil is one
+phase per worker and nothing to collapse. The benefit is on the serial path, `--workers 0`, the
+default. The second session's per-configuration forecast — serial 8 phases 43.4 GiB to ~9-13,
+`--workers 2` 26.0 to ~9, `--workers 8` unchanged — is a PREDICTION from `smoke` t3 rungs, and
+§3's objective reading is the only production-path measurement of it so far.
+
+**The phase lattice and slot pinning lose their performance reason and keep their definitions.**
+No other cache in `src/` keys on phase (the FEM kernels key on element order and kinematics,
+`_KT_CACHE`/`_T1_CACHE` on config, span and flanks), so a continuous rqmc offset would now hit.
+The lattice stays because every recorded stochastic run was drawn on it; pinning stays because
+whether it buys anything besides compiles is unmeasured. The seven prose sites say so in place.
+`study_stage3.py`'s printed report text is not edited: it is output, and the committed report
+describes the run that produced it.
+
+**Green.** §3's suite, plus in the shared checkout at commit, with the tested patch diffed
+equal to the worktree's: the CAD pair, the new test, the three lattice and pinning tests whose
+docstrings the sweep edited, and the AST gate — 9 passed in 37.28 s; `py_compile` of all nine
+touched files; 958 collected. Citation report 103 -> 105: §162's own `def traced` citations at
+`PLAN.md:25432`, whose signatures gained `angles`, measured in a throwaway worktree commit
+first.
+
+**SUCCESSORS.**
+
+0. **ISOLATE THE SERIAL 8-PHASE CALL ON THE PATCHED CODE.** One fresh process, `genes_over_knee`'s
+   call alone at `coarse`, sampled system-wide — the only production-path number for §5's
+   forecast, since §3 could place the peak on the test but not size it. The second session is
+   running exactly this on `6aa84ca` as §164 lands, with its prediction and falsifier registered
+   in advance (10-18 GiB, point 12.8; above ~25 GiB refutes); the result is its to record.
+1. **§105 SUCCESSOR 4, WITH THE ARITHMETIC CHANGED.** A worker cap is now a count of WORKERS at
+   ~9 GiB each at `coarse`, not a count of phases per worker.
+2. **WHETHER TO KEEP THE LATTICE IS NOW A STATISTICS QUESTION, NOT A PERFORMANCE ONE** — and
+   changing it moves every rqmc run, so it wants its own measurement before anyone touches
+   `phase_stencil`.
