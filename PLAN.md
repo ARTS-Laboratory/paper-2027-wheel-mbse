@@ -26326,3 +26326,157 @@ whose transport and pooled-evaluation tests do not read `POOL_GIB`.
    than four workers, but as a draw from a spread, not a point on a line.
 2. **`fine` STAYS UNMEASURED, AND NOTHING NEEDS IT.** No recipe or document runs Stage 3 at `fine`
    (`git grep -- '--config fine'`), so it stays refused. Measure it when something does.
+
+---
+
+## §170 — 2026-09-14. §169's SUCCESSOR 0, PREMISE CHECKED AT `coarse`: **A DESCENT HOLDS THE POOL, AND THEN SOME — `svk-shipped`'s OWN FLAGS FOR 40 STEPS NEVER DROP BELOW 46.0 GiB OF TREE RSS AFTER STEP 0, AND ITS KERNEL MARKS SUM TO 49.61 GiB, 3.1x THE 16G CAP ITS BLOCK TELLS A READER TO LAUNCH UNDER.** THE WORKERS CREEP +1.58 GiB IN 40 STEPS, IN JUMPS, AND THE LARGEST ENDS AT **9.949 GiB — 0.051 UNDER `coarse`'s POOL ALLOWANCE**, WHICH WAS SIZED ON ONE `objective()` CALL. **`prod9` AND `prod10` DO NOT RUN AT ALL**: BOTH START POINTS REFUSE AT THE FILLET CLAMP IN 40 s, SO THEIR 20G CAP IS MOOT. AND THE SWEEP §169 COUNTED AS THREE LAUNCH LINES IS **ELEVEN** — ONE OF THEM THE GUI's LIVE MEMORY MODEL, WHICH PRICES A FOUR-WORKER `coarse` DESCENT AT 81.5 GiB AND REFUSES TO LAUNCH IT
+
+A record, no code change. Two sessions: this one ran the descents; the second session did the
+provenance and the sweep from git and file reads alone, and ran nothing while the box was held.
+
+### 1. THE PREMISE WAS UNANSWERABLE FROM THE RECORD
+
+§169 successor 0 asked whether a descent at the launch blocks' settings still holds a pool the
+size §167 and §169 measured on ONE `objective()` call. Every memory figure in the three blocks
+predates the fillet mesh (`d2cf9fa`, 2026-09-03), and none of them measured what they now sit
+beside:
+
+| figure | commit, date | what it measured |
+|---|---|---|
+| `prod9`: "~12.7 GB anon (parent ~4.5 GB, four workers ~2 GB each)" (`Makefile:362`) | `b13cba3`, 2026-08-01 | cgroup anon, flat "through step 27" (`PLAN.md:999-1001`), **linear** — 18 days before `97f9629` flipped `--kinematics` to svk, and the `prod9` recipe names no kinematics, so it has silently run svk since |
+| `svk-shipped`: "13.16 GiB peak anon against linear's 12.56" (`Makefile:559`) | `b5c22c9`, 2026-08-12 | §15's "peak anon RSS, 4 workers" column (`PLAN.md:3020`), unfilleted |
+| `knee`: "`memory.current` 15.3 GiB, ... 2936 forced direct reclaims" (`Makefile:693-694`) | `b5773dd`, 2026-08-15 | a point read of the live unit's cgroup files (`DEFECT8_PLAN.md` Step 4, deleted 2026-08-16). `memory.current` excludes swapped-out anon and no `MemorySwapMax` was set, so it is a **lower bound** by an unrecorded amount; no swap figure was written anywhere |
+
+Since the fillet switch the record holds §113's live descent read at step 0 on the pre-`6aa84ca`
+code (killed at 60/61 GiB), and §167/§169's single calls. **No multi-step descent had been
+measured on the filleted mesh.** One corroboration is also looser than it reads: `PLAN.md:3035`
+says §15's 12.56 GiB "reproduces" the `~12.7 GB` help text, but 12.7 GB is 11.83 GiB — 6.2%
+apart, not a reproduction.
+
+### 2. THE MEASUREMENT
+
+§169's watcher (per-pid `VmHWM`, tree RSS and `/proc/meminfo` every 0.5 s), plus per-pid RSS every
+~5 s so the process that moves can be named. A worktree at `944474a`; `src/wheel_stage3.py`
+launched directly under the `Makefile`'s five pinned variables, with the recipes' flags verbatim
+plus `--log-every 1` and `--out`/`--best-out` redirected to scratch; `systemd-run --user --scope`
+with `MemoryMax=55G` and `MemorySwapMax=0`.
+
+```
+  run                  steps  parent   workers (GiB)                   SUM     tree peak  system  step 0   steady s/step
+  svk-shipped flags      6    10.212   9.728  9.617  9.477  9.443     48.477   47.099    48.128  388.95 s  85.25 (sd 2.66)
+  svk-shipped flags     40    10.242   9.949  9.797  9.876  9.750     49.613   49.076    49.905  387.27 s  84.53 (sd 1.74)
+  prod9 flags   (rank:9)      FilletClampRefusedError at 40.0 s, exit 1, before step 0 logs
+  prod10 flags  (rank:10)     FilletClampRefusedError at 40.0 s, exit 1, before step 0 logs
+```
+
+Step 0's loss is `52.56615068117939` in both descents, bit-identical to §169's `coarse` svk probe:
+the descent's first evaluation is the call §169 measured. No step was abandoned and none rejected.
+
+**(a) The pool is HELD.** In every step window after step 0 the tree's RSS never falls below
+46.029 GiB (40-step run) or 45.188 (6-step run). The single-call figure was not a compile
+transient that a descent sheds; it is the floor a descent climbs from.
+
+**(b) It creeps, in the workers, in jumps.** Per-window maximum RSS by process, 40-step run:
+
+```
+  step   parent   w1      w2      w3      w4      workers
+     1   9.656   9.333   9.386   9.572   9.242   37.533
+    10   9.763   9.606   9.734   9.686   9.398   38.424
+    20   9.806   9.613   9.778   9.756   9.552   38.699
+    30   9.825   9.864   9.738   9.823   9.736   39.161
+    40   9.827   9.865   9.738   9.816   9.695   39.114
+
+  least-squares slope by block    steps 1-10   11-20   21-30   31-40
+    workers, summed (MiB/step)       101.8      15.5    31.2    -8.3
+    parent (MiB/step)                 12.2       3.0     2.8     0.1
+```
+
+Steps 1→40: workers +1.581 GiB, parent +0.171, tree peak 47.234 → 48.961 (+1.727). The rate falls
+but not monotonically — steps 11–20 were nearly flat and steps 21–30 then added 0.462 GiB, most of
+it one worker jumping 0.23. **So steps 31–40 being flat does not bound steps 41–300**, and nothing
+here is extrapolated to a 300-step run.
+
+**(c) Two runs of the identical launch differ by 0.91 GiB at step 1 and 0.83 at step 6** — as
+much as six steps of creep. The creep's shape agrees across them (+0.774 and +0.693 over steps
+1–6); the offset is run-to-run scatter of §166's kind, not a trend.
+
+**(d) The step is 1.36x the block's figure.** 84.53 s against `Makefile:569`'s 62.3 (84.53 / 62.3
+= 1.357), so 300 steps is 387.27 + 300 × 84.53 = 25,746 s = **7.15 h**, not "~5.3 h".
+
+### 3. `prod9` AND `prod10` ARE DEAD, AND THE RECORD HELD EVERY PIECE EXCEPT THE JOIN
+
+The radii in `rank:9`'s refusal, `(0.6611127634091449, 0.4148964548941661)`, are
+`studies/study_kinematics_rank_filleted.json:1934-1944`'s `elite9 5b02ca6` row to the last digit,
+and §129 §3 already measured that **all sixteen** `stage2_elites.json` ranks refuse at `coarse`
+(`PLAN.md:19425`; fifteen `clamp_reject`, one `mesh_reject`). The start point is scored at
+`wheel_stage3.py:572`, outside the trial loop's refusal guard, so a refused START ends the run
+before step 0 logs; §110's "shorten the step" is true of trial points only. By inference from
+three recorded facts — the clamp raises since `4518348` (2026-08-24), the objective is filleted
+since `d2cf9fa` (2026-09-03), and both elites are `clamp_reject` — the two targets have refused
+since `d2cf9fa`. No record says so: `make help` (`Makefile:92-96`) still offers "~4 h", and
+`svk-elite10` (`Makefile:600`) starts from an artifact that only `prod10` could regenerate.
+
+### 4. THE SWEEP IS ELEVEN LAUNCH INSTRUCTIONS, NOT THREE
+
+§169 named `Makefile:368`, `:563` and `:689`. Enumerated with `git grep`, every instruction that
+launches Stage 3 with a cap or a memory figure, with kinematics as each runs TODAY:
+
+| # | where | config / kinematics / workers | cap | memory figure |
+|---|---|---|---|---|
+| 1 | `make stage3` (`Makefile:282`) | coarse / svk / serial | none | "43.4 GiB peak RSS in one process" (`:278`) |
+| 2–3 | `make prod9`, `prod10` (`:420`, `:426`) | coarse / svk (unnamed) / 4 | 20G (`:368`) | "~12.7 GB anon" — **refuses at start** (§3) |
+| 4 | `make help` (`:92-96`) | — | "a systemd-run cap" | "~12.7 GB anon ... two do not fit in 31 GB" |
+| 5 | `make svk-shipped` (`:593`) | coarse / svk / 4 | 16G (`:563`) | "13.16 GiB peak anon" |
+| 6 | `make svk-elite10` (`:600`) | coarse / svk / 4 | none | inherits `svk-shipped`'s block |
+| 7–8 | `make svk-medium` (`:623`), `buildcap` (`:657`) | medium / svk / 4 | **none** | none — the shape §169 summed at 49.79 GiB |
+| 9 | `make knee` (`:706`) | medium / svk / 4 | 32G (`:689`) | "15.3 GiB" (§1: a lower bound) |
+| 10 | `REPO_EXPLAINED.tex:1751` | medium / svk / `-1` → 4 here | none | none |
+| 11 | the GUI's `stage3` target, `gui/catalog.py:89-91`, `:107-111`; `gui/jobs.py:75`, `:389-392` | any | computed: `max(8, gib × 1.35)`, refused above `0.85 ×` physical RAM | `GIB_PER_WORKER = 12.7` |
+
+Plus three pooled launches outside Stage 3 on the same per-worker cost: `make svk` (`:489`,
+workers 0), `make kinrank` (`KINRANK_WORKERS ?= 8`, `:522`) and `make contact` (20G, `:541`).
+
+**Row 11 is the only live consumer that acts on its number.** `descent_gib` is `23.0 + (43.4 −
+23.0)·ratio + 12.7·ratio·(width − 1)`: 81.5 GiB for four `coarse` workers against 49.613 measured
+here (1.64x), and 56.1 for two against §169's 29.04 — both above `0.85 × 61.37 = 52.16`, so the GUI
+**refuses every pooled `coarse` descent** this box runs. `workers = -1` is priced as width 1
+(`gui/catalog.py:208`), 43.4 GiB, and passes: the GUI admits exactly the pool it cannot see.
+
+Stale for reasons other than memory, flagged and not fixed: the "31 GB" box at `Makefile:95`,
+`:363`, `:560` and `:698` (`:699` says 61 GiB one line later), and every step timing in the three
+blocks, all pre-fillet.
+
+### 5. NOT DONE
+
+No `Makefile`, GUI, `POOL_GIB` or test edit, and nothing at `medium`. Nothing moved a citation:
+this section is appended at the end of the file.
+
+**SUCCESSORS.**
+
+0. **`coarse`'s WORKER ALLOWANCE WAS SIZED ON A CALL, AND ITS CALLERS ARE DESCENTS.**
+   `POOL_GIB["coarse"] = (10.0, 11.0)` (`wheel_pool.py:152`) clears the largest single-call mark,
+   9.500 (`test_pool.py:450`), by 0.500; a 40-step descent's largest worker is 9.949, **0.449 over
+   that mark and 0.051 under the allowance**. The four-worker budget still covers the pool, 51
+   against 49.613 summed, but 0.758 of its 1.387 GiB slack is the PARENT allowance's: the worker
+   claim has all but failed while the total has not. Widening to 11 costs no worker on this box at
+   today's reading — (56.95 − 11) // 10 and (56.95 − 11) // 11 are both 4 — but §167's rule sizes
+   from a mark, and the mark a 300-step descent reaches is unmeasured (7.15 h, §2(d)). Premise
+   first: is there a caller that runs `default_workers` for more than 40 steps? Every pooled
+   `Makefile` descent pins `--workers 4`, so the `-1` paths — `REPO_EXPLAINED.tex:1751`, the GUI's
+   unpriced `-1`, S13's ladder — are the callers the pair governs.
+1. **THE `medium` HALF.** §169's pair (11, 11) sits 0.351 over a single-call worker mark of 10.649
+   (four-phase, w=2) and 0.700 over 10.300 (two-phase, w=4). Coarse's descent added 0.449 over its
+   largest single-call mark by step 40. If that transfers, a w=2 `medium` descent breaches 11 and a
+   w=4 one does not — so the run to make is the recipes' own shape, w=4, and at least 40 steps.
+   Not registered as a prediction: nothing here says the creep scales with the mesh.
+2. **RE-DERIVE THE CAPS AND THE GUI's MODEL FROM THE SETTLED PAIRS, AS ONE SWEEP OVER §4's ROWS.**
+   After 0 and 1, because both derive from `POOL_GIB`. The GUI first of those: it is the one that
+   refuses runs today. `svk-medium` and `buildcap` have no cap line at all, and `KINRANK_WORKERS ?=
+   8` prices at 11 + 8 × 10 = 91 GiB on a 61 GiB box.
+3. **DECIDE WHAT `prod9` AND `prod10` ARE BEFORE SIZING ANYTHING FOR THEM.** §129 §3 left S12's
+   inadmissible start points as "a question about the milestone" (`PLAN.md:19444`); these
+   targets are the same question. Whatever the answer, `make help` should stop offering a 4 h run
+   that ends in 40 s.
+4. **`Makefile:278`'s serial 43.4 GiB predates `6aa84ca`**, and §165 measured `genes_over_knee`
+   alone falling 44.00 → 14.99 GiB across that commit. An inference for S10's figure, unmeasured;
+   it is also the GUI's `GIB_DESCENT_COARSE`.
