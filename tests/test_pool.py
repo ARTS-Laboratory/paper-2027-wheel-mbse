@@ -407,8 +407,8 @@ def test_default_workers_is_capped_by_measured_memory_and_refuses_unmeasured_con
     """PLAN.md §105 successor 4, closed at §167.
 
     §113's live pool at `--workers 2` reached 60/61 GiB.  After §164's collapse a `coarse`
-    worker's kernel high-water mark is 9.44 GiB at most and the parent's 10.27, and summed
-    marks bound the simultaneous peak to 1.2%; `POOL_GIB` carries that.  This pins the
+    worker's kernel high-water mark reaches 10.24 GiB by a descent's step 60 (§171), the
+    parent's 10.27, and `POOL_GIB` carries the pool they sum to.  This pins the
     arithmetic and its edges: memory binds below the cores, too little for one worker is
     serial and never zero, cores and phases still bind when memory is plentiful, a config
     nobody measured (or none at all) is refused rather than sized on `coarse`, and a box
@@ -436,18 +436,18 @@ def test_every_pool_pair_bounds_its_marks_and_admits_the_pool_measured_to_fit(
     """PLAN.md §167 successor 1, closed at §169: `medium` measured before its pair.
 
     Largest kernel high-water marks on a live 8-phase pool, per config and role, GiB.
-    `coarse`'s 9.440 / 10.271 are §167's and were `linear` -- its probe passed no
-    `kinematics`, so `wheel_contact_problem`'s default ran -- while `wheel_stage3 --workers
-    -1` defaults to svk; §169 re-measured `coarse` under svk (9.500 / 10.254) and measured
-    `medium` under both.  A pair below a mark is the silent direction: the cap admits a
-    pool the box cannot hold.  So is borrowing: `coarse`'s (10, 11) at `medium` fails here.
+    `coarse`'s worker is a DESCENT's, 10.242 by step 60 at `-1`'s own argv (§171); one call
+    marked 9.440 under §167's probe, which named no `kinematics` and so ran `linear`, and
+    9.500 under svk (§169).  Its parent's 10.271 is §167's, above every descent's, and
+    `medium`'s are one call under both kinematics, no descent measured.  A pair below a
+    mark is the silent direction: the cap admits a pool the box cannot hold.
 
-    The other direction is pinned too.  Four `medium` svk workers summed to 49.79 GiB,
-    launched with 57.06 GiB available.  A pair that refuses four on that reading has
-    stopped describing the measurement, and `-1` would give three workers where four fit
-    -- the count `knee`, `buildcap` and `svk-medium` run with a literal `--workers 4`.
+    The other direction is pinned too.  A four-worker `medium` svk pool summed 49.79 GiB,
+    launched with 57.06 GiB available, and `coarse`'s 49.72 at 57.05.  A pair refusing four
+    on those readings has stopped describing the measurement, and `-1` would give three
+    where four fit -- the count every pooled `Makefile` descent pins as `--workers 4`.
     """
-    marks = {"coarse": (9.500, 10.271), "medium": (10.649, 10.155)}
+    marks = {"coarse": (10.242, 10.271), "medium": (10.649, 10.155)}
     for cfg, (worker_mark, parent_mark) in marks.items():
         worker, parent = WP.POOL_GIB[cfg]
         assert worker > worker_mark, f"{cfg}: a worker was measured at {worker_mark} GiB"
@@ -455,3 +455,5 @@ def test_every_pool_pair_bounds_its_marks_and_admits_the_pool_measured_to_fit(
     monkeypatch.setattr(WP.os, "cpu_count", lambda: 24)
     monkeypatch.setattr(WP, "_available_gib", lambda: 57.06)
     assert WP.default_workers(8, "medium") == 4, "the pool measured to fit is refused"
+    monkeypatch.setattr(WP, "_available_gib", lambda: 57.05)
+    assert WP.default_workers(8, "coarse") == 4, "the pool measured to fit is refused"
