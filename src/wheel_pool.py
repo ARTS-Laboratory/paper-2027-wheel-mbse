@@ -135,21 +135,21 @@ def worker_env(base=None):
     return env
 
 
-# THE RAM TERM, MEASURED ON A LIVE POOL (PLAN.md §167), `coarse`, 8-phase stencil,
-# filleted mesh, after the per-phase compile was collapsed (§164).  Each figure is the
-# kernel high-water mark (`VmHWM`) of one process, and SUMMING them bounds the
-# simultaneous peak tightly: the sum sat 1.0-1.2% above the tree's simultaneous RSS peak
-# in all three `coarse` pooled runs.
-#   worker  8 marks, 8.740-9.440 GiB, sd 0.217 -- FLAT in the phases it holds (2-phase
-#           mean 9.181, 4-phase mean 9.222), so one number serves every pool size
-#   parent  9.829 and 9.944 at 2 workers, 10.271 at 4 -- it grows a little with the pool
+# THE RAM TERM, MEASURED ON A LIVE POOL (PLAN.md §167, §169), 8-phase stencil, filleted
+# mesh, after the per-phase compile was collapsed (§164).  Each figure is the kernel
+# high-water mark (`VmHWM`) of one process, and SUMMING them bounds the simultaneous peak
+# tightly: 0.3-1.6% above the tree's simultaneous RSS peak in all seven pooled runs.
+#   coarse  worker 10 marks, 8.740-9.500 GiB, sd 0.217 over §167's 8 -- FLAT in the phases
+#           it holds (2-phase mean 9.181, 4-phase 9.222); those 8 were `linear`, svk's are
+#           9.500 / 9.290 (§169).  parent 9.829-10.271, 10.271 at 4 workers
+#   medium  worker 8 marks, 10.231-10.649 GiB, sd 0.171, svk and linear; parent 8.677-10.155
+#           -- 4 svk workers summed 49.79 GiB, the count this pair gives at 57 GiB free
 # Whole GiB above the largest mark each, as `(worker, parent)` per config.  `smoke` carries
 # `coarse`'s pair as an UPPER bound -- every `smoke` figure measured sits below `coarse`'s
 # (§164: 25.67 against 27.35 GiB for the same process; its pooled workers 8.73 / 8.81).
-# `medium` and `fine` are NOT MEASURED: `medium`'s compile took 213 s against `coarse`'s 128
-# (§166), so applying `coarse`'s pair there would under-count, the direction that fills a
-# box.  `default_workers` refuses them rather than guess.
-POOL_GIB = {"coarse": (10.0, 11.0), "smoke": (10.0, 11.0)}
+# `fine` is NOT MEASURED, and `medium`'s worker is 12% over `coarse`'s, so a coarser pair
+# borrowed there under-counts -- the direction that fills a box.  `default_workers` refuses.
+POOL_GIB = {"coarse": (10.0, 11.0), "smoke": (10.0, 11.0), "medium": (11.0, 11.0)}
 
 
 def _available_gib():

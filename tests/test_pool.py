@@ -424,8 +424,34 @@ def test_default_workers_is_capped_by_measured_memory_and_refuses_unmeasured_con
     assert WP.default_workers(8, "coarse") == 8, "with memory to spare the phases bind"
     monkeypatch.setattr(WP.os, "cpu_count", lambda: 4)
     assert WP.default_workers(8, "coarse") == 4, "and so do the cores"
-    for unmeasured in ("medium", "fine", None):
+    for unmeasured in ("fine", None):
         with pytest.raises(ValueError, match="no measured pool memory"):
             WP.default_workers(8, unmeasured)
     monkeypatch.setattr(WP, "_available_gib", lambda: None)
     assert WP.default_workers(8, "coarse") == 1, "no memory reading is serial, not cores"
+
+
+def test_every_pool_pair_bounds_its_marks_and_admits_the_pool_measured_to_fit(
+        monkeypatch):
+    """PLAN.md §167 successor 1, closed at §169: `medium` measured before its pair.
+
+    Largest kernel high-water marks on a live 8-phase pool, per config and role, GiB.
+    `coarse`'s 9.440 / 10.271 are §167's and were `linear` -- its probe passed no
+    `kinematics`, so `wheel_contact_problem`'s default ran -- while `wheel_stage3 --workers
+    -1` defaults to svk; §169 re-measured `coarse` under svk (9.500 / 10.254) and measured
+    `medium` under both.  A pair below a mark is the silent direction: the cap admits a
+    pool the box cannot hold.  So is borrowing: `coarse`'s (10, 11) at `medium` fails here.
+
+    The other direction is pinned too.  Four `medium` svk workers summed to 49.79 GiB,
+    launched with 57.06 GiB available.  A pair that refuses four on that reading has
+    stopped describing the measurement, and `-1` would give three workers where four fit
+    -- the count `knee`, `buildcap` and `svk-medium` run with a literal `--workers 4`.
+    """
+    marks = {"coarse": (9.500, 10.271), "medium": (10.649, 10.155)}
+    for cfg, (worker_mark, parent_mark) in marks.items():
+        worker, parent = WP.POOL_GIB[cfg]
+        assert worker > worker_mark, f"{cfg}: a worker was measured at {worker_mark} GiB"
+        assert parent > parent_mark, f"{cfg}: a parent was measured at {parent_mark} GiB"
+    monkeypatch.setattr(WP.os, "cpu_count", lambda: 24)
+    monkeypatch.setattr(WP, "_available_gib", lambda: 57.06)
+    assert WP.default_workers(8, "medium") == 4, "the pool measured to fit is refused"

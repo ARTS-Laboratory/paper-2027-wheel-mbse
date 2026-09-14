@@ -491,8 +491,8 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
     sizes the pool to the machine via `wheel_pool.default_workers`, and any positive
     integer is taken literally.  Serial is the default deliberately — it is the path every
     gate and every committed artifact was measured on, and S13 is what says the two agree
-    exactly.  An explicit integer is also the only cap on memory: `default_workers`
-    counts cores and knows nothing about RAM, and a `medium` rung is 104k dof per worker.
+    exactly.  An explicit integer is its caller's own cap on memory; `-1` is capped by the
+    per-config pair in `wheel_pool.POOL_GIB`, and refused where none was measured (§167).
 
     `fidelity_check_every` is a PURE OBSERVATION, off by default (`0`).  Every N accepted
     steps (and at step 0), the just-accepted iterate is forward-evaluated a second time
@@ -1097,9 +1097,9 @@ def main():
                          "tiering argument assumes (see t1_barrier_sum)")
     ap.add_argument("--workers", type=int, default=0,
                     help="run the phase loop across processes: 0 (default) is serial, "
-                         "-1 sizes the pool to min(n_phase, cpu_count), and N is taken "
-                         "literally. N is also the only memory cap — the auto-size counts "
-                         "cores and knows nothing about RAM")
+                         "-1 sizes the pool to what phases, cores AND measured free memory "
+                         "allow (refused for a config with no wheel_pool.POOL_GIB pair), "
+                         "and N is taken literally, so N is its caller's own memory cap")
     ap.add_argument("--fidelity-check-every", type=int, default=0,
                     help="every N accepted steps, forward-evaluate the just-accepted "
                          "iterate at --fidelity-check-config too (t3 tier only, value "
