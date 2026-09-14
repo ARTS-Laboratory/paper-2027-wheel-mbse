@@ -25082,3 +25082,204 @@ first number §156 successor 3's bisect should re-measure.
 3. **§156 SUCCESSOR 3 IS THE SECOND SESSION'S NEXT ITEM, AND ITS PREMISE IS HALF THE SIZE OF THE
    PROBLEM.** "One test wants 26 to 29 GiB" is the parent; the file alone reached 60.43 GiB
    system-wide (above). The box was released to that session at 21:38 with these numbers.
+
+---
+
+## §160 — 2026-09-13. §157's SUCCESSOR 1: **THE BLIND SPOT IS 7, NOT 8, AND NOTHING JOINED IT ON A TREE 153 CITATIONS LARGER** — `PLAN.md:16795` WAS NEVER ONE, BECAUSE §156 RESOLVED TODAY'S ANCHOR AGAINST THE COMMIT THAT CREATED THE **LINE** RATHER THAN THE ONE THAT WROTE THE **ANCHOR**. THE SAME DISTINCTION CONVICTS `df1168b`: IT FIXED ONE TREE-TOO-LATE ERROR AND LEFT ANOTHER, ON **18 OF 883** ROWS. AND A SECOND BLIND SPOT SITS UNDER BOTH — **A WRONG REPAIR RE-DATES A WRONG ANCHOR INTO `ok` FOREVER**, MEASURED AT **12 STEPS, 8 OF THEM LIVE, 5 OF THOSE INVISIBLE TO THE SWEEP** — AND THE INSTRUMENT THAT FINDS THEM IS A **ONE-SHOT ON AN UNAUDITED TREE AND NOT A HEALTH METRIC**: REPAIRING ITS OWN EIGHT ROWS MADE ITS COUNT **RISE**, NOT FALL
+
+Measured at `7a28091` in a detached worktree, because a peer session was repairing citations
+in the same checkout throughout and `blame` on an edited file reports "not committed yet".
+883 citations. The lineage pass alone is 155 s, against §156's prediction of 2 min 28 s for
+it; the committed instrument, which reads the same lineage twice over, runs in 2 min 40 s.
+It is `studies/_citation_lineage.py`, at `aeb91e2`, and it is deliberately outside the
+report it reads: every line number in its docstring is one that has MOVED on purpose, so
+each is written "file line N" and not "file:N". Written as citations they would be 17 new
+rows — four of them misattributed by the carried-owner rule, a bare line 1153 inheriting
+`PLAN.md` where `wheel_objective.py` was meant — and the next repair pass would "fix" them
+into nonsense, which is §6 happening to the file that measures §6. The sweep reads 1033
+citations and 103 for a human with it and without it, to the row.
+
+**RE-RUNNING THIS AT HEAD WILL NOT REPRODUCE 883**, and that is not drift: §159 appended a
+section, and `5dab282` stopped reading a token touching `|` as a citation, which is 4 rows.
+The pin is the number; the tree has moved four times since it was taken.
+
+**1. THE `log -L` PASS, AND THE ONE ROW THAT LEFT.** §156 successor 2 named eight rows as the
+whole blind spot. Seven still are: `MBSE_PLAN.md:68`, `PLAN.md:96`, `:2933`, `:6970`,
+`:17607`, `:19688`, `tests/test_pool.py:371`. **`PLAN.md:16795` never was**, and the reason is
+not the pre-image reading `df1168b` added — that row reads `ok` under both readings at both
+commits. That line carries TWO citations — a third, `wheel_pool_worker.py:63`, sits on the
+line below — and it has been repaired twice: created at `96a0ac5` naming
+`studies/study_tri_block.py:228`, `58b311a` re-pointed that to `:242`, and `277a731`
+re-pointed the OTHER citation on the same line from `wheel_objective.py:1015` to `:1037`. §156 compared today's `:242` against the tree at `96a0ac5`, where the anchor `:242`
+**did not exist yet** — a comparison against a tree predating the claim, which manufactures a
+MOVED. `58b311a`'s repair was correct: the content it followed is still at `:242` at HEAD.
+
+So the origin a citation must be resolved against is the newest commit whose diff put THIS
+`:N` on the citing line — the **anchor-origin** — and not the commit that created the line.
+The two are the same for the 702 citations whose citing line has one commit in its lineage,
+and for 163 more where the newest commit is itself the one that wrote the anchor.
+
+  702  the citing line has ONE commit in its lineage -- blame IS the anchor-origin
+  163  the newest commit WROTE this `:N` -- blame is the anchor-origin anyway
+   11  blame is NOT the anchor-origin, and both readings agree
+    7  blame is NOT the anchor-origin AND the verdict flips  <- the blind spot
+
+All 7 flip the same way — blame resolves, the anchor-origin reads MOVED — so the sweep's
+one-directional property survives: its "for a human" count — **158 at `7a28091`**, which
+§159's repairs then took to 107 — is a floor, and the ceiling this pass puts on the 158 is 165. Zero rows flip the other way. A self-check worth recording: blame equals the newest commit in the `log -L`
+lineage on all 883 rows, so the two instruments disagree about nothing except origin.
+
+**2. `df1168b` FIXED ONE TREE-TOO-LATE ERROR AND LEFT ANOTHER, AND THE COUNT IS 18.** §157 §1
+found that `then` was read at the citing commit's post-image when an author writes against its
+pre-image, and folded `(pre: ...)` in for 0.17 s. But BOTH columns are read at **blame** —
+`then` at `blame`, `(pre:)` at `blame^` — and blame is only the right commit when it is the
+anchor-origin. It is, for **865 of 883**. For the other **18, 2.0%, the sweep reads both
+columns at the wrong commit**, and the 7 blind-spot rows are the subset where that changes the
+verdict. The 18 are nameable: `MBSE_PLAN.md:58`, `:68`; `PLAN.md:96`, `:1904`, `:2933`,
+`:3244`, `:6970`, `:16795`, `:17607`, `:19687`, `:19688`, `:19745` (two), `:20948`;
+`src/wheel_stage3.py:326`; `tests/test_pool.py:371`; `tests/test_requirements.py:12` (two).
+
+`tests/test_fem.py:324` is the row that shows what it costs a repairer. Its anchor
+`wheel_fea.py:326-331` was written at `8b347a0`, but when §157 ran the sweep at `7a60002`
+blame was `f0a9e83` — a commit that touched the citing line and left the anchor alone. So the
+report handed out `then`@`f0a9e83` and `(pre:)`@`f0a9e83^`, the repairer followed them
+faithfully onto `:403-408`, and the sentence's "documented regression" is in the PRE-image of
+the ANCHOR-ORIGIN: `8b347a0^:326-331` is byte-identical to HEAD `:417-422`, which is the block
+ending "That equivalence is the regression test." The repair was faithful to a wrong column.
+
+**LIMIT, AND IT IS MEASURED ON THAT SAME ROW.** `anchor_origin` is read off `git log -L`'s
+tracked region, and a commit that RE-WRAPS the paragraph around a citation can be
+over-attributed as having written the anchor: for `test_fem.py:324` this instrument says
+`f0a9e83` where the true write is `8b347a0`. 18 is the count under `-L`'s reading, not a
+settled census, and it is the same region-drift limit §156 hit.
+
+**3. THE SECOND BLIND SPOT: A WRONG REPAIR RE-DATES A WRONG ANCHOR INTO `ok` FOREVER.** The
+sweep's claim is "the cited line holds something different at HEAD than it held at the citing
+line's own commit", and §156 §2 established that a repair re-dates an anchor. Together those
+mean a repair that lands on the WRONG line is `ok` from that day on, and no re-run of the
+sweep can ever see it — the row is not in the report's count and never will be. This is not the
+drift the sweep measures; it is an error the sweep MANUFACTURES a clean bill of health for.
+
+Audited by asking of every repair step whether the line it now names holds what the anchor it
+replaced named. 554 path citations — the owner is on the citing line, so a historical version
+of that line reads without reconstructing carried-owner state. 421 never repaired, 123
+repaired across 147 steps, 10 untrackable.
+
+   93  the repair preserved the claim
+   17  preserved, BUT the two images differ and the repair CHOSE one
+   12  **WRONG DELTA** -- the claim is elsewhere in the file, at exactly one line
+    8  the claim content is ambiguous at the repair commit
+    6  the previous step's line was blank or too short to match on
+    5  downstream of a flagged step -- unscoreable, and §7 is why
+    5  the claim content is gone from the file -- no anchor could have preserved it
+    1  re-aimed INTO a symbol the citing line names
+
+**8 of the 12 are the citation's CURRENT anchor, and the sweep calls 5 of those 8 `ok`.**
+`PLAN.md:15251` is the one to read first: it names `src/wheel_objective.py:1035`, which is a
+closing `"""`, while the `fillet=True)` its sentence quotes is at `:1037` — and `277a731`
+repaired the IDENTICAL content CORRECTLY two thousand lines away at `PLAN.md:16795`. One
+commit, one content, right once and wrong once, two lines apart. `PLAN.md:15561` is the same
+shape: `:1190` is `if phases is None:` where the cited `if meshes is None and pool is None:`
+is at `:1192`.
+
+**4. THE AUDIT'S OWN BLIND SPOT IS NAMED RATHER THAN ABSORBED, AND IT IS 17 ROWS.** Scoring a
+repair against either image is what lets `tests/test_fem.py:324` pass as preserved:
+`8b347a0:326-331` and `641ce0f:403-408` are byte-identical, so the post-image reading is
+satisfied exactly while the sentence needs the pre-image. Where the two images differ and a
+repair matched one of them, the repairer made a CHOICE only a reader of the citing sentence
+can check — 17 steps, all live, `641ce0f` and `cdfc545` following the pre-image and `277a731`
+the post. **The image is a per-ROW decision, not a per-commit one**, which is the finding that
+§157's own commit demonstrates in both directions.
+
+**5. FOUR FALSE-POSITIVE MODES, AND A 14-ROW FALSE ALARM THIS AUDIT RAISED AGAINST §157.** An
+earlier draft reported that `641ce0f` and `cdfc545` — §157's own repair commits, a few hours
+old — had written 14 wrong anchors. **Every one was this instrument's bug**, and the modes are
+worth the space because the next person to write this will hit them. A fifth is §7:
+
+  * **the chain ORIGIN is the wrong baseline.** A creation commit's pre-image is unrelated
+    text, so `wheel_fea.py:750` at a commit predating the `src/` reorg "found" its claim 113
+    lines away. The baseline is the PREVIOUS STEP, which asks only that a repair preserve what
+    the last repairer named and never assumes the original citation was right.
+  * **one reading is the wrong question.** §157 repaired 22 anchors from the pre-image, so
+    scoring against the post-image alone convicts its whole commit.
+  * **an EDITED line is still the same line.** `wheel_fea.py:455` reads
+    `np.clip(thicknesses, thickness_clip[0], ...)` where the claim read
+    `np.clip(thicknesses, 0.5, 20.0)` — the constants became parameters and the repair is
+    right. Exact equality cannot see that; a 0.6 similarity ratio can.
+  * **a repair may RE-AIM a citation that was wrong the day it was typed.**
+    `src/wheel_geometry.py:264` said `wheel_fea.py:750-752` was "exactly what
+    `thicken_3taper_curve` does" while that `def` sat at `:781`; `641ce0f` moved it to
+    `:1037`, inside the function, whose `def` is now at `:1024`. Following the old content
+    would have been the wrong repair. One row, and it is excluded by asking whether the new
+    anchor lands inside a symbol the citing line backticks.
+
+With all four closed, **`641ce0f` and `cdfc545` are clean** — every row they repaired either
+preserved the claim or sits in the 17 above. The one `641ce0f` row that is wrong,
+`tests/test_fem.py:324`, this audit does NOT catch, for the reason in §4; it was found by hand.
+So **12 is a floor.**
+
+**6. A DETECTION IS NOT A REPAIR INSTRUCTION, AND THE ROW THAT PROVES IT IS ONE THE RECORD
+HAD ALREADY MARKED DO-NOT-TOUCH.** `PLAN.md:13773` sits inside a paragraph headed **"AND TWO
+DATED QUOTATIONS OF `wheel_objective` ARE NOW QUOTATIONS OF THE PRE-ARC SOURCE, DELIBERATELY
+LEFT ALONE"** — the anchor `:1153` is part of a quotation dated to `2b4f057`, and its whole
+point is that it no longer resolves. `277a731` shifted it to `:1175` anyway, so a bulk repair
+pass overwrote a dangle the record had deliberately filed. The audit flags the step correctly,
+because 277a731 should not have touched it — but its `CLAIM IS AT` column proposed `:1225`,
+following the content forward, when the repair is to RESTORE `:1153`. **The column says a
+repair is wrong; it does not say what right looks like**, and for a dated quote and for §135's
+six deliberate dangles it points the wrong way. Repaired by restoration at `eea048c`.
+
+**7. THE COUNT RISES WHEN THE TREE GETS HEALTHIER, WHICH IS THE LIMIT THAT GOVERNS HOW THIS
+INSTRUMENT MAY BE USED AT ALL.** Re-run at `eea048c`, after the eight live rows above were
+repaired: **13 wrong-delta steps / 8 live became 22 / 10**, both counts taken before the
+chain rule below existed. Nothing rotted. Every step is
+scored against what its PREDECESSOR named, so "was this repair wrong" is the right question
+only if the predecessor was right — and a repair that CORRECTS a bad anchor necessarily moves
+away from that bad anchor's content and scores as a wrong delta. **Six of those ten were the
+repairs themselves.**
+
+A flagged step therefore poisons its whole chain, and so does an unverified image choice. Made
+sticky, the same two trees read **12 / 8 at `7a28091` and 16 / 5 at `eea048c`** — the rule
+recovers eleven of the false rows and does not touch the eight real ones, and the count STILL
+fails to fall, which is the point. Then the five were hand-read, and the two worth
+naming are both correct: `PLAN.md:14801` cites `studies/study_stage3.py:1258`, which does
+quote the `48.13 h` its sentence is about, and `PLAN.md:14390` cites `src/wheel_wheel.py:3235`,
+which is the "Roll the query points into `mesh.coords`' own frame" comment its sentence
+describes. Both are `0d3e137`/`d17e4ec` re-aiming an anchor SEMANTICALLY, and semantic
+re-aiming is not content preservation — which is the only thing this audit can measure.
+
+So the `7a28091` run is the one that counted, and the numbers in §3 are that run's. **The
+instrument is a one-shot against a tree whose repairs have not themselves been audited.** Run
+it before a bulk repair pass and consume the output once; a re-run afterwards reports mostly
+its own predecessors. The invariant anyone actually wants — "the anchor supports the
+sentence" — is semantic, and none of §1-§6 gets closer to it than counting the ways it can be
+measured wrongly.
+
+**SUCCESSORS.**
+
+0. **THE 8 LIVE ROWS ARE REPAIRED, AT `eea048c` AND `8b84fe2`, EACH HAND-READ FIRST** — which
+   is the only way they could be taken, per §6. `PLAN.md:15251` -> `:1037`, `PLAN.md:15561` ->
+   `:1192`, `MBSE_PLAN.md:58` -> `PLAN.md:6657`, `PLAN.md:13773` restored to `:1153`,
+   `tests/test_fem.py:324` re-aimed. What is NOT closed is the class: the audit is a script
+   whose count is a floor (§4, §5) and whose re-runs are not comparable (§7). Run it BEFORE
+   the next bulk repair pass, not after one.
+1. **RESOLVE AT THE ANCHOR-ORIGIN, NOT AT BLAME** — 18 rows, and it is a change to
+   `resolve()`, not a new pass: the anchor-origin needs the lineage, which is 65x the sweep.
+   The honest options are to fold `log -L` in for the 18 rows blame cannot place, or to print
+   the row's lineage length so a repairer knows when the column is not to be trusted. Decide
+   with the 18/883 in hand and say which cost is being paid.
+2. **THE 17 IMAGE CHOICES NEED A READER, NOT AN INSTRUMENT.** Each is a repair that landed on
+   one of two byte-plausible lines. `test_fem.py:324` is the worked example of getting it
+   wrong and it took a human reading the sentence to see it.
+3. **A BULK REPAIR PASS HAS NO WAY TO SEE "DELIBERATELY LEFT ALONE".** §6 is one instance and
+   §135's six deliberate dangles are six more that a future pass will meet. Either the marker
+   goes in the text in a form an instrument can read, or every bulk pass re-reads the
+   paragraph around each anchor — and `277a731` is the evidence that the second does not
+   happen by itself. This is a decision about the PROSE, not about the sweep.
+4. **THE QUESTION WORTH AUTOMATING IS NOT THE ONE THIS FILE AUTOMATES.** §7 is the argument:
+   content preservation is measurable and is not what a citation promises, while "the anchor
+   supports the sentence" is what it promises and is not measurable by any of the six readings
+   here. `tests/test_fem.py:324` needed a human reading one sentence to settle, and so did
+   each of the five rows at `eea048c`. Whoever takes this should decide whether the sweep's
+   job stops at drift — which it does honestly and in 2.3 s — rather than growing a second
+   instrument that is right once.
