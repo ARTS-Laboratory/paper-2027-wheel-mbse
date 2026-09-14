@@ -1603,3 +1603,55 @@ def memory_to_spare(monkeypatch):
     core count allows; on a real box the memory cap would answer first.
     """
     monkeypatch.setattr(so3.WP, "_available_gib", lambda: 1.0e6)
+
+
+def test_s13_records_the_memory_reading_that_sized_its_ladder(genes, monkeypatch):
+    """PLAN.md §167's successor 0: a ladder sized on free memory records that reading.
+
+    Since §167 the same box derives `[1, 2, 4]` idle and `[1, 2, 3]` busy, and before this
+    the artifact kept the ladder and not the load that chose it.  Free memory here FALLS as
+    soon as the first evaluation runs, the way a real run's does, so a reading taken
+    anywhere after the ladder was sized records a number that did not size it.  No physics
+    and no processes: the evaluator and the pool are stand-ins, and the claim is about what
+    the result dict says.
+    """
+    worker, parent = so3.WP.POOL_GIB[CFG]
+    idle = parent + 3.5 * worker
+    running = []
+
+    class Evaluator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __call__(self, *args, **kwargs):
+            running.append(True)
+            return 1.0, np.zeros(3), {"terms": {}, "report": {}}
+
+    class PhasePool:
+        def __init__(self, n):
+            pass
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(so3.S3, "Evaluator", Evaluator)
+    monkeypatch.setattr(so3.WP, "PhasePool", PhasePool)
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: 16)
+    monkeypatch.setattr(so3.WP, "_available_gib",
+                        lambda: idle - 2.0 * worker if running else idle)
+
+    m = so3.run_phase_pool(genes, CFG, n_phase=8, n_rep=1)
+    assert m["worker_counts"] == [1, 2, 3], "memory, not the 16 cores, must size this ladder"
+    assert m["mem_available_gib"] == idle, "the recorded reading is not the one that sized it"
+    assert m["pool_gib"] == (worker, parent)
+    assert m["worker_counts_given"] is False
+
+    # The recorded fields alone reproduce the ladder, which is what makes two runs comparable.
+    running.clear()
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: m["cpu_count"])
+    monkeypatch.setattr(so3.WP, "_available_gib", lambda: m["mem_available_gib"])
+    assert so3._worker_ladder(m["n_phase"], m["config"]) == m["worker_counts"]
+
+    # A pinned ladder says so, or a reading that does not reproduce it reads as a wrong one.
+    pinned = so3.run_phase_pool(genes, CFG, n_phase=8, n_rep=1, worker_counts=[2])
+    assert pinned["worker_counts"] == [2] and pinned["worker_counts_given"] is True

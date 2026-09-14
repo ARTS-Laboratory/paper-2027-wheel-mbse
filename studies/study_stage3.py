@@ -1273,6 +1273,7 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     z0 = wg.normalize(genes, low, high)
     phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
     ori = tuple(float(o) for o in WW.flank_orientation(genes, WW.get_config(cfg)))
+    available = WP._available_gib()  # sizes `counts`; recorded beside it (§167 successor 0)
     counts = list(_worker_ladder(n_phase, cfg) if worker_counts is None else worker_counts)
 
     def evaluate(pool):
@@ -1330,17 +1331,16 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     return {"config": cfg if isinstance(cfg, str) else cfg.name, "n_phase": n_phase,
             "req_hash": None if req is None else req.req_hash(),
             "cpu_count": os.cpu_count(), "worker_counts": counts, "n_rep": n_rep,
+            "worker_counts_given": worker_counts is not None, "mem_available_gib": available,
+            "pool_gib": WP.POOL_GIB.get(getattr(cfg, "name", cfg)),
             "serial_s": serial_s, "serial_first_call_s": serial_first,
             "serial_projected_hours": float(prod_steps * prod_starts * serial_s / 3600.0),
             "projected_steps": prod_steps, "projected_starts": prod_starts,
-            "rows": rows, "all_identical_values": all_identical,
-            "all_grads_within": all_grads_ok,
+            "rows": rows, "all_identical_values": all_identical, "all_grads_within": all_grads_ok,
             "worst_grad_rel": max(r["worst_grad_rel"] for r in rows),
             "best_workers": best["workers"], "best_speedup": best["speedup"],
-            "best_efficiency": best["efficiency"],
-            "gate_efficiency": GATE_POOL_EFFICIENCY,
-            "gate_grad_rel": GATE_POOL_GRAD_REL,
-            "efficiency_measurable": measurable,
+            "best_efficiency": best["efficiency"], "gate_efficiency": GATE_POOL_EFFICIENCY,
+            "gate_grad_rel": GATE_POOL_GRAD_REL, "efficiency_measurable": measurable,
             "pass": bool(all_identical and all_grads_ok
                          and (not measurable
                               or best["efficiency"] >= GATE_POOL_EFFICIENCY))}
@@ -2113,7 +2113,7 @@ def main():
     ap.add_argument("--pool-workers", default="",
                     help="S13: comma-separated worker counts to measure, e.g. `1,2,4,8`. "
                          "Empty (the default) derives the ladder from this machine — "
-                         "powers of two up to min(n_phase, cpu_count) — so the section "
+                         "powers of two up to what cores AND free memory allow — so the section "
                          "measures concurrency rather than oversubscription wherever it "
                          "runs.")
     args = ap.parse_args()
