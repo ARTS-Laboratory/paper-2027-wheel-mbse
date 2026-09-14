@@ -496,7 +496,7 @@ constants; everything else already threads.
   `study_svk_rescore.py:75`).
 - **CHECK — the cache audit, BY TEST AND NOT BY READING.** `_T1_CACHE` keys on
   `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:932`);
-  `_KT_CACHE` keys without weights (`:533`); `wheel_wheel._COORD_FN_CACHE` (`:2760`) keys on the
+  `_KT_CACHE` keys without weights (`:533`); `wheel_wheel._COORD_FN_CACHE` (`:2838`) keys on the
   static mesh recipe. Two requirement sets differing **only** in `allowable_stress_mpa`
   must give different `stress`/`stress_margin` **in the same interpreter**. A stale jit
   trace returning the old answer is exactly the failure this check exists for.

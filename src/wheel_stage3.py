@@ -42,7 +42,7 @@ is the failure mode this project keeps naming and keeps having to catch with a g
     re-trace eight times per step — roughly double the actual solving.
     `wheel_objective.phase_stencil` quantizes the random offset onto an `n_phase*n_sub`
     grid for exactly this reason, and `_COORD_FN_CACHE_MAX` is already 128 to hold it
-    (`wheel_wheel.py:897`).  Randomising at all buys something specific: the contact
+    (`wheel_wheel.py:2846`).  Randomising at all buys something specific: the contact
     facets on the rim discretisation at 0.25 degrees while the stencil samples at 3.75,
     so the artefact ALIASES, and under a fixed stencil it is a deterministic function of
     the genes with a nonzero gradient — precisely what an optimizer chases.  A random

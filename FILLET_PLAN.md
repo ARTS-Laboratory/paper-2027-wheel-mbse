@@ -698,7 +698,7 @@ capped and uncapped — same build/fold verdict at every radius on
 
 Identical-to-the-digit A/B results are the signature of a parameter that never reaches
 the path, which is exactly the defect §38 found in `mesh_coords`/`coord_fn`. **Checked,
-and it is not that.** `uncap` is consumed at `wheel_wheel.py:1067-1074` — `_uncap_blend`
+and it is not that.** `uncap` is consumed at `wheel_wheel.py:2419-2426` — `_uncap_blend`
 and `_uncap_corner`, inside the **junction** block, setting where its right edge lands.
 The **spoke** block never receives `uncap`, and neither does the unfilleted path
 (`_sector_coords`'s `if fillet is None` branch samples `s_grid x eta_grid` directly).
@@ -710,7 +710,7 @@ PART 4's reasoning was about `P_c` disappearing. But the fold is at **`P_t`'s** 
 moving the shared corner to `B` on the ring circle, and growing the spoke's end
 cross-section from the moved corner to an unmoved far-flank point. **The cap is not on
 that path.** PART 4 named the right consequence of uncapping — `P_c` really is gone,
-`wheel_wheel.py:644-648` records it — and drew the wrong conclusion about this block.
+`wheel_wheel.py:691-695` records it — and drew the wrong conclusion about this block.
 
 ## WHAT IS UNCHANGED
 

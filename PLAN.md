@@ -89,7 +89,7 @@
 > | `REDS_PLAN.md` | the five inherited reds | §31 |
 >
 > **`HUB_PLAN.md` was ALREADY dangling before this cleanup** — `wheel_wheel.py:140` and
-> `wheel_wheel.py:3638` say "See HUB_PLAN.md" and no such file was deleted today because none
+> `wheel_wheel.py:3706` say "See HUB_PLAN.md" and no such file was deleted today because none
 > existed. Do not attribute those to the deletion above; the hub fillet milestone's record is
 > §16 and §24.
 >
@@ -6985,7 +6985,7 @@ promoted, `best_solution.json` is still 2026-08-14, and no threshold moved.
    delete the corner that folds the spoke block, and §38 shipped that cap removal on
    2026-08-18. Measured A/B: **the fold is byte-identical capped and uncapped** — 12 of 4704
    elements at `coarse`, worst −3.0725e-02 mm², all 16 swept cells agreeing — because `uncap`
-   is consumed in the **junction** block (`wheel_wheel.py:1067-1074`) and the fold is in the
+   is consumed in the **junction** block (`wheel_wheel.py:2419-2426`) and the fold is in the
    **spoke** block, which never receives it. Not the §38 plumbing bug; correct construction.
    So the arc still costs what it cost: a dedicated fillet block, or a generated spoke block.
    **The cheap way in does not exist**, and one hour of A/B is what says so.
@@ -14387,7 +14387,7 @@ nonzero phase the match silently picks the nearest node in the WRONG place rathe
 raising. Measured at the shipped genome, `coarse`, `phase_deg` = 13.7: **0.513 mm off**,
 not a near-miss — and `phase_stencil`'s own 8-point grid is nonzero at 7 of 8 points, so
 this was not an edge case, it was most of what `phase_meshes` was about to build. Fixed by
-rolling the query points by `phase_deg` before the match (`src/wheel_wheel.py:3139`, node
+rolling the query points by `phase_deg` before the match (`src/wheel_wheel.py:3235`, node
 ids unaffected — the roll is a rigid rotation, so it reorders nothing, only fixes which
 coordinate each id is compared against). Caught and confirmed by
 `tests/test_gradient.py -k fillet` before any of the wiring below was written; without it
@@ -15875,7 +15875,7 @@ because the correct value was already on the page.
 The cheap fix is one word — `except (RuntimeError, ValueError)` in the trial loop — and it is
 wrong. `ValueError` is what the two modules on that path raise for everything else that can go
 wrong: a `WheelConfig` invariant violated (`wheel_wheel:225,227`), opposite Coons edges that
-disagree (`:629`), a corner mismatch (`:643`), an unknown `fillet_blocking` (`:2354`) — and, in
+disagree (`:629`), a corner mismatch (`:643`), an unknown `fillet_blocking` (`:2382`) — and, in
 `wheel_stage3` itself, `_apply_req`'s refusal to take `req=` and `weights=` together. Caught in
 a descent loop, every one of those becomes a silently rejected step — a 300-step run that
 quietly descends nothing, throwing away every trial for a reason no event records. So the
@@ -15888,12 +15888,12 @@ already wrapped around builds in `studies/study_hub_cap.py:704` and
 Marked, all three where the condition is a function of the GENOME:
 
 ```
-  src/wheel_wheel.py:1831  _filleted_sector_blocks   not c["built"]      THE FUNNEL
-  src/wheel_wheel.py:1846  _filleted_sector_blocks   not lo < hi         fillets cross
-  src/wheel_wheel.py:2058  per_genome_layer_profile  entry is None       no layer profile
+  src/wheel_wheel.py:1859  _filleted_sector_blocks   not c["built"]      THE FUNNEL
+  src/wheel_wheel.py:1874  _filleted_sector_blocks   not lo < hi         fillets cross
+  src/wheel_wheel.py:2086  per_genome_layer_profile  entry is None       no layer profile
 ```
 
-`:1831` is one site and it carries far more than one failure: `_fillet_curves` already catches
+`:1859` is one site and it carries far more than one failure: `_fillet_curves` already catches
 `_fillet_tangency`'s own `ValueError` (`:880`, *"the fillet is larger than the notch can hold"*)
 and the layer-width cliff, and returns `{"built": False, "why": ...}` rather than raising. Every
 curve-level refusal therefore arrives at this one `raise`. That is why the surface is three
