@@ -25360,3 +25360,130 @@ in the process.
    citing file moves, which is this arc's whole subject. Key it on something that survives a
    shift — the cited file, the anchor, and the citing line's text — and measure how many of
    §159's 43 and this section's 23 would survive the last month of commits before building it.
+
+---
+
+## §162 — 2026-09-13. §156's SUCCESSOR 3, BISECTED INSIDE THE TEST: **THE `==` COSTS 0.0 SECONDS AND 0.00 GiB, AND SO DOES THE `req=` THE WHOLE ARC IS ABOUT.** THE ELEVEN MINUTES AND THE 26-30 GiB ARE **ONE XLA COMPILE PER PHASE** — `float(phase)` IS IN `_COORD_FN_CACHE`'s KEY, SO THE JITTED COORDINATE CLOSURE IS COMPILED FOUR TIMES FOR A FOUR-PHASE STENCIL, AT **128.3 s AND SEVERAL GiB EACH**. A THREE-RUNG `n_phase` SWEEP IS LINEAR IN TIME TO **0.5%**, AND ONCE COMPILED A FULL `objective()` CALL IS **17 SECONDS**
+
+§156 filed the successor as "why one `==` between two objective evaluations costs 26 GiB",
+and that sentence contains the error. The test is the eighteenth in its file and the first
+to call `objective()` at all — the seventeen before it assert on constants and dicts and
+hold 0.46 GiB between them — so "one test costs 26 GiB" and "the first `objective()` call
+in a process costs 26 GiB" predict the identical observation, and only the second makes the
+`==` innocent. `tiers` is already a parameter of `objective()`, so the cut cost nothing to
+write.
+
+**1. THE CELLS, IN ONE PROCESS, RESIDENT SET SAMPLED EVERY 0.5 s THROUGHOUT.**
+
+  cell                            wall     rss before -> after   peak in cell
+  tiers=("t1",)   cold            33.2 s    0.20 ->  2.64 GiB       2.63
+  tiers=("t2",)   cold            94.0 s    2.64 ->  9.82 GiB       9.88
+  tiers=("t3",)   cold           537.3 s    9.82 -> 27.13 GiB      29.64
+  objective(genes)                18.0 s   27.13 -> 27.19 GiB      27.20
+  objective(req=baseline())       17.7 s   27.19 -> 27.20 GiB      27.21
+  the `==` the test performs       0.0 s   27.20 -> 27.20 GiB      27.20
+  objective(genes) a third time   17.1 s   27.20 -> 27.21 GiB      27.22
+
+719.7 s in total and a parent high-water of **29.64 GiB**, which reproduces §157's 30.00 GiB
+reading of the same file to 1.2%.
+
+**2. T3 IS THE WHOLE OF IT: 537 s OF THE 720, AND THE ENTIRE CLIMB.** T1 and T2 together are
+127 s and 9.6 GiB; T3 alone is 537 s and carries the resident set from 9.82 to a 29.64 GiB
+peak. The three cold tiers sum to 664 s, which IS §156's "eleven minutes" — measured there
+as the whole test and here as its first call.
+
+**3. THE `==` AND THE `req=` ARE BOTH FREE, WHICH IS THE PART THAT OVERTURNS THE PREMISE.**
+The comparison the test exists to make — a scalar, 14 gradient components and 14 breakdown
+terms, all by `==` — costs **0.0 s and 0.00 GiB**. `objective(req=Requirements.baseline())`
+costs **17.7 s and +0.01 GiB**, no more than the bare call before it: the requirements layer
+resolves to the same six values and hits the same caches, which is exactly what
+`test_requirements.py`'s first claim says it must do. Nothing about MBSE_PLAN Step 3 is
+expensive.
+
+**4. EVERY CALL AFTER THE FIRST IS 17 SECONDS, AND THE COST IS COLD-CACHE COST.** 18.0,
+17.7 and 17.1 s for three successive full evaluations against 664 s for the first. The
+ratio is **38x**, and it is the whole reason one test in a file looks pathological while
+fourteen other files do 267 tests in 1:32 — those files pay the same cold cost once,
+earlier, and spread it over tests nobody is looking at.
+
+**5. NOTHING IS HANDED BACK, AND THE CLIMB IS GRADUAL RATHER THAN A STEP.** §157 measured
+"41 samples with no sample below its predecessor". At 0.5 s this is **1435 samples with
+exactly 3 falls**, two of them under 0.51 GiB and the third (−2.52 GiB) after the last cell
+had finished. And the largest single-sample rise in the whole run is **+0.46 GiB**: 26 GiB
+does not arrive as one allocation, it accumulates in roughly 0.3 GiB increments over nine
+minutes. That shape is retention of many small objects — a trace or compile cache growing —
+and not one large solve holding one large array.
+
+**6. THE 60.43 GiB IS NOT THIS TEST, AND §161 HAS ALREADY TAKEN THE CORRECTION.** §159
+measured `test_requirements.py` alone reaching 60.43 GiB used system-wide with 958 MiB
+available, against `time -v`'s 30.00 GiB for the parent, and reasonably read it as a second
+climb this bisect would explain. It does not: this run's system-wide peak is **32.60 GiB with
+a 28.77 GiB floor**, and it never approached the box. So §156's per-test figure stands and its
+ATTRIBUTION does not, which are separate claims — the 26–30 GiB is real, it is T3's and not
+the `==`'s, and the 60.43 GiB belongs to a later test in the same file, the pooled one, which
+forks. §161 reads that stacking as the later test building on the first one's unreturned
+memory, and §5 above is the measurement that makes it the likely mechanism rather than a
+guess: this process ends holding 27.21 GiB it never gives back, so a test that FORKS after
+this one forks a parent of that size. Unbisected, and successor 0 below.
+
+**7. THE CAUSE HAS A NAME, AND IT IS ONE XLA COMPILE PER PHASE.** XLA says so itself, in the
+run's own stderr: `[Compiling module jit_traced for CPU] Very slow compile?` followed by
+`The operation took 2m1.888256337s`. `jit_traced` is `traced` in
+`src/wheel_wheel.py:2916`/`:2927` — the `@jax.jit` coordinate closure held in
+`_COORD_FN_CACHE`, which is one of the four caches `tests/test_requirements.py`'s own
+docstring already names as the things this file audits. Its key at `src/wheel_wheel.py:2903`
+contains **`float(phase)`**, so each phase is a distinct key, a distinct closure and a
+distinct compile; `_COORD_FN_CACHE_MAX` is 128 at `src/wheel_wheel.py:2846`, sized (its
+comment says) so that "a Stage-3 step that evaluates an 8-point phase stencil touches 8
+entries". **One compile per phase is the design, not an accident**, and the test asks for
+four.
+
+A three-rung sweep, one FRESH process per rung, `tiers=("t3",)` only, says it cleanly:
+
+  n_phase   wall      peak rss
+      1    147.2 s     9.00 GiB
+      2    274.0 s    16.39 GiB
+      4    532.1 s    25.86 GiB
+
+**The wall clock is linear in the phase count: 128.3 s per phase on a fixed 18.9 s**, and the
+rung the fit did not use lands at 275.5 s predicted against 274.0 s observed, **0.5%**. The
+standalone `n_phase=4` rung is 532.1 s against the 537.3 s the in-process bisect measured for
+the same tier, **1.0%** — two harnesses, one number.
+
+**THE MEMORY IS NOT LINEAR, AND SAYING SO IS THE POINT OF HAVING THREE RUNGS.** The marginal
+cost falls from 7.39 GiB for the second phase to 4.73 GiB per phase for the third and fourth,
+and a straight line through the outer rungs misses the middle one by 11%. So the compiles do
+not simply stack: each retains its executable, while the compiler's own working set is
+largely handed back between them. That is also the honest explanation for the 3.2 GiB spread
+§156 could not account for and §157 widened to 4.2 GiB across three runs of one file — it is
+XLA compile-time working set, which is not deterministic run to run.
+
+**SUCCESSORS.**
+
+0. **THE SECOND CLIMB IS UNBISECTED AND THE SAME HARNESS WILL TAKE IT.** 60.43 GiB used with
+   958 MiB available is the only reading in this file that has ever come near the box, and it
+   is a different test from the one bisected here. §5 predicts the mechanism — a pooled test
+   forking a parent still holding 27.21 GiB that nothing hands back — and that prediction is
+   falsifiable in one run: sample `/proc/meminfo` across the pooled test alone in a fresh
+   process, with and without the `==` test ahead of it in the same process. If the figure
+   moves with what ran BEFORE it, the residue is the mechanism and the fix is upstream of the
+   pooled test entirely.
+1. **COLLAPSING THE PER-PHASE COMPILE IS A ONE-LINE QUESTION WITH A 385 s PREDICTION, AND IT
+   IS NOT FREE.** `phase_deg` is baked into the closure because it is read in PYTHON control
+   flow, not merely in arithmetic: `g = _rotate(sector0[name], angle, xp) if (k or phase_deg)
+   else sector0[name]`. Make that rotation unconditional and `phase_deg` can be a traced
+   argument, one compile then serves every phase, and §7's fit predicts the test's T3 falls
+   from 532 s to about 147 s — **385 s saved, three compiles not done** — with peak memory
+   somewhere near the `n_phase=1` rung's 9.00 GiB rather than 25.86. The cost is a `_rotate`
+   performed at `k=0, phase_deg=0` where it is currently skipped, on every sector of every
+   mesh. **It must be gated on the bit-identity tests this very file exists to run**: rotating
+   by an exact zero is not guaranteed to return the input bit-for-bit, and `test_golden.py`
+   and §161's own `==` are the instruments that would catch it. Measure the rotation's cost
+   before assuming the trade is good — the skipped branch may be defending a real inner loop.
+2. **A 38x FIRST-CALL PENALTY IS A FACT ABOUT EVERY BATCH BOUNDARY IN §153's RECIPE.** The
+   light tier is three processes because one test wants 30 GiB, and that test wants it because
+   it is first. Any batching that puts a cheap physics test first pays the same 664 s
+   somewhere else, and no arrangement of files avoids paying it once per process. §156 said a
+   batch boundary that exists because of an unexplained 26 GiB is a workaround wearing a
+   measurement's clothes; the 26 GiB is explained now, and the boundary still has to exist —
+   which is a different and better reason for it, and §153's recipe should say so.
