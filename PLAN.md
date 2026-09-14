@@ -24801,3 +24801,284 @@ What the rest of this record needs to know about it, and nothing more:
 - **It never promotes and never commits.** Promotion is the multi-file atomic act
   `tests/test_promotion.py` prints a checklist for; the panel surfaces that checklist instead
   of performing it, and defaults to not overwriting committed study artifacts.
+
+---
+
+## §159 — 2026-09-13. §157's SUCCESSORS 0 AND 2, CLOSED: **44 OF THE 78 PATH-OWNER ROWS RE-POINTED AND ALL 34 OTHERS LEFT FOR A NAMED REASON**, 68 RE-POINTS AND ONE RESTORED QUOTE IN SEVEN COMMITS, 158 -> 107 FOR A HUMAN. BUT THE FINDING IS WHAT THE SWEEP CANNOT SEE: **A WRONG REPAIR IS CERTIFIED BY THE BLAME THAT RESOLVES IT**, AND NINE ARE NOW REPAIRED — FIVE FOUND BY HAND, FOUR BY THE SECOND SESSION'S AUDIT, SEVEN OF THEM READING `ok` — INCLUDING ONE IN §157's OWN ARC, WHOSE "SAME ANCHOR" IS THE DOCSTRING'S HEADER, 14 LINES ABOVE THE ENTRY IT NAMED. AND EDITING A CITING LINE RE-DATES **EVERY** CITATION ON IT, WHICH HID A MOVED ROW ON THE FIRST COMMIT
+
+Seven commits, `d17e4ec` `be12a40` `bba4eef` `441fcc7` `0d3e137` `8b84fe2` `eea048c`, plus this
+record. Every one is line-number edits inside existing lines: zero line shift, no artifact, no
+driver, no threshold, 957 collected at every step. Two commit messages were amended before push
+for counts I had written without measuring, both message-only with the tree hash checked unchanged
+— the second said "FIFTEEN LEFT" and the report says 37. A third went unamended because
+another commit already sits on it: `0d3e137`'s subject says "14 cited files", and the
+re-pointed citations name 13 (the two others on its lines were co-located, not repaired).
+
+A second session worked §157's successor 1 in parallel on a pinned worktree and is recording it
+as §160; where its numbers touch this section they are cited forward, not restated.
+
+```
+                                  citations  for a human  path MOVED  carried MOVED  unknown
+  7a28091  §157's record                883         158          78             53       27
+  d17e4ec  into wheel_wheel.py          883         147          70             50       27
+  be12a40  into wheel_objective.py      883         135          62             46       27
+  bba4eef  into wheel_stage3.py         883         127          58             42       27
+  441fcc7  into test_promotion.py       883         127          58             42       27
+  0d3e137  the tail, 13 cited files     883         104          40             37       27
+  8b84fe2  §157 successor 2             884         106          42             37       27
+  eea048c  §160's live wrong repairs    884         107          43             37       27
+```
+
+**Every step was checked by diffing the finding LIST before and after, never the count.**
+Across the seven: 59 reported rows left by repair, 1 left by being hidden (§1), 9 entered (§5);
+158 − 59 − 1 + 9 = 107. The last three were measured in a throwaway worktree commit BEFORE the
+real one, because the sweep resolves against committed blame and an uncommitted line reads
+`unknown 0000000` — so a repair cannot be verified by the instrument until it exists.
+
+### 1. EDITING A CITING LINE RE-DATES EVERY CITATION ON IT, NOT ONLY THE ONE REPAIRED
+
+`d17e4ec` re-pointed `MBSE_PLAN.md:499`'s `wheel_wheel` citation (`_COORD_FN_CACHE`, `:2760`)
+and the list diff showed one row leaving that had not been repaired: the same line's citation
+into `wheel_objective.py` (`_KT_CACHE`, `:533`), MOVED. Blame now dated the line to `d17e4ec`,
+where `:533` equals HEAD's `:533` trivially. It was repaired in `be12a40` (-> `:538`, the
+`.get` line, which is what `de67144` meant).
+
+The check that caught it is cheap and was run before every later edit: **list every citation
+ON each line about to be edited, with its current verdict**, and repair a line's MOVED
+citations together or not at all. It decided `RIMCAP_PLAN.md:131`, whose `wheel_objective:861`
+and `wheel_stage3:223` are two cited files on one table row — both went in `be12a40`.
+
+### 2. A WRONG REPAIR IS PERMANENT TO THE INSTRUMENT — FIVE BY HAND, FOUR MORE FROM §160
+
+§156 §2 stated "a repair re-dates an anchor" as the reason last-touch blame is right, and §157
+§2 kept it. It is right for a correct repair. **For a wrong one it is the mechanism that
+certifies the error**: blame dates the line to the repair, the repair's tree is the `then`
+column, and `then == now` for as long as the cited file does not change there.
+
+```
+  site                  lineage (every anchor named by its file)                  sweep said
+  MBSE_PLAN.md:498      de67144 wheel_objective.py:908 held, `_T1_CACHE.get(key)`   ok
+    _T1_CACHE key       4a2fc2e wheel_objective.py:910 -- the get was :915, +7 as +2
+                        277a731 wheel_objective.py:932 -- +22 faithfully, get :937
+  MBSE_PLAN.md:57       de67144 study_stage3.py:2109-2110 held, "anneals"           MOVED,
+    "anneals"           8ea29c8 study_stage3.py:2125-2126 -- it is :2160-2161,      "-> :2135"
+                        +51 as +16.  study_stage3.py at HEAD :2202-2203             (also wrong)
+  PLAN.md:14171         bb7eba8 study_stage3.py:2079 held, `fine` help text          ok
+    `fine` never run    8ea29c8 study_stage3.py:2095 -- it is :2101, +22 as +16
+  PLAN.md:14801         4364ffc study_stage3.py:1238, :2219 -- 4 and 5 off already  ok/MOVED
+    "48.13 h"           (study_stage3.py:1242, :2224); 8ea29c8 +16 faithfully to
+                        study_stage3.py:1254, :2235.  At HEAD :1258, :2282
+  tests/test_fem.py:324 8b347a0 wheel_fea.py:326-331 held against 8b347a0^ (§3)     ok
+                        641ce0f wheel_fea.py:403-408, 14 lines above; HEAD :417-422
+```
+
+`8ea29c8` is §129's record commit, whose message reads "six line citations re-pointed for the
+shifts these edits caused (§114's lesson, applied to my own delta)". Checked against its own
+tree, three of its seven re-points are right (`:1230->:1246`, `study_hub_cap :654->:704`,
+`study_kinematics_rank :190->:235`) and three sites are wrong. **"Applied to my own delta" is
+the defect stated as the method**: a repairer's own delta is correct only on an anchor that
+held at the repairer's parent, and two of the three had drifted +35 and +6 before §129
+touched them. §118's "ALREADY STALE" column is the same observation from the other side.
+
+Three of the five read `ok` in the report and a fourth is half `ok`, so no amount of working
+the report finds them. They turned up because each repair here printed the anchor's lineage
+rather than trusting the suggested `-> :N` — and the suggestion for `MBSE_PLAN.md:57` is
+itself a wrong delta carried forward. **The census of the class is §160's**: the second
+session audited every repair step in every multi-commit lineage, independently reproduced
+`4a2fc2e` and both of `8ea29c8`'s live delta rows, and missed `tests/test_fem.py:324` — §3
+gives the likely reason.
+
+Its list carried four live rows this section had not found, and `eea048c` repaired them after
+reading each in the repair commit's tree:
+
+```
+  PLAN.md:15251    6fd3122 wheel_objective.py:1013 held; 277a731 :1035 (+22) is a closing
+                   `"""`, -> wheel_objective.py:1037.  The SAME commit re-pointed the SAME
+                   content correctly at PLAN.md:16795.
+  PLAN.md:15561    6fd3122 wheel_objective.py:1168 held; 277a731 :1190 (+22) is
+                   `if phases is None:`, -> wheel_objective.py:1192
+  MBSE_PLAN.md:58  de67144 `PLAN.md:6579` held; 58b311a^ has it at PLAN.md:6637, and
+                   58b311a applied its own +20.  -> PLAN.md:6657
+  PLAN.md:13773    NOT A LIVE POINTER.  §97 quotes the PRE-arc tree on purpose,
+                   "`wheel_objective.py:1153` is now :1165" (2b4f057).  277a731 shifted
+                   that dated wheel_objective.py:1153 to :1175, a line "now" ten lines
+                   above itself.  Restored to wheel_objective.py:1153.
+```
+
+All four read `ok`. The third falsifies a claim §129 made about its own sweep:
+`PLAN.md:19754-19756` says the five citations `58b311a` carried were "all five ... stale by
+that commit's own delta and none pre-existing", and `MBSE_PLAN.md:58` was 58 lines stale at the
+parent. The fourth is the class boundary drawn from the other side: a bulk shift applied to a
+number that is a RECORD rather than a pointer is also a wrong repair, and §160's audit, which
+reads every anchor as live, located a target for it (`wheel_objective.py:1225`) that does not
+exist in the sentence's meaning.
+
+### 3. §157 §4's "SAME ANCHOR" WAS THE HEADER, AND THE PRE-IMAGE IT CAME FROM WAS ONE COMMIT TOO LATE
+
+§157 successor 2 asked whether one sentence may carry two anchors. Answering it meant reading
+the anchor §157 §4 had kept — `tests/test_fem.py:324`'s `wheel_fea.py:326-331` -> `:403-408`,
+"the same anchor in `generalized_spoke_mechanics`' BOUNDARY CONDITIONS docstring" — and it is
+not:
+
+```
+  8b347a0^ wheel_fea.py:326-331 == HEAD    :417-422  the "cantilever" entry, ending
+                                                    "That equivalence is the regression test."
+  8b347a0  wheel_fea.py:326-331 == 641ce0f :403-408  `thickness_clip=(0.5, 20.0)):` .. the
+                                                    `-----` under the BOUNDARY CONDITIONS title
+```
+
+Both comparisons are byte-identical, and the sentence says "the repo's own documented
+regression", which only the first holds. **`641ce0f` did not misread its report; it followed
+it.** The sentence was written at `8b347a0`. `f0a9e83` then touched line 324 and left its
+anchor alone, so at `df1168b` blame dated the row to `f0a9e83` and the `(pre: ...)` it printed
+was `f0a9e83^` — which IS `8b347a0`, the post-image of the commit that wrote the anchor.
+
+**So §157 §1's correction is exact only where blame is the anchor's origin.** A pre-image read
+at blame is one commit late whenever a later commit re-touched the line, and it gets this row
+wrong in the same direction §157 §1 measured for 36 others. Before `641ce0f` the row read MOVED
+under both images, so §156's blind-spot census — which counts verdict FLIPS — could not see
+that its `then` was two commits late. §160 defines the right origin as the newest commit that
+wrote THIS `:N` onto the line; the pre-image belongs there too, and an audit of repairs scored
+against the pre-image of blame passes this row. §160 re-derived that independently — blame at
+`7a60002` is `f0a9e83` — and counts the rows where blame is not the anchor's origin.
+
+**The two-anchor question was already answered by the tree.** At `0d3e137`, of 628 lines
+carrying a citation, 162 carry two or more and 126 carry two or more into one file. So each
+anchor now sits on the phrase it evidences: "The 4x ratio between the two boundary conditions
+(`wheel_fea.py:172-175`) is the repo's own documented regression (`:417-422`)". `:172-175` is
+the BOUNDARY CONDITION block's "over-predicts compliance by ~4x". The sweep reads the second as
+carried from the first, correctly.
+
+### 4. THE 44 AND THE 34
+
+Of the 78, **44 re-pointed**: 39 deltas, 3 **wrong when typed** in both images, 1 **wrong
+repair** (§2's `MBSE_PLAN.md:57`) and 1 whose **referent was rewritten** (`PLAN.md:12166`: the
+§75 finding `test_wheel_fea.py:206`'s docstring "has carried" survives as one clause at `:310`
+after `fdbeab3`). The three wrong when typed: `PLAN.md:92`'s second HUB_PLAN site, 35 lines off
+at `56239a1`; `PLAN.md:14390`'s phase roll, cited 28 lines above where `d2cf9fa` put it; and
+`study_fillet_condition_a.py:206`, quoting `study_m9.py:141` for a sentence at `:247-248` —
+while the same file cites `:141-146` correctly 74 lines later. Of the 39 deltas, two anchors
+had changed their own text (`MBSE_PLAN.md:552`'s `def search_block` grew `req=None`; the catch
+at `PLAN.md:15419` was widened by the section's own fix) and one took the post-image against a
+`(pre: ...)` offer — `wheel_stage3.py:45`'s `_COORD_FN_CACHE_MAX = 128`, which `4ec1d91` itself
+raised from 32.
+
+**§157 successor 0's "11 of the 78 carry `(pre: ...)`" is 3 of the 78.** 11 is the count over
+all 158 rows. Of the 3 path rows, the post-image was right for one (`wheel_stage3.py:45`), the
+pre-image for one (`PLAN.md:3196`, left, below) and neither for the third.
+
+Beyond the 78, 25 more were repaired: `eea048c`'s four (§2), and in the first six commits 16
+carried-owner rows on the same lines — among them the hidden `:533`, `PLAN.md:2938`'s banner
+(cited at a line that was `raise SystemExit(main())` in the pre-image), and
+`PLAN.md:14491`/`:14492`, which are `study_stage3.py` lines the carried rule gave to
+`wheel_objective` — plus 4 that read `ok` (three of §2's wrong repairs, and `PLAN.md:14801`'s
+`study_stage3.py:1254`, the `ok` half of a MOVED pair) and one `wheel_wheel.py` `:1831`, bare
+after a fenced block that the sweep does not see.
+
+**The 34 left**, each named in its commit:
+
+```
+  23  DATED RECORDS WHOSE NUMBERS ARE THE RECORD -- repair tables with arrows, and tables
+      naming lines as citing SITES.  PLAN.md:13776, :17250, :17604-17606 (5), :18058-18059
+      (2), :20328, :21470-21478 (6), :21530 (2), :21689, :21700, :21740 (2), :21741.
+      Re-pointing them rewrites what a repair did on a date.
+   4  §157 §5's rows in §156's own text or the instrument's docstring: PLAN.md:24341 (2),
+      :24424, studies/_citation_sweep.py:61.
+   3  THE QUOTE SURVIVES A REWRITE OF ITS LINE.  FILLET_PLAN.md:122, PLAN.md:5371,
+      study_reds_hub_share.py:236 quote "FILLETS ARE NOT MODELLED" at `wheel_wheel.py:44`,
+      and :44 still says it -- `7cec35e` appended "BY THE DEFAULT MESH".  MOVED is a
+      whole-line test; the claim is a substring.
+   2  A FINDING SINCE ACTED ON, where the current line would contradict the sentence:
+      PLAN.md:15081 (`rungs()` "takes no `fillet` argument" -- it does now,
+      study_reds_hub_share.py:194) and PLAN.md:19503 (`if args.out != committed` is
+      `if args.out not in names`, _gate_guard.py:75).
+   1  QUOTED ELSEWHERE AS A WORKED EXAMPLE.  PLAN.md:3196 is the example
+      `_citation_sweep.py:309` and PLAN.md:24603 give for the pre-image reading;
+      wheel_stage3.py:384/:272 would be :497/:372, and the two quotes would break.
+      §157 §4's `wheel_fea.py:663` rule.
+   1  THE REFERENT LEFT THE TREE.  study_stage3.py:642 cites `PLAN.md:41` for M8b-i's
+      feasibility table, which is not in this file any more.
+```
+
+The same reasons covered the carried rows left behind. One more is recorded and not edited:
+**`PLAN.md:13773-13774` — §97's own pointer paragraph for dated quotations — is wrong at its
+own commit** in its "now" half, beyond the dated quote `eea048c` restored. It says threading
+the two requirements moved the lines "down by 12" and that `wheel_objective.py:1234` "is now
+:1246"; `0b8890a`'s hunks above `:1150` are +1, +16 and +5, so the shift is +22 and `:1234`
+became `:1256`. A dated record, and inserting a bracket would shift every citation below it.
+
+### 5. THE COST IS NINE ROWS, AND ALL NINE ARE ONE CLASS
+
+```
+  d17e4ec   PLAN.md:21456 -> MBSE_PLAN.md:499          §136 naming the line as an example
+  441fcc7   PLAN.md:18058, :18059 -> test_genome_key_order.py:45, :84
+  0d3e137   PLAN.md:17607, :24283 -> wheel_objective.py:1171;  PLAN.md:17608 -> WALLPIN_PLAN.md:111
+  8b84fe2   PLAN.md:24693, :24762 -> tests/test_fem.py:324
+  eea048c   PLAN.md:19754 -> MBSE_PLAN.md:58                §129 naming it as a site
+```
+
+Every one is a dated table or paragraph naming a line as a SITE whose content this arc
+changed; every site is still that line. Each trade was taken for the same reason — a live
+pointer in a plan or a docstring is worth more than a dated cell staying byte-identical — and
+each was predicted before the edit by listing the citations INTO the line, not discovered
+after. `PLAN.md:17607` is one of the seven rows §160 still counts as the `log -L` blind spot;
+its verdict moved and its line did not.
+
+**So the report has a floor, and every path-owner row left is on it.** Of 107: 43
+path-owner, 37 carried, 27 unknown — and the 43 are exactly §4's 34 plus these 9, measured by
+list. None is a repair still to do, and the content test will report all 43 forever.
+That is the argument for successor 1, not for widening the test.
+
+**Green.** §157's three-process light tier, re-cut from the file list by script (15 files, 14,
+and `test_requirements.py` alone), over `8b84fe2`'s tree; `eea048c` after it is markdown only,
+and no test reads a `.md` file:
+
+```
+  A  399 passed, 10 xfailed   8:00   parent peak 10.28 GiB     §157: 8:01, 10.75 GiB
+  B  266 passed,  1 xfailed   1:34   parent peak  2.72 GiB     §157: 1:34,  2.73 GiB
+  C   44 passed              20:18   parent peak 28.89 GiB     §157: 20:56, 30.00 GiB
+```
+
+**709 passed, 11 xfailed, 0 failed**, counts identical to §157's in all three. Per commit
+before that: the AST gate over the edited modules, `test_genome_key_order.py` 61 passed,
+`test_study_gate_guard.py` (reads `studies/*.py` as text) 65 passed, `test_requirements.py`'s
+first 17, and `test_a1_a2`.
+
+**AND THE THIRD PROCESS IS NOT A 30 GiB PROCESS.** §157's 30.00 GiB and this run's 28.89 GiB are
+`/usr/bin/time -v` on the pytest parent, which does not count children. A `free -m` sampler at
+10 s beside the tier, two-minute windows:
+
+```
+  21:20-21:32   used 17.2 -> 32.6 GiB     test 18, the `==` test §156 successor 3 names
+  21:32:18-35:58  32.55 -> 60.43 GiB     available 958 MiB; 8 samples under 1.1 GiB to 21:37:08
+  21:37:18      used 30.5 GiB, exit 21:38 oom_kill 0 before and after
+```
+
+The second climb lands on top of the ~30 GiB the first never handed back, which is the shape
+of a pooled test spawning workers inside the same process; the sampler cannot attribute it
+further, and nothing else of this session was running. So `test_requirements.py` ALONE is a
+near-miss on this 61.4 GiB box — the memory note's "the light tier really hits 60/61" measured
+on the one file §156 split out to make it fit. It changes nothing in this arc and it is the
+first number §156 successor 3's bisect should re-measure.
+
+**SUCCESSORS.**
+
+0. **THE WRONG-REPAIR CENSUS IS §160's, AND ITS NUMBER IS A FLOOR UNTIL IT IS SCORED AT THE
+   ANCHOR'S ORIGIN.** §3 is the one known miss, and the instrument's own `(pre: ...)` has the
+   same defect: it should read `<anchor origin>^`, not `<blame>^`. The live rows §160 listed
+   at the time of writing are repaired (`eea048c`); any it adds should be repaired the way §2's
+   were — from the lineage, by content, never from the sweep's `-> :N` — and a DATED number
+   restored rather than shifted. §160 records the audit as a one-shot on an unaudited tree:
+   re-run after these repairs, it scores each correction against the anchor its predecessor
+   named and reports it as a NEW wrong delta, so its count at HEAD is not a finding list.
+1. **THE 43 SHOULD STOP COSTING A READ EVERY TIME THE SWEEP RUNS.** Every path-owner row left is
+   a record, a quote or a site by construction. The cheapest honest fix is a list in the
+   instrument of `(citing site, cited anchor, reason)` that it prints under its own heading
+   instead of among the findings — a ledger, not a filter, so the count stays auditable. Do
+   not widen MOVED to guess the class.
+2. **THE 37 CARRIED AND 27 UNKNOWN ROWS ARE UNTOUCHED AS A CLASS.** §156 successor 1 (the
+   carried rule is wrong 10.0% of the time in one shape) is still open; this arc met the shape
+   twice (`PLAN.md:14491`/`:14492`) and three `unknown` rows of it in §155's text.
+3. **§156 SUCCESSOR 3 IS THE SECOND SESSION'S NEXT ITEM, AND ITS PREMISE IS HALF THE SIZE OF THE
+   PROBLEM.** "One test wants 26 to 29 GiB" is the parent; the file alone reached 60.43 GiB
+   system-wide (above). The box was released to that session at 21:38 with these numbers.
