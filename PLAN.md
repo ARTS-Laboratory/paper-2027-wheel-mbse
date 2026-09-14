@@ -25487,3 +25487,103 @@ XLA compile-time working set, which is not deterministic run to run.
    batch boundary that exists because of an unexplained 26 GiB is a workaround wearing a
    measurement's clothes; the 26 GiB is explained now, and the boundary still has to exist —
    which is a different and better reason for it, and §153's recipe should say so.
+
+---
+
+## §163 — 2026-09-13. §162's SUCCESSOR 0: **THE 60.43 GiB IS ONE TEST, NOT A RESIDUE — `test_pooled_equals_serial_under_a_non_baseline_requirement_set` ALONE IN A FRESH PROCESS REACHES 55.79 GiB, 92.3% OF THE WHOLE FILE'S FIGURE, AND THAT IS A FLOOR BECAUSE THE WATCHDOG KILLED IT FIRST.** THE POOL **RE-PAYS** §162's PER-PHASE COMPILE IN EVERY WORKER: 24.68 GiB, 46.6% OF THE CLIMB, ARRIVES IN THE 201 s AFTER THE TWO WORKERS EXIST, AT **6.17 GiB PER PHASE-COMPILE** AGAINST §162's INDEPENDENTLY MEASURED 4.73–7.39 GiB BAND
+
+§159 measured `test_requirements.py` reaching 60.43 GiB used system-wide with 958 MiB
+available, and §161 read it as a later test stacking on the first one's unreturned memory.
+§162 offered a competing mechanism and the two predicted different things about a single run:
+**residue** says the pooled test alone peaks near 30 GiB and needs the `==` test ahead of it;
+**re-payment** says it approaches 60 GiB with nothing else in the process. One run settles it.
+
+**1. THE RUN, AND IT IS RE-PAYMENT.** `pytest` on that one node id, fresh process, nothing else
+collected, system memory sampled every 0.5 s for 1732 samples:
+
+  peak system used        **55.79 GiB**
+  available floor          **5.57 GiB**
+  killed by the watchdog at 866 s, before the test finished
+
+So the figure is **92.3% of §159's whole-file 60.43 GiB from this test by itself**, and the
+residue reading is refuted — there was no earlier test to leave any. **55.79 is a FLOOR and not
+the peak**: the harness kills the child at 6 GiB available rather than letting the OOM killer
+choose, because §159's run left 958 MiB and the box is 61.4 GiB.
+
+**AND §159's OWN COMPLETED RUN CLOSES THE GAP FROM THE OTHER SIDE.** That run took the whole
+file to a 958 MiB floor on a 61.4 GiB box — about 60.4 GiB — and this section shows one test
+of it reaching at least 55.79 GiB with the pooled arm still climbing when the watchdog fired.
+So **that single test's true peak lies in [55.79, 60.4] GiB, and the whole file's figure is
+essentially this one test finishing**: the other twenty-odd tests in it, which §156 measured
+at 0.46 GiB across the first seventeen, are not where the memory is. The two runs bracket a
+quantity neither could state alone.
+
+**2. THE CLIMB IS WHERE THE MECHANISM IS.** The two workers are `Popen`-spawned and not forked
+— `src/wheel_pool.py` says so in its own header, and gives forking an initialised jax as one of
+the three reasons — so a worker shares nothing with the parent and imports `src/` fresh. The
+trace splits exactly there. At worker spawn the process holds **31.11 GiB**, which is §162's
+four parent-side compiles. In the **201 s** that follow it rises to 55.79: **+24.68 GiB, 46.6%
+of the whole climb, after the two workers exist.**
+
+`PhasePool(2)` over a 4-phase stencil gives each worker two phases, so four further compiles.
+**24.68 / 4 = 6.17 GiB per phase-compile**, and §162 measured the marginal cost of a phase at
+**4.73 to 7.39 GiB** from a completely different experiment — three fresh single-process rungs
+of `tiers=("t3",)`. Two harnesses, two arithmetics, one number inside the band. That is the
+strongest evidence in either section that the per-phase compile is the quantity, and it is why
+this is one mechanism and not two coincident ones.
+
+**3. WHAT IT MEANS FOR §162's SUCCESSOR 1, WHICH IS WORTH MORE THAN §162 PRICED IT.** Collapsing
+the per-phase compile does not only divide the parent's 532 s and 25.86 GiB — it divides every
+WORKER's share too, and the worker share is 46.6% of this test. A pool of `N` multiplies §162's
+per-phase cost by the processes that pay it, so the saving scales with the pool, not just with
+the stencil. Anyone pricing that change should price it here and not only at §162.
+
+**4. §162's SUCCESSOR 2 IS PRICED, AND THE ANSWER IS TO LEAVE §153 ALONE.** §156 refused to edit
+§153's recipe while the 26 GiB was unexplained; it is explained now, so the refusal expires and
+the edit becomes askable. It should still not be made. Inserting lines at §153 shifts every line
+below it, and **16 citations name `PLAN.md` anchors at or after that line** — enumerated with
+`studies/_citation_lineage.py`'s own scan, not estimated. Sixteen fresh dangles is a bad price
+for a sentence that reads identically as a forward reference, which is what this paragraph is.
+**And the first count of that number was 0, which was VACUOUS:** it filtered the sweep's printed
+output, and the sweep prints only rows that do NOT resolve — 103 of 1131. Pricing a line shift
+requires enumerating citations; grepping the report answers a different question and looks like
+the same one.
+
+**5. TWO SESSIONS, ONE CHECKOUT, AND A HAZARD THAT WAS REAL AND DID NOT LAND.** An uncommitted
+`src/wheel_wheel.py` edit was live in the shared tree from 22:21:43 to 22:23:10 while this run
+was in flight. Because workers are `Popen`-spawned they import `src/` at spawn time, so a worker
+starting in that window would have carried the edit into a measurement — and into a test whose
+assertions are exact equalities. It did not: the workers' kernel-reported start time is **Sun
+Sep 13 22:28:32**, PIDs 140807 and 140808, **5 min 22 s after the revert**, because the test runs
+a full serial 4-phase evaluation — §162's cold tier — before it ever constructs the pool. The
+window also sat at **t=256–343 s where the run held 18.20–22.25 GiB with 39.12 GiB free**, and
+the peak is 523 s later and 33.54 GiB higher, so a concurrent 0.65 GiB script for 11 s touched
+neither the peak nor the floor.
+
+**THE VERIFICATION ITSELF NEEDS A WARNING.** The first watcher written for this reported the
+workers appearing at 22:24:40 — **3 min 52 s early and entirely false**. It matched its own
+command line, which contained the string it was searching for; the `[p]attern` trick hides a
+matcher from itself but not from another process quoting the same word. `ps --ppid <captured
+pid>` does no string matching and gave the right answer. A timestamp is evidence only once you
+know what produced it.
+
+**SUCCESSORS.**
+
+0. **THE TRUE PEAK IS BRACKETED TO [55.79, 60.4] GiB AND NOT PINNED, AND PINNING IT IS NOT
+   WORTH A 60 GiB RUN.** §1 gets the bracket from two runs that were not designed as a pair.
+   Closing it further should NOT be done by repeating the expensive side: run the same probe at
+   `PhasePool(1)` and at a 2-phase stencil, which costs a fraction of the memory, and check the
+   per-phase figure this section and §162 already agree on predicts the bracket. That tests the
+   model rather than observing the same number a third time — and if §162's successor 1 lands
+   first, the quantity stops existing and the right answer is to not measure it at all.
+1. **THE PRODUCTION EXPOSURE IS BIGGER THAN THE TEST'S AND NOBODY HAS PRICED IT.** This test
+   uses 4 phases and a pool of 2. §153's note on `_COORD_FN_CACHE` says a Stage-3 step evaluates
+   an **8-point** stencil and M8's quantized RQMC draws from a 64-phase lattice; the cache is
+   sized 128 for exactly that. If the per-phase compile is re-paid per worker, the cost of a
+   real Stage-3 run is the stencil times the pool, and the number to check before the next long
+   run is what pool size Stage 3 actually uses against what stencil.
+2. **§153's RECIPE STILL SAYS ITS BATCH BOUNDARY IS UNEXPLAINED.** §4 declines to edit it in
+   place for a measured reason. If someone ever re-wraps that section for another purpose, the
+   sentence to add costs nothing at that moment: the boundary exists because one test pays a
+   per-phase XLA compile in the parent and again in every pool worker, which is a cause and no
+   longer a workaround.
