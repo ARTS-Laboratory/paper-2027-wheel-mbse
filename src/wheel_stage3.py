@@ -526,7 +526,7 @@ def descend(z0, cfg=DEFAULT_CONFIG, *, steps=DEFAULT_STEPS, lr=DEFAULT_LR, weigh
                                            span_mm=span_mm)
     orientation = tuple(float(o) for o in orientation)
 
-    n_workers = WP.default_workers(n_phase) if workers < 0 else int(workers)
+    n_workers = WP.default_workers(n_phase, wcfg) if workers < 0 else int(workers)
     # THE POOL IS OWNED HERE, next to the loop that can be interrupted.  A
     # KeyboardInterrupt during a 300-step run would otherwise leave `n_workers`
     # interpreters resident, each holding a mesh, and nothing left running to reap them.

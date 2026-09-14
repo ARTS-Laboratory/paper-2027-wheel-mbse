@@ -1150,7 +1150,7 @@ def run_multistart(cfg=DEFAULT_CONFIG, elites=None, n_phase=4, steps=20,
 # S13 — DOES THE PROCESS-PARALLEL PHASE BATCH BUY ANYTHING, AND IS IT THE SAME ANSWER?
 # ---------------------------------------------------------------------------
 
-def _worker_ladder(n_phase):
+def _worker_ladder(n_phase, cfg=DEFAULT_CONFIG):
     """Powers of two up to what this machine can actually run, plus that cap.
 
     DERIVED FROM THE HOST, NOT WRITTEN DOWN.  A hardcoded `(1, 2, 4, 8)` measures
@@ -1160,7 +1160,7 @@ def _worker_ladder(n_phase):
     time against serial isolates what the pipe and the pickling cost from what the
     parallelism buys.
     """
-    top = WP.default_workers(n_phase)
+    top = WP.default_workers(n_phase, cfg)
     ladder, n = [], 1
     while n < top:
         ladder.append(n)
@@ -1273,7 +1273,7 @@ def run_phase_pool(genes, cfg=DEFAULT_CONFIG, n_phase=8, worker_counts=None, n_r
     z0 = wg.normalize(genes, low, high)
     phases = WO.phase_stencil(n_phase=n_phase, scheme="uniform")
     ori = tuple(float(o) for o in WW.flank_orientation(genes, WW.get_config(cfg)))
-    counts = list(_worker_ladder(n_phase) if worker_counts is None else worker_counts)
+    counts = list(_worker_ladder(n_phase, cfg) if worker_counts is None else worker_counts)
 
     def evaluate(pool):
         ev = S3.Evaluator(cfg, orientation=ori, pool=pool, req=req,

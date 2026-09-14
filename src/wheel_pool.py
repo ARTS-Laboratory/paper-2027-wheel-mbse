@@ -135,35 +135,84 @@ def worker_env(base=None):
     return env
 
 
-def default_workers(n_phase):
-    """How many workers this machine should run for `n_phase` phases.
+# THE RAM TERM, MEASURED ON A LIVE POOL (PLAN.md §167), `coarse`, 8-phase stencil,
+# filleted mesh, after the per-phase compile was collapsed (§164).  Each figure is the
+# kernel high-water mark (`VmHWM`) of one process, and SUMMING them bounds the
+# simultaneous peak tightly: the sum sat 1.0-1.2% above the tree's simultaneous RSS peak
+# in all three `coarse` pooled runs.
+#   worker  8 marks, 8.740-9.440 GiB, sd 0.217 -- FLAT in the phases it holds (2-phase
+#           mean 9.181, 4-phase mean 9.222), so one number serves every pool size
+#   parent  9.829 and 9.944 at 2 workers, 10.271 at 4 -- it grows a little with the pool
+# Whole GiB above the largest mark each, as `(worker, parent)` per config.  `smoke` carries
+# `coarse`'s pair as an UPPER bound -- every `smoke` figure measured sits below `coarse`'s
+# (§164: 25.67 against 27.35 GiB for the same process; its pooled workers 8.73 / 8.81).
+# `medium` and `fine` are NOT MEASURED: `medium`'s compile took 213 s against `coarse`'s 128
+# (§166), so applying `coarse`'s pair there would under-count, the direction that fills a
+# box.  `default_workers` refuses them rather than guess.
+POOL_GIB = {"coarse": (10.0, 11.0), "smoke": (10.0, 11.0)}
 
-    THE ONLY PLACE CORE COUNT IS CONSULTED.  Everything else takes an explicit integer, so
-    a study can pin a ladder and a test can assert the same thing on every machine.
+
+def _available_gib():
+    """`MemAvailable` in GiB, or `None` on a platform that has no `/proc/meminfo`.
+
+    `None` makes `default_workers` answer ONE worker, which is serial -- the same stance as
+    `os.cpu_count()` returning `None` below, and the one count ever measured to fit (§113).
+    """
+    try:
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                if line.startswith("MemAvailable:"):
+                    return int(line.split()[1]) / 1048576.0
+    except (OSError, ValueError, IndexError):
+        pass
+    return None
+
+
+def default_workers(n_phase, cfg=None):
+    """How many workers this machine should run for `n_phase` phases at config `cfg`.
+
+    THE ONLY PLACE CORE COUNT AND FREE MEMORY ARE CONSULTED.  Everything else takes an
+    explicit integer, so a study can pin a ladder and a test can assert the same thing on
+    every machine.
 
     Capped by `n_phase` as well as by cores, and that half matters just as much: a ninth
     worker for eight phases is a ninth jax import, a ninth interpreter's worth of resident
     memory, and no work.  `os.cpu_count()` returns `None` on platforms that cannot answer,
     which is a one-worker answer rather than a crash.
 
-    IT STILL KNOWS NOTHING ABOUT RAM, AND SINCE §103 THAT MATTERS.  This was sized when a
-    worker cost ~2 GiB.  On the FILLETED mesh a worker holding one phase is 9.1 GiB
-    measured (PLAN.md §105), so the eight workers this returns for an eight-phase stencil
-    on any 8+ core box want ~73 GiB -- more than the 61 GB machine these numbers were taken
-    on.  `wheel_stage3.py --workers` defaults to `0` (serial), so nothing reaches this by
-    default and it is a hazard for `-1` rather than a live bug; but `-1` is documented as
-    "size the pool to the machine", and on memory it does not.  §105's successor 4 is a
-    RAM-aware cap or an outright refusal here.
+    AND CAPPED BY MEMORY, which is PLAN.md §105's successor 4.  Until §167 this counted
+    cores only: sized when a worker cost ~2 GiB, it returned 8 for an 8-phase stencil on any
+    8+ core box, and on the filleted mesh that was ~73 GiB of a 61 GB machine -- a hazard
+    for `--workers -1`, which is documented as "size the pool to the machine".  §113's live
+    pool at `--workers 2` measured 27.6 / 26.0 GiB per worker and was killed at 60/61 GiB;
+    that was four compiles per worker, and §164 made it one.  The pool now gets the largest
+    count that fits `parent + n * worker` from `POOL_GIB` inside `MemAvailable` at the
+    moment of the call, floor 1 -- and `1` is serial in `wheel_stage3.descend`, which never
+    builds a one-worker pool.  On the box §167 measured, ~58 GiB available gives 4, the size
+    whose live peak was 47.0 GiB.  An explicit positive `--workers` stays literal and is the
+    caller's.
 
-    [CORRECTED PLAN.md §113 -- "2 is the largest that fits a 61 GB box" WAS AN ESTIMATE
-    STATED AS A MEASUREMENT, AND A LIVE POOL SHOWED IT WRONG.  --workers 2 on the Stage-3
-    re-run (4 phases held per worker) measured 27.6 / 26.0 GiB RSS per worker -- not the
-    ~20.7 GiB the RSS-vs-phases fit above predicts -- and pushed a 61 GB box to 60/61 GiB
-    used and 7.4/8 GiB swap within ~14 minutes.  Killed before it OOM'd.  No pooled worker
-    count is confirmed safe on this box for the filleted mesh; `--workers 0` (serial, 43.4
-    GiB peak, PLAN.md §105) is the only one actually measured to fit.]
+    `MemAvailable`, NOT `MemTotal`, and the difference is load-bearing rather than tidy: on
+    that 61.4 GiB box five `coarse` workers want 11 + 5 x 10 = 61 GiB, which only the memory
+    other processes already hold keeps out.  A config with no measured pair raises, and so
+    does `cfg=None`: a cap that silently applied `coarse`'s numbers to `fine` would be a
+    threshold applied to an instrument it was never calibrated on.  A machine that cannot
+    report free memory gets 1 -- the caller of a refusal can pass `--workers N`, but nobody
+    can make `/proc/meminfo` exist, so that case takes the one answer known to be safe.
     """
-    return max(1, min(int(n_phase), os.cpu_count() or 1))
+    cores = max(1, min(int(n_phase), os.cpu_count() or 1))
+    available = _available_gib()
+    if available is None:
+        return 1
+    name = getattr(cfg, "name", cfg)
+    if name not in POOL_GIB:
+        raise ValueError(
+            f"no measured pool memory for config {name!r} (only {sorted(POOL_GIB)}); "
+            f"pass an explicit --workers N rather than -1 -- see wheel_pool.POOL_GIB "
+            f"and PLAN.md §167")
+    worker, parent = POOL_GIB[name]
+    fits = int((available - parent) // worker)
+    return max(1, min(cores, fits))
 
 
 def _send(fh, obj):

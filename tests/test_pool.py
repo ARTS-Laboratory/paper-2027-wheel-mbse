@@ -78,11 +78,11 @@ def stub(tmp_path):
 
 def test_default_workers_never_exceeds_the_phase_count_or_the_core_count(monkeypatch):
     monkeypatch.setattr(WP.os, "cpu_count", lambda: 4)
-    assert WP.default_workers(8) == 4, "must not exceed the cores it has"
-    assert WP.default_workers(2) == 2, "must not exceed the phases there are — a worker "\
-                                       "with no slot is a jax import for nothing"
+    assert WP.default_workers(8, "coarse") == 4, "must not exceed the cores it has"
+    assert WP.default_workers(2, "coarse") == 2, "must not exceed the phases there are — "\
+                                                 "a worker with no slot is a jax import"
     monkeypatch.setattr(WP.os, "cpu_count", lambda: 64)
-    assert WP.default_workers(8) == 8
+    assert WP.default_workers(8, "coarse") == 8
 
 
 def test_default_workers_survives_a_machine_that_cannot_count_its_cores(monkeypatch):
@@ -92,7 +92,7 @@ def test_default_workers_survives_a_machine_that_cannot_count_its_cores(monkeypa
     it runs everywhere.
     """
     monkeypatch.setattr(WP.os, "cpu_count", lambda: None)
-    assert WP.default_workers(8) == 1
+    assert WP.default_workers(8, "coarse") == 1
 
 
 def test_the_worker_env_pins_every_thread_count():
@@ -388,3 +388,44 @@ def test_a_pooled_SVK_evaluation_matches_the_serial_one():
         f"SVK and linear returned the SAME mean axle drop ({d_svk} mm), so `kinematics` "
         f"is reaching neither solver and the equivalence above would hold no matter what "
         f"the pool did with the key")
+
+
+@pytest.fixture(autouse=True)
+def _memory_to_spare_unless_a_test_says_otherwise(monkeypatch):
+    """Every test in this file sees a machine with more free memory than any pool needs.
+
+    `default_workers` consults `MemAvailable` since PLAN.md §167, so the sizing tests above
+    -- written before the RAM term, and asserting what cores and phases allow -- would
+    otherwise answer to whatever this box has free.  With memory to spare, cores and phases
+    are what bind, exactly as before.  A test about the memory term sets its own reading.
+    """
+    monkeypatch.setattr(WP, "_available_gib", lambda: 1.0e6)
+
+
+def test_default_workers_is_capped_by_measured_memory_and_refuses_unmeasured_configs(
+        monkeypatch):
+    """PLAN.md §105 successor 4, closed at §167.
+
+    §113's live pool at `--workers 2` reached 60/61 GiB.  After §164's collapse a `coarse`
+    worker's kernel high-water mark is 9.44 GiB at most and the parent's 10.27, and summed
+    marks bound the simultaneous peak to 1.2%; `POOL_GIB` carries that.  This pins the
+    arithmetic and its edges: memory binds below the cores, too little for one worker is
+    serial and never zero, cores and phases still bind when memory is plentiful, a config
+    nobody measured (or none at all) is refused rather than sized on `coarse`, and a box
+    that cannot report free memory gets one worker -- serial -- rather than its cores.
+    """
+    worker, parent = WP.POOL_GIB["coarse"]
+    monkeypatch.setattr(WP.os, "cpu_count", lambda: 64)
+    monkeypatch.setattr(WP, "_available_gib", lambda: parent + 4.5 * worker)
+    assert WP.default_workers(8, "coarse") == 4, "memory must bind below the core count"
+    monkeypatch.setattr(WP, "_available_gib", lambda: parent + 0.5 * worker)
+    assert WP.default_workers(8, "coarse") == 1, "too little for one worker is serial"
+    monkeypatch.setattr(WP, "_available_gib", lambda: 10_000.0)
+    assert WP.default_workers(8, "coarse") == 8, "with memory to spare the phases bind"
+    monkeypatch.setattr(WP.os, "cpu_count", lambda: 4)
+    assert WP.default_workers(8, "coarse") == 4, "and so do the cores"
+    for unmeasured in ("medium", "fine", None):
+        with pytest.raises(ValueError, match="no measured pool memory"):
+            WP.default_workers(8, unmeasured)
+    monkeypatch.setattr(WP, "_available_gib", lambda: None)
+    assert WP.default_workers(8, "coarse") == 1, "no memory reading is serial, not cores"

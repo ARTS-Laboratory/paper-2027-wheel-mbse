@@ -1513,7 +1513,8 @@ def test_an_elite_that_will_not_solve_is_recorded_and_the_screen_carries_on(monk
 # S13 — the two pure functions the phase-pool section is built on
 # ---------------------------------------------------------------------------
 
-def test_the_worker_ladder_is_derived_from_the_host_not_written_down(monkeypatch):
+def test_the_worker_ladder_is_derived_from_the_host_not_written_down(monkeypatch,
+                                                                   memory_to_spare):
     """A hardcoded ladder measures oversubscription on a machine smaller than it.
 
     Every rung past the core count is workers queueing for a core, and the "speedup" such
@@ -1592,3 +1593,13 @@ def test_a_structural_mismatch_can_never_be_excused_by_the_tolerance():
     # ... including when the missing leaf is a gradient, where a tolerance exists to abuse.
     g = {"grad": np.array([1.0, 2.0])}
     assert so3._split_diffs(g, {"grad": np.array([1.0])})[1]
+
+
+@pytest.fixture
+def memory_to_spare(monkeypatch):
+    """Far more free memory than any pool needs, so `_worker_ladder` sizes on cores alone.
+
+    The ladder test predates `default_workers`' RAM term (PLAN.md §167) and asserts what the
+    core count allows; on a real box the memory cap would answer first.
+    """
+    monkeypatch.setattr(so3.WP, "_available_gib", lambda: 1.0e6)
