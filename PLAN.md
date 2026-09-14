@@ -26199,3 +26199,130 @@ record and carries the reading; the printout does not, and adding it is an in-pl
 **SUCCESSORS.** §167's 1 and 2 stand as filed, and no new ones. Of what is open, §167 successor 1
 (a `medium` worker) ranks first, and its premise is a free check that should run before the
 live pool does: whether anything runs Stage 3 at `medium` at all.
+
+---
+
+## §169 — 2026-09-14. §167's SUCCESSOR 1, CLOSED: **`medium` GETS A MEASURED POOL PAIR, (11, 11).** ON A LIVE POOL A `medium` WORKER IS **10.649 GiB AT MOST**, UNDER SVK AND LINEAR ALIKE, 12% OVER `coarse`'s, AND **FOUR SVK WORKERS SUMMED 49.79 GiB** — THE COUNT THE PAIR GIVES ON THE BOX THEY FIT ON. AND §167's `coarse` MARKS WERE ALL **LINEAR**, BECAUSE ITS PROBE NEVER NAMED `kinematics`, WHILE `--workers -1` DESCENDS UNDER SVK: RE-MEASURED UNDER SVK, **`coarse`'s PAIR STANDS**
+
+`0189ff6` — `src/wheel_pool.py` (the pair), `src/wheel_stage3.py` (two stale descriptions of `-1`,
+in place) and `tests/test_pool.py` (the pin) — plus this record.
+
+### 1. THE PREMISE, CHECKED FIRST AND FREE
+
+§168 asked whether anything runs Stage 3 at `medium` at all. **Three recipes do**: `svk-medium`
+(`Makefile:623`), `buildcap` (`Makefile:657`) and `knee` (`Makefile:706`), all svk and all
+`--workers $(SVK_DESCENT_WORKERS)`, a literal 4 (`Makefile:590`). None of them calls
+`default_workers`, so the pair does not size them — but their pool IS the shape a `medium` pair
+has to describe, and nobody had measured it since the fillet mesh: their artifacts were last
+committed 2026-08-12 and 2026-08-15. And one consumer DID call it: `REPO_EXPLAINED.tex:1751`,
+the workflow walkthrough's first command, runs `--config medium --kinematics svk --workers -1`,
+which has refused since §167. It no longer refuses at this commit, and neither does S13's ladder
+at `--config medium`, which §167 §4 recorded as refusing.
+
+**The premise check found a second gap, in §167 itself.** Its probe called `WO.objective(genes,
+"coarse", phases=..., pool=pool)` and passed no `kinematics`, so every solve took
+`wheel_contact_problem`'s default (`wheel_fem.py:1719`, reached through `wheel_adjoint.py:914`):
+**linear**. `wheel_stage3`'s `--kinematics` defaults to svk (`wheel_stage3.py:1147`), so the cap
+was calibrated on a solve that `--workers -1` does not run. §166 to §168 never say "kinematics".
+S13 does run linear — its `Evaluator` names none either — so both have callers.
+
+### 2. THE MEASUREMENT
+
+§167's watcher unchanged: `VmHWM` of the launched process and every pid beneath it, plus
+`/proc/meminfo`, every 0.5 s. The probe is §167's with `cfg` and `kinematics` named. 8-phase
+uniform stencil, the shipped genome, a worktree at `76add42`, each run in a `systemd-run --user
+--scope` with `MemoryMax` (50G; 55G for w=4) and `MemorySwapMax=0`, so an overshoot would have
+killed the scope and not the box. The peer session held nothing and was told before each round.
+
+```
+  run                   parent   workers (GiB)                     SUM     tree peak  ratio  system  wall
+  coarse  svk     w=2   10.254    9.500   9.290                    29.044   28.964    1.003  0.985   416 s
+  medium  svk     w=2   10.155   10.583  10.649                    31.387   31.207    1.006  0.988   984 s
+  medium  svk     w=4    8.677   10.236  10.300  10.284  10.290    49.787   49.145    1.013  0.990   802 s
+  medium  linear  w=2   10.087   10.539  10.231                    30.857   30.383    1.016  0.998   844 s
+```
+
+Columns as §167's: `ratio` is SUM over the tree's simultaneous RSS peak, `system` SUM over the
+rise in `MemTotal - MemAvailable`. Every run saw exactly its `w` workers. `coarse` svk returned
+`52.56615068117939` against §167's linear `76.02385612583252`, which is the check that a
+different solve ran; `medium` svk returned `54.135523068943705` at w=2 and at w=4, bit-identical.
+
+**(a) svk costs a `coarse` worker nothing measurable.** 9.500 at most, 0.060 over §167's largest
+linear mark, inside its sd of 0.217. The pre-fillet `Makefile` comment at `svk-shipped` measured
+the same thing for a whole descent (13.16 against 12.56 GiB anon, 1.05x). `(10, 11)` stands, 0.50
+GiB above the largest `coarse` worker mark across both kinematics.
+
+**(b) A `medium` worker is 10.231–10.649 GiB**, eight marks, mean 10.389, sd 0.171: 12% over
+`coarse` by largest mark and by mean. Svk's two four-phase marks average 10.616 and linear's
+10.385, one run each, which is inside what two runs of one call differ by (§167's two linear
+`coarse` w=2 runs: 9.346 and 8.740 for the second worker).
+
+**(c) Summing marks stays tight** — 0.3% to 1.6% over the simultaneous peak — so §167's instrument
+transfers to `medium` and the cap still pays almost nothing for being an upper bound.
+
+**(d) The parent does NOT grow with the pool at `medium`.** 10.155 at two workers, **8.677 at
+four**: the lowest parent mark on record, at the largest pool measured. §167's "grows a little"
+was three linear `coarse` runs; the svk `coarse` parent at two workers, 10.254, sits level with
+§167's four-worker 10.271. Across all seven `coarse` and `medium` pooled runs the parent spans
+8.677–10.271, a scatter and not a trend.
+
+**(e) Flat in phases at `medium` is neither confirmed nor refuted.** Four-phase workers (w=2)
+mean 10.5005, two-phase (w=4) 10.2775: 0.223 GiB apart, Welch t = 2.38. But all four two-phase
+marks are ONE run (sd 0.028 within it) and the four-phase ones are two runs across two
+kinematics, so phase count is confounded with run. Not quoted as a per-phase term.
+
+### 3. THE PAIR, AND WHY NOT A WIDER ONE
+
+`POOL_GIB["medium"] = (11.0, 11.0)` (`wheel_pool.py:152`), §167's rule: whole GiB above the
+largest mark, worker 10.649 and parent 10.155. The worker margin is **0.351 GiB, 2.05 sd** —
+thinner than `coarse`'s — and the rule was kept rather than widened because the next whole GiB
+up is refused by the measurement. The w=4 run launched with 57.06 GiB available; (57.06 − 11) //
+11 = **4**, the count that fit, at a system peak of 54.62 GiB used of 61.37. A 12 GiB worker gives
+(57.06 − 12) // 12 = 3. At four workers the pair budgets 11 + 4 × 11 = 55 GiB against 49.79
+summed, 10.5% over: 2.3 GiB of that is the parent allowance over that run's parent, 2.9 the
+workers'.
+
+The comment above the dict is rewritten at its own line count (15 lines), and says the `coarse`
+marks were linear. `descend`'s docstring and `--workers`' help still said `-1` counts cores and
+knows nothing about RAM — false since §167, a claim §167 missed and §168 fixed only in S13's
+help — and are corrected in place. **Net-zero lines in both `src/` files**, and the pin appended
+at the end of `tests/test_pool.py`, so nothing cited moves: the whole-tree sweep in a throwaway
+commit is 1150 citations and 105 for a human, identical to `76add42` except three mention counts.
+
+### 4. THE PIN
+
+`test_every_pool_pair_bounds_its_marks_and_admits_the_pool_measured_to_fit` (`test_pool.py:434`)
+asserts both directions: every pair exceeds its largest worker and parent marks (`coarse` across
+both kinematics, `medium` across both), and on the w=4 run's own reading `default_workers(8,
+"medium")` is 4. `test_pool.py:427`'s refusal loop drops `medium` in place. **Mutated before being
+trusted (§146), four times**: `coarse`'s (10, 11) borrowed for `medium` fails at `assert 10.0 >
+10.649`; (12, 12) at `assert 3 == 4`; (11, 10) at `assert 10.0 > 10.155`; the pair removed at
+`KeyError`. The second mutation first reported the first one's failure — same file size, same
+second, a stale `__pycache__` — and was re-run under `PYTHONDONTWRITEBYTECODE=1`. **A mutation run
+that edits a source in place is timestamp-sensitive**; clear the cache or it can test the last mutant.
+
+**Green, scoped.** 961 collected — 960 plus the pin. `test_pool.py`'s four sizing tests and the pin
+in the worktree and again in the shared checkout with the committed diff checked identical;
+`test_stage3.py`'s ladder and memory-reading tests; `wheel_stage3.py --help` renders. Outside
+pytest on this box: 56.90 GiB free, `default_workers(8, "medium")` = 4 by name and by
+`WheelConfig`, and `fine` still refuses. Not run: the full suite and the rest of `test_pool.py`,
+whose transport and pooled-evaluation tests do not read `POOL_GIB`.
+
+**SUCCESSORS.**
+
+0. **THE `Makefile`'s LAUNCH CAPS ARE 18 TO 31 GiB BELOW TODAY'S POOLS, AND THEY ARE INSTRUCTIONS,
+   NOT RECORDS.** `prod9` says `MemoryMax=20G` (`Makefile:368`), `svk-shipped` `16G` (`Makefile:563`),
+   `knee` `32G` (`Makefile:689`), each for a four-worker descent (`Makefile:395`, `Makefile:590`);
+   the first two at `coarse`. On the probe a four-worker pool measures 47.0 GiB at `coarse` (§167)
+   and 49.79 at `medium` (§2). §167 §4 left the pool figures in those comments as the
+   dated record they are, and that stands; the launch lines are different, because a reader who
+   copies one gets a run its own cgroup kills, if a descent's pool costs what the probe's did — no
+   `MemorySwapMax` is set, but 7 GiB of swap closes none of those gaps. Premise first: does a descent at those
+   settings still hold a pool that size for its whole run? Then re-derive each cap from
+   `POOL_GIB`, which also retires the blocks' "two descents at once" arithmetic on a 61 GiB box.
+1. **§167's successor 2, RE-FRAMED: THE PARENT SCATTERS, IT DOES NOT GROW.** §2(d) — 8.677 to
+   10.271 across seven runs, the lowest at the largest pool. The 11 GiB allowance clears the
+   largest parent mark by 0.73 GiB. What a larger box should record is still the parent at more
+   than four workers, but as a draw from a spread, not a point on a line.
+2. **`fine` STAYS UNMEASURED, AND NOTHING NEEDS IT.** No recipe or document runs Stage 3 at `fine`
+   (`git grep -- '--config fine'`), so it stays refused. Measure it when something does.
