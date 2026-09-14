@@ -55,7 +55,7 @@ Four consequences, each of which this arc is meant to end:
    returns **zero hits — not one**. Over `studies/`, `tests/`, the `Makefile` and the other
    ten `.md` files it returns **four lines, every one a false positive**: a cosine LR
    schedule that "anneals" (`study_stage3.py:2202-2203`, two lines), "import creep"
-   (`test_pool.py:286`), and "creeping to ~0.808" (`PLAN.md:6599`).
+   (`test_pool.py:286`), and "creeping to ~0.808" (`PLAN.md:6657`).
    `YOUNGS_MODULUS_PLA_MPA = 2300.0` and `ULTIMATE_STRESS_MPA = 40.0` are
    single-point values at an **unstated** temperature. A PLA part is a thermoplastic part:
    its modulus is a strong function of ambient well below Tg, and this tree models a

@@ -13770,7 +13770,7 @@ set, and the bit-identity test is what says so.**
 
 **AND TWO DATED QUOTATIONS OF `wheel_objective` ARE NOW QUOTATIONS OF THE PRE-ARC
 SOURCE, DELIBERATELY LEFT ALONE.** Threading the two requirements moved the deflection
-and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1175`
+and utilisation lines down by 12 and renamed what they read: `wheel_objective.py:1153`
 is now :1165 and no longer reads a module global, and :1234 is now :1246 and reads
 `allowable_stress_mpa` where §93 and §94 quote it as `ALLOWABLE_STRESS_MPA`
 (`studies/study_fillet_kt.py:14`, `FILLET_PLAN.md`, `MBSE_PLAN.md` Step 3). Those are
@@ -15248,7 +15248,7 @@ Every clause of that condition is now true, and it went unread for a day because
 parked and nothing reads a parked file:
 
 - the FEA meshes fillets directly — `wheel_objective.phase_meshes` passes `fillet=True`
-  unconditionally (`src/wheel_objective.py:1035`), as does `wheel_pool_worker.run_phase`
+  unconditionally (`src/wheel_objective.py:1037`), as does `wheel_pool_worker.run_phase`
   (`:63`);
 - the objective prices the junctions through the solve — `util_j` is the junction's own
   region p-norm and `Kt` does not appear in it (§103);
@@ -15558,7 +15558,7 @@ computed at a weight the tree no longer has** — 17 of them, of which exactly o
 
 A second, independent mechanism hits the subset whose drivers do not inject their own
 meshes: `t3_terms` builds via `phase_meshes` only when `meshes is None and pool is None`
-(`src/wheel_objective.py:1190`), so a driver that hands in `meshes=` kept control of the
+(`src/wheel_objective.py:1192`), so a driver that hands in `meshes=` kept control of the
 geometry across §103 and one that did not had the mesh flipped under it.
 
 **AND A GENE BOX MOVED UNDER 13 OF THEM, WHICH IS THE SAME FAILURE ONE LEVEL DOWN.** Stage-3
