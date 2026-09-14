@@ -2656,7 +2656,7 @@ def _rotate(grid, angle_rad, xp):
 def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
                    phase_deg, fillet=None, uncap=UNCAP_DEFAULT,
                    fillet_blocking="sector", layer_profile=None,
-                   fillet_clamp=SECTOR_FIT_CLAMP, fillet_roots=None):
+                   fillet_clamp=SECTOR_FIT_CLAMP, fillet_roots=None, angles=None):
     """The raw node coordinates of all twelve sectors, before the seams are merged.
 
     THE ENTIRE TRACED HALF OF `build_wheel`, factored out so that `mesh_coords` can run
@@ -2683,8 +2683,8 @@ def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
     roots = sector0.pop("_roots", None)
     order = FILLETED_BLOCK_ORDER if dirn is not None else BLOCK_ORDER
 
-    parts, offsets, shapes = [], {}, {}
-    cursor = 0
+    parts, offsets, shapes, cursor = [], {}, {}, 0
+    turned = angles is not None       # `coord_fn`'s TRACED angles: rotate every sector
     # `phase_deg` rolls the whole wheel under the ground.  It belongs HERE and not in
     # the load, because the ground does not move: a rolling wheel keeps its contact at
     # the bottom while the spoke pattern turns underneath it.  Putting the phase in the
@@ -2692,9 +2692,9 @@ def _sector_coords(genes, cfg, xp, span_mm, n_spokes, orientation, rim_outer,
     # entirely — and it silently breaks the 12-fold periodicity of the axle drop, which
     # is the cheapest end-to-end check this model has.
     for k in range(n_spokes):
-        angle = xp.zeros(()) + np.radians(SECTOR_DEG * k + phase_deg)
+        angle = angles[k] if turned else xp.zeros(()) + np.radians(SECTOR_DEG * k + phase_deg)
         for name in order:
-            g = _rotate(sector0[name], angle, xp) if (k or phase_deg) else sector0[name]
+            g = _rotate(sector0[name], angle, xp) if (turned or k or phase_deg) else sector0[name]
             shapes[(k, name)] = (int(g.shape[0]), int(g.shape[1]))
             offsets[(k, name)] = cursor
             cursor += shapes[(k, name)][0] * shapes[(k, name)][1]
@@ -2837,12 +2837,12 @@ def _filleted_gradient_recipe(mesh):
 
 _COORD_FN_CACHE = {}
 
-# SIZED BY THE PHASE LATTICE, NOT BY TASTE.  Phase is part of the key (see `coord_fn`), so
-# a Stage-3 step that evaluates an 8-point phase stencil touches 8 entries, and M8's
-# quantized RQMC draws that stencil from a fixed 8x8 = 64-phase lattice.  At 32 the cache
-# evicted an entry it was about to need on every step — a 100% miss rate on the exact
-# workload it exists for, costing the measured 0.774 s re-trace each time.  128 holds the
-# whole lattice with room for a second mesh config at a checkpoint.
+# SIZED BY THE PHASE LATTICE UNTIL PHASE LEFT THE KEY (PLAN.md §162 successor 1).  With phase
+# in it, an 8-point stencil drawn from M8's 8x8 = 64-phase lattice touched 8 entries, and at
+# 32 the cache missed 100% of the workload it exists for.  §162 then priced one entry: ONE XLA
+# COMPILE, 128.3 s per phase at `coarse` in a fresh process.  The twelve sector angles are a
+# traced argument now, so one entry serves every phase of a recipe and 128 is headroom for
+# recipes -- configs, blockings, profiles -- not for phases.
 _COORD_FN_CACHE_MAX = 128
 
 
@@ -2860,12 +2860,12 @@ def coord_fn(mesh):
     wrong.  Every finite difference, every sweep point and every optimizer step builds a
     NEW mesh at new genes, so a per-object cache misses on literally every call it exists
     to serve while looking like it works.  The key is the STATIC RECIPE instead — element
-    counts, orientation, ownership, phase — which is exactly what the traced function
+    counts, orientation, ownership — which is exactly what the traced function
     closes over and is identical across all of those calls.  `owners` is hashed by bytes;
     at 21012 nodes that is ~20 us against the 0.7 s it saves.
 
     A design at fixed genes is not in the key and must not be: the genes are the traced
-    ARGUMENT.  Phase is, because `_sector_coords` branches on it.
+    ARGUMENT.  So is the phase: twelve sector angles, computed in numpy as `build_wheel` does.
 
     A FILLETED MESH'S FROZEN ROOTS ARE A TRACED ARGUMENT TOO, and that is the whole
     reason this function still has a cache to speak of.  They depend on the genome — a
@@ -2885,8 +2885,8 @@ def coord_fn(mesh):
 
     cfg, span, n_spokes = mesh.cfg, mesh.span_mm, mesh.n_spokes
     orientation, rim_outer, phase = mesh.orientation, mesh.rim_outer, mesh.phase_deg
-    uncap = getattr(mesh, "uncap", UNCAP_DEFAULT)
-    owners_np = np.asarray(mesh.owners)
+    uncap, owners_np = getattr(mesh, "uncap", UNCAP_DEFAULT), np.asarray(mesh.owners)
+    angles = jnp.asarray([np.radians(SECTOR_DEG * k + phase) for k in range(n_spokes)])
     # `repr(rec["layer_profile"])` RAW, NOT THROUGH `_layer_profile` (§88).  That helper
     # maps `None` onto the shipped constants, and since §88 `None` in this record means
     # THE PER-GENOME RULE, resolved inside the trace: mapping it would key a per-genome
@@ -2901,7 +2901,7 @@ def coord_fn(mesh):
     # second would then be handed the first's traced geometry.  See `WheelMesh.__init__`.
     key = (cfg.name, cfg.order, cfg.n_curve, cfg.n_span, cfg.n_thick, cfg.n_weld,
            cfg.n_collar_r, cfg.n_collar_free, cfg.n_rim_r, cfg.n_rim_free,
-           float(span), int(n_spokes), float(rim_outer), float(phase),
+           float(span), int(n_spokes), float(rim_outer),
            repr(uncap), np.asarray(orientation).tobytes(), owners_np.tobytes(),
            fillet_key)
 
@@ -2913,10 +2913,10 @@ def coord_fn(mesh):
 
         if not rec:
             @jax.jit
-            def traced(v):                          # noqa: F811
+            def traced(v, angles):                  # noqa: F811
                 coords_all, *_ = _sector_coords(v, cfg, jnp, span, n_spokes,
-                                                orientation, rim_outer, phase,
-                                                uncap=uncap)
+                                                orientation, rim_outer, 0.0,
+                                                uncap=uncap, angles=angles)
                 return coords_all[owners]
         else:
             static = dict(rec)
@@ -2924,10 +2924,10 @@ def coord_fn(mesh):
             clamped = tuple(False for _ in _FILLET_ROOT_JUNCTIONS)
 
             @jax.jit
-            def traced(v, root_vec):                # noqa: F811
+            def traced(v, root_vec, angles):        # noqa: F811
                 coords_all, *_ = _sector_coords(
-                    v, cfg, jnp, span, n_spokes, orientation, rim_outer, phase,
-                    uncap=uncap,
+                    v, cfg, jnp, span, n_spokes, orientation, rim_outer, 0.0,
+                    uncap=uncap, angles=angles,
                     fillet_roots=_fillet_roots_from_vector(root_vec, clamped),
                     **static)
                 return coords_all[owners]
@@ -2937,9 +2937,9 @@ def coord_fn(mesh):
         _COORD_FN_CACHE[key] = traced
     if rec:
         root_vec = jnp.asarray(_fillet_roots_vector(rec["fillet_roots"]))
-        f = functools.partial(traced, root_vec=root_vec)
+        f = functools.partial(traced, root_vec=root_vec, angles=angles)
     else:
-        f = traced
+        f = functools.partial(traced, angles=angles)
     mesh._coord_fn = f
     return f
 

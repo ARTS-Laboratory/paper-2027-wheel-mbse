@@ -98,11 +98,11 @@ Not moot: M6 measured 7.0% std/mean and 19.7% peak-to-peak in axle drop over the
 degree period, against the master plan's 2% "phase is nearly moot" threshold.  So
 `phase_ripple` is a design term, not just a quadrature nuisance.
 
-The stencil is a FIXED LATTICE and that is a performance fact.  `wheel_wheel.coord_fn`
-keys its jit cache on phase, so a continuously-random RQMC offset misses on every phase
-of every step and pays M7's measured 0.774 s re-trace eight times per step — roughly
-double the actual solving.  `phase_stencil` therefore quantizes the random offset onto an
-`n_phase x n_sub` lattice: genuinely stochastic, unbiased, and cached after one pass.
+The stencil is a FIXED LATTICE, and the performance fact that made it one is RETIRED.
+`wheel_wheel.coord_fn` keyed its jit cache on phase, so a continuously-random RQMC offset
+missed on every phase of every step (M7's 0.774 s re-trace; 128 s of vjp compile on the
+filleted mesh) until PLAN.md §162 successor 1 made the phase a traced argument.  The
+`n_phase x n_sub` lattice stays: genuinely stochastic, unbiased, and what runs were drawn on.
 
 Randomizing at all buys something specific.  M7 found the contact facets on the rim
 discretisation (3.8% of the slope at `coarse`, 17.6% at `smoke`), an artefact that

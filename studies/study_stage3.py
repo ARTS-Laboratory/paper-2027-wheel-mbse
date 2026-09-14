@@ -533,10 +533,10 @@ def run_phase_schemes(genes, cfg=DEFAULT_CONFIG, steps=8, n_phase=4, n_sub=4, se
 
     M8a's G9 measured the schemes' BIAS against a 64-point reference.  This measures what
     an optimizer actually feels: how much the loss jitters step to step, and what the
-    scheme costs.  The cost half is not a footnote — `coord_fn` keys its jit cache on
-    `float(phase)`, so `iid` draws a fresh phase every step and re-traces every step,
-    which is the concrete reason `phase_stencil` quantizes the rqmc offset onto a lattice
-    instead of shifting it continuously.
+    scheme costs.  The cost half was not a footnote — `coord_fn` keyed its jit cache on
+    `float(phase)`, so `iid` drew a fresh phase every step and re-traced every step, the
+    concrete reason `phase_stencil` quantizes the rqmc offset onto a lattice.  Since
+    PLAN.md §162 successor 1 the phase is traced and `iid` pays that compile once.
     """
     low, high, _ = _bounds()
     z0 = wg.normalize(genes, low, high)
@@ -552,8 +552,8 @@ def run_phase_schemes(genes, cfg=DEFAULT_CONFIG, steps=8, n_phase=4, n_sub=4, se
         # stencil moving rather than the design moving.
         d = np.abs(np.diff(loss)) / np.maximum(np.abs(loss[:-1]), 1e-30)
 
-        # First visit to a stencil vs a repeat, split apart.  `coord_fn` keys its jit
-        # cache on `float(phase)`, so the first time a lattice point is used it pays a
+        # First visit to a stencil vs a repeat, split apart.  `coord_fn` keyed its jit
+        # cache on `float(phase)` (to PLAN.md §162 s1), so a lattice point's first use paid a
         # trace and every use after that does not.  That makes the trace a ONE-OFF cost
         # of at most `n_phase * n_sub` per run, not a per-step cost — and a short gate run
         # is nearly all first visits, so a raw median badly overstates what rqmc costs a

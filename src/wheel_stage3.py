@@ -37,11 +37,11 @@ is the failure mode this project keeps naming and keeps having to catch with a g
     it is the evidence for the change, not an input to anything.
 
 2.  THE PHASE STENCIL IS DRAWN FROM A FIXED LATTICE.
-    `wheel_wheel.coord_fn` keys its jit cache on `float(phase)`, so a continuously
-    random offset misses on every phase of every step and pays M7's measured 0.774 s
-    re-trace eight times per step — roughly double the actual solving.
-    `wheel_objective.phase_stencil` quantizes the random offset onto an `n_phase*n_sub`
-    grid for exactly this reason, and `_COORD_FN_CACHE_MAX` is already 128 to hold it
+    `wheel_wheel.coord_fn` keyed its jit cache on `float(phase)` until PLAN.md §162
+    successor 1, so a continuously random offset missed on every phase of every step --
+    M7's 0.774 s re-trace, 128 s of vjp compile on the filleted mesh.  The phase is a
+    traced argument now.  `wheel_objective.phase_stencil` still quantizes the offset onto
+    an `n_phase*n_sub` grid, and `_COORD_FN_CACHE_MAX` is still 128, no longer to hold it
     (`wheel_wheel.py:2846`).  Randomising at all buys something specific: the contact
     facets on the rim discretisation at 0.25 degrees while the stencil samples at 3.75,
     so the artefact ALIASES, and under a fixed stencil it is a deterministic function of

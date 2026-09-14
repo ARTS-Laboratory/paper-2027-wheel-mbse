@@ -160,8 +160,8 @@ def test_every_slot_lands_on_its_own_pinned_worker(stub):
     """Slot `i` goes to worker `i % n_workers` and nowhere else.
 
     This is the whole reason the pool is hand-rolled rather than `multiprocessing.Pool`:
-    `coord_fn` keys its jit cache on `float(phase)` and M7 measured a miss at 0.774 s, so
-    a phase that wanders between workers pays that on every step forever.
+    `coord_fn` keyed its jit cache on `float(phase)` (M7: 0.774 s a miss; filleted, 128 s),
+    so a wandering phase paid that every step -- until PLAN.md §162 successor 1 traced it.
     """
     with WP.PhasePool(3, script=stub) as pool:
         out = pool.map_phases([{} for _ in range(7)])

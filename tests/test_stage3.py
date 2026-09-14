@@ -116,11 +116,11 @@ def test_the_cosine_schedule_starts_at_lr_and_ends_at_zero():
 
 @pytest.mark.parametrize("n_phase,n_sub", [(8, 8), (4, 4), (2, 8)])
 def test_the_rqmc_offset_always_lands_on_the_fixed_lattice(n_phase, n_sub):
-    """The whole performance argument for `rqmc` over a continuous shift.
+    """What was the whole performance argument for `rqmc` over a continuous shift.
 
-    `coord_fn` keys its jit cache on `float(phase)`, so if a draw could land off the
-    `n_phase * n_sub` grid it would re-trace on every step forever.  Checked over many
-    draws because a scheme that is usually on the lattice is not on the lattice.
+    `coord_fn` keyed its jit cache on `float(phase)`, so a draw off the `n_phase * n_sub`
+    grid re-traced every step; PLAN.md §162 successor 1 made the phase traced.  Checked over
+    many draws because a scheme that is usually on the lattice is not on the lattice.
     """
     cell = WO.SECTOR_DEG / n_phase
     lattice = np.arange(n_phase * n_sub) * (cell / n_sub)
@@ -128,8 +128,8 @@ def test_the_rqmc_offset_always_lands_on_the_fixed_lattice(n_phase, n_sub):
     for _ in range(50):
         for p in WO.phase_stencil(n_phase, n_sub, "rqmc", rng):
             assert np.min(np.abs(lattice - p)) < 1e-12, (
-                f"phase {p} is off the {n_phase}x{n_sub} lattice; coord_fn's cache "
-                f"would miss on every step — see wheel_stage3's module docstring")
+                f"phase {p} is off the {n_phase}x{n_sub} lattice every recorded rqmc "
+                f"run was drawn on — see wheel_stage3's module docstring")
 
 
 def test_the_warm_vector_is_the_previous_drops_and_nothing_else():

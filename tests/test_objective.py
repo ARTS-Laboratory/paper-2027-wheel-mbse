@@ -1476,11 +1476,11 @@ def _bump(genes, gid, h):
 
 
 def test_the_phase_stencil_is_a_fixed_lattice(genes):
-    """RQMC's offset is quantized so `coord_fn`'s cache can hit.
+    """RQMC's offset is quantized, which is how `coord_fn`'s cache used to hit.
 
-    A continuously-random offset misses on every phase of every step and pays M7's
-    measured 0.774 s re-trace eight times per step, which is roughly double the actual
-    solving.  Every draw must land on the `n_phase * n_sub` grid.
+    A continuously-random offset missed on every phase of every step (M7's 0.774 s
+    re-trace, eight times per step) until PLAN.md §162 successor 1 made the phase traced.
+    Every draw must still land on the `n_phase * n_sub` grid.
     """
     rng = np.random.default_rng(0)
     grid = np.arange(8 * 8) * (WO.SECTOR_DEG / 64)

@@ -930,3 +930,31 @@ def test_the_unfilleted_mesh_reports_no_radii_at_all(genes):
     """
     m = ww.build_wheel(genes, "coarse")
     assert m.fillet_radii_mm is None and m.fillet_clamped is None
+
+
+def test_ONE_trace_serves_every_phase(genes):
+    """PLAN.md §162 successor 1: the phase is a traced argument, not part of the cache key.
+
+    §162 bisected `test_req_baseline_is_bit_identical_to_naming_no_requirements`'s eleven
+    minutes down to ONE XLA COMPILE PER PHASE -- 128.3 s each at `coarse`, linear over 1, 2
+    and 4 phases -- because `float(phase)` was in `_COORD_FN_CACHE`'s key, and it had to be:
+    `_sector_coords` skipped the rotation at sector 0 when the phase was zero, so the phase
+    decided the jaxpr.  `coord_fn` now computes the twelve sector angles in numpy, by the
+    expression `build_wheel` uses, and passes them in; the trace rotates every sector.
+
+    THE GATE WAS BIT-IDENTITY, AND IT WAS MEASURED BEFORE THE CHANGE, NOT AFTER: on `smoke`,
+    filleted, a closure built this way reproduced the old per-phase closures with 0
+    differing bits at phases 0, 3.75, 13.7 and 26.25.  After the change there is no old path
+    to compare against, so this pins the two things the change could still break: ONE cache
+    entry per recipe however many phases it serves, and every phase still reproducing its
+    own eager mesh -- which a trace that closed over the first mesh's phase would fail at
+    the second.
+    """
+    ww._COORD_FN_CACHE.clear()
+    for n_entries, fillet in ((1, True), (2, None)):
+        for p in (0.0, 3.75, 13.7):
+            m = ww.build_wheel(genes, "smoke", phase_deg=p, fillet=fillet)
+            got = np.asarray(ww.coord_fn(m)(genes))
+            assert len(ww._COORD_FN_CACHE) == n_entries, (
+                f"fillet={fillet} phase {p} compiled its own trace")
+            assert np.abs(got - np.asarray(m.coords)).max() < 1e-9, (fillet, p)

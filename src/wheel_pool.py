@@ -30,16 +30,16 @@ WHY THIS IS NOT `multiprocessing.Pool`, and all three reasons are load-bearing:
     what this paragraph originally priced it at — read at 0.774 s against "0.05 s for the
     entire rest of the adjoint" it looks like a micro-optimisation safe to trade away for
     load balancing or a work-stealing queue, and it is not: at ~124 s a miss it decides
-    whether a pooled step beats a serial one.  How much of the 124 s is `coord_fn` rather
-    than other phase-keyed retracing was not isolated, so read it as the cost of a COLD
-    PHASE rather than as a new value for this constant alone.  `Pool.map` gives no control
+    whether a pooled step beats a serial one.  PLAN.md §162 successor 1 isolated it: ALL of
+    it was `coord_fn`'s vjp compile (127.97 s a phase at `coarse`), and the phase has left
+    that key since, so a warm worker's NEW phase costs 0.05 s.  `Pool.map` gives no control
     over which worker sees which task, so a phase would land on a cold worker at random
-    and pay that cost — whichever of the two figures above applies to the mesh in hand.
+    and pay that cost — which is now once per WORKER, whichever phases it is handed.
     Here slot `i` goes to worker `i % n_workers` and nowhere else, so worker `k` only ever
     traces the phases of its own slots.  An rqmc stencil draws its offset from the
-    `n_sub`-point sub-lattice, so one slot spans at most `n_sub` = 8 distinct phases:
-    8 cache entries per worker at `workers=8`, 16 at `workers=4`, against
-    `_COORD_FN_CACHE_MAX = 128`.
+    `n_sub`-point sub-lattice, so one slot spans at most `n_sub` = 8 distinct phases --
+    once 8 cache entries per worker; one per recipe now, so pinning no longer saves a
+    `coord_fn` compile, and whether it still buys anything else is unmeasured.
 
 3.  RESULTS MUST COMBINE IN SLOT ORDER.  `map_phases` returns a list indexed by slot
     regardless of which worker finished first.  Floating-point addition is not
