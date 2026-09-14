@@ -25867,3 +25867,105 @@ is a third. Four measurements of one shape.
    §160 §6's class arriving within hours, on §160's own author's section: **a detection is
    not a repair instruction.** Filed here so the next pass over the report finds the reasoning
    before it finds the rows.
+
+---
+
+## §166 — 2026-09-14. §165's SUCCESSOR 0: **THE PER-PHASE DATA TERM IS NOT RESOLVABLE — 0.0855 GiB/PHASE WITH A STANDARD ERROR OF 0.556, t = 1.08, NOT DISTINGUISHABLE FROM ZERO.** THE WORKER COST IS FLAT IN THE PHASE COUNT, AND **§165's OWN 0.27 GiB/PHASE IS SUPERSEDED**: IT WAS A RESIDUAL BY SUBTRACTION FROM ONE RUN, AND TWO RUNS OF THE IDENTICAL CALL DIFFER BY 2.517 GiB. A REGISTERED LINEARITY PREDICTION IS **REFUTED**, AND SO IS §164's CONFIG-INVARIANT COMPILE TIME **AT `medium`**
+
+§165 left 0.27 GiB/phase as a residual by subtraction — 14.99 measured minus a 12.8 estimate
+built from a one-phase rung and a t1/t2 figure — and filed measuring it directly as successor
+0, because a residual carries the errors of everything subtracted from it. Measured directly,
+it is not there.
+
+**1. THE SWEEP, AND THE PREDICTION IT REFUTES.** Fresh process per rung, the production
+`objective()` call at `coarse`, on `6aa84ca`:
+
+  n_phase   peak RSS
+     1      15.762 GiB
+     2      15.343
+     4      15.134
+     8      17.507
+
+Registered before the run: with one compile serving every phase the remainder is array data,
+so the curve should be **linear**, and a fit on 1 and 8 should predict the held-out rungs to
+within a few percent. It does not. The fit gives BASE 15.513 and 0.249 GiB/phase and
+overpredicts the held-out rungs by **4.4% and 9.1%**, and worse, **the curve is non-monotone**
+— memory FALLS from one phase to four before jumping at eight. The falsifier was that a
+sublinear curve means `BASE + k*PER_PHASE` is the wrong shape for §105's cap. It is.
+
+**2. AND THE REASON IS NOT NON-LINEARITY, IT IS THAT THE SIGNAL IS UNDER THE NOISE.** §165's
+knee probe measured `coarse`/8 phases at **14.990 GiB**; this sweep measured the identical
+call — same commit, config, genome, call — at **17.507**. **2.517 GiB, 16.8%, between two runs
+of the same thing**, which is larger than the entire 2.373 GiB spread across the phase counts
+above. Whatever those four rungs are measuring, it is not mostly phases.
+
+**A SAMPLED PEAK CAN MISS A TRANSIENT AND `ru_maxrss` CANNOT, WHICH SETTLES WHAT KIND OF
+DIFFERENCE IT IS.** The kernel high-water marks are 15.010 and 17.542 for those two runs,
+against sampled peaks of 14.990 and 17.507 — the two instruments agree to 0.020 and 0.035 GiB
+WITHIN each run and differ by **2.532 GiB BETWEEN** them. So both runs peaked where their
+samplers said and the difference is real, not an artifact of when a 0.5 s sampler happened to
+look.
+
+**3. IT IS A CONTINUOUS SCATTER AND NOT TWO STATES.** That 2.517 GiB equalled, to the MiB, the
+single hand-back §162's 0.5 s trace found at its t3 cell's end (−2.517 GiB), which is a
+coincidence worth chasing: it would mean a ~2.5 GiB block either held at peak or already
+released, and a **bimodal** peak rather than noise. Repeated, `coarse`/8 gives **14.990,
+15.700, 16.331, 17.507** — gaps of 0.710, 0.631 and 1.176, evenly spread with no two poles.
+So the 2.517 was simply max-minus-min of a four-draw sample, which is whatever its two extremes
+happen to be. Coincidence, and now measured to be one.
+
+**4. THE PER-PHASE TERM, WITH THE ERROR BAR THAT MAKES IT A NON-RESULT.** Three runs at one
+phase (15.762, 15.605, 15.234; mean 15.534, sd 0.271) against four at eight (mean 16.132, sd
+1.068): **+0.598 GiB over seven phases = 0.0855 GiB/phase, standard error 0.556, t = 1.08.**
+Not distinguishable from zero. The honest statement is not "the term is 0.0855" but **"at
+three and four runs this instrument cannot see a per-phase term at all"**, and §165's 0.27 is
+withdrawn rather than refined — a residual by subtraction from a single run is not evidence
+when single runs scatter by 2.5 GiB.
+
+**THE VARIANCE ITSELF DEPENDS ON THE PHASE COUNT**, which is the one phase-dependent thing
+here: **sd 0.271 GiB at one phase against 1.068 at eight**, a factor of 3.9. A cap calibrated
+at one phase count understates the spread at another.
+
+**5. §164's CONFIG-INVARIANT COMPILE TIME HOLDS `smoke`↔`coarse` AND BREAKS BY `medium`.**
+§164 measured smoke 129.13 s against coarse 128.00 s for the same case and I read that as
+compile time being set by HLO structure, which the config does not change. `medium` at one
+phase compiles in **213.17 s — 1.67x coarse** — which the run's own stderr reports. So shapes
+do reach compile time once they are large enough, and the invariance is a property of the
+smoke–coarse range and not of the compiler. `medium`'s one-phase peak, 16.716 GiB against
+coarse's 15.534 mean, is +7.6% and sits inside the scatter of §4, so it is NOT evidence of a
+config scaling in memory and is not quoted as one.
+
+**6. "NOTHING IS HANDED BACK" WAS A PROPERTY OF THE COMPILE ACCUMULATION, NOT OF THE
+WORKLOAD.** §162 measured 1435 samples with 3 falls, and §163 built on it. The post-collapse
+trace of the same call has **fifty falls over 50 MiB**. The monotone growth was the retained
+per-phase executables; with one compile it is gone, and memory is dynamic. Anything reasoning
+about WHEN the peak occurs — a cap, a watchdog, a batch boundary — has to be re-derived on the
+new shape rather than inherited from §162.
+
+**SUCCESSORS.**
+
+0. **THE CAP'S MARGIN MUST BE SIZED TO THE SPREAD, AND THE SPREAD IS NOW MEASURED.** sd is
+   1.068 GiB at eight phases, so any margin under about 2 GiB is inside the run-to-run scatter,
+   and the quantity to build from is a **maximum kernel mark** rather than a mean or a sampled
+   peak. Three and four runs is a thin basis for an sd — if the cap is going to carry a multiple
+   of it, the multiple deserves more draws than this.
+
+   **BUT NOT 17.542 GiB, AND THE SLIP IS WORTH NAMING BECAUSE IT IS A PROCESS-SHAPE ERROR
+   RATHER THAN AN ARITHMETIC ONE.** Every figure in this section is a SERIAL whole-`objective()`
+   process — t1, t2 and t3 for every phase in one address space — because that is what the
+   sweep ran. A pool WORKER is a different shape: it runs the phase loop and not the tiers
+   around it. Measured on a live pool at `coarse`, a worker holding four phases is **9.35–9.44
+   GiB** and the pooled parent **9.83**, against this section's 17.542 for the serial process.
+   So §4's flatness result transfers to the cap and §0's *number* does not: the cap is built
+   from the worker and parent marks, and a serial peak has no place in it. The measurement that
+   settles the rest is a `w=4` run, which the flatness result predicts at about
+   9.83 + 4 × 9.4 ≈ **47.4 GiB** — and which therefore tests §4 from an instrument that was not
+   used to fit it: flat in `k` means a worker holding two phases costs what one holding four
+   does, and a `w=4` peak well under 47.4 would say §4 is wrong at the worker level.
+1. **THE VARIANCE GROWING 3.9x WITH PHASE COUNT IS UNEXPLAINED.** It is the only quantity here
+   that depends on phases at all, which makes it the interesting one. Whatever varies run to
+   run varies MORE when more phases are evaluated, and nothing in §162–§165 predicts that.
+2. **WHERE BETWEEN `coarse` AND `medium` DOES COMPILE-TIME INVARIANCE BREAK, AND WHY?** §5 has
+   two points and a factor of 1.67. If it is array shapes entering the compiler's cost, `fine`
+   should be worse again and the `smoke`≈`coarse` agreement is the special case rather than the
+   rule — which would make §164's headline a statement about small meshes, not about compiles.
