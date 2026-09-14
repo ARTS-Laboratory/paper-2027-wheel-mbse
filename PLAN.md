@@ -2935,7 +2935,7 @@ was missing was a CLI flag.
 
 - **`src/wheel_stage3.py`** — `--kinematics {linear,svk}`, default `linear`, forwarded to
   **both** optimizers, recorded in `search_block` and in the run record's settings, and
-  **printed in the console banner** (`:954`). The record reads `ev.problem_kw` — the very
+  **printed in the console banner** (`:1227`). The record reads `ev.problem_kw` — the very
   dict the `Evaluator` splats into the solver — so the record cannot disagree with what was
   solved. `search_block` has **no `getattr(args, "kinematics", "linear")` fallback** on
   purpose: a default there would report "linear" for an SVK run whose caller forgot the
@@ -15416,7 +15416,7 @@ elements at `coarse`). Its t1 barrier sum is **301.4**. Chain it together:
     section — "one to three orders of magnitude below the screen", for the 17 clamped genomes'
     sums of 43.77 to 712.2 — is a CORRECT bracket (14.0x to 228.5x, all inside 10x-1000x) and
     is left exactly as written.]**
-  - `descend` wraps the evaluator in `except RuntimeError` (`src/wheel_stage3.py:600`), for
+  - `descend` wraps the evaluator in `except RuntimeError` (`src/wheel_stage3.py:626`), for
     *"NewtonDivergedError, the secant's stall, or dF/ddelta <= 0"*. A blocking refusal is a
     **`ValueError`**, so it is not caught and it ends the run.
   - `--start all` loads all 16 elites and `--start rank:11` reaches this one directly
@@ -15919,8 +15919,8 @@ something not measured to be broken.
 ### THE SAME HOLE ELSEWHERE: THERE IS NONE, AND STAGE 2 EXPLAINS WHY THE GENOME EXISTS
 
 A `RuntimeError`-only guard occurred in **exactly one file in the whole tree** —
-`wheel_stage3.py`, at the three catch sites this section widened (`:370` the fidelity probe,
-`:602` the trial loop, `:906` L-BFGS-B's `fun`); `grep -rn "except RuntimeError" --include=*.py`
+`wheel_stage3.py`, at the three catch sites this section widened (`:394` the fidelity probe,
+`:626` the trial loop, `:937` L-BFGS-B's `fun`); `grep -rn "except RuntimeError" --include=*.py`
 returns those three lines and nothing else. Every other evaluation loop over many genomes
 already catches `Exception`:
 `study_stage3.run_multistart:1068` (the elite screen, whose own test asserts *"one bad genome
@@ -15946,7 +15946,7 @@ serial runs died — which would make the defect a property of the default path 
 put a `MeshRefusedError` branch in `_decode_error` on the critical list.
 
 It says no such thing. `Evaluator.__call__` builds `wanted = phases[:1]` **in the parent even
-when pooled** (`src/wheel_stage3.py:435`), because T2 reads `meshes[0]`. That line predates
+when pooled** (`src/wheel_stage3.py:459`), because T2 reads `meshes[0]`. That line predates
 §107 — §107 cites it as the one caller that already had the phase guard, and `4b77a6c` changed
 `wheel_objective` and tests, not this file. So the build that refuses is always the PARENT's,
 raised before any task is dispatched; the refusal reaches `descend` as itself on both paths,

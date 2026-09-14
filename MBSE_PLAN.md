@@ -549,7 +549,7 @@ hot day, heavy payload, rough field, long service life.
 
 `--requirements <path>` on `wheel_stage3`, warm-started from `best_solution.json`. The
 output record grows a **top-level** `requirements` block carrying the derived set and
-`req_hash`; `search_block` (`wheel_stage3.py:883`) records `req_hash` beside `min_wall_mm`
+`req_hash`; `search_block` (`wheel_stage3.py:1019`) records `req_hash` beside `min_wall_mm`
 and `cy_bound_mm`.
 
 - **CHECK:** `--requirements baseline.json` at `coarse`, 5 steps, reproduces a plain run's
