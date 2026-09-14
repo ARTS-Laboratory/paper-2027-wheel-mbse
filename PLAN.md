@@ -25784,3 +25784,86 @@ first.
 2. **WHETHER TO KEEP THE LATTICE IS NOW A STATISTICS QUESTION, NOT A PERFORMANCE ONE** — and
    changing it moves every rqmc run, so it wants its own measurement before anyone touches
    `phase_stencil`.
+
+---
+
+## §165 — 2026-09-14. §163's OPEN BAND, SETTLED ON ONE CLEAN INSTRUMENT: **`genes_over_knee` ALONE IN A FRESH PROCESS IS 14.99 GiB ON `6aa84ca`, AGAINST 44.00 GiB BEFORE — INSIDE THE 10–18 GiB REGISTERED IN ADVANCE, 2.94x DOWN, AND THE >25 GiB FALSIFIER DID NOT TRIGGER.** THE POINT ESTIMATE WAS LOW BY 17.1% FOR A REASON WORTH MORE THAN THE HIT: **THE COLLAPSE REMOVES THE PER-PHASE COMPILE, NOT THE PER-PHASE DATA**
+
+§164 closed §162's successor 1 and left one number unsettled, deliberately. The suite could
+not settle it and said so: `test_objective.py`'s file peak was CALL-dominated before the
+change (44.0 of 51.0 GiB, 86%) and PLATEAU-dominated after (18.1 of 28.45, 64%), so the
+7 GiB residue §163's decision rule assumed held only while the call dwarfed everything else —
+**the rule was built on the before-state and did not survive the change it was predicting.**
+And the after-figure was a **+10.3 GiB increment in a warm process** where the 44.00 was a
+**total in a fresh one**; those are not the same quantity, and the increment landing inside
+the band was not evidence.
+
+**1. ONE CALL, ONE INSTRUMENT, BOTH SIDES THE SAME SHAPE.** The fixture's own call —
+`objective(g, "coarse", phases=phase_stencil(n_phase=8, scheme="uniform"))` on
+`stage3_buildcap2_slack_medium.json` — alone in a fresh process at `6aa84ca`, resident set
+and system memory sampled throughout:
+
+  wall                    436.2 s
+  parent peak RSS        **14.99 GiB**   (high-water 15.01)
+  system used peak        18.53 GiB
+  system available floor  42.84 GiB
+
+against **44.00 GiB** for the same call alone on the old code. **29.01 GiB removed, 65.9% of
+it, a factor of 2.94** — the probe printed 2.93 from its unrounded peak, and 44.00/14.99 as
+quoted re-divides to 2.94; the ratio is stated on the quoted figures so it re-derives, and the
+0.01 is the peak's own rounding rather than a disagreement. The gradient is finite, so the
+call did the work.
+
+**2. THE PREDICTION, AND IT WAS REGISTERED BEFORE ANY OF §164's RESULTS EXISTED.** Band
+**10–18 GiB**, point estimate **12.8**, falsifier **above ~25 GiB** — the falsifier being the
+interesting outcome, since it would have said compile is NOT the dominant term on the serial
+production path and §162/§163's mechanism is incomplete there. Measured 14.99: **inside the
+band, falsifier not triggered, and the point estimate low by 17.1%.** The reduction, 2.94x,
+sits inside the 2.4–4.4x predicted from the same arithmetic.
+
+**3. WHY THE POINT WAS LOW, WHICH IS THE PART THAT TEACHES SOMETHING.** The 12.8 was one
+compile (9.00 GiB) plus a t1/t2 residue (3.78), and **the 9.00 came from a ONE-PHASE rung**.
+That silently assumed everything per-phase was compile. It is not: **8 phases still build 8
+meshes and hold 8 sets of coordinates even when a single compiled program serves them all.**
+The residual is **2.19 GiB over 8 phases, 0.27 GiB each** — and §164 independently found
+exactly such a term, the only config-dependent part of its table, "array-sized state beside a
+config-invariant compile". The collapse removes the per-phase COMPILE. The per-phase DATA was
+always there and was invisible underneath it.
+
+**4. AND THE 29.01 GiB REMOVED CONTINUES §162's FALLING MARGINAL.** Seven compiles went away,
+so **4.14 GiB per removed compile at 8-phase depth**, against §162's measured marginals of
+7.39 GiB (1→2) and 4.73 (2→4). 7.39, 4.73, 4.14 — the same curve, extended by an instrument
+that was not used to fit it, and §164's within-run series (8.35, 6.92, 6.08, 5.76 at `coarse`)
+is a third. Four measurements of one shape.
+
+**SUCCESSORS.**
+
+0. **THE PER-PHASE DATA TERM IS NOW THE THING THAT SCALES, AND NOBODY HAS MEASURED IT
+   DIRECTLY.** 0.27 GiB per phase is a residual by subtraction in §3, not a measurement —
+   it is whatever is left after one compile and a t1/t2 estimate, and it carries both of their
+   errors. It matters because it is what a longer stencil now buys: with the compile fixed at
+   one, memory scales with phases through this term alone. Measure it the way §162 measured
+   the compile — fresh processes at 1, 2, 4, 8 phases on `6aa84ca` — which is now cheap
+   precisely because the expensive part is gone. Then the open question is whether the term
+   follows the STENCIL (8, transient per evaluation) or the LATTICE (64, if meshes are
+   retained the way traces were); §153's `_COORD_FN_CACHE` note says the lattice is the unit
+   for traces, and nobody has asked it of the data.
+1. **§105's SUCCESSOR 4 IS UNTOUCHED BY ALL OF THIS AND SHOULD BE RE-STATED WITH TODAY'S
+   ARITHMETIC.** `default_workers` returns `min(n_phase, cpu_count)`, so on an 8+ core box an
+   8-phase stencil still asks for 8 workers. The collapse does not help there and cannot: at
+   8 workers over 8 phases each worker already holds ONE phase, which is the configuration
+   with nothing to collapse. What HAS changed is the per-worker figure it should be checked
+   against — no longer §105's 9.1 GiB per phase held, but a one-compile worker plus its own
+   per-phase data. It is still RAM-blind, and it is still a hazard for `--workers -1`.
+2. **TWO CITATIONS IN §162 NOW READ `MOVED` AND THE CORRECT REPAIR IS NONE — DO NOT
+   RE-POINT THEM.** §162 names the jitted closure at `src/wheel_wheel.py:2916` and `:2927`.
+   `6aa84ca` changed those two signatures IN PLACE — `def traced(v)` became
+   `def traced(v, angles)` — so the anchors still name exactly what §162 says they name,
+   while the sweep sees text that differs from the citing commit's and reports drift. That is
+   the instrument working correctly: MOVED is a candidate for a human, not a verdict. The
+   human's answer here is that the pointer is right and the PROSE is dated — §162 describes
+   the pre-collapse behaviour, which was true at `fa9c9c4` and is superseded by §164, and
+   editing it to match HEAD would falsify a record rather than repair a citation. This is
+   §160 §6's class arriving within hours, on §160's own author's section: **a detection is
+   not a repair instruction.** Filed here so the next pass over the report finds the reasoning
+   before it finds the rows.
