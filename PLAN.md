@@ -13623,7 +13623,7 @@ no special case in the code, and:
 
 `sum p = 100` is an exact conservation law rather than an algebraic near-miss, and the nine
 `shall` weights are structurally out of reach of the points — `Priorities`' axis set is
-asserted equal to `OBJECTIVE_TERMS`, which `wheel_objective.py:394` already asserts is
+asserted equal to `OBJECTIVE_TERMS`, which `wheel_objective.py:399` already asserts is
 disjoint from and exhaustive with `BARRIER_TERMS`. **Points move `should`s only, and that
 is the whole shall/should spine in one line of validation.**
 
@@ -14404,7 +14404,7 @@ report describes are now the same mesh. `t3_terms`'s per-phase loop builds
 `adjoint_grads`'s `(name, factory)` door the way `_qoi_buckling_eig` already does, because
 the QoI needs the arc's node ids and is not in the static `QOI` table. Each phase's two
 values and gradients accumulate into `pn_hub`/`pn_rim` lists exactly as the whole-wheel
-p-norm already did, and `_pnorm_and_grad` (`:1074`) — the phase-aggregation arithmetic
+p-norm already did, and `_pnorm_and_grad` (`:1098`) — the phase-aggregation arithmetic
 `_stress_aggregate` computes for `agg`, factored out WITHOUT its `c = mean(max/pnorm)`
 diagnostic, which is measured against the WHOLE-WHEEL true max and means nothing for a
 per-junction region quantity — turns those into `agg_hub`/`agg_rim` and their gradients.
@@ -14488,8 +14488,8 @@ not go through `_row` — it hand-builds its own row dict from named `rep[...]` 
 second, independent construction `wheel_objective`'s new keys never reached. Running the
 full corrected test file found this as a `KeyError: 'hub_region_pnorm_mpa'`, not as a
 number mismatch — the row the test needed simply did not have the field. Fixed by adding
-the same two pulls beside the existing `kt_hub`/`kt_rim` ones (`:966`). **Left alone,
-deliberately**: `run_multistart`'s own hand-built row (`:1052`), fifty lines below in the
+the same two pulls beside the existing `kt_hub`/`kt_rim` ones (`:982`). **Left alone,
+deliberately**: `run_multistart`'s own hand-built row (`:1068`), fifty lines below in the
 same file — nothing reads `hub_region_pnorm_mpa` off it, and adding fields no test and no
 caller uses would be exactly the speculative completeness this project's house style
 argues against.

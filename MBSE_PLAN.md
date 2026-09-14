@@ -114,7 +114,7 @@ seconds. Step 6 spends compute.
 ## What is already known — do not re-derive, re-read
 
 **The shall/should distinction is ALREADY IN THE CODE, and it is asserted.**
-`wheel_objective.py:394-401`:
+`wheel_objective.py:399-406`:
 
 ```
   BARRIER_TERMS   = ("stress", "buckling", "x_order", "hub_overlap", "fold",
@@ -495,8 +495,8 @@ constants; everything else already threads.
   `study_contact.py:94`, `study_gradient.py:120`, `study_fillet_cost.py:115`,
   `study_svk_rescore.py:75`).
 - **CHECK — the cache audit, BY TEST AND NOT BY READING.** `_T1_CACHE` keys on
-  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:932`);
-  `_KT_CACHE` keys without weights (`:533`); `wheel_wheel._COORD_FN_CACHE` (`:2838`) keys on the
+  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:937`);
+  `_KT_CACHE` keys without weights (`:538`); `wheel_wheel._COORD_FN_CACHE` (`:2838`) keys on the
   static mesh recipe. Two requirement sets differing **only** in `allowable_stress_mpa`
   must give different `stress`/`stress_margin` **in the same interpreter**. A stale jit
   trace returning the old answer is exactly the failure this check exists for.
@@ -586,7 +586,7 @@ Add the arc to `PLAN.md`'s *Open arcs* table as row 9.
   default here turns every silent omission in every driver into a wrong answer.
 
 - **Do not let points reach `BARRIER_TERMS`.** A barrier is a `shall`. Priorities move
-  `OBJECTIVE_TERMS` only, and the disjoint/exhaustive assert at `wheel_objective.py:398-401`
+  `OBJECTIVE_TERMS` only, and the disjoint/exhaustive assert at `wheel_objective.py:403-406`
   must stay green.
 
 - **Do not put diameter, spoke count or face width in the allocation.** Ø100 is frozen for

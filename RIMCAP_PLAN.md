@@ -117,7 +117,7 @@ for the first time.
 
 **SO THE HALF THIS ARC WAS RANKED FOR IS GONE.**  Step 1 asks for `rim_fillet_cap_mm` in
 `wheel_objective`, differentiable, *"mirroring the hub"* — but §103 demoted `Kt`,
-`hub_fillet_cap_mm` and `hub_fillet_r_effective` to **reporting only** (`:1261`).  The rim
+`hub_fillet_cap_mm` and `hub_fillet_r_effective` to **reporting only** (`:1283`).  The rim
 does not need a stress surrogate; the solve prices it.
 
 **WHAT THE HUB CAP STILL DOES IS THE HALF NOBODY RESTATED, AND THERE ARE THREE LIMITS, NOT
@@ -127,8 +127,8 @@ objective evaluation:
 
 | limit | asks | reads | lives in |
 |---|---|---|---|
-| `fillet` barrier (3000) | does a circle of R fit the re-entrant **corner**? | `g[12]` & `g[13]` | `wheel_objective:836` |
-| `fillet_cap` (500) + selection tier | does it fit the **slot** between adjacent spokes? | **`g[12]` only** | `wheel_objective:861`, `wheel_stage3:223` |
+| `fillet` barrier (3000) | does a circle of R fit the re-entrant **corner**? | `g[12]` & `g[13]` | `wheel_objective:860` |
+| `fillet_cap` (500) + selection tier | does it fit the **slot** between adjacent spokes? | **`g[12]` only** | `wheel_objective:885`, `wheel_stage3:247` |
 | `SECTOR_FIT_CLAMP` | does it fit its own **sector**? | both | `wheel_wheel:1527` — mesh, silent |
 
 **STEP 0, RUN: THE GAP BINDS.**  Enumerated over every genome kept on disk (16 GA elites, the

@@ -35,7 +35,7 @@ requirement.  There are two input surfaces and they never mix:
 five names in the same order.  Points move `should`s.  **Points never reach
 `BARRIER_TERMS`** — you cannot buy your way out of a mesh that does not integrate, a
 spoke that folds through itself, or a fillet that does not fit in its sector.  Those are
-`shall`s and their only admissible value is zero, which `wheel_objective.py:394-401`
+`shall`s and their only admissible value is zero, which `wheel_objective.py:399-406`
 already asserts and this module reuses rather than re-inventing.
 
 WHAT THIS FILE DELIBERATELY CANNOT REACH
@@ -897,7 +897,7 @@ def load(path):
 # THE COMPLIANCE TABLE'S TWO HALVES ARE `wheel_objective`'s OWN, READ AND NOT RETYPED.
 # `BARRIER_TERMS` are the `shall`s and `OBJECTIVE_TERMS` are the `should`s — that split
 # is already in the code, already asserted disjoint and exhaustive
-# (`wheel_objective.py:394-401`), and already load-bearing: it exists because defect 6
+# (`wheel_objective.py:399-406`), and already load-bearing: it exists because defect 6
 # promoted an infeasible design on 2026-08-11 by selecting on loss alone.  Reusing it is
 # what stops this file inventing a second requirements taxonomy that can drift from the
 # one the optimiser actually enforces.
