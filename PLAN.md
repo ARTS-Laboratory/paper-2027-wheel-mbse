@@ -26110,3 +26110,92 @@ are left as the dated record they are.
 2. **THE PARENT GROWS WITH THE POOL** — 9.83 / 9.94 at two workers, 10.27 at four. `11 GiB`
    covers what was measured; a pool past four on a larger box is extrapolation, and the next
    box with the memory to try it should record the parent at that size.
+
+---
+
+## §168 — 2026-09-14. §167's SUCCESSOR 0, CLOSED: **S13 RECORDS THE `MemAvailable` READING THAT SIZED ITS LADDER, THE `POOL_GIB` PAIR IT WAS DIVIDED BY, AND WHETHER THE LADDER WAS PINNED** — AND THE WINDOW §167 TOLD US TO NAME IS **EMPTY IN THE REPOSITORY**: NO S13 ARTIFACT WAS COMMITTED BETWEEN `ce19197` AND `c324323`. THE FIRST DRAFT OF THE FIX WAS **TEN LINES AND MOVED 19 LIVE CITATIONS**; THE COMMITTED ONE IS **ZERO NET LINES AND MOVES NONE**, CHECKED ON THE WHOLE TREE'S LIST AND NOT ITS COUNT
+
+`c324323` — `studies/study_stage3.py` (the fields) and `tests/test_stage3.py` (the pin) — plus this
+record.
+
+### 1. WHAT IS RECORDED
+
+`run_phase_pool` reads `WP._available_gib()` before the ladder is derived and before the first
+evaluation — the thing that moves it — and returns three fields beside `cpu_count` and
+`worker_counts`:
+
+```
+  mem_available_gib    the reading                   None only where /proc/meminfo does not exist
+  pool_gib             POOL_GIB's (worker, parent)   None only for a config nobody measured
+  worker_counts_given  the caller pinned the ladder  `--quick`'s [2], or `--pool-workers`
+```
+
+With `cpu_count` and `n_phase` the three reproduce a derived ladder. The one gap is named rather
+than closed: `default_workers` takes its own reading on the next line, so free memory crossing a
+whole-worker boundary between the two reads records a pair that sized the ladder one rung
+differently. Closing it means a reading parameter on `default_workers`, where `None` already
+means "no `/proc/meminfo`" — a sentinel with two meanings — for a race microseconds wide.
+`worker_counts_given` is there because the other half is not a race: a pinned `[2]` beside a
+56.93 GiB reading does not reproduce, and without the flag that reads as a wrong reading.
+
+On this box, outside pytest: **MemAvailable 56.93 GiB, 24 cores**, `_worker_ladder(8, "coarse")`
+= `[1, 2, 4]` — (56.93 − 11) // 10 = 4 — and the three fields serialise to JSON.
+`--pool-workers`' help text still said the ladder stops at `min(n_phase, cpu_count)`, false
+since §167; it now says cores AND free memory, in place.
+
+**The window.** Successor 0 said any S13 artifact dated after §167 and before this fix is not
+comparable on its ladder. `git log ce19197..c324323 -- studies/study_stage3_pool.json` is empty,
+so the only artifacts that can be in it are uncommitted runs on someone's disk. The committed
+artifact is untouched and needs nothing: it predates §167, when the ladder was
+`min(n_phase, cpu_count)`, fully determined by two fields it already records. Not regenerated
+(§119; §167 §4 declined the same).
+
+### 2. WHY ZERO NET LINES — A MEASUREMENT ABOUT THIS FILE, NOT A STYLE
+
+The first draft carried its reasoning as a seven-line comment at the read: **+10 lines**.
+`_citation_sweep.py --into studies/study_stage3.py` in a throwaway worktree commit took the file
+from **40 of 43 citations resolving to 21**, 19 moved by the delta alone — `PLAN.md` §101, §105,
+§129 and §159 and `MBSE_PLAN.md:57`, citing `main` from its `argparse` at `study_stage3.py:2079` to
+its final write at `study_stage3.py:2326`, every one below the insertion. Re-pointing them was the other road, and one citing line rules it out:
+**`PLAN.md:19675` carries one of the 19 beside three citations that were already MOVED before
+the draft** (`:2125-2126`, `:2219`, `:2235`). Editing that line re-dates all four to the repair
+commit, where the three stale ones would then read `ok` — §159's certified wrong repair, made by
+a change that never meant to touch them.
+
+So the committed change is net zero in `study_stage3.py` (2333 lines, as at `37d52ac`), which is
+§167's own precedent for this file: the read is one line with a pointer comment, and the return
+dict is reflowed to absorb the new keys (four short lines merged into two, and two into one). The reasoning moved to the pin's docstring, at the END of `tests/test_stage3.py`,
+where no cited line sits below it. **Whole tree, same instrument, same throwaway commit:
+1140 citations, 105 for a human, and the full row list identical to HEAD's** — diffed, since a
+count can hold while rows trade places (§119).
+
+**The finding worth carrying:** any line added above `study_stage3.py:2079` moves all 19 live
+citations, and one added above the docstring citations at `:1238` moves more, because §101–§159
+cite `main` by line. The next edit to this file
+has the same two roads, and the second one crosses `PLAN.md:19675`.
+
+### 3. THE PIN
+
+`test_s13_records_the_memory_reading_that_sized_its_ladder` runs the real `run_phase_pool` with
+a stand-in evaluator and pool, on 16 cores and `parent + 3.5 x worker` = 46 GiB free that
+**falls to 26 GiB once the first evaluation runs** — so a reading taken anywhere after the ladder
+records a number that did not size it. It asserts `[1, 2, 3]`, the reading, the pair, the flag;
+then that the recorded fields alone reproduce the ladder through the real `_worker_ladder`; then
+that a pinned `[2]` says so. **Mutated before being trusted (§146), twice**: the reading taken
+at return time fails at `the recorded reading is not the one that sized it` (`assert 26.0 ==
+46.0`); the flag forced `False` fails at the pinned-ladder assertion.
+
+**Green, scoped.** 960 collected — 959 plus the pin. The pin and the ladder test pass;
+`test_study_gate_guard.py` 65 passed, which covers the argparse surface and the AST gate. Not
+run: the full suite and `tests/test_pool.py`, which reads only `_split_diffs` and
+`GATE_POOL_GRAD_REL` from this module, neither touched.
+
+### 4. WHAT IT DOES NOT DO
+
+**`_print_phase_pool` still heads the terminal report with cores only.** The artifact is the
+record and carries the reading; the printout does not, and adding it is an in-place edit of
+`:1679-1680` when someone next touches the report.
+
+**SUCCESSORS.** §167's 1 and 2 stand as filed, and no new ones. Of what is open, §167 successor 1
+(a `medium` worker) ranks first, and its premise is a free check that should run before the
+live pool does: whether anything runs Stage 3 at `medium` at all.
