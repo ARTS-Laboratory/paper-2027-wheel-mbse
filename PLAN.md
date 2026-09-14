@@ -3160,7 +3160,7 @@ Stage-3 run record is not reporting an internal state the saved genome does not 
 reached to within a part in two million. What fails is the *outer* secant's ability to resolve
 a force difference smaller than the noise floor of the inner Newton solve that produces it,
 and SVK raises that floor. The function raises rather than returning the state, which is
-correct and documented. `wheel_pool_worker.py:88-98` reports it to the parent as the
+correct and documented. `wheel_pool_worker.py:96-106` reports it to the parent as the
 `solve_reject` that `descend` already knows how to handle — it prints a traceback and is not
 a crash. **Run 1 is unaffected: 301 calls, `n_reject_cumulative` 0.** The tolerance was **not**
 loosened; see the successors.
@@ -12163,7 +12163,7 @@ carries `sweep_filleted_svk` — fourteen rows, `--sweep --fillet`, `coarse`, SV
 distinct hub-share values against the unfilleted control's one — and it was regenerated at
 §85.  §91 quotes its numbers (`hub_fillet_cap_mm` 0.6657, the shipped `R_hub` at 99.7% of
 it) three paragraphs above the ranking that asks for it, and
-`tests/test_wheel_fea.py:206`'s docstring has carried the finding since §75.
+`tests/test_wheel_fea.py:310`'s docstring has carried the finding since §75.
 
 So the fillet arc did not have one term left.  It had none.  §89 said *"those two numbers
 ARE the decision"* — the cost and the surrogate — and both have existed since §90 and §75
@@ -13726,7 +13726,7 @@ is three asserted numbers.
 **No `medium` production descent was run and nothing is promoted.** `--requirements` is
 proved at `coarse` and by test. **`ALLOWABLE_STRESS_MPA`'s `FFF_KNOCKDOWN` / `SAFETY_FACTOR`
 derivation is not re-opened**; the card recovers `sigma_ult(20C) = 50.0` from it rather than
-asserting a fourth number. **`studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25`
+asserting a fourth number. **`studies/study_deflection_gci.py:73`'s `SAFETY_FACTOR = 1.25`
 is Roache's GCI factor, is unrelated, and was not touched.**
 
 **The 51/43/6/0.3/0 portfolio is arithmetic on the shipped weights, not a measurement of an
@@ -14168,7 +14168,7 @@ The filleted arm's memory is a near-fixed JIT-compile cost, not a per-element on
 the elements buys 0.7% more RSS.  The unfilleted arm stays under 12 GB throughout.
 Neither was knowable from `make gci`'s 20.6 GB whole-ladder figure (Makefile:727) or
 `study_m9`'s 3.1 GB `fine` figure — both solve `fine` outside the Stage-3 objective, and
-`study_stage3.py:2095` has flagged contact-plus-secant-plus-adjoint at `fine` as never
+`study_stage3.py:2101` has flagged contact-plus-secant-plus-adjoint at `fine` as never
 attempted in this repo for exactly this reason. It has now been attempted, at both mesh
 constructions, and it fits the 61 GB box with room to spare when run one cell at a time.
 
@@ -14235,7 +14235,7 @@ geometry moved under it.  That is a missing gradient path, and it would have mea
 extending the adjoint's QoI contract.
 
 It is not missing.  `study_corner_singularity.fillet_arcs` already recovers the arc **by a
-least-squares circle fit through the arc's own mesh nodes** (`:226`), reporting a 7e-14 mm
+least-squares circle fit through the arc's own mesh nodes** (`:227`), reporting a 7e-14 mm
 residual because the nodes are on a circle by construction.  Given the node IDS the
 identical fit runs on the traced `coords`, and the arc becomes a function of the mesh that
 `adjoint_grads` already differentiates and already chains to the genes through one shared
@@ -14798,7 +14798,7 @@ route by which the two changed places.  `Makefile:253`, corrected by this sectio
 against the CURRENT filleted measurement.  All three divisions are true of something; only
 the superlative here was attached to the wrong one.]**
 
-The `48.13 h` still quoted in `studies/study_stage3.py:1254` and `:2235` is the 2026-07-29
+The `48.13 h` still quoted in `studies/study_stage3.py:1258` and `:2282` is the 2026-07-29
 reading, two generations stale; PLAN.md's own number of record is S13's 46.46 h -> 11.77 h.
 
 **And `0.774 s` is not the same quantity as either.**  `study_stage3.py:1246` describes it
@@ -15489,7 +15489,7 @@ new evidence"* — because it is not a re-proposal at all.
 Premise check, mechanical:
 
 - `set_min_wall(2.0)` is still wrapped around both tests named in the plan
-  (`tests/test_wheel_fea.py:370` and `:407`), restored in a `finally` as described. INTACT.
+  (`tests/test_wheel_fea.py:477` and `:514`), restored in a `finally` as described. INTACT.
 - `MIN_WALL_MM = 1.2` (`src/wheel_fea.py:236`). INTACT.
 - The measurement path is untouched by §103: `study_reds_ratio_stability.py` never builds a
   wheel; `run_beam_blindness`'s FEA side is `_blindness_row`, and it calls
@@ -15881,9 +15881,9 @@ a descent loop, every one of those becomes a silently rejected step — a 300-st
 quietly descends nothing, throwing away every trial for a reason no event records. So the
 refusal got a name:
 `wheel_wheel.MeshRefusedError`, a **subclass of `ValueError`** so that the `except ValueError`
-already wrapped around builds in `studies/study_hub_cap.py:704` and
-`studies/study_fillet_fold.py:202`, and the `pytest.raises(ValueError, match=...)` in
-`tests/test_filleted_mesh.py:823,862`, keep working untouched.
+already wrapped around builds in `studies/study_hub_cap.py:728` and
+`studies/study_fillet_fold.py:226`, and the `pytest.raises(ValueError, match=...)` in
+`tests/test_filleted_mesh.py:878,917`, keep working untouched.
 
 Marked, all three where the condition is a function of the GENOME:
 
@@ -15923,7 +15923,7 @@ A `RuntimeError`-only guard occurred in **exactly one file in the whole tree** �
 `:626` the trial loop, `:937` L-BFGS-B's `fun`); `grep -rn "except RuntimeError" --include=*.py`
 returns those three lines and nothing else. Every other evaluation loop over many genomes
 already catches `Exception`:
-`study_stage3.run_multistart:1068` (the elite screen, whose own test asserts *"one bad genome
+`study_stage3.run_multistart:1084` (the elite screen, whose own test asserts *"one bad genome
 must not cost the other fifteen"*), `study_objective.py:445,668,1022`, and
 `wheel_pool_worker.py:98`. Nothing else needed changing, and that is a measurement rather than
 an assumption.
@@ -17861,7 +17861,7 @@ not `fillet=`, and every check returns True at the outgoing genome with today's 
 `study_svk_rescore.run_control` (§25) throughout: **the constant stays, the READ moves**
 onto the file the constant was measured on, and rows that characterise the SHIPPED wheel
 keep following `best_solution.json`. Repointing `--genome` was never available —
-`tests/test_tri_block.py:815` asserts `report["genome"] == "best_solution.json"` from the
+`tests/test_tri_block.py:955` asserts `report["genome"] == "best_solution.json"` from the
 other side, two more tests re-measure against a shipped-genome fixture, and `_gate_guard`
 refuses any other genome under a committed artifact's name.
 
@@ -19549,7 +19549,7 @@ the single `args.out !=` test, guarding `study_stage3.json` alone. Three tracked
 come out of that same file uncovered: `study_stage3_m8bi5.json`, `study_stage3_pnorm.json`,
 `study_stage3_pool.json`. `make m8bi5` is permitted precisely because it writes elsewhere,
 and `--sections mesh_convergence,multistart --config smoke --out study_stage3_m8bi5.json`
-is accepted. The plot goes with it: `:2284` derives the `.jpg` from `--out`, so a degraded
+is accepted. The plot goes with it: `:2326` derives the `.jpg` from `--out`, so a degraded
 run redraws the committed figure as well.
 
 **`tests/test_study_gate_guard.py` cannot catch either gap by construction.** Its `DRIVERS`
@@ -23869,7 +23869,7 @@ a PLAN section, per `pyproject.toml`'s policy set at §31 — a policy that has 
    found. **Two constraints now exist that did not when it was filed.** §150 §2 measured
    `smoke` to be the CONSERVATIVE evaluation point for the other `test_gnl` red, so an
    argument for moving this one's fidelity must be made for this test alone and never for
-   the file. And `tests/test_gnl.py:230` carries a STRICT xfail — §14 item 4a's
+   the file. And `tests/test_gnl.py:349` carries a STRICT xfail — §14 item 4a's
    pre-registered small-load gate, 0.2007% against 0.1%, whose reason says
    *"GATE_SMALL_LOAD_REL is NOT to be moved"* — so **a repair that changes the small-load
    solver path can turn that xfail into a passing test, which under `xfail_strict` is a

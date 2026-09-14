@@ -108,7 +108,7 @@ pin whose justification was retired is not.
 ## PREMISE CHECKED AGAINST THE FILLET SWITCH — 2026-09-03. **INTACT, AND THE JUDGEMENT GAINS A SECOND DIMENSION.**
 
 PLAN.md §106.  Verified mechanically: `set_min_wall(2.0)` still wraps both named tests
-(`tests/test_wheel_fea.py:370`, `:407`) and is restored in a `finally`; `MIN_WALL_MM = 1.2`
+(`tests/test_wheel_fea.py:477`, `:514`) and is restored in a `finally`; `MIN_WALL_MM = 1.2`
 (`src/wheel_fea.py:236`); and the measurement path is untouched by §103 — `run_beam_
 blindness`'s FEA side is `_blindness_row`, which calls `WW.build_wheel(v, cfg)` with **no
 `fillet=` argument** (`studies/study_wheel_fea.py:465`), the unfilleted default.  §31's CV

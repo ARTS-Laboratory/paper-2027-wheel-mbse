@@ -1168,7 +1168,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     because `force`, `E` and `nu` already thread — `force` here, the other two on
     `**problem_kw` and through the process pool (`wheel_objective.py:1151`) — and the
     asymmetry was arbitrary: three of the five quantities a MISSION sets could be varied
-    inside one interpreter and two could not.  `tests/test_objective.py:1257` had to
+    inside one interpreter and two could not.  `tests/test_objective.py:1447` had to
     `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move one of them, which is
     the tell.  See `wheel_requirements.py` and MBSE_PLAN.md Step 3.
 

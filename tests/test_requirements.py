@@ -9,7 +9,7 @@ TWO CLAIMS THAT PULL IN OPPOSITE DIRECTIONS, AND BOTH ARE GATED HERE.
      14 breakdown terms.  A default that moved is a silent re-interpretation of every
      committed artifact on disk and of the five study drivers that re-alias
      `SERVICE_FORCE_N` (`study_gnl.py:106`, `study_contact.py:94`,
-     `study_gradient.py:120`, `study_fillet_cost.py:115`, `study_svk_rescore.py:75`).
+     `study_gradient.py:120`, `study_fillet_cost.py:115`, `study_svk_rescore.py:76`).
 
   2  **AND YET IT REACHES.**  Two requirement sets differing ONLY in
      `allowable_stress_mpa` must give different `stress`/`stress_margin` IN THE SAME

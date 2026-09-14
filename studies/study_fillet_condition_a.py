@@ -203,7 +203,7 @@ def run_ladder(genome=GENOME, ladder=LADDER, n_phase=N_PHASE, kinematics=KINEMAT
 # each cell's own cost does not; a fresh process per cell returns that memory to the OS
 # on exit, which is the one configuration this repo has actually observed to survive.
 #
-# `study_m9.py` solved the same class of problem (`fine` at 261k dof, `study_m9.py:141`:
+# `study_m9.py` solved the same class of problem (`fine` at 261k dof, `study_m9.py:270`:
 # "the most likely thing in this repo to be OOM-killed by its own cgroup cap -- and a
 # SIGKILL is not catchable") with a per-SECTION checkpoint and a `complete` flag that
 # stays false, with no verdict, until every section is in.  This adopts the same shape at
@@ -277,7 +277,7 @@ def run_one_cell(out_path, genome, n_phase, kinematics, ladder, cfg_name, fillet
         entry["peak_rss_gb"] = round(peak_rss_gb(), 2)
     except Exception as exc:
         # A refused cell is RECORDED rather than left to crash the process with nothing
-        # written — `study_m9.py`'s pattern (`study_m9.py:141-146`) for the same class of
+        # written — `study_m9.py`'s pattern (`study_m9.py:142-147`) for the same class of
         # never-before-run rung.  This cannot catch a cgroup memory kill (SIGKILL is not
         # catchable); it is here for the failures that ARE Python exceptions.
         entry = {"error": f"{type(exc).__name__}: {exc}",

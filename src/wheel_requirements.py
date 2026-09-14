@@ -171,7 +171,7 @@ STROKE_EFFICIENCY = 0.5
 # knockdown is monotone in life and roughly log-linear over a few decades, and that is all
 # this claims.
 #
-# NOT TO BE CONFUSED WITH `studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25`,
+# NOT TO BE CONFUSED WITH `studies/study_deflection_gci.py:73`'s `SAFETY_FACTOR = 1.25`,
 # which is ROACHE'S GCI factor and has nothing to do with structural margin.  Two
 # different `SAFETY_FACTOR`s live in this repo; a global rename would silently corrupt a
 # convergence gate.

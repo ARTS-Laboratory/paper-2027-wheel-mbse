@@ -54,7 +54,7 @@ Four consequences, each of which this arc is meant to end:
    'temperatur|thermal|celsius|glass.trans|\bTg\b|ambient|anneal|creep'` over `src/`
    returns **zero hits — not one**. Over `studies/`, `tests/`, the `Makefile` and the other
    ten `.md` files it returns **four lines, every one a false positive**: a cosine LR
-   schedule that "anneals" (`study_stage3.py:2125-2126`, two lines), "import creep"
+   schedule that "anneals" (`study_stage3.py:2202-2203`, two lines), "import creep"
    (`test_pool.py:286`), and "creeping to ~0.808" (`PLAN.md:6599`).
    `YOUNGS_MODULUS_PLA_MPA = 2300.0` and `ULTIMATE_STRESS_MPA = 40.0` are
    single-point values at an **unstated** temperature. A PLA part is a thermoplastic part:
@@ -493,7 +493,7 @@ constants; everything else already threads.
   for bit. A default that moved is a silent re-interpretation of every committed artifact
   and of the five study files that re-alias `SERVICE_FORCE_N` (`study_gnl.py:106`,
   `study_contact.py:94`, `study_gradient.py:120`, `study_fillet_cost.py:115`,
-  `study_svk_rescore.py:75`).
+  `study_svk_rescore.py:76`).
 - **CHECK — the cache audit, BY TEST AND NOT BY READING.** `_T1_CACHE` keys on
   `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:937`);
   `_KT_CACHE` keys without weights (`:538`); `wheel_wheel._COORD_FN_CACHE` (`:2838`) keys on the
@@ -594,7 +594,7 @@ Add the arc to `PLAN.md`'s *Open arcs* table as row 9.
   parameter; `SPOKE_WIDTH_MM = 22.4` is the extrude depth the whole 2D plane-stress model
   rests on.
 
-- **Do not touch `studies/study_deflection_gci.py:72`.** It defines its own
+- **Do not touch `studies/study_deflection_gci.py:73`.** It defines its own
   `SAFETY_FACTOR = 1.25` and that is **Roache's GCI safety factor**, entirely unrelated to
   `wheel_fea.SAFETY_FACTOR = 1.6`. Two different `SAFETY_FACTOR`s live in this repo and a
   global rename would silently corrupt a convergence gate.
@@ -721,7 +721,7 @@ of which is a compliance question.
   not a hope: `test_req_baseline_is_bit_identical_to_naming_no_requirements`.
 - **Ø100, `NUMBER_OF_SPOKES = 12` and `SPOKE_WIDTH_MM` were not touched**, and no
   requirement axis reaches any of them.
-- **`studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25` was not touched.**  It
+- **`studies/study_deflection_gci.py:73`'s `SAFETY_FACTOR = 1.25` was not touched.**  It
   is Roache's GCI factor and is unrelated to `wheel_fea.SAFETY_FACTOR = 1.6`;
   `wheel_requirements.SAFETY_FACTOR_BASE`'s docstring names the collision so the next
   person to reach for a global rename is warned in the file that would break.
