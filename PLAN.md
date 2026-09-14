@@ -26480,3 +26480,158 @@ this section is appended at the end of the file.
 4. **`Makefile:278`'s serial 43.4 GiB predates `6aa84ca`**, and §165 measured `genes_over_knee`
    alone falling 44.00 → 14.99 GiB across that commit. An inference for S10's figure, unmeasured;
    it is also the GUI's `GIB_DESCENT_COARSE`.
+
+---
+
+## §171 — 2026-09-14. §170's SUCCESSOR 0, CLOSED: **`coarse`'s POOL PAIR IS (11, 11).** THE `-1` CALLERS THE PAIR GOVERNS RUN 60 STEPS, NOT 40, AND AT THEIR OWN ARGV A WORKER'S KERNEL MARK REACHED **10.242 GiB — 0.242 OVER THE 10.0 SIZED ON ONE CALL**, FIRST PAST IT AT STEP 30. BY §167's OWN RULE, WHOLE GiB ABOVE THE LARGEST MARK, THE WORKER IS 11 AND THE PARENT STAYS 11; `smoke` FOLLOWS. **THE GROWTH IS HELD, NOT A WIDER TRANSIENT** — THE TREE's PER-WINDOW FLOOR ROSE AS FAR AS ITS PEAK — AND NOTHING IN THIS REPOSITORY's CACHES OR SHAPES CHANGES WITH A STEP, SO WHAT GROWS IS BELOW THE REPO AND STEP 300 IS UNBOUNDED BY ANYTHING HERE
+
+Code in `8a05f81`; this is the record. Two sessions again: this one ran the descent and made the
+change; the second read the worker's path from code and the record while the box was held.
+
+### 1. THE PREMISE: WHO CALLS `default_workers` FOR MORE THAN 40 STEPS
+
+§170 successor 0 asked it before any run. From code, four callers, and none runs 40:
+
+| caller | config / steps / scheme | where |
+|---|---|---|
+| `make help` on `make stage3`: "add `--workers -1`" | coarse / 60 (`DEFAULT_STEPS`, `wheel_stage3.py:136`) / rqmc | `Makefile:79` |
+| the GUI's stage3 target, `workers` "0 serial, -1 auto" | coarse / 60 / rqmc, all defaults | `gui/catalog.py:175-185`, `:244-253` |
+| the walkthrough | medium / 100 / rqmc | `REPO_EXPLAINED.tex:1751` |
+| the restart helper, which forwards a recorded `workers` | whatever it restarts | `studies/stage3_resume_genome.py:83` |
+
+S13's ladder (`studies/study_stage3.py:1163`) also asks `default_workers`, for a handful of
+evaluations, not a descent. The first two are one argv, so one run covers both.
+
+### 2. THE MEASUREMENT
+
+§170's watcher and kill switch (`MemoryMax=55G`, `MemorySwapMax=0`), a worktree at `f8b26bf`, the
+`Makefile`'s five pinned variables, and the GUI's argv verbatim except `--out`/`--best-out`:
+`--config coarse --steps 60 --n-phase 8 --phase-scheme rqmc --kinematics svk --workers -1 --start
+best --log-every 1`. `-1` chose **4** at 57.05 GiB available — (57.05 − 11) // 10 = 4, and 24 cores.
+Exit 0 in 5457.6 s, no step abandoned or rejected, no events, 8 distinct rqmc stencils.
+
+```
+  run                                   parent  workers (GiB)                   SUM     tree peak  ratio  system
+  §170  uniform, --workers 4, 40 steps  10.242   9.949  9.797  9.876  9.750    49.613   49.076   1.011  0.994
+  §171  rqmc,    --workers -1, 60 steps 10.267   9.757  9.892  9.562 10.242    49.719   49.438   1.006  0.982
+```
+
+Columns as §169's: `ratio` is SUM over the tree's simultaneous RSS peak, `system` SUM over the
+rise in `MemTotal - MemAvailable` (50.655 GiB here). Step 0 389.62 s; steady step 84.40 s (sd
+2.65) against §170's 84.53 (sd 1.74).
+
+**(a) Per process, per step window** (maximum RSS in the window, sampled every ~5 s, so a little
+under the `VmHWM` column above):
+
+```
+  step   parent   w1      w2      w3      w4      workers
+     1   10.073   9.308   9.087   8.782   9.328   36.505
+    10   10.168   9.611   9.376   9.047   9.784   37.818
+    20   10.199   9.678   9.866   9.104   9.884   38.532
+    30   10.268   9.568   9.775   9.417  10.008   38.768
+    40   10.270   9.668   9.776   9.396  10.066   38.906
+    50   10.270   9.580   9.830   9.468  10.148   39.026
+    60   10.270   9.680   9.777   9.440  10.148   39.045
+
+  least-squares slope by block   1-10   11-20   21-30   31-40   41-50   51-60
+    workers, summed (MiB/step)  139.3    70.3    27.8     8.1    24.0    -8.3
+    parent (MiB/step)             8.7     4.3     4.7     0.3     0.0     0.0
+```
+
+Steps 1→60: workers +2.540 GiB, parent +0.197. `w4` passed 9.75 at step 7 and 10.0 at step 30; no
+other worker passed 10.0. The rate falls and is again not monotone: steps 31–40 were nearly flat
+and steps 41–50 then added 24 MiB a step, `w4`'s 10.066 → 10.148 among it — §170 §2(b)'s shape, one
+scheme over.
+
+**(b) Held, not a wider tail.** The second session proposed the discriminator, and the tables
+already carried it: the tree's per-window **minimum** rose 45.446 → 48.337 GiB from step 1 to step
+60, as its maximum rose 46.622 → 49.315. A floor rising with the peak is resident memory that stays
+resident; a transient that got wider would leave the floor flat. So a cap has to cover the
+residency, and the residency is what grows.
+
+**(c) rqmc against uniform is not a like-for-like continuation** (second session's caution, and
+right): the scheme changes the phase values. Their peaks sit inside §170 §2(c)'s run-to-run scatter
+of 0.91 GiB — the tree's window maximum at step 40 is 49.279 here and 48.961 there, 0.318 apart —
+and `ratio` holds at 1.006–1.029 across all three descents (§170's 6-step run is the 1.029).
+
+### 3. WHAT THE CODE SAYS CAN GROW
+
+Read by the second session, the load-bearing pieces re-checked here:
+
+- **No array shape depends on the genes.** `WheelConfig.n_elements` (`wheel_wheel.py:239-245`) is
+  a function of the config's integers only; the fillet radii move node positions, not counts.
+- **The phase is a traced argument**, not a cache key, since §162 successor 1
+  (`wheel_stage3.py:40-45`, in place), so `rqmc`'s 8 offsets compile nothing `uniform` does not.
+  `FILLET_PLAN.md:3618-3623` already measured the genome side: "37 genomes across four flank
+  orientations now produce four traces, one per orientation", and `wheel_stage3.py:51-59` pins the
+  orientation for the run.
+- **Every module-level cache on the worker's path** is keyed on config, element order or a flag
+  that a step does not change. The one genome-keyed cache in the tree, `_AREA_REF_CACHE`
+  (`wheel_wheel.py:3578`), is reached only through `area_report`, which nothing on the path calls.
+  Nothing in `src/` or `studies/` calls `jax.clear_caches`, `gc.collect` or `cache_clear`.
+
+So the growth is **not a repository cache and not a retrace**, and what remains — allocator or
+XLA-runtime retention, or a per-step peak that depends on where the iterate is — is **inference**,
+unmeasured. The record's one long reading points the other way and does not transfer: §113's serial
+descent **plateaued at 38.3 GiB** over six hours (`PLAN.md:16845-16849`), before `6aa84ca`, and §166
+§6 (`PLAN.md:25938-25941`) found the post-collapse process hands memory back at the call level.
+
+### 4. THE CHANGE, `8a05f81`
+
+`POOL_GIB["coarse"]` and `["smoke"]` (10, 11) → (11, 11). The rule is unchanged and is §167's: whole
+GiB above the largest mark; the largest worker mark is now a descent's, 10.242, and the largest
+parent mark is still §167's 10.271 (descents: 10.242, 10.267). `smoke` carries `coarse`'s pair as
+an upper bound.
+
+**What it costs**, with 11 + 4 × 11 = 55 GiB for a four-worker pool: at this box's 57.05 GiB reading
+nothing — both pairs give 4. Between 51 and 55 GiB available, (11, 11) gives 3 where (10, 11) gave
+4, and (10, 11)'s 51 GiB budget sat **1.281 GiB over the measured SUM and 0.345 over the system
+rise** of this run. That band is where the old pair admitted a pool with less than 0.4 GiB to spare.
+
+**The pin** (`test_pool.py:434`) takes `coarse`'s marks from the descent, (10.242, 10.271), and
+gains the other direction for `coarse`: `default_workers(8, "coarse") == 4` at 57.05, the reading
+this pool fit at. Mutated before trusting, `__pycache__` cleared each time: the old (10, 11) fails
+at `assert 10.0 > 10.242`, (12, 11) at `assert 3 == 4`, (11, 10) at `assert 10.0 > 10.271`. The
+`POOL_GIB` comment and three docstrings the change made false were corrected in place, line-neutral.
+Green, scoped as `0189ff6`: the three sizing tests and the pin in `test_pool.py` and S13's two
+ladder tests pass, 961 collected. Citation sweep in a throwaway commit: 1172 citations, 105 → 108
+for a human, the three new rows being §169's and §170's `wheel_pool.py:152` and §170's
+`test_pool.py:450` — the two lines whose values `8a05f81` sets. Nothing moved.
+
+**The pin's sentence "`coarse`'s (10, 11) at `medium` fails here" is gone** (`f8b26bf`'s
+`test_pool.py:443`), because it no longer can: the two configs now carry the same pair. §169 §4's
+mutation of it was true when made.
+
+### 5. FLAGGED, NOT FIXED
+
+1. **`Makefile:397-404` gives `uniform` as a MEMORY constraint whose mechanism is retired.** It says
+   `rqmc` retains 64 traces because `coord_fn` keys on `float(phase)` — measured "~0.4 GB per trace"
+   and an OOM at step 3 on the 31 GB box. The phase left that key at §162 successor 1, and §2 is a
+   60-step `rqmc` pool at a peak inside the scatter of `uniform`'s. `wheel_objective.py:1000-1001`
+   (the `phase_stencil` docstring) keeps the same retired warrant, and `gui/catalog.py:249` ("rqmc
+   keeps coord_fn's jit cache hitting") inherits it. The `minwall` block's second reason for
+   `uniform` (`Makefile:451-453`, the arms were measured under it) does not depend on memory and
+   stands.
+2. **§170 §4's sweep missed a twelfth pooled descent**: `make minwall-%` (`Makefile:458`), coarse /
+   svk / `MINWALL_WORKERS ?= 4` / 125 steps / no cap, no memory figure — the shape of rows 7–8.
+
+### 6. NOT DONE
+
+No step-300 mark, no `medium` descent, no GUI or `Makefile` edit.
+
+**SUCCESSORS.**
+
+0. **THE `medium` HALF, NOW WITH A NUMBER TO BEAT.** §170 successor 1, re-ranked first. `medium`'s
+   (11, 11) is 0.351 over a single-call worker mark of 10.649. `coarse`'s descent added **0.742**
+   over its largest call mark (9.500 → 10.242) by step 60; if anything like that transfers, a
+   `medium` descent's worker passes 11. Run the shape the `medium` callers use for at least 60 steps
+   at four workers — `svk-medium`/`buildcap`/`knee` pin `uniform` and 4, `REPO_EXPLAINED.tex:1751`
+   is `rqmc` at `-1` — and size from its mark by the same rule. Not a prediction: nothing here says
+   the growth scales with the mesh.
+1. **STEP 300.** Nothing bounds `coarse`'s growth past step 60 (§2(a), §3), and nothing cheaper
+   than the run itself says whether it saturates: 7.15 h at the GUI argv (§170 §2(d)).
+2. **RE-DERIVE THE CAPS AND THE GUI's MODEL** (§170 successor 2) over **twelve** rows, after 0.
+3. **DECIDE WHAT `prod9` AND `prod10` ARE** (§170 successor 3).
+4. **`Makefile:278`'s serial 43.4 GiB** (§170 successor 4).
+5. **THE RETIRED `rqmc` MEMORY WARRANT** (§5.1): three places, and the `Makefile` one sets a recipe
+   flag on it. Settle what `prod`'s `uniform` is for before changing a word of it.
