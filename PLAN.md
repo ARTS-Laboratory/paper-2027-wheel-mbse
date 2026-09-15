@@ -27461,3 +27461,101 @@ reads as `hwm_by_pid`; `knee`'s record is read from its per-pid samples and the 
    the one thing between `make kinrank` and a clobbered closed record.
 4. **`make svk`'s serial `medium` rescore and `make contact`'s serial ladder** (§174 §8.3),
    unmeasured since §164.
+
+---
+
+## §176 — 2026-09-15. §175's SUCCESSOR 3 / §130's SUCCESSOR 0, DECIDED WHILE `knee` RUNS: **THE FILLETED `kinrank` ARTIFACT IS THE GATE, AND §32's UNFILLETED ONE IS REFUSED UNDER EVERY RUN** — `make kinrank`'s DEFAULT WROTE OVER THE ONLY ARTIFACT HOLDING THE RHO −0.83 THAT `wheel_stage3`'s `--kinematics svk` DEFAULT CITES. THE "NEVER A ONE-FILE CHANGE" WARNING THAT KEPT THIS OPEN EIGHT DAYS WAS **TWO DEFAULTS AND ONE COMMENT**; EVERYTHING ELSE THAT NAMES THE OLD FILE IS A RECORD
+
+Code in `e6b238a`; this is the record. Compute-free, so it ran beside `knee`. The second session
+censused every mention of both names and checked the guard design against `_gate_guard` and its
+test; this one decided and made the change.
+
+### 1. THE DECISION, AND WHAT "CANONICAL" IS SCOPED TO
+
+`studies/study_kinematics_rank_filleted.json` is the gate for this tree: it is the mesh
+`wheel_objective` has solved since §103, and §175 §2(c) re-ran it at four workers and got its 38
+losses back bit for bit, the gradient leaves to 5.1e-14. `studies/study_kinematics_rank.json` stays
+what §32's summary (`PLAN.md:5553-5554`) says it is, that arc's evidence, on the unfilleted mesh.
+**The two do not agree, which is why the unfilleted one must never be overwritten:**
+
+```
+  block      unfilleted (§32)                          filleted
+  full       n 36, rho +0.6914, argmin identical no    n 19, rho +0.9860, argmin identical yes
+  feasible   n 10, rho -0.8303, R2 fails                n  5, rho +1.0000, R2 passes
+```
+
+On the filleted mesh linear ranks the five feasible designs exactly as SVK does; §32's verdict
+survives there on R3 alone, the gradient cosine (0.7878 at the shipped genome) — the companion
+record's own headline, "the verdict survives and its three supports do not"
+(`KINEMATICS_PLAN.md:508`). So the filleted file supersedes nothing in §32: each artifact is the
+evidence for its own construction, and only the filleted one can be reproduced at this commit.
+
+### 2. WHY NOW, AND WHY IT WAS CHEAP
+
+§132 §5 measured the clobber — a degraded run cuts the 115 kB artifact to 316 bytes and leaves
+`linear_is_acceptable: false` standing, the real artifact's own verdict — and parked the guard on
+this decision. It was still reachable at the full run: `KINRANK_OUT` named the unfilleted file, so a
+bare `make kinrank` wrote filleted results over §32's evidence, and `1a9d20c`'s help line had just
+told a reader that run takes an hour.
+
+§130 successor 0 said promotion was "never a one-file change": §32's summary, Step 1's quoted
+internals and `KINRANK_OUT`'s default all describe the old file. The second session's census, 31
+mentions of the two names: §32's summary and Step 1's record header (`KINEMATICS_PLAN.md:322-325`,
+the 2026-08 run's 8 workers, 3549 s, 0 failed cells) are records of that run and stay; every
+`PLAN.md` mention is a closed record; `tests/test_kinematics_rank.py` re-derives each artifact's
+verdict from its own rows and reads no default. **Three lines were live**: the two `--out` defaults,
+and `wheel_stage3`'s warrant, which paired "`make kinrank`" with the unfilleted file.
+
+### 3. THE CHANGE, `e6b238a`
+
+- **Defaults.** `KINRANK_OUT` and the driver's own `--out` name the filleted file. Line-neutral.
+- **The guard, one call per name** (`_gate_guard`'s §131 shape;
+  `studies/study_kinematics_rank.py:548`, `:552`). The unfilleted name takes one unconditional
+  reason, so any run whose `--out` spells it is refused — `make kinrank`'s own argv until this
+  commit among them. The filleted name refuses `--config` other than `coarse`, `--n-phase` other
+  than 8, `--no-elites`, `--skip-rank` and `--skip-grad`; `--workers` is a scheduling knob and
+  passes. The check is string equality, as the helper's docstring intends, so a path typed another
+  way still writes: it guards the default, not the inode — and for a file no run can regenerate,
+  that is the residual risk rather than a convenience. Both names are bare basenames, because the
+  driver joins `--out` with `HERE` and a `studies/...` spelling reaches neither file. The import
+  sits inside `main()` so that no line above it moves. The row lists the names in call order, and
+  the test's fixture stops at the last one, so reordering either alone breaks the row.
+- **`wheel_stage3`'s warrant** now names "§32's unfilleted studies/study_kinematics_rank.json"
+  instead of `make kinrank`. Line-neutral.
+- **`tests/test_study_gate_guard.py`** gains a `DRIVERS` row for both names — the recipe argv, and
+  seven refusals including the pre-`e6b238a` recipe aimed at the unfilleted name — and the comment
+  that held the slot ("its guard waits on which of its two artifacts is canonical") says it was
+  decided. Without the row the change turns `test_the_set_of_unchecked_recipes_has_not_grown` red,
+  because the guard call enrols the driver by string scan.
+
+**Green.** `tests/test_study_gate_guard.py` 68 passed (65 before, three new ids); with
+`tests/test_kinematics_rank.py`, 76; 266 MB, run beside `knee` at ~11 GiB free. Four mutants, each
+red alone: the unfilleted reason made conditional, `--workers` counted as degrading, `--skip-grad`
+unguarded, and the old Makefile default. The mutant that deletes a guard call outright was not run —
+it lets the driver start its study inside the test's 20 s alarm, and nothing heavy runs beside
+`knee`. Citation sweep in a throwaway commit: 1280 citations, 126 for a human, the same list as
+`6af599f`; the driver's added lines sit below its last cited anchor, and nothing cites the test file
+by line.
+
+### 4. NOT DONE, AND WHAT THIS LEAVES VISIBLE
+
+**`wheel_stage3`'s `--kinematics` WHY paragraph is still a ranking argument**
+(`src/wheel_stage3.py:1124-1132`): rho −0.83, 82% of pairs discordant, different argmins, the
+minwall ladder at −0.8333, a correction spanning 5.70–48.54%. Every figure is the unfilleted mesh's,
+and on the filleted mesh the feasible ranking it describes agrees instead (rho +1.0000, the same
+argmin). The default itself stands on R3 — §130 reproduced "linear is not an acceptable default for
+search" — so what is wrong is the stated reason, not the setting. Not rewritten here: nine lines of
+reasoning are not a line-neutral repair, and it is its own decision about which condition the
+default rests on.
+
+**SUCCESSORS** — §175's, re-ranked with 3 closed.
+
+0. **`knee`'s result against §175 §4's registration** (running). `make knee` passes no
+   `--log-every`, whose default is 10, so steps log at 0, 10, …, 100 and the checks at 25 and 75
+   have no line of their own: they are read from the artifact's per-step seconds against the per-pid
+   samples.
+1. **STEP 300 at `coarse`**, at `svk-shipped`'s argv, 7.15 h (§175 successor 1).
+2. **Restate the `--kinematics svk` warrant around R3** (§4). Prose only, in `src/wheel_stage3.py`,
+   and it has to stay line-neutral or move seven citations of six anchors below the paragraph with
+   it.
+3. **`make svk`'s serial `medium` rescore and `make contact`'s serial ladder** (§174 §8.3).
