@@ -88,7 +88,7 @@ FIRST_EVAL_S = 1180.0
 # has already OOMed twice.
 GIB_BASELINE = 23.0
 GIB_DESCENT_COARSE = 43.4
-GIB_PER_WORKER = 12.7           # `svk` comment: 11.5-12.7 GiB per worker beside the parent
+GIB_PER_WORKER = 12.7           # pre-fillet `svk` comment; now only a config POOL_GIB lacks
 
 # `n_span * n_thick` per spoke block, from `wheel_wheel.CONFIGS`, normalised to coarse.
 ELEMENT_RATIO = {"smoke": 32 / 192, "coarse": 1.0, "medium": 576 / 192, "fine": 1536 / 192}
@@ -102,13 +102,36 @@ SECONDS_BASIS = {
 }
 GIB_BASIS = ("affine on two measured points -- 43.4 GiB at coarse, >22.9 GiB at smoke; "
              "a LOWER bound above coarse")
+POOL_BASIS = ("pool: parent + workers x worker from wheel_pool.POOL_GIB, kernel marks of live "
+              "descents rounded up to whole GiB -- an UPPER bound (PLAN.md §167, §171, §173)")
+
+
+def _wheel_pool():
+    """`src/wheel_pool`, imported the way `jobs._env` imports it and for the same reason: its
+    numbers are the ones the launched run obeys, so a copy here would be a second place for
+    them to drift."""
+    import sys
+    if os.path.join(ROOT, "src") not in sys.path:
+        sys.path.insert(0, os.path.join(ROOT, "src"))
+    import wheel_pool
+    return wheel_pool
 
 
 def descent_gib(cfg, width):
-    """Peak RSS for a descent at `cfg` with `width` parallel phase workers."""
+    """`(peak GiB, is an upper bound)` for a descent at `cfg` with `width` phase workers.
+
+    A POOL IS PRICED FROM `wheel_pool.POOL_GIB`, the pair `--workers -1` sizes itself by.
+    The affine model's 12.7 GiB a worker priced four `coarse` workers at 81.5 GiB against
+    49.72 measured, and refused every pooled `coarse` descent this box runs (PLAN.md §170
+    §4, §171 §2).  Serial, and a pool at a config with no measured pair, stay affine.
+    """
+    pair = _wheel_pool().POOL_GIB.get(cfg) if width >= 2 else None
+    if pair:
+        worker, parent = pair
+        return parent + width * worker, True
     ratio = ELEMENT_RATIO.get(cfg, 1.0)
     one = GIB_BASELINE + (GIB_DESCENT_COARSE - GIB_BASELINE) * ratio
-    return one + GIB_PER_WORKER * ratio * max(0, width - 1)
+    return one + GIB_PER_WORKER * ratio * max(0, width - 1), False
 
 
 @dataclass(frozen=True)
@@ -134,7 +157,7 @@ class Target:
     interpreter: str = "opt"     # opt | cad
     # argv(params, rundir) -> list[str].  rundir is where output must land.
     argv: object = None
-    # cost(params) -> (seconds, peak_gib, basis) | None
+    # cost(params) -> (seconds, peak_gib, basis[, peak_gib is an upper bound]) | None
     cost: object = None
     # outputs(params, rundir) -> {label: path}; files the run is expected to write.
     outputs: object = field(default=None)
@@ -204,10 +227,17 @@ def _stage3_cost(p):
     n_phase = int(p.get("n_phase", 8))
     workers = int(p.get("workers", 0))
     starts = 16 if p.get("start") == "all" else 1
+    # `-1` is priced at the width `default_workers` gives it now, the call the run makes a
+    # moment later.  Priced as serial it was 43.4 GiB against the 49.72 its four workers held
+    # (PLAN.md §171 §2).  A config it refuses raises here, and `jobs.plan` blocks on that.
+    if workers < 0:
+        workers = _wheel_pool().default_workers(n_phase, cfg)
     # Workers parallelise the phase loop, so wall time divides by the effective width.
     width = max(1, min(workers, n_phase)) if workers > 0 else 1
     seconds = FIRST_EVAL_S + steps * starts * n_phase * per / width
-    return (seconds, descent_gib(cfg, width), SECONDS_BASIS[cfg] + "; " + GIB_BASIS)
+    gib, bound = descent_gib(cfg, width)
+    return (seconds, gib, SECONDS_BASIS[cfg] + "; " + (POOL_BASIS if bound else GIB_BASIS),
+            bound)
 
 
 TARGETS = [

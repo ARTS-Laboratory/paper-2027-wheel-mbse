@@ -142,7 +142,8 @@ CREATE_NEW_PROCESS_GROUP` on Windows.
 
 Because only the first can cap memory, `plan()` **refuses** on total RAM — which every
 platform reports exactly — and only **warns** on available RAM, which off Linux is an
-approximation. The hard guard does not rest on the soft number.
+approximation. The hard guard does not rest on the soft number. An estimate is refused above
+85% of total; a pool priced from `wheel_pool.POOL_GIB`, an upper bound, only above all of it.
 
 User units die at logout (`Linger=no` on this box). `loginctl enable-linger` if you want a
 descent to survive logging out; closing the app does not need it.
@@ -166,13 +167,19 @@ descent to survive logging out; closing the app does not need it.
 ## Costs are shown with their basis
 
 Before launching, the panel prints the estimated wall time and peak RSS against free
-memory, and blocks what does not fit — a `medium` descent prices at ~84 GiB on a 61 GiB
-box. Every constant behind those numbers is either measured and cited or extrapolated and
-labelled; see the cost-model block at the top of `catalog.py`. Two of them were measured
-here rather than inherited:
+memory, and blocks what does not fit. A pool (`workers` 2 or more, or `-1` at the width
+`wheel_pool.default_workers` picks) is priced `parent + workers × worker` from the pair
+`--workers -1` sizes itself by, measured on live descents (PLAN.md §167–§174): 55 GiB for
+four `coarse` workers, whose pool held 49.7. A SERIAL descent is still the affine estimate
+below, and a serial `medium` one prices at ~84 GiB on a 61 GiB box and is refused while three
+`medium` workers at 47 GiB are admitted — the serial figure predates §164's compile collapse
+and is unmeasured since (§173 successor 2), not evidence that serial costs more. Every
+constant behind those numbers is either measured and cited or extrapolated and labelled; see
+the cost-model block at the top of `catalog.py`. Two of them were measured here rather than
+inherited:
 
 - a `smoke` descent exceeded **22.9 GiB** and had not reached step 0 after six minutes, so
-  the memory model is affine on a large mesh-independent baseline rather than proportional
+  the serial memory model is affine on a large mesh-independent baseline rather than proportional
   to element count — a proportional model priced it at 7.2 GiB and the resulting cgroup cap
   put the run into swap;
 - the first evaluation is a **~1180 s** one-off jit trace (step 0 took 1391 s against a
