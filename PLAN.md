@@ -26635,3 +26635,140 @@ No step-300 mark, no `medium` descent, no GUI or `Makefile` edit.
 4. **`Makefile:278`'s serial 43.4 GiB** (§170 successor 4).
 5. **THE RETIRED `rqmc` MEMORY WARRANT** (§5.1): three places, and the `Makefile` one sets a recipe
    flag on it. Settle what `prod`'s `uniform` is for before changing a word of it.
+
+---
+
+## §172 — 2026-09-14. §171's SUCCESSORS 5 AND 3, CLOSED WHILE THE BOX RAN SUCCESSOR 0: **`rqmc`'s MEMORY WARRANT IS RETIRED IN CODE AND WAS STILL STATED, IN THE PRESENT TENSE, IN FIVE PLACES, NOT THREE.** ALL FIVE ARE CORRECTED; `PROD_SCHEME` STAYS `uniform` FOR THE ONE REASON LEFT, COMPARABILITY — ALL 31 COMMITTED prod, `minwall-` AND `svk-` DESCENT RECORDS WERE DRAWN UNDER IT — AND THE WALL-CLOCK HALF OF THE OLD ARGUMENT IS RETIRED TOO: §171's `rqmc` STEADY STEP IS §170's `uniform` ONE, 84.40 AGAINST 84.53 s. **`prod9` AND `prod10` ARE KEPT** AS THE MILESTONE's ARGV, AND `make help` NO LONGER OFFERS A 4 h RUN THAT REFUSES IN 40 s
+
+Code in `e23b67c` (the warrant) and `ebfa2aa` (the help); this is the record. Two sessions: the
+second read the tree while the box was held and wrote what it found, and this one re-checked the
+load-bearing pieces, decided, and made the changes.
+
+### 1. THE WARRANT IS RETIRED — FROM CODE, NOT FROM A RUN
+
+`coord_fn`'s cache key (`wheel_wheel.py:2902-2906`) is config integers, span, spoke count, rim
+radius, `uncap`, orientation, owners and the fillet recipe: **no phase**. The phase enters as the
+traced `angles` at `:2889`, and `6aa84ca` is the commit that took it out of the key. The second
+session enumerated every module-level cache and `lru_cache` on the descent's path (`wheel_wheel`,
+`wheel_fem`, `wheel_objective`, `wheel_adjoint`) and found none keyed on a phase value. Two places
+in the tree already said so: `_COORD_FN_CACHE_MAX`'s comment (`wheel_wheel.py:2840-2845`, "128 is
+headroom for recipes ... not for phases") and `wheel_objective`'s module docstring (`:101-105`,
+"the performance fact that made it one is RETIRED").
+
+The warrant had two halves, and M8b-ii's notes (`PLAN.md:972-980`) gave them one mechanism:
+memory, and "80 s of every `rqmc` step was JIT compilation". **Both halves are measured gone.**
+Memory: §171 §2's 60-step `rqmc` pool peaked inside `uniform`'s run-to-run scatter. Wall clock:
+that run's steady step was 84.40 s (sd 2.65) against §170's `uniform` 84.53 (sd 1.74) — same
+`coarse`, svk and four workers, since `-1` chose 4 (`PLAN.md:26520-26521`).
+
+### 2. FIVE PLACES, NOT THREE
+
+§171 §5.1 named three. `git grep` for the clauses found two more, marked **new**:
+
+| where | the present-tense claim | now |
+|---|---|---|
+| `Makefile:397-404` | `coord_fn` "keys its jit cache on `float(phase)`", "all 64 traces are RETAINED", "`uniform` fixes the 8 phases, so the cache saturates" | past tense, the OOM kept as history, the reason that survives (§3) |
+| `wheel_objective.py:999-1002` | "`coord_fn`'s jit cache and any mesh cache hit after the first pass", and a continuous offset "costs (roughly double)" | the lattice kept, the cache fact marked retired, pointing at `:101-105` |
+| `wheel_stage3.py:1086-1087` **new** | `--phase-scheme` help: "which keeps coord_fn's jit cache hitting" — what `--help` prints | what the two schemes are |
+| `gui/catalog.py:249` | the GUI's help, the same clause, added by `b69ff09` four days before `6aa84ca` | what the two schemes are |
+| `REPO_EXPLAINED.tex:1185-1186`, `:1194-1199` **new** | "the quantization is a performance fact"; "`\_COORD\_FN\_CACHE\_MAX = 128` is sized to hold" the 64-point lattice | past tense; 128 is headroom for recipes; the lattice stays as what runs used |
+
+**Left alone on purpose:** `wheel_pool.py:25-40` opens with the old claim and corrects itself at
+`:33-35`; editing the opening would orphan the correction. Past-tense sentences at
+`wheel_stage3.py:38-48`, `studies/study_stage3.py:536-537` and `tests/test_pool.py:163` are
+already right.
+
+### 3. WHAT `uniform` IS FOR NOW
+
+| reason | where | status |
+|---|---|---|
+| memory: 64 retained traces | `Makefile:397-404` | **retired** (§1) |
+| wall clock: re-trace per `rqmc` step | `PLAN.md:972-980` (M8b-ii) | **retired** (§1) |
+| comparability: the start and control arm were measured under it | `Makefile:451-453` (`minwall-%`) | **live**, and says so itself |
+| "for the reasons PROD_SCHEME ... give above" | `Makefile:583-585` (`svk-shipped`, `svk-elite10`) | inherits whatever `:397-404` says |
+| L-BFGS-B needs a fixed stencil | `wheel_stage3.py:905-918` | live, **not `prod`'s**: `--optimizer` defaults to `adam` (`:1084`) |
+| `uniform` lets the rim's faceting alias into a chaseable bias | `wheel_objective.py:1003-1004` | live, and argues **against** `uniform` |
+| `rqmc` turns that bias into noise of the same size, "worse for a gradient and no better for a gate" | `PLAN.md:8977-8983` (§62) | argues **for** it, but about `solve_wheel`'s nearest-node reading, which §65 found the descent never consumes |
+
+**Checked, not assumed:** every committed `stage3_prod_*`, `stage3_minwall_*` and `stage3_svk_*`
+descent record carries `phase_scheme: "uniform"` (4 + 18 + 9 = 31; the 32nd file,
+`stage3_svk_refillet_shipped_resume.json`, is a genome with no search block), and `minwall-%` and
+`svk-elite10` start from `stage3_prod_best_elite10.json`. No test pins `PROD_SCHEME` or a `prod`
+artifact's scheme.
+
+**So the value stays and the reason changes.** `Makefile:397-404` now says `uniform` holds for
+comparability and that nothing measured says it descends better. That keeps `:451`'s and `:583`'s
+references true without editing them. Whether a descent should run `rqmc` is a statistical
+question the record barely argues — one live sentence against `uniform`, one §65 took off the
+descent's path — and memory no longer settles it.
+
+### 4. `prod9` AND `prod10`: KEPT, AND `make help` SAYS WHAT THEY DO
+
+What the second session established, re-checked where it bears on the decision:
+
+- `--start rank:9` / `rank:10` index `stage2_elites.json` (`wheel_stage3.py:1010-1015`), whose only
+  commit is `4ec1d91` (2026-07-27). §129 §3 measured all sixteen ranks refusing at `coarse`, and
+  §170 §3 matched `rank:9`'s live refusal to its row.
+- Both targets last completed at `b13cba3` (2026-08-01): no `kinematics` key, so linear (the svk
+  default is `97f9629`, 2026-08-19); unfilleted (`d2cf9fa` is 2026-09-03); on the 16-core box.
+- **Their OUTPUTS mesh fine**: `studies/study_kinematics_rank_filleted.json`'s rows 1 and 2,
+  `stage3_prod_best_elite9.json` and `stage3_prod_best_elite10.json`, score with no failure under
+  both kinematics (re-read here). Only the inputs refuse.
+- Consumers: `minwall-%` (`Makefile:456`) and `svk-elite10` (`:602`) read `prod10`'s committed
+  output, not the target. Three studies (`kinematics_rank`, `svk_rescore`, `boundary_waste`) and
+  `wheel_geometry.py:405` read the records. No test names either target, and the GUI offers no
+  `rank:N` (`gui/catalog.py:254`).
+
+The three dispositions and the choice:
+
+- **Re-point `--start` at the converged outputs.** It would run, but `--out` would overwrite the
+  2026-08-01 records those readers use, `prod10` would descend from its own output, and
+  `svk-shipped`/`svk-elite10` (`Makefile:574-577`) already ask the converged-start question under
+  their own names.
+- **Retire them.** It breaks nothing executable, but `Makefile:105`, `:110`, `:557`, `:587`,
+  `:646`, `:683` and `:687` send a reader to this block's capping and `--out` comments, and `:451`
+  and `:583` cite `PROD_SCHEME` by name. All of those are live rationales for live targets.
+- **KEEP THEM, CORRECT THE HELP** — chosen. `Makefile:92-96` said "~4 h", "RUN THE TWO
+  SEQUENTIALLY" and "~12.7 GB anon". It now says both refuse at the start in ~40 s, that they are
+  kept as the milestone's argv, and that `minwall-%` and `svk-elite10` start from `prod10`'s
+  committed output. §170 successor 3's own condition — stop offering a 4 h run that ends in 40 s —
+  holds whatever else is decided.
+
+Nothing in the tree can regenerate the `prod` records today, with or without the targets.
+
+### 5. GREEN, AND THE SWEEP
+
+No test reads any changed text: `git grep` over `tests/` for each clause, `PROD_SCHEME`,
+`REPO_EXPLAINED` and `prod9`/`prod10` returns nothing. The three Python files parse, and `make -s
+help` renders. **No pytest run** — the box held a `medium` descent throughout. Every edit is
+line-neutral.
+
+`REPO_EXPLAINED.pdf` was rebuilt with `latexmk`: 35 pages before and after, the same four overfull
+hboxes, 0 undefined references. HEAD's `.tex` rebuilt here reproduces the committed PDF's text
+exactly.
+
+Citation sweep over `e23b67c` in a throwaway commit: 1192 citations, 108 → 110 for a human. The two
+new rows are §171 §5.1's citations of `gui/catalog.py:249` and `wheel_objective.py:1000-1001`,
+which is the text that commit corrects. Nothing moved. `ebfa2aa` touches only `Makefile` lines,
+which the sweep does not resolve.
+
+**Flagged, not fixed:** `PLAN.md:1728` attributes `stage3_prod_best_elite10.json` to `eddcfc2`,
+which is not a commit in this repository; the file's only commit is `b13cba3`.
+
+### 6. NOT DONE
+
+`Makefile:363-371`'s capping comment (~12.7 GB anon, `MemoryMax=20G`) is untouched; it belongs to
+§171 successor 2. No measurement of `rqmc` against `uniform` as a descent.
+
+**SUCCESSORS** — §171's, re-ranked with 3 and 5 closed.
+
+0. **THE `medium` HALF (§171 successor 0), RUNNING.** Its first run, `REPO_EXPLAINED.tex:1751`'s
+   argv at `-1` (which chose 4), took a worker's `VmHWM` past `medium`'s 11.0 GiB **during step
+   3**, with the box at 57.7 of 61.4 GiB used. It was stopped there and is being re-measured at the
+   three workers any corrected pair gives on this box. Record both runs when the second closes.
+1. **STEP 300 at `coarse`** (§171 successor 1).
+2. **RE-DERIVE THE CAPS AND THE GUI's MODEL** over twelve rows (§171 successor 2), after 0. The
+   three `medium` recipes (`svk-medium`, `buildcap`, `knee`) pin four workers, the pool 0's first
+   run was stopped in.
+3. **`Makefile:278`'s serial 43.4 GiB** (§171 successor 4).
+4. **`PLAN.md:1728`'s `eddcfc2`** (§5): find what the citation meant, or mark it.
