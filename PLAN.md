@@ -26752,8 +26752,10 @@ new rows are §171 §5.1's citations of `gui/catalog.py:249` and `wheel_objectiv
 which is the text that commit corrects. Nothing moved. `ebfa2aa` touches only `Makefile` lines,
 which the sweep does not resolve.
 
-**Flagged, not fixed:** `PLAN.md:1728` attributes `stage3_prod_best_elite10.json` to `eddcfc2`,
-which is not a commit in this repository; the file's only commit is `b13cba3`.
+**Checked and withdrawn:** the second session flagged `PLAN.md:1728`'s `eddcfc2` as no commit in
+this repository, and `ebfa2aa`'s message repeats it. It is no commit because it is a **genome
+hash**: `wheel_genome.genome_hash` of `stage3_prod_best_elite10.json`'s genes is `eddcfc2`,
+recomputed here, and `stage3_prod_elite10.json:44912` records it. The citation is right.
 
 ### 6. NOT DONE
 
@@ -26771,4 +26773,3 @@ which is not a commit in this repository; the file's only commit is `b13cba3`.
    three `medium` recipes (`svk-medium`, `buildcap`, `knee`) pin four workers, the pool 0's first
    run was stopped in.
 3. **`Makefile:278`'s serial 43.4 GiB** (§171 successor 4).
-4. **`PLAN.md:1728`'s `eddcfc2`** (§5): find what the citation meant, or mark it.
