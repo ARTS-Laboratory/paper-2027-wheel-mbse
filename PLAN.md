@@ -27829,3 +27829,130 @@ at +0.7878 it is true by construction, and R3's gate is 0.90.
 0. **`knee`'s result against §175 §4's registration** (running; ETA ~01:50).
 1. **STEP 300 at `coarse`** against §2 (auto-starts after `knee`, ~7.15 h).
 2. **`make contact` then `make svk`** against §3 (queued after `s300`).
+
+## §179 — 2026-09-15. `knee`'s **F3 FIRED AT STEP 40**, 60 STEPS BEFORE THE RUN ENDS: THE LARGEST WORKER PASSED `POOL_GIB`'s `medium` 12 AT **12.023** WHILE THE 52G CAP SAT 4.2 GiB IDLE — AND SINCE §174 DERIVED THAT CAP **FROM** THE PAIR, THE CAP IS DOWNSTREAM OF WHAT BROKE. §173's 0.246 "MARGIN" WAS A STOPPING POINT: AT STEP 40 THIS RUN IS **0.544 ABOVE** §173's, 2.2x THE SCATTER THE BAND WAS BUILT ON. THE STEP-100 MARK, AND THE ALLOWANCE IT SIZES, ARE REGISTERED HERE BEFORE STEP 50 LOGS
+
+The run continues; its record is the next section. This one is the consequence map and a prediction,
+both written while the answer is still six hours away.
+
+### 1. THE FIRING
+
+```
+  step  wall_s  parent   workers (GiB, VmHWM maxima)   cg_cur   events              avail
+  0     879.50  15.874   10.546 10.387 10.191          45.171   max:0,oom_kill:0    -
+  10    419.15  15.874   11.541 10.975 10.719          47.599   max:0,oom_kill:0    8.986
+  20    400.16  15.874   11.717 11.124 10.906          47.889   max:0,oom_kill:0   10.046
+  30    398.38  15.874   11.881 11.179 11.093          47.503   max:0,oom_kill:0    8.386
+  40    403.01  15.874   12.023 11.228 11.093          47.796   max:0,oom_kill:0    7.777
+```
+
+Step 0 carries `fc0`; checks fall at 0, 25, 50, 75, 100. **F1 has not fired and is now unlikely to**:
+the parent has read 15.874 at every sample since before step 10 — §173's finding, that the parent's
+mark is set inside step 0 and never moves, reproduced on a second run and a second scheme. **F4 has
+not fired**, and the scope's `memory.stat` reads `file=0.000` throughout, so §175 §4's reasoning
+about page cache being reclaimed before anon describes a cushion this run does not have:
+`memory.current` here is anon, and a `max` event would be the cap binding.
+
+### 2. WHAT §175 §4's F3 GOT IMPRECISE, NOW THAT IT HAS FIRED
+
+1. **"falsifies the pair" is too broad.** The **worker** half broke. The **parent** half is holding
+   at the same time, and it is the more load-bearing of the two because it is the term no width
+   divides.
+2. **"with 52G nowhere near" was written as reassurance and is the actual problem.** The cap is not
+   independent of the pair: `Makefile:722-726` derives `knee`'s 52G as `16 + 3 x 12`, the parent
+   rounded up from the fidelity check's 15.47 and the worker being §173's 12. A worker that breaks
+   its allowance while the cap idles does not mean the cap is safe; it means the cap's own
+   arithmetic moved underneath it.
+3. **F3 named no disposition.** It fired with 60 steps left. The right call is to finish — the
+   step-100 mark is what sizes the new allowance, and stopping at the breach leaves the pair
+   needing a third run. A falsifier on a long run should carry its disposition: *fires -> record and
+   continue, unless the cap is within 2 GiB.*
+
+What F3 got right is worth keeping: it predicted the pair would break **before** the cap did, on a
+0.246 margin against 3+ GiB, and named the level. That is why the breach was read at 18:43 instead
+of found in the artifact tomorrow.
+
+### 3. §173's 0.246 WAS NEVER A MARGIN
+
+§173 set `medium`'s worker at 12 on a largest mark of **11.754**, from a 100-step run whose last
+three block slopes were 36, 39 and 31 MiB/step and whose own §3(c) says *"it does not level off"*.
+§173 §6 asked for a second 100-step run because *"the margin is 0.246"*. `knee` is that run:
+
+```
+                              §173's 100-step run      knee
+  rung / width / genome / floor   medium / 3 / best_solution.json / 1.2   IDENTICAL
+  scheme                          rqmc                 uniform
+  fidelity check                  none                 every 25 at coarse
+  largest worker, step 1 / 40     10.787 / 11.479      10.546 / 12.023
+  rise to step 40                 +0.692               +1.477  (2.13x)
+```
+
+**The fidelity check is not the cause**: `ev_fc` is built with no `pool=`
+(`src/wheel_stage3.py:557-561`), so it takes `Evaluator.__init__`'s `pool=None` and runs serial in
+the parent — which is why the parent reads 15.874 and the workers carry none of it. **The scheme
+points the other way**: `uniform` shows each worker the same eight phases every step while `rqmc`
+draws a fresh lattice offset (§171 measured 8 distinct stencils), and since §164 neither retraces —
+if anything `rqmc` should retain more, and it is the run that grew less. What is left is
+**run-to-run variation in the growth itself**, 0.544 GiB at step 40 against the 0.23 per-worker
+scatter §170 §2(c) measured at `coarse`. A single run's stopping point is not a bound, and that is
+what the old 12 was.
+
+### 4. THE CONSEQUENCE MAP, IF THE ALLOWANCE GOES TO 13
+
+`POOL_GIB = {"coarse": (11.0, 11.0), "smoke": (11.0, 11.0), "medium": (12.0, 11.0)}`
+(`src/wheel_pool.py:152`), the tuple `(worker, parent)`, and `default_workers` is the only
+arithmetic: `fits = int((available - parent) // worker)` (`:214`). Everything else quotes it.
+
+```
+  site                            what moves
+  src/wheel_pool.py:152           the pair itself; :138-152's comment block states each mark
+  tests/test_pool.py:434-452      the pin, BOTH directions: the marks literal
+                                  {"medium": (11.754, 10.508)} and the count it must still admit
+  Makefile:722-726                knee's 52G derivation, 16 + 3 x 12 -> 16 + 3 x 13 = 55
+  studies/study_stage3.py:1335    S13 records pool_gib in its artifact (§168): new runs record 13
+  gui/catalog.py:128-131          reads the pair, prices parent + width x worker: w=3 47 -> 50,
+                                  w=4 59 -> 63, which crosses MemTotal and flips a warning into a
+                                  blocker (gui/ is closed, §158: recorded, not proposed)
+```
+
+**`-1`'s answer does not move on this box, and that is arithmetic rather than luck**: at parent 11
+and ~57.8 available, every whole allowance from 12 to 15 gives 3 (§173 §2 recorded the same). Where
+it bites is a busier box — three workers need 47 GiB free at 12 and **50** at 13, so between 47 and
+50 the change drops `-1` from three workers to two; four need 59 -> **63**, past this machine's
+61.37 at any load. The three `medium` recipes (`make svk-medium`, `make buildcap`, `make knee`,
+`Makefile:623/:657/:706`) pin a literal 3 and take no advice; what changes for them is their **cap**.
+
+### 5. REGISTERED, BEFORE STEP 50 LOGS
+
+Three laws fitted to the four decade marks (step 0 excluded, `ln 0`):
+
+```
+  law                                        step 50  60     70     80     90     100    crosses 13.0
+  log   y = 10.731 + 0.342 ln s  (rms 0.028) 12.07  12.13  12.18  12.23  12.27  12.31    step ~760
+  geometric decay, r = 0.898 (observed)      12.15  12.27  12.37  12.46  12.54  12.62    step ~180
+  linear at the last decade's 14.5 MiB/step                                       12.88   step ~110
+```
+
+**The largest worker mark at step 100: 12.6, band 12.3–12.9**, central from the geometric-decay law,
+the only one using the observed decay rather than assuming a form. With it:
+
+- **The allowance becomes 13** under §167's rule (whole GiB above the largest mark) — every model
+  rounds up to it, and no `medium` caller runs past 100. The honest form is the ladder: 12 is
+  exceeded at step 40, measured; 13 at step ~180 under the fastest model that fits; 14 by nothing
+  inside 1000 steps.
+- **`memory.current` at step 100 near 49.1, `oom_kill` 0.** At step 40 the marks sum to 50.218
+  against `cg_cur` 47.796, a ratio of 0.952; the two smaller workers extrapolate to a sum near 51.5.
+  About 2.9 GiB of room, down from tonight's 4.2.
+- **F1 stays unfired**; the parent's mark is a step-0 number on this run too.
+- **Falsified by**: a step-100 mark **above 13.0**, which refutes all three laws together and sends
+  the allowance to 14; or **below 12.3**, where the decay is faster than the observed ratio. The
+  band itself settles only the number, never the mechanism.
+
+The knee record closes this, `knee`'s own registration (§175 §4), and the pair's change as one unit.
+
+**SUCCESSORS** — §178's, with 0 now running to its answer.
+
+0. **`knee`'s step-100 result**, against §175 §4 and §5 above; then `POOL_GIB`'s `medium` worker and
+   every site in §4, as one change.
+1. **STEP 300 at `coarse`** against §178 §2 (auto-starts when `knee` ends).
+2. **`make contact` then `make svk`** against §178 §3 (queued behind it).
