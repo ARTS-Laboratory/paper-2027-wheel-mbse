@@ -2935,7 +2935,7 @@ was missing was a CLI flag.
 
 - **`src/wheel_stage3.py`** — `--kinematics {linear,svk}`, default `linear`, forwarded to
   **both** optimizers, recorded in `search_block` and in the run record's settings, and
-  **printed in the console banner** (`:1227`). The record reads `ev.problem_kw` — the very
+  **printed in the console banner** (`:1231`). The record reads `ev.problem_kw` — the very
   dict the `Evaluator` splats into the solver — so the record cannot disagree with what was
   solved. `search_block` has **no `getattr(args, "kinematics", "linear")` fallback** on
   purpose: a default there would report "linear" for an SVK run whose caller forgot the
@@ -16731,7 +16731,7 @@ from, and nothing in the tree bridged that.** `_persist` rewrites the trajectory
 step and does it atomically, on the stated grounds that *"a run measured in tens of minutes
 must survive a kill"* (`wheel_stage3.py:875-896`). The genome gets no such treatment:
 `--best-out` is written once, by `save_record`, **after** the descent loop returns
-(`:1299-1310`). And the trajectory is not a restart either — `load_genes` reads a TOP-LEVEL
+(`:1303-1314`). And the trajectory is not a restart either — `load_genes` reads a TOP-LEVEL
 `"genes"` (`:980-982`) while a trajectory nests them under `best`/`final`, so
 `--genome <trajectory>` raises `KeyError`.
 
@@ -26222,7 +26222,7 @@ at `--config medium`, which §167 §4 recorded as refusing.
 **The premise check found a second gap, in §167 itself.** Its probe called `WO.objective(genes,
 "coarse", phases=..., pool=pool)` and passed no `kinematics`, so every solve took
 `wheel_contact_problem`'s default (`wheel_fem.py:1719`, reached through `wheel_adjoint.py:914`):
-**linear**. `wheel_stage3`'s `--kinematics` defaults to svk (`wheel_stage3.py:1147`), so the cap
+**linear**. `wheel_stage3`'s `--kinematics` defaults to svk (`wheel_stage3.py:1151`), so the cap
 was calibrated on a solve that `--workers -1` does not run. §166 to §168 never say "kinematics".
 S13 does run linear — its `Evaluator` names none either — so both have callers.
 

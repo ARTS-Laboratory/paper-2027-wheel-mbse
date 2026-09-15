@@ -1121,8 +1121,12 @@ def main():
     # SEARCH path and it is the one place where the strain measure decides which design
     # comes out, so it is the one place the default was measured and changed.
     #
-    # WHY: `linear` does not RANK designs the way SVK does, so a linear descent does not
-    # return the design SVK would pick.  Measured over 36 committed genomes at `coarse`
+    # WHY, ON THE MESH THE OBJECTIVE SOLVES (PLAN.md §130): at `b729e86`, the design that
+    # ships, `linear` points the descent 38 degrees off SVK — gradient cosine **+0.7878**,
+    # 8 genes moved opposite ways, under the registered 0.90 — though it ranks the five
+    # feasible designs exactly as SVK does.  §32 flipped the default on the unfilleted mesh,
+    # where `linear` did not RANK designs the way SVK does either, so a linear descent did
+    # not return the design SVK would pick.  Measured over 36 committed genomes at `coarse`
     # (§32's unfilleted studies/study_kinematics_rank.json): Spearman rho **-0.83** on the
     # subset feasible under both, 82% of pairs discordant, and different argmins.  The
     # cleanest cell is the §8 minwall ladder — eight arms from ONE linear descent differing
