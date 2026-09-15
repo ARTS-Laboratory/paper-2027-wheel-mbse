@@ -27622,3 +27622,203 @@ record and the new anchor are right.
 0. **`knee`'s result against §175 §4's registration** (running; steps log every 10).
 1. **STEP 300 at `coarse`**, at `svk-shipped`'s argv, 7.15 h.
 2. **`make svk`'s serial `medium` rescore and `make contact`'s serial ladder** (§174 §8.3).
+
+## §178 — 2026-09-15. §177's SUCCESSORS 1 AND 2, **REGISTERED BEFORE EITHER LAUNCHES**: THE STEP-300 `coarse` DESCENT IS PREDICTED TO HOLD `POOL_GIB`'s PAIR WITH 0.66 GiB TO SPARE, AND ITS READING IS THE WORKERS' RISE FROM STEP 60 TO 300, NOT THE LEVEL; `make svk`'s SERIAL `medium` RESCORE IS PREDICTED AT **2.11 h, NOT 2.52**, WITH ROW 0's LINEAR CALL HALVING WHILE ITS SVK CALL HOLDS; AND `make contact`'s LADDER IS NOT A §164 QUESTION AT ALL — IT SOLVES NO ADJOINT. ALSO: WHERE THE SVK DEFAULT's "1.49x" COMES FROM
+
+Nothing ran for this section. `knee` (§175 §4) logged step 30 of 100 at 17:36 and its result is
+the next section's. The step-300 run auto-starts when `knee` ends; §177 successor 2 follows it. Both
+registrations are the second session's, written from the committed records and artifacts alone,
+then checked here against them; one was sent back and rebuilt before this commit (§3.2).
+
+### 1. THE QUEUE, AND WHAT EACH RUN IS
+
+```
+  run         argv                                                       cap               from
+  s300        make svk-shipped's flags verbatim (--start best --genome   55G, no swap      worktree at
+              best_solution.json --kinematics svk --min-wall 1.2          (the block's      5114b68
+              --steps 300 --workers 4 --phase-scheme uniform              documented cap)
+              --fidelity-check-every 0), --out/--best-out to scratch
+  contact     make -n contact, bare: best_solution.json, linear, patch,  20G, no swap      the same
+              --no-plot, --out to scratch                                 (Makefile:541's)
+  svk         make -n svk, bare: --config medium --workers 0,            32G, no swap      the same
+              --out redirected off the committed artifact                 (no cap documented)
+```
+
+`s300` is §170 §2's experiment run 7.5x longer. `make svk`'s bare `--out` IS the committed
+`studies/study_svk_rescore.json`, and the guard is silent by design — the bare recipe is the gate
+invocation, and `--workers` is unguarded for `_gate_guard`'s `--seed` reason — so the redirect is
+the run's, as `knee`'s were. `make contact`'s default output is untracked, and the gate's own name
+would be refused twice (`--sections patch`, `--no-plot`).
+
+### 2. STEP 300 AT `coarse` — §177 SUCCESSOR 1
+
+Built from §170 §2 and §171 §2's printed tables — the only per-window records of a `coarse`
+descent — by a log law fitted to each run's window maxima and averaged, converted to kernel marks
+by the offsets both runs measured (+0.09 on one worker, +0.33 on four summed). The law reproduces
+both committed SUMs before it predicts anything: 49.58 at step 40 against §170's 49.613, 49.82 at
+step 60 against §171's 49.719.
+
+```
+  at step   largest worker mark   workers summed   parent   SUM of marks    tree peak   under 55G
+  60        10.11 ± 0.25          39.55            10.28    49.8 ± 0.9      49.4        5.6
+  120       10.21 ± 0.25          39.92            10.31    50.2 ± 0.9      49.8        5.2
+  180       10.27 ± 0.25          40.14            10.34    50.5 ± 0.9      50.0        5.0
+  240       10.31 ± 0.25          40.30            10.35    50.7 ± 0.9      50.2        4.8
+  300       10.34 ± 0.25          40.42            10.36    50.8 ± 0.9      50.3        4.7
+```
+
+±0.9 is §170 §2(c)'s run-to-run scatter (two identical launches, 0.91 apart); ±0.25 the
+§170-against-§171 spread of one worker at step 40. Tree peak is SUM / 1.009, between the two measured ratios (1.011, 1.006). Also
+registered: exit 0, no step abandoned or rejected, `events` empty, a steady step of ~84.5 s (§170's
+84.53, §171's 84.40), wall ~7.15 h, `memory.current` peaking near 51.8.
+
+**THE LEVEL AT STEP 300 CANNOT BE THE RESULT.** A saturating law and a linear one continued at the
+late rate differ by 0.135 GiB on the largest worker at step 300, against 0.20 of scatter between
+the two anchors. **What discriminates is the rise in the workers' summed marks from step 60 to step
+300**: +1.0 GiB saturating, +1.9 linear-late — a within-run difference, so no scatter is paid.
+
+- **F1, a worker mark past 11.0**: the pair breaks. Even the late rate continued with no decay
+  reaches 11.0 only at step ~455, so a breach here falsifies both laws. Early warning: ≥ 10.6 at
+  step 120.
+- **F2, SUM past 53**: linear-late reaches it at step ~473. Early warning: ≥ 51.5 at step 120.
+- **F3, the parent past 10.5**: new behaviour. §173 found the parent's mark set inside step 0 and
+  never moved again, and `coarse`'s three readings are 10.271 (§167), 10.242 (§170), 10.267 (§171).
+- **F4, `oom_kill` > 0**: the only reading that means 55G fired.
+- **F5, the null both anchors killed**: growth at §171's first-block rate would OOM the scope
+  before step 150. If the marks track it, something outside the repository changed.
+
+55G is `11 + 4 x 11`, `POOL_GIB`'s own four-worker `coarse` budget, so "it fits under the cap" and
+"the pair holds" are one statement, not two. One run gives no scatter, `uniform` against `rqmc`
+stays confounded with run across the anchors, and no caller runs past 300.
+
+### 3. `make svk` AND `make contact` — §177 SUCCESSOR 2
+
+#### 3.1 Half the premise was wrong
+
+§174 §8.3 filed both as serial shapes unmeasured since §164. **True of `make svk`, not of `make
+contact`**: `studies/study_contact.py` imports no `wheel_adjoint`, and its patch ladder calls only
+`fem.solve_wheel` and `fem.solve_wheel_contact` — forward solves, no VJP, no phase loop. §164
+collapsed the per-phase coordinate-VJP compile, so it cannot have moved `contact`. What moved under
+`contact` is everything else: its committed shape runs (`studies/study_contact_e126cc3_lin.json`,
+177.4 s, and three siblings, `b37e302`, 2026-08-13) scored genome `e126cc3` on the UNFILLETED mesh;
+the recipe now scores `best_solution.json`, which is `b729e86` (promoted 2026-09-06), on the
+filleted one. `studies/study_contact.json` is the seven-section gate and not this recipe's record.
+
+**Neither recipe's memory has ever been recorded**, and `Makefile:541`'s `MemoryMax=20G` for
+`contact` has no warrant in the tree: `git grep 20G` over the `Makefile` finds this launch line and
+`prod9`'s, and no measurement behind either.
+
+#### 3.2 `make svk`: the wall, rebuilt on the artifact's own rows
+
+The first draft took the saving as 8 compiles per flank orientation and predicted 0.9–1.7 h.
+`studies/study_svk_rescore.json`'s per-row `elapsed_s` leaves no room for that:
+
+```
+  row  genome        mesh_s   linear s   svk s    svk/linear
+   0   shipped          2.4     2752.5    922.3      0.335
+   1   36aed36          46.8    refused   refused      -
+   2   elite10           2.5     360.8     415.7      1.152
+   3   minwall 1.2       2.5     638.8     803.1      1.257
+   4   minwall 1.4       2.5     558.8     670.0      1.199
+   5   minwall 1.6       2.5     509.0     585.1      1.150
+   6   minwall 2.0       2.5     372.8     428.4      1.149
+  rows 2-6 mean                  488.0     580.5     1.181 (of the ratios)
+  rows and meshes 9079.0 of settings.elapsed_s 9085.4
+```
+
+Six genomes are scored, not seven, each under both kinematics. **The compile cost is paid once, in
+row 0's linear call**: 2752.5 − 488.0 = 2264 s of excess, and no later linear call exceeds 639 s,
+against 1704 s for one more set of eight `medium` compiles. Row 0's svk call carries only
+~342 s over its successors: coordinates do not depend on the strain measure, so it reuses the
+coordinate closure's compiles and pays its own kernels. Rows 2–6's 360–640 s spread is solve cost —
+not quantised near 213 s, and svk/linear holds at 1.181 (sd 0.047) across them.
+
+**Registered: wall 2.11 h, band 1.9–2.3** — `9085.4 − 7 x 213 = 7594 s`, eight `medium` compiles at
+§166's 213 s becoming one, once for the run; ~560 s of row 0's excess is first-call cost §164 does
+not touch.
+
+**THE DISCRIMINATOR IS ROW 0, NOT THE WALL.** Row 0's linear `elapsed_s` falls 2752.5 → ~1262 (band
+1150–1450) while row 0's svk stays at ~922 and rows 2–6 stay put. The wall moves 16%; that field
+moves 2.2x, and if row 0's svk time moves with it, the saving is not the coordinate closure's phase
+multiplicity whatever the total says. Nothing counts compiles, so "eight became one" is still read
+off a duration.
+
+**Peak parent kernel mark (max over samples, §175): 17–23 GiB.** The two serial post-§164 `coarse`
+marks of this process shape are §166's whole-`objective()` process, **15.010 and 17.542 in two runs
+of the same call**, and §175's three-step `make stage3` at 16.969; `medium` over `coarse` for a
+phase-loop process is 11.754 / 10.242 = 1.148 (§173's largest worker against §171's). That gives
+**17.2–20.1**. The second session's central 19.5–20.2 used the upper two marks only; the scatter
+§166 measured puts the low end at 17.2, and the band holds both. `memory.current` within ~3% above
+it — `knee`'s scope reads `file=0.000` throughout, so the gap is not page cache. **Cap 32G**: the
+band top is 23, and 20G would be a coin flip on this run.
+
+**Bit for bit: predicted YES, all 12 losses and the control.** A code-level comparison, comments
+and docstrings stripped, of every `src/` module and the driver between `ebcb6f0` (the artifact's
+commit) and `5114b68`: the numerics path differs only in `wheel_wheel.py`, and only by `6aa84ca` —
+§164 — with `wheel_pool.py` (unused at `--workers 0`), `wheel_stage3.py` (not on the driver's import path) and the
+driver's guard the other changes. No package in `.venv-opt` was installed after the artifact (jax 0.11.0, numpy 2.5.1 and scipy 1.18.0 date from 2026-08-03). §164 proved 0
+differing bits at `smoke` and `coarse`, and §166 already found its compile-time claim did not hold
+at `medium`, so this is that proof's first test one rung up. **A difference is §164's scope**, since
+nothing else on the path changed.
+
+#### 3.3 `make contact`
+
+**Wall 230–440 s**, 1.3–2.5x the committed 177.4 s, for a mesh the fillet grows (+26.5% elements at
+`coarse`; the low end if cost follows elements, the high end for a superlinear direct solve).
+**Peak 6–18 GiB**, an inference rather than an extrapolation, so wide on purpose: below §3.2's
+serial objective, which carries the adjoint §165 measured as the dominant term. **Cap: the
+documented 20G**, so the run tests the number the block tells a reader to use. **Bit for bit: NO** —
+another genome on another mesh. The ladder should keep its shape (smoke, coarse, medium, each at
+`n_quad` 6 and 20), with `n_elements` near 1214 / 5951 / 15544 if the fillet adds +26.5% at every rung,
+against the committed 960 / 4704 / 12288.
+
+#### 3.4 Falsifiers
+
+```
+  S1   svk wall >= 2.4 h        §164 did not reach this driver; row 0's excess was not the compiles.
+  S2   svk wall < 1.7 h         more came off than the phase multiplicity: the decomposition is incomplete.
+  S2b  row 0 linear not ~1262,  THE SHARP ONE: the saving is not the coordinate closure's, whatever
+       or row 0 svk moves too   the wall does.
+  S3   svk wall 1.9-2.3 h       as predicted, and the svk block's "the better part of an hour" is
+                                stale — as it already is against the committed 2.52 h.
+  S4   svk peak > 20            a 20G cap would kill it, and the svk block documents none.
+  S5   svk peak > 23            the medium/coarse ratio does not carry from a pool worker to a serial
+                                process; §3.3's upper bound, built on §3.2's, goes with it.
+  S6   losses not bit-identical §164's 0 differing bits stop at coarse.
+  S7   contact killed at 20G    Makefile:541's cap was never measured and is wrong.
+  S8   contact wall > 600 s     the fillet costs a contact ladder more than 2.5x.
+  S9   svk peak < 15            below every serial coarse mark on record: §175's 16.97 is in question,
+                                not this run.
+```
+
+Nothing here measures `make svk` at two workers, which `Makefile:488` records as never measured;
+after this run there is a serial figure to size that attempt against.
+
+### 4. WHERE THE SVK DEFAULT's "1.49x" COMES FROM — §177 §3.2's FLAG, SETTLED
+
+`src/wheel_stage3.py:1138-1139`: "IT COSTS 1.49x ... Paired over those same 36 genomes on shared
+meshes at 8 workers: linear 34.2 s median against SVK 51.9 s." The second session found 51.9 / 34.2
+= 1.518. From `studies/study_kinematics_rank.json`'s rows (unfilleted, 8 workers):
+
+```
+  over the 35 rows after row 0      linear median 34.20   svk median 51.90   median of paired ratios 1.4943
+  over all 36 rows                  linear median 34.30   svk median 51.90   median of paired ratios 1.4933
+```
+
+Row 0 is the warm-up (linear 129.9 s, svk 46.6 s). **All three figures reproduce exactly over the 35
+rows after it**: 1.49 is the median of the paired ratios, as "paired" says, and 1.518 is a ratio of
+medians the comment never states. The "36" counts the warm-up row the medians leave out. Nothing to
+fix. A third shape now sits beside it: `make svk`'s rows 2–6 above give svk/linear **1.181** per call,
+serial, at `medium`, filleted; `Makefile:569-570`'s 1.36x is SVK_PLAN Step 2's descent wall. Three
+shapes, three numbers, none interchangeable.
+
+The same review's other flag: the gradient row's `"linear_step_descends_svk": true` beside a
+38-degree split reads like a rebuttal of §177 §1 and is not. It is `bool(cos > 0.0)`
+(`studies/study_kinematics_rank.py:431`) — the sign of the cosine, not a step that was taken — so
+at +0.7878 it is true by construction, and R3's gate is 0.90.
+
+### 5. SUCCESSORS
+
+0. **`knee`'s result against §175 §4's registration** (running; ETA ~01:50).
+1. **STEP 300 at `coarse`** against §2 (auto-starts after `knee`, ~7.15 h).
+2. **`make contact` then `make svk`** against §3 (queued after `s300`).
