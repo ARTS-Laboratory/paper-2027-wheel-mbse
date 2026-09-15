@@ -27559,3 +27559,66 @@ default rests on.
    and it has to stay line-neutral or move seven citations of six anchors below the paragraph with
    it.
 3. **`make svk`'s serial `medium` rescore and `make contact`'s serial ladder** (§174 §8.3).
+
+---
+
+## §177 — 2026-09-15. §176's SUCCESSOR 2, CLOSED WHILE `knee` RUNS: **`wheel_stage3`'s `--kinematics svk` WARRANT NOW OPENS WITH THE REASON THAT HOLDS ON THE MESH THE OBJECTIVE SOLVES** — AT `b729e86` `linear` POINTS THE DESCENT 38 DEGREES OFF SVK — AND DATES §32's RANKING EVIDENCE TO THE UNFILLETED MESH, WHERE THE FILLETED ONE RANKS THE FEASIBLE DESIGNS IDENTICALLY. NOTHING RECORDED WAS DROPPED; FOUR CITATIONS MOVED BY A PROVED +4
+
+Code in `df4087e`; this is the record.
+
+### 1. WHAT THE PARAGRAPH SAID, AND WHAT HOLDS
+
+The default's WHY paragraph (`src/wheel_stage3.py:1124-1136`) opened "`linear` does not RANK designs
+the way SVK does" and supported it with rho −0.83, 82% of pairs discordant, different argmins, the
+minwall ladder at −0.8333 and a 5.70–48.54% correction spread. All of that is §32's, from
+`studies/study_kinematics_rank.json` on the unfilleted mesh. §130 §1-§2 on the filleted mesh: the
+five feasible designs rank identically (rho +1.0000, 0 of 10 pairs discordant, the same argmin), and
+§32's verdict stands on R3 alone — cosine +0.7878 at the shipped genome, 38 degrees, 8 of 14 genes
+signed opposite, under the registered 0.90 — the one feasible near-optimum in the pool, where the
+FEA term rather than a barrier decides the gradient.
+
+The paragraph's first two lines became six: the filleted reason first, then "§32 flipped the default
+on the unfilleted mesh, where `linear` did not RANK designs the way SVK does either". The seven
+lines that carry §32's evidence are byte-identical, so the record they hold is dated, not deleted.
+The setting is unchanged; the stated reason was what was wrong.
+
+### 2. THE CITATIONS
+
+Four lines inserted, so every citation of a line below the paragraph moves by exactly four. Each was
+proved as `HEAD[N] == new[N + 4]` before it was re-pointed, and each named the right content before
+(§159's rule: never apply a delta to an anchor that was already wrong):
+
+```
+  citing site                          wheel_stage3 line, was -> now   holds
+  PLAN.md:26225 (§169)                 1147 -> 1151                    the --kinematics argument
+  PLAN.md:2938, owner carried          1227 -> 1231                    the console banner print
+  PLAN.md:16734, owner carried         1299-1310 -> 1303-1314          wg.save_record(... **extra)
+  studies/stage3_resume_genome.py:11   1299-1310 -> 1303-1314          the same call
+```
+
+The sweep also carries three bare anchors to this file at 1841, 1867 and 1882 — past its end; they
+are rows of §155's table of `wheel_fem.py` citations — and they were not touched. No `Makefile`,
+`.tex` or `gui/` line cites this file below the paragraph.
+
+**The sweep, in a throwaway commit: 126 → 128 for a human, both named and left.** One is §176 §4's
+own citation of the paragraph as it stood before this change — a record of the finding this section
+acts on. The other is §159's repair record at `PLAN.md:24971`, which names `PLAN.md:2938`'s banner
+citation as one it repaired; that line's anchor changed here, so the row reads MOVED while both the
+record and the new anchor are right.
+
+**Green.** Comment and docstring only; both files parse. No test was run for them.
+
+### 3. FLAGGED
+
+1. **`REPO_EXPLAINED.tex`'s file inventory lists `wheel_stage3.py` at 1317 lines; it is now 1321.**
+   The row was exact until this change. `wheel_pool.py`'s row already trails (435 against 484), and
+   the committed PDF is built from the `.tex`, so it is left for an inventory refresh.
+2. **The paragraph after the WHY still prices SVK at 1.49x linear** — "paired over those same 36
+   genomes on shared meshes at 8 workers", the unfilleted run. The filleted artifact's per-row
+   timings are serial and were not re-derived here.
+
+**SUCCESSORS** — §176's, re-ranked with 2 closed.
+
+0. **`knee`'s result against §175 §4's registration** (running; steps log every 10).
+1. **STEP 300 at `coarse`**, at `svk-shipped`'s argv, 7.15 h.
+2. **`make svk`'s serial `medium` rescore and `make contact`'s serial ladder** (§174 §8.3).
