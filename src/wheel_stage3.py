@@ -1083,8 +1083,8 @@ def main():
     ap.add_argument("--lr", type=float, default=DEFAULT_LR)
     ap.add_argument("--optimizer", choices=("adam", "lbfgsb"), default="adam")
     ap.add_argument("--phase-scheme", choices=("rqmc", "uniform", "iid"), default="rqmc",
-                    help="rqmc draws the stencil offset from the n_phase*n_sub lattice, "
-                         "which keeps coord_fn's jit cache hitting")
+                    help="rqmc draws the stencil offset from the n_phase*n_sub lattice; "
+                         "uniform is the same stencil unshifted, and deterministic")
     ap.add_argument("--n-phase", type=int, default=DEFAULT_N_PHASE)
     ap.add_argument("--n-sub", type=int, default=DEFAULT_N_SUB)
     ap.add_argument("--seed", type=int, default=0)

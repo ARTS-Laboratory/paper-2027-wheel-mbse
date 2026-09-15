@@ -246,7 +246,7 @@ TARGETS = [
             Param("steps", "int", 60, (), "descent steps"),
             Param("n_phase", "int", 8, (), "phase stencil width"),
             Param("phase_scheme", "choice", "rqmc", ("rqmc", "uniform", "iid"),
-                  "rqmc keeps coord_fn's jit cache hitting"),
+                  "rqmc shifts the stencil by a random lattice offset; uniform does not"),
             Param("kinematics", "choice", "svk", ("svk", "linear"),
                   "svk since PLAN.md 32; linear does not rank designs the same way"),
             Param("workers", "int", 0, (),

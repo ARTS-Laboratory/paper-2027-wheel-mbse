@@ -394,14 +394,14 @@ m9buck:
 PROD_STEPS ?= 300
 PROD_WORKERS ?= 4
 
-# `uniform`, NOT the `rqmc` default, and this is a MEMORY constraint rather than a
-# statistical preference.  `rqmc` redraws the stencil every step from an `n_sub`-point
-# sub-lattice, so a 300-step run visits `n_phase * n_sub` = 64 distinct phase values —
-# and `wheel_wheel.coord_fn` keys its jit cache on `float(phase)` with FIFO eviction only
-# at 128 entries, so all 64 traces are RETAINED.  Measured: ~0.4 GB per trace, and the
-# pool holds all 64 no matter how the slots are split across workers, so `--workers` is
-# not a lever on it.  A run at the defaults peaked at 18.9 GB and was OOM-killed at step 3.
-# `uniform` fixes the 8 phases, so the cache saturates at 8 traces after step 0.
+# `uniform`, NOT the `rqmc` default.  It was chosen as a MEMORY constraint that is RETIRED:
+# `rqmc` visits `n_phase * n_sub` = 64 phases, `wheel_wheel.coord_fn` keyed its jit cache
+# on `float(phase)`, and all 64 traces were retained at ~0.4 GB each — a run at the
+# defaults was OOM-killed at step 3 on the 31 GB box.  Since `6aa84ca` the phase is a
+# traced argument and one entry serves every phase; a 60-step `rqmc` pool peaked inside
+# `uniform`'s run-to-run scatter (PLAN.md §171 §2).  What keeps `uniform` is COMPARABILITY:
+# all 31 committed prod, `minwall-` and `svk-` descent records were drawn under it.  Nothing
+# measured says it descends better, and `phase_stencil`'s docstring argues the other way.
 PROD_SCHEME ?= uniform
 
 # OFF, and that default is a MEASUREMENT rather than a preference.  The check is a PURE

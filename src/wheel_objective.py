@@ -996,10 +996,10 @@ def phase_stencil(n_phase=8, n_sub=8, scheme="rqmc", rng=None):
     """The phase angles [deg] one objective evaluation is averaged over.
 
     `rqmc`     an `n_phase`-point uniform stencil shifted by a random offset drawn from
-               the `n_sub`-point sub-lattice.  Unbiased and genuinely stochastic, but the
-               union of all reachable phases is the fixed `n_phase * n_sub` grid, so
-               `coord_fn`'s jit cache and any mesh cache hit after the first pass.  See
-               the module docstring for what a continuous offset costs (roughly double).
+               the `n_sub`-point sub-lattice.  Unbiased and genuinely stochastic, and the
+               union of all reachable phases is the fixed `n_phase * n_sub` grid.  That
+               grid was a jit-cache fact until the phase became a traced argument; the
+               module docstring records it as RETIRED, and the lattice as what runs used.
     `uniform`  the same stencil with no shift.  Deterministic, cheapest, and the one that
                lets the rim's contact faceting alias into a chaseable bias.
     `iid`      independent uniform draws.  Present because the master plan asks for it to
