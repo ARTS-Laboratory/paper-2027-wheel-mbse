@@ -112,7 +112,7 @@ help:
 	@echo "              genome under BOTH kinematics and asks whether linear RANKS"
 	@echo "              designs the way SVK does — argmin identity, Spearman rho and"
 	@echo "              the gradient cosine, against bars registered before the run."
-	@echo "              ~2.7 h serial at coarse. Override KINRANK_CONFIG/KINRANK_WORKERS"
+	@echo "              ~1 h at 4 workers, coarse. Override KINRANK_CONFIG/KINRANK_WORKERS"
 	@echo "make contact  CONTACT_PLAN.md step 2: ONE cell of the patch-resolution"
 	@echo "              matrix — is the axle drop the objective steers by still"
 	@echo "              mesh-convergent on the genome that ships? Override"
@@ -512,7 +512,7 @@ svk:
 #
 # NOT IN `studies`, for the reason `svk`, `m8bi5`, `m9buck` and `hubcap` are not: it
 # measures THE WHEEL, NOT THE COMMIT.  KINRANK_WORKERS is the memory cap and nothing else
-# sizes it: 4 fits `coarse`'s `POOL_GIB` pair on 61 GiB, where 8 budgets 99 (PLAN.md §174).
+# sizes it: 4 held 49.3 GiB against `coarse`'s `POOL_GIB` 55; 8 budgets 99 (PLAN.md §175).
 #
 # `coarse` is the default rung and it is a choice, not a saving: §14 measured the GNL
 # correction converged by `coarse` and mesh-independent to three digits on both the shipped
