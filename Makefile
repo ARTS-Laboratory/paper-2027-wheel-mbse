@@ -76,7 +76,7 @@ help:
 	@echo "              multi-start set Stage 3 begins from"
 	@echo "make stage3   Stage-3 descent from best_solution.json, writing"
 	@echo "              stage3_run.json as it goes and stage3_best.json at the end"
-	@echo "              (add --workers -1 to run the phase loop across processes)"
+	@echo "              ~3.8 h serial (add --workers -1 to run the phase loop across processes)"
 	@echo "make m8bi5    the two sections that QUALIFY M8b-i's infeasibility verdict:"
 	@echo "              the stress QoI up the mesh ladder, and the same feasibility"
 	@echo "              question asked from all 16 Stage-2 elites (~2 h at coarse)"
