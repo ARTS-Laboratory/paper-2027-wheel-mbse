@@ -1123,7 +1123,7 @@ def main():
     #
     # WHY: `linear` does not RANK designs the way SVK does, so a linear descent does not
     # return the design SVK would pick.  Measured over 36 committed genomes at `coarse`
-    # (`make kinrank`, studies/study_kinematics_rank.json): Spearman rho **-0.83** on the
+    # (§32's unfilleted studies/study_kinematics_rank.json): Spearman rho **-0.83** on the
     # subset feasible under both, 82% of pairs discordant, and different argmins.  The
     # cleanest cell is the §8 minwall ladder — eight arms from ONE linear descent differing
     # only in the wall floor — where rho is **-0.8333** and linear's best arm (0.8 mm) is

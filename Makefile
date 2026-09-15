@@ -520,7 +520,7 @@ svk:
 # `medium` — and `medium` costs ~5x.  Re-run with KINRANK_CONFIG=medium to check that.
 KINRANK_CONFIG ?= coarse
 KINRANK_WORKERS ?= 4
-KINRANK_OUT ?= study_kinematics_rank.json
+KINRANK_OUT ?= study_kinematics_rank_filleted.json
 
 kinrank:
 	$(PY_OPT) -u studies/study_kinematics_rank.py --config $(KINRANK_CONFIG) \

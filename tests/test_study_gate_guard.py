@@ -125,9 +125,9 @@ DRIVERS = [
        "--out", "study_stage3_pnorm.json"],
       ["--sections", "phase_pool", "--no-plot", "--out", "study_stage3_pool.json"]]),
     # §131: the drivers §129.5 censused as EXPOSED — a fidelity or section flag reaching a
-    # tracked artifact with nothing in the way.  `study_kinematics_rank` is the tenth and
-    # is not here: it was being worked in a concurrent session, and its guard waits on
-    # which of its two artifacts is canonical (§130 successor 0).
+    # tracked artifact with nothing in the way.  `study_kinematics_rank` was the tenth and
+    # waited on which of its two artifacts is canonical (§130 successor 0); PLAN.md §176
+    # decided it, and its row is the last one below.
     ("study_m9",             ["study_m9.json"],
      [["--out", "study_m9.json"]],
      [["--quick", "--out", "study_m9.json"],
@@ -201,6 +201,23 @@ DRIVERS = [
      [["--config", "smoke", "--out", "studies/study_junction_agreement.json"],
       ["--genome", "best_solution_ga_beam.json",
        "--out", "studies/study_junction_agreement.json"]]),
+    # TWO NAMES FROM ONE PATH, AND THE FIRST CAN NEVER BE WRITTEN (PLAN.md §176).  The
+    # unfilleted artifact is §32's closed evidence, so its list is one unconditional reason
+    # and `make kinrank`'s argv as it stood until §176 is the refusal that matters.  The
+    # filleted one is the gate, and `--workers 4` must pass: a worker count moves no value
+    # (§175 §2(c)).  Bare basenames only — the driver joins `--out` with `HERE`, so a
+    # `studies/...` spelling would not reach either file.
+    ("study_kinematics_rank", ["study_kinematics_rank.json",
+                               "study_kinematics_rank_filleted.json"],
+     [["--config", "coarse", "--workers", "4",
+       "--out", "study_kinematics_rank_filleted.json"]],
+     [["--config", "coarse", "--workers", "4", "--out", "study_kinematics_rank.json"],
+      ["--out", "study_kinematics_rank.json"],
+      ["--config", "smoke", "--out", "study_kinematics_rank_filleted.json"],
+      ["--n-phase", "4", "--out", "study_kinematics_rank_filleted.json"],
+      ["--no-elites", "--out", "study_kinematics_rank_filleted.json"],
+      ["--skip-rank", "--out", "study_kinematics_rank_filleted.json"],
+      ["--skip-grad"]]),
 ]
 
 _IDS = [d[0] for d in DRIVERS]
