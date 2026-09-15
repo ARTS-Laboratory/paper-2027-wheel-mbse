@@ -26944,3 +26944,299 @@ more here than at `coarse` because the margin is 0.246. No recipe or GUI edit.
 2. **`Makefile:278`'s serial 43.4 GiB** (§171 successor 4).
 3. **A second `medium` 100-step run** for scatter on the 0.246 GiB margin. Rank it behind 0: the
    cap question does not wait on it, and it costs 11 h.
+
+---
+
+## §174 — 2026-09-15. §173's SUCCESSOR 0, CLOSED: **THE THREE `medium` RECIPES RUN THREE WORKERS UNDER 52G, BECAUSE FOUR CANNOT FIT THIS BOX AT ALL** — THEIR FIDELITY CHECK BUILDS A SERIAL `coarse` EVALUATOR IN THE PARENT, AND `knee`'s OWN FLAGS TOOK THE PARENT **10.42 → 15.47 GiB** ACROSS IT AND HELD IT, SO FOUR WORKERS BUDGET 16 + 4 × 12 = **64 GiB AGAINST 61.4 OF RAM**. **THE GUI NOW PRICES A POOL FROM `POOL_GIB`**: IT ADMITS THE FOUR-WORKER `coarse` POOL IT PRICED AT 81.5 GiB AND REFUSED (49.72 HELD), PRICES `-1` AT THE WIDTH `-1` PICKS, AND CAPS AN UPPER BOUND AT ITSELF, NOT AT 1.35x IT — 74 GiB ON A 61 GiB BOX. `svk-shipped` 16G → 55G, `KINRANK_WORKERS` 8 → 4, AND `prod9`/`prod10` KEEP THEIR 20G, MARKED MOOT
+
+Code in `e9ddba2` (the `Makefile`) and `3490855` (the GUI and its first test); this is the record. Two
+sessions: the second read the tree (the GUI's consumers, the three drivers outside Stage 3, the
+committed start-point records, every citation into the edited regions) and audited the diff;
+this one ran the start-point check and the measurement, decided, and made the changes.
+
+### 1. THE ROWS, AND WHAT EACH GOT
+
+§170 §4's eleven launch instructions, §171 §5.2's twelfth, and the three pooled launches outside
+Stage 3. Worker and parent budgets are `wheel_pool.POOL_GIB`'s, `(worker, parent)`: `coarse`
+(11, 11), `medium` (12, 11).
+
+| row | where | before | now | why |
+|---|---|---|---|---|
+| `make stage3`, serial | `Makefile:278-282` | 43.4 GiB | unchanged | §173 successor 2's figure |
+| `prod9`, `prod10` | `Makefile:361-371` | 20G; "sits flat at ~12.7 GB anon" | **20G kept**; the figure dated `b13cba3`, linear, unfilleted; both starts refuse (§172) | a cap for a run that cannot start has no run behind it |
+| `make help` | `Makefile:92-96` | — | — | closed at §172 |
+| `svk-shipped`, `svk-elite10` | `Makefile:557-567` | 16G; "13.16 GiB peak anon" | **55G, `MemorySwapMax=0`**; the filleted pool's 49.6 GiB | 11 + 4 × 11, the cap §170 and §171's pools held 49.61 and 49.72 under |
+| `svk-medium`, `buildcap`, `knee` | `Makefile:627`, `:661`, `:710`; `:689`; `:715-733` | 4 workers (`SVK_DESCENT_WORKERS`); `knee` 32G, the others none | **3 workers (`SVK_MEDIUM_WORKERS`), 52G, `MemorySwapMax=0`** | §2-§3 |
+| `REPO_EXPLAINED.tex:1751` | — | `-1` | unchanged | sized by `POOL_GIB`, §173 |
+| the GUI's `stage3` | `gui/catalog.py`, `gui/jobs.py` | 12.7 GiB a worker; `-1` as serial; cap 1.35x; refused above 0.85x RAM | **§6** | §170 §4 |
+| `minwall-%` | `Makefile:458` | 4 workers, no cap line | **unchanged, flagged** (§8) | |
+| `make svk` | `Makefile:489` | serial `medium` | unchanged | no pool; unmeasured since §164 (§8) |
+| `make kinrank` | `Makefile:514-522` | 8 workers | **4** | 11 + 8 × 11 = 99 GiB; 4 is `default_workers(8, "coarse")` on this box (§5) |
+| `make contact` | `Makefile:541` | 20G | unchanged | no pool: forward solves only, no adjoint (§8) |
+
+### 2. THE PREMISE: DO THE RECIPES RUN, AND CAN FOUR STAY
+
+**Every start point builds and differentiates at its recipe's config.** Built as
+`WO.phase_meshes` builds them and put through `mesh_coords`' own guard at the 8 uniform phases,
+§129 §4's instrument, no solve:
+
+```
+  recipe          start genome                     config   result
+  knee            best_solution.json               medium   ok 8/8
+  svk-medium      stage3_svk_best_shipped.json     medium   ok 8/8
+  buildcap        stage3_svk_best_medium.json      medium   ok 8/8
+  svk-shipped     best_solution.json               coarse   ok 8/8
+  svk-elite10     stage3_prod_best_elite10.json    coarse   ok 8/8
+  minwall-%       stage3_prod_best_elite10.json    coarse   ok 8/8   (the unprojected genome)
+```
+
+The second session found the `coarse` half already on record — every row clean in
+`studies/study_kinematics_rank_filleted.json` — and the `medium` half not: that artifact is
+`coarse`, and the three committed `medium` descent records predate the fillet switch. The clamp is
+not config-free (`curves_at` closes over `cfg.nn(cfg.n_thick)`, `wheel_wheel.py:1776`), so the
+`coarse` rows did not answer `svk-medium` and `buildcap`. They do now. Unlike `prod9` and
+`prod10`, all six recipes run.
+
+**Four `medium` workers do not stay, and that was settled before any run here.** §173 §2's
+four-worker pool, with no fidelity check, summed 51.319 GiB of kernel marks after step 0 and
+53.549 by step 3, one worker past 11.0 and the box at 57.75 of 61.37 GiB used. What was not
+known was how much less than four fits, because the recipes run a check §173's argv did not.
+
+### 3. THE MEASUREMENT: WHAT THE FIDELITY CHECK COSTS THE PARENT
+
+`knee`'s argv verbatim (`Makefile:706-712`) bar `--workers 3`, `--steps 2`, `--log-every 1` and
+the output paths: `--start best --genome best_solution.json --config medium --kinematics svk
+--min-wall 1.2 --phase-scheme uniform --fidelity-check-every 25 --fidelity-check-config coarse`.
+§170's watcher, a worktree at `77d67fd`, `systemd-run --user --scope` with `MemoryMax=55G` and
+`MemorySwapMax=0`, an append-only `/proc` sampler beside the scope. Launched at 57.74 GiB
+available. Exit 0 in 2055.6 s; no events.
+
+```
+  run                                         parent  workers (VmHWM, GiB)     SUM     tree peak  ratio  system
+  §173  REPO_EXPLAINED argv, 3 workers, 100    10.508  11.754 11.423 11.318   45.003   43.603    1.032  0.998
+  §174  knee argv, 3 workers, 2 steps          15.474  10.526 10.185 10.706   46.891   46.590    1.006  0.969
+```
+
+Columns as §171's; `system` is SUM over the 48.404 GiB rise in `MemTotal - MemAvailable` above a
+3.629 baseline, a reading that counts everything else on the box. Step 0 took 874.42 s, the
+check that follows it 366.0 s solve and 2.1 s mesh, steps 1 and 2 412.86 and 395.97 s.
+
+**Kernel marks at four moments** (the watcher's per-pid samples, every ~5 s):
+
+```
+  moment                                      parent   w1      w2      w3      sum
+  step 0's pool call done (871 s), check next  10.417  10.120   9.996  10.580  41.113
+  step 0 logged, check done                    15.474  10.120   9.996  10.580  46.170
+  step 1 logged                                15.474  10.243  10.091  10.589  46.397
+  step 2 logged, exit                          15.474  10.526  10.185  10.706  46.891
+```
+
+**(a) The check adds 5.057 GiB to the parent and keeps it.** The workers' RSS goes flat at 871 s
+and the parent's mark first moves at 881 s, so the first row is the pool call's. RSS peaked at 15.423
+during the check and sat at 15.266 and 15.268 in steps 1 and 2. The `Evaluator` is built once
+and held for the run (`wheel_stage3.py:557-561`), and its call is a full `WO.objective` — value
+and gradient, the gradient discarded (`:393`), so the parent compiles `coarse`'s VJP serially.
+The pre-fillet record said ~3.4 GB (`Makefile:412-413`); this is the filleted, post-§164 figure.
+
+**(b) The workers are §173's, one scheme over.** 10.185–10.706 by step 2, where §173's
+three-worker `rqmc` pool read 10.656–10.787 by step 1.
+
+**(c) So the pair's rule gives this recipe a parent of 16, not 11.** Whole GiB above 15.474 is
+16. The worker stays `POOL_GIB`'s 12, which is §173's 100-step mark and not this run's: 10.706 is
+two steps old, and its whole GiB, 11, would make four workers 60 and fit. With 12, four workers
+budget **16 + 4 × 12 = 64 GiB**, over the box's 61.37 of RAM, and three budget **16 + 3 × 12 = 52**.
+(The second session's catch: the first draft of the `Makefile` block credited both halves to
+this run.)
+
+**(d) Where three stands at step 100 is a composition, not a measurement.** This parent, 15.474,
+plus §173's three worker marks at step 100, 34.495, is **49.969 GiB** — 2.03 under 52. Two runs,
+two schemes, no scatter, and no check after step 0 has been measured: the recipes fire four more,
+at steps 25, 50, 75 and 100.
+
+### 4. THE `Makefile` CHANGE, `e9ddba2`
+
+- **`svk-medium`, `buildcap`, `knee`** read a new `SVK_MEDIUM_WORKERS ?= 3`. `SVK_DESCENT_WORKERS`
+  stays 4 at `Makefile:590` because `svk-shipped` and `svk-elite10` read it at `coarse`, where
+  four fit. `knee`'s launch line is `MemoryMax=52G -p MemorySwapMax=0`, and the reason is one
+  block after its recipe (`:715-733`), naming all three. It is placed there, not beside the other
+  variables, so that nothing above it moves.
+- **52G is the budget, not a margin over one**, and it says so. **No swap**: every run that sized
+  a cap here ran with `MemorySwapMax=0`, and the 2026-08-13 `knee` run's 15.3 GiB
+  `memory.current` is a lower bound because swap was not (§170 §1). A pool past its budget is
+  now killed instead of swapping for hours. That is a changed failure mode, and the second
+  session's point: the 16G run that survived on 2936 forced direct reclaims would, under this
+  flag, be killed.
+- **The count moves no value.** A pool returns serial's values bit for bit and its gradient
+  within 1e-14 (`test_a_pooled_evaluation_matches_the_serial_one`), and every control the three
+  recipes name was drawn on the unfilleted mesh (`stage3_svk_medium.json` and
+  `stage3_buildcap_medium.json` 2026-08-12, `stage3_margin_medium.json` 2026-08-13,
+  `stage3_knee_medium.json` 2026-08-15; `d2cf9fa` is 2026-09-03). **What it costs is time.** The
+  check is additive to the step (`elapsed_s` 2051.4 = 874.42 + 412.86 + 395.97 + 366.0 + 2.1),
+  and a 100-step run fires five (`stage3_knee_medium.json`: `fidelity_check_n_calls: 5`), so
+  874.42 + 100 × 404.4 + 5 × 368.1 = 43,156 s, **~12 h**. `:616`, `:649` and `:686` said ~7.6 and
+  ~6.3 h, four-worker and unfilleted, and now give both.
+- **`svk-shipped`**: 16G → **55G** with `MemorySwapMax=0`, and the block gives the filleted
+  pool's 49.6 GiB beside Step 2's 13.16 against linear's 12.56. 55 is 11 + 4 × 11 and the cap
+  §170's 40-step and §171's 60-step pools held 49.61 and 49.72 under. Step 300 is unmeasured
+  and the block says so.
+- **`prod9`/`prod10`**: the second session's disposition, taken. The 20G stays; `:362-363` date
+  the ~12.7 GB anon figure (`b13cba3`, linear, unfilleted) and `:371` says both starts now refuse.
+- **`kinrank`**: `KINRANK_WORKERS` 8 → **4**, `:515` giving both budgets. §5.
+- **`knee`'s own claims**: "EVERY KNOB IS §19'S ... 4 workers" (`:669-671`) now says 3 since §174,
+  and `make help`'s "~6.3 h, capped as prod9" (`:110`) — 20G, which was already not `knee`'s
+  32G — says "~12 h at 3 workers, 52G cap". `:692` and `:698` spoke of "the 16G above", which
+  is now 55G, and say "then above". `kinrank`'s help "~1 h at coarse" (`:115`), a pre-fillet
+  8-worker figure, gives the one filleted run instead: 9736.6 s serial, "~2.7 h".
+
+All edits above `:713` are line-neutral. The appendix adds 20 lines below `knee`'s recipe; the
+only citations below it are two of `Makefile:727` (`PLAN.md:14169`,
+`studies/study_fillet_condition_a.py:114`), which already missed their "20.6 GB" before this
+change — it is at `Makefile:124` and `Makefile:805`. `make -n` resolves `svk-medium`, `buildcap` and `knee` to
+`--config medium --workers 3`, `kinrank` to `--config coarse --workers 4`, and `svk-shipped` to 4.
+
+### 5. `kinrank`: 8 → 4
+
+§129 §6 declined to change it for want of "one measured rung at `coarse`", and
+`KINEMATICS_PLAN.md:513` and `:608` say 8 "has never been measured on this construction" and the
+serial run "does not license changing it". §167 §1 and §171 §2 are that rung. **Both sentences are
+superseded here, for the worker; not for the parent.** `study_kinematics_rank.py`'s parent is
+the driver's, not `wheel_stage3`'s, and nobody has measured it, so 55 GiB at four is
+`wheel_stage3`'s parent borrowed. What is certain is the old default: eight `coarse` workers
+alone are 88 GiB of allowance on a 61 GiB box. The committed control artifact records
+`workers = 8` three times and the filleted one `workers = 0`; neither is rewritten.
+
+### 6. THE GUI CHANGE, `3490855`
+
+`descent_gib` returns `(GiB, upper bound)`. A pool of two or more at a config in `POOL_GIB` is
+**`parent + width × worker`, read from `wheel_pool` rather than copied**. Serial, and a pool at a
+config with no pair, keep the affine model. `_stage3_cost` resolves `-1` through
+`default_workers(n_phase, cfg)` — the call `wheel_stage3.py:529` makes at launch — and `plan()`
+turns that function's refusal into a blocker with its own message. For an upper bound `plan()`
+caps at the price itself and blocks only above physical RAM. It still warns above
+`MemAvailable`: `-1` is sized inside what is free by construction, and an explicit count is the
+caller's (§167). An estimate keeps ×1.35 and the 0.85 ceiling. Where memory cannot be read,
+`default_workers` answers 1, so `-1` is priced serial there — and runs serial
+(`wheel_stage3.py:535`).
+
+**The block rule is the second session's, and it replaced this one's**, which blocked a pool above
+`MemAvailable`. `available_gib` falls back to total on any failure, "correct here, because this
+number only ever warns" (`gui/jobs.py:163-164`), and `gui/README.md` says the hard guard never
+rests on the soft number. Blocking above total keeps that true.
+
+On this box, 61.37 GiB total and 57.8 available, 8 phases:
+
+```
+  config   workers   before: GiB   cap    verdict     after: GiB   cap    verdict
+  coarse   2            56.1       75.7   BLOCK          33.0      33.0   admit
+  coarse   4            81.5      110.0   BLOCK          55.0      55.0   admit     (held 49.61 / 49.72)
+  coarse   -1           43.4       58.6   admit          55.0      55.0   admit     (-1 -> 4)
+  coarse   0            43.4       58.6   admit          43.4      58.6   admit     (unchanged)
+  medium   3           160.4      216.5   BLOCK          47.0      47.0   admit     (held 45.00, §173)
+  medium   4           198.5      268.0   BLOCK          59.0      59.0   warn
+  medium   -1           84.2      113.7   BLOCK          47.0      47.0   admit     (-1 -> 3)
+  medium   0            84.2      113.7   BLOCK          84.2     113.7   BLOCK     (unchanged)
+  medium   8           350.9      473.7   BLOCK         107.0     107.0   BLOCK
+  smoke    -1           26.4       35.6   admit          55.0      55.0   admit     (-1 -> 4)
+  fine     -1          186.2      251.4   BLOCK            —        —     BLOCK: "no measured pool memory for config 'fine'"
+```
+
+"Before" is the second session's table, re-derived from `HEAD`'s formula; "after" is `plan()`
+called on the change with both readings patched.
+
+**The odd surface is real and the README says so.** `medium` at three workers is admitted at 47
+GiB and serial `medium` is refused at 84.2. The serial figure is the affine model's, built on the
+pre-§164 43.4, so it measures nothing current — it does not show that serial costs more.
+`smoke`'s pooled price is `coarse`'s pair, an upper bound. §167 §1's `smoke` row, 16.114 GiB of
+parent, is `test_pool.py`'s `_pooled_equals_serial`, whose parent also ran the serial
+evaluation it compares against — not a descent's parent.
+
+**The pin is `tests/test_gui_cost.py`, the first test in the tree to import the GUI** (966
+collected). Five tests through `jobs.plan` with every reading patched: the three measured pools
+admitted and priced above what they held; `-1` priced at the width it picks at two readings;
+`fine`'s `-1` blocked with `default_workers`' reason; four `medium` workers warned and eight
+blocked; serial unchanged. Mutated before trusting, `__pycache__` cleared each time:
+
+| mutant | fails |
+|---|---|
+| `HEAD`'s `gui/catalog.py` and `gui/jobs.py` | 4 of 5 — the serial test holds, as it should |
+| ×1.35 on an upper bound | `an upper bound is its own cap` |
+| 0.85 ceiling on an upper bound | 2 — `needs about 55.0 GiB`, `needs about 59.0 GiB` |
+| `-1` not resolved | 3 — `assert 43.4 == 55.0` |
+| the refusal not caught | 1 — `ValueError: no measured pool memory` |
+
+`gui/README.md`'s block rule and cost paragraph are corrected in place. `GIB_PER_WORKER`'s
+comment says it now prices only a config without a pair.
+
+### 7. GREEN, AND THE SWEEP
+
+`tests/test_gui_cost.py` and `tests/test_study_gate_guard.py`, which reads the `Makefile` through
+`make -n`: 70 passed. `test_pool.py`'s sizing tests, 6 passed, and `test_stage3.py`'s ladder and
+memory-reading tests, 5 passed. Nothing else reads a changed line: no test imported the GUI, and
+`git grep` over `tests/` for `KINRANK_WORKERS`, `SVK_DESCENT_WORKERS` and the caps is empty. No full
+suite run.
+
+Citation sweep over both changes in a throwaway commit, re-run on the committed tree: **1235
+citations, 116 → 126 for a human, none closed.** All ten are citations into the GUI that the
+change moved. The cited lines are named in words below, as they stood before it, because a
+`file:N` token written here would resolve against this commit's tree and read `ok`:
+
+- `PLAN.md:26434`'s citations of catalog lines 107-111 and jobs lines 389-392, and
+  `PLAN.md:26443`'s of catalog line 208 — the model, the cap and the `-1` width that §170 §4 found
+  wrong, and this change replaces.
+- `PLAN.md:26498`'s of catalog lines 175-185 and 244-253, `PLAN.md:26673`'s and `PLAN.md:26751`'s
+  of catalog line 249, `PLAN.md:26720`'s of line 254, and `PLAN.md:26791`'s of lines 244 and 253 —
+  the `stage3` target's argv and params, unchanged in text and moved 23 to 30 lines down by the
+  cost block's growth.
+
+Base and change are both 1235 citations, so the ten are breakage and nothing new, and the list
+is the same re-run on the committed tree. **They are left, and not for cost.** Re-pointing is
+mechanically safe here — no citing line mixes stale and live anchors, the §159/§160 hazard, and
+`PLAN.md:26434`'s other two, `gui/catalog.py:89-91` and `gui/jobs.py:75`, still resolve. But four
+of the ten point at text whose claim this section retires (catalog line 208's width-1 pricing,
+lines 107-111's single model, jobs lines 389-392's unconditional ×1.35, and line 249 as §172's
+quotation of the line it corrected). Re-pointed, they would resolve `ok` against lines that no
+longer say it: a MOVED row sends a human to look, an `ok` row tells them not to. Net zero above
+the `stage3` target's params would have meant cutting the cost block's measured prose or defining the pricing after `TARGETS`.
+
+**The `Makefile` citations the sweep cannot see and this change makes false in content**, with the line
+unmoved: `PLAN.md:26214` and `:26792` ("a literal 4 (`Makefile:590`)" for the `medium` recipes);
+`:26437` and `:26474` (`KINRANK_WORKERS ?= 8`, the second priced on the retired (10, 11));
+`:26314`, `:26421`, `:26429` (16G); `:26314`, `:26421`, `:26432`, `:26917` (32G); and
+`KINEMATICS_PLAN.md:513` and `:608` (§5). Each is a closed record of what the line said, and this
+section supersedes it.
+
+### 8. FLAGGED, NOT FIXED
+
+1. **`POOL_GIB`'s parent does not know about the fidelity check.** A `-1` descent with
+   `--fidelity-check-every` would get 11 for a 16 GiB parent: at 50 GiB free, (50 − 11) // 12 = 3
+   workers wanting 52. No caller does that today. The three recipes pin a count, and the GUI's
+   argv never passes the flag, whose default is 0 (`wheel_stage3.py:1103`). That is one default
+   holding it, so a fidelity-check `Param` added to the catalog must price the parent at 16.
+   `wheel_pool.py`'s comment is not edited: no line-neutral wording fit, and a line there
+   moves `:152`'s four citations.
+2. **`minwall-%`** (`Makefile:458`): four `coarse` workers for 125 steps, no launch line. 55G is
+   its budget; there was no instruction to correct, and adding one moves every cited anchor
+   below it.
+3. **`kinrank`'s parent, `make contact`'s serial ladder (20G, reaches `medium`) and `make svk`'s
+   serial `medium` rescore** are all unmeasured since §164. None is a pool that `POOL_GIB` sizes.
+4. **The GUI's systemd path sets `MemoryMax` without `MemorySwapMax`** (`gui/jobs.py:518-521`),
+   so its cap swaps before it kills — the failure `MEMORY_FLOOR_GIB`'s comment records.
+5. **The GUI's `test` target prices the suite at 20.0 GiB** (`gui/catalog.py`, the `test` entry),
+   cap 27.0. §164 measured `test_requirements.py` alone at 35.4 GiB. The second session's find.
+6. **`svk-shipped`'s ~5.3 h is 7.15 h** (§170 §2(d)), unedited: its step timing is a record of
+   Step 2, and nothing here changed that recipe's width.
+
+### 9. NOT DONE
+
+No run of a `medium` recipe past step 2, and none of a check after step 0. No `minwall-%`, `svk`,
+`contact` or `kinrank` measurement. No `wheel_pool` edit.
+
+**SUCCESSORS** — §173's, re-ranked with 0 closed.
+
+0. **STEP 300 at `coarse`** and **past step 100 at `medium`** (§173 successor 1). The 52G budget
+   has 2.03 GiB of room at step 100 by composition (§3(d)), and the checks at 25–100 are unmeasured.
+   A `knee` run to step 100 at three workers answers both `medium` questions at once, in ~12 h.
+1. **`Makefile:278`'s serial 43.4 GiB** (§173 successor 2). It is now the one GUI price with no
+   current measurement behind it, and it refuses serial `medium` beside an admitted pool.
+2. **A second `medium` 100-step run** for scatter (§173 successor 3), which 0 can be.
+3. **`kinrank`'s parent at four workers**, before anyone relies on 55 GiB for it (§5).
