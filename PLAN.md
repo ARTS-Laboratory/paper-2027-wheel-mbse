@@ -27668,9 +27668,10 @@ step 60 against §171's 49.719.
 ```
 
 ±0.9 is §170 §2(c)'s run-to-run scatter (two identical launches, 0.91 apart); ±0.25 the
-§170-against-§171 spread of one worker at step 40. Tree peak is SUM / 1.009, between the two measured ratios (1.011, 1.006). Also
-registered: exit 0, no step abandoned or rejected, `events` empty, a steady step of ~84.5 s (§170's
-84.53, §171's 84.40), wall ~7.15 h, `memory.current` peaking near 51.8.
+§170-against-§171 spread of one worker at step 40. Tree peak is SUM / 1.009, between the two
+measured ratios (1.011, 1.006). Also registered: exit 0, no step abandoned or rejected, `events`
+empty, a steady step of ~84.5 s (§170's 84.53, §171's 84.40), wall ~7.15 h, `memory.current` peaking
+near 51.8.
 
 **THE LEVEL AT STEP 300 CANNOT BE THE RESULT.** A saturating law and a linear one continued at the
 late rate differ by 0.135 GiB on the largest worker at step 300, against 0.20 of scatter between
@@ -27752,25 +27753,26 @@ phase-loop process is 11.754 / 10.242 = 1.148 (§173's largest worker against §
 it — `knee`'s scope reads `file=0.000` throughout, so the gap is not page cache. **Cap 32G**: the
 band top is 23, and 20G would be a coin flip on this run.
 
-**Bit for bit: predicted YES, all 12 losses and the control.** A code-level comparison, comments
-and docstrings stripped, of every `src/` module and the driver between `ebcb6f0` (the artifact's
-commit) and `5114b68`: the numerics path differs only in `wheel_wheel.py`, and only by `6aa84ca` —
-§164 — with `wheel_pool.py` (unused at `--workers 0`), `wheel_stage3.py` (not on the driver's import path) and the
-driver's guard the other changes. No package in `.venv-opt` was installed after the artifact (jax 0.11.0, numpy 2.5.1 and scipy 1.18.0 date from 2026-08-03). §164 proved 0
-differing bits at `smoke` and `coarse`, and §166 already found its compile-time claim did not hold
-at `medium`, so this is that proof's first test one rung up. **A difference is §164's scope**, since
-nothing else on the path changed.
+**Bit for bit: predicted YES, all 12 losses and the control.** A code-level comparison, comments and
+docstrings stripped, of every `src/` module and the driver between `ebcb6f0` (the artifact's commit)
+and `5114b68`: the numerics path differs only in `wheel_wheel.py`, and only by `6aa84ca` — §164 —
+with `wheel_pool.py` (unused at `--workers 0`), `wheel_stage3.py` (not on the driver's import path)
+and the driver's guard the other changes. No package in `.venv-opt` was installed after the artifact
+(jax 0.11.0, numpy 2.5.1 and scipy 1.18.0 date from 2026-08-03). §164 proved 0 differing bits at
+`smoke` and `coarse`, and §166 already found its compile-time claim did not hold at `medium`, so
+this is that proof's first test one rung up. **A difference is §164's scope**, since nothing else on
+the path changed.
 
 #### 3.3 `make contact`
 
 **Wall 230–440 s**, 1.3–2.5x the committed 177.4 s, for a mesh the fillet grows (+26.5% elements at
-`coarse`; the low end if cost follows elements, the high end for a superlinear direct solve).
-**Peak 6–18 GiB**, an inference rather than an extrapolation, so wide on purpose: below §3.2's
-serial objective, which carries the adjoint §165 measured as the dominant term. **Cap: the
-documented 20G**, so the run tests the number the block tells a reader to use. **Bit for bit: NO** —
-another genome on another mesh. The ladder should keep its shape (smoke, coarse, medium, each at
-`n_quad` 6 and 20), with `n_elements` near 1214 / 5951 / 15544 if the fillet adds +26.5% at every rung,
-against the committed 960 / 4704 / 12288.
+`coarse`; the low end if cost follows elements, the high end for a superlinear direct solve). **Peak
+6–18 GiB**, an inference rather than an extrapolation, so wide on purpose: below §3.2's serial
+objective, which carries the adjoint §165 measured as the dominant term. **Cap: the documented
+20G**, so the run tests the number the block tells a reader to use. **Bit for bit: NO** — another
+genome on another mesh. The ladder should keep its shape (smoke, coarse, medium, each at `n_quad` 6
+and 20), with `n_elements` near 1214 / 5951 / 15544 if the fillet adds +26.5% at every rung, against
+the committed 960 / 4704 / 12288.
 
 #### 3.4 Falsifiers
 
@@ -27784,7 +27786,7 @@ against the committed 960 / 4704 / 12288.
   S4   svk peak > 20            a 20G cap would kill it, and the svk block documents none.
   S5   svk peak > 23            the medium/coarse ratio does not carry from a pool worker to a serial
                                 process; §3.3's upper bound, built on §3.2's, goes with it.
-  S6   losses not bit-identical §164's 0 differing bits stop at coarse.
+  S6   losses not bit-identical §164's 0 differing bits (smoke, coarse) do not reach medium.
   S7   contact killed at 20G    Makefile:541's cap was never measured and is wrong.
   S8   contact wall > 600 s     the fillet costs a contact ladder more than 2.5x.
   S9   svk peak < 15            below every serial coarse mark on record: §175's 16.97 is in question,
@@ -27794,11 +27796,11 @@ against the committed 960 / 4704 / 12288.
 Nothing here measures `make svk` at two workers, which `Makefile:488` records as never measured;
 after this run there is a serial figure to size that attempt against.
 
-### 4. WHERE THE SVK DEFAULT's "1.49x" COMES FROM — §177 §3.2's FLAG, SETTLED
+### 4. WHERE THE SVK DEFAULT's "1.49x" COMES FROM — §177 §3.2's FLAG, SETTLED, AND ALREADY ON RECORD
 
-`src/wheel_stage3.py:1138-1139`: "IT COSTS 1.49x ... Paired over those same 36 genomes on shared
-meshes at 8 workers: linear 34.2 s median against SVK 51.9 s." The second session found 51.9 / 34.2
-= 1.518. From `studies/study_kinematics_rank.json`'s rows (unfilleted, 8 workers):
+`src/wheel_stage3.py:1138-1139` read, until `c179858`: "IT COSTS 1.49x ... Paired over those same 36
+genomes on shared meshes at 8 workers: linear 34.2 s median against SVK 51.9 s." The second session
+found 51.9 / 34.2 = 1.518. From `studies/study_kinematics_rank.json`'s rows (unfilleted, 8 workers):
 
 ```
   over the 35 rows after row 0      linear median 34.20   svk median 51.90   median of paired ratios 1.4943
@@ -27806,11 +27808,16 @@ meshes at 8 workers: linear 34.2 s median against SVK 51.9 s." The second sessio
 ```
 
 Row 0 is the warm-up (linear 129.9 s, svk 46.6 s). **All three figures reproduce exactly over the 35
-rows after it**: 1.49 is the median of the paired ratios, as "paired" says, and 1.518 is a ratio of
-medians the comment never states. The "36" counts the warm-up row the medians leave out. Nothing to
-fix. A third shape now sits beside it: `make svk`'s rows 2–6 above give svk/linear **1.181** per call,
-serial, at `medium`, filleted; `Makefile:569-570`'s 1.36x is SVK_PLAN Step 2's descent wall. Three
-shapes, three numbers, none interchangeable.
+rows after it**: 1.49 is the median of the paired ratios, and 1.518 is a ratio of medians the
+comment never stated. **It was already on record**: `KINEMATICS_PLAN.md:629`, Step 2's record of
+2026-08-16, reads "1.52× on medians, 1.49× median of the per-genome paired ratio", its warm-up row
+excluded — this section re-derived it before grepping. As committed, this paragraph ended "Nothing
+to fix"; amended after the second session's audit, because the comment gave two medians and a third
+number that is not their quotient without naming it, and its "36" counted the row the medians leave
+out. One reader divided. `c179858` names the statistic in the same two lines. A third shape now sits
+beside it: `make svk`'s rows 2–6 above give svk/linear **1.181** per call, serial, at `medium`,
+filleted; `Makefile:569-570`'s 1.36x is SVK_PLAN Step 2's descent wall. Three shapes, three numbers,
+none interchangeable.
 
 The same review's other flag: the gradient row's `"linear_step_descends_svk": true` beside a
 38-degree split reads like a rebuttal of §177 §1 and is not. It is `bool(cos > 0.0)`
