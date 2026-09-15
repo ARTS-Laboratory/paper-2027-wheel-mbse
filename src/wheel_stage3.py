@@ -1135,8 +1135,8 @@ def main():
     # deflection the correction spans 5.70%-48.54% across feasible designs, cv 0.51 against
     # study_gnl's own 0.10 bar.
     #
-    # AND IT COSTS 1.49x, NOT THE MULTIPLE STEP 2 BUDGETED FOR.  Paired over those same 36
-    # genomes on shared meshes at 8 workers: linear 34.2 s median against SVK 51.9 s.
+    # AND IT COSTS 1.49x, NOT THE MULTIPLE STEP 2 BUDGETED FOR: median PAIRED ratio over 35 of
+    # those genomes (+1 JIT warmup), shared meshes, 8 workers; medians linear 34.2, SVK 51.9 s.
     #
     # `linear` REMAINS SUPPORTED AND IS NOT DEPRECATED — study_gnl, study_kinematics_rank
     # and the M5/M7 controls all need it as an arm, and `wheel_fem`'s own kernel defaults
