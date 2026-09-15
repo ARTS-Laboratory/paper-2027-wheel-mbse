@@ -27240,3 +27240,224 @@ No run of a `medium` recipe past step 2, and none of a check after step 0. No `m
    current measurement behind it, and it refuses serial `medium` beside an admitted pool.
 2. **A second `medium` 100-step run** for scatter (§173 successor 3), which 0 can be.
 3. **`kinrank`'s parent at four workers**, before anyone relies on 55 GiB for it (§5).
+
+---
+
+## §175 — 2026-09-15. §174's SUCCESSORS 3 AND 1, CLOSED WHILE THE BOX RAN SUCCESSOR 0: **`make kinrank` AT FOUR WORKERS HELD 49.32 GiB OF KERNEL MARKS AGAINST `coarse`'s 55, ITS OWN PARENT 10.39 — THE PAIR §174 BORROWED FROM `wheel_stage3` FITS THE DRIVER — AND IT REPRODUCED THE COMMITTED SERIAL ARTIFACT BIT FOR BIT IN 58 MIN, NOT 2.7 h.** **`make stage3`'s COMMENT PRICED A LINEAR RUN**: AT THE RECIPE's OWN ARGV A PHASE IS **27.47 s, NOT 18.9**, AND THE ONE PROCESS MARKS **16.97 GiB BY STEP 3, NOT 43.4**. AND `knee` IS RUNNING TO STEP 100 UNDER ITS 52G, WITH ITS PREDICTION REGISTERED HERE BEFORE THE RUN ENDS
+
+Code in `3dd875d` (`kinrank`'s two lines), `f392548` (`make stage3`'s nine) and `1a9d20c` (its help
+line); this is the record.
+Two sessions: the second worked read-only — the `make stage3` argv and every live statement of its
+figures, the caches on `kinrank`'s path, what `knee` writes and which callers run past step 60,
+the `knee` prediction below — and audited both commits; this one ran the three measurements and
+made the changes. The user's call today, restating §158: no GUI work. Nothing in `gui/` was edited.
+
+### 1. THE ORDER
+
+The box runs one heavy job at a time, and §174 §9 ranked `knee`'s ~12 h run first. The two short
+measurements went first instead, so that `knee` takes the night and nothing waits on it:
+`kinrank` 12:27-13:26, `make stage3` 13:26-13:45, `knee` from 13:48. Each ran from a detached
+worktree under §170's watcher (per-pid `VmHWM` every 0.5 s, per-pid samples every ~5 s) in a
+`systemd-run --user --scope` with `MemorySwapMax=0`, with the Makefile's five pinned thread
+variables and an append-only `/proc` sampler outside the scope.
+
+### 2. `kinrank` AT FOUR WORKERS — §174 SUCCESSOR 3
+
+`make kinrank`'s argv at `d73361a`, `--out` redirected: `studies/study_kinematics_rank.py --config
+coarse --workers 4`. Scope `MemoryMax=58G`. Launched at 57.58 GiB available; exit 0 in 3506.8 s.
+The driver opens two pools in turn — one for the 36-genome ranking, a second for the four gradient
+probes — and closes the first before the second starts.
+
+```
+  moment (per-pid maxima of the watcher's samples)  parent  largest worker  workers summed   SUM
+  first scored genome done (elite9, 402 s)          10.276       9.409          37.240       47.516
+  genome 10 done (1416 s)                           10.360       9.722          38.546       48.906
+  last scored genome done (genome 21, 2818 s)       10.386      10.008          38.933       49.319
+  gradient pool, exit (3507 s)                      10.386       9.863          37.988       48.374
+```
+
+Tree RSS peak 49.150 (ratio 1.003); system rise 50.607 over a 3.788 baseline, so the box bottomed
+at ~6.97 GiB available.
+
+**THE WATCHER's `hwm_by_pid` IS ITS LAST READ, AND HERE THE LAST READ IS NOT THE MARK.** Its own
+samples read the parent at 10.386 and one ranking worker at 9.770 (at 2048 s), and the final reads
+say 10.383 and 9.766 (two gradient workers likewise, 9.505 → 9.502 and 9.219 → 9.216). The serial
+run in §3 does it on one live pid, 16.968 → 16.965 → 16.968 → 16.965 → 16.969 → 16.966, mid-run.
+`/proc/<pid>/status` reports `VmHWM` as the larger of the live RSS and a high-water the kernel
+updates lazily, so a read that lands on a live peak can return more than a later read keeps. The
+larger read is RSS the process held, so this section quotes maxima over the samples, and a last
+read is low by a few MiB, never high. §167 §1's description of the instrument (`PLAN.md:25988-25989`)
+calls `VmHWM` a mark "no sampling rate can miss"; for the last read that is off by these few MiB.
+The second session checked §173's and §174's `medium` records: last read and maximum agree for
+every pid there, so nothing in §167-§174 moves, and every pair was rounded up to whole GiB.
+`3dd875d`'s message pairs the maximum parent, 10.386, with the last-read sum, 49.312; the maxima
+sum to 49.319.
+
+**(a) The parent fits `coarse`'s 11 by 0.614, and a worker by 0.992.** §174 §5 set 4 by the
+worker and borrowed `wheel_stage3`'s parent for the driver's; this is the driver's own. It builds
+one `coarse` mesh per genome with a pool (`studies/study_kinematics_rank.py:228`) and holds scalars,
+so its mark is the first compile's plus 0.11 across the run.
+
+**(b) The workers creep — the largest 9.41 GiB after the first scored genome, 10.01 after the last,
++0.60 over the 36 evaluations between — and the repository's caches do not explain it.** The
+second session's census: every cache on this path is keyed on config integers, element order, a kinematics branch,
+`flank_orientation` (four values) or `flanks` (sixteen); no array shape depends on the genes at
+fixed config; and `FILLET_PLAN.md:3620-3623` measured 37 genomes making four traces. That predicted
+a staircase that goes flat. What ran is a slope, the same shape as §171 §3's descent growth, which
+nothing in the repository's caches or shapes explained either. It stayed 0.992 under the pair.
+
+**(c) The values are the committed serial run's, to the last bit.** Against
+`studies/study_kinematics_rank_filleted.json` (serial, run 2026-09-07), field by field: 38 scored
+losses bit-identical, R1 and R2 pass and R3 fails, and the same 17 refusals — §129 §4's census
+(`PLAN.md:19453`): all sixteen stage-2 elites (`36aed36` is rank 0) and `minwall 2.2`. What differs is timing, the `workers` fields, and five gradient leaves at ≤ 5.1e-14 —
+the cosines to 1.1e-16, `angle_deg` losing digits through `arccos` near 1. That is
+`tests/test_pool.py:344`'s "values BIT-IDENTICAL, gradients to 1e-14", and §167 §1's one genome
+bit-identical across three pool sizes, extended: pooled against a committed serial artifact across
+36 genomes and both kinematics, a scale the test does not reach. Four workers
+cut the wall clock 2.78x (9736.6 / 3506.8), against S13's 2.93x at four (`Makefile:359`).
+
+The `Makefile`, `3dd875d`: the `kinrank` block's sizing line now reads "4 held 49.3 GiB against
+`coarse`'s `POOL_GIB` 55; 8 budgets 99", and `make help`'s "~2.7 h serial at coarse" — a width the
+recipe does not run — reads "~1 h at 4 workers".
+
+### 3. `make stage3`'s OWN ARGV — §174 SUCCESSOR 1
+
+The recipe is bare `src/wheel_stage3.py`, so every value is an argparse default: `coarse`, 60
+steps, `rqmc` 8 × 8, `svk`, serial, no fidelity check, one start from `best_solution.json`. Neither
+default output is tracked. Run at `d73361a` with `--steps 3 --log-every 1` and the outputs
+redirected; scope `MemoryMax=50G`. Launched at 57.31 GiB available; exit 0 in 1156.8 s.
+
+```
+  step   wall s   s a phase   process VmHWM at the step's log line
+  0      494.90       —         16.822
+  1      211.12     26.39       16.822
+  2      229.80     28.73       16.956
+  3      218.40     27.30       16.966
+```
+
+Mean steady step 219.77 s, **27.47 s a phase**; step 0 plus 60 is 494.90 + 60 × 219.77 = 13,681 s,
+**3.80 h**. One process, so no sum: tree RSS peak 16.969, system rise 17.284 over a 4.060 baseline.
+The mark was set in step 0 and rose 0.144 over steps 2-3, so **16.97 GiB is a floor for the 60-step
+run** (§171: a coarse worker added 0.742 between one call and step 60).
+
+**What the comment carried, and why none of it was this recipe's.** The second session's reading,
+checked here:
+
+- **18.9 s a phase and 151.42 s were S10's, and S10 is `linear`.** `studies/study_stage3.py`'s
+  `run_cost` builds `S3.Evaluator(cfg, orientation=ori)` and never names `kinematics` (the file has
+  no occurrence of the word), so the solve takes `wheel_fem`'s `"linear"` default; `make stage3`
+  descends under `svk` by default since `97f9629`. 27.47 / 18.93 is 1.45x. SVK_PLAN Step 2
+  measured svk at 1.36x linear on a pooled pre-fillet step (`Makefile:569-570`); the rest — serial
+  against pooled, the step's own overhead, the code since — is not separated here.
+- **43.4 GiB was `/usr/bin/time -v` of that same S10 run** (§105's re-run on the filleted mesh):
+  linear, maximum RSS rather than `VmHWM`, priming plus eight timed calls, and before §164's
+  compile collapse.
+- **50.47 h projects 300 steps × 4 starts**, `run_cost`'s hard defaults. The recipe runs 60 × 1.
+- None of the three reached `studies/study_stage3.json`: §105 filed its `--sections cost` run to a
+  scratch `--out` because `_gate_guard` refuses a degraded run under the committed name, so the
+  artifact's `cost` block still reads the pre-fillet 2026-08-20 128.55 s. The comment was the
+  figures' only home.
+
+The `Makefile`, `f392548`, line-neutral, nine lines for nine: the formula reads 27.5 s plus a
+~495 s step 0; the measurement is dated and attributed to this section; S10's 18.9 s and 151.42 s
+stay, marked linear; the 43.4 GiB line (still `Makefile:278`, the line six sections cite) now
+carries 16.97 GiB as a floor; the `0.7 s` history stays; 50.47 h is named as 300 × 4. `1a9d20c`
+gives `make help`'s `make stage3` entry the ~3.8 h it was the one long target without.
+
+### 4. `knee` TO STEP 100 — §174 SUCCESSOR 0, RUNNING
+
+Launched 13:48:17 at `f392548`, `make -n knee`'s argv with `KNEE_OUT` and `KNEE_BEST` redirected
+off the committed controls (the recipe writes those two files and nothing else): `--start best
+--genome best_solution.json --config medium --kinematics svk --min-wall 1.2 --steps 100 --workers 3
+--phase-scheme uniform --fidelity-check-every 25 --fidelity-check-config coarse`. Named scope
+`knee175`, **`MemoryMax=52G`, `MemorySwapMax=0`** — the recipe's documented cap, so the run tests
+it. The side sampler also records the scope's `memory.current`, `memory.events` and `memory.stat`
+anon/file. The result is the next section's.
+
+**REGISTERED BEFORE THE RUN** — the second session's, written at 12:52 from §173's three-worker
+100-step record and §174's two-step `knee` record, and committed here before step 25:
+
+```
+  at step   parent mark     largest worker       SUM of marks            tree peak      vs 52 GiB
+  0         15.47           10.35 ± 0.9          46.9 ± 0.9              46.6 ± 0.9     5.4 under
+  25        15.47-15.55     11.3                 48.6 ± 0.9              47.1-48.3      3.7 under
+  50        15.47-15.60     11.4                 48.9 ± 0.9              47.4-48.6      3.4 under
+  75        15.47-15.65     11.6                 49.2 ± 0.9              47.7-48.9      3.1 under
+  100       15.47-15.80     11.5-12.0 (11.68)    49.4-51.0 (50.0)        48.4-49.7      2.3-3.6 under
+```
+
+Built as: the parent at `fc0`'s 15.474 plus §173's parent creep after step 0, which was **zero** —
+§173's parent read 10.508 at every sample from inside step 0 to the end of an 11 h run; the
+workers on §173's trajectory less 0.08, the offset between the two records' early largest marks;
+±0.9, §170 §2(c)'s run-to-run scatter.
+
+- **F1, the parent steps up at the checks.** The headline prediction is that it does not: the
+  `coarse` `Evaluator` and every cache it fills are built at `fc0`. A parent mark ≥ 16.2 at step 25
+  puts the tree on a path to 52 by step 100 (four checks at > 0.75 each); a rise of even 0.3
+  falsifies the headline.
+- **F2, the workers keep §173's late 26-39 MiB/step and add as much again**, reaching ~37.5 summed
+  instead of ~34.5. Not predicted; nothing bounds it.
+- **F3, the pair breaks before the cap.** `POOL_GIB`'s `medium` worker is 12, set on 11.754 with
+  0.246 to spare. A largest worker above 12.0 falsifies the pair with 52G nowhere near.
+- **F4, `oom_kill` > 0** — the only reading that means the cap fired. `memory.current` counts page
+  cache, which the kernel reclaims before anon and `MemorySwapMax=0` does not block, so `max`
+  events are likely near a ~50.6 GiB `memory.current` and are not a failure; a `max` count that
+  climbs steadily between checks, or steps drifting past ~430 s with flat marks, is the cushion
+  being spent.
+
+### 5. GREEN, AND THE SWEEP
+
+Both commits are `Makefile` comment and help text. `make -n stage3 kinrank` unchanged; `make help`
+renders; `tests/test_study_gate_guard.py`, 65 passed. No other test reads these lines. The full
+suite was not run, and nothing may run beside `knee`.
+
+The citation sweep does not own `Makefile` citations. The six `PLAN.md` sites that cite the
+`make stage3` comment's line 278 for "43.4 GiB" — §170 §4's row 1 and successor 4, §171's, §172's
+and §173's successor entries, and §174 §9's successor 1 — still land on that line, which now
+carries the new figure beside the old; §174 §1's row for `make stage3` says "unchanged" and is a
+record of that commit. §174 §1's `kinrank` row cites the block as a range that holds the edited
+sizing line, and still describes it; the help line's timing is cited nowhere.
+`KINEMATICS_PLAN.md:513` ("has never been measured on this construction") and `:608` ("does not
+license changing it") are closed records, answered now: four workers on the filleted mesh, measured.
+
+### 6. FLAGGED, NOT FIXED
+
+1. **The GUI's serial model still reads 151.42 s, 18.93 s and 43.4 GiB** (`gui/catalog.py`'s cost
+   model, `gui/jobs.py`'s ceiling comment, and the two serial pins in `tests/test_gui_cost.py`),
+   and `gui/catalog.py` names the `Makefile` comment as its source. Not edited: `gui/` is done.
+2. **S10 still measures `linear`**, so the M8b-i gate's cost section prices a run nothing launches
+   by default. Changing it is a study change that carries a regenerated artifact.
+3. **Five in-code sites quote 50.47 h** (`src/wheel_stage3.py`, `studies/study_stage3.py` twice,
+   `tests/test_stage3.py` twice). All attribute it to §105 and none asserts it, so none is false;
+   all price a linear 300 × 4 run.
+4. **`kinrank`'s workers grow per genome** (§2(b)), in a driver the caches say should plateau. It
+   stays a flag, as §171 §3's descent growth did: nothing cheap settles what grows below the
+   repository, and the margin it leaves is 0.992.
+5. **`make kinrank` still overwrites §32's evidence by default, unguarded** — known since §132 §5
+   and left for §130 successor 0, which artifact is canonical. The second session's sharpening:
+   `KINRANK_OUT`'s default names the UNFILLETED artifact (0 refusals, 8 workers), so a bare run
+   writes filleted results over it, and `make help` now tells a reader that run takes an hour.
+   §2(c) is new evidence for the decision: a re-run at the filleted name changes nothing but
+   timings.
+
+### 7. NOT DONE
+
+No `knee` result yet, no full suite, no `wheel_pool` or `gui/` edit, and no second `kinrank` or
+`make stage3` run for scatter. The watcher, a scratch script outside the tree, still reports last
+reads as `hwm_by_pid`; `knee`'s record is read from its per-pid samples and the side log instead.
+
+**SUCCESSORS** — §174's, re-ranked with 3 and 1 closed.
+
+0. **`knee`'s result against §4's registration** (§174 successor 0, running since 13:48; ~01:50).
+   It also serves as §174 successor 2, a second `medium` 100-step run.
+1. **STEP 300 at `coarse`** (§171 successor 1), at `svk-shipped`'s argv, 7.15 h. `svk-shipped` and
+   `svk-elite10` run 300 steps at four workers under 55G, over 49.7 GiB held at step 60 on a rate
+   that was falling, with 0.758 of the worker's 11 left against `medium`'s 0.246.
+2. **"Past step 100 at `medium`" is retired as a successor.** Every `medium` descent caller runs
+   100 by its resolved values — `svk-medium`, `buildcap`, `knee`, `REPO_EXPLAINED.tex:1751` — so
+   no `Makefile` or walkthrough caller reaches it; it returns if one does. The GUI's `steps` is a
+   free integer, and §174 made a pooled `medium` descent admissible there.
+3. **§130 SUCCESSOR 0, WHICH `kinrank` ARTIFACT IS CANONICAL** (§6.5), open since 2026-09-07 and
+   the one thing between `make kinrank` and a clobbered closed record.
+4. **`make svk`'s serial `medium` rescore and `make contact`'s serial ladder** (§174 §8.3),
+   unmeasured since §164.
