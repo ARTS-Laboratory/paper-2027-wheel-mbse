@@ -26773,3 +26773,174 @@ recomputed here, and `stage3_prod_elite10.json:44912` records it. The citation i
    three `medium` recipes (`svk-medium`, `buildcap`, `knee`) pin four workers, the pool 0's first
    run was stopped in.
 3. **`Makefile:278`'s serial 43.4 GiB** (§171 successor 4).
+
+---
+
+## §173 — 2026-09-15. §171's SUCCESSOR 0, CLOSED: **`medium`'s POOL PAIR IS (12, 11).** AT THE LONGEST `-1` CALLER's OWN ARGV, `REPO_EXPLAINED.tex:1751`'s 100 STEPS, `-1` CHOSE FOUR WORKERS AND **ONE PASSED 11.0 GiB DURING STEP 3**, WITH THE BOX AT 57.75 OF 61.4 GiB USED. THE THREE-WORKER POOL A CORRECTED PAIR GIVES THEN RAN ALL 100 STEPS AND ITS LARGEST WORKER REACHED **11.754 GiB, STILL RISING**. AND THE FOUR-WORKER `medium` POOL THAT THREE RECIPES PIN SUMMED **51.3 GiB OF KERNEL MARKS AFTER STEP 0 — 1.6x THE 32G CAP `make knee` TELLS A READER TO LAUNCH UNDER**
+
+Code in `acbf738`; this is the record. The run that closes it took 11.3 h. While it held the box,
+the second session read the tree for §172.
+
+### 1. THE PREMISE: WHICH `medium` CALLERS, AND FOR HOW LONG
+
+Five launch instructions can run Stage 3 at `medium`. Four of them run **100 steps**:
+
+| caller | steps / workers / scheme / extras | sized by `POOL_GIB`? |
+|---|---|---|
+| `REPO_EXPLAINED.tex:1751`, the walkthrough's first command | 100 / `-1` / `rqmc` | **yes** |
+| the GUI's stage3 target with `medium` chosen (`gui/catalog.py:244`, `:253`) | 60 by default, editable / `-1` offered / `rqmc` | **yes**, when `-1` is |
+| `make svk-medium` (`Makefile:623`), `buildcap` (`:657`), `knee` (`:706`) | 100 / a literal 4 (`:590`) / `uniform` / fidelity check at `coarse` every 25 | no |
+
+`acbf738`'s message says the walkthrough is "the one caller" sized this way. The GUI is a second
+one, found while writing this record, and its default 60 steps sits inside the 100 measured. The
+pair governs the first two rows, so both runs are the longer one's argv verbatim, bar `--log-every
+1`, the output paths and, in the second run, the worker count: `--start best --steps 100 --config
+medium --kinematics svk --min-wall 1.2`. Each ran in a worktree at `0f95d13`, under §170's watcher
+with per-pid kernel marks every 5 s, in a `systemd-run --user --scope` with `MemorySwapMax=0`.
+Beside the scope ran an append-only `/proc` sampler, so a kill could not take the record with it.
+
+### 2. FOUR WORKERS: PAST 11.0 DURING STEP 3, AND STOPPED THERE
+
+`-1` chose 4 at 57.81 GiB available: (57.81 − 11) // 11 = 4. Cap 55G. Kernel marks at the end of
+each step's window, GiB:
+
+```
+  step   wall s   parent   w1      w2      w3      w4
+     0   804.31   10.352   10.253  10.227  10.353  10.134
+     1   343.48   10.352   10.444  10.568  10.728  10.217
+     2   312.17   10.398   10.622  10.811  10.728  10.431
+     3   304.69   10.408   10.761  11.102  10.728  10.431
+```
+
+`w2` passed 11.0 during step 3's window: **+0.875 GiB in three steps**, where `coarse`'s largest
+worker took 60 steps to add 0.742 over its call mark (§171). The tree's window floor rose 49.031
+→ 50.290 GiB as its peak rose 52.135 → 52.936. At the stop the marks summed **53.549 GiB**
+(parent 10.434; workers 10.761, 11.143, 10.728, 10.483), 1.006 over the tree's simultaneous peak
+of 53.242. The box's used memory peaked at **57.749 of 61.37 GiB**, and the watching session's
+host was already killing its background shells for low memory.
+
+**Why stop at step 3.** The question the pair asks — does a `medium` worker stay under 11.0 at its
+caller's argv? — was answered, and the pool had 3.6 GiB of the box left with every worker still
+climbing. And three is the pool a corrected pair launches: whole GiB above 11.143 is 12, and at
+~57.8 GiB available every whole-GiB allowance from 12 to 15 gives (57.8 − 11) // w = 3. The parent
+took SIGTERM; the watcher saw it exit and wrote a complete record. The orphaned workers' marks, read
+from `/proc` before they were stopped, matched the watcher's last sample for three of the four; `w3`
+had moved 10.728 → 10.755 after the parent was gone, still under `w2`'s 11.143.
+
+### 3. THREE WORKERS: 100 STEPS, 11.754, STILL RISING
+
+The same argv at `--workers 3`, cap 52G, launched at 57.76 GiB available. It exited 0 in
+40731.9 s: step 0 took 874.5 s, and steps 1–100 averaged 398.5 s (sd 10.9). No step was rejected
+or abandoned, and `events` is empty.
+
+```
+  run                              parent  workers (VmHWM, GiB)           SUM     tree peak  ratio  system
+  §173  -1 → 4, stopped in step 3  10.434  10.761 11.143 10.728 10.483   53.549   53.242    1.006  0.988
+  §173  --workers 3, 100 steps     10.508  11.754 11.423 11.318          45.003   43.603    1.032  0.998
+```
+
+Columns as §171's. **(a) Per step window** — the maximum RSS in each window and the tree's summed
+minimum and maximum, then each process's kernel mark at the window's end:
+
+```
+  step   parent   w1      w2      w3      workers  tree_min tree_max   marks: w1     w2      w3     sum
+     1    9.302  10.753  10.606  10.641   32.000   38.863   40.999          10.787  10.676  10.656  42.627
+    10    9.389  11.109  10.828  10.636   32.573   39.866   41.933          11.147  10.908  10.794  43.357
+    20    9.392  11.407  10.639  10.588   32.634   40.048   42.042          11.451  10.967  10.794  43.720
+    30    9.399  11.308  10.727  10.576   32.611   39.981   41.989          11.479  10.967  10.794  43.748
+    40    9.426  11.226  10.833  10.693   32.752   40.207   42.160          11.479  10.967  10.795  43.749
+    50    9.431  11.485  10.865  10.828   33.178   40.609   42.582          11.559  10.986  10.938  43.991
+    60    9.431  11.489  10.737  10.611   32.837   40.496   42.389          11.652  10.986  11.018  44.164
+    70    9.432  11.460  10.799  10.909   33.168   40.623   42.540          11.652  10.986  11.018  44.164
+    80    9.433  11.532  11.019  10.727   33.278   40.612   42.767          11.693  11.142  11.080  44.423
+    90    9.433  11.720  11.227  10.778   33.725   41.268   43.105          11.754  11.309  11.080  44.651
+   100    9.434  11.632  11.228  11.036   33.896   41.425   43.280          11.754  11.423  11.318  45.003
+
+  least-squares slope by block   1-10   11-20   21-30   31-40   41-50   51-60   61-70   71-80   81-90   91-100
+    workers, summed (MiB/step)   58.3   -30.4     9.5    24.5    32.1   -10.0     8.0    35.8    38.6    31.1
+```
+
+The workers' kernel marks passed 11.0 at steps 7, 51 and 78, in that order. Steps 1→100 added
++1.896 GiB to the workers' summed window maxima and +0.132 to the parent's.
+
+**(b) Held, as at `coarse`.** The tree's window floor rose 38.863 → 41.425 GiB as its peak rose
+40.999 → 43.280. That is resident memory staying resident, §171 §2(b)'s discriminator.
+
+**(c) It does not level off.** `coarse`'s rate fell over its 60 steps (§171 §2(a)). Here the last
+three blocks add 36, 39 and 31 MiB a step, and the marks' sum rose 0.839 GiB over steps 70–100
+after holding still over steps 60–70. Nothing measured says a 101st step stops. No `medium`
+caller runs one.
+
+**(d) Not a per-phase term.** Three workers split the 8 phases 3/3/2, where four held 2 each.
+After step 0 the three-worker marks were 10.334–10.649 and the four-worker marks 10.134–10.353.
+By step 3 the four-worker pool's largest led, 11.102 against 10.997. That is one run of each, with
+phase count confounded with run — §169 §2(e)'s situation, still not quoted.
+
+### 4. THE CHANGE, `acbf738`
+
+`POOL_GIB["medium"]` goes from (11, 11) to **(12, 11)** by §167's rule. The largest worker mark is
+now a 100-step descent's, 11.754, which 12 bounds by **0.246 GiB** — the thinnest margin on any
+pair, against `coarse`'s 0.758. The largest parent mark is this run's 10.508, so the parent stays
+11.
+
+**What it costs.** At this box's ~57.8 GiB `-1` gives `medium` three workers where it gave four.
+The four-worker run's steps 2–3 averaged 308.4 s, against 398.5 at three: **1.29x per step**, read
+off three steps of a run that was stopped, so a rough figure. In exchange the pool leaves ~12 GiB
+of the box free instead of 3.6.
+
+**The pin** (`test_pool.py:434`) takes `medium`'s marks from the descent, (11.754, 10.508). Its
+admit direction becomes `default_workers(8, "medium") == 3` at 57.76, the reading the 100-step
+pool ran on. The sentence saying four `medium` workers fit is gone: that was one call, 49.79 GiB,
+and it is the pool that passed 11.0 by step 3. Mutated before trusting, `__pycache__` cleared each
+time:
+
+| mutant | fails at |
+|---|---|
+| (11, 11) | `assert 11.0 > 11.754` |
+| (16, 11) | `assert 2 == 3` |
+| (12, 10) | `assert 10.0 > 10.508` |
+
+**(13, 11) survives**: at 57.76 the admit assertion holds for any whole-GiB allowance from 12 to
+15, so the pin bounds the pair and does not pin the rule. Line-neutral in both files.
+
+Green: `test_pool.py`'s three sizing tests and the pin, plus `test_stage3.py`'s worker-ladder and
+S13 memory-reading tests — 6 passed. The rest of the suite does not read `POOL_GIB` and was not
+run. Citation sweep in a throwaway commit: 1224 citations, 110 → 113 for a human. The three new
+rows are §171's citations of `wheel_pool.py:152` and `test_pool.py:450` (the two lines whose
+values this change sets) and of `f8b26bf`'s `test_pool.py:443`. Nothing moved.
+
+### 5. FLAGGED, NOT FIXED — §171 SUCCESSOR 2's ROWS 7–9 NOW HAVE A NUMBER
+
+The three `medium` recipes pin **four** workers. The four-worker pool's kernel marks summed
+**51.319 GiB after step 0** (§2) and 53.549 by step 3, still climbing.
+
+- **`make knee`** (`Makefile:689`) tells a reader to launch under `MemoryMax=32G`, a figure raised
+  from 16G on 2026-08-13 against a pre-fillet `memory.current` of 15.3 GiB (`:692-698`). Step 0
+  alone sums to **1.60x** that cap.
+- **`svk-medium` and `buildcap`** carry no cap, and on this 61.4 GiB box their pool took used
+  memory to 57.75 GiB within three steps.
+
+These recipes run `uniform` with a fidelity check at `coarse`, not this argv, so the figures are
+the nearest measured shape, not theirs. At `coarse`, §171 §2(c) found `rqmc` inside `uniform`'s
+run-to-run scatter (§170 §2(c)). The fidelity check adds a second, serial `Evaluator` in the parent
+(`Makefile:406-416`), which only adds.
+
+The descent's own output is a by-product and was not assessed: genome `05ca120`, loss 54.152 →
+53.936, in the job directory, not committed.
+
+### 6. NOT DONE
+
+No `medium` mark past step 100. No second 100-step run to put a scatter on 11.754, which matters
+more here than at `coarse` because the margin is 0.246. No recipe or GUI edit.
+
+**SUCCESSORS** — §172's, re-ranked with 0 closed.
+
+0. **RE-DERIVE THE CAPS AND THE GUI's MODEL** over twelve rows (§171 successor 2), **`knee` first**:
+   its 32G cannot hold step 0 of the pool it launches (§5), and `svk-medium`/`buildcap` have no cap
+   at all. Decide whether those recipes keep four workers on a 61.4 GiB box before sizing a cap
+   for them.
+1. **STEP 300 at `coarse`** (§171 successor 1), and now **past step 100 at `medium`**. Neither
+   growth has been seen to stop, and `medium`'s had not slowed by step 100.
+2. **`Makefile:278`'s serial 43.4 GiB** (§171 successor 4).
+3. **A second `medium` 100-step run** for scatter on the 0.246 GiB margin. Rank it behind 0: the
+   cap question does not wait on it, and it costs 11 h.
