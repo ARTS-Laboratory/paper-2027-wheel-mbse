@@ -27957,7 +27957,7 @@ The knee record closes this, `knee`'s own registration (§175 §4), and the pair
 1. **STEP 300 at `coarse`** against §178 §2 (auto-starts when `knee` ends).
 2. **`make contact` then `make svk`** against §178 §3 (queued behind it).
 
-## §180 — 2026-09-16. §174's SUCCESSOR 0, CLOSED: `knee` RAN ITS 100 `medium` STEPS UNDER 52G IN **11.72 h**, EXIT 0, AND THE LARGEST WORKER MARKED **12.023 ONCE, AT STEP 41, AND NEVER AGAIN** — 59 STEPS AND THREE FIDELITY CHECKS SET NO NEW PEAK. THE CREEP §173 CALLED "STILL RISING" **STOPS**. THE PAIR's `medium` WORKER GOES TO 13 (`aa9e938`) AND THE RECIPES' BUDGET WITH IT, 52G -> 55G. THE PARENT NEVER MOVED OFF 15.874, AND `memory.current` PEAKED 2.77 UNDER THE CAP WITH **ZERO** EVENTS OF ANY KIND
+## §180 — 2026-09-16. §174's SUCCESSOR 0, CLOSED: `knee` RAN ITS 100 `medium` STEPS UNDER 52G IN **11.72 h**, EXIT 0, AND THE LARGEST WORKER MARKED **12.023 ONCE, AT STEP 41, AND NEVER AGAIN** — 59 STEPS AND THREE FIDELITY CHECKS SET NO NEW PEAK. THE CREEP §173 CALLED "STILL RISING" **STOPS 60 STEPS BEFORE THE RUN DOES**. THE PAIR's `medium` WORKER GOES TO 13 (`aa9e938`) AND THE RECIPES' BUDGET WITH IT, 52G -> 55G. THE PARENT NEVER MOVED OFF 15.874, AND `memory.current` PEAKED 2.77 UNDER THE CAP WITH **ZERO** EVENTS OF ANY KIND
 
 Run in `$T/wt` at `f392548`, `make -n knee`'s argv with `KNEE_OUT`/`KNEE_BEST` redirected,
 `systemd-run --user --scope MemoryMax=52G MemorySwapMax=0`, launched 13:48:17 and ended 01:31:31.
@@ -27982,8 +27982,9 @@ Every column is a running maximum to the end of that step, `memory.current` incl
 step-30 47.503 is under this table's 48.497.
 
 Marks are per-process `VmHWM` maxima over the watcher's samples (§175's rule). Exit 0, `events`
-empty, no step abandoned, `n_reject` 0. Wall **42191.8 s = 11.72 h**, against the recipe's own
-"~12 h"; a steady step is 382.5-419.2 s and the five `coarse` fidelity checks cost 1271.8 s of
+empty, no step abandoned, `n_reject_cumulative` 0. Wall **42191.8 s = 11.72 h**, against the
+recipe's own "~12 h"; over all 100 steps a step is **375.9-436.6 s, mean 400.2** (the decades the
+log prints span only 382.5-419.2); the five `coarse` fidelity checks cost 1271.8 s of
 solve and 10.6 s of mesh, **256.5 s each**. Tree RSS peak 49.701, so the summed marks sit **1.025x**
 it — above the 1.006 and 1.011 the two `coarse` descents gave (§170, §171), and the first `medium`
 reading of that ratio.
@@ -28002,8 +28003,16 @@ reading of that ratio.
   100      largest worker  11.5-12.0 (11.68)     12.023     ABOVE the band: F3
   100      SUM             49.4-51.0 (50.0)      50.968     in band
   100      tree peak       48.4-49.7             49.701     at the top, 0.001 over
-  100      under 52G       2.3-3.6               2.77       in band (by memory.current)
+  100      under 52G       2.3-3.6               2.299      at the floor, like for like
+                                                     (2.769)    (by memory.current, see below)
 ```
+
+The last row is the one to read carefully: the registered band was built from **tree peak**
+(52 - 49.7, 52 - 48.4), so the like-for-like reading is `52 - 49.701` = **2.299**, at the band's
+floor. `memory.current`'s 2.769 is the friendlier number against the stricter band, and it is lower
+for two reasons that both flatter a cap — it is sampled every 5 s against the watcher's 0.5, and
+with `file=0.000` the mapped interpreter and `.so` pages counted in `VmRSS` are charged elsewhere.
+**For a cap margin the conservative figure is the tree's.**
 
 **The shape was right and the levels were low.** Both of the section's structural calls held — the
 parent does not move, and the pair breaks before the cap — while every SUM row between steps 25 and
@@ -28025,7 +28034,10 @@ parent does not move, and the pair breaks before the cap — while every SUM row
 - **F4, `oom_kill` > 0: NO** — and not a single event of any kind: `low:0 high:0 max:0 oom:0
   oom_kill:0`. `memory.current` peaked at **49.231** (anon 49.096) against 52G. The scope's `file`
   was **0.000 throughout**, so the page-cache cushion F4's reasoning leaned on did not exist; it was
-  never needed.
+  never needed. **F4's other signal would have mis-fired**: it named "steps drifting past ~430 s
+  with flat marks" as the cushion being spent, and this run has a **436.557 s** step with marks flat
+  and nothing to reclaim. A duration heuristic for a memory effect needs the memory reading beside
+  it, and that pairing is live for `s300`.
 
 ### 4. §179 §5's OWN PREDICTION, FALSIFIED ON THE LOW SIDE
 
@@ -28051,7 +28063,9 @@ shaped as a ladder survived its own laws being wrong.
 
 `BEST OVER 1 START(S): best_solution at step 0, loss 54.1355, selection tier 0`. The final iterate
 is **lower** — 53.9338 at step 100, `4305981` — and it is not admissible: its `fillet_cap` term
-reads 0.016 while step 0's every barrier is 0.0. That is `selection_key`'s tier-0 floor doing the
+reads 0.0163 while step 0's every barrier is 0.0 — with `x_order`'s 0.00009 the violation
+`selection_key` sums over `WO.BARRIER_TERMS` is **0.01639**, which puts step 100 in **tier 2**
+(`src/wheel_stage3.py:244`), not a thin-slack tier 1. That is its tier-0 floor doing the
 job `best_solution.json`'s own promotion note describes ("the run's own literal final step is NOT a
 valid candidate — it is in fillet_cap violation"), one arc later and on a different rung. **100
 `medium` steps, 11.72 h, and the recipe returns its own starting genome.** `make knee` is a memory
