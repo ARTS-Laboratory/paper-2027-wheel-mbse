@@ -439,15 +439,15 @@ def test_every_pool_pair_bounds_its_marks_and_admits_the_pool_measured_to_fit(
     `coarse`'s worker is a DESCENT's, 10.242 by step 60 at `-1`'s own argv (§171); one call
     marked 9.440 under §167's probe, which named no `kinematics` and so ran `linear`, and
     9.500 under svk (§169).  Its parent's 10.271 is §167's, above every descent's.
-    `medium`'s are a 100-step descent's at `REPO_EXPLAINED.tex:1751`'s argv (§173); one
-    call marked 10.649.  A pair below a mark is the silent direction: it admits a pool the
-    box cannot hold -- `medium`'s (11, 11) gave four there, and one passed 11.0 in step 3.
+    `medium`'s 11.754 is §173's 100-step descent, 12.023 `make knee`'s (§180), FLAT from
+    step 40; one call marked 10.649.  A pair below a mark is the silent direction: it
+    admits a pool the box cannot hold -- `medium`'s (11, 11) gave four, one past 11.0 by 3.
 
     The other direction is pinned too.  `coarse`'s four workers summed 49.72 GiB with 57.05
     available and `medium`'s three 45.00 with 57.76, over 60 and 100 steps.  A pair that
     refuses those counts on those readings has stopped describing the box they ran on.
     """
-    marks = {"coarse": (10.242, 10.271), "medium": (11.754, 10.508)}
+    marks = {"coarse": (10.242, 10.271), "medium": (12.023, 10.508)}
     for cfg, (worker_mark, parent_mark) in marks.items():
         worker, parent = WP.POOL_GIB[cfg]
         assert worker > worker_mark, f"{cfg}: a worker was measured at {worker_mark} GiB"

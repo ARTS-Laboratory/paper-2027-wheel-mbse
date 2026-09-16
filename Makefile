@@ -107,7 +107,7 @@ help:
 	@echo "make knee     DEFECT8_PLAN.md step 4: the production descent under the"
 	@echo "              knee'd stress_margin. Every knob is §19's, so §19's own run"
 	@echo "              (stage3_margin_medium.json) is an exact control and the"
-	@echo "              objective is the only difference. ~12 h at 3 workers, 52G cap"
+	@echo "              objective is the only difference. 11.7 h at 3 workers, 55G cap"
 	@echo "make kinrank  KINEMATICS_PLAN.md step 1: scores every distinct committed"
 	@echo "              genome under BOTH kinematics and asks whether linear RANKS"
 	@echo "              designs the way SVK does — argmin identity, Spearman rho and"
@@ -683,13 +683,13 @@ buildcap:
 # DISTINCT --out AND --best-out, load-bearing for the reason prod9/prod10's and buildcap's
 # are: `stage3_margin_medium.json` is the control and clobbering it would destroy it.
 #
-# ~226 s/step on the three `medium`/SVK/100-step runs this mirrors, ~6.3 h; ~12 h now.
+# ~226 s/step on the three `medium`/SVK/100-step runs this mirrors, ~6.3 h; 11.7 h now.
 # Launch it capped and detached, exactly as prod9/prod10 and svk-shipped —
 #
-#   systemd-run --user --unit=wheel-knee -p MemoryMax=52G -p MemorySwapMax=0 --collect \
+#   systemd-run --user --unit=wheel-knee -p MemoryMax=55G -p MemorySwapMax=0 --collect \
 #       --working-directory=$$PWD /usr/bin/make knee
 #
-# 32G UNTIL §174, WHOSE 52G FOLLOWS THE RECIPE; not the 16G then above, and measured.  The
+# 32G UNTIL §174, WHOSE 52G FOLLOWED THE RECIPE; 55G SINCE §180; not the 16G above.  The
 # 2026-08-13 run was launched at 16G and sat at the ceiling: `memory.current` 15.3 GiB,
 # `memory.events` max = 2936 forced direct reclaims, `oom_kill` 0.  It survived and held the
 # control's pace (224-239 s/step against §19's 236/191/227), so nothing in this file's timings
@@ -712,7 +712,7 @@ knee:
 	    --fidelity-check-every 25 --fidelity-check-config coarse \
 	    --out $(KNEE_OUT) --best-out $(KNEE_BEST)
 
-# THE `medium` RECIPES' POOL: 3 WORKERS UNDER 52G, NOT 4 UNDER 32G.  `svk-medium`,
+# THE `medium` RECIPES' POOL: 3 WORKERS UNDER 55G, NOT 4 UNDER 32G.  `svk-medium`,
 # `buildcap` and `knee` above share these pool flags.  PLAN.md §173-§174, filleted mesh.
 #
 # 4 until 2026-09-15, through SVK_DESCENT_WORKERS, which `svk-shipped` and `svk-elite10`
@@ -722,14 +722,14 @@ knee:
 # builds a second, serial `coarse` Evaluator in the PARENT: `knee`'s own flags at 3 workers
 # took the parent from 10.42 to 15.47 GiB across the step-0 check and held it there
 # (§174).  By `wheel_pool.POOL_GIB`'s rule, whole GiB above each mark, that parent is 16,
-# and a worker stays §173's 12, so four is 64 GiB and cannot fit this box; three is 52.  It
-# summed 46.9 GiB by step 2.  §173's three workers summed 34.5 by step 100, still rising, so
-# with this parent the pool nears 50 by then -- if no later check adds to it, which is
-# unmeasured.  So 52G is the budget, not a margin over it, and no swap: a pool past it is
-# killed rather than left swapping for hours.  At three workers a step is ~400 s, so 100
-# steps and five checks are ~12 h.  The count moves no value: a pool returns serial's
-# values bit for bit and its gradient within 1e-14 (`tests/test_pool.py`), and every
-# control these recipes name was drawn on the unfilleted mesh.
+# and a worker is §180's 13, so four is 68 GiB and cannot fit this box; three is 55.  It
+# summed 46.9 GiB by step 2.  `knee` ran the 100 steps under 52G: three workers summed
+# 35.094, the parent held 15.874 across all five checks, and `memory.current` peaked at
+# 49.231 -- 2.8 under the cap that ran and 5.8 under this budget.  No swap: a pool past
+# it is killed rather than left swapping for hours.  At three workers a step is ~400 s,
+# so 100 steps and five checks are 11.7 h measured.  The count moves no value: a pool
+# returns serial's values bit for bit and its gradient within 1e-14 (`tests/test_pool.py`),
+# and every control these recipes name was drawn on the unfilleted mesh.
 SVK_MEDIUM_WORKERS ?= 3
 
 # The milestone gates.  These are not tests — they produce measured reports whose

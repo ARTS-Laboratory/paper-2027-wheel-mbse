@@ -142,14 +142,14 @@ def worker_env(base=None):
 #           FLAT in phases held; svk's 9.500 / 9.290 (§169).  A DESCENT CREEPS PAST THEM:
 #           10.242 by step 60 at `-1`'s own argv, whose parent and 4 workers summed 49.72
 #           GiB at 57.05 free (§171); step 300 is unmeasured.  parent 9.829-10.271
-#   medium  worker 8 one-call marks, 10.231-10.649 GiB (§169).  A DESCENT at `-1`'s argv
-#           reaches 11.754 by step 100 at 3 workers and rises (§173).  parent 8.677-10.508
+#   medium  worker 8 one-call marks, 10.231-10.649 GiB (§169); parent 8.677-10.508.  TWO
+#           100-step DESCENTS at 3 workers: 11.754 rising (§173), 12.023 FLAT from 40 (§180)
 # Whole GiB above the largest mark each, as `(worker, parent)` per config.  `smoke` carries
 # `coarse`'s pair as an UPPER bound -- every `smoke` figure measured sits below `coarse`'s
 # (§164: 25.67 against 27.35 GiB for the same process; its pooled workers 8.73 / 8.81).
 # `fine` is NOT MEASURED; `medium`'s one-call worker is 12% over `coarse`'s, so a coarser
 # rung's pair under-counts there, the side that fills a box.  `default_workers` refuses.
-POOL_GIB = {"coarse": (11.0, 11.0), "smoke": (11.0, 11.0), "medium": (12.0, 11.0)}
+POOL_GIB = {"coarse": (11.0, 11.0), "smoke": (11.0, 11.0), "medium": (13.0, 11.0)}
 
 
 def _available_gib():

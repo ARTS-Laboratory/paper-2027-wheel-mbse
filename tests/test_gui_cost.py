@@ -50,7 +50,7 @@ def test_the_pools_the_box_held_are_admitted_priced_above_what_they_held(monkeyp
         assert pre["memory_max_gib"] == 55.0, "an upper bound is its own cap"
     pre = _plan(monkeypatch, 57.76, config="medium", workers=-1)
     assert not pre["blockers"], pre["blockers"]
-    assert pre["peak_gib"] == 47.0 > 45.003
+    assert pre["peak_gib"] == 50.0 > 45.003
 
 
 def test_minus_one_is_priced_at_the_width_it_will_pick_not_as_serial(monkeypatch):
@@ -68,12 +68,14 @@ def test_a_config_default_workers_refuses_is_blocked_with_its_reason(monkeypatch
 
 def test_an_explicit_count_is_the_callers_below_the_machine_and_refused_above_it(
         monkeypatch):
-    """Four `medium` workers budget 59 GiB: over the 57.76 free, which §173 §2's pool made
-    real by step 3, and under the 61.37 total -- a warning, because `--workers 4` is the
-    caller's (§167).  Eight budget 107 and cannot fit the machine at all."""
-    pre = _plan(monkeypatch, 57.76, config="medium", workers=4)
+    """Three `medium` workers budget 50 GiB at §180's worker of 13: over a 45 GiB reading
+    and under the 61.37 total -- a warning, because `--workers 3` is the caller's (§167).
+    FOUR budget 63 and cannot fit the machine at all; at §173's 12 they budgeted 59 and
+    warned, and that cell is the one the new pair flips (§180).  Eight budget 115."""
+    pre = _plan(monkeypatch, 45.0, config="medium", workers=3)
     assert not pre["blockers"], pre["blockers"]
     assert any("exceeds" in w for w in pre["warnings"]), pre["warnings"]
+    assert _plan(monkeypatch, 57.76, config="medium", workers=4)["blockers"]
     assert _plan(monkeypatch, 57.76, config="medium", workers=8)["blockers"]
 
 
