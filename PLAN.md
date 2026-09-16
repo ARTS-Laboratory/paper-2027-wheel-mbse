@@ -28606,10 +28606,23 @@ eight it replaced, which is plausible for one trace carrying the phase as an arg
 eight specialised ones. It is an identity, not a confirmation: the 226.3 is derived FROM the
 saving, so it re-expresses the 122 s residual rather than explaining it. Its value is that it is
 **checkable**: a pre-§164 log showing eight alarms near 213 s rather than near 226 would refute
-it. Two loads to name: the background factor rests on five rows and is **not flat** — the ten
-later calls run **0.9751 to 0.9944 in run order**, a 1.93% drift with position rather than a
-constant speedup, so the single 0.9850 is the mean of a trend — and §166's 213 s is itself one
-measurement.
+it. Two loads to name, and the first has its own scored falsifier. **The background factor rests on
+five rows and is not flat**, but it is not simply positional either:
+
+```
+  new/old, in run order        elite10   mw 1.2   mw 1.4   mw 1.6   mw 2.0
+  linear                        0.9751   0.9789   0.9825   0.9886   0.9906   monotone rising
+  svk                           0.9783   0.9842   0.9906   0.9944   0.9865   rises, then BREAKS
+```
+
+While row 6 was still running, the second session registered the test: *if the drift is positional,
+row 6 continues it — linear ≥ 0.989, svk ≥ 0.994.* **It half-fired.** Linear came in at 0.9906 and
+continued, five of five monotone; svk came in at **0.9865** and fell 0.0079 off row 5, which is
+four times the step it had been rising by. Row 6 is `minwall 2.0`, the *shortest* of the five, so
+the reading the break leaves open is a duration effect rather than a positional one — and a
+registered number separated the two for free, on a row that was going to be measured anyway. So
+the single 0.9850 is the mean of something that is at least two things, and the 226.3 inherits that
+width. The second load is that §166's 213 s is itself one measurement.
 
 #### 5.3 WHAT `make svk` DOES NOT SETTLE
 
