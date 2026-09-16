@@ -28125,7 +28125,7 @@ numeric half of that file (`test_a_pooled_evaluation_equals_the_serial_one_exact
    fixed. A third would say whether 15.47-15.87 is a band or a drift, and the `medium` recipes' 16
    in `Makefile:724` rests on it.
 
-## §181 — 2026-09-16. §177's SUCCESSOR 1, CLOSED: THE STEP-300 `coarse` DESCENT RAN 6.98 h, EXIT 0, AND ITS WORKERS' SUMMED MARKS ROSE **+1.085 FROM STEP 60 TO 300** — THE SATURATING LAW's +1.0, NOT LINEAR-AT-THE-LATE-RATE's +1.9. **§171's SUCCESSOR 1 IS ANSWERED: `coarse`'s CREEP IS BOUNDED IN PRACTICE**, THE PAIR's 11 HOLDS WITH **0.49 GiB** TO SPARE AT THE LONGEST ARGV ANYTHING RUNS, AND NO FALSIFIER FIRED. BUT THE PARENT **CREPT +0.170**, WHICH §173 AND §180 BOTH SAY IT DOES NOT — AT `medium` IT DOES NOT, AND AT `coarse` BOTH MEASURED RUNS DO
+## §181 — 2026-09-16. §177's SUCCESSOR 1, CLOSED: THE STEP-300 `coarse` DESCENT RAN 6.98 h, EXIT 0, AND ITS WORKERS' SUMMED MARKS ROSE **+1.085 FROM STEP 60 TO 300** — THE SATURATING LAW's +1.0, NOT LINEAR-AT-THE-LATE-RATE's +1.9. **§171's SUCCESSOR 1 IS ANSWERED: `coarse`'s CREEP IS BOUNDED OVER THE LONGEST ARGV ANYTHING RUNS**, THE PAIR's 11 HOLDS WITH **0.488 GiB** TO SPARE ON THE WORKER AND **0.565** ON THE PARENT, AND NO FALSIFIER FIRED. THE PARENT **CREPT +0.170**, AND THE RUNG RULE THIS SECTION FIRST GAVE FOR THAT IS FALSIFIED BY §173's OWN TABLES — **EVERY PARENT PLOTTED AS WINDOW RSS CREEPS, AT BOTH WIDTHS AND BOTH RUNGS**, AND NO RUN HAS EVER HAD ITS PARENT READ BOTH WAYS
 
 Run in `$T/wt2` at `5114b68`, `make svk-shipped`'s flags verbatim with `--out`/`--best-out`
 redirected, `systemd-run --user --scope MemoryMax=55G MemorySwapMax=0`, 01:33:59 to 08:32:56.
@@ -28166,9 +28166,18 @@ apart on a worker against 0.20 of run-to-run scatter — and that the **within-r
 found continues; at the longest argv any caller runs, it does not. The rise is 0.36 in the first
 60 steps of that window and **0.061 over the last 120**.
 
-Two consequences the registration named and can now be stated: **`coarse` is bounded in practice**,
-and **`POOL_GIB`'s 11 holds with 0.49 GiB to spare** on the largest worker at step 300. 55G is
-`11 + 4 x 11` — the same statement, not a second one.
+Two consequences the registration named and can now be stated: **`coarse` is bounded over the
+longest argv anything runs**, and **`POOL_GIB`'s 11 holds** — by 0.488 GiB on the largest worker at
+step 300 and by 0.565 on the parent. 55G is `11 + 4 x 11` — the same statement, not a second one.
+
+**It holds by less on both sides than it did.** The margins were `11 − 10.242 = 0.758` on the
+worker and `11 − 10.271 = 0.729` on the parent; both are now under 0.6, and the parent's erosion
+came from a quantity §178 registered as not expected to move at all. For the first time in four
+`coarse` runs **the parent is not the largest process in the tree** — 10.435 against the worker's
+10.512, where §167's four-worker `objective()`, §170 and §171 all had parent ≥ worker
+(10.271/10.242/10.267 against 9.261/9.949/10.242). Nothing depends on the ordering, since
+`POOL_GIB` carries the two separately, but prose that assumes the parent is the biggest one is now
+wrong.
 
 ### 3. §178 §2's REGISTRATION, SCORED
 
@@ -28204,24 +28213,71 @@ short runs were low, exactly as §180 §2 found for `knee`.
   steepest model §178 justified put 11.0 at step ~455; nothing here approaches it.
 - **F2, SUM past 53: NO.** 51.748.
 - **F3, the parent above 10.5: NO — but it moved, and §178 called a moving parent new behaviour.**
-  10.265 at step 0, 10.435 at step 300: **+0.170**, most of it by step 120. §173 established the
-  parent's mark as a step-0 number and §180 reproduced that at `medium` (15.874 at every sample of
-  11.7 h). **Both `coarse` runs disagree**: §171 measured +0.197 over 60 steps and this one +0.170
-  over 300. So the rule is not "the parent does not move" — it is that the `medium` parent, the one
-  a fidelity check builds, is set once, while a `coarse` parent creeps and then stops with the
-  workers. F3's 10.5 line was reached to within 0.065 by creep alone, which is close enough to
-  matter for a cap that is 11.
+  10.265 at step 0, 10.435 at step 300: **+0.170**, most of it by step 120. F3's 10.5 line was
+  reached to within 0.065 by creep alone, which is close enough to matter for a cap that is 11.
+
+  **As committed, this row read "the `medium` parent, the one a fidelity check builds, is set once,
+  while a `coarse` parent creeps". That rule is wrong, and its replacement is not a second rule but
+  an instrument question.** §173 §2's own four-worker `medium` table refutes the rung half — its
+  parent marks are 10.352, 10.352, 10.398, 10.408 at steps 0–3 and 10.434 at the stop, **+0.082 in
+  three steps**, faster per step than anything here. But sorting the runs by what was actually
+  plotted matters more than sorting them by rung or width:
+
+```
+  run              rung    width  check  parent, as VmHWM MARKS     parent, as WINDOW RSS maxima
+  §170             coarse    4     no    (mark history not printed) creeps +0.171 over 40 steps
+  §171             coarse    4     no    (mark history not printed) creeps +0.197 over 60 steps
+  §173 first run   medium    4     no    creeps +0.082 in 3 steps   (RSS history not printed)
+  §173 second run  medium    3     no    (mark history not printed) creeps +0.132 over 100 steps
+  §180 knee        medium    3     yes   FLAT, 15.874 throughout    (RSS history not printed)
+  §181 s300        coarse    4     no    creeps +0.170 over 300     (RSS history not printed)
+```
+
+  **On the window instrument every parent creeps, at both widths and both rungs — three of three,
+  including a 3-worker one. On the mark instrument two creep and one is flat, and the flat one is
+  the only 3-worker run there.** So the width reading — §167 §1 found the parent's SIZE scales with
+  the pool, 9.83 / 9.94 at two workers against 10.27 at four, and growth scaling the same way is the
+  natural extension — is a hypothesis with three mark-runs behind it and a counterexample on the
+  other instrument. **No run has had its parent read both ways**, and until one has, "the parent is
+  flat" means only "no new kernel mark was set", which is a weaker claim than the window series
+  makes. **The fidelity check is not separable either**: `knee` is the only run that has one and the
+  only flat mark history on the list, so check, width and flatness are all confounded in the same
+  column — and the check is known to move the parent's LEVEL enormously (15.874 against ~10.5),
+  which is §174 §8.1's flag. §173's first run is also only three steps: it shows a mark rising
+  within a run, which is the phenomenon, but not a long demonstration.
 - **F4, `oom_kill` > 0: NO** — and again not one event of any kind, `low:0 high:0 max:0 oom:0`.
 - **F5, the early-rate null: refuted**, as both anchors said it would be.
 
 ### 5. WHAT THE DESCENT RETURNED
 
 `BEST OVER 1 START(S): best_solution at step 110, loss 52.5209, selection tier 0`, genome
-`df2da4d`, every barrier 0.0. Step 0 was 52.5662, so **300 steps bought 0.086%** and the last 190
-bought nothing at all. Unlike `knee` (§180 §5) the run did improve on its start and its answer is
-admissible — but the improvement is inside what a rung change moves, the artifact went to scratch,
-and nothing here promotes anything: `df2da4d` is a `coarse` iterate, and §115's promotion path
-scores at `medium` first.
+`df2da4d`, every barrier 0.0. Step 0 was 52.5662, so **300 steps bought 0.086%**. The artifact went
+to scratch and nothing here promotes anything: `df2da4d` is a `coarse` iterate, and §115's
+promotion path scores at `medium` first.
+
+**As committed this paragraph said the last 190 steps "bought nothing at all", and that is wrong.**
+They bought 0.0417% — half as much again as the first 110's 0.0861% — and spent it walking onto the
+hub cap. What they bought no more of is ADMISSIBLE improvement, which is the more interesting
+statement, and the artifact gives its exact shape. Summing `BARRIER_TERMS` over all 301 iterates,
+**68 are tier-0 eligible and 233 violate**, and the 68 are not scattered through the run: they are
+ten shrinking islands —
+
+```
+  0, 4-18, 23-28, 30-33, 40-49, 56-64, 71-79, 85-92, 99-101, 108-110      then nothing, 190 steps
+```
+
+**Step 110 is the last admissible iterate of the run**, not merely the best one; `fillet_cap` goes
+0.0 → 0.001544 at step 111 and settles near 0.0079 from step 200 on. Violation is not only a late
+phenomenon either — step 1 already violates at 3.844 with the loss up at 63.03, Adam's opening
+overshoot.
+
+**And the contrast this paragraph drew with `knee` was the wrong way round.** It read "unlike
+`knee` (§180 §5) the run did improve on its start and its answer is admissible". Both halves are
+true of the ANSWER and neither is true of the RUN: `knee` ended at `fillet_cap` 0.0163 and this one
+ends in `fillet_cap` violation too. **Two descents, two rungs, two days, both walking into the hub
+cap in their closing steps and both returning an earlier iterate** — that is the parallel, it is
+DEFECT 6's shape, and it is evidence about the objective's geometry rather than about memory. It is
+also exactly the job `selection_key`'s tier-0 floor exists to do.
 
 ### 6. WHAT IT DOES NOT SETTLE
 
@@ -28252,8 +28308,12 @@ pin in words.
 ### 8. SUCCESSORS
 
 0. **`make contact` then `make svk`** against §178 §3, running now.
-1. **The parent's two shapes** (§4's F3, and §180's successor 2): `medium`-with-check reads 15.47
-   and 15.874 on two runs and never moves within one; `coarse` creeps +0.170-0.197 on both of its.
-   `POOL_GIB` carries one parent number per config and `Makefile:724`'s 16 rests on the first pair.
+1. **Read one parent both ways** (§4's F3, and §180's successor 2). Every parent plotted as window
+   RSS creeps — +0.132 at 3 workers, +0.171 and +0.197 at 4 — while the only parent plotted as a
+   mark history and called flat is a 3-worker run. No run has both series, so width and instrument
+   are confounded, and "the parent is flat" currently means "no new kernel mark was set". The next
+   pooled run of any width should print both columns for the parent, as §173's second run already
+   does for its workers. `POOL_GIB` carries one parent number per config and `Makefile:724`'s 16
+   rests on the `medium`-with-check pair.
 2. **`coarse` past step 300 stays unmeasured**, and by §176's criterion that is a regime nothing
    enters — the successor is to keep it that way unless a caller appears.
