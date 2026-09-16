@@ -28124,3 +28124,136 @@ numeric half of that file (`test_a_pooled_evaluation_equals_the_serial_one_exact
 2. **The parent's 0.40 GiB of scatter (F1)**: two readings of a number both sections treated as
    fixed. A third would say whether 15.47-15.87 is a band or a drift, and the `medium` recipes' 16
    in `Makefile:724` rests on it.
+
+## §181 — 2026-09-16. §177's SUCCESSOR 1, CLOSED: THE STEP-300 `coarse` DESCENT RAN 6.98 h, EXIT 0, AND ITS WORKERS' SUMMED MARKS ROSE **+1.085 FROM STEP 60 TO 300** — THE SATURATING LAW's +1.0, NOT LINEAR-AT-THE-LATE-RATE's +1.9. **§171's SUCCESSOR 1 IS ANSWERED: `coarse`'s CREEP IS BOUNDED IN PRACTICE**, THE PAIR's 11 HOLDS WITH **0.49 GiB** TO SPARE AT THE LONGEST ARGV ANYTHING RUNS, AND NO FALSIFIER FIRED. BUT THE PARENT **CREPT +0.170**, WHICH §173 AND §180 BOTH SAY IT DOES NOT — AT `medium` IT DOES NOT, AND AT `coarse` BOTH MEASURED RUNS DO
+
+Run in `$T/wt2` at `5114b68`, `make svk-shipped`'s flags verbatim with `--out`/`--best-out`
+redirected, `systemd-run --user --scope MemoryMax=55G MemorySwapMax=0`, 01:33:59 to 08:32:56.
+Registered at §178 §2 before it launched; the second session built that registration from §170 §2
+and §171 §2 alone.
+
+### 1. THE RUN
+
+```
+  step      t_s  wall_s  parent    wmax     wsum      SUM   memory.current
+     0      397   396.9  10.265   9.235   36.704   46.969      46.322
+    60     5464    85.8  10.373  10.293   40.228   50.601      49.835
+   120    10514    84.8  10.427  10.340   40.586   51.013      50.231
+   180    15482    81.8  10.429  10.490   41.252   51.681      50.797
+   240    20412    81.2  10.431  10.512   41.284   51.715      50.898
+   300    25132    50.9  10.435  10.512   41.313   51.748      50.898
+```
+
+Running maxima to the end of each step, as §180 §1. Exit 0, `events` empty, no step abandoned or
+rejected, four workers throughout. Wall **25135.7 s = 6.98 h** against the registered 7.15; a step
+is 50.9-90.6 s, **mean 82.43** against the registered ~84.5 (the closing steps are short: `lr`
+reaches 0 and the trial machinery stops re-evaluating). Tree RSS peak **51.405**, so the summed
+marks sit **1.0067x** it — inside the registered 1.006-1.012 and beside §170's 1.011 and §171's
+1.006. `memory.current` peaked **50.898** (anon 50.753) against 55G, and `file` was 0.000
+throughout, as on `knee`.
+
+### 2. THE READING THE SECTION EXISTS FOR
+
+§178 §2 registered, in advance, that the step-300 **level** could not discriminate — two laws 0.135
+apart on a worker against 0.20 of run-to-run scatter — and that the **within-run rise** could:
+
+```
+  workers' summed marks, step 60 -> 300     saturating +1.0    linear-at-the-late-rate +1.9
+  measured                                  40.228 -> 41.313 = +1.085
+```
+
+**Saturating, by 0.085 against 0.815.** §171's successor 1 asked whether the creep §170 and §171
+found continues; at the longest argv any caller runs, it does not. The rise is 0.36 in the first
+60 steps of that window and **0.061 over the last 120**.
+
+Two consequences the registration named and can now be stated: **`coarse` is bounded in practice**,
+and **`POOL_GIB`'s 11 holds with 0.49 GiB to spare** on the largest worker at step 300. 55G is
+`11 + 4 x 11` — the same statement, not a second one.
+
+### 3. §178 §2's REGISTRATION, SCORED
+
+```
+  at step  quantity            registered          measured   verdict
+  60       largest worker      10.11 +/- 0.25      10.293     in band
+  60       workers summed      39.55               40.228     +0.68
+  60       parent              10.28               10.373     in the 10.25-10.45 band
+  60       SUM                 49.8 +/- 0.9        50.601     in band
+  120      largest worker      10.21 +/- 0.25      10.340     in band
+  120      SUM                 50.2 +/- 0.9        51.013     in band, 0.09 under the top
+  180      SUM                 50.5 +/- 0.9        51.681     +0.28 OUT
+  240      SUM                 50.7 +/- 0.9        51.715     +0.12 OUT
+  300      largest worker      10.34 +/- 0.25      10.512     in band
+  300      SUM                 50.8 +/- 0.9        51.748     +0.05 OUT
+  300      tree peak           50.3 +/- 0.9        51.405     +0.21 OUT
+  300      ratio SUM/peak      1.006-1.012         1.0067     in band
+  300      under 55G           4.7                 3.595      by tree peak
+  --       steady step         ~84.5 s             82.43      in band
+  --       wall                7.15 h              6.98 h     -2.4%
+  --       memory.current      ~51.8               50.898     0.9 low
+```
+
+**The worker predictions were good and the SUM ran high.** Every per-worker figure landed inside
+±0.25, while the summed workers came in ~0.7-0.9 above the log law at every checkpoint, so the SUM
+crossed its ±0.9 top from step 180 on — by 0.28, 0.12 and 0.05, i.e. the error stopped growing as
+the run saturated. The prediction that mattered — the rise — was right; the levels built from two
+short runs were low, exactly as §180 §2 found for `knee`.
+
+### 4. THE FALSIFIERS
+
+- **F1, a worker mark past 11.0: NO.** 10.512 is the run's largest, 0.49 under the pair. The
+  steepest model §178 justified put 11.0 at step ~455; nothing here approaches it.
+- **F2, SUM past 53: NO.** 51.748.
+- **F3, the parent above 10.5: NO — but it moved, and §178 called a moving parent new behaviour.**
+  10.265 at step 0, 10.435 at step 300: **+0.170**, most of it by step 120. §173 established the
+  parent's mark as a step-0 number and §180 reproduced that at `medium` (15.874 at every sample of
+  11.7 h). **Both `coarse` runs disagree**: §171 measured +0.197 over 60 steps and this one +0.170
+  over 300. So the rule is not "the parent does not move" — it is that the `medium` parent, the one
+  a fidelity check builds, is set once, while a `coarse` parent creeps and then stops with the
+  workers. F3's 10.5 line was reached to within 0.065 by creep alone, which is close enough to
+  matter for a cap that is 11.
+- **F4, `oom_kill` > 0: NO** — and again not one event of any kind, `low:0 high:0 max:0 oom:0`.
+- **F5, the early-rate null: refuted**, as both anchors said it would be.
+
+### 5. WHAT THE DESCENT RETURNED
+
+`BEST OVER 1 START(S): best_solution at step 110, loss 52.5209, selection tier 0`, genome
+`df2da4d`, every barrier 0.0. Step 0 was 52.5662, so **300 steps bought 0.086%** and the last 190
+bought nothing at all. Unlike `knee` (§180 §5) the run did improve on its start and its answer is
+admissible — but the improvement is inside what a rung change moves, the artifact went to scratch,
+and nothing here promotes anything: `df2da4d` is a `coarse` iterate, and §115's promotion path
+scores at `medium` first.
+
+### 6. WHAT IT DOES NOT SETTLE
+
+The four the registration named, unchanged by the result: the step-300 **level** does not
+discriminate between the laws (0.135 against 0.20 of scatter); **one run gives no scatter**, so
+every band above still rests on the §170/§171 pair; `uniform` against `rqmc` stays confounded with
+run, this being a third `uniform` rather than a matched pair; and **nothing extends past step 300**,
+where no caller goes.
+
+### 7. THE CHANGE, `41a94e3`
+
+`src/wheel_pool.py`'s `coarse` row said "10.242 by step 60 ...; step 300 is unmeasured". It now
+carries 10.512 by step 300, the +1.085 and the saturation, and a parent range ending at 10.435 with
+its creep named. `tests/test_pool.py`'s marks pin goes `("coarse", (10.242, 10.271))` ->
+`(10.512, 10.435)` — **the pair itself does not move**: 11 still bounds both, which is the result.
+Line-neutral in both files, so no anchor moves.
+
+**THE SWEEP: 134 -> 136, both `41a94e3`'s and both correct to leave.** §180 §6 and §8 cite
+`tests/test_pool.py:450` as the marks line, and that line's content changed again here, so each row
+reads MOVED while the anchor still names the marks dict (§159's rule, the same shape §180's own six
+rows have). §181 adds no citation of its own: it names `wheel_pool.py`'s `coarse` row and the marks
+pin in words.
+
+**GREEN.** `tests/test_pool.py -k "pair_bounds or default_workers"` and `tests/test_gui_cost.py`:
+5 passed. The full `test_pool.py` was not run — it spawns real pool workers (§180 §6) and the
+`make contact` run is now on the box.
+
+### 8. SUCCESSORS
+
+0. **`make contact` then `make svk`** against §178 §3, running now.
+1. **The parent's two shapes** (§4's F3, and §180's successor 2): `medium`-with-check reads 15.47
+   and 15.874 on two runs and never moves within one; `coarse` creeps +0.170-0.197 on both of its.
+   `POOL_GIB` carries one parent number per config and `Makefile:724`'s 16 rests on the first pair.
+2. **`coarse` past step 300 stays unmeasured**, and by §176's criterion that is a regime nothing
+   enters — the successor is to keep it that way unless a caller appears.
