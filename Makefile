@@ -475,10 +475,10 @@ export:
 # wheel still feasible under SVK, at the utilisation the CONSTRAINT computes rather than
 # the p99-scaled figure §14 quoted.
 #
-# DELIBERATELY NOT IN `studies`, for the reason `m8bi5`, `m9buck` and `hubcap` are not:
-# it measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the code changes,
-# it is the better part of an hour at `medium`, and a gate nobody can afford to run stops
-# being run.  SVK_WORKERS is the memory cap and nothing else sizes it — see PLAN.md §1.
+# DELIBERATELY NOT IN `studies`, for the reason `m8bi5`, `m9buck` and `hubcap` are not: it
+# measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the code changes, it is
+# TWO HOURS at `medium` (2.52 h at the artifact, 2.05 h now), and a gate nobody can afford to
+# run stops being run.  SVK_WORKERS is the memory cap and nothing else sizes it — PLAN.md §1.
 SVK_CONFIG ?= medium
 # 4 UNTIL 2026-09-06, AND IT NO LONGER FITS THIS BOX — PLAN.md §115.4/§116.  On the
 # filleted mesh §103 made unconditional, four workers read 11.5–12.7 GiB RSS each beside a
@@ -540,7 +540,7 @@ kinrank:
 #
 #   systemd-run --user --unit=contact-s2 -p MemoryMax=20G --collect \
 #       make contact CONTACT_GENOME=best_solution.json CONTACT_KIN=svk \
-#            CONTACT_OUT=study_contact_e126cc3_svk.json
+#            CONTACT_OUT=study_contact_b729e86_svk.json   # name it for the genome in force
 #
 CONTACT_GENOME ?= best_solution.json
 CONTACT_KIN ?= linear

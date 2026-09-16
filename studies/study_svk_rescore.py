@@ -27,10 +27,10 @@ rule (`< 1.0`, every barrier 0.0) are all unchanged — only the construction be
 moved.  What did NOT survive the move is `_score`'s probe assertion, which is why this gate
 raised on the first genome it was asked to score afterwards.]
 
-DELIBERATELY NOT IN `make studies`, for the reason PLAN.md gives for `m8bi5`, `m9buck`
-and `hubcap`: it measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the
-code changes, it costs the better part of an hour at `medium`, and a gate nobody can
-afford to run stops being run.  `make svk` runs it on purpose.
+DELIBERATELY NOT IN `make studies`, for the reason PLAN.md gives for `m8bi5`, `m9buck` and
+`hubcap`: it measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the code
+changes, it costs TWO HOURS at `medium` (2.52 h at the artifact, 2.05 h at an 18.1 GiB peak
+now), and a gate nobody can afford to run stops being run.  `make svk` runs it on purpose.
 
 THE CONTROL COLUMN IS NOT PADDING, AND IT IS THE FIRST THING TO READ.  `36aed36`
 (`best_solution_ga_beam.json`) is the GA/beam genome — a thicker, duller wheel that §14
