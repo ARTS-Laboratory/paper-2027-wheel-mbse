@@ -140,8 +140,8 @@ def worker_env(base=None):
 # (`VmHWM`); SUMMED, they sit 0.3-3.2% above the tree's simultaneous RSS peak in 12 runs.
 #   coarse  worker 10 one-call marks, 8.740-9.500 GiB, sd 0.217 over §167's 8 (`linear`),
 #           FLAT in phases held; svk's 9.500 / 9.290 (§169).  A DESCENT CREEPS PAST THEM:
-#           10.242 by step 60 at `-1`'s own argv, whose parent and 4 workers summed 49.72
-#           GiB at 57.05 free (§171); step 300 is unmeasured.  parent 9.829-10.271
+#           GiB at 57.05 free (§171); 10.512 by step 300, +1.085 summed from step 60 and
+#           SATURATING (§181).  parent 9.829-10.435, and it CREEPS: +0.170 over 300 steps
 #   medium  worker 8 one-call marks, 10.231-10.649 GiB (§169); parent 8.677-10.508.  TWO
 #           100-step DESCENTS at 3 workers: 11.754 rising (§173), 12.023 FLAT from 40 (§180)
 # Whole GiB above the largest mark each, as `(worker, parent)` per config.  `smoke` carries
