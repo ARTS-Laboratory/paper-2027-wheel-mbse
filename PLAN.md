@@ -27956,3 +27956,157 @@ The knee record closes this, `knee`'s own registration (§175 §4), and the pair
    every site in §4, as one change.
 1. **STEP 300 at `coarse`** against §178 §2 (auto-starts when `knee` ends).
 2. **`make contact` then `make svk`** against §178 §3 (queued behind it).
+
+## §180 — 2026-09-16. §174's SUCCESSOR 0, CLOSED: `knee` RAN ITS 100 `medium` STEPS UNDER 52G IN **11.72 h**, EXIT 0, AND THE LARGEST WORKER MARKED **12.023 ONCE, AT STEP 41, AND NEVER AGAIN** — 59 STEPS AND THREE FIDELITY CHECKS SET NO NEW PEAK. THE CREEP §173 CALLED "STILL RISING" **STOPS**. THE PAIR's `medium` WORKER GOES TO 13 (`aa9e938`) AND THE RECIPES' BUDGET WITH IT, 52G -> 55G. THE PARENT NEVER MOVED OFF 15.874, AND `memory.current` PEAKED 2.77 UNDER THE CAP WITH **ZERO** EVENTS OF ANY KIND
+
+Run in `$T/wt` at `f392548`, `make -n knee`'s argv with `KNEE_OUT`/`KNEE_BEST` redirected,
+`systemd-run --user --scope MemoryMax=52G MemorySwapMax=0`, launched 13:48:17 and ended 01:31:31.
+
+### 1. THE RUN
+
+```
+  step      t_s  wall_s  fc  parent    wmax    wsum      SUM   memory.current
+     0     1248   879.5 yes  15.874  10.546  31.124   46.998      45.171
+    10     5290   419.1      15.874  11.541  33.235   49.109      47.599
+    20     9358   400.2      15.874  11.721  33.751   49.625      47.889
+    25    11635   407.1 yes  15.874  11.818  34.094   49.968      47.889
+    30    13664   398.4      15.874  11.884  34.160   50.034      48.497
+    40    17712   403.0      15.874  11.999  34.320   50.194      48.575
+    50    21955   399.1 yes  15.874  12.023  34.508   50.382      48.847
+    75    32249   413.1 yes  15.874  12.023  34.769   50.643      48.919
+   100    42187   382.5 yes  15.874  12.023  35.094   50.968      49.231
+```
+
+Every column is a running maximum to the end of that step, `memory.current` included — §179 §1's
+`cg_cur` column was the monitor's spot reading at the moment each step logged, which is why its
+step-30 47.503 is under this table's 48.497.
+
+Marks are per-process `VmHWM` maxima over the watcher's samples (§175's rule). Exit 0, `events`
+empty, no step abandoned, `n_reject` 0. Wall **42191.8 s = 11.72 h**, against the recipe's own
+"~12 h"; a steady step is 382.5-419.2 s and the five `coarse` fidelity checks cost 1271.8 s of
+solve and 10.6 s of mesh, **256.5 s each**. Tree RSS peak 49.701, so the summed marks sit **1.025x**
+it — above the 1.006 and 1.011 the two `coarse` descents gave (§170, §171), and the first `medium`
+reading of that ratio.
+
+### 2. §175 §4's REGISTRATION, SCORED
+
+```
+  at step  quantity        registered            measured   verdict
+  0        parent          15.47                 15.874     +0.40, and see F1
+  0        largest worker  10.35 +/- 0.9         10.546     in band
+  0        SUM             46.9 +/- 0.9          46.998     in band
+  25       largest worker  11.3                  11.818     +0.52
+  25       SUM             48.6 +/- 0.9          49.968     +1.37, OUT
+  50       SUM             48.9 +/- 0.9          50.382     +1.48, OUT
+  75       SUM             49.2 +/- 0.9          50.643     +1.44, OUT
+  100      largest worker  11.5-12.0 (11.68)     12.023     ABOVE the band: F3
+  100      SUM             49.4-51.0 (50.0)      50.968     in band
+  100      tree peak       48.4-49.7             49.701     at the top, 0.001 over
+  100      under 52G       2.3-3.6               2.77       in band (by memory.current)
+```
+
+**The shape was right and the levels were low.** Both of the section's structural calls held — the
+parent does not move, and the pair breaks before the cap — while every SUM row between steps 25 and
+75 sat outside a ±0.9 band, because the parent's base was 0.40 low and the workers ran ~0.5 high.
+
+### 3. THE FALSIFIERS
+
+- **F1, the parent steps up at the checks: NO.** 15.874 at every sample from before step 10 to the
+  end, across five checks. §173's finding — the parent's mark is set inside step 0 — reproduced on
+  a second run, a second scheme, and with a second Evaluator in the process. **But the band's base
+  was wrong**: §174 measured 15.47 for this same shape and this run reads 15.874 from step 0
+  onwards, so a number twice called fixed carries **0.40 GiB of run-to-run scatter**, and 15.874 is
+  past the 15.80 top the registration gave step 100. The prediction was right about the behaviour
+  and wrong about the level, which is the distinction F1 did not draw.
+- **F2, the workers keep §173's late rate and add as much again (~37.5 summed): NO.** 35.094.
+- **F3, a worker above 12.0: YES, at 18:43:37**, in the window after step 40 — the sample that first
+  read 12.0 is the same sample that set the run's last new peak. **59 steps and three more fidelity
+  checks produced no higher reading.**
+- **F4, `oom_kill` > 0: NO** — and not a single event of any kind: `low:0 high:0 max:0 oom:0
+  oom_kill:0`. `memory.current` peaked at **49.231** (anon 49.096) against 52G. The scope's `file`
+  was **0.000 throughout**, so the page-cache cushion F4's reasoning leaned on did not exist; it was
+  never needed.
+
+### 4. §179 §5's OWN PREDICTION, FALSIFIED ON THE LOW SIDE
+
+Registered there: step-100 largest worker **12.6, band 12.3-12.9**, from three laws fitted to the
+first four decades. Measured **12.023** — below the band, which §179 named as "the decay is faster
+than the observed ratio". It is more than that: **the growth did not decay, it stopped.** The log
+law wanted +0.31 GiB over steps 40-100 and the geometric one +0.62; the run delivered **0.024**, and
+all of it inside step 41.
+
+What the three laws had in common is the assumption that a decaying increment keeps producing
+increments. Two runs now say otherwise in two different ways — §173's rose 36-39 MiB/step to its
+last block and stopped when the run did; this one stopped 60 steps before the run did. **A
+saturating fit and a terminating process are not the same claim**, and only the second bounds
+anything. `coarse`'s step-300 descent (§178 §2) asks the same question with 200 steps of room past
+where this one flattened, and its registered reading — the workers' summed rise from step 60 to 300
+— is now the more interesting number of the two.
+
+**The rule's answer did not move.** §167's rule is whole GiB above the largest mark; 12.023 gives
+**13** under every model §179 fitted and under the measurement that refuted them all. A registration
+shaped as a ladder survived its own laws being wrong.
+
+### 5. WHAT THE DESCENT ITSELF RETURNED, WHICH IS THE START
+
+`BEST OVER 1 START(S): best_solution at step 0, loss 54.1355, selection tier 0`. The final iterate
+is **lower** — 53.9338 at step 100, `4305981` — and it is not admissible: its `fillet_cap` term
+reads 0.016 while step 0's every barrier is 0.0. That is `selection_key`'s tier-0 floor doing the
+job `best_solution.json`'s own promotion note describes ("the run's own literal final step is NOT a
+valid candidate — it is in fillet_cap violation"), one arc later and on a different rung. **100
+`medium` steps, 11.72 h, and the recipe returns its own starting genome.** `make knee` is a memory
+and pace instrument, not a search that was expected to improve the wheel — but the record should
+say plainly that it did not.
+
+### 6. THE CHANGE, `aa9e938`
+
+```
+  src/wheel_pool.py:152            POOL_GIB medium (12.0, 11.0) -> (13.0, 11.0); the comment
+                                   block's medium row now carries both 100-step descents
+  tests/test_pool.py:450           marks medium 11.754 -> 12.023, and the docstring's warrant
+  tests/test_gui_cost.py           medium -1 peak 47.0 -> 50.0; the four-worker cell moves from
+                                   a warning to a BLOCKER (63 over the 61.37 box), so the test
+                                   takes a 45 GiB reading for its warning branch instead
+  Makefile, six places              the medium recipes' budget 52G -> 55G (16 + 3 x 13): the
+  (help text, the `knee` block's    help line, the launch line, the history line and the pool
+  launch line and history line,     block, whose derivation now reads 13 and carries this run's
+  and the pool block's three)       measured 11.7 h, 35.094 summed, 15.874 parent, 49.231 peak
+```
+
+`-1` picks the same 3 workers on this box at any allowance from 12 to 15, so nothing the walkthrough
+or the GUI launches changes today; what moves is a busier box (three `medium` workers need 50 GiB
+free rather than 47) and four workers, which at 63 GiB no longer fit the machine at all.
+
+**THE SWEEP: 128 -> 134 for a human, all six `aa9e938`'s and all six correct to leave.** Four
+records cite `src/wheel_pool.py:152` — §171's own row carried by §174, §174 §8.1's flag, and §179
+§4's two — and two cite `tests/test_pool.py:443` and `:450`. Every one still names the right line:
+the pair, its comment block and the marks dict are where they were. What changed is the content on
+them, which re-dates each citation (§159), so the rows read MOVED while the records and the anchors
+are both right. §180 adds no unresolved row of its own.
+
+**GREEN.** `tests/test_pool.py -k "pair_bounds or default_workers"` and all of
+`tests/test_gui_cost.py`: 5 and 5 passed. `make -n knee` unchanged, `make help` renders.
+`test_pool.py`'s full file was NOT run: it spawns real pool workers and reached 8.8 GiB beside the
+step-300 descent, which is `§115`'s rule — nothing runs beside a tier — proving itself again. The
+numeric half of that file (`test_a_pooled_evaluation_equals_the_serial_one_exactly`) does not read
+`POOL_GIB`.
+
+### 7. FLAGGED, NOT FIXED
+
+1. **`gui/README.md:175` still says "three `medium` workers at 47 GiB are admitted"**; it is 50 now.
+   `gui/` is closed (§158), so this is recorded rather than edited, with the catalog cell in §6.
+2. **§174 §8.1's flag is now measured twice.** `POOL_GIB`'s parent (11) does not know about the
+   fidelity check, whose second Evaluator puts the real parent at 15.47 (§174) and 15.874 (here).
+   Any `-1` caller that ever passes `--fidelity-check-every` would be sized against 11.
+3. **The 1.025 SUM-over-tree-peak ratio is a `medium` first**, against `coarse`'s 1.006-1.011. One
+   reading; it widens the conversion §178 §2 uses for `s300` rather than settling it.
+
+### 8. SUCCESSORS
+
+0. **STEP 300 at `coarse`** against §178 §2 — running since 01:33:59, step 0 at 396.88 s and its
+   loss `52.5662` bit-identical to §170's, ETA ~08:45. Its summed-rise reading now also answers
+   whether §4's *termination* is a `medium` accident or the shape of the thing.
+1. **`make contact` then `make svk`** against §178 §3, queued behind it.
+2. **The parent's 0.40 GiB of scatter (F1)**: two readings of a number both sections treated as
+   fixed. A third would say whether 15.47-15.87 is a band or a drift, and the `medium` recipes' 16
+   in `Makefile:724` rests on it.
