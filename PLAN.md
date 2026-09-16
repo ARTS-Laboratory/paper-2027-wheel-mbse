@@ -28317,3 +28317,381 @@ pin in words.
    rests on the `medium`-with-check pair.
 2. **`coarse` past step 300 stays unmeasured**, and by §176's criterion that is a regime nothing
    enters — the successor is to keep it that way unless a caller appears.
+
+## §182 — 2026-09-16. §177's SUCCESSOR 2, CLOSED. `make contact` RAN IN **153.9 s AT 1.274 GiB** AGAINST §178 §3.1's 230–440 s AND 6–18 GiB — **THREE PREDICTIONS FALSIFIED LOW FROM ONE WRONG PREMISE**, THAT ITS LADDER BUILDS A FILLETED MESH; IT DOES NOT, AND `n_elements` IS 960 / 4704 / 12288, IDENTICAL TO THE 2026-08-13 RUN. THE RECIPE ALSO **EXITS 1 AT ITS DOCUMENTED ARGV AND CANNOT EXIT 0 ON ANY WHEEL**, BECAUSE `patch` CARRIES NO VERDICT KEY OF EITHER KIND AND `bool([])` IS FALSE. `Makefile:541`'s UNWARRANTED 20G CAP IS **15.7x** THE MEASURED PEAK
+
+Both runs in `$T/wt2` at `5114b68`, queued, `systemd-run --user --scope MemorySwapMax=0`.
+`make contact` 08:35:18–08:37:53 under 20G; `make svk` 08:39:54–10:42:56 under 32G. Registered at
+§178 §3 before either launched.
+
+### 1. `make contact`: THE RUN
+
+```
+  driver elapsed_s 153.9        watcher wall_s 154.6        exit 1
+  one process, VmHWM max 1.274 GiB; tree RSS peak 1.220; system rise above baseline 1.898
+  ladder: smoke 960 / coarse 4704 / medium 12288 elements, each at n_quad 6 and 20
+```
+
+`n_elements` is identical, element for element, to the committed 2026-08-13 run
+(`studies/study_contact_e126cc3_lin.json`, 177.4 s). **That is the demonstration that the fillet
+never entered this driver**: had it, every count would have moved.
+
+### 2. §178 §3.1 AND §3.3, SCORED — THREE FALSIFIED PREDICTIONS, ONE PREMISE
+
+```
+  quantity          registered (§178 §3.1, §3.3)   measured              verdict
+  wall              230-440 s, central ~300        153.9 s               FALSIFIED low, and below
+                                                                         the 177.4 s anchor it
+                                                                         was scaled UP from
+  peak VmHWM        6-18 GiB, central ~10          1.274 GiB             FALSIFIED low by 5-14x
+  n_elements        1214 / 5951 / 15544            960 / 4704 / 12288    FALSIFIED: unchanged
+  bit for bit       NO                             NO                    right, for one of the two
+                                                                         reasons it gave
+  S7 killed at 20G  --                             1.274 of 20           NO, by 15.7x
+  S8 wall > 600 s   --                             153.9                 NO
+```
+
+**The premise.** `run_emergent_patch` calls `WW.build_wheel(genes, cfg)` with no `fillet=`
+(`studies/study_contact.py:549`), and `build_wheel`'s signature defaults **`fillet=None`**
+(`src/wheel_wheel.py:2949`), which is unfilleted. §103 made the fillet unconditional on
+`wheel_objective`'s path, not on `build_wheel`'s, so **a driver that builds its own mesh still gets
+the plain one**.
+
+**The tree already carried this, in two places, in the words §178 §3.1 needed.**
+`src/wheel_objective.py:1549` states the split outright — *"Since §103 `phase_meshes` passes
+`fillet=True` and the bare default does not"* — and quantifies what it cost there: `mass` and
+`min_sj` were being read on a mesh **9.78% lighter** than the one the stress and deflection terms
+solved. And §135 calls `tests/test_contact.py`'s census, which makes the same bare call, "the
+unfilleted census" in those words. §178 §3.1 inferred the mesh from the recipe's date instead of
+reading its one call, and neither of the two sites that already knew was grepped — `git grep 'bare
+default'` returns `wheel_objective.py:1547` as its first hit, which is the paragraph above.
+
+**The band's shape was the second error, and it is the one worth carrying.** §178 §3.1 called
+6–18 GiB "an inference rather than an extrapolation, so wide on purpose" and still gave it a
+**floor**. The floor's whole argument was "strictly less than a serial `medium` objective, because
+there is no adjoint" — which reasons downward from a large number and never asks what a forward
+solve at 12288 elements costs. §165's 44.00 → 14.99 GiB across `6aa84ca` says the adjoint and its
+compiles **are** the memory of this tree's big processes; with those gone there was no reason to
+expect gigabytes at all. **An inference with no measurement under it should carry no lower bound.**
+
+**What did change since 2026-08-13 is the genome**, `e126cc3` → `b729e86` (promoted §115), and it
+is the whole of the difference in the values: contact axle drop **+25.2% to +26.9%** at every rung
+(1.5347 → 1.9472 at `smoke`, 1.5892 → 2.0025 at `coarse`, 1.6036 → 2.0079 at `medium`), measured
+patch half 0.3996 → 0.4482 deg, assumed-over-measured 7.507 → 6.694, and the sampled patch's
+overstatement of the real one 6.099 → 4.693. §178 §3.1's "bit for bit: NO" was right on the genome
+and wrong on the mesh.
+
+**And the promoted wheel's ladder sits 11.2x closer to its own Richardson limit**, which is free
+evidence nobody asked for. On the identical mesh sequence the successive change ratio goes
+**3.789 → 10.321** and the finest rung's distance from that limit **0.321% → 0.029%**: `b729e86`'s
+`medium` contact drop is 2.00791 against a limit of 2.00849. The driver's own headline question —
+is the quantity the objective steers by mesh-convergent? — gets a cleaner yes on the promoted wheel
+than it got on the one the committed artifact was made from, on the same three meshes.
+
+So §178 §3.1's one correct structural call about this recipe — that §164 cannot have moved it,
+because it solves no adjoint — understates its own conclusion. **Nothing has moved it**: not §164,
+and not the fillet either. `make contact` is the same measurement it was a month ago, on a
+different wheel.
+
+### 3. THE RECIPE EXITS 1, AND CANNOT DO OTHERWISE
+
+```
+  hwm_contact178.json   "exit": 1        <- the driver's own status, recorded by the watcher
+  s2_summary.txt        pipeline_exit=0  <- systemd-run's status, which is hwm_watch's
+```
+
+`studies/study_contact.py:1212` is `return 0 if rep["solver_is_correct"] else 1`. The `patch`
+section carries **neither a `pass` nor a `solver_pass` key** — its keys are `rows`, `convergence`,
+and seven scalar characterisation figures. So `verdicts` is empty, `rep["pass"]` is
+`bool([]) and all([])` = **False by emptiness**, the `solver` list comprehension filters on
+`if "pass" in rep[n]` and is empty too, and `solver_is_correct` is False the same way. The driver
+prints the fact in words and both sessions read past it: **`verdict over those that carry one: no
+verdict`**, and then exits 1.
+
+**This is a statement about the section set, not about the wheel and not about the solver.**
+`make contact` at its documented argv — `--sections patch`, which `Makefile:547` defaults — cannot
+exit 0 on any wheel. `:1177-1181`'s comment builds the exit code from solver verdicts precisely so
+that a true characterisation FAIL cannot make the other eight drivers unreachable; the **empty**
+case is the one it did not consider, and `all([])` is True while `bool([])` is False. Disposition is
+CONTACT_PLAN's, not this arc's; what belongs here is that the number is not evidence.
+
+**The harness item is the general one.** `s2_summary.txt`'s `pipeline_exit` captures
+`PIPESTATUS[0]`, which is `systemd-run`'s status, which is `hwm_watch.py`'s — and `hwm_watch.py`
+records `exit=proc.returncode` in its JSON and then exits 0 itself. **The summary line can never
+report a failed study, and this arc proves it did not.** Seven runs produced an END line;
+**all seven read `pipeline_exit=0`**, and `contact178`'s driver really exited **1**. The
+`hwm_*.json` files also record a **−15** for the 4-worker `medium` descent that was SIGTERMed at
+step 3 (§173),
+which never reached an END line at all. And the knowledge was briefly present and then lost: the
+2026-09-15 summaries for `desc_med3` and `desc_knee3` append *"(stage3 exit is in the json)"* to
+their END lines, and the script written after them dropped the caveat while keeping the blind field.
+The driver's real status is the `exit` field of its `hwm_*.json`; both of this successor's runs were
+read that way.
+
+### 4. `make svk`: THE RUN
+
+```
+  row  genome              mesh_s   linear s              svk s               svk/linear
+   0   shipped                 2.4  2752.5 -> 1139.1      922.3 ->  906.9     0.796
+   1   36aed36 GA/beam        46.8  refused (clamp_reject, both sides)
+   2   elite10                 2.5   360.8 ->  351.8      415.7 ->  406.7     1.156
+   3   minwall 1.2             2.5   638.8 ->  625.3      803.1 ->  790.4     1.264
+   4   minwall 1.4             2.5   558.8 ->  549.0      670.0 ->  663.7     1.209
+   5   minwall 1.6             2.5   509.0 ->  503.2      585.1 ->  581.8     1.156
+   6   minwall 2.0             2.5   372.8 ->  369.3      428.4 ->  422.6     1.144
+  rows 2-6 mean                      488.0 ->  479.7                          1.186
+  rows and meshes 7371.3 of settings.elapsed_s 7377.6; the unaccounted 6.3 s is the control
+```
+
+08:39:54 to 10:42:56, **exit 0** — read from `hwm_svk178.json`, since `s2_summary.txt`'s
+`pipeline_exit` cannot see a driver's status (§3). Wall **7377.6 s = 2.049 h** by the driver's own
+clock, 7380.3 s by the watcher's. One process throughout, `VmHWM` **18.113 GiB** as a maximum over
+samples and as its last read (§175's convention, which here has nothing to arbitrate), tree RSS peak
+18.097, system rise above baseline 19.036, and `sum_hwm_over_simultaneous_tree_peak` **1.001** — the
+serial floor against `coarse`'s pooled 1.006–1.011 and `medium`'s 1.025.
+
+**S6, the sharp one for §164: all 12 losses are bit-identical, and so is everything else.** Every
+`loss`, `axle_drop_mean/min/max_mm`, `deflection_error_mm`, `kt_hub` and `kt_rim` on all six scored
+rows under both kinematics — **84 of 84 float fields, equal in their IEEE bits** — plus the control
+block's `force_n` 66.7233, both its `service_rel_diff` rows, and `36aed36`'s refusal on both sides.
+§164 proved 0 differing bits at `smoke` and `coarse`; **this is that proof's first test one rung up,
+and it passes.** §166 had already found §164's compile-time claim did not hold at `medium`, so the
+two halves of §164 now separate cleanly: its numerics are exact at every rung measured, and only its
+timing claim was rung-dependent.
+
+### 5. §178 §3.2, SCORED — THE SURVIVING COMPILE's COST IS NOW OBSERVED, ITS COUNT STILL IS NOT
+
+```
+  quantity                  registered (§178 §3.2)     measured   verdict
+  row 0 linear (S2b)        ~1262, band 1150-1450      1139.1     OUT, 10.9 UNDER the floor: S2b
+                                                                  FIRED, and see 5.1
+  row 0 svk (S2b)           holds near 922             906.9      x0.9833, inside the run's own
+                                                                  0.9751-0.9944 background
+  wall                      2.11 h, band 1.9-2.3       2.049 h    in band, 2.9% under the estimate
+  rows 2-6 svk/linear       1.181 (sd 0.047)           1.186      in band
+  rows 2-6 linear mean      488.0                      479.7      x0.983
+  peak parent VmHWM         17-23, central 17.2-20.1   18.113     in band, and in the central
+  SUM / tree peak           --                         1.001      the serial floor, first reading
+  12 losses bit-identical   YES                        84/84      YES, every float field
+  the control               reproduces §14             identical  force_n and both rel_diff rows
+  S1 wall >= 2.4 h          --                         2.049 h    NO
+  S2 wall < 1.7 h           --                         2.049 h    NO
+  S3 wall 1.9-2.3 h         --                         2.049 h    YES -- the block's prose is stale
+  S4 peak > 20              --                         18.113     NO
+  S5 peak > 23              --                         18.113     NO
+  S9 peak < 15              --                         18.113     NO
+```
+
+**S2b FIRED, and that has to be said before anything else is.** Its text was "row 0 linear not
+~1262 (band 1150–1450), or row 0 svk moves too", and 1139.1 is outside the band. By the letter the
+registered falsifier tripped.
+
+**And S2b was the wrong falsifier** — a finding about the registration, not about the mechanism. It
+is a two-sided band around a point estimate, written for a claim that predicts a *direction* and a
+*concentration*; a test that fires on a 0.95% undershoot of its own floor is measuring the precision
+of §166's single 213 s figure, not whether the saving is the coordinate closure's. The four
+readings that *could* have refuted the mechanism all held:
+
+```
+  would have refuted                                    measured
+  row 0's linear roughly unchanged                      it fell 1613.4 s, to x0.414
+  the saving spread across rows rather than in row 0    rows 2-6 all within x0.975-0.994
+  row 0's svk falling comparably                        x0.9833, inside that same background
+  rows 2-6 falling materially                           they did not; their mean moved x0.983
+```
+
+So: **the mechanism is confirmed, the point estimate was 8.2% low on the saving, and the falsifier
+as written could not tell those two apart.** §178 §3.2's structural sentence survives intact —
+*"no later linear call exceeds 639 s"* is still true, at a new maximum of 625.3.
+
+**One registration detail worth keeping.** §178 §3.2's peak band was widened from the second
+session's central 19.5–20.2 to **17.2–20.1**, on the grounds that §166 measured this process shape
+at 15.010 as well as 17.542 and the scatter belonged in the band. The measurement is **18.113** —
+inside the widened central and **below** the narrow one. The widening was the difference between a
+central estimate that contained the answer and one that did not.
+
+#### 5.1 THE COMPILE, MEASURED — AND WHAT THE ALARM CANNOT SAY
+
+§178 §3.2 registered its whole case on a subtraction and said so: *"Nothing counts compiles, so
+'eight became one' is still read off a duration."* The run's log carries **one XLA slow-operation
+alarm**, and it settles the cost if not the count:
+
+```
+  E0916 08:46:35  slow_operation_alarm.cc:73    [Compiling module jit_traced for CPU]
+  E0916 08:48:07  slow_operation_alarm.cc:140   The operation took 3m31.527583023s
+```
+
+**211.53 s, against §166's 213 s for a `medium` compile**, and it sits wholly inside row 0's linear
+call (08:44:35–08:48:07 within 08:40:03–08:59:03).
+
+**The instrument is fixed from the log itself, no run needed, and the discriminator is the GAP
+rather than the arming time.** Whether `cc:140` reports the operation's total or only its excess
+over the threshold is settled without assuming what the threshold is: under the excess reading the
+two lines must be exactly the reported value apart, whatever the threshold, because both the arming
+and the report are measured from the same start. Measured, using XLA's own microsecond stamps
+rather than the wrapper's 1 s ones:
+
+```
+  cc:140 at 08:48:07.339845 reporting 211.527583 s  ->  operation started 08:44:35.812262
+  cc:73  at 08:46:35.812361                         ->  armed 120.000099 s in
+  gap cc:73 -> cc:140                                       91.527484 s
+  the excess reading requires that gap to be           211.527583 s      REFUTED, by 2.3x
+```
+
+So `cc:140` reports the **total**, the threshold is **120.000 s to microseconds**, and the surviving
+compile really cost 211.5 s. A third check agrees from the distribution: across this arc's 27
+alarms the **smallest reported duration is 120.629 s**, a hard floor just above the threshold —
+under the excess reading the smallest excess should sit near zero, since some operation somewhere
+finishes shortly after crossing.
+
+**The count is the part that is not measured, and the reason is the instrument, not the run.** Eight
+compiles at ~213 s would each have passed 120 s, so one alarm is inconsistent with eight *if the
+alarm fires per operation*. **This arc's nine logs carry 27 alarms and not one process appears
+twice.** `log_kinrank4.txt` looked like the counterexample at 8 alarms, and is not:
+`hwm_kinrank4.json` records **eight worker pids** — 418075–418078 and 435942–435945, two pools of
+four run 46 minutes apart — and the eight `cc:140` lines carry exactly those eight as their tid,
+one each. (Their `cc:73` partners carry different tids inside the same processes, so the arming
+line comes from a timer thread and the report from the compiling one.) `run_kinrank`'s 19 scored
+genomes then put every row after its 308.0 s first at 36.0–67.4 s, and `make svk`'s six genomes
+share one flank orientation. **The observation that would separate "per operation" from "the first
+slow operation per process" has never occurred in this tree**, so nothing here distinguishes them —
+and a failed falsification only counts when the test had power. **A threshold reporter is silent
+about everything it did not report**, and reading a count off that silence is the same error as
+reading "the quantity is steady" off a running maximum that set no new peak — §181's, made a day
+earlier. Both are now `CLAUDE.md`'s instrument check
+(`cc38a12`). So the eight-to-one claim still rests on row 0's timing, exactly where §178 left it;
+what has moved is that the surviving compile's price is observed.
+
+#### 5.2 THE IMPLIED PRE-§164 COMPILE, AS A HYPOTHESIS
+
+With the surviving compile measured, the saving decomposes — but only against an assumed background,
+so this is registered rather than asserted:
+
+```
+  measured saving        2752.5 - 1139.1                     = 1613.4 s
+  predicted saving       7 x 213                             = 1491 s        (122.4 s short)
+  new non-compile part   1139.1 - 211.5                      =  927.6 s
+  old non-compile part   927.6 / 0.9850                      =  941.7 s
+  implied 8 old compiles 2752.5 - 941.7                      = 1810.8 s
+  implied OLD per phase  1810.8 / 8                          =  226.3 s
+```
+
+**226.3 s against the surviving 211.5 s**, i.e. the collapsed trace is cheaper than each of the
+eight it replaced, which is plausible for one trace carrying the phase as an argument against
+eight specialised ones. It is an identity, not a confirmation: the 226.3 is derived FROM the
+saving, so it re-expresses the 122 s residual rather than explaining it. Its value is that it is
+**checkable**: a pre-§164 log showing eight alarms near 213 s rather than near 226 would refute
+it. Two loads to name: the background factor rests on five rows and is **not flat** — the ten
+later calls run **0.9751 to 0.9944 in run order**, a 1.93% drift with position rather than a
+constant speedup, so the single 0.9850 is the mean of a trend — and §166's 213 s is itself one
+measurement.
+
+#### 5.3 WHAT `make svk` DOES NOT SETTLE
+
+The control's verdict is unchanged and so is the wheel's: **`pass: True`, the shipped genome
+still feasible under SVK at `medium`**, every figure bit-identical to the artifact — which is the
+question SVK_PLAN Step 3 exists to answer and which this run therefore re-answers rather than
+advances. Two workers remains unmeasured (`Makefile:488`), though there is now a serial figure to
+size the attempt against. And `rows 2-6`'s svk/linear **1.186** is a third shape of the SVK cost
+beside §178 §4's three, not a fourth reading of any of them.
+
+### 6. THE CHANGE
+
+S3 named the one thing this run makes stale, and it is in two places that must move together:
+
+```
+  Makefile:478-481                 the svk block's "it is the better part of an hour at `medium`"
+  studies/study_svk_rescore.py     the driver docstring's twin of the same sentence
+```
+
+Both now read **two hours**, with the artifact's 2.52 h and this run's 2.05 h and 18.1 GiB peak
+beside it — the recipe's memory cost having been documented nowhere until now, which §178 §3.2
+flagged when it observed that the block documents no cap at all. Each site is **reflowed within its
+existing line count**, so no anchor moves: `Makefile`'s later citations (`:488`, `:541`, `:547`,
+`:569-570`, `:686-731`) and `study_svk_rescore.py:76`, which `MBSE_PLAN.md:496`,
+`studies/study_mbse_score.py:30` and `tests/test_requirements.py:12` all cite, are untouched.
+
+One promotion consequence found on the way and fixed with them: `Makefile:543`'s worked example
+passed `CONTACT_GENOME=best_solution.json` while naming its output `study_contact_e126cc3_svk.json`,
+and `best_solution.json` has been `b729e86` since `cb4e3dd` (§115). A reader following that block
+wrote a file whose name asserted a genome the run did not use. That is §118's checklist item 7 — the
+CONSUMERS of `best_solution.json` — finding one more consumer an arc late.
+
+**GREEN** (`f1df33f`). `tests/test_study_gate_guard.py` and `tests/test_promotion.py`: 72 passed.
+`make -n svk`, `make -n contact` and `make help` render unchanged and the driver parses.
+`tests/test_objective.py`, which also names this driver, was NOT run — §115's rule, and it peaks at
+28.5 GiB alone. The diff is **9 insertions, 9 deletions**.
+
+**What this change does NOT add: a cap for `make svk`.** §178 §3.2 observed that the block
+documents none, and it still does not; what exists now is a measured 18.113 GiB in the driver's
+docstring and in this record, which is what a future cap would be sized from. 32G was this run's
+and it was never approached.
+
+### 7. FLAGGED, NOT FIXED
+
+1. **`make contact`'s exit 1 wants a disposition, and it is CONTACT_PLAN's, not this arc's.** The
+   two doors are giving `patch` a `solver_pass` of its own, or giving the recipe a section set that
+   carries a verdict. `studies/study_contact.py:1177-1181`'s comment argues the first door for a
+   section that FAILS; the empty case it does not address.
+2. **The scratch harness's `pipeline_exit` is blind and stays blind** — it is in
+   `$T/run_s2.sh`, not in the tree, so there is nothing here to fix. The rule it teaches is §3's:
+   a driver's status is the `exit` field of its `hwm_*.json`, and `PIPESTATUS[0]` past
+   `hwm_watch.py` reports the watcher.
+
+### 8. A RULE FOR THE NEXT GENERALISATION, EARNED BY THREE PASSES IN TWO DAYS
+
+§180 and §181 were both amended after audit, and both amendments made the same fix: **a headline
+asserted a rule the section's own body had scoped**. The third pass (`4a0e696`) then found that the
+audit which prompted the second amendment had made the same mistake itself, in the other document.
+Four instances:
+
+```
+  §180   "the creep STOPS"                     1 run
+  §181   "bounded in practice"                 1 run
+  §181   "medium is set once, coarse creeps"   5 runs differing in rung, width, check AND instrument
+  audit  "the width, not the rung"             6 runs, the same four confounds, plus mark-vs-series
+```
+
+What separates these from the headline rules that are right — §167's `default_workers` refusal, for
+one — is not that the good ones avoid rules. It is that **§167's rule is about code the section
+changed, and its mutants are the falsifier**. All four failures are rules about behaviour a section
+merely observed. So:
+
+> **A section may assert a rule about code it changed. A rule about behaviour it merely observed
+> must name the design that could have refuted it — and where the runs behind it differ in more
+> than one way, it is a hypothesis and must be written as one.**
+
+Three operational checks, all fast, adopted here and in `CLAUDE.md`:
+
+1. **The confound check.** Before writing any "X does / does not Y", list the runs it rests on and
+   the ways they differ. More than one plausible cause makes it a hypothesis.
+2. **The instrument check.** A cross-run comparison names the instrument behind each figure, and a
+   **running maximum is never compared against a series**: a mark can only report "nothing exceeded
+   the previous high", never "the quantity is steady". This is §175's rule one level up — that
+   section made a convention per table, this makes one per comparison.
+3. **The headline test.** A headline may state a rule only if the section registered a falsifier
+   the run could have tripped and did not. §167 passes on its mutants. §180's "stops" fails: F3 was
+   registered against the pair, and no falsifier was ever registered for "the creep continues", so
+   the run could not have refuted the headline it carries.
+
+And its other half: **an audit's own generalisations get a falsifier beside them**, which is the
+one discipline the audits had not been applying to themselves. The width table's would have read
+"refuted if any 3-worker parent creeps on any instrument", and writing it would have opened §173's
+window column in a minute — before it cost an amendment. Amend for substance; rule for scope.
+
+### 9. SUCCESSORS
+
+0. **`make contact`'s exit 1 needs a disposition** — a `solver_pass` for `patch`, or a section set
+   that carries a verdict. CONTACT_PLAN's call, and the first time the recipe's exit status has
+   been looked at.
+1. **`make svk` at two workers.** `Makefile:488` records that it "has never been measured here",
+   and until today there was no serial figure to size the attempt against. There is now.
+2. **Read one parent both ways** (carried from §181 successor 1, unchanged by this section).
+3. **The fillet is on `wheel_objective`'s path and not on `build_wheel`'s, and `make contact` is
+   not the only driver that builds its own mesh.** `git grep 'build_wheel('` over `studies/` finds
+   **67 calls with no `fillet=` across 16 drivers** — `study_wheel_fea.py`, `study_objective.py`
+   and `study_gnl.py` are bare at every call site, `study_gradient.py` at 13 of 31. Many will be
+   deliberate: `study_svk_rescore.py`'s single bare call is its CONTROL row, and its comment says
+   in so many words that "the re-score is uncapped AND filleted; this row is neither". The
+   successor is to ask of each driver whether its RECORD implies a filleted wheel its call does
+   not build — which is the question §178 §3.1 got wrong for one of them.
