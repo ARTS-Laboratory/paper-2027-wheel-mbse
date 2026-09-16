@@ -28418,13 +28418,38 @@ CONTACT_PLAN's, not this arc's; what belongs here is that the number is not evid
 **The harness item is the general one.** `s2_summary.txt`'s `pipeline_exit` captures
 `PIPESTATUS[0]`, which is `systemd-run`'s status, which is `hwm_watch.py`'s — and `hwm_watch.py`
 records `exit=proc.returncode` in its JSON and then exits 0 itself. **The summary line can never
-report a failed study, and this arc proves it did not.** Seven runs produced an END line;
-**all seven read `pipeline_exit=0`**, and `contact178`'s driver really exited **1**. The
-`hwm_*.json` files also record a **−15** for the 4-worker `medium` descent that was SIGTERMed at
-step 3 (§173),
-which never reached an END line at all. And the knowledge was briefly present and then lost: the
-2026-09-15 summaries for `desc_med3` and `desc_knee3` append *"(stage3 exit is in the json)"* to
-their END lines, and the script written after them dropped the caveat while keeping the blind field.
+report a failed study, and this arc proves it did not.** Nine runs produced an END line and every
+one of them reads zero, while two of the nine really failed:
+
+```
+  END line                                   the field it prints      hwm_*.json exit
+  desc_med100  2026-09-14  watcher_exit=0  (stage3 exit is in the json)         -15
+  desc_med3    2026-09-15  pipeline_exit=0 (stage3 exit is in the json)           0
+  desc_knee3   2026-09-15  pipeline_exit=0 (stage3 exit is in the json)           0
+  kinrank4     2026-09-15  pipeline_exit=0                                        0
+  stage3serial 2026-09-15  pipeline_exit=0                                        0
+  knee175      2026-09-16  pipeline_exit=0                                        0
+  s300         2026-09-16  pipeline_exit=0                                        0
+  contact178   2026-09-16  pipeline_exit=0                                        1
+  svk178       2026-09-16  pipeline_exit=0                                        0
+```
+
+**The blindness arrived in three steps, none of which looks wrong on its own.** The 2026-09-14
+script named the field **`watcher_exit`** — accurate — and added the caveat *"(stage3 exit is in
+the json)"* as well. The 2026-09-15 script renamed it `pipeline_exit`, which is now the wrong name,
+but kept the caveat, so the caveat carried the truth. The script after that dropped the caveat and
+kept the name, and nothing carried it. A rename beside a live caveat, then a caveat that had come
+to look redundant beside its own field name.
+
+**As first committed this paragraph said SEVEN runs, all reading `pipeline_exit`, with
+`desc_med100` never reaching an END line at all.** All three are wrong, and from one cause: the
+census was `grep pipeline_exit`, which by construction cannot see the summary that names the field
+something else, and which also predated `svk178`'s own END line. The second session's audit caught
+it. That is this section's §5.1 lesson landing on this section — **an instrument reports what it
+was pointed at and is silent about the rest**, and a literal-string grep is as much an instrument
+as a high-water mark or a threshold alarm. The corrected census greps `=== END`, which every line
+has, and reads the field afterwards.
+
 The driver's real status is the `exit` field of its `hwm_*.json`; both of this successor's runs were
 read that way.
 
