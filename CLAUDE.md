@@ -76,3 +76,37 @@ as steps each with its own check.
 
 Strong criteria let the work loop independently. Weak criteria ("make it work") force constant
 clarification.
+
+---
+
+## How a section states a rule
+
+Added 2026-09-16 (PLAN.md §182 §8), and earned: §180 and §181 were each amended after audit to
+scope a headline their own bodies had already scoped, and the audit that prompted the second
+amendment then turned out to have made the same mistake in the other direction. Four instances
+in two days, all of one shape — **a generalisation stated from runs that differ in more than
+one way.**
+
+> **A section may assert a rule about code it changed. A rule about behaviour it merely
+> observed must name the design that could have refuted it — and where the runs behind it
+> differ in more than one way, it is a hypothesis and must be written as one.**
+
+§167's headline rule is right because the section wrote the refusal and its mutants prove it
+fires. "The creep stops", "bounded in practice" and "`medium` is set once, `coarse` creeps" are
+wrong because nothing in those sections could have come back and said otherwise.
+
+Three checks, each a minute's work:
+
+1. **Confound check.** Before writing any "X does / does not Y", list the runs it rests on and
+   the ways they differ. More than one plausible cause makes it a hypothesis; write it as one.
+2. **Instrument check.** A cross-run comparison names the instrument behind each figure, and
+   **an instrument that reports only exceedances is silent about everything below** — its
+   silence is not data. A high-water mark says "nothing beat the previous high", never "the
+   quantity is steady"; a threshold alarm says "this operation passed 120 s", never how many
+   did not. So a running maximum is never compared against a series, and a threshold reporter
+   is never read as a count.
+3. **Headline test.** A headline may state a rule only if the section registered a falsifier
+   the run could have tripped and did not. Check it against the section's own falsifier list.
+
+This applies to audits and findings files too, which is where it was learned: **an audit's own
+generalisations get a falsifier beside them.**
