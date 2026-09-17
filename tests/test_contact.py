@@ -626,3 +626,44 @@ def test_the_guard_refuses_a_name_not_a_run(monkeypatch, past_the_guard, argv):
     monkeypatch.setattr(sys, "argv", ["study_contact.py", *argv])
     with pytest.raises(_PastTheGuard):
         sc.main()
+
+
+# ---------------------------------------------------------------------------
+# THE EXIT CODE — PLAN.md §182 §3 / §7.1
+# ---------------------------------------------------------------------------
+
+def test_a_verdict_free_section_set_is_not_a_solver_failure():
+    """`make contact`'s documented argv exited 1 on a wheel with nothing wrong with it.
+
+    §182 §3 measured it: `--sections patch`, which `Makefile:547` defaults, produces an
+    EMPTY solver-verdict list, because `patch` carries neither a `pass` nor a
+    `solver_pass` key.  The old expression was `bool(solver) and all(solver)`, False by
+    emptiness, so the recipe **could not exit 0 on any wheel** — it printed "no verdict"
+    in words and returned 1 anyway.  Nothing about the solver was being reported.
+
+    The three cases are pinned together because the failure was a collision between two
+    of them: emptiness must read like "nothing failed", a real FAIL must still read 1,
+    and the two must not be the same answer.
+    """
+    assert sc.solver_is_correct([]) is True, "no verdict taken is not a solver failure"
+    assert sc.solver_is_correct([True, True]) is True
+    assert sc.solver_is_correct([True, False]) is False, "a real FAIL must still exit 1"
+    assert sc.solver_is_correct([False]) is False
+
+
+def test_emptiness_cannot_arrive_by_accident():
+    """What makes `all([])` safe here is the guard upstream of it, not optimism.
+
+    An empty solver list is only ever a deliberate, valid, verdict-free section set:
+    `parse_sections` rejects an empty `--sections` and an unknown name alike, with a
+    `ValueError` and BEFORE any solving.  If that guard were ever loosened, a typo would
+    become a silent exit 0 — so this test is the other half of the one above, and the
+    reason the fix is one line rather than a special case.
+    """
+    with pytest.raises(ValueError):
+        sc.parse_sections("")
+    with pytest.raises(ValueError):
+        sc.parse_sections("  ,  ")
+    with pytest.raises(ValueError):
+        sc.parse_sections("ptach")
+    assert sc.parse_sections("patch") == ["patch"]

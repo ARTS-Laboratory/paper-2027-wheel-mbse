@@ -21324,7 +21324,7 @@ tests/` returns **six lines across four files**, and there are TWO instruments, 
       tests/test_gradient.py:248        build_wheel(genes,CFG) == INSENSITIVE_EXPECTED
       tests/test_objective.py:321       build_wheel(genes,CFG) cols[12] == cols[13] == 0
 
-  study_contact.py:826   an FD census through the FEA, a different instrument
+  study_contact.py:862   an FD census through the FEA, a different instrument
       tests/test_contact.py:498                                == {R_hub, R_rim}
 ```
 
@@ -28352,7 +28352,7 @@ never entered this driver**: had it, every count would have moved.
 ```
 
 **The premise.** `run_emergent_patch` calls `WW.build_wheel(genes, cfg)` with no `fillet=`
-(`studies/study_contact.py:549`), and `build_wheel`'s signature defaults **`fillet=None`**
+(`studies/study_contact.py:585`), and `build_wheel`'s signature defaults **`fillet=None`**
 (`src/wheel_wheel.py:2949`), which is unfilleted. §103 made the fillet unconditional on
 `wheel_objective`'s path, not on `build_wheel`'s, so **a driver that builds its own mesh still gets
 the plain one**.
@@ -28400,7 +28400,7 @@ different wheel.
   s2_summary.txt        pipeline_exit=0  <- systemd-run's status, which is hwm_watch's
 ```
 
-`studies/study_contact.py:1212` is `return 0 if rep["solver_is_correct"] else 1`. The `patch`
+`studies/study_contact.py:1248` is `return 0 if rep["solver_is_correct"] else 1`. The `patch`
 section carries **neither a `pass` nor a `solver_pass` key** — its keys are `rows`, `convergence`,
 and seven scalar characterisation figures. So `verdicts` is empty, `rep["pass"]` is
 `bool([]) and all([])` = **False by emptiness**, the `solver` list comprehension filters on
@@ -28669,7 +28669,7 @@ and it was never approached.
 
 1. **`make contact`'s exit 1 wants a disposition, and it is CONTACT_PLAN's, not this arc's.** The
    two doors are giving `patch` a `solver_pass` of its own, or giving the recipe a section set that
-   carries a verdict. `studies/study_contact.py:1177-1181`'s comment argues the first door for a
+   carries a verdict. `studies/study_contact.py:1213-1217`'s comment argues the first door for a
    section that FAILS; the empty case it does not address.
 2. **The scratch harness's `pipeline_exit` is blind and stays blind** — it is in
    `$T/run_s2.sh`, not in the tree, so there is nothing here to fix. The rule it teaches is §3's:
