@@ -28733,3 +28733,230 @@ window column in a minute — before it cost an amendment. Amend for substance; 
    in so many words that "the re-score is uncapped AND filleted; this row is neither". The
    successor is to ask of each driver whether its RECORD implies a filleted wheel its call does
    not build — which is the question §178 §3.1 got wrong for one of them.
+
+## §183 — 2026-09-17. §182's SUCCESSORS 3 AND 0. THE BARE-`build_wheel` CENSUS IS **63 CALLS ACROSS 14 DRIVERS, NOT 67 ACROSS 16** — §182 §9 COUNTED WITH A LINE GREP, AND FOUR OF ITS "BARE" ROWS PASS `fillet=` ON A CONTINUATION LINE WHILE A FIFTH IS A PRINT STRING. TWO DRIVERS FOUND WHERE THE RECORD IMPLIES A MESH THE CALL DOES NOT BUILD: **`study_objective`'s DOCSTRING SAYS "NO FILLET IS MESHED" WHILE ITS OWN G7/G8/G10 MESH ONE** (`R_hub`/`R_rim` MEASURED **DEAD AT EXACTLY 0.0 BARE, LIVE AT 0.231/0.280 mm FILLETED**), AND **`study_deflection_gci` DRAWS ITS CELL SIZE `h` FROM THE BARE MESH AND ITS QoI FROM THE FILLETED ONE** — 26.5% APART IN ELEMENTS — WHICH IS THE BUG ITS OWN COMMENT EXISTS TO RECORD CLOSING, RE-OPENED ONE LEVEL DOWN BY §103. AND SUCCESSOR 0 IS CLOSED IN CODE (`467d08c`)
+
+No solves, and no run was launched for any of it. Every figure below is a mesh build, an
+`ast` parse or a `git` query — the successor was filed expecting a driver-by-driver read and
+the first two findings came out of the meshes' own element counts.
+
+### 1. THE ENUMERATION, AND ITS INSTRUMENT
+
+§182 §9 filed "**67 calls with no `fillet=` across 16 drivers**", with
+"`study_gradient.py` at 13 of 31". Re-counted by parsing each driver with `ast` and asking
+each `build_wheel` **call node** for a `fillet` keyword:
+
+```
+  instrument                          bare calls   drivers
+  git grep 'build_wheel(' | grep -v fillet=    68        16     <- what §182 §9 used
+  ast, per call node                           63        14     <- the answer
+```
+
+The five-line gap is one class and a stray, and every one is checkable:
+
+```
+  study_fillet_block.py:2268      **kw -- and the kw is a deliberate PAIR, the loop being
+                                  ("filleted", {"fillet": True}), ("unfilleted", {"fillet": None})
+  study_fillet_condition_a.py:129 fillet= on the continuation line
+  study_fillet_optimum.py:241     fillet= on the continuation line
+  study_fillet_optimum.py:315     fillet= on the continuation line
+  study_gradient.py:1504          NOT A CALL -- a print string whose text is
+                                  `build_wheel(genes, cfg)`, and which says "which is UNFILLETED"
+```
+
+Two drivers leave the list entirely (`study_fillet_block`, `study_fillet_condition_a`), which
+is where 16 becomes 14. **§182's own sub-figure splits the same way**: `study_gradient`'s
+**13** is right — it is the AST's bare count — while the **31** is the number of source LINES
+containing the token, against **25** actual calls. A numerator from one instrument over a
+denominator from another.
+
+This is §182 §5.1's rule landing on §182's own successor, one section later: *an instrument
+reports what it was pointed at and is silent about the rest*, and a literal-string grep is as
+much an instrument as a high-water mark or a threshold alarm. The stray is the sharpest form
+of it — **the single line that inflated `study_gradient`'s count is the line where the driver
+tells its reader the mesh is unfilleted.**
+
+### 2. `study_objective`: THE DOCSTRING DENIES THE MESH THE DRIVER BUILDS
+
+`studies/study_objective.py:186-187` states, unconditionally and in the module docstring:
+
+> M7 proved `R_hub` and `R_rim` are dead at the MESH because no fillet is meshed.
+
+The driver reaches the geometry two ways, and only one of them makes that true:
+
+```
+  G1-G6   run_ladder, run_kernel_and_ratio, run_coupling, run_closed_form
+          8 bare `WW.build_wheel(genes, cfg)` calls          -> UNFILLETED
+  G7/G8/G10  run_total, :615  `WO.phase_meshes(genes, cfg, phases)` -> FILLETED since §103
+```
+
+`phase_meshes` passes `fillet=True` at `src/wheel_objective.py:1036-1037` and says why in the
+four lines above it. Measured at the shipped genome on `smoke`, perturbing each gene by
++0.10 mm and taking `max|dcoord|` over the mesh:
+
+```
+  path                     n_nodes    R_hub +0.10        R_rim +0.10
+  fillet=None (bare)          4644    0.0 exactly        0.0 exactly        DEAD
+  fillet=True (phase_meshes)  5508    2.314307e-01 mm    2.803302e-01 mm    LIVE
+```
+
+**The zeros are exact**, which is the half of this that could have come back otherwise and
+did not: had the bare mesh moved at all, the docstring would have been wrong in the opposite
+direction and this would be a different finding. It is right about the mesh G1–G6 build and
+wrong about the mesh G7/G8/G10 solve, in a sentence that scopes itself to neither.
+
+The paragraph it opens then builds on the premise — `fillet_feasibility` exists *"to give them
+a gene-space gradient"*, i.e. because the genes were dead at the mesh. PLAN.md's own arcs
+table has recorded the opposite since §104 — *"`R_hub`/`R_rim` are no longer invisible to the
+optimizer — §79 made the filleted mesh differentiable and §88 removed the last refusal"* — so
+the record above this file knew, and the file did not.
+
+**Scope, stated rather than assumed.** One genome (`b729e86`), `smoke`, coordinates rather
+than gradients. It establishes that the genes move the filleted mesh and not the bare one; it
+does not measure what that does to any G-gate's number, and no G-gate was re-run here.
+
+### 3. `study_deflection_gci`: `h` FROM ONE MESH, THE QoI FROM THE OTHER
+
+This is the sharper of the two, because the driver already fixed this exact bug once and
+left the fix in a comment that now certifies the re-opened version of it.
+
+```
+  :118  mesh_counts()  ->  WW.build_wheel(genes, cfg)                  BARE.   supplies h
+  :216  run_ladder()   ->  WO.phase_meshes(genes, name, wanted, ...)   FILLETED. supplies the QoI
+```
+
+`row["h"] = _h(counts)` is the representative cell size Richardson divides by; `row[kin]` is
+the axle drop `WO.objective` solved for. They are computed on different meshes. And
+`:83-84`, in capitals, is the driver asserting the opposite:
+
+> EVERY COUNT HERE COMES FROM `wheel_wheel`, THE MESH THE QoI IS ACTUALLY SOLVED ON
+
+The comment continues into the history of the first version of this defect — *"drew `h` from
+`wheel_mesh` while `WO.objective` solved on `wheel_wheel`, which put the refinement ratios at
+1.826/1.789 instead of the true 1.616/1.593 and inflated every reported `p` by
+ln(1.826)/ln(1.616) = 1.25x"* — and closes with the rule **"Take the counts from the mesh you
+solved on."** §103 broke that rule again without touching this file. Before it was the wrong
+MODULE; now it is the right module at the wrong FILLET.
+
+Measured at the shipped genome, `H_PRIMARY = 1/sqrt(n_elements)`:
+
+```
+  rung      bare n_el   filleted n_el   delta     bare n_nodes   filleted n_nodes
+  coarse         4704            5952   +26.53%         21012              26196
+  medium        12288           15552   +26.56%         53124              66468
+  fine          31200           37632   +20.62%        132276             158388
+
+  refinement ratios        r21 (medium/fine)    r32 (coarse/medium)
+  bare      (h as used)             1.593444              1.616244
+  filleted  (h as solved)           1.555556              1.616448
+  ln(used)/ln(solved)               1.054466x             0.999738x
+```
+
+`studies/study_deflection_gci.json` carries **4704 / 12288 / 31200** — the bare counts,
+exactly — beside deflections solved on 5952 / 15552 / 37632. **The committed artifact records
+one mesh's size next to another mesh's answer.**
+
+**A falsifier registered here half-fired, and the half that held is the informative one.**
+Before measuring: *if the two ladders refine at the same ratios, the h-source is harmless and
+this is cosmetic.* `r32` came back at **1.616244 against 1.616448** — a match to four
+decimals, which would have made that verdict. `r21` did not: **1.593444 against 1.555556**,
+the non-constant-ratio leg, because the fillet adds proportionally fewer elements at `fine`
+(+20.62%) than at `coarse` and `medium` (+26.5%).
+
+#### 3.1 WHAT IS NOT MEASURED, AS A HYPOTHESIS
+
+**The shift in the reported `p` is not measured and must not be read off the 1.054466.** That
+factor is the driver's own `ln(r_used)/ln(r_true)` applied to one leg. `observed_order` is
+Roache's three-grid form at a NON-constant ratio, so it consumes both ratios and the measured
+`phi`, and no `phi` was computed here — that needs the ladder re-run to `fine` under both
+kinematics, which is the expensive thing this section did not spend.
+
+> **Hypothesis:** re-running with counts taken from the filleted mesh moves the reported `p`
+> and leaves the extrapolated value and the GCI unchanged to their quoted precision.
+
+Its second half is the driver's own argument, not a new one: *"with three points, `p` and `r`
+enter Richardson only through `r^p = |e21/e32|`, which is fixed by the measured `phi` alone"*.
+**Falsifier: a re-run in which `p` comes back within its own reported precision, or in which
+the extrapolated value moves.** Either would say the h-source does not matter here and this
+is a documentation defect rather than a numerical one.
+
+### 4. THE CHECKED NEGATIVES
+
+Recorded because a census that only reports hits is the instrument error this section opened
+with.
+
+```
+  study_stage3.py:435,438   bare, and SAFE.  Both read `.orientation` only.  Measured at the
+                            shipped genome on `smoke`: bare and filleted both give [1., 1.],
+                            array-equal, so the discrete flank decision does not depend on the
+                            fillet.  (One genome, one rung -- it is a spot check, not a proof.)
+  study_svk_rescore.py:217  bare, and DELIBERATE.  §182 §9 already named it: the single bare
+                            call is the CONTROL row, and its comment says "the re-score is
+                            uncapped AND filleted; this row is neither".
+  study_m9.py:73            bare, and SCOPED BY ITS OWN DOCSTRING -- "deliberately
+                            measurement-only ... does not add the eigenvalue to the Stage 3
+                            objective".  The eigenvalue is a property of the mesh it built.
+                            Ambiguous rather than wrong: nothing claims a fillet, nothing
+                            denies one either.
+  study_gradient.py         13 bare calls and 62 fillet mentions, including :1504 printing
+                            "which is UNFILLETED" to its own reader.  Fully aware.
+```
+
+### 5. §182's SUCCESSOR 0, CLOSED IN CODE — `467d08c`
+
+`make contact` exiting 1 at its documented argv is fixed, and the disposition §182 §7.1
+deferred had nowhere to go: **it named CONTACT_PLAN, which was deleted 2026-08-16 and was
+never tracked at all** — `git log -- CONTACT_PLAN.md` is empty, version control having started
+2026-08-19, three days after the deletion. The header block's "read the numbered section
+instead" is the right instruction and there is no numbered section for an exit code.
+
+The two neighbouring lines want **opposite** answers to the empty case, which is why one idiom
+served both and why the empty case was never considered:
+
+```
+  rep["pass"]         False by emptiness is RIGHT -- nothing checked, nothing green.
+                      UNCHANGED; the printed line still reads "no verdict".
+  solver_is_correct   False by emptiness is WRONG -- it answers "did a solver verdict FAIL?",
+                      and none failing is the true answer when none was taken.  Now all().
+```
+
+`parse_sections` rejects an empty `--sections` and an unknown name alike, with a `ValueError`
+and before any solving, so an empty list only ever means a deliberate, valid, verdict-free
+section set — which is what makes `all([])` safe here rather than optimistic. A real FAIL
+still returns 1.
+
+§182 §7.1's other door — give `patch` a `solver_pass` of its own — is **refused**:
+`solver_pass` asserts that a SOLVE converged (`:229`, *"every admissible decade converged, the
+drop sequence is monotone and contracting"*), and `patch` characterises a mesh-convergent
+quantity rather than certifying a solve. A section with no solve to certify should report no
+verdict, not a manufactured one.
+
+**Nothing in `tests/` asserted `solver_is_correct`**, which is why §182 found this by running
+the recipe rather than as a red. Two tests now pin all three cases together, since the failure
+was a collision between them; on the old semantics the first goes red at *"no verdict taken is
+not a solver failure"* and the second stays green. **GREEN**: `tests/test_contact.py` and
+`tests/test_study_gate_guard.py`, **102 passed in 116.94 s**. `make -n contact` renders
+unchanged. `tests/test_objective.py` was NOT run — §115's rule, 28.5 GiB alone.
+
+The insert is **+36 lines at `:141`**, so four PLAN.md citations below it moved. All four were
+verified against their new targets rather than shifted blind, and **a naive +37 landed wrong on
+every one of them**: `:826`->`:862`, `:549`->`:585`, `:1212`->`:1248`,
+`:1177-1181`->`:1213-1217`. The three citations outside this file all point at `:94`, above the
+insert, and did not move.
+
+### 6. SUCCESSORS
+
+0. **`study_deflection_gci`'s `h` source.** One line — `mesh_counts` should build what
+   `run_ladder` solves on. The re-run that scores §3.1's hypothesis is the ladder to `fine`
+   under both kinematics, which is the real cost; the artifact must be regenerated with the
+   script, never separately.
+1. **`study_objective.py:186-187` wants scoping**, not deletion: the sentence is true of G1–G6
+   and false of G7/G8/G10, and the file is the only place that says which gates take which
+   mesh.
+2. **Ten drivers remain unread** — this pass took the two mixers with the loudest records plus
+   four spot checks. `study_contact` (11 bare), `study_wheel_fea` (11), `study_gnl` (8) and
+   `study_gradient` (13) are 43 of the 63 calls between them, and all four are bare at every
+   site where they build at all.
+3. **The census instrument is worth keeping.** The AST counter is nine lines and it disagreed
+   with a line grep on 5 of 68 rows; `git grep` over a call that can wrap is the same class of
+   blind spot as `grep pipeline_exit` in §182 §3.
