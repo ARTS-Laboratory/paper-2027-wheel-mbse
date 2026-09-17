@@ -29168,3 +29168,213 @@ default — what changes is that the alternative now has numbers.
    reach them. The next pooled descent of any width should print both columns.
 3. **The cgroup read must outlive the scope** (§5), which is a harness fix in the second
    session's scratch and not in this tree.
+
+---
+
+## §185 — 2026-09-17. A STALENESS SWEEP OVER THE TEN ARC FILES: **EIGHT OF THE TEN DO NOT NAME §115, AND THE LAST PREMISE CHECK MOST OF THEM GOT WAS §106's, AGAINST §103's FILLET SWITCH, THREE DAYS BEFORE THE PROMOTION.** THE EXPIRY HAS **TWO MECHANISMS AND NOT ONE** — GENOME-DEPENDENT READINGS AND REPOSITORY-CENSUS CLAIMS — AND `WALLPIN` AND `UNCAP` ARE IMMUNE TO BOTH FOR A STATED REASON, WHICH IS WHAT MAKES THIS A DISCRIMINATOR RATHER THAN A CALENDAR. **`RIMCAP`'s ITEM 1 WENT FALSE ONE DAY AFTER IT WAS WRITTEN**, AND THE MEASUREMENT IT WAS BLOCKED ON HAS BEEN ON DISK SINCE 2026-09-08: **ZERO**. AND THE CITATION SWEEP SCORES THESE FILES **3 ROWS OF 1337** WHILE THEY SAY FALSE THINGS — **A CLEAN CITATION SWEEP IS SILENT ABOUT CONTENT**
+
+Three commits, all markdown, none of them touching a line any other file cites: `e58fa0f`
+(`RIMCAP_PLAN.md`, `EXPORTPREC_PLAN.md`) and `edf6e8b` (`CLAUDE.md`), plus this record.
+
+### 1. THE CENSUS
+
+Ten sibling arc files. **Two name §115 and eight do not:**
+
+```
+  arc                     rank    last content record        names §115
+  KINEMATICS_PLAN.md      1 clo   §132       2026-09-07      yes
+  FILLET_PLAN.md          2       PART 14 / §103  2026-09-03  no
+  HUBSHARE_PLAN.md        3 clo   §109 / §114     2026-09-05  no
+  WALLPIN_PLAN.md         4       §106       2026-09-03      no
+  RIMCAP_PLAN.md          5 park  §114       2026-09-05      no   -> corrected here
+  MESHSTEP_PLAN.md        6       §114       2026-09-05      no
+  EXPORTPREC_PLAN.md      7       §106       2026-09-03      no   -> corrected here
+  BOUNDARY_PLAN.md        8       §114       2026-09-05      no
+  MBSE_PLAN.md            9       §119       2026-09-07      yes
+  UNCAP_PLAN.md          10 park  §114       2026-09-05      no
+```
+
+§106 (`6fd3122`, 2026-09-03) premise-checked six of them against §103's fillet switch —
+`BOUNDARY`, `EXPORTPREC`, `HUBSHARE`, `MESHSTEP`, `RIMCAP`, `WALLPIN`. §114 corrected four
+headers (`3d5ffbc`) and parked two (`68ecab5`). **§115 promoted `b729e86` on 2026-09-06
+(`cb4e3dd`), and no sweep of these files has happened since.** The promotion is not a small
+step: `R_hub` −13.96% (0.663606 → 0.570995), `R_rim` −43.99% (3.000000 → 1.680168), `t0`
++137.85%, and `best_solution.json`'s own note warns in terms that *"drivers take constants
+measured on a SPECIFIC genome from this file"*.
+
+### 2. THE EXPIRY HAS TWO MECHANISMS, AND CONFLATING THEM WOULD HAVE BEEN THE MISTAKE
+
+The first draft of this section's headline was *"a premise check expires at the next
+promotion"*. **That is one rule stated from runs that differ in more than one way**, and the
+files separate cleanly into two groups that fail for unrelated reasons:
+
+- **(a) GENOME-DEPENDENT READINGS.** A number measured on the wheel that shipped. `EXPORTPREC`'s
+  three manifest volumes, `HUBSHARE`'s 0.008308 hub share and its 0.667-vs-0.664 fillet
+  comparison, `MESHSTEP`'s 2.650x step ratio. These expire **at a promotion** and at nothing
+  else.
+- **(b) REPOSITORY-CENSUS CLAIMS.** A statement about what the tree contains. `RIMCAP`'s *"all
+  25 committed Stage-3 artifacts"* and *"the clamp has never fired on disk"*, `BOUNDARY`'s
+  *"four of twenty-five committed runs"*, and every *"blocked behind X"*. These expire **at any
+  commit that adds an artifact**, promotion or not — `RIMCAP`'s went false at `ebcb6f0`, which
+  promoted nothing.
+
+A single rule covering both would have predicted `BOUNDARY` stale for the same reason as
+`HUBSHARE`. It is not: `BOUNDARY`'s denominator moved 25 → 27 while **its finding survives
+untouched**, because both new runs are `coarse`/SVK and the finding is scoped to the five
+`medium`/SVK descents and the three 301-step `coarse` ones, neither of which changed.
+
+### 3. THE CONTROLS — TWO ARCS THAT DID NOT EXPIRE, AND WHY THAT IS THE EVIDENCE
+
+**Registered before the sweep ran: if every arc file had gone stale, mechanism (a) would be
+unfalsifiable and the finding would be "time passed".** Two did not, each for a reason in its
+own text:
+
+- **`WALLPIN` (#4) — checked mechanically, wholly intact.** `set_min_wall(2.0)` still wraps both
+  named tests at `tests/test_wheel_fea.py:477` and `:514`; `MIN_WALL_MM = 1.2` at
+  `src/wheel_fea.py:236`; `study_wheel_fea.py:465` still calls `WW.build_wheel(v, cfg)` with no
+  `fillet=`. Its evidence is a CV swept over 20 seeds in **both** gene boxes and its FEA path is
+  the unfilleted default, so it is genome-independent by construction. §103 cannot reach it and
+  neither can a promotion.
+- **`UNCAP` (#10) — its stated reopen condition still holds.** *"Reopens only if `rim:P_c`
+  acquires a consumer"*; `grep -rn "rim:P_c" src/` returns **zero**, as at §114.
+
+So mechanism (a) is a claim about genome-dependence, not about elapsed days. **The falsifier
+was available and did not fire.**
+
+### 4. `RIMCAP` — ITEM 1'S THREE CLAUSES, AND THE ZERO IT WAS WAITING FOR
+
+`WHAT IS NOT PARKED` item 1 was written at `68ecab5` on 2026-09-05 and **was true that day.**
+
+```
+  "the clamp has never fired on disk"      false at ebcb6f0, 2026-09-06 -- ONE DAY LATER.
+                                           study_svk_rescore.json rescore.rows[1], genome
+                                           36aed36 GA/beam, reject_kind clamp_reject, the
+                                           detail naming the radii the mesh was built at
+                                           (0.6669990463043006, 0.8952435891662489).
+                                           §170 read the same clamp again on 2026-09-14:
+                                           prod9 and prod10 both refuse in 40 s.
+  "all 25 committed Stage-3 artifacts"     27.  stage3_svk_refillet_shipped.json (178 steps)
+                                           and _r2.json (123) postdate §103, committed at
+                                           277a731 on 2026-09-08 -- §115's own descent.
+  "blocked behind the Stage-3 re-run"      landed §115, cb4e3dd, 2026-09-06.
+```
+
+**THE MEASUREMENT IT NAMED IS THEREFORE AVAILABLE: `clamp_reject` across both post-§103
+descents, 301 steps of `coarse`/SVK, is 0.**
+
+**AND THE INSTRUMENT CHECK IS THE POINT, NOT A FORMALITY.** A zero from an events list is
+exactly the shape that is silence rather than data. It is data here: `_reject_kind` emits the
+string (`wheel_stage3.py:217`), and the list is populated rather than empty by construction —
+`stage3_svk_refillet_shipped.json` carries one event and its kind is `solve_reject`. So these
+runs distinguish the kinds and recorded no clamp refusal.
+
+**WHAT THE ZERO IS NOT.** It is not *"the clamp does not fire under the live objective"* —
+§170's `prod9`/`prod10` refusals are the same clamp on the same tree, from start points a
+descent never reached. The two readings agree on something narrower and that is the whole of
+it: **the clamp did not fire on any step of the descent that produced the shipped genome.**
+Whether it fires often enough to need a barrier is a question about the POPULATION OF START
+POINTS, and 301 steps down one basin do not sample it. Nothing is unparked.
+
+### 5. `EXPORTPREC` — BLOCKED ON A CONDITION DISCHARGED ELEVEN DAYS AGO
+
+The 2026-09-03 block closed *"explicitly blocked until successor 1 lands"*. It landed three
+days later. That block also certified the manifest volumes because *"the exporter is OCC-side
+and does not touch the FEA mesh"* — true of §103, **silent about a promotion**, and `make
+export` ran with the promotion:
+
+```
+                       2026-08-14, 09e8188    2026-09-06, b729e86
+    solid                    39224.5 mm3            47962.7 mm3    +22.28%
+    nofillet                 36145.8                46990.1        +30.00%
+    fillets                   3078.77                 972.6        -68.41%
+    fillet share                7.849%                 2.028%
+    overlap hub                 26.0                  118.53        4.56x
+    bite    rim                  1.6416                 0.7206     -56.1%
+```
+
+**Cause measured from the two manifests rather than inferred from the drop:** both fillet radii
+shrank while the solid grew, and OCC fillets 24 hub and 24 rim edges in **both**, so it is not
+a corner count. §28's `5.1e-5` is deliberately **not** re-derived — its direction is not
+obvious and must not be guessed: a larger overlap makes the 2-dp quantisation a *smaller*
+fraction of the value, while the rim bite falling 56% toward an unchanged 0.25 floor makes the
+same absolute loss matter *more* to the thing the value gates. Those pull opposite ways, and
+Step 1 re-derives it from the current manifest instead of importing it.
+
+### 6. THE COUNT IN `CLAUDE.md`, AND THE THREE PLACES IT WAS RIGHT TO LEAVE
+
+*"the nine sibling plan files carry a pointer"* is **present tense** and has been one short
+since `MBSE_PLAN.md` landed at `de67144` on 2026-08-31. All ten do carry the pointer. Fixed to
+ten (`edf6e8b`).
+
+**Deliberately unchanged, because they are dated records and correct as such** — the
+distinction this tree keeps having to re-make:
+
+- `PLAN.md`'s own header block names the nine and says they *"were all swept the same day"*,
+  dated 2026-08-19. There **were** nine that day.
+- The ten arc files' *"cannot drift across ten files"* sits inside a block headed **CHANGED
+  2026-08-19**, where ten was right (nine siblings plus this file). It is eleven now. Editing
+  ten files to re-date a dated rationale would shift citations in all ten and buy nothing.
+- `MBSE_PLAN.md`'s copy of that block says "ten files" and **was born wrong**, carried verbatim
+  into `de67144` — the same commit that made the count stale — describing a same-day sweep it
+  was not part of. Left as the artefact it is.
+
+### 7. THE INSTRUMENT: A CLEAN CITATION SWEEP IS SILENT ABOUT CONTENT
+
+`studies/_citation_sweep.py` reports **1337 citations, 137 for a human, and only 3 of those 137
+cite from an arc file** — `MBSE_PLAN.md:157` twice and `FILLET_PLAN.md:122` once, the last of
+which §159 §3 already recorded as deliberately left. By that instrument the arc files are the
+healthiest documents in the tree: **3 of the 137 rows a human must read, and 3 of all 1337
+citations — 2.19% and 0.22%**, two divisions that are easy to state as one and are not.
+
+**They were also, at that moment, telling a reader that the shipped genome is `09e8188` and
+that a clamp has never fired.** The sweep resolves whether a `:N` still points where it
+pointed; it has no opinion on whether the sentence around it is true, and **its silence is not
+a freshness signal** — the same shape as a high-water mark that says only "nothing beat the
+previous high". Nothing in the tree measures content staleness, and this sweep was done by
+hand. That is the honest status of §156's instrument, not a defect in it.
+
+**The three commits here moved no citation.** The whole-tree row list is identical before and
+after; the one added row is this work's own `wheel_stage3.py:217`, which resolves.
+
+### 8. FILED, NOT FIXED
+
+1. **`FILLET_PLAN.md` (#2, the top open arc) — its last word is a breach and an open
+   successor, both closed by §115.** PART 14 / §103 ends *"THE SHIPPED GENOME BREACHES THE WALL
+   IT WAS NEVER MEASURED AGAINST"* (hub utilisation 1.0557 against the 1.0 wall) and files
+   *"Successor 1 is now §93's steps 4 and 5: re-run Stage 3 under the live term and
+   re-promote."* `cb4e3dd` is that re-run; `best_solution.json` records 0.953 at `coarse`,
+   every barrier 0.0, and 0.9723 at `medium`/SVK. **Highest-value remaining item.**
+2. **`HUBSHARE` (#3, CLOSED) — the closure's scope argument now points the wrong way.**
+   `HUBSHARE_PLAN.md:354` reads *"the stand-in's hub fillet (0.667 mm) lands within 0.51% of the
+   shipped genome's (0.664 mm)"*; against `b729e86`'s 0.571 that is ~16.8%. The file's own
+   stated direction is *"hub share RISES as `R_hub` FALLS"*, and `R_hub` fell 13.96%. The arc
+   closed on a 29.0% margin the file already calls *"an upper bound on its own margin"*.
+   **A HYPOTHESIS, NOT A VERDICT — the falsifier is `make reds-hub` on `b729e86`.**
+3. **`MESHSTEP` (#6) — its staleness note went stale by the mechanism it describes.**
+   `MESHSTEP_PLAN.md:157` says the ratio *"tracks the design"* and that the shipped genome *"has
+   been `09e8188` since §26"*. Both `2.650x` and `15.003` are readings on a superseded design.
+4. **`PLAN.md`'s own index row for arc 9 is one re-derivation behind the file it points at** —
+   it carries §103's 53.51/44.60/1.59/0.30/0.00 while `MBSE_PLAN.md` carries §119's
+   49.37/41.14/1.47/**8.02**/0.00. The row's *"SEE `MBSE_PLAN.md`"* is what saves the reader.
+5. **`BOUNDARY` (#8) — denominator 25 → 27, finding intact** (§2 above). Separately: those two
+   runs are the first post-§103 descents on disk, so Step 0's wasted-descent ratio could be read
+   on the filleted mesh for the first time.
+6. **The same stale export volumes outside the arc files.** `src/wheel_wheel.py:48` — the block
+   calling fillets *"a FIRST-ORDER term, not a rounding"* at 7.85%, now **2.028%** — plus `:58`,
+   `:105`, `REPO_EXPLAINED.tex:2035` (*"48.64 g of PLA"*, now 59.47) and `FILLET_PLAN.md:3547`.
+   **Not a red:** `:58` and `:105` already self-scope (*"read the manifest rather than this
+   sentence"*) and `test_the_fillet_reference_agrees_with_the_STEP_MANIFEST` reads the manifest
+   live at a 10% band. `PLAN.md:11340`, `:11349` and `:15519` are dated records — leave them.
+7. **`MBSE_PLAN.md:157`'s two moved citations** — `wheel_objective.py:1234-1235` and
+   `:1272-1273` no longer hold. **Not auto-re-pointed**, per §159: a wrong repair reads `ok`
+   forever.
+
+### 9. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174's RULE)
+
+Every `file:N` above, verified against HEAD at the time of writing: `src/wheel_stage3.py:217`
+(`return "clamp_reject"`), `src/wheel_wheel.py:48`, `src/wheel_fea.py:236`,
+`tests/test_wheel_fea.py:477` and `:514`, `studies/study_wheel_fea.py:465` and `:94`,
+`Makefile:736`, `REPO_EXPLAINED.tex:2035`, `MBSE_PLAN.md:157`, `FILLET_PLAN.md:122` and
+`:3547`, `HUBSHARE_PLAN.md:354`, `EXPORTPREC_PLAN.md:106`, `MESHSTEP_PLAN.md:157`,
+`PLAN.md:11340`, `:11349`, `:15519`. The `wheel_objective.py` line numbers in item 7 are quoted
+as **what `MBSE_PLAN.md:157` says**, not as live anchors — they are the rows that moved.
