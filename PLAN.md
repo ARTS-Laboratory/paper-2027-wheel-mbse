@@ -201,7 +201,7 @@ had its premise re-checked against the fillet switch (2026-09-03) without a step
 | # | file | the question | cost |
 |---|---|---|---|
 | ~~1~~ | ~~`KINEMATICS_PLAN.md`~~ | **CLOSED 2026-08-16 — §32. NO, not for search.** ρ = **−0.83** over the feasible pool; `wheel_stage3.py --kinematics` now defaults to `svk`, at 1.49× | settled for 3549 s + 303 s |
-| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52); Step 3 IS THE ONLY THING LEFT AND IT IS A DECISION, NOT A MECHANISM — REWRITTEN 2026-08-29 AFTER §92.** The two meshes disagree about the solved wheel by 37.97% (§52, linear, one phase) and by 47.85% (§91, svk, eight phases), and §91 files that spread open. `R_hub`/`R_rim` are no longer invisible to the optimizer — §79 made the filleted mesh differentiable and §88 removed the last refusal — so what keeps the optimizer off that mesh is now the SCOPE GATE, which is a decision this tree has taken deliberately rather than a thing it cannot do. Genome-robustness, which this cell used to name as the blocker, was settled at §74/§78/§89. **And the rim tri-block is no longer part of that queue: §53 BUILT it, and it has the same genome problem** | Steps 0-2 spent; Step 3's measurements are all spent too — what remains is a record |
+| 2 | `FILLET_PLAN.md` | Mesh the junction fillets. **Steps 0-2 DONE (§50, §52); Step 3 IS THE ONLY THING LEFT AND IT IS A DECISION, NOT A MECHANISM — REWRITTEN 2026-08-29 AFTER §92.** The two meshes disagree about the solved wheel by 37.97% (§52, linear, one phase) and by 47.85% (§91, svk, eight phases), and §91 files that spread open. `R_hub`/`R_rim` are no longer invisible to the optimizer — §79 made the filleted mesh differentiable and §88 removed the last refusal — so what keeps the optimizer off that mesh is now the SCOPE GATE, which is a decision this tree has taken deliberately rather than a thing it cannot do. Genome-robustness, which this cell used to name as the blocker, was settled at §74/§78/§89. **And the rim tri-block is no longer part of that queue: §53 BUILT it, and it has the same genome problem** **[EXECUTED 2026-09-03 — §103 / PART 14, AND THE CELL ABOVE IS §92's TREE. THE SCOPE GATE WAS NOT HELD, IT WAS INVERTED: `test_the_objective_builds_the_filleted_mesh` NOW REQUIRES THE LITERAL `fillet=True` AT BOTH MESH-BUILDING CALL SITES AND IS GREEN, EVERY MESH THE OBJECTIVE SOLVES IS FILLETED, AND §115 DESCENDED AND PROMOTED `b729e86` ON IT ON 2026-09-06. SEE §186 AND `FILLET_PLAN.md`'s 2026-09-17 BLOCK.]** | Steps 0-2 spent; Step 3's measurements are all spent too — what remains is a record |
 | ~~3~~ | ~~`HUBSHARE_PLAN.md`~~ | **CLOSED 2026-09-04 — §109. NO.** The gate is green on the mesh the objective solves, the bound is `0.0117`, and the shipped wheel holds 0.008308 at `coarse` inside a bound derived without reference to it — there is no deficit for an objective term to close. §31's `cy4` route is not retired, it is de-prioritised and stays filed | settled |
 | 4 | `WALLPIN_PLAN.md` | Re-derive Gate 1 at the 1.2 mm floor and drop the beam test's 2.0 mm pin (§14's reserved judgement, measured by §31) | small |
 | ~~5~~ | ~~`RIMCAP_PLAN.md`~~ | **PARKED 2026-09-05 — §114. BOTH HALVES SUPERSEDED.** Step 1's cap model mirrors `hub_fillet_cap_mm`, which §103 demoted to reporting-only; the report half was tried at §110 (`f21ec7d`) and reverted as UNREACHABLE — `mesh_coords` raises before the report dict exists, so the keys were constant-by-construction, and visibility shipped in the event record instead (`clamp_reject`). **The gap is not parked with the arc:** the sector limit is still applied by the mesh, not priced by the objective, and whether it needs a barrier is blocked behind the Stage-3 re-run | Step 0 spent; both deliverables superseded |
@@ -29378,3 +29378,171 @@ Every `file:N` above, verified against HEAD at the time of writing: `src/wheel_s
 `:3547`, `HUBSHARE_PLAN.md:354`, `EXPORTPREC_PLAN.md:106`, `MESHSTEP_PLAN.md:157`,
 `PLAN.md:11340`, `:11349`, `:15519`. The `wheel_objective.py` line numbers in item 7 are quoted
 as **what `MBSE_PLAN.md:157` says**, not as live anchors — they are the rows that moved.
+
+---
+
+## §186 — 2026-09-17. §185 §8 ITEM 1 — THE TOP OPEN ARC, AND §185 RANKED IT "HIGHEST-VALUE REMAINING": **`FILLET_PLAN.md`'s LAST WORD AND THIS FILE'S OWN INDEX ROW FOR IT BOTH DESCRIBE A TREE THAT ENDED ON 2026-09-03.** THE ROW AT `PLAN.md:204` SAYS *"WHAT KEEPS THE OPTIMIZER OFF THAT MESH IS NOW THE SCOPE GATE"* — THE GATE WAS **INVERTED** AT §103 AND §115 DESCENDED THE SHIPPED WHEEL ON THAT MESH. AND THE ARC's SELF-CLEARING XFAIL **DID NOT CLEAR**: ITS REASON PROMISES TO REOPEN "THE DAY THE SHIPPED GENOME READS BELOW 0.80 AGAIN", `b729e86` HAS READ 0.667478 THERE SINCE 2026-09-06, AND THE TEST IS STILL RED — BECAUSE THE CLAIM IT ASSERTS WAS FALSIFIED BY PART 14's OWN COMMIT, NOT BY A GENOME. PLUS: `stress_margin = 89.21` IS THE **OUTGOING** GENOME's EXCHANGE RATE, 19.77% UNDER WHAT ITS OWN FORMULA RETURNS ON THE WHEEL THAT SHIPS
+
+Two commits, both markdown: `af639a6` (`FILLET_PLAN.md`, appended) and this record with
+the one-line index-row correction.  The full premise check is
+**`FILLET_PLAN.md`'s 2026-09-17 block**; what is here is what is this file's rather than the
+arc's.
+
+### 1. THE ROW AT `PLAN.md:204` IS TWO SECTIONS BEHIND, AND IT IS THE ROW THAT RANKS THE WORK
+
+The arc index's cell for #2 was **rewritten 2026-08-29 after §92** and says:
+
+> *"Step 3 IS THE ONLY THING LEFT AND IT IS A DECISION, NOT A MECHANISM ... what keeps the
+> optimizer off that mesh is now the SCOPE GATE, which is a decision this tree has taken
+> deliberately rather than a thing it cannot do."*
+
+`test_nothing_wires_the_fillet_into_the_objective` stood from §48 through §102 and **§103
+replaced it with its mirror image**, `test_the_objective_builds_the_filleted_mesh`
+(`tests/test_corner_singularity.py:700`), which parses `src/` and requires the literal `True`
+at `wheel_objective.phase_meshes` and `wheel_pool_worker.run_phase`.  It is green.  So the
+row's own subject reversed 14 days ago, and three days after that §115 descended and promoted
+`b729e86` on the mesh the row says the optimizer is kept off.
+
+**CORRECTED IN PLACE, AS A DATED BRACKET RATHER THAN A REWRITE** — the form row 9 already
+uses, and the form §185 §6 argued for: the cell keeps its §92 text, which was true then.  One
+line changed, one line long; **no citation in the tree moves.**
+
+**THIS IS THE SECOND INSTANCE OF ONE SHAPE IN TWO DAYS.**  §185 §8 item 4 found the index row
+for arc 9 one re-derivation behind the file it points at.  This is the same defect on arc 2,
+worse: row 9 is behind on a NUMBER and its *"SEE `MBSE_PLAN.md`"* saves the reader, while
+row 2 is behind on the STATE and reads as an instruction to take a decision that was taken.
+**The index is not covered by anything that sweeps this tree** — §185 §7 measured that for
+content inside the arc files and the finding extends to the table that ranks them.
+
+### 2. WHAT THE ARC's CHECK FOUND THAT IS NOT BOOKKEEPING
+
+Three, in the order a reader should care:
+
+**THE XFAIL WHOSE CONDITION FIRED AND WHICH DID NOT REOPEN.**
+`tests/test_objective.py:840`'s `reason=` ends *"strict=True via pyproject.toml, so this
+reopens itself the day the shipped genome (or its replacement) reads below 0.80 again."*
+§118 measured the replacement at **hub 0.667478 / rim 0.708341** on that test's own fixture on
+2026-09-06 and the test stayed `xfail`.  Re-run at HEAD under `--runxfail`, **the test's first
+two assertions pass and the third fails**: the shipped genome IS below the knee, the margin
+term IS exactly 0.0, and the gradients are **`dL/dR_hub +3.048e+01`, `dL/dR_rim +5.899e+01`**,
+with hub/rim utilisation **0.667478 / 0.708341**, §118's six digits reproduced.
+
+**The mechanism is the arc's own wiring, and the route is measured rather than inferred.**
+Read term by term on the same call, `stress` and `stress_margin` — the only two
+`MARGIN_KNEE_UTIL` gates — carry a gradient norm of **exactly 0.0**, and the only terms that
+carry one at all are `deflection` (463.976), `mass` (7.849) and `smoothness` (1.037) — and
+`smoothness`'s T1 Jacobian row is nonzero on genes 0-7 and exactly 0.0 at 12 and 13, measured,
+so it cannot reach a fillet radius either.  The code says why the stress zeros are exact
+rather than small: both terms are `2 * w * max(0.0, util_j - k) * d_util`
+(`src/wheel_objective.py:1351-1354`).  That leaves `deflection` and `mass` carrying the whole
+of it, and both reach those two genes only through the MESH, which `fillet=True` made a
+function of both radii at §103.  **A
+`strict=True` marker is a promise about WHEN a claim gets re-asked, and this one names a
+condition that is not the one holding it red** — the §185 §7 shape in a second instrument:
+the marker resolves whether the test is red and is silent about whether its stated reason is.
+
+**§135's ATTRIBUTION IS PUT IN QUESTION, NOT CONTRADICTED.**  §135 read `dL/dR_hub` +1.736e+01
+and `dL/dR_rim` +3.697e+01 at `coarse`/8 and attributed them to *"the stress/`Kt` one the knee
+gates ... exactly what a rim at util 0.90959 above a 0.80 knee predicts"* — available there,
+since both junctions clear the knee at `coarse`.  With that route provably shut, the same two
+genes read **+3.048e+01 / +5.899e+01**.  **Two rungs and two phase counts apart, so this is
+not a decomposition of §135's numbers and none is claimed**; what it establishes is that the
+route §135 named cannot be assumed to be carrying them.  And a sign question falls out that
+this section does NOT answer: both readings are positive at both rungs, while the arc's
+founding premise (*"more fillet means a lower stress concentration, so more fillet must mean
+less loss: both derivatives are negative"*, the test's own docstring) says a stress-carried
+gradient is negative.  `d(util_j)/dR_j` was not measured and its sign is not asserted here.
+
+**AN EXCHANGE RATE ANCHORED TO A GENOME THAT NO LONGER SHIPS.**
+`DEFAULT_WEIGHTS["stress_margin"] = 89.21` is §99's `w = mass_term / (2*(util_ref - knee)*util_ref)`
+evaluated on *"the shipped genome's FILLETED mass term, 35.6822"*.  `b729e86`'s is
+**44.478315** (`best_solution.json`, same rung and same settings), so the same formula returns
+**111.196** — the live constant is **19.77% under** its own policy on the wheel it prices.
+§99's *"0.665% apart on an unrelated genome"* is not evidence against this and never claimed
+to be: §99's own parenthesis says the rate *"depends on the reference genome's own mass"*, so
+88.61 against 89.21 tests only that `b029622` and `09e8188` weigh nearly the same.  `b729e86`
+is 24.65% heavier than both.  **FILED, NOT FIXED** — adopting 111.196 re-prices every
+committed loss number in this tree.
+
+**AND THE ONE LIVE GUARD CANNOT SEE IT.**
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be` reads the mass term off the LIVE
+shipped genome and asserts `0.5 < ratio < 2.0`; the reading is **0.82246**, green — against
+**1.02505** on the genome the weight was fit to, the same 19.77%.  Its
+docstring pre-states that scope (*"an order of magnitude, not to the digit"*), so this is the
+band working as designed, not a defect — but it is why a 24.65% move in a calibration input
+produced no red anywhere in 11 days.
+
+### 3. THE THIRD EXPIRY MECHANISM — §185's TWO DO NOT COVER THIS FILE
+
+§185 §2 separated **(a)** genome-dependent readings, which expire at a promotion, from
+**(b)** repository-census claims, which expire at any commit.  `FILLET_PLAN.md` needs a third,
+and it is the one that explains its header:
+
+**(c) A CLAIM THE ARC'S OWN EXECUTION RETIRED.**  The header still frames Step 3 as *"a
+DECISION with two terms"* whose survivor is *"ONE term: the `Kt` surrogate that is flat over
+half of `R_hub`'s range"*.  §103 deleted that term from the constraint —
+`src/wheel_objective.py:1402-1403` says so in the source (*"`kt_hub`/`kt_rim` below no longer
+feed it; they stay for the geometric report"*) — and `PLAN.md:204` inherits the same framing.
+Neither expired at a promotion or at a commit that added an artifact.  **They expired when the
+arc did what it said it would**, and nothing re-read the sentences that were waiting on it.
+
+That is not a fourth mechanism dressed up: (a) and (b) are both about the tree moving under a
+STATIC sentence, and (c) is the sentence's own author moving.  It predicts a different search
+— re-read a plan's header at the commit that CLOSES its step, not at the next promotion.
+
+**"AN ARC THAT EXECUTES STOPS BEING READ" IS A HYPOTHESIS AND IS WRITTEN AS ONE, BECAUSE THE
+FALSIFIER IS ALREADY IN THE TREE AND HALF-FIRED.**  §114 corrected four arc headers
+(`3d5ffbc`) and parked two (`68ecab5`) at the moment their steps moved, so the tree does
+sometimes do exactly this.  What is measured here is two sentences in one file, and one
+index row; whether (c) is a general failure or a single arc that nobody came back to would
+take the sweep §5 successor 5 asks for.
+
+### 4. WHAT DID NOT MOVE
+
+No `src/` file, no test, no study artifact, no threshold, no weight.  `best_solution.json` is
+untouched.  **`89.21` IS NOT CHANGED** and the two source comments that state its stale
+provenance (`src/wheel_objective.py:361`, `:1335`) are left exactly as they are — §113's rule
+about not folding an unrelated repair into a commit, and §185's about not rewriting a plan to
+match its outcome, point the same way here.  `FILLET_PLAN.md`'s header is **unedited**: the
+record is appended, so `FILLET_PLAN.md:122` and `:3547` do not move.
+
+**THE CITATION SWEEP'S HUMAN LIST IS IDENTICAL ROW FOR ROW BEFORE AND AFTER** — 1379
+citations at `5a929bc` and 1412 here, **137 for a human both times**, checked as a LIST and
+not a count (§119).  The 33 added are this change's own; the 12 of them that are bare `file:N`
+anchors read as unresolved for exactly as long as the lines carrying them are uncommitted
+(the sweep resolves against the CITING LINE's commit, and an uncommitted line blames to
+`0000000`), and every one of them resolves at the commit that carries it.
+
+**NOT RUN: `make test`.**  Markdown only, in two files nothing reads — no test, study, module
+or `Makefile` recipe opens a `.md`.  What WAS run is the five-test subset this record measures
+on, at HEAD, under `--runxfail`: the five knee and exchange-rate tests of
+`tests/test_objective.py`, **703.93 s, 2 failed (both of them the xfail-marked pair) and 3
+passed** — `test_but_above_the_knee_the_fillet_radii_are_live`,
+`test_the_margin_term_prices_and_never_gates` and
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be`.  With the markers respected
+that is the `2 xfailed, 3 passed` §118 left, reproduced eleven days later.
+
+### 5. SUCCESSORS, RANKED
+
+0. **THE `reason=` AT `tests/test_objective.py:840`** — replace the self-clearing clause with
+   the route §2 measures.  One string, the test stays red either way, and it is a source
+   commit rather than a record.  **Cheapest item on this list and the one a reader trips over
+   next.**
+1. **DECIDE `stress_margin`** — adopt 111.196, or write into the weight's own comment that
+   89.21 is `09e8188`'s rate and deliberately frozen.  Either closes it; leaving both source
+   comments asserting a false provenance does not.  A promotion-shaped blast radius, so it is
+   a decision and not a measurement.
+2. **`d(util_j)/dR_j`, ONE PROBE, AND IT GATES ANY READING OF §135.**  Both `dL/dR` readings
+   are positive at both rungs while the arc's premise says a stress-carried gradient is
+   negative.  If the derivative is negative the stress route is a NEGATIVE contribution at
+   `coarse` and §135's attribution is inverted rather than narrow; if it is positive, this
+   arc's founding premise needs re-reading on the mesh it now builds.  Cheap — no solve
+   beyond one the suite already pays.
+3. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — PART 14's successor 2, which
+   `b729e86` satisfies at `smoke`/2 and at no rung the objective solves.
+4. **§105's SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — and PART 15's
+   warning about that artifact is corrected in the arc file: the collapsed pair was never
+   committed, the file on disk is §92's pre-switch one, and it must still not be quoted.
+5. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES.**  Two of ten rows are now known
+   behind (2 here, 9 at §185); nothing has checked the other eight, and the citation sweep
+   cannot.
