@@ -260,3 +260,46 @@ untouched, no threshold moved. One loose end from the block above IS now closed 
 part of this decision: the stale `_fillet_margins` docstring quoting `[+4.647, +0.125]` as the
 shipped genome's margins was corrected at §112 (`89a370e`) — it now names `ga_beam` as the
 genome those belong to and records the current `[4.0271, 10.7491]` alongside.
+
+---
+
+## PREMISE RE-CHECKED AGAINST THE PROMOTION — 2026-09-17. **ITEM 1'S THREE CLAUSES HAVE ALL EXPIRED, THE FIRST OF THEM ONE DAY AFTER IT WAS WRITTEN — AND THE MEASUREMENT IT WAS WAITING FOR HAS BEEN ON DISK SINCE 2026-09-08. IT READS ZERO.**
+
+`WHAT IS NOT PARKED` item 1 was written at `68ecab5` on 2026-09-05 and was **true that day**.
+It is a claim about what the repository holds, and the repository moved under it three times:
+
+- *"the clamp has never fired on disk"* — false since `ebcb6f0`, **2026-09-06, one day
+  later**. `studies/study_svk_rescore.json`'s `rescore.rows[1]`, genome `36aed36 GA/beam`,
+  carries `refused.reject_kind: "clamp_reject"` with the `FilletClampRefusedError` detail
+  naming the radii the mesh was built at — `(0.6669990463043006, 0.8952435891662489)`, not
+  the genes'. §170 read the same clamp independently on 2026-09-14: `prod9` and `prod10` do
+  not run at all, both start points refusing at the fillet clamp in 40 s.
+- *"all 25 committed Stage-3 artifacts predate §103's fillet switch"* — there are **27**, and
+  two postdate it: `stage3_svk_refillet_shipped.json` (178 steps) and
+  `stage3_svk_refillet_shipped_r2.json` (123 steps), both `coarse`/SVK, committed at
+  `277a731` on 2026-09-08. They are §115's own promotion descent.
+- *"blocked behind the Stage-3 re-run (§113, still #1 tree-wide)"* — that run landed at
+  **§115, `cb4e3dd`, 2026-09-06**, promoting `b729e86`.
+
+**THE MEASUREMENT ITEM 1 NAMED IS THEREFORE AVAILABLE.** *"When that run lands, its
+`clamp_reject` event count is the measurement."* Across both post-§103 descents — 301 steps
+of `coarse`/SVK — the count is **0**.
+
+**AND ZERO IS A READING HERE, NOT A SILENCE**, which is the distinction that has to be made
+before the number is quoted. The instrument is live on these two artifacts rather than absent:
+`wheel_stage3._reject_kind` returns the string `"clamp_reject"` (`wheel_stage3.py:217`), and
+the `events` list is populated, not empty by construction — `stage3_svk_refillet_shipped.json`
+carries one event and its kind is `solve_reject`. So these runs distinguish the kinds and
+recorded no clamp refusal.
+
+**WHAT THE ZERO DOES NOT SETTLE, AND THE FALSIFIER IT FAILS TO BE.** It is not *"the clamp
+does not fire under the live objective"*: §170's `prod9`/`prod10` refusals are the same clamp,
+on the same tree, from start points a descent never reached. The two readings agree on
+something narrower, and that is the whole of it — **the clamp did not fire on any step of the
+descent that produced the shipped genome.** Whether it fires often enough to need a barrier is
+a question about the POPULATION OF START POINTS, and 301 steps down one basin do not sample
+it. `SCOPE, WITH ITS DIRECTION` is unchanged: the gap is real, still open, and still not
+priced by the objective.
+
+**NOTHING IS UNPARKED BY THIS.** Both halves of the arc stay superseded for the reasons at
+`THE PARK`. This corrects three expired clauses and records the number item 1 asked for.
