@@ -29506,12 +29506,22 @@ about not folding an unrelated repair into a commit, and §185's about not rewri
 match its outcome, point the same way here.  `FILLET_PLAN.md`'s header is **unedited**: the
 record is appended, so `FILLET_PLAN.md:122` and `:3547` do not move.
 
-**THE CITATION SWEEP'S HUMAN LIST IS IDENTICAL ROW FOR ROW BEFORE AND AFTER** — 1379
-citations at `5a929bc` and 1412 here, **137 for a human both times**, checked as a LIST and
-not a count (§119).  The 33 added are this change's own; the 12 of them that are bare `file:N`
-anchors read as unresolved for exactly as long as the lines carrying them are uncommitted
-(the sweep resolves against the CITING LINE's commit, and an uncommitted line blames to
-`0000000`), and every one of them resolves at the commit that carries it.
+**THE CITATION SWEEP, AND IT CAUGHT THIS WORK MINTING THE EXACT DEFECT §174 NAMES.** 1379
+citations at `5a929bc`, 1412 after the two record commits, 1415 after the repair below —
+which adds two of its own by QUOTING the sweep's row, and both resolve; the
+human list went **137 -> 138 -> 137**, checked as a LIST and not a count (§119).  The one
+added row was this work's own.  `af639a6`'s citation list cited the arc index row as
+`PLAN.md:204`, verified at HEAD when that line was written — and `ac2f06a`, the commit that
+carries this section, edited line 204 itself.  So the anchor was **stale one commit after it
+was minted**, and the sweep said so: `FILLET_PLAN.md:4939 -> PLAN.md:204, MOVED, 0 matches at
+HEAD`.  §174's rule is this shape exactly (*"a record quoting OLD anchors as `file:N` mints
+wrong `ok` rows — name them in words"*), and what defeated the list is not carelessness but
+the TWO-COMMIT SPLIT the VC block asks for: arc file first, then the record that corrects the
+index.  **The sharper form: a citation into a line THIS WORK IS ABOUT TO EDIT is stale on
+arrival however carefully it was verified.**  Repaired in a THIRD commit — the one carrying this
+paragraph, which cannot cite its own hash — by naming the row in words; the human list is
+then identical row for row to `5a929bc`'s, and every other citation these three commits add
+resolves at the commit carrying it.
 
 **NOT RUN: `make test`.**  Markdown only, in two files nothing reads — no test, study, module
 or `Makefile` recipe opens a `.md`.  What WAS run is the five-test subset this record measures

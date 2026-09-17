@@ -4936,7 +4936,11 @@ Verified against HEAD at the time of writing: `src/wheel_objective.py:361`, `:13
 marker), `:851` (the test), `:899` (the assertion that fires), `:1042` (the exchange-rate
 test).  `FILLET_PLAN.md:122` and
 `:3547` are named as citations INTO this file that the append does not move, not as anchors
-read here.  `PLAN.md:204` is named in the `PLAN.md` record rather than here.
+read here.  **The arc index's row for this file is named in WORDS and not as a `PLAN.md:N`
+anchor** — the `PLAN.md` record corrects that row in the very next commit, so a bare anchor
+written here would have been stale on arrival.  It was: the first draft of this list carried
+`PLAN.md:204`, `studies/_citation_sweep.py` reported it MOVED one commit later, and that is
+§174's rule catching its own author.
 
 ### 10. SUCCESSORS
 
