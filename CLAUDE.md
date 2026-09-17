@@ -7,7 +7,7 @@ the behavioural guidelines that apply to every turn.
 
 **`PLAN.md`'s header block is the single source for version control** — anonymous authorship,
 one commit per finished unit of work, green before commit, branches, message shape. It says so
-itself, and the nine sibling plan files carry a pointer rather than a second copy. Do not
+itself, and the ten sibling plan files carry a pointer rather than a second copy. Do not
 restate those rules anywhere, including here.
 
 The numbered sections of `PLAN.md` are the project record. Six closed arc files were deleted on
