@@ -4674,3 +4674,287 @@ and must not be quoted until it is re-run.
 
 Measurements, the pool verdict and the t2/t3 mesh split this uncovered are in **PLAN §105**
 and are not restated here.
+
+---
+
+## PREMISE RE-CHECKED AGAINST THE PROMOTION — 2026-09-17. **THE HEADER'S LAST WORD IS TWO CLAIMS AND §115 SETTLED BOTH ELEVEN DAYS AGO: SUCCESSOR 1 RAN, AND THE WHEEL THAT SHIPS TODAY WAS DESCENDED ON THIS ARC'S OWN MESH. WHAT DID NOT SETTLE WITH IT IS THE THING THE ARC EXPECTED TO — THE XFAIL WHOSE REASON PROMISES TO REOPEN "THE DAY THE SHIPPED GENOME READS BELOW 0.80 AGAIN" HAS HAD SUCH A GENOME SINCE 2026-09-06 AND DID NOT REOPEN**
+
+`PLAN.md` §185 §8 ranked this file first of the ten arc files: *"its last word is a breach
+and an open successor, both closed by §115."*  This is that check, and it is **appended, with
+the header left unedited** — §185's own commit (`e58fa0f`) gives the reason and it holds
+unchanged here: a plan is not quietly rewritten to match its outcome, and two live citations
+point into this file below the header (`FILLET_PLAN.md:122`, `:3547`) which any inserted line
+would move.  **Before this block, the file named neither `§115` nor `b729e86` anywhere** —
+`grep -c` returned 0 for both at `5a929bc` — so nothing below is a restatement of something
+this arc already held.
+
+### 1. SUCCESSOR 1 RAN, AND THE ARTIFACT SAYS IT RAN UNDER THE LIVE TERM
+
+PART 14 filed it: *"re-run Stage 3 under the live term and re-promote against
+`tests/test_promotion.py`'s checklist."*  §115 is that run — `cb4e3dd`, 2026-09-06, genome
+`b729e86`, `coarse`/SVK/8 uniform phases, promoted through the checklist.
+
+**Checked rather than assumed, because "under the live term" is the half that could have been
+false:** `stage3_svk_refillet_shipped_r2_best.json` carries `hub_region_pnorm_mpa`
+22.760627 and `rim_region_pnorm_mpa` 23.825366.  Those two keys did not exist before PART 14
+wired them (`wheel_objective`'s report block, §103), so the descent that produced the shipped
+genome was scored by the region-p-norm term this arc built, not by `Kt * agg`.
+
+### 2. THE BREACH, AT THE INSTRUMENT THAT MEASURED IT
+
+PART 14's 1.0557 is a `smoke`/2-phase reading, and the only like-for-like comparison is at
+`smoke`/2.  **§118 already took it** and this run reproduces it at HEAD:
+
+```
+  hub / rim utilisation            settings                 hub        rim
+    09e8188   PART 14              smoke, 2 phase        1.0557         --
+    b729e86   §118, 2026-09-06     smoke, 2 phase        0.667478   0.708341
+    b729e86   HERE, 2026-09-17     smoke, 2 phase        0.667478   0.708341
+    b729e86   best_solution.json   coarse, 8, SVK        0.910425   0.953015
+    b729e86   §115 / §118          medium, 8, SVK        0.954467   0.972345   <- what ships
+```
+
+The wall is cleared at every one of them.  **The clearance is a fidelity fact and §118 is the
+section that says so**: 29.2% at `smoke`/2 against **2.77%** at the setting the objective
+solves, on the same genome.  All five rows are here for that reason — the row the header's
+1.0557 must be compared against is the `smoke` one, and the row that ships is the last one,
+and reading the first as reassurance about the last is the error §118 names.
+
+### 3. THE CONTROL: THE HALF OF PART 14'S FINDING A PROMOTION CANNOT TOUCH
+
+The breach paragraph states two numbers and only one of them is anchored to
+`best_solution.json`.  `genes_over_knee`'s 1.68672 / 1.21257 come from
+`stage3_buildcap2_slack_medium.json`, **last written at `b5c22c9` on 2026-08-12** and
+untouched since — a committed file, not the shipped genome — so they are immune to a
+promotion by construction.  **Registered before the run: if they had moved, the mechanism
+below would be "time passed" rather than "the reference genome moved".**  Re-measured today
+at `coarse`/8:
+
+```
+  genes_over_knee, rim util    1.21257 (PART 14, 2026-09-02)  ->  1.2125709572399281
+  genes_over_knee, hub util    1.68672 (PART 14, 2026-09-02)  ->  above 0.80, exact value not re-read
+```
+
+**The rim reproduces to every digit PART 14 recorded, fifteen days and one promotion later.**
+The hub was not re-read as a number: `test_but_above_the_knee_the_fillet_radii_are_live`
+asserts `u_hub > MARGIN_KNEE_UTIL` on this fixture and **passes**, which is the claim the
+control needs, and the rim's identity already answers the question the control asks.  **The
+falsifier was available and did not fire**, so what expired in the breach paragraph expired
+because the REFERENCE GENOME moved, not because time passed.
+
+### 4. THE FINDING: A SELF-CLEARING XFAIL WHOSE CONDITION FIRED ELEVEN DAYS AGO AND WHICH DID NOT CLEAR
+
+`test_the_fillet_radii_are_not_dead_genes`'s marker was written at `d2cf9fa` (§103) and has
+not been touched since.  Its reason ends:
+
+> *"strict=True via pyproject.toml, so this reopens itself the day the shipped genome (or its
+> replacement) reads below 0.80 again."*
+
+**The replacement reads 0.667478 at the hub and 0.708341 at the rim on this test's own
+fixture** — §118's numbers on 2026-09-06, and `0.6674784949249843` / `0.7083409245211643`
+re-read at HEAD today, six digits reproduced.  Both are below 0.80.  The condition the
+marker names is met, `xfail_strict` is on, and the test did not reopen: §118 re-ran this file
+on the day of the promotion and reported `126 tests, 2 failed, 2 xfailed`, both fillet markers
+still xfailing.  The five-test subset below re-reads both of them at HEAD eleven days later
+and both still fail on their own assertions.
+
+Run at HEAD with `--runxfail` (`smoke`/2, 703.93 s for the five-test subset), **the test's
+first two assertions PASS and the third fails**:
+
+```
+  assert report["stress_utilisation_hub"] < MARGIN_KNEE_UTIL      PASSES
+  assert terms["stress_margin"]["value"] == 0.0                   PASSES
+  assert g[12] == 0.0 and g[13] == 0.0                            FAILS
+    dL/dR_hub +3.048e+01, dL/dR_rim +5.899e+01 -- nonzero below the knee, where the
+    only thing that prices the fillets should be flat
+    (tests/test_objective.py:899, dL/dR_hub = 30.48037347703914)
+```
+
+**The premise the marker states is not the premise that is failing, and the test says so in
+its own first two lines.**  The reason says the test is red because the shipped genome is not
+below the knee.  The shipped genome IS below the knee here — assertion 1 passes — and the
+margin term IS exactly flat — assertion 2 passes.  What is false is the CLAIM: *"below the
+knee ... the fillet genes are once again exactly dead there"*.  They are not, and **PART 14's
+own commit is what killed it**.
+
+**THE ROUTE IS MEASURED, NOT INFERRED.**  The same call, read term by term
+(`breakdown["terms"][k]["grad_norm"]`, `smoke`/2, HEAD):
+
+```
+  term            value      ||grad||        term            value      ||grad||
+    deflection   54.25531   463.976            stress          0.0        0.0
+    mass         44.47163     7.849            stress_margin   0.0        0.0
+    smoothness    4.87158     1.037            every other     0.0        0.0
+                                               EXACT ZEROS IN dL/dz: 0 of 14
+```
+
+**`stress` and `stress_margin` carry a gradient norm of exactly 0.0** — the two terms
+`MARGIN_KNEE_UTIL` gates, and the code says why it is exact rather than small: both are built
+as `2 * w * max(0.0, util_j - k) * d_util` (`src/wheel_objective.py:1351-1354`), which is
+identically zero whenever the term is.  **`smoothness` is excluded by measurement rather than
+by argument**: its T1 Jacobian row is nonzero on genes 0-7 and exactly 0.0 at 12 and 13, so it
+cannot reach a fillet radius.  That leaves `deflection` and `mass` carrying the whole of
+`dL/dR_hub` and `dL/dR_rim`, and both reach those genes only through the MESH, which
+`fillet=True` made a function of both radii.  §79 dated that route 2026-08-24 and §85 pinned it green
+(`test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh`).  **14 of 14 components
+are nonzero here too**, which is §135's `coarse` census holding at a rung where the knee is
+shut.
+
+**AND IT IS NOT A SMALL ROUTE.**  §135 read `dL/dR_hub` +1.736e+01 and `dL/dR_rim` +3.697e+01
+at `coarse`/8 and attributed them to *"the stress/`Kt` one the knee gates"* — available there,
+because both junctions sit above the knee at `coarse`.  With that route provably shut, the
+same two genes read **+3.048e+01 and +5.899e+01**.  Two rungs and two phase counts apart, so
+**this is not a decomposition of §135's numbers and none is claimed**; what it establishes is
+that the route §135 named cannot be assumed to be carrying them.
+
+**A SIGN QUESTION FALLS OUT AND IS FILED RATHER THAN ANSWERED.**  Both readings are POSITIVE,
+at both rungs.  This test's own original docstring states the arc's premise — *"more fillet
+means a lower stress concentration, so more fillet must mean less loss: both derivatives are
+negative"* — so a stress-carried gradient should be NEGATIVE, and a `mass`-carried one
+positive, since a larger fillet is more material.  The positive sign here is what the measured
+route predicts.  **What is NOT asserted is anything about §135's row**: `d(util_j)/dR_j` was
+not measured at either rung, so whether the stress route at `coarse` adds or subtracts is
+open, and with it whether §135's attribution is narrow or inverted (§10 successor 4).
+
+**WHAT THIS IS NOT.**  It is not a reason to lift the marker: the test would still fail.  It
+is not a threshold to move.  And it is not a defect in `xfail_strict` — the mechanism worked
+exactly as designed on the marker beside it (`test_the_margin_term_prices_and_never_gates`
+XPASSed at the promotion and was lifted at §118).  What is wrong is one sentence of prose in a
+`reason=` string, and the cost of leaving it is that the next reader to see this red will look
+for a genome instead of for the mesh.
+
+### 5. PART 14'S SUCCESSOR 2, ANSWERED IN THE NEGATIVE — AND IT IS THE SAME EVIDENCE
+
+> *"every fixture this arc has used for 'below the knee' now reads above the wall, so a
+> genuinely below-the-knee witness does not exist on disk until successor 1 produces one."*
+
+Successor 1 produced `b729e86`, which **is** below the knee at `smoke`/2 — and the test that
+wanted the witness still fails.  So the witness was never the only thing missing, and it is
+not a witness at production fidelity either: the same genome reads 0.910425/0.953015 at
+`coarse`/8 and 0.954467/0.972345 at `medium`/8/SVK.  **A design that is faithfully below the knee
+at the fidelity the objective solves still does not exist on disk.**  Successor 2 stays open
+with its scope corrected: it is a question about fidelity as much as about genomes.
+
+### 6. WHAT ELSE IN THE HEADER IS DATED, SORTED BY WHAT DATED IT
+
+Three mechanisms, not one, and the third is this arc's own execution:
+
+**(a) THE PROMOTION MOVED THE READING.**  PART 5's table is `svk, shipped genome, coarse,
+8 phases` and `best_solution.json`'s `search` block is the same settings, so its filleted
+column is directly re-readable.  **The comparability has one gap and it is closed by
+construction, not assumed**: §107 (`4b77a6c`, 2026-09-04) found T2's FALLBACK mesh taking
+`build_wheel`'s unfilleted default, 9.78% light on `mass`, which would make a `mass` term
+recorded between §103 and §107 a plain-mesh reading.  A Stage-3 descent never took that
+fallback — `wheel_stage3.Evaluator` builds its own through `WO.phase_meshes` and passes them
+in (`src/wheel_stage3.py:460`), and `phase_meshes` has been `fillet=True` since §103.  So
+both columns below are filleted:
+
+```
+                          09e8188 (PART 5)      b729e86 (best_solution.json)
+    deflection term            635.8102              0.039740        1.6e4 lower
+    mean axle drop               0.9914 mm           1.992026 mm     +100.93%
+    error vs the 2.0 target    -50.43%              -0.399%
+    mass term                   35.6822             44.478315        +24.65%
+```
+
+**That 0.9914 is why §115 ran at all** — §111 read it as `SHOULD-DEFLECTION MET -> MISSED`,
+10.09x tolerance, on the outgoing genome.  **The 17x and its 99.5% attribution are NOT
+restated**: the unfilleted arm has not been re-run on `b729e86`, so only the filleted column
+above is a measurement and the ratio is not.
+
+**(b) THE PROMOTION MOVED A CONSTANT'S REFERENCE, AND THE CONSTANT DID NOT FOLLOW — SEE §7.**
+
+**(c) §103 DISSOLVED THE DECISION THE HEADER IS STILL FRAMED AROUND.**  *"What is left is ONE
+term: the `Kt` surrogate that is flat over half of `R_hub`'s range"* is a decision term the
+switch removed: `util_j` is `agg_j / ALLOWABLE` and `wheel_objective.py:1402-1403` says it in
+the source — *"`kt_hub`/`kt_rim` below no longer feed it; they stay for the geometric
+report."*  Nothing about the promotion; the arc retired it by executing.
+
+### 7. `stress_margin = 89.21` IS THE OUTGOING GENOME'S EXCHANGE RATE, AND THE TREE'S ONLY LIVE GUARD ON IT CANNOT SEE THE MOVE
+
+PART 10 / §99 set the weight by `w = mass_term / (2*(util_ref - knee)*util_ref)` at
+`util_ref = 1.0`, on **the shipped genome's filleted mass term, 35.6822**.  The shipped genome
+changed.  The same formula, on the wheel that ships today, at the same rung, from
+`best_solution.json`'s own `loss_terms.mass`:
+
+```
+  reference genome     filleted mass term      w = mass_term / 0.4
+    09e8188                  35.6822                 89.21      <- DEFAULT_WEIGHTS today
+    b029622                  35.4449                 88.61      <- §99's corroboration
+    b729e86  SHIPPED         44.478315              111.196     <- +24.65%
+```
+
+**§99's "0.665% apart on an unrelated genome" is not evidence of genome-independence, and
+§99's own parenthesis says why** — *"it depends on the reference genome's own mass"*.  The
+rate is proportional to the reference mass term by construction, so 88.61 against 89.21 tests
+only that `b029622` and `09e8188` weigh nearly the same.  `b729e86` is 24.65% heavier and the
+corroboration goes with it: **the live weight is 19.77% below what its own formula returns on
+the wheel it is running on.**
+
+**THE GUARD EXISTS AND ITS BAND IS 2x.**
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be` reads the mass term off the
+LIVE shipped genome and asserts `0.5 < one_pct_of_util / one_pct_of_mass < 2.0`.  Measured
+here at `smoke`/2, where that term reads 44.4716 — 0.015% off the `coarse` value above, so
+the rung is not what moved it — the ratio is **0.82246**, green, against **1.02505** on the
+genome the weight was fit to.  That is the same 19.77%.  It is not a defect in the test — its
+docstring
+pre-states the scope (*"Checked as an order of magnitude, not to the digit, because the rate
+is exact only at the design it was derived at"*) — it is the reason a 24.65% move produced no
+red anywhere.
+
+**TWO LIVE SOURCE COMMENTS STATE THE STALE PROVENANCE IN THE PRESENT TENSE**:
+`src/wheel_objective.py:361` and `:1335`, both reading *"the shipped genome's FILLETED mass
+term, 35.6822 g"*.  On today's tree that is the OUTGOING genome's, and the *g* is a unit slip
+in both — 35.6822 is a loss-term value, `0.821917808219178 * 43.413 g`.  **Filed, not fixed**:
+re-deriving the weight re-prices every committed loss number in this tree, which is a policy
+decision and a promotion-shaped commit, not a comment repair.
+
+### 8. PART 15'S WARNING DESCRIBES A FILE THAT IS NOT ON DISK
+
+PART 15 closes: *"`study_fillet_optimum.json` on disk is still PART 14's two identical arms
+and must not be quoted until it is re-run."*  That path carries no local modification and is
+**bit-identical to `e474ea7`** (2026-08-30, §92 / PART 6): its two arms differ by an order of
+magnitude (control loss opens 38.7859, treatment 671.6603), its `control.filleted` is `false`,
+and its weight block carries `stress_margin` **325.0** — the pre-§103 value.  So it is the
+PRE-SWITCH artifact, not the collapsed pair; PART 14's run was never committed, and whether it
+ever wrote this path is not recoverable from the repository.
+
+**AND §185's CENSUS ROW FOR THIS FILE IS ONE PART SHORT** — it records the last content record
+as *"PART 14 / §103"*; it is PART 15 / §105, the section immediately above this one.  Both
+carry the date 2026-09-03, so **nothing in §185's conclusion moves** — noted because the row
+is what a later reader would use to decide this file had been read to the end.
+
+**THE OPERATIVE HALF SURVIVES AND IS STRENGTHENED**: do not quote it.  Not because its two
+arms are one mesh, but because it is a `Kt * agg` measurement at `stress_margin` 325.0 on a
+genome that no longer ships — **three supersessions, none of them the one the warning names.**
+§105's successor 2, the ~3.7 h descent pair, is unchanged and still unspent.
+
+### 9. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
+
+Verified against HEAD at the time of writing: `src/wheel_objective.py:361`, `:1335`,
+`:1351-1354`, `:1402-1403`; `src/wheel_stage3.py:460`; `tests/test_objective.py:840` (the
+marker), `:851` (the test), `:899` (the assertion that fires), `:1042` (the exchange-rate
+test).  `FILLET_PLAN.md:122` and
+`:3547` are named as citations INTO this file that the append does not move, not as anchors
+read here.  `PLAN.md:204` is named in the `PLAN.md` record rather than here.
+
+### 10. SUCCESSORS
+
+0. **THE `reason=` STRING AT `tests/test_objective.py:840`** — one sentence, and the test
+   stays red either way.  Its self-clearing clause has fired and must be replaced by the
+   route §4 measures.  Not done here because it is a source commit and this is a record.
+1. **RE-DERIVE `DEFAULT_WEIGHTS["stress_margin"]` ON THE SHIPPED GENOME, OR STATE THAT IT IS
+   ANCHORED TO THE OUTGOING ONE.**  The number is already measured (111.196).  Adopting it
+   re-prices every committed loss in the tree, so it is a decision with a promotion's
+   blast radius, and the two source comments are wrong in the present tense until it is
+   taken either way.
+2. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — PART 14's successor 2, scope
+   corrected at §5 above.
+3. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR**, ~3.7 h — now with three
+   reasons rather than one.
+4. **`d(util_j)/dR_j`, ONE PROBE** — the sign question §4 raises, and it is about §135's
+   `coarse` row, not this one: the route here is measured.  If more fillet lowers the
+   junction's own region p-norm then the stress term contributes NEGATIVELY at `coarse` and
+   §135's +1.736e+01 / +3.697e+01 are carried by something else after all; if it does not,
+   this arc's founding premise needs re-reading on the mesh it now builds.  No solve is
+   needed beyond one the tests above already pay for.
