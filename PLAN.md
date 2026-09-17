@@ -28960,3 +28960,211 @@ insert, and did not move.
 3. **The census instrument is worth keeping.** The AST counter is nine lines and it disagreed
    with a line grep on 5 of 68 rows; `git grep` over a call that can wrap is the same class of
    blind spot as `grep pipeline_exit` in §182 §3.
+
+## §184 — 2026-09-17. §182's SUCCESSOR 1 AND §181's SUCCESSOR 1, BOTH CLOSED BY ONE RUN. `make svk` AT TWO WORKERS: **4525.6 s AGAINST SERIAL's 7377.6, 1.630x, AND 0 OF 442 FLOAT LEAVES MOVED** — §164's ZERO-DIFFERING-BITS PROOF CARRIED ACROSS THE POOL BOUNDARY AT `medium` FOR THE FIRST TIME. AND **THE PARENT WAS READ BOTH WAYS ON ONE CLOCK, THE FIRST SUCH ROW IN THIS TREE: ITS RSS SERIES CREEPS +0.089 MONOTONE OVER TWELVE WINDOWS WHILE ITS KERNEL MARK NEVER MOVES OFF 9.382, SET AT t=206.2 AND NOT BEATEN IN 4300 s.** §181's WIDTH READING IS **REFUTED IN ITS STRONG FORM**; "THE PARENT IS FLAT" MEANS "NO NEW MARK WAS SET" AND NOTHING MORE
+
+Run by the second session in a detached worktree at `a8dd998`, venvs symlinked, under
+`systemd-run --user --unit=svk-w2 --scope -p MemoryMax=45G -p MemorySwapMax=0`, 08:24–09:40.
+**Falsifiers registered at 08:23:52, before launch** — §178's precedent, and the registration
+also checked that `5114b68..a8dd998` is inert for this path (`POOL_GIB`'s `medium` worker
+12 → 13 is read only by `default_workers`, which `--workers 2` bypasses, and by the GUI cost
+model; the other two commits are docstrings). The worktree exists because the first session
+was editing tracked files for the whole 1.26 h and bit-identity was the sharpest falsifier on
+the board.
+
+### 1. THE RUN
+
+```
+  wall            4525.6 s = 1.257 h by the driver's clock (4527.7 s by the watcher's)
+  processes       THREE — parent + 2 pinned workers, 4 phase slots each (N_PHASE = 8)
+  marks           parent 9.382   w0 11.009   w1 11.121     (max over samples, §175)
+  sum_hwm         31.512   against POOL_GIB's budgeted 37.0 and a 45G cap
+  tree RSS peak   30.457;  system rise above baseline 30.601
+  exit            0 — and read from the artifact's `control.pass`, not from `make`, which
+                  returns 2 for any failed recipe and would have masked the driver (§182 §3)
+```
+
+```
+  row  genome           mesh_s        linear                  svk
+   0   shipped          2.4 -> 0.3   1139.1 ->  880.5 1.294   906.9 -> 550.1 1.649
+   1   36aed36 GA/beam 46.8 -> 5.8   refused (clamp_reject, both sides, both runs)
+   2   elite10          2.5 -> 0.3    351.8 ->  199.4 1.764   406.7 -> 243.3 1.672
+   3   minwall 1.2      2.5 -> 0.3    625.3 ->  355.4 1.759   790.4 -> 479.8 1.647
+   4   minwall 1.4      2.5 -> 0.3    549.0 ->  314.3 1.747   663.7 -> 399.0 1.663
+   5   minwall 1.6      2.5 -> 0.3    503.2 ->  283.9 1.772   581.8 -> 339.5 1.714
+   6   minwall 2.0      2.5 -> 0.3    369.3 ->  212.3 1.740   422.6 -> 252.4 1.674
+```
+
+**THE 1.630x IS AGAINST §182's SERIAL RE-RUN, NOT THE COMMITTED ARTIFACT.** The artifact's
+`settings.elapsed_s` is **9085.4 s**, and 9085.4 → 4525.6 reads **2.008x** — a figure that
+credits the pool with §164's compile collapse. The same-code, same-box comparison is
+7377.6 → 4525.6. The wrong baseline was reached for once in this record and caught by
+division; it is the §182 §5 shape again, where a comparison's value depends entirely on which
+of two available baselines it names.
+
+**Bit-identity, verified independently by both sessions and WIDER than §182's 84.** Walking
+every leaf of both JSON documents: **514 leaves each, 0 present in only one, 442 float leaves
+compared, 0 differing** once `workers`, `mesh_s` and `elapsed_s` are excluded. §182 carried
+§164's proof from `coarse` up to `medium`; **this carries it across the POOL boundary at
+`medium`**, which is the one place a phase-parallel rescore could have differed from a serial
+one and did not. `36aed36`'s refusal is identical on both sides, consistent with `t2_vector`'s
+`mesh_coords` raising in the PARENT before T3 ever reaches the pool.
+
+### 2. §181's SUCCESSOR 1, ANSWERED — ONE PARENT, BOTH INSTRUMENTS, ONE CLOCK
+
+300 s window maxima, GiB. Steady state is windows from 1200 s on: row 0's linear call ends at
+t≈900 and the pool is warm after it.
+
+```
+  series                    1200 s      4500 s     delta    shape
+  parent  RSS                8.475       8.564    +0.089    MONOTONE over all 12 windows
+  parent  MARK               9.382       9.382    +0.000    set at t=206.2, never beaten
+  w0      RSS               10.538      10.958    +0.420    MARK 10.601 -> 11.005  +0.404
+  w1      RSS               10.429      10.830    +0.401    MARK 10.511 -> 11.121  +0.610
+```
+
+§181 §4 left two surviving explanations for why every parent plotted as window RSS creeps
+while the one plotted as a mark history is flat, and they predicted different things here:
+
+```
+  hypothesis     parent RSS   parent mark    observed                     verdict
+  instrument       creeps        flat        creeps +0.089, mark flat     HOLDS
+  width            flat          flat        RSS creeps at 2 workers      REFUTED (strong form)
+```
+
+**"Narrower pool ⇒ the parent does not creep" is false**: two workers is narrower than every
+run in §181's table and the window instrument still creeps, monotonically, across twelve
+consecutive windows — a creep and not scatter. And the thing §181 explicitly could not do —
+rule out that the flat mark histories and the creeping RSS series were the same parents read
+two ways — **is now done directly, on one process and one clock.** `CLAUDE.md`'s instrument
+check gets its cleanest instance: **a running maximum's silence is not data**, and "the parent
+is flat" only ever meant "no new kernel mark was set".
+
+**THE MECHANISM, AND ITS FALSIFIER.** The workers show no asymmetry at all — both instruments
+move together for w0 (+0.420 / +0.404) and w1 (+0.401 / +0.610). So the asymmetry is not a
+property of parents; it is a property of **any process whose early peak exceeds its later
+creep**, and the parent is where that happens because row 0's T2 is its largest moment.
+*Refuted by:* a run whose parent's creep carries it above its early peak and whose mark still
+does not move. That would make the reading wrong and the instrument itself suspect.
+
+**WHAT THIS DOES NOT SETTLE, AND THE BRIEF THAT COMMISSIONED IT OVERSTATED THIS.** The first
+session's brief said a pooled run of any width would settle it. **It does not**, by
+`CLAUDE.md`'s confound check: this run differs from all six rows in §181's table in more than
+one way — a rescore rather than a descent, no steps, a parent doing seven T1/T2 evaluations
+rather than 300 gradient steps, a new width and a new driver. The second session registered
+that objection **before the numbers existed**, which is the right time to register it. Two
+specifics:
+
+- **Width may still set the MAGNITUDE.** +0.089 is roughly half the smallest creep in §181's
+  table (+0.132 at 3 workers, +0.171 and +0.197 at 4), which is consistent with §167 §1's
+  parent-size-scales-with-pool. Four points across four workloads is not a trend and no trend
+  is claimed.
+- **The window is not the same window.** §181's are per-STEP-window maxima; a rescore has no
+  steps, so these are fixed 300 s windows. Named rather than smoothed over.
+
+### 3. M5 FIRED, AND THE CAUSE IS THAT THE MARKS NEVER COEXISTED
+
+`sum_hwm / simultaneous tree peak` came in at **1.035** against `wheel_pool.py:140`'s 12-run
+band of 1.003–1.032. Over by 0.003, and measurable rather than guessed:
+
+```
+  parent mark   9.382   first reached at t =  206.2 s
+  w0     mark  11.009   first reached at t = 3931.0 s
+  w1     mark  11.121   first reached at t = 2615.6 s
+  max SIMULTANEOUS sum of the three RSS   30.455 at t = 2697.3
+  sum of the three marks                  31.512      gap 1.057
+```
+
+**The parent's mark was set 3725 s before w0's**, and it spent the rest of the run 0.8 GiB
+below it: **0.835 of the 1.057 gap is the parent alone.** So the ratio is not measuring pool
+arithmetic here, it is measuring how far apart in time the peaks were.
+
+> **Hypothesis:** `sum_hwm / tree_peak` is a tight bound only where the processes peak
+> together. The band was built on DESCENTS, where every process does the same thing in the
+> same step; a rescore front-loads the parent's peak into row 0's T2 and then idles low.
+
+*Registered falsifier that did not fire:* had the three peaks been near-simultaneous, the max
+simultaneous sum would have come out near 31.5 rather than 30.455 and the fire would have been
+real pool arithmetic. One run, so this is a hypothesis about workload shape and **not** a
+correction to the band — `wheel_pool.py:140` is unchanged.
+
+### 4. BOTH MEMORY PREDICTIONS MISSED **HIGH**, WHICH IS THE OPPOSITE OF THE RECENT FAILURES
+
+```
+  falsifier                     registered      measured    verdict
+  M1  a worker mark past 13.0   11.5-12.8       11.009 / 11.121   NO — 1.879 under the pair
+  M2  the parent past 11.0      9.8-10.6        9.382             NO
+  M3  sum_hwm past 37.0         —               31.512            NO, 5.5 to spare
+  T2  wall outside 3800-5300    central 4250    4525.6            NO
+  T3  speedup > 2.0x            —               1.630x            NO
+  N1  any float moved           —               0 of 442          NO
+  X1  mesh_s did not fall       0.3-0.8         0.3               NO, it fell
+```
+
+§180 §2 and §181 §3 both found levels built from short runs coming in **low**. These came in
+**high**, and for the same mistake with its sign flipped: **a rescore's processes were sized
+from descent runs.** §173's and §180's workers carry an optimizer's state and a line search;
+these carry one phase's solve at a time. The registered reasoning was explicitly *"2 workers
+means 4 phase slots each, more than any `medium` figure on record"* — and four slots marked
+11.0, barely above §169's one-call `medium` worker at 10.231–10.649 and **well under §173's
+three-slot descent at 11.754**.
+
+**That prediction is falsified; the rule it suggests is not available.** Slot count and
+workload differ between this run and §173's in the same step, so "slots do not drive the
+worker's mark" is a hypothesis with one confounded comparison behind it. What is clean is the
+negative: **whatever drives a `medium` worker's mark, four slots in a rescore did not reach
+the three-slot descent's level.**
+
+### 5. TWO THINGS THE INSTRUMENT DID NOT CATCH, RECORDED BECAUSE THEY BOUND THE CLAIMS ABOVE
+
+- **The cgroup's own accounting is verified only to t≈1200 s.** `memory.peak` read 29.418 and
+  `memory.events` all-zero at that point; the scope was reaped at exit before a final read, so
+  **M4's event half rests on a mid-run reading plus the exit status**, not a post-run one. It
+  is bounded from the other side by the watcher's `system_peak_above_baseline` of 30.601
+  against a 45G cap, with `MemorySwapMax=0`, every row completing and exit 0 — no room for a
+  kill. *Next run: read the cgroup before the scope exits, or `--unit` with `--collect`.*
+- **The 0.5 s RSS sampler missed 0.043 GiB that the kernel mark caught** — the parent's mark
+  is 9.382 against a highest-ever-sampled RSS of 9.339. The two instruments disagreeing in
+  exactly the direction each is built for, which is the reason §2 records both.
+
+### 6. A SECOND READING THE RUN GIVES FOR FREE — AND IT IS THE RARE UNCONFOUNDED ONE
+
+On rows 2–6, where no compile is in the figure, **`linear` parallelises better than `svk`,
+5 of 5, with DISJOINT ranges**: linear 1.740–1.772 (mean 1.756) against svk 1.647–1.714 (mean
+1.674). Equivalently **`svk/linear` rose from §182's 1.186 serial to 1.245 pooled.**
+
+This is one run, but it is the rare comparison that is **not** confounded: same process, same
+pool, same width, same rung, same meshes, same row — **only the strain measure differs**,
+which is the one thing the driver varies on purpose. *The falsifier that could have fired:*
+the two sets of five could have overlapped. They do not.
+
+**The mechanism is unknown** — a longer per-phase solve should help a pool, not hurt it — so
+this is a hypothesis about where svk's extra time goes, and the check is a second width.
+
+Two smaller readings: **row 0's linear call carries ≈232 s of one-time pool warm-up** (880.5
+against 648.7 at the steady 1.756 rate), the jax import and kernel traces each worker pays
+once and which does not halve when the work is split; and **row 1's mesh cost is per-MESH**,
+46.8 → 5.8 s, a factor of **8.07** on 8 phases against 1, settling a half that was registered
+at low confidence.
+
+### 7. THE CHANGE
+
+`Makefile:488`'s "2 workers has never been measured here" is retired (`7af0eed`), reflowed
+within its existing line count so `SVK_WORKERS` stays at `:489` and the later citations
+(`:541`, `:547`, `:569-570`, `:686-731`) do not move. **`SVK_WORKERS` stays `0`**: serial is
+what the committed artifact was regenerated with, and nothing here argues for changing the
+default — what changes is that the alternative now has numbers.
+
+### 8. SUCCESSORS
+
+0. **A second width for §6's linear/svk split.** The one reading here that is unconfounded
+   within the run and unexplained outside it. Four workers does not fit `medium` on this box
+   (§174), so the width to vary is the rung, or `coarse` at 3 and 4.
+1. **`sum_hwm / tree_peak`'s band is descent-shaped** (§3). Either scope `wheel_pool.py:140`'s
+   band to descents in words, or record the rescore figure beside it. Not a code change until
+   a second non-descent run exists.
+2. **Read a parent both ways on a DESCENT.** §2 answers the instrument question on a rescore;
+   §181's six rows are all descents, and the confound list in §2 is the reason this does not
+   reach them. The next pooled descent of any width should print both columns.
+3. **The cgroup read must outlive the scope** (§5), which is a harness fix in the second
+   session's scratch and not in this tree.
