@@ -29556,3 +29556,230 @@ that is the `2 xfailed, 3 passed` §118 left, reproduced eleven days later.
 5. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES.**  Two of ten rows are now known
    behind (2 here, 9 at §185); nothing has checked the other eight, and the citation sweep
    cannot.
+
+---
+
+## §187 — 2026-09-18. §186's SUCCESSOR 0 AND `FILLET_PLAN.md` §10's, CLOSED IN SOURCE: **THE MARKER AT `tests/test_objective.py:840` NO LONGER PROMISES TO CLEAR ITSELF AT A GENOME; WHAT REPLACES THE PROMISE IS THE ROUTE, RE-MEASURED AT HEAD BEFORE THE STRING WAS WRITTEN RATHER THAN COPIED FROM §186.** TEN STRING LINES FOR TEN, WHICH IS THE ONLY FORM THAT WOULD HAVE DONE: **36 CITATIONS POINT INTO THAT FILE AND 20 OF THEM ANCHOR BELOW THE EDIT** — A COUNT THIS SECTION FIRST PUT AT 14 BY GREP, WHICH CANNOT SEE A CARRIED OWNER AND MISSES 17 OF THE 36. AND THE MARKER CENSUS, ENUMERATED WITH `ast` ACROSS `tests/` AND `studies/`, IS **13 — OF WHICH EXACTLY TWO PROMISE TO REOPEN AT A NUMBER, BOTH §103's, BOTH IN THIS FILE.** THE SECOND, `tests/test_objective.py:904`, CARRIES THE SAME DEFECT LATENT: ITS CONDITION HAS NOT FIRED, BUT THE CLAIM BEHIND IT IS ALREADY FALSE AT ONE RUNG — THE SHIPPED GENOME'S RIM READS **0.708341** UNDER THE KNEE AT `smoke`/2 WITH `dL/dR_rim` AT **+5.899e+01**. **AND §103 WROTE A THIRD PROMISE OF THE SAME SHAPE THAT CLEARED ITSELF ON SCHEDULE**, WHICH IS THE CONTROL THAT MAKES THIS A DISCRIMINATOR AND NOT A COMPLAINT ABOUT SELF-CLEARING MARKERS: ITS STATED CONDITION WAS THE PROPOSITION ITS FAILING ASSERTION TESTED, AND THESE TWO'S ARE NOT
+
+One commit, one file: `9c57d1e`, `tests/test_objective.py`, ten insertions and ten deletions.
+No test was added, removed or re-marked; the test is still `xfail(strict=True)` and still
+fails on its third assertion. The measurement this
+record rests on is §186 §2's and `FILLET_PLAN.md`'s 2026-09-17 block §4; what is new here is
+that it was **re-run at HEAD before the string was written**, plus the census in §3 and the
+sibling in §4.
+
+### 1. RE-MEASURED, NOT COPIED — AND THE FALSIFIER WAS AVAILABLE
+
+§186 is one day old and `src/` has not moved since (`af639a6`, `ac2f06a` and `17039c9` are
+markdown in two files).  It would have been defensible to quote it.  It was re-run anyway,
+because **what is being written is a mechanism claim that will sit in `src/` and be read as
+current, not in a plan file and read as dated** — and because the run registers a falsifier
+the write on its own could not: if `stress` or `stress_margin` had come back with a nonzero
+gradient norm, the sentence *"the only two `MARGIN_KNEE_UTIL` gates carry `||grad||` of
+exactly 0.0"* would have been unwritable as drafted, and the marker would have needed a
+different sentence rather than a tightened one.
+
+```
+  pytest tests/test_objective.py::test_the_fillet_radii_are_not_dead_genes --runxfail
+    4 m 32 s, smoke/2, HEAD = 17039c9
+
+    assert report["stress_utilisation_hub"] < MARGIN_KNEE_UTIL      PASSES
+    assert terms["stress_margin"]["value"] == 0.0                   PASSES
+    assert g[12] == 0.0 and g[13] == 0.0                            FAILS
+      dL/dR_hub +3.048e+01, dL/dR_rim +5.899e+01
+      assert (np.float64(30.48037347703914) == 0.0)
+```
+
+`30.48037347703914` is §186's figure to every digit it printed.  The term decomposition, on a
+second call at the same settings:
+
+```
+  breakdown["terms"][k]["grad_norm"], same genome, same settings, second process
+
+    term            value        ||grad||     term            value        ||grad||
+      deflection   54.255312    463.976416      stress          0.000000     0.000000
+      mass         44.471626      7.848897      stress_margin   0.000000     0.000000
+      smoothness    4.871579      1.036786      the other 9     0.000000     0.000000
+
+    util hub 0.667478   rim 0.708341   MARGIN_KNEE_UTIL 0.80
+```
+
+**`stress` and `stress_margin` are exactly 0.0, not small**, and the code says why rather than
+the run: both are `2 * w * max(0.0, util_j - k) * d_util` (`src/wheel_objective.py:1351-1354`),
+which is identically zero wherever the term is.  That leaves `deflection` and `mass`, and both
+reach genes 12 and 13 only through the MESH — `fillet=True` at `phase_meshes`, which is §103's
+own commit.  **So the marker's replacement asserts a route that was measured on the call it
+describes, at the settings it describes.**
+
+### 2. TEN STRING LINES FOR TEN, AND THE REASON IS COUNTED RATHER THAN ASSUMED
+
+`@pytest.mark.xfail(reason=(` is line 840 and `def test_the_fillet_radii_are_not_dead_genes` is
+line 851; the string body is the ten lines between them.  The replacement is ten lines, so
+**the diff is `10 insertions(+), 10 deletions(-)` and no line in the file moves.**
+
+That is §168's form and here it is not a nicety.  **36 citations point into
+`tests/test_objective.py` and 20 of them anchor at an in-range line strictly below the edited
+block**:
+
+```
+  :851  x1   :899 x2   :960  x1   :1010 x1   :1042 x1
+  :1072 x2   :1129 x1  :1257 x8   :1393 x1   :1447 x2
+     across PLAN.md, FILLET_PLAN.md, MBSE_PLAN.md, src/wheel_objective.py and
+     studies/_citation_sweep.py.  Six further anchors above 850 are §135's deliberate
+     dangles, whose numbers are PLAN.md lines and out of range in this file.
+```
+
+A reason string that ran one line longer would have re-dated every one of the twenty, and three
+of them are in the citation list `FILLET_PLAN.md` §9 wrote yesterday under §174's rule.
+
+**THIS COUNT WAS 14 ON THE FIRST PASS, BY HAND, AND THE HAND WAS THE INSTRUMENT THAT WAS
+WRONG.**  A `git grep -E 'test_objective(\.py)?:[0-9]+'` returns the sites that spell the
+filename beside the anchor; it cannot see a bare `:N` resolved against an owner CARRIED from an
+earlier sentence, which is 17 of this file's 36 citations.  It missed `:1129` and `:1393`
+outright and undercounted `:1257` five-for-eight and `:1447` one-for-two.
+`studies/_citation_sweep.py` exists precisely so this is not done by hand (§138 successor 2),
+and it was not consulted until after the number had been written down. **§183's lesson in a
+second instrument: the census and the grep disagree, and the grep is never the one to
+believe.**
+
+**Checked as a LIST and not a count** (§119): `studies/_citation_sweep.py --into
+tests/test_objective.py` returns the same 8 human rows before and after, row for row, and the
+tree-wide sweep is unchanged at **1415 citations, 137 for a human**.  All 8 are pre-existing
+and named in the record already — six are §135's deliberate dangles at `PLAN.md:21239-21240`,
+and the other two are `PLAN.md:17606`'s `:1257` and `PLAN.md:21689`'s `:960`, both reported
+MOVED at `17039c9` too.
+
+### 3. THE MARKER CENSUS — 13, AND THE DEFECT IS NOT GENERAL
+
+The obvious next question is whether the tree is full of markers promising to clear themselves
+at a reading.  It is not, and the answer is a census rather than a sample. **Enumerated with
+`ast` over every `tests/*.py` and `studies/*.py`** — not a line grep, which would have missed
+the five markers that live inside `pytest.param(..., marks=...)` on a continuation line, the
+§183 failure mode exactly:
+
+```
+  13 xfail markers in the tree      8 function-level decorators, 5 inside pytest.param
+   4  tests/test_corner_singularity.py    "Strict, so a re-promotion ... XPASSes this"
+   6  tests/test_fillet_block.py          5 of them param-level; "FALSE ON THE WHEEL THAT SHIPS"
+   1  tests/test_gnl.py                   "reopens itself IF THE WHEEL EVER PASSES IT"
+   2  tests/test_objective.py             ":840 and :904 -- BOTH name a number"
+```
+
+Eleven of the thirteen either state the `xfail_strict` mechanism without a threshold — *a fix,
+a promotion or a re-measurement that makes this claim true will XPASS and force the record to
+be revisited*, which is true of the marker on any day — or name no reopening condition at all
+and simply record what went false on the shipped wheel. `tests/test_gnl.py:349` looks like the
+defective shape and is not: *"reopens itself if the wheel ever passes it"* is the mechanism
+statement again, with no threshold in it.
+
+**Only `:840` and `:904` name a QUANTITY and a NUMBER as the reopening trigger, and both are
+§103's, written the same day.**  The falsifier for this census is a marker outside
+`tests/test_objective.py` that names a numeric reopening threshold; all 13 were read and none
+does.
+
+### 4. THE SIBLING AT `:904` — THE SAME DEFECT, LATENT, AND THE MEASUREMENT IS ALREADY PAID FOR
+
+`test_below_the_knee_the_rim_fillet_radius_is_dead` ends its reason *"strict=True, so this
+reopens itself the day some genome's rim reads faithfully below 0.80 again."*  Its condition
+has **not** fired the way `:840`'s did — its fixture `genes_over_knee` reads rim 1.21257 at
+`coarse`/8, above the wall, so the test fails on its FIRST assertion and the reason it gives
+for that is accurate.
+
+What is already false is the claim the promise would hand back.  **The shipped genome IS a
+genome whose rim reads faithfully below 0.80 — 0.708341 at `smoke`/2 — and `dL/dR_rim` there is
+`+5.899e+01`, measured on the call in §1.**  Point this test at it and assertion 1 passes while
+assertion 2 fails, which is `:840`'s failure one junction over.
+
+**THE SCOPE IS NAMED BECAUSE IT IS NARROWER THAN THE CLAIM.**  0.708341 is a `smoke`/2 reading;
+at the fixture's own `coarse`/8 the same genome's rim is 0.953015, above the knee, and
+`FILLET_PLAN.md` §5's standing result is that **a design faithfully below the knee at the
+fidelity the objective solves does not exist on disk** — so nothing here measures the
+below-knee branch at the rung this test runs at.  What is established is that *"a rim below the
+knee implies `R_rim` is dead"* is false at one rung on one genome, which is enough to make the
+promise wrong and not enough to say the branch behaves the same way at `coarse`. **The
+falsifier that would refute this: a genome whose rim reads below 0.80 at `coarse`/8 with
+`g[13]` exactly 0.0.**  None exists to test it against — which is PART 14's successor 2, still
+open, and is why this is filed as successor 0 below rather than fixed in this commit. The two
+markers are in different states and want different sentences; folding them together would be
+§113's rule broken for the sake of one diff.
+
+### 5. WHAT DID NOT CHANGE
+
+The docstring under the marker is **§103's and is left exactly as it stands**, including its
+headline *"RED SINCE THE FILLET SWITCH, AND THE PREMISE IS WHAT BROKE, NOT THE CLAIM"*, which
+the new reason now contradicts in as many words and names as contradicted — *"THE CLAIM IS WHAT
+BROKE, NOT THE PREMISE -- the §103 docstring below says the opposite."*  That is the same
+choice §186 §1 made for the arc index row and `FILLET_PLAN.md` made for its header: supersede
+in place, dated, rather than rewrite a record of what was believed.  It also costs nothing in
+anchors, which a rewrite of the docstring would not have.
+
+`MARGIN_KNEE_UTIL` is unchanged at 0.80.  `DEFAULT_WEIGHTS["stress_margin"]` is still **89.21**
+and the two source comments stating its outgoing-genome provenance
+(`src/wheel_objective.py:361`, `:1335`) are untouched — §186's successor 1, and still a
+decision with a promotion's blast radius.  No fixture, no threshold, no study artifact, no
+`best_solution.json`.
+
+### 6. §103 WROTE THREE SUCH PROMISES, AND THE ONE THAT CLEARED IS THE CONTROL
+
+A first pass at this section said three sentences elsewhere in `PLAN.md` restate the clause
+this commit deleted.  **Two of them do not, and reading them is what turns this from a
+complaint into a discriminator.**  `PLAN.md:17344` and `:17464` quote a DIFFERENT §103 marker —
+`test_the_margin_term_prices_and_never_gates`, whose reason promised *"this reopens itself the
+day the shipped genome (or its replacement) reads back under the wall."*
+
+**That one worked exactly as written.**  `b729e86` read back under the wall at §115, the marker
+XPASSed, and §118 lifted it: *"It is off, and nothing about the test changed."*  Three markers,
+one day, one author, one mechanism — and the two that failed and the one that succeeded differ
+in a way that is stated rather than guessed:
+
+```
+  marker                            its stated condition       was that the failing assertion?
+    ..._margin_term_prices_...        "reads back under the wall"   YES -> cleared at §118
+    ..._fillet_radii_are_not_dead...  "reads below 0.80 again"      NO  -> fired, stayed red
+    ..._below_the_knee_the_rim_...    "rim reads below 0.80 again"  NO  -> claim already false
+```
+
+**So the defect is not "a self-clearing marker is a bad idea".**  It is that a `reason=` names
+a condition, and the condition is only a promise worth keeping when it is the same proposition
+the test's failing assertion tests.  `:840`'s condition was assertion 1 and the test failed on
+assertion 3; `:904`'s is assertion 1 and its assertion 2 is already false elsewhere.  The
+margin-term marker's condition WAS its failing assertion, and it cleared itself on schedule
+without anyone reading it.
+
+**WRITTEN AS A HYPOTHESIS, BECAUSE THREE MARKERS BY ONE AUTHOR ON ONE DAY IS NOT A LAW.** The
+confound is that all three came out of §103 and share its premise; a fourth instance elsewhere
+in the tree would test it, and §3's census says there is no fourth to look at. `PLAN.md:14573`
+is the one remaining restatement of the deleted clause, in §103's own successor 1, and it is
+left as the dated record it is (§185's rule); `FILLET_PLAN.md:4750` and `PLAN.md:29423` quote
+the string as evidence and stay correct as quotations.
+
+### 7. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
+
+Verified at the commit that carries this section: `tests/test_objective.py:840` (the marker,
+whose ten string lines this work replaced one-for-one and whose own line number does not move),
+`:851`, `:899`, `:904`, `:913`; `tests/test_gnl.py:349`; `src/wheel_objective.py:361`, `:1335`,
+`:1351-1354`; `PLAN.md:14573`, `:17344`, `:17464`, `:17606`, `:21239-21240`, `:21689`,
+`:29423`; `FILLET_PLAN.md:4750`.  **Every one of them is a line this work does not touch** —
+the source commit is ten-for-ten inside `tests/test_objective.py` and this record is an append
+— so none was stale on arrival in §186 §4's sense.  The anchors into `tests/test_objective.py`
+were re-read at HEAD after the source commit, not before it.
+
+### 8. SUCCESSORS, RANKED
+
+0. **THE `reason=` AT `tests/test_objective.py:904`** — the sibling in §4.  One string again,
+   the test stays red on its first assertion either way, and it should say what §4 measured:
+   the promise is wrong because the claim behind it is, not because no genome has arrived.
+   Same ten-for-ten discipline; `:913` and everything below it must not move.
+1. **DECIDE `stress_margin`** — §186's successor 1, unchanged and untouched here: adopt
+   111.196 or write into the weight's own comment that 89.21 is `09e8188`'s rate and
+   deliberately frozen.  The two source comments assert a false provenance until then.
+2. **`d(util_j)/dR_j`, ONE PROBE** — §186's successor 2.  Both `dL/dR` readings are positive
+   at both rungs while this arc's founding premise says a stress-carried gradient is
+   negative; the probe decides whether §135's attribution is narrow or inverted.
+3. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §186's successor 3, and §4 above
+   gives it a second job: it is also the only thing that can test the `coarse` half of the
+   sibling's claim.
+4. **§105's SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §186's
+   successor 4, unchanged.
+5. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §186's successor 5, unchanged;
+   two of ten rows are known behind and nothing has checked the other eight.
