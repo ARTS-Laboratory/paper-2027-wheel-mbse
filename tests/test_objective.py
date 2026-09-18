@@ -838,16 +838,16 @@ def test_the_t1_term_lists_stay_in_lockstep(genes):
 
 
 @pytest.mark.xfail(reason=(
-    "PLAN.md §102/§103: the fillet switch replaced `Kt * agg` with the region-p-norm term, "
-    "and under it the shipped genome's hub utilisation is 1.0557 -- ABOVE THE WALL (1.0), "
-    "not merely above the 0.80 knee this test was written to sit below. This is not a "
-    "threshold to move: §99 already predicted the faithful reading would land there "
-    "(\"the shipped hub sits at 1.1415\"), and MARGIN_KNEE_UTIL/the wall are policy, not "
-    "fitted to whichever genome happens to be on disk. It is a fixture -- the shipped "
-    "genome as a below-knee witness -- that no longer exists; finding or descending a "
-    "genome that is faithfully below the knee is future work, not this switch's job. "
-    "strict=True via pyproject.toml, so this reopens itself the day the shipped genome (or "
-    "its replacement) reads below 0.80 again."))
+    "REPLACED 2026-09-18 (PLAN.md §186 §2, FILLET_PLAN.md's 2026-09-17 block §4): the clause "
+    "here promised to reopen \"the day the shipped genome reads below 0.80 again\", and "
+    "`b729e86` has read 0.667478 / 0.708341 on this fixture since 2026-09-06 without it "
+    "clearing. THE CLAIM IS WHAT BROKE, NOT THE PREMISE -- the §103 docstring below says the "
+    "opposite. Assertions 1 and 2 PASS (below the knee, `stress_margin` exactly 0.0); the "
+    "third fails at dL/dR_hub +3.048e+01, dL/dR_rim +5.899e+01. The route is MEASURED, not "
+    "inferred: `stress` and `stress_margin`, the only two MARGIN_KNEE_UTIL gates, carry "
+    "||grad|| of exactly 0.0, and `deflection` and `mass` reach genes 12/13 only through the "
+    "MESH, which §103's own `fillet=True` made a function of both radii. So no genome "
+    "reopens this: the below-knee claim itself has to be re-asked. strict=True stands."))
 def test_the_fillet_radii_are_not_dead_genes(genes):
     """RED SINCE THE FILLET SWITCH, AND THE PREMISE IS WHAT BROKE, NOT THE CLAIM.
 
