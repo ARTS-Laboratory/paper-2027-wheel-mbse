@@ -29643,11 +29643,19 @@ second instrument: the census and the grep disagree, and the grep is never the o
 believe.**
 
 **Checked as a LIST and not a count** (§119): `studies/_citation_sweep.py --into
-tests/test_objective.py` returns the same 8 human rows before and after, row for row, and the
-tree-wide sweep is unchanged at **1415 citations, 137 for a human**.  All 8 are pre-existing
-and named in the record already — six are §135's deliberate dangles at `PLAN.md:21239-21240`,
-and the other two are `PLAN.md:17606`'s `:1257` and `PLAN.md:21689`'s `:960`, both reported
-MOVED at `17039c9` too.
+tests/test_objective.py` returns the same 8 human rows at `17039c9` and at `9c57d1e`, row for
+row, and the tree-wide sweep is unchanged across the source commit at **1415 citations, 137
+for a human**.  All 8 are pre-existing and named in the record already — six are §135's
+deliberate dangles at `PLAN.md:21239-21240`, and the other two are `PLAN.md:17606`'s `:1257`
+and `PLAN.md:21689`'s `:960`, both reported MOVED at `17039c9` too.
+
+**[ADDED IN THE COMMIT AFTER THIS SECTION LANDED, BECAUSE THE FIGURE DID NOT EXIST UNTIL THEN
+— AND THE SENTENCE ABOVE SAID "UNCHANGED AT 1415" IN A COMMIT THAT MAKES IT 1450.**  §187's
+own append carries **35 citations**, so the tree-wide total goes 1415 -> 1450 at `300b19c`.
+**The human list does not move: 137 rows before, 137 after, identical row for row** — so all
+35 of this section's citations resolve at the commit carrying them, which is what §7 claimed
+in advance and could not check.  The scoped claim is the true one: the SOURCE commit changed
+neither total nor list; this record adds to the total and not to the list.]**
 
 ### 3. THE MARKER CENSUS — 13, AND THE DEFECT IS NOT GENERAL
 
