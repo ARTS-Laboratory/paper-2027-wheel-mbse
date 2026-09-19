@@ -29933,6 +29933,11 @@ human list stays at **137 rows, identical row for row**, every one of the 25 res
 commit that carries it.  **A row that does not is a citation this section got wrong**, and the
 check is the first thing run after committing.
 
+**[RUN, AND THE PREDICTION HELD: 1475 CITATIONS, 137 FOR A HUMAN, THE LIST IDENTICAL ROW FOR
+ROW AGAINST THE PRE-COMMIT BASELINE.**  All 25 resolve.  Recorded because a register whose
+outcome is never written down is the shape this whole arc is about — an §187 amendment is
+filed when a prediction misses, and this one is filed because it did not.]**
+
 **GREEN BEFORE COMMIT, ARGUED RATHER THAN RE-RUN.**  Re-running the two tests would have cost
 another 11 m 39 s to observe the same two reds.  Instead: parse both files, blank every string
 constant, and compare the dumps — **the ASTs are identical**, so no expression, branch,
