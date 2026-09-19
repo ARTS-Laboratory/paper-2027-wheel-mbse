@@ -902,14 +902,14 @@ def test_the_fillet_radii_are_not_dead_genes(genes):
 
 
 @pytest.mark.xfail(reason=(
-    "PLAN.md §102/§103: under the region-p-norm term `genes_over_knee`'s rim reads "
-    "util 1.21257 -- above the WALL, not merely above the 0.80 knee the fixture was named "
-    "for the hub crossing. This is the same fixture-drift §38's uncap flip already caused "
-    "once (see the sibling xfail two tests down): the region term reads the true fillet "
-    "stress directly rather than diluting it through `Kt * agg`, and every genome measured "
-    "so far moves further from the knee under it, not closer. Not a threshold to move -- a "
-    "fixture that no longer sits where its name says. strict=True, so this reopens itself "
-    "the day some genome's rim reads faithfully below 0.80 again."))
+    "PLAN.md §102/§103, REASON REPLACED 2026-09-19 (§187 §4): this fixture's rim reads "
+    "1.21257 at `coarse`/8 -- above the WALL, not merely above the 0.80 knee it was named "
+    "for -- so assertion 1 fails, unchanged. NOT A THRESHOLD TO MOVE: a fixture that no "
+    "longer sits where its name says. DELETED here is a promise to reopen \"the day some "
+    "genome's rim reads faithfully below 0.80 again\": one has been on disk since "
+    "2026-09-06. The shipped `b729e86` reads rim 0.708341 at `smoke`/2 and dL/dR_rim "
+    "+5.899e+01, so assertion 2 fails there -- THE CLAIM IS WHAT BROKE, NOT THE ABSENCE OF A "
+    "GENOME. Scope: at `coarse`/8 it reads 0.953015. strict=True stands."))
 def test_below_the_knee_the_rim_fillet_radius_is_dead(genes_over_knee):
     """`R_rim` carries no gradient while the rim sits under the knee.  STILL LIVE.
 
