@@ -29791,3 +29791,247 @@ were re-read at HEAD after the source commit, not before it.
    successor 4, unchanged.
 5. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §186's successor 5, unchanged;
    two of ten rows are known behind and nothing has checked the other eight.
+
+## §188 — 2026-09-19. §187's SUCCESSOR 0, CLOSED IN SOURCE: **THE SECOND §103 MARKER, `tests/test_objective.py:904`, NO LONGER PROMISES TO REOPEN AT A NUMBER — AND WITH IT THE TREE'S COUNT OF MARKERS THAT DO GOES TO ZERO**, ENUMERATED WITH `ast` AND ALL THIRTEEN READ. EIGHT STRING LINES FOR EIGHT, `:913` UNMOVED, AND THE FILE'S AST IDENTICAL TO ITS PRE-IMAGE ONCE EVERY STRING CONSTANT IS BLANKED — WHICH IS A STRONGER GREEN THAN RE-RUNNING THE TWELVE MINUTES WOULD HAVE BEEN. **AND THE RE-MEASUREMENT CAUGHT ITSELF USING THE WRONG INSTRUMENT**: A BARE PROBE SCRIPT, OUTSIDE BOTH `make` AND `pytest`, RETURNED `dL/dR_hub` **81 ULPs — 9.441e-15 RELATIVE — OFF THE VALUE BOTH `pytest` RUNS AGREE ON**, WHILE EVERY FORWARD VALUE MATCHED TO THE BIT. THE CAUSE WAS REGISTERED AS A FALSIFIER AND TESTED: RE-RUN WITH `wheel_pool.PINNED_ENV` EXPORTED, THE SAME SCRIPT REPRODUCES `30.48037347703914` EXACTLY. **THE TREE ALREADY KNEW** — `Makefile:18` SAYS SO IN CAPITALS — AND THE 4.5 MINUTES IT COST IS THE PRICE OF A PROBE WRITTEN OUTSIDE BOTH HARNESSES THAT PIN IT
+
+One commit, one file: `606a541`, `tests/test_objective.py`, eight insertions and eight
+deletions.  No test was added, removed or re-marked; the test is still `xfail(strict=True)`
+and still fails on its FIRST assertion, at `tests/test_objective.py:929`.  §187 §4 filed
+this and had already paid for the measurement; what is new here is that it was re-run at
+HEAD with four falsifiers written down first, the instrument finding in §3, and the census
+in §5 that §187's could not yet report.
+
+### 1. THE FOUR FALSIFIERS, WRITTEN BEFORE THE RUN
+
+§187 §1 established the form and the reason: the string lands in a test file and is read as
+current, not in a plan file and read as dated.  `src/` had not moved since §187's own run
+(`git log 17039c9..HEAD -- src/` is empty; the only source delta in the window is the
+`reason=` string `9c57d1e` replaced at `:840`), so quoting §187 would again have been
+defensible.  Registered before launching, at `d06499a`:
+
+```
+  F1  shipped genome's rim at smoke/2 comes back >= 0.80
+        -> "a genome that reads faithfully below 0.80 exists" is FALSE and the promise stands
+  F2  dL/dR_rim at smoke/2 comes back EXACTLY 0.0
+        -> assertion 2 would PASS there; the promise is keepable and the marker should be
+           RE-POINTED at the shipped genome rather than rewritten
+  F3  genes_over_knee's rim at coarse/8 no longer reads above 0.80
+        -> the marker's stated failure mode is wrong and a different string entirely is needed
+  F4  the test fails on assertion 2 rather than assertion 1
+        -> §187 §4's "its condition has NOT fired the way :840's did" is wrong
+```
+
+**None fired.**  F2 is the one that mattered: it is the whole difference between rewriting
+this marker and re-pointing it, and a zero there would have made the sibling at `:840` a
+one-off rather than a pair.
+
+### 2. THE READINGS, AND WHICH INSTRUMENT TOOK EACH
+
+`pytest tests/test_objective.py::test_below_the_knee_the_rim_fillet_radius_is_dead
+::test_the_fillet_radii_are_not_dead_genes --runxfail`, one process, **11 m 39.6 s**, peak
+RSS **26.98 GiB** (28 291 444 kB), exit 1 with both tests failing as `--runxfail` requires:
+
+```
+  genes_over_knee, coarse / 8 uniform      rim util  1.2125709572399281   assertion 1 FAILS
+  b729e86 (shipped), smoke / 2 uniform     hub util  0.6674784949249843   assertion 1 passes
+                                           rim util  0.7083409245211643   below the 0.80 knee
+                                           stress_margin value 0.0        assertion 2 passes
+                                           dL/dR_hub 30.48037347703914    assertion 3 FAILS
+                                           dL/dR_rim +5.899e+01
+  b729e86, coarse / 8 / SVK                rim util  0.9530146348215367   above the knee
+                                             — read off best_solution.json's metrics block,
+                                               not re-solved; no run here costs a coarse/8 SVK
+```
+
+The fixture's 1.2125709572399281 reproduces `FILLET_PLAN.md`'s 2026-09-17 reading to every
+digit and PART 14's 1.21257 seventeen days on, which is what F3 asked.  Its source file
+`stage3_buildcap2_slack_medium.json` was last written at `b5c22c9` on 2026-08-12 and is
+immune to a promotion by construction — that argument is `FILLET_PLAN.md`'s 2026-09-17 §3's
+and is not re-derived here.
+
+### 3. THE INSTRUMENT: A BARE SCRIPT IS AN UNPINNED ONE, AND THIS TREE SAYS SO IN CAPITALS
+
+`pytest` prints `dL/dR_rim` through the assertion's own `%+.3e`, so the rim utilisation at
+`smoke`/2 — F1's quantity — is not in its output at all.  A small probe was written to read
+it: `WO.objective(so.load_genes(), "smoke", phases=phase_stencil(n_phase=2,
+scheme="uniform"))`, 268.1 s, printing the report and both gradient components at full
+precision.  It returned the utilisations F1 needed, **and a different gradient**:
+
+```
+  instrument                                    dL/dR_hub               ULPs from pytest
+    §187 §1, pytest, ONE test, 2026-09-18       30.48037347703914       0
+    HERE,    pytest, TWO tests, after a coarse solve
+                                                30.48037347703914       0
+    HERE,    bare script, no pins               30.480373477038853      81   (9.441e-15 rel)
+    HERE,    bare script, PINNED_ENV exported   30.48037347703914       0
+```
+
+**The forward values are bit-identical in all four**: `0.6674784949249843` and
+`0.7083409245211643` on every row, which is the half of `conftest.py`'s own claim that says
+forwards agree and gradients do not (`conftest.py:20`, `Makefile:18`).  The two `pytest`
+rows differ in day, in test count and in whether a `coarse`/8 solve ran first in the same
+process, and agree to the bit — **so run order is ruled out by the rows themselves**, and
+what is left is the entry point.  The fourth row tests that directly and the falsifier was
+available:
+
+```
+  F5  the pinned bare script returns anything other than 30.48037347703914
+        -> PINNED_ENV is NOT the cause, and this section stops at "two instruments, 81 ULPs"
+```
+
+It returned `30.48037347703914`.  **`wheel_pool.PINNED_ENV` (`src/wheel_pool.py:97`) is the
+whole difference**, and both harnesses that matter already set it — the Makefile exports the
+five at `Makefile:29-33` for every recipe, `conftest.py:43` sets the same five so a bare
+`pytest` matches `make test`, and `src/wheel_pool_worker.py:34` does it for a phase worker.
+A script run by hand outside both is the one route that gets neither, which `PLAN.md:869`
+names in as many words.  **So this is not a defect found; it is a defect this repository
+documented and this section walked into.**  It cost one 4 m 31 s re-run, which is the honest
+price of a probe written outside the two harnesses that pin it.
+
+**THE MAGNITUDE IS AN OBSERVATION AND NOT A LAW, AND THE CONFOUND IS NAMED.**  `Makefile:19-23`
+measures the unpinned spread at **3.33e-16** on one `coarse` adjoint; `smoke`/2's `dL/dR_hub`
+here is **9.441e-15**, 28x that.  The two runs differ in mesh rung, in phase count, in which
+gradient component is read and in a year of code, and there is one run per condition — more
+than one plausible cause, so it is filed as a second instance at a second rung and nothing is
+claimed about how the spread scales.  `dL/dR_rim` moved only 1 ULP between the same two
+scripts (`58.98805908415074` unpinned, `58.98805908415072` pinned), which is on its own
+enough to say the spread is not uniform across components.
+
+### 4. EIGHT STRING LINES FOR EIGHT, AND THE GREEN IS A PROOF RATHER THAN A RUN
+
+`@pytest.mark.xfail(reason=(` is `tests/test_objective.py:904` and
+`def test_below_the_knee_the_rim_fillet_radius_is_dead` is `:913`; the string body is the
+eight lines between them, and the replacement is eight.  **No line in the file moves**, which
+§187 §8 made an explicit condition of this successor.
+
+The count, taken with `studies/_citation_sweep.py`'s own owner index rather than by hand —
+§187's lesson, applied rather than re-learned:
+
+```
+  45 citations point into tests/test_objective.py; 25 carry an anchor numerically above 912
+  minus 6 that are §135's deliberate dangles, whose numbers are PLAN.md lines and out of
+  range in this file (:17573 :17631 :20287 :20384 :20570 :20647)
+  = 19 IN-RANGE citations anchored strictly below the edited block:
+      :913 x2   :960 x1   :1010 x1  :1042 x1  :1072 x2
+      :1129 x1  :1257 x8  :1393 x1  :1447 x2
+```
+
+Two of the nineteen are `:913` itself.  **The grep that §187 §2 convicted was not used**; the
+sweep's index was, and it is the same instrument that reported 36 into this file before
+§187's own append and 45 after.
+
+**Checked as a LIST and not a count** (§119): `--into tests/test_objective.py` returns the
+same 8 human rows before and after, row for row, and the tree-wide sweep is **1450 / 137**
+either side, identical line for line.  It could hardly have been otherwise — the replacement
+contains no `:N` token at all — and it was diffed rather than assumed.
+
+**THAT SENTENCE IS SCOPED TO THE SOURCE COMMIT, WHICH IS §187'S OWN AMENDMENT MADE INTO A
+HABIT RATHER THAN RE-LEARNED.**  This record carries **25 citations of its own**, so the
+tree-wide total goes **1450 -> 1475** at the commit that appends it.  Registered here as a
+prediction with its falsifier, because the figure cannot exist until the commit does: the
+human list stays at **137 rows, identical row for row**, every one of the 25 resolving at the
+commit that carries it.  **A row that does not is a citation this section got wrong**, and the
+check is the first thing run after committing.
+
+**GREEN BEFORE COMMIT, ARGUED RATHER THAN RE-RUN.**  Re-running the two tests would have cost
+another 11 m 39 s to observe the same two reds.  Instead: parse both files, blank every string
+constant, and compare the dumps — **the ASTs are identical**, so no expression, branch,
+parameter or marker in the file differs from its pre-image and nothing the interpreter
+executes can have changed.  Collection is **971**.  That is a stronger statement than a green
+run, because a green run would have proved it for one invocation and this proves it for all of
+them.
+
+### 5. THE CENSUS §187 §3 TOOK, RE-TAKEN — AND THE COUNT THAT MATTERS IS NOW ZERO
+
+Re-enumerated with `ast` across every `tests/*.py` and `studies/*.py`, and all thirteen
+`reason=` strings read in full rather than sampled:
+
+```
+  13 xfail markers, distribution unchanged from §187 §3
+   4  tests/test_corner_singularity.py   :614 :821 :929 :987   none names a reopening condition
+   6  tests/test_fillet_block.py         :529 :537 :580 :1161 :1171 :1682   likewise
+   1  tests/test_gnl.py:349              "reopens itself IF the wheel ever passes it" — the
+                                         mechanism statement, no threshold in it
+   2  tests/test_objective.py:840 :904   BOTH now name the route, neither names a trigger
+```
+
+**Markers promising to reopen at a stated number: 2 at §187, 0 here.**  The falsifier is the
+same one §187 §3 registered — a marker anywhere in the tree naming a numeric reopening
+threshold — and all 13 were read against it.  §187's §6 hypothesis is untouched by this: three
+markers by one author on one day is still three, and nothing measured here tests it.  What
+this closes is the instance, not the pattern.
+
+### 6. WHAT THE STRING NOW SAYS, AND THE HALF IT DECLINES TO CLAIM
+
+The deleted clause was *"strict=True, so this reopens itself the day some genome's rim reads
+faithfully below 0.80 again."*  What replaces it names the failure that is actually live —
+this fixture's rim at 1.21257, above the WALL, so assertion 1 is what fails — keeps §103's
+*"not a threshold to move"* instruction verbatim, and then says why the promise was wrong:
+**the shipped genome IS such a genome, and pointing this test at it fails assertion 2 instead.**
+
+**THE SCOPE IS IN THE STRING BECAUSE IT IS NARROWER THAN THE CLAIM**, and it is §187 §4's
+scope unchanged: 0.708341 is a `smoke`/2 reading, the same genome reads 0.953015 at the
+fixture's own `coarse`/8, and `FILLET_PLAN.md` §5's standing result is that no design
+faithfully below the knee at the fidelity the objective solves exists on disk.  So what is
+established is that *"a rim below the knee implies `R_rim` is dead"* is false at one rung on
+one genome — enough to make the promise wrong, not enough to describe the branch at `coarse`.
+**The falsifier that would refute it is unchanged and untested: a genome whose rim reads
+below 0.80 at `coarse`/8 with `g[13]` exactly 0.0.**  Nothing on disk can be pointed at it,
+which is successor 2 below.
+
+### 7. WHAT DID NOT CHANGE
+
+The docstring under the marker is §103's and §31's and is **left exactly as it stands**,
+including its account of the 2026-08-18 split and the 0.55 / 0.48 readings that no longer
+hold — superseded in place by a dated `reason=` above it, which is the choice §186 §1, §187 §5
+and `FILLET_PLAN.md`'s header all made, and the only one that costs no anchors.  The
+`genes_over_knee` fixture, its docstring and its mesh table are untouched.  `MARGIN_KNEE_UTIL`
+is still 0.80.  `DEFAULT_WEIGHTS["stress_margin"]` is still **89.21** with both source
+comments still asserting the outgoing genome's provenance — §186's successor 1, now the top
+open item.  No fixture, no threshold, no study artifact, no `best_solution.json`.
+
+The working tree's one modified tracked file, `studies/study_deflection_gci.json`, is §183's
+and was not staged, touched or regenerated here.
+
+### 8. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
+
+Verified by reading each anchor at the commit that carries this section:
+`tests/test_objective.py:840`, `:899`, `:904` (the marker, whose eight string lines this work
+replaced one-for-one and whose own line number does not move), `:913`, `:929`;
+`tests/test_gnl.py:349`; `src/wheel_objective.py:1351`; `src/wheel_pool.py:97`;
+`src/wheel_pool_worker.py:34`; `conftest.py:20` and `conftest.py:43`; `PLAN.md:869`; and the
+three `Makefile` anchors — line 18, lines 19-23 and lines 29-33 — **named in words on purpose**.
+
+**THE FIRST DRAFT OF THIS LIST MINTED THE DEFECT §174 EXISTS TO PREVENT, AND THE SWEEP CAUGHT IT
+BEFORE THE COMMIT.**  It read `` `Makefile:18`, `:19-23`, `:29-33` `` — and `studies/_citation_sweep.py`
+resolved both bare ones against **`conftest.py`** — a 44-line file, so one of the two would have
+resolved to a comment about `XLA_FLAGS` and read `ok` forever, which is §159's wrong repair arriving
+by a different road.  The sweep's scope is `.md` and `.py`, so a `Makefile` anchor never registers as
+an owner at all, and the bare `:N` after it carries the last owner that did.  This is
+§186 §4's defect in a new place: **a bare `:N` is only as safe as the owner the reader carries, and an
+owner the INSTRUMENT cannot see is one the reader will carry past.**  Hence the words.
+
+**Every one is a line this work does not touch** — the source commit is
+eight-for-eight inside `tests/test_objective.py` and this record is an append — so none is
+stale on arrival in §186 §4's sense.  The anchors into `tests/test_objective.py` were re-read
+at HEAD **after** the source commit.  No commit hash of this record's own commit is cited, and
+no `file:N` anchor here points into a line this section is about to edit.
+
+### 9. SUCCESSORS, RANKED
+
+0. **DECIDE `stress_margin`** — §187's successor 1 and §186's, unchanged and untouched again:
+   adopt 111.196, or write into the weight's own comment that 89.21 is `09e8188`'s exchange
+   rate and deliberately frozen.  Two source comments assert a false provenance until then,
+   and this is now the oldest open item in the arc.
+1. **`d(util_j)/dR_j`, ONE PROBE** — §186's successor 2.  Both `dL/dR` readings are positive
+   at both rungs while this arc's founding premise says a stress-carried gradient is negative;
+   the probe decides whether §135's attribution is narrow or inverted.  **Note for whoever
+   runs it: §3 above.  Export `wheel_pool.PINNED_ENV` or run it under `make`, or the gradient
+   it reports is the unpinned one.**
+2. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §186's successor 3, and §6 above
+   gives it the same second job §187 §8 did: it is the only thing that can test the `coarse`
+   half of this marker's claim.
+3. **§105's SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §186's
+   successor 4, unchanged.
+4. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §186's successor 5, unchanged;
+   two of ten rows are known behind and nothing has checked the other eight.
