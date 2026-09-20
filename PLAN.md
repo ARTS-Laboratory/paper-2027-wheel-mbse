@@ -30256,6 +30256,40 @@ not an anchor.  Every bare `:N` above carries the owner named immediately before
 sentence — the mis-carry §188 §8 caught in its own list was the reason to check, and this list
 was read back with that failure in mind.
 
+**[RUN, AND THE PREDICTION HELD ON ITS OWN HALF: ALL 13 OF THIS SECTION'S ANCHORS RESOLVE
+`ok`, AND NOT ONE `PLAN.md:30044+` ROW IS IN THE HUMAN LIST.**  Total 1475 -> **1498**; the
+append moved no existing line, as predicted.  **BUT THE LIST WENT 137 -> 148, AND ALL ELEVEN
+NEW ROWS ARE THIS WORK'S**, from a cause the twelve-for-twelve had no power over:
+
+```
+  FILLET_PLAN.md:4906, :4934        -> wheel_objective.py:361 and :1335   4 rows
+  PLAN.md:29504, :29726, :29768     -> wheel_objective.py:361 and :1335   6 rows
+  PLAN.md:24672                     -> wheel_objective.py:360-370         1 row
+```
+
+**AN N-FOR-N REPLACEMENT PROTECTS EVERY CITATION BELOW THE EDIT AND NONE OF THE CITATIONS TO
+IT.**  Nothing moved — the file's line count is unchanged and `:369`, `:1351-1354` and
+`:1402-1403` are where §5 says.  What went is the CONTENT those eleven rows quoted, because
+replacing it was the work.  §187 and §188 each rewrote a string that nothing in the tree
+cited; this rewrote two lines that six records cite by name, and it is the first time in this
+arc that the two halves of the citation problem have come apart.
+
+**TEN OF THE ELEVEN ARE NOT REPAIRED, AND THE REASON IS THAT REPAIRING THEM WOULD MAKE THEM
+LIE.**  Every one of the five sites naming `:361` and `:1335` cites those lines in order to
+say the comments are WRONG — `FILLET_PLAN.md:4906` is the sentence *"TWO LIVE SOURCE COMMENTS
+STATE THE STALE PROVENANCE IN THE PRESENT TENSE"*, and `PLAN.md:29504` and `:29726` are §187's
+and §188's records of declining to fix them.  Re-pointing those anchors at the corrected text
+would have each record assert the opposite of what it measured.  **They are deliberate dangles
+of §135's kind, and the defect they name is closed — which is the only way a citation like
+that can ever end.**  §159's rule holds in both directions here: a wrong repair reads `ok`
+forever, and an `ok` is exactly what these must not read.
+
+The eleventh, `PLAN.md:24672`, is a different animal and is named separately rather than
+folded in: it is an already-repaired range anchor (`:315-325` -> `:360-370`) inside a
+pre-image/post-image comparison about a `float(np.clip(...))` line, and it reads MOVED only
+because line 360's text changed under it.  It describes a file state two repairs old and is
+left alone for the same reason.]**
+
 ### 9. SUCCESSORS, RANKED
 
 0. **`d(util_j)/dR_j`, ONE PROBE** — §188's successor 1, now the top item.  Both `dL/dR`
