@@ -30040,3 +30040,237 @@ no `file:N` anchor here points into a line this section is about to edit.
    successor 4, unchanged.
 4. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §186's successor 5, unchanged;
    two of ten rows are known behind and nothing has checked the other eight.
+
+## §189 — 2026-09-20. §188's SUCCESSOR 0 AND THE OLDEST OPEN ITEM IN THE ARC, **DECIDED RATHER THAN FILED AGAIN: `DEFAULT_WEIGHTS["stress_margin"]` STAYS AT 89.21, AND THE COMMENT NOW SAYS THAT IT IS `09e8188`'s RATE AND FROZEN ON PURPOSE.** THE BLOCKER ON RECORD SINCE §186 — *"adopting 111.196 re-prices every committed loss number in this tree"* — WAS NEVER TESTED; IT IS NOW, AND IT IS **SUBSTANTIALLY TRUE**: 22 COMMITTED ARTIFACTS CARRY A NONZERO `stress_margin` LOSS TERM, `best_solution.json`'s OWN RECORDED LOSS MOVES **+1.4893%**, AND FOUR OF THE FIVE ASSERTIONS IN `test_the_calibration_reproduces_the_portfolio_the_plan_states` GO PAST THEIR `abs=0.01` BAND. **BUT THE GROUND FOR FREEZING IS NOT THE CHURN.** §99 MOVED `util_ref` OFF A DESIGN BECAUSE AN ANCHOR *"NEEDS NO DESIGN TO STAND ON"* — AND LEFT THE **NUMERATOR** READING ONE. RE-ANCHORING IT AT EVERY PROMOTION MAKES THE WEIGHT A FUNCTION OF THE OUTPUT OF THE DESCENT IT STEERS, AND THE TERM IS NO BYSTANDER IN THAT DESCENT: **`stress_margin` IS NONZERO AT 123 OF THE 123 STEPS OF THE RUN THAT PRODUCED `b729e86`.** **AND THE FIRST DRAFT OF THE SOURCE EDIT COMMITTED THE DEFECT §187 AND §188 EACH SPENT A SECTION AVOIDING** — 21 ADDED LINES, **162 CITATIONS MOVED**, CAUGHT BY THE SWEEP AND REWRITTEN TWELVE-FOR-TWELVE
+
+### 1. THE FIVE FALSIFIERS, REGISTERED BEFORE THE FIRST GREP
+
+Written into the scratchpad before anything ran, because the case I expected to make was the
+opposite one — that the term is inert at the shipped genome, that adoption therefore changes
+nothing today, and that the eleven-day blocker was an overstatement.
+
+```
+  F1  the shipped genome's loss moves          -> adoption is promotion-shaped      FIRED
+  F2  a committed artifact carries a nonzero
+      stress_margin loss term                  -> the blocker is literally true      FIRED
+  F3  a test pins a number that moves          -> not a one-constant commit          FIRED
+  F4  the gradient moves below the knee        -> "changes nothing" is false      SPLIT (§2)
+  F5  the term was live in the descent that
+      produced b729e86                         -> the anchor is self-referential     FIRED
+```
+
+**F1 fired on the first grep and took my intended argument with it.**  The prediction beside
+it was *"0.0 — both junctions read below the 0.80 knee, §188 measured rim 0.708341 / hub
+0.667478 at `smoke`/2"*, and that reading is correct and irrelevant: `best_solution.json`
+records `loss_terms.stress_margin` = **3.176515979942935**.  §188's zero was `smoke`/2; the
+descent ran at `coarse`, where §188 itself measured the rim at **0.953015**, above the knee.
+**The fidelity is part of the reading** — this file's own recurring lesson, arriving here as a
+falsifier I had written against myself.
+
+### 2. THE READINGS
+
+```
+  reference genome     filleted mass term      w = mass_term / 0.4     source
+    09e8188                 35.6822                  89.21             DEFAULT_WEIGHTS today
+    b029622                 35.4449                  88.61             §99's corroboration
+    b729e86  SHIPPED        44.478315               111.196            best_solution.json
+
+  the shipped genome, at the descent's own fidelity (coarse / SVK / 8 uniform phases):
+    loss_terms.stress_margin        3.176515979942935     6.0429% of the 52.5661507207903 loss
+    under 111.196                   3.959375              +0.782859   -> +1.4893% on the total
+    steps of that descent with stress_margin > 0          123 of 123
+    rim util at coarse/8            0.9530146348215367    §188 §2, re-read here, not re-solved
+    hub util at coarse/8            0.910425              INFERRED from the two above, not read
+```
+
+**The hub figure is an inference and is marked as one.**  It is what `w*(u-k)^2` summed over
+two junctions requires given the recorded total and §188's measured rim; no run produced it.
+It is carried because it says both junctions are over the knee at production fidelity, which
+is the claim §4 leans on — and that claim also follows from the rim alone, so nothing rests
+on the inferred digit.
+
+**F4 SPLITS ON FIDELITY, AND THE SPLIT IS A PROPERTY OF THE CODE, NOT A MEASUREMENT.**
+`src/wheel_objective.py:1353-1354` computes `2.0 * w["stress_margin"] * max(0.0, util_j -
+MARGIN_KNEE_UTIL) * d_util`, which is exactly linear in `w`.  So below the knee the gradient
+contribution is 0.0 under either weight — §186 §2's "exactly 0.0" at `smoke`/2 holds for both
+— and above it every component scales by exactly **111.196 / 89.21 = 1.246452**.  This is a
+rule about code the section read, so it is asserted; no descent was run to check where that
+lands, and none is claimed.
+
+### 3. THE BLAST RADIUS, MEASURED
+
+**22 committed artifacts carry a nonzero `stress_margin` loss term.**  Dated by the commit
+that last touched each — an instrument whose limit is that a file can be re-committed without
+being recomputed, so the post-§103 group is an upper bound:
+
+```
+  written at 89.21 (§103 wired it in at d2cf9fa, 2026-09-03) -- adoption supersedes these   8
+    best_solution.json, stage3_svk_refillet_shipped{,_r2,_r2_best}.json,
+    studies/study_{kinematics_rank,kinematics_rank_filleted,mbse_calibration,svk_rescore}.json
+  written at 325.0 or earlier -- already one supersession behind, adoption adds none        14
+```
+
+`studies/study_mbse_calibration.json` is the one that says its own weight out loud
+(`calibration.identity_weights.stress_margin` = 89.21), so it is direct evidence rather than
+dated evidence; the other seven are dated.
+
+**THE ONE LIVE TEST THAT GOES RED, AND THE FOUR ASSERTIONS IN IT.**
+`tests/test_requirements.py:367-372` — `calibrated_priorities` derives the 100-point portfolio
+FROM `DEFAULT_WEIGHTS`, so the weight moves it.  Run here at both values:
+
+```
+                        89.21      111.196     asserted        verdict
+  deflection           41.1430     40.9947     41.14 ±0.01     RED
+  mass                 49.3716     49.1936     49.37 ±0.01     RED
+  stress_margin         1.4681      1.8234      1.47  ±0.01    RED
+  smoothness            8.0173      7.9884      8.02  ±0.01    RED
+  phase_ripple          0.0000      0.0000     == 0.0          green
+```
+
+**The instrument reproduces the committed baseline before it is trusted for the other column**
+— all four of the 89.21 figures land inside the bands the test asserts.  `MBSE_PLAN.md:330-332`
+carries the same five numbers as a table and `:516` as that file's own CHECK line, so adoption
+is a three-file edit before any artifact is considered.
+
+**AND THE GUARD CANNOT SEE THE REPAIR EITHER — THE SAME BLINDNESS, FROM THE OTHER SIDE.**
+`test_the_margin_weight_is_the_exchange_rate_it_claims_to_be`
+(`tests/test_objective.py:1082`) asserts `0.5 < one_pct_of_util / one_pct_of_mass < 2.0`.
+FILLET_PLAN.md §7 measured the numerator's input at `smoke`/2 and read **0.82246**; the same
+arithmetic at 111.196 gives **1.02516**.  Both are green.  §7 recorded that a 24.65% move in a
+calibration input produced no red in 11 days; the symmetric half is that undoing it would
+produce no green either.  **This is a re-derivation of §7's figure, not a re-run** — the test
+was not executed here, and the 0.82246 it starts from is §7's measurement.
+
+**WHAT DOES NOT MOVE.** `tests/test_golden.py` reads `best_solution_ga_beam.json`, which has
+no `stress_margin` term at all — that file's docstring wrote the decoupling down as the point,
+and this is the first occasion since that would have exercised it.  It works.
+`test_total_exchange_rate_pressure_is_invariant_under_any_reallocation` is a relative identity
+and is green under any weight.
+
+### 4. WHY FOLLOWING THE FORMULA IS THE WRONG REPAIR
+
+The blast radius above is a cost, not an argument.  The argument is this:
+
+> **§99 moved `util_ref` off a design precisely because an anchor "needs no design to stand
+> on", and left the numerator reading one.  A rate that is re-anchored at every promotion is
+> a calibration that takes its input from the output of the search it steers.**
+
+Both halves of the self-reference are measured, not inferred.  `w` is proportional to the
+reference genome's own mass term — §99 says so in its own parenthesis and the three rows of
+§2 are that proportionality.  And the reference genome is not independent of `w`:
+`stress_margin` is nonzero at **123 of the 123 steps** of the `coarse`/SVK/8 Adam run that
+produced `b729e86` (`stage3_svk_refillet_shipped_r2.json`, best at step 58, min 2.701851, max
+3.955496), so the term priced every step of that search.  Not "live at the endpoint" — live
+throughout.
+
+This tree has been caught by the same shape once already, from the other side.  §109 moved the
+hub-share gate to the filleted mesh, and rescaling `0.03` by the *design under test*'s own
+factor would have produced exactly 0% margin by construction — §14's prohibition arrived at
+arithmetically.  Re-anchoring a weight to the genome the weight selected is that operation
+with the arrow reversed.
+
+**WHAT THIS SECTION DOES NOT CLAIM, AND THE DESIGN THAT WOULD REFUTE IT.**  It does not claim
+that adopting 111.196 would make the next wheel heavier, or that the frozen rate is closer to
+right than the live formula's.  Whether a higher `stress_margin` weight buys margin at the
+cost of mass is a statement about a descent, and no descent was run: the falsifier is a pair of
+`coarse` re-descents from the same start at 89.21 and 111.196, and until one exists the
+direction is unmeasured.  What is established is narrower and sufficient for the decision —
+**the anchor is self-referential**, which is a fact about the wiring and needs no descent.
+
+**AND THE DECISION IS STATED, NOT DEFERRED.**  It is written at the standing
+`MARGIN_KNEE_UTIL = 0.80` already uses in this tree — a judgement carrying its evidence, which
+a later section may overturn by arguing with the evidence.  **It deliberately contains no
+numeric reopening trigger.**  §187 and §188 each spent a section deleting one of those, and a
+comment promising to revisit "when the gap exceeds X" would have minted a third in the same
+week, in the same file's neighbourhood.
+
+### 5. WHAT THE COMMENTS NOW SAY, TWELVE LINES FOR TWELVE
+
+`src/wheel_objective.py:360-368` (9 lines) and `:1333-1337` (5) were replaced by 9 and 5.  The
+file's line count is unchanged, so `:369` — the constant itself — `:1351-1354` and `:1402-1403`
+are all exactly where `FILLET_PLAN.md` §9 cited them.
+
+Two repairs stand whichever way the decision had gone, and they are what made this a source
+commit rather than a record: *"the shipped genome's FILLETED mass term"* is **`09e8188`'s**, the
+genome that shipped when §99 ran, and the trailing **"g" was a unit slip in both comments** —
+35.6822 is a loss-term value (`MASS_WEIGHT * mass_g / MASS_REFERENCE_G`,
+`src/wheel_fea.py:163-164`), not grams.  Both were named at `FILLET_PLAN.md:4873` and neither
+had been fixed.
+
+**GREEN IS A PROOF, NOT A RUN.**  The change is comments only: both files parsed before and
+after, `ast.dump` identical.  Comments do not reach the AST at all, so this is stronger than
+§188's string-blanking argument and far stronger than one green suite.
+
+### 6. THE FIRST DRAFT MOVED 162 CITATIONS, AND THE SWEEP CAUGHT IT AFTER THE COMMIT
+
+The long-form argument of §4 was first written into the weight's own comment: **+21 lines**.
+It was committed.  Then the sweep:
+
+```
+                                    total  resolve  FOR A HUMAN   into wheel_objective.py
+  §188's final snapshot (df037ef)    1475     1338       137               11
+  the 21-line draft                  1475     1176       299              173
+  twelve-for-twelve                  1475     1338       137               11
+```
+
+All 162 of the new rows anchor into `src/wheel_objective.py` below the edit.  **The cause was a
+wrong belief about the instrument, held confidently**: I had read the sweep's `git blame`
+resolution as meaning a citation is judged against the commit that wrote the citing line, and
+concluded that adding lines to a *target* file cannot re-date anchors in *other* files.  Half
+right — the sweep resolves the anchor at the citing commit and then asks where that content
+lives **at HEAD**, and it is the second half that the insert broke.  186 citations point into
+this file; §187 counted 36 into `tests/test_objective.py` and went ten-for-ten, §188 went
+eight-for-eight, and the reason both did is exactly this.
+
+The fix was not to repair 162 anchors — §159's rule is that a wrong repair reads `ok` forever,
+and 162 of them run through dated records in eight files.  The fix was to stop moving the
+lines: the commit was reset, the source restored from the pre-image, and the same decision
+written into 9 lines and 5.  The argument that did not fit is in §4 above, which is where a
+record belongs anyway.
+
+**The one numeric difference between the final sweep and §188's snapshot is `PLAN.md`
+mentions, 1429 -> 1430** — the new comment's own `PLAN.md §189` pointer.  Every other cell and
+every one of the 137 human rows is identical, checked as a LIST (§119) and not as a total.
+
+### 7. WHAT DID NOT CHANGE
+
+`DEFAULT_WEIGHTS["stress_margin"]` is **89.21**, at `:369`.  `MARGIN_KNEE_UTIL` is 0.80.  No
+test, no fixture, no artifact, no `best_solution.json`.  No genome moved and nothing was
+promoted.  `studies/study_fillet_optimum.json`'s pre-switch 325.0 is left exactly as §105's
+warning and `FILLET_PLAN.md` §8 describe it.  The pre-existing modification to
+`studies/study_deflection_gci.json` (§183's) and the untracked overnight logs are in
+neither commit.
+
+`FILLET_PLAN.md` §7's *"Filed, not fixed"* is a dated record and is not rewritten; this section
+supersedes it, which is what the numbered sections are for.
+
+### 8. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
+
+Verified against HEAD after the source commit and before this one, which is the order §186's
+lesson requires — a citation into a line the same unit of work is about to edit is stale on
+arrival: `src/wheel_objective.py:369`, `:360-368`, `:1333-1337`, `:1351-1354`, `:1402-1403`;
+`src/wheel_fea.py:163-164`; `tests/test_objective.py:1082`;
+`tests/test_requirements.py:367-372`; `MBSE_PLAN.md:330-332`, `:516`;
+`FILLET_PLAN.md:4873`.  The `d2cf9fa` in §3 is a commit hash,
+not an anchor.  Every bare `:N` above carries the owner named immediately before it in the same
+sentence — the mis-carry §188 §8 caught in its own list was the reason to check, and this list
+was read back with that failure in mind.
+
+### 9. SUCCESSORS, RANKED
+
+0. **`d(util_j)/dR_j`, ONE PROBE** — §188's successor 1, now the top item.  Both `dL/dR`
+   readings are positive at both rungs while this arc's founding premise says a stress-carried
+   gradient is negative, and §4 above adds a second consumer: the probe is also the cheapest
+   thing that speaks to the direction §4 explicitly declines to claim.  **Export
+   `wheel_pool.PINNED_ENV` or run it under `make`** — §188 §3.
+1. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §188's successor 2, unchanged, and §2
+   above gives it a third job: it would read `util_hub` at `coarse`/8 directly instead of
+   inferring it.
+2. **THE DESCENT PAIR THAT WOULD MEASURE §4's DIRECTION** — two `coarse` re-descents from one
+   start, at 89.21 and at 111.196.  New here, and it is the falsifier §4 registers against
+   itself.  Not cheap, and nothing depends on it: the freeze stands on the self-reference,
+   which is already measured.
+3. **§105's SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §188's successor
+   3, unchanged.
+4. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §188's successor 4, unchanged; two
+   of ten rows are known behind and nothing has checked the other eight.
