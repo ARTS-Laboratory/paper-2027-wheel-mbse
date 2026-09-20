@@ -357,15 +357,15 @@ DEFAULT_WEIGHTS = {
     # This is the one weight in the table that sets an exchange rate rather than a scale:
     # `w = mass_term / (2*(util_ref - knee)*util_ref)`, PLAN.md §99.  89.21 is that
     # formula at `util_ref` = 1.0 (the wall — §99's reason for pinning it there rather
-    # than at a design's own reading: it needs no design to stand on) and the shipped
-    # genome's FILLETED mass term, 35.6822 g — the mesh this term now actually reads,
-    # since §103 wired `util_j` onto the region-p-norm QoI rather than `Kt * agg`.  A
-    # 3.6x cut from the old 325.0, which was calibrated at `util_ref` = 0.855 against the
-    # `Kt`-surrogate's own reading — a reference point §99 found no design occupies any
-    # more under the replacement quantity.  `b029622` gives 88.61 from its own filleted
-    # mass term, 0.665% apart on an unrelated genome — the corroboration a wall-anchored
-    # rate should produce, since it depends on the reference genome's own mass rather
-    # than on where that genome's utilisation happens to sit.
+    # than at a design's own reading: it needs no design to stand on) and the FILLETED
+    # mass term of `09e8188` — THE GENOME THAT SHIPPED WHEN §99 RAN, not the one that
+    # ships now: 35.6822, a loss-term value and not the grams both comments said until
+    # §189.  That mesh is what §103 wired `util_j` onto, the region-p-norm QoI rather
+    # than `Kt * agg`; the 3.6x cut is from 325.0 at `util_ref` = 0.855, an anchor §99
+    # found unoccupied.  `b029622`'s 88.61 tests only that it and `09e8188` weigh nearly
+    # the same.  FROZEN HERE ON PURPOSE, DECIDED 2026-09-20 — PLAN.md §189, which carries
+    # the argument and the blast radius: `b729e86` ships and returns 111.196, so this is
+    # 19.77% under its own policy, and §189 §4 says why following it is the wrong repair.
     "stress_margin": 89.21,
     "buckling":    2000.0,      # soft_barrier scale on ratio - 1   [NO GRADIENT]
     "x_order":     80.0,        # per control-point pair
@@ -1332,9 +1332,9 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     #
     # THE WEIGHT IS AN EXCHANGE RATE AND IT IS A POLICY, SO IT IS STATED — PLAN.md §99.
     # `w = mass_term / (2*(util_ref - knee)*util_ref)` at `util_ref` = 1.0 (the wall) and
-    # the shipped genome's FILLETED mass term, 35.6822 g: `w` = 89.21.  See
-    # `DEFAULT_WEIGHTS["stress_margin"]`'s own comment for why `util_ref` moved to the
-    # wall rather than staying at a design's own reading.
+    # `09e8188`'s FILLETED mass term, 35.6822 — a loss-term value, not grams: `w` = 89.21.
+    # That genome stopped shipping at §115 and §189 froze the weight there on purpose.
+    # See `DEFAULT_WEIGHTS["stress_margin"]`'s own comment for that and for `util_ref`.
     #
     # Quadratic rather than linear is deliberate and is the second half of the policy: the
     # exchange rate steepens as margin disappears, so the last 10% of utilisation costs far
