@@ -30308,3 +30308,423 @@ left alone for the same reason.]**
    3, unchanged.
 4. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §188's successor 4, unchanged; two
    of ten rows are known behind and nothing has checked the other eight.
+
+## §190 — 2026-09-21. §189's SUCCESSOR 0, §187's SUCCESSOR 2 AND `FILLET_PLAN.md` §10's SUCCESSOR 4 — ONE QUESTION, ASKED THREE TIMES AND NEVER MEASURED. **CLOSED, AND THE ANSWER REVERSES THIS ARC's STANDING READING OF ITS OWN CENTRAL NUMBER.** `d(util_j)/dR_j` IS NEGATIVE IN **ALL TWELVE ENTRIES OF THREE 2x2s**, SO THE PREMISE's PHYSICS HALF HOLDS AT EVERY RUNG MEASURED — AND AT `coarse`/8/**SVK**, THE SETTINGS `best_solution.json`'s OWN SEARCH BLOCK NAMES, **BOTH LOSS GRADIENTS ARE NEGATIVE TOO: `dL/dR_hub` −3.765 AND `dL/dR_rim` −0.111.** THE `+3.048e+01` / `+5.899e+01` THAT FOUR SECTIONS AND A LIVE `xfail` REASON CARRY AS "THE FILLET GENES' GRADIENT" IS A `smoke`/2/**LINEAR** READING, AND §135's `+17.362` / `+36.969` IS `coarse`/8/**LINEAR**. **ONE KWARG SEPARATES THEM FROM THE DESCENT's RUNG**, AND ACROSS THAT ONE CHANGE THE STRESS ROUTE MOVES **1.00x AND 1.31x** WHILE THE MESH ROUTE COLLAPSES **17.2x AND 13.2x** — WHICH IS WHAT FLIPS THE SIGN. **THE RIM's FLIP IS A 96.41% CANCELLATION AND IS FLAGGED AS ONE.** PLUS: §135's ATTRIBUTION IS INVERTED AND THE `Kt` IT NAMED HAD BEEN DISCARDED FIVE DAYS EARLIER; §189 §2's "INFERRED, NO RUN PRODUCED IT" IS A COMMITTED READING; AND PART C REPRODUCES `KINEMATICS_PLAN.md:597`'s `kinrank` RE-SCORE **BIT FOR BIT, 0 ULP**
+
+### 1. THREE REGISTERS, EACH WRITTEN BEFORE ITS RUN
+
+`falsifiers190.md`'s F1–F4 were registered 2026-09-20 before the first probe.  Registering
+them mattered for the reason §189 §1 gives for its own register: there the expectation the run
+destroyed was *"the case I expected to make was the opposite one"*, and here it is this arc's
+founding premise — the thing every section in the arc has assumed and none has measured.
+
+```
+  F1  both d(util_j)/dR_j NEGATIVE  -> the premise holds, the positive dL/dR
+                                       readings are entirely mesh-carried       HELD, 3 rungs
+  F2  the sector-fit clamp active on either radius -> the probe is reading
+                                       SECTOR_FIT_CLAMP, no sign may be quoted  DID NOT FIRE
+  F3  the two step sizes disagree in sign -> the FD is in the noise             NOT TESTABLE (§3)
+  F4  util_j at the base point differs from §188's -> wrong instrument          DID NOT FIRE
+```
+
+G1–G5 (`falsifiers190b.md`) are mine, registered while part A was still solving; H1–H3 before
+part C launched.
+
+```
+  G1  part A is coarse/8/LINEAR and will reproduce §135's row, not the artifact's  CONFIRMED
+  G2  §189 §2's "INFERRED" hub is a committed reading                              FIRED (§9)
+  G3  the green above-knee test pins the premise where the WALL governs            HELD (§10)
+  G4  smoke/2 vs coarse/8 differ in TWO ways -> no sign rule may cross them        OBEYED
+  G5  §135's 44 GiB / 1359.3 s, re-measured                                        17.286 / 447.4
+  H1  part C reproduces best_solution.json's four recorded numbers within 1e-8     3 of 4 (§7)
+  H2  all four SVK entries negative                                                HELD
+  H3  both loss gradients stay POSITIVE and mesh-dominated at the SVK rung         FALSIFIED
+```
+
+**H3 IS THE ONE THAT MATTERS AND IT IS THE ONE THAT FAILED.**  It was written down, in those
+words, with its consequence spelled out — *"then the stress route wins somewhere the descent
+actually visited"* — before part C launched.  §6 is that consequence.
+
+### 2. THE RUNG, AND THE ONE KWARG THAT DECIDES IT
+
+§189's successor 0 asked for the rung where the stress term is live, and part A was launched
+at `coarse`/8 for that reason.  But `WO.objective(genes, "coarse", phases=PH)` passes no
+`kinematics=`, and `wheel_requirements.py:954` states the rule in capitals — **`svk` defaults
+"HERE AND NOWHERE ELSE IN THE TREE"** — while `wheel_fem.py:1336`, `:1496` and `:1719` each
+default `linear`.  So part A is `coarse`/8/**linear**.
+
+**THE SOURCE WARNS ABOUT THIS EXACT TRAP, TWO LINES BELOW THE ONE THAT SETS IT UP.**
+`wheel_requirements.py:955-957` continues: *"`wheel_fem`'s kernel default is `linear` on
+purpose (§32) and eleven study drivers never mention the argument at all, so a ladder built on
+those takes linear silently."*  A probe written outside `make` and outside `pytest` is a
+twelfth such caller.  This is §188's lesson in a second form — that one cost 4.5 minutes and
+81 ULPs for an unexported `PINNED_ENV`; this one is a whole rung, and the probe exported
+`PINNED_ENV` faithfully while passing no `kinematics`.
+
+**THE PREDICTION IS THE CONTROL.**  G1 named, before part A returned, the row it would
+reproduce and the row it would not:
+
+```
+                                         util_hub      util_rim     dL/dR_hub    dL/dR_rim
+  §135, coarse/8, 2026-09-08              0.91093       0.90959    +1.736205e+01  +3.696881e+01
+  PART A, coarse/8, 2026-09-21       0.9109281773  0.9095856834    +1.736205e+01  +3.696881e+01
+  best_solution.json, coarse/8/SVK   0.9104250669  0.9530146348         --            --
+  PART C, coarse/8/SVK, 2026-09-21   0.9104250649  0.9530146335    −3.7648262130  −0.1109236014
+```
+
+**EVERY DIGIT §135 PRINTED IS REPRODUCED, THIRTEEN DAYS AND 135 COMMITS LATER**
+(`git rev-list 6f1f01e..HEAD --count`; re-counted rather than guessed — the first draft of
+this sentence said "four", which is §8's gap between `6f1f01e` and `322262c` carried onto the
+wrong pair).  That is what makes part A trustworthy AND what identifies its kinematics.
+
+**AND `coarse`/8/linear AGAINST `coarse`/8/SVK DIFFERS IN EXACTLY ONE THING** — same genome,
+same config, same stencil, same HEAD, same afternoon, one kwarg.  G4's confound check passes
+on that pair and fails on `smoke`/2 against `coarse`/8, which changes mesh AND phase count
+together; no sign rule is ever stated across the second pair.
+
+### 3. THE INSTRUMENT: THE ADJOINT THE OBJECTIVE ALREADY COMPUTES, CROSS-CHECKED BY A SECOND
+
+`src/wheel_objective.py:1280-1281` builds `dagg_hub`/`dagg_rim`, and `:1346-1347` turns each
+into `d_util = dagg_j / allowable_stress_mpa`.  **That IS the quantity three successors asked
+for — computed on every objective call since §103 and thrown away below the knee**, because
+`:1353-1354` multiplies it by `max(0.0, util_j - MARGIN_KNEE_UTIL)`.  So nothing was
+finite-differenced to get it: the probe wraps `_pnorm_and_grad`, keeps what the two calls
+return, and divides.  Exact, one evaluation, no step size to defend.
+
+Part B is the second instrument, a central difference on `util_j` at `smoke`/2:
+
+```
+  entry                  adjoint (exact)     central FD h=5e-4      rel
+  d(util_hub)/dR_hub   -9.2509126000e-02   -9.2509077000e-02     5.30e-07
+  d(util_hub)/dR_rim   -5.6412615478e-02   -5.6412623000e-02     1.33e-07
+  d(util_rim)/dR_hub   -7.8079981978e-03   -7.8080196800e-03     2.75e-06
+  d(util_rim)/dR_rim   -1.3856641392e-02   -1.3856648100e-02     4.84e-07
+```
+
+Four entries, two instruments, worst disagreement **2.75e-06** — an O(h²) central difference's
+truncation at h = 5e-4 — and all four signs agree.
+
+**F3 IS NOT TESTABLE AS REGISTERED AND IS RECORDED AS THAT, NOT AS "DID NOT FIRE".**  It asked
+whether two step sizes disagree; the launcher reduced `for h in (5e-4, 1e-4)` to `(5e-4,)`, so
+only one ran.  The cross-instrument agreement is the stronger check and is the probe's own
+stated reason for running an FD at all — but it is not the check F3 named, and **a falsifier
+that could not fire may not be reported as one that did.**
+
+**F2 DID NOT FIRE, AND IT WAS CHECKED AT EVERY PERTURBED POINT RATHER THAN AT THE BASE.**  The
+FD prints `REFUSED` and reports no derivative if `filleted_sector`'s `_applied["clamped"]` is
+set on either radius at either offset.  No such line printed, at a step deliberately smaller
+than the 0.0011 mm the hub sits under its cap.  None of these four numbers is a reading of
+`SECTOR_FIT_CLAMP`.
+
+### 4. THE 2x2 AT THREE RUNGS, AND THE RULE THAT MAKES ITS SIGN A STATEMENT ABOUT CODE
+
+```
+  rung                  d(u_hub)/dR_hub     d(u_hub)/dR_rim     d(u_rim)/dR_hub     d(u_rim)/dR_rim
+  smoke /2 /linear    -9.2509126000e-02   -5.6412615478e-02   -7.8079981978e-03   -1.3856641392e-02
+  coarse/8 /linear    -2.4534857185e-01   -6.0331646090e-02   -1.0225251827e-02   -5.9279887935e-02
+  coarse/8 /SVK       -2.4365257092e-01   -6.0280225450e-02   -9.7081263538e-03   -6.9643328739e-02
+```
+
+**Twelve entries, twelve negative.**  F1 held everywhere it was asked.
+
+`util_j` reaches the loss through exactly two terms, and `src/wheel_objective.py:1345-1355` is
+both of them:
+
+```
+  d_stress        += 2.0 * w["stress"]        * max(0.0, util_j - 1.0)              * d_util   :1349
+  d_stress_margin += 2.0 * w["stress_margin"] * max(0.0, util_j - MARGIN_KNEE_UTIL) * d_util   :1353-1354
+```
+
+Each is `d_util` times a weight times a `max(0.0, ·)`.  **The prefactor is non-negative
+always, so the sign of the stress route is the sign of `d(util_j)/dR_j` — at every genome, at
+every fidelity, under either gate.**  This is a rule about code this section read rather than
+behaviour it observed, so it is asserted; all a run has to supply is the sign of the 2x2, and
+that is exactly what §189's successor 0 was asking for.
+
+### 5. THE ROUTE SPLIT
+
+```
+  rung                u_hub     u_rim | dL/dR_hub     stress       mesh | dL/dR_rim     stress       mesh
+  smoke /2 /linear  0.667478  0.708341| +30.480373  +0.000000 +30.480373| +58.988060  +0.000000 +58.988060
+  coarse/8 /linear  0.910928  0.909586| +17.362051   −5.055818 +22.417870| +36.968810   −2.353129 +39.321939
+  coarse/8 /SVK     0.910425  0.953015|  −3.764826   −5.065493  +1.300667|  −0.110924   −3.088967  +2.978043
+```
+
+The split is **exact arithmetic on two measured quantities**, not a fit: the total is the
+gradient `objective()` returned, the stress route is §4's two lines evaluated on the `dagg_j`
+the probe kept, and the mesh route is the difference.
+
+**"MESH ROUTE" IS A RESIDUAL AND IS NAMED AS ONE.**  It is everything reaching genes 12 and 13
+that is not the two `util_j` gates, and this section did not enumerate it.  §186 §2
+(`PLAN.md:29434-29438`) did, at `smoke`/2: `smoothness`'s T1 Jacobian row is *"exactly 0.0 at
+12 and 13, measured"*, which *"leaves `deflection` and `mass` carrying the whole of it, and
+both reach those two genes only through the MESH"*.  That enumeration is a `smoke`/2 reading
+and is not re-taken here, so at `coarse`/8 the residual is quoted as a residual.  **Which term
+inside it collapses under SVK is §14's successor 0 and is not claimed here.**
+
+At `smoke`/2 the stress route is **exactly 0.0** in both genes — §186's result reproduced from
+the other side, both junctions under the knee, `max(0.0, ·)` zero, the whole of +30.480 /
++58.988 mesh.  At `coarse`/8 both junctions clear the knee and the route opens.  **It
+subtracts at both kinematics, which is what all three successors were asking.**
+
+### 6. THE REVERSAL, AND THE ONE VARIABLE THAT CARRIES IT
+
+`best_solution.json`'s `search` block reads `config coarse / n_phase 8 / kinematics svk`.
+**That is the rung the descent that produced `b729e86` solved, and at it both fillet loss
+gradients are NEGATIVE** — which is the arc's founding premise, stated at
+`tests/test_objective.py:872` as *"more fillet must mean less loss: both derivatives are
+negative"*, holding at the settings that produced the wheel that ships.
+
+One kwarg separates it from part A, so the comparison is clean and the attribution is stated:
+
+```
+  coarse/8, b729e86, one kwarg apart        linear  ->  SVK          factor
+    stress route into dL/dR_hub           −5.055818  ->  −5.065493    1.002x
+    stress route into dL/dR_rim           −2.353129  ->  −3.088967    1.313x
+    MESH route into dL/dR_hub            +22.417870  ->  +1.300667    /17.24
+    MESH route into dL/dR_rim            +39.321939  ->  +2.978043    /13.20
+    TOTAL dL/dR_hub                      +17.362051  ->  −3.764826    SIGN FLIPS
+    TOTAL dL/dR_rim                      +36.968810  ->  −0.110924    SIGN FLIPS
+```
+
+**THE SIGN FLIP IS CARRIED BY THE MESH ROUTE COLLAPSING, NOT BY THE STRESS ROUTE GROWING.**
+The stress route is within 0.2% of itself at the hub across the change.
+
+**AND THE RIM's FLIP IS A 96.41% CANCELLATION.**  −3.088967 against +2.978043 leaves −0.110924
+— the total is 3.59% of the stress route it came from.  Said in weights, which is the sharper
+form: holding this design fixed, `dL/dR_rim` would reach zero at `w` = **86.01**, and the
+frozen weight is 89.21.  **The rim's negative sign sits 3.6% of the weight from flipping, and
+nothing in this section says it survives a change of genome or of fidelity.**  The hub's does
+not sit like that: its zero is at `w` = 22.91, a factor of 3.9 away.
+
+**WHAT THIS DOES NOT SAY.**  It does not say the fillet gradients are negative at
+`medium`/8/SVK, which is what actually ships (§118's table, hub 0.954467 / rim 0.972345).
+That rung is unmeasured here and, given the rim's 3.6%, is not safely extrapolated to — §14's
+successor 1.  It does not retract `smoke`/2's or `coarse`/8/linear's readings: all three are
+reproduced above and all three are correct at their own settings.  **What it retracts is
+reading any of them as "the fillet genes' gradient" without its rung attached.**
+
+### 7. PART C's INSTRUMENT CHECK, AND THE ONE ROW THAT MISSED ITS BAND
+
+H1 predicted part C would reproduce `best_solution.json`'s four recorded numbers within 1e-8
+relative, a band deliberately looser than the 1.4e-09 / 7.5e-10 `KINEMATICS_PLAN.md:597` got
+through a different driver.
+
+```
+  util_hub        here 0.9104250648700405   artifact 0.9104250668518019   rel 2.18e-09   MATCH
+  util_rim        here 0.9530146334989034   artifact 0.9530146348215367   rel 1.39e-09   MATCH
+  loss            here 52.5661506811793870  artifact 52.5661507207902972  rel 7.54e-10   MATCH
+  stress_margin   here 3.1765159047891496   artifact 3.1765159799429350   rel 2.37e-08   MISSED
+```
+
+**THE MISS IS THE BAND's, NOT THE READING's, AND THAT IS DERIVED RATHER THAN ASSERTED.**
+`stress_margin` is `w*((u_hub−k)² + (u_rim−k)²)`, quadratic in a difference six to eight
+times smaller than `u` itself, so a relative error in `u` is amplified twice over — once by
+subtracting the knee, once by squaring.  Propagating the two measured `u` errors through it
+predicts **2.366e-08** on the sum; the probe measured **2.37e-08**.  A uniform band across
+rows of different degree was the wrong instrument, and it was mine.
+
+**AND THE THIRD INSTRUMENT IS BIT-IDENTICAL.**  `KINEMATICS_PLAN.md:597` re-scored `b729e86`
+at `coarse`/8/SVK through the `kinrank` driver and recorded loss `52.56615068117939` and
+`stress_utilisation` `0.9530146334989034`.  Part C returns **both to the last bit — 0 ULP on
+each** — through a third code path, while both differ from `best_solution.json` by ~1e-9.
+**So the ~1e-9 is a property of the descent's own recording, not of either re-score**: two
+independent re-scores agree exactly with each other and differ identically from the artifact.
+That is a sharper statement of `KINEMATICS_PLAN.md`'s own *"nothing in the promote-export-score
+chain has drifted"*, from a third path it did not have.
+
+### 8. §135's ATTRIBUTION IS INVERTED, AND THE TREE CONTRADICTED IT THE SAME AFTERNOON
+
+`PLAN.md:21044-21046`:
+
+> *"the `fillet_cap` barrier built on it is flatter than ever and cannot be carrying +36.97.
+> The live path is the stress/`Kt` one the knee gates: `_kt_rim` is
+> `stress_concentration_kt(g[13], g[11])`, `R_rim` with `t3`, which is exactly what a rim at
+> util 0.90959 above a 0.80 knee predicts."*
+
+**Its elimination is right; its conclusion is wrong twice, for two independent reasons.**
+
+**ONE — THE MECHANISM IT NAMES CARRIES NO GRADIENT, AND HAD CARRIED NONE FOR FIVE DAYS.**
+`src/wheel_objective.py:1283-1287` says so in the source, and `:1288` proves it rather than
+promising it: `(kt_hub, _), (kt_rim, _) = junction_kt(...)` **discards both gradients**, and
+the only other use of either is `kt_max` at `:1380`, reaching the `by_p` diagnostic dict at
+`:1385` and no term.  `git log -S "(kt_hub, _), (kt_rim, _)"` returns exactly one commit —
+`d2cf9fa`, 2026-09-03, the fillet switch, which §135's own section cites as §102/§103.  At
+`d2cf9fa^` the same call site bound `dkt_hub`/`dkt_rim` and a loop at `:1255` fed them into
+`d_stress` and `d_stress_margin`; that loop is now §4's, over `dagg_j`.
+
+**AND THE TREE SAID SO IN SOURCE 86 MINUTES AFTER §135 WAS COMMITTED.**  §135 is `6f1f01e`,
+2026-09-08 15:10:21.  `322262c`, 2026-09-08 16:37:04 — four commits later, the same afternoon
+— retired the same clause in `wheel_adjoint.py`'s header, and its subject line is *"§103
+unwired the surrogate from the loss"*.  **Neither section went back to §135's sentence, and it
+has read as the tree's answer for thirteen days.**
+
+**TWO — THE ROUTE IT MEANT HAS THE OPPOSITE SIGN.**  Read past the dead parenthesis, §135
+means the knee-gated `stress_margin` term, which IS live at `coarse` and IS what a rim over
+the knee predicts.  §5 measures it at §135's own rung: **−2.353 against the +36.969 it was
+offered to explain**, 6.4% of it and the wrong way.  The carrier there is the mesh route —
+which §135's OWN §1 had already dated and named (*"the mesh route opened at §85"*, `75bc9d9`,
+2026-08-26, pinned by a green test).  **§135 held both halves and joined them wrongly.**
+
+**WHAT THIS DOES NOT TOUCH.**  §135's readings are exact — part A reproduces every digit.  Its
+gene census, its three-genome table, its `1e-4`-is-an-instrument finding and its dating of the
+mesh route all stand.  What is superseded is one sentence of attribution.  §135 is a dated
+record and is not rewritten; that is what the numbered sections are for (§189 §7's rule).
+
+### 9. WHAT §189 §2 MARKED "INFERRED" IS A COMMITTED READING
+
+§189 §2 carried `hub util at coarse/8  0.910425  INFERRED from the two above, not read`, with
+the note *"no run produced it"*.  **A run produced it and the tree had already tabulated it.**
+`best_solution.json` carries `/metrics/stress_utilisation_hub` = **0.9104250668518019** beside
+the rim's `0.9530146348215367`; its `search` block is `coarse`/8/`svk`; and
+`FILLET_PLAN.md:4713` prints the pair as one row of five.  Part C now measures it a third
+time.
+
+The number is not wrong, and the reason it is not wrong is the reason it was never
+corroboration.  The inference inverted `w*((u_hub−k)² + (u_rim−k)²)` using the recorded
+`loss_terms.stress_margin`, and that term was COMPUTED from those two utilisations by that
+same formula — so the inversion returns the recorded hub **to the last bit** (checked here:
+relative difference exactly 0.000e+00) and could not have done otherwise.  **An inference that
+inverts the formula its own input came from re-derives its input and tests nothing.**  §189
+marked it honestly as an inference and leaned nothing on it, which is why this costs nothing;
+what it cost was the reading that was already on disk.
+
+### 10. THE GREEN TEST THAT PINS THE PREMISE PINS IT WHERE THE WALL GOVERNS
+
+`test_but_above_the_knee_the_fillet_radii_are_live` (`tests/test_objective.py:938`) asserts
+`g[12] < 0.0` at `:985` and is GREEN.  **NOT RE-RUN HERE, AND QUOTED AS SOMEONE ELSE's RUN:**
+§187 §4 ran the five-test subset at HEAD under `--runxfail` on 2026-09-18 — `703.93 s, 2
+failed (the xfail pair) and 3 passed`, this among them — and the two commits since changed one
+string constant (§188, AST-identical once strings are blanked) and comments only (§189,
+`ast.dump` identical).
+
+Its fixture is `genes_over_knee`, whose hub reads **1.68672** — above the WALL, which §187 §4
+already says of the same fixture, not merely above the 0.80 knee the test is named for.  §4's
+prefactor, at that design and at the one that ships:
+
+```
+  design                      util_hub   margin prefactor   WALL prefactor      total
+  b729e86 SHIPPED, coarse/8    0.91093         19.79             0.00           19.79
+  genes_over_knee, coarse/8    1.68672        158.21          5493.76         5651.97
+```
+
+**285.6x, of which the 4000.0 `stress` barrier supplies 97.20%.**  So the green assertion is a
+claim about a design the hard wall is already vetoing, and it is silent about the sign where
+`stress_margin` is the only live gate.  **The test is not wrong and nothing here asks it to
+change**; what is wrong is reading it as the premise's guarantee at a shippable design.  §6 is
+a reading at one — and it agrees with the test, for a reason the test does not supply.
+
+### 11. A ONE-POINT CONTRIBUTION TO §189 §4's OPEN DIRECTION, AND ITS LIMIT STATED FIRST
+
+§189 §4 declined to say whether adopting 111.196 buys margin or mass and registered the
+falsifier as *"a pair of `coarse` re-descents from the same start"*.  **That is still the
+measurement and this is not it.**  What §6 supports is a statement about the gradient at ONE
+point, holding the design and therefore the mesh route fixed — and §189 §2 established the
+term is exactly linear in `w`, so it needs no further run:
+
+```
+  coarse/8/SVK, b729e86            stress->hub   TOTAL hub   stress->rim   TOTAL rim
+    w = 89.21   frozen at §189       −5.065493   −3.764826     −3.088967   −0.110924
+    w = 111.196 §99's formula        −6.313895   −5.013228     −3.850250   −0.872206
+```
+
+At the descent's own rung both gradients are already negative and the larger weight makes both
+**more** negative — the opposite of what the same arithmetic gives at `coarse`/8/linear, where
+both stay positive.  **This does not reopen §189's freeze**, which stands on the
+self-reference — a weight re-anchored at every promotion takes its input from the output of
+the search it steers — and that is a fact about wiring which no gradient touches.  What it
+does is give successor 1 a prior it did not have.
+
+### 12. THE COST, AND A PROHIBITION WHOSE PREMISE HAS MOVED
+
+```
+  one coarse/8 objective() call, serial, shipped genome
+    §135, 2026-09-08      1359.3 s   44 GiB       sampled RSS series, a watchdog
+    PART A, linear        447.4 s    17.286 GiB   /proc VmHWM, 20 s, 15 samples
+    PART C, SVK           488.9 s    17.103 GiB   /proc VmHWM, 20 s
+```
+
+**THE INSTRUMENTS ARE NOT THE SAME AND THE RATIOS ARE APPROXIMATE.**  A sampled RSS series is
+a lower bound on its own peak; a kernel high-water mark is not.  Part A's figure is the mark
+rather than a truncated one — it stood at 17.286 for its last FOUR samples, 09:19:20 through
+09:20:20, while the process was still alive.  §164's compile collapse is the obvious cause of
+both ratios and is **NOT asserted**: three weeks and 135 commits separate the runs, more than
+one thing changed, and by CLAUDE.md's confound check that makes it a hypothesis.
+
+What does follow is narrower.  §135 §3's rule — *"Nothing may run beside a `coarse` objective
+call, pool or no pool"* — was derived FROM the 44 GiB, explicitly: *"one serial call is 44 GiB,
+~72% of a 61 GiB box, so two copies were never going to fit."*  At 17.286 the same call is
+**28%** of the same box.  **The rule is NOT rewritten here** — three runs, one genome, and
+nothing in this section measured a pool.  It is filed as a successor, and it was obeyed
+throughout: nothing ran beside parts A, B or C, and SVK costs 9.3% more wall than linear for
+1.1% less memory.
+
+### 13. THIS SECTION's OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
+
+All twenty-seven were read back against HEAD before this section was written, and **this is a record-only
+commit** — no source file is touched, so §186's "stale on arrival" case cannot arise.
+
+`src/wheel_objective.py:759`, `:1280-1281`, `:1283-1287`, `:1288`, `:1345-1355`, `:1349`,
+`:1353-1354`, `:1380`, `:1385`; `src/wheel_requirements.py:954`, `:955-957`;
+`src/wheel_fem.py:1336`, `:1496`, `:1719`; `tests/test_objective.py:751`, `:840`, `:872`,
+`:938`, `:985`; `tests/test_export_contract.py:172`; `studies/study_reds_hub_share.py:118`;
+`PLAN.md:21044-21046`, `:29434-29438`; `FILLET_PLAN.md:4713`, `:4959-4964`;
+`KINEMATICS_PLAN.md:597`.
+
+Every bare `:N` above carries the owner named immediately before it in the same run of
+semicolons — §188 §8's mis-carry is why that sentence is here and why the list was read back
+with that failure in mind.  `d2cf9fa`, `d2cf9fa^`, `6f1f01e`, `322262c`, `75bc9d9`, `b729e86`
+and `09e8188` are commit or genome hashes, not anchors;
+`/metrics/stress_utilisation_hub` and `loss_terms.stress_margin` are JSON keys.
+
+**THE PREDICTION, REGISTERED BEFORE THE COMMIT.**  This section appends to `PLAN.md` and edits
+nothing else, so it moves no existing line and changes no content anything cites.  Predicted:
+every anchor above resolves `ok`; the total rises by this section's own count; and **not one
+new row enters the human list.**  §189's identical prediction held on its own half and was
+beaten on the half an N-for-N cannot protect — citations TO content that changed.  **That half
+has no purchase here, so if a new human row appears the prediction is wrong and the cause is
+something this section has not thought of.**
+
+### 14. SUCCESSORS, RANKED
+
+0. **WHICH TERM IN THE MESH RESIDUAL COLLAPSES UNDER SVK.**  §6 measures the collapse — 17.2x
+   at the hub, 13.2x at the rim, one kwarg apart — and §5 says the residual was never
+   enumerated at `coarse`.  The obvious candidate is `deflection` (SVK stiffens the wheel
+   geometrically, and the loss at this genome and rung falls 76.023856 under linear — §135's
+   figure, whose gradients and utilisations part A reproduced to the digit — to part C's
+   52.5661506811793870 under SVK), and `mass` is pure geometry and cannot
+   move with a strain measure at all — **but neither is measured and neither is claimed.**
+   Two `objective()` calls that keep `brk["terms"]` instead of throwing it away, ~490 s each,
+   at argv this section already has.  **Highest value on this list**: it turns §6's mechanism
+   from a residual into a named term.
+1. **THE SIGN AT `medium`/8/SVK, WHICH IS WHAT SHIPS.**  §6 is a `coarse` result and §118's
+   table puts the shipped genome at hub 0.954467 / rim 0.972345 there — higher on both
+   junctions, so the stress prefactor is larger and the case for a negative total is
+   stronger.  **That is an argument, not a measurement, and the rim's 3.6% margin is exactly
+   the size that makes arguing it a bad idea.**  One `medium`/8/SVK call.
+2. **THE `Kt`-PRICES-THE-FILLET CENSUS, SHAPED BEFORE IT IS RUN.**  §8 establishes `Kt`
+   reaches no term.  `wheel_adjoint.py`'s header already says so — `322262c`, 2026-09-08 —
+   and that correction is the template: one clause, retired with its date.  Live text still
+   reading the other way, as CANDIDATES and not findings, because each needs reading against
+   `fillet_cap` (which IS live) first: `src/wheel_objective.py:759`,
+   `tests/test_export_contract.py:172`, `studies/study_reds_hub_share.py:118`,
+   `tests/test_objective.py:751`.  `:759`'s sentence is BYTE-IDENTICAL to `d2cf9fa^`'s
+   `:730`, so it is a pre-switch comment the switch left standing — the same shape `322262c`
+   fixed.  **A different census from §136's**, which swept `insensitive_genes`, a MESH
+   instrument, and found four sites saying the pair was DEAD; these say it is priced through
+   `Kt`.  Reading only, no solve.
+3. **THE `xfail` REASON AT `tests/test_objective.py:840` NOW CARRIES A RUNG-LESS NUMBER.**  It
+   states `dL/dR_hub +3.048e+01, dL/dR_rim +5.899e+01` and calls the route MESH-carried.  Both
+   are correct at `smoke`/2 and §187 measured them there deliberately.  **Nothing in it is
+   false** — but a reader meeting it after §6 needs the rung, and §187 and §188 each spent a
+   section on this same string.  A scope clause, not a rewrite, and the N-for-N discipline
+   applies: 36 citations point into that file and 20 anchor below the edit (§187).
+4. **THE DESCENT PAIR THAT WOULD MEASURE §189 §4's DIRECTION** — §189's successor 2,
+   unchanged, with §11's prior.  Nothing in the freeze depends on it.
+5. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §189's successor 1, minus one stated
+   job: §9 shows `util_hub` at `coarse`/8 was never an inference needing a run.
+6. **§135 §3's PROHIBITION AND ITS 44 GiB PREMISE** — §12.  The pool case is what the rule was
+   written for and is unmeasured; until then the rule stands.
+7. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §189's
+   successor 3, unchanged.
+8. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §189's successor 4, unchanged.
