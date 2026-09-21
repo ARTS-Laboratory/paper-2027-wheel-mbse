@@ -31449,3 +31449,35 @@ commit, so a pre-commit sweep reports a section's own citations as missing, all 
 11. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §190's successor 5.
 12. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §190's successor 7.
 13. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §190's successor 8.
+
+### 11. THE SWEEP PREDICTION, RESOLVED — AND ITS WEAK HALF FAILED, FOR THE REASON §174's RULE EXISTS
+
+```
+  predicted   total unchanged at 1604          human list 148, identical row for row
+  measured    total 1604 -> 1606  (+2)         human list 148, IDENTICAL ROW FOR ROW
+```
+
+**THE STRONG HALF HELD AND THE WEAK HALF DID NOT, AND THE WEAK HALF IS THE ONE WORTH
+WRITING UP.**  §9 says *"this section cites no source line"* and lists none.  It minted
+**two**: `tests/test_objective.py:840` and, carried from it by §138 §4's continuation rule,
+`:88` — both inside **§10's successor 4**, which was written AFTER §9's citation list and
+never sent back through it.  Both resolve `ok` (1456 -> 1458), so nothing is damaged and the
+human list did not move; what failed is the census, not the tree.
+
+**THIS IS THE EXACT DEFECT §174's RULE WAS WRITTEN TO CATCH, ARRIVED AT FROM A DIRECTION THE
+RULE DOES NOT COVER.**  The rule is *"list this section's own citations before committing"*,
+and §187, §188, §189, §190 and §191 all obeyed it and all passed.  It assumes the citation
+list is written LAST.  Here it was written last **of the section** and then a successor list
+was appended below it — and a successors block is exactly where a `file:N` gets typed,
+because naming the next piece of work means naming where it lives.
+
+**THE RULE, TIGHTENED BY ONE CLAUSE, AND EARNED:** *the citation list is written after the
+SUCCESSORS, not after the prose.*  Five sections' worth of evidence that the rule works is
+five sections in which the successors happened to cite nothing; §190's successor 2 lists four
+source anchors and §190 §13 caught them because that section wrote both blocks together.
+
+**AND THE PREDICTION WAS THE INSTRUMENT THAT CAUGHT IT.**  A "+0" that came back "+2" is a
+one-line diff to chase.  Had §9 predicted nothing, two uncounted citations would have entered
+the record silently and the next section's baseline would have absorbed them — which is the
+failure mode §119 records for reading a count instead of a list, one layer up: **here the
+LIST was clean and the COUNT was the one that knew.**
