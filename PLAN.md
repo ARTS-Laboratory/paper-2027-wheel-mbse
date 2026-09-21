@@ -31880,3 +31880,36 @@ anchors, both of which resolve — and the human list stays at **148**, identica
 Run after the commit (§191 §12).  §192 §11 predicted zero and got two by forgetting its own
 successors; this list was written below them for that reason, and the predicted number is
 stated rather than "no change".
+
+### 10. THE SWEEP PREDICTION, RESOLVED — +5 AGAINST A PREDICTED +2, AND §190 §13 HAD ALREADY WRITTEN THE REASON DOWN
+
+```
+  predicted   total 1608 -> 1610  (+2)      human list 148, identical row for row
+  measured    total 1608 -> 1613  (+5)      human list 148, IDENTICAL ROW FOR ROW
+```
+
+The human half held.  The count did not, and the miss is **not a new finding — it is one this
+file already carries.**  §190 §13, resolving its own prediction:
+
+> *"56 IS MORE THAN THE 27 LISTED IN §13 AND THAT IS NOT A DISCREPANCY — the list names each
+> distinct anchor once and the sweep counts each `:N` token, and this section quotes several
+> of them more than once."*
+
+§9 lists **two distinct anchors** and the section spends **five tokens** on them —
+`PLAN.md:28460` three times (§2, §3, §9) and `PLAN.md:27719` twice (§4, §9).  All five
+resolve; none appears in the human list.  **The stronger reading is the right one, as §190
+§13 also said: every OCCURRENCE resolves, not merely every distinct anchor.**
+
+**SO THE RULE IS NOT "LIST YOUR ANCHORS AND PREDICT THEIR COUNT" — IT IS "PREDICT THE TOKEN
+COUNT, WHICH IS THE ONLY THING THE INSTRUMENT MEASURES".**  Three predictions about this
+sweep have now been made in four sections and **two of the three missed, both on the
+instrument and neither on the tree**: §192 §11 predicted +0 having forgotten that its own
+successors block cites files, and this one predicted the number of distinct anchors where the
+sweep counts tokens.  §191's, which predicted neither — it said "the total rises by this
+section's own count" — is the one that held, and it held because it did not commit to a
+number it had not counted.
+
+**AND THIS ONE WAS AVOIDABLE BY READING THIS FILE.**  §190 §13 is four sections back and
+states the distinction in the same words it would have taken to get the prediction right.
+That is the re-finding cost this arc keeps paying: the check is `grep -n "PLAN.md:" <the
+section>` before predicting, one command, and it returns the five.
