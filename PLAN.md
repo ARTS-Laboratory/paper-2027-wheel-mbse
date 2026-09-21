@@ -31064,3 +31064,121 @@ and **the human list is identical row for row at 148** — checked as a LIST and
 total (§119).  §190's identical prediction held on both halves for a reason it stated —
 a record that corrects another record by argument mints no citation damage — and this
 section corrects §190 §5's rim column the same way, by saying so rather than editing it.
+
+### 12. THE CITATION PREDICTION, RESOLVED — AND THE SWEEP HAS AN INSTRUMENT TOO
+
+**HELD ON BOTH HALVES.**  Total **1573 -> 1596**, the 23 citations this section adds are all
+of them resolving, and the human list went **148 -> 148 and is IDENTICAL ROW FOR ROW**,
+checked as a LIST and not as a total (§119): no row added, none removed, none changed.  Not
+one citing row from this section's own line range appears in the report.
+
+**BUT THE FIRST RUN OF THE SWEEP SAID 171, AND THAT IS WORTH MORE THAN THE 148.**  It was
+run BEFORE the commit, and it returned exactly 23 new human rows — this section's own
+citations, every one of them, with the status `unknown` and the commit `0000000`:
+
+```
+  PLAN.md:31052   src/wheel_objective.py:1349   carried  unknown  0000000
+                  no line 1349 in src/wheel_objective.py at 0000000
+```
+
+`_citation_sweep.py` resolves an anchor **against the commit of the citing line**, found by
+blame.  An uncommitted line has no commit, so it resolves against the empty tree and every
+anchor it carries reads as missing.  **A PRE-COMMIT SWEEP IS STRUCTURALLY BLIND TO THE
+SECTION BEING WRITTEN** — it cannot return anything but a full set of false positives for it,
+and the count it prints is a count of one's own uncommitted lines.
+
+§190 ran its sweep after committing and so never met this.  The rule that follows is narrow
+and is a statement about this script, read from its own output and its `resolve()`:
+**the sweep is run after the commit, and a pre-commit run is a check on the REST of the
+tree only.**  The 148 baseline taken before the append is still the right baseline, because
+that is precisely the part of the tree the commit does not touch.
+
+### 13. `mean_dgrad` IS NOT "BACKED OUT" — IT IS AN EXACT QUOTIENT, AND ITS SIGN IS THE ARC's MECHANISM
+
+**§6's closing hedge is too weak and is superseded here by argument, not by editing it**
+(§189 §7's rule, applied to this section's own prose).  It said the 1.0504x and 1.1820x are
+"arithmetic on two measured products, not a reading", and that this section "never saw
+`mean_dgrad`".  That is wrong in a way worth correcting: `:1253` is
+`d_deflection = w * 2.0 * err / target * mean_dgrad`, and **every factor but `mean_dgrad` is
+known exactly** — `w["deflection"]` is 2500.0 (`:353`, no `weights` was passed),
+`target_deflection_mm` is 2.0 (`best_solution.json` records it beside the drop), and `err`
+is measured.  So `mean_dgrad = d_deflection / (2500 * err)` is a DIVISION, not an inference:
+
+```
+  rung               err             factor 2500*err    mean_dgrad[12]      mean_dgrad[13]
+  coarse/8/linear   -0.099004853    -247.512132970    -8.908604201e-02   -1.541756654e-01
+  coarse/8/SVK      -0.003986996      -9.967489513    -9.357155251e-02   -1.822378447e-01
+                                                       1.050350x           1.182014x
+```
+
+**ALL FOUR ARE NEGATIVE, AND THAT IS THE SENTENCE THIS ARC HAS BEEN MISSING.**  `mean_dgrad`
+is the mean axle drop's own derivative with respect to a fillet radius: **more fillet makes
+the wheel STIFFER and it drops LESS**, 0.089 mm of drop per mm of hub radius at linear,
+0.094 at SVK.  Put beside a NEGATIVE `err` — the wheel already drops LESS than its 2.0 mm
+target — the product is positive, and that is the whole of §190's "+22.418 mesh route":
+
+> **THE WHEEL IS TOO STIFF FOR ITS OWN DEFLECTION REQUIREMENT, FILLETS MAKE IT STIFFER, AND
+> SO THE `deflection` TERM HAS BEEN PUSHING BOTH FILLET RADII DOWN.**
+
+`stress_margin` pulls them up (negative, §3) because more fillet means less stress.  The two
+have opposed each other at every rung this arc has measured, and which one wins is decided
+by **how far the design sits from 2.0 mm**, a REQUIREMENT — not by the mesh, not by `Kt`, and
+not by the strain measure except through the drop it produces.  At `coarse`/8/SVK the drop
+is 0.40% off target, the deflection term nearly vanishes, and `stress_margin` wins: that is
+§190 §6's sign flip, in mechanism.
+
+**WHAT THIS DOES NOT SAY.**  It does not say the sign flips back at any particular target or
+fidelity — no run here moved `target_deflection_mm`, and the design's own optimality moves
+with it, so the linear-in-`err` arithmetic above prices the gradient AT THIS DESIGN and
+nothing else.  It is §14's successor 1.  And `mean_dgrad`'s own twelve other components were
+not recovered; only genes 12 and 13 were, because only those two have a `d_deflection` entry
+printed here.
+
+### 14. SUCCESSORS, RANKED
+
+0. **THE SIGN AT `medium`/8/SVK, WHICH IS WHAT SHIPS** — §190's successor 1, unchanged in
+   cost and **sharpened in what to watch**.  §190 argued the case from the stress prefactor
+   (§118's table puts the shipped genome at hub 0.954467 / rim 0.972345 there, so the
+   prefactor is larger).  §13 says the other factor is the one to read: **`medium`'s mean
+   axle drop against 2.0 mm.**  If `medium` moves the drop off the target the deflection
+   term reopens and the rim's 3.6% cancellation is not safe in either direction.  One
+   `medium`/8/SVK call, ~1 h, and the probe is written.  **Highest value on this list**:
+   it is the only rung that ships and both §190 and §191 now have an explicit prior on it.
+1. **DOES THE FLIP SURVIVE A CHANGE OF `target_deflection_mm`?**  §13 shows the whole mesh
+   route is proportional to `err`, so the arc's central sign is a function of a REQUIREMENT
+   the tree can change — `objective(genes, req=Requirements.baseline())` is the entry point
+   and MBSE_PLAN Step 3 built it.  **This is not free arithmetic**: moving the target moves
+   which design is optimal, so it needs a pair of re-descents, not a re-scoring.  Registered
+   here because §13 makes it askable for the first time.
+2. **THE CENSUS AT `genes_over_cap`** — §4's own named falsifier, and cheap.  Ten terms read
+   exactly 0.0 at genes 12 and 13 on `b729e86`; `fillet_cap` should be NONZERO at gene 12 on
+   a design over its hub cap, and the fixture already exists.  It would show "ten zeros" is a
+   property of the shipped genome rather than of the objective, which is how §4 scoped it.
+   One `coarse` call, or `smoke` if only the sign is wanted.
+3. **WHICH BARE CALL SITES ARE READ AS STATEMENTS ABOUT THE DESCENT** — §9 counted 28 and
+   resolved the config for only 7, because the rest pass a variable or take the default.  A
+   census that resolves the config through variables, and then names which of those sites'
+   RESULTS are quoted anywhere as the descent's rung.  Reading only, no solve.  Most bare
+   sites are bare because the argument is irrelevant to them (`src/wheel_stage3.py:337` is
+   `tiers=("t1",)`), so this is a filter, not a defect list.
+4. **THE 2.0 GiB MEMORY GAP** — §10.  Two probes, same rung, same box, same afternoon,
+   17.29/17.10 GiB against 15.27/15.05.  A candidate is named there and NOT claimed.
+   Settled by one run of §190's probe with its `captured` list dropped.
+5. **§135 §3's PROHIBITION AND ITS 44 GiB PREMISE** — §190's successor 6, unchanged, and
+   §191 adds a fourth and fifth serial `coarse` call at 15.27 and 15.05 GiB to the evidence
+   that the 44 GiB premise is stale.  The POOL case is still what the rule was written for
+   and is still unmeasured; until then the rule stands and was obeyed here.
+6. **THE `Kt`-PRICES-THE-FILLET CENSUS** — §190's successor 2, unchanged.
+7. **THE `xfail` REASON AT `tests/test_objective.py:840` CARRIES A RUNG-LESS NUMBER** —
+   §190's successor 3, unchanged, and §9 adds that the GREEN test one screen down has the
+   same gap: its fixture is `coarse`/8/linear and nothing says so.
+8. **THE DESCENT PAIR THAT WOULD MEASURE §189 §4's DIRECTION** — §190's successor 4.
+9. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §190's successor 5.
+10. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §190's
+    successor 7.
+11. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §190's successor 8.
+
+**THIS ADDENDUM's OWN CITATIONS:** `src/wheel_objective.py:353`, `:1253`;
+`src/wheel_stage3.py:337`; `tests/test_objective.py:840`.  `0000000` is git's null blame sha
+and `31052`/`1349` inside the quoted sweep row are that row's own text, not this section's
+anchors.
