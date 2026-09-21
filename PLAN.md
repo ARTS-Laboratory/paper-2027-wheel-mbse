@@ -31182,3 +31182,270 @@ printed here.
 `src/wheel_stage3.py:337`; `tests/test_objective.py:840`.  `0000000` is git's null blame sha
 and `31052`/`1349` inside the quoted sweep row are that row's own text, not this section's
 anchors.
+
+---
+
+## §192 — 2026-09-21. §191's SUCCESSOR 0 AND §190's SUCCESSOR 1, CLOSED AT THE RUNG THAT SHIPS: **BOTH FILLET LOSS GRADIENTS ARE NEGATIVE AT `medium`/8/SVK — `dL/dR_hub` −8.270 AND `dL/dR_rim` −2.136 — AND BOTH ARE MORE NEGATIVE THAN AT `coarse`, BY 2.197x AND 19.253x.** THE ARC's FOUNDING PREMISE HOLDS WHERE IT MATTERS, AND **THE RIM's 96.41% CANCELLATION, THE ONE THING §190 FLAGGED AS FRAGILE, EASES TO 47.34%**: ITS ZERO-CROSSING WEIGHT MOVES FROM `w` = 86.01 TO **42.23**, SO THE FROZEN 89.21 GOES FROM **1.04x CLEAR TO 2.11x**. THE DIRECTION WAS ARGUED FROM COMMITTED DATA BEFORE THE RUN AND BOTH POINT ESTIMATES LANDED INSIDE THEIR REGISTERED ±40% BAND. **SIX FORWARD VALUES REPRODUCE `study_svk_rescore.json`'s ROW 0 BIT FOR BIT, 0 ULP ON ALL SIX** — INCLUDING THE `stress_margin` §190 §7 HAD TO WIDEN A BAND FOR. AND §191 §7's REGISTERED OPEN QUESTION IS ANSWERED: **`mass` OVERTAKES `deflection`, AT THE RIM, HERE — 60.6% AGAINST 39.4% OF THE MESH ROUTE.** ONE PREDICTION FAILED AND IT IS THE CLOCK: **1322.2 s AGAINST §184's 906.9 s FOR THE SAME CALL**, 1.458x, CAUSE NOT ESTABLISHED
+
+One commit, record-only: this file, appended.  No source file is touched.
+
+### 1. SIX PREDICTIONS, REGISTERED BEFORE LAUNCH — AND THE DIRECTION ARGUED FIRST
+
+`falsifiers192.md`, written at 11:48 and the run launched at 11:48:14.  **The registration did
+the arithmetic it could do without a run**, which is the part worth keeping: `medium`/8 for
+BOTH kinematics on this genome was already on disk in `studies/study_svk_rescore.json`, and
+both factors move the same way against `coarse`/8/SVK.
+
+```
+  util_hub   0.9104250649 -> 0.9544672580   stress prefactor  19.702 -> 27.560   1.3988x
+  util_rim   0.9530146335 -> 0.9723447671   stress prefactor  27.301 -> 30.750   1.1263x
+  err       -0.0039869958 -> -0.0016206243  deflection factor -9.967 -> -4.052   2.4602x DOWN
+```
+
+The stress route (negative) grows and the deflection route (positive) shrinks, so the
+prediction was not a hope about a sign — it was a direction with two measured reasons.
+
+```
+  Q0  both negative, and more negative than at coarse          HELD  2.197x / 19.253x
+  Q1  hub -6.2665 / rim -1.9029, within +-40%                  HELD  -32.0% / -12.2%
+  Q2  cancellation ~50%, zero at w ~ 44.6, not near 89.21      HELD  47.34%, w = 42.23
+  Q3  forward values reproduce the artifact, 1e-8 / 1e-7       HELD AND BEATEN: 0 ULP x6
+  Q4  the capture is proved bitwise or nothing is quoted       HELD
+  Q5  800-1100 s and under 30 GiB                              SPLIT: 18.451 GiB, 1322.2 s
+```
+
+### 2. THE RESULT
+
+```
+  term            tier    d/dR_hub medium/8/SVK   d/dR_rim medium/8/SVK      value
+  mass             T2         +0.376954867           +1.162587309          44.47903598
+  deflection       T3         +0.385223201           +0.757428875           0.00656606
+  stress_margin    T3         -9.031718954           -4.055618386           4.77834208
+  the other eleven            exactly 0.0            exactly 0.0
+  ----------------------------------------------------------------------------------
+  TOTAL                       -8.269540886           -2.135602202
+```
+
+`stress` is **exactly 0.0** again — both junctions are under the 1.0 wall even at `medium`,
+at util 0.954 and 0.972 — so "the stress route" is `stress_margin` ALONE at this rung too,
+as §191 §5 found at `coarse`.  **Eleven terms exactly zero at a second mesh** reproduces
+§191 §3's census; it remains a reading at ONE GENOME, and `fillet_cap`'s zero is still a
+fact about `b729e86` sitting inside its cap, not about the objective (§191 §4).
+
+**AGAINST `coarse`/8/SVK, ONE THING DIFFERS: THE MESH.**  Same genome, same 8 uniform
+phases, same `kinematics="svk"`, same HEAD, same afternoon.  CLAUDE.md's confound check
+passes on this pair and is why a factor may be quoted across it at all.
+
+```
+                     coarse/8/SVK      medium/8/SVK      factor
+  dL/dR_hub          -3.7648262130     -8.2695408855     2.197x more negative
+  dL/dR_rim          -0.1109236014     -2.1356022018    19.253x more negative
+```
+
+### 3. Q2 — THE FRAGILE ONE, AND IT IS NO LONGER THE FRAGILE ONE
+
+§190 §6 refused to extrapolate its rim result and said exactly why: *"the total is 3.59% of
+the stress route it came from ... `dL/dR_rim` would reach zero at `w` = 86.01, and the frozen
+weight is 89.21.  The rim's negative sign sits 3.6% of the weight from flipping, and nothing
+in this section says it survives a change of genome or of fidelity."*  **It survives the
+change of fidelity, and it survives it with room:**
+
+```
+  rung            stress route    mesh route     total      cancellation   zero at w    clear by
+  coarse/8/SVK      -3.088967      +2.978043   -0.110924      96.41%         86.01       1.04x
+  medium/8/SVK      -4.055618      +1.920016   -2.135602      47.34%         42.23       2.11x
+```
+
+The frozen `stress_margin` weight of 89.21 (§189) sits **2.11x** above the value at which the
+rim's gradient would change sign at `medium`, against 1.04x at `coarse`.  **§190 WAS RIGHT TO
+REFUSE THE EXTRAPOLATION AND THE REFUSAL COST NOTHING** — the answer came out on the
+comfortable side, which is knowable only by measuring, and the run was 22 minutes.
+
+**WHAT THIS STILL DOES NOT SAY.**  One genome.  The zero-crossing weight is arithmetic at a
+fixed design — `stress_margin`'s gradient is exactly linear in `w` (§189 §2), so no run is
+needed for the crossing, but the design is held still while `w` moves, and a descent under a
+different `w` would not stay at this design.  It prices the sign here, not the optimum there.
+
+### 4. Q1's ERROR IS ALL IN ONE PLACE, AND ASSUMPTION A IS AUDITED TERM BY TERM
+
+Q1's point estimates assumed the 2x2 `d(util_j)/dR_j`, `mean_dgrad` and the `mass` gradient
+hold their `coarse`/8/SVK values.  Three of those four held to within 2.6%:
+
+```
+  quantity              coarse/8/SVK        medium/8/SVK       factor
+  mean_dgrad  hub    -9.3571552514e-02   -9.5080200166e-02     1.0161x
+  mean_dgrad  rim    -1.8223784470e-01   -1.8694743404e-01     1.0258x
+  mass grad   hub    +3.6799333939e-01   +3.7695486749e-01     1.0244x
+  mass grad   rim    +1.1615895377e+00   +1.1625873093e+00     1.0009x
+  2x2 hub COLUMN, in aggregate: stress route -7.0136 predicted -> -9.0317 measured   1.2877x
+  2x2 rim COLUMN, in aggregate: stress route -3.8028 predicted -> -4.0556 measured   1.0665x
+```
+
+**THE AXLE DROP's SENSITIVITY TO A FILLET RADIUS IS A `coarse` QUANTITY TO 2.6%, AND THE
+STRESS AGGREGATE's IS NOT.**  That is what a finer mesh buys: `mean_dgrad` is a global
+compliance derivative and converges early; the region p-norm over the fillet arc is a local
+quantity on the surface being refined.  **This is a two-rung reading and is offered as a
+hypothesis in that form**, not as a convergence claim — two points cannot establish an order,
+and §7's own arc has a memory of inflating one by 25%.
+
+**AND ASSUMPTION A's REGISTERED FALSIFIER IS NOT TESTABLE FROM THIS RUN, WHICH IS RECORDED AS
+THAT AND NOT AS "DID NOT FIRE".**  It named *"any 2x2 entry more than 1.4x its `coarse`
+value"* — four entries.  This probe captures per-TERM gradients and **not** the `dagg_j` that
+§190's did, so what came back is the aggregate COLUMN, one number where the falsifier wanted
+two.  1.2877x is under 1.4 and tells us nothing about whether an individual entry is: the
+column is a weighted sum of two entries with different prefactors and they could move in
+opposite directions.  **A falsifier that could not fire may not be reported as one that did**
+(§190 §3's rule, applied to my own register).  It is §6's successor 0.
+
+### 5. Q3 — SIX NUMBERS, 0 ULP, AND WHY THIS ONE IS SHARPER THAN §190's
+
+```
+  loss           54.1355230689437050        util_hub   0.9544672580405015
+  deflection      0.0065660576118883        util_rim   0.9723447670611012
+  stress_margin   4.7783420750841277        mass      44.4790359847414933
+```
+
+**All six identical to `studies/study_svk_rescore.json`'s row 0 `svk` block to the last bit,
+against a registered band of 1e-8.**  Provenance was checked before registering, not after:
+the artifact is `a8dd998`'s, and `git log a8dd998..HEAD -- src/` is one commit, `2954b0a`,
+which §189 established is comment-only.
+
+**THE `stress_margin` ROW IS THE INTERESTING ONE.**  §190 §7 gave this exact term its own
+derived band because it missed a uniform 1e-8 — *"quadratic in a difference six to eight
+times smaller than `u`, so a relative error in `u` is amplified twice"* — and Q3 carried that
+lesson forward by giving it 1e-7 in advance.  **It did not need it: 0 ULP.**  The two cases
+are not in tension and the difference names itself: §190 compared a serial call against
+`best_solution.json`, written by a POOLED DESCENT through `wheel_stage3.Evaluator`, and got
+~1e-9 on the utilisations; this compares a serial call against a serial rescore driver.
+**The ~1e-9 §190 §7 measured is a property of the descent's own recording, which is exactly
+what §190 §7 concluded from its third instrument** — and this is a fourth, agreeing.
+
+### 6. Q5 — THE MEMORY HELD, THE CLOCK DID NOT, AND THE SIDE LOG WAS MY OWN FAULT
+
+```
+  one medium/8/SVK objective() call, serial, shipped genome
+    §184 row 0, 2026-09-17, in a worktree      906.9 s
+    §192,       2026-09-21, this box          1322.2 s        1.458x
+```
+
+**Q5's 800-1100 s IS FALSIFIED.**  §184's figure was taken from its own table rather than
+estimated, which is what made it worth registering, and it is still 1.458x out.  A candidate
+is visible in the run's own stderr — two `slow_operation_alarm` lines, one reporting
+**2m1.4s** for a single `jit_traced` compile — and §184's row 0 ran its LINEAR call
+(2752.5 s) in the same process immediately before its SVK one, so that SVK call met a warm
+XLA cache while this one was cold.  **NOT ASSERTED.**  The two runs also differ in worktree,
+in `systemd-run` scope, in cap, and in four days of commits; by CLAUDE.md's confound check
+that is a hypothesis with more than one plausible cause, and testing it is one cold
+`medium`/8/LINEAR call away.
+
+Memory: **18.451 GiB**, well inside Q5's 30 GiB, and the run was launched under
+`systemd-run --user --scope -p MemoryMax=40G -p MemorySwapMax=0` (§184's precedent) which it
+never approached.  For scale, §191 measured `coarse`/8 serial at 15.27 and 15.05 GiB, so
+`medium` costs **+21%** over `coarse` on one process — far less than the mesh ratio, and not
+generalised from one run.
+
+**THE INSTRUMENT IS ONE READ, NOT A SERIES, AND THE REASON IS A BUG I INTRODUCED.**  The
+`/proc` side log that watched §191 was reused for this run through a careless `sed` that
+stripped a closing quote, so it died at line 11 and sampled nothing; `mem192.log` contains
+its error and nothing else.  The 18.451 figure is the probe's own single read of
+`/proc/self/status` `VmHWM` at the end of the call.  **That is the kernel's high-water mark
+and is monotone within a process, so a final read IS the peak** — §175's caution is about
+comparing reads across samples and processes, which is not what this is — but there is no
+trajectory here, and anything about WHEN the peak arrived is unavailable.
+
+### 7. §191 §7's OPEN QUESTION, ANSWERED: `mass` OVERTAKES `deflection`
+
+§191 §7 measured `mass`'s share of the mesh route rising from 1.64% to 28.29% at the hub
+across the kwarg and stopped there, in these words: *"whether `mass` overtakes `deflection`
+anywhere is not measured here."*  **It does, one rung up, at the rim:**
+
+```
+  rung / gene                deflection        mass       mesh route
+  coarse/8/linear  hub          98.358%       1.642%       +22.417870
+  coarse/8/SVK     hub          71.707%      28.293%        +1.300667
+  medium/8/SVK     hub          50.542%      49.458%        +0.762178
+  coarse/8/linear  rim          97.046%       2.954%       +39.321937
+  coarse/8/SVK     rim          60.995%      39.005%        +2.978043
+  medium/8/SVK     rim          39.449%      60.551%        +1.920016
+```
+
+**`mass` HAS NOT MOVED IN ABSOLUTE TERMS AT ANY POINT IN THIS TABLE** — +0.368 to +0.377 at
+the hub across two meshes and one kinematics, +1.1616 to +1.1626 at the rim.  Every column
+in it is `deflection` falling away beneath a constant.  At the rung that ships, the positive
+route pushing both fillet radii DOWN is **a majority `mass` at the rim**: a fillet adds
+material, material is mass, and mass is priced — which was always true and was always
+invisible under a `deflection` term twenty times its size.
+
+### 8. A LABEL BUG IN THE PROBE, CAUGHT AND CHECKED RATHER THAN NOTICED LATER
+
+`probe191_terms.py` prints its own banner from a hardcoded string, so this run's log opens
+`=== §191 PART B: coarse/8/SVK ===` while the config came from an environment variable and
+is `medium`.  **The log line is wrong and the data are not**: the JSON records
+`"config": "medium"`, and the decisive check is that the loss returned is
+**54.1355230689437050**, which is `medium`'s committed row — `coarse`/8/SVK's is
+52.5661506811793870, a different number by 3%.  Checked before reading anything else, because
+a probe whose banner disagrees with its argv is exactly the shape of §190 §2's finding.
+
+### 9. THIS SECTION's OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
+
+This section cites no source line.  Every anchor it would otherwise carry is quoted from
+§190 and §191 by section number, and the four quantities it compares against live in
+`studies/study_svk_rescore.json` (row 0), which is a tracked artifact and not a line citation.
+`a8dd998`, `2954b0a` and `b729e86` are commit or genome hashes.  `falsifiers192.md` is a
+scratchpad file and is not tracked.
+
+**THE PREDICTION, REGISTERED BEFORE THE COMMIT.**  An append that cites no `file:N` should
+move the sweep's total by **zero** and leave the human list at **148**, identical row for row.
+That is a weaker prediction than §191's and is stated as such — it has no citations to
+resolve, so it tests only that the append minted none by accident, which is a real failure
+mode for a section quoting numbers with colons in them.  **And it is run AFTER the commit**:
+§191 §12 measured that `_citation_sweep.py` resolves each anchor against its citing line's
+commit, so a pre-commit sweep reports a section's own citations as missing, all of them.
+
+### 10. SUCCESSORS, RANKED
+
+0. **THE 2x2 AT `medium`/8/SVK, WHICH IS THE FALSIFIER §4 COULD NOT FIRE.**  Re-run this
+   exact call with §190's `_pnorm_and_grad` spy restored alongside the per-term capture, and
+   the four `d(util_j)/dR_j` entries come back beside the terms.  It makes Assumption A's
+   registered falsifier testable, turns §4's "hub COLUMN 1.2877x in aggregate" into two
+   entries, and tests §4's own hypothesis that a local surface quantity refines while a
+   global compliance derivative does not.  **One `medium`/8/SVK call, ~1322 s, and both
+   instruments are already written** — they were in one probe at §190 and were separated by
+   my edit, which is the only reason this is a successor and not a row above.
+   **Highest value on this list**: it costs one run and closes a register.
+1. **THE COLD/WARM COMPILE TEST FOR §6's 1.458x.**  §184's 906.9 s SVK call followed a
+   2752.5 s LINEAR call in the same process; this one was cold and the stderr carries a
+   2m1.4s `jit_traced` compile.  One cold `medium`/8/LINEAR call, timed, settles whether the
+   gap is the XLA cache — and it is the SAME run successor 0 wants if the spy is added to it,
+   so the two should be launched as one pair.  **Do not quote 906.9 or 1322.2 as "the cost of
+   a `medium` call" until this is done**; they are not the same measurement.
+2. **DOES `mass` OVERTAKE AT `fine`, AND DOES THE RIM's MARGIN KEEP GROWING?**  §7's table has
+   three rows and a clear direction, and §3's 2.11x is a `medium` number.  `fine` is the only
+   rung left and nothing in this tree has ever solved an adjoint there — cost unknown and
+   likely hours, so this is filed as a QUESTION, not a plan.  Its value is that both of this
+   section's findings are monotone across the three rungs measured and a fourth point is what
+   separates "converging" from "still moving".
+3. **THE CENSUS AT `genes_over_cap`** — §191's successor 2, unchanged and now cheaper to
+   justify: eleven terms read exactly 0.0 at genes 12 and 13 at BOTH meshes, so the claim
+   that this is a property of `b729e86` rather than of the objective is the one thing two
+   rungs have not tested.
+4. **THE `xfail` REASON AND THE GREEN TEST BOTH CARRY A RUNG-LESS NUMBER** — §190's successor
+   3 and §191 §9, merged: `tests/test_objective.py:840`'s reason states `smoke`/2 figures
+   without saying so, and `:88`'s fixture is `coarse`/8/linear without saying so.  §192 gives
+   the scope clause its missing third rung — the premise now holds at `medium`/8/SVK, which
+   is what a reader meeting either string actually wants to know.
+5. **WHICH BARE CALL SITES ARE READ AS STATEMENTS ABOUT THE DESCENT** — §191's successor 3.
+6. **THE 2.0 GiB MEMORY GAP BETWEEN §190's AND §191's PROBES** — §191's successor 4, and §192
+   adds a third probe at 18.451 GiB whose retention differs from both.
+7. **§135 §3's PROHIBITION AND ITS 44 GiB PREMISE** — §191's successor 5.  A serial `medium`
+   call is now measured at 18.451 GiB, 30% of the box; the POOL case remains the one the rule
+   was written for and remains unmeasured.
+8. **DOES THE FLIP SURVIVE A CHANGE OF `target_deflection_mm`?** — §191's successor 1, and
+   §192 sharpens the prior sharply: at `medium`/8/SVK the deflection route is already only
+   +0.762 of a −8.270 total at the hub, so moving the target has less to work with there than
+   §191's `coarse` numbers suggested.  Still needs a pair of re-descents, not a re-scoring.
+9. **THE `Kt`-PRICES-THE-FILLET CENSUS** — §190's successor 2, unchanged.
+10. **THE DESCENT PAIR FOR §189 §4's DIRECTION** — §190's successor 4.
+11. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §190's successor 5.
+12. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §190's successor 7.
+13. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §190's successor 8.
