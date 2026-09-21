@@ -30747,3 +30747,320 @@ citation side.]**
 7. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** (~3.7 h) — §189's
    successor 3, unchanged.
 8. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §189's successor 4, unchanged.
+
+---
+
+## §191 — 2026-09-21. §190's SUCCESSOR 0, ITS "HIGHEST VALUE ON THIS LIST", CLOSED: **THE MESH RESIDUAL IS `deflection`, AND IT IS THE ONLY TERM IN IT — 100.000% OF BOTH COLLAPSES, NOT MERELY THE LARGEST SHARE.** THE ELEVEN OTHER NON-STRESS TERMS ARE EITHER **EXACTLY 0.0 AT GENES 12 AND 13 UNDER BOTH KINEMATICS** (TEN OF THEM) OR, IN `mass`'s CASE, **BIT-IDENTICAL ACROSS THE KWARG** — SO THE ARITHMETIC LEAVES NOTHING OVER. AND THE MECHANISM FACTORS WITHOUT A THIRD RUN: `src/wheel_objective.py:1253` MAKES THE DEFLECTION GRADIENT A **SCALAR TIMES A VECTOR**, AND **SVK LANDS THE AXLE DROP 0.40% UNDER THE 2.0 mm TARGET AGAINST LINEAR's 9.90% UNDER**, SO THE `err` PREFACTOR IS **24.8319x SMALLER** WHILE THE MESH SENSITIVITY MOVES **1.0504x / 1.1820x THE OTHER WAY**. **§190's "MESH ROUTE" WAS NEVER THE MESH GOING QUIET — IT IS A DEFLECTION TERM GOING TO SLEEP ON ITS OWN TARGET.** PLUS: THE ENUMERATION §186 §2 MADE AT `smoke`/2 IS CONFIRMED AT `coarse`/8 AND GIVEN SHARES, AND ITS TWO TERMS **SWAP RANK UNDER SVK** — `mass` GOES FROM 1.64% OF THE HUB's RESIDUAL TO 28.29%; §190 §5's `coarse`/8/linear **RIM** FIGURES CARRY §135's SEVEN-SIGNIFICANT-FIGURE LITERAL AND ARE CORRECTED IN THEIR LAST TWO DIGITS; AND THE ONE GREEN TEST THAT PINS THIS ARC's PREMISE RUNS AT **`coarse`/8/LINEAR**, WHICH NO SECTION HAS SAID
+
+One commit, record-only: this file, appended.  No source file is touched, so §186's
+"stale on arrival" case cannot arise and the green-before-commit rule is met the way §190
+met it — by changing nothing a test can see.
+
+### 1. EIGHT PREDICTIONS, ALL REGISTERED BEFORE THE RUN THAT COULD SETTLE THEM
+
+`falsifiers191.md` carried P1–P6 before either `coarse` call launched.  **P7 and P8 were
+written while part B was still solving**, which is the form §179 used and the reason is the
+same: part A's numbers plus §190's already-published SVK mesh route DETERMINE the SVK
+`deflection` entries, so the second run was a test of a stated arithmetic rather than a
+look at a new number.
+
+```
+  P1  the capture is proved bitwise, or no per-term number is quoted      HELD, both runs
+  P2  it reproduces §190 §5's split from the other side                   HELD (§5, one digit)
+  P3  the ten non-T3 terms are BIT-IDENTICAL across the kwarg             HELD, all ten
+  P4  (a) deflection >90% / (b) shared / (c) phase_ripple / (d) P3 falsified   LANDED ON (a)
+  P5  both runs reproduce §190 parts A and C                             HELD, every digit
+  P6  400-550 s and under 19 GiB each                                    451.4 / 492.1 s
+  P7  [11:23, mid-run] deflection SVK = +0.932674 / +1.816453 +-1e-6     HELD, 5.3e-07 / 8.1e-07
+  P8  [11:24, mid-run] the collapse is the `err` prefactor, 24.8320x     HELD (§6)
+```
+
+**P4 WAS WRITTEN AS FOUR NAMED OUTCOMES RATHER THAN A HOPE**, because §190's successor
+named `deflection` "the obvious candidate" and an obvious candidate that comes back
+confirmed is exactly the shape that gets read as evidence when it is only agreement.  The
+run landed on (a) and the prose below says so before it says why.
+
+### 2. THE INSTRUMENT WAS ALREADY IN THE OBJECTIVE AND WAS BEING THROWN AWAY
+
+`src/wheel_objective.py:1589` builds the gradient every caller gets as
+`gsum = np.sum([grads[k] for k in values], axis=0)` — a dict of **fourteen gene-length
+per-term gradient vectors** — and `:1595` and `:1598` keep only each one's NORM.  The
+vectors live for one line.  §190 §5 called the mesh route "a residual ... this section did
+not enumerate", and the thing that would have enumerated it was in the same function,
+computed, discarded.
+
+So nothing here is finite-differenced and there is no step size to defend.  The probe
+swaps `wheel_objective`'s module-level `np` for a forwarding proxy that records the one
+`np.sum` call whose first argument is a list of 14 arrays of shape `(14,)`.
+`objective`'s `normalized` defaults to **False** (`:1434`), so no `rng` chain rule applies
+and these are the units §190 §5 quoted.
+
+**THE CAPTURE IS PROVED, NOT ASSUMED, AND THE PROOF IS THE REASON A NAME MAY BE PUT ON A
+NUMBER.**  P1 required two bitwise identities before any per-term figure could be read: the
+fourteen captured vectors must sum to the RETURNED `g`, and each vector's
+`float(np.linalg.norm(v))` must equal that term's own `grad_norm` in the breakdown, under
+the `for k in values` order the two loops at `:1589` and `:1595` share.  Both held on both
+runs.  Had either failed the probe printed `REFUSED` and exited before printing a table.
+
+`wheel_pool.PINNED_ENV` is exported — §188 measured a bare probe outside both harnesses
+reading a gradient 81 ULPs off — and `kinematics=` is passed EXPLICITLY on both runs, which
+is §190 §2's whole finding turned into a habit.
+
+### 3. THE CENSUS.  FOURTEEN TERMS, TWO KINEMATICS, ONE KWARG APART
+
+```
+  term            tier    d/dR_hub linear    d/dR_hub SVK     d/dR_rim linear    d/dR_rim SVK
+  x_order          T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  hub_overlap      T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  smoothness       T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  fold             T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  arrival          T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  fillet           T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  fillet_cap       T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  buckling         T1      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  mass             T2      +0.367993339       +0.367993339      +1.161589538      +1.161589538
+  min_sj           T2      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  deflection       T3     +22.049876276       +0.932673468     +38.160347796      +1.816453806
+  stress           T3      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  stress_margin    T3      -5.055818150       -5.065493021      -2.353129025      -3.088966945
+  phase_ripple     T3      +0.000000000       +0.000000000      +0.000000000      +0.000000000
+  ------------------------------------------------------------------------------------------
+  TOTAL                   +17.362051466       -3.764826213     +36.968808308      -0.110923601
+```
+
+`mass`'s four entries are **bit-identical across the kwarg**, compared as `float.hex()` and
+not as printed decimals.  That is P3, and it is the measurement behind §190 successor 0's
+own parenthesis — *"`mass` is pure geometry and cannot move with a strain measure at all"* —
+which until now was a code reading with no run behind it.  All ten non-T3 terms pass it;
+for the nine that are identically zero it is trivial, and `mass` is the one that had
+something to lose.
+
+### 4. THE ANSWER, AND WHY IT IS AN IDENTITY RATHER THAN A SHARE
+
+```
+  dL/dR_hub   mesh route  +22.417870 -> +1.300667   a change of  -21.117203
+                deflection +22.049876 -> +0.932673   delta -21.117203   100.000% of it
+  dL/dR_rim   mesh route  +39.321937 -> +2.978043   a change of  -36.343894
+                deflection +38.160348 -> +1.816454   delta -36.343894   100.000% of it
+```
+
+**THE 100.000% IS NOT A ROUNDED 99.9 — IT IS THE ONLY ARITHMETIC THE TABLE ALLOWS.**  Strike
+`stress` and `stress_margin` and eleven terms remain; **ten of those eleven are exactly 0.0
+in all four columns and the eleventh, `mass`, is bit-identical across the kwarg**, so the
+change in the residual and the change in `deflection` are the same float.  §190 successor 0 asked to "turn §6's mechanism from a residual into a named term";
+the term is `deflection` and there is no second one.
+
+**AND THE SCOPE OF THAT IS NARROWER THAN THE SENTENCE SOUNDS, SO IT IS STATED HERE AND NOT
+IN A SUCCESSOR.**  Two different things hold it up and they have different reach:
+
+  - **A code fact, asserted.** Only T3 takes `kinematics` — it rides `**problem_kw` into
+    `t3_terms` at `:1579-1583` and `objective` never names it (`grep -n kinematics
+    src/wheel_objective.py` returns two COMMENT lines and no code).  So no T1 or T2 term
+    can move with a strain measure at any genome.  This is a rule about code this section
+    read and is asserted, per CLAUDE.md.
+  - **A measurement at ONE design, scoped.** That eleven terms read exactly 0.0 is a fact
+    about `b729e86` at `coarse`/8, not about the objective.  `fillet` and `fillet_cap` are
+    `soft_barrier`s and read zero because this design is inside both; `tests/test_objective.py`
+    keeps a `genes_over_cap` fixture precisely because the shipped genome no longer breaches
+    its hub cap. **THE FALSIFIER IS NAMED: run this census on `genes_over_cap` and
+    `fillet_cap` should be nonzero at gene 12.** Not run here.
+
+### 5. P2: §190 §5's SPLIT, REPRODUCED FROM THE OTHER SIDE — AND ONE COLUMN CORRECTED
+
+§190 built its stress route from the `dagg_j` the adjoint returned times the
+`2*w*max(0, u-k)` prefactor at `:1349` and `:1353-1354`.  This section reads the `stress`
+and `stress_margin` term gradients the objective itself assembled.  Two constructions, and
+they agree:
+
+```
+                      §190 §5 printed        §191 measured          
+  linear stress hub     -5.055818            -5.055818150           
+  linear stress rim     -2.353129            -2.353129025           
+  SVK    stress hub     -5.065493            -5.065493021           
+  SVK    stress rim     -3.088967            -3.088966945           
+```
+
+`stress` itself is **exactly 0.0 in all four columns** — both junctions are under the 1.0
+wall — so what §190 called "the stress route" is `stress_margin` ALONE at this design.  That
+is a sharpening of §190 §4, whose rule covered both terms because both have the same shape.
+
+**THE ONE CORRECTION, AND IT MOVES NOTHING.**  §190 §5 and §6 print `coarse`/8/linear
+`dL/dR_rim` as **+36.968810** and its mesh route as **+39.321939**.  Measured here:
+**+36.968808308200245** and **+39.321937333**.  The cause is not a bad reading — it is that
+`tables190.py` carried the rim total as the literal `36.96881e0`, seven significant figures,
+copied from what §135 PRINTED, while the hub was carried at full precision.  So §190's rim
+mesh route is a derived figure standing on a truncated input.  The collapse factor it
+reports, **13.20x**, is **13.204x** measured, and §190's own parenthetical precision is
+unaffected.  **§190's hub column has no such defect.**
+
+### 6. P8: THE MECHANISM, AND IT IS NOT WHAT "MESH ROUTE" SUGGESTS
+
+`:1253` is the whole of it:
+
+```
+  d_deflection = w["deflection"] * 2.0 * err / target_deflection_mm * mean_dgrad
+  err          = (mean_drop - target_deflection_mm) / target_deflection_mm      :1251
+```
+
+A SCALAR times a VECTOR.  So a collapse in it is the scalar, the vector, or both — and the
+scalar is recoverable from the term's own VALUE without another run, because
+`deflection = 2500 * err**2`:
+
+```
+                       deflection VALUE   err            mean axle drop      vs the 2.0 mm target
+  coarse/8/linear       24.504902387      -0.099004853    1.8019902936 mm     9.90% UNDER
+  coarse/8/SVK           0.039740339      -0.003986996    1.9920260084 mm     0.40% UNDER
+```
+
+**BOTH ERRORS ARE NEGATIVE AND THE SIGN IS READ, NOT INFERRED FROM A SQUARE ROOT.**
+`best_solution.json` records `metrics.axle_drop_mean_mm` = **1.9920260119553344** at its own
+`coarse`/8/`svk` search block, which agrees with the value-derived drop to **3.57e-09** and
+settles the branch.  Its `loss_terms.deflection` = 0.03974030333529417 is the same quantity
+from the same artifact and part B returns 0.039740338878.
+
+So the factorisation, with each half named:
+
+```
+  gene   deflection collapse      =   err prefactor    x    mean_dgrad moves
+  hub        23.6416x             =     24.8319x       x       1.0504x
+  rim        21.0082x             =     24.8319x       x       1.1820x
+```
+
+**24.8319 AGAINST THE 24.8320 REGISTERED AT 11:24, AND THE GAP IS THE REGISTER'S.**  P8 was
+written from part A's deflection value as this section's §6 table rounds it, 24.504902; the
+measured value is 24.504902386898.  One digit of the input, one digit of the ratio, and it
+is recorded rather than quietly re-rounded.
+
+**THE MESH SENSITIVITY DOES NOT COLLAPSE — IT GOES UP.**  `mean_dgrad`, the axle drop's own
+derivative with respect to each fillet radius, is 5.0% and 18.2% LARGER under SVK.  The
+entire collapse, and more, is the prefactor: the SVK wheel is stiffer, its axle drop lands
+almost exactly on the target the term is written against, and a two-sided squared error
+evaluated at its own minimum has a vanishing derivative.
+
+**WHAT IS MEASURED AND WHAT IS BACKED OUT, SEPARATED.**  The two `deflection` gradients and
+the two `err` values are measured.  `mean_dgrad`'s 1.0504x and 1.1820x are **arithmetic on
+two measured products, not a reading** — this section never saw `mean_dgrad` and does not
+claim to.  Naming it requires keeping `mean_dgrad` off a T3 call, which is §14's successor 0.
+
+**AND THE NAME "MESH ROUTE" SURVIVES, BARELY.**  §186 §2 and §190 §5 both called this
+route "the mesh", meaning it reaches genes 12 and 13 only through mesh coordinates, and that
+remains true — `mean_dgrad` IS a mesh derivative.  But the factor that changed across the
+kwarg is a scalar about a REQUIREMENT, `target_deflection_mm = 2.0`, and nothing about the
+mesh.  A reader who takes "the mesh route collapsed" to mean the fillet stopped moving the
+mesh has it backwards.
+
+### 7. §186 §2's ENUMERATION, CONFIRMED AT BOTH RUNGS — AND ITS TWO TERMS SWAP RANK
+
+§186 §2 (`PLAN.md:29434-29438`) enumerated the residual at `smoke`/2 and concluded it
+"leaves `deflection` and `mass` carrying the whole of it".  **It is exactly right, at both
+rungs, and this is the first time it has been given shares:**
+
+```
+  rung                      deflection     mass      everything else
+  smoke /2 /linear  hub        98.917%     1.083%      exactly 0.0   (the dry run, §8)
+  smoke /2 /linear  rim        97.975%     2.025%      exactly 0.0
+  coarse/8 /linear  hub        98.358%     1.642%      exactly 0.0
+  coarse/8 /linear  rim        97.046%     2.954%      exactly 0.0
+  coarse/8 /SVK     hub        71.707%    28.293%      exactly 0.0
+  coarse/8 /SVK     rim        60.995%    39.005%      exactly 0.0
+```
+
+**THE LAST TWO ROWS ARE THE INTERESTING ONES.**  `mass` does not move at all — it is the
+same float in all four `coarse` columns — but because `deflection` falls away beneath it,
+its share of the residual goes from **1.64% to 28.29%** at the hub and from 2.95% to 39.01%
+at the rim.  **At the rung the descent actually solves, a term that was a 3% rounding error
+under linear is two fifths of the mesh route.**  That is a statement about this genome at
+this rung and is not extrapolated: whether `mass` overtakes `deflection` anywhere is not
+measured here.
+
+### 8. THE CONTROL RUN, WHICH WAS CHEAP AND WHICH CAUGHT NOTHING — AND THAT IS THE POINT
+
+Before spending 944 s of `coarse`, the same probe ran at `smoke`/2/linear, for the single
+purpose of proving the capture machinery on a rung where the answer was already known.  It
+returned `dL/dR_hub` = **30.48037347703914** — the exact value §188 §3 established as the
+one both `pytest` runs agree on, and which a probe with `PINNED_ENV` unexported missed by 81
+ULPs.  **So the dry run doubles as a PINNED_ENV check on this session's probe**, which is why
+its 272 s were not a detour.  Its census is §7's first two rows.
+
+### 9. A THIRTEENTH CALLER OF §190 §2's TRAP, AND THIS ONE IS A TEST
+
+§190 §2 counted the callers that take `linear` silently: *"eleven study drivers never
+mention the argument at all"* — quoting `wheel_requirements.py:955-957`'s own comment — plus
+its own probe as a twelfth.  **THIS IS A DIFFERENT QUANTITY AND IS NOT OFFERED AGAINST IT:**
+that is a count of DRIVERS, and a driver can reach the objective through
+`wheel_stage3.Evaluator` without a call site of its own.  What is counted here is CALL SITES
+of `objective()` and `t3_terms()`.  On that count **the test suite is the larger half, and
+no section has counted it**.  Enumerated with `ast` across `tests/`, `studies/` and
+`src/` — a line grep cannot see a call whose kwargs wrap, which is what cost §183 four rows
+of a 67-row census:
+
+```
+  objective() / t3_terms() call sites          bare   **kwargs splat   explicit kinematics=
+                                                 28         11                 13
+```
+
+Of the 28 bare sites, **exactly two name `coarse` AS A LITERAL** — the census resolves the
+config only where it is a constant, and twenty-one pass a variable or take the default, so
+this is a lower bound on how many run at `coarse` and is quoted as one.  Of those two,
+**exactly one solves an FEA at all** — the other, `tests/test_objective.py:1231`, passes `tiers=("t1",)`.  The
+one that solves is `tests/test_objective.py:88`, the `genes_over_knee` fixture, `coarse` with
+an 8-phase uniform stencil and no `kinematics=`.
+
+**SO THE ONE GREEN TEST THAT PINS THIS ARC's PREMISE PINS IT AT `coarse`/8/LINEAR.**
+`test_but_above_the_knee_the_fillet_radii_are_live` asserts `g[12] < 0.0` off that fixture,
+and §190 §10 read it as the premise holding above the knee without naming its kinematics.
+It is the rung where §190 measured the SHIPPED genome at **+17.362**, positive.  **The test
+is not wrong and nothing here asks it to change** — §190 §10 already explained why it is
+green, that its fixture sits above the WALL where the 4000.0 barrier makes the prefactor
+285.6x larger — and this adds the second half of the same point: it is green at a design
+AND at a kinematics, and neither is the descent's.
+
+`src/wheel_stage3.py:337` is bare too and was checked rather than counted: it passes
+`tiers=("t1",)` and solves nothing, so `kinematics` cannot reach it.  **That check is why the
+number above is 28 and not a longer list of defects** — most bare sites are bare because the
+argument is irrelevant to them.  Which of the remaining ones are read as statements about the
+descent is §14's successor 2, and is not asserted here.
+
+### 10. THE COST, ON ONE INSTRUMENT
+
+```
+  one coarse/8 objective() call, serial, shipped genome, /proc VmHWM at 20 s
+    PART A, linear    451.4 s   15.269 GiB        §190 part A, linear   447.4 s   17.286 GiB
+    PART B, SVK       492.1 s   15.050 GiB        §190 part C, SVK      488.9 s   17.103 GiB
+```
+
+Wall clock reproduces §190 to under 1%.  **The memory does not, and the difference is NOT
+explained here**: 2.0 GiB lower on both runs, same instrument, same box, same HEAD, same
+afternoon.  A candidate exists — §190's probe wrapped `_pnorm_and_grad` and held both calls'
+full `pgrads` alive to the end of the process, while this one holds only fourteen 14-vectors
+— but two probes differ in more than their retention and CLAUDE.md's confound check makes
+that a hypothesis.  Filed, not claimed.
+
+§135 §3's rule — *"nothing may run beside a `coarse` objective call, pool or no pool"* — was
+obeyed: the two runs went one after the other, the side log is a `sleep`-and-`cat` loop on
+`/proc`, and the dry run finished before either launched.  §190's successor 6, the question
+of whether the rule's 44 GiB premise still holds, is **untouched here** and stays open.
+
+**VmHWM's MAX OVER SAMPLES, NOT ITS LAST READ** (§175): 16033964 kB across the side log's
+samples for part A, which is the 15.269 the probe's own in-process read reported.
+
+### 11. THIS SECTION's OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
+
+All read back against HEAD before this section was written, and **this is a record-only
+commit** — no source file is touched, so §186's "stale on arrival" case cannot arise.
+
+`src/wheel_objective.py:1251`, `:1253`, `:1349`, `:1353-1354`, `:1434`, `:1579-1583`,
+`:1589`, `:1595`, `:1598`; `tests/test_objective.py:88`, `:1231`; `src/wheel_stage3.py:337`;
+`PLAN.md:29434-29438`.
+
+`b729e86` is a genome hash, not an anchor; `metrics.axle_drop_mean_mm`,
+`loss_terms.deflection` and `search` are JSON keys; `falsifiers191.md` and `tables190.py`
+are scratchpad files and were never tracked.
+
+**THE PREDICTION, REGISTERED BEFORE THE COMMIT.**  This section appends to `PLAN.md` and
+edits nothing else, so it moves no existing line and changes no content anything cites.
+Predicted: every anchor above resolves `ok`; the total rises by this section's own count;
+and **the human list is identical row for row at 148** — checked as a LIST and not as a
+total (§119).  §190's identical prediction held on both halves for a reason it stated —
+a record that corrects another record by argument mints no citation damage — and this
+section corrects §190 §5's rim column the same way, by saying so rather than editing it.
