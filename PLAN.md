@@ -30685,6 +30685,25 @@ beaten on the half an N-for-N cannot protect — citations TO content that chang
 has no purchase here, so if a new human row appears the prediction is wrong and the cause is
 something this section has not thought of.**
 
+**[RUN, AND THE PREDICTION HELD ON BOTH HALVES.**  Total **1516 -> 1572**, and the 56 citations
+this section adds are **all of them resolving** — not one `PLAN.md:30312+` citing line appears
+anywhere in the report.  The human list went **148 -> 148 and is IDENTICAL ROW FOR ROW**,
+checked as a LIST and not as a total (§119): no row added, none removed, none changed.
+
+**56 IS MORE THAN THE 27 LISTED IN §13 AND THAT IS NOT A DISCREPANCY** — the list names each
+distinct anchor once and the sweep counts each `:N` token, and this section quotes several of
+them more than once (`:1288` and `:1353-1354` each appear in two places).  The stronger reading
+is the right one: every occurrence resolves, not merely every distinct anchor.
+
+**THE HALF THAT BEAT §189 HAD NO PURCHASE HERE, AS PREDICTED, AND THE REASON IS WORTH KEEPING
+RATHER THAN THE RESULT.**  §189's eleven new human rows came from citations TO content it
+rewrote, which an N-for-N line replacement cannot protect.  This section rewrote no content:
+it is an append, `diff` against the pre-image is empty above line 30310, and it supersedes
+§135's sentence in the way the numbered sections supersede — by saying so, not by editing it.
+**A record that corrects another record by argument mints no citation damage at all**, which
+is the same mechanism §189 §7 invoked for `FILLET_PLAN.md` §7 and is now measured from the
+citation side.]**
+
 ### 14. SUCCESSORS, RANKED
 
 0. **WHICH TERM IN THE MESH RESIDUAL COLLAPSES UNDER SVK.**  §6 measures the collapse — 17.2x
