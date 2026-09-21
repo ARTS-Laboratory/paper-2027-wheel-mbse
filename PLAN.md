@@ -31679,3 +31679,204 @@ that came back **+2**.  This list is written below the successors for that reaso
 
 **THE PREDICTION:** the sweep total moves by **zero** and the human list stays at **148**,
 identical row for row — and it is run AFTER the commit (§191 §12).
+
+---
+
+## §194 — 2026-09-21. §193's SUCCESSOR 0, CLOSED, AND THE ANSWER IS OUTCOME (a): **§192 §6's 1.458x IS THE XLA CACHE, MEASURED AT 1.4289x.** ONE PROCESS, LINEAR THEN SVK — §184 ROW 0's OWN ORDER — RETURNS **1144.5 s AND 906.3 s AGAINST §182's SERIAL 1139.1 AND 906.9: 1.0047x AND 0.9993x.** THE SAME SVK CALL RUN ALONE IS 1295–1322 s. **AND THE REGISTER's LINEAR BASELINE WAS WRONG, IN EXACTLY THE CLASS §184 §1 RECORDED AND CAUGHT THE SAME WAY — BY DIVISION**: I REACHED FOR THE COMMITTED ARTIFACT's `elapsed_s` (2752.5 s, PRE-§164) INSTEAD OF §182's SERIAL RE-RUN AT HEAD, AND THE RATIO CAME BACK **0.416x**, WHICH IS NOT A NUMBER ANY OF MY FOUR OUTCOMES ALLOWED. PLUS, FREE: **THE CENSUS GRID IS COMPLETE, AND THE SIGN IS SET BY THE KINEMATICS AND NOT THE MESH** — BOTH LINEAR RUNGS POSITIVE, BOTH SVK RUNGS NEGATIVE — `mass` IS **BIT-IDENTICAL ACROSS THE KWARG AT BOTH MESHES**, AND §191 §13's `err`-TIMES-`mean_dgrad` FACTORISATION REPRODUCES AT `medium` TO **1.0517x AGAINST `coarse`'s 1.0504x**
+
+One commit, record-only.  The run: one process, two `objective()` calls, 2050.7 s, capped
+at 40G, nothing beside it (§135 §3).
+
+### 1. THE DESIGN, WHICH IS WHY ONE RUN SETTLED IT
+
+§192's successor 1 as filed asked for *"one cold `medium`/8/LINEAR call, timed"*.  That
+yields one number and no control.  **Running the PAIR in one process replicates §184 row 0's
+actual configuration**, and the linear half is the control that could have killed the
+hypothesis outright: if linear also came back ~1.46x slow, the gap would be systematic to
+this box and the cache irrelevant.  Four outcomes were named before launch, with my own
+guess registered as (b) so the run could not be read as confirming whatever it returned:
+
+```
+  (a) linear ~1.0x, svk ~1.0x    warm cache explains it            <-- LANDED HERE
+  (b) linear ~1.0x, svk ~1.4x    warm cache refuted                <-- what I guessed
+  (c) linear ~1.4x, svk ~1.4x    systematic, cache irrelevant
+  (d) linear ~1.4x, svk ~1.0x    incoherent; re-run before writing
+```
+
+### 2. THE MEASUREMENT
+
+```
+                                        linear s     svk s
+  study_svk_rescore.json COMMITTED        2752.5      922.3    pre-§164, the WRONG baseline
+  §182's SERIAL RE-RUN AT HEAD            1139.1      906.9    the right one (`PLAN.md:28460`)
+  §194, one process, this box             1144.5      906.3    1.0047x and 0.9993x
+  §192 / §193, SVK ALONE, cold               --     1322.2 / 1295.0
+```
+
+**COLD SVK / WARM SVK = 1.4289x**, against the 1.458x §192 §6 filed as a real gap with no
+established cause.  §192 §6 was right that it was real and right to refuse the explanation on
+one run; the cause is a preceding call in the same process, and it is now measured rather
+than named.
+
+**AND THE ANSWER CHANGES IN NO BIT.**  S2 predicted the SVK call would reproduce §193
+exactly, because a cache may not alter arithmetic: `L`, `dL/dR_hub`, `dL/dR_rim`, **all
+fourteen term entries and all four 2x2 entries are bit-identical** to §193's standalone run.
+Only the clock moved.
+
+### 3. THE BASELINE I GOT WRONG, AND THE DIVISION THAT CAUGHT IT
+
+`falsifiers194.md`'s outcome table is written against *"§184's 2752.5 s"* for the linear
+call.  **That is the committed artifact's `elapsed_s`, a PRE-§164 figure, and not §184's
+baseline at all.**  §184's own table reads `1139.1 -> 880.5` for linear and
+`906.9 -> 550.1` for svk — serial at HEAD to two workers — and `PLAN.md:28460` is where
+§182 records the pair that produced those serial numbers, `2752.5 -> 1139.1` and
+`922.3 -> 906.9`, artifact to re-run.
+
+**§184 §1 RECORDED THIS EXACT ERROR CLASS AND I WALKED INTO IT FOUR DAYS LATER:**
+
+> *"THE 1.630x IS AGAINST §182's SERIAL RE-RUN, NOT THE COMMITTED ARTIFACT ... a figure that
+> credits the pool with §164's compile collapse.  The wrong baseline was reached for once in
+> this record and caught by division."*
+
+Caught the same way.  The first ratio printed was **0.416x**, and 0.416 is not a number any
+of §1's four outcomes allowed — a control that comes back 2.4x FASTER than its baseline is
+not a result, it is a wrong denominator.  **The register's SVK baseline was right** (906.9 is
+§182's serial figure), so the test itself was never affected; only the control's denominator
+was, and against the correct one the control passes at 1.0047x instead of failing at 0.416x.
+
+**AND §192 §6 USED THE RIGHT BASELINE**, 906.9, so its 1.458x stands as stated and nothing in
+§192 needs correcting.
+
+### 4. A PROPERTY OF THE DRIVER, WHICH IS THE REUSABLE PART
+
+`study_svk_rescore` scores each genome LINEAR first and SVK second, in one process.  So its
+per-call `elapsed_s` are **not comparable with each other**: the first kinematics pays the
+compile and the second does not.
+
+```
+  the same medium/8/SVK call     906.3 s   second in a process
+                                1295.0 s   first in a process        1.4289x
+```
+
+**ANY `svk/linear` COLUMN IN THAT ARTIFACT IS A RATIO OF A WARM CALL TO A COLD ONE**, and
+`PLAN.md:27719` prints one: `0.335` for row 0.  Nothing here says that column was ever read
+as a cost model — it was printed beside the numbers it came from — but a reader who takes
+0.335 as "SVK is a third the price of linear" has the compile on the wrong side of it, and at
+this rung the honest standalone figure is 1295.0 / 1144.5 = **1.13x**, not 0.34x.  **This is
+a statement about the driver's INSTRUMENT, not about its science**: §184 verified the
+artifact's 442 float leaves bit-identical across the pool boundary, and no value moves.
+
+### 5. THE CENSUS GRID, COMPLETED — AND THE SIGN IS THE KINEMATICS' DOING
+
+`medium`/8/LINEAR was the one empty cell of (coarse, medium) x (linear, SVK) and came out of
+this run at no extra cost.  S3 predicted eleven terms exactly 0.0, `stress` exactly 0.0, and
+both totals POSITIVE.  **All of it held.**
+
+```
+  rung                dL/dR_hub      dL/dR_rim   stress_margin hub   deflection hub
+  coarse/8/linear    +17.362051     +36.968808        -5.055818        +22.049876
+  medium/8/linear    +13.144368     +36.122281        -9.151560        +21.918973
+  coarse/8/SVK        -3.764826      -0.110924        -5.065493         +0.932673
+  medium/8/SVK        -8.269541      -2.135602        -9.031719         +0.385223
+```
+
+**BOTH LINEAR RUNGS POSITIVE, BOTH SVK RUNGS NEGATIVE.**  §190 had one pair and scoped its
+finding to it; with four cells the statement is stronger and still scoped: **across the two
+meshes this tree solves at, the SIGN of both fillet gradients is set by the strain measure
+and not by the mesh.**  The mesh moves magnitudes — and moves them most under SVK, where the
+hub goes 2.197x and the rim 19.253x more negative — but it does not move a sign anywhere in
+this grid.  **One genome, two meshes, and the falsifier is named: a third mesh, or a genome
+whose axle drop sits on the target under LINEAR, which would collapse the positive route
+without changing kinematics at all.**
+
+### 6. THREE THINGS THAT REPRODUCED ACROSS THE MESH, WHICH IS WHAT MAKES THEM RULES
+
+**`mass` IS BIT-IDENTICAL ACROSS THE KWARG AT BOTH MESHES.**  §191 P3 measured it at `coarse`
+and asserted the code reason (only T3 takes `kinematics`); `medium` now carries the same
+result, compared as `float.hex()`, at both genes.  Eleven terms read exactly 0.0 in all four
+cells.
+
+**THE STRESS ROUTE IS NEARLY KINEMATICS-INDEPENDENT, AT BOTH MESHES.**
+
+```
+            hub                          rim
+  coarse   -5.055818 -> -5.065493  1.0019x     -2.353129 -> -3.088967  1.3127x
+  medium   -9.151560 -> -9.031719  0.9869x     -3.160149 -> -4.055618  1.2834x
+```
+
+§190 §6 measured 1.00x and 1.31x at `coarse` and that is the whole shape again at `medium`:
+the hub's stress route barely notices the strain measure, the rim's moves ~30%.
+
+**AND §191 §13's FACTORISATION REPRODUCES TO THE THIRD DIGIT.**
+
+```
+  mesh     gene   deflection collapse  =  err prefactor  x  mean_dgrad moves
+  coarse   hub        23.6416x              24.8319x          1.0504x
+  medium   hub        56.8994x              59.8407x          1.0517x
+  coarse   rim        21.0082x              24.8319x          1.1820x
+  medium   rim        50.3279x              59.8407x          1.1890x
+```
+
+The collapse is **2.4x bigger at `medium`** and for the reason §191 §13 gives: `medium`/SVK's
+axle drop sits 0.162% off the 2.0 mm target against `coarse`/SVK's 0.399%, so the `err`
+prefactor has further to fall.  **`mean_dgrad`'s response to the kwarg is 1.0504 / 1.0517 at
+the hub and 1.1820 / 1.1890 at the rim** — two meshes, four numbers, agreeing to under 0.6%.
+That is a mesh-independent property of this genome and is the strongest form §191 §13's
+mechanism has been stated in.
+
+### 7. COST, AND S4
+
+```
+  §194, one process    linear 1144.5 s   svk 906.3 s   total 2050.7 s
+  VmHWM                15.560 GiB after the linear call, 15.899 GiB at the end
+```
+
+S4 predicted 2500–4200 s and under 25 GiB.  **The time is BELOW its band** — because the band
+was built on the same wrong 2752.5 (§3) — and the memory held.  A band derived from a bad
+denominator is not a real prediction and this one is recorded as void rather than as met.
+
+The side log was a fresh `bash -n`-checked script (§192 §6's died on a stripped quote) and
+sampled throughout.  **Its peak agrees with the probe's in-process reads**, and note the
+process mark is CUMULATIVE across both calls: 15.560 after linear, 15.899 after SVK, so the
+SVK call added 0.339 GiB to a mark linear had already set.  Against §193's standalone SVK at
+17.139 that is 7.2% lower — **inside §193 §5's measured 7.11% scatter band and therefore not
+called a signal.**
+
+### 8. SUCCESSORS, RANKED
+
+0. **THE 2x2 AT A THIRD MESH** — §193's successor 1, promoted: §5 and §6 now have four cells
+   and three quantities that reproduce across `coarse` -> `medium`, so a third rung tests
+   real rules rather than a guess.  `fine` has never had an adjoint solved in this tree; cost
+   unknown, likely hours.  Still a QUESTION, not a plan.
+1. **A GENOME WHOSE AXLE DROP SITS ON TARGET UNDER LINEAR** — §5's named falsifier, and it is
+   the sharpest test of §191 §13's mechanism anywhere on this list: if the sign is really the
+   `err` prefactor's doing, such a genome should show NEGATIVE fillet gradients under LINEAR,
+   with no strain measure involved.  Needs a search over committed genomes' recorded
+   `axle_drop_mean_mm` first — **reading only, and the artifacts are on disk.**  Cheap.
+2. **THE `VmHWM` SCATTER, MEASURED PROPERLY** — §193's successor 2, and §7 adds a fourth
+   point that sits inside the one-pair band.
+3. **THE CENSUS AT `genes_over_cap`** — §192's successor 3, unchanged.
+4. **THE `xfail` REASON AND THE GREEN TEST BOTH CARRY A RUNG-LESS NUMBER** — §192's
+   successor 4, and §5's four-cell grid is now the table that belongs in the scope clause.
+5. **WHICH BARE CALL SITES ARE READ AS STATEMENTS ABOUT THE DESCENT** — §191's successor 3.
+6. **§135 §3's PROHIBITION AND ITS 44 GiB PREMISE** — §192's successor 7.
+7. **DOES THE FLIP SURVIVE A CHANGE OF `target_deflection_mm`?** — §192's successor 8, and
+   successor 1 above is the cheap half of the same question.
+8. **THE `Kt`-PRICES-THE-FILLET CENSUS** — §190's successor 2.
+9. **THE DESCENT PAIR FOR §189 §4's DIRECTION** — §190's successor 4.
+10. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §190's successor 5.
+11. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** — §190's successor 7.
+12. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §190's successor 8.
+
+### 9. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+`PLAN.md:27719`, `PLAN.md:28460`.  Both are rows in earlier sections' tables, quoted as
+tables and read back at HEAD before this section was written.  No source file is cited.
+`a8dd998` and `b729e86` are commit and genome hashes; `elapsed_s`, `svk/linear` and
+`axle_drop_mean_mm` are JSON keys and column headings.
+
+**THE PREDICTION:** the sweep total rises by exactly **2** — this section's two `PLAN.md:N`
+anchors, both of which resolve — and the human list stays at **148**, identical row for row.
+Run after the commit (§191 §12).  §192 §11 predicted zero and got two by forgetting its own
+successors; this list was written below them for that reason, and the predicted number is
+stated rather than "no change".
