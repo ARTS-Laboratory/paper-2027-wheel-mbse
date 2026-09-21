@@ -31481,3 +31481,201 @@ one-line diff to chase.  Had §9 predicted nothing, two uncounted citations woul
 the record silently and the next section's baseline would have absorbed them — which is the
 failure mode §119 records for reading a count instead of a list, one layer up: **here the
 LIST was clean and the COUNT was the one that knew.**
+
+---
+
+## §193 — 2026-09-21. §192's SUCCESSOR 0, CLOSED: **THE 2x2 AT `medium`/8/SVK IS NEGATIVE IN ALL FOUR ENTRIES, ASSUMPTION A's FALSIFIER DID NOT FIRE (MAX 1.2961x AGAINST ITS 1.4x), AND §192 §4's OWN HYPOTHESIS IS REFUTED** — THE REGION P-NORM DOES **NOT** REFINE UNIFORMLY. ONE ENTRY *FALLS*, TO **0.9559x**, AND THE MOVEMENT IS **DIAGONAL**: EACH JUNCTION's SENSITIVITY TO ITS **OWN** RADIUS RISES (1.2961x, 1.1523x) WHILE THE CROSS TERMS GO 1.1009x AND **0.9559x**. `d(u_hub)/dR_hub` ALONE SUPPLIES **98.5%** OF THE HUB COLUMN's MOVE, AND AT THE RIM THE CROSS TERM WORKS **AGAINST** IT AT −29.0%. THE SPY's CAPTURE IS PROVED BY AN **ARITHMETIC IDENTITY THAT CLOSES AT 0.00e+00** IN BOTH COLUMNS, AND THE PER-TERM HALF REPRODUCES §192 **BIT-IDENTICALLY IN ALL FOURTEEN TERMS**. PLUS, FREE AND UNPLANNED: **TWO RUNS OF BIT-IDENTICAL ARITHMETIC DIFFER BY 1.312 GiB OF `VmHWM`, 7.11%** — WHICH **REFUTES THE RETENTION CANDIDATE §191 §10 FILED** FOR ITS 2.0 GiB GAP, BECAUSE THIS RUN *ADDS* EXACTLY THAT RETENTION AND CAME BACK **LOWER** — AND §5 SHOWS THAT CANDIDATE WAS NEVER DIMENSIONALLY POSSIBLE EITHER, SINCE WHAT §190's SPY RETAINED WAS TWO **14-VECTORS**, NOT `pgrads`
+
+One commit, record-only: this file, appended.
+
+### 1. FOUR PREDICTIONS, REGISTERED BEFORE THE RUN
+
+```
+  R0  the per-term half reproduces §192 bit-identically      HELD, all 14 terms + L + both totals
+  R1  all four 2x2 entries negative; and the prefactor-
+      weighted sums rebuild §192's stress route exactly      HELD; the identity closes at 0.00e+00
+  R2  (a) hh alone / (b) all four together / (c) cross
+      terms only / (d) some entry falls below 1.0            LANDED ON (a) AND (d); (b) REFUTED
+  R3  1250-1400 s, and 18.2-18.8 GiB                         SPLIT: 1295.0 s HELD, 17.139 GiB FALSIFIED
+```
+
+R2's four outcomes were written before the run **because §192 §4 had already published a
+hypothesis** — *"`mean_dgrad` is a global compliance derivative and converges early; the
+region p-norm over the fillet arc is a local quantity on the surface being refined"* — and
+(b) is what that hypothesis predicts.  Naming (d) in advance is what makes its arrival a
+result rather than a surprise.
+
+### 2. THE INSTRUMENT, AND THE IDENTITY THAT PROVES IT GRABBED THE RIGHT VECTORS
+
+§190's probe captured `dagg_j` from `_pnorm_and_grad`; §191's captured the per-term gradient
+vectors.  **They were one probe at §190 and I separated them**, which is the whole reason
+§192 §4 had to record Assumption A's falsifier as NOT TESTABLE.  Both are in one probe here,
+and neither disturbs the other: R0 confirms all fourteen term entries, `L`, `dL/dR_hub` and
+`dL/dR_rim` come back **bit-identical to §192**, so adding the spy changed no arithmetic.
+
+The capture is proved twice over.  §191's P1 holds again (the fourteen vectors sum to the
+returned `g` bitwise, each norm equals its own `grad_norm`), and the 2x2 is checked by an
+identity that needs no new measurement — §190 §4's two lines say the stress route IS the
+prefactor-weighted 2x2, so:
+
+```
+  27.560048 * -3.157864011223e-01 + 30.749753 * -1.068725727413e-02 = -9.031718954439
+  §192's measured stress route into dL/dR_hub                        = -9.031718954439
+  27.560048 * -5.762005682249e-02 + 30.749753 * -8.024802074618e-02 = -4.055618386030
+  §192's measured stress route into dL/dR_rim                        = -4.055618386030
+                                                             difference 0.00e+00, both
+```
+
+**THE TWO INSTRUMENTS RECONSTRUCT EACH OTHER TO THE LAST BIT.**  That is what licenses
+quoting an individual entry: §190's last-two-calls convention (`PN[-2]` is hub, `PN[-1]` is
+rim) was a `coarse` convention and could have picked the wrong pair at a different mesh.  It
+did not, and the identity is how that is known rather than assumed.
+
+### 3. THE 2x2, AND WHAT MOVED
+
+```
+  entry                  coarse/8/SVK        medium/8/SVK       factor
+  d(u_hub)/dR_hub    -2.4365257092e-01   -3.1578640112e-01     1.2961x   diagonal
+  d(u_rim)/dR_rim    -6.9643328739e-02   -8.0248020746e-02     1.1523x   diagonal
+  d(u_rim)/dR_hub    -9.7081263538e-03   -1.0687257274e-02     1.1009x   cross
+  d(u_hub)/dR_rim    -6.0280225450e-02   -5.7620056822e-02     0.9559x   cross, FALLS
+```
+
+**ALL FOUR NEGATIVE**, so §190 §4's rule — the prefactor is non-negative always, hence the
+stress route's sign IS the 2x2's sign — keeps the stress route negative at `medium` for a
+reason read off the entries rather than inferred from the total.  **F1 of §190 now holds at
+four rungs and sixteen entries.**
+
+**ASSUMPTION A's FALSIFIER DID NOT FIRE.**  It named *"any entry more than 1.4x its `coarse`
+value"*; the largest is 1.2961x.  So §192 §1's point estimates were built on an assumption
+that survives its own test, which is worth saying because Q1's hub estimate was still 32%
+out — **a 1.30x move in one entry is enough to put a point estimate a third out, and the
+registered ±40% band was not generous, it was about right.**
+
+### 4. R2 — IT IS THE DIAGONAL, AND §192 §4's HYPOTHESIS IS REFUTED
+
+Decomposing the gap between Assumption A's prediction and the measurement, exactly:
+
+```
+  hub column   -7.0136 -> -9.031719   change -2.018120
+      via d(u_hub)/dR_hub  -1.988012    98.5%
+      via d(u_rim)/dR_hub  -0.030108     1.5%
+  rim column   -3.8028 -> -4.055618   change -0.252777
+      via d(u_hub)/dR_rim  +0.073314   -29.0%    <-- opposes
+      via d(u_rim)/dR_rim  -0.326092   129.0%
+```
+
+**IN BOTH COLUMNS THE OWN-JUNCTION ENTRY CARRIES THE MOVE AND THE CROSS TERM IS SMALL OR
+OPPOSED.**  §192 §4 guessed "the region p-norm refines" as a single quantity; it does not
+behave as one.  A junction's utilisation gets measurably more sensitive to ITS OWN fillet
+radius on the finer mesh — which is what refining the surface that radius shapes should do —
+while its sensitivity to the OTHER junction's radius moves little and, at the hub, moves the
+wrong way.
+
+**THIS IS A HYPOTHESIS AND IS WRITTEN AS ONE (CLAUDE.md's confound check).**  Two rungs, one
+genome, one kinematics, four entries.  "The diagonal refines and the cross terms do not" is
+a pattern in four numbers, and the discriminating test is named: the same 2x2 at a third
+mesh, where the diagonal should keep rising and 0.9559x should not become 1.2x.  Nothing
+here establishes an order of convergence and no third rung exists — §7's successor 2.
+
+**WHAT IT DOES SETTLE** is §192 §4's own sentence, which is retired by measurement rather
+than by argument: *"a local surface quantity refines while a global compliance derivative
+does not"* is right about `mean_dgrad` (1.0161x / 1.0258x, §192) and **wrong to treat the
+p-norm 2x2 as one local quantity.**
+
+### 5. R3 — THE CLOCK REPRODUCED, THE MEMORY DID NOT, AND THAT REFUTES §191 §10's CANDIDATE
+
+```
+                        §192          §193        apart
+  wall               1322.2 s      1295.0 s       2.06%
+  VmHWM             18.451 GiB    17.139 GiB      7.11%   (1.312 GiB)
+  every float returned                            IDENTICAL, all 14 terms (R0)
+```
+
+**THE ARITHMETIC IS BIT-IDENTICAL AND THE PEAK MEMORY IS 1.312 GiB APART.**  R3's memory band
+of 18.2–18.8 GiB is **falsified**, and falsified downward, which is the direction that
+matters: §193 retains strictly MORE than §192 — it is §192's probe plus §190's
+`_pnorm_and_grad` spy, holding both calls' full `pgrads` alive to process end — and it peaked
+**lower**.
+
+**SO §191 §10's FILED CANDIDATE IS REFUTED — TWICE, AND THE SECOND WAY IS WORSE FOR IT.**
+That section measured §190's probes at 17.286 / 17.103 GiB against §191's 15.269 / 15.050 at
+the same `coarse` rung, filed the ~2.0 GiB gap as unexplained, and named one candidate:
+*"§190's probe wrapped `_pnorm_and_grad` and held both calls' full `pgrads` alive to the end
+of the process, while this one holds only fourteen 14-vectors."*
+
+**ONE — MEASURED.**  This run adds exactly that retention and memory went DOWN by 1.312 GiB.
+
+**TWO — THE CANDIDATE WAS NEVER DIMENSIONALLY POSSIBLE, AND THAT SENTENCE OF §191 §10 IS
+MINE AND IS WRONG ON ITS FACE.**  §190's spy appends the RETURN of `_pnorm_and_grad`, not its
+arguments: `out = _orig(*a, **k); captured.append(out)`.  The return is `(agg_j, dagg_j)` — a
+float and a **14-vector**, which §190's own run printed as *"`_pnorm_and_grad` called 2 times;
+dagg length (14,)"*.  Two of those is **a few hundred bytes**.  `pgrads_hub` is an ARGUMENT
+and was never retained by anything.  **A candidate cause that is seven orders of magnitude too
+small should not have survived being written down**, and the check that would have killed it
+is the one §190's own log already prints: read what the instrument says it captured.
+
+§191 §10 called it a hypothesis and refused to claim it, which is the only reason this costs
+nothing; but "filed, not claimed" is not a licence to skip an order-of-magnitude check on the
+thing being filed.
+
+**AND THE SCALE IS THE POINT.**  13.21% and 13.64% is what §191 §10 filed as needing an
+explanation; **7.11% is what this tree's own scatter produces on arithmetic that does not
+differ by a single bit.**  A single `VmHWM` read of one of these runs is not reproducible to
+better than several percent, so a gap of that order is not evidence of anything.  **What is
+NOT claimed:** that the whole 13% is scatter.  One pair, one rung, and §191 §10's pair is at
+`coarse` while this one is at `medium`.  The honest statement is that the gap is about twice
+a scatter that was never measured until now, which is a long way from "unexplained".
+
+**THE CLOCK IS THE OPPOSITE CASE AND IT STRENGTHENS §192 §6.**  2.06% apart across the same
+two runs, so a cold `medium`/8/SVK call IS reproducible on this box — which means §192 §6's
+1322.2 s against §184's 906.9 s, **1.458x**, is a real difference with a real cause and not
+run-to-run noise.  §192's successor 1 is worth running.
+
+### 6. THE SIDE LOG WORKED THIS TIME, AND SAID SO
+
+§192 §6 recorded that its `/proc` side log died on a quote a careless `sed` had stripped.
+This run's was a fresh script, checked with `bash -n` before launch, and it sampled the
+process throughout.  Its maximum agrees with the probe's own final in-process read of
+`VmHWM` — which is the check that matters, since §192 had to defend a single read as
+sufficient on the grounds that a kernel high-water mark is monotone within a process.
+**It is, and now that has a sampled series behind it rather than an argument.**
+
+### 7. SUCCESSORS, RANKED
+
+0. **THE COLD/WARM COMPILE TEST FOR §192 §6's 1.458x** — §192's successor 1, and §5 has
+   promoted it: the cold figure is now reproducible to 2.06%, so the gap against §184's
+   906.9 s is real.  One cold `medium`/8/LINEAR call, timed, ~2752 s by §184's own table.
+   **Highest value on this list**: it is the only open question in the last three sections
+   with a measured discrepancy and no cause.
+1. **THE 2x2 AT A THIRD MESH** — §4's named discriminator.  "The diagonal refines, the cross
+   terms do not" is four numbers at two rungs; `fine` would separate it from coincidence.
+   Cost unknown and likely hours — no adjoint has ever been solved at `fine` in this tree —
+   so this is a QUESTION, not a plan, and `smoke` is NOT a substitute (it changes the phase
+   count too, §190 §2's G4).
+2. **THE `VmHWM` SCATTER, MEASURED PROPERLY** — §5 has one pair.  Three repeats of one call
+   would turn "7.11% on identical floats" into a band, and every memory comparison in this
+   arc from §165 onward is quoted against an unmeasured one.  Cheap only at `smoke`, where it
+   may not transfer; that limitation is the reason it is filed rather than done.
+3. **THE CENSUS AT `genes_over_cap`** — §192's successor 3, unchanged.
+4. **THE `xfail` REASON AND THE GREEN TEST BOTH CARRY A RUNG-LESS NUMBER** — §192's
+   successor 4, unchanged, and now with a four-rung table to put in the scope clause.
+5. **WHICH BARE CALL SITES ARE READ AS STATEMENTS ABOUT THE DESCENT** — §191's successor 3.
+6. **§135 §3's PROHIBITION AND ITS 44 GiB PREMISE** — §192's successor 7.
+7. **DOES THE FLIP SURVIVE A CHANGE OF `target_deflection_mm`?** — §192's successor 8.
+8. **THE `Kt`-PRICES-THE-FILLET CENSUS** — §190's successor 2.
+9. **THE DESCENT PAIR FOR §189 §4's DIRECTION** — §190's successor 4.
+10. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §190's successor 5.
+11. **§105'S SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** — §190's successor 7.
+12. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §190's successor 8.
+
+### 8. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174'S RULE, TIGHTENED BY §192 §11)
+
+**NONE.**  Every anchor this section would carry is named by section number, and the two
+quantities it compares live in this session's scratchpad and in §192's own table.  §192 §11
+earned the placement of this block: that section listed its citations after the prose, then
+appended a successors list containing two `file:N` anchors, and predicted a delta of zero
+that came back **+2**.  This list is written below the successors for that reason.
+
+**THE PREDICTION:** the sweep total moves by **zero** and the human list stays at **148**,
+identical row for row — and it is run AFTER the commit (§191 §12).
