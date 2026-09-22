@@ -31913,3 +31913,305 @@ number it had not counted.
 states the distinction in the same words it would have taken to get the prediction right.
 That is the re-finding cost this arc keeps paying: the check is `grep -n "PLAN.md:" <the
 section>` before predicting, one command, and it returns the five.
+
+## §195 — 2026-09-22. §194's SUCCESSOR 1, CLOSED BOTH WAYS. **THE GENOME IT ASKED FOR IS NOT IN THIS REPOSITORY AND CANNOT BE: ALL 27 COMMITTED LINEAR READINGS ON A FILLETED MESH ARE UNDER TARGET AND THE NEAREST IS `b729e86` ITSELF, −9.70% AT `medium` AND −9.90% AT `coarse`, WHILE THE 1575 BARE ONES — WHICH INCLUDE EVERY LINEAR READING THAT SITS ON THE TARGET — ARE ON MESHES WITH NO FILLET IN THEM — EVERY LINEAR DESCENT HERE PREDATES §103 AND BOTH FILLETED DESCENTS RAN SVK.** SO THE FALSIFIER WAS REACHED THROUGH `err`'s **OTHER** INPUT, AND IT FIRES: AT A TARGET OF **1.837525 mm** THE HUB's LINEAR FILLET GRADIENT CROSSES ZERO AND AT **1.807038 mm** THE RIM's, BOTH PREDICTED FROM §191 §3's COMMITTED TABLE **BEFORE THE RUN AND LANDING WITHIN 4.7e-07 mm**; AT `err` = 0 BOTH TOTALS ARE **BIT-EQUAL** TO `mass + stress_margin`, **−4.687824810194 AND −1.191539487309, NEGATIVE UNDER LINEAR WITH NO STRAIN MEASURE INVOLVED.** **THE HUB FLIPS FIRST AND THE RIM 0.030487 mm LATER**, SO THERE IS A WINDOW OF TARGET IN WHICH THE TWO FILLET GENES DISAGREE IN SIGN — AND THE TWO RESIDUALS AT THE CROSSINGS ARE NOT NOISE: **−5.922107e-05 AND +1.012709e-04, PREDICTED TO EVERY PRINTED DIGIT** BY THE ROUNDING OF THE REGISTERED TARGET TIMES THE LOCAL SLOPE
+
+One commit, record-only: this file, appended.  No source file is touched, so §186's "stale
+on arrival" case cannot arise and the green-before-commit rule is met the way §191 and §194
+met it — by changing nothing a test can see.  The run: one process, four `objective()`
+calls at `coarse`/8/LINEAR, 1013.3 s, capped at 40G, nothing beside it (§135 §3).
+
+### 1. THE SUCCESSOR AS FILED, AND WHAT THE READING HALF RETURNED
+
+§194 §5 named the falsifier and §194's successor 1 filed it: *"a genome whose axle drop sits
+on target under LINEAR ... if the sign is really the `err` prefactor's doing, such a genome
+should show NEGATIVE fillet gradients under LINEAR, with no strain measure involved.  Needs
+a search over committed genomes' recorded `axle_drop_mean_mm` first — reading only, and the
+artifacts are on disk.  Cheap."
+
+The search is part A and it came back **empty**, which is the finding: not that the record
+happens to hold no such genome, but that it **cannot**.  Part B then reaches the same
+physics through the other variable, with its outcomes named in `falsifiers195.md` before
+the run — (a) crossings where the closed form puts them, (b) crossings displaced by more
+than 0.01 mm, (c) no crossing at all, (d) the drop itself moving with the target.  **(b),
+(c) and (d) would each have killed it, and the run landed on (a).**
+
+### 2. THE CENSUS.  3208 READINGS, 72 ARTIFACTS, FOUR CELLS
+
+Every `axle_drop_mean_mm` in every committed JSON, classified by kinematics and by whether
+the mesh it was solved on carried a fillet:
+
+```
+                     bare mesh    filleted mesh
+       LINEAR           1575            27
+       SVK              1270           336
+```
+
+**ALL 27 LINEAR-ON-A-FILLETED-MESH READINGS ARE UNDER THE TARGET AND THE NEAREST IS THE
+SHIPPED GENOME ITSELF.**
+
+```
+    1.806042   -9.70%   b729e86 SHIPPED     medium   study_svk_rescore row 0
+    1.801990   -9.90%   b729e86 SHIPPED     coarse   kinrank_filleted row 20
+    1.737412  -13.13%   b029622 optimum     coarse   study_fillet_terms_b029622
+    1.356365  -32.18%   minwall 0.8         coarse   kinrank_filleted row 3
+    ... 23 more, from -37.98% down to -78.36%
+```
+
+Not one is above the target, and the gap between the best of them and 2.0 mm is
+**0.198010 mm** — **12711x** the 1.558e-05 mm `stage3_minwall_1.4` step 100 manages on a
+BARE mesh, which is the closest LINEAR reading to the target in the repository.
+
+### 3. THE BARE READINGS SIT ON THE TARGET AND CANNOT BE USED, AND THAT IS MEASURED TWICE
+
+**9** of the 1575 bare LINEAR readings sit inside 1e-4 mm of 2.0, 100 inside 1e-3 and 1022
+inside 1e-2 — `stage3_minwall_1.4` step 100 reads 1.9999844227, the closest in the tree —
+because they are the output of descents that minimised exactly that error.  They are useless here for a reason §183 already measured: on a bare mesh the
+realised `R_hub`/`R_rim` are **exactly 0.0**, against 0.231/0.280 mm on the filleted one, so
+a bare-mesh genome on target is a wheel with no junction to take a gradient through.
+
+And the same six genomes, read on both meshes at the same rung, say it in the drop itself:
+
+```
+    genome              bare kinrank    filleted kinrank
+    minwall 0.8          1.999104675     1.356365422    -32.15%
+    minwall 1.0          2.000394402     1.240357011    -37.99%
+    350f4c7 minwall1.2   1.999232172     1.162068036    -41.87%
+    minwall 2.0          1.993550299     0.433715383    -78.24%
+    elite9 prod          1.994152183     0.568679695    -71.48%
+    elite10 prod         1.994082425     0.432870852    -78.29%
+```
+
+Each row's bare figure is also its own descent artifact's `metrics`, to **2.3e-9 mm or
+better** — six independent reproductions that the bare column is what those descents
+actually produced.
+
+### 4. THE CONFOUND, AND ITS DISCRIMINATOR IS MEASURED AND NOT A DATE
+
+27 committed descent artifacts carry `steps`.  Their mesh build seconds per objective call
+split them in two with **no overlap**:
+
+```
+    2 runs   2.137 and 2.150 s/call    FILLETED    both `kinematics: svk`   2026-09-08
+   25 runs   0.014 - 0.105 s/call      BARE        10 pre-kwarg (LINEAR), 15 svk
+```
+
+**EVERY COMMITTED DESCENT THAT COULD HAVE PRODUCED THE FALSIFIER's GENOME RAN ON A MESH WITH
+NO FILLET IN IT, AND BOTH DESCENTS THAT RAN ON A FILLETED MESH RAN SVK.**  §103 wired
+`fillet=True` on 2026-09-03; the ten LINEAR descents are dated 2026-07-30 to 2026-08-05, and
+the two filleted ones are `stage3_svk_refillet_shipped` and its `_r2`, both 2026-09-08, both
+SVK, and `b729e86` is what they produced.  The record's (kinematics x mesh) coverage is a
+confound, and no amount of reading gets a witness out of it — **a LINEAR descent on a
+filleted mesh has never been run in this repository.**
+
+### 5. SO THE FALSIFIER WAS REACHED THROUGH `err`'s OTHER INPUT
+
+`src/wheel_objective.py:1251` is `err = (mean_drop - target_deflection_mm) /
+target_deflection_mm`.  It has two inputs.  The record can only move `mean_drop`, and part A
+says it cannot move it far enough on a mesh where the fillet exists.  **So this section moves
+the target instead, with the genome, the mesh and the kinematics all held fixed** — one input
+changed, which is what CLAUDE.md's confound check asks for and what no second genome could
+have given, since a second genome moves `mass`, `stress_margin` and `mean_dgrad` too.
+
+**AND THAT IS A WEAKER TEST THAN THE ONE §194 FILED, WHICH IS SAID HERE AND NOT BURIED IN A
+SUCCESSOR.**  It tests the mechanism exactly and the falsifier's genome half not at all.
+
+### 6. THE CLOSED FORM, WRITTEN DOWN BEFORE THE RUN
+
+`src/wheel_objective.py:1253` is the only place the target enters a gradient:
+
+```
+    d_deflection = w["deflection"] * 2.0 * err / target_deflection_mm * mean_dgrad
+```
+
+`mean_drop` and `mean_dgrad` come out of the solve and know nothing about the target; `mass`
+and `stress_margin` do not read it at all.  So with `A_j = mass_j + stress_margin_j` taken
+from §191 §3's `coarse`/8/LINEAR column, the whole target dependence of both fillet gradients
+is one hyperbola:
+
+```
+    dL/dR_j (t)  =  A_j  +  D_j(2.0) * [ (d - t)/t^2 ] / [ (d - 2)/4 ]
+
+    d = 1.8019902936241827
+    A_hub = +0.367993339 - 5.055818150 = -4.687824811    D_hub(2) = +22.049876276
+    A_rim = +1.161589538 - 2.353129025 = -1.191539487    D_rim(2) = +38.160347796
+```
+
+and `A_j + D_j(t) = 0` has one root apiece in the interval:
+
+```
+      gene   zero-crossing target   vs the drop   vs 2.0     predicted at that t
+      hub         1.837525 mm         +1.972%     -8.124%    rim still +6.9214
+      rim         1.807038 mm         +0.280%     -9.648%    hub already -3.9993
+```
+
+**THE STRUCTURAL CLAIM IS THE ORDER, NOT THE PAIR.**  As the target falls from 2.0 the HUB
+flips first and the RIM 0.030487 mm later — 1.524% of the target — so there is a window in
+which one fillet gradient is negative and the other is still positive.  Under SVK at this
+rung both are negative together (§190: −3.764826 and −0.110924).  The falsifier was named
+with it: a crossing displaced by more than 0.01 mm, or the rim crossing ABOVE the hub's, or
+the two within 0.005 mm of each other.
+
+### 7. THE RUN, AND EVERY REGISTERED CHECK
+
+```
+  call  target mm     dL/dR_hub        dL/dR_rim      deflection hub   wall s
+   0    2.0000000    +17.362051466    +36.968808308    +22.049876      444.6
+   1    1.8375250     -0.000059221     +6.921284504     +4.687766      189.8
+   2    1.8070380     -3.999268945     +0.000101271     +0.688556      189.7
+   3    1.8019903     -4.687824810     -1.191539487     -0.000000      189.2
+```
+
+**S1, THE INSTRUMENT.**  Call 0 is bit-identical to `study_kinematics_rank_filleted.json`
+row 20's `linear` block on all four forward values — loss 76.0238561258325234, drop
+1.8019902936241827, `util_hub` 0.9109281772856953, `util_rim` 0.9095856833805225 — and its
+gradient column reproduces §191 §3 exactly, +17.362051466 and +36.968808308, with `mass`,
+`deflection` and `stress_margin` matching entry for entry.  That is also the proof the mesh
+is FILLETED: that committed row was scored on one.
+
+**S2, THE DROP.**  `0x1.cd4f3c62d3470p+0` in **all four calls**.  Outcome (d) did not fire,
+and the 2x2 `d(u_j)/dR_k` is identical across the four as a target-free quantity must be.
+
+**S3, `err` = 0.**  Call 3 took its target from call 0's own reported drop, so `err` is
+0.0 by construction; it also equals the registered constant to the bit.  `deflection`'s
+entries came back **exactly −0.0** at both genes, and each total is **bit-equal** to that
+call's own `mass + stress_margin`, delta +0.000e+00:
+
+```
+      dL/dR_hub  -4.687824810194  =  +0.367993339 - 5.055818150
+      dL/dR_rim  -1.191539487309  =  +1.161589538 - 2.353129025
+```
+
+**BOTH NEGATIVE, UNDER LINEAR, AT `coarse`/8, WITH THE STRAIN MEASURE UNTOUCHED.**  That is
+§194 §5's falsifier firing on the mechanism §191 §13 named.
+
+**S4, THE CROSSINGS AND THEIR ORDER.**  Both landed inside their registered bands: the hub
+reads −5.9221e-05 where |·| < 0.01 was required, with the rim at +6.921285 against a
+predicted +6.9214; the rim reads +1.0127e-04 with the hub at −3.999269 against −3.9993.
+Recomputed from this run's own full-precision numbers the crossings are **1.837525467** and
+**1.807037569** against the registered 1.837525 and 1.807038 — **4.7e-07 and 4.3e-07 mm**.
+The order holds: hub first, rim 0.030487 mm later.
+
+### 8. THE TWO RESIDUALS ARE NOT NOISE — THEY ARE THE ROUNDING, AND THEY PREDICT THEMSELVES
+
+Neither "zero" is zero, and the size of each is set before the run by the fact that the
+registered targets were rounded to six decimals:
+
+```
+    gene   offset from the crossing   local d(total)/dt   predicted      measured
+    hub          -4.670e-07 mm           +126.818 /mm     -5.922107e-05  -5.922107e-05
+    rim          +4.310e-07 mm           +234.757 /mm     +1.012709e-04  +1.012709e-04
+```
+
+**EVERY PRINTED DIGIT, BOTH GENES.**  A sign flip that lands near zero is weak evidence on
+its own; a residual whose magnitude AND sign are predicted from the target's own rounding is
+the hyperbola of §6 confirmed, not merely its root.
+
+### 9. THE SAME ARITHMETIC AT `medium`, DERIVED FROM COMMITTED NUMBERS AND NOT RUN
+
+§194 §5 and §6 published the `medium`/8/LINEAR column, and §192 §3 published `mass` at
+`medium` — which §194 §6 proved is bit-identical across the kwarg at both meshes, so the
+LINEAR column may borrow it.  That is every input §6's hyperbola needs:
+
+```
+    rung     d (linear)    A_j = mass + stress_margin    D_j(2.0)      crossing t
+    coarse   1.801990      hub  -4.687825                +22.049876     1.837525 mm
+                           rim  -1.191539                +38.160348     1.807038 mm
+    medium   1.806042      hub  -8.774605                +21.918973     1.874228 mm
+                           rim  -1.997562                +38.119843     1.814407 mm
+```
+
+`medium`'s rim `deflection` is the one derived entry — TOTAL − `mass` − `stress_margin` —
+and the same subtraction reproduces §194's printed totals exactly at all four rows.  **THE
+ORDER IS THE SAME AT BOTH RUNGS AND THE WINDOW IS 1.962x WIDER AT `medium`: 0.059821 mm
+against 0.030487.**  This is a derivation, not a measurement, and it is filed as successor 1
+in that form.
+
+### 10. COST, AND WHAT THE MECHANICS RUN PAID FOR
+
+```
+    walls   444.6  189.8  189.7  189.2 s      total 1013.3 s
+    VmHWM   13.244 GiB in process, 13.244 GiB from the side log's running maximum
+```
+
+S5's original 1100–1900 s band was built on four COLD calls; it was amended in
+`falsifiers195.md` **before** the run, on the mechanics run's own evidence, to 500–1400 s,
+and 1013.3 lands inside the amended band.  The memory figure is quoted with §193 §5's 7.11%
+scatter and nothing is called a signal against it.  The side log's running maximum agrees
+with the in-process read to three decimals.
+
+Two free readings, each stated at its own scope:
+
+  - **THE THREE WARM REPEATS ARE 189.8 / 189.7 / 189.2 s, A SPREAD OF 0.32%** — a same-
+    process reproducibility figure for a `coarse`/8/LINEAR call, against §193 §5's 2.06%
+    wall scatter across separate runs.  Different designs, so they are not compared.
+  - Cold-to-warm in this process is **2.3425x** at `coarse`/8/LINEAR.  §194 §4 measured
+    1.4289x at `medium`/8/SVK.  **THOSE TWO DIFFER IN THE RUNG, THE KINEMATICS AND THE
+    COMPARISON ITSELF** — §194 compared a warm call against a separate cold run, this
+    compares repeats of one call inside one process — so by CLAUDE.md's confound check no
+    factor may be quoted across them and none is.
+
+**AND THE MECHANICS RUN PAID FOR ITSELF TWICE.**  Its control call at `smoke`/2/LINEAR
+returned `dL/dR_hub` = **30.480373477039141**, which is §188's value to the bit — the one
+that section measured 81 ULPs off when the probe ran outside `PINNED_ENV`.  So this probe
+was proved inside the pinned environment, against a committed number, before the `coarse`
+run started; it also settled S2 and the 2x2's target-invariance at a rung that costs 6.8 s
+per repeat instead of 190.
+
+### 11. SUCCESSORS, RANKED
+
+0. **A LINEAR DESCENT ON A FILLETED MESH — THE CELL THIS REPOSITORY HAS NEVER RUN.**  §4 is
+   the argument for it: the genome §194 §5 asked for cannot be read out of the record and has
+   to be descended.  It is also the only way this arc gets a **second** filleted genome —
+   every filleted number in §190–§195 is `b729e86`.  The prediction is already registered by
+   §6's closed form: a LINEAR descent drives `err` toward 0, so at its endpoint both fillet
+   gradients should be NEGATIVE under LINEAR.  Cost: `stage3_svk_refillet_shipped_r2` ran 122
+   steps in 27430 s serial, so ~7 h at `coarse`.
+1. **THE `medium` CROSSINGS, DERIVED IN §9 AND MEASURED NOWHERE.**  One `medium`/8/LINEAR run
+   at 1.874228 and 1.814407 tests a prediction made entirely from committed numbers at a rung
+   this section did not touch.  §194 measured a `medium` LINEAR call at 1144.5 s and this
+   section measured warm repeats at 0.43x cold, so ~40 min.
+2. **THE 2x2 AT A THIRD MESH** — §194's successor 0, with one thing added free: the `fine`
+   forward drops already exist, 1.807251 LINEAR and 1.998229 SVK, so the `err` prefactor at
+   `fine` is priced before anyone solves an adjoint there.  They are in an UNCOMMITTED
+   artifact — successor 3.
+3. **DECIDE THE UNCOMMITTED `studies/study_deflection_gci.json`.**  The working tree has held
+   a regenerated copy since 2026-09-18 (7871.9 s, exit 0, `overnight_gci.log`): four rungs,
+   both kinematics, FILLETED, and its `coarse` and `medium` LINEAR rows reproduce the
+   committed `kinrank_filleted` and `study_svk_rescore` values exactly.  It is the only
+   `fine` filleted reading in existence and it is evidence sitting outside the record.
+   Commit it with its provenance or delete it.
+4. **THE `VmHWM` SCATTER, MEASURED PROPERLY** — §194's successor 2, and §10 adds a fifth
+   point at 13.244 GiB, the lowest yet at `coarse`.
+5. **THE CENSUS AT `genes_over_cap`** — §194's successor 3 / §191 §4's named falsifier.
+6. **THE `xfail` REASON AND THE GREEN TEST BOTH CARRY A RUNG-LESS NUMBER** — §194's successor
+   4, and §6 is now a second thing the scope clause must say: those numbers are `smoke`/2/
+   LINEAR **at a 2.0 mm target**, and the target is not a constant of nature.
+7. **WHICH BARE CALL SITES ARE READ AS STATEMENTS ABOUT THE DESCENT** — §194's successor 5,
+   and §2 is the reason it matters: 1575 of 3208 committed drop readings are bare.
+8. **§135 §3's PROHIBITION AND ITS 44 GiB PREMISE** — §194's successor 6.
+9. **DOES THE FLIP SURVIVE A CHANGE OF `target_deflection_mm`?** — §194's successor 7, and it
+   is **NOT** closed here.  §192's successor 8 asks for *"a pair of re-descents, not a
+   re-scoring"*, and this section is a re-scoring: it settles the prefactor's control of the
+   sign AT A FIXED DESIGN, not where a descent under a moved target ends up.
+10. **THE `Kt`-PRICES-THE-FILLET CENSUS** — §194's successor 8.
+11. **THE DESCENT PAIR FOR §189 §4's DIRECTION** — §194's successor 9.
+12. **A BELOW-THE-KNEE WITNESS AT PRODUCTION FIDELITY** — §194's successor 10.
+13. **§105's SUCCESSOR 2, THE `study_fillet_optimum` DESCENT PAIR** — §194's successor 11.
+14. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §194's successor 12.
+
+### 12. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+Two distinct anchors, both into the objective and both read at HEAD before this section was
+written: `src/wheel_objective.py:1251`, which defines `err`, and
+`src/wheel_objective.py:1253`, which defines the deflection gradient.  Neither line is edited
+by this commit, so §186's stale-on-arrival case cannot apply.  No line anchor into this file
+is cited at all — every reference to an earlier section is by section and subsection number.
+`b729e86`, `b029622` and `09e8188` are genome hashes; `axle_drop_mean_mm`, `mesh_s`,
+`metrics`, `steps` and `elapsed_s` are JSON keys.
+
+**THE PREDICTION:** the sweep total rises by exactly **4** — the TOKEN count over this
+section, counted with `grep` before the commit, which §194 §10 established is the only thing
+the instrument measures — and the human list stays at **148**, identical row for row.
+Baseline measured at a clean tree before the commit: **1615 total, 148 human**.  Run after
+the commit (§191 §12).
