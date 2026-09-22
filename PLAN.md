@@ -32215,3 +32215,30 @@ section, counted with `grep` before the commit, which §194 §10 established is 
 the instrument measures — and the human list stays at **148**, identical row for row.
 Baseline measured at a clean tree before the commit: **1615 total, 148 human**.  Run after
 the commit (§191 §12).
+
+### 13. THE SWEEP PREDICTION, RESOLVED — **+4 AGAINST A PREDICTED +4, AND THE HUMAN LIST IDENTICAL ROW FOR ROW**
+
+```
+  predicted   total 1615 -> 1619  (+4)      human list 148, identical row for row
+  measured    total 1615 -> 1619  (+4)      human list 148, IDENTICAL ROW FOR ROW
+```
+
+The baseline was not re-derived from memory: the parent commit was checked out into a
+throwaway worktree, the sweep run there, and the two reports diffed line by line — which is
+the form this tree's own rule asks for, the LIST and not the count.  The objective's row
+moved `238 -> 242` cites and `126 -> 130` resolved, **`112 -> 112` for a human**, and every
+other file's citation columns are byte-identical.
+
+**THIS IS THE FIRST OF THE FOUR SWEEP PREDICTIONS IN THIS SUB-ARC TO LAND ON ITS NUMBER.**
+§191's held because it named no number; §192 predicted +0 and got +2, forgetting that its
+own successors block cites files; §194 predicted the count of DISTINCT anchors where the
+instrument counts tokens and got +5 for +2.  §194 §10's fix was one command — `grep` the
+section for its own anchors before predicting — and it is what produced the 4.
+
+**AND THE DIFF SHOWED A COLUMN THIS RECORD HAS NEVER WATCHED MOVE.**  Four driver rows
+changed in the `mentions` column and in no other: `study_kinematics_rank.py` 82 -> 83,
+`study_svk_rescore.py` 75 -> 77, `study_deflection_gci.py` 57 -> 58,
+`study_fillet_optimum.py` 37 -> 38.  Those are this section NAMING those drivers in prose,
+not citing a line in them.  **The report has two kinds of number in one table and only one
+of them is a citation** — worth knowing before the next prediction is written against the
+wrong column.
