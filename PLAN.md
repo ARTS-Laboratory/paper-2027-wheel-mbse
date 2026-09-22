@@ -33111,3 +33111,24 @@ have letters, which was checked with the sweep's own regex rather than by eye.
 **148**, identical row for row — the first prediction in this sub-arc to claim a zero, which
 is only sayable because the section was run through `_citation_sweep.TOKEN` before the
 commit and returned **0 matches**.  §197's lesson applied the same day it was written.
+
+### 7. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO**
+
+```
+  predicted   total 1628 -> 1628  (0)      human 148 -> 148, identical row for row
+  measured    total 1628 -> 1628  (0)      human 148 -> 148, IDENTICAL ROW FOR ROW
+```
+
+**THE FOURTH CONSECUTIVE PREDICTION TO LAND, AND THE ONLY WAY TO PREDICT A ZERO HONESTLY
+IS TO HAVE MEASURED IT.**  A section that means to cite nothing still has to prove it, and
+the proof is one second of the instrument — which also confirmed that `hub:P_c` and
+`rim:P_t` are not tokens, the regex needing digits after the colon.  By eye they look
+exactly like citations, and that is the whole argument for not using eyes.
+
+Every citation and human column in the per-file table is byte-identical to the baseline.
+Six rows moved in `mentions` and only there — `study_corner_singularity` 151 -> 156,
+`wheel_wheel` 291 -> 293, `wheel_objective` 416 -> 417, `wheel_fem` 139 -> 140,
+`_citation_sweep` 24 -> 25, `PLAN.md` 1478 -> 1479 — which is §195 §13's discovery getting
+its fourth instance and its first on a section that cites nothing at all. **`mentions`
+moves on prose alone, and a zero-citation section proves that cleanly**, because here there
+is no citation delta for it to be confused with.
