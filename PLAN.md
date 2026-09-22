@@ -32637,3 +32637,314 @@ a section that repairs a citation naturally predicts "the human list stays at 14
 row for row" — §195's own wording — and that would have been wrong at the BASELINE, which was
 149.  The baseline had to be re-measured after the source commit rather than carried from
 §195's closing number, and §10.1 is the only reason the middle number has a name.
+
+---
+
+## §197 — 2026-09-22. §196's SUCCESSOR 0, ITS OWN REGISTERED HYPOTHESIS, CLOSED: **THE CAUSE IS THE FILLET, AND THE GENOME IS REFUTED WITH ITS SIGN WRONG.** AT ONE GENOME, 09e8188, THE BARE LADDER READS `p` 0.7947 / GCI 1.2859% AND THE FILLETED ONE **2.4985 / 0.0809% — 3.14x AND 15.89x, UNDER ALL FOUR `h`** — WHILE THE GENOME AXIS IS **1.5916x AND MOVES `p` BACKWARDS, 2.4985 -> 2.3376**. THE CODE AXIS IS NOT ARGUED, IT IS **CLOSED: TODAY'S CODE REPRODUCES `5c46f64`'s ENTIRE BARE LADDER — THREE RUNGS, BOTH KINEMATICS, SIX OF SIX AT 0 ULP.** THE FOURTH CELL IS **UNRUNNABLE BY CONSTRUCTION** AND THAT IS THE ANSWER TO "MESH OR CODE": `_region_qois` REFUSES AN UNFILLETED MESH, SO §103 MADE THE MESH CHANGE AND THE CODE CHANGE **ONE CHANGE**. PLUS: **I CLAIMED §49's TABLE WAS CONFOUNDED AND MY OWN CONTROL REFUTED IT** — §29's LADDER IS `09e8188` CAPPED, PROVED AT **0 ULP IN BOTH COLUMNS**, SO A GIT DATE SAID "TWO THINGS MOVED" WHERE THE REPLAY SAYS ONE DID; THE 2x2 IT COST BUYS §38's CAP AT **TWO** GENOMES, −3.28%/−3.37% LINEAR AND −3.87%/−3.79% SVK. AND **`09e8188` IS INFEASIBLE ON THE MESH THAT SHIPS**, `stress_utilisation` 1.347/1.383/1.395 AGAINST 0.713 BARE
+
+Two commits.  The first is the artifact and the genome file it names (`f2e55df`); the
+second is this record.  One ladder was solved — 6218.8 s, exit 0 — and everything else
+below is a `coarse`-or-smaller control, about 80 minutes of them in total.
+
+### 1. THE SUCCESSOR AS FILED, AND THE DESIGN REGISTERED BEFORE THE RUN
+
+§196 §11 ranked it 0 and §196 §8 wrote it as a hypothesis with three live candidates —
+the mesh, the genome, or convergence quality — and said it was *"separable without a
+descent: re-run the ladder at the OLD genome on the FILLETED mesh"*.  That is this run.
+
+**WHAT IT SEPARATES AND WHAT IT DOES NOT, WRITTEN DOWN BEFORE IT LAUNCHED.**
+
+  - **Against HEAD's artifact the genome axis is CLEAN.**  Same code, same driver, same
+    rungs — and, measured before launching, the same mesh: `mesh_counts` returns
+    1152/5952/15552/37632 elements and 5508/26196/66468/158388 nodes at BOTH genomes,
+    bit-identical, so `h`, `r21` = 1.616448 and `r32` = 1.555556 are unchanged and `phi`
+    is the only thing that moves.
+  - **Against the committed artifact the mesh axis was CONFOUNDED WITH THE CODE**, that
+    run being 2026-08-23.  §4 closes it; §5 is why it could not have been closed the
+    obvious way.
+
+Outcomes were registered before the first rung: **(a)** `p(svk)` >= 2.0 and GCI <= 0.3%,
+the genome refuted; **(b)** `p(svk)` <= 1.2 and GCI >= 1.0%, the mesh refuted; **(c)**
+anything between, an interaction and nothing refuted.  The lean was (a) **at low stated
+confidence**, and the reason the confidence was low is in §10.
+
+### 2. THE PREDICTION WAS SHARPENED MID-RUN, AND BOTH COLUMNS LANDED ON (a)
+
+With `coarse` and `medium` solved and `fine` not yet, the whole outcome turns on one
+unsolved number, and `naive_ratio` = e21/e32 is the discriminator with both candidate
+values already committed.  Registered at that point, `fine` still running:
+
+```
+    kin      ratio     source                            predicted phi(fine)   MEASURED
+    linear   3.34860   b729e86 FILLETED  -> outcome (a)      0.874181          0.874100
+             1.51217   09e8188  BARE     -> outcome (b)      0.875494
+    svk      3.21868   b729e86 FILLETED  -> outcome (a)      0.997314          0.997210
+             1.50126   09e8188  BARE     -> outcome (b)      0.998921
+```
+
+**0.08 um from (a) on a 1.31 um discriminator, and 0.10 um on a 1.61 um one.**  Both
+columns land on (a) and both land slightly BEYOND it — the measured ratios are 3.6071 and
+3.4703, tighter than the shipped filleted ladder's own.  Outcome (b) is refuted by 16x and
+15x its own separation.
+
+**THE PREDICTION WAS ABOUT A RATIO AND THE RECORD SAYS SO**, because the LEVEL moved
+enormously and is not evidence for either outcome: this wheel reads 0.87 mm where the bare
+ladder reads 1.63 and the shipped wheel 1.81.  Only the ratio enters `p`.
+
+### 3. THE RESULT, AND IT HOLDS UNDER EVERY DEFINITION OF `h`
+
+```
+                              p(svk)   GCI(fine,svk)   vs the +-0.3% band   decidable
+    09e8188  BARE     5c46f64  0.7947      1.2859%           4.286x            no
+    09e8188  FILLETED this     2.4985      0.0809%           0.270x           YES
+    b729e86  FILLETED HEAD     2.3376      0.0508%           0.169x           YES
+```
+
+Factored on the primary `h`: the total is **25.2898x**, of which the mesh is **15.8892x**
+and the genome **1.5916x** — 85.6% and 14.4% of it in log terms.  Under all four `h`:
+
+```
+    h definition          mesh x    genome x    ratio of the two
+    1/sqrt(n_elements)    15.889      1.592          9.98
+    1/n_span              17.406      1.593         10.93
+    1/n_thick             70.713      1.575         44.89
+    1/sqrt(n_nodes)       15.606      1.592          9.80
+```
+
+**THE GENOME AXIS IS 1.575-1.593x UNDER ALL FOUR AND THE MESH AXIS IS 15.6-70.7x**, so the
+two are separated by an order of magnitude at worst and by 45x at `1/n_thick` — which is
+the `h` that made §49's ladder undecidable most emphatically, GCI 10.7308%.
+
+**AND ON `p` THE GENOME MOVES THE WRONG WAY.**  2.4985 -> 2.3376 is **0.9356x**: the
+2026-09-06 genome is, on this measure, very slightly WORSE converged than the one it
+replaced.  §196 §8's third candidate — *"the 2026-09-06 genome is simply a better-converged
+design"* — is not merely small, it has the opposite sign.
+
+### 4. THE CODE AXIS IS CLOSED BY MEASUREMENT, SIX OF SIX AT 0 ULP
+
+The deflection half of the objective does not need the fillet arc, so the bare reading is
+reachable at today's code through `WA.service_qoi_value_and_grad` per phase, averaging
+`o["axle_drop"]["value"]` over the 8-phase uniform stencil at the orientation pinned at
+`fine`.  **THAT IS A DIFFERENT CODE PATH FROM THE ONE BOTH ARTIFACTS WERE WRITTEN BY, SO
+IT WAS VALIDATED BEFORE IT WAS BELIEVED**: on the FILLETED `coarse` mesh at `b729e86` it
+returns `1.8019902936241827` and `1.9920260083894532`, which are HEAD's committed row to
+the bit.
+
+Then, 09e8188 BARE at today's code against `5c46f64`'s committed rows:
+
+```
+    rung     kin      measured 2026-09-22        committed 2026-08-23     ulps
+    coarse   linear   1.6211942831747768         1.6211942831747768         0
+    coarse   svk      1.9011015378085443         1.9011015378085443         0
+    medium   linear   1.6320856528331626         1.6320856528331626         0
+    medium   svk      1.9144115523076135         1.9144115523076135         0
+    fine     linear   1.6392881481459352         1.6392881481459352         0
+    fine     svk      1.9232774466554896         1.9232774466554896         0
+```
+
+**ALL THREE EXTRAPOLATION RUNGS, BOTH KINEMATICS, EXACT.**  A month of commits moved the
+bare ladder by zero bits, so the comparison in §3 is the fillet and nothing else.  The
+rungs were run in full rather than sampled at `coarse` deliberately: `p` and the GCI are
+LADDER-level quantities and `e32` is set by `fine`, so one bit-identical rung would have
+been a sample and not the ladder.
+
+**AND THE LADDER ITSELF RAN UNPINNED**, launched from `tmux` with only `PYTHONPATH` set —
+`XLA_FLAGS` and `OMP_NUM_THREADS` both `None`, which the probe printed rather than assumed.
+§188 paid 4.5 minutes for exactly that, so it was measured and not quoted: the validation
+above ran under the SAME unpinned environment and still came back at 0 ULP.  The Makefile's
+own note is confirmed — the pinning is a GRADIENT property, and this study reads only
+forward values.  What the unpinned launch did move is cost, not answers: 6218.8 s against
+HEAD's 7871.9 s and 44.96 GiB peak against the recipe's recorded 20.6 GB.  **THAT PAIR IS
+NOT ATTRIBUTED**, because those two runs also differ in genome and in mesh.
+
+### 5. THE FOURTH CELL IS UNRUNNABLE, AND THE REFUSAL IS THE ANSWER TO "MESH OR CODE"
+
+The obvious way to close §4 was to run the objective on a bare mesh.  It cannot be done:
+
+```
+    ValueError: fillet_arc_nodes wants a filleted mesh -- an unfilleted one has no arc,
+    and the corner it has instead is the P_t singularity the fillet exists to remove
+```
+
+`src/wheel_objective.py:1092-1093` calls it unconditionally, once per phase, for §102's
+region-p-norm term.  **SO "THE MESH" AND "THE CODE" WERE NEVER TWO CANDIDATES THAT HAPPEN
+TO BE CONFOUNDED — §103 MADE THEM ONE CHANGE**, wiring the filleted mesh in and making the
+bare path unreachable in the same commit.  §196 §8 listed them as separable and they are
+not, which is why §4 had to close the axis from the other side, on the deflection path the
+refusal does not guard.  This is §85's shape again: a refusal hides the path behind it.
+
+### 6. I CLAIMED §49 WAS CONFOUNDED AND MY OWN CONTROL REFUTED IT
+
+`best_solution.json` is committed at `b5773dd`, 2026-08-15 — between §29's 2026-08-14 run
+and §49's 2026-08-23 one — and that commit moves the genome from `e126cc3` to `09e8188`.
+Read off the dates, §49's table attributes to §38's uncap flip a comparison in which the
+genome also moved.  **I WROTE THAT DOWN AS A FINDING.  IT IS FALSE.**
+
+The validation leg said so before the claim could reach this file.  Re-running §29's
+`coarse` row at `e126cc3` CAPPED returns 1.7153033702828822 against the artifact's
+1.6777220182141408 — it DIFFERS, by +2.24%.  Re-running it at **`09e8188` CAPPED** returns
+
+```
+    linear  1.6777220182141408   svk  1.9760779153724584     0 ULP, BOTH COLUMNS
+```
+
+**§29's LADDER IS `09e8188`, NOT `e126cc3`.**  The genome was on disk before the commit
+that recorded it, so the commit date is later than the file's content — and `best_solution.json`
+is exactly the kind of file a driver writes and a human commits afterwards.  §49 compared
+two ladders at ONE genome and its attribution stands, unamended.
+
+**WHAT THE EPISODE IS WORTH KEEPING FOR IS THE TECHNIQUE, WHICH ANSWERS §196's SUCCESSOR 4
+BETTER THAN A NEW FIELD WOULD.**  An artifact that records `"genome": "best_solution.json"`
+does not name a wheel — but the wheel is RECOVERABLE, at about five minutes a candidate,
+by replaying one rung against each and comparing at 0 ULP.  A git date is not a substitute
+for that replay and this section is the proof: the date and the replay disagreed, and the
+replay was right.
+
+### 7. THE 2x2 THAT MISTAKE BOUGHT — §38's CAP, AT TWO GENOMES
+
+Three legs at `coarse`, BARE, today's code; the two diagonal corners are committed
+artifacts and one of them is the 0-ULP validation of §6.  `uncap=False` reproduces the
+pre-2026-08-18 geometry bit-for-bit, which `src/wheel_wheel.py:2279`'s own note states.
+
+```
+    linear           CAPPED       UNCAPPED     cap effect       svk       CAPPED      UNCAPPED    cap effect
+    e126cc3        1.7153034     1.6589973      -3.2826%              1.9907939     1.9137207     -3.8715%
+    09e8188        1.6777220     1.6211943      -3.3693%              1.9760779     1.9011015     -3.7942%
+    genome effect   -2.1909%      -2.2787%                             -0.7392%      -0.6594%
+```
+
+**THE CAP IS A CLEAN MAIN EFFECT.**  It is worth −3.28% to −3.37% under linear and −3.87%
+to −3.79% under SVK, and changing the genome moves it by 0.09 and 0.08 percentage points —
+so §49's −3.96% and −4.45% at `fine` are the same quantity read one rung finer, not a
+number that needed a genome to explain it.
+
+**THE GENOME EFFECT IS THE ONE THAT DEPENDS ON THE KINEMATICS**, −2.28% under linear
+against −0.66% under SVK, 3.5x.  Recorded as a reading and not explained: these two runs
+differ in the genome only, so the reading is clean, but nothing here measures WHY the
+strain measure damps it.
+
+### 8. `09e8188` IS INFEASIBLE ON THE MESH THAT SHIPS, AND THE LADDER SAYS SO AT EVERY RUNG
+
+Not what the run was launched to measure, and it is in the artifact either way:
+
+```
+    stress_utilisation      smoke    coarse    medium     fine
+    09e8188 BARE            0.688     0.713     0.720     0.725
+    09e8188 FILLETED        1.228     1.347     1.383     1.395
+    b729e86 FILLETED        0.838     0.911     0.956     0.975
+```
+
+The retired genome does not merely READ differently on the filleted mesh — it **fails the
+stress constraint there, at every rung, by 23% to 40%**.  That is a measured reason the
+re-descent §103 required was a re-descent and not a re-score, and `cb4e3dd`'s subject says
+as much.  **AND THE SHIPPED WHEEL'S OWN MARGIN IS THIN AND SHRINKING UP THE LADDER**:
+0.838 -> 0.975, still under 1 at `fine` but by 2.5%.  No claim is made about where it goes
+beyond `fine`; the ladder stops there.
+
+### 9. WHAT §29 ACTUALLY CONFLATED — DECIDABILITY IS THE MESH'S, PASSING IS THE GENOME'S
+
+```
+                            GCI vs the band      extrapolated vs 2.0 mm       verdict
+    09e8188  BARE              4.286x                 -2.847%            cannot be judged
+    09e8188  FILLETED          0.270x                -50.107%            judged, and FAILS
+    b729e86  FILLETED          0.169x                 -0.048%            judged, and PASSES
+```
+
+**THE TWO PROPERTIES SEPARATE ONTO THE TWO AXES.**  Whether the gate CAN be adjudicated is
+a numerical property and it travels with the mesh — both filleted ladders are decidable
+under all four `h`, the bare one under none.  Whether a design PASSES is a design property
+and it travels with the genome — on the same filleted mesh, `09e8188` misses by 50% and
+`b729e86` by 0.048%.  §29 retired the gate on the first and the tree has argued about it
+ever since as though it were the second.
+
+**SCOPE, STATED:** two filleted genomes and one bare one.  Nothing here shows that EVERY
+filleted ladder is decidable, and the falsifier is named in successor 2.
+
+### 10. THE FREE 2x2 THAT ARGUED AGAINST THE ANSWER, AND WHY THE CONFIDENCE WAS LOW
+
+`study_corner_singularity` costs 8 s a cell, so the mesh axis was priced at both genomes
+before the ladder launched.  Its QoI is the SINGLE-PHASE LINEAR node deflection, a proxy
+and not the gate's 8-phase mean.
+
+```
+    genome    mesh     coarse/medium/fine (mm)      spread%   ratio    mono  settling
+    09e8188   bare     1.551645 1.562981 1.570505    1.2077   0.6638   yes   yes
+    09e8188   FILLET   0.961370 0.960719 0.959545    0.1901   1.8044   yes   no
+    b729e86   bare     2.088951 2.084985 2.090085    0.2442  -1.2858   NO    no
+    b729e86   FILLET   1.843091 1.848606 1.850105    0.3797   0.2720   yes   yes
+```
+
+**THE PROXY SHOWS AN INTERACTION AND NOT A MAIN EFFECT** — the fillet tightens the spread
+6.4x at `09e8188` and LOOSENS it 1.6x at `b729e86` — which is why the registered confidence
+in outcome (a) was low.  The gate's own QoI disagrees with it flatly, and the lesson is the
+scope one: a proxy that differs from the real QoI in the stencil, the kinematics AND the
+functional is not a cheap version of it.
+
+**AND THE MECHANISM THAT WOULD HAVE BEEN THE OBVIOUS EXPLANATION IS FALSE, MEASURED.**  The
+same artifacts carry the Williams census, and it is identical at both genomes: BARE carries
+four re-entrant corners (`hub:P_t`, `hub:P_c`, `rim:P_t`, `rim:P_c`) and FILLETED carries
+exactly two (`hub:P_c`, `rim:P_c`).  **The fillet removes the TENSION-side corners and
+leaves the COMPRESSION-side ones**, at both wheels, and the global von Mises still diverges
+on the filleted mesh — `slope_finest3` −0.4650 against bare's −0.4181.  So "the fillet
+removed the singularity and `p` recovered" is NOT available as the explanation of §3, and
+§3 does not offer it.  **The re-entrant census is set by the mesh and not by the genome,
+which is the one thing the proxy establishes cleanly.**
+
+### 11. SUCCESSORS, RANKED
+
+0. **WHY DOES `p` RECOVER WHEN THE SINGULARITY SURVIVES?**  §3 measures 0.7947 -> 2.4985
+   and §10 shows two re-entrant corners on both meshes with the global peak still
+   diverging.  A corner-limited `p` should not triple while its corners remain.  Candidates:
+   the surviving corners are compression-side and carry a smaller stress-intensity share;
+   or the deflection functional is dominated by the tension side; or the +26.5% elements
+   are local refinement where the error lives.  **The third is separable for free** — the
+   committed `study_corner_singularity_fillet.json` carries per-corner profiles.
+1. **THE `medium` CROSSINGS** — §196's successor 1 and §195's, unmoved at ~40 min and now
+   the cheapest measurement on the board for the third section running.
+2. **IS EVERY FILLETED LADDER DECIDABLE, OR ONLY THESE TWO?**  §9's named falsifier.  The
+   cheapest test is a third filleted genome, and `b029622` is already on disk with its own
+   corner artifacts.  ~2.2 h, and it would give this tree its third `fine` filleted reading.
+3. **A LINEAR DESCENT ON A FILLETED MESH** — §195's successor 0, ~7 h, unmoved.
+4. **THE GENOME EFFECT'S 3.5x KINEMATICS DEPENDENCE** (§7).  Measured clean and not
+   explained.  It is the same shape as §190-§194's `err`-prefactor story and may be the
+   same mechanism, which would make it a prediction rather than a new study.
+5. **DATE THE OTHER ARTIFACTS BY REPLAY** (§6).  37 study artifacts name a genome by path
+   and 3 carry a hash.  The replay technique prices at ~5 min a candidate, and §6 shows a
+   git date is not a substitute.  Worth doing for the artifacts that ANCHOR a live claim.
+6. **§29's RETIREMENT AND THE LIVE `GATE_PCT`** — §196's successor 3, and §9 sharpens it:
+   the retirement rested on a decidability reading, and decidability is now measured to be
+   a property of the mesh.  Still a decision, not a measurement.
+7. **THE OTHER NINE `1/sqrt(n_elements)` CONSUMERS** — §196's successor 5.
+8. **§196's SUCCESSORS 6 AND §195's 2 AND 4-14**, unchanged.
+
+### 12. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+Read at HEAD after the artifact commit and before this section was written; this commit
+edits no line in any file but this one, so §186's stale-on-arrival case cannot apply.  Two
+line-numbered anchors, both into source this work does not touch:
+`src/wheel_objective.py:1092-1093`, the two `fillet_arc_nodes` calls of §5, and
+`src/wheel_wheel.py:2279`, `UNCAP_DEFAULT` in §7.  Everything else names a function, a
+test or a JSON key rather than a line: `mesh_counts`, `run_ladder`, `analyse`,
+`naive_ratio`, `service_qoi_value_and_grad`, `phase_meshes`, `flank_orientation`,
+`_region_qois`, `axle_drop_mean_mm`, `stress_utilisation`, `slope_finest3`, `GATE_PCT`.
+`5c46f64`, `b5773dd`, `cb4e3dd` and `f2e55df` are commits; `09e8188`, `b729e86`, `e126cc3`
+and `b029622` are genome hashes.
+
+**THE PREDICTION:** the sweep goes **1622 -> 1628 (+6)** and the human list stays at
+**148**, identical row for row.  Baseline measured at a clean tree after the artifact
+commit: **1622 total, 148 human**.
+
+**THE +6 IS TWO DISTINCT ANCHORS COUNTED THREE TIMES EACH, AND THE THIRD OF EACH IS THIS
+SENTENCE.**  `src/wheel_objective.py:1092-1093` stands in §5, in §12's list above and here;
+`src/wheel_wheel.py:2279` stands in §7, in §12's list above and here.  A distinct-anchor
+prediction would read **2** and a count that forgot the prediction sentence would read
+**4**.  The number was not counted by eye: this section was run through the sweep's OWN
+`TOKEN` regex before the commit, which returned 6, and my first draft of this paragraph
+said **+3** — it had counted the `src/`-prefixed spellings and missed that §12's list and
+this sentence each cite both anchors again.  That is §194's and §192's seam for the third
+time in this sub-arc, and the fix is the instrument, not more care: **count with the
+sweep's own regex, never with a hand tally.**  A `-` range is ONE token whose first integer
+is the anchor, so `1092-1093` resolves against line 1092.
+
+The human list is predicted STILL because this section repairs no citation and edits no
+line any other citation anchors on — the condition §196 §10.1 had and this one does not.
