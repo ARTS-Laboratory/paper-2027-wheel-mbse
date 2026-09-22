@@ -256,6 +256,18 @@ def test_the_p_norm_the_optimizer_uses_diverges_far_more_slowly(report):
     rests on widened rather than narrowed — the p-norm slope moved −0.0441 → −0.0262
     against a peak slope of −0.4695, so 10.6x became 17.9x. The assertion is unchanged;
     what changed is that it no longer has to survive a mismatch to hold.
+
+    **AND AT §196 IT GAVE BACK MORE THAN IT GAINED, WHICH IS WHY THE PARAGRAPH ABOVE IS
+    KEPT RATHER THAN EDITED.**  Committing the filleted ladder at the shipped genome puts
+    the p-norm slope at **−0.0662** against a peak of **−0.4765**: **7.2x**, below even
+    the 10.6x this test started at.  Both assertions still hold, and the FIVE-FOLD clause
+    is the binding one of the two: 0.0662 against the 0.0953 it allows is **1.44x clear**,
+    against the −0.10 floor's 1.51x.  At −0.0262 those read 3.64x and 3.82x, so the
+    binding margin has lost a factor of 2.5.  **THE MOVE IS CONFOUNDED AND
+    NOTHING HERE ATTRIBUTES IT**: between the two ladders both the mesh (§103's fillet)
+    and the genome (12 of 14 genes, `cb4e3dd`) changed, and `h` itself was re-measured on
+    the filleted wheel at §196.  What the number says is that the qualifier this test
+    defends has less room than its own docstring has ever recorded.
     """
     gci = os.path.join(REPO, "studies", "study_deflection_gci.json")
     with open(gci) as fh:

@@ -38,8 +38,8 @@ pinned at the FINEST rung — that is the one whose answer the extrapolation is 
 
 GCI, NOT A BARE RICHARDSON.  `run_refinement` assumes a constant refinement ratio and
 takes `(d1-d2)/(d2-d3)` as the observed one.  The rungs here are NOT constant-ratio:
-h = 1/sqrt(n_elements) gives 1.6162 from coarse to medium and 1.5934 from medium to fine,
-a 1.4% inconsistency.  So this uses Roache's iterative solve for the observed order `p`,
+h = 1/sqrt(n_elements) gives 1.6164 from coarse to medium and 1.5556 from medium to fine,
+a 3.9% inconsistency.  So this uses Roache's iterative solve for the observed order `p`,
 which is stated for exactly that case, and reports the apparent order both ways so the
 difference between the two treatments is on the record instead of hidden in a formula.
 =============================================================================
@@ -87,11 +87,28 @@ GATE_PCT = 0.3                  # the plan-level gate, ± this many percent of t
 # 128x10 spoke block (1280 elements) while wheel_wheel is the 12-sector wheel (12288).
 # The first version of this study drew `h` from `wheel_mesh` while `WO.objective` solved
 # on `wheel_wheel`, which put the refinement ratios at 1.826/1.789 instead of the true
-# 1.616/1.593 and inflated every reported `p` by ln(1.826)/ln(1.616) = 1.25x.  The
-# extrapolated value and the GCI survived that error untouched — with three points, p
-# and r enter Richardson only through r^p = |e21/e32|, which is fixed by the measured
-# phi alone — but `p` itself did not, and `p` is the number that identifies WHY the
-# convergence is slow.  Take the counts from the mesh you solved on.
+# 1.616/1.593 and moved every reported `p` by ln(1.826)/ln(1.616) = 1.25x.  `p` is the
+# number that identifies WHY the convergence is slow.  Take the counts from the mesh you
+# solved on.
+#
+# TWO CLAUSES OF THAT PARAGRAPH WERE WRONG AND ARE CORRECTED HERE — PLAN.md §196 MEASURED
+# BOTH, BY REPLAYING `analyse` OVER THREE COUNT SOURCES ON ONE UNCHANGED `phi`.
+#
+#   - IT SAID "INFLATED".  The error DEFLATED `p`: a coarser ratio needs a SMALLER
+#     exponent to explain the same measured differences.  Replayed on this study's own
+#     two artifacts, `p` comes back at 0.7899x and 0.7959x of the true value — the
+#     reciprocal of the paragraph's own 1.2539, which was the right magnitude written
+#     the wrong way round.
+#   - IT SAID THE GCI SURVIVED UNTOUCHED.  It does not, and it cannot: `ext` and `gci`
+#     below are built from ONE factor, 1/(r32**p - 1), so they move by the SAME relative
+#     amount and differ only in that `ext` adds it to a ~1.8 mm base.  The identity
+#     `ext_move = gci_move * (ext - phi3)/ext` closes to every printed digit in all eight
+#     replayed rows.  The exemption holds only when `r32**p` is preserved, i.e. when the
+#     h-error is a UNIFORM rescaling in log space — which the `wheel_mesh` error nearly
+#     was (GCI moved 1.10%/1.70%) and §103's fillet error was NOT (13.88%/23.49%).
+#   - WHAT IS PHI-ONLY IS `naive_ratio`, NOT `r32**p`.  The paragraph's argument named
+#     the constant-ratio shortcut this study deliberately replaced.  Across the fillet
+#     error `naive_ratio` is BIT-IDENTICAL and `r32**p` moves 8.36%.
 H_DEFS = {
     "1/sqrt(n_elements)": lambda c: 1.0 / math.sqrt(c["n_elements"]),
     "1/n_span": lambda c: 1.0 / c["n_span"],
@@ -112,10 +129,19 @@ def mesh_counts(cfg_name, genes):
     `n_nodes` is taken from an ACTUAL assembled `WheelMesh` rather than from a formula,
     because the sector blocks share seams and the merged count is not the sum of the
     grids.  Topology is frozen per config, so any feasible genome gives the same numbers;
-    building costs 0.08 s even at `fine`.
+    building costs 0.39 s even at `fine`.
+
+    `fillet=True` BECAUSE `run_ladder` SOLVES ON `WO.phase_meshes`, WHICH PASSES IT
+    (PLAN.md §183 §3, fixed at §196).  §103 wired the fillet into the objective without
+    touching this file, so from 2026-09-03 this call returned the size of a mesh the QoI
+    was not solved on — the block above's own rule, broken a second time at the FILLET
+    rather than at the module.  The surcharge is not uniform up the ladder — +20.00%
+    elements at `smoke`, +26.53% `coarse`, +26.56% `medium`, +20.62% `fine` — which is
+    exactly why it reaches the arithmetic instead of cancelling: `r32` moves 1.593444 ->
+    1.555556 while `r21` holds at 1.616244 -> 1.616448.
     """
     cfg = WW.get_config(cfg_name)
-    mesh = WW.build_wheel(genes, cfg)
+    mesh = WW.build_wheel(genes, cfg, fillet=True)
     return {"n_elements": int(mesh.n_elements), "n_nodes": int(mesh.n_nodes),
             "n_span": int(cfg.n_span), "n_thick": int(cfg.n_thick),
             "n_weld": int(cfg.n_weld)}
