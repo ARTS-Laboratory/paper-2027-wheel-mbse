@@ -29398,7 +29398,7 @@ The arc index's cell for #2 was **rewritten 2026-08-29 after §92** and says:
 
 `test_nothing_wires_the_fillet_into_the_objective` stood from §48 through §102 and **§103
 replaced it with its mirror image**, `test_the_objective_builds_the_filleted_mesh`
-(`tests/test_corner_singularity.py:700`), which parses `src/` and requires the literal `True`
+(`tests/test_corner_singularity.py:714`), which parses `src/` and requires the literal `True`
 at `wheel_objective.phase_meshes` and `wheel_pool_worker.run_phase`.  It is green.  So the
 row's own subject reversed 14 days ago, and three days after that §115 descended and promoted
 `b729e86` on the mesh the row says the optimizer is kept off.
@@ -32242,3 +32242,367 @@ changed in the `mentions` column and in no other: `study_kinematics_rank.py` 82 
 not citing a line in them.  **The report has two kinds of number in one table and only one
 of them is a citation** — worth knowing before the next prediction is written against the
 wrong column.
+
+## §196 — 2026-09-22. §195's SUCCESSOR 3, DECIDED, AND §183's SUCCESSOR 0 CLOSED IN CODE WITH IT: **THE UNCOMMITTED LADDER IS COMMITTED, AND IT REVERSES §29 — THE ±0.3% DEFLECTION GATE IS DECIDABLE, GCI 0.051% AGAINST THE COMMITTED ARTIFACT's 1.286%, UNDER ALL FOUR `h` DEFINITIONS. THE CAUSE IS CONFOUNDED AND IS NOT CLAIMED: THE TWO LADDERS DIFFER IN THE MESH AND IN 12 OF 14 GENES.** §183 §3.1's HYPOTHESIS IS SCORED AND ITS SECOND HALF IS **REFUTED** — FILLETING `h` MOVES `p` BY −2.50% AND THE EXTRAPOLATED VALUE BY +0.004% AS PREDICTED, BUT THE **GCI MOVES +13.88%**, VISIBLE AT THE ARTIFACT's OWN PRINTED PRECISION. THE REASON IS ONE SHARED FACTOR: `ext` AND `gci` ARE BOTH BUILT ON `1/(r32**p − 1)`, SO **`ext_move = gci_move × (ext − phi3)/ext` CLOSES AT ≤1.9e-14 IN ALL EIGHT REPLAYED ROWS** — "THE EXTRAPOLATION SURVIVED" WAS NEVER IMMUNITY, ONLY THE CORRECTION's SHARE OF A 1.8 mm BASE. AND THE DRIVER COMMENT THAT GRANTED THE EXEMPTION HAS **A SIGN BACKWARDS**: THE `wheel_mesh` ERROR **DEFLATED** `p`, MEASURED AT 0.7899x AND 0.7959x, THE RECIPROCAL OF ITS OWN CORRECT 1.2539. PLUS: **THE ARTIFACT HAD BEEN HOLDING A TEST RED IN THE WORKING TREE SINCE 2026-09-18**, WHICH §195 DID NOT SAY, AND THE PIN FOR §183's DEFECT **CERTIFIED ITS OWN RECURRENCE FOR NINETEEN DAYS** BY COMPARING AGAINST A BARE BUILD
+
+Two commits.  The first is source and artifact together, which the header block's study rule
+requires: `studies/study_deflection_gci.py`, its regenerated `studies/study_deflection_gci.json`,
+`tests/test_deflection_gci.py` and `tests/test_corner_singularity.py`.  The second is this
+record.  No FEA was run for any of it — the ladder itself is the 7871.9 s run already on disk
+from 2026-09-18 (`overnight_gci.log`, exit 0), and everything below is either a mesh count or
+a replay of `analyse` over it, which is what `--reanalyse` exists for.
+
+### 1. THE SUCCESSOR AS FILED, AND WHY IT WAS NOT BOOKKEEPING
+
+§195 §11 item 3 filed it as a two-way choice: *"It is the only `fine` filleted reading in
+existence and it is evidence sitting outside the record.  Commit it with its provenance or
+delete it."*  Both options were wrong as stated, because neither had been priced:
+
+  - **Committing it as-is commits a known-wrong `h` column** — §183 §3's defect, still live,
+    never fixed.
+  - **Deleting it destroys the only `fine` filleted reading in the tree**, 7871.9 s of solve.
+  - And the choice is not free either way: the artifact **reverses a plan-level gate call**.
+
+So the decision needed three measurements first, and all three are cheap.  What follows is
+those, then the call.
+
+### 2. THE TWO ARTIFACTS ARE NOT TWO READINGS OF ONE THING
+
+The committed artifact is `5c46f64`, 2026-08-23.  Its `mesh_s` column reads **0.0 / 0.1 / 0.2 /
+0.6 s**; the working tree's reads **1.9 / 2.1 / 2.4 / 3.1**.
+
+§195 §4's discriminator is the right idea at the wrong scope and is NOT borrowed here: its
+0.014–0.105 s is per OBJECTIVE CALL, and `run_ladder` at `--workers 0` builds the whole
+8-phase stencil into one `mesh_s`, so the committed `fine` row's 0.6 s already sits outside
+that range while being bare.  Timed directly instead, one build per rung, and multiplied by
+the 8 the code actually builds:
+
+```
+    rung     1 bare   x8    artifact  |  1 filleted   x8   artifact
+    smoke      0.01   0.08     0.0    |       0.26   2.08     1.9
+    coarse     0.01   0.08     0.1    |       0.26   2.08     2.1
+    medium     0.03   0.24     0.2    |       0.30   2.40     2.4
+    fine       0.07   0.56     0.6    |       0.39   3.12     3.1
+```
+
+**EIGHT ROWS, BOTH COLUMNS RECONSTRUCTED.**  The committed ladder is **BARE** and the working
+tree's is **FILLETED**, and the instrument is this section's own timing rather than a figure
+carried in from a different denominator.  That is the expected half.
+
+**THE UNEXPECTED HALF IS THE GENOME.**  Both artifacts record `"genome": "best_solution.json"`
+and nothing more — no hash, which is a provenance weakness in its own right.  Read the file as
+it stood at each commit and **12 of the 14 genes differ**; `cb4e3dd` promoted `b729e86` on
+2026-09-06, between the two runs.  So the two ladders differ in **at least two ways**, and by
+CLAUDE.md's confound check nothing below may attribute any movement between them to the mesh.
+
+What the working tree's ladder IS, is corroborated.  Four of its eight solve values reproduce
+two other committed artifacts **bit for bit**:
+
+```
+    coarse linear  1.8019902936241827   study_kinematics_rank_filleted  .rank.rows[20].linear
+    coarse svk     1.9920260083894532   study_kinematics_rank_filleted  .rank.rows[20].svk
+    medium linear  1.8060415598414676   study_svk_rescore               .rescore.rows[0].linear
+    medium svk     1.9967587514475096   study_svk_rescore               .rescore.rows[0].svk
+```
+
+§195 §11 claimed the LINEAR pair.  **The SVK pair matches too**, which doubles the check.
+
+### 3. AND IT HAD BEEN HOLDING A TEST RED SINCE 2026-09-18
+
+`tests/test_deflection_gci.py::test_the_recorded_report_still_says_the_gate_is_undecidable`
+reads that path and asserted `GCI > gate_pct`.  Against the regenerated file it fails —
+*"GCI 0.045% is no longer wider than the ±0.3% band"* — and it fails from the ARTIFACT alone,
+before any edit of mine: the committed artifact reads 1.2859% with `gate_decidable` false and
+is green.  **So the working tree has been red for four days** while §195 was appended and
+committed under a green-before-commit rule, and §195 §11 item 3 described the file as evidence
+"sitting outside the record" without noticing it was inside the test suite.
+
+That is the sharpest argument for the successor being ranked higher than 3: an uncommitted
+artifact is not inert when a test reads its path.
+
+### 4. §183's SUCCESSOR 0, CLOSED IN CODE
+
+`mesh_counts` now builds what `run_ladder` solves on.  One argument, plus the prose that
+argument makes wrong.  The surcharge, measured at the shipped genome:
+
+```
+    rung      bare el   filleted el   delta     bare nodes   filleted nodes    delta
+    smoke         960          1152   +20.00%         4644             5508   +18.60%
+    coarse       4704          5952   +26.53%        21012            26196   +24.67%
+    medium      12288         15552   +26.56%        53124            66468   +25.12%
+    fine        31200         37632   +20.62%       132276           158388   +19.74%
+```
+
+**THE SURCHARGE IS NOT UNIFORM, AND THAT IS THE WHOLE REASON THE DEFECT REACHES THE
+ARITHMETIC.**  It is +26.5% at the two middle rungs and +20.6% at `fine`, so the ratios split:
+
+```
+    r21 (coarse/medium)   1.616244071  ->  1.616447718     +0.0126%
+    r32 (medium/fine)     1.593443598  ->  1.555555556     -2.3777%
+```
+
+§183 §3 registered exactly this falsifier and called it half-fired.  **The half that fired is
+`r32`**, and §183 was right to say so: had the fillet scaled every rung alike, both ratios
+would have held and the defect would have been cosmetic.
+
+### 5. §183 §3.1's HYPOTHESIS, SCORED — AND ITS SECOND HALF IS REFUTED
+
+The hypothesis, registered before any `phi` existed to test it:
+
+> re-running with counts taken from the filleted mesh moves the reported `p` and leaves the
+> extrapolated value and the GCI unchanged to their quoted precision.
+
+Scored by replaying `analyse` over the same `phi` with three count sources.  `phi` is untouched
+throughout — the reanalyse moved **0 solve leaves of 298** and both `phi` arrays are
+bit-identical before and after:
+
+```
+    quantity                 bare h        filleted h        move      hypothesis
+    p        linear       2.484400898      2.422234136     -2.5023%    MOVES      -> HOLDS
+    p        svk          2.401200012      2.337639197     -2.6470%    MOVES      -> HOLDS
+    ext mm   linear       1.807805887      1.807882827     +0.00426%   unchanged  -> HOLDS
+    ext mm   svk          1.998942620      1.999041952     +0.00497%   unchanged  -> HOLDS
+    GCI %    linear          0.038352         0.043673    +13.8758%    unchanged  -> REFUTED
+    GCI %    svk             0.044631         0.050845    +13.9225%    unchanged  -> REFUTED
+```
+
+**AT THE ARTIFACT's OWN PRINTED PRECISION THAT IS `GCI(fine) 0.038%` BECOMING `0.044%`** — not
+a rounding, a visible digit.  The hypothesis's second half came from the driver's own comment
+and is quoted there as settled law; it is neither.
+
+### 6. THE MECHANISM IS ONE SHARED FACTOR, AND IT CLOSES AS AN IDENTITY
+
+`studies/study_deflection_gci.py:213-214`:
+
+```
+    ext = phi[2] + e32 / (r32 ** p - 1.0)
+    gci = SAFETY_FACTOR * abs(e32 / phi[2]) / (r32 ** p - 1.0)
+```
+
+**THEY SHARE `1/(r32**p − 1)` AND NOTHING ELSE MOVES.**  So they do not move by different
+amounts at all — they move by the SAME relative amount on that term, and `ext` merely adds it
+to a ~1.8 mm base while `gci` is the term alone.  Stated as a prediction and then measured
+across both artifacts and both h-errors:
+
+```
+    ext_move%  ==  gci_move%  ×  (ext − phi3)/ext
+
+    artifact    h error      kin      gci move%     share    predicted     measured     delta
+    COMMITTED   wheel_mesh   linear     +1.7022   0.009493   +0.016158    +0.016158   -1.7e-14
+    COMMITTED   wheel_mesh   svk        +1.7237   0.010182   +0.017551    +0.017551   -7.8e-15
+    COMMITTED   filleted     linear    +23.4859   0.009493   +0.222940    +0.222940   -1.5e-14
+    COMMITTED   filleted     svk       +23.8484   0.010182   +0.242828    +0.242828   -1.2e-14
+    WORKTREE    wheel_mesh   linear     +1.0952   0.000307   +0.000336    +0.000336   +1.9e-14
+    WORKTREE    wheel_mesh   svk        +1.0978   0.000357   +0.000392    +0.000392   +1.5e-15
+    WORKTREE    filleted     linear    +13.8758   0.000307   +0.004256    +0.004256   +1.3e-14
+    WORKTREE    filleted     svk       +13.9225   0.000357   +0.004969    +0.004969   -1.8e-17
+```
+
+**EIGHT ROWS, EVERY ONE AT MACHINE PRECISION.**  The extrapolated value looks immune because
+the correction is **0.03%** of it on the worktree ladder and **0.95%** on the committed one —
+that ratio IS the exemption, and it is a property of how well-converged the ladder is, not of
+Richardson.
+
+And the argument the comment actually made — *"p and r enter Richardson only through
+`r^p = |e21/e32|`, which is fixed by the measured phi alone"* — **names the wrong quantity.**
+The phi-only quantity is `naive_ratio`, the constant-ratio shortcut this study deliberately
+replaced, and it is **BIT-IDENTICAL across every count source in all eight rows**.  `r32**p`
+is not phi-only and moves **−8.36%** across the fillet error.
+
+### 7. THE CONTROL — AND THE COMMENT HAS A SIGN BACKWARDS
+
+The exemption is not simply false; it holds where it was first written, which is what makes
+this a discriminator rather than a complaint.  Replayed with `wheel_mesh`'s counts — the
+study's FIRST defect, 1.826/1.789 against 1.616/1.593:
+
+```
+    h error       GCI move, committed phi    GCI move, worktree phi
+    wheel_mesh          +1.7022%                   +1.0952%
+    filleted           +23.4859%                  +13.8758%          13.8x and 12.7x larger
+```
+
+`wheel_mesh`'s error is very nearly a UNIFORM rescaling in log space, so `p` rescales as
+`1/ln(r)` and the product `p·ln(r32)` — hence `r32**p`, hence the GCI — is very nearly
+preserved: `r32**p` moves **−0.74%** there against **−8.36%** under the fillet.  §103's error
+is not uniform, and §4 is why.
+
+**AND IN CHECKING IT, THE COMMENT's OWN CLAIM ABOUT `p` TURNS OUT TO BE THE RECIPROCAL OF THE
+TRUTH.**  It says the `wheel_mesh` error *"inflated every reported `p` by ln(1.826)/ln(1.616) =
+1.25x"*.  A COARSER ratio needs a SMALLER exponent to explain the same measured differences,
+so the error DEFLATED `p`.  Measured, on both artifacts and both kinematics:
+
+```
+    p(wheel_mesh) / p(true)     0.7899x   0.7897x   0.7959x   0.7958x
+    the comment's own 1/1.253864 =                  0.79754
+```
+
+**THE MAGNITUDE IS THE COMMENT's OWN AND IT IS RIGHT; ONLY THE WORD IS WRONG.**  Four
+independent readings land within 1.1% of the reciprocal it printed.  This is §190's shape
+again — a right number carrying the opposite sign — and it survived in a comment written
+specifically to record what that error did.
+
+### 8. §29's GATE IS REVERSED, AND THE CAUSE IS NOT CLAIMED
+
+```
+                        committed ladder      this ladder      the band
+    svk GCI(fine)            1.2859%            0.0508%          ±0.3%
+    svk extrapolated       1.943062 mm        1.999042 mm
+    vs the 2.0 mm target     -2.847%            -0.048%
+    gate_decidable            False              True
+    under all four h          False              True    p in [1.686, 2.428]
+                                                         GCI in [0.041%, 0.096%]
+```
+
+§29 retired the ±0.3% deflection gate because the GCI was **four times the band it was meant
+to adjudicate**.  On the wheel that ships, on the mesh the objective solves, it is **one sixth
+of it**, and the extrapolated value sits inside the band under every `h` definition carried.
+
+**NOTHING HERE SAYS THE FILLET DID THAT.**  §2 measured two differences between the ladders and
+either could produce a tighter one; a third possibility is that the 2026-09-06 genome is simply
+a better-converged design.  **This is a hypothesis with three live candidates and it is filed as
+successor 0, not asserted.**  What is asserted is only the reading: the comparison §29 rested a
+retirement on now runs the other way.
+
+### 9. THE OTHER CONSUMER, WHICH GIVES BACK MORE THAN IT GAINED
+
+`tests/test_corner_singularity.py` fits `log(stress_utilisation)` against `log(h)` off this
+same artifact — so it consumes **both** columns this work moved.  It stays green and its margin
+collapses:
+
+```
+                          p-norm slope   raw peak    ratio   five-fold clause   -0.10 floor
+    committed ladder        -0.0262      -0.4765     18.2x       3.64x clear      3.82x
+    this ladder             -0.0662      -0.4765      7.2x       1.44x clear      1.51x
+```
+
+Its docstring records the margin **widening** from 10.6x to 17.9x and calls that the good news;
+this ladder puts it at **7.2x, below where it started**.  Both assertions hold, the FIVE-FOLD
+clause is the binding one, and the binding margin has lost a factor of 2.5.  Confounded for
+§2's reasons and §8's — and `h` itself moved here too, which is a third difference this one row
+carries that §8's does not.
+
+### 10. THE DECISION, AND THE FOUR TESTS IT MOVED
+
+**THE ARTIFACT IS COMMITTED, AT THE CANONICAL PATH, WITH THE `h` DEFECT FIXED FIRST.**  The
+grounds, in order:
+
+1. Its `phi` is corroborated bit-for-bit at four of eight solve values by two committed
+   artifacts (§2), and no solve value was touched by the repair (§5).
+2. It is the only `fine` filleted reading in the tree and cost 7871.9 s.
+3. The committed artifact describes a **retired genome on a retired mesh**; leaving it at
+   `GCI_OUT`'s default path means `make gci`'s output describes a wheel that has not shipped
+   since 2026-09-06.  It is not lost — it is `5c46f64`, and §8's table is its epitaph.
+4. Committing it as-is was never an option (§1), and `--reanalyse` is the driver's own
+   sanctioned repair for precisely a stale-counts error, at zero FEA.
+
+Four tests moved, and **one of them is the finding**:
+
+  - `test_mesh_counts_come_from_the_wheel_that_was_actually_solved` compared against a **BARE**
+    `build_wheel`.  **ITS NAME WAS TRUE OF IT AND ITS BODY WAS NOT**, so from §103 to today it
+    was the pin for §183's defect certifying §183's defect — green for nineteen days on 4704
+    against the 5952 that was solved.  It now builds through `WO.phase_meshes`.
+  - `test_the_refinement_ratios_are_the_ones_the_docstring_claims` — 1.5934 to 1.5556, with
+    §4's reason recorded beside it.
+  - `test_the_recorded_report_still_says_the_gate_is_undecidable` is renamed and inverted, and
+    carries §8's confound in its docstring so it cannot be read as attributing the reversal.
+  - `test_rescaling_h_moves_p_but_essentially_not_the_extrapolation` **stays green and stays
+    correct** — it rescales by one exponent, which is the uniform case. Its docstring now says
+    so: it is a CONTROL for the invariance, not a warrant for it.
+
+Green: `test_deflection_gci` 14 passed, `test_corner_singularity` 26 passed 4 xfailed,
+`test_study_gate_guard` 40 passed.  The blast radius was enumerated with `ast` and not a line
+grep, which is §183 §6's own lesson applied to §183's own fix: **`mesh_counts` has exactly 5
+call sites in the tree — 2 in the driver, 3 in its test, and none anywhere else** — and
+`study_fillet_pnorm` and `study_fillet_condition_a` import only `richardson`, which is
+untouched.  The artifact's reader set is closed at three test files.
+
+### 10.1 THE SWEEP CAUGHT ONE CITATION, AND IT WAS WRONG BEFORE THIS WORK TOUCHED IT
+
+The baseline sweep after the source commit came back **1619 total, 149 for a human** — and
+§195 §13 left the human list at **148**.  One row appeared, and the both-ways discipline
+(§191/§192) says find it before predicting anything.  It is §186's sentence about
+`test_the_objective_builds_the_filleted_mesh`, whose anchor into `test_corner_singularity`
+the 12 docstring lines §9 added to that file pushed down.
+
+**BUT THE CITATION WAS NOT BROKEN BY THIS WORK — IT HAS NEVER BEEN RIGHT.**  At `ac2f06a`,
+the commit that WROTE that sentence, the `def` already sat two lines below the line cited,
+and the line cited was BLANK.  It has resolved ever since only because a blank line matches
+a blank line — which is also why the sweep now reports **146 matches at HEAD** and refuses
+to guess which one it meant.
+
+So this is a trap no rule in this file had named: **an off-by-two citation onto whitespace is
+INVISIBLE to the sweep, because the instrument's check is content equality and whitespace is
+the one content that is never unique.**  A citation onto a `def` fails loudly the moment it
+slips; a citation onto the blank line above that `def` never fails at all.  §159's rule —
+read the anchor's lineage, never apply the arithmetic — is what caught it, and the arithmetic
+would have been wrong anyway: the offset gives line 712 and the `def` is at line 714.
+
+Repointed at the `def` in this commit, which re-dates §186's line, so the human list should
+return to **148**.  Recorded here because a sweep that reads 148 -> 149 -> 148 across two
+commits looks like noise unless the middle number has a name.
+
+**AND THE RAW SWEEP ROW IS DELIBERATELY NOT QUOTED ABOVE.**  Pasting it would have put two
+live `path:N` tokens into this record — one of them onto the blank line this subsection
+exists to condemn — and the sweep counts tokens wherever they appear, fenced or not.  A
+record of a bad citation must not mint one.
+
+### 11. SUCCESSORS, RANKED
+
+0. **WHICH OF THE THREE CAUSES TIGHTENED THE LADDER** — §8, and it is this section's own
+   registered hypothesis.  The mesh, the genome, or convergence quality.  **It is separable
+   without a descent**: re-run the ladder at the OLD genome on the FILLETED mesh, one change
+   from the committed artifact, and the cell it lands in names the cause.  Cost is the ladder,
+   ~2.2 h, and it also gives this tree its second filleted `fine` reading.
+1. **THE `medium` CROSSINGS** — §195's successor 1, unmoved and still the cheapest measurement
+   on the board at ~40 min.
+2. **A LINEAR DESCENT ON A FILLETED MESH** — §195's successor 0, ~7 h.
+3. **§29's RETIREMENT NOW HAS NO STANDING EVIDENCE, AND THE BAND IT RETIRED IS STILL LIVE IN
+   THE TREE.**  §8 reverses the reading the retirement rested on.  Meanwhile ±0.3% never left:
+   `GATE_PCT` is 0.3 and drives four `gate_*` keys in this artifact, `study_fillet_pnorm`
+   derives its own 0.5% by loosening it, and `test_corner_singularity` quotes `FILLET_PLAN`'s
+   "±0.3% absolute deflection band" as a live reason.  So the tree currently holds a gate it
+   retired at plan level and still uses everywhere else.  **Reinstating it is a decision, not a
+   measurement**, and it wants successor 0 answered first — but the inconsistency is real today.
+   (Checked and NOT the finding: there is no §29 row in the arc index to correct — that table
+   indexes arc FILES, and §29 is a section.)
+4. **THE ARTIFACTS CARRY NO GENOME HASH** (§2).  `study_deflection_gci.json` records
+   `"genome": "best_solution.json"`, which is a path and not a wheel; dating this one took a
+   `git show` of a file that `.gitignore` also names.  Every study artifact in this tree with
+   the same field has the same weakness.
+5. **THE OTHER NINE `1/sqrt(n_elements)` CONSUMERS.**  §4's non-uniform surcharge is a property
+   of the fillet, not of this study, and `study_fillet_pnorm` and `study_fillet_condition_a`
+   both call `SG.richardson` with an `h` they compute themselves.
+6. **§195's SUCCESSORS 2 AND 4-14**, unchanged — and successor 2's free half is now committed:
+   the `fine` forward drops it wanted are in the record as of this commit.
+
+### 12. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+Read at HEAD after the source commit and before this section was written, so §186's
+stale-on-arrival case cannot apply — the first commit is the one that moved these lines, and
+this commit moves none of them.  `studies/study_deflection_gci.py:213-214`, the two lines of
+§6's shared factor, is the only line-numbered anchor.  Everything else names a function or a
+test by NAME rather than by line, deliberately, because the first commit shifted every line in
+both test files: `mesh_counts`, `run_ladder`, `analyse`, `richardson`, `H_DEFS`, `GCI_OUT`,
+`SG.richardson`, `WO.phase_meshes`, and the four tests named in §10.  `5c46f64` and `cb4e3dd`
+are commits; `b729e86` is a genome hash.  `axle_drop_mean_mm`, `mesh_s`, `genome`,
+`gate_decidable`, `gci_fine_pct` and `n_elements` are JSON keys.  This commit also EDITS
+one citation it does not own — §186's, per §10.1 — which is the only line of this file outside
+this section that it touches, and re-dating that line is the whole of the predicted -1.
+
+**THE PREDICTION:** the sweep goes **1619 -> 1622 (+3)** and the human list **149 -> 148 (-1)**.
+Baseline measured at a clean tree after the source commit: **1619 total, 149 human**.  The +3
+is the TOKEN count over this section, counted with `grep` before the commit, per §194 §10 and
+§195 §13.  **THE -1 IS §10.1's REPAIR, AND IT IS THE FIRST TIME THIS RECORD HAS PREDICTED THE
+HUMAN LIST TO MOVE AT ALL** — the four predictions before it all said "identical row for row",
+and this one says exactly one NAMED row leaves it while every other row stays identical.
+
+**THE 3 IS ONE ANCHOR COUNTED THREE TIMES, AND THE THIRD IS THIS SENTENCE.**
+`studies/study_deflection_gci.py:213-214` appears in §6, in §12's list above, and in the
+prediction itself.  Two of this sub-arc's four sweep predictions have now failed on this exact
+seam: §194 predicted DISTINCT anchors where the instrument counts tokens, and §192 forgot that
+its own successors block cites files.  A distinct-anchor prediction here would read **1**, a
+count that ignored the prediction sentence would read **2**, and the grep that decides between
+them reads **3** — so the rule is now `grep -c` over the finished section INCLUDING the
+sentence making the claim, which is self-referential and has to be, because the sweep reads the
+committed file and the sentence is in it.  The sweep's own header supplies the other half: a
+`-` range is ONE token whose first integer is the anchor.
