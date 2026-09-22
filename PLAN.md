@@ -33132,3 +33132,113 @@ Six rows moved in `mentions` and only there — `study_corner_singularity` 151 -
 its fourth instance and its first on a section that cites nothing at all. **`mentions`
 moves on prose alone, and a zero-citation section proves that cleanly**, because here there
 is no citation delta for it to be confused with.
+
+---
+
+## §199 — 2026-09-22. §198's SUCCESSOR 1, FREE AND IT **DECIDES §198's DICHOTOMY AGAINST THE COMFORTABLE BRANCH**: `hub:P_c`'s FIELD-MEASURED EXPONENT IS **0.5466 AGAINST ITS GEOMETRIC 0.5458, corr −0.9869** — A GENUINE FREE-WEDGE SINGULARITY SURVIVES THE FILLET, SO BRANCH (i) IS REFUTED AND **THE FILLETED LADDER IS PRE-ASYMPTOTIC**. THE FILLETED `P_t` CORNERS CONFIRM §198 §1 INDEPENDENTLY WITH **POSITIVE** SLOPES, λ 1.3922 AND 1.0493. AND THE CAVEAT IS **PRICED RATHER THAN FLAGGED**: RE-SCALED TO `p` = 2λ = 1.0932, THE SHIPPED WHEEL'S GCI GOES 0.0508% -> 0.1481% AND STAYS **DECIDABLE UNDER ALL FOUR `h`, WORST 0.2489%** — **§196's REVERSAL OF §29 SURVIVES ITS OWN WORST CASE** — WHILE `09e8188`'s FAILS AT `1/n_thick`, 0.1518% -> 0.4415%, SO **§197 §3's "UNDER ALL FOUR `h`" DOES NOT SURVIVE FOR THAT GENOME AND IS AMENDED HERE**. THE BARE LADDER IS UNDECIDABLE EITHER WAY, 0.48% TO 1.56%
+
+One commit, this record.  No FEA: `radial_decay` is already in both committed corner
+artifacts at every rung, which §198's successor 1 did not know when it ranked this first
+for being "free or nearly so" — it guessed the traction would be the route and the field
+EXPONENT turned out to be a better one.
+
+### 1. THE FIELD CONFIRMS THE GEOMETRY AT `hub:P_c`, AND THAT IS THE WHOLE REFUTATION
+
+Each corner carries a log-log fit of peak von Mises against radius over a 0.064-0.592 mm
+window.  At the `fine` rung, filleted, `b729e86`:
+
+```
+    corner      williams lambda   field lambda     slope     corr     reading
+    hub:P_t            --             1.3922      +0.3922   +0.9066   REGULARISED
+    rim:P_t            --             1.0493      +0.0493   +0.9051   REGULARISED
+    hub:P_c          0.5458           0.5466      -0.4534   -0.9869   SINGULAR, CONFIRMED
+    rim:P_c          0.5419           0.8224      -0.1776   -0.4920   does not resolve
+```
+
+**`hub:P_c`'s TWO INDEPENDENT EXPONENTS AGREE TO 0.0008 ON A FIT WITH corr −0.9869.**  One
+is read off the wedge angle and the other off the solved field, and nothing makes them
+agree except the singularity being real.  §198 §4's branch (i) — *"the compression corners
+do not carry a free-wedge singularity"* — is refuted.
+
+**`rim:P_c` DOES NOT RESOLVE AND IS NOT COUNTED**: corr −0.4920 over 7 bins whose maxima
+run 37.2, 44.5, 32.8, 24.9, 18.4, 34.9, 28.6 — not a decay at all.  One confirmed corner
+is enough to refute a claim about the pair, and the record says which one did it.
+
+**AND THE `P_t` PAIR CORROBORATES §198 §1 BY A ROUTE §198 DID NOT USE.**  Their fitted
+slopes are POSITIVE — stress rising with radius, λ above 1 — which is what a corner with
+no singularity looks like.  §198 §1 measured convergence UP THE LADDER; this measures decay
+ACROSS RADIUS at one rung.  Two instruments, same verdict, and the fillet's job is done
+where it was supposed to do it.
+
+### 2. SO THE LADDER IS PRE-ASYMPTOTIC, AND THE SIGN OF THE ERROR IS KNOWN
+
+A λ = 0.5466 corner caps a smooth functional at `h^1.0932` (§198 §2).  The filleted ladders
+run at 2.34 to 2.58.  **A RATE CANNOT EXCEED ITS OWN ASYMPTOTIC CAP IN THE ASYMPTOTIC
+RANGE, SO THE THREE RUNGS ARE NOT IN IT** — the singular layer is not yet resolved at
+`fine` and is contributing below its eventual share.
+
+Which direction that biases the GCI is not a guess, because §196 §6 already established
+that `ext` and `gci` share the single factor `1/(r32**p − 1)` and nothing else moves:
+**over-estimating `p` inflates that denominator and therefore UNDER-states the GCI.**  The
+reported uncertainty is optimistic, not conservative, and the question is by how much.
+
+### 3. THE CAVEAT, PRICED — AND IT SPLITS BY GENOME
+
+Re-scaling each reported GCI onto `p` = 2λ = 1.0932 with the measured `e32/phi3` held
+fixed.  **THIS IS A RE-SCALING, NOT A RECOMPUTED GCI**: the true asymptotic constant is not
+the measured one, so this is an order-of-magnitude bound on the correction and is offered
+as nothing more.  Each `h` keeps its own `r32`.
+
+```
+    ladder             kin  h definition         reported    re-scaled    factor   verdict
+    b729e86 FILLETED   svk  1/sqrt(n_elements)    0.0508%     0.1481%     2.913x   decidable
+                            1/n_span              0.0415%     0.0812%     1.957x   decidable
+                            1/n_thick             0.0963%     0.2489%     2.584x   decidable
+                            1/sqrt(n_nodes)       0.0492%     0.1514%     3.078x   decidable
+    09e8188 FILLETED   svk  1/sqrt(n_elements)    0.0809%     0.2627%     3.247x   decidable
+                            1/n_span              0.0660%     0.1439%     2.179x   decidable
+                            1/n_thick             0.1518%     0.4415%     2.909x   **NOT**
+                            1/sqrt(n_nodes)       0.0783%     0.2686%     3.430x   decidable
+    09e8188 BARE       svk  worst of four        10.7308%     1.5592%     0.145x   NOT, either way
+```
+
+**THE WHEEL THAT SHIPS IS DECIDABLE UNDER ITS OWN WORST CASE, UNDER EVERY `h`.**  §196 §8
+reversed §29 on `b729e86` and that reversal survives the correction with its worst reading
+at 0.2489% against the 0.3% band — 0.83x of it, which is narrow and is stated as narrow.
+
+**§197 §3's CLAIM FOR `09e8188` DOES NOT SURVIVE AND IS AMENDED HERE.**  That ladder is
+decidable under three definitions of `h` and not under `1/n_thick`, which is the definition
+that was always this study's weakest — it is the one that read 10.7308% on the bare ladder
+and the one §197 §3 singled out as separating the two axes by 45x.  §197's ATTRIBUTION is
+untouched: it compares two ladders against each other and never against a theoretical rate.
+What is amended is one clause of its decidability reading for the retired genome.
+
+**AND THE BARE LADDER MOVES THE OTHER WAY** — its `p` is BELOW the cap, so re-scaling
+SHRINKS its GCI, by up to 6.9x at `1/n_thick`.  It is still undecidable by 1.6x to 5.2x
+under every `h`, so §29's and §49's call is unaffected in either direction.  That row is
+carried because a correction that only ever worsens things is a correction worth doubting.
+
+### 4. SUCCESSORS, RANKED
+
+0. **THE FIFTH RUNG** — §198's successor 0, now the only way to close this.  Branch (ii) is
+   established, so the open question is no longer WHETHER the rates are pre-asymptotic but
+   WHERE they turn, and one rung beyond `fine` measures it.  3-4 h, and §198's ranking of
+   this below the free check was correct: the free check changed what the run is for.
+1. **WHY DOES `rim:P_c` NOT RESOLVE?** (§1).  It carries the LARGEST peak in the mesh,
+   88.6 MPa, and the worst fit, corr −0.4920.  A bad window, a second corner inside the
+   probe radius, or contact interference are all cheap to tell apart from the committed
+   `bin_r_mm`/`bin_max_vm` arrays, at every rung rather than just `fine`.  **Free.**
+2. **RE-STATE THE GATE VERDICT WITH THE RE-SCALING BESIDE IT** — a decision, not a
+   measurement, and it belongs with §196's successor 3 rather than ahead of it.
+3. **THE `medium` CROSSINGS** — §197's successor 1, unmoved, ~40 min.
+4. **§198's SUCCESSORS 2-3 AND §197's 2-8**, unchanged.
+
+### 5. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE**, checked with `_citation_sweep.TOKEN` over the
+finished text, 0 matches.  It names `radial_decay`, `bin_r_mm`, `bin_max_vm`, `corr`,
+`lambda`, `gci_fine_pct`, `r32`, the four corner labels and the two corner artifacts.
+`b729e86` and `09e8188` are genome hashes.
+
+**THE PREDICTION:** total stays **1628** and the human list **148**, identical row for row,
+for the same reason as §198 and verified the same way.
