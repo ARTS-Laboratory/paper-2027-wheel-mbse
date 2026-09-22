@@ -32948,3 +32948,37 @@ is the anchor, so `1092-1093` resolves against line 1092.
 
 The human list is predicted STILL because this section repairs no citation and edits no
 line any other citation anchors on — the condition §196 §10.1 had and this one does not.
+
+### 13. THE SWEEP PREDICTION, RESOLVED — **+6 AGAINST A PREDICTED +6, AND THE HUMAN LIST IS IDENTICAL ROW FOR ROW**
+
+```
+  predicted   total 1622 -> 1628  (+6)      human 148 -> 148, identical row for row
+  measured    total 1622 -> 1628  (+6)      human 148 -> 148, IDENTICAL ROW FOR ROW
+```
+
+**THE THIRD OF FIVE IN THIS SUB-ARC TO LAND ON ITS NUMBER, AND THE FIRST WHOSE COUNT WAS
+TAKEN FROM THE INSTRUMENT RATHER THAN FROM A HAND TALLY.**  The draft of §12 said +3 and
+was wrong for the third distinct reason in five sections — §194 predicted distinct anchors
+where the instrument counts tokens, §192 forgot that a successors block cites files, and
+this one forgot that §12's own list and the prediction sentence each re-cite every anchor.
+Running the section through the sweep's `TOKEN` regex before committing costs one second
+and ends that series; **the rule is now to count with the instrument, and the three misses
+are why.**
+
+The baseline was re-measured in a detached worktree at the artifact commit rather than
+carried from §196's closing number, and the two human lists were DIFFED rather than
+compared by their totals — §119's lesson, that a matching count can hide rows opening and
+closing in equal number.  The diff is four summary rows and no human rows at all:
+
+```
+  owner                              cites   resolved   human      mentions
+  src/wheel_objective.py            242->245  130->133  112 (same)  413->416
+  src/wheel_wheel.py                 71->74    47->50    24 (same)  288->291
+  PLAN.md                           340 same  193 same  147 (same) 1477->1478
+  studies/study_corner_singularity.py  5 same    2 same    3 (same)  149->151
+```
+
+**THE +6 ARRIVES ON THE TWO FILES §12 SAID IT WOULD, THREE EACH, ALL RESOLVING.**  And the
+`mentions` column moved on the same four rows and nowhere else — a much smaller spread than
+§195's nine and §196's nine, because this section names fewer files in prose than either.
+That column is still not a citation count and no prediction here was written against it.
