@@ -32982,3 +32982,132 @@ closing in equal number.  The diff is four summary rows and no human rows at all
 `mentions` column moved on the same four rows and nowhere else — a much smaller spread than
 §195's nine and §196's nine, because this section names fewer files in prose than either.
 That column is still not a citation count and no prediction here was written against it.
+
+---
+
+## §198 — 2026-09-22. §197's SUCCESSOR 0, ITS FREE HALF, AND IT **REFUTES THE CANDIDATE IT WAS MEANT TO CONFIRM**: NO NEW FEA. THE FILLET CONVERGES **EXACTLY THE TWO TENSION-SIDE CORNERS** — `hub:P_t` AND `rim:P_t` GO FROM slope −0.5259/−0.5186 AND 3.22x/3.13x GROWTH TO **+0.0207/−0.0171 AND 0.91x/0.99x** — WHILE THE TWO COMPRESSION-SIDE ONES ARE UNTOUCHED, −0.4384 -> −0.4327 AND −0.4181 -> −0.4650. **BUT THE SURVIVORS CANNOT BE WHAT LIMITED THE LADDER EITHER.** EVERY CONFIG IS `order=2`, Q9, SO A λ = 0.5458 CORNER CAPS A SMOOTH FUNCTIONAL AT `h^1.0916` — AND ALL FOUR FILLETED READINGS SIT **2.14x TO 2.37x ABOVE THAT CAP** WITH BOTH CORNERS STILL RE-ENTRANT, WHILE BOTH BARE READINGS SIT **0.73x BELOW IT**. SO "THE WORST SURVIVING CORNER SETS `p`" IS FALSE IN BOTH DIRECTIONS, AND WHAT REPLACES IT IS A DICHOTOMY, NAMED NOT ASSERTED — **EITHER THE COMPRESSION CORNERS DO NOT CARRY A FREE-WEDGE SINGULARITY, OR THE FILLETED LADDER IS PRE-ASYMPTOTIC FOR THEM.** THE SECOND BRANCH WOULD QUALIFY §196's AND §197's GCI, WHICH IS WHY IT IS REGISTERED HERE RATHER THAN LEFT TO BE FOUND
+
+One commit, this record.  **No FEA was run for any of it** — the per-corner ladders are in
+`study_corner_singularity.json` and `study_corner_singularity_fillet.json`, committed at
+`1a42de4` and both at `b729e86`, and the `p` values are §196's and §197's own.
+
+### 1. THE FILLET CONVERGES THE TENSION PAIR AND LEAVES THE COMPRESSION PAIR ALONE
+
+Peak von Mises at each junction corner, up the ladder, at ONE genome — so this comparison
+moves the mesh only.  `slope` is the fit of `log(peak)` against `log(h)` over the finest
+three rungs; `growth` is `fine/smoke`.
+
+```
+    corner        BARE slope   growth        FILLETED slope   growth
+    hub:P_t         -0.5259     3.219            +0.0207      0.907     CONVERGED
+    rim:P_t         -0.5186     3.133            -0.0171      0.988     CONVERGED
+    hub:P_c         -0.4384     2.339            -0.4327      2.249     unchanged
+    rim:P_c         -0.4181     2.283            -0.4650      2.394     unchanged
+```
+
+**A DIVERGING PEAK BECOMES A SETTLING ONE AT EXACTLY THE TWO CORNERS THE FILLET REMOVES**,
+and the two it leaves keep their slope to within 0.005 and 0.047.  §197 §10 had the census
+— four re-entrant corners bare, two filleted, identically at both genomes — and this is the
+same fact read on the field instead of on the geometry.  The bare slopes cluster at −0.42
+to −0.53 around the `λ−1` = −0.4542 that a 270-degree wedge predicts, which is the
+corroboration that makes them singular readings rather than mesh noise.
+
+### 2. THE ELEMENT ORDER, WHICH IS WHAT MAKES THE REST ARITHMETIC
+
+`wheel_wheel`'s four configs are `order=2` at every rung — Q9, biquadratic, full
+integration (`_gauss_1d`: 3 points, and `wheel_fem`'s own note says Q9 is the fix for Q4
+shear locking rather than reduced integration).  Node counts corroborate it without reading
+the code: 158388 nodes to 37632 elements at `fine` is 4.21, the Q9 ratio, not Q4's ~1.
+
+For a smooth linear functional of the solution — and `axle_drop_mean_mm` is one, a mean of
+displacements over the 8-phase stencil — the duality estimate gives `min(2k, 2λ)` with
+`k` = 2 here.  So:
+
+```
+    no singularity        rate 4.0
+    lambda = 0.545796     rate 1.0916     (hub:P_c, wedge 269.193 deg)
+    lambda = 0.541891     rate 1.0838     (rim:P_c, wedge 271.647 deg)
+```
+
+**THE ASSUMPTION IS NAMED:** that estimate is the standard one for a traction-free
+re-entrant wedge in linear elasticity, and §3 is what happens when it is held against the
+measurements rather than assumed to hold.
+
+### 3. BOTH SIDES OF THE CAP ARE VIOLATED, IN OPPOSITE DIRECTIONS
+
+```
+    ladder                    kin       p        vs cap 1.0916      vs Q9's 4.0
+    09e8188  BARE            linear   0.8100        0.742x            0.203x
+    09e8188  BARE            svk      0.7947        0.728x            0.199x
+    09e8188  FILLETED        linear   2.5811        2.365x            0.645x
+    09e8188  FILLETED        svk      2.4985        2.289x            0.625x
+    b729e86  FILLETED        linear   2.4222        2.219x            0.606x
+    b729e86  FILLETED        svk      2.3376        2.141x            0.584x
+```
+
+**THE FILLETED LADDERS RUN 2.14x TO 2.37x FASTER THAN THE SLOWEST CORNER STILL PRESENT IN
+THEIR OWN MESH ALLOWS.**  That is the refutation, and it does not depend on which of §197's
+two positive candidates is right: whether the tension corners' regularisation or the +26.5%
+local elements deserves the credit, NEITHER can lift a rate above a cap that a surviving
+corner imposes.  So the cap is not being imposed.
+
+**AND THE BARE LADDERS UNDERSHOOT IT BY THE SAME KIND OF MARGIN**, 0.73x, with four
+singular corners rather than two — which is the ordinary pre-asymptotic direction and is
+NOT evidence for anything here; it is recorded so the table is not read as one-sided.
+
+### 4. THE DICHOTOMY, AND WHY ITS SECOND BRANCH IS REGISTERED AGAINST §196 AND §197
+
+  - **(i) THE COMPRESSION CORNERS DO NOT CARRY A FREE-WEDGE SINGULARITY.**  The classical
+    exponent needs traction-free faces.  These corners are on the compression side of a
+    contact-loaded junction, and if their faces bear on one another the wedge solution does
+    not apply to them however re-entrant the geometry is.  Their stress peaks still diverge
+    at −0.43 and −0.47 (§1), so SOMETHING is singular there; what that implies for a
+    displacement functional is exactly what this branch does not know.
+  - **(ii) THE FILLETED LADDER IS PRE-ASYMPTOTIC FOR THEM.**  A singular layer that no rung
+    resolves contributes below its asymptotic share, and the measured `p` is then a local
+    rate that will fall toward 1.09 as `h` shrinks.
+
+**BRANCH (ii) WOULD QUALIFY THE GCI, AND THAT IS WHY IT IS WRITTEN HERE.**  Roache's
+procedure assumes the three points sit in one asymptotic range; §196 §8 and §197 §3 read
+GCI 0.0508% and 0.0809% off `p` values of 2.34 and 2.50.  If those rates are pre-asymptotic
+the uncertainty they report is optimistic, and "the gate is decidable" would be resting on
+it.  **NOTHING HERE SHOWS THAT IT IS** — branch (i) is at least as live, and §197's own
+`h`-sensitivity is evidence against a gross failure, since `p` stays in [1.795, 2.593]
+across four definitions of the cell size and the GCI in [0.066%, 0.152%].  It is filed as
+the open question it is.
+
+**WHAT IS NOT IN DOUBT** is §197's answer to §196: the fillet moved the ladder, the genome
+did not, and both of those are differences measured between ladders rather than rates
+compared against a theory.  This section touches the MECHANISM, not the attribution.
+
+### 5. SUCCESSORS, RANKED
+
+0. **DECIDE THE DICHOTOMY WITH THE CHEAPEST THING THAT SEPARATES IT — A FIFTH RUNG.**
+   Branch (ii) predicts `p` FALLS toward 1.09 as the ladder extends; branch (i) predicts it
+   holds near 2.5.  One rung beyond `fine` on the filleted mesh, re-extrapolating on
+   `medium,fine,finer`, discriminates them, and the prediction is registered here before
+   anyone pays for it.  Cost is the worry: `fine` alone was ~3300 s of the 6218.8 s ladder
+   and the next rung is ~3x that, so this is a 3-4 h run and it should be priced properly
+   before launching.
+1. **ASK WHETHER THE `P_c` FACES ARE IN CONTACT AT ALL**, which is branch (i)'s premise and
+   is a field question, not a convergence one — and `study_corner_singularity` already
+   computes the traction at each probe.  **Free or nearly so**, and it should be done
+   BEFORE successor 0, because if the faces are bearing, branch (i) is established and the
+   3-4 h run is unnecessary.
+2. **THE `medium` CROSSINGS** — §197's successor 1, unmoved, ~40 min.
+3. **§197's SUCCESSORS 2-8**, unchanged.
+
+### 6. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE.**  Everything it names is a function, a config
+field, an artifact or a JSON key: `_gauss_1d`, `get_config`, `order`, `axle_drop_mean_mm`,
+`peak_vm_mpa`, `wedge_deg`, `lambda`, `re_entrant`, `study_corner_singularity.json`,
+`study_corner_singularity_fillet.json`, `hub:P_t`, `hub:P_c`, `rim:P_t`, `rim:P_c`.
+`1a42de4` is a commit; `09e8188` and `b729e86` are genome hashes.  The corner labels carry
+a colon and are NOT citations — the sweep's token needs digits after the colon and these
+have letters, which was checked with the sweep's own regex rather than by eye.
+
+**THE PREDICTION:** the sweep total stays at **1628**, unchanged, and the human list at
+**148**, identical row for row — the first prediction in this sub-arc to claim a zero, which
+is only sayable because the section was run through `_citation_sweep.TOKEN` before the
+commit and returned **0 matches**.  §197's lesson applied the same day it was written.
