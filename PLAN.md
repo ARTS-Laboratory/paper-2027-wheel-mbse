@@ -33242,3 +33242,16 @@ finished text, 0 matches.  It names `radial_decay`, `bin_r_mm`, `bin_max_vm`, `c
 
 **THE PREDICTION:** total stays **1628** and the human list **148**, identical row for row,
 for the same reason as §198 and verified the same way.
+
+### 6. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO, TWICE RUNNING**
+
+```
+  predicted   total 1628 -> 1628  (0)      human 148 -> 148, identical row for row
+  measured    total 1628 -> 1628  (0)      human 148 -> 148, IDENTICAL ROW FOR ROW
+```
+
+**FIFTH CONSECUTIVE PREDICTION TO LAND, AND THE SECOND ZERO.**  Every citation and human
+column byte-identical; `mentions` moved on five rows and only there, which is §195 §13's
+column getting its fifth instance.  The run cost one second before the commit and the
+claim needed no argument — which is the whole of §197's lesson, now applied twice on the
+day it was learned.
