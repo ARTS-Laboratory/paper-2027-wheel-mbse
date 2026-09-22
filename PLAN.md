@@ -32606,3 +32606,34 @@ them reads **3** — so the rule is now `grep -c` over the finished section INCL
 sentence making the claim, which is self-referential and has to be, because the sweep reads the
 committed file and the sentence is in it.  The sweep's own header supplies the other half: a
 `-` range is ONE token whose first integer is the anchor.
+
+### 13. THE SWEEP PREDICTION, RESOLVED — **+3 AGAINST A PREDICTED +3, AND THE HUMAN LIST FELL TO 148 BY EXACTLY THE ROW NAMED**
+
+```
+  predicted   total 1619 -> 1622  (+3)      human 149 -> 148 (-1), one NAMED row leaving
+  measured    total 1619 -> 1622  (+3)      human 149 -> 148 (-1), THAT ROW AND NO OTHER
+```
+
+**THE SECOND OF FOUR IN THIS SUB-ARC TO LAND ON ITS NUMBER, AND THE FIRST TO PREDICT A MOVE IN
+THE HUMAN LIST RATHER THAN ITS STILLNESS.**  §195's held by counting tokens; this one had to
+count tokens AND name which row would leave AND be right that nothing else would move.  The
+diff removes one line and adds none:
+
+  - §186's row is gone from the human list, resolved now that it points at the `def`.
+  - No row was added.  Every surviving human row is byte-identical to the baseline's.
+  - `study_deflection_gci.py` goes **4 -> 7 cites, 4 -> 7 resolved, 0 human** — this section's
+    three tokens, all resolving, which is the +3 arriving where §12 said it would.
+
+**AND THE `mentions` COLUMN MOVED ON NINE FILES, WHICH IS §195 §13's DISCOVERY GETTING ITS
+SECOND INSTANCE.**  `wheel_mesh` 76 -> 86, `test_corner_singularity` 41 -> 46,
+`study_kinematics_rank` 84 -> 86, `study_fillet_condition_a` 25 -> 27, `study_svk_rescore`
+78 -> 80, `PLAN.md` 1475 -> 1476, `FILLET_PLAN.md` 212 -> 213, `_gate_guard` 150 -> 151,
+`test_mesh` 28 -> 29.  Not one is a citation — they are this section's prose NAMING those
+files.  §195 §13 found that column and warned the next prediction not to be written against
+it; this section did not, and the warning is now load-bearing twice.
+
+**THE PREDICTION THAT WOULD HAVE MISSED IS WORTH STATING**, because it was the tempting one:
+a section that repairs a citation naturally predicts "the human list stays at 148, identical
+row for row" — §195's own wording — and that would have been wrong at the BASELINE, which was
+149.  The baseline had to be re-measured after the source commit rather than carried from
+§195's closing number, and §10.1 is the only reason the middle number has a name.
