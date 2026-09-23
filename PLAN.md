@@ -34026,3 +34026,17 @@ either of which the sweep can carry as an owner. Rewritten as a duration; the co
 is from the re-staged diff.
 
 **THE PREDICTION:** total stays **1658** and the human list **234**, identical row for row.
+
+### 9. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO**
+
+```
+  predicted   total 1658 -> 1658  (0)      human 234 -> 234, identical row for row
+  measured    total 1658 -> 1658  (0)      human 234 -> 234, IDENTICAL ROW FOR ROW
+```
+
+Baseline re-measured at `e994d0a` before the probe landed, and again after each of the three
+commits since: 1658 / 234 every time. Every citation column is byte-identical; `mentions`
+moved on **six** rows and only there — `wheel_fem` +5, `PLAN.md` +2, and `wheel_wheel`,
+`study_contact`, `study_deflection_gci` and `_citation_sweep` +1 each — the modules this
+section and the probe's scripts name. The zero was counted from the STAGED diff, and that
+count is what caught §8's two clock times before the commit rather than after it.
