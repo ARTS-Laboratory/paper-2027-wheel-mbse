@@ -257,7 +257,7 @@ committed study artifacts describe a wheel promoted out of their named file thre
 >   e4219f3  §16, 2026-08-11      →  stage3_buildcap2_feasible_medium.json
 >   e126cc3  §19, 2026-08-13      →  stage3_margin_best_medium.json
 >   09e8188  §26, 2026-08-14      →  stage3_knee_best_medium.json   (preserved, no longer ships)
->   b729e86  §115, 2026-09-06     →  best_solution.json  ← SHIPPED.  59.47 g OCC / 54.12 g mesh
+>   b729e86  §115, 2026-09-06     →  best_solution.json  ← SHIPPED.  56.59 g OCC / 54.12 g mesh
 > ```
 >
 > **THE PROMOTION BEFORE THIS ONE (§26 -> §115) SPANS THE §103 FILLET-MESH SWITCH.** Every

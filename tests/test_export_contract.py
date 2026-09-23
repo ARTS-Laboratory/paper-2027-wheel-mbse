@@ -517,3 +517,143 @@ def test_the_solid_report_finds_a_mass_from_either_optimizer():
     # next to a label claiming the optimizer reported it.
     assert empty[0] != empty[0], "expected nan"
     assert "no mass key" in empty[1]
+
+# ---------------------------------------------------------------------------
+# THE TRANSVERSE CROWN
+# ---------------------------------------------------------------------------
+# The crown is a CAD-ONLY feature: `wheel_fem` is plane-stress and cannot represent a
+# variation along the face width at all, so the manifest is the only place its geometry is
+# ever written down.  That makes these the same kind of check as the bite above — a
+# quantity produced in the CadQuery env, re-derived here in the jax env from the one
+# constant both interpreters import.
+
+
+def test_the_manifest_publishes_the_crown_this_tree_would_cut(manifest):
+    """THE STALENESS TRIPWIRE FOR A CONSTANT NO GENOME HASH CAN SEE.
+
+    `genome_hash` hashes the genes and nothing else, so raising `CROWN_HEIGHT_MM` leaves
+    every hash in the tree unchanged while the committed STEP becomes a solid nobody
+    asked for.  `tests/test_promotion.py`'s checklist is the right precedent and the
+    wrong tripwire: it fires on a promotion, and a design-constant change is not one.
+
+    If this fails the fix is `make export`, not an edit here.
+    """
+    import wheel_fea as W
+    import wheel_geometry as G
+
+    crown = manifest["crown"]
+    assert crown["height_mm"] == pytest.approx(G.CROWN_HEIGHT_MM), (
+        f"the committed STEP was cut with a {crown['height_mm']} mm crown but "
+        f"wheel_geometry now says {G.CROWN_HEIGHT_MM} — re-run `make export`")
+    assert crown["radius_mm"] == pytest.approx(
+        G.crown_radius_mm(W.SPOKE_WIDTH_MM), abs=5e-5)
+
+
+def test_the_two_kernels_agree_on_how_much_the_crown_removed(manifest):
+    """OCC's before-minus-after against `wheel_geometry`'s closed form.
+
+    The point of publishing both is that they are different constructions of one
+    quantity: the exporter subtracts two measured solid volumes, the kernel evaluates an
+    antiderivative.  Agreement is evidence that the solid carries the crown the constant
+    describes; one number printed twice would be evidence of nothing.
+
+    They agree to 0.00 mm^3 at the manifest's 2 dp on the shipped genome, and to the same
+    on the analytic 48.5 -> 50.0 band.  The tolerance is the rounding of the two published
+    figures, not a fitted band: a real disagreement means the cut reached something it
+    should not have — the rim fillet is the candidate, since R_rim = 1.68 mm springs from
+    r = 48.5 and could pass r = 49 — and that is a finding, not a tolerance to widen.
+    """
+    import wheel_fea as W
+    import wheel_geometry as G
+    import wheel_wheel as WW
+
+    crown = manifest["crown"]
+    closed = G.crown_relief_volume_mm3(W.SPOKE_WIDTH_MM, WW.RIM_OUTER_RADIUS_MM,
+                                       crown["height_mm"])
+    assert crown["volume_closed_form_mm3"] == pytest.approx(closed, abs=0.01)
+    assert crown["volume_mm3"] == pytest.approx(
+        crown["volume_closed_form_mm3"], abs=0.02), (
+        f"OCC removed {crown['volume_mm3']} mm^3 where the closed form says "
+        f"{crown['volume_closed_form_mm3']} — the cut reached something else")
+
+
+def test_the_crown_took_material_away_and_never_added_any(manifest):
+    """Ø100 IS FROZEN (`wheel_requirements.py:43`), SO THE CROWN MAY ONLY CUT INWARD.
+
+    Two independent statements of it.  THE BOUNDING BOX is the direct one: an inward crown
+    cannot grow it, so a solid still measuring 2R x 2R x face width is the frozen diameter
+    surviving.  `report` has printed that box since the first export and nothing read it,
+    which was tolerable while the part was a prism taking its OD from a 2D circle — the
+    crown is the first construction that could push the OD outward from a sign slip, so the
+    exporter now publishes it and this is the gate.
+
+    The relieved band at the side faces is the second: an inward crown leaves
+    `rim_outer - height - RIM_RADIUS_MM`, thinner than the uncrowned band, while a crown
+    that had grown the OD would leave the band at its full 1.5 mm and push the apex past
+    Ø100.
+    """
+    import wheel_fea as W
+    import wheel_geometry as G
+    import wheel_wheel as WW
+
+    crown = manifest["crown"]
+    uncrowned_band = WW.RIM_OUTER_RADIUS_MM - W.RIM_RADIUS_MM
+
+    x, y, z = manifest["solid"]["bbox_mm"]
+    assert x == pytest.approx(2 * WW.RIM_OUTER_RADIUS_MM, abs=1e-3), (
+        f"the solid is {x} mm across — Ø{2 * WW.RIM_OUTER_RADIUS_MM} is frozen "
+        f"(`wheel_requirements.py:43`) and a crown may only cut inward")
+    assert y == pytest.approx(2 * WW.RIM_OUTER_RADIUS_MM, abs=1e-3)
+    assert z == pytest.approx(W.SPOKE_WIDTH_MM, abs=1e-3), (
+        f"the face is {z} mm wide, not {W.SPOKE_WIDTH_MM} — the crown is a RADIAL relief "
+        f"and must not touch the axial extent")
+
+    assert crown["volume_mm3"] > 0, "a crown removes material; this one added it"
+    assert crown["side_face_band_mm"] == pytest.approx(
+        uncrowned_band - G.CROWN_HEIGHT_MM, abs=1e-6)
+    assert crown["side_face_band_mm"] < uncrowned_band, (
+        "the band at the side faces must be THINNER than the uncrowned band, or the "
+        "crown grew the wheel instead of relieving it")
+
+
+def test_the_crown_did_not_eat_the_rim_fillets(manifest):
+    """The fillet volume is measured as crowned-minus-crowned, so the crown must cancel.
+
+    `crown_rim` runs on BOTH solids, which is what keeps `fillets.volume_mm3` a fillet.
+    Cutting only the finished wheel would drop 2324 mm^3 of relief into a number whose job
+    is to report ~970 mm^3 of fillet, and the mass budget in
+    `test_total_mass_matches_the_step_manifest_within_the_embed_difference` would then be
+    reconciling against a fillet term that is mostly crown.
+
+    Measured: 972.6 mm^3 of fillet with and without the crown, identical across the two
+    manifests, so the rim fillet does not reach the relief.  Pinned as an ORDER OF
+    MAGNITUDE against the crown rather than as the figure, which moves with the genome.
+    """
+    fil, crown = manifest["fillets"], manifest["crown"]
+    assert fil["volume_mm3"] > 0
+    assert fil["volume_mm3"] < 0.5 * crown["volume_mm3"], (
+        f"fillets {fil['volume_mm3']} mm^3 is a sizeable fraction of the crown's "
+        f"{crown['volume_mm3']} — the likeliest cause is the crown being cut from only "
+        f"one of the two solids, which would fold the relief into this number")
+
+
+def test_no_swept_surface_survives_into_the_shipped_step(manifest):
+    """THE CROWN PUT ONE BACK, AND THIS IS WHY `despecialize` CONVERTS REVOLUTIONS NOW.
+
+    The crown's OD face is a `Geom_SurfaceOfRevolution`: OCC does not see it as a torus,
+    because the arc's centre sits 13.22 mm the far side of the axle while its own radius
+    is 63.22.  Under `despecialize`'s old `revolution=False` that face shipped as-is and
+    `step_health` raised the Parasolid/Onshape risk banner — the defect that made Onshape
+    reject this part once already.
+
+    This pins the empty census rather than the flag, so it also covers whatever future
+    construction reintroduces one.  The cylinder count is the other side of the same
+    check: `despecialize` must convert the crown WITHOUT splining the bore.
+    """
+    health = manifest["step_health"]
+    assert health["swept_surfaces_remaining"] == {}, (
+        f"{health['swept_surfaces_remaining']} survive in the shipped solid — Parasolid "
+        f"has no native equivalent and must approximate them on import")
+    assert health["surface_census"].get("CylindricalSurface", 0) > 0, (
+        "the hub bore and the remaining cylinders must stay analytic — if they have all "
+        "become B-splines, `despecialize` is converting more than it was asked to")

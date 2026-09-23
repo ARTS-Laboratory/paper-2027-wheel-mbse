@@ -13,6 +13,7 @@ classes of thing have to hold, and each has its own tolerance decided in advance
 """
 
 import json
+import math
 import os
 
 import numpy as np
@@ -428,3 +429,107 @@ def test_self_intersection_margin_detects_a_fold():
     folded = G.self_intersection_margin(c, p, 40.0, 40.0, 40.0, 40.0, NPTS)
     assert healthy > 0, "the shipped design should not be folding"
     assert folded < 0, "a 40 mm-thick band on a ~11 mm curvature radius must fold"
+
+
+# ---------------------------------------------------------------------------
+# THE TRANSVERSE CROWN
+# ---------------------------------------------------------------------------
+# Equivalence-class tolerance (1e-15) is the wrong instrument for these: the quantities
+# are compared against QUADRATURE, not against a second spelling of the same closed form,
+# so the residual is the quadrature's and not the kernel's.  The volume check below is
+# the tightest the sampling supports and is stated as such rather than tuned until green.
+
+CROWN_W = W.SPOKE_WIDTH_MM
+CROWN_RIM_OUTER = 50.0                  # `wheel_wheel.RIM_OUTER_RADIUS_MM`, spelled here
+                                        # rather than imported: this module is the kernel's
+                                        # test and must not need the mesher to run.
+
+
+def test_the_crown_radius_inverts_its_own_sagitta():
+    """`crown_radius_mm` is the inverse of `h = R - sqrt(R^2 - (w/2)^2)`, so the round
+    trip is the only check that matters and it is exact to machine precision.
+
+    Swept over a decade of crown heights rather than checked at the shipped 1.0 mm: a
+    formula that happens to be right at one point is what this repo keeps finding.
+    """
+    for h in (0.1, 0.25, 0.5, 1.0, 2.0, 4.0):
+        r = G.crown_radius_mm(CROWN_W, h)
+        assert r - math.sqrt(r * r - (0.5 * CROWN_W) ** 2) == pytest.approx(h, abs=1e-12)
+    assert G.crown_radius_mm(CROWN_W) == pytest.approx(63.22, abs=1e-9)
+
+
+def test_the_crown_relief_is_the_rectangle_minus_the_segment_not_the_segment():
+    """THE FAILURE THIS PINS IS AN OFF-BY-2x, AND IT IS EASY TO MAKE.
+
+    The circular segment is the material UNDER the arc; the relief a crown removes is the
+    material ABOVE it, between the arc and the cylinder it replaces.  Confusing the two
+    reports 14.957 mm^2 where the answer is 7.443 -- a 2.01x error that would look
+    plausible in every downstream number.  Checked here as the identity
+    `rectangle = relief + segment`, which fails if either term is the other one.
+    """
+    h = G.CROWN_HEIGHT_MM
+    r = G.crown_radius_mm(CROWN_W, h)
+    th = math.asin(0.5 * CROWN_W / r)
+    segment = r * r * (th - math.sin(th) * math.cos(th))
+    relief = G.crown_relief_area_mm2(CROWN_W, h)
+    assert relief + segment == pytest.approx(CROWN_W * h, abs=1e-9)
+    assert relief == pytest.approx(7.442884186, abs=1e-8)
+    assert relief < segment, "the relief is the SMALLER of the two at this aspect ratio"
+
+
+def test_the_crown_volume_agrees_with_quadrature():
+    """The closed form against a direct numerical sweep of the same solid of revolution.
+
+    Independent in the way that matters: `crown_relief_volume_mm3` evaluates an
+    antiderivative, this integrates `pi * (R_out^2 - r(z)^2)` over a million samples.  A
+    sign slip or a dropped term in the closed form cannot survive both.
+    """
+    for h in (0.25, 1.0, 2.5):
+        r = G.crown_radius_mm(CROWN_W, h)
+        z = np.linspace(-0.5 * CROWN_W, 0.5 * CROWN_W, 1_000_001)
+        r_z = (CROWN_RIM_OUTER - r) + np.sqrt(r * r - z * z)
+        quad = math.pi * np.trapezoid(CROWN_RIM_OUTER ** 2 - r_z ** 2, z)
+        got = G.crown_relief_volume_mm3(CROWN_W, CROWN_RIM_OUTER, h)
+        assert got == pytest.approx(quad, rel=1e-9), f"crown height {h}"
+    assert G.crown_relief_volume_mm3(CROWN_W, CROWN_RIM_OUTER) == pytest.approx(
+        2324.240750, abs=1e-5)
+
+
+def test_the_crown_thins_the_rim_band_below_the_print_floor_over_45_percent_of_the_face():
+    """REGISTERING A MANUFACTURABILITY FACT THAT NOTHING ELSE IN THE TREE POLICES.
+
+    `wheel_fea.MIN_WALL_MM` is a floor on the thickness GENES -- it builds `GENE_SPACE`
+    (wheel_fea.py:261) -- and has never been a check on the rim band, which is a fixed
+    1.5 mm between two fixed constants.  So the crown thins that band with nothing going
+    red anywhere: 1.500 mm at the apex, 0.500 mm at the side faces, and below the 1.2 mm
+    print floor over 45.08% of the 22.4 mm face.
+
+    This test exists so the number is on the record rather than met on a print.  It is
+    DERIVED from the kernel, not transcribed, so raising `CROWN_HEIGHT_MM` moves it
+    instead of rotting it -- what would be wrong is a crown whose cost nobody wrote down.
+    """
+    band_at_edge = CROWN_RIM_OUTER - G.CROWN_HEIGHT_MM - W.RIM_RADIUS_MM
+    assert band_at_edge == pytest.approx(0.5, abs=1e-12)
+    assert band_at_edge < W.MIN_WALL_MM, (
+        "this test is about a band that falls BELOW the print floor; if the geometry has "
+        "changed so that it no longer does, delete the test rather than invert it")
+
+    span = G.crown_min_wall_span_mm(CROWN_W, CROWN_RIM_OUTER, W.RIM_RADIUS_MM,
+                                    W.MIN_WALL_MM)
+    assert span == pytest.approx(12.3031703, abs=1e-6)
+    assert 100.0 * (1.0 - span / CROWN_W) == pytest.approx(45.075, abs=1e-3)
+
+
+def test_the_min_wall_span_clamps_at_both_ends():
+    """The span is a width of face and cannot leave [0, w].
+
+    Both clamps are real cases and not defensive padding: a band thinner than the floor
+    even at the apex returns 0.0, and one thick enough to clear it at the edges returns
+    the whole face -- which is what an uncrowned rim does, and is the continuity check
+    that this reduces to the flat answer as the crown vanishes.
+    """
+    assert G.crown_min_wall_span_mm(CROWN_W, CROWN_RIM_OUTER, 49.5, W.MIN_WALL_MM) == 0.0
+    assert G.crown_min_wall_span_mm(CROWN_W, CROWN_RIM_OUTER, 44.0,
+                                    W.MIN_WALL_MM) == CROWN_W
+    assert G.crown_min_wall_span_mm(CROWN_W, CROWN_RIM_OUTER, W.RIM_RADIUS_MM,
+                                    W.MIN_WALL_MM, height_mm=1e-12) == CROWN_W

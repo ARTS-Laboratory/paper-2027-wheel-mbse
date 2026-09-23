@@ -39,7 +39,17 @@ junction blocks well-shaped instead of slivers.
 WHAT IS AND IS NOT MODELLED
 ---------------------------
 The material region is `hub_disk | rim_band | 12 spoke bands clipped to the annulus`.
-Two deliberate differences from the shipped STEP, both measured rather than assumed:
+Three deliberate differences from the shipped STEP, all measured rather than assumed:
+
+  THE RIM OD IS CROWNED IN THE SOLID AND FLAT HERE, AND THAT ONE IS NOT A MODELLING
+  CHOICE.  `wheel_geometry.CROWN_HEIGHT_MM` relieves the shipped rim by 1 mm across the
+  face -- 2324.24 mm3, 2.882 g, 4.85% of the solid -- and THIS MESH CANNOT CARRY IT AT
+  ALL: `coords` is `[n, 2]` and the face width is a scalar multiplier, so the crown varies
+  along an axis with no coordinate here.  The rim therefore stays the full-radius cylinder
+  and models the crown's APEX section, which is also the section the ground touches.  The
+  manifest publishes `crown.volume_mm3` so the mass budget can subtract it; nothing in an
+  AREA comparison moves, because `reference_shipped_step_mm2` is a prismatic cross-section
+  and the crown is a solid of revolution.
 
   FILLETS ARE NOT MODELLED BY THE DEFAULT MESH, and they are a FIRST-ORDER term, not a
   rounding.  Read from `export/wheel_step_manifest.json`, which is the shipped genome's
@@ -93,7 +103,7 @@ Two deliberate differences from the shipped STEP, both measured rather than assu
   ANCHOR (§87).  All six values still reproduce exactly; what row 1 is measured against is
   the DERIVED anchor `reference_capped_mm2 + 12 x EMBED_ALLOWANCE_PER_SPOKE_MM2`, not the
   STEP's own unfilleted cross-section.  Against THAT the answer is row 3 — identical,
-  because mass and area are the same ratio for a uniform extrusion — so the mesh is
+  because mass and area are one ratio for the PRE-CROWN uniform extrusion — so the mesh is
   **-0.2292% from the shipped solid's unfilleted profile, not -2.05%**.
 
   THE ~1.8% BETWEEN THE TWO ROWS IS `EMBED_ALLOWANCE_PER_SPOKE_MM2` BEING STALE, which is
