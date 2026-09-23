@@ -33568,3 +33568,219 @@ This resolution adds exactly one citation of its own — the same frozen-diamete
 uses, counted with the regex before the commit and deliberately not re-spelled in this
 sentence, since doing so would add a second and falsify the arithmetic. **The baseline the
 next section inherits is 1658 / 234.**
+
+---
+
+## §201 — 2026-09-23. §200's SUCCESSOR 0, SCOPED, AND **THE CHEAP MODEL IT PROPOSED IS OUTSIDE ITS OWN REGIME.** HERTZ PUTS THE CROWNED PATCH AT **2.213 mm OF THE 22.4 mm FACE, 9.88%**, WITH **4.317x** THE FLAT RIM's PEAK PRESSURE — BUT ITS HALF-SPACE PREMISE SITS AT **a/t = 0.74**, **3.6x BEYOND THE ONLY RATIO AT WHICH THIS TREE HAS CHECKED IT**, SO THE NUMBER IS A SCOPE, NOT A PRICE. **AND A 3D MODEL IS WORTH MORE THAN THE CROWN IT WAS FILED FOR**: THE 2D KERNEL's OWN `plane="strain"` SWITCH, WHICH NO RUN IN THIS TREE HAD EVER SET, BRACKETS THE SHIPPED WHEEL's AXLE DROP **11.91% WIDE AT `medium`** — **2.38x THE ±5% DEFLECTION TOLERANCE** — AND THE TREE SITS ON THE **SOFT** EDGE OF IT. WHERE THE REAL WHEEL FALLS INSIDE THAT BRACKET IS UNMEASURED, AND THE SAME 3D RUN ANSWERS BOTH QUESTIONS
+
+One commit, this record. No code changed, no artifact written, no genome moved. Two probes
+ran outside the tree and are described below closely enough to re-derive: a closed-form
+Hertz computation (no FEA), and four 2D contact solves on the shipped genome.
+
+### 1. WHAT §200 ASKED, AND THE TWO QUESTIONS IT CONTAINS
+
+§200 §8 filed successor 0 as *"a model with a transverse dimension"* and named a cheaper
+candidate — *"a 2D model carrying an effective contact width plus a Hertzian term"* — that
+*"would answer the narrower question — how much of the 22.4 mm actually bears"*. It said:
+**unpriced; scope it before costing it.** Scoping splits it in two:
+
+- **(N) the narrow question** — how wide the crowned contact is. Hertz answers it free, IF
+  its premise holds. §2 computes it and §3 tests the premise.
+- **(S) the structural question** — what the crown costs in axle drop and rim-band stress.
+  Nothing in the tree answers it; §4 finds that the model which would answer it answers a
+  larger question too, and §5 prices the routes to one.
+
+### 2. THE NARROW QUESTION, IN CLOSED FORM
+
+Rigid frictionless flat against PLA (`E*` = E/(1−ν²) = 2621.0826 MPa, ν = 0.35), service
+force 66.7233 N (`wheel_fea.TOTAL_FORCE_NEWTONS`). The flat rim is a line contact across the
+full face; the crowned rim is a point contact between a rolling radius of 50.0 mm and a
+transverse crown radius of 63.22 mm (`wheel_geometry.crown_radius_mm`). The elliptical case
+is solved exactly — Johnson's (1985) elliptic-integral equations, the eccentricity root-found
+from the curvature ratio, and the B-equation checked afterwards to 5.7e-14 relative — not by
+the equivalent-circle shortcut, which it agrees with to 7.6e-4 on √(ab).
+
+```
+                                  FLAT (line)         CROWNED (ellipse)    crowned / flat
+  bearing width across face       22.4 mm (100%)      2a = 2.2126 mm  (9.878%)
+  circumferential half-length     0.268977 mm         b  = 0.946177 mm        3.5177x
+  contact area                    12.0502 mm^2        3.2885 mm^2             0.2729x
+  peak pressure p0                7.0501 MPa          30.4346 MPa             4.3169x
+  half-space max von Mises *      3.8131 MPa          18.1796 MPa             4.7676x
+    ... at depth                  0.1993 mm           0.5090 mm
+    ... over ALLOWABLE (25 MPa)   0.153               0.727
+  semi-axis over band (t = 1.5)   b/t = 0.1793        a/t = 0.7375, b/t = 0.6308
+```
+
+\* on the load axis; plane strain for the line, and the axisymmetric solution on the
+equivalent circle for the ellipse, whose a/b = 1.1692 makes that an approximation, labelled.
+
+The flat line-contact half-width is **0.308224 deg, identical to what
+`wheel_fem.hertz_patch_half_angle_deg` returns**, so the flat column is the tree's own
+function and not a second derivation of it.
+
+**AN 18 MPa STRESS IN A REGION NOTHING SCORES.** Both stress terms — the `stress` barrier
+and `stress_margin`, which its own comment calls *"THE SAME TWO UTILISATIONS, PRICED INSTEAD
+OF WALLED"* — read the region p-norm over the two FILLET ARCS (`wheel_objective._region_qois`).
+The rim band is region `rim` and no term reads its stress at all. On the flat rim that
+cost nothing to know — 0.153 of allowable. Crowned, the half-space figure is **0.727 of
+allowable, in silence**, which is the same shape as §200 §4's 45.08%-under-`MIN_WALL_MM`:
+a cost of the decision the tree has no instrument for. **It is NOT a verdict**, for §3's reason.
+
+### 3. THE PREMISE TEST — AND WHY §2 IS A SCOPE AND NOT A PRICE
+
+Hertz is a half-space theory. The rim band is a 1.5 mm shell over spokes and voids, and the
+only place this tree has measured how far a real patch departs from Hertz is
+`studies/study_contact.json` — which is on the FLAT rim:
+
+```
+  study_contact.json, patch rows (committed 2026-08-20, bare mesh, a genome older than b729e86)
+     smoke   patch/Hertz 1.142 / 1.093    coarse 1.053 / 1.118    medium 1.149 / 1.138
+     medium mean patch half-angle 0.35254 deg = 0.307649 mm   ->   b/t = 0.2051
+```
+
+So the tree's one check on Hertz sits at **b/t ≈ 0.18–0.21** and finds the band widening the
+patch by ~5–15%. The crown puts the ratio at **0.7375 — 3.60x past the measured edge**
+(0.7375 / 0.2051), in a regime where the contact semi-axis is comparable to the thickness of
+the thing being indented and band bending, not local indentation, sets the patch.
+
+**CONFOUND CHECK, BECAUSE THIS PARAGRAPH GENERALISES.** The 1.05–1.15x rests on one genome
+(committed before `b729e86` existed, so not the one that ships), one phase, a bare mesh
+and a flat rim; the band thickness is a fixed constant and genome-independent, but the
+spoke positions under the patch are not. So "Hertz holds to ~15% at b/t ≈ 0.2" is a
+single observation, and **"Hertz does not hold at a/t = 0.74" is a HYPOTHESIS** — nothing
+here measured it. What is not a hypothesis is that the regime is unmeasured, and that is
+enough to forbid pricing the crown from §2. The DIRECTION of the error is not known either:
+band bending widens the patch (lowering p0) and adds a bending stress Hertz does not have,
+and which wins is exactly what a model with a transverse dimension would say.
+
+**THEREFORE §200's CHEAP ROUTE IS DECLINED.** An "effective contact width plus a Hertzian
+term" grafted onto the plane-stress kernel would carry §2's number into the objective with
+§3's premise unmet — a constant standing in for a quantity that ranges, which is the M4/M6
+pattern `studies/study_contact.py`'s own docstring records (the 3.0 deg patch that was six
+times the real one).
+
+### 4. THE LARGER QUESTION THE 3D MODEL WOULD ANSWER — MEASURED FIRST ON THE 2D KERNEL
+
+`wheel_fem`'s module docstring says that a 22.4 mm-wide, ~2 mm spoke is a
+wide beam that *"behaves closer to plane STRAIN"*, that the difference is *"larger than most
+effects this project is chasing"*, and *"Do not let it be picked silently"*. A `git grep`
+across the tree finds **no run, study, test or section that ever set `plane="strain"`** — the
+only other hits are `REPO_EXPLAINED.tex` restating the docstring. So the pair was run, on the
+shipped genome, filleted, phase 0, linear kinematics, rigid-ground contact at 66.7233 N,
+under `wheel_pool.PINNED_ENV`:
+
+```
+            mesh (el / nodes)   plane STRESS (the tree)   plane STRAIN            strain/stress
+  coarse     5952 / 26196       1.7697970487853911 mm     1.5586645746109966 mm    0.8807024
+  medium    15552 / 66468       1.7732830896925957 mm     1.5620895453617272 mm    0.8809025
+                                                                       1 - nu^2 =  0.8775
+  wall  coarse 45.1 s (22.6 + 21.8 per solve), medium 167.6 s (84.2 + 82.7); peak RSS 0.736 / 1.161 GiB
+```
+
+**The mesh is the ladder's mesh, checked by count:** both rows' element and node counts equal
+`studies/study_deflection_gci.json`'s rows for the same configs exactly, and 5952 / 4704 =
+1.2653x reproduces §183's 26.5% filleted-over-bare. The phase-0 readings sit inside that
+artifact's 8-phase `[min, max]` at both rungs. They are NOT compared with its means: those are
+over eight phases and this is one, the phase-0-against-a-phase-mean trap this tree has
+already fallen into once.
+
+**THE BRACKET IS 11.91% WIDE AT `medium` (11.93% AT `coarse`), AND IT DOES NOT CLOSE WITH
+THE MESH** — the ratio moves 2.0e-4 between rungs. It sits 0.0034 above 1−ν², so the wheel's
+drop is not a pure modulus rescaling, which is expected: plane strain changes the effective
+Poisson ratio as well as the modulus.
+
+**WHY IT IS A BRACKET, AND WHAT IS AND IS NOT CLAIMED.** For linear elasticity under a
+PRESCRIBED load, the two extremum principles bound the 3D extruded solution from both sides:
+the plane-strain field is kinematically admissible in 3D (so the true body is no stiffer),
+and the plane-stress field is statically admissible (σ_zz = σ_xz = σ_yz = 0 satisfies
+equilibrium and the free faces), so by complementary energy the true body is no softer. **That
+is a theorem for a prescribed load and NOT for this problem**: here the load arrives through
+unilateral contact, whose complementary functional carries a gap term, and the bound is
+therefore registered as a PREDICTION for §6's successor to test, not asserted.
+
+**WHAT THE BRACKET MEANS IF THE PREDICTION HOLDS, WRITTEN AS THE HYPOTHESIS IT IS.** The tree
+models the wheel at the soft edge. If the 3D wheel sits anywhere but that edge, the shipped
+design is stiffer than every committed deflection figure says — by up to 11.91% at the far
+edge, which would be **2.38x the ±5% `DEFLECTION_TOLERANCE`** and ~40x the 0.3% GCI gate
+§196–§199 spent four sections deciding. **Nothing here says where in the bracket the wheel
+sits**, and the docstring's "closer to plane strain" is itself an unmeasured judgement: a
+wide beam's anticlastic curvature is suppressed only when Searle's parameter b²/(R·t) is
+large, and a rough estimate from the drop and the spoke length — an estimate, not a
+measurement — puts it of order one here. That is a reason for NOT guessing, not a
+reason for either edge. **And SVK is outside all of this** — the bound is linear, and the
+shipped wheel was descended under SVK.
+
+**This is the finding that ranks successor 0 above the fifth rung.** The GCI arc measures a
+discretisation error of ~0.05–0.25% inside a modelling bracket of 11.91% that no section had
+measured. It is the kinematics kwarg's lesson (§169, §190) met again on a different kwarg: a
+quantity measured carefully at one setting of a switch nobody varied.
+
+### 5. THE ROUTES TO A TRANSVERSE DIMENSION, PRICED WHERE THEY CAN BE
+
+```
+  route                                 answers              cost, and its instrument
+  A  2D + effective width + Hertz       (N) only, IF §3      free; DECLINED (§3)
+  B  in-tree 3D: extrude the 2D mesh    (N), (S), bracket    NEW KERNEL; DOF by arithmetic:
+     to hex27, half-width by symmetry                        coarse 26196 nodes x 17 planes
+                                                             x 3 = 1.34M DOF at 8 layers;
+                                                             spsolve on that is UNMEASURED
+  C  one-shot 3D on the exported STEP   (N), (S), bracket    external mesher + solver, NONE
+     (mesh + linear elastic solve,                           INSTALLED (checked: no gmsh,
+     rigid-ground contact)                                   ccx, scikit-fem in either venv)
+  D  3D sub-model of one rim-band span  (N), local (S) only  small; BUT its weld-line BCs are
+     between two welds                                       rigid across the width, which
+                                                             biases exactly what it measures
+```
+
+**C IS THE RECOMMENDATION, AND THE REASON IS DESIGN, NOT COST.** The crown commit replaced
+`export/wheel.step`, so `78f17d8^` holds the uncrowned shipped solid and `78f17d8` the crowned
+one: **same genome, same fillets, same exporter, one geometric difference.** Two 3D runs on
+those two files are the one-variable A/B behind the falsifier §200 §4 named, and the
+uncrowned run is simultaneously the bracket test of §4 — the one place the 3D answer can be
+checked against numbers this tree already trusts. B's 1.34M DOF is an extrusion count, not a
+timing, and is quoted only to say why B is not first: it builds a kernel before knowing
+whether the answer moves anything. D is kept as the fallback if C's dependencies are refused.
+
+### 6. SUCCESSORS, RANKED
+
+0. **ROUTE C, THE 3D A/B ON THE TWO STEPS** — `78f17d8^` flat against `78f17d8` crowned,
+   linear, rigid ground, phase 0, 66.7233 N. **Registered before anyone pays for it:**
+   - **(i) the bracket.** The FLAT 3D drop lands in **[1.5621, 1.7733] mm** — §4's `medium`
+     pair — widened only by the 3D run's own discretisation error, which it must measure at
+     two mesh sizes. Outside that band, suspect the 3D model before the wheel — and within
+     it, suspect GEOMETRY CORRESPONDENCE first: the STEP carries the `_embed` gusset and the
+     other as-built terms the mass-budget test reconciles against the mesh, so the two are
+     not the same body to the last cubic millimetre.
+   - **(ii) the crown's price** is the crowned/flat 3D drop ratio, and the rim-band peak
+     stress under the patch is read against §2's 18.18 MPa half-space figure. Neither
+     direction is predicted, for §3's reason.
+   - **(iii) the narrow question.** The crowned patch's transverse extent against Hertz's
+     2.2126 mm: WIDER is the band-bending branch of §3, which is the one predicted.
+   Unpriced in time until one mesh exists; the first step is a mesh at two sizes and a
+   timing. New dependencies are needed and none are installed.
+1. **§200's SUCCESSORS 1–4, UNCHANGED** — the fifth rung (3–4 h), re-dating
+   `study_wheel_fea.json`, the geometry-frame guard, and `RIM_OUTER_RADIUS_MM` spelled twice.
+   **The fifth rung is RE-RANKED below 0**, per §4: it would refine a 0.25% bound inside an
+   unmeasured 11.91% one.
+2. **A STRESS TERM, OR AT LEAST A REPORT, FOR THE RIM BAND** — §2's 0.727 of allowable is
+   in a region no term scores. Deferred to 0, which will say whether the half-space figure
+   is anywhere near the truth; building a term for it first would repeat §3's mistake.
+3. **§199's SUCCESSORS 1–4, §198's 2–3 AND §197's 2–8**, unchanged.
+
+### 7. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE.** It names functions, constants, artifacts and
+commits instead: `wheel_fem.hertz_patch_half_angle_deg`, `wheel_objective._region_qois`,
+`wheel_geometry.crown_radius_mm`, `wheel_fea.TOTAL_FORCE_NEWTONS`,
+`wheel_pool.PINNED_ENV`, `DEFLECTION_TOLERANCE`, `studies/study_contact.json`,
+`studies/study_deflection_gci.json`, `export/wheel.step`. `78f17d8` is a commit and
+`b729e86` a genome hash. **The first draft wrote the `medium` wall time as
+minutes-colon-seconds and said here that the token regex could not match it — "checked,
+not assumed".** Running the regex over the draft matched it twice: the owner group is
+optional, and a digit is a word character. Rewritten in seconds; the sentence that claimed
+the check is the one that had not made it.
+
+**THE PREDICTION:** total stays **1658** and the human list **234**, identical row for row,
+counted with `_citation_sweep.TOKEN` over the STAGED diff (§200 §10's lesson) before the
+commit.
