@@ -1,0 +1,13 @@
+# A THIRD interpreter, for studies/probe_3d only (PLAN.md sec202).  Neither env-opt nor
+# env-cad has a mesher or a 3D solver, and nothing in `make test` imports these.
+#
+#   /usr/bin/python3.12 -m venv .venv-3d && .venv-3d/bin/pip install -r requirements-3d.txt
+#
+# The gmsh wheel links libGLU.so.1 and libOpenGL.so.0 even when nothing is drawn.  Where
+# they are not installed and there is no sudo, unpack them beside the venv instead:
+#   apt-get download libglu1-mesa libopengl0 && dpkg -x <each>.deb root
+#   export LD_LIBRARY_PATH=$PWD/root/usr/lib/x86_64-linux-gnu
+gmsh==4.15.2
+pypardiso==0.4.7        # brings mkl==2026.1.0
+numpy==2.5.3
+scipy==1.18.1
