@@ -5,11 +5,16 @@
   - the solid is cut at the mid-plane z = 11.2 and only z <= 11.2 is kept (symmetry);
   - a refinement box sits over the ground contact at the bottom (y ~ -50).
 
-usage: mesh3d.py STEP OUT.npz H_GLOBAL H_CONTACT
+usage: mesh3d.py STEP OUT.npz H_GLOBAL H_CONTACT [BX0 BX1 BY0 BY1 BTHICK]
+  the box defaults to x [-4, 4], y [-51, -47], transition 3.0 -- every run in PLAN.md sec202's
+  ladder; a smaller box is what makes H_CONTACT = 0.15 affordable (1.75M DOF and 54.6 GB
+  RSS with the default box at H_GLOBAL 1.5, killed)
 """
 import sys, time, gmsh, numpy as np
 
 step, out, h, hc = sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4])
+BX0, BX1, BY0, BY1, BT = (map(float, sys.argv[5:10]) if len(sys.argv) > 5
+                          else (-4.0, 4.0, -51.0, -47.0, 3.0))
 R_TIE, ZMID = 7.7, 11.2
 
 gmsh.initialize(); gmsh.option.setNumber("General.Terminal", 0)
@@ -44,10 +49,10 @@ gmsh.model.addPhysicalGroup(2, od, 13)
 f = gmsh.model.mesh.field
 b = f.add("Box")
 f.setNumber(b, "VIn", hc); f.setNumber(b, "VOut", h)
-f.setNumber(b, "XMin", -4.0); f.setNumber(b, "XMax", 4.0)
-f.setNumber(b, "YMin", -51.0); f.setNumber(b, "YMax", -47.0)
+f.setNumber(b, "XMin", BX0); f.setNumber(b, "XMax", BX1)
+f.setNumber(b, "YMin", BY0); f.setNumber(b, "YMax", BY1)
 f.setNumber(b, "ZMin", -1.0); f.setNumber(b, "ZMax", 12.0)
-f.setNumber(b, "Thickness", 3.0)
+f.setNumber(b, "Thickness", BT)
 f.setAsBackgroundMesh(b)
 gmsh.option.setNumber("Mesh.MeshSizeMax", h)
 gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 8)
