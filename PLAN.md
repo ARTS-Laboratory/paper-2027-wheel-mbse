@@ -33509,3 +33509,62 @@ from two runs that differ in more than one way is the confound CLAUDE.md forbids
 registered instead is a DIRECTION and a constraint the run could falsify: the human list
 RISES, and **every row it gains must be an anchor into `wheel_wheel.py` or
 `wheel_step_export.py`**. A new human row naming any other file refutes this paragraph.
+
+### 10. THE SWEEP PREDICTION, RESOLVED — **+29 AGAINST A PREDICTED +28, AND THE HUMAN-LIST CONSTRAINT IS REFUTED**
+
+```
+  predicted   total 1628 -> 1656  (+28 = 11 code + 17 record)
+  measured    total 1628 -> 1657  (+29 = 12 code + 17 record)     MISSED BY ONE
+  predicted   human 148  -> rises, every gained row into wheel_wheel or wheel_step_export
+  measured    human 148  -> 234   (+86)  RISES, BUT TWO ROWS NAME NEITHER FILE
+```
+
+The baseline was re-measured rather than quoted: a detached worktree at `7271012` returns
+**1628 / 148**, byte-identical to §199's figures, so the deltas below are against a
+re-derived number and not a transcribed one.
+
+**THE +1 IS NOT A MYSTERY AND IT IS NOT THE REGEX.** The code commit's true count is 12,
+not 11. The eleventh-hour work in §3 — publishing the bounding box so the frozen diameter
+became a gate instead of a printed line — added one more `wheel_requirements.py:43` in the
+new contract test's failure message, **after** the count had been taken. The instrument was
+right both times; it was run against the working tree at a moment that was not the moment of
+the commit. **THE COUNT MUST COME FROM THE STAGED DIFF, NOT FROM THE TREE MID-EDIT** — §197's
+lesson had already moved the count off eyes and onto the regex, and this moves it off the
+tree and onto `git show`, which is where §192 §11 was pointing all along.
+
+**THE HUMAN-LIST CONSTRAINT WAS REGISTERED AS REFUTABLE AND IT IS REFUTED.** The direction
+held — the list rises, +86 — and 84 of the 86 land exactly where §9 said they must:
+
+```
+  src/wheel_wheel.py             5 ->  74   +69    the 10-line docstring insertion
+  src/wheel_step_export.py       0 ->  15   +15    the three insertions
+  tests/test_filleted_mesh.py    0 ->   1    +1    NOT PREDICTED
+  tests/test_geometry_kernel.py  0 ->   1    +1    NOT PREDICTED
+```
+
+The two stragglers are both `PLAN.md` rows citing a TEST file, and the cause is one omission
+in §9's enumeration: it listed the files this work inserted *prose* into and forgot the two it
+inserted *code* into. A single `import math` added at the top of the kernel's test file pushed
+its fixture down one line, and the comment block restoring `test_filleted_mesh`'s premise
+pushed two anchors in that file. Both are ordinary `MOVED` rows with a repair the sweep names.
+Neither wrong spelling is reproduced here, for §174's reason.
+
+**THE LESSON IS NOT "PREDICT WIDER".** The enumeration was built by asking which files the
+PROSE grew in, and the answer to that question is not the answer to "which files grew". Any
+line added anywhere above an anchor moves it, and `import math` is a line. The falsifier fired
+because it was written sharply enough to fire; a paragraph saying "some rows will move" would
+have been unfalsifiable and would have taught nothing.
+
+**AND THE INSTRUMENT COUNTS THREE THINGS THAT ARE NOT CITATIONS AT ALL.** The committed
+manifest carries ISO timestamps, and the token regex needs only a word character before the
+colon and digits after it, so `source_mtime` and `exported_at` contribute **three tokens that
+churn on every `make export`** — three out, three in, netting zero here purely by coincidence
+of there being one of each field plus a second colon in the time. They never reach the human
+list, because no owner resolves, so they inflate the TOTAL and nothing else. This is the same
+shape as §198's `hub:P_c`, which escaped only because letters follow its colon. **A sweep
+total that moves by three after an export is the manifest's clock, not a citation.**
+
+This resolution adds exactly one citation of its own — the same frozen-diameter anchor §1
+uses, counted with the regex before the commit and deliberately not re-spelled in this
+sentence, since doing so would add a second and falsify the arithmetic. **The baseline the
+next section inherits is 1658 / 234.**
