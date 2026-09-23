@@ -34374,3 +34374,19 @@ itself be a citation.
 that pre-existing row's suggested target moves down one line, because `df9c92c` moved the
 line it names by one (the blank-line trade in `t3_terms`, §5). Measured on the report commit
 alone before this record was written: 1658 / 234 and that one detail, and nothing else.
+
+### 9. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO, AND THE ONE DETAIL**
+
+```
+  predicted   total 1658 -> 1658  (0)      human 234 -> 234, same rows, one detail column moves
+  measured    total 1658 -> 1658  (0)      human 234 -> 234, SAME ROWS, THAT ONE DETAIL AND NO OTHER
+```
+
+Baseline measured at `ea496ad` before any edit; re-measured on `df9c92c` alone, on `df9c92c` +
+`3210620`, and after `256154e`: identical every time. The one moved detail is the pre-existing
+PLAN.md row into `wheel_objective.py` whose suggested target moved down one line with `t3_terms`'
+blank-line trade. `mentions` moved on **nine** rows and only there — PLAN.md +9, `wheel_adjoint`
++8, `wheel_fem` +4, `study_deflection_gci` +3, `wheel_wheel` and `wheel_pool` +2, and
+`wheel_objective`, `test_pool` and `_citation_sweep` +1 — the modules the report, the probe
+scripts and this record name. The layout that moved nothing was measured against the one that
+moved **206** before either was committed.
