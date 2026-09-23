@@ -1233,6 +1233,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                      "pnorm_stress_mpa": float(o["pnorm_stress"]["value"]),
                      "max_stress_mpa": float(o["_meta"]["max_stress_mpa"]),
                      "contact_force_n": float(o["_meta"]["contact_force_n"]),
+                     "rim_band_od_vm_mpa": float(o["_meta"]["rim_band_od_vm_mpa"]),
                      "coupling_frac": float(
                          np.linalg.norm(o["pnorm_stress"]["coupling_grad"])
                          / max(np.linalg.norm(o["pnorm_stress"]["grad"]), 1e-30))})
@@ -1242,7 +1243,6 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     pn = np.asarray(pn)
     pgrads = np.asarray(pgrads)
     n = len(drops)
-
     # -- deflection: mean drop against the target, two-sided.  For a compliant mechanism
     # the travel IS the feature, so being too stiff is penalised exactly as hard as being
     # too soft — `wheel_fea`'s reasoning, unchanged.
@@ -1422,7 +1422,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "target_deflection_mm": float(target_deflection_mm),
                    "allowable_stress_mpa": float(allowable_stress_mpa),
                    "service_force_n": float(force),
-                   "n_phase": n, "rows": rows},
+                   "n_phase": n, "rows": rows, **_rim_band(rows, allowable_stress_mpa)},
     }
 
 
@@ -1677,7 +1677,21 @@ def print_loss_breakdown(breakdown, title="STAGE-3 OBJECTIVE"):
     if r:
         print()
         for k in ("axle_drop_mean_mm", "phase_ripple_std_over_mean", "max_stress_mpa",
-                  "stress_utilisation", "mesh_mass_g", "min_scaled_jacobian",
-                  "buckling_ratio"):
+                  "stress_utilisation", "rim_band_utilisation", "mesh_mass_g",
+                  "min_scaled_jacobian", "buckling_ratio"):
             if k in r:
                 print(f"    {k:<32s}{r[k]:12.5f}")
+
+
+def _rim_band(rows, allowable_stress_mpa):
+    """The rim band's surface stress over the stencil — READ AND NOT SCORED (PLAN.md §203).
+
+    No term prices the band and no barrier walls it; both stress terms read the fillet
+    arcs.  This is the number that says whether one should: the worst phase's
+    `wheel_adjoint.rim_band_surface_stress`, and that over the same allowable
+    `stress_utilisation` is a fraction of.  It changes no loss, no gradient and no verdict.
+    """
+    worst = max(rows, key=lambda r: r["rim_band_od_vm_mpa"])
+    return {"rim_band_od_vm_max_mpa": worst["rim_band_od_vm_mpa"],
+            "rim_band_worst_phase_deg": worst["phase_deg"],
+            "rim_band_utilisation": worst["rim_band_od_vm_mpa"] / allowable_stress_mpa}

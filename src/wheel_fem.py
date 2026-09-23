@@ -281,7 +281,7 @@ def _element_kernels(order, nonlinear):
 _KERNEL_CACHE = {}
 
 
-def _stress_kernel(order, nonlinear, cauchy):
+def _stress_kernel(order, nonlinear, cauchy, at="gauss"):
     """vmapped `(Xe, ue, lam, mu) -> sigma[n_elem, ngp, 2, 2]` over elements, jitted.
 
     Split out of `gauss_stresses` so that the reported stress and the quantity M8's
@@ -296,10 +296,10 @@ def _stress_kernel(order, nonlinear, cauchy):
     the cache key is the shape-and-branch tuple only and a change of material does not
     re-trace.
     """
-    key = (order, nonlinear, cauchy)
+    key = (order, nonlinear, cauchy, at)
     if key in _STRESS_CACHE:
         return _STRESS_CACHE[key]
-    _, dN, _ = _TABLES[order]
+    dN = {"gauss": _TABLES[order][1], "nodes": _NODE_GRADIENTS[order]}[at]
     dN_j = jnp.asarray(dN)
 
     def per_elem(Xe1, ue1, lam, mu):
@@ -1912,3 +1912,31 @@ def solve_wheel_contact(mesh, *, force=TOTAL_FORCE_NEWTONS, newton=None,
     raise RuntimeError(
         f"contact load control did not reach {force:.4f} N in {max_iter} iterations; "
         f"last force {f0:.6f} N at indentation {d0:.6f} mm")
+
+
+def _node_gradients(order):
+    """Reference shape gradients AT each of the element's own nodes, [nen, nen, 2].
+
+    `_stress_kernel(at="nodes")` reads these in place of the Gauss-point table and returns
+    `[n_elem, nen, 2, 2]`, row `k` being node `k` of `_NODE_IJ[order]` — so it lines up with
+    `conn` column for column.  Same law, same push-forward, other points.
+
+    FOR A STRESS READ ON A SURFACE.  A Gauss-point maximum of a bending stress, which is
+    linear through the thickness, reads it at the outermost Gauss point's depth — and that
+    depth shrinks with the element, so the reading climbs under refinement without
+    diverging.  PLAN.md §203 measured it on the rim band at phase 0: 26.89 / 27.34 / 28.08
+    MPa at coarse / medium / fine, increments growing, while the same fields evaluated at
+    the outer-surface nodes read 29.10 / 28.63 / 29.08.
+    """
+    ij = _NODE_IJ[order]
+    a, b = ij[:, 0], ij[:, 1]
+    at = np.linspace(-1.0, 1.0, order + 1)
+    dN = []
+    for i, j in ij:
+        nx, dx = _lagrange_1d(order, at[i])
+        ny, dy = _lagrange_1d(order, at[j])
+        dN.append(np.stack([dx[a] * ny[b], nx[a] * dy[b]], axis=1))
+    return np.asarray(dN)
+
+
+_NODE_GRADIENTS = {order: _node_gradients(order) for order in (1, 2)}

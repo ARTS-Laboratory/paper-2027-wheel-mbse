@@ -935,10 +935,10 @@ def service_qoi_value_and_grad(genes, cfg="coarse", qois=("pnorm_stress",), *,
                      "d_dindentation": g[name]["d_dindentation"]}
 
     out["_meta"] = {"axle_drop_mm": delta, "contact_force_n": g["contact_force"]["value"],
-                    "d_force_d_indentation": dF_ddelta, "force_grad":
-                    g["contact_force"]["grad"], "res": res, "secant": sec, "mesh": mesh,
-                    "prob": prob, "timings": t, "max_stress_mpa":
-                    max_stress(prob, prob.coords, res["u"])}
+                    "d_force_d_indentation": dF_ddelta, "res": res, "secant": sec,
+                    "force_grad": g["contact_force"]["grad"], "mesh": mesh, "prob": prob,
+                    "timings": t, "max_stress_mpa": max_stress(prob, prob.coords, res["u"]),
+                    "rim_band_od_vm_mpa": rim_band_surface_stress(prob, res["u"], mesh)}
     return out
 
 
@@ -979,3 +979,35 @@ def insensitive_genes(genes, mesh, tol=0.0):
     col = np.asarray(jnp.sqrt(jnp.sum(jac ** 2, axis=(0, 1))))
     names = [wg.GENE_NAMES[i] for i in range(len(col)) if col[i] <= tol]
     return names, col
+
+
+def rim_band_surface_stress(prob, u_full, mesh):
+    """Max von Mises [MPa] on the rim band's OUTER SURFACE — a report, never a term.
+
+    PLAN.md §201 §2 and §202 §5: the band (region `rim`) is where the ground load enters
+    and where nothing in the objective reads stress — both stress terms read the fillet
+    arcs.  This reads it, and scores nothing.
+
+    THE SURFACE, AND NOT THE REGION's GAUSS POINTS, FOR TWO MEASURED REASONS (§203).  The
+    band's inner face meets each rim junction at a re-entrant corner that survives the
+    fillet (§199), so a maximum over the whole band chases a singularity: 30.06 / 34.60 /
+    41.08 MPa at coarse / medium / fine, phase 0.  The outer face is 1.5 mm from it and
+    carries the band's bending peak, but a Gauss-point maximum there under-reads a
+    through-thickness-linear stress by the outermost point's depth — 26.89 / 27.34 / 28.08,
+    climbing.  Evaluated AT the outer-surface nodes it reads 29.10 / 28.63 / 29.08.  Each
+    band element evaluates its own nodes (`fem._stress_kernel(at="nodes")`), and the
+    maximum is taken over (element, node) pairs on `rim_outer` without averaging, so no
+    element's reading is diluted by a neighbour's.
+
+    The plane-stress von Mises form, like `gauss_stresses`: exact under plane stress,
+    an under-read under plane strain.  Cauchy under SVK, like `max_stress`.
+    """
+    band = np.where(np.asarray(mesh.region_mask("rim")))[0]
+    conn = np.asarray(prob.conn)[band]
+    s = fem._stress_kernel(prob.order, prob.nonlinear, True, at="nodes")(
+        jnp.asarray(prob.coords)[conn], jnp.asarray(u_full).reshape(-1, 2)[conn],
+        prob.lam, prob.mu)
+    sxx, syy, sxy = s[..., 0, 0], s[..., 1, 1], s[..., 0, 1]
+    vm = np.sqrt(np.asarray(sxx**2 - sxx * syy + syy**2 + 3.0 * sxy**2))
+    on_od = np.isin(conn, np.asarray(mesh.node_sets["rim_outer"]))
+    return float(vm[on_od].max())

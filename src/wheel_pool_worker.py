@@ -80,8 +80,8 @@ def run_phase(task):
                              "grad": o["hub_region_pnorm"]["grad"]},
         "rim_region_pnorm": {"value": o["rim_region_pnorm"]["value"],
                              "grad": o["rim_region_pnorm"]["grad"]},
-        "_meta": {"max_stress_mpa": meta["max_stress_mpa"],
-                  "contact_force_n": meta["contact_force_n"]},
+        "_meta": {k: meta[k] for k in ("max_stress_mpa", "contact_force_n",
+                                       "rim_band_od_vm_mpa")},
         "_probe": probe,
     }
 

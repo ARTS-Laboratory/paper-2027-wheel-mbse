@@ -683,3 +683,36 @@ def test_the_interpolated_drop_is_the_same_number_when_a_node_IS_at_the_bottom()
             f"{tag}: gap {g:+.4e} is not the first-order snap {predicted:+.4e} "
             f"(off {o:+.5f} deg) -- the correction is a different quantity, not a "
             f"correction")
+
+
+@pytest.mark.parametrize("order", [1, 2])
+def test_node_evaluated_stress_is_the_field_gradient_AT_each_node(order):
+    """`_stress_kernel(at="nodes")` returns the law at node k in `conn` column k.
+
+    One parallelogram element and a displacement field in its space, written in the
+    natural coordinates — `xi*eta` for Q4, plus `xi^2` and `eta^2` for Q9 — so the
+    nodal gradient is the analytic one exactly.  A wrong row order in `_node_gradients`
+    would still give a plausible stress field, just at the wrong node; a constant-strain
+    patch test cannot see that, and this does.  `wheel_adjoint.rim_band_surface_stress`
+    reads the rim band's OD off these rows (PLAN.md §203).
+    """
+    ij = fem._NODE_IJ[order]
+    xe = np.linspace(-1.0, 1.0, order + 1)[ij]                 # [nen, 2] = (xi, eta)
+    J = np.array([[2.0, 0.4], [0.3, 1.5]])                      # d(x, y) / d(xi, eta)
+    coords = xe @ J.T + [5.0, -3.0]
+    xi, eta = xe[:, 0], xe[:, 1]
+    q = 1.0 if order == 2 else 0.0                              # Q4 has no xi^2, eta^2
+    u = 1e-3 * np.stack([q * xi**2 + 2 * xi * eta + 0.5 * eta,
+                         -q * eta**2 + 3 * xi * eta - xi], axis=1)
+    du_dxe = 1e-3 * np.stack([np.stack([2 * q * xi + 2 * eta, 2 * xi + 0.5], -1),
+                              np.stack([3 * eta - 1.0, -2 * q * eta + 3 * xi], -1)], 1)
+    grad = du_dxe @ np.linalg.inv(J)                            # [nen, 2, 2] = du_i/dx_j
+    lam, mu = fem.lame(wf.YOUNGS_MODULUS_PLA_MPA, fem.POISSON_RATIO_PLA)
+    s = np.asarray(fem._stress_kernel(order, False, True, at="nodes")(
+        coords[None], u[None], lam, mu))[0]                    # [nen, 2, 2]
+    eps = 0.5 * (grad + np.swapaxes(grad, 1, 2))
+    want = lam * np.trace(eps, axis1=1, axis2=2)[:, None, None] * np.eye(2) + 2 * mu * eps
+    err = np.abs(s - want).max() / np.abs(want).max()
+    assert err < 1e-12, f"order {order}: node stress off the analytic field by {err:.3e}"
+    # and it genuinely varies node to node, or the row order would be unobservable
+    assert np.ptp(want[:, 0, 0]) > 0.1 * np.abs(want).max()

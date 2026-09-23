@@ -667,3 +667,46 @@ def test_emptiness_cannot_arrive_by_accident():
     with pytest.raises(ValueError):
         sc.parse_sections("ptach")
     assert sc.parse_sections("patch") == ["patch"]
+
+
+def test_the_rim_band_report_reads_the_OD_surface_nodes_of_the_band(mesh, res):
+    """`wheel_adjoint.rim_band_surface_stress`, against an independent numpy recompute.
+
+    The report (PLAN.md §203) is a maximum over (band element, OD node) pairs of the stress
+    each element evaluates AT that node.  Recomputed here from the solved field with plain
+    numpy — the gradient through `J^-1` at the nodal natural coordinates, the linear law,
+    the plane-stress von Mises — so a wrong region, a wrong node set or a Gauss-point
+    evaluation in the kernel each disagree with it.  The last is checked directly too: the
+    band's outer-face Gauss-point maximum is a DIFFERENT, lower number (§203 §4), and a
+    report equal to it would be reading the instrument §203 rejected.
+    """
+    import wheel_adjoint as WA
+    prob = fem.wheel_contact_problem(mesh, indentation_mm=res["axle_drop_mm"])
+    got = WA.rim_band_surface_stress(prob, res["u"], mesh)
+
+    xy, u = np.asarray(mesh.coords), np.asarray(res["u"]).reshape(-1, 2)
+    band = np.where(np.asarray(mesh.element_region) == "rim")[0]
+    conn = np.asarray(mesh.conn)[band]
+    order = mesh.cfg.order
+    ij = fem._NODE_IJ[order]
+    at = np.linspace(-1.0, 1.0, order + 1)
+    dN = []
+    for i, j in ij:
+        nx, dx = fem._lagrange_1d(order, at[i])
+        ny, dy = fem._lagrange_1d(order, at[j])
+        dN.append(np.stack([dx[ij[:, 0]] * ny[ij[:, 1]], nx[ij[:, 0]] * dy[ij[:, 1]]], 1))
+    dN = np.asarray(dN)
+    J = np.einsum("pnk,eni->epik", dN, xy[conn])
+    gu = np.einsum("eni,pnk,epkj->epij", u[conn], dN, np.linalg.inv(J))
+    eps = 0.5 * (gu + np.swapaxes(gu, -1, -2))
+    s = (prob.lam * (eps[..., 0, 0] + eps[..., 1, 1])[..., None, None] * np.eye(2)
+         + 2.0 * prob.mu * eps)
+    vm = np.sqrt(s[..., 0, 0]**2 - s[..., 0, 0] * s[..., 1, 1] + s[..., 1, 1]**2
+                 + 3.0 * s[..., 0, 1]**2)
+    want = vm[np.isin(conn, np.asarray(mesh.node_sets["rim_outer"]))].max()
+    assert got == pytest.approx(want, rel=1e-12)
+
+    st = fem.gauss_stresses(xy, mesh.conn, res["u"], order=order, lam=prob.lam, mu=prob.mu)
+    r = np.hypot(st["xy"][band, :, 0], st["xy"][band, :, 1])
+    outer_gauss = st["von_mises"][band][r > r.mean()].max()
+    assert got > outer_gauss * (1 + 1e-3), (got, outer_gauss)
