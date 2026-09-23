@@ -34040,3 +34040,337 @@ moved on **six** rows and only there — `wheel_fem` +5, `PLAN.md` +2, and `whee
 `study_contact`, `study_deflection_gci` and `_citation_sweep` +1 each — the modules this
 section and the probe's scripts name. The zero was counted from the STAGED diff, and that
 count is what caught §8's two clock times before the commit rather than after it.
+
+## §203 — 2026-09-23. §202's SUCCESSORS 0, 1 AND 3, IN THAT ORDER. **THE 28% POSITION IS A PROPERTY OF THE WHEEL, NOT OF PHASE 0 — OVER ALL EIGHT STENCIL PHASES THE BRACKET POSITION IS 0.278–0.301, AT MOST 0.019 FROM PHASE 0, AND THE EIGHT-PHASE CORRECTION IS 8.55% AGAINST §202's 8.58% — BUT ONLY IN THE RATIO FORM AND ONLY UNDER LINEAR KINEMATICS: THE h 2.0 TWIN IS 0.28–0.77% TOO STIFF AT SIX OF THE SEVEN PHASES §202 DID NOT RUN, AND SVK WIDENS THE BRACKET AT EVERY PHASE, 12.01% -> 13.04%, SO THE OBJECTIVE's SVK MEAN IS STILL UNMEASURED.** THE EXPORTED PART's EXTRA STIFFNESS IS **THE RIM JUNCTION's — 112% OF IT — WHILE THE HUB JUNCTION IS 0.4–0.5% SOFTER**. AND THE RIM BAND NOW HAS A REPORT, WHOSE FIRST READING IS THAT **THE FLAT BAND IS OVER ALLOWABLE AT 6 OF 8 PHASES UNDER SVK, 1.39x AT THE OBJECTIVE's OWN SETTING** — in plane stress; the 3D twin agrees at phase 0, reads 10.5–12.4% lower at the five others it can read, and is still over at four of six, worst 1.24x — **AND §202 §5's CROWNED "0.846 OF ALLOWABLE" WAS A WINDOW: AT THE SURFACE PEAK THE CROWNED STEP READS 1.42x**
+
+### 1. WHAT RAN
+
+Two commits before this record: `df9c92c` (the rim-band report, §5) and `3210620` (five probe
+scripts in `studies/probe_3d`: `solve2d.py`, `band2d.py`, `rot.py`, `hybrid.py`,
+`post3d_surface.py`). `fe3d.py` and `mesh3d.py` are §202's, unchanged. No genome, no loss term,
+no gradient and no barrier moved. The genome is `b729e86` throughout. `df9c92c` landed green:
+the suite batched one heavy file per process, **971 passed, 2 skipped, 13 xfailed**, including
+`test_pool.py`'s pooled-equals-serial bit-identity gates, which now cover the new report leaves.
+
+- **2D**, `wheel_fem.solve_wheel_contact` under `wheel_pool.PINNED_ENV`, filleted: all eight
+  `phase_stencil(scheme="uniform")` phases x plane stress and plane strain x linear and SVK at
+  `medium` (32 solves), plus plane stress at `coarse` and `fine` under both kinematics (32
+  more).
+- **3D**, §202's solver and mesher at §202's twin configuration (h 2.0, hc 0.25, default box):
+  the twin at all eight phases, free faces and `u_z = 0` on both faces, plus a fresh re-mesh of
+  phase 0; three junction hybrids at phase 0; phase 7.5 again at h 1.25.
+- **Registered before any 3D solve** (the file the queue was launched beside, four and a half
+  minutes before the first 3D solve started, with the 2D linear sweep complete): Q0 the
+  per-phase control, Q1 the re-mesh scatter, Q2 the question, Q3 the objective's quantity, Q4
+  SVK, S0–S2 the split. **Amended twice mid-run, each time before the result it bears on
+  existed** — §3 says what forced each.
+
+**THE CONTROLS, FIRST.** Phase 0 reproduces §201 §4's pair bit for bit (1.7732830896925957 /
+1.5620895453617272). **Every plane-stress row reproduces `studies/study_deflection_gci.json`**:
+at `medium`, `fine` and `coarse` the eight-phase minimum and maximum are **bit-equal** to that
+artifact's rows under BOTH kinematics (medium linear 1.6259009156172648 / 2.043151784087024, SVK
+1.7951701560770774 / 2.2733803318605736), and every mean to 2.2e-16 relative — summation
+order. So the
+2D half of this section is the committed ladder's own solves, phase by phase, plus the
+plane-strain column nothing in the tree had ever run at more than one phase.
+
+**A PHASE IS A RIGID ROTATION, CHECKED — WHICH IS WHAT LETS ONE TWIN SERVE EIGHT PHASES.**
+`build_wheel(phase_deg=phi)` returns the phase-0 mesh rotated by +phi to 4.8e-14 mm (every node,
+three phases checked; the opposite sense misses by 3.6–6.5 mm). So the 3D body at phase phi is
+§202's `twin.step` rotated, not re-splined — one body, eight orientations, eight meshes.
+
+### 2. THE BRACKET AT EVERY PHASE, AND UNDER SVK
+
+```
+  medium, filleted     LINEAR                              SVK                                 s_stress/
+  phase     stress      strain      rho          stress      strain      rho           s_strain
+    0.00    1.7732831   1.5620895   0.88090      1.9713751   1.7140843   0.86949       1.01313
+    3.75    2.0000737   1.7694917   0.88471      2.2215185   1.9502946   0.87791       1.00775
+    7.50    2.0431518   1.7962795   0.87917      2.2733803   1.9741987   0.86840       1.01241
+   11.25    1.9159303   1.6859111   0.87994      2.1071603   1.8326343   0.86972       1.01176
+   15.00    1.7678683   1.5550869   0.87964      1.9376760   1.6843108   0.86924       1.01196
+   18.75    1.6623306   1.4598490   0.87819      1.8270523   1.5847506   0.86738       1.01247
+   22.50    1.6259009   1.4265714   0.87740      1.7951702   1.5550649   0.86625       1.01288
+   26.25    1.6597938   1.4573585   0.87804      1.8407373   1.5951568   0.86659       1.01321
+   mean     1.8060416   1.5890797   0.87987      1.9967588   1.7363119   0.86957
+                       (rho = strain / stress;  s = SVK / linear, per plane)
+```
+
+**THE DROP MOVES 25.7% WITH PHASE AND THE BRACKET's SHAPE BARELY MOVES AT ALL.** The
+plane-stress drop ranges 1.6259–2.0432 (22.5 and 7.5) and phase 0's sits 1.81% below the mean;
+rho ranges 0.87740–0.88471, and phase 0's 0.88090 is within 0.0038 of every other. **Q4 FAILS,
+AND IT IS THE LARGER FINDING OF THIS TABLE: SVK SOFTENS THE PLANE-STRESS EDGE MORE THAN THE
+PLANE-STRAIN ONE AT EVERY PHASE, BY 0.78% TO 1.32%**, against a registered 0.5%. **The bracket
+widens under SVK, 12.01% -> 13.04% on the means.** So no bracket POSITION measured under linear
+kinematics carries to the objective's SVK mean by arithmetic — whether the 3D wheel's own
+SVK/linear ratio sits nearer the stress edge's 1.1056 or the strain edge's 1.0927 is what a 3D
+SVK run would say, and none exists.
+
+### 3. SUCCESSOR 0 — THE TWIN AT ALL EIGHT PHASES
+
+```
+  twin, h 2.0 / hc 0.25     3D clamped   3D free      c         p        p_r      r         k
+  phase   0.00              1.5621698    1.6216952   +0.005%   0.2822   0.2818   1.03810   0.91452
+          3.75              1.7712805    1.8356592   +0.101%   0.2870   0.2789   1.03635   0.91780
+          7.50              1.7843212    1.8525521   -0.666%   0.2279   0.2782   1.03824   0.90671
+         11.25              1.6729371    1.7393138   -0.770%   0.2322   0.2908   1.03968   0.90782
+         15.00              1.5431910    1.6064429   -0.765%   0.2414   0.2996   1.04099   0.90869
+         18.75              1.4497058    1.5102068   -0.695%   0.2487   0.3009   1.04173   0.90849
+         22.50              1.4199759    1.4785755   -0.462%   0.2609   0.2953   1.04127   0.90939
+         26.25              1.4533526    1.5112406   -0.275%   0.2662   0.2867   1.03983   0.91050
+  sec202's phase-0 mesh     1.5617475    1.6212061   -0.022%   0.2799   0.2816   1.03807   0.91424
+  phase 7.50 at h 1.25      1.7892393    1.8580685   -0.392%   0.2503   0.2799   1.03847
+
+  c   = D3clamped / D2strain - 1                      the per-phase control
+  p   = (D3free - D2strain) / (D2stress - D2strain)   the registered form, on 2D edges
+  p_r = (r - 1) / (D2stress/D2strain - 1)              Amendment A's form, on 3D's own ratio
+  r   = D3free / D3clamped;   k = D3free / D2stress
+```
+
+**Q1 HOLDS**: a fresh phase-0 mesh moves p by 0.0023 against a registered 0.005. **Q0 HOLDS AT
+ITS 1% BOUND AT EVERY PHASE AND ITS TIGHT HALF FAILS AT ALL SEVEN NEW ONES**: phase 0 twice
+agrees with the 2D strain edge to 0.022%; 3.75 misses the 0.1% bar by a thousandth of a point
+(+0.101%, soft); the other six read the twin 0.28–0.77% STIFF. §202's one phase was one of the
+two where the h 2.0 twin happens to sit on the 2D strain edge.
+
+**THAT FAILURE FORCED AMENDMENT A, AND THE AMENDMENT PREDICTED ITS OWN SIZE.** With c = −0.666%
+at 7.5 on the table and no free result at any non-zero phase yet, the registered p was
+predicted to read low by ~c/(1 − rho) = −0.055 there, and the ratio form p_r — 3D free over 3D
+clamped, on one mesh, so a mesh error common to both cancels — was added as primary. The free
+run then read p 0.2279 against p_r 0.2782: **−0.054 against a predicted −0.055.** And the
+discriminator registered with it, **Q5, half holds**: at h 1.25 c moves toward zero, −0.666% ->
+−0.392%, but by **41% of itself against a registered "more than half"** — so the h 2.0 mesh is
+PART of the stiffness and not shown to be all of it; while **r moves 0.022% against a
+registered 0.2%**, and p_r 0.2782 -> 0.2799. The ratio is robust to the mesh the absolute
+drops are not converged on, which is the property §3's answer rests on.
+
+**Q2, THE QUESTION: THE POSITION IS A PROPERTY OF THE WHEEL, NOT OF PHASE 0 — IN THE RATIO
+FORM.** p_r spans **0.2782–0.3009** over the eight phases, **at most 0.0191 from phase 0**
+against a registered 0.025. The registered absolute form spans 0.2279–0.2870, 0.0543 from phase
+0, and FAILS — for the reason Amendment A gave before it could be seen. **Q3, THE OBJECTIVE's
+QUANTITY: the ratio-form eight-phase correction K = sum(r·D2strain)/sum(D2stress) is 0.91454,
+against phase 0's 0.91452 (+0.002%) and §202's 0.91424 (+0.033%) — HOLDS**; the absolute form's
+0.91053 is −0.41% and fails the 0.3% bar. **So §202's 8.58% survives the stencil as 8.55%, under
+linear kinematics**: the flat modelled wheel's eight-phase mean drop in 3D is 0.91454 x
+1.8060416 = **1.6517 mm**, where the tree's plane-stress mean is 1.8060.
+
+**WHAT THIS IS NOT, WRITTEN BESIDE IT.** It is linear, on the MODELLED body (the twin), flat.
+§2's Q4 says the SVK bracket is 1.03 points wider, so the same position under SVK is a
+HYPOTHESIS with no instrument behind it, and §4 says the exported body is ~3% stiffer again.
+The number the objective scores — the SVK eight-phase mean of the body that gets printed — is
+not measured here, and **nothing in this section may carry a correction into the objective**.
+
+**CONFOUND CHECK.** The eight phases differ in orientation AND in mesh (gmsh re-meshes each, and
+the box sits over a different part of the wheel). p_r's spread is 0.0227; one re-mesh at phase 0
+moved p_r by 0.0002 (0.2816 -> 0.2818) and one refinement at 7.5 moved it 0.0017, so the spread
+is at least 13x what either knob did at the phase it was tried at — the drift with phase (0.278
+at 7.5, 0.301 at 18.75) is plausibly real, and it is within the 0.025 bar either way. That the
+variation is a physical phase effect rather than mesh is not claimed.
+
+### 4. SUCCESSOR 1 — THE 2.60% IS THE RIM JUNCTION, AND THE HUB JUNCTION PULLS THE OTHER WAY
+
+`hybrid.py` takes the STEP's and the twin's sections at z = 11.2 (both bodies are extrusions:
+the STEP's section area is 2137.2962 mm² at six heights from z 0.3 to 22.1), glues them at
+r = 30 — mid-spoke, where §202 §2 measured the two bodies coincident to 9 µm — with a 0.02 mm
+boolean tolerance, and extrudes. Three bodies: the STEP rebuilt through the same route
+(`hyb_step`), STEP inside r < 30 (`hyb_hub`), STEP outside (`hyb_rim`).
+
+```
+  phase 0, h 2.0 / hc 0.25          clamped       G vs twin        free          G vs twin
+  twin (sec202 / re-mesh)           1.5617475     -                1.6212061     -
+                                    1.5621698     (+0.027%)        1.6216952     (+0.030%)
+  hyb_step  (STEP everywhere)       1.5135446     3.086 / 3.113%   1.5723012     3.017 / 3.046%
+  hyb_hub   (STEP hub junction)     1.5690558    -0.468 / -0.441%  1.6289155    -0.476 / -0.445%
+  hyb_rim   (STEP rim junction)     1.5077349     3.458 / 3.485%   1.5662855     3.388 / 3.417%
+
+  shares of G(hyb_step):   hub -0.142 to -0.158    rim 1.119 to 1.123    (hub+rim)/step 0.965-0.978
+  half-model tet volume:   twin 21809.06 / 21810.55,  hyb_hub 21813.55,  hyb_rim 21852.49,  hyb_step 21852.81 mm³
+```
+
+**S0 HOLDS**: `hyb_step` reads the STEP's own h 2.0 drops to −0.052% in both modes (1.5143373 /
+1.5731215), so the section route is the STEP. **S1 HOLDS AND OVERSHOOTS: THE RIM JUNCTION
+CARRIES 112% OF THE STIFFENING.** **S2 HOLDS**: the two swaps sum to 0.965–0.978 of the whole.
+**The hub junction is SOFTER in the STEP by 0.44–0.48%** — a sign no one predicted — while
+carrying 3.0–4.5 mm³ MORE material per half than the twin (the range is the two twin meshes,
+which themselves differ by 1.5 mm³): the hub difference is shape, not bulk. The rim junction
+carries +41.9 to +43.4 mm³ per half.
+
+**CONFOUND CHECK — THE RIM SWAP IS CONFOUNDED WITH MESH DENSITY AND THE HUB SWAP IS NOT.** The
+node counts sort by the RIM side: twin-rim bodies 311581–312489 nodes, STEP-rim bodies
+224797–235052, because the twin's rim carries the spline chunks. So the hub swap is measured
+twice at matched density (twin -> hyb_hub, and hyb_rim -> hyb_step, +0.47% and +0.39% — the
+same sign and size), and the rim swap only across a 1.33–1.39x density step. The STEP's own
+ladder prices that step: +0.208% of drop from h 2.0 to 1.5 (1.32x the DOF). It moves the rim
+swap AND the whole-STEP gap by the same ~0.2 points, which leaves the rim share at 1.12–1.13;
+it does not move the hub's sign. **"The rim junction is where the exported part is stiffer" is
+a MEASUREMENT at one mesh family; "because of the `junction_overlap`/`bite` material" is still
+the HYPOTHESIS §202 named** — the manifest's own overlap figures do not match these volume
+differences — hub 118.53 mm³ against a measured 6–9 full-model, rim 97.26 against 84–87 — and
+nothing here reads the exporter.
+
+**AND "2.60%" IS ONE PAIRING OF SEVERAL.** §202's figure is the STEP at h 1.0 against the
+twin at h 2.0. At equal nominal h the gap is 3.04% (clamped); at matched DOF (STEP h 1.5,
+885135, against the twin's 934722) it is 2.83%. The split's shares are ratios within one
+mesh family and do not depend on which is quoted.
+
+### 5. SUCCESSOR 3 — THE RIM-BAND REPORT, AND WHAT IT READ BEFORE IT WAS WIRED IN
+
+**THE INSTRUMENT CAME FIRST, AND TWO OF THE THREE CANDIDATES FAIL ON THEIR OWN LADDER.** Three
+readings of one field — `b729e86`, filleted, phase 0, plane stress, linear:
+
+```
+                                                 coarse    medium    fine       (MPa)
+  whole band (region `rim`), Gauss-point max      30.06     34.60     41.08     the corner
+  outer half of the band (r >= 49.25), Gauss      26.89     27.34     28.08     increments GROW
+  the band's OD-surface NODES                     29.10     28.63     29.08     +-1%, two peaks
+```
+
+The first is the rim junction's compression-side re-entrant corner (§198–§199: it survives the
+fillet): its argmax sits on the band's INNER face at x −1.13 to −1.27, r 48.52–48.54, beside a
+junction whose own maximum reads 55.72 / 69.56 / 85.40. The second is band BENDING — a hump
+several mm wide over the weld, profiled along x at all three meshes, not a point — read at the
+outermost Gauss point, whose depth shrinks with the element: a through-thickness-linear stress
+read at a mesh-dependent depth climbs, and a rising increment ratio makes its top rung a lower
+bound, not an estimate. The third reads the same field AT the surface and does not climb; its
+two local maxima (x −1.08 and −1.88) trade places between rungs. **It is what the report
+reads.**
+
+**THE CODE** (`df9c92c`). `wheel_fem._stress_kernel` takes `at="nodes"`, the same law and
+push-forward evaluated at the element's own nodes from `_node_gradients`, so there is still one
+constitutive law. `wheel_adjoint.rim_band_surface_stress` takes the maximum over (band element,
+OD node) pairs, unaveraged; `service_qoi_value_and_grad` carries it in `_meta`, the pool worker
+returns it, and `t3_terms` writes it into every row and the worst phase into `report` as
+`rim_band_od_vm_max_mpa`, `rim_band_worst_phase_deg` and `rim_band_utilisation` (over the same
+allowable `stress_utilisation` uses), printed by `print_breakdown`. **It moves no loss, no
+gradient and no verdict.** Two tests, each mutation-checked: the node table against a field
+whose nodal gradient is known exactly (a permuted table fails both orders), and the report
+against an independent numpy recomputation on a solved `smoke` field that also asserts it is
+NOT the Gauss-point reading (evaluating at Gauss points fails it; so does region `spoke`).
+**It is laid out to move no citation** — new functions at the file ends, and every in-place
+edit reflowed to its own line count; the first layout, inserted where it read best, moved
+**206** rows onto the human list.
+
+**THE READING — THE FLAT BAND IS OVER ALLOWABLE AT MOST PHASES, AND NOTHING HAD SAID SO:**
+
+```
+  OD-surface max, MPa     0.00   3.75   7.50  11.25  15.00  18.75  22.50  26.25     max   /25   >25
+  linear   coarse        29.10  34.25  33.00  30.06  25.10  20.95  17.68  23.60   34.25  1.370    5
+           medium        28.63  34.55  32.48  29.83  26.09  21.76  17.55  23.26   34.55  1.382    5
+           fine          29.08  33.85  32.04  29.40  25.64  21.45  18.19  23.50   33.85  1.354    5
+  SVK      coarse        30.88  34.67  33.86  30.71  25.74  21.55  19.34  25.28   34.67  1.387    6
+           medium        30.50  35.14  33.13  30.57  26.76  22.47  19.13  25.12   35.14  1.405    6
+           fine          31.21  34.96  33.09  29.90  26.05  22.12  19.24  25.56   34.96  1.398    6
+```
+
+**The worst phase is 3.75 on every row, and the maximum converges to ±1% on both kinematics.**
+What the tree will print when `objective` next runs at its own setting (`coarse`, SVK, uniform)
+is predicted by the SVK coarse row: **34.67 MPa, `rim_band_utilisation` 1.387**. The fillet
+arcs that the stress terms do read are not this region, and this is not a verdict on them.
+
+**CONFOUND CHECK, BECAUSE "OVER ALLOWABLE" GENERALISES.** Every row is the MODELLED body in
+plane stress. Three things could make the real band read differently: plane stress itself
+(§202's bracket), the exported body's junctions (§4), and the crown (it raises it — below). The
+3D twin measures the first wherever its peak falls inside the refined box (`post3d_surface.py`,
+the same surface-node reading in P2 tets):
+
+```
+  OD-surface band max, linear      0.00   3.75   7.50  11.25  15.00  18.75  22.50  26.25
+  3D twin, free, h 2.0            28.48  30.93  28.82  26.12  22.85  19.28   (x -8.3, -4.6:
+  2D medium, plane stress         28.63  34.55  32.48  29.83  26.09  21.76    outside the box)
+  3D / 2D                        -0.5% -10.5% -11.3% -12.4% -12.4% -11.4%
+  7.50 at h 1.25                         28.83
+```
+
+**AT PHASE 0 THEY AGREE; AT THE FIVE OTHERS THAT CAN BE READ, THE 2D REPORT READS 10.5–12.4%
+HIGH.** Amendment B registered the discriminator before the h 1.25 solve started — if the h 2.0
+mesh were what held the 3D band low, refining would raise it toward 32.48 — and **Q6 FAILS:
+28.82 -> 28.83.** So the gap is not the global mesh, and the registered consequence stands: away
+from phase 0 the 2D report over-reads the 3D band of the same body. The local size at the peak
+was 0.25 mm in every 3D run, never varied (§202's lesson), which is the one knob left that could
+still move it. **The 3D band is nonetheless over allowable at four of the six readable phases,
+worst 30.93 MPa at 3.75 — 1.24x** — so "over allowable" survives the plane-stress confound in 3D
+at reduced size, and the report's 1.39x is its plane-stress reading, not the 3D one.
+
+**AND THIS CORRECTS §202 §5 — ALL THREE OF ITS BAND FIGURES WERE A WINDOW.** §202 read "the rim
+band beside the patch", within 2 mm of x = 1.4, at Gauss points, and reported the modelled body
+at 21.75, the flat STEP at 14.42 ("a third less") and the crowned STEP at 21.15 MPa, "0.846 of
+allowable". Every one of those peaks sits OUTSIDE that window, 2.8–4.2 mm to the −x side of its
+centre, near the rim junction (the 2D corner is at x −1.02). Re-read from §202's own saved
+fields, window removed:
+
+```
+  3D OD-surface band max, phase 0, free    h 2.0    h 1.5    h 1.25   h 1.0     at
+  flat STEP                                25.75    25.75    25.84    25.79     x -2.68 to -2.84, z ~0.2
+  crowned STEP                             35.57    35.58    35.58    35.62     x -2.30 to -2.42, z ~11
+  twin (the modelled body)                 28.48                                x -1.38
+```
+
+**The twin reads 28.48 (1.14x allowable), the flat STEP 25.75–25.84 (1.03x), and the CROWNED
+STEP 35.57–35.62 MPa — 1.42x ALLOWABLE, NOT 0.846**, stable across all four of §202's h rungs.
+The flat STEP's band is 9.6% under the twin's, not a third; the crown raises the band peak
+1.38x, not 1.466x. **So §202 successor 2's crown decision now has a stress price as well as a
+deflection one, and it is over the line** — at phase 0, linear, on the exported body, with the
+local mesh at the peak never varied (the §202 lesson, again: every run carried hc 0.25 there).
+
+### 6. HEADLINES, AGAINST THEIR FALSIFIERS
+
+- **"The bracket position is a property of the wheel, not of phase 0 — under linear kinematics,
+  in the ratio form"** — p_r 0.2782–0.3009, at most 0.0191 from phase 0, against Q2's 0.025,
+  registered before any 3D solve; the eight-phase correction 8.55% against phase 0's 8.55%
+  (Q3). Scored on both forms: the ratio form was added BEFORE the first free result at a
+  non-zero phase existed (Amendment A), and its reason — c at 7.5 — was predicted to bias the
+  absolute form by −0.055 and biased it by −0.054. Q5 half holds: r is mesh-robust (0.022%),
+  but h 1.25 recovered only 41% of the twin's stiffness, so "the h 2.0 mesh is the whole cause"
+  is NOT shown.
+- **"SVK widens the bracket at every phase"** — Q4 could have held (0.5%) and failed at all
+  eight phases, 0.78–1.32%. A 2D measurement on the committed ladder's own solves.
+- **"The exported part's extra stiffness is the rim junction's"** — S1 could have gone to the
+  hub and S2 could have failed additivity; neither did. The hub's SIGN is measured twice at
+  matched density. "Because of the overlap material" remains a HYPOTHESIS.
+- **"The flat band is over allowable at 5 (linear) / 6 (SVK) of 8 phases in the tree's own
+  model"** — a measurement at three meshes on an instrument whose convergence is shown. In 3D
+  the same body is over at 4 of the 6 readable phases, worst 1.24x: the 2D report reads it
+  10.5–12.4% high away from phase 0, and Q6 says the global 3D mesh is not why.
+- **"§202 §5's crowned 0.846 of allowable is 1.42x at the surface peak"** — a re-reading of
+  §202's own saved fields with the window removed; stable over four h rungs; local mesh at the
+  peak never varied.
+
+### 7. SUCCESSORS, RANKED
+
+0. **A 3D SVK RUN — THE ONE THING BETWEEN §3's POSITION AND THE OBJECTIVE.** Q4 closes the
+   arithmetic route: the bracket widens 1.03 points under SVK, and where the 3D wheel's
+   SVK/linear ratio falls between 1.0927 and 1.1056 decides the correction the objective would
+   carry. `fe3d.py` is linear and condenses contact onto a once-factored K; SVK needs a Newton
+   loop re-assembling and re-factoring K (19–38 s and 12–96 s per iteration on this box at
+   0.9M DOF, measured in this section's runs), so one phase is of order tens of minutes.
+   **Nothing may carry a correction into the objective before it** — this section adds SVK
+   to the reasons §202 §7 gave.
+1. **CONVERGE THE TWIN AWAY FROM PHASE 0, AND VARY THE LOCAL MESH.** Q5 recovered 41% of the
+   twin's stiffness at h 1.25; a third rung (h 1.25 was already 1277337 DOF at a 28.3 GiB peak,
+   so h 1.0 likely exceeds the 32 GiB scope) or a larger refinement box would say whether the
+   rest is mesh. And no 3D run has yet varied hc at the band peak — Q6's 28.82 -> 28.83 held it
+   at 0.25. The ratio form carried §3 and needs neither; the absolute 3D drops and the 3D band
+   levels need both.
+2. **THE BAND — A DECISION, NOT A MEASUREMENT.** The report now prints 1.387 at the objective's
+   own setting. Whether the band gets a barrier, a priced term, or a documented waiver is a
+   requirements decision for a human (a `shall` that the shipped wheel fails at 6 of 8 phases
+   changes `verify`'s compliance verdict, which is why this section adds a report and no row).
+3. **§202 SUCCESSOR 2, THE CROWN, RE-PRICED**: +16.3% drop at phase 0 AND a band peak 1.38x the
+   flat one, 1.42x allowable, on the exported body.
+4. **THE RIM JUNCTION's EXTRA STIFFNESS** — read the exporter's junction construction against
+   §4's 84–87 mm³, and decide whether the 2D mesh or the STEP is the body to believe.
+5. **§202's successors 3–4 and §201's 1–3, unchanged.**
+
+### 8. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE.** It names functions, scripts, artifacts and commits,
+and quotes no clock time. The one pre-existing human row this work touches — a PLAN.md
+citation into `wheel_objective.py` whose suggested repair target is printed beside it — is
+described in words below and not by its numbers, because a bare line number written here would
+itself be a citation.
+
+**THE PREDICTION**, counted with `_citation_sweep.TOKEN` over the STAGED diff: total stays
+**1658** and the human list **234**, the same 234 rows; **one row's detail column changes** —
+that pre-existing row's suggested target moves down one line, because `df9c92c` moved the
+line it names by one (the blank-line trade in `t3_terms`, §5). Measured on the report commit
+alone before this record was written: 1658 / 234 and that one detail, and nothing else.
