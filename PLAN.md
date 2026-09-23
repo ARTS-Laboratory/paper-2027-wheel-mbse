@@ -33799,3 +33799,230 @@ names by module or path, which is §195 §13's column doing what it always does 
 that cites nothing. The zero was counted from the STAGED diff, not the working tree (§200
 §10), and that count is what caught §7's own false "checked, not assumed" before the commit
 rather than after it.
+
+## §202 — 2026-09-23. §201's SUCCESSOR 0, ROUTE C, RUN: **THE FLAT 3D DROP LANDS INSIDE THE BRACKET, 27.99% OF THE WAY FROM THE PLANE-STRAIN EDGE — SO THE TREE's PLANE-STRESS FIGURE OVERSTATES THE SHIPPED WHEEL's PHASE-0 DROP BY 8.58%.** THE CROWN COSTS **+16.3% OF DROP (1.1629–1.1636 ACROSS SIX MESH PAIRS)** AND ITS PATCH IS **WIDER THAN HERTZ, 2.509 mm AGAINST 2.2126**, AS §201 PREDICTED. **BUT THE CONTROL THAT WAS MEANT TO CHECK MY CODE FAILED ON THE STEP AND PASSED ON A TWIN, AND THAT IS THE SECTION's OTHER FINDING: THE EXPORTED PART IS 2.60% STIFFER THAN THE BODY EVERY COMMITTED DEFLECTION FIGURE DESCRIBES**, AND ITS RIM BAND BESIDE THE PATCH CARRIES A THIRD LESS STRESS — THE TWO BODIES DIFFER ONLY AT THE SPOKE JUNCTIONS
+
+Two commits before this record: `ea727dc` (the probe, `studies/probe_3d`, and
+`requirements-3d.txt`, a third interpreter nothing in `make test` touches), `50df377` (the
+refinement box made an argument). No solver, objective or genome moved. Every figure below is
+**phase 0, linear kinematics, rigid frictionless ground at 66.7233 N, eps_n = 1e4 N/mm³** —
+§201 §6's registration — and none of it is the 8-phase SVK mean the `deflection` term scores.
+
+### 1. WHAT RAN
+
+- **Geometry**: `78f17d8^` and `78f17d8`'s `export/wheel.step`, meshed by gmsh/OCC as HALF
+  models (z ≤ 11.2, `u_z = 0` on the mid-plane), 10-node tets with mid-edge nodes on the
+  geometry. The hub interior r < 7.7 is cut away and its face tied `u = 0` — `wheel_fem`'s
+  `hub_tie` at the same radius. The STEP's hub is SOLID to the axle; the 2D mesh stops at
+  r = 7.7, which the cut reconciles exactly.
+- **Solver** (`fe3d.py`): linear elasticity assembled by hand (14-point degree-5 rule,
+  checked against every monomial to degree 5), penalty contact on the OD's 6-node triangles
+  with a 36-point collapsed-Gauss rule, a secant on the indentation to 33.36165 N per half.
+  K is factored ONCE (PARDISO SPD) and the contact is condensed exactly onto the nodes the
+  patch needs. Equilibrium closes in every run to better than 1e-9 N (hub reaction against
+  contact resultant).
+- **Registered before any 3D solve**, in the file the first run was launched beside
+  (written 19 minutes before the first result came back, a sentence each):
+  **P0** a CONTROL — `u_z = 0` on BOTH faces makes an extrusion exactly plane strain, so the
+  3D code must reproduce §201 §4's 2D plane-strain 1.5620895 within |3D/2D − 1| < 1%;
+  **P1** §201 §6.0(i), the flat free-face drop in [1.5621, 1.7733];
+  **P2** §201 §6.0(iii), the crowned patch WIDER than Hertz's 2.2126 mm;
+  **P3** §201 §6.0(ii), the crown's price, no direction.
+
+**THE FIRST RESULT WAS WRONG AND THE SOLVER NOW REFUSES ITS SHAPE.** The contact candidates
+were a ±1.5 mm window about the bottom point; the patch came back at x ∈ [0.842, 1.490], its
+far edge ON the window edge. At phase 0 the patch is NOT at the bottom: the 2D kernel's own
+`patch_centre_deg` at `coarse` puts it 1.5675° (strain) to 1.7175° (stress) toward +x — 1.37
+to 1.50 mm — the same offset the committed `study_contact_e126cc3_*.json` rows carry for another genome at
+1.89–2.19°. That truncated run read **1.5160 mm** and is discarded. The window is now
+explicit (x ∈ [0, 3] flat, [−1, 4] crowned) and the solver ASSERTS that no active point lies
+within 0.1 mm of it.
+
+### 2. P0 FAILED ON THE STEP — AND THE TWIN SAYS WHY
+
+```
+  STEP, flat, u_z = 0 on both faces   (hc = 0.25 mm contact box throughout)
+     h      DOF       3D drop       vs 2D plane strain 1.5620895
+    2.0    672264    1.5143373       -3.057%
+    1.5    885135    1.5174909       -2.855%
+    1.25  1053105    1.5189034       -2.765%
+    1.0   1434741    1.5211091       -2.623%
+
+  TWIN, the 2D medium mesh's own boundary extruded
+    2.0    934722    1.5617475       -0.022%      <- P0 HOLDS
+```
+
+**P0 fails on the STEP by 2.6x its bound and passes on the twin by 45x.** The twin
+(`twin.py`) is the 2D `medium` mesh's 14 boundary loops — corner AND mid-side nodes — splined
+in 20-node chunks and extruded; its tet volume is 0.999519 of the 2D area times 11.2, the
+STEP's 1.001452. Same mesher, same element, same solver, same window. **The twin is the
+design that could have refuted the code and did not**: 0.022% against a 1% bound.
+
+**CONFOUND CHECK.** STEP and twin differ in geometry AND in mesh (the twin's 20-node spline
+chunks split its surface into 39 tie faces and 38 OD faces, and give it 934722 DOF at the
+nominal 2.0 against the STEP's 672264). The mesh axis is bounded by the STEP's own ladder:
+**+0.447% from 2.0 to 1.0 across 2.13x the DOF**, six times short of 2.6%. So the gap is the
+body. **The meshing scatter is smaller still**: gmsh with 8 threads does not reproduce its
+own mesh (138600 tets against 138204 for identical inputs), and the flat free drop on the
+re-mesh moves **−0.017%**.
+
+**WHERE THE BODIES DIFFER, MEASURED — WHAT EACH DIFFERENCE COSTS, NOT.** `bdist.py` takes
+every 2D boundary node of the `medium` mesh (7776, all inside the solid: 0 of 15552 element
+centroids fall outside it) and measures its distance to the STEP surface at z = 11.2:
+
+```
+   radial band     nodes   median     p90        max  (mm)
+   7.7 - 15        1128    0.00215    0.03325    0.11671     hub junction
+   15 - 45         4740    <=0.0003   <=0.0034   0.00902     spokes: COINCIDE to 9 um
+   45 - 48.49       732    0.00151    0.19009    0.42893     rim junction
+   48.49 - 50.1    1176    0          0          0.47058     band: the rim junction's corner
+```
+
+**The spokes are the same body to 9 µm; the junctions are not, by up to 0.47 mm.** Every
+difference over 0.01 mm on the rim side sits at ONE angle per 30° sector (θ mod 30 ≈ 29°,
+r 47.93–48.50: 132 nodes plus the band's 12, one per spoke); on the hub side at r 12.71–14.56
+within 5° of the sector boundaries (300 nodes). That the
+2.60% stiffening COMES FROM the junction material is a **HYPOTHESIS**: it is the only place
+the bodies differ by more than 9 µm, but no run removed it and re-measured. The manifest's
+`junction_overlap_mm3` (hub 118.53, rim 97.26, with `bite`) and the `_embed` gusset §201 §6.0
+warned of are the named candidates. **Instrument note**: the section's OCC mass properties
+are NOT used anywhere above — OCC's `getMass` read the flat STEP at 47505.96 mm³ where its own
+tet mesh reads 47935.5 and the manifest 47962.7, and read a spline twin's voids at 444–499 mm²
+where their polygons are 476.60 each. Every volume here is a tet-mesh volume.
+
+### 3. P1 HOLDS, AND WHERE THE WHEEL SITS
+
+```
+                                 plane strain   free faces    free / clamped   in bracket
+  twin, 2.0                      1.5617475      1.6212061     1.03807          0.2799
+  STEP, 2.0 / 1.5 / 1.25 / 1.0   (above)        1.5731215     1.03882
+                                                1.5768066     1.03909
+                                                1.5784332     1.03919
+                                                1.5809126     1.03932
+
+  2D medium: plane stress 1.7732831, plane strain 1.5620895, ratio 1.13520
+```
+
+**P1 HOLDS: the twin's free-face drop is 1.62121 mm, inside [1.5621, 1.7733], 27.99% of the
+way from the plane-strain edge** — the bound §201 §4 registered as a prediction rather than
+a theorem (the contact gap term) could have failed and did not. **The tree's plane-stress
+figure is 1.09380x the 3D answer; the 3D drop is 8.576% below it.** On the STEP the flat drop
+is 1.58091 mm, 10.848% below — the 8.58% plus the stiffer body.
+
+**The free/clamped ratio is the transferable number and it transfers**: 1.03807 on the twin
+against 1.03882 on the STEP at the same nominal h, 0.072% apart, while the absolute drops
+differ by 3.06%. It is also the most mesh-stable number here (1.03882 → 1.03932 across the
+ladder). **What is NOT claimed**: that 0.2799 holds at another phase, under SVK, or for
+another genome — every run is phase 0 linear on `b729e86`, the twin exists at one mesh, and
+§201 §4's own caution applies unchanged (Searle's parameter was estimated, not measured).
+Docstring note: `wheel_fem`'s "behaves closer to plane STRAIN" is right in direction and
+28% short of the edge — the wheel is nearer plane strain than stress, but not at it.
+
+### 4. THE CROWN, PRICED — P2 HOLDS, P3 MEASURED
+
+```
+  STEP pair, free faces            flat         crowned      crowned / flat
+  ladder  2.0  (box -4..4)        1.5731215    1.8299650     1.16327
+          1.5                     1.5768066    1.8347669     1.16360
+          1.25                    1.5784332    1.8364837     1.16349
+          1.0                     1.5809126    1.8390820     1.16330
+  small box 2.0, hc 0.25          1.5697642    1.8254561     1.16289
+                 hc 0.15          1.5697101    1.8258150     1.16315
+```
+
+**P3: the crown costs +16.3% of phase-0 drop, 1.16289 to 1.16360 over six pairs** — two
+bodies each meshed separately every time, one geometric difference. The crowned STEP's drop
+is 1.83908 mm, **+3.711% over the tree's 2D plane-stress figure** for the flat wheel;
+carried onto the twin's basis (1.62121 × 1.16330 = 1.88596) it would be +6.354%, but the
+crown ratio was measured on the STEP pair only and the transfer is NOT claimed.
+
+**THE LADDER DID NOT TEST THE CONTACT MESH, AND THE SMALL-BOX RUNS DO.** Every ladder rung
+carried the same 0.25 mm box over the contact, so everything that lives inside it — patch,
+pressure, band stress — was held at one local mesh while "converging". The box was shrunk to
+the patch and band (x −0.5..3.5, y −50.2..−48.0) so 0.15 mm fits (835701 / 761865 DOF,
+23.4 / 20.7 GB under a 32 GB systemd scope — the first attempt, with the ladder's box at
+H 1.5, reached 1.75M DOF and 54.6 GB and was killed by hand at 3 GB free):
+
+```
+  crowned patch, hc 0.25 -> 0.15      3D            Hertz (sec201 sec2)    3D / Hertz
+     2a, across the face (z)          2.4907 -> 2.5093 mm    2.2126 mm      +13.41%
+     2b, along the rim (x)            2.1888 -> 2.2036 mm    1.8924 mm      +16.45%
+     peak pressure                    26.171 -> 26.181 MPa   30.435 MPa     -13.98%
+  drops, hc 0.25 -> 0.15              flat -0.0034%,  crowned +0.0197%
+```
+
+**P2 HOLDS: the crowned patch is 13.4% wider across the face than Hertz**, the band-bending
+branch §201 §3 predicted, and 16.5% longer along the rim. The flat patch LIFTS OFF within
+1.26–1.29 mm of each side face (active z from 1.264 to 11.2 on the half) — the flat rim does
+not bear its full 22.4 mm either.
+
+### 5. THE RIM BAND's STRESS — AND WHAT THE TWIN SAYS ABOUT IT
+
+Von Mises beside the patch (rim band r ≥ 48.5, within 2 mm of x = 1.4), from `post.py` on the
+saved fields; every maximum sits AT the OD surface near x = −0.59, just ahead of the patch,
+not at Hertz's subsurface depth — band bending, not indentation:
+
+```
+                                 flat           crowned        crowned / flat
+  STEP, small box hc 0.25        14.267         20.614
+                  hc 0.15        14.422         21.148          1.466
+  twin (flat body), free         21.753
+  twin, u_z clamped              20.717
+  2D medium, plane stress        20.987   (coarse 19.575)
+  2D medium, plane strain        18.648   (coarse 17.378)
+                                           ALLOWABLE 25.0 MPa
+```
+
+**On the modelled body, 3D and 2D agree on the band** (twin 21.75 / 20.72 against 2D 20.99 /
+18.65). **On the exported body the band carries a third less** (14.42 against 21.75), which
+is §2's body difference again, read in a second quantity. **The crowned STEP's band sits at
+21.15 MPa, 0.846 of allowable, in a region no term scores** — §201 §2's 0.727 from the
+half-space was low by 16.3%, and §201 §2's flat-rim "0.153 of allowable, cost nothing to
+know" was a CONTACT stress: the flat band's BENDING stress is 14.42 MPa on the STEP and ~21 on
+the modelled body, 0.58 to 0.87 of allowable, and was never read by anything either.
+
+**Junction peaks are NOT reported as numbers**: the STEP's sampled maximum at the rim junction
+near x = −2.0 reads 30.2 / 28.4–28.8 MPa flat and 39.5 / 37.3–38.2 crowned with the large and
+small boxes — it moves with a mesh box it does not even sit in, so its earlier "stability"
+across the ladder was the fixed local mesh. The twin carries the 2D mesh's re-entrant corner at
+x = −1.11, r = 48.60 (sampled 93 MPa, the §198–§199 kind) and the STEP does not have it. Both
+facts are recorded; neither is a stress claim.
+
+### 6. HEADLINES, AGAINST THEIR FALSIFIERS
+
+- **"The 3D flat drop is 27.99% into the bracket, 8.58% below the tree's figure"** — P1
+  could have landed outside; it did not. Scope: phase 0, linear, one genome, twin at one mesh.
+- **"The crown costs +16.3% of drop and widens its patch past Hertz"** — P2 could have come
+  back narrower; the crown ratio could have drifted with either mesh knob; neither did.
+- **"The STEP is 2.60% stiffer than the modelled body"** — P0 on the twin could have failed
+  (code) and the STEP ladder could have closed the gap (mesh); neither did. **"Because of the
+  junction material" is a HYPOTHESIS** (§2).
+- **"The STEP's band carries a third less stress"** — one mesh per body; a hypothesis in
+  cause, a measurement in size.
+
+### 7. SUCCESSORS, RANKED
+
+0. **IS 0.2799 A PROPERTY OF THE WHEEL OR OF PHASE 0?** The free/clamped ratio at one more
+   phase (the stencil's most different one) on the twin, and under SVK if the 2D SVK pair
+   exists at that phase. Nothing may carry an 8.58% correction into the objective until the
+   ratio is shown phase-independent — the phase-0-for-a-phase-mean trap §201 §4 named.
+1. **PRICE THE JUNCTION MATERIAL — §2's hypothesis.** A hybrid twin carrying the STEP's hub
+   junction only, then its rim junction only: two runs split the 2.60% and say whether the
+   exporter's `junction_overlap`/`bite` is a stiffness term the 2D mesh should carry.
+2. **THE CROWN DECISION NOW HAS A PRICE** — +16.3% at phase 0, +3.71% over the tree's figure on
+   the STEP. Whether the crowned wheel meets its deflection requirement is NOT answered here
+   (wrong quantity — this section's scope line); it waits on 0.
+3. **§201's SUCCESSOR 2, RE-RANKED UP — A RIM-BAND STRESS REPORT.** 0.846 of allowable crowned,
+   converged to 2.6% in the last refinement, in a region nothing reads.
+4. **§201's successors 1–3, unchanged**; the fifth GCI rung stays below 0.
+
+### 8. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE.** It names commits (`78f17d8`, `ea727dc`,
+`50df377`), a genome hash (`b729e86`), modules and scripts by name, and artifacts by path.
+**The first staged draft wrote two clock times with a colon, and `_citation_sweep.TOKEN`
+over the staged diff matched both** — in a paragraph that names `wheel_fem` and `fe3d.py`,
+either of which the sweep can carry as an owner. Rewritten as a duration; the count below
+is from the re-staged diff.
+
+**THE PREDICTION:** total stays **1658** and the human list **234**, identical row for row.
