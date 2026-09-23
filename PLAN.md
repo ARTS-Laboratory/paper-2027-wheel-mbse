@@ -33255,3 +33255,257 @@ column byte-identical; `mentions` moved on five rows and only there, which is §
 column getting its fifth instance.  The run cost one second before the commit and the
 claim needed no argument — which is the whole of §197's lesson, now applied twice on the
 day it was learned.
+
+---
+
+## §200 — 2026-09-22. NOT A SUCCESSOR FROM THE BOARD — A DESIGN CONSTANT, ASKED FOR DIRECTLY: **THE RIM OD IS CROWNED 1 mm ACROSS ITS FACE, AND THE WHOLE CHANGE IS CONFINED TO THE CAD LAYER BY CONSTRUCTION.** THE SOLVER IS UNTOUCHED AND THAT IS **MEASURED, NOT ARGUED: 88 BIT-EXACT VALUES — TWO `evaluate_design` RECORDS, `objective` AT `smoke` AND `coarse` WITH ALL 14 GRADIENT COMPONENTS, AND TWO `area_report`s — ARE BYTE-IDENTICAL BEFORE AND AFTER, 0 ULP**, PREDICTED BEFORE THE RUN. THE RELIEF IS **2324.2408 mm³ / 2.882059 g**, AND OCC's OWN BEFORE-MINUS-AFTER AGREES WITH `wheel_geometry`'s CLOSED FORM TO **0.00 mm³ AT THE PUBLISHED 2 dp AND TO <5e-5 ON THE ANALYTIC BAND** — TWO KERNELS, ONE QUANTITY. Ø100 SURVIVES: THE BOUNDING BOX IS STILL **100 × 100 × 22.40**. **BUT THE CROWN INTRODUCED A REAL EXPORT REGRESSION AND THE EXPORTER's OWN INSTRUMENT CAUGHT IT** — the relieved OD is a `Geom_SurfaceOfRevolution`, `despecialize` was converting extrusions only, and the STEP shipped with the Parasolid/Onshape risk banner raised, **the exact defect that made Onshape reject this part once already**. THE FIX IS ONE FLAG AND THE CENSUS PROVES IT: `CylindricalSurface` 37 -> 36, `BSplineSurface` 60 -> 61, `swept_surfaces_remaining` BACK TO `{}`. **WHAT IS NOT CLAIMED IS THE POINT OF THE SECTION: THIS TREE CANNOT SAY WHAT THE CROWN COSTS STRUCTURALLY**, because `wheel_fem` is plane-stress and the crown varies along the one axis it has no coordinate for — so the mass saving is **deliberately NOT credited to the objective**, and 45.08% of the face now carries a rim band under `MIN_WALL_MM` with nothing in the tree policing it
+
+One commit for the code, tests and export artifacts; this record is a second. No FEA was run for any of it beyond the bit-exact probe, and no genome moved.
+
+### 1. THE DECISION, AND THE GEOMETRY IT FIXES
+
+Asked for directly rather than ranked off §199's board: a 1 mm smooth transverse crown, no
+tread, carried as a design constant. Two forks were decided by the user before any code:
+
+- **APEX AT Ø100, EDGES RELIEVED TO Ø98.** The material comes INWARD, so
+  `wheel_requirements.py:43`'s *"Ø100 is frozen"* holds and no gene is reinterpreted —
+  `RIM_RADIUS_MM` and the span do not move, which is what `wheel_fea.py:118-131` prices as
+  *"REINTERPRETS every gene on disk"*.
+- **THE MASS SAVING IS NOT CREDITED** to `wheel_objective`. See §4.
+
+```
+  crown arc radius   R = (w/2)^2/(2h) + h/2        63.220000 mm
+  relief area        w*h - segment                  7.442884 mm^2     (NOT the segment)
+  relief volume      washer integral             2324.240751 mm^3
+  mass removed                                      2.882059 g PLA
+  shipped solid      47962.7 -> 45638.5 mm^3       -4.85%
+  shipped OCC mass   59.47 -> 56.59 g
+  rim band, apex -> side face   1.500 -> 0.500 mm
+```
+
+**THE RELIEF IS NOT THE CIRCULAR SEGMENT AND THE DIFFERENCE IS 2.01x.** The segment is the
+material UNDER the arc (14.957116 mm²); a crown removes the material ABOVE it, between the
+arc and the cylinder it replaces (7.442884 mm²). The first draft of this work used the
+segment and reported 5.8 g — the error survives every downstream sanity check because both
+numbers are plausible. `test_the_crown_relief_is_the_rectangle_minus_the_segment_not_the_segment`
+pins the identity `rectangle = relief + segment`, which fails if either term is the other.
+
+### 2. THE SOLVER IS UNTOUCHED, AND THE PREDICTION WAS REGISTERED BEFORE THE RUN
+
+The claim the whole timing argument rests on: the crown lives in the exporter and a derived
+constant, so nothing the FEA computes moves. Registered as a falsifier that could fire, then
+run. `wheel_geometry.py` is append-only here and `wheel_step_export` is not in the solver's
+import graph, so a MOVED value would have meant the crown had leaked.
+
+```
+                                   values   before vs after
+  evaluate_design, ga_beam genome      17    identical
+  evaluate_design, shipped genome      17    identical
+  objective smoke  1 value + 14 grad + 1      identical
+  objective coarse 1 value + 14 grad + 1      identical
+  area_report smoke 11 / coarse 11     22    identical
+  ----------------------------------------------------------
+                                       88    88 identical, 0 moved, files byte-identical
+```
+
+Every float is compared as `float.hex()`, not as a decimal repr, so this is 0 ULP and not
+"agrees to printed precision". Phases were pinned to a fixed 8-point stencil because the
+default `rqmc` stencil is stochastic and would have made the probe noise rather than a probe.
+
+### 3. TWO KERNELS ON ONE QUANTITY, AND THE BOX IS THE FROZEN-Ø100 CHECK
+
+`crown_rim` revolves the relief and cuts it from the finished solid. The volume is measured
+as a before-minus-after difference of the SOLID — the tool's own volume is larger, because it
+reaches past the part on purpose — exactly as `fillets.volume_mm3` has been measured since
+§14, and both are now published.
+
+```
+  analytic 48.5->50.0 band   OCC 2324.2408   closed form 2324.2408   diff < 5e-5
+  shipped filleted solid     OCC 2324.24     closed form 2324.24     diff 0.00 at 2 dp
+  bounding box               100.00 x 100.00 x 22.40    (expect 100 x 100 x 22.4)
+  exported STEP, probed      radius at 9 axial stations matches the arc to 0.00000 mm
+```
+
+The bounding box is not decoration: an inward crown cannot grow it, so the box IS the
+statement that Ø100 survived — **and it was a printed diagnostic that nothing read until this
+arc needed it.** `report` has shown it since the first export; the crown is the first
+construction that could push the OD outward from a sign slip, so the manifest now publishes
+`solid.bbox_mm` and a contract test holds it. A claim made in a docstring about a guard that
+did not exist is how this file gets the docstrings it keeps having to correct, so the guard
+was built rather than the sentence softened. The 9-station probe bisects the solid classifier for the
+largest radius still inside, and is the only check that the SHIPPED STEP — not the tool, not
+the constant — carries the arc.
+
+**AND IT DOES NOT EAT THE RIM FILLETS,** which was the live worry, since `R_rim` = 1.68 mm
+springs from r = 48.5 and could have reached past r = 49. `fillets.volume_mm3` is **972.6 mm³
+in both manifests, identical**, and both solid volumes fall by the same 2324.2 — because
+`crown_rim` runs on the unfilleted fallback too, which is what keeps that difference a fillet
+rather than a fillet plus a crown.
+
+### 4. WHAT IS NOT CLAIMED, AND THE DESIGN THAT COULD REFUTE IT
+
+`wheel_fem` is a plane-stress kernel: `coords` is `[n, 2]`, the face width is a scalar
+multiplier on element energies (`wheel_fem.py:255`), and contact is against a rigid
+horizontal LINE (`wheel_fem.py:652`). A transverse crown varies along the one axis that model
+does not have. **So this section asserts nothing about stiffness, stress, the contact patch or
+rolling.** There is no run here that could have come back and said otherwise, and under
+CLAUDE.md's headline test that forbids the claim rather than merely weakening it.
+
+What is now optimistic is the width multiplier near the OD: a crowned wheel contacts a strip,
+not the full 22.4 mm face. **NOTHING MEASURED HERE BOUNDS THAT ERROR.** The design that could
+refute *"the crown is structurally free"* is a model with a transverse dimension — a 3D mesh,
+or a 2D one carrying an effective contact width and a Hertzian term. Neither exists; it is
+successor 0.
+
+**WHICH IS EXACTLY WHY THE MASS IS NOT CREDITED.** Crediting the 2.882 g would book a
+**2.369-unit** loss win — the mass term is 44.478 of the shipped 52.566, so it dominates —
+for stiffness the model cannot price. `wheel_fea.py:118-131` records this failure happening
+once already: a rim term the beam model could not see meant *"the GA was solving the wrong
+problem, not solving it badly"*. `wheel_objective.py:979` is therefore left scoring the
+flat-rim region, and the relief is reconciled as an as-built term instead.
+
+**AND 45.08% OF THE FACE IS NOW UNDER THE PRINT FLOOR, IN SILENCE.** `MIN_WALL_MM` = 1.2 is a
+floor on the thickness GENES — it builds `GENE_SPACE` (`wheel_fea.py:261`) — and has never
+been a check on the rim band, which is a fixed 1.5 mm between two fixed constants. Crowned,
+that band clears 1.2 mm over the middle 12.303 mm of the face and thins to 0.500 mm at the
+side faces. Nothing in the tree goes red for it, which is the reason it is pinned in
+`tests/test_geometry_kernel.py` and stated here: it is a manufacturability cost of the
+decision, not a defect in it.
+
+### 5. THE EXPORT REGRESSION THE CROWN INTRODUCED, AND THE CONTROL THAT CLEARED THE OTHER ONE
+
+The relieved OD is a `Geom_SurfaceOfRevolution` — OCC does not recognise it as a torus,
+because the arc's centre sits 13.22 mm the far side of the axle while its own radius is 63.22,
+making the would-be torus the degenerate self-crossing kind. `despecialize` was called with
+`(extrusion=True, revolution=False)`, so that face shipped unconverted and `step_health`
+raised the risk banner naming Onshape. **This was a real defect in the first export, caught by
+the exporter's own instrument rather than by inspection.**
+
+```
+                          before      after cut, revolution=False   after fix
+  CylindricalSurface          37                             36           36
+  BSplineSurface              60                             60           61
+  SurfaceOfRevolution          0                              1            0
+  swept_surfaces_remaining    {}             one SurfaceOfRevolution      {}
+```
+
+`test_no_swept_surface_survives_into_the_shipped_step` pins the empty census rather than the
+flag, so it also covers whatever future construction reintroduces one, and the cylinder count
+is the other half — `despecialize` must convert the crown WITHOUT splining the bore.
+
+**A SECOND SUSPICIOUS NUMBER TURNED OUT TO BE PRE-EXISTING, AND THE CONTROL IS WHAT SAID SO.**
+Re-importing the written STEP measures 1.00% less volume than the manifest publishes. That
+looks like the crown until the same measurement is made on the OLD committed STEP:
+
+```
+  old committed STEP, no crown   step 47505.9568   manifest 47962.7   -456.7432 mm^3
+  new crowned STEP               step 45181.7160   manifest 45638.5   -456.7840 mm^3
+```
+
+**The drift is the same absolute 456.78 mm³ either way — 0.041 mm³ apart** — which is the
+B-spline quadrature artifact `report`'s docstring already documents and the reason it measures
+volume BEFORE despecializing. The percentage moved only because the denominator shrank. The
+ABSOLUTE gap is the invariant, which is the same lesson
+`test_the_embed_difference_from_the_shipped_step_is_the_known_amount` learned in area.
+
+### 6. THE MASS BUDGET, RECONCILED WITH A THIRD PUBLISHED TERM RATHER THAN A WIDER BAND
+
+`test_total_mass_matches_the_step_manifest_within_the_embed_difference` went red on the SIGN,
+not the magnitude: the solid had lost 2.882 g the mesh still carried.
+
+```
+  before fix   mesh 58.135 + fillets 1.206  vs solid 56.59   ->  -2.751 g  (-4.86%)  RED
+  after  fix   same, vs UNCROWNED 59.472                     ->  +0.131 g  (+0.22%)  GREEN
+```
+
+The manifest publishes `crown.volume_mm3` as OCC's own subtraction, so the budget gains a term
+instead of a tolerance. Widening the band would have absorbed a first-order 4.9% into a
+fudge — which is precisely the mistake that test's own docstring records it making once
+before, when a hand-fitted percentage stood in for two quantities nothing published.
+
+`tests/test_filleted_mesh.py` needed the same treatment for a subtler reason: it divides the
+solid's volume by `SPOKE_WIDTH_MM` to get a cross-section, on the stated grounds that *"the
+solid is a uniform extrusion"* — **a premise the crown falsifies**. It was still GREEN
+(2.18% against a 1.5–3% bound), and that is the hazard: adding the crown back restores the
+documented 2.07% and the premise with it. A test that stays green while its reason stops being
+true is the failure mode §120's half-pinned comparison already cost once.
+
+### 7. A PRE-EXISTING STALENESS FOUND ON THE WAY, AND DELIBERATELY NOT FIXED HERE
+
+`studies/study_wheel_fea.json` records `manifest_mass_g = 48.64` and a derived
+`mass_vs_manifest = -8.06%`. The manifest said 59.47 before this work and says 56.59 after, so
+the artifact matches neither. It was last written **2026-08-23** (`073aff7`), two weeks before
+`b729e86` was promoted on **2026-09-06** (`cb4e3dd`) — so this is a consumer §115's promotion
+missed, dated by git rather than inferred, and NOT something the crown caused. Regenerating it
+needs a `medium` run behind `_gate_guard.refuse_degraded_out`, and folding a promotion debt
+into a crown commit would make both harder to read. Filed as successor 2.
+
+### 8. SUCCESSORS, RANKED
+
+0. **A MODEL WITH A TRANSVERSE DIMENSION** — the falsifier §4 names, and the only thing that
+   would let the crown's structural cost be priced or its mass credited honestly. A 2D model
+   carrying an effective contact width plus a Hertzian term is far cheaper than a 3D mesh and
+   would answer the narrower question — how much of the 22.4 mm actually bears. **Unpriced;
+   scope it before costing it.**
+1. **THE FIFTH RUNG** — §199's successor 0, unmoved and still the top of the GCI board, 3-4 h.
+   Untouched by this work: the ladder artifacts are bit-identical, which §2 measures.
+2. **RE-RUN `study_wheel_fea.py` AND RE-DATE ITS MANIFEST FIGURES** (§7). A §115 leftover, now
+   two promotions and one crown stale. `medium`, gate-guarded, cost not measured here.
+3. **A GEOMETRY-FRAME GUARD.** `genome_hash` hashes genes only, and `test_golden.py`'s
+   `geometry` block carries `rim_radius_mm` but **not** `rim_outer_radius_mm` — the one frame
+   constant this arc touched. `test_the_manifest_publishes_the_crown_this_tree_would_cut`
+   plugs the crown's own hole against the manifest; the general guard, mirroring
+   `wheel_requirements.req_hash`'s refuse-on-mismatch, is a separate unit of work. **Adding
+   `rim_outer_radius_mm` to the pinned artifact was deliberately NOT done here: it would
+   transcribe today's value as history for a run nobody can replay.**
+4. **`RIM_OUTER_RADIUS_MM` IS STILL SPELLED TWICE** — `wheel_wheel.py:183` and
+   `wheel_step_export.py:95` — with no test pinning them equal. Pre-existing; `CROWN_HEIGHT_MM`
+   deliberately did not repeat it.
+5. **§199's SUCCESSORS 1-4 AND §198's 2-3 AND §197's 2-8**, unchanged.
+
+### 9. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, TIGHTENED BY §192 §11)
+
+This section cites, in prose: `wheel_requirements.py:43`, `wheel_fea.py:118-131` (twice),
+`wheel_fem.py:255`, `wheel_fem.py:652`, `wheel_objective.py:979`, `wheel_fea.py:261`,
+`wheel_wheel.py:183`, `wheel_step_export.py:95`. Everything else it names is a function, a
+test, a JSON key or an artifact: `crown_rim`, `despecialize`, `step_health`, `report`,
+`_gate_guard.refuse_degraded_out`, `crown.volume_mm3`, `fillets.volume_mm3`,
+`manifest_mass_g`, `studies/study_wheel_fea.json`. `073aff7` and `cb4e3dd` are commits and
+`b729e86` a genome hash — neither is a citation.
+
+**THE CODE COMMIT'S OWN CITATIONS ARE THE LARGER HALF AND THEY ARE COUNTED SEPARATELY:** 11
+new tokens, all in the source and test files, verified line by line against the tree AFTER the
+edits that moved them. **TWO WERE STALE ON ARRIVAL** — both `RIM_OUTER_RADIUS_MM` anchors,
+written against the pre-edit files and each landing ten and four lines short once this work's
+own insertions went in above them. They were re-measured and repaired before the commit, and
+the wrong spellings are deliberately NOT quoted here: §174's lesson is that a record which
+prints a dead anchor as `file:N` mints a citation row for it. §186's is met head-on — a
+citation into a file this work is about to edit is stale the moment it is written.
+
+**THE PREDICTION:** the code commit adds **11** tokens, 1628 -> **1639**, and this record
+adds **17** more, for **1656**. Both counted by running `_citation_sweep.TOKEN` over the diff
+and over this section's own text — and the eye-count for the record was **9**, which is
+§197's lesson arriving for the fourth time. The regex found three tokens no reader would
+call citations: the surface census in §5, whose JSON value happened to put a digit straight
+after a colon, and the two dead anchors the prose above meant to
+DISCUSS rather than cite. All three were rewritten out rather than predicted around; the
+mirror of §198's `hub:P_c`, which was safe only because letters follow its colon. The
+human list starts at **148**, and what moves it is line growth above existing anchors:
+
+```
+  file                    net lines   anchors    shifted by this work
+  wheel_geometry.py            +145        --    NONE — appended past the last line
+  wheel_wheel.py                +10        47    all 47 (the +10 is in the docstring)
+  wheel_step_export.py         +115        21    14 (7 sit above the import block)
+```
+
+**`wheel_geometry.py` IS THE POINT OF THAT TABLE.** The largest addition in the arc moves no
+anchor at all, because a constant and four closed forms can be appended rather than inserted;
+the two files that shift are the ones where the new prose had to land *among* existing prose.
+
+**THE COUNT IS NOT PREDICTED.** The sweep resolves each anchor at its own citing commit, and
+this work has no measurement of how many of those 61 resolve that way — guessing a number
+from two runs that differ in more than one way is the confound CLAUDE.md forbids. What is
+registered instead is a DIRECTION and a constraint the run could falsify: the human list
+RISES, and **every row it gains must be an anchor into `wheel_wheel.py` or
+`wheel_step_export.py`**. A new human row naming any other file refutes this paragraph.
