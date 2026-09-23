@@ -33784,3 +33784,18 @@ the check is the one that had not made it.
 **THE PREDICTION:** total stays **1658** and the human list **234**, identical row for row,
 counted with `_citation_sweep.TOKEN` over the STAGED diff (§200 §10's lesson) before the
 commit.
+
+### 8. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO**
+
+```
+  predicted   total 1658 -> 1658  (0)      human 234 -> 234, identical row for row
+  measured    total 1658 -> 1658  (0)      human 234 -> 234, IDENTICAL ROW FOR ROW
+```
+
+Baseline re-measured at `3e9a775` before any edit, not quoted from §200 §10: 1658 / 234,
+which is what §200 §10 said the next section would inherit. Every citation column is
+byte-identical; `mentions` moved on **ten** rows and only there — the ten files this section
+names by module or path, which is §195 §13's column doing what it always does on a section
+that cites nothing. The zero was counted from the STAGED diff, not the working tree (§200
+§10), and that count is what caught §7's own false "checked, not assumed" before the commit
+rather than after it.
