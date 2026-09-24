@@ -34390,3 +34390,231 @@ blank-line trade. `mentions` moved on **nine** rows and only there — PLAN.md +
 `wheel_objective`, `test_pool` and `_citation_sweep` +1 — the modules the report, the probe
 scripts and this record name. The layout that moved nothing was measured against the one that
 moved **206** before either was committed.
+
+## §204 — 2026-09-24. §203's SUCCESSOR 0, RUN: **THE 3D SVK SOLVE EXISTS, AND THE BRACKET POSITION CARRIES TO SVK — p MOVES AT MOST 0.0064 AT ALL EIGHT PHASES AGAINST A REGISTERED 0.025 — SO THE OBJECTIVE's OWN QUANTITY IS NOW MEASURED: THE TREE's PLANE-STRESS SVK EIGHT-PHASE MEAN OVERSTATES THE MODELLED WHEEL's 3D DROP BY 9.34%, AND THAT PUTS THE 3D DROP AT 1.8102 mm — 9.49% UNDER THE 2.0 mm TARGET, 1.9x OUTSIDE THE ±5% `DEFLECTION_TOLERANCE` THE TREE's OWN FIGURE SITS 0.16% INSIDE.** ON THE MODELLED BODY, FLAT; THE EXPORTED PART IS STIFFER AGAIN AND THE CROWN IS SOFTER, SO WHAT THE PRINTED WHEEL DOES IS NOT CLAIMED. **THE SHIFT UNDER SVK IS SMALL BUT ONE-SIGNED — p FALLS AT EVERY PHASE, 0.0029 TO 0.0064 — WHICH NO ONE PREDICTED.** AND THE SVK BAND IS OVER ALLOWABLE IN 3D AT FOUR OF THE SIX READABLE PHASES, **WORST 32.68 MPa, 1.31x**, AGAINST THE REPORT's PLANE-STRESS 1.39x
+
+### 1. WHAT RAN
+
+One commit before this record: `dce18e7` (the probe). `fe3d.py` gains
+`--kinematics svk`; `post3d_surface.py` reads an SVK result as Cauchy stress. No genome, loss,
+gradient, barrier or tracked artifact moved; nothing in `make test` imports `studies/probe_3d`.
+
+**THE SOLVER.** `wheel_fem`'s law in 3D: Green-Lagrange strain, the St. Venant-Kirchhoff energy
+with the 3D Lamé constants, contact on the reference surface through `u_y` alone — the 2D
+kernel's choices, term for term. The linear answer is computed first, exactly as before
+(the edited script reproduces the unedited one's drop **bit for bit** on a 445k-DOF dev
+mesh, 1.6077789323420069 both), and SVK starts from it: **full Newton on (u, delta)**, the
+consistent tangent, the contact penalty's Hessian added on the candidate DOFs, the service
+load imposed by bordering the system with the force constraint (two solves per factor), and
+an Armijo backtrack on the potential W + eps/2 ∫pen² − F·delta, which is stationary in both
+u and delta exactly at equilibrium under the load. Four self-checks run on every solve and
+passed on all sixteen: a 30° rigid rotation produces no force (1.6–3.4e-10 against a
+K·u of order 1); the SVK force is K·u + O(u²) (halving u quarters the gap, 3.9999–4.0001);
+and central differences of force against tangent and of energy against force agree to
+1.4e-9–4.6e-8 and 1.2e-9–6.3e-8. **The finite-difference bar was first set at 1e-6 and failed at 4e-5 — and
+the error scaled EXACTLY as h², 0.406 / 4.06e-3 / 4.06e-5 / 4.06e-7 over four decades of
+step, which is truncation on a quartic energy, not a defect.** The step is now 1e-5 and the
+scaling is written beside it.
+
+**A FIRST DESIGN DIVERGED, AND WHY IS PART OF THE PHYSICS.** The first attempt kept the linear
+K (already factored and condensed) as a modified-Newton iteration matrix, re-solving the
+condensed contact problem each pass. Its first pass moved the drop to −2.23 mm. At the linear
+solution the SVK residual is **11–17x the service load** in norm on the sixteen meshes (21x
+on the dev mesh): transverse deflection of a
+thin spoke carries a membrane strain the linear K has no term for, so the tangent is nowhere
+near K there. Full Newton from the same start converges quadratically in 5–8 passes; every step
+is taken at alpha = 1 except three, each the LAST step of a clamped run, at |R|/F ≤ 2.7e-7.
+
+**THE STOPPING RULE WAS AMENDED MID-QUEUE, AND NO RESULT MOVED.** The first criterion was
+|R|/F < 1e-10. At phase 7.5 clamped the residual reached a floor at 1.9e-9 by step 5 and sat
+there for 35 steps with the drop fixed to 1e-12 (1.960587503064) — the residual's 2-norm floor
+grows with the mesh. `wheel_fem.solve_nonlinear`'s own second criterion was added — stop when
+the energy increment falls to 1e-14 of the first step's — and the step it fires on is TAKEN,
+because stopping before it left the dev mesh's drop 1.4e-9 short; with the step taken, the dev
+drop is bit-identical to the residual-criterion answer (1.7681323270535485). The re-run 7.5
+clamped drop is 1.9605875030641, the stalled run's to twelve figures. Phase 0 had converged
+on the residual criterion before the change and was not re-run; nine runs stopped on energy,
+seven on residual, per the table.
+
+**THE RUNS.** §203's twin meshes at all eight uniform-stencil phases (h 2.0, hc 0.25, default
+box, §203's per-phase candidate windows), `u_z = 0` on both faces (clamped, the plane-strain
+control) and on the mid-plane only (free) — sixteen solves, serial, each under a 32 GiB
+`MemoryMax` scope: 398–818 s wall, 17.4–22.3 GiB peak. Every one closes equilibrium: hub
+reaction against contact resultant to better than 1e-9 N. Every linear drop reproduces
+§203's to 1.7e-12 or better (PARDISO, §202: agreement to 1e-13 relative, never 0 ULP). Registered BEFORE any 3D SVK solve existed, in the file the queue
+was launched beside: V0 (the code), C0 (the control), Q7 (the question), Q8 (the objective's
+quantity, as arithmetic from Q7); and AMENDMENT C (Q9, §4), registered after the sixteen and
+before the solve it bears on.
+
+### 2. THE CONTROL — C0 HOLDS, AND THE RATIO FORM HOLDS EVERYWHERE
+
+```
+  phase    3D clamped lin   3D clamped SVK   c_svk      (3D SVK/lin) / (2D strain SVK/lin) - 1
+   0.00    1.5621698        1.7144545        +0.022%    +0.016%
+   3.75    1.7712805        1.9537233        +0.176%    +0.075%
+   7.50    1.7843212        1.9605875        -0.689%    -0.024%
+  11.25    1.6729371        1.8178439        -0.807%    -0.038%
+  15.00    1.5431910        1.6706926        -0.809%    -0.044%
+  18.75    1.4497058        1.5726280        -0.765%    -0.071%
+  22.50    1.4199759        1.5471361        -0.510%    -0.048%
+  26.25    1.4533526        1.5906104        -0.285%    -0.010%
+
+  c_svk = D3clamped_SVK / D2strain_SVK - 1,   D2 from §203 §2 (medium, filleted)
+```
+
+**C0 HOLDS AT PHASE 0: +0.022% against a registered 0.1%, and the per-mesh SVK/linear ratio
++0.016% against its 0.1%.** Away from phase 0 the absolute control misses by up to 0.81% —
+§203 §3's h 2.0 twin stiffness (linear c −0.28% to −0.77%), now under SVK too, within 0.075
+points of the linear c at every phase — while **the SVK/linear RATIO on each clamped mesh reproduces the 2D
+plane-strain edge's to 0.075% or better at all eight**. So the mesh error is common to both
+kinematics and cancels in the ratio, as Amendment A argued for free/clamped in §203. This is
+the property §3 rests on.
+
+### 3. THE QUESTION — Q7 HOLDS AT EVERY PHASE, AND THE SHIFT HAS ONE SIGN
+
+```
+  phase    3D free lin   3D free SVK   p_lin    p_svk    dp        K_lin     K_svk     steps  stop
+   0.00    1.6216952     1.7858402     0.2818   0.2774   -0.0044   0.91447   0.90569   6/6    res/res
+   3.75    1.8356592     2.0278128     0.2789   0.2727   -0.0062   0.91687   0.91120   8/8    res/res
+   7.50    1.8525521     2.0423950     0.2782   0.2753   -0.0029   0.91279   0.90463   6/6    en/en
+  11.25    1.7393138     1.8962495     0.2908   0.2879   -0.0029   0.91486   0.90723   6/6    res/res
+  15.00    1.6064429     1.7448265     0.2996   0.2950   -0.0046   0.91569   0.90781   5/6    en/res
+  18.75    1.5102068     1.6434992     0.3009   0.2947   -0.0061   0.91484   0.90647   5/5    en/en
+  22.50    1.4785755     1.6161695     0.2953   0.2890   -0.0064   0.91361   0.90490   5/5    en/en
+  26.25    1.5112406     1.6594747     0.2867   0.2812   -0.0055   0.91301   0.90410   5/5    en/en
+
+  p = (r - 1)/(1/rho - 1),  r = D3free/D3clamped (one mesh),  rho = D2strain/D2stress (§203 §2)
+  K = r * D2strain / D2stress;   steps and stop are clamped/free
+```
+
+**Q7 HOLDS: max |dp| = 0.0064 at 22.5, against a registered 0.025.** The bracket position
+§203 measured under linear kinematics carries to SVK at every phase. **What was not predicted
+is the sign: p_svk is below p_lin at all eight phases**, mean −0.0049 — under SVK the free
+3D wheel sits slightly nearer the plane-strain edge of a bracket that is itself 1.03 points
+wider (§203 Q4). The linear p_r column reproduces §203 §3's to its printed four figures.
+
+**Q8, THE OBJECTIVE's QUANTITY: K̄_svk = Σ r_svk·D2strain_svk / Σ D2stress_svk = 0.90658.**
+Registered as ~0.906 at phase 0 by arithmetic from Q7; phase 0 reads 0.90569, and the
+eight-phase figure is 0.90658 (linear K̄ 0.91454, §203's). **The tree's plane-stress SVK
+eight-phase mean, 1.9967588 mm, overstates the modelled flat wheel's 3D SVK mean by 9.34%**,
+where §203 had 8.55% under linear kinematics. The 3D figures:
+
+```
+                                   2D plane stress (tree)   3D, modelled body, flat
+  linear, 8-phase mean             1.8060416                1.6517
+  SVK,    8-phase mean             1.9967588                1.8102
+  SVK / linear                     1.1056                   1.0960      (2D strain 1.0927)
+  SVK mean vs 2.0 mm target        -0.16%                   -9.49%
+```
+
+**AND THAT CROSSES A REQUIREMENT.** `TARGET_DEFLECTION_MM` is 2.0 (`wheel_fea`) and
+`DEFLECTION_TOLERANCE` is ±5% (`wheel_requirements`). The tree's figure sits 0.16% inside it.
+The 3D figure for the same body sits **9.49% outside — 1.9x the band**. The objective runs at
+`coarse`, not `medium`: `study_deflection_gci.json`'s SVK means are 1.9920 / 1.9968 / 1.9982
+at `coarse` / `medium` / `fine`, and K̄_svk (measured against `medium`) carried to either end
+by arithmetic lands at −9.70% and −9.42%. The rung does not move it back across the line.
+
+**WHAT THIS IS NOT, WRITTEN BESIDE IT.** It is the MODELLED body (the twin), FLAT, at h 2.0
+with the local box held at 0.25 mm. The exported part is 2.60–3.04% stiffer than the twin at
+phase 0 (§202, §203 §4) — that moves a real wheel further under target — and the crown is
++16.3% softer at phase 0 on the STEP (§202) — a linear phase-0 ratio which, if it carried to
+the SVK mean, is larger than the whole gap; neither has been run under SVK or at more than one
+phase. **So "the printed wheel misses
+its deflection target" is NOT claimed. "The body every committed deflection figure describes
+misses it in 3D, under the objective's own kinematics and phase stencil" IS — a measurement
+with one registered falsifier per link (C0, Q7, Q9).**
+
+**CONFOUND CHECK.** The eight phases differ in orientation and in mesh; every |dp| (0.0029 to
+0.0064) is 14–32x the 0.0002 by which one re-mesh moved p_r at phase 0 in §203, and every
+value has one sign. A shared mesh bias would also be one-signed. Q9 (§4) varies the
+mesh at one phase and dp does not move there (−0.0029 -> −0.0028), which rules out the global
+size at that phase and nothing else.
+
+### 4. Q9 — THE SVK RATIO UNDER REFINEMENT
+
+Registered after the sixteen and before this solve (Amendment C): the answer rests on r_svk
+being mesh-robust, which §203 Q5 showed for linear kinematics only. §203's h 1.25 mesh of
+phase 7.5 (1.28M DOF), clamped and free, under SVK:
+
+```
+  phase 7.5                h 2.0         h 1.25        move
+  3D clamped SVK           1.9605875     1.9665554     c_svk -0.689% -> -0.387%
+  3D free SVK              2.0423950     2.0491404
+  r_svk                    1.0417260     1.0419948     +0.026%      (registered < 0.2%)
+  p_svk                    0.2753        0.2771        +0.0018      (registered < 0.005)
+  dp = p_svk - p_lin       -0.0029       -0.0028
+  clamped SVK/lin vs 2D    -0.024%       +0.005%
+  band OD max, SVK         29.97         30.00 MPa
+  wall / peak              494+528 s     768+872 s,  28.2 / 29.2 GiB of the 32 GiB scope
+```
+
+**Q9 HOLDS BOTH WAYS.** r_svk moves 0.026% and p_svk 0.0018 while the absolute clamped miss
+recovers 44% of itself (−0.689% -> −0.387%, the share §203 Q5 found under linear, 41%) — the
+h 2.0 stiffness is real and it is common to free and clamped under SVK as under linear. **And
+the one-signed dp does not move with the mesh at this phase, −0.0029 -> −0.0028**, so at this phase it
+is not the global-size bias; that it is physical at the other seven phases is not shown, only that the one
+mesh knob tried did not reach it. The band reading is unmoved (29.97 -> 30.00), with the local
+size at its peak still 0.25 mm on both rungs. **The h 1.25 SVK free run peaked at 29.2 GiB
+against the 32 GiB scope: a further refinement does not fit this box.**
+
+### 5. THE BAND UNDER SVK, IN 3D
+
+`post3d_surface.py` on the free SVK fields, Cauchy stress at the OD-surface nodes (§203 §5's
+reading, same meshes):
+
+```
+  OD-surface band max, MPa    0.00    3.75    7.50   11.25   15.00   18.75   (22.50, 26.25:
+  3D twin, free, SVK         30.25   32.68   29.97   26.70   23.33   19.82    peak outside the
+  3D twin, free, linear      28.48   30.93   28.82   26.12   22.85   19.28    refined box,
+  2D medium, SVK (§203)      30.50   35.14   33.13   30.57   26.76   22.47    not read)
+  3D SVK / 3D linear         1.062   1.056   1.040   1.022   1.021   1.028
+  3D SVK / 2D SVK            -0.8%   -7.0%   -9.5%  -12.7%  -12.8%  -11.8%
+  / 25 MPa allowable         1.210   1.307   1.199   1.068   0.933   0.793
+```
+
+**The band is over allowable in 3D under SVK at four of the six readable phases, worst 32.68
+MPa at 3.75 — 1.31x**, where `rim_band_utilisation` at the objective's setting is predicted at
+1.387 (§203 §5). The 3D/2D pattern is §203's under linear kinematics (agreement at phase 0,
+3D 7.0–12.8% below 2D elsewhere). The linear 3D column reproduces §203 §5's to its printed
+figures. Local mesh at the peak still 0.25 mm in every run — the §202 lesson, unchanged.
+
+### 6. HEADLINES, AGAINST THEIR FALSIFIERS
+
+- **"The bracket position carries to SVK"** — Q7 could have failed at any of eight phases by
+  more than 0.025 and failed at none (max 0.0064); registered before any 3D SVK solve.
+- **"The modelled flat wheel's 3D SVK eight-phase mean is 1.8102 mm, 9.34% under the tree's
+  plane-stress figure and 9.49% under target"** — rests on C0 (held at phase 0, and in ratio
+  form at all eight), Q7 (held) and Q9 (held, §4). Arithmetic from those, not a separate test.
+- **"p falls under SVK at every phase"** — measured, one-signed, UNPREDICTED; at 7.5 it
+  survives refinement to h 1.25 unchanged (Q9), elsewhere its cause is a HYPOTHESIS.
+- **"The SVK position is mesh-robust"** — Q9 could have moved r_svk by 0.2% or p_svk by 0.005;
+  it moved 0.026% and 0.0018. One phase, one refinement step.
+- **"The band is over allowable in 3D under SVK, worst 1.31x"** — six readable phases, one mesh,
+  local size never varied: a measurement of this body at this mesh, not a converged value.
+
+### 7. SUCCESSORS, RANKED
+
+0. **THE DEFLECTION VERDICT — A DECISION, AND IT IS NOW PRICED.** The objective scores a
+   plane-stress SVK mean that §3 measures 9.34% soft against 3D for the body it describes.
+   Three candidate routes, not chosen here: carry K̄_svk as a correction on the `deflection`
+   term (re-prices every committed loss, the §189 blocker's shape, and re-opens every
+   promotion); switch the 2D kernel to a calibrated effective width or plane; or keep the
+   plane-stress figure and re-state the requirement against the 3D number. Any route
+   re-descends the wheel, which is why this section adds a record and no code.
+1. **THE EXPORTED, CROWNED BODY UNDER SVK.** §3's number is the twin, flat. The printed part is
+   the crowned STEP: one SVK pair at phase 0 and one at 3.75 on `export/wheel.step` (the
+   crowned mesh ladder exists from §202) answers whether the part itself is in its band.
+2. **§203 SUCCESSOR 1, UNCHANGED** — converge the twin away from phase 0 and vary the local box.
+3. **§203 SUCCESSORS 2–5, UNCHANGED** — the band decision (now 1.31x in 3D under SVK), the
+   crown re-priced, the rim-junction stiffness, §202's and §201's leftovers.
+
+### 8. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE.** It names one commit (`dce18e7`), a genome
+hash (`b729e86`, by reference to §203), modules, constants, scripts and one artifact by name,
+and writes no clock time. `_citation_sweep.TOKEN` over the draft matched nothing.
+
+**THE PREDICTION:** total stays **1658** and the human list **234**, identical row for row;
+`mentions` moves only on rows for modules this record names. Measured on `dce18e7` alone
+before this record was staged: 1658 / 234, identical row for row, `mentions` +1 on PLAN.md
+and +3 on `wheel_fem` — the probe's new docstring and comments — and nothing else.
