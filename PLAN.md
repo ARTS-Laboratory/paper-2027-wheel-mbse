@@ -35058,3 +35058,19 @@ writes no clock time.
 committed: 1656 / 234 — and against its parent `3dfba61` in a detached worktree, 1658 / 234
 identical row for row, the −2 being two citations of the retired Ø100 gate that `9f296d0`
 deleted with it (the old `crown_rim` docstring and the old box-gate assertion message).
+
+### 9. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO**
+
+```
+  predicted   total 1656 -> 1656  (0)      human 234 -> 234, identical row for row
+  measured    total 1656 -> 1656  (0)      human 234 -> 234, IDENTICAL ROW FOR ROW
+```
+
+Baseline measured after `9f296d0` committed; re-measured after this record's commit: identical
+in every citation column. `mentions` moved on **three** rows: `src/wheel_adjoint.py` +2 (the
+record names `rim_band_surface_stress` twice), `studies/study_wheel_fea.py` +2, and
+`src/wheel_fea.py` +2. **The last is not a file this record names** — both of its +2 are the
+two mentions of `studies/study_wheel_fea.json`, which contain `wheel_fea` as a substring. So
+"`mentions` moves only on rows for files this record names" holds for two of three rows and
+fails on the third through the counter's substring match, not through a reference. The staged
+diff carried no citation token, counted after the last edit.
