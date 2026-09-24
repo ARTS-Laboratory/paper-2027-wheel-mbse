@@ -34618,3 +34618,17 @@ and writes no clock time. `_citation_sweep.TOKEN` over the draft matched nothing
 `mentions` moves only on rows for modules this record names. Measured on `dce18e7` alone
 before this record was staged: 1658 / 234, identical row for row, `mentions` +1 on PLAN.md
 and +3 on `wheel_fem` — the probe's new docstring and comments — and nothing else.
+
+### 9. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO**
+
+```
+  predicted   total 1658 -> 1658  (0)      human 234 -> 234, identical row for row
+  measured    total 1658 -> 1658  (0)      human 234 -> 234, IDENTICAL ROW FOR ROW
+```
+
+Baseline measured at `75e5e69` in a detached worktree before any edit; re-measured on
+`dce18e7` alone and after the record's commit: identical every time in every citation column.
+`mentions` moved on **six** rows and only there — `wheel_fem` +6, PLAN.md +3, and `wheel_fea`,
+`wheel_requirements`, `study_deflection_gci` and `_citation_sweep` +1 each — the modules the
+probe's docstring and this record name. The staged diff carried no `TOKEN` match, counted
+after the last edit.
