@@ -34858,3 +34858,203 @@ Baseline measured at `bf4a003` in a detached worktree before any edit; re-measur
 record's commit: identical in every citation column. `mentions` moved on **two** rows and only
 there — PLAN.md +1 and `tests/test_promotion.py` +1, the files this record names. The staged
 diff carried no `TOKEN` match, counted after the last edit.
+
+## §206 — 2026-09-24. §205's SUCCESSOR 0, DECIDED BY THE USER AND MEASURED: **THE CROWN NOW SITS ON TOP OF THE FULL 1.5 mm BAND (APEX Ø102), AND THE BAND STRESS FALLS AT EVERY PHASE — TO 0.49–0.66x OF THE CUT CROWN's — BUT THE PART's 3D SVK EIGHT-PHASE MEAN IS 1.3178 mm, 34.1% UNDER THE 2.0 mm TARGET, SO §205's DEFLECTION VERDICT IS REVERSED FOR THIS PART.** THE STIFFENING IS FAR OUTSIDE WHAT I REGISTERED (R_svk **0.728** AGAINST A RANGE OF 0.97–1.10) AND THE TREE ALREADY HELD THE NUMBER THAT WOULD HAVE PREDICTED IT: `studies/study_wheel_fea.json`'s 2D `rim_sweep`, WHERE THE BAND CARRIES ~30% OF THE COMPLIANCE. **THE BAND IS STILL OVER ALLOWABLE AT TWO OF EIGHT PHASES — 1.16x AT 3.75 AND 1.03x AT 7.5, EACH MOVING UNDER 0.2% WHEN ITS LOCAL MESH IS REFINED, THE SECOND AT MID-SPAN 5 mm FROM ANY SPOKE** — at the INNER fibre, which the tree's band report does not read, for a reason that holds at the corners and does not hold at these points
+
+### 1. WHAT CHANGED, AND WHY THE ORDER
+
+§205 §7.0 filed the band decision with both prices on the part: the cut crown bought +15% of
+drop and cost 1.28–1.71x of band stress. The user chose: keep the 1 mm crown, but put it ON TOP
+of the original 1.5 mm band rather than cutting it into the band. `9f296d0` does that in the CAD
+layer only — the 2D solver is code-identical to its parent by an AST comparison with
+docstrings stripped, and Ø100 stays the GENE frame. Its message carries the geometry: +4736.53
+mm³ against the flat solid (the segment swept, OCC and the closed form agree to 0.00 at 2 dp),
+65.35 g OCC against the cut part's 56.59 (+8.755 g, +15.48%), band 1.5 mm at the side faces
+and 2.5 at the apex, bounding box 102 × 102 × 22.40. Full suite green: 987 collected, 974
+passed, 13 xfailed.
+
+**The question this section answers** is the one §205 §7.0 said a thicker band would raise:
+the crown's softness was what landed the part in the deflection band, by cancellation (§205 §4).
+A band that is thicker everywhere removes the softness. How much, and does the band stress
+then clear?
+
+### 2. THE RUN — §205's QUEUE, WITH ONE THING CHANGED
+
+`export/wheel.step` at `9f296d0` (sha1 `aa3a7619…`), rotated +phi (`rot.py`), meshed h 2.0 /
+hc 0.25 with the DEFAULT box — §205's rung. The apex now sits on the box's lower y edge; all
+material is inside it. `fe3d.py --faces free --kinematics svk --r-out 51`, eight serial solves
+under 32 GiB `MemoryMax` scopes, 508–659 s and 16.4–19.6 GiB each, windows §205's final
+(Amendment A) windows unchanged. Every run closes equilibrium at 33.361650 N, hub against
+contact.
+
+`--r-out` is the one code change `9f296d0` made to the probe: the ground's zero-drop radius,
+default 50.0. Two controls were registered for it before any solve on the new part:
+
+- **V0 HOLDS.** The flag at its default on §205's own phase-0 mesh reproduces §205's SVK
+  2.0617881541817296 to −2.2e-16 relative and the linear 1.8299649515058058 to +3.9e-13,
+  against a registered 1e-12. The flag changed nothing else.
+- **V1 HOLDS.** At every phase the lowest OD node sits at y −50.99998 to −51.00000, so contact
+  starts at a drop of zero. And the phase-0 solve closes the check from the other side: the
+  lowest node's rise 1.27765 plus the penetration 0.00252 is the drop 1.27975. A 1 mm
+  ground error would show there as 1 mm.
+
+### 3. THE DROP — Q1 HOLDS, Q2's RANGE IS REFUTED
+
+```
+  phase   top SVK     twin SVK    R_svk     §205 cut SVK   top / cut
+   0.00   1.2797470   1.7858402   0.71661   2.0617882      0.62070
+   3.75   1.3548182   2.0278128   0.66812   2.3259441      0.58248
+   7.50   1.3842679   2.0423950   0.67777   2.3927300      0.57853
+  11.25   1.3650435   1.8962495   0.71986   2.2055424      0.61892
+  15.00   1.3258595   1.7448265   0.75988   2.0006557      0.66271
+  18.75   1.2850779   1.6434992   0.78192   1.8665027      0.68850
+  22.50   1.2559632   1.6161695   0.77712   1.8325595      0.68536
+  26.25   1.2440626   1.6594747   0.74967   1.8989434      0.65513
+
+  twin = §204's modelled flat body, h 2.0, SVK.  sum-ratio R_svk 0.72799, R_lin 0.75518.
+  (A) mean of the eight              1.31185 mm   -34.41%
+  (B) 1.8102 x R_svk (§204 carried)  1.31780 mm   -34.11%
+  part / tree's plane-stress figure (1.99676)      0.65997
+```
+
+**Q1 HOLDS: every phase is below §205's**, 0.579–0.689x. Each patch is a single strip on the
+apex (z 9.97–11.20 at phase 0); the cut crown's two patches at 3.75 are gone — the apex is now
+the only contact, as a convex crown's should be.
+
+**Q2 IS REFUTED IN SIZE AND HOLDS IN DIRECTION.** Registered: R_svk 1.02, range 0.97–1.10, so
+(B) 1.756–1.991, with the hypothesis that the part leaves the band LOW. Measured R_svk
+**0.72799**, (B) **1.3178 mm**: the hypothesis holds, and the part lands 29.1 points of target
+below the lower edge, 21.9 points below the bottom of my own range. **The number that would have predicted it was committed:** `rim_sweep` in
+`studies/study_wheel_fea.json`, the 2D sweep that moved `RIM_RADIUS_MM` to 48.5, puts ~30% of
+the compliance in the band and reads a 1.5 -> 2.1 mm band at −24% of drop. The crown's mean
+added thickness is 14.957 / 22.4 = 0.668 mm, which interpolates on the sweep to −25.6%; the 3D linear
+eight-phase ratio is **−24.5%** (R_lin 0.75518). I weighted the added material by the contact strip and
+not by what the band does, and did not read the sweep before writing the range.
+
+**BY THE RULE REGISTERED BEFORE THE ANSWER: (B) is outside [1.90, 2.10], so §205's deflection
+verdict is REVERSED for this part and the trade goes back to the user.** No re-descent and no
+re-pricing here. The margin is not close: (B) is 29.1 points of target below the lower edge, and
+the two drop moves measured under refinement (§4) are 0.017% and 0.083%.
+
+### 4. THE BAND — Q3's DIRECTION HOLDS ON BOTH INSTRUMENTS, ITS HYPOTHESIS FAILS AT TWO PHASES
+
+**THE INSTRUMENT HAD TO WIDEN, AND THE WIDENING HAS A TRAP THIS TREE ALREADY RECORDED.**
+Registered: `post3d_surface.py`, the OD-surface nodes, the same instrument as §205 §5, with its
+blindness stated — it does not read the band's inner fibre. Phase 0's own `vm_max` (Gauss
+points, whole body) came back at r 48.38, the inner side, above every OD reading. So
+**Amendment A**, before any other phase returned, added `post3d_all.py`: the same arithmetic
+at every element node in the same region, reported by radius. And **Amendment C**, before its
+control returned, stated the trap — `wheel_adjoint.rim_band_surface_stress` reads the OUTER
+surface ON PURPOSE (§203): the inner face meets each rim junction at a re-entrant corner that
+survives the fillet (§199), and a whole-band maximum there climbs 30.06 / 34.60 / 41.08 MPa
+with refinement. **An inner-fibre peak AT a junction is not a stress value.** So every peak
+below is classified by its distance from the nearest spoke, and the two that decide the
+verdict are refined.
+
+```
+  phase   OD nodes   all nodes (where)                        /25     §205 OD   §205 all   all: top/cut
+   0.00   17.41      24.62  r 48.450, 0.52 mm from a spoke    0.985   38.66     45.92      0.536
+   3.75   24.19      28.98  r 48.500, 0.92 mm (fillet toe)    1.159   44.68     53.39      0.543
+   7.50   24.22      25.83  r 48.500, 4.94 mm (MID-SPAN)      1.033   39.40     39.40      0.656
+  11.25   22.62      24.70  r 48.500, no spoke within 8 mm    0.988   39.51     39.51      0.625
+  15.00   22.15      23.09  r 48.500, no spoke within 8 mm    0.924   37.35     39.78      0.580
+  18.75   20.17      21.20  r 48.500, 5.38 mm                 0.848   33.81     38.15      0.556
+  22.50   17.56      18.42  r 48.500, 2.14 mm                 0.737   28.37     33.36      0.552
+  26.25   14.77      17.60  r 48.453, x -5.17, outside the box 0.704   (not read)  36.25    0.486
+
+  MPa, Cauchy von Mises under SVK, one local size (hc 0.25).  "all" excludes the spoke body
+  (r < 48.45) except at phase 0, whose peak is at r 48.450 on the band's inner face.
+  Phase 22.5's whole-region maximum, 60.50 MPa, is INSIDE a spoke at r 45.64 -- priced by the
+  objective's own stress terms, not band.
+```
+
+**Q3's DIRECTION HOLDS ON BOTH:** OD 0.450–0.619x of §205 at every readable phase, all-node
+0.486–0.656x at all eight.
+
+**Q3's HYPOTHESIS (worst ≤ 25 MPa, all-node) FAILS AT TWO PHASES, and both survive their
+controls:**
+
+```
+  Q5  phase 3.75, box x [-2.0, 2.5] y [-51, -47.5], hc 0.25 -> 0.20   (707 k DOF, 816 s, 18.1 GiB)
+        all-node   28.979 -> 28.981   +0.007%   (registered < 5%)
+        OD         24.187 -> 24.648   +1.906%
+        drop       1.3548182 -> 1.3545933   -0.017%   (registered < 0.3%)
+  Q6  phase 7.5,  box x [-2.5, 2.5] y [-51, -47.5], hc 0.25 -> 0.20
+        all-node   25.827 -> 25.785   -0.163%   (registered < 3%; 5.01 mm from the spoke)
+        OD         24.22  -> 24.615   +1.6%
+        drop       1.3842679 -> 1.3831159   -0.083%   (registered < 0.3%)
+                                                      (708 k DOF, 798 s, 18.1 GiB)
+```
+
+**Q5 decides 3.75 is NOT the corner.** A free-wedge singularity at §199's λ ≈ 0.55 would climb
+about (1.25)^0.45 = +10.6% under this refinement; it moved +0.007%. The peak sits 0.92 mm from
+the spoke body, on the fillet's toe, where the surface is smooth. **Q6 decides 7.5 is over at a smooth point:** the mid-span inner-fibre peak moved −0.16%, and its margin over allowable is 3.1% — 19x the move.
+
+**What is claimed is scoped:** the band's inner fibre, at one genome, at local sizes 0.25 and
+0.20, is over allowable at 3.75 (1.16x, on the fillet's toe) and at 7.5 (1.03x, mid-span). The OD surface — the only surface the tree's
+band report reads — is under at every phase, worst 0.97x at hc 0.25 (24.22 at 7.5; 0.99x refined at 3.75), and would have
+reported the part as clearing.
+
+### 5. WHY THE TREE's BAND REPORT WOULD HAVE MISSED THIS, AND WHAT IS NOT CLAIMED ABOUT §205
+
+The report reads the outer surface because the inner face is singular at the junctions
+(§203) — correct where the peak IS at a junction. **With a 1.5 mm band that was also where the
+bending peak was reported from, and nothing checked the inner face away from the junctions.**
+Here the band's bending peak is on the inner face at mid-span (phases 7.5–18.75, 4.9–8+ mm from
+any spoke), on a smooth surface, and higher than the OD reading by 4.2–9.2%. A thicker band
+under a narrow apex patch moves its neutral axis and its peak fibre; which face carries the
+peak is geometry, and the report picks one face by construction.
+
+**§205's 1.14–1.79x is NOT corrected here.** The same all-node reader on §205's fields gives
+higher numbers at five of the seven phases §205 read (45.92 / 53.39 / 39.78 / 38.15 / 33.36 at
+0 / 3.75 / 15 / 18.75 / 22.5), but those peaks were not classified by distance from a spoke and not refined, and at
+least phases 0 and 3.75 sit where §203's corner lives. They are reported as unrefined
+all-node reads of §205's fields and nothing more. The all-node column on the cut part is used
+above only for the DIRECTION comparison, where both parts are read by the same instrument.
+
+### 6. HEADLINES, AGAINST THEIR FALSIFIERS
+
+- **"The part's 3D SVK mean is 1.3178 mm, 34.1% under target; §205's verdict is reversed"** —
+  Q2 could have put (B) inside the band and did not; the decision is the registered rule's.
+  One genome, one mesh rung for the mean (Q5 moves one phase's drop 0.017%).
+- **"The band stress falls at every phase"** — Q3's direction, falsifiable at every phase on
+  two instruments, held at all.
+- **"Over allowable at 3.75, 1.16x, at the inner fibre"** — Q5 could have shown a climb and
+  showed +0.007%. One genome, two local sizes.
+- **"Over allowable at 7.5, 1.03x, mid-span"** — Q6 could have moved it past its 3.1% margin
+  and moved it −0.16%. One genome, two local sizes, 5.0 mm from the nearest spoke.
+- **"The committed rim_sweep predicted the size"** — an interpolation from a 2D linear sweep
+  committed in that artifact, landing within 1.1 points of the 3D linear ratio; a check, not a
+  model.
+
+### 7. SUCCESSORS, RANKED
+
+0. **THE TRADE, NOW WITH BOTH PRICES MEASURED ON BOTH CROWNS — THE USER's CALL.** Cut crown:
+   deflection in band (+4.26%), band 1.14–1.79x (OD). Crown on top: band worst 1.16x (inner
+   fibre; 1.03x at a smooth mid-span point), deflection −34.1%. The band is the lever for both, in opposite
+   directions, so no crown height alone does both at this genome. What would is a descent
+   that knows the part: the spokes carry ~65% of the compliance (`rim_sweep`'s split), so
+   softer spokes under a thick band could put the drop back in band — but the objective scores
+   the flat 2D body, and the part sits at 0.660x of its figure now. That is §204 §7.0's route
+   question, re-opened with a part/tree offset of −34% instead of +4.4%.
+1. **THE BAND REPORT's BLIND FACE.** `wheel_adjoint.rim_band_surface_stress` should read the
+   inner face away from the junctions — excluding a distance from each spoke flank, not the
+   whole face. Its first test is whether the 2D kernel shows the same outer/inner split this
+   section measured in 3D.
+2. **§205's ALL-NODE READS, CLASSIFIED.** Five of §205's phases read higher on the inner face
+   than it published; classify each by distance from a spoke and refine the non-corner ones,
+   or leave §205 standing. Free: the fields are on disk.
+3. **§205 SUCCESSORS 1–3, UNCHANGED** — the promotion-checklist 3D check now has a second data
+   point with the opposite sign.
+
+### 8. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE.** It names commits (`9f296d0`), a STEP's sha1
+prefix (`aa3a7619`), modules, functions, scripts, a JSON artifact and a constant by name, and
+writes no clock time.
+
+**THE PREDICTION:** total stays **1656** and the human list **234**, identical row for row;
+`mentions` moves only on rows for files this record names. Baseline measured after `9f296d0`
+committed: 1656 / 234 — and against its parent `3dfba61` in a detached worktree, 1658 / 234
+identical row for row, the −2 being two citations of the retired Ø100 gate that `9f296d0`
+deleted with it (the old `crown_rim` docstring and the old box-gate assertion message).
