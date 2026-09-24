@@ -42,13 +42,13 @@ The material region is `hub_disk | rim_band | 12 spoke bands clipped to the annu
 Three deliberate differences from the shipped STEP, all measured rather than assumed:
 
   THE RIM OD IS CROWNED IN THE SOLID AND FLAT HERE, AND THAT ONE IS NOT A MODELLING
-  CHOICE.  `wheel_geometry.CROWN_HEIGHT_MM` relieves the shipped rim by 1 mm across the
-  face -- 2324.24 mm3, 2.882 g, 4.85% of the solid -- and THIS MESH CANNOT CARRY IT AT
+  CHOICE.  `wheel_geometry.CROWN_HEIGHT_MM` adds 1 mm ON TOP of the shipped rim (§206)
+  -- 4736.53 mm3, 5.873 g, apex at R51 -- and THIS MESH CANNOT CARRY IT AT
   ALL: `coords` is `[n, 2]` and the face width is a scalar multiplier, so the crown varies
-  along an axis with no coordinate here.  The rim therefore stays the full-radius cylinder
-  and models the crown's APEX section, which is also the section the ground touches.  The
-  manifest publishes `crown.volume_mm3` so the mass budget can subtract it; nothing in an
-  AREA comparison moves, because `reference_shipped_step_mm2` is a prismatic cross-section
+  along an axis with no coordinate here.  The rim therefore stays the R50 cylinder and
+  models the SIDE-FACE section, the band's minimum, not the apex the ground touches.  The
+  manifest publishes `crown.volume_added_mm3` so the mass budget can remove it; nothing in
+  an AREA comparison moves, because `reference_shipped_step_mm2` is a prismatic cross-section
   and the crown is a solid of revolution.
 
   FILLETS ARE NOT MODELLED BY THE DEFAULT MESH, and they are a FIRST-ORDER term, not a

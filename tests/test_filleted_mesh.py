@@ -710,7 +710,7 @@ def test_the_fillet_reference_agrees_with_the_STEP_MANIFEST(genes):
     # on the gusset. Both radii must match, or the two are filleting different wheels.
     #
     # THE SOLID AS A WHOLE IS NO LONGER A UNIFORM EXTRUSION, WHICH IS WHY THE CROWN IS
-    # ADDED BACK BELOW.  `wheel_geometry.CROWN_HEIGHT_MM` relieves the rim OD along the
+    # TAKEN OFF BELOW.  `wheel_geometry.CROWN_HEIGHT_MM` crowns the rim OD along the
     # face, so dividing the SOLID's volume by the width stopped being a cross-section the
     # moment the crown landed.  The fillets themselves are untouched by it -- measured,
     # 972.6 mm3 with and without -- so this line is still exactly what it says.
@@ -732,11 +732,11 @@ def test_the_fillet_reference_agrees_with_the_STEP_MANIFEST(genes):
     # hit this exact fact after `test_the_area_reference_DESCRIBES_the_filleted_region`'s
     # 5-12% -> ~2% and its own `share` bound. 1.5-3% keeps the same margin around the new
     # true value rather than pinning it, matching those two.
-    # `+ crown.volume_mm3` restores the prismatic solid this ratio is about.  Without it
-    # the denominator loses 2324 mm3 the mesh still carries, the share reads 2.18% instead
-    # of the measured 2.07%, and the drift would be mistaken for a fillet moving.
+    # `- crown.volume_added_mm3` restores the prismatic solid this ratio is about.  Without
+    # it the denominator gains 4737 mm3 the mesh does not carry (§206; the cut crown lost
+    # 2324), and the drift would be mistaken for a fillet moving.
     uncrowned_nofillet = (man["solid"]["volume_nofillet_mm3"]
-                          + man["crown"]["volume_mm3"])
+                          - man["crown"]["volume_added_mm3"])
     assert 0.015 < step_mm2 / (uncrowned_nofillet / wf.SPOKE_WIDTH_MM) < 0.03
 
 

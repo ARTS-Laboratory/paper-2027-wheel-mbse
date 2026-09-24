@@ -41,9 +41,9 @@ already asserts and this module reuses rather than re-inventing.
 WHAT THIS FILE DELIBERATELY CANNOT REACH
 -----------------------------------------
 **Ø100 is frozen.**  Ground clearance and prop clearance are real requirements and they
-want `RIM_RADIUS_MM`; `wheel_fea.py:113-137` states the price — changing it
-*"REINTERPRETS every gene on disk"* — so every axis here leaves the genome frame intact.
-That is what lets `best_solution.json` and `tests/test_golden.py` stay meaningful while
+want `RIM_RADIUS_MM`, the genome frame (the part's crown adds 1 mm above it, Ø102, §206).
+`wheel_fea.py:113-137` prices changing it — *"REINTERPRETS every gene on disk"* — so every
+axis here keeps it, and `best_solution.json` and `tests/test_golden.py` stay meaningful while
 requirements move.  `NUMBER_OF_SPOKES = 12` is likewise not a parameter: it is baked into
 `SECTOR_DEG`, the mesh's twelve-fold periodicity and the `/3` in
 `FORCE_PER_SPOKE_NEWTONS`.

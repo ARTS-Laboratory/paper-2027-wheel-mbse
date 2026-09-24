@@ -2,16 +2,16 @@
   "genome_hash": "b729e86",
   "source": "best_solution.json",
   "source_mtime": "2026-09-06T13:49:56",
-  "exported_at": "2026-09-22T22:49:50",
-  "export_seconds": 63.7,
+  "exported_at": "2026-09-24T16:40:46",
+  "export_seconds": 63.1,
   "solid": {
     "valid": true,
-    "volume_mm3": 45638.5,
-    "mass_g_pla": 56.59,
-    "volume_nofillet_mm3": 44665.9,
+    "volume_mm3": 52699.3,
+    "mass_g_pla": 65.35,
+    "volume_nofillet_mm3": 51726.7,
     "bbox_mm": [
-      100.0,
-      100.0,
+      102.0,
+      102.0,
       22.4
     ]
   },
@@ -76,10 +76,11 @@
   "crown": {
     "height_mm": 1.0,
     "radius_mm": 63.22,
-    "volume_mm3": 2324.24,
-    "volume_closed_form_mm3": 2324.24,
-    "mass_g_pla": 2.882,
-    "side_face_band_mm": 0.5
+    "volume_added_mm3": 4736.53,
+    "volume_added_closed_form_mm3": 4736.53,
+    "mass_g_pla": 5.873,
+    "side_face_band_mm": 1.5,
+    "apex_band_mm": 2.5
   },
   "profile_health": {
     "min_curvature_radius_mm": 7.169737,
@@ -98,12 +99,12 @@
     },
     "counts": {
       "faces": 111,
-      "edges": 330,
-      "vertices": 221
+      "edges": 327,
+      "vertices": 218
     },
     "min_edge_mm": 0.114773,
     "min_face_mm2": 2.5709,
-    "max_edge_tolerance_mm": 0.0002467423745027764,
+    "max_edge_tolerance_mm": 1.0119149648311526e-07,
     "degenerate_edges": 0,
     "brepcheck_valid": true,
     "self_intersecting": false,

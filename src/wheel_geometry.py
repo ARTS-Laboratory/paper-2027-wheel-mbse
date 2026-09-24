@@ -440,18 +440,18 @@ def self_intersection_margin(curve, ctrl_pts, t0, t1, t2, t3, num_points, xp=np)
 # TRANSVERSE CROWN ON THE RIM OD
 # ---------------------------------------------------------------------------
 
-# Sagitta of the rim's transverse crown, in mm: how much smaller the rim's radius is at
-# the axial EDGES of the face than at its mid-width apex.  The outer surface becomes a
+# Sagitta of the rim's transverse crown, in mm: how much larger the rim's radius is at
+# the mid-width apex than at the axial EDGES of the face.  The outer surface becomes a
 # circular arc across the face instead of a cylinder, which is what a real wheel has.
 #
-# APEX AT THE FROZEN DIAMETER, EDGES RELIEVED INWARD.  `wheel_requirements.py:43` freezes
-# O100 -- ground clearance and prop clearance are real requirements -- so the crown may
-# not add radius anywhere.  The apex keeps the frozen diameter and the face falls away
-# from it, which also leaves every gene on disk meaning what it meant: this moves neither
-# `RIM_RADIUS_MM` nor the span, so nothing is reinterpreted (`wheel_fea.py:113-137`).
-# The exporter publishes the solid's bounding box and `test_export_contract.py` holds it
-# to 100 x 100 x 22.4: an inward crown cannot grow the box, so that IS the frozen-diameter
-# check.  It was only a printed diagnostic until this arc needed it to be a gate.
+# EDGES AT THE GENE FRAME'S O100, APEX ADDED OUTWARD TO O102 (§206).  Until §206 the crown
+# was CUT into the band -- apex at O100, edges relieved to R49, band 1.5 -> 0.5 mm at the
+# side faces -- and §205 measured that part's band at 1.14-1.79x allowable at every
+# readable phase, the crown raising it 1.28-1.71x over the flat twin.  So the crown now
+# sits ON TOP of the full 1.5 mm band.  `wheel_requirements.py:43`'s O100 stays the GENE
+# frame: this moves neither `RIM_RADIUS_MM` nor the span, so every gene on disk means what
+# it meant (`wheel_fea.py:113-137`); the part's apex is O102 by decision, and clearance
+# only grows.  `test_export_contract.py` holds the bounding box to 102 x 102 x 22.4.
 #
 # Lives here for the same reason `MIN_JUNCTION_BITE` does: the producer is the STEP
 # exporter (CadQuery env) and the consumer is a test in `make test` (jax env), and this
@@ -459,40 +459,35 @@ def self_intersection_margin(curve, ctrl_pts, t0, t1, t2, t3, num_points, xp=np)
 # already spelled twice -- `wheel_wheel.py:183` and `wheel_step_export.py:95`, with no
 # test pinning them equal -- and that is a trap to avoid repeating, not a pattern.
 #
-# WHAT IT COSTS, at 1.0 mm on the 22.4 mm face against a 50.0 mm outer radius:
+# WHAT IT COSTS, at 1.0 mm on the 22.4 mm face above a 50.0 mm outer radius:
 #
 #     crown arc radius                     63.220000 mm
-#     material removed                   2324.240751 mm^3  =  2.882059 g PLA
-#     shipped solid   47962.7 mm^3  ->      45638.5 mm^3      ( -4.85% )
-#     rim band at the axial edges     1.500 mm ->  0.500 mm
+#     material added                     4736.533448 mm^3  =  5.873301 g PLA
+#     against the flat solid's 47962.7 mm^3                   ( +9.88% )
+#     rim band                        1.500 mm at the side faces, 2.500 mm at the apex
 #
 # THE FEA CANNOT SEE ANY OF IT, AND THAT IS NOT A DEFECT TO BE FIXED HERE.  `wheel_fem` is
 # a plane-stress kernel: node arrays are [n, 2], the face width enters as a scalar
 # multiplier on element energies (`wheel_fem.py:255`), and contact is against a rigid
 # horizontal LINE (`wheel_fem.py:652`).  A crown varies along the one axis the solver does
-# not have.  So the 2D mesh keeps `RIM_OUTER_RADIUS_MM` = 50.0 and models the crown's APEX
-# section -- which is also the section the ground touches, so it remains the right
-# centre-plane model.  What is now optimistic is the width multiplier near the OD: a
-# crowned wheel contacts a strip, not the full 22.4 mm face, and NOTHING MEASURED HERE
-# BOUNDS THAT ERROR.  The design that could refute "the crown is structurally free" is a
-# model with a transverse dimension -- a 3D mesh, or a 2D one carrying an effective
-# contact width and a Hertzian term.  Neither exists, so the claim is not made.
+# not have.  So the 2D mesh keeps `RIM_OUTER_RADIUS_MM` = 50.0, which is now the SIDE-FACE
+# section -- the band's minimum -- and not the apex the ground touches.  The 2D band is a
+# lower bound on the part's; what the crown does to the contact strip, the drop and the
+# band stress is unmeasured by anything here and is §206's 3D run to measure.
 #
-# WHICH IS WHY THE MASS SAVING IS NOT CREDITED.  `wheel_objective.py:979` scores the
-# flat-rim region and is deliberately left alone; the 2.88 g is reconciled as an as-built
-# term against the STEP instead, the way `_embed`'s gusset and the fillets already are.
-# Crediting it would book a 2.369-unit loss win -- the mass term carries 44.478 of the
-# shipped 52.566 -- for stiffness the model cannot price, which is the failure
-# `wheel_fea.py:118-131` already records once: a rim term the beam model could not see
-# meant "the GA was solving the wrong problem, not solving it badly".
+# THE MASS IS STILL NOT CHARGED, AND THAT NOW CUTS THE OTHER WAY.  `wheel_objective.py:979`
+# scores the flat-rim region and is deliberately left alone; the 5.87 g is reconciled as an
+# as-built term against the STEP instead, the way `_embed`'s gusset and the fillets already
+# are.  While the crown was a relief, not crediting its 2.88 g saving was conservative.  As
+# an addition, the objective's mass UNDER-states the part by 5.87 g the optimiser never
+# sees -- stiffness it cannot price either way (`wheel_fea.py:118-131`).
 #
-# 45% OF THE FACE CARRIES A RIM BAND THINNER THAN `MIN_WALL_MM`, AND NOTHING ELSE SAYS SO.
-# `wheel_fea.MIN_WALL_MM` = 1.2 is a floor on the thickness GENES -- it builds `GENE_SPACE`
-# -- and has never been a check on the rim band, which is a fixed 1.5 mm of fixed
-# constants.  Crowned, that band holds 1.2 mm over the middle 12.303 mm of the face and
-# thins to 0.500 mm at the side faces: 45.08% of the width below the print floor.
-# `tests/test_geometry_kernel.py` pins both numbers so the fact is registered here rather
-# than met on a print.
+# THE BAND CLEARS `MIN_WALL_MM` OVER THE WHOLE FACE.  `wheel_fea.MIN_WALL_MM` = 1.2 is a
+# floor on the thickness GENES and has never been a check on the rim band, which is a
+# fixed 1.5 mm of fixed constants.  The cut crown thinned it to 0.500 mm at the side faces,
+# 45.08% of the width below the floor; on top, its thinnest point is the uncrowned 1.5 mm.
+# `tests/test_geometry_kernel.py` pins that so a later change back is met there, not on a
+# print.
 CROWN_HEIGHT_MM = 1.0
 
 
@@ -541,10 +536,10 @@ def crown_relief_volume_mm3(width_mm, rim_outer_mm, height_mm=CROWN_HEIGHT_MM):
     PLA, 4.85% of the shipped solid.  `tests/test_geometry_kernel.py` checks it against
     the same 8-million-point quadrature, which agrees to 7.8e-11.
 
-    This is the number the STEP manifest publishes as `crown.volume_closed_form_mm3`
-    beside OCC's own before-minus-after measurement of the cut.  Two kernels, one
-    quantity: agreement is evidence that the solid carries the crown this constant
-    describes, which one number measured twice would not be.
+    The STEP manifest published this beside OCC's before-minus-after while the crown was
+    a cut; since §206 the crown is added on top, and `crown_added_volume_mm3` -- which
+    the manifest publishes now -- is built from this one taken at the apex radius, so
+    it is still the closed form under the shipped figure.
     """
     half = 0.5 * width_mm
     radius = crown_radius_mm(width_mm, height_mm)
@@ -567,9 +562,10 @@ def crown_min_wall_span_mm(width_mm, rim_outer_mm, rim_inner_mm, min_wall_mm,
     clamped to the face at both ends: 0.0 when even the apex is too thin, `width_mm` when
     even the edges clear.
 
-    At 22.4 / 50.0 / 48.5 / 1.2 it returns 12.303 mm -- 54.92% of the face, leaving
-    45.08% of it under the floor.  That is a printability fact and not an FEA one: see
-    `CROWN_HEIGHT_MM` above for why nothing else in the tree would report it.
+    `rim_outer_mm` is the APEX radius.  The shipped crown is added on top (§206), so its
+    apex is 51.0 and at 22.4 / 51.0 / 48.5 / 1.2 this returns the full 22.4 mm face; the
+    cut crown it replaced, apex 50.0, returned 12.303 mm -- 45.08% of the face under the
+    floor.  A printability fact and not an FEA one: see `CROWN_HEIGHT_MM` above.
     """
     apex_band = rim_outer_mm - rim_inner_mm
     if apex_band < min_wall_mm:
@@ -579,3 +575,24 @@ def crown_min_wall_span_mm(width_mm, rim_outer_mm, rim_inner_mm, min_wall_mm,
     radius = crown_radius_mm(width_mm, height_mm)
     drop = apex_band - min_wall_mm
     return 2.0 * math.sqrt(radius * radius - (radius - drop) ** 2)
+
+
+def crown_added_volume_mm3(width_mm, rim_outer_mm, height_mm=CROWN_HEIGHT_MM):
+    """Material a crown built ON TOP of the `rim_outer_mm` cylinder adds, in mm^3 (§206).
+
+    The apex sits at `rim_outer_mm + height_mm` and the side faces at `rim_outer_mm`.  That
+    solid's washer out to the apex radius, minus the relief a crown CUT from that apex
+    radius would remove, is exactly what lies above the cylinder -- so this reuses
+    `crown_relief_volume_mm3` and adds no second closed form to get wrong:
+
+        V = pi * w * ((rim_outer + h)**2 - rim_outer**2)  -  relief(w, rim_outer + h, h)
+
+    At w = 22.4, h = 1.0 and rim_outer = 50.0 that is 4736.533448 mm^3 -- 5.873301 g of
+    PLA -- the circular segment's 14.957116 mm^2 swept around the axle.  It agrees with an
+    8-million-point quadrature to 1.7e-14, and `tests/test_geometry_kernel.py` checks it
+    over a decade of heights.  The STEP manifest publishes it as
+    `crown.volume_added_closed_form_mm3` beside OCC's own after-minus-before.
+    """
+    outer = rim_outer_mm + height_mm
+    return (math.pi * width_mm * (outer * outer - rim_outer_mm * rim_outer_mm)
+            - crown_relief_volume_mm3(width_mm, outer, height_mm))

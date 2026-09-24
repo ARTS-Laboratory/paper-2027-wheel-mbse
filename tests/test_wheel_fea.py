@@ -808,27 +808,27 @@ def test_total_mass_matches_the_step_manifest_within_the_embed_difference(mesh):
 
     # (3) THE BUDGET.  Mesh plus fillets accounts for the solid to within the gusset.
     #
-    # THE CROWN IS ADDED BACK, AND IT IS A THIRD PUBLISHED TERM RATHER THAN A WIDER BAND.
-    # `crown_rim` relieves 2324.24 mm^3 (2.882 g) from the rim OD, and the mesh cannot
-    # model it at all -- `wheel_fem` is plane-stress, so the crown varies along an axis
-    # the mesh has no coordinate for and its rim stays the full-radius cylinder.  Left
-    # unaccounted this read -2.751 g / -4.86%, failing on the SIGN: the solid had lost
-    # material the mesh still carried.  The manifest publishes `crown.volume_mm3` as OCC's
-    # own before-minus-after, exactly as `fillets.volume_mm3` is published, so the fix is
+    # THE CROWN IS TAKEN OFF, AND IT IS A THIRD PUBLISHED TERM RATHER THAN A WIDER BAND.
+    # `crown_rim` adds 4736.53 mm^3 (5.873 g) on top of the rim OD (§206; until then it
+    # cut 2324.24 mm^3 away), and the mesh cannot model it at all -- `wheel_fem` is plane
+    # stress, the crown varies along an axis the mesh has no coordinate for, and its rim
+    # stays the R50 cylinder.  Unaccounted, the cut crown read -2.751 g / -4.86%, failing
+    # on the SIGN.  The manifest publishes `crown.volume_added_mm3` as OCC's
+    # own after-minus-before, exactly as `fillets.volume_mm3` is published, so the fix is
     # to reconcile against the UNCROWNED solid -- the region the mesh actually models --
     # and the gusset is again the only term left over.  Widening the band instead would
     # have absorbed a first-order 4.9% into a tolerance, which is the precise mistake the
     # docstring above records this test already making once.
     m = swf.wheel_mass_g(mesh)
     fillet_g = fil["volume_mm3"] * wf.DENSITY_PLA
-    crown_g = man["crown"]["volume_mm3"] * wf.DENSITY_PLA
-    uncrowned_g = solid["mass_g_pla"] + crown_g
+    crown_g = man["crown"]["volume_added_mm3"] * wf.DENSITY_PLA
+    uncrowned_g = solid["mass_g_pla"] - crown_g
     gap_g = uncrowned_g - (m + fillet_g)
     gap_frac = gap_g / uncrowned_g
     assert 0.0 < gap_frac < 0.015, (
         f"mesh {m:.3f} g + fillets {fillet_g:.3f} g leaves {gap_g:+.3f} g "
         f"({gap_frac:+.2%}) against the uncrowned solid's {uncrowned_g:.3f} g "
-        f"({solid['mass_g_pla']} g shipped + {crown_g:.3f} g of crown) — the gusset is "
+        f"({solid['mass_g_pla']} g shipped - {crown_g:.3f} g of crown) — the gusset is "
         f"the only term left and it is neither positive nor under 1.5%")
 
     # And it has to be the right SHAPE for a gusset: one per spoke, order 1 mm^2 of

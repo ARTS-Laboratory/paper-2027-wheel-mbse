@@ -45,12 +45,12 @@ ap.add_argument("--block", type=int, default=300)
 ap.add_argument("--seed0", type=float, default=0.8)
 ap.add_argument("--seed1", type=float, default=1.9)
 ap.add_argument("--kinematics", default="linear", choices=["linear", "svk"])
-ap.add_argument("--tol", type=float, default=1e-10)
+ap.add_argument("--tol", type=float, default=1e-10); ap.add_argument("--r-out", type=float, default=50.0)
 a = ap.parse_args()
 
 E, NU, EPS_N = 2300.0, 0.35, 1.0e4
 F_TARGET = 66.7233 / 2.0
-R_OUT = 50.0
+R_OUT = a.r_out      # the ground's zero-drop radius: 51.0 for the sec206 crown-on-top part
 LAM = E * NU / ((1 + NU) * (1 - 2 * NU)); MU = E / (2 * (1 + NU))
 
 d = np.load(a.mesh)
@@ -422,7 +422,7 @@ kmax = np.unravel_index(np.argmax(vm), vm.shape)
 
 rep = dict(
     m_columns=int(have.sum()),
-    mesh=a.mesh, faces=a.faces, n_tet=len(T), n_nodes=N, ndof=ndof, n_free=len(free),
+    mesh=a.mesh, faces=a.faces, n_tet=len(T), n_nodes=N, ndof=ndof, n_free=len(free), r_out=R_OUT,
     volume_half_mm3=vol, m_candidates=m, n_contact_tris=len(ctri),
     axle_drop_mm=delta, lowest_node_rise_mm=float(U[lowest, 1]),
     max_penetration_mm=float(pen.max()), contact_force_half_n=float(fc.sum()),

@@ -495,31 +495,6 @@ def test_the_crown_volume_agrees_with_quadrature():
         2324.240750, abs=1e-5)
 
 
-def test_the_crown_thins_the_rim_band_below_the_print_floor_over_45_percent_of_the_face():
-    """REGISTERING A MANUFACTURABILITY FACT THAT NOTHING ELSE IN THE TREE POLICES.
-
-    `wheel_fea.MIN_WALL_MM` is a floor on the thickness GENES -- it builds `GENE_SPACE`
-    (wheel_fea.py:261) -- and has never been a check on the rim band, which is a fixed
-    1.5 mm between two fixed constants.  So the crown thins that band with nothing going
-    red anywhere: 1.500 mm at the apex, 0.500 mm at the side faces, and below the 1.2 mm
-    print floor over 45.08% of the 22.4 mm face.
-
-    This test exists so the number is on the record rather than met on a print.  It is
-    DERIVED from the kernel, not transcribed, so raising `CROWN_HEIGHT_MM` moves it
-    instead of rotting it -- what would be wrong is a crown whose cost nobody wrote down.
-    """
-    band_at_edge = CROWN_RIM_OUTER - G.CROWN_HEIGHT_MM - W.RIM_RADIUS_MM
-    assert band_at_edge == pytest.approx(0.5, abs=1e-12)
-    assert band_at_edge < W.MIN_WALL_MM, (
-        "this test is about a band that falls BELOW the print floor; if the geometry has "
-        "changed so that it no longer does, delete the test rather than invert it")
-
-    span = G.crown_min_wall_span_mm(CROWN_W, CROWN_RIM_OUTER, W.RIM_RADIUS_MM,
-                                    W.MIN_WALL_MM)
-    assert span == pytest.approx(12.3031703, abs=1e-6)
-    assert 100.0 * (1.0 - span / CROWN_W) == pytest.approx(45.075, abs=1e-3)
-
-
 def test_the_min_wall_span_clamps_at_both_ends():
     """The span is a width of face and cannot leave [0, w].
 
@@ -533,3 +508,43 @@ def test_the_min_wall_span_clamps_at_both_ends():
                                     W.MIN_WALL_MM) == CROWN_W
     assert G.crown_min_wall_span_mm(CROWN_W, CROWN_RIM_OUTER, W.RIM_RADIUS_MM,
                                     W.MIN_WALL_MM, height_mm=1e-12) == CROWN_W
+
+
+def test_the_added_crown_volume_agrees_with_quadrature():
+    """`crown_added_volume_mm3` against a direct sweep of the material ABOVE the cylinder.
+
+    The closed form is a washer minus `crown_relief_volume_mm3` taken at the APEX radius;
+    this integrates `pi * (r(z)^2 - R_out^2)` with the arc's edges on `R_out` and its apex
+    at `R_out + h`.  A washer taken at the wrong radius, or the relief taken at `R_out`
+    instead of the apex, cannot survive both.  4736.533448 mm^3 is the circular SEGMENT
+    swept -- the other half of the rectangle the relief test above splits.
+    """
+    for h in (0.25, 1.0, 2.5):
+        r = G.crown_radius_mm(CROWN_W, h)
+        z = np.linspace(-0.5 * CROWN_W, 0.5 * CROWN_W, 1_000_001)
+        r_z = (CROWN_RIM_OUTER + h - r) + np.sqrt(r * r - z * z)
+        quad = math.pi * np.trapezoid(r_z ** 2 - CROWN_RIM_OUTER ** 2, z)
+        got = G.crown_added_volume_mm3(CROWN_W, CROWN_RIM_OUTER, h)
+        assert got == pytest.approx(quad, rel=1e-9), f"crown height {h}"
+    assert G.crown_added_volume_mm3(CROWN_W, CROWN_RIM_OUTER) == pytest.approx(
+        4736.533448, abs=1e-5)
+
+
+def test_the_crown_sits_on_the_full_band_and_clears_the_print_floor_across_the_face():
+    """§206: THE CROWN IS ADDED ON TOP, SO THE BAND'S THINNEST POINT IS THE UNCROWNED ONE.
+
+    `wheel_fea.MIN_WALL_MM` is a floor on the thickness GENES -- it builds `GENE_SPACE`
+    (wheel_fea.py:261) -- and has never been a check on the rim band, which is a fixed
+    1.5 mm between two fixed constants.  The cut crown this replaced thinned that band to
+    0.500 mm at the side faces, below the 1.2 mm floor over 45.08% of the 22.4 mm face,
+    with nothing red anywhere.  On top, the band is 1.500 mm at the side faces and 2.500
+    mm at the apex, and the whole face clears.  Pinned so that a crown moved back into the
+    band goes red here rather than on a print.
+    """
+    band_at_edge = CROWN_RIM_OUTER - W.RIM_RADIUS_MM
+    apex = CROWN_RIM_OUTER + G.CROWN_HEIGHT_MM
+    assert band_at_edge == pytest.approx(1.5, abs=1e-12)
+    assert apex - W.RIM_RADIUS_MM == pytest.approx(2.5, abs=1e-12)
+    assert band_at_edge >= W.MIN_WALL_MM
+    assert G.crown_min_wall_span_mm(CROWN_W, apex, W.RIM_RADIUS_MM,
+                                    W.MIN_WALL_MM) == CROWN_W

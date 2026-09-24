@@ -6,8 +6,8 @@ Builds a watertight B-rep solid of the full optimized wheel and writes it to
 `wheel.step` (+ a guaranteed-valid `wheel_nofillet.step` fallback) for import into
 Fusion 360 / Inventor / SolidWorks.
 
-  Full wheel = solid hub disk  +  12 spiral spokes  +  Ø100 rim band CROWNED
-  1 mm across its face, unioned into one solid, with true tangent fillets at
+  Full wheel = solid hub disk  +  12 spiral spokes  +  Ø100 rim band with a 1 mm
+  crown ON TOP (Ø102 apex), unioned into one solid, with true tangent fillets at
   the spoke↔hub and spoke↔rim junctions (radii = evolved R_hub / R_rim genes).
 
 RUN THIS IN THE CadQuery ENV (Python 3.12), e.g.:
@@ -81,11 +81,11 @@ from wheel_fea import (
 )
 # numpy-only, so it imports in the CAD env too — which is the point: `junction_bite` and
 # its floor have to be the same object the `make test` side checks the manifest against.
-# The crown names ride the same contract: this module CUTS the crown and the `make test`
+# The crown names ride the same contract: this module ADDS the crown and the `make test`
 # side checks the manifest's volume against the same closed form, so both must read one
 # constant rather than two copies that agree today.
 from wheel_geometry import (MIN_JUNCTION_BITE, junction_bite, CROWN_HEIGHT_MM,
-                            crown_radius_mm, crown_relief_volume_mm3)
+                            crown_radius_mm, crown_added_volume_mm3)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = PP.ROOT
@@ -129,11 +129,11 @@ RIM_OUTER_RADIUS_MM = 50.0     # Ø100 outer rim; spokes merge at RIM_RADIUS_MM 
 HUB_EMBED_RADIUS_MM = HUB_RADIUS_MM - 0.5            # 12.20 mm, just inside the hub disk
 RIM_EMBED_RADIUS_MM = RIM_OUTER_RADIUS_MM + 0.25     # 50.25 mm, clipped back to Ø100
 
-# How far past the OD the crown's cutting tool reaches.  A construction allowance, not a
-# design parameter: the tool has to swallow every point the crown removes, and the part
-# never reaches this radius, so nothing about the finished solid depends on the value.
-# 1.0 mm clears RIM_EMBED_RADIUS_MM's 0.25 four times over.  See `crown_rim`.
-CROWN_TOOL_CLEARANCE_MM = 1.0
+# How far INSIDE the OD the crown's fused tool starts.  A construction allowance, not a
+# design parameter: overlapping the solid 48.5-50.0 band keeps the union off a coincident
+# cylinder face, and the overlap is band either way, so nothing about the finished solid
+# depends on the value.  The same 0.25 RIM_EMBED_RADIUS_MM uses.  See `crown_rim`.
+CROWN_TOOL_EMBED_MM = 0.25
 N_OUTLINE_PTS       = 48       # interpolation pts per spoke edge (splined → smooth faces)
 # Vertical-edge screen: a junction edge wanders less than this in XY over its full
 # height.  This is a straightness tolerance, NOT a radial one — see `_junction_edges`
@@ -344,7 +344,7 @@ def _unit_tan(a, b):
 def spoke_profile(genes):
     """
     Closed PLANAR wire of one spoke.  Not a solid — the whole wheel is assembled in 2D
-    and extruded once at the end: the part is a prism until `crown_rim` relieves it, and
+    and extruded once at the end: the part is a prism until `crown_rim` crowns it, and
     every 3D construction it used to go through (solid booleans, the 3D fillet solver,
     a tangential outer-diameter trim) was a place to produce geometry OCC accepts and
     Parasolid does not.
@@ -573,55 +573,55 @@ def extrude_profile(face):
 
 
 def crown_rim(solid):
-    """Cut the transverse crown into the rim OD and return the relieved solid.
+    """Fuse the transverse crown ON TOP of the rim OD and return the grown solid (§206).
 
     THIS IS THE SECOND 3D OPERATION, AND IT IS WHAT STOPS THE PART BEING A PRISM.  The
     docstring above `extrude_profile` and the note at the head of `spoke_profile` both say
     the wheel is assembled in 2D and extruded once "because the part is a constant-section
     prism".  That was true until the crown: the rim's radius now varies along z, which is
     an axis the 2D assembly has no coordinate for.  Everything else still happens in 2D —
-    this runs last, on the finished solid, and takes material away rather than adding it.
+    this runs last, on the finished solid, and adds material outside the Ø100 OD.
 
-    The tool is the relief revolved about the axle: a section in the r-z half-plane bounded
-    below by the crown arc (three points — edge, apex, edge) and above by a radius clear of
-    the part, swept 360 degrees.  `cq.Workplane("XZ")` maps local (x, y) to global
-    (x, 0, y), so local x IS the radius and local y IS the axial station; `revolve` reads
-    its axis in LOCAL coordinates, which is why the axle is `(0,1,0)` here and not
-    `(0,0,1)` — passing the global spelling silently revolves about the wrong axis and
-    returns a half-space with an infinite bounding box rather than raising.
+    The tool is the crown revolved about the axle: a section in the r-z half-plane bounded
+    above by the crown arc (three points — edge at R50, apex at R50 + CROWN_HEIGHT_MM,
+    edge at R50) and below by CROWN_TOOL_EMBED_MM inside the OD, swept 360 degrees.
+    `cq.Workplane("XZ")` maps local (x, y) to global (x, 0, y), so local x IS the radius
+    and local y IS the axial station; `revolve` reads its axis in LOCAL coordinates, which
+    is why the axle is `(0,1,0)` here and not `(0,0,1)` — passing the global spelling
+    silently revolves about the wrong axis and returns a half-space with an infinite
+    bounding box rather than raising.
 
     IT RUNS AFTER THE FILLETS, AND THE ORDER IS LOAD-BEARING.  `_junction_edges` selects
     z-parallel edges that wander less than FILLET_TOL_MM in XY over their full height, and
     the family table at the head of this module — including `r = 50.0000 x 1 178.0 deg`,
     the OD trim seam — is what MIN_FILLET_WEDGE_DEG is calibrated against.  Crowning first
-    would destroy that seam, tilt every OD-touching edge out of the straightness test and
-    put the selection outside its own calibration.  Crowning last leaves the entire 2D
-    pipeline — fuse, planar OD clip, edge classification, fillets — reading exactly the
-    geometry it was measured on.
+    would bury that seam under the tool and put the selection outside its own calibration.
+    Crowning last leaves the entire 2D pipeline — fuse, planar OD clip, edge
+    classification, fillets — reading exactly the geometry it was measured on, and the tool
+    (r >= 49.75) never reaches a rim fillet (r <= 48.5).
 
-    THE APEX IS TANGENT TO THE CYLINDER IT REPLACES, which is the one thing worth watching:
-    a tangential boolean is where the old 3D `intersect(envelope)` left 0.87 mm3 slivers
-    per spoke (see `build_profile`).  Measured on the exact analytic case — a plain
-    48.5 -> 50.0 band over the full face — OCC removes 2324.2408 mm3 against the closed
-    form's 2324.2408, one valid solid, no slivers, and the bounding box stays
-    100 x 100 x 22.4.  That last is the check that the crown took material away and never
-    added any: `report` prints the box on every run and the frozen diameter is a
-    requirement, not a preference (`wheel_requirements.py:43`).
+    UNTIL §206 THIS WAS A CUT, apex at Ø100 and the side faces relieved to R49, which
+    thinned the band to 0.5 mm there; §205 measured that band at 1.14-1.79x allowable.
+    Now the band keeps its full 1.5 mm at the side faces and reaches 2.5 mm at the apex,
+    clearing `MIN_WALL_MM` over the whole face.
+    The Ø100 box gate became a Ø102 one: `test_export_contract.py` holds the part to
+    2(R50 + CROWN_HEIGHT_MM) x the same x 22.4, and that is the check the crown grew
+    outward by exactly its height and nowhere else.
 
-    HOW MUCH IT REMOVED IS NOT RETURNED, because the tool's own volume is not the answer:
-    it reaches past the part on purpose.  The caller measures the relief as a
-    before-minus-after difference of the SOLID, the way `fillets.volume_mm3` already is.
+    HOW MUCH IT ADDED IS NOT RETURNED, because the tool's own volume is not the answer:
+    it overlaps the band on purpose.  The caller measures it as an after-minus-before
+    difference of the SOLID, the way `fillets.volume_mm3` already is.
     """
-    inner = RIM_OUTER_RADIUS_MM - CROWN_HEIGHT_MM
-    clear = RIM_OUTER_RADIUS_MM + CROWN_TOOL_CLEARANCE_MM
+    inner = RIM_OUTER_RADIUS_MM - CROWN_TOOL_EMBED_MM
     tool = (cq.Workplane("XZ")
             .moveTo(inner, 0.0)
-            .threePointArc((RIM_OUTER_RADIUS_MM, 0.5 * SPOKE_WIDTH_MM), (inner, SPOKE_WIDTH_MM))
-            .lineTo(clear, SPOKE_WIDTH_MM)
-            .lineTo(clear, 0.0)
+            .lineTo(RIM_OUTER_RADIUS_MM, 0.0)
+            .threePointArc((RIM_OUTER_RADIUS_MM + CROWN_HEIGHT_MM, 0.5 * SPOKE_WIDTH_MM),
+                           (RIM_OUTER_RADIUS_MM, SPOKE_WIDTH_MM))
+            .lineTo(inner, SPOKE_WIDTH_MM)
             .close()
             .revolve(360.0, (0, 0, 0), (0, 1, 0)))
-    return solid.cut(tool)
+    return solid.union(tool)
 
 
 def _material_wedge_deg(classifier, x, y, z,
@@ -880,7 +880,7 @@ def despecialize(shape):
 
     REVOLUTION IS CONVERTED TOO, SINCE THE CROWN.  `crown_rim` replaces the Ø100 OD — a
     `Geom_CylindricalSurface` — with the crown's `Geom_SurfaceOfRevolution`, and OCC does
-    NOT recognise it as a torus: the arc's centre sits 13.22 mm the far side of the axle
+    NOT recognise it as a torus: the arc's centre sits 12.22 mm the far side of the axle
     while its own radius is 63.22, so the would-be torus is the degenerate self-crossing
     kind and OCC leaves it a generic surface of revolution.  With the old
     `revolution=False` that face survived into the STEP and `step_health` said so —
@@ -1140,7 +1140,7 @@ def report(part, genes, metrics, ghash, vol=None):
     print(f"  valid (OCC)      : {solid.isValid()}")
     print(f"  solid count      : {len(part.solids().vals())} (expect 1)")
     print(f"  bounding box     : {bb.xlen:.2f} × {bb.ylen:.2f} × {bb.zlen:.2f} mm "
-          f"(expect ≈ {2*RIM_OUTER_RADIUS_MM:.0f} × {2*RIM_OUTER_RADIUS_MM:.0f} × "
+          f"(expect ≈ Ø{2 * (RIM_OUTER_RADIUS_MM + CROWN_HEIGHT_MM):.0f} across × "
           f"{SPOKE_WIDTH_MM:.1f})")
     print(f"  volume           : {vol:.1f} mm³")
     opt_mass, opt_src = optimizer_spoke_mass(metrics)
@@ -1223,8 +1223,8 @@ def main(argv=None):
     # subtracted from each other.
     # BOTH SOLIDS ARE CROWNED, AND THAT IS WHAT KEEPS `fillets.volume_mm3` A FILLET.  The
     # difference below is only the material the fillets add while the crown is the same
-    # subtraction on both sides; crowning just the finished wheel would fold a 2324 mm³
-    # relief into a number whose whole job is to report ~3000 mm³ of fillet.
+    # addition on both sides; crowning just the finished wheel would fold 4737 mm³ of
+    # crown into a number whose whole job is to report ~3000 mm³ of fillet.
     nofillet_path = paths["nofillet"]
     nofillet = crown_rim(extrude_profile(profile))
     vol_nofillet = nofillet.val().Volume()
@@ -1264,29 +1264,29 @@ def main(argv=None):
                         (rim_fams, rim_found, rim_wedge))
 
     print("\n  Crowning the rim…")
-    # Measured as a before-minus-after on the SOLID, exactly as the fillet volume is: the
-    # tool's own volume is bigger than the relief because it reaches past the OD, so it is
-    # not the answer.  `crown_volume_closed_form_mm3` is the same quantity through the
+    # Measured as an after-minus-before on the SOLID, exactly as the fillet volume is: the
+    # tool's own volume is bigger than the crown because it overlaps the band, so it is
+    # not the answer.  `volume_added_closed_form_mm3` is the same quantity through the
     # other kernel — `wheel_geometry`'s closed form — and publishing both makes them a
-    # cross-check rather than one number printed twice.  They agreed to 0.0000 mm³ on the
-    # analytic band; on the real solid a DISAGREEMENT means the crown has eaten something
-    # it should not have, most likely the rim fillets, which is why this is published
-    # rather than asserted here.
+    # cross-check rather than one number printed twice.  On the real solid a DISAGREEMENT
+    # means the tool has reached something it should not have — the side faces, or past
+    # the band into a rim fillet — which is why this is published rather than asserted
+    # here, and the tests hold it.
     vol_uncrowned = wheel.val().Volume()
     wheel = crown_rim(wheel)
 
     # Measure BEFORE despecializing — see report()'s docstring.
     vol_true = wheel.val().Volume()
-    vol_crown = vol_uncrowned - vol_true
-    vol_crown_closed = crown_relief_volume_mm3(SPOKE_WIDTH_MM, RIM_OUTER_RADIUS_MM)
+    vol_crown = vol_true - vol_uncrowned
+    vol_crown_closed = crown_added_volume_mm3(SPOKE_WIDTH_MM, RIM_OUTER_RADIUS_MM)
     # Published so the frozen diameter is CHECKED and not just printed.  `report` has shown
     # the box since the first export and nothing ever read it, which was tolerable while the
     # part was a prism whose OD came straight from a 2D circle.  The crown is the first
-    # construction that could silently grow Ø100 — a sign slip in `crown_rim` would relieve
-    # the face OUTWARD — so the box stops being a diagnostic and becomes the gate.  Measured
-    # before despecialize, like the volumes, so the three describe the same solid.
+    # construction that grows the OD — to Ø102 at its apex since §206, and a slip in
+    # `crown_rim` could grow it further — so the box stops being a diagnostic and becomes
+    # the gate.  Measured before despecialize, like the volumes, so the three agree.
     bb_true = wheel.val().BoundingBox()
-    print(f"  crown removed    : {vol_crown:.2f} mm³ (closed form "
+    print(f"  crown added      : {vol_crown:.2f} mm³ (closed form "
           f"{vol_crown_closed:.2f}, {vol_crown - vol_crown_closed:+.2f})")
     vol, valid = report(wheel, genes, metrics, rec["_hash"], vol=vol_true)
 
@@ -1335,20 +1335,20 @@ def main(argv=None):
         "fillets": {"hub_edges": hub_n, "rim_edges": rim_n,
                     "volume_mm3": round(vol - vol_nofillet, 2),
                     "detail": kt_rows},
-        # The transverse crown, published as its own subtraction for the same reason
-        # `fillets.volume_mm3` is (PLAN.md §14): the mesh does not model it AT ALL — it
-        # cannot, being plane-stress — so the mass budget in
+        # The transverse crown, published as its own addition for the same reason
+        # `fillets.volume_mm3` is (PLAN.md §14): the plane-stress mesh cannot model it, so
         # `test_total_mass_matches_the_step_manifest_within_the_embed_difference` has no
-        # way to account for 2324 mm³ that nothing published.  `volume_mm3` is OCC's
-        # before-minus-after; `volume_closed_form_mm3` is `wheel_geometry`'s exact
-        # integral.  Two kernels, one quantity.
+        # way to account for 4737 mm³ that nothing published.  `volume_added_mm3` is OCC's
+        # after-minus-before, `..._closed_form_mm3` `wheel_geometry`'s exact integral: two
+        # kernels, one quantity.  Renamed from `volume_mm3` at §206 (the cut's sign).
         "crown": {"height_mm": CROWN_HEIGHT_MM,
                   "radius_mm": round(crown_radius_mm(SPOKE_WIDTH_MM), 4),
-                  "volume_mm3": round(vol_crown, 2),
-                  "volume_closed_form_mm3": round(vol_crown_closed, 2),
+                  "volume_added_mm3": round(vol_crown, 2),
+                  "volume_added_closed_form_mm3": round(vol_crown_closed, 2),
                   "mass_g_pla": round(vol_crown * DENSITY_PLA, 3),
-                  "side_face_band_mm": round(
-                      RIM_OUTER_RADIUS_MM - CROWN_HEIGHT_MM - RIM_RADIUS_MM, 4)},
+                  "side_face_band_mm": round(RIM_OUTER_RADIUS_MM - RIM_RADIUS_MM, 4),
+                  "apex_band_mm": round(CROWN_HEIGHT_MM + RIM_OUTER_RADIUS_MM - RIM_RADIUS_MM,
+                                        4)},
         "profile_health": prof_health,
         "step_health": health,
     }
