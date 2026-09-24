@@ -34846,3 +34846,15 @@ scripts and a test file by name, and writes no clock time.
 **THE PREDICTION:** total stays **1658** and the human list **234**, identical row for row;
 `mentions` moves only on rows for files this record names. Baseline measured at `bf4a003` in
 a detached worktree before any edit: 1658 / 234.
+
+### 9. THE SWEEP PREDICTION, RESOLVED — **ZERO AGAINST A PREDICTED ZERO**
+
+```
+  predicted   total 1658 -> 1658  (0)      human 234 -> 234, identical row for row
+  measured    total 1658 -> 1658  (0)      human 234 -> 234, IDENTICAL ROW FOR ROW
+```
+
+Baseline measured at `bf4a003` in a detached worktree before any edit; re-measured after the
+record's commit: identical in every citation column. `mentions` moved on **two** rows and only
+there — PLAN.md +1 and `tests/test_promotion.py` +1, the files this record names. The staged
+diff carried no `TOKEN` match, counted after the last edit.
