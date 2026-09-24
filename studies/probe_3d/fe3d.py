@@ -20,9 +20,18 @@ with a +/-1.5 mm window truncated the patch and read 1.5160 mm; the assertion be
 refuses any patch that comes within 0.1 mm of the window edge.
 
 usage: fe3d.py MESH.npz OUT.npz [--faces free|clamped_z] [--x0 0] [--x1 3]
-                                [--seed0 0.8] [--seed1 1.9]
+                                [--seed0 0.8] [--seed1 1.9] [--kinematics linear|svk]
   --faces clamped_z   u_z = 0 on the z = 0 face as well: exact plane strain for an
                       extrusion, the control that checks this code against the 2D kernel
+  --kinematics svk    St. Venant-Kirchhoff, `wheel_fem`'s law in 3D: Green-Lagrange strain,
+                      the same energy, contact on the reference surface through u_y alone.
+                      Solved AFTER the linear answer, from it, by full Newton on (u, delta):
+                      the consistent tangent plus the penalty Hessian, the service load as a
+                      bordered constraint (two solves per factor), Armijo backtracking on
+                      W + eps/2 int pen^2 - F delta.  Modified Newton on the linear K was
+                      tried first and diverged: at the linear answer the SVK residual is
+                      11-21x the load, the thin spokes' membrane strain that K has no term
+                      for.  Reports both drops.  PLAN.md sec204.
 """
 import sys, time, argparse, numpy as np, scipy.sparse as sp
 import pypardiso
@@ -35,6 +44,8 @@ ap.add_argument("--x1", type=float, default=3.0)
 ap.add_argument("--block", type=int, default=300)
 ap.add_argument("--seed0", type=float, default=0.8)
 ap.add_argument("--seed1", type=float, default=1.9)
+ap.add_argument("--kinematics", default="linear", choices=["linear", "svk"])
+ap.add_argument("--tol", type=float, default=1e-10)
 a = ap.parse_args()
 
 E, NU, EPS_N = 2300.0, 0.35, 1.0e4
@@ -97,6 +108,7 @@ def element_grads(idx):
 
 t0 = time.time()
 rows, cols, vals = [], [], []
+GW = []
 vol = 0.0
 CH = 20000
 for s in range(0, len(T), CH):
@@ -112,6 +124,8 @@ for s in range(0, len(T), CH):
     rows.append(np.repeat(dof, 30, axis=1).ravel().astype(np.int32))
     cols.append(np.tile(dof, (1, 30)).ravel().astype(np.int32))
     vals.append(Ke.reshape(len(idx), 900).ravel())
+    if a.kinematics == "svk":
+        GW.append((dof.ravel(), T[idx], G, wd))
 K = sp.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))),
                   shape=(ndof, ndof))
 del rows, cols, vals
@@ -242,17 +256,151 @@ for k in range(30):
 delta, uc = d1, uc1
 t_sec = time.time() - t0
 
+# ---- SVK: full Newton from the linear answer ----------------------------------------
+def svk_chunks(u, what):
+    """Yield per-chunk SVK quantities: 'W' energy, 'f' internal force, 'K' tangent."""
+    U = u.reshape(-1, 3)
+    for dofs, Te, G, wd in GW:
+        F = np.einsum("eai,eqaj->eqij", U[Te], G) + np.eye(3)
+        Eg = 0.5 * (np.einsum("eqki,eqkj->eqij", F, F) - np.eye(3))
+        trE = np.trace(Eg, axis1=-2, axis2=-1)
+        if what == "W":
+            yield np.sum(wd * (0.5 * LAM * trE ** 2 + MU * np.einsum("eqij,eqij->eq", Eg, Eg)))
+            continue
+        Sg = LAM * trE[..., None, None] * np.eye(3) + 2 * MU * Eg
+        if what == "f":
+            yield dofs, np.einsum("eq,eqik,eqkj,eqaj->eai", wd, F, Sg, G)
+            continue
+        # dP_iJ/dF_kL = delta_ik S_JL + lam F_iJ F_kL + mu (F_iM F_kM delta_JL + F_iL F_kJ)
+        Bf = np.einsum("eqim,eqam->eqai", F, G)
+        Ke = (LAM * np.einsum("eq,eqai,eqbk->eaibk", wd, Bf, Bf)
+              + MU * np.einsum("eq,eqbi,eqak->eaibk", wd, Bf, Bf)
+              + MU * np.einsum("eq,eqik,eqab->eaibk", wd, np.einsum("eqim,eqkm->eqik", F, F),
+                               np.einsum("eqaj,eqbj->eqab", G, G)))
+        Kg = np.einsum("eq,eqaj,eqjl,eqbl->eab", wd, G, Sg, G)
+        for i in range(3):
+            Ke[:, :, i, :, i] += Kg
+        yield dofs, Ke
+
+def svk_W(u):
+    return sum(svk_chunks(u, "W"))
+
+def svk_fint(u):
+    """Internal force of the SVK energy, [ndof]: f_a = sum_q w F S dN_a/dX."""
+    f = np.zeros(ndof)
+    for dofs, fe in svk_chunks(u, "f"):
+        f += np.bincount(dofs, fe.ravel(), minlength=ndof)
+    return f
+
+def svk_K(u):
+    r_, c_, v_ = [], [], []
+    for dofs, Ke in svk_chunks(u, "K"):
+        d30 = dofs.reshape(-1, 30)
+        r_.append(np.repeat(d30, 30, axis=1).ravel().astype(np.int32))
+        c_.append(np.tile(d30, (1, 30)).ravel().astype(np.int32))
+        v_.append(Ke.reshape(len(d30), 900).ravel())
+    return sp.csr_matrix((np.concatenate(v_), (np.concatenate(r_), np.concatenate(c_))),
+                         shape=(ndof, ndof))
+
+def potential(u, dlt):
+    """W + eps/2 int pen^2 - F delta: stationary in u AND delta exactly at equilibrium
+    under the service load, since d/d(delta) of the penalty term is the contact force."""
+    pen = contact_state(u[cdof], dlt)[1]
+    return svk_W(u) + 0.5 * EPS_N * np.sum(pen * pen * wq) - F_TARGET * dlt
+
+svk_hist, t_svk = [], 0.0
+if a.kinematics == "svk":
+    t0 = time.time()
+    delta_lin = delta
+    rhs = np.zeros(len(free)); rhs[cpos] = contact_state(uc, delta)[2]
+    u = np.zeros(ndof); u[free] = solver.solve(Kup, rhs)
+    solver.free_memory(everything=True); del S
+    # frame indifference, the check a linear kernel would also pass for a SMALL rotation:
+    # a 30-degree rigid rotation must produce no force at all
+    th = np.radians(30.0); R = np.array([[np.cos(th), -np.sin(th), 0], [np.sin(th), np.cos(th), 0], [0, 0, 1]])
+    f_rot = np.abs(svk_fint((X @ R.T - X).ravel())).max()
+    f_lin = np.abs(K @ u).max()
+    assert f_rot < 1e-9 * f_lin, ("SVK force under a rigid rotation", f_rot, f_lin)
+    # it must be the linear force to first order: halving u quarters the gap to K u
+    e1 = np.abs(svk_fint(1e-3 * u) - 1e-3 * (K @ u)).max()
+    e2 = np.abs(svk_fint(5e-4 * u) - 5e-4 * (K @ u)).max()
+    assert 3.9 < e1 / e2 < 4.1, ("SVK force is not K u + O(u^2)", e1, e2)
+    # and force, tangent and energy must be one function: central differences at u_lin.
+    # The error is truncation (the energy is quartic): on a 445k-DOF dev mesh it read
+    # 4.06e-1, 4.06e-3, 4.06e-5, 4.06e-7 (tangent) at hh 1e-2 .. 1e-5 -- exactly h^2.
+    v = np.random.default_rng(0).standard_normal(ndof) * 1e-2; v[fixed] = 0.0
+    hh = 1e-5
+    fd_f = (svk_fint(u + hh * v) - svk_fint(u - hh * v)) / (2 * hh)
+    Kt = svk_K(u)
+    e_K = np.abs(fd_f - Kt @ v).max() / np.abs(Kt @ v).max()
+    e_W = abs((svk_W(u + hh * v) - svk_W(u - hh * v)) / (2 * hh) - svk_fint(u) @ v) / abs(svk_fint(u) @ v)
+    assert e_K < 1e-5 and e_W < 1e-5, ("SVK tangent/energy inconsistent", e_K, e_W)
+    print(f'SVK checks: rigid 30 deg {f_rot:.2e} (K u {f_lin:.2e}); O(u^2) ratio {e1 / e2:.4f}; '
+          f'FD tangent {e_K:.1e}, FD energy {e_W:.1e}', flush=True)
+    del fd_f, v
+    Ef = sp.csr_matrix((np.ones(m), (cpos, np.arange(m))), shape=(len(free), m))   # E_C
+    for it in range(40):
+        fint = svk_fint(u)
+        g, pen, fc, act = contact_state(u[cdof], delta)
+        Rf = fint[free] - Ef @ fc
+        gd = fc.sum() - F_TARGET
+        res = np.sqrt(Rf @ Rf + gd * gd) / F_TARGET
+        if it > 0 and res < a.tol:
+            why = "residual"; svk_hist.append((it, float(res), float(delta), 0.0, 0.0, 0)); break
+        Ba = B[act]
+        Kc = EPS_N * (Ba.T @ sp.diags(wq[act]) @ Ba)                    # m x m
+        bd = EPS_N * (Ba.T @ wq[act]); sd = EPS_N * wq[act].sum()
+        A = (Kt if it == 0 else svk_K(u))[free][:, free] + Ef @ Kc @ Ef.T
+        Aup = sp.triu(A, format="csr"); del A
+        slv = pypardiso.PyPardisoSolver(mtype=2)
+        slv.factorize(Aup)
+        x = slv.solve(Aup, np.c_[-Rf, Ef @ bd])
+        slv.free_memory(everything=True); del Aup, slv
+        x1, x2 = x[:, 0], x[:, 1]
+        dd = (-gd + bd @ x1[cpos]) / (sd - bd @ x2[cpos])
+        du = x1 + dd * x2
+        # energy backtracking (Armijo), as wheel_fem.solve_nonlinear does
+        P0 = potential(u, delta); slope = Rf @ du + gd * dd
+        assert slope < 0, ("not a descent direction", slope)
+        # solve_nonlinear's second criterion: the residual norm has a roundoff floor that
+        # grows with the mesh (twin 7.5 clamped sat at 1.9e-9 for 35 steps, the drop fixed
+        # to 1e-12 from step 4), the energy increment does not.  The step it fires on is
+        # still TAKEN: it is a quadratic Newton step, and stopping before it left the dev
+        # mesh's drop 1.4e-9 short
+        dE0 = -slope if it == 0 else dE0
+        last = -slope <= 1e-14 * dE0
+        alpha, nb = 1.0, 0
+        while True:
+            ut = u.copy(); ut[free] += alpha * du
+            if potential(ut, delta + alpha * dd) <= P0 + 1e-4 * alpha * slope or nb >= 20:
+                break
+            alpha *= 0.5; nb += 1
+        u, delta = ut, delta + alpha * dd
+        svk_hist.append((it, float(res), float(delta), float(alpha * dd),
+                         float(alpha * np.abs(du).max()), nb))
+        print(f'  svk {it:2d}  |R|/F {res:.3e}  drop {delta:.12f}  d(drop) {alpha * dd:+.3e}  '
+              f'max|du| {alpha * np.abs(du).max():.3e}  alpha {alpha:g}  active {act.sum()}  '
+              f'({time.time() - t0:.0f}s)', flush=True)
+        if last:
+            why = "energy"; break
+    else:
+        raise RuntimeError("SVK Newton did not converge")
+    print(f'  svk {it:2d}  |R|/F {res:.3e}  converged ({why})', flush=True)
+    uc = u[cdof]
+    t_svk = time.time() - t0
+
 # ---- recover the full field and report ---------------------------------------------
 g, pen, fc, act = contact_state(uc, delta)
 # the patch must sit strictly inside the candidate window, or it was truncated
 xe0, xe1 = xq.min(), xq.max()
 assert xq[act].min() > xe0 + 0.1 and xq[act].max() < xe1 - 0.1, ('PATCH TRUNCATED', xq[act].min(), xq[act].max(), xe0, xe1)
-rhs = np.zeros(len(free)); rhs[cpos] = fc
-uf = solver.solve(Kup, rhs)
-u = np.zeros(ndof); u[free] = uf
+if a.kinematics == "linear":
+    rhs = np.zeros(len(free)); rhs[cpos] = fc
+    uf = solver.solve(Kup, rhs)
+    u = np.zeros(ndof); u[free] = uf
 U = u.reshape(-1, 3)
 assert np.abs(U[cnodes, 1] - uc).max() < 1e-9 * np.abs(uc).max()
-reac = (K @ u)
+reac = (K @ u) if a.kinematics == "linear" else svk_fint(u)
 hub_fy = reac[3 * TIE + 1].sum()
 lowest = cnodes[np.argmin(X[cnodes, 1])]
 
@@ -263,6 +411,10 @@ G, wd = element_grads(near)
 gu = np.einsum("eai,eqaj->eqij", U[T[near]], G)
 eps = 0.5 * (gu + np.swapaxes(gu, -1, -2))
 sig = LAM * np.trace(eps, axis1=-2, axis2=-1)[..., None, None] * np.eye(3) + 2 * MU * eps
+if a.kinematics == "svk":             # Cauchy: F S F^T / det F, as `wheel_fem` reports it
+    F = gu + np.eye(3); Eg = 0.5 * (np.swapaxes(F, -1, -2) @ F - np.eye(3))
+    Sg = LAM * np.trace(Eg, axis1=-2, axis2=-1)[..., None, None] * np.eye(3) + 2 * MU * Eg
+    sig = F @ Sg @ np.swapaxes(F, -1, -2) / np.linalg.det(F)[..., None, None]
 dev = sig - np.trace(sig, axis1=-2, axis2=-1)[..., None, None] * np.eye(3) / 3
 vm = np.sqrt(1.5 * np.einsum("eqij,eqij->eq", dev, dev))
 xqp = np.einsum("qa,eai->eqi", QN, X[T[near]])
@@ -281,6 +433,9 @@ rep = dict(
     vm_max_mpa=float(vm.max()), vm_max_at=xqp[kmax].tolist(),
     secant=hist, t_assemble=t_asm, t_factor=t_fact, t_condense=t_cond, t_secant=t_sec,
     t_total=time.time() - t_start)
+if a.kinematics == "svk":
+    rep.update(kinematics="svk", axle_drop_linear_mm=delta_lin,
+               svk_ratio=delta / delta_lin, svk_passes=svk_hist, svk_converged=why, t_svk=t_svk)
 for k, v in rep.items():
     print(f"  {k:24s} {v}")
 np.savez(a.out, u=u, rep=np.array([repr(rep)]))

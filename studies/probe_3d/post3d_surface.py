@@ -18,6 +18,10 @@ for tag in sys.argv[1:]:
     G = np.einsum("paj,epji->epai", dNn, np.linalg.inv(J))
     gu = np.einsum("eai,epaj->epij", U[T[sel]], G); eps = 0.5*(gu+np.swapaxes(gu,-1,-2))
     sig = LAM*np.trace(eps, axis1=-2, axis2=-1)[..., None, None]*np.eye(3) + 2*MU*eps
+    if "'kinematics': 'svk'" in str(np.load(res)["rep"][0]):      # Cauchy, as fe3d.py reports
+        F = gu + np.eye(3); Eg = 0.5*(np.swapaxes(F, -1, -2) @ F - np.eye(3))
+        Sg = LAM*np.trace(Eg, axis1=-2, axis2=-1)[..., None, None]*np.eye(3) + 2*MU*Eg
+        sig = F @ Sg @ np.swapaxes(F, -1, -2) / np.linalg.det(F)[..., None, None]
     dev = sig - np.trace(sig, axis1=-2, axis2=-1)[..., None, None]*np.eye(3)/3
     vm = np.sqrt(1.5*np.einsum("epij,epij->ep", dev, dev))
     on = np.isin(T[sel], np.unique(OD))
