@@ -34632,3 +34632,217 @@ Baseline measured at `75e5e69` in a detached worktree before any edit; re-measur
 `wheel_requirements`, `study_deflection_gci` and `_citation_sweep` +1 each — the modules the
 probe's docstring and this record name. The staged diff carried no `TOKEN` match, counted
 after the last edit.
+
+## §205 — 2026-09-24. §204's SUCCESSORS 0 AND 1, IN THE ORDER THE SECOND DECIDES THE FIRST: **THE EXPORTED, CROWNED PART's 3D SVK EIGHT-PHASE MEAN IS 2.0852 mm — 4.26% OVER THE 2.0 mm TARGET, INSIDE THE ±5% BAND BY 0.74% — SO THE DEFLECTION VERDICT IS: NO RE-DESCENT, NO RE-PRICING OF THE OBJECTIVE, BY A RULE FIXED BEFORE THE ANSWER EXISTED.** THE TREE's PLANE-STRESS FIGURE LANDS **BY CANCELLATION**: 3D PUTS THE MODELLED BODY 9.34% UNDER IT (§204), AND THE EXPORTED BODY WITH ITS CROWN IS **15.04% SOFTER THAN THAT BODY UNDER SVK**, SO THE PART SITS 4.43% ABOVE THE FIGURE THE OBJECTIVE SCORES. **THE CROWN's PRICE GROWS UNDER SVK AT ALL EIGHT PHASES, +0.55% TO +2.31% — MY REGISTERED 2% BAR FAILED AT TWO.** AND THE PART's BAND IS **OVER ALLOWABLE AT ALL SEVEN READABLE PHASES, 1.14x TO 1.79x**, WHICH IS NOW THE WORSE OF THE TWO REQUIREMENTS
+
+### 1. WHY THIS ORDER, AND WHAT RAN
+
+§204 §7.0 filed the deflection verdict as a decision among three routes, each of which
+re-descends the wheel, on a number measured for the MODELLED FLAT body. §204 §3 also wrote
+beside it that the exported part is 2.60–3.04% stiffer and the crown 16.3% softer, both at
+phase 0 under linear kinematics — and by arithmetic those carry the 1.8102 mm to about
+2.04 mm, INSIDE the band. A route chosen before §204 §7.1 ran would have been chosen for a
+body nobody prints. So §7.1 ran first, over all eight stencil phases rather than the two it
+named, because the objective's quantity is the eight-phase mean.
+
+**No code changed.** `studies/probe_3d` is byte-identical to `dce18e7` (checked by
+`git diff` before the queue, and the queue's copies' sha1 logged). No genome, loss,
+gradient, barrier or tracked artifact moved.
+
+**THE BODY.** `export/wheel.step` — sha1 `a24e3316…`, byte-identical to §202's `crown.step` —
+rotated +phi about z (`rot.py`), meshed at §202's ladder rung (h 2.0, hc 0.25, the default
+x ±4 mm box); phase 0 REUSES §202's own mesh file. `fe3d.py --faces free --kinematics svk`,
+eight serial solves, each under a 32 GiB `MemoryMax` scope: 467–741 s, 13.72–16.02 GiB peak.
+Every run closes equilibrium, hub reaction against contact resultant, to 2.2e-10 N or better.
+
+**REGISTERED BEFORE ANY CROWNED SVK SOLVE**, in the file the queue was launched beside:
+V1 (reproduction), Q10 (the crown/twin ratio carries to SVK), Q11 (the verdict quantity, two
+estimators, both inside the band), Q12 (the band), and a DECISION RULE — both estimators
+inside with ≥ 1% margin: no re-descent, no re-pricing; within 1% of an edge: one refinement
+rung first; outside: route (a) re-priced and chosen or refused. Three amendments followed,
+each timestamped before the result it bears on (§2, §4).
+
+### 2. TWO RUNS WERE REFUSED, AND THE REFUSAL WAS RIGHT
+
+The windows were §204's twin windows widened 1 mm each side. Phases 3.75 and 7.5 converged
+and were then REFUSED by `fe3d.py`'s PATCH TRUNCATED assertion (§202's guard): active points
+within 0.1 mm of the window edge — 3.75 at its left edge, 7.5 at both. No drop was recorded
+from either enters any figure below. **Amendment A** (before any
+other phase returned): the queue was stopped and re-run for all seven non-zero phases with the
+twin window widened 4 mm each side; nothing else changed.
+
+The refusal measured something: the crowned patch away from phase 0 is FAR longer than §202's
+2.2 mm at phase 0 — **7.9 to 10.2 mm at 3.75–11.25** — and at 3.75 it is **TWO patches**,
+x [−4.60, −2.19] and about [1.5, 4.24], with 3.73 mm of band lifted between them (nodal gap
+g < 0 on the OD). The refused 3.75 run's last pass — read only to explain the refusal — had its left lobe cut
+off by the window and sat 0.28% soft.
+
+```
+  phase   patch x (mm)          contact nodes outside the ±4 box
+   0.00   [+0.88, +3.05]        0
+   3.75   [-4.60, +4.24]  TWO   24     (3.73 mm gap)
+   7.50   [-5.72, +4.50]        53
+  11.25   [-5.24, +2.61]        35
+  15.00   [-4.09, +1.65]        3
+  18.75   [-2.79, +1.50]        0
+  22.50   [-1.58, +1.92]        0
+  26.25   [-0.32, +2.32]        0
+```
+
+Contact outside the box sits on OD triangles of 0.43–0.49 mm (median) against 0.25 inside — which is
+what **Amendment B** registered a control for (§4, Q13).
+
+### 3. V1 HOLDS; Q10 FAILS AT TWO PHASES, ONE-SIGNED AT ALL EIGHT
+
+```
+  phase   crowned lin   crowned SVK   R_lin     R_svk     R_svk/R_lin - 1   passes  stop
+   0.00   1.8299650     2.0617882     1.12843   1.15452   +2.312%           6       energy
+   3.75   2.0727875     2.3259441     1.12918   1.14702   +1.580%           8       residual
+   7.50   2.1584613     2.3927300     1.16513   1.17153   +0.550%           7       residual
+  11.25   2.0082490     2.2055424     1.15462   1.16311   +0.735%           6       residual
+  15.00   1.8252499     2.0006557     1.13621   1.14662   +0.917%           5       energy
+  18.75   1.6932084     1.8665027     1.12118   1.13569   +1.294%           5       energy
+  22.50   1.6476940     1.8325595     1.11438   1.13389   +1.751%           6       residual
+  26.25   1.6926992     1.8989434     1.12007   1.14430   +2.163%           6       residual
+
+  R = D_crowned_free / D_twin_free, same kinematics, both h 2.0; twin drops from §204 §3.
+  sum-ratio over eight: R_lin 1.13474, R_svk 1.15041
+```
+
+**V1 HOLDS**: phase 0's linear drop reproduces §202's 1.8299649515056868 on the same mesh
+file to **6.5e-14 relative** (PARDISO, never 0 ULP).
+
+**Q10 FAILS at phase 0 (+2.312%) and 26.25 (+2.163%)** against the registered 2%, and holds at
+the other six. **The miss has one sign at all eight phases**: the crowned part stiffens less
+under SVK than the twin does — eight-phase SVK/linear 1.1110 against the twin's 1.0958 — so the
+crown-plus-junction ratio is larger under the objective's kinematics than under linear. WHY is
+a **HYPOTHESIS**: the crowned patch is a narrow strip (z 9.95–11.19 at phase 0, the crown's
+apex) and its local indentation is the part of the drop SVK's membrane stiffening does not
+reach. No run separated it.
+
+### 4. Q11 HOLDS — AND THE RULE ASKED FOR TWO CONTROLS, BOTH OF WHICH HOLD
+
+```
+  estimator                                        mean, mm     vs 2.0 target   to +5% edge
+  (A) mean of the eight crowned SVK drops, h 2.0   2.07308      +3.654%         1.35%
+  (B) 1.8102 x R_svk (§204's 3D mean, carried)     2.08248      +4.124%         0.88%
+```
+
+**Q11 HOLDS: both inside [1.90, 2.10]**; the registered point estimate was 2.04 (+2.1%), carried on phase 0's LINEAR
+ratio; the eight-phase SVK ratio is 1.95% higher — 0.56% from R_lin's variation over phase
+(1.13474 against 1.12843) and 1.38% from SVK, which is Q10's miss. (A) is biased low by construction — the h 2.0
+twin reads 0.28–0.77% stiff away from phase 0 (§203 §3), which (B)'s ratio cancels.
+
+**(B) is 0.88% from the edge, inside the rule's 1% — so the rule fired.** Amendment B (after
+3.75 returned, before any later phase) and Amendment C (after all eight, before Q13 returned):
+
+```
+  Q13  phase 3.75, box x ±4 -> ±8 (771519 DOF, 1661 s, 21.19 GiB)   SVK 2.3259441 -> 2.3269620   +0.044%   (registered < 0.3%)
+                                                 lin 2.0727875 -> 2.0735797   +0.038%
+                                                 patch [-4.65, 4.26] -> [-4.69, 4.27]
+  Q14  phase 7.5, h 2.0 -> h 1.25 (917055 DOF, 1056 s, 22.79 GiB)   crowned SVK 2.3927300 -> 2.4037850   +0.462%
+       (default box, as §204 Q9's twin rung)     twin SVK (§204 Q9) 2.0423950 -> 2.0491404   +0.330%
+                                                 R_svk 1.17153 -> 1.17307                    +0.131%   (registered < 0.3%)
+```
+
+**Both hold.** Carried with its sign, the larger move (Q14's +0.131%) puts (B) at
+**2.08521 mm, +4.261%, 0.74% inside the edge.** And the two estimators agree once the
+mesh bias is removed from (A): (A) × Q14's crowned move (1.00462) is 2.08266, within 0.01% of
+(B) — two routes to one number, one through the twin's ratio form and one through the part's
+own absolute drops.
+
+**THE DECISION, BY THE RULE REGISTERED BEFORE THE ANSWER: THE EXPORTED PART MEETS
+`TARGET_DEFLECTION_MM` WITHIN `DEFLECTION_TOLERANCE`; THE OBJECTIVE IS NOT RE-PRICED AND THE
+WHEEL IS NOT RE-DESCENDED.** None of §204 §7.0's three routes is taken. Each one moves every
+committed loss to fix a number whose physical referent — the part — is already in its band.
+
+**WHY IT LANDS, AND WHY THAT IS NOT A CERTIFICATE FOR THE NEXT GENOME:**
+
+```
+  tree, 2D plane stress, SVK, 8-phase mean (the objective)            1.99676   -0.16%
+  x 0.90658   3D, modelled flat body (§204 Q8)                        1.8102    -9.49%
+  x 1.15041   exported body + crown, SVK (this section, R_svk)        2.0825
+  x 1.00131   Q14's ratio move                                        2.0852    +4.26%
+  part / tree                                                         1.04430
+```
+
+**The tree's figure is 4.43% LOW for the part it ships, and it lands in-band because that
+offset is smaller than the band's half-width.** The offset is the product of two things the
+objective does not model — 3D and the CAD layer's junctions and crown — measured for ONE
+genome, `b729e86`. It is not claimed to transfer: the junction share is geometry (§202 §2),
+and the crown's patch length varies 2.2–10.2 mm with the phase alone. **At this offset the
+band on the part is −9.03% to +0.55% on the tree's figure — a genome scoring above +0.55% of
+target would ship outside it.**
+That is written as the next section's successor 0 rather than fixed here, because the fix is a
+promotion-checklist item, not a loss.
+
+**WHAT IS NOT CLAIMED.** The part here is the exported NOMINAL geometry with isotropic
+E 2300 MPa and ν 0.35. The margin is 0.74% of target; a printed part whose effective modulus
+is 1% under nominal moves the drop by about that much, and FDM print-to-print stiffness is not
+measured anywhere in this tree. **So "the printed wheel is in its band" is NOT claimed; "the
+exported part, as the tree models its material, is" IS — and the one thing that would change
+the verdict is a measured print modulus, which only a printer can supply.**
+
+### 5. THE BAND ON THE PART, UNDER SVK — Q12's DIRECTION HOLDS, ITS SIZE MISSES
+
+`post3d_surface.py` on the eight crowned SVK fields, Cauchy stress at the OD-surface nodes:
+
+```
+  phase                  0.00    3.75    7.50   11.25   15.00   18.75   22.50   (26.25:
+  crowned part, SVK     38.66   44.68   39.40   39.51   37.35   33.81   28.37    peak at x -5.70,
+  / 25 MPa allowable    1.546   1.787   1.576   1.580   1.494   1.352   1.135    outside the box,
+  / 3D twin SVK (§204)  1.278   1.367   1.315   1.480   1.601   1.706     -      not read)
+```
+
+**Q12: at phase 0 the SVK band is 38.661 MPa against 35.574 linear on the same mesh file —
+1.087x.** The registered direction holds; the registered 1.02–1.08 misses by 0.7 points. The
+3.75 peak (x +0.80) sits in the 3.73 mm lifted gap between the two patches. Both controls
+re-read the peaks: 44.679 -> 44.677 on the ±8 box, 39.397 -> 39.377 at h 1.25 — **but the
+local size at every peak is 0.25 mm on every run**, so this is a reading at one local mesh,
+not a converged value (§202, §203 §5). **The part's band is over allowable at all seven
+readable phases, worst 1.79x** — against §204 §5's 1.31x for the modelled flat body. The crown
+raises the band 1.28–1.71x over the flat twin at the same phase.
+
+### 6. HEADLINES, AGAINST THEIR FALSIFIERS
+
+- **"The exported part's 3D SVK eight-phase mean is 2.0852 mm, inside the band"** — Q11 could
+  have put either estimator outside and put neither; Q13 and Q14 could each have moved it more
+  than 0.3% and moved it 0.044% and 0.131%. One refinement step at one phase, one box step at
+  another: the mesh bound is two rungs, not a ladder.
+- **"No re-descent, no re-pricing"** — a DECISION, taken by a rule registered before any
+  crowned SVK drop existed, and conditional on nominal material (§4).
+- **"The part sits 4.43% above the tree's figure"** — arithmetic from §204 Q8 and this
+  section's R_svk; one genome.
+- **"The crown's price grows under SVK"** — measured, one-signed at all eight phases, and
+  Q10's registered 2% bar failed at two; its cause is a HYPOTHESIS (§3).
+- **"The part's band is 1.14–1.79x allowable"** — seven readable phases, one local size, and
+  Q12's registered magnitude missed: a measurement of this part at this mesh.
+
+### 7. SUCCESSORS, RANKED
+
+0. **THE BAND DECISION — §203 SUCCESSOR 2, NOW THE BINDING REQUIREMENT.** Deflection is in its
+   band on the part; the band stress is not, at 1.14–1.79x on every readable phase, and the
+   crown is why it is that high. The decision §202 filed ("keep the crown?") now has both
+   prices on the part: the crown buys +15% of drop the objective never asked for and costs
+   1.28–1.71x of band stress. Removing it would put the part's deflection at or under §204's 1.81 mm
+   (the exported junctions stiffen, §202), OUT of band — so the crown cannot simply go, and the choice is between the crown's relief
+   and a rim that is thicker where the band peaks. Decide, with the local mesh at the peak
+   varied first (the §202 lesson).
+1. **A 3D DEFLECTION CHECK ON THE PROMOTION CHECKLIST.** The part/tree offset is +4.43% at one
+   genome; any promotion whose plane-stress SVK mean sits above +0.55% of target ships outside
+   the band at this offset. Cheapest form: the eight-phase crowned SVK run of this section,
+   ~75 min serial, as a checklist item for `tests/test_promotion.py`'s manual half — not a
+   test (it needs the third venv).
+2. **WHY THE CROWN's PRICE GROWS UNDER SVK** (§3's hypothesis) — one clamped crowned pair at
+   phase 0 separates the patch's local indentation from the band's membrane response.
+3. **§203 SUCCESSORS 1, 3–5, UNCHANGED.**
+
+### 8. THIS SECTION's OWN CITATIONS, LISTED AFTER THE SUCCESSORS (§174, §192 §11)
+
+**THIS SECTION CITES NO LINE IN ANY FILE.** It names commits (`dce18e7`), a genome hash
+(`b729e86`, by reference to §204), a STEP's sha1 prefix (`a24e3316`), modules, constants,
+scripts and a test file by name, and writes no clock time.
+
+**THE PREDICTION:** total stays **1658** and the human list **234**, identical row for row;
+`mentions` moves only on rows for files this record names. Baseline measured at `bf4a003` in
+a detached worktree before any edit: 1658 / 234.
