@@ -301,7 +301,7 @@ def test_wheel_pool_imports_without_jax():
 # THE CLAIM
 # ---------------------------------------------------------------------------
 
-def _pooled_equals_serial(**problem_kw):
+def _pooled_equals_serial(rim_outer=None, **problem_kw):
     """The comparison itself, so the two kinematics cannot drift into two standards.
 
     Extracted rather than copied for the same reason `_split_diffs` is imported from
@@ -321,13 +321,13 @@ def _pooled_equals_serial(**problem_kw):
                         WW.flank_orientation(genes, WW.get_config(cfg)))
     probe = (4.0, 30.0)
 
-    meshes = WO.phase_meshes(genes, cfg, phases, orientation=orientation)
-    serial = WO.t3_terms(genes, cfg, phases=phases, meshes=meshes,
+    meshes = WO.phase_meshes(genes, cfg, phases, orientation, rim_outer)
+    serial = WO.t3_terms(genes, cfg, phases=phases, meshes=meshes, rim_outer=rim_outer,
                          stress_p_probe=probe, **problem_kw)
     with WP.PhasePool(2) as pool:
         pooled = WO.t3_terms(genes, cfg, phases=phases, pool=pool,
                              orientation=orientation, stress_p_probe=probe,
-                             **problem_kw)
+                             rim_outer=rim_outer, **problem_kw)
 
     vdiffs, gdiffs = so3._split_diffs(serial, pooled)
     assert not vdiffs, (
@@ -457,3 +457,19 @@ def test_every_pool_pair_bounds_its_marks_and_admits_the_pool_measured_to_fit(
     assert WP.default_workers(8, "medium") == 3, "the pool measured to fit is refused"
     monkeypatch.setattr(WP, "_available_gib", lambda: 57.05)
     assert WP.default_workers(8, "coarse") == 4, "the pool measured to fit is refused"
+
+
+def test_a_pooled_evaluation_matches_the_serial_one_on_the_crown_standin():
+    """The same gate on CROWN_PLAN.md's stand-in band (Step 6).  The worker builds its own
+    mesh from the task, so a `rim_outer` lost on the way to it would solve the shipped
+    Ø100 band in the pool and the stand-in in the parent — no error, two wheels.  Serial
+    and pooled must agree to the bit on the stand-in, and the serial run must be ON it."""
+    import wheel_objective as WO
+    serial = _pooled_equals_serial(rim_outer=WO.CROWN_STANDIN["rim_outer"],
+                                   kinematics="svk")
+    base = WO.t3_terms(
+        np.array(list(json.load(open(os.path.join(HERE, "best_solution.json")))
+                      ["genes"].values()), dtype=float),
+        "smoke", phases=WO.phase_stencil(n_phase=2, scheme="uniform"), kinematics="svk")
+    assert serial["report"]["axle_drop_mean_mm"] < base["report"]["axle_drop_mean_mm"], (
+        "the stand-in's thicker band did not stiffen the wheel — it never reached a mesh")

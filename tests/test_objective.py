@@ -1571,3 +1571,70 @@ def test_t2_reads_the_same_mesh_t3_solves(genes, scheme):
         explicit["report"]["min_scaled_jacobian"], rel=1e-12), (
         f"T2's mesh fallback disagrees with `phase_meshes` on min_scaled_jacobian "
         f"under {scheme!r}")
+
+
+# ---------------------------------------------------------------------------
+# CROWN_PLAN.md STEP 6 — THE STAND-IN IS THREADED, AND THE DEFAULT PATH DID NOT MOVE
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def one_phase_default(genes):
+    """One `smoke` phase on the shipped band, no factor: the baseline Step 6 must not move."""
+    phases = WO.phase_stencil(n_phase=1, scheme="uniform")
+    return phases, WO.t3_terms(genes, CFG, phases=phases)
+
+
+def test_naming_the_shipped_band_is_the_default_call(genes, one_phase_default):
+    """`rim_outer=RIM_OUTER_RADIUS_MM` named and `rim_outer` omitted are ONE call, to the bit.
+
+    Step 6's premise is that threading the band moves nothing until someone names a
+    different one.  Values `==` and gradients `array_equal`: the two meshes are built by
+    the same `build_wheel` call, so anything short of identity is a second code path.
+    """
+    phases, base = one_phase_default
+    named = WO.t3_terms(genes, CFG, phases=phases, rim_outer=WW.RIM_OUTER_RADIUS_MM)
+    assert named["values"] == base["values"]
+    for k in base["grads"]:
+        assert np.array_equal(named["grads"][k], base["grads"][k]), k
+
+
+def test_the_drop_factor_scales_the_drop_and_nothing_else(genes, one_phase_default):
+    """`drop_factor` (R5 D2) multiplies the drop before anything aggregates it: the mean
+    and its gradient scale, the target is untouched, and the stress terms do not move."""
+    phases, base = one_phase_default
+    k = WO.CROWN_STANDIN["drop_factor"]
+    out = WO.t3_terms(genes, CFG, phases=phases, drop_factor=k)
+    rb, ro = base["report"], out["report"]
+    assert ro["axle_drop_mean_mm"] == rb["axle_drop_mean_mm"] * k
+    for key in ("pnorm_stress_agg_mpa", "stress_utilisation", "max_stress_mpa"):
+        assert ro[key] == rb[key], key
+    for term in ("stress", "stress_margin"):
+        assert out["values"][term] == base["values"][term], term
+    t = WO.TARGET_DEFLECTION_MM
+    w = WO.DEFAULT_WEIGHTS["deflection"]
+    assert out["values"]["deflection"] == pytest.approx(
+        w * ((rb["axle_drop_mean_mm"] * k - t) / t) ** 2, rel=1e-12)
+    # Per-phase rows stay the 2D solve's own figure: the factor is on the aggregate.
+    assert ro["rows"][0]["axle_drop_mm"] == rb["rows"][0]["axle_drop_mm"]
+
+
+def test_meshes_on_another_band_are_refused(genes):
+    """A half-threaded caller, meshes on the shipped band handed to a call that names the
+    stand-in, is refused before any solve, rather than scoring the band it was not asked to."""
+    phases = WO.phase_stencil(n_phase=1, scheme="uniform")
+    meshes = WO.phase_meshes(genes, CFG, phases)
+    with pytest.raises(ValueError, match="rim_outer"):
+        WO.t3_terms(genes, CFG, phases=phases, meshes=meshes,
+                    rim_outer=WO.CROWN_STANDIN["rim_outer"])
+
+
+def test_the_standin_band_is_the_band_the_meshes_are_built_on(genes):
+    """`phase_meshes(rim_outer=)` reaches `build_wheel`: the ground-contact nodes sit on the
+    stand-in's radius, not on the shipped Ø100 (the ground is placed from `mesh.rim_outer`,
+    `wheel_fem.solve_wheel_contact`, so a mesh that only CLAIMED the radius would pass a
+    check on the attribute alone)."""
+    r = WO.CROWN_STANDIN["rim_outer"]
+    mesh = WO.phase_meshes(genes, CFG, [0.0], rim_outer=r)[0]
+    od = np.asarray(mesh.coords)[np.asarray(mesh.node_sets["rim_outer"])]
+    assert mesh.rim_outer == r
+    assert np.allclose(np.hypot(od[:, 0], od[:, 1]), r, rtol=0, atol=1e-9)

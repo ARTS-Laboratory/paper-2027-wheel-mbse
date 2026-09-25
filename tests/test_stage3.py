@@ -868,9 +868,9 @@ def test_fidelity_check_evaluator_shares_the_pinned_orientation(genes, z0, monke
     seen = []
     real = WO.phase_meshes
 
-    def spy(g, cfg, phases, orientation=None):
+    def spy(g, cfg, phases, orientation=None, rim_outer=None):
         seen.append(orientation)
-        return real(g, cfg, phases, orientation=orientation)
+        return real(g, cfg, phases, orientation=orientation, rim_outer=rim_outer)
 
     monkeypatch.setattr(WO, "phase_meshes", spy)
     S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", verbose=False,
@@ -959,9 +959,9 @@ def test_every_mesh_a_step_builds_is_built_with_the_pinned_orientation(genes, z0
     seen = []
     real = WO.phase_meshes
 
-    def spy(g, cfg, phases, orientation=None):
+    def spy(g, cfg, phases, orientation=None, rim_outer=None):
         seen.append(orientation)
-        return real(g, cfg, phases, orientation=orientation)
+        return real(g, cfg, phases, orientation=orientation, rim_outer=rim_outer)
 
     monkeypatch.setattr(WO, "phase_meshes", spy)
     rec = S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", verbose=False)
@@ -1655,3 +1655,47 @@ def test_s13_records_the_memory_reading_that_sized_its_ladder(genes, monkeypatch
     # A pinned ladder says so, or a reading that does not reproduce it reads as a wrong one.
     pinned = so3.run_phase_pool(genes, CFG, n_phase=8, n_rep=1, worker_counts=[2])
     assert pinned["worker_counts"] == [2] and pinned["worker_counts_given"] is True
+
+
+def test_the_search_block_names_the_crown_standin_or_none():
+    """A genome descended on the stand-in is the optimum of a different wheel, and its
+    genes alone do not say so (CROWN_PLAN.md R5 D3).  None is the shipped band."""
+    assert S3.search_block(_Args, "l", 1)["crown_standin"] is None
+    blk = S3.search_block(_Args, "l", 1, crown_standin=WO.CROWN_STANDIN)
+    assert blk["crown_standin"] == WO.CROWN_STANDIN
+
+
+def test_the_crown_standin_switch_is_both_values_or_neither(monkeypatch):
+    """`--crown-standin` yields `WO.CROWN_STANDIN`'s two values together, and its absence
+    yields none: they splat into `descend` / `descend_lbfgsb` as keywords, so a missing
+    one would descend a thickened band without its factor (R5 D3)."""
+    import argparse
+    for argv, want in ((["wheel_stage3.py", "--crown-standin"], dict(WO.CROWN_STANDIN)),
+                       (["wheel_stage3.py"], {})):
+        monkeypatch.setattr(sys, "argv", argv)
+        _, sk = S3._parse_args(argparse.ArgumentParser())
+        assert sk == want
+    assert set(WO.CROWN_STANDIN) == {"rim_outer", "drop_factor"}
+
+
+def test_the_standin_reaches_the_run_record_off_the_evaluator():
+    """The run record reads the stand-in off the evaluator's own `problem_kw`, as it reads
+    the mission, so it says what reached the objective rather than what was asked for."""
+    ev = S3.Evaluator(CFG, **WO.CROWN_STANDIN)
+    assert S3._standin_settings(ev) == {"rim_outer_mm": WO.CROWN_STANDIN["rim_outer"],
+                                        "drop_factor": WO.CROWN_STANDIN["drop_factor"]}
+    assert S3._standin_settings(S3.Evaluator(CFG)) == {"rim_outer_mm": None,
+                                                        "drop_factor": None}
+
+
+def test_an_evaluator_on_the_standin_scores_the_standin(genes):
+    """The descent's own path, end to end: an `Evaluator` carrying the stand-in builds its
+    meshes on the stand-in's band (else `objective` refuses them) and scores what a direct
+    `t3_terms` on that band scores, factor included."""
+    low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+    phases = WO.phase_stencil(n_phase=1, scheme="uniform")
+    _, _, brk = S3.Evaluator(CFG, **WO.CROWN_STANDIN)(
+        wg.normalize(genes, low, high), low, high, phases=phases, tiers=("t3",))
+    direct = WO.t3_terms(genes, CFG, phases=phases, **WO.CROWN_STANDIN)
+    assert brk["report"]["axle_drop_mean_mm"] == pytest.approx(
+        direct["report"]["axle_drop_mean_mm"], rel=1e-12)

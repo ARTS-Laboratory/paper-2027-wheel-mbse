@@ -457,8 +457,8 @@ class Evaluator:
             # and not 0.0.  One build is a small price for a tier that then matches
             # exactly.
             wanted = phases[:1] if self.pool is not None else phases
-            meshes = WO.phase_meshes(genes, self.cfg, wanted,
-                                     orientation=self.orientation)
+            meshes = WO.phase_meshes(genes, self.cfg, wanted, self.orientation,
+                                     self.problem_kw.get("rim_outer"))
         self.mesh_s += time.time() - t0
 
         t0 = time.time()
@@ -806,7 +806,7 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
                      # MBSE_PLAN Step 3 these five can all be moved per run.  Read from
                      # the modules they would report the shipped mission for every run,
                      # which is precisely the failure §14 records for `kinematics`.
-                     **_requirement_settings(ev),
+                     **_requirement_settings(ev), **_standin_settings(ev),
                      "elapsed_s": round(time.time() - t_start, 1),
                      "orientation": [float(o) for o in (ev.orientation or ())],
                      "n_objective_calls": ev.n_calls,
@@ -1017,7 +1017,7 @@ def start_points(spec, genome="best_solution.json", elites="stage2_elites.json")
 
 
 def search_block(args, label, at_step, selection=None, req=None,
-                 requirements_file=None):
+                 requirements_file=None, crown_standin=None):
     """Search provenance for the `--best-out` record: which run produced this genome,
     and inside WHAT BOX.
 
@@ -1063,7 +1063,7 @@ def search_block(args, label, at_step, selection=None, req=None,
             # MBSE_PLAN Step 6 — an absent hash means "the shipped mission", never
             # "unknown".
             "req_hash": None if req is None else req.req_hash(),
-            "requirements_file": requirements_file,
+            "requirements_file": requirements_file, "crown_standin": crown_standin or None,
             # WHY this step and not the lowest-loss one.  Recorded next to the box for the
             # same reason the box is recorded: a promoted file that does not say which
             # rule chose it cannot be re-derived, and this rule replaced one that shipped
@@ -1171,7 +1171,7 @@ def main():
                          "and every number below is unchanged.")
     ap.add_argument("--out", default="stage3_run.json")
     ap.add_argument("--best-out", default="stage3_best.json")
-    args = ap.parse_args()
+    args, sk = _parse_args(ap)
 
     # `--min-wall` AND `--requirements` TOGETHER ARE REFUSED, not silently ordered.  The
     # floor sets 4 of the 14 genes at the optimum (`set_min_wall`'s own docstring), so
@@ -1244,7 +1244,7 @@ def main():
             if args.optimizer == "lbfgsb":
                 rec = descend_lbfgsb(z0, args.config, steps=args.steps,
                                      n_phase=args.n_phase, scheme=args.phase_scheme,
-                                     out=out, kinematics=args.kinematics, req=req)
+                                     out=out, kinematics=args.kinematics, req=req, **sk)
             else:
                 rec = descend(z0, args.config, steps=args.steps, lr=args.lr,
                               n_phase=args.n_phase, n_sub=args.n_sub,
@@ -1255,7 +1255,7 @@ def main():
                               log_every=args.log_every, out=out, workers=args.workers,
                               fidelity_check_every=args.fidelity_check_every,
                               fidelity_check_cfg=args.fidelity_check_config,
-                              kinematics=args.kinematics, req=req)
+                              kinematics=args.kinematics, req=req, **sk)
         except WW.MeshRefusedError as err:
             # NARROWER THAN THE TRIAL LOOP'S CATCH ON PURPOSE.  Only a genome refusal is
             # survivable here; a `KeyboardInterrupt`, a dead pool or a bad requirement set
@@ -1306,7 +1306,7 @@ def main():
         source="wheel_stage3.py",
         search=search_block(args, best["label"], best["best"]["step"],
                             selection=best["best"]["selection"], req=req,
-                            requirements_file=args.requirements),
+                            requirements_file=args.requirements, crown_standin=sk),
         loss_terms=best["best"]["terms"],
         metrics=best["best"]["report"],
         loss=best["best"]["loss"],
@@ -1315,6 +1315,42 @@ def main():
     )
     print(f"\nwrote {os.path.join(HERE, args.best_out)}  (genome_hash {h})")
     return 0
+
+
+# ---------------------------------------------------------------------------
+# THE CROWN STAND-IN — CROWN_PLAN.md Step 6, R5 D3
+# ---------------------------------------------------------------------------
+#
+# The stand-in's `rim_outer` and `drop_factor` ride `problem_kw`, the route `force` and
+# `target_deflection_mm` already take: `objective()` NAMES both, so they bind there and
+# never reach the solver, and every Evaluator -- `descend`'s, `descend_lbfgsb`'s and the
+# fidelity check's -- carries them with no code of its own.  The one place that needs them
+# by hand is `Evaluator.__call__`'s own mesh build, which reads `problem_kw["rim_outer"]`;
+# `objective` refuses meshes on a band other than the one it was named
+# (`WO._check_mesh_rim_outer`), so an evaluator that builds its own meshes and forgets it
+# cannot score the shipped band under a stand-in record.  Kept down here, and the call
+# sites edited in their own line count, so no line citation into this file moves.
+
+def _parse_args(ap):
+    """`(args, standin)`: `main`'s parse plus `--crown-standin`.
+
+    `standin` is `WO.CROWN_STANDIN`'s values when the switch is set and `{}` when not, so
+    it splats into `descend` / `descend_lbfgsb` as keywords and into `search_block` as the
+    record of which band this genome is the optimum of.  One switch, both values or none
+    (R5 D3): a band thickened without its factor scores a wheel nobody measured."""
+    ap.add_argument("--crown-standin", action="store_true",
+                    help="descend against CROWN_PLAN.md's crown stand-in: the 2D band "
+                         "thickened to WO.CROWN_STANDIN['rim_outer'] and the drop scaled "
+                         "by its 'drop_factor' (R5 D1-D3), applied together")
+    args = ap.parse_args()
+    return args, (dict(WO.CROWN_STANDIN) if args.crown_standin else {})
+
+
+def _standin_settings(ev):
+    """The stand-in that REACHED the objective, off the evaluator's own `problem_kw`, as
+    `_requirement_settings` reads the mission.  None is the shipped Ø100 band / no factor."""
+    kw = getattr(ev, "problem_kw", {}) or {}
+    return {"rim_outer_mm": kw.get("rim_outer"), "drop_factor": kw.get("drop_factor")}
 
 
 if __name__ == "__main__":

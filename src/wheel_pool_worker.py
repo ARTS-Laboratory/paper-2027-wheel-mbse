@@ -60,7 +60,7 @@ def run_phase(task):
     # `fillet=True` — PLAN.md §93/§103.  Must match `wheel_objective.phase_meshes`
     # exactly, or `test_pool.py`'s bit-identity gate compares two different meshes.
     mesh = WW.build_wheel(genes, cfg, phase_deg=float(task["phase"]),
-                          orientation=orientation, fillet=True)
+                          orientation=orientation, fillet=True, rim_outer=task["rim_outer"])
 
     qoi = ("pnorm_stress",
            lambda prob: WA._qoi_pnorm_stress(prob, p=task["stress_gauss_p"]))
