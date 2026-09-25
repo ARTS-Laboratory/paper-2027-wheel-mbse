@@ -1321,7 +1321,7 @@ def main():
 # THE CROWN STAND-IN — CROWN_PLAN.md Step 6, R5 D3
 # ---------------------------------------------------------------------------
 #
-# The stand-in's `rim_outer` and `drop_factor` ride `problem_kw`, the route `force` and
+# The stand-in's `rim_outer`, `drop_factor` and `band` ride `problem_kw`, the route `force` and
 # `target_deflection_mm` already take: `objective()` NAMES both, so they bind there and
 # never reach the solver, and every Evaluator -- `descend`'s, `descend_lbfgsb`'s and the
 # fidelity check's -- carries them with no code of its own.  The one place that needs them
@@ -1334,14 +1334,16 @@ def main():
 def _parse_args(ap):
     """`(args, standin)`: `main`'s parse plus `--crown-standin`.
 
-    `standin` is `WO.CROWN_STANDIN`'s values when the switch is set and `{}` when not, so
+    `standin` is `WO.CROWN_STANDIN`'s three values (the band, the drop factor and the band
+    term, R5 D3 / R6) when the switch is set and `{}` when not, so
     it splats into `descend` / `descend_lbfgsb` as keywords and into `search_block` as the
-    record of which band this genome is the optimum of.  One switch, both values or none
+    record of which band this genome is the optimum of.  One switch, all three or none
     (R5 D3): a band thickened without its factor scores a wheel nobody measured."""
     ap.add_argument("--crown-standin", action="store_true",
                     help="descend against CROWN_PLAN.md's crown stand-in: the 2D band "
                          "thickened to WO.CROWN_STANDIN['rim_outer'] and the drop scaled "
-                         "by its 'drop_factor' (R5 D1-D3), applied together")
+                         "by its 'drop_factor', with the band term priced (R5 D1-D6), "
+                         "applied together")
     args = ap.parse_args()
     return args, (dict(WO.CROWN_STANDIN) if args.crown_standin else {})
 
@@ -1350,7 +1352,8 @@ def _standin_settings(ev):
     """The stand-in that REACHED the objective, off the evaluator's own `problem_kw`, as
     `_requirement_settings` reads the mission.  None is the shipped Ø100 band / no factor."""
     kw = getattr(ev, "problem_kw", {}) or {}
-    return {"rim_outer_mm": kw.get("rim_outer"), "drop_factor": kw.get("drop_factor")}
+    return {"rim_outer_mm": kw.get("rim_outer"), "drop_factor": kw.get("drop_factor"),
+            "band": kw.get("band")}
 
 
 if __name__ == "__main__":

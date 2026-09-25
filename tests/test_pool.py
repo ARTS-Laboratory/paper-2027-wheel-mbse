@@ -463,13 +463,14 @@ def test_a_pooled_evaluation_matches_the_serial_one_on_the_crown_standin():
     """The same gate on CROWN_PLAN.md's stand-in band (Step 6).  The worker builds its own
     mesh from the task, so a `rim_outer` lost on the way to it would solve the shipped
     Ø100 band in the pool and the stand-in in the parent — no error, two wheels.  Serial
-    and pooled must agree to the bit on the stand-in, and the serial run must be ON it."""
+    and pooled must agree to the bit on the whole stand-in, the band term's QoI included,
+    and the serial run must be ON it."""
     import wheel_objective as WO
-    serial = _pooled_equals_serial(rim_outer=WO.CROWN_STANDIN["rim_outer"],
-                                   kinematics="svk")
+    serial = _pooled_equals_serial(**WO.CROWN_STANDIN, kinematics="svk")
     base = WO.t3_terms(
         np.array(list(json.load(open(os.path.join(HERE, "best_solution.json")))
                       ["genes"].values()), dtype=float),
         "smoke", phases=WO.phase_stencil(n_phase=2, scheme="uniform"), kinematics="svk")
     assert serial["report"]["axle_drop_mean_mm"] < base["report"]["axle_drop_mean_mm"], (
         "the stand-in's thicker band did not stiffen the wheel — it never reached a mesh")
+    assert "band_margin" in serial["values"], "the stand-in's band term never reached T3"

@@ -782,3 +782,78 @@ spokes at (1.5, 1), re-descends from a warm start, and records which one moved.
 Step 5's calibration needs only `build_wheel(rim_outer=)`, which exists, but its gradient check
 needs the threaded objective. **Unchanged:** the rim stays (1.5, 1.0). 0.5's coupons block
 Step 8's `s_zz` gate only. `b729e86` stays in `best_solution.json` until Step 8.
+
+### R6 — 2026-09-25. STEPS 6 AND 5 DONE. D4 IS REFUTED: THE 2D INNER FACE HAS A CORNER BESIDE EVERY SPOKE, AND THE BAND IS READ 0.5 mm CLEAR OF IT. THERE D5 PRICES (c_band SPREAD 1.185), THE TERM READS 55.9 AT `b729e86`, AND ITS GRADIENT OPPOSES THE DEFLECTION TERM's AT COSINE −0.990.
+
+**Step 6 (`b9aa118`).** The stand-in reaches `phase_meshes`, `t3_terms`, `objective`, the pool worker and both descents. Into the descents it rides `problem_kw`, the route `force` already takes. Every call site is edited in its own line count, and new code sits at the file ends.
+- **The default path did not move.** The full suite is green, including the requirements layer's bit-identity gate.
+- **On the stand-in the objective reproduces R4.** At the six held-out phases it gives R4's direct 2D solves exactly. Its predicted 3D mean is 1.31779 mm against the measured 1.31186 (+0.45%, as D2 registered).
+- **Two mutants go red.** Removing `rim_outer` from the pool worker breaks the pooled-equals-serial check. An Evaluator that builds meshes without it is refused by `objective`.
+- **Found, not acted on:** on the stand-in, junction utilisation falls from 0.953 to 0.756, under the 0.80 knee.
+- **The citation sweep's registered prediction missed on its instrument.** A 212-row first attempt was reflowed to 19 rows, every one anchored on a line the change edits in place. I predicted 11 with a `wheel_objective.py:N` grep. The difference is bare `:N` tokens carried from an earlier owner, which that grep cannot see. The 19 are left as they are (memory, §159): each still points at its line, with that line's new text.
+
+**Step 5. Instrument:** `studies/study_band_tension.py` → `study_band_tension.json`.
+- **What it solves:** 24 SVK service solves at `b729e86`, each keeping the RAW inner-face profile (`wheel_adjoint.band_face_profile`: hoop stress, x, y and distance to the nearest spoke junction, per element node). The 24 are the flat band and the stand-in at the eight stencil phases, at `coarse`, plus the stand-in at phases 0, 3.75 and 11.25 at `medium` and `fine`.
+- **Everything below is a reduction of those profiles.** The driver's first pass read maxima only and was overwritten. It is the d 0 row here, from solves that reproduce it to the printed digit.
+- Predictions were registered before the second pass, in the session scratchpad (`PREDICTIONS_step5b.txt`).
+
+**D4 — REFUTED.** At the face node beside a junction the tension climbs with refinement:
+
+```
+  stand-in, inner face, no exclusion     coarse    medium    fine      node's distance to the junction
+  phase 3.75  (x +2.125)                 27.05     30.43     36.35     0.188 / 0.117 / 0.067 mm
+  phase 0     (x -1.049)                 28.63     33.43     40.89
+  phase 11.25 (mid-span control)         19.75     20.35     20.20
+```
+
+- **The two junction phases climb, and the climb accelerates:** +12.5% then +19.4% at 3.75, +16.8% then +22.3% at 0. The node closes on the corner at each rung. The mid-span control moves −0.76% from medium to fine.
+- **This is §203's corner, on its tension side.** §203 says "the band's inner face meets each rim junction at a re-entrant corner that survives the fillet". D4 leaned on §199's compression-corner result and did not read that sentence.
+- **The corner node is the peak at four of the eight coarse phases** (0, 3.75, 22.5, 26.25). R3's 3D peaks at 0 and 3.75 sit about 1 mm further out, on the face node 1.154 mm from the junction.
+
+**THE EXCLUSION, FROM THE LADDER, AS D4's FALLBACK SAID. P6.1 IS REFUTED AS REGISTERED:** no exclusion d both keeps R3's 3D peaks in the read and moves ≤ 3% from medium to fine at all three ladder phases.
+
+```
+  d mm              0.25     0.50     0.75     1.00     1.25     1.50     2.00
+  m->f, phase 0    +12.04    -2.65    +6.16    -4.16    -7.09    -0.13    +3.28   %
+  m->f, phase 3.75  +0.26    -3.40    -3.40    -3.40    -3.40    +0.16    +1.11   %
+  reads 3D peaks     yes      yes      yes      yes      no       no       no     (the 1.154 node)
+```
+
+**DECIDED: d = 0.5 mm, on these grounds and not on the 3% bar, which it misses at 3.75 by 0.40 points.**
+1. The objective runs at `coarse`. There the face nodes sit 0.188, 1.154 and 2.12 mm from a junction, so every d from 0.25 to 1.0 drops exactly the corner node and nothing else. 0.5 leaves 0.31 mm and 0.65 mm to the nodes either side.
+2. Beyond it, the medium-to-fine moves are −2.65 / −3.40 / −0.76%, and non-monotone across d, where d 0 climbed 19–22%. **Hypothesis, not finding:** the scatter is where each mesh puts its first node on a stress that falls with distance from the corner. Three meshes cannot separate that from a slow climb.
+
+**D5 — PRICES, AND ITS "c_band > 1" HOLDS ONCE THE CORNER IS OUT.** Beyond 0.5 mm:
+
+```
+  phase          0.00   3.75   7.50   11.25  15.00  18.75  22.50  26.25
+  3D (R1)       26.72  33.80  29.83  28.41  26.49  24.17  21.01  19.97   MPa
+  2D stand-in   19.77  23.29  21.91  19.75  18.08  15.85  13.75  15.49   MPa, coarse, beyond 0.5 mm
+  c_band        1.352  1.452  1.361  1.439  1.465  1.525  1.528  1.289
+```
+
+- **Spread 1.185, under the 1.3 bar (P6.3 holds).** With no exclusion it was 1.717, and c_band was 0.933 and 0.888 at 0 and 26.25: the corner node made those phases read above the 3D figure.
+- **The priced factor is the max, 1.5277.**
+- **Control: c_flat is 1.273 / 1.393 at phases 0 / 3.75.** So plane stress alone under-reads the 3D inner-face tension about 1.3–1.4x on the part's own geometry, and the stand-in adds only 4–6% (c_band / c_flat 1.062 / 1.042). **Hypothesis, not finding:** the gap is the band's bending ACROSS the face, which R1's `s_zz` shows and plane stress cannot hold. That rests on one genome and one 3D rung.
+
+**D6.** `node_p` = 64, the smallest of 8 / 16 / 32 / 64 whose node p-norm is within 2% of the max at all eight phases: 1.3%, against 3.3% at 32 (P6.4 holds). The weight is `stress_margin`'s 89.21.
+- **At `b729e86` on the whole stand-in, in the objective: util_band 1.5917 and `band_margin` 55.912.** R5's registered 20–27 is refuted: it left out D5's max-c and the phase p-norm.
+- **A revised estimate, 46–56, was registered before the figure was computed, and it held.**
+- **The term over-reads the 3D worst phase (33.80 / 25 = 1.352) by 17.7%:** 5.2% from the max-c (1.5277 against 3.75's 1.452) and 11.7% from the eight-phase p-norm at `stress_phase_p` 8. Conservative by construction, as D5 decided, and the size is now on the record.
+
+**THE HEADLINE TRADE: cos(∇band_margin, ∇deflection) = −0.990.**
+- Softening the spokes, which the target needs, raises the band's tension. Every thickness gene's band gradient is negative, and its deflection gradient positive.
+- At the start the band's gradient is 0.0715x the deflection's in norm. P7.1 below quotes 0.076, which is the t2 component alone.
+- Recorded and not acted on, as D6 said.
+
+**Registered for Step 7, before any descent (P7.1):** the descent lands SHORT of the target, at a predicted-3D eight-phase mean of 1.90–1.97 mm. The crude linear estimate is 1.92, from the gradient ratio and both terms' shapes. **Below 1.90 fails Step 8's window by construction.** That would mean the band's price, not the stand-in, sets the drop, and it goes back as a trade to decide: the band's knee or weight against the target.
+
+**A DEVIATION FROM R5 D6, RECORDED:** the band term is NOT in `OBJECTIVE_TERMS` or `DEFAULT_WEIGHTS`. That tuple is the requirements layer's list of priority axes (`wheel_requirements.priority_axes`), and a new axis reshapes its SHOULD rows, reference deviations and weight derivation, which Step 5 did not ask for. The term exists only where the stand-in is: `WO.CROWN_STANDIN["band"]` is its third value, and `--crown-standin` applies all three. With `band` None the breakdown is unchanged.
+
+**Pinned by:**
+- `test_gradient.py`: the band QoI's adjoint against a central difference on `t3`.
+- `test_objective.py`: the term absent unless named, and priced as `stress_margin` when it is.
+- `test_pool.py`: pooled equals serial to the bit on the whole stand-in, band term included.
+- `test_stage3.py`: the switch is all three values or none, and the run record reads the stand-in off the evaluator.
+
+**Scope:** one genome, SVK, the service load, 2D `coarse` for the calibration, the ladder at three phases on the stand-in only. The 3D figures are R1 / R3's: one 3D rung, nodal values.

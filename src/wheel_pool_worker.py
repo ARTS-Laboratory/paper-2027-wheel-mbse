@@ -64,9 +64,9 @@ def run_phase(task):
 
     qoi = ("pnorm_stress",
            lambda prob: WA._qoi_pnorm_stress(prob, p=task["stress_gauss_p"]))
-    hub_qoi, rim_qoi = WO._region_qois(mesh)
+    hub_qoi, rim_qoi, *bq = WO._region_qois(mesh) + WO._band_qoi(mesh, task["band"])
     o = WA.service_qoi_value_and_grad(
-        genes, cfg, (qoi, hub_qoi, rim_qoi), force=task["force"], mesh=mesh,
+        genes, cfg, (qoi, hub_qoi, rim_qoi, *bq), force=task["force"], mesh=mesh,
         delta0=task["delta0"], **task["problem_kw"])
 
     meta = o["_meta"]
@@ -82,7 +82,7 @@ def run_phase(task):
                              "grad": o["rim_region_pnorm"]["grad"]},
         "_meta": {k: meta[k] for k in ("max_stress_mpa", "contact_force_n",
                                        "rim_band_od_vm_mpa")},
-        "_probe": probe,
+        "_probe": probe, **WO._band_leaf(o, task["band"]),
     }
 
 

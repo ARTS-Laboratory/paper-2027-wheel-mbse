@@ -1115,7 +1115,7 @@ def _pnorm_and_grad(values, grads, p):
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
              force=SERVICE_FORCE_N, target_deflection_mm=None, rim_outer=None,
              allowable_stress_mpa=None, stress_phase_p=8.0, warm=None, drop_factor=None,
-             stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None,
+             stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None, band=None,
              orientation=None, span_mm=W.S, flanks=None, **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
 
@@ -1203,16 +1203,16 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
         {"genes": np.asarray(genes, dtype=float), "cfg": cfg, "phase": float(p),
          "orientation": orientation, "force": force, "rim_outer": _rim_outer(rim_outer),
          "delta0": None if warm is None else warm[i],
-         "stress_gauss_p": stress_gauss_p, "probe_p": tuple(probe_p),
+         "stress_gauss_p": stress_gauss_p, "probe_p": tuple(probe_p), "band": band,
          "problem_kw": problem_kw}
         for i, p in enumerate(phases)])
 
     pn_hub, pgrads_hub, pn_rim, pgrads_rim = [], [], [], []
     for i, p in enumerate(phases):
         if pooled is None:
-            hub_qoi, rim_qoi = _region_qois(meshes[i])
+            hub_qoi, rim_qoi, *bq = _region_qois(meshes[i]) + _band_qoi(meshes[i], band)
             o = WA.service_qoi_value_and_grad(
-                genes, cfg, (qoi, hub_qoi, rim_qoi), force=force, mesh=meshes[i],
+                genes, cfg, (qoi, hub_qoi, rim_qoi, *bq), force=force, mesh=meshes[i],
                 delta0=None if warm is None else warm[i], **problem_kw)
             # The same field the adjoint above differentiated, at a different exponent.
             probes = _probe_values(o["_meta"]["prob"], o["_meta"]["res"]["u"], probe_p)
@@ -1234,7 +1234,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                      "max_stress_mpa": float(o["_meta"]["max_stress_mpa"]),
                      "contact_force_n": float(o["_meta"]["contact_force_n"]),
                      "rim_band_od_vm_mpa": float(o["_meta"]["rim_band_od_vm_mpa"]),
-                     "coupling_frac": float(
+                     **_band_row(o, band), "coupling_frac": float(
                          np.linalg.norm(o["pnorm_stress"]["coupling_grad"])
                          / max(np.linalg.norm(o["pnorm_stress"]["grad"]), 1e-30))})
 
@@ -1385,7 +1385,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                          "stress_utilisation_kt": kt_max * a_v / allowable_stress_mpa,
                          "pnorm_stress_mpa": [float(x) for x in probe_pn[v]]}
 
-    return {
+    return _with_band({
         "values": {"deflection": float(deflection), "stress": float(stress),
                    "stress_margin": float(stress_margin),
                    "phase_ripple": float(phase_ripple)},
@@ -1423,7 +1423,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "allowable_stress_mpa": float(allowable_stress_mpa),
                    "service_force_n": float(force),
                    "n_phase": n, "rows": rows, **_rim_band(rows, allowable_stress_mpa)},
-    }
+    }, rows, band, allowable_stress_mpa, stress_phase_p)
 
 
 # ---------------------------------------------------------------------------
@@ -1764,7 +1764,86 @@ def _scaled_drops(drops, dgrads, drop_factor):
 #                ratio only; this carries the plane-stress -> 3D offset and the exported
 #                junctions' stiffening (R5 D2).  Predicted at `b729e86` on the stand-in:
 #                0.88867 x 1.48280 = 1.31773 mm against the measured 1.31186 (+0.45%).
+#   band         the band term (Step 5, R5 D4-D6 as amended by R6), all four from
+#                `study_band_tension.json`: `exclude_mm` 0.5 drops the one coarse face
+#                node beside each junction (0.188 mm off it; the next is 1.154) where the
+#                tension is a corner reading -- 27.05 / 30.43 / 36.35 MPa coarse / medium /
+#                fine at phase 3.75 -- and keeps the node R3's 3D peaks map to (1.154).
+#                `c_band` 1.5277 is the max over the eight phases of R1's 3D inner-face
+#                tension over the stand-in's 2D max beyond 0.5 mm (spread 1.185, under D5's
+#                1.3).  `node_p` 64 is the smallest of 8 / 16 / 32 / 64 whose p-norm is
+#                within 2% of that max at every phase (1.3%).  `weight` is `stress_margin`'s
+#                exchange rate, copied at import.  At `b729e86`: util 1.592, term 55.9 --
+#                17.7% over the 3D worst phase's 1.352, by the max-c (5%) and the phase
+#                p-norm at `stress_phase_p` 8 (11.7%), conservative by construction.
 CROWN_STANDIN = {
     "rim_outer": W.RIM_RADIUS_MM + 2.144207067698175,
     "drop_factor": 0.8886724512251485,
+    "band": {"weight": DEFAULT_WEIGHTS["stress_margin"], "c_band": 1.5276838666230264,
+             "node_p": 64.0, "exclude_mm": 0.5},
 }
+
+
+# ---------------------------------------------------------------------------
+# THE BAND TERM — CROWN_PLAN.md Step 5, decided at R5 D4-D6
+# ---------------------------------------------------------------------------
+#
+# `band` is None (no term, no QoI, nothing in the breakdown: every committed number is
+# the call it always was) or `{"weight", "c_band", "node_p", "exclude_mm"}`, and it is `CROWN_STANDIN`'s
+# third value.  It rides `problem_kw` into `t3_terms`, which names it, so it never reaches
+# the solver.  NOT IN `OBJECTIVE_TERMS` OR `DEFAULT_WEIGHTS`, against R5 D6's wording:
+# that tuple is the requirements layer's priority-axis list (`wheel_requirements.
+# priority_axes`), and adding an axis reshapes its SHOULD rows, reference deviations and
+# weight derivation, which Step 5 did not ask for.  The term exists where the stand-in is.
+
+def _band_qoi(mesh, band):
+    """`()`, or the one QoI the band term needs, appended to T3's by both the serial loop
+    and `wheel_pool_worker.run_phase` -- one definition, `_region_qois`' reason."""
+    if band is None:
+        return ()
+    return (("band_tension", lambda prob: WA._qoi_band_tension(
+        prob, *WA.band_inner_pairs(prob, mesh, band["exclude_mm"]), p=band["node_p"])),)
+
+
+def _band_leaf(o, band):
+    """The band QoI's leaves off a solve, for the pool's reply."""
+    if band is None:
+        return {}
+    return {"band_tension": {"value": o["band_tension"]["value"],
+                             "grad": o["band_tension"]["grad"]}}
+
+
+def _band_row(o, band):
+    """The phase row's band fields; `_band_grad` is taken back out by `_with_band`."""
+    if band is None:
+        return {}
+    return {"band_tension_pnorm_mpa": float(o["band_tension"]["value"]),
+            "_band_grad": np.asarray(o["band_tension"]["grad"])}
+
+
+def _with_band(out, rows, band, allowable_stress_mpa, stress_phase_p):
+    """`t3_terms`' return, plus `band_margin` when `band` is given (R5 D6).
+
+        util_band    = c_band * phase_pnorm(node_pnorm(sigma_tt+)) / allowable
+        band_margin  = soft_barrier(util_band - MARGIN_KNEE_UTIL, weight)
+
+    `stress_margin`'s form and knee, phase-aggregated by the same `_pnorm_and_grad` the two
+    junction terms use.  No wall (decision 0.3: the band is priced, not forbidden).  `c_band`
+    calibrates the stand-in's 2D tension to the crowned part's 3D reading (D5), read beyond
+    `exclude_mm` of every spoke junction, where the 2D face has a corner (R6)."""
+    if band is None:
+        return out
+    grads = [r.pop("_band_grad") for r in rows]
+    agg, dagg = _pnorm_and_grad(np.asarray([r["band_tension_pnorm_mpa"] for r in rows]),
+                                np.asarray(grads), stress_phase_p)
+    util = band["c_band"] * agg / allowable_stress_mpa
+    d_util = band["c_band"] * dagg / allowable_stress_mpa
+    out["values"]["band_margin"] = float(soft_barrier(util - MARGIN_KNEE_UTIL,
+                                                      band["weight"]))
+    out["grads"]["band_margin"] = (2.0 * band["weight"] * max(0.0, util - MARGIN_KNEE_UTIL)
+                                   * d_util)
+    out["report"].update({"band_tension_agg_mpa": float(agg),
+                          "band_utilisation": float(util),
+                          "band_c": float(band["c_band"]),
+                          "band_node_p": float(band["node_p"])})
+    return out

@@ -1638,3 +1638,27 @@ def test_the_standin_band_is_the_band_the_meshes_are_built_on(genes):
     od = np.asarray(mesh.coords)[np.asarray(mesh.node_sets["rim_outer"])]
     assert mesh.rim_outer == r
     assert np.allclose(np.hypot(od[:, 0], od[:, 1]), r, rtol=0, atol=1e-9)
+
+
+def test_the_band_term_is_absent_unless_named_and_priced_as_stress_margin_when_it_is(
+        genes, one_phase_default):
+    """R5 D6: `band` None adds nothing to the breakdown; given, `band_margin` is
+    `stress_margin`'s soft barrier on c_band x the phase p-norm of the node p-norm over the
+    allowable, and its per-phase value rides the rows without its gradient."""
+    phases, base = one_phase_default
+    assert "band_margin" not in base["values"] and "band_utilisation" not in base["report"]
+    band = {"weight": 10.0, "c_band": 2.0, "node_p": 8.0, "exclude_mm": 0.0}
+    out = WO.t3_terms(genes, CFG, phases=phases, band=band)
+    rep = out["report"]
+    row = rep["rows"][0]
+    assert "_band_grad" not in row
+    agg, _ = WO._pnorm_and_grad(np.asarray([row["band_tension_pnorm_mpa"]]),
+                                np.zeros((1, 14)), 8.0)
+    util = band["c_band"] * agg / WO.ALLOWABLE_STRESS_MPA
+    assert rep["band_utilisation"] == pytest.approx(util, rel=1e-12)
+    assert out["values"]["band_margin"] == pytest.approx(
+        band["weight"] * max(0.0, util - WO.MARGIN_KNEE_UTIL) ** 2, rel=1e-12)
+    assert util > WO.MARGIN_KNEE_UTIL, "the fixture must sit above the knee to test a price"
+    assert np.linalg.norm(out["grads"]["band_margin"]) > 0.0
+    for term in ("deflection", "stress", "stress_margin"):
+        assert out["values"][term] == base["values"][term], term

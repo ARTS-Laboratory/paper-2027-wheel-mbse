@@ -1666,7 +1666,7 @@ def test_the_search_block_names_the_crown_standin_or_none():
 
 
 def test_the_crown_standin_switch_is_both_values_or_neither(monkeypatch):
-    """`--crown-standin` yields `WO.CROWN_STANDIN`'s two values together, and its absence
+    """`--crown-standin` yields `WO.CROWN_STANDIN`'s three values together, and its absence
     yields none: they splat into `descend` / `descend_lbfgsb` as keywords, so a missing
     one would descend a thickened band without its factor (R5 D3)."""
     import argparse
@@ -1675,7 +1675,7 @@ def test_the_crown_standin_switch_is_both_values_or_neither(monkeypatch):
         monkeypatch.setattr(sys, "argv", argv)
         _, sk = S3._parse_args(argparse.ArgumentParser())
         assert sk == want
-    assert set(WO.CROWN_STANDIN) == {"rim_outer", "drop_factor"}
+    assert set(WO.CROWN_STANDIN) == {"rim_outer", "drop_factor", "band"}
 
 
 def test_the_standin_reaches_the_run_record_off_the_evaluator():
@@ -1683,9 +1683,10 @@ def test_the_standin_reaches_the_run_record_off_the_evaluator():
     the mission, so it says what reached the objective rather than what was asked for."""
     ev = S3.Evaluator(CFG, **WO.CROWN_STANDIN)
     assert S3._standin_settings(ev) == {"rim_outer_mm": WO.CROWN_STANDIN["rim_outer"],
-                                        "drop_factor": WO.CROWN_STANDIN["drop_factor"]}
+                                        "drop_factor": WO.CROWN_STANDIN["drop_factor"],
+                                        "band": WO.CROWN_STANDIN["band"]}
     assert S3._standin_settings(S3.Evaluator(CFG)) == {"rim_outer_mm": None,
-                                                        "drop_factor": None}
+                                                        "drop_factor": None, "band": None}
 
 
 def test_an_evaluator_on_the_standin_scores_the_standin(genes):
