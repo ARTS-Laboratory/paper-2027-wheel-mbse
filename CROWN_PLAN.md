@@ -353,3 +353,142 @@ solve), one local mesh size at every peak, nodal values at element nodes without
 No flat-body field. No peak classified by spoke distance beyond what §206 §4 already did for
 the crown-on-top phases.
 
+
+### R2 — 2026-09-25. STEP 1 DONE: THE RIM IS TWO ARGUMENTS. AND A FREE READ OF THE PATCH: THE CUT CROWN FAILS STEP 0.1, THE CROWN ON TOP PASSES.
+
+**What changed:** `wheel_step_export` takes `--base-mm` (b) and `--crown-mm` (h), threaded
+through `build_profile(genes, rim_outer_mm)` and `crown_rim(solid, rim_outer_mm, height_mm)`.
+Unset is the shipped rim through the constants themselves. A non-shipped rim writes under a
+`_b.._h..` stem, so a map point cannot land in `wheel.step`. The spoke wire does NOT move with
+b: its tip still runs out to `RIM_EMBED_RADIUS_MM` 50.25 and is clipped at the new OD, so inside
+that OD the face is the shipped face cut by a circle. h 0 is the flat rim (`crown_rim` returns
+the solid). `wheel_geometry` did not need to change: every crown function there already took
+`height_mm`.
+
+**Step 1's three checks, each of which could have failed:**
+
+1. **Default: byte-identical.** HEAD's own re-export of `b729e86` differs from the committed
+   `export/wheel.step` only in the `FILE_NAME` timestamp line, and the parametric build differs
+   from HEAD's only there too. The manifests are identical except `exported_at` / `export_seconds`.
+2. **(0.5, 1.0) reproduces §200's cut part: 45638.5 mm³, 56.59 g**, to the printed digit. So do
+   `volume_nofillet_mm3` 44665.9, `fillets.volume_mm3` 972.6 and the surface census (Plane 14,
+   BSpline 61, Cylinder 36, swept `{}`). OCC's crown after-minus-before 4642.56 equals the closed
+   form 4642.56. §200 built this solid by CUTTING down from Ø100; this builds it up from Ø98.
+3. **The solver is untouched by construction, not by probe.** The diff is `wheel_step_export.py`
+   and one test. The exporter is imported by nothing on the jax side (`wheel_fea` spawns it as
+   a subprocess). **Deviation from the plan as written:** §200's 88-value probe was NOT re-run.
+   It was asked for on the premise that `wheel_geometry` would change, and it did not.
+
+**Pinned by** `test_export_contract.py::test_a_thinner_rim_base_is_the_shipped_face_cut_by_a_circle`.
+The (b 1.5) face minus the (b 0.5) face is exactly the 49–50 annulus: 311.017672 against π(50² −
+49²) = 311.017673 mm². The test also checks that the hub overlap does not move, that the rim
+overlap shrinks, the flat identity, and refusals at r 48.5 and 50.25. Three mutants: a clip left
+at 50 and h 0 building an arc both fail it. A band left at 50 inside a clip at 49 builds the SAME
+face; only the rim-overlap assertion, added for it, kills it.
+
+**A FINDING THE STEP DID NOT ASK FOR: THE JUNCTION BITE IS A PROPERTY OF THE CONSTRUCTION, NOT
+OF THE SOLID.** The same solid (check 2) reports rim bite **0.7206 t** in §200's manifest and
+**0.240 t** in this one — under the 0.25 floor, `[WEAK JUNCTION]`. `check_junction_overlap`
+intersects the spoke with the UNCROWNED 2D band: §200's was 1.5 mm and this one's is 0.5 mm, and
+neither sees the crown. So every b 0.5 map point will print the warning. It is a true
+statement about the side-face band and blind to the crown. The flag warns; it does not gate.
+Nothing here is changed for it.
+
+**THE PATCH, READ FREE FROM FIELDS ALREADY ON DISK** — new instrument `studies/probe_3d/patch3d.py`,
+Step 0.1's metrics. The pressure is fe3d's own: the same penalty, the same 6×6 points on the
+same P2 OD triangles, the same reference-surface gap. **Control: ∫p dA reproduces fe3d's
+`contact_force_half_n` 33.36165 N at all 15 fields**, and the length, width and peak pressure
+reproduce each log's `patch_x_mm` / `patch_z_mm` / `peak_pressure_mpa` (checked at the cut
+crown's 0 / 3.75 / 7.5).
+
+```
+  CROWN ON TOP (1.5, 1)   0.00   3.75   7.50  11.25  15.00  18.75  22.50  26.25
+  patches                    1      1      1      1      1      1      1      1
+  length, mm              2.29   2.73   2.71   2.64   2.59   2.54   2.48   2.28
+  width, mm               2.46   2.36   2.41   2.43   2.44   2.47   2.46   2.47
+  scrub M/mu, N mm        44.8   48.3   48.5   48.2   47.8   47.4   46.8   44.9
+  lever = M/(mu F), mm   0.671  0.724  0.726  0.722  0.717  0.710  0.701  0.672
+
+  CUT CROWN (0.5, 1)      0.00   3.75   7.50  11.25  15.00  18.75  22.50
+  patches                    1  2 (.90/.10) 1     1      1      1      1
+  length, mm              2.20   8.91  10.48   7.88   5.79   4.39   3.54
+  width, mm               2.50   2.30   1.60   2.00   2.34   2.60   2.62
+  scrub M/mu, N mm        44.4   93.5  196.6  129.1   90.4   71.2   60.4
+  lever, mm              0.666  1.401  2.947  1.935  1.354  1.067  0.905
+
+  F = 2 x 33.36165 N every row.  M/mu = int p |q - c| dA over the full (mirrored) patch,
+  c the pressure centroid.  Phase 26.25 of the cut crown is not read, as in R1.
+```
+
+**What it says:** the crown on top keeps one short strip at every phase, and its scrub lever
+moves 8% over the stencil. The cut crown's patch runs from 2.20 to 10.48 mm long (4.8x),
+splits at 3.75, and its scrub lever swings **4.4x** as it rolls. **By Step 0.1 the cut crown
+FAILS** (two patches), and it would be a poor steering rim even without the split: the proxy
+for turn-in resistance changes 4.4x across one spoke pitch of roll. The mechanism is not
+measured here. That the thin band sags onto the ground between spokes, so the crown stops
+setting the patch, is the obvious reading, and the patch's position relative to the spokes
+was not classified.
+**Hypothesis, not finding:** that the base, not the crown, sets the patch's stability. The two
+parts differ in b only, but b also changes the drop 1.6x, and the patch length is confounded
+with the drop. Step 2's (1.0, 1.0) point splits them: its predicted drop sits between the two
+parts'.
+
+**Scope:** one genome, one mesh rung (h 2.0 / hc 0.25, the default box). Contact outside the
+x ±4 box sits on coarser triangles (§205), which is where the cut crown's long patches run. The
+scrub proxy is a pressure moment on frictionless, rigid, flat ground under a radial load.
+
+### STEP 2 — PREDICTIONS, REGISTERED BEFORE THE FIRST SOLVE
+
+First pass: the seven new points at phases 0 and 3.75, SVK, h 2.0 / hc 0.25, default box,
+`fe3d --r-out` = 48.5 + b + h, windows §205's final. Queue order: (1.5, 0), (1.0, 1.0),
+(1.0, 0.5), (1.5, 0.5), (1.0, 0), (0.5, 0.5), (0.5, 0).
+
+**H-MEAN** (the mean-thickness stand-in §3 doubts): q(b, h) = q(1.5, 1) · (t̄(1.5, 1) / t̄)^k,
+with t̄ = b + 2h/3 and k fitted per phase and per quantity on the two measured h 1 parts.
+**H-LIN** (§2's first hypothesis): the drop is linear in b at fixed h, so it can only be tested
+at (1.0, 1.0).
+
+```
+                          k     (0.5,0) (0.5,.5) (1.0,0) (1.0,.5) (1.0,1) (1.5,0) (1.5,.5)
+  drop  ph 0     H-MEAN  0.770   3.960   2.672    2.322   1.860    1.566   1.699   1.456
+  drop  ph 3.75  H-MEAN  0.873   4.874   3.120    2.661   2.070    1.704   1.868   1.568
+  drop  ph 0     H-LIN                                              1.671
+  drop  ph 3.75  H-LIN                                              1.840
+  hoop T ph 0    H-MEAN  1.063   127.1    73.8     60.8    44.8     35.3    39.5    31.9
+  hoop T ph 3.75 H-MEAN  0.956   137.2    84.2     70.8    53.8     43.4    48.0    39.7
+  s_zz  ph 0     H-MEAN  0.759    33.8    22.9     20.0    16.1     13.6    14.7    12.6
+  s_zz  ph 3.75  H-MEAN  0.588    39.3    29.1     26.1    22.1     19.3    20.6    18.3
+```
+
+The falsifiers, each one a reading the first pass makes:
+
+- **P1, (1.0, 1.0) drop: H-MEAN against H-LIN**, 1.566 / 1.671 at phase 0 and 1.704 / 1.840 at
+  3.75, 6.7–8.0% apart. The closer one survives. If neither is within 3% at both phases, both
+  are refuted and the Step 3 map cannot be interpolated; it has to be measured.
+- **P2, (1.5, 0) drop: H-MEAN against the flat estimate.** The estimate is §204's modelled-flat
+  SVK twin, 1.7858 / 2.0278, times §202–§204's junction stiffening of 0.970–0.974, giving
+  1.732–1.739 / 1.967–1.975. H-MEAN reads 1.699 / 1.868, 1.9–2.4% / 5.3–5.7% below it. That is already
+  a doubt about H-MEAN at h 0. The junction factor was measured linear and at phase 0 only, so
+  if the estimate misses, the stiffening does not carry to SVK or to 3.75.
+- **P3, (1.5, 0) interlayer tension: does the crown drive R1's excess?** The instrument is
+  `post3d_cyl.py`'s new last line: `s_zz / hoop` at the SAME node as the band's hoop-tension
+  peak. **R1's "0.41–0.66 at the peak point" was not that.** It divided the two band MAXIMA,
+  which sit at nearby but different nodes. Same-node, the crown on top reads:
+
+  ```
+    phase           0.00   3.75   7.50  11.25  15.00  18.75  22.50  26.25
+    crown on top   0.390  0.476  0.557  0.586  0.614  0.646  0.653  0.409
+    cut crown      0.344  0.388  0.578  0.678  0.742  0.787  0.805    --
+  ```
+
+  The first pass reads phases 0 and 3.75 only, where the crown on top is 0.390 / 0.476. R1's
+  hypothesis says the flat band sits at ν: **flat ≤ 0.37 at both phases supports it; flat at or
+  above 0.390 / 0.476 at both refutes it (the crown is not the driver); between is undecided.**
+  The discriminating phases are mid-span, 7.5–22.5, which the first pass does not read; an
+  undecided P3 is the reason to read them. H-MEAN's s_zz 14.7 / 20.6 MPa is registered as
+  well. Its hoop 39.5 / 48.0 has no in-tree bound: §204's flat 32.68 MPa is OD von Mises, a
+  different quantity on a different body.
+- **P4, the patch.** Every b ≥ 1.0 crowned point shows one patch at both phases. Every h 0 point
+  has a scrub lever at least 3x the crown on top's 0.67–0.72 mm: a flat rim contacts across
+  its face. A b 0.5 point with ONE patch at 3.75 would say the split is not a thin-base
+  property.
