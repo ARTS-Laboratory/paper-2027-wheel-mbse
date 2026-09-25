@@ -693,3 +693,92 @@ phases, the STEPs and manifests, `q.log` (every solve's line), `windows.txt`, an
 scripts. The six held-out 2D drops are in `../d2_phases.json`, and the registered predictions
 are in `../PREDICTIONS_step4.txt`. The §206 crown-on-top fields are in `ea223ab2-…/scratchpad/p3d/`
 and §205's cut-crown fields in `afcbf479-…/scratchpad/`.
+
+### R5 — 2026-09-25. R4's QUESTION DECIDED ON THE USER's DELEGATION ("decide the next design decisions"): THE STAND-IN IS JUDGED ON THE EIGHT-PHASE MEAN, t_eq STAYS 2.1442 mm, NOT REFITTED, AND STEPS 5–6 GET THEIR DESIGN. NO SOLVE; EVERY FIGURE BELOW IS RE-DERIVED FROM R3, R4, §206 AND `study_crown_standin.json`.
+
+**A correction first.** §2's table gives the crown on top's 3D SVK eight-phase mean as 1.3178 mm.
+That is §206's line (B), `1.8102 x R_svk`, a CARRIED estimate. §206's line (A), the mean of the
+eight measured drops, is **1.31186 mm**, and it is the figure R4's 0.74105 divides: 1.31186 /
+1.77026 = 0.74105. Nothing downstream used 1.3178. The table is left as written.
+
+**D1 — THE CRITERION IS THE EIGHT-PHASE MEAN, AND t_eq = 2.1442 mm IS KEPT, NOT REFITTED.**
+- The per-phase drop enters the loss only through its mean: `deflection` is
+  `(mean_drop - target) / target`, squared. `phase_ripple` is the only term that reads the phases
+  one by one, and its weight is 0.0 in `DEFAULT_WEIGHTS` and in `best_solution.json`'s own
+  descent (`loss_terms.phase_ripple` 0.0). So R4's 1.53% / 1.55% at 7.5 and 11.25 reach no term
+  the descent sees.
+- **Budget:** +0.45% of the mean is 0.006 mm, against Step 8's [1.90, 2.10] half-width of
+  0.10 mm, 17x inside it.
+- **Why not refit on all eight phases:** the +0.45% is an error at SIX HELD-OUT phases, the only
+  held-out evidence the stand-in has. A fit to the mean makes it zero by construction and leaves
+  nothing to check the stand-in against until Step 8.
+- **Why not R4's option 2:** a phase is a rotation of one geometry, so a band thickness that
+  depends on phase is not a wheel. `rim_modulus_scale` is also one scalar and cannot bend a
+  phase pattern. Either one is a new Step 4, spending solves on an error that enters no term.
+- **The cost, recorded so it is not rediscovered:** the stand-in over-reads the ripple. Taking the
+  eight 3D crowned drops (flat per-phase drop x R4's 3D ratio) against flat x R4's 2D ratio,
+  std/mean is **3.77% measured and 4.41% predicted, 1.17x.** **If `phase_ripple` is ever given a
+  weight under the stand-in, D1 re-opens.**
+
+**D2 — THE TARGET FACTOR IS K = 0.88867**, R4's 3D / 2D for the flat exported part, all eight
+phases, as 0.4 decided. It is an explicit `drop_factor` on `t3_terms` that scales `drops` and
+`dgrads` as they are assembled, so `deflection` and the report read predicted-3D millimetres and
+`phase_ripple` is unmoved (it has no scale). `None` skips the multiply. **Predicted at `b729e86`
+on the stand-in:** K x 1.48280 (the 2D eight-phase mean at t_eq, 1.992026 x 0.74437) =
+**1.31773 mm, +0.45% over the measured 1.31186.** The combined per-phase factor 3D / 2D(t_eq)
+is **0.87620 at phase 0 and 0.87370 at 3.75**, and it is Step 8's first falsifier (D7).
+
+**D3 — ONE SWITCH, NOT THREE FLAGS.** The stand-in's three values, `rim_outer` 48.5 + 2.1442 =
+50.6442, `drop_factor` 0.88867 and the band weight (D6), are one record in `wheel_objective`
+and one `wheel_stage3 --crown-standin`. The run's `search` block records all three. A rim
+thickened without its factor, or a factor without the band term, scores a wheel nobody measured.
+
+**D4 — THE 2D BAND QUANTITY IS THE TANGENTIAL STRESS ON THE INNER FACE, ITS POSITIVE PART.** On a
+traction-free face the normal and shear tractions are zero, so the in-plane max principal IS the
+tangential stress: no square root and no branch. It is read on `rim_inner_free`, at element
+nodes without averaging, as `rim_band_surface_stress` reads the OD. That report is not touched.
+**REGISTERED: NO SPOKE-FLANK EXCLUSION IS NEEDED FOR TENSION.** §199's confirmed singular corner is
+a COMPRESSION corner, `hub:P_c`. `rim:P_c` does not resolve, and `rim:P_t` is regularised
+(λ 1.0493). §203's 30.06 / 34.60 / 41.08 MPa climb was von Mises over the whole band, which
+includes the compression corner. **Falsifier:** the inner-face tension max at phase 3.75 moves
+more than 3% from `medium` to `fine`. If it does, the exclusion distance comes from that ladder,
+and it must not exclude R3's 3D peak locations (x +0.85 to +1.12 at 3.75, x −2.0 to −2.3 at 0).
+
+**D5 — THE 2D TENSION IS CALIBRATED TO 3D BY ONE MEASURED FACTOR, TAKEN AT ITS MAXIMUM.**
+c_band(φ) = R1's 3D inner-face hoop tension on the crown on top (26.72 … 19.97 MPa, all eight
+phases) divided by the 2D value at t_eq. The priced factor is **max over φ of c_band**, so it
+over-prices by construction.
+- **Control:** c_flat at (1.5, 0), phases 0 and 3.75, is R3's 39.07 / 50.33 divided by the 2D
+  value at t 1.5. There the 2D band IS the part's geometry, so c_flat is the plane-stress offset
+  alone, and c_band / c_flat is the stand-in's share.
+- **Registered:** c_band > 1 at every phase, because a thicker 2D band carries the same moment at
+  a lower surface stress.
+- **Falsifier for pricing at all:** max / min of c_band over the eight phases above 1.3. Then the
+  2D quantity is not tracking the 3D mechanism, and the band stays a report. That goes in the
+  next record; it does not stop the arc.
+
+**D6 — PRICED THE WAY `stress_margin` IS, AT ITS EXCHANGE RATE.**
+`band_margin = soft_barrier(util_band − MARGIN_KNEE_UTIL, w)`, where:
+- `util_band = c_band x phase_pnorm(node_pnorm(s_tt+)) / allowable`;
+- w = `DEFAULT_WEIGHTS["stress_margin"]`, one exchange rate for utilisation (§99);
+- phases aggregate through `_pnorm_and_grad` at `stress_phase_p`;
+- the node exponent is the smallest of {8, 16, 32} within 2% of the nodal max at all eight phases
+  at t_eq.
+
+No wall (0.3). `DEFAULT_WEIGHTS["band_margin"]` is 0.0, and D3's switch sets it.
+- **Registered at `b729e86`:** util_band about 1.3 (R1's 3.75 row is 1.352 x 25 MPa), so the
+  term is about 20–27, a large share of today's loss of 52.57.
+- The Step 5 driver reports the term and the cosine between its gradient and `deflection`'s.
+  **A strongly opposed pair (cosine below −0.8) is recorded, not acted on:** the descent is the
+  instrument that prices that trade.
+
+**D7 — STEP 8's FIRST PASS HAS A REGISTERED FALSIFIER, AND A MISS IS NOT A HALT.** On the Step 7
+genome, at phases 0 and 3.75, the combined factor 3D / 2D(t_eq) should hold to within 2% of
+0.87620 / 0.87370. That tests two hypotheses no measurement here can reach: that t_eq, fitted on
+`b729e86`'s spokes, transfers to softer ones, and that K does. A miss refits t_eq on the new
+spokes at (1.5, 1), re-descends from a warm start, and records which one moved.
+
+**Order:** Step 6 (threading, default path 0 ULP) before Step 5 (the band term), then Step 7.
+Step 5's calibration needs only `build_wheel(rim_outer=)`, which exists, but its gradient check
+needs the threaded objective. **Unchanged:** the rim stays (1.5, 1.0). 0.5's coupons block
+Step 8's `s_zz` gate only. `b729e86` stays in `best_solution.json` until Step 8.
