@@ -600,3 +600,96 @@ and hold one out from. The chosen rim is its end point.
 mesh rung. No new peak refined. The grid itself is the only evidence for "more base, more crown
 lowers band tension": hoop tension falls along every row and column at phase 0. At 3.75 it
 breaks at b 0.5, where (0.5, 0.5) reads below both (0.5, 1) and (1.0, 0.5).
+
+### R4 — 2026-09-25. STEP 4 FAILS AS WRITTEN: NO FIT ALONG b REPRODUCES 3D TO 1%. THE CHOSEN RIM's OWN STAND-IN, t_eq 2.144 mm, MISSES TWO OF SIX HELD-OUT PHASES BY 1.5% AND THE EIGHT-PHASE MEAN BY 0.45%. BACK TO THE USER BEFORE ANY DESCENT, AS STEP 4 REQUIRES.
+
+**Instrument:** `studies/study_crown_standin.py` → `study_crown_standin.json`. The 2D drop is the
+objective's own per-phase quantity: `build_wheel(..., fillet=True)` at `coarse`,
+`solve_wheel_contact` at `SERVICE_FORCE_N` under SVK, with only `rim_outer` = 48.5 + t moved.
+**Control: at t 1.5 it reproduces `best_solution.json`'s recorded figures to ten digits.**
+Phase 7.5 gives 2.269685753 = `axle_drop_max_mm`, 22.5 gives 1.789749979 = `axle_drop_min_mm`,
+and the mean over the eight stencil phases, 1.992026, = `axle_drop_mean_mm`. The fit targets are
+RATIOS to the flat exported (1.5, 0) in 3D and to t 1.5 in 2D, so decision 0.4's offsets cancel.
+The sweep interpolation (t 1.0–2.4, step 0.2, log-log) checks against a direct solve at each
+t_eq to 0.10% or better.
+
+**The column fit (h 1, phases 0 / 3.75):**
+
+```
+  b      3D ratio (0 / 3.75)    t_eq mm (0 / 3.75)    t_eq mean   t_eq - b
+  0.5    1.19657 / 1.20127      1.2365 / 1.1948       1.2156      0.716
+  1.0    0.90043 / 0.87793      1.6924 / 1.7104       1.7014      0.701
+  1.5    0.74271 / 0.69972      2.1399 / 2.1485       2.1442      0.644
+
+  hold out   form     t_pred    ratio error (0 / 3.75)
+  b 0.5      offset   1.1728    +5.18% / +1.41%
+  b 0.5      affine   1.2587    -1.71% / -3.69%
+  b 1.0      either   1.6799    +0.58% / +1.92%
+  b 1.5      offset   2.2085    -2.48% / -2.56%
+  b 1.5      affine   2.1872    -1.73% / -1.68%
+```
+
+**No fold passes the 1% check at both phases. Step 4's criterion, as written, FAILS.** t_eq(b) is
+concave, and the ratio moves about 2% per 0.03 mm of band at 3.75. So a stand-in interpolated
+along b is not good to 1%, even between measured points.
+Predictions (registered 05:39, in the session scratchpad):
+- **S4.1 holds:** 2.144 is inside 1.95–2.15 and under the mean-thickness 2.168; 1.216 is inside
+  1.20–1.35 and over 1.168. §3's direction is confirmed at both ends.
+- **S4.2 holds for `offset`, fails for `affine`:** the affine form does not pass even interpolating
+  at b 1.0.
+- **S4.3 is refuted:** the largest phase split is 0.042 mm (b 0.5), under the predicted 0.05.
+
+**THE PHASE HOLD-OUT ON THE CHOSEN RIM, (1.5, 1).** This is the test that matters once Step 3 put
+the rim on a measured grid point. It fits one band thickness at two phases and checks it at the
+six the objective also averages over. It needed the flat exported (1.5, 0) at all eight phases in
+3D: six new fe3d SVK solves, 425–608 s and 14.3–17.0 GiB each, all on the default window, all
+passing `patch3d.py`'s force control, one patch at every phase. S4.4 was registered at 05:57,
+before any held-out number.
+
+```
+  phase    3D ratio   2D ratio at t_eq 2.1442   error
+   0.00    0.74270    0.74257                   -0.02%   fitted
+   3.75    0.69972    0.69950                   -0.03%   fitted
+   7.50    0.68256    0.69300                   +1.53%
+  11.25    0.72116    0.73235                   +1.55%
+  15.00    0.76196    0.76900                   +0.93%
+  18.75    0.78751    0.78957                   +0.26%
+  22.50    0.78870    0.78694                   -0.22%
+  26.25    0.76913    0.76547                   -0.48%
+  8-phase mean ratio  3D 0.74105   2D 0.74437   +0.45%
+```
+
+**S4.4 FAILS: 7.5 and 11.25 are over 1%.** The mean is within 0.45%. The EXPECTATION beside it is
+refuted in shape: I expected the phases near the fit to pass and mid-sector to fail, and it is
+the reverse. The 2D band tracks the ratio's swing across the sector (0.683–0.789 in 3D,
+0.693–0.790 in 2D) but not its dip just after 3.75.
+
+**TWO NUMBERS THIS RECORD MEASURES FOR THE FIRST TIME:**
+- **The flat EXPORTED part's 3D SVK eight-phase mean is 1.77026 mm**, 11.5% under the 2.0 mm
+  target. The per-phase drops are 1.72309 / 1.93624 / 2.02807 / 1.89284 / 1.74007 / 1.63183 /
+  1.59244 / 1.61750. §204's 1.8102 was the modelled twin. **3D / 2D for that body is 0.88867**:
+  Step 0.4's single target factor, measured on the flat exported part, across all eight phases.
+- **Its patch at every phase is one full-face strip, lever 4.12–4.79 mm**, 6.2–6.6x the crown
+  on top's 0.671–0.726 at every one of the eight phases.
+
+**WHAT THIS LEAVES FOR THE USER (Step 4's rule: a failed fit goes back before any descent):**
+1. **Is the eight-phase MEAN the right criterion?** The objective's `deflection` term scores the
+   mean, and there the stand-in is within 0.45%. The per-phase 1% bar came from Step 4's
+   wording, not from a requirement. The per-phase misses (up to 1.55%) would enter
+   `phase_ripple`, not `deflection`. If the mean is accepted, t_eq = 2.144 mm for (1.5, 1),
+   and the stand-in is the Ø100 gene-frame band thickened to r 50.644 in 2D.
+2. **If per-phase 1% is required**, one band thickness cannot do it. The next idea to try is a
+   PHASE-DEPENDENT band or a stiffness scale on the band (`rim_modulus_scale` exists in
+   `wheel_fem`), which is a different stand-in and a new Step 4.
+3. **Nothing here changes Steps 5 and 6's code work.** Step 7's descent waits on 1 or 2.
+
+**Scope:** one genome, one 3D mesh rung, the 2D at `coarse` only. The column fit uses phases 0 and
+3.75 only. The phase hold-out uses one rim.
+
+**WHERE THE FIELDS ARE** (session scratchpad, not the tree):
+`/tmp/claude-1000/-home-eric-bodhi-github-wheel/cd083dce-06e6-46c8-b903-b5b7bebfe30e/scratchpad/map/`.
+It holds `m_<b>_<h>_<phase>.npz` / `r_<b>_<h>_<phase>.npz` for every R3 point and the six new flat
+phases, the STEPs and manifests, `q.log` (every solve's line), `windows.txt`, and the queue
+scripts. The six held-out 2D drops are in `../d2_phases.json`, and the registered predictions
+are in `../PREDICTIONS_step4.txt`. The §206 crown-on-top fields are in `ea223ab2-…/scratchpad/p3d/`
+and §205's cut-crown fields in `afcbf479-…/scratchpad/`.
