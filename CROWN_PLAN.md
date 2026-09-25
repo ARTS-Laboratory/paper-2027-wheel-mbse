@@ -492,3 +492,111 @@ The falsifiers, each one a reading the first pass makes:
   has a scrub lever at least 3x the crown on top's 0.67–0.72 mm: a flat rim contacts across
   its face. A b 0.5 point with ONE patch at 3.75 would say the split is not a thin-base
   property.
+
+### R3 — 2026-09-25. STEP 2's FIRST PASS, AND STEP 3 DECIDED: THE RIM STAYS (1.5, 1.0). IT IS THE ONLY RIM ON THE GRID WHOSE BAND IS UNDER THE PRINTED ULTIMATE, AND IT SITS ON THE Ø102 CAP.
+
+**What ran:** the seven new points of §5's grid, each exported by Step 1's `--base-mm` /
+`--crown-mm` from `b729e86`, at phases 0 and 3.75. SVK, h 2.0 / hc 0.25, default box,
+`fe3d --r-out` 48.5 + b + h, 32 GiB `MemoryMax` scopes, one serial queue, 438–1334 s per
+accepted solve (refused attempts up to 1765 s) and 13.8–18.1 GiB peak. The two measured parts (§205, §206) fill the h 1 column. **Every
+solve below passes `patch3d.py`'s control**: ∫p dA reproduces fe3d's 33.36165 N.
+
+```
+  (b, h)      mass g   drop 0     drop 3.75   H-MEAN err    hoop T 0 / 3.75   s_zz 0 / 3.75   patches   lever mm
+  (1.5, 0)    59.47    1.72309    1.93624     +1.4 / +3.7    39.07 / 50.33     14.66 / 18.21   1 / 1     4.13 / 4.64
+  (1.5, 0.5)  62.40    1.46596    1.59516     +0.7 / +1.7    32.11 / 45.29     12.93 / 22.52   1 / 1     0.78 / 0.90
+  (1.5, 1)    65.35    1.27975    1.35482     anchor         26.72 / 33.80     11.11 / 16.58   1 / 1     0.67 / 0.72
+  (1.0, 0)    55.13    2.51160    2.73806 w8  +8.2 / +2.9    60.30 / 58.74     21.67 / 21.30   1 / 2     4.25 / 6.18
+  (1.0, 0.5)  58.02    1.90185    2.14986     +2.3 / +3.9    45.40 / 58.35     16.54 / 25.90   1 / 1     0.78 / 1.12
+  (1.0, 1)    60.95    1.55152    1.69988     -0.9 / -0.2    35.45 / 49.49     13.40 / 24.09   1 / 1     0.67 / 0.84
+  (0.5, 0)    50.83    NOT SOLVED -- see below
+  (0.5, 0.5)  53.70    2.93322 w4 3.00910 w8  +9.8 / -3.6    69.99 / 57.91     23.78 / 19.98   1 / 2     0.90 / 5.32
+  (0.5, 1)    56.59    2.06179    2.32594     anchor         51.61 / 61.07     17.77 / 23.86   1 / 2     0.67 / 1.40
+
+  drop: SVK axle drop, mm.  hoop T: max hoop tension on the band's inner face (r >= 48.45,
+  |x| < 10), MPa, Cauchy, element nodes, post3d_cyl.py; the printed ultimate is 50 x 0.80 =
+  40 MPa (wheel_fea), the allowable 25.  s_zz: max interlayer tension in the band, same
+  instrument.  lever: scrub M / (mu F), patch3d.py.  w4 / w8: fe3d's window widened 4 / 8 mm
+  each side.  mass: OCC, from each export's manifest; (1.5, 0) is §200's flat 59.47 g.
+```
+
+**The registered predictions (R2), each against the reading:**
+
+- **P1 — H-MEAN SURVIVES, H-LIN IS REFUTED.** At (1.0, 1.0): 1.55152 / 1.69988 measured, H-MEAN
+  1.566 / 1.704 (−0.9% / −0.2%), H-LIN 1.671 / 1.840 (−7.1% / −7.6%), each as measured over
+  predicted.
+  §2's "linear in b, the drop hits 2.0 at b ≈ 0.61" falls with H-LIN. **H-MEAN holds for the
+  drop at h 1 only.** Its error grows as the crown shrinks: 0.2–0.9% at h 1, 0.7–9.8% at h 0.5,
+  1.4–8.2% at h 0, and always the same sign (too stiff) at h ≤ 0.5 but one. **Hypothesis, not
+  finding:** a crown stiffens more than its 2h/3 share of mean thickness says. The confound is
+  that k was fitted on two points per phase, so the error pattern could be the fit's.
+  **H-MEAN FAILS FOR BAND STRESS AT 3.75:** 43.4 predicted, 49.49 read at (1.0, 1); 39.7
+  predicted, 45.29 read at (1.5, 0.5). At phase 0 it was within 1.3% at five of the six new
+  points (5.2% at (0.5, 0.5)).
+- **P2 — THE FLAT ESTIMATE MISSES LOW, AND IT IS THE JUNCTION FACTOR.** (1.5, 0) reads 1.72309 /
+  1.93624 against 1.732–1.739 / 1.967–1.975. Measured against §204's twin, the exported flat
+  part is **3.51% stiffer at phase 0 and 4.52% at 3.75 under SVK**, against the 2.60–3.04%
+  measured LINEAR at phase 0 (§202–§204). So the junction stiffening grows under SVK and off
+  phase 0. That matters to Step 0.4's single target factor, which folds it in.
+- **P3 — SUPPORTED, AND THE HEADLINE IS THE OTHER HALF.** The flat (1.5, 0) reads same-node
+  `s_zz / hoop` **0.354 / 0.341**, at ν, under the 0.37 bar at both phases. The crown on top reads
+  0.390 / 0.476. So the crown does push the ratio above ν, as R1 hypothesised. **But in
+  absolute terms the flat band carries MORE interlayer tension, not less: 14.66 / 18.21
+  against 11.11 / 16.58 MPa**, because its hoop tension is higher still (39.07 / 50.33 against
+  26.72 / 33.80). R1's "the crown pulls the layers apart" is right about the ratio and wrong
+  about the stress, at the two phases read. The mid-span phases, where the crowned ratio
+  reaches 0.65, were not read on the flat.
+- **P4 — HOLDS.** Every crowned b ≥ 1.0 point shows one patch at both phases. Every h 0 point has
+  a lever of 4.13–6.18 mm, 6.2–8.5x the crown on top's 0.671 / 0.724 at the same phase. **The split is a thin-rim
+  property, not a crown property**: (0.5, 0.5) splits at 3.75 (0.788 / 0.212) as (0.5, 1) did,
+  and so does the flat (1.0, 0) (0.846 / 0.154). Step 0.1 fails three points: (0.5, 1),
+  (0.5, 0.5) and (1.0, 0).
+
+**Where the band peaks sit.** At every point the hoop-tension peak is at x −2.0…−2.3 (phase 0)
+or x +0.85…+1.12 (phase 3.75), r 48.45–48.50. That is the same place on every rim, so the spoke
+geometry sets it. At 3.75 it is where §206 Q5 put the crown on top's peak: 0.92 mm from the
+spoke body on the fillet toe, and under refinement it moved +0.007%, not the +10.6% a corner
+singularity would. No peak on the NEW points was refined. My own distance-to-spoke read did not
+reproduce §206 §4's column (0.07 / 0.43 mm against 0.52 / 0.92 at the crown on top's 0 / 3.75),
+so no distance is quoted for them.
+
+**AN INSTRUMENT DEFECT, CAUGHT BY THE CONTROL.** fe3d builds its contact candidates from OD
+triangles whose EVERY node lies inside the window, and its truncation check reads only those
+triangles. At (1.0, 0) phase 3.75, with the window widened 4 mm, three coarse triangles (about
+1.7 mm across, outside the refined box) straddled the window's edge. The ground penetrated them
+at up to 0.42 µm, carrying 0.70 N that the solve never saw: 34.062 against 33.362 N. fe3d
+reported success. Re-solved widened 8 mm, the control passes, and the drop moved
+**−0.006%** (2.73822 → 2.73806) with the band figures unchanged. It cost nothing here. Only
+`patch3d.py`'s control can see it, which is a reason to run the control on every solve. All 15
+§205/§206 fields passed it (R2), so nothing committed is affected. fe3d is not changed.
+
+**(0.5, 0) IS NOT SOLVED.** At phase 0 the SVK equilibrium walked out of both windows tried:
+drop 14.1 mm at the default window, 12.7 mm with 29 active points at +4 mm, each time with the
+patch on the window's edge. Its phase 3.75 was stopped by hand. Nothing is claimed about it
+beyond that. It is thinner than the cut crown, which already fails the band and Step 0.1.
+
+**STEP 3 — DECIDED ON THE STANDING DELEGATION (overrulable, nothing spent on it): THE RIM STAYS
+(1.5, 1.0), the part as shipped since §206.**
+- **The band decides it.** At phase 3.75, (1.5, 1) is the only point under the printed ultimate
+  (33.80 MPa; every other point reads 45.29–61.07). It is also the lowest in interlayer
+  tension at both phases (11.11 / 16.58). Its full eight phases are already measured (§206), and
+  its 3.75 peak is already refined (§206 Q5). The worst band phase, 3.75, reads 1.35x the 25 MPa
+  allowable. Step 0.3 prices that; it does not forbid it.
+- **The patch agrees.** It has one strip at all eight phases, the lowest scrub lever on the grid
+  and the flattest over the stencil (R2).
+- **What it costs is what §2's first hypothesis said.** It is the stiffest and heaviest point
+  (65.35 g), 34.1% under target (§206). **The spokes must soften the most here, and Step 7's
+  distance-from-`b729e86` report will say how much.** §6's fallback on the map is (1.5, 0.5):
+  +0.19–0.24 mm of drop and 2.95 g lighter, but 45.29 MPa at 3.75, 1.13x the printed ultimate.
+- **THE Ø102 CAP BINDS, AND IT IS THE ONE CONSTRAINT THIS CHOICE SITS ON.** (1.5, 1) is the
+  grid's corner at b + h = 2.5. Both directions that lower band tension on the grid, more base
+  and more crown, go past Ø102. What lies beyond is unmeasured and is the user's to open
+  (Step 0.2 set the cap). A rim past the cap would also be stiffer, which moves the spokes further.
+
+**So Step 4 fits the stand-in for h 1.** The h 1 column (b 0.5 / 1.0 / 1.5) is the grid to fit on
+and hold one out from. The chosen rim is its end point.
+
+**Scope:** one genome, phases 0 and 3.75 only, for every point but the two measured ends. One
+mesh rung. No new peak refined. The grid itself is the only evidence for "more base, more crown
+lowers band tension": hoop tension falls along every row and column at phase 0. At 3.75 it
+breaks at b 0.5, where (0.5, 0.5) reads below both (0.5, 1) and (1.0, 0.5).
