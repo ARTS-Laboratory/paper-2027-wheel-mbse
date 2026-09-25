@@ -857,3 +857,42 @@ Step 8's `s_zz` gate only. `b729e86` stays in `best_solution.json` until Step 8.
 - `test_stage3.py`: the switch is all three values or none, and the run record reads the stand-in off the evaluator.
 
 **Scope:** one genome, SVK, the service load, 2D `coarse` for the calibration, the ladder at three phases on the stand-in only. The 3D figures are R1 / R3's: one 3D rung, nodal values.
+
+### R7 — 2026-09-25. STEP 7 REGISTERED BEFORE LAUNCH: `svk-shipped`'s RECIPE ON THE STAND-IN, 300 STEPS AT FOUR WORKERS. AND P7.1 WAS DERIVED ON A GENE THE DESCENT CANNOT MOVE: `t2` SITS ON THE 1.2 mm FLOOR IN `b729e86`, AS DOES `t1`.
+
+**The argv.** `svk-shipped`'s own flags (`Makefile`, the `svk-shipped` recipe), with `--crown-standin` added and distinct outputs:
+
+```
+wheel_stage3 --crown-standin --start best --genome best_solution.json --config coarse
+  --kinematics svk --min-wall 1.2 --steps 300 --workers 4 --phase-scheme uniform
+  --n-phase 8 --fidelity-check-every 0 --log-every 1
+  --out stage3_crown_standin.json --best-out stage3_crown_standin_best.json
+```
+
+It runs under a `systemd-run --user` scope with MemoryMax 55G and MemorySwapMax 0, the cap `svk-shipped` names. A `/proc` side log outside the scope reads every process's VmHWM every 30 s.
+
+**Two departures from the plan as handed over (60 steps, serial), and why.**
+- **300 steps, not the default 60.** P7.1 predicts where the descent SETTLES. The start is 34% short of the target (predicted-3D 1.3178 mm, deflection term 290.9, against the band term's 55.9). `cosine_lr` decays to zero at the last step, so a 60-step run that lands short could be out of budget, not balanced by the band. That is a second cause, and it would make P7.1 unreadable. 300 is the recipe's length, and §181 ran it at `coarse` to exit 0 in 6.98 h.
+- **Four workers, not serial.** The `coarse` pool is measured: `POOL_GIB` is (11, 11) over 300 steps (§171, §181). `test_pool` pins pooled equal to serial to the bit on the whole stand-in, band term included (U3). Serial would take about 18 h at `b729e86`'s ~215 s/step.
+
+**P7.2 — memory. Registered:** no worker's VmHWM passes 11.0 GiB, and the scope never reaches its cap. The stand-in band is 2.144 mm thicker, so the mesh is larger than any mesh `POOL_GIB` was measured on. **Falsifier:** a worker mark over 11.0 means the pair does not cover the stand-in. That gets recorded whether or not the run finishes.
+
+**Wall time: an estimate, not a registered prediction.** 7–11 h. Steady s/step will be read from steps 2–5 and projected before step 10.
+
+**THE CONFOUND IN P7.1, FOUND WHILE WRITING THIS.**
+- R6 quotes the band / deflection gradient ratio as 0.076 "for the t2 component alone", and the 1.92 estimate rests on it.
+- `b729e86` has `t1` = `t2` = 1.2 mm, exactly `--min-wall`: normalised z = 0.0 on both.
+- The deflection term wants those genes THINNER, and `project` holds them at the floor. So the component P7.1 was sized on cannot move.
+- So a drop that lands short has at least three plausible causes: the band's price, the wall floor, or another term (`stress_margin`, `mass`, `smoothness`).
+- **P7.1 is left exactly as registered. What changes is how it is read.**
+
+**THE READ THAT SEPARATES THEM, registered now.** At the selected genome, one serial objective call returns each term's gradient.
+1. List the genes on a bound.
+2. Restrict each term's gradient to the FREE genes, and project it on deflection's free-gene gradient.
+- **"The band sets the drop"** needs the band's projection to cancel at least half of deflection's there.
+- **If it is the floor instead:** the free-gene deflection gradient is small against its full-gene norm, and the floor genes carry the rest. Then the trade to decide is the floor against the target, not the band's knee.
+
+**Also reported, as Step 7 and §6 require:**
+- every gene's move, in millimetres and in normalised units;
+- the spoke profile overlaid on `b729e86`'s;
+- the tier-0 selection step, and whether it differs from the literal last step, as it did at `b729e86` (§115's fillet_cap pathology).
