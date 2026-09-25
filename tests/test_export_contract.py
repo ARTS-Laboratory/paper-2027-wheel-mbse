@@ -654,3 +654,63 @@ def test_no_swept_surface_survives_into_the_shipped_step(manifest):
     assert health["surface_census"].get("CylindricalSurface", 0) > 0, (
         "the hub bore and the remaining cylinders must stay analytic — if they have all "
         "become B-splines, `despecialize` is converting more than it was asked to")
+
+
+_RIM_BASE_PROBE = r"""
+import json, math
+import wheel_step_export as X
+genes = json.load(open("best_solution.json"))["genes"]
+shipped, j_shipped = X.build_profile(genes)
+thin, j_thin = X.build_profile(genes, 49.0)
+solid = X.extrude_profile(thin)
+refused = []
+for r in (X.RIM_RADIUS_MM, X.RIM_EMBED_RADIUS_MM):
+    try:
+        X.build_profile(genes, r)
+    except ValueError:
+        refused.append(r)
+print("RESULT:" + json.dumps({
+    "area_shipped": shipped.Area(), "area_thin": thin.Area(),
+    "hub_same": j_shipped["hub"] == j_thin["hub"],
+    "rim_mm3": [j_shipped["rim"]["mm3"], j_thin["rim"]["mm3"]],
+    "flat_is_identity": X.crown_rim(solid, 49.0, 0.0) is solid,
+    "refused": refused}))
+"""
+
+
+@pytest.mark.skipif(not os.path.exists(CAD_PY), reason="no .venv-cad on this machine")
+def test_a_thinner_rim_base_is_the_shipped_face_cut_by_a_circle():
+    """CROWN_PLAN.md Step 1: the rim's base b is an argument, and moving it moves NOTHING
+    but the band.
+
+    `build_profile(genes, rim_outer_mm)` keeps the spoke wire as it is — its tip still runs
+    out to RIM_EMBED_RADIUS_MM — and clips at the new OD.  So inside r 49.0 the b 0.5 face
+    must BE the shipped face, and the whole difference between them is the annulus 49-50:
+    pi (50^2 - 49^2) = 311.0177 mm^2.  Measured 2026-09-24 on `b729e86`: 311.017672 against
+    311.017673, 2.9e-7 mm^2 apart.  A spoke wire that moved with the OD, or a clip that
+    reached inside it, would miss by the area of a spoke tip.  The same geometry built to a
+    STEP reproduced §200's cut-crown part to the printed 0.1 mm^3, 45638.5.
+
+    The hub junction cannot see the rim, so its overlap must not move; the rim's is measured
+    against the band it meets, 97.26 -> 32.39 mm^3 (bite 0.721 -> 0.240, under the 0.25
+    floor), so it must shrink — a band left at r 50 inside a clip at 49 builds the same face
+    and only this sees it.  The refusals are the
+    two ends where the clip stops cutting a spoke tip that reaches past it.  A zero crown is
+    the flat rim, and `crown_rim` hands the solid back rather than building a degenerate arc.
+    """
+    import math
+
+    proc = subprocess.run(
+        [CAD_PY, "-c", _RIM_BASE_PROBE], cwd=HERE,
+        env={**os.environ, "PYTHONPATH": os.path.join(HERE, "src")},
+        capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 0, proc.stderr[-3000:]
+    line = next(ln for ln in proc.stdout.splitlines() if ln.startswith("RESULT:"))
+    got = json.loads(line[len("RESULT:"):])
+
+    annulus = math.pi * (50.0 ** 2 - 49.0 ** 2)
+    assert got["area_shipped"] - got["area_thin"] == pytest.approx(annulus, abs=1e-5)
+    assert got["hub_same"]
+    assert got["rim_mm3"][1] < got["rim_mm3"][0]
+    assert got["flat_is_identity"]
+    assert got["refused"] == [48.5, 50.25]
