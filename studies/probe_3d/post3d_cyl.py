@@ -43,3 +43,5 @@ for tag in sys.argv[1:]:
     print("   " + at(szz, "s_zz+ (interlayer tension)") + " | " + at(np.hypot(srz, stz), "interlayer shear"))
     k = np.unravel_index(np.argmax(np.where(band, vm, -1)), vm.shape)
     print(f"   at the vM peak: hoop {stt[k]:+.2f}  s_zz {szz[k]:+.2f}  s_rr {comp(er,er)[k]:+.2f}  s1 {s1[k]:+.2f}  s3 {w[k][0]:+.2f}")
+    k = np.unravel_index(np.argmax(np.where(band, stt, -np.inf)), stt.shape)
+    print(f"   at the hoop+ peak: hoop {stt[k]:+.2f}  s_zz {szz[k]:+.2f}  s_zz/hoop {szz[k] / stt[k]:.3f}  (CROWN_PLAN R2 P3)")
