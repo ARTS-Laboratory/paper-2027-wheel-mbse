@@ -1345,3 +1345,65 @@ tmux new-session -d -s step8 "OUT=<a scratch dir> studies/probe_3d/q_step8.sh"
 - `m_*.npz` / `r_*.npz`, `q.sh`, `q.log`, `collate_*.txt` and `junction.txt`
 - `floor.py` / `.out`, and `s1_robust.py` / `.out`
 - `PREDICTIONS_r14.txt`, and R14's queue in `s8/`
+
+### R14 — 2026-09-26. STEP 8's 3D RUN ON `4ec44f5` (`64e5068` WITH `R_rim` AT THE 1.35 FLOOR): THE BAND PASSES AT EVERY PHASE, WORST 33.67 MPa AT PHASE 0. THE EIGHT-PHASE MEAN IS 1.89982 mm, 0.00018 mm UNDER THE 1.90 EDGE. BY ITS LETTER THE DROP GATE FAILS, AND IT IS NOT REINTERPRETED. ALL THREE REGISTERED PREDICTIONS HOLD. THE RE-DESCENT WITH THE FLOOR AS A BOUND IS NEXT.
+
+**What ran.** R13's registered queue: `4ec44f5`'s seven remaining phases, with phase 0 reused from R13's field.
+- Each solve is SVK at h 2.0 / hc 0.25, on R9's windows widened 4 mm, in a 32G scope. Every one ran at the first try: 509–659 s and 15.7–17.9 GiB each, 66 min in all.
+- `patch3d.py`'s force control passes at all eight phases to 6.3e-13 N, with one patch each and 100% of the force.
+
+```
+  phase    3D SVK drop   / 64e5068   in-layer s1   64e5068 (R10)   change    hoop+    s_zz+    lever mm
+   0.00     1.86826       0.97453      33.67          39.30          -14.3%    32.34    13.84    0.677
+   3.75     1.92653       0.97777      33.23          33.31           -0.2%    32.73    16.21    0.732
+   7.50     1.95070       0.97975      31.61          31.75           -0.4%    31.61    17.13    0.733
+  11.25     1.94252       0.98062      30.83          31.13           -1.0%    30.83    16.99    0.730
+  15.00     1.91656       0.98064      29.63          29.93           -1.0%    29.63    16.77    0.726
+  18.75     1.88448       0.97949      27.99          28.25           -0.9%    27.99    16.49    0.721
+  22.50     1.86131       0.97832      25.86          26.25           -1.5%    25.86    15.72    0.715
+  26.25     1.84824       0.97456      30.59          28.80           +6.2%    29.95    15.78    0.696
+  mean      1.89982       0.97824
+
+  MPa, Cauchy, element nodes, band r >= 48.45, |x| < 10, post3d_cyl.py; z-share 0.00 at every
+  phase.  Phase 0 is R13's field.  Drops are axle_drop_mm.
+```
+
+**P14.1 HOLDS: the mean is 1.89982 mm**, inside the registered 1.890–1.906 and +0.10% from the registered point of 1.898.
+- R12's 2D-ratio route, 1.9049, over-read it by 0.27%. The phase-0 route, 1.8926, under-read it by 0.38%.
+- The 3D / `64e5068` ratio runs 0.9745–0.9806 by phase, with its two lowest at phases 0 and 26.25. Those are the phases whose toes sit at a rim junction.
+
+**P14.2 HOLDS: the worst in-layer s1 is 33.67 MPa at phase 0, ≤ 33.85, a factor of 1.188 to the printed ultimate.** Two of its sub-ranges missed:
+- **Phase 3.75** read 33.23, just under the registered 33.4–33.7. It barely moved from `64e5068`'s 33.31, and it sits on the side of the linear guess it had no reason to take.
+- **Phase 26.25 read 30.59, over the registered 27.0–29.0, and it ROSE 6.2% from `64e5068`'s 28.80.** I had registered "not above A's".
+  - The node-averaged read agrees: 27.87 → 29.55, +6.0% (`s1_robust_A.out`).
+  - The junction footprint's +x edge moved from −0.90 to −0.09 mm ([−4.47, −0.90] → [−4.70, −0.09]). The peak moved with it, from x −0.65 to +0.12, 0.21 mm outside the new edge.
+  - **Hypothesis, not finding:** at 26.25 the +x flank faces the load, so a larger fillet carries that toe TOWARD the load. At phase 0 it carried the −x toe away from it.
+  - The runs differ in one gene, but the mechanism rests on two locations. A mid-value (1.10 at 26.25) was not solved.
+  - It has 9.6% margin to the bar. **The floor does not bound it, and Step 8's 3D gate remains its backstop.**
+- The other five phases each read under `64e5068`'s, as registered.
+
+**P14.3 HOLDS:** one patch at every phase and the force control at 6.3e-13 N. The lever is 0.677–0.733 mm, inside 0.67–0.74. It is within 0.001 mm of `64e5068`'s at the six mid phases, and shorter at the two junction phases: 0.681 → 0.677 at phase 0 and 0.705 → 0.696 at 26.25.
+
+**`s_zz`** reaches 13.84–17.13 MPa, worst at 7.5, against `64e5068`'s 17.17 and `b729e86`'s 16.78. Step 0.5's coupons are still outstanding, so Step 8's `s_zz` gate cannot be read on any genome yet (R10).
+
+**THE CALL: STEP 8's DROP GATE FAILS BY ITS LETTER, BY 0.00018 mm (0.009%).**
+- The gap is small but it is not noise on this instrument. Widening the window moved a drop by 1.4e-7 relative, and refining hc 0.25 → 0.20 moved one by 1.7e-5 (R10). The gap is 9.2e-5.
+- The edge is not moved to meet the part. That would be a gate fitted to its result.
+- **`4ec44f5` is not promoted, and `b729e86` stays in `best_solution.json`.**
+- **Promotion was not reachable anyway.** A drop pass would still have left Step 8 blocked on Step 0.5's interlayer allowable.
+- **The stand-in did its job, and so did Step 8's falsifier.** Its reading that "the stand-in or the target correction was wrong" does not apply. The drop fell because of a gene fixed after the descent (the floor), and the 2D route priced that change to within 0.27%.
+- What `4ec44f5` does settle: the spokes of `64e5068`, with a fillet the 2D mesh cannot see, reach the band bar at every phase and the drop edge to within 0.2 µm. Any re-descent should do at least that well.
+
+**SUCCESSOR (R15), R12's REGISTERED BRANCH: RE-DESCEND WITH THE FLOOR AS A BOUND.**
+1. **The floor setter.** `GENE_SPACE[13]["low"]` goes from 0.5 to 1.35. It is set per run, by a setter in `wheel_fea.set_min_wall`'s pattern, not by editing the global, and a test pins it. This is its own commit.
+2. **Step 7's recipe, re-run.** It uses `svk-shipped`'s recipe on the stand-in at 300 steps and four workers, with the band term and target unchanged.
+   - **Warm start: `4ec44f5`.** It is feasible on the floor and 0.00018 mm from the window, so the descent starts where the 3D evidence is.
+   - Its predictions get registered before launch, with the 2D-to-3D route this record measured (K × 2D mean, −0.27% here).
+   - Cost: about 6.6 h, as R8's run took.
+3. **Step 8 again on the result:** the user's spoke-look gate, then the eight-phase 3D run.
+
+**Scope.** One genome, one 3D rung and eight phases, all at hc 0.25. The fields are in the session scratchpad, `/tmp/claude-1000/-home-eric-bodhi-github-wheel/d1909de0-a89b-4191-9d7f-397b67cfd244/scratchpad/r13/s8/`:
+- `m_s135_*.npz` / `r_s135_*.npz`, `q.sh`, `q.log` and `hashes.txt`
+- `collate_cyl.txt` and `collate_patch.txt`
+- `s1_robust.out` and `s1_robust_A.out`
+- the registered `../PREDICTIONS_r14.txt`
