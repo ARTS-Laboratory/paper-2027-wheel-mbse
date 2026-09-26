@@ -1126,3 +1126,53 @@ tmux new-session -d -s step8 "OUT=<a scratch dir> studies/probe_3d/q_step8.sh"
   - **If it fails:** the toe is set by the spoke ends, and the same 2D blindness question moves to `t0` / `t3`.
 
 **Scope.** One genome, one 3D rung (h 2.0 / hc 0.25), and one refinement step at one phase. The 2D is at `coarse`. The toe hypothesis rests on two genomes that differ in every spoke gene. The fields are in the session scratchpad, `/tmp/claude-1000/-home-eric-bodhi-github-wheel/a3321b31-5874-4406-9372-37eea1a1a028/scratchpad/step8/`: `m_s7_*.npz` / `r_s7_*.npz`, `r_s7_0_w4.npz`, `m_s7_0_q20.npz` / `r_s7_0_q20.npz`, `q.log`, `collate_cyl.txt`, `collate_patch_noassert.txt`, the registered `PREDICTIONS_q20.txt`, and `../rrim2d.py` / `../rrim2d.out` for the 2D rows above.
+
+### R11 — 2026-09-26. R10's SUCCESSOR, RUN: RESTORING `R_rim` ALONE TAKES THE PHASE-0 TOE FROM 39.30 TO 31.04 MPa (−21%), AND THE DROP PAYS 4.1–4.7%. BOTH REGISTERED PREDICTIONS HOLD. THE TOE IS THE FILLET's, AND THE 2D BAND TERM CANNOT SEE IT.
+
+**What ran.** `64e5068`'s genome with `R_rim` set to `b729e86`'s 1.6801683 mm, nothing else changed.
+- Export: `src/wheel_step_export.py --genome <scratch>/s7_rrim.json --out-prefix <scratch>/s7_rrim`. An absolute prefix keeps the candidate out of `export/`. On the default (1.5, 1.0) rim: 51418.5 mm³, 63.76 g (+0.69 g), BRepCheck valid, min curvature R 0.5108 mm.
+- Two SVK solves at phases 0 and 3.75, h 2.0 / hc 0.25, on R10's windows widened 4 mm, in 32G scopes: 656 / 630 s, 18.7 / 16.8 GiB.
+- Both pass `patch3d.py`'s force control to 1e-13, one patch each, lever 0.676 / 0.731 mm.
+
+```
+                          64e5068            R_rim -> 1.6802       change
+  phase 0   drop mm       1.91708            1.82681               -4.71%   (R11.2: 1.8485, -1.17%)
+            s1 MPa        39.30 @ x -1.43    31.04 @ x -1.84       -21.0%
+            hoop+ MPa     37.32              29.87
+            s_zz MPa      16.22              12.64
+            footprint     [-1.31, 2.27]      [-1.69, 3.75]         3.58 -> 5.44 mm
+  phase 3.75 drop mm      1.97033            1.88916               -4.12%   (R11.2: 1.8998, -0.56%)
+            s1 MPa        33.31 @ x +1.62    33.70 @ x +1.10       +1.2%
+            hoop+ MPa     32.75              33.64
+            s_zz MPa      16.19              16.30
+            footprint     [ 1.86, 5.32]      [ 1.46, 6.88]         3.46 -> 5.42 mm
+
+  Same instruments as R10: post3d_cyl.py (band r >= 48.45, |x| < 10, element nodes, Cauchy), and
+  the junction footprint as the x-extent of material at r 48.2-48.44.  b729e86: 6.49 / 6.44 mm.
+```
+
+**R11.1 HOLDS: the worst s1 over the two phases is 33.70 MPa, ≤ 35.** The falsifier was ≥ 38. The ratio to the printed ultimate is 1.187, where `b729e86` sits at 1.182.
+- **The headline rests on a one-variable design.** Only `R_rim` differs between the two genomes, and the outcome could have come back ≥ 38.
+- Both peaks still sit on the footprint's edge, 0.15 / 0.36 mm outside. The fillet moves the toe away from the load at phase 0. At 3.75 the toe was not beside the load on either genome, and s1 moved +1.2%.
+- **Scope:** two phases on one genome. Phase 26.25, R10's other toe phase, was not solved. That it follows phase 0 is an expectation, not a finding.
+
+**R11.2 HOLDS:** each drop is within 1.5% of the 2D mean ratio applied per phase (−1.17% / −0.56%).
+- **The fillet is worth 4.1–4.7% of the drop.** On the 2D mean that is 1.9463 → 1.8766 predicted-3D, **under Step 8's 1.90 edge.**
+- **So R_rim alone is no fix.** The part it gives is safe in the band and too stiff for the target. This is the trade R8 found the descent making, now priced in 3D: the fillet's 0.8 mm bought 3.6% of drop, and 18% of in-layer margin at the toe.
+
+**WHY THE DESCENT SPENT IT: THE BAND TERM IS BLIND TO THE FILLET.**
+- Across the same one-gene change, 2D `band_utilisation` moves −0.5% (1.7483 → 1.7389, R10), while the 3D toe falls 21%.
+- The band term reads the inner face 0.5 mm clear of the 2D corner (R6). The toe is where that exclusion sits.
+- `kt_rim` does track the fillet, 2.061 → 1.700 (×0.825). But it has fed no loss term since §103 (it stays for the geometric report, per `t3_terms`' docstring).
+- **Hypothesis, not finding:** one gene pair cannot calibrate either quantity against the 3D toe.
+
+**SUCCESSOR (R12), REGISTERED:** make the descent see the toe, and measure in 2D before any descent.
+- **The test:** find a 2D quantity whose `64e5068` → `R_rim`-restored ratio matches 3D's at both phases solved: **0.790 at phase 0 and 1.012 at 3.75, each within 5%**.
+- **Candidates:**
+  1. The band's inner-face tension read with `exclude_mm` under 0.5, with R6's corner checked under refinement at each exclusion.
+  2. `kt_rim`, phase by phase.
+- **A candidate that passes** gets priced, and Step 7 re-runs with it.
+- **The fallback** is a floor on `R_rim`: a bound, not a price. Its value is not derivable from one pair. At the old value it costs the 3.6% the drop window does not have.
+- **`b729e86` stays in `best_solution.json`.**
+
+**Fields:** `/tmp/claude-1000/-home-eric-bodhi-github-wheel/a3321b31-5874-4406-9372-37eea1a1a028/scratchpad/r11/`. It holds `m_*.npz` / `r_*.npz`, `q.sh` (the queue), `q.log`, `collate_*.txt`, `junction.txt`, the genome JSON, the STEP and the manifest.
