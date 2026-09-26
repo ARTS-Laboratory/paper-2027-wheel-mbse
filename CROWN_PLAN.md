@@ -1042,3 +1042,87 @@ tmux new-session -d -s step8 "OUT=<a scratch dir> studies/probe_3d/q_step8.sh"
 
 - **If Step 8 passes, Step 9 is the promotion.** It goes through `tests/test_promotion.py`'s checklist, as one atomic commit, never one file.
 - **Promotion's other open question: the drivers' measured constants were taken on `b729e86`.** The stand-in record (`WO.CROWN_STANDIN`) and the `--crown-standin` switch describe a rim, not a genome, and do not move.
+
+### R10 — 2026-09-26. STEP 8's 3D RUN: THE DROP PASSES (1.9421 mm, D7 HOLDS AT BOTH PHASES), BUT THE BAND DOES NOT. THE IN-LAYER PRINCIPAL TENSION AT THE PHASE-0 JUNCTION TOE IS 39.30 MPa, 39.65 REFINED, AGAINST THE 40 MPa PRINTED ULTIMATE. P8.3's HOOP READ PASSES BY ITS LETTER AND UNDER-READS THAT POINT. `64e5068` IS NOT PROMOTED.
+
+**What ran.** `q_step8.sh` exactly as R9 gives it, one serial queue, nothing else on the box. Eight SVK solves, 519–664 s each, 16.9–18.7 GiB peak, every one on its default window at the first try. Then two solves R9 did not register, both at phase 0 and both explained below: a re-solve on a window widened 4 mm (649 s, 19.0 GiB), and a refinement at hc 0.20 (1018 s, 23.2 GiB).
+
+**THE FORCE CONTROL CAUGHT R3's WINDOW DEFECT AT PHASE 0, AND IT COST NOTHING.**
+- `patch3d.py`'s ∫p dA read 33.36768 N against fe3d's 33.36165 N (+1.8e-4). Its assertion stopped the script, so no other phase was read.
+- The cause is the one R3 recorded. Phase 0's patch reaches x −1.034, past the window's x0 −1.00, which was fitted to `b729e86`'s patch. One OD triangle straddling that edge penetrates 0.39 µm and carries the 0.0060 N. fe3d never saw it, because its candidates and its truncation check use only triangles wholly inside the window.
+- Re-solved on x [−5.00, 8.00], the control passes to 1e-13. The drop moved −1.4e-7 relative, 1.9170804 → 1.9170802 mm. The band figures are unchanged to the printed digit.
+- The other seven phases pass at the first try, each to 1e-13. **All eight fields below pass the control.**
+
+**P8.1 (D7) HOLDS AT BOTH PHASES.** The combined factor 3D / 2D(t_eq) sits within 2% of `b729e86`'s:
+- Phase 0: **1.91708 mm** against 1.8987 [1.8607, 1.9366]. Factor 0.88470 against 0.87620, **+0.97%**.
+- Phase 3.75: **1.97033 mm** against 1.9523 [1.9133, 1.9914]. Factor 0.88175 against 0.87370, **+0.92%**.
+- **No refit.** R9's confound stands: this is t_eq and K tested together, and a pass says neither failed by more than the other made up.
+
+**P8.2, STEP 8's DROP GATE, HOLDS: THE EIGHT-PHASE 3D SVK MEAN IS 1.94209 mm, INSIDE [1.90, 2.10].**
+- That is 0.042 mm clear of the low edge, and 2.9% under the 2.0 mm target.
+- Against R9's point prediction 1.9376: **+0.23%**. Against plain K × the 2D mean, 1.94626: **−0.21%**. The −0.45% correction R9 carried over from `b729e86` did not transfer: the stand-in over-read this genome by 0.21%, not 0.45%. With two genomes, nothing here says which of the two predictors is the better one.
+- 3D / 2D over the eight phases is 0.88677, against K 0.88867 (−0.21%).
+
+```
+  phase    3D SVK drop    3D/2D(t_eq)   vs K x 2D   in-layer s1 max   hoop+ max   P8.3 hoop   s_zz max   lever mm (b729e86)
+   0.00     1.91708        0.88470       -0.45%       39.30             37.32       28.53       16.22      0.681 (0.671)
+   3.75     1.97033        0.88175       -0.78%       33.31             32.75       35.61       16.19      0.733 (0.724)
+   7.50     1.99102        0.88362       -0.57%       31.75             31.75       32.32       17.17      0.733 (0.726)
+  11.25     1.98091        0.88631       -0.27%       31.13             31.13       33.33       17.11      0.731 (0.722)
+  15.00     1.95440        0.88882       +0.02%       29.93             29.93       31.56       16.83      0.727 (0.717)
+  18.75     1.92395        0.89021       +0.17%       28.25             28.25       31.07       16.54      0.722 (0.710)
+  22.50     1.90256        0.89058       +0.22%       26.25             26.25       27.85       16.06      0.716 (0.701)
+  26.25     1.89649        0.88849       -0.02%       28.80             27.77       21.69       14.99      0.705 (0.672)
+  mean      1.94209        0.88677       -0.21%
+  phase 0 at hc 0.20:  1.91711 (+0.0017%)             39.65             37.06
+
+  MPa, Cauchy, element nodes, band r >= 48.45, |x| < 10, post3d_cyl.py.  s1: max principal
+  tension, its direction in the layer (z-share 0.00 at every phase).  hoop+: its hoop
+  component's max, P8.3's quantity.  Phase 0 is the widened-window field.  One patch at
+  every phase, 100% of the force.
+```
+
+**P8.3 PASSES BY ITS LETTER: NO PHASE's HOOP TENSION REACHES 40 MPa. ITS SHAPE IS REFUTED, AND ITS COMPONENT IS THE WRONG ONE AT THE POINT THAT MATTERS.**
+- **The worst phase is 0, not 3.75.** The hoop reads 37.32 MPa, 0.6% over the registered range's top of 37.1. Phases 0 and 26.25, which are neighbours across the 30° period, read **+30.8% and +28.0%** over their per-phase predictions. The other six read 1.8–9.1% under.
+- **R8's global-ratio route came closer than R9's per-phase one.** R8 put the worst phase at about 37.1 MPa, 0.6% under the measured 37.32. R9's c_band(φ) × p-norm put the worst at 3.75.
+- **On `b729e86`, s1 and hoop agree to within 1.1 MPa at all eight phases** (re-read now from §206's fields: s1 27.80 / 33.85 / 29.83 / 28.42 / 26.49 / 24.17 / 21.01 / 20.91). That is R1's "the max principal points along the hoop at every peak", and P8.3 was written on it. **On `64e5068` at phase 0 they split by 1.98 MPa at the same node:** s1 39.30, hoop 37.32. The direction is still in the layer, with no z-share, but it is no longer the cylinder's hoop.
+- **The 40 MPa bar is the printed ultimate for tension along the filaments**, 50 × 0.80 (`wheel_fea`, R1). s1 with no z-share IS that tension, and hoop is one component of it. So the bar applies to s1: **39.30 MPa at the rung every other figure uses, a factor of 1.018 to the ultimate. `b729e86`'s worst is 33.85 (1.182).**
+- **Refined, it climbs.** Q20, registered in the session scratchpad before the mesh existed, used hc 0.25 → 0.20 with a box x [−3.0, 2.5] × y [−51, −47.5] over the toe:
+  - Q20.1, "the hoop peak moves < 1%", HOLDS: 37.32 → 37.06, −0.70%.
+  - Q20.2, "the drop moves < 0.05%", HOLDS: +0.0017%.
+  - **The s1 peak rose 39.30 → 39.65 (+0.9%), a factor of 1.009.** One refinement step cannot say whether or where it converges, so the 39.65 is quoted as a reading, not a limit. It is read at surface element nodes, the reading §203 found within ±1% under refinement on the band's OD. This peak is on the inner face, at a toe.
+- **Hoop, s1 and the location on each genome, measured:**
+
+```
+            b729e86 peak     junction footprint    64e5068 peak     junction footprint
+  phase     MPa @ x          r 48.2-48.44          MPa @ x          r 48.2-48.44
+   0.00     26.72 @ -2.10    [-1.93, 4.56]         37.32 @ -1.43    [-1.31, 2.27]
+   3.75     33.80 @ +0.85    [ 1.23, 7.67]         32.75 @ +1.62    [ 1.86, 5.32]
+  26.25     19.97 @ -5.17    [-5.07, 1.39]         27.77 @ -0.65    [-4.47, -0.90]
+```
+
+- **Measured:** every one of the six peaks sits 0.10–0.38 mm outside the edge of the material that joins the band (the junction's footprint just inside the inner face). The footprint is **3.6 mm wide on `64e5068` against 6.5 mm on `b729e86`**. R8's largest gene move was `R_rim`, the rim-junction fillet, 1.680 → 0.886 mm.
+- **Hypothesis, not finding:** the narrower junction left a toe beside the load at phases 0 and 26.25. There the band bends hardest, and the principal direction turns off the hoop along the fillet's surface. The two genomes differ in every spoke gene, so the runs behind this differ in more than one way. The design that could refute it is the successor below.
+- **Implied c_band on `64e5068`** (3D hoop / 2D p64) is 1.768 / 1.335 / 1.337 / 1.344 / 1.390 / 1.387 / 1.440 / 1.651. That is **1.31x and 1.28x R6's** at phases 0 and 26.25, and 0.91–0.98x at the other six. The 2D term reads 0.5 mm clear of the corner (R6), and its calibration was taken on `b729e86`'s junction. The descent narrowed that junction under a price that could not see the toe.
+
+**P8.4, `s_zz`:** 14.99–17.17 MPa, worst at 7.5, against `b729e86`'s 16.78 (+2.3%). Step 0.5's coupons are still outstanding, so there is no allowable to read it against. The 12.5 MPa placeholder is exceeded by both parts.
+
+**P8.5 HOLDS: ONE PATCH AT EVERY PHASE, THE LEVER 0.681–0.733 mm** (hypothesis range 0.67–0.85). It is longer than `b729e86`'s at every phase: +1.0% to +2.1% at six phases, +1.5% at 0, and +4.9% at 26.25. Softer spokes, a longer patch, as registered.
+
+**THE CALL: STEP 8 DOES NOT PASS, AND `64e5068` IS NOT PROMOTED.** `b729e86` stays in `best_solution.json`. The drop is right and the patch is right. The band fails the reason its bar exists: in-layer tension at 98–99% of the printed ultimate, rising under refinement, where the shipped part has 18% margin. R9 registered that a band over 40 MPa "goes back as the band weight or knee against the target". The component P8.3 named reads 37 MPa there only because it is the wrong one at a fillet toe. **Lesson, for any later band prediction: register the in-layer max principal, not a cylindrical component.** Hoop is the same number only where the surface is a cylinder.
+
+**SUCCESSOR (R11), REGISTERED HERE BEFORE ANY SOLVE: ONE GENE.** `64e5068` with `R_rim` alone restored to `b729e86`'s 1.6802 mm, exported on the (1.5, 1.0) rim, SVK at phases 0 and 3.75, windows widened 4 mm.
+- 2D on the stand-in (the run's own Evaluator, serial, `coarse`, SVK, step 142's phases):
+  - **Control:** `64e5068` reproduces R9's predicted-3D mean, 1.9462621 mm.
+  - With `R_rim` restored, the predicted-3D mean is **1.87661 mm (−3.58%)**, under Step 8's 1.90 edge. So restoring the fillet alone costs the drop window.
+  - `kt_rim` 2.061 → 1.700, `stress_utilisation` 0.918 → 0.887.
+  - **`band_utilisation` 1.7483 → 1.7389 (−0.5%).** The 2D band term barely registers the fillet. If R11.1 holds, that blindness is how the descent could spend it.
+- **Registered:**
+  - **R11.1:** if the hypothesis holds, the junction footprint widens toward `b729e86`'s 6.5 mm, and the worst in-layer s1 over the two phases falls to **≤ 35 MPa**, a factor ≥ 1.14.
+  - **Falsifier:** ≥ 38 MPa. Then the fillet is not the lever, and the thinner spoke ends (`t0`, `t3`) are next.
+  - **R11.2:** each phase's 3D drop moves by the 2D MEAN ratio, 0.96421, within 1.5%: phase 0 **1.8485 mm**, phase 3.75 **1.8998 mm**. The ratio is an eight-phase mean applied per phase, hence the wider band.
+- **What follows from each outcome:**
+  - **If R11.1 holds:** the band read has to reach the toe, or `R_rim` needs a floor. Either way Step 7 re-runs, and the descent then has to find the lost 3.6% of drop elsewhere.
+  - **If it fails:** the toe is set by the spoke ends, and the same 2D blindness question moves to `t0` / `t3`.
+
+**Scope.** One genome, one 3D rung (h 2.0 / hc 0.25), and one refinement step at one phase. The 2D is at `coarse`. The toe hypothesis rests on two genomes that differ in every spoke gene. The fields are in the session scratchpad, `/tmp/claude-1000/-home-eric-bodhi-github-wheel/a3321b31-5874-4406-9372-37eea1a1a028/scratchpad/step8/`: `m_s7_*.npz` / `r_s7_*.npz`, `r_s7_0_w4.npz`, `m_s7_0_q20.npz` / `r_s7_0_q20.npz`, `q.log`, `collate_cyl.txt`, `collate_patch_noassert.txt`, the registered `PREDICTIONS_q20.txt`, and `../rrim2d.py` / `../rrim2d.out` for the 2D rows above.
