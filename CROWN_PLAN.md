@@ -5,7 +5,7 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
-**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). NEXT: R13, the floor on `R_rim` from two 3D solves, registered at the foot.**
+**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). NEXT: R15, the re-descent with the floor as a bound, registered at the foot.**
 
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
@@ -1407,3 +1407,59 @@ tmux new-session -d -s step8 "OUT=<a scratch dir> studies/probe_3d/q_step8.sh"
 - `collate_cyl.txt` and `collate_patch.txt`
 - `s1_robust.out` and `s1_robust_A.out`
 - the registered `../PREDICTIONS_r14.txt`
+
+### R15 — 2026-09-26. R14's SUCCESSOR, REGISTERED BEFORE LAUNCH: STEP 7's RECIPE RE-RUN WITH `R_rim` FLOORED AT 1.35, WARM FROM `4ec44f5`. A STEP-0 PROBE SAYS THE LOSS PUSHES `R_rim` INTO THE FLOOR, AND THAT THE TOE R13 SET THE FLOOR ON IS NOT PRICED BY ANYTHING THE DESCENT SEES — SO STEP 8's BAND GATE IS NOT PREDICTED TO PASS.
+
+**Step 1 is done.** `W.set_rim_fillet_floor(mm)` sets `GENE_SPACE[13]["low"]` per run, in `set_min_wall`'s pattern. `wheel_stage3 --r-rim-floor` applies it on parse, and both run records carry `r_rim_floor_mm`. It is committed separately, with its tests.
+
+**The argv.** R7's, with the floor added and new output files:
+
+```
+wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
+  --genome stage3_crown_standin_best.json --config coarse --kinematics svk --min-wall 1.2
+  --steps 300 --workers 4 --phase-scheme uniform --n-phase 8 --fidelity-check-every 0
+  --log-every 1 --out stage3_crown_floor.json --best-out stage3_crown_floor_best.json
+```
+
+- **The start is `4ec44f5`, reached by projection.** The genome file is the tracked `64e5068`. The floor lifts its `R_rim` from 0.8857 to exactly 1.35, and every other gene takes the same normalise round trip it would take from R13's `rr135.json`.
+- It runs under R7's scope (MemoryMax 55G, MemorySwapMax 0), with the same 30 s `/proc` side log outside it.
+
+**THE STEP-0 PROBE** (one serial `Evaluator` call each, `coarse` SVK, uniform 8 phases, the whole stand-in):
+
+```
+                          64e5068 (floor 0.5)    4ec44f5 (floor 1.35)
+  loss                    140.0784               142.0744
+  predicted-3D mean drop  1.946262               1.908988      (-1.92%)
+  deflection term         1.80  (|g| 809)        5.18  (|g| 1352)
+  band_margin             80.22 (|g| 668)        79.53 (|g| 664)
+  stress_margin           2.40                   1.48          kt_rim 2.061 -> 1.807
+  mass                    47.34                  47.57
+  dL/dz on R_rim          +0.80                  +12.53        (z = 0: on the floor)
+  dL/dz on t1 / t2        +128.1 / +58.6         +464.7 / +363.8
+```
+
+- **The control reproduces R8 and R9 to the printed digit:** the loss 140.078 and the mean drop 1.946262.
+- **The band term hardly sees the fillet:** −0.9%, as R11 found (−0.5%). So what `R_rim` costs in 2D is almost all drop, and the deflection term's gradient grows 1.67×.
+
+**REGISTERED (P15.x), before launch:**
+- **P15.0, the instrument.** The run's step 0 reproduces the probe: loss 142.0744 and predicted-3D mean 1.908988, with `R_rim` = 1.35. A miss means the start is not `4ec44f5`, and the run is read as nothing until that is explained.
+- **P15.1: `R_rim` ends ON the floor** (z = 0) at the selected step, because the loss pushes into it at the start (+12.5). `t1` stays on its 1.2 floor too. **Falsifier:** `R_rim` above 1.35 by more than 1e-9 mm.
+- **P15.2: the landing's predicted-3D mean is 1.925–1.965 mm, point 1.945.**
+  - The reasoning: R8's landing is where the band's free-gene gradient cancels deflection's, and the band term moved −0.9% with the fillet. So that balance should form again at about R8's drop (1.9463), and the floor's cost should be paid in the other genes rather than in drop.
+  - **Confound, stated now:** R8's selected step was not stationary (net +0.10–0.12), and tier-0 selection stops wherever the barriers allow. A landing low in the range therefore says as much about selection as about the balance.
+- **P15.3: the 3D mean is K × 2D mean × 0.9952–0.9979,** the stand-in's two measured over-reads: `4ec44f5` 1.89982 / 1.908988, and `64e5068` 1.94209 / 1.946262.
+  - At P15.2's point that is **1.936–1.941 mm**.
+  - Step 8's 1.90 edge needs a predicted-3D landing of at least 1.9092 at the worse factor. **The drop gate is predicted to pass.**
+- **P15.4: the phase-0 junction toe in 3D reads 33.7–34.2 MPa, and the 33.85 bar lies inside that range. A band pass is NOT predicted.**
+  - R13 set the floor on `64e5068`'s spokes, with 0.18 MPa (0.53%) to spare. The descent will soften the spokes to recover about 0.037 mm of drop.
+  - Nothing it sees prices the toe (R12). The 2D band term rose 0.21% per 1% of drop over R8's descent, and that gives the low end. Stress proportional to drop gives the high end.
+  - **If it fails:** raise `R_rim` on the new spokes after the descent, not in another descent. R13's slope between 1.35 and 1.68 is −7.96 MPa per mm, so 0.1 MPa costs about 0.013 mm of fillet. R14 measured the drop that fillet costs: 2.2% of the 3D mean for 0.46 mm. So a phase-0 solve at the sized radius comes first, then the eight-phase run.
+- **P15.5, memory:** no worker's VmHWM passes 11.0 GiB (R8: 10.36 at most).
+- **Wall time, an estimate:** 6.0–7.5 h (R8: 6.59 h).
+
+**What follows the run:**
+1. R8's report on the result: every gene's move from `4ec44f5`, the overlay, R7's attribution, and the selected step against the last.
+2. **The user's spoke-look gate (§6).** The overlay will be against `64e5068`, the spokes the user passed at R9.
+3. Step 8's eight-phase 3D run, P15.3 and P15.4 read first.
+
+**`b729e86` stays in `best_solution.json`.** Step 8's `s_zz` gate still waits on Step 0.5's coupons, so no genome can clear Step 8 whole yet (R10, R14).
