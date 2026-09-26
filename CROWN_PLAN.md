@@ -5,7 +5,7 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
-**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). The user passed `64e5068`'s spokes at Step 8's look gate. NEXT: Step 8's 3D run — R9 at the foot has the registered predictions and the exact commands (`studies/probe_3d/q_step8.sh`).**
+**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). NEXT: R13, the floor on `R_rim` from two 3D solves, registered at the foot.**
 
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
@@ -1176,3 +1176,91 @@ tmux new-session -d -s step8 "OUT=<a scratch dir> studies/probe_3d/q_step8.sh"
 - **`b729e86` stays in `best_solution.json`.**
 
 **Fields:** `/tmp/claude-1000/-home-eric-bodhi-github-wheel/a3321b31-5874-4406-9372-37eea1a1a028/scratchpad/r11/`. It holds `m_*.npz` / `r_*.npz`, `q.sh` (the queue), `q.log`, `collate_*.txt`, `junction.txt`, the genome JSON, the STEP and the manifest.
+
+### R12 — 2026-09-26. NO 2D READ PASSES. FOUR CANDIDATES, AND NONE COMES WITHIN 5% OF BOTH 3D RATIOS AT ANY RUNG. THE CAUSE IS IN THE MESH, NOT THE READ: THE 2D SECTOR BUILDS `R_rim` ON ONE FLANK OF EACH RIM JUNCTION, THE EXPORTED PART ON BOTH, AND 3D's TOE SITS ON THE FLANK 2D LEAVES SQUARE. THAT FLANK IS `rim:P_c`, THE CORNER `UNCAP_PLAN.md` FILED AS NOT LOAD-BEARING. THE FALLBACK, A FLOOR ON `R_rim`, IS TAKEN, AND ITS 3D LADDER IS REGISTERED AS R13.
+
+**What ran.** Genome A is `64e5068`. Genome B is A with `R_rim` alone at `b729e86`'s 1.6801683, R11's pair.
+- Each was solved on the stand-in mesh (`CROWN_STANDIN`'s `rim_outer`, orientation (1, 1), `fillet=True`), SVK, 66.7233 N. That is 18 service solves, 2669 s: two genomes × coarse / medium / fine × phases 0, 3.75 and 26.25.
+- Every solve keeps the raw inner-face profile, as R6 did, so any exclusion is a re-read.
+- The predictions, candidate C4 among them, were registered before the first solve in the session scratchpad (`PREDICTIONS_r12.txt`).
+- The target is R11's in-layer s1 ratio B / A: **0.7898 at phase 0 and 1.0117 at 3.75.** A pass needs both within 5% at `coarse`, the objective's rung, and still within 5% at medium and fine. Phase 26.25 is reported, not scored, because no 3D solve of B exists there.
+
+**P12.0, the control, HOLDS.** A's coarse drops are R9's raw 2D drops to the printed digit: 2.16693, 2.23456 and 2.13450.
+
+```
+  B / A (error against the 3D ratio)   phase 0            phase 3.75          phase 26.25
+  C2  kt_rim (geometric, no phase)     0.8247 (+4.4%)     0.8247 (-18.5%)     0.8247
+  C1  hoop, d 0 (the corner node)      c  0.9086 (+15.0%) c  0.9244 (-8.6%)   c 0.9266
+                                       m  0.9122 (+15.5%) m  0.9124 (-9.8%)   m 0.9263
+                                       f  0.9316 (+17.9%) f  0.9319 (-7.9%)   f 0.9448
+  C1  hoop, d 0.2 .. 0.5 (max)         c  1.0062 (+27.4%) c  1.0038 (-0.8%)   c 1.0133
+      (d 0.5 is the priced read)       m  1.0093 (+27.8%) m  0.9909 (-2.1%)   m 1.0291
+                                       f  1.0029 (+27.0%) f  0.9960 (-1.6%)   f 1.0038
+  C3  rim_region_pnorm                 c  0.8917 (+12.9%) c  0.9816 (-3.0%)   c 0.9322
+      (stress_margin's rim quantity)   m  0.8812 (+11.6%) m  0.9766 (-3.5%)   m 0.9322
+                                       f  0.8739 (+10.6%) f  0.9724 (-3.9%)   f 0.9302
+  C4  in-plane s1, free boundary,      c  0.8408 (+6.5%)  c  0.8460 (-16.4%)  c 0.8358
+      r 44.5-48.5, y < 0, |x| < 10     m  0.8367 (+5.9%)  m  0.8390 (-17.1%)  m 0.8299
+                                       f  0.8503 (+7.7%)  f  0.8534 (-15.6%)  f 0.8438
+  3D (R11), in-layer s1                0.7898             1.0117
+  2D drop, for scale                   0.9589             0.9648-0.9649       0.9573-0.9575
+
+  c / m / f: coarse / medium / fine.  C1 at d 0.1 equals d 0 on B (its corner node sits
+  0.150 mm out at coarse) and d 0.2 on A (0.094 mm), so it is not a row of its own.
+```
+
+**THE REGISTERED PREDICTIONS, SCORED:**
+- **C2, `kt_rim`, FAILS AS REGISTERED, with no solve.** It is `1 + (t3 / 2 R_rim)^0.65` and has no phase: 0.8247 everywhere. It matches phase 0 to +4.4% and misses 3.75 by −18.5%.
+- **C1 at d 0.5 HOLDS as registered.** B / A is 0.991–1.009 at both phases on every rung, inside the registered 0.97–1.03. So it fails phase 0 by 27–28%. This is R11's "the band term is blind to the fillet", now shown at three rungs.
+- **C1 at d 0 misses both registered figures.**
+  - Phase 0 at coarse reads 0.9086, just outside the registered 0.75–0.90.
+  - **"The ratio moves > 5% under refinement" is REFUTED.** It moves +2.5% at phase 0 and +0.8% at 3.75, coarse to fine, while the value itself climbs 35.30 / 41.62 / 47.80 MPa. A ratio of two singular readings is steadier than either reading.
+  - It fails both phases in any case: +15 to +18% and −8 to −10%.
+- **C3 fails, but at the other phase from the one registered.** Phase 0 at 0.892 is inside the registered 0.80–0.90. Phase 3.75 at 0.982 is outside the registered 0.85–0.95. So it is within 5% at 3.75 and +10.6 to +12.9% off at phase 0.
+- **C4's registered pass is REFUTED:** +5.9 to +7.7% at phase 0 and −15.6 to −17.1% at 3.75.
+  - Its maximum is not a stress. It sits on the same corner node at every phase and rung, and climbs 124.6 / 153.3 / 185.2 MPa (phase 0, A).
+
+**THE SHAPE EVERY CANDIDATE SHARES.** Each 2D quantity that moves with `R_rim` moves by about the same factor at phases 0 and 3.75: kt 0.82 / 0.82, the corner 0.91 / 0.92, C4 0.84 / 0.85. The one exception is C3, 0.89 / 0.98. 3D moves by 0.79 and 1.01. No reweighting of a phase-uniform response fits a phase-selective one, which is why every row fails at one phase or the other.
+
+**WHY: THE 2D MESH DOES NOT BUILD THE FILLET THE 3D TOE SITS ON. MEASURED, on geometry and manifests, no solve:**
+- **2D.** At phase 0, coarse, the band nodes the junction owns span x [−0.785, 1.001] on A and [−0.729, 2.125] on B. A fillet 0.79 mm larger moves the +x edge 1.124 mm and the −x edge 0.056 mm.
+  - A plot of both junctions (session scratchpad, `junction2d.png`) shows why. `WW.fillet_arc_nodes(mesh, "rim")` is the only rim arc, and it is on the +x flank.
+  - The −x flank is the far-flank corner, `rim:P_c`. It is built by `_uncap_corner` at `UNCAP_DEFAULT`'s rim blend 1.0 (radial), and it meets the band SQUARE.
+  - Every d 0 peak in the table is on that corner: x −0.88 at phase 0, +2.29 at 3.75, −4.05 at 26.25. That is one corner rolled 3.17 mm per 3.75°.
+- **3D.** Both exports fillet **all 24 rim edges at the requested radius**, 0.886 on A and 1.680 on B (`fillets.detail`, rim: `n_edges_filleted` 24 of 24 found, one family each). That is both flanks of all twelve spokes. So the 3D footprint grows on both sides: [−1.31, 2.27] → [−1.69, 3.75].
+- **The 3D toe is on the −x edge at both phases solved** (R10 / R11): phase 0 at x −1.43 → −1.84, and 3.75 at +1.62 → +1.10. Each sits 0.12–0.36 mm outside that edge. **That is the fillet 2D does not have.**
+- **Not every 3D peak is there.** At phase 26.25, R10 puts A's peak at x −0.65, 0.25 mm outside the +x edge (−0.90): the flank 2D DOES fillet, at 27.77 MPa hoop / 28.80 s1. B was not solved there. So the claim is about phases 0 and 3.75, where the toe that fails Step 8 is.
+- **Hypothesis, not finding:** 3D's phase-0 response is the `rim:P_c` fillet's local geometry, which 2D sees only as a square corner and a global stiffness change. Two things support it: the location, and the phase-uniform 2D response.
+  - The design that could refute it is a 2D mesh with `R_rim` built at `rim:P_c`, whose d 0 ratio should then approach 0.79 at phase 0. That mesh does not exist.
+  - The runs behind the hypothesis differ in one gene, but 2D and 3D differ in the whole corner, so this is not a one-variable result.
+
+**WHY THAT MESH IS NOT BUILT HERE: `UNCAP_PLAN.md` PRICED IT.** A faithful `rim:P_c` needs rim blend 0.0. There the junction block turns into a curvilinear triangle, `min_scaled_jacobian` is 0.0072 against the 0.2 gate, and there is no blend that satisfies both (its "THE BLEND SWEEP"). The tri-block it would need was "filed, not built". The blend-1.0 corner the tree uses is 50.6° off the part's wedge, so a fillet built on it would be a fillet on the wrong corner.
+- §114 parked that arc because `rim:P_c` "reaches no barrier, no objective term and no gradient. Reopens only if that quantity acquires a consumer."
+- **This record gives it a consumer: the band toe on a part that fails Step 8 there.**
+- **Not reopened here.** The tri-block is a mesh-topology arc with a measured quality cost. The floor below is one bound. PLAN.md's index row for `UNCAP_PLAN.md` now carries the pointer.
+
+**THE CALL: R11's FALLBACK, A FLOOR ON `R_rim`.** No 2D read prices the toe, and the only 2D quantity that matches phase 0, `kt_rim` (+4.4%), is one gene pair's coincidence: it also predicts an 18% fall at 3.75 that 3D does not show. A price calibrated on it would be fitted to two points of one genome. A floor is a bound, and its value can come from 3D directly.
+- **Its limit, stated:** it closes the one lever measured. A descent could narrow the junction by `t3` or the arch instead, and the 2D term would miss that too. **Step 8's 3D gate stays the backstop, and the in-layer s1 is its quantity** (R10's lesson).
+
+**THE DROP COST, 2D, the run's own Evaluator** (serial, `coarse`, SVK, step 142's phases; the control reproduces 1.9462621):
+
+```
+  R_rim      predicted-3D mean   vs 64e5068   x measured 3D mean 1.94209   kt_rim   band_utilisation
+  0.8857     1.94626             -            1.94209 (R10)                2.0611   1.74828
+  1.10       1.93016             -0.83%       1.92602                      1.9217   1.74656
+  1.35       1.90899             -1.92%       1.90490                      1.8068   1.74419
+  1.6802     1.87661             -3.58%       1.87259  (R11: R11.2 held)   1.6999   1.73894
+```
+
+**SUCCESSOR (R13), REGISTERED HERE BEFORE ANY SOLVE: THE FLOOR's VALUE, FROM 3D.** `64e5068` with `R_rim` alone at **1.10 and 1.35**, exported on the (1.5, 1.0) rim. SVK at phase 0 only: R10 put A's worst there. Phase 26.25 reads 28.80 on A, 5.05 MPa under the bar below, on the +x flank. That a larger fillet does not raise it is an expectation, not a measurement. R11's queue runs with the genome swapped, on the windows R11 used. Cost: 2 exports and 2 solves, about 25 min.
+- **The bar: in-layer s1 at phase 0 ≤ 33.85 MPa,** `b729e86`'s worst (R10). That is no less margin to the 40 MPa printed ultimate than the shipped part has (1.182). At 3.75 these spokes already read 33.31 / 33.70 (A / B, R11), under it.
+- **The floor** is the smallest `R_rim` meeting the bar, interpolated over four points: 0.886 → 39.30 and 1.680 → 31.04 (measured), plus the two new ones.
+- **R13.1:** both points lie on or below the chord between the measured ends, which reads 37.07 at 1.10 and 34.47 at 1.35. A Kt-shaped curve through the ends, `a + b (t3 / 2R)^0.65`, reads 36.11 and 33.49. **Registered: 35.1–37.1 at 1.10 and 32.5–34.5 at 1.35, and the floor in 1.25–1.42** (Kt-shaped 1.31, chord 1.41).
+  - **Falsifier:** either point above the chord. Then the floor is above 1.41, and it costs more of the drop than the table above allows.
+- **R13.2:** each phase-0 3D drop moves by the 2D mean ratio within 1.5%, as R11.2 did: **1.90122 at 1.10 and 1.88037 at 1.35.**
+- **What follows:**
+  - **If the floor lands at or under 1.35,** then `64e5068` with `R_rim` at the floor is itself a Step 8 candidate. Its predicted eight-phase mean is 1.905–1.926, inside [1.90, 2.10] without a re-descent, but by 0.005 mm at 1.35, inside R11.2's 1.5%. It gets the full eight-phase run, not a two-phase read. A re-descent with the floor as a bound (a `set_min_wall`-style setter on `GENE_SPACE[13]["low"]`, now 0.5) is the next branch if it misses the window.
+  - **If the floor is above 1.35,** only the re-descent remains, and it has to find the drop elsewhere.
+- **`b729e86` stays in `best_solution.json`.**
+
+**Scope.** One gene pair, one genome, the stand-in mesh, SVK, three rungs at three phases. The 3D side is R11's two phases at one rung. The mechanism rests on geometry read off both models, not on a 2D solve that has the fillet. The fields and scripts are in the session scratchpad, `/tmp/claude-1000/-home-eric-bodhi-github-wheel/c060e21e-596a-4a36-ae48-06e3342c9504/scratchpad/`: `r12_probe.py` → `r12_ladder.json` / `.log`, `r12_reduce.py`, `PREDICTIONS_r12.txt`, `junction2d.png`, and `rrim2d_floor.py` / `.out` for the drop table.
