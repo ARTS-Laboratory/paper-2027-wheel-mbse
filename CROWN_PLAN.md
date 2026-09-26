@@ -896,3 +896,80 @@ It runs under a `systemd-run --user` scope with MemoryMax 55G and MemorySwapMax 
 - every gene's move, in millimetres and in normalised units;
 - the spoke profile overlaid on `b729e86`'s;
 - the tier-0 selection step, and whether it differs from the literal last step, as it did at `b729e86` (§115's fillet_cap pathology).
+
+### R8 — 2026-09-25. STEP 7 DONE: THE DESCENT LANDS AT A PREDICTED-3D MEAN OF 1.9463 mm, INSIDE P7.1's 1.90–1.97. BY R7's REGISTERED READ THE BAND SETS THE DROP: ON THE FREE GENES IT CANCELS 72–83% OF THE DEFLECTION GRADIENT. THE FLOOR IS ALSO ACTIVE: THE WHOLE LOSS STILL PUSHES `t1` INTO 1.2 mm. AND THE BAND GOES UP 9.8% TO GET THERE.
+
+**The run.** R7's argv, exit 0, 23714.5 s (6.59 h, 77.8 s/step over steps 2–300). R7's 7–11 h wall estimate was high.
+- Record: `stage3_crown_standin.json`. Selected genome: `stage3_crown_standin_best.json`, genome_hash `64e5068`, at **step 142**, loss 140.078, tier 0.
+- **It is not the lowest loss in the run** (139.953, step 290). By `selection_key`, 208 of the 301 steps carry a barrier and 2 more sit inside the 1 µm cap slack. `fillet_cap` is nonzero at 163 steps, first at step 30; `x_order` and `arrival` account for the rest. Step 142 is the lowest loss among the 91 tier-0 steps. It is the same pathology `b729e86` was selected past (§115), at the same rate: 86 of 123 steps carried a barrier in that run's resumed leg (69.9%), 208 of 301 here (69.1%).
+
+**P7.2 HOLDS.** No process passed 11.0 GiB in 789 samples, 30 s apart.
+- Workers' VmHWM: 10.087 / 10.213 / 10.281 / 10.357 GiB. Parent: 10.404 GiB.
+- Scope: at most 50.47 GiB of its 55G cap. The box never had under 2.80 GiB available.
+- So `POOL_GIB`'s `coarse` pair (11, 11) covers the stand-in mesh, 300 steps, with 0.643 GiB to spare on the largest worker.
+
+**P7.1 HOLDS: 1.9463 mm, inside 1.90–1.97.** The crude estimate was 1.92, which is 0.026 mm under the landing.
+- P7.1 was sized on `t2`'s gradient (R7), and `t2` did not move. So the hit is on the registered range, not on its derivation.
+- Against Step 8's window [1.90, 2.10], the landing is 0.046 mm inside the low edge. D7's 2% per-phase factor check is worth 0.039 mm at this drop, so Step 8's first pass can fail on the factor alone.
+
+```
+  at step 0 (b729e86 on the stand-in)  ->  step 142 (64e5068)
+  predicted-3D mean drop       1.3178 -> 1.9463 mm       phase ripple (std/mean)  4.16% -> 2.00%
+  stress_utilisation           0.756  -> 0.918           kt_hub / kt_rim   3.124 / 1.815 -> 2.841 / 2.061
+  band_utilisation (priced)    1.5917 -> 1.7483          buckling_ratio    0.156 -> 0.197
+  mesh mass (stand-in mesh)    59.77  -> 57.59 g         min scaled Jacobian 0.408 -> 0.333
+  loss 400.79 -> 140.08: deflection 290.88 -> 1.80, band_margin 55.91 -> 80.22,
+                          mass 49.13 -> 47.34, smoothness 4.87 -> 8.32, stress_margin 0 -> 2.40
+```
+
+**THE GENES** (`studies/study_crown_step7.py` → `.json`, `.jpg`):
+
+```
+  gene      b729e86     64e5068      move mm    move z    bound
+  cx1        2.4566      2.0751     -0.3815    -0.0426
+  cy1       24.9130     27.9515     +3.0385    +0.0475
+  cx2       19.6900     19.6900      0          0         HIGH (at start too)
+  cy2       21.6545     25.0173     +3.3629    +0.0525
+  cx3       23.1354     22.5104     -0.6250    -0.0529
+  cy3       16.7656     15.0860     -1.6796    -0.0262
+  cx4       25.1988     25.0600     -0.1388    -0.0155    LOW
+  cy4        6.4416      5.0186     -1.4230    -0.0222
+  t0         3.5055      2.9863     -0.5192    -0.0590
+  t1         1.2000      1.2000      0          0         LOW (at start too)
+  t2         1.2000      1.2021     +0.0021    +0.0003    (0.002 mm off the floor)
+  t3         2.4547      1.9406     -0.5141    -0.1071
+  R_hub      0.5710      0.6009     +0.0299    +0.0083
+  R_rim      1.6802      0.8857     -0.7945    -0.3178
+```
+
+- **The largest move is `R_rim`**, the rim-junction fillet: −0.795 mm, −0.318 of its range. That is why `kt_rim` rose 1.815 → 2.061.
+- **The spoke thinned at both ends** (`t0` −0.52, `t3` −0.51 mm) and its arch rose about 3 mm near the hub (`cy1`, `cy2`).
+- **The overlay** (`study_crown_step7.jpg`) shows the same shape family, a taller and thinner arch. Whether it still "looks right" is the user's call at Step 8 (§6).
+
+**R7's ATTRIBUTION, AS REGISTERED.** Isolated per-term gradients at `64e5068`.
+- **The instrument checks out.** Every term reproduces the run's value and gradient norm to the printed digit. The five sum to the run's recorded gradient within 3.8e-5 on a norm of 163.1 (2.3e-7 relative). **Not bit-exact, cause unmeasured.** The hypothesis is that the descent's Newton solves were warm-started and these were not.
+- **The driver reproduces itself.** Run twice, from the scratchpad and then from `studies/`, the per-term gradients agree to 0.0.
+
+```
+  projection on deflection's free-gene gradient    t2 free      t2 pinned
+  |deflection|, free / all                         640.5/809.0  453.8/809.0   (0.792 / 0.561)
+  band_margin                                      -0.8347      -0.7165
+  stress_margin                                    -0.0554      -0.1147
+  smoothness                                       -0.0291      -0.0579
+  mass                                             +0.0359      -0.0069
+  net                                              +0.1167      +0.1040
+```
+
+- **By R7's rule the band sets the drop.** It cancels 83% (t2 free) or 72% (t2 pinned) of deflection's free-gene component, where the bar was half. Its cosine with deflection there is −0.978.
+- **The floor half of R7's rule does not fire.** The free genes carry 79% / 56% of deflection's norm, which is not "small".
+- **But the floor is ACTIVE, and R7's rule did not ask about that.** On `t1` the summed loss gradient is **+128.1**. Deflection's +493.8 outweighs the band's −383.1, so the loss as a whole still wants `t1` thinner, and only the bound stops it. `t2` sums to +58.6 with 0.002 mm to give.
+- **So both constraints hold the landing.** The band on the free genes, the floor on `t1` / `t2`. **Hypothesis, not finding:** relaxing either would move the drop up. Gradients at one point cannot say by how much. Only a descent with the floor lowered, or the band re-weighted, can, and each changes one thing.
+- **The net +0.10 to +0.12 is not zero.** Step 142 is not a stationary point on the free genes. It is where the tier-0 floor stopped the selection, not where the descent settled. The lr was 0.0055 there. The literal last step's drop, 1.9519, is 0.0056 mm higher.
+
+**THE BAND GOT WORSE, AND THAT IS THE TRADE THE DESCENT PRICED.** The priced utilisation rose from 1.5917 to 1.7483 (+9.8%).
+- **Hypothesis, not finding:** assume R6's 17.7% over-read of the 3D worst phase carries to the new spokes. Then the 3D inner-face worst phase moves from R1's 33.80 to about **37.1 MPa**. That is against the 25 MPa allowable and the 40 MPa printed ultimate (R1), leaving about 7% to the ultimate.
+- That rests on the same transfer D7 exists to test. Step 8's 3D run measures it, and it is the number to read first there.
+
+**Scope.** One descent, one start, `coarse`, SVK, uniform 8 phases, the stand-in rim. The attribution is a first-order read at one genome. Every drop here is PREDICTED 3D (the 2D drop × `drop_factor` 0.88867), until Step 8 measures one.
+
+**NEXT: STEP 8's GATE IS THE USER's (§6).** The spoke look (overlay), then the 3D run. `b729e86` stays in `best_solution.json`.
