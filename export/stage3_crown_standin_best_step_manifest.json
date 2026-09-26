@@ -1,0 +1,119 @@
+{
+  "genome_hash": "64e5068",
+  "source": "stage3_crown_standin_best.json",
+  "source_mtime": "2026-09-25T22:43:53",
+  "exported_at": "2026-09-26T00:05:35",
+  "export_seconds": 65.9,
+  "solid": {
+    "valid": true,
+    "volume_mm3": 50864.3,
+    "mass_g_pla": 63.07,
+    "volume_nofillet_mm3": 50665.5,
+    "bbox_mm": [
+      102.0,
+      102.0,
+      22.4
+    ]
+  },
+  "junction_overlap_mm3": {
+    "hub": 97.11,
+    "rim": 72.66,
+    "bite": {
+      "hub": 0.4861,
+      "rim": 0.8613
+    },
+    "t_mm": {
+      "hub": 2.9863,
+      "rim": 1.9406
+    },
+    "pass": {
+      "hub": true,
+      "rim": true
+    },
+    "bite_floor": 0.25
+  },
+  "fillets": {
+    "hub_edges": 24,
+    "rim_edges": 24,
+    "volume_mm3": 198.76,
+    "detail": [
+      {
+        "junction": "hub",
+        "r_requested_mm": 0.6009365958355021,
+        "r_built_mm": 0.5107961064601767,
+        "n_edges_filleted": 24,
+        "n_edges_found": 24,
+        "worst_wedge_deg": 328.0,
+        "fillet_families": [
+          {
+            "radius_mm": 0.5107961064601767,
+            "n_edges": 24
+          }
+        ],
+        "kt_modeled": 2.8068796509887197,
+        "kt_built": 3.0081998263844745,
+        "kt_error_pct": 7.172383587049769
+      },
+      {
+        "junction": "rim",
+        "r_requested_mm": 0.8857028125652322,
+        "r_built_mm": 0.8857028125652322,
+        "n_edges_filleted": 24,
+        "n_edges_found": 24,
+        "worst_wedge_deg": 296.0,
+        "fillet_families": [
+          {
+            "radius_mm": 0.8857028125652322,
+            "n_edges": 24
+          }
+        ],
+        "kt_modeled": 2.06110094641463,
+        "kt_built": 2.06110094641463,
+        "kt_error_pct": 0.0
+      }
+    ]
+  },
+  "crown": {
+    "height_mm": 1.0,
+    "radius_mm": 63.22,
+    "volume_added_mm3": 4736.53,
+    "volume_added_closed_form_mm3": 4736.53,
+    "mass_g_pla": 5.873,
+    "side_face_band_mm": 1.5,
+    "apex_band_mm": 2.5
+  },
+  "profile_health": {
+    "min_curvature_radius_mm": 6.679792,
+    "self_intersections": 0,
+    "worst_at": [
+      -2.321,
+      14.309,
+      0.0
+    ]
+  },
+  "step_health": {
+    "surface_census": {
+      "Plane": 14,
+      "BSplineSurface": 61,
+      "CylindricalSurface": 36
+    },
+    "counts": {
+      "faces": 111,
+      "edges": 327,
+      "vertices": 218
+    },
+    "min_edge_mm": 0.027757,
+    "min_face_mm2": 0.6218,
+    "max_edge_tolerance_mm": 1.0130468195000527e-07,
+    "degenerate_edges": 0,
+    "brepcheck_valid": true,
+    "self_intersecting": false,
+    "min_curvature_radius_mm": 0.51078,
+    "min_curvature_at": [
+      7.236,
+      10.595,
+      22.4
+    ],
+    "swept_surfaces_remaining": {}
+  }
+}

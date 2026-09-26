@@ -5,6 +5,8 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
+**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). The user passed `64e5068`'s spokes at Step 8's look gate. NEXT: Step 8's 3D run — R9 at the foot has the registered predictions and the exact commands (`studies/probe_3d/q_step8.sh`).**
+
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
 while a study driver is mid-write, a study commit carries its artifacts, a promotion is one
@@ -973,3 +975,70 @@ It runs under a `systemd-run --user` scope with MemoryMax 55G and MemorySwapMax 
 **Scope.** One descent, one start, `coarse`, SVK, uniform 8 phases, the stand-in rim. The attribution is a first-order read at one genome. Every drop here is PREDICTED 3D (the 2D drop × `drop_factor` 0.88867), until Step 8 measures one.
 
 **NEXT: STEP 8's GATE IS THE USER's (§6).** The spoke look (overlay), then the 3D run. `b729e86` stays in `best_solution.json`.
+
+### R9 — 2026-09-26. STEP 8's LOOK GATE PASSED BY THE USER ("Spokes look decent"). `64e5068` IS EXPORTED, AND THE 3D RUN's PREDICTIONS ARE REGISTERED HERE, BEFORE ANY SOLVE, WITH THE COMMAND THAT RUNS IT.
+
+**The gate (§6).** The user reviewed `export/stage3_crown_standin_best.step` and R8's overlay and passed the spokes. No trust region and no frozen genes. `b729e86` stays in `best_solution.json` until the 3D run below clears Step 8.
+
+**The export.** `make export EXPORT_GENOME=stage3_crown_standin_best.json` → `export/stage3_crown_standin_best.step` (+ `_nofillet.step`, `_step_manifest.json`), on the default rim, which is the chosen (1.5, 1.0).
+- OCC: one valid solid, Ø102.00 × 22.40 mm, 50864.3 mm³, 63.07 g PLA (`b729e86` on the same rim: 65.35 g).
+- STEP health: BRepCheck valid, not self-intersecting, min curvature R 0.5108 mm (floor 0.25).
+
+**2D per-phase at `64e5068` on the stand-in.** One serial `t3_terms` call, `coarse` SVK, the whole `CROWN_STANDIN`. It reproduces the pooled run's step-142 mean, 1.946262 mm, and band utilisation, 1.74828. The raw 2D drops (before K) and the band's node p-norm per phase:
+
+```
+  phase    2D drop b729e86   2D drop 64e5068   band 2D p64 MPa   c_band (R6)   pred 3D hoop T   R1 3D at b729e86
+   0.00       1.45825            2.16693             21.11           1.352          28.53             26.72
+   3.75       1.55358            2.23456             24.53           1.452          35.61             33.80
+   7.50       1.57288            2.25325             23.75           1.361          32.32             29.83
+  11.25       1.53990            2.23501             23.16           1.439          33.33             28.41
+  15.00       1.48631            2.19887             21.54           1.465          31.56             26.49
+  18.75       1.43828            2.16122             20.37           1.525          31.07             24.17
+  22.50       1.40843            2.13631             18.23           1.528          27.85             21.01
+  26.25       1.40540            2.13450             16.82           1.289          21.69             19.97
+  mean                           2.19008   x K 0.88867 = 1.94626 predicted 3D
+```
+
+**REGISTERED FOR STEP 8's 3D RUN (P8.x), before any solve:**
+- **P8.1, D7's check, run first:** 3D / 2D(t_eq) holds to within 2% of `b729e86`'s combined factors, 0.87620 at phase 0 and 0.87370 at 3.75.
+  - Phase 0: predicted **1.8987 mm**, band [1.8607, 1.9366].
+  - Phase 3.75: predicted **1.9523 mm**, band [1.9133, 1.9914].
+  - **A miss is not a halt (D7).** Refit t_eq on these spokes at (1.5, 1), re-descend warm, and record which transfer moved.
+  - **Confound, stated now:** P8.1 tests two transfers at once, t_eq's and K's. A miss says one failed, not which. Only D7's refit separates them.
+- **P8.2, Step 8's own gate:** the eight-phase 3D SVK mean is in [1.90, 2.10].
+  - Point prediction: **1.9376 mm**. That is K × the 2D mean, less the +0.45% by which the stand-in over-read `b729e86`'s measured 3D mean (1.31773 predicted, 1.31186 measured).
+  - The low edge is 0.038 mm away, inside D7's 2% (0.039 mm). So this is a live test, not a formality.
+  - **Falsifier (Step 8's):** outside the window, the part does not ship.
+- **P8.3, the band:** inner-face hoop tension, worst at phase 3.75, **35.6–37.1 MPa**.
+  - Two routes give the range: c_band(φ) × the 2D p-norm per phase (35.61, and the p-norm under-reads the max by ≤ 1.3%, D6), and R8's global ratio (37.1). Every phase's prediction is in the table.
+  - It is over the 25 MPa allowable at every phase, and that is priced, not barred (0.3).
+  - **Falsifier:** any phase over **40 MPa**, R1's printed ultimate. That goes back to the user as the band weight or knee against the target, before any promotion.
+- **P8.4, `s_zz`:** reported, not gated. Step 0.5's coupons are outstanding, and the 12.5 MPa placeholder is already exceeded on `b729e86` (16.78, R1).
+- **P8.5, the patch (Step 0.1):** ONE patch at every phase is the pass/fail. **Hypothesis, not a gate:** the scrub lever is 0.67–0.85 mm, against `b729e86`'s 0.671–0.726 on this rim (R4). Softer spokes should lengthen the patch a little.
+- **Cost, an estimate:** 8 solves × 430–750 s at 14–18 GiB (R4's six flat phases: 425–608 s, 14.3–17.0 GiB), so ~60–100 min.
+
+**HOW TO RUN IT** — nothing else on the box:
+
+```
+cd <repo root>
+tmux new-session -d -s step8 "OUT=<a scratch dir> studies/probe_3d/q_step8.sh"
+```
+
+- **`q_step8.sh` is R4's queue with the genome swapped.** It copies the STEP and the five `probe_3d` tools into `OUT`, then:
+  - runs phases 0 and 3.75 first, then the other six;
+  - rotates each phase with `rot.py`;
+  - meshes at h 2.0 / hc 0.25 (gmsh retried up to 3×, §203);
+  - solves `fe3d.py --faces free --kinematics svk --r-out 51.0` in a 32G scope, retrying a refused window at +4 then +8 mm;
+  - ends with `patch3d.py` → `collate_patch.txt` and `post3d_cyl.py` → `collate_cyl.txt`.
+- **Its log is `OUT/q.log`, one line per mesh and per solve.** Watch that file for `solve|NO MESH|FAILED|DONE`. A queue without a watch finished 2.5 h unseen (R3).
+- **The 3D venv and GL libs** are the defaults in the script (`V3D`, `GLLIB`), under a 2026-09-23 scratchpad in `/tmp`. If `/tmp` has been wiped, rebuild per PLAN.md §202's toolchain: a python3.12 venv from `requirements-3d.txt`, plus libGLU / libOpenGL unpacked from `.deb`s.
+
+**What the next record (R10) reads, in this order:**
+1. **D7 at phases 0 and 3.75** (P8.1), as soon as those two solves land. A miss can stop the queue early.
+2. **Every solve's force control:** `patch3d.py`'s ∫p dA must equal fe3d's 33.36165 N. The window edge is blind otherwise (R3).
+3. **The eight-phase mean** against [1.90, 2.10] (P8.2).
+4. **The band's inner-face hoop tension** per phase against P8.3's table and the 40 MPa bar.
+5. **`s_zz`** (P8.4), and the **patch count and lever** (P8.5).
+
+- **If Step 8 passes, Step 9 is the promotion.** It goes through `tests/test_promotion.py`'s checklist, as one atomic commit, never one file.
+- **Promotion's other open question: the drivers' measured constants were taken on `b729e86`.** The stand-in record (`WO.CROWN_STANDIN`) and the `--crown-standin` switch describe a rim, not a genome, and do not move.
