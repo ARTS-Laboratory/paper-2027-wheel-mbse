@@ -1264,3 +1264,84 @@ tmux new-session -d -s step8 "OUT=<a scratch dir> studies/probe_3d/q_step8.sh"
 - **`b729e86` stays in `best_solution.json`.**
 
 **Scope.** One gene pair, one genome, the stand-in mesh, SVK, three rungs at three phases. The 3D side is R11's two phases at one rung. The mechanism rests on geometry read off both models, not on a 2D solve that has the fillet. The fields and scripts are in the session scratchpad, `/tmp/claude-1000/-home-eric-bodhi-github-wheel/c060e21e-596a-4a36-ae48-06e3342c9504/scratchpad/`: `r12_probe.py` → `r12_ladder.json` / `.log`, `r12_reduce.py`, `PREDICTIONS_r12.txt`, `junction2d.png`, and `rrim2d_floor.py` / `.out` for the drop table.
+
+### R13 — 2026-09-26. THE FLOOR IS 1.35 mm, MEASURED, NOT INTERPOLATED. AT `R_rim` 1.35 THE PHASE-0 TOE READS 33.67 MPa, UNDER THE 33.85 BAR. R13.1 FAILS: THE 1.10 POINT READS 38.71, ABOVE THE CHORD. ITS STATED CONSEQUENCE, "THE FLOOR IS ABOVE 1.41", DOES NOT FOLLOW, BECAUSE THE CURVE IS NOT CONVEX. R13.2 HOLDS AT BOTH POINTS. THE EIGHT-PHASE RUN AT 1.35 IS REGISTERED AND LAUNCHED AS R14.
+
+**What ran.** R12's registered design, unchanged. `64e5068` with `R_rim` alone at 1.10 and at 1.35, exported on the (1.5, 1.0) rim (`src/wheel_step_export.py --genome <scratch>/rr1{10,35}.json --out-prefix <scratch>/rr1{10,35}`).
+- Genome hashes: `8a7d91d` at 1.10, `4ec44f5` at 1.35.
+- Both are valid OCC solids. All 24 rim edges are filleted at the requested radius, with the built Kt equal to the model's (1.922 / 1.807).
+- Mass is 63.18 / 63.39 g, against `64e5068`'s 63.07.
+- Min curvature R is 0.5108 mm at both, the same hub corner as before.
+- R11's queue ran with the genome swapped, at phase 0 only, on R11's phase-0 window. That is h 2.0 / hc 0.25, SVK, in a 32G scope: 633 / 659 s, 18.5 / 18.7 GiB.
+- Both solves pass `patch3d.py`'s force control to 3e-13, with one patch each and levers of 0.679 / 0.677 mm.
+
+```
+  R_rim    phase-0 drop mm   vs R13.2        in-layer s1 MPa   hoop+   s_zz+   footprint r 48.2-48.44   peak outside -x edge
+  0.8857   1.91708 (R10)     -               39.30 @ x -1.43   37.32   16.22   [-1.31, 2.27]            0.12
+  1.10     1.89554           -0.30% (1.90122)  38.71 @ x -1.50   36.32   15.34   [-1.42, 2.64]            0.08
+  1.35     1.86826           -0.64% (1.88037)  33.67 @ x -1.62   32.34   13.84   [-1.54, 3.10]            0.08
+  1.6802   1.82681 (R11)     -               31.04 @ x -1.84   29.87   12.64   [-1.69, 3.75]            0.15
+
+  Same instruments as R10 / R11: post3d_cyl.py (Cauchy, element nodes, band r >= 48.45, |x| < 10),
+  junction2.py for the footprint.  z-share of s1 is 0.00 at every row: the tension is in the layer.
+```
+
+**R13.2 HOLDS:** both drops are within 1.5% of the 2D mean ratio, at −0.30% and −0.64%.
+
+**THE FLOOR IS SET BY A MEASURED POINT.** At 1.35 the in-layer s1 is **33.67 MPa ≤ 33.85**, a factor of 1.188 to the 40 MPa printed ultimate against `b729e86`'s 1.182.
+- The margin is **0.18 MPa, 0.53%**.
+- Piecewise-linear interpolation between 1.10 and 1.35 puts the crossing at 1.341. That saves 0.009 mm of fillet on no measurement, so **the floor is taken at 1.35**, the point that was solved.
+
+**R13.1 FAILS AT 1.10.** The registered range was 35.1–37.1 with the chord at 37.07. The point measured **38.71**, 1.64 MPa above the chord. The 1.35 point, 33.67, is inside its registered 32.5–34.5 and under its chord, 34.47.
+- **The falsifier tripped, and its stated consequence is refuted by the other point.** It read "then the floor is above 1.41", on the assumption that the curve is convex, as a Kt-shaped curve is.
+- The four points are flat, then a cliff, then gentle. Over the three intervals the slope is −2.75, −20.2 and −7.96 MPa per mm.
+- A Kt-shaped least-squares fit through all four leaves residuals of −1.00 / +1.82 / −0.41 / −0.42 MPa. It does not describe this curve, and its floor of 1.374 is quoted for completeness only.
+
+**THE 1.10 READING RESTS ON ONE NODE. MEASURED, with a read not registered beforehand** (`s1_robust.py`, over the same element-node set):
+
+```
+                         elem-node s1: top 5 distinct nodes     gap 1-2   node-averaged s1 max
+  0.8857 (R10, w4)       39.30 39.14 38.88 38.72 38.60           0.16     38.69
+  1.10                   38.71 36.57 36.39 36.37 36.28           2.14     37.05
+  1.35                   33.67 33.36 33.32 33.29 33.29           0.31     33.34
+  1.6802 (R11)           31.04 30.74 30.66 30.58 30.58           0.30     30.96
+  0.8857 at hc 0.20      39.65 39.46 39.20 39.19 39.02           0.19     39.48
+  b729e86 3.75 (bar)     33.85 33.80 33.78 33.78 33.68           0.05     33.68   (control: reproduces 33.85)
+  b729e86 3.75 hc 0.20   34.06 33.97 33.89 33.81 33.76           0.09     33.81
+```
+
+- On every field but 1.10, the top node leads the next by 0.05–0.31 MPa. At 1.10 it leads by 2.14 MPa (5.5%). Its location is not what sets it apart: at x −1.50, z 10.27, it sits where `64e5068`'s own peak does (x −1.43, z 10.32).
+- **R13.1 against the other two reads:**
+  - The second-node read gives 36.57 at 1.10, under its own chord of 36.87, so R13.1 would pass there.
+  - The node-averaged read gives 37.05 at 1.10, over its chord of 36.61, so R13.1 still fails there.
+- **Hypothesis, not finding:** the flat-then-cliff shape is a local mesh spike at 1.10, not the fillet's response.
+  - The design that could refute it is 1.10 re-meshed, or refined at hc 0.20.
+  - It was not run, because it cannot change the call: 1.10 is over the bar on every read (36.57 > 33.80, 37.05 > 33.68).
+- **The floor does not depend on which read is right.** On the node-averaged read, the bar is `b729e86`'s 33.68 and 1.35 reads 33.34 (1.0% margin), so it passes. The interpolated crossings land at 1.316–1.341 across the three reads, all under 1.35.
+
+**THE MARGIN IS WITHIN ONE REFINEMENT STEP. Hypothesis, not finding.**
+- Refining hc 0.25 → 0.20 raised `64e5068`'s phase-0 toe by +0.89% (R10) and `b729e86`'s bar by +0.62% (`r_top_3.75_q5_free.npz`, a refined field in §206's `ea223ab2-…/scratchpad/p3d/`, read now).
+- If 1.35 refines like the first and the bar like the second, the 0.53% margin shrinks to about 0.26%. The sign holds, but the margin is not measured at hc 0.20.
+- The bar is compared like for like, at the rung every Step 8 figure uses. **Step 8 reads it at that rung, and so does R14.**
+
+**THE DROP IS NOW THE QUESTION.** At 1.35 the phase-0 3D drop fell 2.55% from `64e5068`, where 2D's mean ratio predicts 1.92%.
+- Applying the 2D mean ratio to R10's measured eight-phase mean gives **1.9049**.
+- Applying phase 0's measured ratio to every phase gives **1.8926**.
+- In R11, phase 0 fell further than the 2D ratio (−1.17%) and phase 3.75 less (−0.56%).
+- **So Step 8's 1.90 edge lies inside the prediction, and a pass is not predicted.**
+
+**SUCCESSOR (R14), REGISTERED AND LAUNCHED:** the full eight-phase Step 8 run on `64e5068` with `R_rim` at 1.35 (`4ec44f5`), as R12 required before any re-descent.
+- The predictions were written to the session scratchpad before the queue started (`PREDICTIONS_r14.txt`, sha1 `edc197d…`, 15:56). Phase 0 is this record's field. The queue runs R9's windows widened 4 mm (8 mm on a refusal), with the band-critical phases 3.75 and 26.25 first.
+- **P14.1:** the eight-phase mean is **1.890–1.906, point 1.898**. **Falsifier of the bracket:** a mean outside 1.885–1.911.
+- **P14.2:** the in-layer s1 over all eight phases stays ≤ 33.85, with phase 3.75 at 33.4–33.7 (linear in `R_rim` between R11's 33.31 and 33.70) and 26.25 at 27.0–29.0. **Falsifier:** any phase over 33.85.
+- **P14.3:** one patch at every phase, force control to 1e-12, and the lever in 0.67–0.74 mm.
+- **What follows:**
+  - **If the mean is ≥ 1.90 and P14.2 holds,** then `4ec44f5` passes Step 8's drop and band gates, and the promotion checklist is next.
+  - **If the mean is under 1.90,** the part is safe and 0.5% too stiff. Then comes R12's next branch: a re-descent with `GENE_SPACE[13]["low"]` raised from 0.5 to 1.35, which has to find the drop in the other genes.
+- **`b729e86` stays in `best_solution.json`.**
+
+**Scope.** One genome, two new fillet radii, phase 0 only, and one 3D rung. The floor holds for the phase-0 toe on the −x flank. Other phases are R14's to measure. The fields are in the session scratchpad, `/tmp/claude-1000/-home-eric-bodhi-github-wheel/d1909de0-a89b-4191-9d7f-397b67cfd244/scratchpad/r13/`:
+- `rr1{10,35}.json` / `.step` / `_step_manifest.json` and `export_*.log`
+- `m_*.npz` / `r_*.npz`, `q.sh`, `q.log`, `collate_*.txt` and `junction.txt`
+- `floor.py` / `.out`, and `s1_robust.py` / `.out`
+- `PREDICTIONS_r14.txt`, and R14's queue in `s8/`
