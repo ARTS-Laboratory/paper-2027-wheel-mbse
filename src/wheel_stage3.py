@@ -806,7 +806,7 @@ def _record(cfg, z, low, high, ev, step_rows, events, best, t_start, *, scheme, 
                      # MBSE_PLAN Step 3 these five can all be moved per run.  Read from
                      # the modules they would report the shipped mission for every run,
                      # which is precisely the failure §14 records for `kinematics`.
-                     **_requirement_settings(ev), **_standin_settings(ev),
+                     **_requirement_settings(ev), **_standin_settings(ev), **_box_settings(),
                      "elapsed_s": round(time.time() - t_start, 1),
                      "orientation": [float(o) for o in (ev.orientation or ())],
                      "n_objective_calls": ev.n_calls,
@@ -1051,8 +1051,8 @@ def search_block(args, label, at_step, selection=None, req=None,
     return {"optimizer": args.optimizer, "config": args.config,
             "steps": args.steps, "phase_scheme": args.phase_scheme,
             "n_phase": args.n_phase, "seed": args.seed, "start": args.start,
-            "min_wall_mm": float(W.MIN_WALL_MM),
-            "cy_bound_mm": float(W.CY_BOUND_MM),
+            "min_wall_mm": float(W.MIN_WALL_MM), "cy_bound_mm": float(W.CY_BOUND_MM),
+            **_box_settings(),
             "kinematics": args.kinematics,
             # THE REQUIREMENT SET, BESIDE THE BOX, for the same reason the box is here.
             # `min_wall_mm` and `cy_bound_mm` say WHAT SPACE this genome is a boundary
@@ -1344,8 +1344,24 @@ def _parse_args(ap):
                          "thickened to WO.CROWN_STANDIN['rim_outer'] and the drop scaled "
                          "by its 'drop_factor', with the band term priced (R5 D1-D6), "
                          "applied together")
+    # CROWN_PLAN.md R15.  Applied HERE, on parse, because `main` reads the bounds a few
+    # lines after this returns (`--min-wall`'s own comment says why that order matters);
+    # the default None leaves `GENE_SPACE`'s 0.5 untouched, bit for bit.
+    ap.add_argument("--r-rim-floor", type=float, default=None,
+                    help="low bound on R_rim in mm (default: the box's own 0.5). "
+                         "CROWN_PLAN.md R13 measured 1.35 in 3D. A start below it is "
+                         "projected up onto it.")
     args = ap.parse_args()
+    if args.r_rim_floor is not None:
+        W.set_rim_fillet_floor(args.r_rim_floor)
     return args, (dict(WO.CROWN_STANDIN) if args.crown_standin else {})
+
+
+def _box_settings():
+    """`R_rim`'s floor, read off the box as `min_wall_mm` is, for both records: a genome
+    sitting on 1.35 is a boundary optimum of that floor, and the genes alone cannot say so
+    (`W.set_rim_fillet_floor`, CROWN_PLAN.md R15)."""
+    return {"r_rim_floor_mm": float(W.GENE_SPACE[13]["low"])}
 
 
 def _standin_settings(ev):

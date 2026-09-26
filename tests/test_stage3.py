@@ -1700,3 +1700,28 @@ def test_an_evaluator_on_the_standin_scores_the_standin(genes):
     direct = WO.t3_terms(genes, CFG, phases=phases, **WO.CROWN_STANDIN)
     assert brk["report"]["axle_drop_mean_mm"] == pytest.approx(
         direct["report"]["axle_drop_mean_mm"], rel=1e-12)
+
+
+def test_the_r_rim_floor_flag_moves_the_box_and_both_records_carry_it(monkeypatch):
+    """CROWN_PLAN.md R15: `--r-rim-floor` lands on parse, before `main` reads the bounds,
+    and the floor rides in `search_block` and the run record's settings, read off the box.
+    Absent, the box keeps its 0.5 and the records say so.  Restored by hand: this file's
+    bounds fixture is module-scoped (`test_gene_space.py`'s docstring)."""
+    import argparse
+    saved = [(g["low"], g["high"]) for g in W.GENE_SPACE]
+    try:
+        monkeypatch.setattr(sys, "argv", ["wheel_stage3.py"])
+        S3._parse_args(argparse.ArgumentParser())
+        assert W.GENE_SPACE[13]["low"] == saved[13][0] == 0.5
+        assert S3.search_block(_Args, "l", 1)["r_rim_floor_mm"] == 0.5
+
+        monkeypatch.setattr(sys, "argv", ["wheel_stage3.py", "--r-rim-floor", "1.35"])
+        S3._parse_args(argparse.ArgumentParser())
+        assert W.GENE_SPACE[13]["low"] == 1.35
+        assert wg.bounds_arrays(W.GENE_SPACE)[0][13] == 1.35
+        assert S3.search_block(_Args, "l", 1)["r_rim_floor_mm"] == 1.35
+        assert S3._box_settings() == {"r_rim_floor_mm": 1.35}
+    finally:
+        for g, (lo, hi) in zip(W.GENE_SPACE, saved):
+            g["low"], g["high"] = lo, hi
+        W._refresh_gene_arrays()
