@@ -325,15 +325,15 @@ moving re-derives the whole column. §115's `b729e86` carries smoothness **4.871
 against the outgoing genome's implied ~0.168:
 
 ```
-  term             c_T (§103)   c_T (§119)     p_cal (§103)   p_cal (§119)
-  --------------  ----------   ----------     ------------   ------------
-  mass              0.300000     0.300000            53.51          49.37
-  deflection        0.250000     0.250000            44.60          41.14
-  stress_margin     0.008921     0.008921             1.59           1.47
-  smoothness        0.001678     0.048716             0.30           8.02
-  phase_ripple      0.000000     0.000000             0.00           0.00
-  --------------------------------------------------------------------
-  sum c             0.560599     0.607637              100            100
+  term             c_T (§103)   c_T (§119)   c_T (CROWN R20)   p_cal (§103)   p_cal (§119)   p_cal (R20)
+  --------------  ----------   ----------   ---------------   ------------   ------------   -----------
+  mass              0.300000     0.300000          0.300000          53.51          49.37         46.84
+  deflection        0.250000     0.250000          0.250000          44.60          41.14         39.04
+  stress_margin     0.008921     0.008921          0.008921           1.59           1.47          1.39
+  smoothness        0.001678     0.048716          0.081492           0.30           8.02         12.72
+  phase_ripple      0.000000     0.000000          0.000000           0.00           0.00          0.00
+  -----------------------------------------------------------------------------------------------------
+  sum c             0.560599     0.607637          0.640413            100            100           100
 ```
 
 `c_smoothness` moves **29x** and every other share falls to pay for it. Smoothness was a
@@ -513,8 +513,8 @@ derive `p^cal`, implement `weights_from_priorities`, and anchor `phase_ripple` f
   point. The map must be an identity at its own calibration point or it is not a
   re-parameterisation, it is a change.
 - **CHECK — the table above is reproduced from `src/`**, not copied from this file. If
-  `p_cal` does not come back as 49.37 / 41.14 / 1.47 / 8.02 / 0.00 (RE-MEASURED AT PLAN.md
-  §119, after §115's promotion moved the shipped genome's `smoothness` loss term; it was
+  `p_cal` does not come back as 46.84 / 39.04 / 1.39 / 12.72 / 0.00 (CROWN_PLAN R20's `240d5a2`,
+  smoothness 8.1492; 49.37 / 41.14 / 1.47 / 8.02 at §119, after §115's promotion; it was
   53.51 / 44.60 / 1.59 / 0.30 / 0.00 at §103 and 51.35 / 42.80 / 5.56 / 0.29 / 0.00 before
   that), this file is wrong and the driver is right. **THIS CHECK RE-DERIVES AT EVERY
   PROMOTION**, because `c_smoothness` reads the shipped genome — expect to update it in the

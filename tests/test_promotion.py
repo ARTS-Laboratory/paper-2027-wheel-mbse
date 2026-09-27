@@ -51,8 +51,8 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ---------------------------------------------------------------------------------------
 # THE SHIPPED GENOME.  Update this in the SAME change that updates `best_solution.json`, and
 # do the checklist in the failure message below while you are here.
-SHIPPED_GENOME_HASH = "b729e86"
-SHIPPED_PROMOTED_IN = "PLAN.md §115 (2026-09-06)"
+SHIPPED_GENOME_HASH = "240d5a2"
+SHIPPED_PROMOTED_IN = "CROWN_PLAN.md R20 (2026-09-27)"
 
 # The genome §14's constants were measured on.  `study_svk_rescore.run_control` is pinned to
 # this FILE rather than to the shipped pointer, which is §25's fix; if the file itself ever

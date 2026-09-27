@@ -726,7 +726,7 @@ def test_R_eff_is_exactly_the_cap_more_than_one_rung_above_it(genes_over_cap):
     assert d2[12] < 0.0, "below the cap a bigger fillet must still lower Kt"
 
 
-def test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively(genes):
+def test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively():
     """§13's genome landed in the smooth-min's blend, where nothing had landed before.
 
     It landed there from ABOVE on 2026-08-10, having landed there from below in §13, and
@@ -750,7 +750,13 @@ def test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively(gen
     +0.0%: that number is the EXPORTER comparing its own modelled Kt against its own built
     Kt, and it is correct.  The objective prices the same junction on the blended radius
     instead, and now at Kt 2.0533 against the exporter's 2.0235.
+
+    PINNED BY FILE AT CROWN_PLAN R20.  The shipped `240d5a2` requests `R_hub` 0.455917,
+    the radius OCC builds, 0.179 mm under its 0.634915 cap and out of the 0.095237 blend,
+    so on it this test is vacuous by its own first assertion.  The claim is the blend's
+    DIRECTION, a mechanism, so it reads `b729e86`, the last shipped genome in the blend.
     """
+    genes = so.load_genes("stage3_svk_refillet_shipped_r2_best.json")
     cfgo = WW.get_config(CFG)
     flanks = WO.fillet_flanks(genes, cfgo)
     cap = float(WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks))

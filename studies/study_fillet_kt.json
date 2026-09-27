@@ -16,9 +16,9 @@
       "corner_census": {
         "hub:P_t": {
           "unfilleted": {
-            "wedge_deg": 323.630995770535,
+            "wedge_deg": 327.85024298453624,
             "kind": "re_entrant",
-            "lambda": 0.5026098440930036
+            "lambda": 0.5017928868337691
           },
           "filleted": {
             "wedge_deg": 360.0,
@@ -29,22 +29,22 @@
         },
         "hub:P_c": {
           "unfilleted": {
-            "wedge_deg": 269.07205364589294,
+            "wedge_deg": 269.34592264034876,
             "kind": "re_entrant",
-            "lambda": 0.545995641035647
+            "lambda": 0.5455455742365569
           },
           "filleted": {
-            "wedge_deg": 269.1933432480273,
+            "wedge_deg": 269.45735057331314,
             "kind": "re_entrant",
-            "lambda": 0.5457959180750451
+            "lambda": 0.5453633835686098
           },
           "resolved_by_the_fillet": false
         },
         "rim:P_t": {
           "unfilleted": {
-            "wedge_deg": 303.53386449960993,
+            "wedge_deg": 297.15402786774945,
             "kind": "re_entrant",
-            "lambda": 0.5101116080697827
+            "lambda": 0.514131724700118
           },
           "filleted": {
             "wedge_deg": 360.0,
@@ -55,14 +55,14 @@
         },
         "rim:P_c": {
           "unfilleted": {
-            "wedge_deg": 271.72261082841146,
+            "wedge_deg": 271.50016653745,
             "kind": "re_entrant",
-            "lambda": 0.5417738768313773
+            "lambda": 0.5421168350376087
           },
           "filleted": {
-            "wedge_deg": 271.6468074876051,
+            "wedge_deg": 271.4343885926381,
             "kind": "re_entrant",
-            "lambda": 0.5418905183118155
+            "lambda": 0.5422186422386288
           },
           "resolved_by_the_fillet": false
         }
@@ -70,28 +70,28 @@
       "global_max_vm": {
         "unfilleted": {
           "peak_mpa": [
-            45.15488643723695,
-            69.43199557146376,
-            85.7786289067103,
-            103.10409688174435
+            58.03852881032532,
+            87.06273709025413,
+            107.43590649276658,
+            129.55390238530862
           ],
           "increment_ratios": [
-            0.6733352494675907,
-            1.0598798920678647
+            0.7019371280008749,
+            1.0856433506027992
           ],
           "diverges": true,
           "settled_estimate_mpa": null
         },
         "filleted": {
           "peak_mpa": [
-            37.02796704577416,
-            57.74424579365933,
-            72.39685201201722,
-            88.64758786457338
+            46.716050006415735,
+            71.6686740898515,
+            89.391923313633,
+            110.52278291018283
           ],
           "increment_ratios": [
-            0.7072991436675714,
-            1.1090679439809155
+            0.7102759679510688,
+            1.1922678132966678
           ],
           "diverges": true,
           "settled_estimate_mpa": null
@@ -100,31 +100,31 @@
       "fillet_surface": {
         "hub": {
           "peak_mpa": [
-            17.783979107095437,
-            21.848760177381877,
-            23.4859731274573,
-            24.42248544330408
+            23.632532974942002,
+            29.014004376912613,
+            31.184593908844107,
+            32.57348281909888
           ],
           "increment_ratios": [
-            0.4027801059307852,
-            0.5720161911763753
+            0.40334499057946455,
+            0.6398671373941766
           ],
           "diverges": false,
-          "settled_estimate_mpa": 25.674168794066556
+          "settled_estimate_mpa": 35.041195331455604
         },
         "rim": {
           "peak_mpa": [
-            16.10517856269382,
-            18.52222765111997,
-            19.711947912738754,
-            20.490766302144106
+            15.529425877966176,
+            18.161631154121846,
+            19.18431589353771,
+            19.864119053652917
           ],
           "increment_ratios": [
-            0.4922201486579924,
-            0.6546231198463897
+            0.388527729459419,
+            0.6647240678525178
           ],
           "diverges": false,
-          "settled_estimate_mpa": 21.966929164115406
+          "settled_estimate_mpa": 21.21190897414146
         }
       },
       "objective": {
@@ -253,36 +253,36 @@
         "linear": {
           "hub": {
             "modelled_peak_mpa": 13.443166028022757,
-            "measured_surface_peak_mpa": 25.674168794066556,
-            "measured_over_modelled": 1.9098305221067595,
+            "measured_surface_peak_mpa": 35.041195331455604,
+            "measured_over_modelled": 2.606617760906247,
             "util_modelled": 0.5377266411209103,
-            "util_measured": 1.0269667517626622,
+            "util_measured": 1.4016478132582242,
             "model_understates": true
           },
           "rim": {
             "modelled_peak_mpa": 8.938936714124587,
-            "measured_surface_peak_mpa": 21.966929164115406,
-            "measured_over_modelled": 2.457443191135366,
+            "measured_surface_peak_mpa": 21.21190897414146,
+            "measured_over_modelled": 2.3729789853668066,
             "util_modelled": 0.3575574685649835,
-            "util_measured": 0.8786771665646163,
+            "util_measured": 0.8484763589656583,
             "model_understates": true
           }
         },
         "svk": {
           "hub": {
             "modelled_peak_mpa": 14.507373027808107,
-            "measured_surface_peak_mpa": 25.674168794066556,
-            "measured_over_modelled": 1.7697324487937027,
+            "measured_surface_peak_mpa": 35.041195331455604,
+            "measured_over_modelled": 2.4154059638700773,
             "util_modelled": 0.5802949211123243,
-            "util_measured": 1.0269667517626622,
+            "util_measured": 1.4016478132582242,
             "model_understates": true
           },
           "rim": {
             "modelled_peak_mpa": 9.646573516495375,
-            "measured_surface_peak_mpa": 21.966929164115406,
-            "measured_over_modelled": 2.277174286450268,
+            "measured_surface_peak_mpa": 21.21190897414146,
+            "measured_over_modelled": 2.1989060610868387,
             "util_modelled": 0.38586294065981497,
-            "util_measured": 0.8786771665646163,
+            "util_measured": 0.8484763589656583,
             "model_understates": true
           }
         }
@@ -591,20 +591,20 @@
       ]
     },
     "model_understates_everywhere": true,
-    "measured_over_modelled_min": 1.7697324487937027,
+    "measured_over_modelled_min": 2.0170983203073587,
     "measured_over_modelled_max": 2.9817994171086992,
-    "direction_note": "\u00a793 argued the filleted objective OVERSTATES stress because `Kt > 1`.  Measured against the fillet surface's own converged peak it understates it by 1.77x to 2.98x, because the other factor \u2014 a whole-wheel p=4 p-norm standing in for a local peak \u2014 errs further the other way.  Both scope gaps (one phase vs eight, linear vs SVK) raise the measured side, so these are lower bounds.",
+    "direction_note": "\u00a793 argued the filleted objective OVERSTATES stress because `Kt > 1`.  Measured against the fillet surface's own converged peak it understates it by 2.02x to 2.98x, because the other factor \u2014 a whole-wheel p=4 p-norm standing in for a local peak \u2014 errs further the other way.  Both scope gaps (one phase vs eight, linear vs SVK) raise the measured side, so these are lower bounds.",
     "admissibility": {
       "shipped": {
         "hub": {
           "util_modelled": 0.5802949211123243,
-          "util_measured": 1.0269667517626622,
+          "util_measured": 1.4016478132582242,
           "modelled_admissible": true,
           "measured_admissible": false
         },
         "rim": {
           "util_modelled": 0.38586294065981497,
-          "util_measured": 0.8786771665646163,
+          "util_measured": 0.8484763589656583,
           "modelled_admissible": true,
           "measured_admissible": true
         }

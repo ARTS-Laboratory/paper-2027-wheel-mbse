@@ -344,7 +344,7 @@ def test_the_map_is_an_identity_at_its_own_calibration_point(shipped_record):
 
 
 def test_the_calibration_reproduces_the_portfolio_the_plan_states(shipped_record):
-    """49.37 / 41.14 / 1.47 / 8.02 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
+    """46.84 / 39.04 / 1.39 / 12.72 / 0.00.  If this moves, MBSE_PLAN.md is wrong and the
     code is right — but somebody has to be told.
 
     RECALIBRATED AT PLAN.md §103: `calibrated_priorities` derives its points from
@@ -363,12 +363,17 @@ def test_the_calibration_reproduces_the_portfolio_the_plan_states(shipped_record
     `sum c` 0.560599 -> 0.607637.  Every share falls except smoothness, which goes
     0.30 -> 8.02 points and becomes the third-largest axis in the budget: the same
     100-point redistribution as §103, driven from the other side.  MBSE_PLAN.md's table
-    and its own CHECK line are updated to match, as that file's tripwire instructs."""
+    and its own CHECK line are updated to match, as that file's tripwire instructs.
+
+    AND AGAIN AT CROWN_PLAN R20: `240d5a2` carries smoothness 8.149205318512976, taking
+    `c_smoothness` 0.048716 -> 0.081492 (1.67x) and `sum c` 0.607637 -> 0.640413, so the
+    portfolio reads 46.84 / 39.04 / 1.39 / 12.72 / 0.00.  A claim about the wheel that
+    ships, so its numbers move with it; MBSE_PLAN.md moves in the same change."""
     p, _ = R.calibrated_priorities(shipped_record["loss_terms"]["smoothness"])
-    assert p.points["mass"] == pytest.approx(49.37, abs=0.01)
-    assert p.points["deflection"] == pytest.approx(41.14, abs=0.01)
-    assert p.points["stress_margin"] == pytest.approx(1.47, abs=0.01)
-    assert p.points["smoothness"] == pytest.approx(8.02, abs=0.01)
+    assert p.points["mass"] == pytest.approx(46.84, abs=0.01)
+    assert p.points["deflection"] == pytest.approx(39.04, abs=0.01)
+    assert p.points["stress_margin"] == pytest.approx(1.39, abs=0.01)
+    assert p.points["smoothness"] == pytest.approx(12.72, abs=0.01)
     assert p.points["phase_ripple"] == 0.0
 
 

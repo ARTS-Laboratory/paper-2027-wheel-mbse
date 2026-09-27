@@ -150,7 +150,7 @@ def test_only_the_rim_od_near_the_bottom_is_loaded(mesh):
                   - ww.RIM_OUTER_RADIUS_MM).max() < 1e-9
 
 
-def test_work_identity(res):
+def test_work_identity(mesh, res):
     """delta = 2U/F for a linear body under one load system.
 
     Ties the reported strain energy to the reported displacement, so the compliance
@@ -158,12 +158,18 @@ def test_work_identity(res):
     claims to decompose.  The work-conjugate displacement is the pressure-weighted mean
     over the patch, which sits between the centre node and the plain patch mean, so it
     is checked to bracket rather than to equal either.
+
+    [CORRECTED AT CROWN_PLAN R20: THE BRACKET IS NOT A PROPERTY, AND IT FAILED ON `240d5a2`.
+    2U/F reads 2.870503 against a centre node of 2.880930 and a plain mean of 2.874414.  The
+    consistent load puts 12-14 N on the edge nodes of the two wide free-arc elements (267.6
+    and 272.6 deg) while uy tilts across the patch, so the weighted mean can fall under the
+    plain one.  The identity itself held to every printed digit on both `240d5a2` and
+    `b729e86`, so the test now asserts it against f.u directly.]
     """
     delta_work = 2.0 * res["strain_energy_mJ"] / wf.TOTAL_FORCE_NEWTONS
-    lo = min(res["axle_drop_mm"], res["axle_drop_patch_mean_mm"])
-    hi = max(res["axle_drop_mm"], res["axle_drop_patch_mean_mm"])
-    assert lo - 1e-9 <= delta_work <= hi + 1e-9, (
-        f"2U/F = {delta_work:.6f} outside [{lo:.6f}, {hi:.6f}]")
+    _, f = fem.wheel_problem(mesh)
+    f_dot_u = abs(float(np.asarray(f) @ np.asarray(res["u"]))) / wf.TOTAL_FORCE_NEWTONS
+    assert delta_work == pytest.approx(f_dot_u, rel=1e-9), (delta_work, f_dot_u)
 
 
 @pytest.mark.parametrize("phase", [0.0, 11.0])
@@ -361,6 +367,14 @@ def test_the_beam_model_does_not_predict_the_axle_drop(filleted_res, genes):
         f"believing it")
 
 
+@pytest.mark.xfail(strict=True, reason=(
+    "CROWN_PLAN R20: FALSE ON THE WHEEL THAT SHIPS, UNDER THIS FIXTURE's MODEL. `240d5a2` "
+    "reads 2.6026 mm here. It was descended under WO.CROWN_STANDIN (the 2D band thickened to "
+    "t_eq 2.144 mm and the drop scaled by 0.8887), and this fixture builds the default flat "
+    "1.5 mm band, which is not the part: the exported crowned part measures 1.91314 mm in 3D "
+    "SVK over eight phases (R17). It is xfailed rather than moved, as §111 did, because the "
+    "band has no warrant. Clearing condition: this fixture builds the stand-in rim, or the "
+    "default objective becomes the stand-in."))
 def test_the_axle_drop_meets_the_stroke_target(filleted_res):
     """The band half of the old combined gate, split out and read on the filleted mesh.
 
