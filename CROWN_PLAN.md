@@ -5,7 +5,7 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
-**CURRENT STATE (2026-09-27): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17) and the user's look gate (R18). NEXT: Step 0.5's coupons for `s_zz`, whose part, protocol and pass rule (R ≥ 0.6848) are fixed in R19; promotion waits on them.**
+**CURRENT STATE (2026-09-27): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17) and the user's look gate (R18). Step 0.5's coupons for `s_zz` have their part, protocol and pass rule (R ≥ 0.6848) fixed in R19. The user has no printer for now, so `240d5a2` (`be96531` with `R_hub` at OCC's built radius) is PROMOTED at R20 ahead of them; `s_zz` stays open, and the default 2D model not describing the crowned part is R20's successor 0.**
 
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
@@ -1737,3 +1737,82 @@ wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
 - The first batch's own CVs replace these assumptions as soon as it is pulled.
 
 **Still open, unchanged:** the hub fillet is cut at 0.456 against the 0.631 requested (R16, +14.9%). **`b729e86` stays in `best_solution.json`.**
+
+### R20 — 2026-09-27. STEP 9: `240d5a2` IS PROMOTED. IT IS `be96531` WITH `R_hub` SET TO THE 0.455917 mm OCC BUILDS, AND ITS STEP IS `be96531`'s TO THE BYTE APART FROM THE HEADER, SO EVERY STEP 8 FIGURE IS ITS OWN. THE TREE's DEFAULT 2D MODEL DOES NOT DESCRIBE IT: UNSCORED BY THE STAND-IN IT READS 2.945 mm AND UTILISATION 1.186, AND `make svk` CALLS IT INFEASIBLE. THE SAME MODEL HAD CALLED `b729e86` FEASIBLE AT 1.992 mm WHILE ITS PRINTED PART MEASURED 1.318.
+
+**The call (the user, 2026-09-27: "Promote and start step 9").** Decision 0.5 made Step 0.5 block Step 8, and the user has no printer for some time. The case for promoting anyway:
+- `s_zz` cannot tell the two genomes apart: `be96531` reads 17.12 MPa and `b729e86` 16.78.
+- On every other gate `be96531` passes (R17, R18), and the shipped part fails its drop by 34%.
+- Keeping `b729e86` protects nothing the coupons would decide.
+- `s_zz` stays open for both, with R19's rule unchanged.
+
+**THE GENOME.**
+- `240d5a2` is `be96531` with `R_hub` 0.631028 → **0.455917433900182**. That is OCC's built radius at the worst (328°) hub corner, the second rung of the exporter's 0.85 ladder (0.631 → 0.536 → 0.4559).
+- **Control: its STEP is `be96531`'s solved STEP (`s168.step`) byte for byte, apart from the `FILE_NAME` header line.** The exporter now reports `kt_error_pct` +0.0% at both junctions.
+- **Control: its 2D price reproduces R17's.** Under the descent's settings (coarse, SVK, uniform 8-phase, min-wall 1.2, `R_rim` floor 1.35, `WO.CROWN_STANDIN`):
+  - predicted-3D mean drop **1.938313**, against R17's 1.93831;
+  - `kt_hub` 3.125839, OCC's `Kt_built` to the digit;
+  - stress utilisation 0.9491 (hub), loss 142.41039.
+  - Two runs gave identical output.
+- Files: `stage3_crown_be96531.json` (the 3D-gated genome, as R17 ran it), `stage3_crown_shipped.json` (= `best_solution.json`, with `loss`, `loss_terms` and `metrics` re-scored at `240d5a2`), and `b729e86`, already preserved as `stage3_svk_refillet_shipped_r2_best.json`.
+
+**THE DEFAULT MODEL IS NOT THE PART. Measured before the suite ran:**
+
+```
+  240d5a2, 2D, 8-phase mean            drop mm    stress util   loss
+  coarse SVK, WO.CROWN_STANDIN         1.9383     0.949         142.41   (how it was descended)
+  coarse SVK, default flat 1.5 band    2.9453     1.186         878.94
+  make svk: medium linear, default     2.6120     1.252         609.37   INFEASIBLE
+  make svk: medium SVK, default        2.9507     1.247        1015.68   INFEASIBLE
+  (b729e86, same gate, 09-06 artifact)  1.9968     0.972          54.14   FEASIBLE; crowned part in 3D: 1.3178 (§206)
+  3D SVK, exported crowned part        1.91314    (band under the bar at all 8 phases, R17)
+```
+
+- The default builds a flat 1.5 mm band. The part is crowned, and the stand-in (t_eq 2.144 mm, drop × 0.8887) is what R4/R5 fitted to it.
+- **The mismatch is not new.** `b729e86` scored feasible under the same default (1.992 mm), and its crowned part measured 1.318 mm (§206). The promotion moved the error to the side where it shows.
+- `make svk`'s §14 control passes (23.346%), and the ten scored rival rows reproduce the 09-06 artifact to the printed digit, as does the GA/beam refusal (`clamp_reject`). Only the shipped row moved.
+- **Checklist item 4 is recorded, not waived.** `make svk`'s verdict is INFEASIBLE for the model it scores. The gate cannot score the stand-in, and whether it should, or the default should become the stand-in, is the successor below.
+
+**CHECKLIST ITEMS 7–9: THE SUITE, AFTER THE GENOME MOVED.**
+- Baseline: the whole suite green at `2294c61`. No file in `src/` or `tests/` changed between then and the promotion.
+- After writing the genome: **25 reds, 23 failures and 2 strict XPASSes**, all in `tests/`. Each one was decided on what it claims, per item 9: 12 stale-artifact, 5 pinned by file, 3 mechanism-false, 1 new number, 2 xfail, 2 XPASS.
+
+```
+  class                                   repair                                      tests
+  stale artifact (item 7/8)               re-run the driver; read what moved          corner x3, junction_fit, tri_block, tri_bend,
+                                                                                      fillet_wiring chain, fillet_fold report, fillet_block
+                                                                                      report + fold gate + void chord x2
+  mechanism, vehicle moved (item 9)       read b729e86 BY FILE                        test_mesh fold margin (§119's filed successor),
+                                                                                      test_objective blend, fillet_block PART 3 and control,
+                                                                                      fillet_fold window edge
+  mechanism, FALSE on 240d5a2             assert what holds; record the reading       work identity (bracket false: exact f.u identity now),
+                                                                                      filleted_mesh == 0.0 (4.3e-14 at the rim; bound 1e-12)
+  the shipped wheel, answer moved         new numbers, deliberately                   requirements portfolio (+ MBSE_PLAN.md)
+  the shipped wheel, wrong model          strict xfail, clearing = stand-in fixture   stroke target (2.6026 mm), contact band (1.28%)
+  strict XPASS                            marker lifted, reading recorded             §124 rim sliver (0.175944 < 0.2 again),
+                                                                                      §125 hub fillet (closed BY this promotion)
+```
+
+**Refreshing the artifacts opened 6 more, as §119's did.** Each is a claim about the shipped wheel, decided one at a time:
+- **P_t lambda:** hub 0.5026 → 0.5018, rim 0.5101 → 0.5141. New values pinned.
+- **rim:P_t diverges faster than Williams.** Divergence-rate lambda 0.3168 (slope −0.6832, last-increment ratio 1.180) against Williams 0.5141, 0.197 apart; `b729e86` read 0.4814 against 0.5101. The other three corners agree. **The cause is not measured.** The finding is pinned so that its return goes red.
+- **The shipped fillet's effect** is −9.66% (`b729e86`: −11.77%). It has a smaller fillet, 0.456 against 0.571 mm. The bound is now the test's stated claim, 10× its own 0.3% noise, rather than a second re-centring. That noise check itself passed by 0.01%: 0.1 → 0.2 mm reads +0.29% HIGH.
+- **End cap:** both verdicts hold. The hub fits capped (leg 1.4547, T/leg 0.3375); the rim is refused by more (T/leg 8.10). The leg floors follow the measurement.
+- **The faithful rim's factor** fell 4.6 → 2.03 → **1.71**. It still refuses the shipped `R_rim`, so §46's qualifier stands.
+- **`fillet_fold`'s PART 3 criterion** no longer lands ON the fold window's upper edge at the rim: 0.50 against 0.46 at coarse, 0.38 against 0.23 at medium. The order (never stricter) holds on both genomes, and that is what is asserted.
+- **One pre-existing mix, found and NOT repaired:** `study_fillet_kt` and `study_fillet_wiring` read `study_fillet_terms.json`, last written 2026-08-29, when `best_solution.json` was `09e8188`. So since §115 their "shipped" rows have paired one genome's corner census with another's objective terms, and they still do, now with `240d5a2`'s census.
+  - `make filletterms` cannot run at HEAD: exit 2 after 184 s. It scores the unfilleted mesh through `WO.objective`, whose region QoIs refuse a mesh with no fillet arc (`fillet_arc_nodes`: "wants a filleted mesh"). The refusal is on the mesh type, not the genome.
+  - It wrote nothing, so the committed artifact is unchanged. Successor 3.
+
+**NOT RE-RUN, AS AT §115:** `make studies`' artifacts (`study_gnl`, `study_objective`, `study_wheel_fea`, `study_contact`, `study_gradient`, `study_stage3`), which predate §115 already, and `study_mbse_score` (`09e8188`). No test reads them against the shipped genome. They describe earlier wheels, as they did yesterday.
+
+**THE COMMITS AND THE CITATION SWEEP.** The promotion is `203ec13`, one commit. 95 citation rows newly read MOVED after it, most of them anchors its test edits shifted. `f2a604b` re-points 75 tokens on 55 lines, each where the diff's own line offset and the sweep's content match agreed. The sweep reads 1384 of 1656 resolving, against 1403 before. The 21 no longer resolving that did before:
+- 15 are records, left as written: a stale-anchor table, two earlier "-> :N" repairs, and the dangle §118 recorded at line 1257 of `tests/test_objective.py`, at six sites.
+- 6 point at lines edited in place: MBSE_PLAN.md's portfolio rows and CHECK line, and four lines the repair itself touched.
+
+**SUCCESSORS.**
+0. **The default 2D model describes a part nobody prints.** Every bare `best_solution.json` read (`make svk`, `test_wheel_fea`'s fixtures, `test_contact`, the studies) scores a flat 1.5 mm band. Either the stand-in becomes the default, which changes every committed loss, or the shipped-wheel gates take `WO.CROWN_STANDIN` explicitly. The two strict xfails above name this as their clearing condition.
+1. rim:P_t's fast divergence on `240d5a2`: cause not measured.
+2. `mesh_coords`' numpy path is 4.3e-14 off the built mesh at 3769 rim nodes on `240d5a2`/`be96531`: cause not measured.
+3. `study_fillet_terms.py` has rotted against the fillet-only objective, and `study_fillet_kt` / `study_fillet_wiring`'s shipped rows mix `09e8188`'s terms with the shipped census until it runs again.
+4. **`s_zz`: Step 0.5, R19, unchanged.** If the coupons fail at 0.6848, this promotion is revisited. If they fail at 0.6712 too, so is the part it replaced.
