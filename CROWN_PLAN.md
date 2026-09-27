@@ -5,7 +5,7 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
-**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). NEXT: R15, the re-descent with the floor as a bound, registered at the foot.**
+**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17). NEXT: the user's look gate on `be96531`, and Step 0.5's coupons for `s_zz`; promotion waits on both.**
 
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
