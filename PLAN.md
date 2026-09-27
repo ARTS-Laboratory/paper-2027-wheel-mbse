@@ -12163,7 +12163,7 @@ carries `sweep_filleted_svk` — fourteen rows, `--sweep --fillet`, `coarse`, SV
 distinct hub-share values against the unfilleted control's one — and it was regenerated at
 §85.  §91 quotes its numbers (`hub_fillet_cap_mm` 0.6657, the shipped `R_hub` at 99.7% of
 it) three paragraphs above the ranking that asks for it, and
-`tests/test_wheel_fea.py:310`'s docstring has carried the finding since §75.
+`tests/test_wheel_fea.py:316`'s docstring has carried the finding since §75.
 
 So the fillet arc did not have one term left.  It had none.  §89 said *"those two numbers
 ARE the decision"* — the cost and the surrogate — and both have existed since §90 and §75
@@ -15009,7 +15009,7 @@ been run against them.
    call.  §103 opened it (before `d2cf9fa` both tiers were unfilleted and AGREED) and it is
    worth **+3.867 g, +9.78%**, against a `mass` tolerance of 0.365 g — 10.6x.  Nine call
    sites are exposed, three read a t2 quantity: `wheel_requirements.score_record` (so the
-   MBSE gate), `study_mbse_score`, and `test_objective.py:1072`'s exchange rate.
+   MBSE gate), `study_mbse_score`, and `test_objective.py:1078`'s exchange rate.
    **`wheel_stage3.Evaluator` is NOT among them** — it builds `phase_meshes` itself, and
    builds `phases[:1]` even when pooled, for this exact reason and with a comment saying so
    — which is why the descent above can be run before this is settled.  The fix is one line
@@ -15489,7 +15489,7 @@ new evidence"* — because it is not a re-proposal at all.
 Premise check, mechanical:
 
 - `set_min_wall(2.0)` is still wrapped around both tests named in the plan
-  (`tests/test_wheel_fea.py:477` and `:514`), restored in a `finally` as described. INTACT.
+  (`tests/test_wheel_fea.py:491` and `:528`), restored in a `finally` as described. INTACT.
 - `MIN_WALL_MM = 1.2` (`src/wheel_fea.py:236`). INTACT.
 - The measurement path is untouched by §103: `study_reds_ratio_stability.py` never builds a
   wheel; `run_beam_blindness`'s FEA side is `_blindness_row`, and it calls
@@ -20945,7 +20945,7 @@ not close the successor the way the successor assumed — or entirely.
 **WHAT IS AND IS NOT SETTLED HERE.** Successor 1 asked three things. The GENE question is
 answered by measurement and inverted: `R_rim` is not inert, and it carries the larger of the
 two loss gradients (§1). The GENE CENSUS half is answered without a re-run and in the
-negative — its two sites are `tests/test_contact.py:498` and `tests/test_filleted_mesh.py:304`,
+negative — its two sites are `tests/test_contact.py:505` and `tests/test_filleted_mesh.py:310`,
 both GREEN, and both are claims about the MESH, where the pair is dead for a reason that has
 nothing to do with the knee (§5 successor 0). **The STUDY'S VERDICT has not been re-run and
 is still owed.** Calling this successor closed would be the §133 §4 mistake again — reading
@@ -21010,7 +21010,7 @@ search block is `adam`, and Adam cannot move a gene whose gradient is identicall
 (`m = v = 0`), so the trajectory alone falsifies the comment without any of this.
 
 **WHY THE DATE IS NOT THE PROMOTION — AND THE TREE ALREADY PINS IT, GREEN.**
-`tests/test_filleted_mesh.py:293`,
+`tests/test_filleted_mesh.py:299`,
 `test_the_fillet_genes_are_the_LARGEST_movers_on_a_filleted_mesh`, asserts both halves in
 one place: `insensitive_genes` on the PLAIN mesh is exactly `{R_hub, R_rim}`, and on the
 FILLETED mesh it is `[]` — with the stronger clause that the two fillet genes each move MORE
@@ -21258,10 +21258,10 @@ bearing evidence for §1's dating.
 0. **THE STUDY'S VERDICT IS STILL OWED; THE GENE CENSUS IS ANSWERED IN THE NEGATIVE AND
    MUST NOT BE "FIXED".** §118 filed both, §133 re-filed both, and this section resolves
    one of them by reading rather than by re-running.** The
-   census sites are `tests/test_contact.py:498` (`insensitive_genes == {R_hub, R_rim}`) and
-   `tests/test_filleted_mesh.py:304`. **Both are GREEN, both are about the MESH rather than the
+   census sites are `tests/test_contact.py:505` (`insensitive_genes == {R_hub, R_rim}`) and
+   `tests/test_filleted_mesh.py:310`. **Both are GREEN, both are about the MESH rather than the
    loss, and the second one does not merely fail to contradict §1 — it AFFIRMS it.**
-   `tests/test_filleted_mesh.py:304-306` pins `{R_hub, R_rim}` dead on the plain mesh and
+   `tests/test_filleted_mesh.py:310-312` pins `{R_hub, R_rim}` dead on the plain mesh and
    `[]` dead on the filleted one, so the census has recorded the pair as live on the mesh
    that ships since 2026-08-26. The `test_contact.py` site is the unfilleted census, where
    the pair is dead for a reason that has nothing to do with the knee. **Neither is
@@ -21319,13 +21319,13 @@ tests/` returns **six lines across four files**, and there are TWO instruments, 
 ```
   wheel_adjoint.py:966   insensitive_genes(genes, mesh)   jacfwd(mesh_coords), tol=0.0
                          a MESH census.  No solver, no objective, no loss.
-      tests/test_filleted_mesh.py:303   plain["coarse"]        == {R_hub, R_rim}
-      tests/test_filleted_mesh.py:305   filleted_shipped       == []
+      tests/test_filleted_mesh.py:309   plain["coarse"]        == {R_hub, R_rim}
+      tests/test_filleted_mesh.py:311   filleted_shipped       == []
       tests/test_gradient.py:248        build_wheel(genes,CFG) == INSENSITIVE_EXPECTED
       tests/test_objective.py:321       build_wheel(genes,CFG) cols[12] == cols[13] == 0
 
   study_contact.py:862   an FD census through the FEA, a different instrument
-      tests/test_contact.py:498                                == {R_hub, R_rim}
+      tests/test_contact.py:505                                == {R_hub, R_rim}
 ```
 
 plus `tests/test_gradient.py:336`, `:354` and `:426`, which assert `INSENSITIVE_EXPECTED`
@@ -21371,7 +21371,7 @@ On that mesh, at the shipped genome:
 **`R_rim` ranks FIRST of fourteen by column norm and `R_hub` SECOND, at both fidelities.**
 
 That is §79's result, and it is worth having on the DEFAULT path: §135 §1 dated the mesh
-route to `75bc9d9` using `tests/test_filleted_mesh.py:293`, whose fixture is pinned to
+route to `75bc9d9` using `tests/test_filleted_mesh.py:299`, whose fixture is pinned to
 `FILLET_LAYER_SHIPPED` — **the pair `fillet=True` took BEFORE §85**, named in the fixture's
 own docstring so §79's numbers stay on §79's geometry. That is the right choice for that
 test and it means the green test does not, by itself, say anything about the mesh Stage 3
@@ -22700,7 +22700,7 @@ mistake; the numbers alone would have suggested it.**
 
 **`1205064`** — `tests/test_wheel_fea.py`, one assertion and the docstring paragraph that
 records why. **Green: the whole file, 21 passed**, per §141 successor 2. **Citation cost
-ZERO**: all seven citations into that file (`:26` x2, `:34`, `:41`, `:206`, `:370` x3) are
+ZERO**: all seven citations into that file (`:26` x2, `:34`, `:41`, `:212`, `:384` x3) are
 above the edit, so the count is incidental rather than earned — but it was checked before
 the prose was written, which is §138's rule and the reason it was safe to write at length.
 
@@ -23580,7 +23580,7 @@ which is exactly the case where the link most needs preserving.**
 
 **AND THE COUNT SURVIVED BY LUCK OF WHAT THE RENAME DID.** Measured independently in both
 sessions: the old node ID has **0 occurrences** in `tests/test_objective.py`, and the
-replacement at `:1129` **passes**. So §135 did close that row — by inverting the finding
+replacement at `:1135` **passes**. So §135 did close that row — by inverting the finding
 and renaming the test to match — and §150's "eleven minus R_rim = ten" is right in
 substance. **But it is right because the renamed test happens to be green.** Had `a96f1de`
 renamed a test that then went red, all three of our keys would have hidden it: a node-ID
@@ -24953,7 +24953,7 @@ carried from the first, correctly.
 
 Of the 78, **44 re-pointed**: 39 deltas, 3 **wrong when typed** in both images, 1 **wrong
 repair** (§2's `MBSE_PLAN.md:57`) and 1 whose **referent was rewritten** (`PLAN.md:12166`: the
-§75 finding `test_wheel_fea.py:206`'s docstring "has carried" survives as one clause at `:310`
+§75 finding `test_wheel_fea.py:212`'s docstring "has carried" survives as one clause at `:316`
 after `fdbeab3`). The three wrong when typed: `PLAN.md:92`'s second HUB_PLAN site, 35 lines off
 at `56239a1`; `PLAN.md:14390`'s phase roll, cited 28 lines above where `d2cf9fa` put it; and
 `study_fillet_condition_a.py:206`, quoting `study_m9.py:141` for a sentence at `:247-248` —
@@ -29230,7 +29230,7 @@ unfalsifiable and the finding would be "time passed".** Two did not, each for a 
 own text:
 
 - **`WALLPIN` (#4) — checked mechanically, wholly intact.** `set_min_wall(2.0)` still wraps both
-  named tests at `tests/test_wheel_fea.py:477` and `:514`; `MIN_WALL_MM = 1.2` at
+  named tests at `tests/test_wheel_fea.py:491` and `:528`; `MIN_WALL_MM = 1.2` at
   `src/wheel_fea.py:236`; `study_wheel_fea.py:465` still calls `WW.build_wheel(v, cfg)` with no
   `fillet=`. Its evidence is a CV swept over 20 seeds in **both** gene boxes and its FEA path is
   the unfilleted default, so it is genome-independent by construction. §103 cannot reach it and
@@ -29373,7 +29373,7 @@ after; the one added row is this work's own `wheel_stage3.py:217`, which resolve
 
 Every `file:N` above, verified against HEAD at the time of writing: `src/wheel_stage3.py:217`
 (`return "clamp_reject"`), `src/wheel_wheel.py:48`, `src/wheel_fea.py:236`,
-`tests/test_wheel_fea.py:477` and `:514`, `studies/study_wheel_fea.py:465` and `:94`,
+`tests/test_wheel_fea.py:491` and `:528`, `studies/study_wheel_fea.py:465` and `:94`,
 `Makefile:736`, `REPO_EXPLAINED.tex:2035`, `MBSE_PLAN.md:157`, `FILLET_PLAN.md:122` and
 `:3547`, `HUBSHARE_PLAN.md:354`, `EXPORTPREC_PLAN.md:106`, `MESHSTEP_PLAN.md:157`,
 `PLAN.md:11340`, `:11349`, `:15519`. The `wheel_objective.py` line numbers in item 7 are quoted
@@ -29398,7 +29398,7 @@ The arc index's cell for #2 was **rewritten 2026-08-29 after §92** and says:
 
 `test_nothing_wires_the_fillet_into_the_objective` stood from §48 through §102 and **§103
 replaced it with its mirror image**, `test_the_objective_builds_the_filleted_mesh`
-(`tests/test_corner_singularity.py:714`), which parses `src/` and requires the literal `True`
+(`tests/test_corner_singularity.py:730`), which parses `src/` and requires the literal `True`
 at `wheel_objective.phase_meshes` and `wheel_pool_worker.run_phase`.  It is green.  So the
 row's own subject reversed 14 days ago, and three days after that §115 descended and promoted
 `b729e86` on the mesh the row says the optimizer is kept off.
@@ -29419,7 +29419,7 @@ content inside the arc files and the finding extends to the table that ranks the
 Three, in the order a reader should care:
 
 **THE XFAIL WHOSE CONDITION FIRED AND WHICH DID NOT REOPEN.**
-`tests/test_objective.py:840`'s `reason=` ends *"strict=True via pyproject.toml, so this
+`tests/test_objective.py:846`'s `reason=` ends *"strict=True via pyproject.toml, so this
 reopens itself the day the shipped genome (or its replacement) reads below 0.80 again."*
 §118 measured the replacement at **hub 0.667478 / rim 0.708341** on that test's own fixture on
 2026-09-06 and the test stayed `xfail`.  Re-run at HEAD under `--runxfail`, **the test's first
@@ -29534,7 +29534,7 @@ that is the `2 xfailed, 3 passed` §118 left, reproduced eleven days later.
 
 ### 5. SUCCESSORS, RANKED
 
-0. **THE `reason=` AT `tests/test_objective.py:840`** — replace the self-clearing clause with
+0. **THE `reason=` AT `tests/test_objective.py:846`** — replace the self-clearing clause with
    the route §2 measures.  One string, the test stays red either way, and it is a source
    commit rather than a record.  **Cheapest item on this list and the one a reader trips over
    next.**
@@ -29559,7 +29559,7 @@ that is the `2 xfailed, 3 passed` §118 left, reproduced eleven days later.
 
 ---
 
-## §187 — 2026-09-18. §186's SUCCESSOR 0 AND `FILLET_PLAN.md` §10's, CLOSED IN SOURCE: **THE MARKER AT `tests/test_objective.py:840` NO LONGER PROMISES TO CLEAR ITSELF AT A GENOME; WHAT REPLACES THE PROMISE IS THE ROUTE, RE-MEASURED AT HEAD BEFORE THE STRING WAS WRITTEN RATHER THAN COPIED FROM §186.** TEN STRING LINES FOR TEN, WHICH IS THE ONLY FORM THAT WOULD HAVE DONE: **36 CITATIONS POINT INTO THAT FILE AND 20 OF THEM ANCHOR BELOW THE EDIT** — A COUNT THIS SECTION FIRST PUT AT 14 BY GREP, WHICH CANNOT SEE A CARRIED OWNER AND MISSES 17 OF THE 36. AND THE MARKER CENSUS, ENUMERATED WITH `ast` ACROSS `tests/` AND `studies/`, IS **13 — OF WHICH EXACTLY TWO PROMISE TO REOPEN AT A NUMBER, BOTH §103's, BOTH IN THIS FILE.** THE SECOND, `tests/test_objective.py:904`, CARRIES THE SAME DEFECT LATENT: ITS CONDITION HAS NOT FIRED, BUT THE CLAIM BEHIND IT IS ALREADY FALSE AT ONE RUNG — THE SHIPPED GENOME'S RIM READS **0.708341** UNDER THE KNEE AT `smoke`/2 WITH `dL/dR_rim` AT **+5.899e+01**. **AND §103 WROTE A THIRD PROMISE OF THE SAME SHAPE THAT CLEARED ITSELF ON SCHEDULE**, WHICH IS THE CONTROL THAT MAKES THIS A DISCRIMINATOR AND NOT A COMPLAINT ABOUT SELF-CLEARING MARKERS: ITS STATED CONDITION WAS THE PROPOSITION ITS FAILING ASSERTION TESTED, AND THESE TWO'S ARE NOT
+## §187 — 2026-09-18. §186's SUCCESSOR 0 AND `FILLET_PLAN.md` §10's, CLOSED IN SOURCE: **THE MARKER AT `tests/test_objective.py:846` NO LONGER PROMISES TO CLEAR ITSELF AT A GENOME; WHAT REPLACES THE PROMISE IS THE ROUTE, RE-MEASURED AT HEAD BEFORE THE STRING WAS WRITTEN RATHER THAN COPIED FROM §186.** TEN STRING LINES FOR TEN, WHICH IS THE ONLY FORM THAT WOULD HAVE DONE: **36 CITATIONS POINT INTO THAT FILE AND 20 OF THEM ANCHOR BELOW THE EDIT** — A COUNT THIS SECTION FIRST PUT AT 14 BY GREP, WHICH CANNOT SEE A CARRIED OWNER AND MISSES 17 OF THE 36. AND THE MARKER CENSUS, ENUMERATED WITH `ast` ACROSS `tests/` AND `studies/`, IS **13 — OF WHICH EXACTLY TWO PROMISE TO REOPEN AT A NUMBER, BOTH §103's, BOTH IN THIS FILE.** THE SECOND, `tests/test_objective.py:910`, CARRIES THE SAME DEFECT LATENT: ITS CONDITION HAS NOT FIRED, BUT THE CLAIM BEHIND IT IS ALREADY FALSE AT ONE RUNG — THE SHIPPED GENOME'S RIM READS **0.708341** UNDER THE KNEE AT `smoke`/2 WITH `dL/dR_rim` AT **+5.899e+01**. **AND §103 WROTE A THIRD PROMISE OF THE SAME SHAPE THAT CLEARED ITSELF ON SCHEDULE**, WHICH IS THE CONTROL THAT MAKES THIS A DISCRIMINATOR AND NOT A COMPLAINT ABOUT SELF-CLEARING MARKERS: ITS STATED CONDITION WAS THE PROPOSITION ITS FAILING ASSERTION TESTED, AND THESE TWO'S ARE NOT
 
 One commit, one file: `9c57d1e`, `tests/test_objective.py`, ten insertions and ten deletions.
 No test was added, removed or re-marked; the test is still `xfail(strict=True)` and still
@@ -29763,9 +29763,9 @@ the string as evidence and stay correct as quotations.
 
 ### 7. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
 
-Verified at the commit that carries this section: `tests/test_objective.py:840` (the marker,
+Verified at the commit that carries this section: `tests/test_objective.py:846` (the marker,
 whose ten string lines this work replaced one-for-one and whose own line number does not move),
-`:851`, `:899`, `:904`, `:913`; `tests/test_gnl.py:349`; `src/wheel_objective.py:361`, `:1335`,
+`:857`, `:905`, `:910`, `:919`; `tests/test_gnl.py:349`; `src/wheel_objective.py:361`, `:1335`,
 `:1351-1354`; `PLAN.md:14573`, `:17344`, `:17464`, `:17606`, `:21239-21240`, `:21689`,
 `:29423`; `FILLET_PLAN.md:4750`.  **Every one of them is a line this work does not touch** —
 the source commit is ten-for-ten inside `tests/test_objective.py` and this record is an append
@@ -29774,10 +29774,10 @@ were re-read at HEAD after the source commit, not before it.
 
 ### 8. SUCCESSORS, RANKED
 
-0. **THE `reason=` AT `tests/test_objective.py:904`** — the sibling in §4.  One string again,
+0. **THE `reason=` AT `tests/test_objective.py:910`** — the sibling in §4.  One string again,
    the test stays red on its first assertion either way, and it should say what §4 measured:
    the promise is wrong because the claim behind it is, not because no genome has arrived.
-   Same ten-for-ten discipline; `:913` and everything below it must not move.
+   Same ten-for-ten discipline; `:919` and everything below it must not move.
 1. **DECIDE `stress_margin`** — §186's successor 1, unchanged and untouched here: adopt
    111.196 or write into the weight's own comment that 89.21 is `09e8188`'s rate and
    deliberately frozen.  The two source comments assert a false provenance until then.
@@ -29792,11 +29792,11 @@ were re-read at HEAD after the source commit, not before it.
 5. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §186's successor 5, unchanged;
    two of ten rows are known behind and nothing has checked the other eight.
 
-## §188 — 2026-09-19. §187's SUCCESSOR 0, CLOSED IN SOURCE: **THE SECOND §103 MARKER, `tests/test_objective.py:904`, NO LONGER PROMISES TO REOPEN AT A NUMBER — AND WITH IT THE TREE'S COUNT OF MARKERS THAT DO GOES TO ZERO**, ENUMERATED WITH `ast` AND ALL THIRTEEN READ. EIGHT STRING LINES FOR EIGHT, `:913` UNMOVED, AND THE FILE'S AST IDENTICAL TO ITS PRE-IMAGE ONCE EVERY STRING CONSTANT IS BLANKED — WHICH IS A STRONGER GREEN THAN RE-RUNNING THE TWELVE MINUTES WOULD HAVE BEEN. **AND THE RE-MEASUREMENT CAUGHT ITSELF USING THE WRONG INSTRUMENT**: A BARE PROBE SCRIPT, OUTSIDE BOTH `make` AND `pytest`, RETURNED `dL/dR_hub` **81 ULPs — 9.441e-15 RELATIVE — OFF THE VALUE BOTH `pytest` RUNS AGREE ON**, WHILE EVERY FORWARD VALUE MATCHED TO THE BIT. THE CAUSE WAS REGISTERED AS A FALSIFIER AND TESTED: RE-RUN WITH `wheel_pool.PINNED_ENV` EXPORTED, THE SAME SCRIPT REPRODUCES `30.48037347703914` EXACTLY. **THE TREE ALREADY KNEW** — `Makefile:18` SAYS SO IN CAPITALS — AND THE 4.5 MINUTES IT COST IS THE PRICE OF A PROBE WRITTEN OUTSIDE BOTH HARNESSES THAT PIN IT
+## §188 — 2026-09-19. §187's SUCCESSOR 0, CLOSED IN SOURCE: **THE SECOND §103 MARKER, `tests/test_objective.py:910`, NO LONGER PROMISES TO REOPEN AT A NUMBER — AND WITH IT THE TREE'S COUNT OF MARKERS THAT DO GOES TO ZERO**, ENUMERATED WITH `ast` AND ALL THIRTEEN READ. EIGHT STRING LINES FOR EIGHT, `:919` UNMOVED, AND THE FILE'S AST IDENTICAL TO ITS PRE-IMAGE ONCE EVERY STRING CONSTANT IS BLANKED — WHICH IS A STRONGER GREEN THAN RE-RUNNING THE TWELVE MINUTES WOULD HAVE BEEN. **AND THE RE-MEASUREMENT CAUGHT ITSELF USING THE WRONG INSTRUMENT**: A BARE PROBE SCRIPT, OUTSIDE BOTH `make` AND `pytest`, RETURNED `dL/dR_hub` **81 ULPs — 9.441e-15 RELATIVE — OFF THE VALUE BOTH `pytest` RUNS AGREE ON**, WHILE EVERY FORWARD VALUE MATCHED TO THE BIT. THE CAUSE WAS REGISTERED AS A FALSIFIER AND TESTED: RE-RUN WITH `wheel_pool.PINNED_ENV` EXPORTED, THE SAME SCRIPT REPRODUCES `30.48037347703914` EXACTLY. **THE TREE ALREADY KNEW** — `Makefile:18` SAYS SO IN CAPITALS — AND THE 4.5 MINUTES IT COST IS THE PRICE OF A PROBE WRITTEN OUTSIDE BOTH HARNESSES THAT PIN IT
 
 One commit, one file: `606a541`, `tests/test_objective.py`, eight insertions and eight
 deletions.  No test was added, removed or re-marked; the test is still `xfail(strict=True)`
-and still fails on its FIRST assertion, at `tests/test_objective.py:929`.  §187 §4 filed
+and still fails on its FIRST assertion, at `tests/test_objective.py:935`.  §187 §4 filed
 this and had already paid for the measurement; what is new here is that it was re-run at
 HEAD with four falsifiers written down first, the instrument finding in §3, and the census
 in §5 that §187's could not yet report.
@@ -29899,8 +29899,8 @@ enough to say the spread is not uniform across components.
 
 ### 4. EIGHT STRING LINES FOR EIGHT, AND THE GREEN IS A PROOF RATHER THAN A RUN
 
-`@pytest.mark.xfail(reason=(` is `tests/test_objective.py:904` and
-`def test_below_the_knee_the_rim_fillet_radius_is_dead` is `:913`; the string body is the
+`@pytest.mark.xfail(reason=(` is `tests/test_objective.py:910` and
+`def test_below_the_knee_the_rim_fillet_radius_is_dead` is `:919`; the string body is the
 eight lines between them, and the replacement is eight.  **No line in the file moves**, which
 §187 §8 made an explicit condition of this successor.
 
@@ -29957,7 +29957,7 @@ Re-enumerated with `ast` across every `tests/*.py` and `studies/*.py`, and all t
    6  tests/test_fillet_block.py         :529 :537 :580 :1161 :1171 :1682   likewise
    1  tests/test_gnl.py:349              "reopens itself IF the wheel ever passes it" — the
                                          mechanism statement, no threshold in it
-   2  tests/test_objective.py:840 :904   BOTH now name the route, neither names a trigger
+   2  tests/test_objective.py:846 :910   BOTH now name the route, neither names a trigger
 ```
 
 **Markers promising to reopen at a stated number: 2 at §187, 0 here.**  The falsifier is the
@@ -30001,8 +30001,8 @@ and was not staged, touched or regenerated here.
 ### 8. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
 
 Verified by reading each anchor at the commit that carries this section:
-`tests/test_objective.py:840`, `:899`, `:904` (the marker, whose eight string lines this work
-replaced one-for-one and whose own line number does not move), `:913`, `:929`;
+`tests/test_objective.py:846`, `:905`, `:910` (the marker, whose eight string lines this work
+replaced one-for-one and whose own line number does not move), `:919`, `:935`;
 `tests/test_gnl.py:349`; `src/wheel_objective.py:1351`; `src/wheel_pool.py:97`;
 `src/wheel_pool_worker.py:34`; `conftest.py:20` and `conftest.py:43`; `PLAN.md:869`; and the
 three `Makefile` anchors — line 18, lines 19-23 and lines 29-33 — **named in words on purpose**.
@@ -30115,7 +30115,7 @@ being recomputed, so the post-§103 group is an upper bound:
 dated evidence; the other seven are dated.
 
 **THE ONE LIVE TEST THAT GOES RED, AND THE FOUR ASSERTIONS IN IT.**
-`tests/test_requirements.py:367-372` — `calibrated_priorities` derives the 100-point portfolio
+`tests/test_requirements.py:372-377` — `calibrated_priorities` derives the 100-point portfolio
 FROM `DEFAULT_WEIGHTS`, so the weight moves it.  Run here at both values:
 
 ```
@@ -30134,7 +30134,7 @@ is a three-file edit before any artifact is considered.
 
 **AND THE GUARD CANNOT SEE THE REPAIR EITHER — THE SAME BLINDNESS, FROM THE OTHER SIDE.**
 `test_the_margin_weight_is_the_exchange_rate_it_claims_to_be`
-(`tests/test_objective.py:1082`) asserts `0.5 < one_pct_of_util / one_pct_of_mass < 2.0`.
+(`tests/test_objective.py:1088`) asserts `0.5 < one_pct_of_util / one_pct_of_mass < 2.0`.
 FILLET_PLAN.md §7 measured the numerator's input at `smoke`/2 and read **0.82246**; the same
 arithmetic at 111.196 gives **1.02516**.  Both are green.  §7 recorded that a 24.65% move in a
 calibration input produced no red in 11 days; the symmetric half is that undoing it would
@@ -30249,8 +30249,8 @@ supersedes it, which is what the numbered sections are for.
 Verified against HEAD after the source commit and before this one, which is the order §186's
 lesson requires — a citation into a line the same unit of work is about to edit is stale on
 arrival: `src/wheel_objective.py:369`, `:360-368`, `:1333-1337`, `:1351-1354`, `:1402-1403`;
-`src/wheel_fea.py:163-164`; `tests/test_objective.py:1082`;
-`tests/test_requirements.py:367-372`; `MBSE_PLAN.md:330-332`, `:516`;
+`src/wheel_fea.py:163-164`; `tests/test_objective.py:1088`;
+`tests/test_requirements.py:372-377`; `MBSE_PLAN.md:330-332`, `:516`;
 `FILLET_PLAN.md:4873`.  The `d2cf9fa` in §3 is a commit hash,
 not an anchor.  Every bare `:N` above carries the owner named immediately before it in the same
 sentence — the mis-carry §188 §8 caught in its own list was the reason to check, and this list
@@ -30472,7 +30472,7 @@ subtracts at both kinematics, which is what all three successors were asking.**
 `best_solution.json`'s `search` block reads `config coarse / n_phase 8 / kinematics svk`.
 **That is the rung the descent that produced `b729e86` solved, and at it both fillet loss
 gradients are NEGATIVE** — which is the arc's founding premise, stated at
-`tests/test_objective.py:872` as *"more fillet must mean less loss: both derivatives are
+`tests/test_objective.py:878` as *"more fillet must mean less loss: both derivatives are
 negative"*, holding at the settings that produced the wheel that ships.
 
 One kwarg separates it from part A, so the comparison is clean and the attribution is stated:
@@ -30591,8 +30591,8 @@ what it cost was the reading that was already on disk.
 
 ### 10. THE GREEN TEST THAT PINS THE PREMISE PINS IT WHERE THE WALL GOVERNS
 
-`test_but_above_the_knee_the_fillet_radii_are_live` (`tests/test_objective.py:938`) asserts
-`g[12] < 0.0` at `:985` and is GREEN.  **NOT RE-RUN HERE, AND QUOTED AS SOMEONE ELSE's RUN:**
+`test_but_above_the_knee_the_fillet_radii_are_live` (`tests/test_objective.py:944`) asserts
+`g[12] < 0.0` at `:991` and is GREEN.  **NOT RE-RUN HERE, AND QUOTED AS SOMEONE ELSE's RUN:**
 §187 §4 ran the five-test subset at HEAD under `--runxfail` on 2026-09-18 — `703.93 s, 2
 failed (the xfail pair) and 3 passed`, this among them — and the two commits since changed one
 string constant (§188, AST-identical once strings are blanked) and comments only (§189,
@@ -30666,8 +30666,8 @@ commit** — no source file is touched, so §186's "stale on arrival" case canno
 
 `src/wheel_objective.py:759`, `:1280-1281`, `:1283-1287`, `:1288`, `:1345-1355`, `:1349`,
 `:1353-1354`, `:1380`, `:1385`; `src/wheel_requirements.py:954`, `:955-957`;
-`src/wheel_fem.py:1336`, `:1496`, `:1719`; `tests/test_objective.py:751`, `:840`, `:872`,
-`:938`, `:985`; `tests/test_export_contract.py:172`; `studies/study_reds_hub_share.py:118`;
+`src/wheel_fem.py:1336`, `:1496`, `:1719`; `tests/test_objective.py:751`, `:846`, `:878`,
+`:944`, `:991`; `tests/test_export_contract.py:172`; `studies/study_reds_hub_share.py:118`;
 `PLAN.md:21044-21046`, `:29434-29438`; `FILLET_PLAN.md:4713`, `:4959-4964`;
 `KINEMATICS_PLAN.md:597`.
 
@@ -30727,12 +30727,12 @@ citation side.]**
    reading the other way, as CANDIDATES and not findings, because each needs reading against
    `fillet_cap` (which IS live) first: `src/wheel_objective.py:759`,
    `tests/test_export_contract.py:172`, `studies/study_reds_hub_share.py:118`,
-   `tests/test_objective.py:751`.  `:759`'s sentence is BYTE-IDENTICAL to `d2cf9fa^`'s
+   `tests/test_objective.py:751`.  `:765`'s sentence is BYTE-IDENTICAL to `d2cf9fa^`'s
    `:730`, so it is a pre-switch comment the switch left standing — the same shape `322262c`
    fixed.  **A different census from §136's**, which swept `insensitive_genes`, a MESH
    instrument, and found four sites saying the pair was DEAD; these say it is priced through
    `Kt`.  Reading only, no solve.
-3. **THE `xfail` REASON AT `tests/test_objective.py:840` NOW CARRIES A RUNG-LESS NUMBER.**  It
+3. **THE `xfail` REASON AT `tests/test_objective.py:846` NOW CARRIES A RUNG-LESS NUMBER.**  It
    states `dL/dR_hub +3.048e+01, dL/dR_rim +5.899e+01` and calls the route MESH-carried.  Both
    are correct at `smoke`/2 and §187 measured them there deliberately.  **Nothing in it is
    false** — but a reader meeting it after §6 needs the rung, and §187 and §188 each spent a
@@ -31002,7 +31002,7 @@ of a 67-row census:
 Of the 28 bare sites, **exactly two name `coarse` AS A LITERAL** — the census resolves the
 config only where it is a constant, and twenty-one pass a variable or take the default, so
 this is a lower bound on how many run at `coarse` and is quoted as one.  Of those two,
-**exactly one solves an FEA at all** — the other, `tests/test_objective.py:1231`, passes `tiers=("t1",)`.  The
+**exactly one solves an FEA at all** — the other, `tests/test_objective.py:1237`, passes `tiers=("t1",)`.  The
 one that solves is `tests/test_objective.py:88`, the `genes_over_knee` fixture, `coarse` with
 an 8-phase uniform stencil and no `kinematics=`.
 
@@ -31050,7 +31050,7 @@ All read back against HEAD before this section was written, and **this is a reco
 commit** — no source file is touched, so §186's "stale on arrival" case cannot arise.
 
 `src/wheel_objective.py:1251`, `:1253`, `:1349`, `:1353-1354`, `:1434`, `:1579-1583`,
-`:1589`, `:1595`, `:1598`; `tests/test_objective.py:88`, `:1231`; `src/wheel_stage3.py:337`;
+`:1589`, `:1595`, `:1598`; `tests/test_objective.py:88`, `:1237`; `src/wheel_stage3.py:337`;
 `PLAN.md:29434-29438`.
 
 `b729e86` is a genome hash, not an anchor; `metrics.axle_drop_mean_mm`,
@@ -31169,7 +31169,7 @@ printed here.
    that the 44 GiB premise is stale.  The POOL case is still what the rule was written for
    and is still unmeasured; until then the rule stands and was obeyed here.
 6. **THE `Kt`-PRICES-THE-FILLET CENSUS** — §190's successor 2, unchanged.
-7. **THE `xfail` REASON AT `tests/test_objective.py:840` CARRIES A RUNG-LESS NUMBER** —
+7. **THE `xfail` REASON AT `tests/test_objective.py:846` CARRIES A RUNG-LESS NUMBER** —
    §190's successor 3, unchanged, and §9 adds that the GREEN test one screen down has the
    same gap: its fixture is `coarse`/8/linear and nothing says so.
 8. **THE DESCENT PAIR THAT WOULD MEASURE §189 §4's DIRECTION** — §190's successor 4.
@@ -31179,7 +31179,7 @@ printed here.
 11. **SWEEP THE REST OF THE ARC INDEX AGAINST ITS FILES** — §190's successor 8.
 
 **THIS ADDENDUM's OWN CITATIONS:** `src/wheel_objective.py:353`, `:1253`;
-`src/wheel_stage3.py:337`; `tests/test_objective.py:840`.  `0000000` is git's null blame sha
+`src/wheel_stage3.py:337`; `tests/test_objective.py:846`.  `0000000` is git's null blame sha
 and `31052`/`1349` inside the quoted sweep row are that row's own text, not this section's
 anchors.
 
@@ -31430,7 +31430,7 @@ commit, so a pre-commit sweep reports a section's own citations as missing, all 
    that this is a property of `b729e86` rather than of the objective is the one thing two
    rungs have not tested.
 4. **THE `xfail` REASON AND THE GREEN TEST BOTH CARRY A RUNG-LESS NUMBER** — §190's successor
-   3 and §191 §9, merged: `tests/test_objective.py:840`'s reason states `smoke`/2 figures
+   3 and §191 §9, merged: `tests/test_objective.py:846`'s reason states `smoke`/2 figures
    without saying so, and `:88`'s fixture is `coarse`/8/linear without saying so.  §192 gives
    the scope clause its missing third rung — the premise now holds at `medium`/8/SVK, which
    is what a reader meeting either string actually wants to know.
@@ -31459,7 +31459,7 @@ commit, so a pre-commit sweep reports a section's own citations as missing, all 
 
 **THE STRONG HALF HELD AND THE WEAK HALF DID NOT, AND THE WEAK HALF IS THE ONE WORTH
 WRITING UP.**  §9 says *"this section cites no source line"* and lists none.  It minted
-**two**: `tests/test_objective.py:840` and, carried from it by §138 §4's continuation rule,
+**two**: `tests/test_objective.py:846` and, carried from it by §138 §4's continuation rule,
 `:88` — both inside **§10's successor 4**, which was written AFTER §9's citation list and
 never sent back through it.  Both resolve `ok` (1456 -> 1458), so nothing is damaged and the
 human list did not move; what failed is the census, not the tree.

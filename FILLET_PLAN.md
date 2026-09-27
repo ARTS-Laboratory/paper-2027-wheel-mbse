@@ -4767,7 +4767,7 @@ first two assertions PASS and the third fails**:
   assert g[12] == 0.0 and g[13] == 0.0                            FAILS
     dL/dR_hub +3.048e+01, dL/dR_rim +5.899e+01 -- nonzero below the knee, where the
     only thing that prices the fillets should be flat
-    (tests/test_objective.py:899, dL/dR_hub = 30.48037347703914)
+    (tests/test_objective.py:905, dL/dR_hub = 30.48037347703914)
 ```
 
 **The premise the marker states is not the premise that is failing, and the test says so in
@@ -4932,8 +4932,8 @@ genome that no longer ships — **three supersessions, none of them the one the 
 ### 9. THIS SECTION'S OWN CITATIONS, LISTED BEFORE COMMITTING (§174'S RULE)
 
 Verified against HEAD at the time of writing: `src/wheel_objective.py:361`, `:1335`,
-`:1351-1354`, `:1402-1403`; `src/wheel_stage3.py:460`; `tests/test_objective.py:840` (the
-marker), `:851` (the test), `:899` (the assertion that fires), `:1042` (the exchange-rate
+`:1351-1354`, `:1402-1403`; `src/wheel_stage3.py:460`; `tests/test_objective.py:846` (the
+marker), `:857` (the test), `:905` (the assertion that fires), `:1048` (the exchange-rate
 test).  `FILLET_PLAN.md:122` and
 `:3547` are named as citations INTO this file that the append does not move, not as anchors
 read here.  **The arc index's row for this file is named in WORDS and not as a `PLAN.md:N`
@@ -4944,7 +4944,7 @@ written here would have been stale on arrival.  It was: the first draft of this 
 
 ### 10. SUCCESSORS
 
-0. **THE `reason=` STRING AT `tests/test_objective.py:840`** — one sentence, and the test
+0. **THE `reason=` STRING AT `tests/test_objective.py:846`** — one sentence, and the test
    stays red either way.  Its self-clearing clause has fired and must be replaced by the
    route §4 measures.  Not done here because it is a source commit and this is a record.
 1. **RE-DERIVE `DEFAULT_WEIGHTS["stress_margin"]` ON THE SHIPPED GENOME, OR STATE THAT IT IS
