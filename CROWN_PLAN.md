@@ -1658,3 +1658,11 @@ wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
 - **`b729e86` stays in `best_solution.json`.**
 
 **Scope.** Two genomes over eight phases, two more at phase 0, and one rung (hc 0.25). Three-mesh evidence exists only for 66c6838's phase 0, the bar at 3.75, and `be96531` at 3.75. Every other band figure is one mesh, and phase 0's 2.5 MPa is the only other margin that is several SD clear.
+
+### R18 — 2026-09-27. STEP 8's LOOK GATE PASSED BY THE USER ON `be96531` ("Spokes look good"). STEP 8 NOW WAITS ONLY ON `s_zz`, WHICH ONLY STEP 0.5's COUPONS CAN READ.
+
+- The gate (§6) was taken on R17's `be96531`: `c68ef36`'s spokes with `R_rim` at 1.6802.
+- Step 8 stands at: drop PASS (1.91314 mm), band PASS (all eight phases), patch PASS, look PASS, **`s_zz` not readable**.
+  - `s_zz` reaches 17.12 MPa, against `b729e86`'s 16.78 (+2.0%) and the 12.5 placeholder.
+- **Not promoted.** Decision 0.5 makes Step 0.5 block Step 8's gate. `b729e86` stays in `best_solution.json`.
+- `be96531`'s genome is not in the tree. It is `stage3_crown_floor_best.json` with `R_rim` set to 1.6802, and Step 9 writes it.
