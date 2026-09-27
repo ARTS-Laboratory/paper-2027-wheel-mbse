@@ -1563,3 +1563,98 @@ wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
 - The hub gap stays open, as §125 left it. It is a finding here, not a Step 8 gate.
 - A descent that cannot see what OCC cuts will keep widening it whenever `stress_margin` rewards a larger `R_hub`.
 - **`b729e86` stays in `best_solution.json`.**
+
+### R17 — 2026-09-27. STEP 8 ON THE DESCENT's RESULT AND TWO RADII ON ITS SPOKES. THE TOE's MESH-TO-MESH SCATTER IS ~0.3 MPa, SO EVERY BAND CALL SINCE R13 WAS DECIDED INSIDE IT. AT `R_rim` 1.6802, `b729e86`'s OWN FILLET, `be96531` CLEARS BOTH GATES OUTSIDE THE SCATTER: MEAN DROP 1.91314 mm, AND THE BAND UNDER THE BAR AT ALL EIGHT PHASES, WITH PHASE 3.75 DECIDED ON THREE MESHES A SIDE. ONLY `s_zz` IS UNREAD, AND ONLY STEP 0.5's COUPONS CAN READ IT.
+
+**What ran.** Every solve is SVK at h 2.0 / hc 0.25, in a 32G scope, with the tools byte-identical to `studies/probe_3d/`.
+- Phase 0 used R11's window. The other phases used R9's windows widened 4 mm.
+- At most two solves ran at once. One gmsh failure (`be96531` at 26.25) passed on its retry.
+- Every solve passes `patch3d.py`'s force control, to at most 6.3e-13 N.
+- Every phase has one patch, with a lever of 0.676–0.733 mm.
+- The fields and registered files are in the session scratchpad, `.../b167574d-…/scratchpad/r15/`: `s8/`, `rr140/`, `rr168/`, `bar/` and `cand/`.
+
+**`c68ef36`, EIGHT PHASES:**
+- **PM.1 holds:** the mean is **1.95115 mm**, −0.03% from its registered 1.9518.
+- **P15.3 misses high by +0.26%, as PM.1 predicted it would.** Its factors were taken at the requested hub radius.
+- Per phase, the 3D ratio to `4ec44f5` is 1.0259–1.0283, against the as-built 2D mean ratio of 1.0273.
+- The drop passes Step 8's window. The band reads 33.92 at phase 0, 0.07 over the bar on one mesh (R16). Every other phase is under.
+
+**THE INSTRUMENT'S SCATTER.** Registered before either re-mesh solve (`PREDICTIONS_scatter.txt`, sha1 `30d3ed4…`): H, that the toe scatters mesh to mesh by at least 0.10 MPa.
+- gmsh re-meshes of one STEP differ: 155432, 155676 and 155863 tets.
+
+```
+  66c6838 (R_rim 1.40), phase 0, three meshes of one STEP
+                   mesh A    mesh B    mesh C    mean     range
+  elem-node s1     33.93     34.19     33.58     33.90    0.61
+  node-avg s1      33.83     33.33     33.35     33.50    0.50
+  drop mm          1.91346   1.91323   1.91325            0.012%
+```
+
+- **H holds**: the fillet toe's SD is about 0.3 MPa. The drop's spread is 0.012%, just over the "< 0.01%" registered for it.
+- **Consequences, stated as hypotheses:**
+  - R13's floor "33.67 ≤ 33.85, margin 0.18" and R16's "33.92, 0.07 over" were both one-mesh reads, inside this scatter.
+  - The 1.35 → 1.40 step (+0.01 MPa, where P16.1's chord predicted −0.40) cannot be read either.
+  - R13's "flat, then a cliff" curve rests on single meshes too.
+  - None of these was re-measured on three meshes, except 1.40 itself.
+- **P16.1 and P16.3 fail on the first mesh** (33.93 against 33.2–33.6, and 33.83 node-averaged against 33.68). On three meshes, 1.40 is still undecided: its element-node mean is 0.04 over the bar's three-mesh mean, and its node-averaged mean is 0.29 under. **P16.2 holds** (1.91346).
+- **The bar re-measured on three meshes** (`b729e86` at phase 3.75: §206's own mesh plus two re-meshes of its STEP):
+  - **Control:** today's `fe3d.py` on §206's original mesh reproduces 33.85 / 33.68 MPa exactly, and the drop to 2.4e-15.
+  - Element-node: 33.85 / 33.87 / 33.87, mean **33.863**, SD 0.012.
+  - Node-averaged: 33.68 / 33.87 / 33.81, mean **33.787**, SD 0.097.
+  - The bar's peak sits on the band face at x +0.88, not on a fillet corner, and it scatters far less than the toe does.
+
+**THE CALL: `R_rim` TO 1.6802, WHERE BOTH MARGINS CAN BE READ.**
+- Stepping a radius past a 0.07 MPa failure measures noise. The next radius had to put the toe several SD clear.
+- **1.6802** is `b729e86`'s own rim fillet, and R11 measured the toe there at 31.04 on `64e5068`'s spokes, which are within 0.58 mm of these.
+- 2D at the as-built hub prices the drop at −1.71% (1.97210 → 1.93831). At R14's 1.14× 3D factor, that lands about 0.7% above 1.90.
+- 1.55 was priced too (−1.00%) and not taken: its toe rested on the chord that had just failed.
+- `be96531` (`c68ef36` with `R_rim` 1.6802) builds valid: rim 24/24 at 1.680, 63.16 g against `b729e86`'s 65.35 g on the same rim (R9). The hub is as `c68ef36`'s, +14.9% (R16).
+- Registered before any solve (`PREDICTIONS_r17.txt`, sha1 `a27236d…`).
+
+**`be96531`, EIGHT PHASES:**
+
+```
+  phase   3D drop    / c68ef36   in-layer s1 (c68ef36)   hoop+    s_zz+ (c68ef36)   lever
+   0.00   1.87582    0.97727     31.32 (33.92)            30.03    12.64 (13.94)     0.676
+   3.75   1.93738    0.98026     33.68 (33.34)            33.62    16.21 (16.26)     0.732
+   7.50   1.96638    0.98259     31.66 (31.80)            31.66    17.10 (17.20)     0.733
+  11.25   1.95957    0.98292     30.88 (31.05)            30.88    17.12 (17.03)     0.730
+  15.00   1.93357    0.98249     29.67 (29.86)            29.67    16.82 (16.81)     0.726
+  18.75   1.90127    0.98166     27.98 (28.26)            27.98    16.44 (16.53)     0.721
+  22.50   1.87503    0.98006     25.75 (26.12)            25.75    15.46 (15.83)     0.714
+  26.25   1.85605    0.97663     28.69 (30.43)            27.75    14.48 (16.03)     0.688
+  mean    1.91314    0.98052
+```
+
+- **P17.2 HOLDS AND STEP 8's DROP GATE PASSES: 1.91314 mm**, +0.0131 (+0.69%) over 1.90.
+  - The ratio is 0.98052, against the registered point of 0.9805.
+  - 3D paid 1.14× the 2D route's fillet cost (1.95% / 1.71%), which is R14's factor again.
+  - The margin is 57× the drop's measured mesh scatter.
+- **P17.1 HOLDS:** the phase-0 toe reads **31.32 MPa** (range 30.5–31.8), 2.5 MPa under the bar, about 8 SD of the toe's scatter.
+- **P17.3 MISSES ON BOTH SUB-CLAIMS.**
+  - Phase 3.75 read 33.68, 0.08 over its 33.2–33.6. The fillet did move it, by +0.34 from `c68ef36`, and the peak moved from x +1.42 to +1.13.
+  - Phase 26.25 FELL to 28.69 where a rise to 30.9–32.5 was registered. R14's +6.2% going 0.886 → 1.35 does not extend to 1.35 → 1.68.
+  - Neither mechanism is claimed here.
+- **PHASE 3.75, DECIDED AS REGISTERED: on three meshes a side, `be96531` is under the bar on both reads.**
+
+```
+  phase 3.75       be96531 (queue mesh + 2 re-meshes)     b729e86 bar (sec 206 mesh + 2 re-meshes)
+  elem-node s1     33.68 / 33.65 / 33.72  mean 33.683 sd 0.035    33.85 / 33.87 / 33.87  mean 33.863 sd 0.012
+  node-avg s1      33.65 / 33.54 / 33.60  mean 33.597 sd 0.055    33.68 / 33.87 / 33.81  mean 33.787 sd 0.097
+```
+
+  - The means differ by 0.180 and 0.190 MPa.
+  - The candidate's highest sample is under the bar's lowest on both reads.
+  - At this location the scatter is small (SD 0.035), so the call is not made inside it.
+  - **Hypothesis, not measured:** refinement to hc 0.20 raised the bar +0.62% and one toe +0.89% (R13). If this peak refines like the toe, the 0.53% margin shrinks to about 0.26%. It is compared like for like at the rung every Step 8 figure uses.
+- **Every other phase** is under the bar by at least 2.2 MPa.
+- **`s_zz`** reaches 17.12 MPa (phase 11.25). `b729e86` read 16.78 and `c68ef36` 17.20, against the 12.5 placeholder. **Step 8's `s_zz` gate still cannot be read (Step 0.5).**
+- **The patch** (Step 0.1): one patch at every phase. The lever is 0.676–0.733 mm, within 0.004 of `c68ef36`'s at every phase except 26.25 (0.697 → 0.688).
+
+**WHERE STEP 8 STANDS FOR `be96531`:** drop PASS, band PASS, patch PASS, `s_zz` NOT READABLE.
+- **The look gate is the user's (§6), and it is open.** `be96531`'s spokes are `c68ef36`'s (`study_crown_r15.jpg`), at most 0.58 mm from the `64e5068` spokes the user passed at R9, and the rim fillet is `b729e86`'s own.
+- **Not promoted.** Step 8 is not whole until `s_zz` has a measured allowable.
+- **Open alongside:** the hub fillet is cut at 0.456 against 0.631 requested (R16: `kt_error_pct` +14.9%, as-built hub utilisation 0.965). Requesting 0.456 would make the genome describe the part that exports, but it is not done here.
+- **`b729e86` stays in `best_solution.json`.**
+
+**Scope.** Two genomes over eight phases, two more at phase 0, and one rung (hc 0.25). Three-mesh evidence exists only for 66c6838's phase 0, the bar at 3.75, and `be96531` at 3.75. Every other band figure is one mesh, and phase 0's 2.5 MPa is the only other margin that is several SD clear.
