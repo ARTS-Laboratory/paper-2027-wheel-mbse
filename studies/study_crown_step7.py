@@ -35,6 +35,8 @@ OUT = sys.argv[2] if len(sys.argv) > 2 else "studies/study_crown_step7"
 rec = json.load(open(RUN))
 st = rec["settings"]
 W.set_min_wall(st["min_wall_mm"])
+# R15's run descends with `R_rim` floored (`r_rim_floor_mm`); R8's record predates the key.
+W.set_rim_fillet_floor(st.get("r_rim_floor_mm", W.GENE_SPACE[13]["low"]))
 low, high, rng = wg.bounds_arrays(W.GENE_SPACE)
 names = list(json.load(open("best_solution.json"))["genes"])
 assert len(names) == len(W.GENE_SPACE)
@@ -72,7 +74,8 @@ def poly(g):
     return G.place_sector(p, W.HUB_RADIUS_MM), G.place_sector(curve, W.HUB_RADIUS_MM)
 
 fig, ax = plt.subplots(figsize=(10, 4.5))
-for g, lab, col in ((g0, "b729e86 (start)", "0.55"), (gb, f"step 7, step {sel}", "C3")):
+for g, lab, col in ((g0, f"{wg.genome_hash(dict(zip(names, g0)))} (start)", "0.55"),
+                    (gb, f"{wg.genome_hash(dict(zip(names, gb)))}, step {sel}", "C3")):
     p, c = poly(g)
     ax.fill(p[:, 0], p[:, 1], color=col, alpha=0.25, lw=0)
     ax.plot(np.r_[p[:, 0], p[:1, 0]], np.r_[p[:, 1], p[:1, 1]], color=col, lw=1.2, label=lab)

@@ -1463,3 +1463,103 @@ wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
 3. Step 8's eight-phase 3D run, P15.3 and P15.4 read first.
 
 **`b729e86` stays in `best_solution.json`.** Step 8's `s_zz` gate still waits on Step 0.5's coupons, so no genome can clear Step 8 whole yet (R10, R14).
+
+### R16 — 2026-09-27. R15's DESCENT: FOUR OF ITS FIVE PREDICTIONS HOLD. IT LANDS AT A PREDICTED-3D MEAN OF 1.95006 mm, INSIDE P15.2, WITH `R_rim` ON THE FLOOR, AND THE SPOKES MOVE AT MOST 0.58 mm FROM `64e5068`'s. P15.3 DOES NOT: ITS FACTORS ARE TAKEN AT THE REQUESTED HUB RADIUS, AND THE HUB IS NOT BUILT AT THAT RADIUS. `c68ef36` REQUESTS `R_hub` 0.631 AND OCC CUTS 0.456, `kt_error_pct` +14.9%. AT THE BUILT RADIUS THE MODEL's OWN HUB UTILISATION IS 0.965, UNDER 1.
+
+**The run.** R15's argv, exit 0, 24037 s (6.68 h). That is 78.8 s/step over steps 2–300, inside the 6.0–7.5 h estimate.
+- Record: `stage3_crown_floor.json`. Selected genome: `stage3_crown_floor_best.json`, **`c68ef36`**, at **step 232**, loss 140.7222, tier 0.
+- The lowest loss is step 299 (140.6949).
+- 219 of 301 steps carry a barrier (R8: 208): `fillet_cap` at 175, `arrival` at 110, `x_order` at 96.
+
+**P15.0 HOLDS, TO 0 ULP.** Step 0 is `4ec44f5`: loss 142.07435139279352 and predicted-3D mean 1.9089880831693666, both equal to the serial probe. Its `z` equals the probe's exactly, and the record carries `r_rim_floor_mm` 1.35.
+
+**P15.1 HOLDS.** `R_rim` is 1.35 exactly, and `t1` and `t2` are on 1.2.
+
+**P15.2 HOLDS: 1.95006 mm**, inside 1.925–1.965 and +0.26% from the registered 1.945 point. The last step reads 1.95175. R8 landed at 1.9463.
+
+**P15.5 HOLDS.** The largest worker's VmHWM was 10.631 GiB, and the parent's 10.493, over 3996 samples 30 s apart. The scope reached at most 50.77 GiB, and the box never had under 2.72 GiB available.
+
+```
+  at step 0 (4ec44f5)  ->  step 232 (c68ef36)
+  predicted-3D mean drop  1.90899 -> 1.95006 mm     phase ripple (std/mean)  2.137% -> 2.055%
+  stress_utilisation      0.900   -> 0.918          kt_hub / kt_rim   2.841 / 1.807 -> 2.761 / 1.789
+  mesh mass (stand-in)    57.88   -> 57.35 g        min scaled Jacobian 0.358 -> 0.355
+  loss 142.07 -> 140.72: deflection 5.18 -> 1.56, band_margin 79.53 -> 81.61,
+                          mass 47.57 -> 47.14, smoothness 8.32 -> 8.15, stress_margin 1.48 -> 2.27
+```
+
+**THE GENES** (`studies/study_crown_step7.py stage3_crown_floor.json studies/study_crown_r15` → `.json`, `.jpg`):
+
+```
+  gene      4ec44f5     c68ef36      move mm    move z    bound
+  cx1        2.0751      2.0258     -0.0493    -0.0055
+  cy1       27.9515     27.3677     -0.5838    -0.0091
+  cx2       19.6900     19.6900      0          0         HIGH
+  cy2       25.0173     25.4285     +0.4112    +0.0064
+  cx3       22.5104     22.8196     +0.3092    +0.0262
+  cy3       15.0860     14.5203     -0.5657    -0.0088
+  cx4       25.0600     25.0600      0          0         LOW
+  cy4        5.0186      4.9976     -0.0210    -0.0003
+  t0         2.9863      2.9094     -0.0769    -0.0087
+  t1         1.2000      1.2000      0          0         LOW
+  t2         1.2021      1.2000     -0.0021    -0.0003    LOW
+  t3         1.9406      1.8751     -0.0656    -0.0137
+  R_hub      0.6009      0.6310     +0.0301    +0.0084
+  R_rim      1.3500      1.3500      0          0         LOW (the floor)
+```
+
+- `4ec44f5` carries `64e5068`'s spokes, which the user passed at R9, so these moves are measured against spokes already passed.
+- The largest move is 0.58 mm (`cy1`). No thickness moved more than 0.077 mm.
+- The overlay (`study_crown_r15.jpg`) is nearly indistinguishable from its start.
+
+**R7's attribution at `c68ef36`.**
+- `band_margin` cancels **76.9%** of deflection's free-gene component (cosine −0.970). R8 read 72–83%.
+- The net over all terms is **+0.042**, closer to stationary than R8's +0.10–0.12.
+- `t2` is on its floor now, so R7's two arms coincide.
+- The isolated gradients sum to the run's own within 1.1e-4 on a norm of 116.5 (9.4e-7 relative). Not bit-exact, as in R8, and the cause is still unmeasured.
+
+**THE DRIVER, RE-RUN ON R8's RECORD AS A CONTROL, DOES NOT REPRODUCE ITSELF TO 0.0.**
+- Two edits went in first: the driver reads `r_rim_floor_mm` off the record, with a default of the box's own 0.5, and it labels the overlay by genome hash.
+- Every gene, value and printed figure matches.
+- The term gradients differ from the committed `study_crown_step7.json` by up to **2.8e-15 relative**. R8 recorded 0.0 across two runs. **Cause not measured.** The floor edit sets 0.5 on a box that already had 0.5, so it cannot reach these numbers.
+- The committed JSON is kept, not overwritten with a noise-level copy. The `.jpg` is regenerated, because its labels changed; they read `b729e86 (start)` and `64e5068, step 142` as before.
+
+**THE HUB IS NOT BUILT AT THE RADIUS THE DESCENT PRICED.** This is not new: PLAN.md §125 §2 recorded it on `b729e86`, at +7.5%.
+- The export of `c68ef36` requests `R_hub` 0.631. OCC fillets all 24 hub edges at **0.456**, set by the worst corner, a 328° wedge. `kt_error_pct` is **+14.9%**, past the exporter's 10% warning.
+- `4ec44f5`'s export read +7.2% (0.601 requested, 0.511 cut).
+- **The descent drove the model and OCC apart.**
+  - It raised `R_hub` 0.601 → 0.631 to lower `kt_hub`, and the model's buildable cap rose with it, 0.613 → 0.635. So `fillet_cap` stayed slack at the selected step.
+  - What OCC cuts fell, 0.511 → 0.456.
+  - The cap and OCC move in opposite directions across the same spoke moves.
+- **At the built radius, the model's hub utilisation is 0.965, under 1** (`hub_asbuilt.py`: one serial eight-phase call, `R_hub` set to OCC's worst-corner radius).
+  - Its `kt_hub` is 3.12589, OCC's `Kt_built` to the digit.
+  - Scaling the requested utilisation by Kt_built / Kt_model reads 1.039–1.055. That over-reads, because the mesh's own fillet changes along with Kt.
+  - §15 refused `bc77614` at an "as-built utilisation 1.046". Which of the two methods produced that figure is not checked here.
+
+```
+  2D coarse SVK, 8 phases, stand-in       hub util   kt_hub    predicted-3D mean drop
+  c68ef36  R_hub 0.631 (requested)         0.918      2.761     1.95006
+  c68ef36  R_hub 0.4559 (as built)         0.965      3.126     1.97210   (+1.13%)
+  4ec44f5  R_hub 0.601 (requested)         0.900      2.841     1.90899
+  4ec44f5  R_hub 0.5108 (as built)         0.922      3.008     1.91962   (+0.56%)
+```
+
+**THAT IS WHY P15.3 IS THE WRONG FACTOR. Registered before the seven remaining phases reported** (`PREDICTIONS_mean.txt`, sha1 `7f8f27b…`, 02:40:12). Every 3D solve meshes the STEP, so every 3D drop is an AS-BUILT drop, and R14's 0.9952 over-read already contains `4ec44f5`'s +0.56% hub gap.
+- `c68ef36`'s hub gap is twice that. So the ratio that should transfer is the as-built 2D ratio, **1.02734**, not the requested one, 1.02151.
+- Phase 0 measured **1.02739** (1.86826 → 1.91944).
+- **PM.1:** the eight-phase 3D mean is 1.89982 × 1.02734 = **1.9518**, bracket 1.946–1.957. P15.3's 1.9407–1.9460 is predicted to miss high.
+
+**P15.4, READ AT PHASE 0: THE TOE IS 33.92 MPa, 0.07 OVER THE 33.85 BAR.** That is inside the registered 33.7–34.2, and a pass was not predicted.
+- The node-averaged read gives 33.82, against that read's bar of 33.68.
+- The second node reads 33.82, 0.10 behind the first. It is not R13's lone-node case.
+- The toe rose 0.74% for a 2.74% rise in the phase-0 drop, about 0.27% per 1%, close to the low end of R15's two routes.
+- **The registered branch is taken: `R_rim` 1.40 on `c68ef36`'s spokes (`66c6838`), with no new descent.** It builds valid: rim 24/24 at 1.40, 62.83 g.
+  - Predictions were registered before its solve (`PREDICTIONS_r16.txt`, sha1 `123de97…`).
+  - **P16.1:** the phase-0 toe reads 33.2–33.6 MPa (R13's chord −7.96 MPa/mm gives 33.52).
+  - **P16.2:** the phase-0 drop is 1.911–1.915 mm.
+  - **P16.3:** the node-averaged toe is under 33.68.
+
+**What the next record (R17) reads:** `c68ef36`'s eight phases against PM.1, P15.3 and the band, then `66c6838`'s phase 0 against P16.x. `66c6838`'s own eight-phase run follows, if P16.1 holds.
+- The hub gap stays open, as §125 left it. It is a finding here, not a Step 8 gate.
+- A descent that cannot see what OCC cuts will keep widening it whenever `stress_margin` rewards a larger `R_hub`.
+- **`b729e86` stays in `best_solution.json`.**
