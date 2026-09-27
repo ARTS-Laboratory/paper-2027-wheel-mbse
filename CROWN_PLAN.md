@@ -5,7 +5,7 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
-**CURRENT STATE (2026-09-26): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17). NEXT: the user's look gate on `be96531`, and Step 0.5's coupons for `s_zz`; promotion waits on both.**
+**CURRENT STATE (2026-09-27): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17) and the user's look gate (R18). NEXT: Step 0.5's coupons for `s_zz`, whose part, protocol and pass rule (R ≥ 0.6848) are fixed in R19; promotion waits on them.**
 
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
@@ -1666,3 +1666,74 @@ wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
   - `s_zz` reaches 17.12 MPa, against `b729e86`'s 16.78 (+2.0%) and the 12.5 placeholder.
 - **Not promoted.** Decision 0.5 makes Step 0.5 block Step 8's gate. `b729e86` stays in `best_solution.json`.
 - `be96531`'s genome is not in the tree. It is `stage3_crown_floor_best.json` with `R_rim` set to 1.6802, and Step 9 writes it.
+
+### R19 — 2026-09-27. STEP 0.5 MADE RUNNABLE, AND ITS RULE REGISTERED BEFORE ANY COUPON IS PRINTED. `be96531` NEEDS AN INTERLAYER-TO-IN-PLANE STRENGTH RATIO OF AT LEAST 0.6848, AND THE SHIPPED `b729e86` NEEDS 0.6712. IF THE COUPONS FAIL, NO RIM ON R3's MAP IS A WAY OUT: AT BOTH PHASES IT READ, (1.5, 1) HAS THE LOWEST `s_zz` ON THE GRID.
+
+**What remains after R18 is one measurement, and only the user's printer can make it.** Nothing below is a solve. This record fixes the coupon, the protocol and the pass rule before any coupon exists, so that the pull tests the rule rather than the rule being fitted to the pull.
+
+**THE THRESHOLD.** Decision 0.5 takes the ratio, `allowable_zz = 25 × mean(σ_Z) / mean(σ_XY)`, with 25 MPa being `wheel_fea.ALLOWABLE_STRESS_MPA`. It takes a ratio because both sets are pulled on one rig, so a shared scale error cancels.
+- `be96531`: `s_zz` 17.12 MPa (R17, phase 11.25) → **R ≥ 17.12 / 25 = 0.6848**.
+- `b729e86`: 16.78 MPa (R1, phase 7.5) → **R ≥ 0.6712**.
+- Both `s_zz` figures come from one mesh per phase, and their mesh scatter has not been measured. The toe's 0.3 MPa SD (R17), applied here, would move the threshold by 0.012, about a sixth of the coupons' own 2 SE (see RESOLUTION). It is not spent.
+
+**IF THE COUPONS FAIL, THE RIM IS NOT THE LEVER. Read off R3's map, not measured anew.** On `b729e86`'s spokes, (1.5, 1) reads `s_zz` 11.11 at phase 0 and 16.58 at phase 3.75. Those are the lowest of the eight grid points at both phases; the next are 12.93 at (1.5, 0.5) and 18.21 at (1.5, 0).
+- A thicker base under the same crown breaks decision 0.2's Ø102 cap (b + h ≤ 2.5).
+- So a failing ratio points at the print, meaning settings that bond the layers better, each measured with a new coupon batch. It does not point at another rim.
+- **Scope:** two phases on one set of spokes. The mid-span phases, where `be96531` peaks, were not read on the map.
+
+**THE COUPON** (`studies/study_coupons.py` → `export/coupon_step05.step` / `.stl`, `studies/study_coupons.json`, run in env-cad):
+- One geometry printed two ways.
+  - **XY** lies flat and is pulled along the extrusions, the way the band's hoop tension runs.
+  - **Z** is the same file stood on its end and pulled across the layers, the way `s_zz` runs.
+  - Only the pull direction relative to the layers differs, so the ratio carries anisotropy and nothing else.
+- **Geometry:**
+  - Gauge 3.0 × 3.0 mm (9 mm²), 10 mm straight.
+  - R 12.7 transitions (ASTM D638 Type V's) to 20 mm grips, 3.0 mm thick throughout.
+  - A Ø4.4 pin hole (M4 clearance) 8 mm from each end. Overall 65.97 mm.
+- **Sized for a hand-held 50 kg scale:**
+  - The in-plane control breaks at 40 MPa × 9 mm² = 360 N = **36.7 kgf**.
+  - A Z coupon at exactly `be96531`'s threshold breaks at **25.1 kgf** (24.6 at `b729e86`'s).
+- **Sized to break in the gauge:** the net section beside a hole carries 9 / 46.8 = **0.19×** the gauge stress, so the gauge still governs up to a hole Kt of about 5.
+- **Checks:**
+  - OCC volume 2465.1079 mm³ against an analytic 2465.1079, with a difference of 5e-9 mm³.
+  - One valid solid, with a 65.97 × 20.00 × 3.00 bounding box.
+  - A slice at the gauge centre measures 3.0 mm wide.
+
+**THE PROTOCOL (the user's):**
+1. **Print:**
+   - Use the wheel's own settings: same spool, nozzle, nozzle and bed temperature, layer height and fan.
+   - Set at least 4 walls, so the 3 mm gauge is all walls, as the band is. Use 100% infill.
+   - Print **seven of each** orientation, which leaves room for breaks outside the gauge.
+   - XY: flat on the bed.
+   - Z: stood on its 20 × 3 mm end with an 8 mm brim. Print all seven in one job, at least 15 mm apart.
+2. **Match the wheel's LAYER TIME in the Z job.**
+   - Read the wheel's per-layer time over the band's layers in the slicer preview.
+   - Set the Z job's minimum layer time to that value.
+   - **Hypothesis, not measured here:** interlayer bonding depends on how hot the layer below still is. A lone 3 × 3 mm gauge layer prints in a second or two, so an unslowed Z coupon would bond hotter than the wheel does and over-read it.
+3. **Measure:**
+   - Caliper each gauge's width and thickness. Take three readings each and keep the smallest.
+4. **Pull:**
+   - Pass a pin (M4 bolt or 4 mm rod) through each hole.
+   - Pull steadily so the coupon breaks in about 30–60 s, on a scale with peak hold.
+   - Record the peak in kgf and where it broke: `gauge`, `transition` or `grip`.
+5. **Score:**
+   - Write one CSV row per coupon: `orientation,width_mm,thickness_mm,peak_kgf,break`.
+   - Run `.venv-cad/bin/python studies/study_coupons.py --score coupons.csv`.
+
+**THE RULE, REGISTERED HERE AND CODED IN `--score`:**
+- Only gauge breaks count, and each orientation needs at least five.
+- R = mean(σ_Z) / mean(σ_XY). SE(R) = R × √(CV_Z² / n_Z + CV_XY² / n_XY).
+- **PASS** if R − 2 SE ≥ the threshold. **FAIL** if R + 2 SE < it. **UNDECIDED** otherwise: print five more of each and pool them. This is R17's lesson applied: a gate is decided outside the instrument's scatter.
+- **The XY control is reported, not gated.** If mean(σ_XY) + 2 SE < 40 MPa, `wheel_fea`'s 50 × 0.80 in-plane ultimate is itself optimistic for this printer. That is recorded as a finding against the 25 MPa allowable every band figure uses. It is not absorbed into the ratio.
+- **Branches:**
+  - PASS at 0.6848: Step 8 is whole for `be96531`, and Step 9 promotes it.
+  - FAIL at 0.6848 only: `be96531` fails, `b729e86` stays shipped, and the 0.0136 gap between thresholds is recorded as smaller than the measurement's resolution.
+  - FAIL at both: the part already shipping is over its interlayer allowable too. By the map, the next batch changes print settings, not the rim.
+- **Checked on a synthetic CSV** (five 35–38 kgf XY, five 24–27 kgf Z, one grip break): `--score` reads R 0.6978, SE 0.0171. A separate by-hand computation gives 0.69780 and 0.017082, and both give UNDECIDED.
+
+**RESOLUTION — A HYPOTHESIS ON ASSUMED SCATTER, NOT A MEASUREMENT.** The CVs are assumed, not measured: 10% for Z and 5% for XY, at n = 5 each. Then SE/R = √(0.01/5 + 0.0025/5) = 0.050.
+- Five a side can PASS only if R ≥ 0.6848 / 0.90 = **0.761**, and can FAIL only if R < 0.6848 / 1.10 = **0.623**.
+- A true ratio between those will come back UNDECIDED. Pooling to ten a side narrows the band by √2.
+- The first batch's own CVs replace these assumptions as soon as it is pulled.
+
+**Still open, unchanged:** the hub fillet is cut at 0.456 against the 0.631 requested (R16, +14.9%). **`b729e86` stays in `best_solution.json`.**
