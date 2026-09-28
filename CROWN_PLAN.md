@@ -5,7 +5,7 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
-**CURRENT STATE (2026-09-27): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17) and the user's look gate (R18). Step 0.5's coupons for `s_zz` have their part, protocol and pass rule (R ≥ 0.6848) fixed in R19. The user has no printer for now, so `240d5a2` (`be96531` with `R_hub` at OCC's built radius) is PROMOTED at R20 ahead of them; `s_zz` stays open, and the default 2D model not describing the crowned part is R20's successor 0.**
+**CURRENT STATE (2026-09-28): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17) and the user's look gate (R18). Step 0.5's coupons for `s_zz` have their part, protocol and pass rule (R ≥ 0.6848) fixed in R19. The user has no printer for now, so `240d5a2` (`be96531` with `R_hub` at OCC's built radius) is PROMOTED at R20 ahead of them; `s_zz` stays open. R21 closes R20's successor 0 without changing the default: the shipped-wheel gates read the model the genome's record names, and `make svk` then reads SVK util 0.997, INFEASIBLE by its letter on `arrival` alone (the rim at 65.015° at `medium` against the 65° wall, 64.984° at `coarse`, where the descent ran). The promotion stands; R21's successor 0 is what would clear the letter.**
 
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
@@ -1816,3 +1816,78 @@ wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
 2. `mesh_coords`' numpy path is 4.3e-14 off the built mesh at 3769 rim nodes on `240d5a2`/`be96531`: cause not measured.
 3. `study_fillet_terms.py` has rotted against the fillet-only objective, and `study_fillet_kt` / `study_fillet_wiring`'s shipped rows mix `09e8188`'s terms with the shipped census until it runs again.
 4. **`s_zz`: Step 0.5, R19, unchanged.** If the coupons fail at 0.6848, this promotion is revisited. If they fail at 0.6712 too, so is the part it replaced.
+
+### R21 — 2026-09-28. R20's SUCCESSOR 0: THE SHIPPED-WHEEL GATES NOW READ THE MODEL THE GENOME's OWN RECORD NAMES, AND THE DEFAULT STAYS FLAT. `make svk` CALLS `240d5a2` INFEASIBLE BY ITS LETTER, ON `arrival` ALONE AT `medium` (1.9403 mm, UTIL 0.997). THE STROKE XFAIL CLEARS AT 1.772 mm. THE CONTACT XFAIL's CLEARING CONDITION WAS MET AND ITS CLAIM IS STILL FALSE: ON THE STAND-IN THE ASSUMED PATCH MATCHES REAL CONTACT TO 0.08% OR BETTER, ON EVERY MESH AND BOTH KINEMATICS.
+
+**The call (the user, 2026-09-28: "Go as you think best").** R20 successor 0 offered two repairs. This record takes the second, reading the model from the genome's record, and does not change the default.
+- **Why not make the stand-in the default.** Its three values are calibrations, not physics: `drop_factor` (3D/2D on the flat exported part) and `c_band` (3D/2D band tension) were measured on `b729e86`'s spokes (R4–R6), and `t_eq` on one rim. Of the 35 genome records at the repo root, five name the stand-in: the crown arc's four and `best_solution.json`. As the default, the stand-in would score the other 30 with factors nobody measured on those wheels, including the GA/beam control and every `prod`/`minwall` descent, and every committed loss would move.
+- **Why the record.** `wheel_stage3.search_block` already writes `search.crown_standin` into every descent record: the three values, or `null`. `best_solution.json` carries them, equal to `WO.CROWN_STANDIN`, and `b729e86`'s record carries `null`. So the model is part of the genome's provenance, and a gate that reads the genome from a file can read its model from the same file. **A genome descended on the flat band still scores flat, so every committed number on such a record is unchanged.**
+
+**THE CHANGE.**
+- `wheel_objective.descent_model(record)`, at the end of the file, returns the record's `search.crown_standin` as `objective` kwargs, or `{}`.
+- `study_svk_rescore` scores each genome under its own record's model: meshes built at the record's `rim_outer`, and `drop_factor` and `band` passed to `objective`. `band_margin` is classified in a new `STANDIN_NAMES` as a price, allowed but not required, for `stress_margin`'s reason: decision 0.3 prices the band with no wall. Each row records `crown_standin` and `band_utilisation`.
+- `test_wheel_fea` and `test_contact` each get one new fixture, at the end of the file, for the one test R20 xfailed. Every other test in both files still reads the flat `mesh`: they are claims about mechanisms, calibrated there, and §109's reason for not re-aiming a shared fixture holds.
+- `test_stage3::test_a_record_names_the_model_every_gate_reads_it_under` round-trips `search_block` → `descent_model`, pinned BY FILE (`stage3_crown_shipped.json` → the stand-in, `stage3_svk_refillet_shipped_r2_best.json` → `{}`), per checklist item 9.
+
+**CONTROL: THE WIRING REPRODUCES R20's DESCENT-SETTINGS PRICE EXACTLY.** Before the `medium` run, `make svk SVK_CONFIG=coarse SVK_ONLY=shipped` (scratch output) read the SVK column at drop **1.9383127924**, util **0.9491334**, loss **142.41038711**, against R20's 1.938313 / 0.9491 / 142.41039. The linear column read 1.7965 / 0.9560 / 146.99. The §14 control passed at 23.346% / 3.953%.
+
+**THE GATE AT `medium`** (`make svk`, serial, `MemoryMax=40G`, 7456.7 s. The cgroup's memory, which counts page cache and is not comparable with the Makefile's 18.1 GiB RSS figure, read 27.5 GiB at 89 min, so the 40 GiB cap was raised to 52 GiB on the running unit. The final peak was not captured):
+
+```
+  240d5a2, medium, 8-phase mean   drop mm   stress util   band util   loss      barriers breached
+  flat band, linear (R20)         2.6120    1.252         -            609.37   stress, arrival 0.00714
+  flat band, SVK    (R20)         2.9507    1.247         -           1015.68   stress, arrival 0.00714
+  stand-in, linear                1.7984    1.005 (hub)   1.668        152.58   stress 0.1195, arrival 0.00714
+  stand-in, SVK                   1.9403    0.997 (hub)   1.784        148.77   arrival 0.00714
+  (coarse, stand-in, SVK: 1.9383 / 0.949 / 1.757 / 142.41, nothing breached; 3D SVK, R17: 1.91314)
+```
+
+**BY ITS LETTER THE GATE STILL SAYS INFEASIBLE, AND THE MODEL IS NOT WHY.** At `medium` the stand-in takes the SVK stress util from 1.247 to **0.997**, under the wall, as the descent priced it. The verdict is carried by a barrier R20's record did not name: **`arrival` 0.00713**, which R20's flat-band row carried too, at the same value, beside its `stress` breach. It is geometry, and the band cannot move it:
+
+```
+  rim arrival angle, deg from the ring tangent (closed form, `WW.arrival_angles`; wall 65.0)
+                 smoke     coarse    medium    fine
+  240d5a2       64.922    64.984    65.015    65.031
+  b729e86       58.597    58.656    58.686    58.701
+```
+
+- `(65.01542 - 65) / 10`, squared, × 3000 = 0.00713, the artifact's figure. The hub arrives at 4.26°.
+- The descent ran at `coarse`, where the rim sits 0.016° inside the wall. The sampler's resolution moves the reading +0.031° from `coarse` to `medium`, which carries the genome 0.015° over. **So R20's successor 0 was half the cause of R20's INFEASIBLE.** Threading the model clears `stress`; nothing about the model could have cleared `arrival`.
+- The linear column is over on `stress` too (util 1.005, the hub). Linear is not the reporting model (§14), and SVK is the column this gate is read on.
+- **The call: the promotion stands, and the gate's verdict is recorded, not waived** (R20's item 4, unchanged in kind). The 65° wall is `wheel_wheel`'s 70.6° junction-quality boundary (minSJ > 0.2, 200 genomes, "SHARP") minus 5.6° of margin, and 0.015° of it is spent. The exported part meshed and solved in 3D at every phase (R17). Successor 1 below is what would clear the letter.
+
+**THE TWO STRICT XFAILS.** Their clearing condition was "this fixture builds the stand-in rim". Both fixtures now do, from the record.
+- **`test_the_axle_drop_meets_the_stroke_target` CLEARS, and the marker is lifted.** Band at the stand-in's `rim_outer`, drop × `drop_factor` (R5 D3: both or neither): 1.994039 × 0.888672 = **1.772048 mm**, inside `1.4 < d < 2.0` (the flat band read 2.602626).
+  - Scope, stated in the docstring: the factor was measured on the 8-phase SVK contact mean, and this is a phase-0 linear assumed-patch read. The product is the stand-in's reading, not a 3D prediction (R17 measured 1.91314).
+  - Unfactored it reads 1.994, 0.006 under the edge. The band still has no warrant, as §111 found.
+- **`test_the_assumed_patch_no_longer_stands_in_for_contact`'s clearing condition was met, and the test still fails. Its claim is false on the part under both models, so it is renamed to what holds.** Signed real/assumed − 1 on `240d5a2`, measured on every mesh and both kinematics:
+
+```
+                     flat 1.5 mm band        stand-in (record's rim_outer)
+  mesh     kin       real/assumed - 1        real/assumed - 1
+  smoke    linear      -1.2751%                +0.0760%
+  smoke    svk         -1.7430%                +0.0799%
+  coarse   linear      -1.4007%                +0.0440%
+  coarse   svk         -1.9330%                +0.0619%
+  medium   linear      -1.4744%                +0.0004%
+  medium   svk         -2.0413%                +0.0199%
+```
+
+  - Under 2% in eleven of the twelve cells; the flat band at `medium` SVK reads 2.04%. Every stand-in cell is under 0.08%. The 2–8% band was set on `e126cc3`/`e4219f3`, which read 3.1–6.8%.
+  - `test_the_assumed_patch_stands_in_for_contact_again` asserts `|rel| < 0.02`, the band's own lower edge, the line the test drew between "stands in" and "no longer does". Its xfail marker is gone.
+  - **Not discriminating between the two models, said so:** the flat band passes it too at the test's `smoke` (1.28%). It is a claim about the part that holds under both, not a pin on this change. The mutant below confirms it.
+  - **The docstring's mechanism reading is contradicted on this genome.** It says the promoted rim "conforms less" and so diverges more. Here only the band thickness changed (same genome, same spokes, one variable), and the divergence FELL, from 1.3–2.0% to ≤0.08%, with its sign flipped. That is one genome; the cross-genome reading it contradicts rested on two genomes that differ in many genes, so neither is a rule.
+  - What the test indicts is unchanged: the legacy assumed-patch records (M4, M5, `study_gnl`, `study_wheel_fea`). On the wheel that ships, under the model that describes it, the assumed patch is not what makes those records wrong.
+
+**MUTANT.** `descent_model` → `return {}`, `__pycache__` cleared: the stroke test goes red (2.602626 < 2.0 false), and so does the round trip. The contact test stays green, as stated above. Restored; the three pass.
+
+**THE SUITE.** The §14 control and all five rival rows, plus the GA/beam `clamp_reject`, are identical to `203ec13`'s artifact on every field apart from `elapsed_s`, so only the shipped row moved. Tests run: `test_wheel_fea` and `test_contact` whole (56 passed, no xfail markers left), `test_promotion` (6), `test_study_gate_guard`, the five stand-in tests of `test_stage3`, and `test_objective`'s term-classification test, all green. **The full batched suite was not run.** The `src/` change is one appended function, and `study_svk_rescore` is not in `make test`. The code is `1e3c87b`.
+- **Citation sweep:** 1383 of 1656 resolve after `1e3c87b`, against 1384 before. The one lost is PLAN.md's line-28893 anchor into `study_svk_rescore`, which `STANDIN_NAMES` moved by +5 lines onto the same content. It is re-pointed 217 → 222 in this record's commit.
+
+**NOT DONE, AND WHY.**
+- The other bare `best_solution.json` readers (75 `.py` files in `src/`, `tests/` and `studies/` mention it, `probe_3d` excluded) are unchanged. Checklist item 9 splits them into claims about a mechanism (the genome is a vehicle, and the flat band is what they were calibrated on) and claims about the wheel that ships. R20's 25 reds were classified that way already, and only these two xfails named the stand-in as their clearing condition. A future shipped-wheel claim should build from `descent_model`, not from `WO.CROWN_STANDIN` by name, so that it follows the record through the next promotion.
+- `make studies`' artifacts, and `study_mbse_score` (`09e8188`), are not re-run, for R20's reason: no test reads them against the shipped genome.
+- The requirements portfolio reads `best_solution.json`'s `loss_terms`, which R20 re-scored under the stand-in, and `smoothness` does not depend on the band. Nothing to thread.
+
+**SUCCESSORS.** R20's 1–4 stand unchanged: rim:P_t's divergence, `mesh_coords`' 4.3e-14, `study_fillet_terms`' rot, and `s_zz`.
+0. **The descent's rung is not the gate's rung, and the genome sits on two walls at the second.** From `coarse` to `medium`, the rim arrival moves +0.031° (+0.030° on `b729e86`, two genomes, same direction) and the SVK hub util moves 0.949 → 0.997 (+5.1%). The Makefile's `svk` block already says why SVK_PLAN Step 6 re-scores a winner at `medium`: "the two rungs differ". R20 did that re-score on the flat band, where `stress` hid `arrival`. What would clear the letter: a step off the arrival wall re-scored at `medium`, or the arrival barrier read at the gate's resolution in the descent. Neither is taken here; the call above says why.

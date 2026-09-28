@@ -28890,7 +28890,7 @@ with.
                             shipped genome on `smoke`: bare and filleted both give [1., 1.],
                             array-equal, so the discrete flank decision does not depend on the
                             fillet.  (One genome, one rung -- it is a spot check, not a proof.)
-  study_svk_rescore.py:217  bare, and DELIBERATE.  §182 §9 already named it: the single bare
+  study_svk_rescore.py:222  bare, and DELIBERATE.  §182 §9 already named it: the single bare
                             call is the CONTROL row, and its comment says "the re-score is
                             uncapped AND filleted; this row is neither".
   study_m9.py:73            bare, and SCOPED BY ITS OWN DOCSTRING -- "deliberately
