@@ -15009,7 +15009,7 @@ been run against them.
    call.  §103 opened it (before `d2cf9fa` both tiers were unfilleted and AGREED) and it is
    worth **+3.867 g, +9.78%**, against a `mass` tolerance of 0.365 g — 10.6x.  Nine call
    sites are exposed, three read a t2 quantity: `wheel_requirements.score_record` (so the
-   MBSE gate), `study_mbse_score`, and `test_objective.py:1078`'s exchange rate.
+   MBSE gate), `study_mbse_score`, and `test_objective.py:1084`'s exchange rate.
    **`wheel_stage3.Evaluator` is NOT among them** — it builds `phase_meshes` itself, and
    builds `phases[:1]` even when pooled, for this exact reason and with a comment saying so
    — which is why the descent above can be run before this is settled.  The fix is one line
@@ -23580,7 +23580,7 @@ which is exactly the case where the link most needs preserving.**
 
 **AND THE COUNT SURVIVED BY LUCK OF WHAT THE RENAME DID.** Measured independently in both
 sessions: the old node ID has **0 occurrences** in `tests/test_objective.py`, and the
-replacement at `:1135` **passes**. So §135 did close that row — by inverting the finding
+replacement at `:1141` **passes**. So §135 did close that row — by inverting the finding
 and renaming the test to match — and §150's "eleven minus R_rim = ten" is right in
 substance. **But it is right because the renamed test happens to be green.** Had `a96f1de`
 renamed a test that then went red, all three of our keys would have hidden it: a node-ID
@@ -30134,7 +30134,7 @@ is a three-file edit before any artifact is considered.
 
 **AND THE GUARD CANNOT SEE THE REPAIR EITHER — THE SAME BLINDNESS, FROM THE OTHER SIDE.**
 `test_the_margin_weight_is_the_exchange_rate_it_claims_to_be`
-(`tests/test_objective.py:1088`) asserts `0.5 < one_pct_of_util / one_pct_of_mass < 2.0`.
+(`tests/test_objective.py:1094`) asserts `0.5 < one_pct_of_util / one_pct_of_mass < 2.0`.
 FILLET_PLAN.md §7 measured the numerator's input at `smoke`/2 and read **0.82246**; the same
 arithmetic at 111.196 gives **1.02516**.  Both are green.  §7 recorded that a 24.65% move in a
 calibration input produced no red in 11 days; the symmetric half is that undoing it would
@@ -30249,7 +30249,7 @@ supersedes it, which is what the numbered sections are for.
 Verified against HEAD after the source commit and before this one, which is the order §186's
 lesson requires — a citation into a line the same unit of work is about to edit is stale on
 arrival: `src/wheel_objective.py:369`, `:360-368`, `:1333-1337`, `:1351-1354`, `:1402-1403`;
-`src/wheel_fea.py:163-164`; `tests/test_objective.py:1088`;
+`src/wheel_fea.py:163-164`; `tests/test_objective.py:1094`;
 `tests/test_requirements.py:372-377`; `MBSE_PLAN.md:330-332`, `:516`;
 `FILLET_PLAN.md:4873`.  The `d2cf9fa` in §3 is a commit hash,
 not an anchor.  Every bare `:N` above carries the owner named immediately before it in the same
@@ -31002,7 +31002,7 @@ of a 67-row census:
 Of the 28 bare sites, **exactly two name `coarse` AS A LITERAL** — the census resolves the
 config only where it is a constant, and twenty-one pass a variable or take the default, so
 this is a lower bound on how many run at `coarse` and is quoted as one.  Of those two,
-**exactly one solves an FEA at all** — the other, `tests/test_objective.py:1237`, passes `tiers=("t1",)`.  The
+**exactly one solves an FEA at all** — the other, `tests/test_objective.py:1243`, passes `tiers=("t1",)`.  The
 one that solves is `tests/test_objective.py:88`, the `genes_over_knee` fixture, `coarse` with
 an 8-phase uniform stencil and no `kinematics=`.
 
@@ -31050,7 +31050,7 @@ All read back against HEAD before this section was written, and **this is a reco
 commit** — no source file is touched, so §186's "stale on arrival" case cannot arise.
 
 `src/wheel_objective.py:1251`, `:1253`, `:1349`, `:1353-1354`, `:1434`, `:1579-1583`,
-`:1589`, `:1595`, `:1598`; `tests/test_objective.py:88`, `:1237`; `src/wheel_stage3.py:337`;
+`:1589`, `:1595`, `:1598`; `tests/test_objective.py:88`, `:1243`; `src/wheel_stage3.py:337`;
 `PLAN.md:29434-29438`.
 
 `b729e86` is a genome hash, not an anchor; `metrics.axle_drop_mean_mm`,

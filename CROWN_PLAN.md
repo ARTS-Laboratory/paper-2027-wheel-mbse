@@ -5,7 +5,7 @@ DECIDED (§5, on the user's delegation, same day). No solve run; one free read o
 disk is recorded at the foot and changed decision 0.3.** This file is the plan as written before any of it runs; records go at the foot, and the plan
 above them is not rewritten to match them.**
 
-**CURRENT STATE (2026-09-28): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17) and the user's look gate (R18). Step 0.5's coupons for `s_zz` have their part, protocol and pass rule (R ≥ 0.6848) fixed in R19. The user has no printer for now, so `240d5a2` (`be96531` with `R_hub` at OCC's built radius) is PROMOTED at R20 ahead of them; `s_zz` stays open. R21 closes R20's successor 0 without changing the default: the shipped-wheel gates read the model the genome's record names, and `make svk` then reads SVK util 0.997, INFEASIBLE by its letter on `arrival` alone (the rim at 65.015° at `medium` against the 65° wall, 64.984° at `coarse`, where the descent ran). The promotion stands; R21's successor 0 is what would clear the letter.**
+**CURRENT STATE (2026-09-28): Steps 0–7 are done and recorded (R1–R8). `64e5068` passed the look gate (R9) and failed Step 8's band in 3D at the phase-0 junction toe (R10); `R_rim` is the lever (R11), and no 2D read can see it because the 2D mesh leaves that flank square (R12). The floor is 1.35 mm, measured (R13). `4ec44f5`, on that floor, passes the band at all eight phases and misses the drop edge by 0.00018 mm (R14). R15's re-descent landed at `c68ef36` (R16); with `R_rim` raised to `b729e86`'s own 1.6802 it is `be96531`, which passes Step 8's drop (1.91314 mm) and band (R17) and the user's look gate (R18). Step 0.5's coupons for `s_zz` have their part, protocol and pass rule (R ≥ 0.6848) fixed in R19. The user has no printer for now, so `240d5a2` (`be96531` with `R_hub` at OCC's built radius) is PROMOTED at R20 ahead of them; `s_zz` stays open. R21 closes R20's successor 0 without changing the default: the shipped-wheel gates read the model the genome's record names, and `make svk` then reads SVK util 0.997, INFEASIBLE by its letter on `arrival` alone (the rim at 65.015° at `medium` against the 65° wall, 64.984° at `coarse`, where the descent ran). The promotion stands. R22 found why: the `arrival` barrier read the first chord of the sampled centerline, not the tangent, so its wall moved with the mesh. It now reads the exact end tangent: `240d5a2`'s rim is 65.046°, over by 0.046° at every rung and priced 0.0647, and only the crown arc's five genomes move. `make svk`'s shipped row is predicted, not re-run.**
 
 **VERSION CONTROL** follows `PLAN.md`'s header block, which is the only place the rules are
 stated: one commit per finished unit of work on `feature`, `make test` green first, never
@@ -1891,3 +1891,50 @@ wheel_stage3 --crown-standin --r-rim-floor 1.35 --start best
 
 **SUCCESSORS.** R20's 1–4 stand unchanged: rim:P_t's divergence, `mesh_coords`' 4.3e-14, `study_fillet_terms`' rot, and `s_zz`.
 0. **The descent's rung is not the gate's rung, and the genome sits on two walls at the second.** From `coarse` to `medium`, the rim arrival moves +0.031° (+0.030° on `b729e86`, two genomes, same direction) and the SVK hub util moves 0.949 → 0.997 (+5.1%). The Makefile's `svk` block already says why SVK_PLAN Step 6 re-scores a winner at `medium`: "the two rungs differ". R20 did that re-score on the flat band, where `stress` hid `arrival`. What would clear the letter: a step off the arrival wall re-scored at `medium`, or the arrival barrier read at the gate's resolution in the descent. Neither is taken here; the call above says why.
+
+### R22 — 2026-09-28. R21's SUCCESSOR 0, TAKEN AS A FIX TO THE READING, NOT A RE-DESCENT (the user: "go ahead with the arrival fix"). THE `arrival` BARRIER READ THE FIRST CHORD OF A SAMPLED POLYLINE, NOT THE TANGENT, SO ITS WALL MOVED WITH THE MESH. IT NOW READS THE EXACT END TANGENT: `240d5a2`'s RIM IS 65.046°, OVER THE WALL BY 0.046° AT EVERY RUNG, PRICED 0.0647. OF 66 COMMITTED GENOMES ONLY THE CROWN ARC's FIVE MOVE, AND EVERY OTHER T1 TERM IS BIT-IDENTICAL.
+
+**The call.** The promotion stands, for R21's reasons, and `240d5a2` is not re-descended. Any move of its spokes voids R17's 3D gates and R18's look, which were read on this exact STEP. What R21 filed as "the descent's rung is not the gate's rung" turns out to be a defect in how the barrier read the angle, and fixing it serves every descent from here on.
+
+**THE CAUSE.** `WW.arrival_angles` takes the end direction as `sample(1e-5) - sample(0)` on the centerline sampled at `cfg.n_curve`. Inside the first polyline segment that difference is the segment's CHORD, not the tangent, so the reading carries an O(h) error that halves with every doubling of `n_curve`. On `240d5a2`'s rim:
+
+```
+  n_curve    600      1200     2400     4800     9600     19200    exact (last control-polygon edge)
+  rim deg    64.922   64.984   65.015   65.031   65.039   65.043   65.046
+  gap        0.124    0.062    0.031    0.0155   0.0078   0.0039
+```
+
+- `coarse` (1200) drew the wall 0.062° further out than the limit. The crown descents ran there and parked on it.
+- `band_sampler`'s docstring records the same trap for normals ("the GEOMETRY ITSELF MOVES as the mesh refines") and takes them from the analytic hodograph. `arrival_angles` never did.
+- Stage 2's `wheel_fea.arrival_penalty` has always read the exact edge. So until now the two stages read the same wall two different ways.
+
+**THE CHANGE** (`src/wheel_objective.py`; the edits inside `t1_vector` keep its line count, and the helper is at the end of the file):
+- `t1_vector`'s `arrival` barrier reads `_arrival_exact_deg(ctrl)`: `asin(|dx|/|d|)` off the first and last control-polygon edges, with both endpoints on their ring's +x axis. This is Stage 2's construction, in jnp.
+- **The hub fillet cap keeps the sampled hub angle.** `study_arrival_cap` fitted `HUB_CAP_ARRIVAL_SLOPE` on that reading, and moving it would have moved every `Kt_hub`. So the comment "a barrier and a cap disagreeing about the same angle is a class of bug worth making impossible" is amended: they now differ by the O(h) bias, 0.062° on `240d5a2`'s hub at `coarse`, deliberately.
+- `test_wheel_fea::test_the_junction_is_re_entrant_enough_to_be_singular` asserted `arrival <= MAX_ARRIVAL_DEG` and `wedge >= 295` on the sampled `coarse` reading of the shipped genome. Both held only because of the bias: exact, the wedge is 294.954. The barrier is soft, so neither was ever a guarantee. It now reads the exact angle and asserts the claim its docstring says is the one that matters, `wedge > 180` (re-entrant). Line count kept.
+
+**CONTROL: HEAD's `t1_vector` AGAINST THE NEW ONE, SEVEN GENOMES × FOUR RUNGS** (`240d5a2`, the floor best, `64e5068`, `b729e86`, GA/beam, minwall 1.2, elite10 at smoke/coarse/medium/fine):
+- The six other T1 entries are bit-identical in all 28 cells, `fillet_cap` included.
+- `arrival` on `240d5a2` and the floor best, both 65.046° exact: **0.0646633 at every rung**, where HEAD read 0 / 0 / 0.00714 / 0.0287. It equals `wheel_fea.arrival_penalty` on the same polygon, and `((65.04643 - 65) / 10)² × 3000`.
+- Every other genome: 0.0 before and after, at every rung.
+
+**AUDIT, OVER EVERY COMMITTED GENOME:** 66 distinct genomes at 122 sites across the root records and `studies/*.json`.
+- **Five read over 65° exact, all the crown arc's:** the `final` genomes of `stage3_crown_floor.json` (65.066) and `stage3_crown_standin.json` (65.066), `240d5a2` (`best_solution.json`, `stage3_crown_shipped.json`), `be96531`, and the floor best, all three at 65.046.
+- The next is `64e5068`, the stand-in best, at 64.954, and the old shipped family is at ≤59.06. **So only the crown descents rode this wall.**
+
+**WHAT MOVES, AND WHAT IS LEFT AS WRITTEN.**
+- **`240d5a2` now carries `arrival` 0.0647 at every rung.** So `wheel_stage3.selection_key` ranks it tier 2 ("in violation"), where its record says tier 0. A descent warm-started from it would be pushed off the wall by the barrier's gradient: rim end only, ∂/∂cx4 and ∂/∂cy4 nonzero, hub 60.8° inside and exactly zero.
+- **`best_solution.json`'s stored `loss_terms.arrival` 0.0 and `loss` 142.41039 are the pre-R22 `coarse` reading.** A re-score adds 0.0647. They are not edited: a record states what its descent scored. The same holds for the `stage3_crown_*.json` descent records.
+- **`make svk`'s artifact (`1e3c87b`) is stale in one row, by a predicted amount.** The shipped row's `arrival` goes 0.00714 → 0.0647 at both kinematics, so its loss rises by 0.0575276: SVK 148.76787 → 148.82540, linear 152.57682 → 152.63435. The verdict is unchanged, INFEASIBLE on `arrival`, now at every rung. Every other row reads `arrival` 0 and does not move. The prediction rests on the control above, since `arrival` is T1 only and T3 is untouched. **Not re-run (2 h); a `make svk` re-run confirms or refutes the prediction.**
+
+**TESTS.**
+- `test_objective::test_the_arrival_barrier_reads_one_value_at_every_rung`: `240d5a2` reads one value at all four rungs, equal to Stage 2's `arrival_penalty` (rel 1e-12) and to the closed form; `b729e86` reads 0.0. Pinned BY FILE.
+- `test_objective::test_the_exact_arrival_gradient_matches_a_central_difference`: ∂/∂cx4 and ∂/∂cy4 at rel 1e-5, nonzero; ∂/∂cx1 exactly 0.
+- **Mutant** (barrier back on the sampled rim angle, `__pycache__` cleared): the rung test goes red with the original symptom, `{smoke 0, coarse 0, medium 0.00714, fine 0.0287}`.
+- **Run whole:** `test_objective`, `test_stage3`, `test_gradient` and `test_wheel_fea`. `test_objective` had one red, `test_the_margin_term_prices_and_never_gates`. It asks `selection_key` for tier 0 on the shipped genome as a stand-in for "a live margin term never gates", and `arrival` now makes that genome tier 2 for a geometric reason. The test's own comment already gives the hub-cap slack its own assert for that reason, and `arrival` gets the same treatment: the walls are asserted to be `arrival` alone, and the key exactly what they give. Re-run, green. The other three files went green first time. **Not the full batched suite:** `WW.arrival_angles` is unchanged, so its other readers are untouched by construction. The code is `91d03d2`.
+- **Citation sweep:** 1376 of 1656 resolve after `91d03d2`, against 1384 before. The margin-test edit put 6 lines mid-file and moved 8 anchors into `test_objective` by +6 onto identical content: one each in FILLET_PLAN.md, `wheel_objective`'s pool note and PLAN.md's §135 row, and five more in PLAN.md. All 8 are re-pointed in this record's commit. A ninth row also changed, but it is pre-existing: its target in `wheel_wheel` was already stale, and only its citing line moved.
+
+**NOT DONE.** `WW.arrival_angles` itself is unchanged, and still O(h). It feeds the hub cap (fitted on it), `study_arrival_cap`, `study_hub_cap`, `study_wheel_mesh`'s 65° sweep and four call sites in `test_objective`'s cap tests. Making it exact would move every `Kt_hub` by the bias through the cap law, and would re-open the calibration it was fitted on. That is a separate change with its own audit, and nothing on the arrival wall needs it.
+
+**SUCCESSORS.** R21's 0 is closed by this record. R20's 1–4 are unchanged: rim:P_t's divergence, `mesh_coords`' 4.3e-14, `study_fillet_terms`' rot, and `s_zz`.
+0. **`make svk`, to confirm the predicted shipped row** (148.82540 / 152.63435, `arrival` 0.0647 at both kinematics). About 2 h at a ≥52 GiB cap (R21).

@@ -4933,7 +4933,7 @@ genome that no longer ships — **three supersessions, none of them the one the 
 
 Verified against HEAD at the time of writing: `src/wheel_objective.py:361`, `:1335`,
 `:1351-1354`, `:1402-1403`; `src/wheel_stage3.py:460`; `tests/test_objective.py:846` (the
-marker), `:857` (the test), `:905` (the assertion that fires), `:1048` (the exchange-rate
+marker), `:857` (the test), `:905` (the assertion that fires), `:1054` (the exchange-rate
 test).  `FILLET_PLAN.md:122` and
 `:3547` are named as citations INTO this file that the append does not move, not as anchors
 read here.  **The arc index's row for this file is named in WORDS and not as a `PLAN.md:N`
