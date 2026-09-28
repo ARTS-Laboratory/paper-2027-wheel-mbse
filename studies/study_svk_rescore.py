@@ -104,6 +104,11 @@ BARRIER_NAMES = ("x_order", "hub_overlap", "fold", "arrival", "fillet",
 # report every design the current objective wants as infeasible, i.e. exactly the failure
 # the smoothness note above records.
 HEADLINE_NAMES = ("mass", "deflection", "phase_ripple", "smoothness", "stress_margin")
+# PRESENT ONLY ON A GENOME WHOSE RECORD NAMES THE STAND-IN (CROWN_PLAN R21), and a price for
+# `stress_margin`'s reason: `band_margin` is `soft_barrier(util_band - MARGIN_KNEE_UTIL)`
+# with no wall behind it (decision 0.3, "the band is priced, not forbidden").  Allowed, not
+# required, so a flat-band row is still checked against the full list above.
+STANDIN_NAMES = ("band_margin",)
 
 # `36aed36` IS EXPECTED TO COME BACK INFEASIBLE and that is not a finding.  It predates
 # the fillet-cap work, and `wheel_objective.DEFAULT_WEIGHTS`' own comment names its
@@ -150,7 +155,7 @@ def load_genes(path):
 def _barriers(terms):
     """`(dict of breaches, worst)`.  Raises if the term set moved under this file."""
     missing = set(BARRIER_NAMES + HEADLINE_NAMES) - set(terms)
-    extra = set(terms) - set(BARRIER_NAMES + HEADLINE_NAMES)
+    extra = set(terms) - set(BARRIER_NAMES + HEADLINE_NAMES + STANDIN_NAMES)
     if missing or extra:
         raise RuntimeError(
             f"the objective's term set moved: missing {sorted(missing)}, "
@@ -239,11 +244,11 @@ def run_control(cfg=CONTROL_CONFIG):
 # THE RE-SCORE — the objective's own quantities, both kinematics, shared meshes
 # ---------------------------------------------------------------------------
 
-def _score(genes, cfg, phases, meshes, kinematics, pool=None, orientation=None):
+def _score(genes, cfg, phases, meshes, kinematics, pool=None, orientation=None, model=None):
     val, _, brk = WO.objective(
         genes, cfg, normalized=False, phases=phases, meshes=meshes,
         stress_p_probe=(WO.STRESS_NOMINAL_P, 30.0),
-        pool=pool, orientation=orientation, kinematics=kinematics)
+        pool=pool, orientation=orientation, kinematics=kinematics, **(model or {}))
     terms = {k: d["value"] for k, d in brk["terms"].items()}
     rep = brk["report"]
     breached, worst = _barriers(terms)
@@ -306,6 +311,9 @@ def _score(genes, cfg, phases, meshes, kinematics, pool=None, orientation=None):
         "max_stress_mpa": float(rep["max_stress_mpa"]),
         "mass_g": float(rep["mesh_mass_g"]),
         "phase_ripple_std_over_mean": float(rep["phase_ripple_std_over_mean"]),
+        # Priced, never a verdict (`STANDIN_NAMES`); None on a flat-band row.
+        "band_utilisation": (float(rep["band_utilisation"])
+                             if "band_utilisation" in rep else None),
         "terms": {k: float(v) for k, v in terms.items()},
         "barriers_breached": {k: float(v) for k, v in breached.items()},
         "worst_barrier": float(worst),
@@ -325,6 +333,12 @@ def run_rescore(genomes=GENOMES, cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0)
                 print(f"  {label:<16} MISSING {path}", flush=True)
                 continue
             genes = load_genes(path)
+            # THE MODEL THE GENOME's OWN RECORD NAMES (CROWN_PLAN R21, R20 successor 0).
+            # Until R20 every row here was a flat-band genome and this was `{}` for all of
+            # them; `240d5a2` was descended under the stand-in, and on the flat band this
+            # gate called it INFEASIBLE (util 1.252 / 1.247) about a part nobody prints.
+            with open(full) as fh:
+                model = WO.descent_model(json.load(fh))
             # Pinned once per genome so both kinematics see the same discrete decision;
             # `flank_orientation` is a branch, and letting it be re-derived per column
             # would put a topology change inside a strain-measure comparison.
@@ -332,14 +346,15 @@ def run_rescore(genomes=GENOMES, cfg=DEFAULT_CONFIG, n_phase=N_PHASE, workers=0)
                                 WW.flank_orientation(genes, WW.get_config(cfg)))
             t0 = time.time()
             wanted = phases[:1] if pool is not None else phases
-            meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation)
-            row = {"genome": label, "file": path,
+            meshes = WO.phase_meshes(genes, cfg, wanted, orientation=orientation,
+                                     rim_outer=model.get("rim_outer"))
+            row = {"genome": label, "file": path, "crown_standin": model or None,
                    "mesh_s": round(time.time() - t0, 1)}
             try:
                 for kin in ("linear", "svk"):
                     t1 = time.time()
                     row[kin] = _score(genes, cfg, phases, meshes, kin,
-                                      pool=pool, orientation=orientation)
+                                      pool=pool, orientation=orientation, model=model)
                     row[kin]["elapsed_s"] = round(time.time() - t1, 1)
                     print(f"  {label:<16} {kin:<6} "
                           f"drop {row[kin]['axle_drop_mean_mm']:7.4f} "
@@ -437,6 +452,11 @@ def _print_rescore(rep):
                   f"{s['loss']:11.4f}  {b}")
         print(f"  {'':<16} {'Δsvk':<6} {100 * r['drop_rel_diff']:8.3f}% "
               f"{'':>8} {100 * r['util_rel_diff']:6.2f}%")
+        if r.get("crown_standin"):
+            m = r["crown_standin"]
+            print(f"  {'':<16} stand-in (its record's): rim_outer {m['rim_outer']:.4f}, "
+                  f"drop x {m['drop_factor']:.4f}, band util "
+                  f"{r['linear']['band_utilisation']:.3f} / {r['svk']['band_utilisation']:.3f}")
 
     print("\n  THE QUESTION THIS FILE EXISTS TO ANSWER")
     for r in rs["rows"]:

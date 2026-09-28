@@ -1847,3 +1847,20 @@ def _with_band(out, rows, band, allowable_stress_mpa, stress_phase_p):
                           "band_c": float(band["c_band"]),
                           "band_node_p": float(band["node_p"])})
     return out
+
+
+def descent_model(record):
+    """The stand-in a genome record was descended under, as `objective`'s kwargs: the
+    record's own `search.crown_standin`, or `{}` for a record that names none.
+
+    CROWN_PLAN R21 (R20 successor 0).  Every bare `best_solution.json` read scores the flat
+    1.5 mm band, and since R20 that is not the part that ships: `240d5a2` reads 2.945 mm /
+    util 1.186 on it against 1.938 / 0.949 on the stand-in it was descended under.  The
+    record already says which model describes it (`wheel_stage3.search_block` writes
+    `crown_standin`), so a gate that makes a claim about a genome reads the model from the
+    genome's own record, not from a module default.  NOT made the default instead, because
+    the stand-in's `drop_factor` and `c_band` are calibrations measured on `b729e86`'s and
+    this family's spokes (R4-R6), not physics: applied to every genome on disk they would
+    price wheels nobody measured.  A record without the key gets `{}`, so every committed
+    number on such a record is the call it always was."""
+    return dict((record.get("search") or {}).get("crown_standin") or {})

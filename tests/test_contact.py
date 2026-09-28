@@ -329,15 +329,15 @@ def test_the_real_patch_is_far_smaller_than_the_assumed_one(genes, res):
         f"called a LOWER bound and expected to be exceeded by far")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "CROWN_PLAN R20: `240d5a2` reads 1.28% here, back at M6's 1.3% and under the 2-8% band "
-    "set on e126cc3/e4219f3. This fixture builds the default flat 1.5 mm band, and the "
-    "shipped genome was descended under WO.CROWN_STANDIN, so the reading is a flat-rim "
-    "wheel's, not the part's. Not moved, because the band is two genomes' measurements, not "
-    "a warrant. Clearing condition: this fixture builds the stand-in rim, or the default "
-    "objective becomes the stand-in."))
-def test_the_assumed_patch_no_longer_stands_in_for_contact(mesh, res):
+def test_the_assumed_patch_stands_in_for_contact_again(standin_contact):
     """M6's second half, RENAMED because its answer changed and the old name asserted it.
+
+    RENAMED AGAIN AT CROWN_PLAN R21: FALSE ON THE PART UNDER BOTH MODELS. R20 xfailed it at
+    1.28% (flat band) until the fixture "builds the stand-in rim"; there (the record's
+    `descent_model`, fixture at file end) it reads 0.076%. Signed real/assumed-1, `240d5a2`,
+    flat / stand-in, %: smoke lin -1.275/+0.076, svk -1.743/+0.080; coarse -1.401/+0.044,
+    -1.933/+0.062; medium -1.474/+0.000, -2.041/+0.020. Only the band moved and the gap FELL,
+    against "conforms less" below; the two-sided band below is retired for its 2% edge alone.
 
     M6 measured that the assumed 3.0 deg patch was badly wrong about the patch and close
     to right about the ANSWER — 1.3% on the axle drop — because the drop is dominated by
@@ -369,13 +369,13 @@ def test_the_assumed_patch_no_longer_stands_in_for_contact(mesh, res):
     the two-sided one: this must not silently return to "the assumption was fine", and it
     must not silently get much worse either.
     """
-    assumed = fem.solve_wheel(mesh)["axle_drop_mm"]
-    rel = abs(res["axle_drop_mm"] / assumed - 1.0)
-    assert 0.02 < rel < 0.08, (
-        f"real contact moves the axle drop by {rel:.2%} against the assumed patch, "
-        f"outside the 2-8% band measured across both genomes and three tiers — the "
-        f"legacy assumed-patch records (M4, M5, study_gnl, study_wheel_fea) need "
-        f"re-reading against whichever end this crossed")
+    real, assumed = standin_contact
+    rel = abs(real / assumed - 1.0)
+    assert rel < 0.02, (
+        f"real contact moves the axle drop by {rel:.2%} against the assumed patch on the "
+        f"model the shipped record names: past 2%, the edge where this test drew 'no longer "
+        f"stands in', so the legacy assumed-patch records (M4, M5, study_gnl, "
+        f"study_wheel_fea) need re-reading against it")
 
 
 def test_the_patch_migrates_with_phase(genes):
@@ -717,3 +717,19 @@ def test_the_rim_band_report_reads_the_OD_surface_nodes_of_the_band(mesh, res):
     r = np.hypot(st["xy"][band, :, 0], st["xy"][band, :, 1])
     outer_gauss = st["von_mises"][band][r > r.mean()].max()
     assert got > outer_gauss * (1 + 1e-3), (got, outer_gauss)
+
+
+# THE MODEL THE SHIPPED RECORD NAMES (CROWN_PLAN R21, R20 successor 0), at the end of the file
+# so no anchor above moves, and for `test_the_assumed_patch_stands_in_for_contact_again`
+# ONLY: every other test here reads `mesh`, the flat band, as a vehicle for the kernel.  A
+# record naming no stand-in gets the flat band, the fixture it replaced.
+@pytest.fixture(scope="module")
+def standin_contact(genes):
+    """`(real, assumed)` axle drop in mm at `CFG`; the stand-in's `drop_factor` cancels."""
+    import wheel_objective as WO
+    with open(os.path.join(REPO, "best_solution.json")) as fh:
+        model = WO.descent_model(json.load(fh))
+    mesh = WW.build_wheel(genes, CFG,
+                          rim_outer=model.get("rim_outer", WW.RIM_OUTER_RADIUS_MM))
+    return (fem.solve_wheel_contact(mesh)["axle_drop_mm"],
+            fem.solve_wheel(mesh)["axle_drop_mm"])

@@ -1725,3 +1725,18 @@ def test_the_r_rim_floor_flag_moves_the_box_and_both_records_carry_it(monkeypatc
         for g, (lo, hi) in zip(W.GENE_SPACE, saved):
             g["low"], g["high"] = lo, hi
         W._refresh_gene_arrays()
+
+
+def test_a_record_names_the_model_every_gate_reads_it_under():
+    """CROWN_PLAN R21 (R20 successor 0): `WO.descent_model` reads back what `search_block`
+    wrote, and `{}` off a record that names none, so a gate scoring a genome from its file
+    scores the wheel the descent saw.  Pinned BY FILE, not to the shipped pointer (the
+    promotion checklist's item 9): `240d5a2` was descended on the stand-in, `b729e86` on the
+    flat band, and `make svk` read the first INFEASIBLE while it scored both on the second."""
+    assert WO.descent_model({"search": S3.search_block(
+        _Args, "l", 1, crown_standin=WO.CROWN_STANDIN)}) == WO.CROWN_STANDIN
+    assert WO.descent_model({"search": S3.search_block(_Args, "l", 1)}) == {}
+    for name, want in (("stage3_crown_shipped.json", WO.CROWN_STANDIN),
+                       ("stage3_svk_refillet_shipped_r2_best.json", {})):
+        with open(os.path.join(REPO, name)) as fh:
+            assert WO.descent_model(json.load(fh)) == want, name

@@ -367,16 +367,16 @@ def test_the_beam_model_does_not_predict_the_axle_drop(filleted_res, genes):
         f"believing it")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "CROWN_PLAN R20: FALSE ON THE WHEEL THAT SHIPS, UNDER THIS FIXTURE's MODEL. `240d5a2` "
-    "reads 2.6026 mm here. It was descended under WO.CROWN_STANDIN (the 2D band thickened to "
-    "t_eq 2.144 mm and the drop scaled by 0.8887), and this fixture builds the default flat "
-    "1.5 mm band, which is not the part: the exported crowned part measures 1.91314 mm in 3D "
-    "SVK over eight phases (R17). It is xfailed rather than moved, as §111 did, because the "
-    "band has no warrant. Clearing condition: this fixture builds the stand-in rim, or the "
-    "default objective becomes the stand-in."))
-def test_the_axle_drop_meets_the_stroke_target(filleted_res):
+def test_the_axle_drop_meets_the_stroke_target(standin_filleted_drop):
     """The band half of the old combined gate, split out and read on the filleted mesh.
+
+    XFAILED AT CROWN_PLAN R20, LIFTED AT R21 BY THE CONDITION ITS REASON NAMED: the fixture
+    builds the model `best_solution.json`'s own record names (`descent_model`), the band at
+    the stand-in's `rim_outer` and the drop times its `drop_factor`, together, as R5 D3
+    requires. `240d5a2` reads 1.994039 x 0.888672 = 1.772048 mm (2.602626 on the flat band
+    R20 xfailed). SCOPE: the factor was measured on the 8-phase SVK contact mean, and this is
+    a phase-0 linear assumed-patch read, so the product is the stand-in's reading here, not a
+    3D prediction (R17 measured 1.91314). Unfactored it reads 1.994, 0.006 under the edge.
 
     XFAILED AT §111, LIFTED AT §118 BY THE PROMOTION ITS OWN REASON NAMED. §111 read
     0.961370 mm here on the then-shipped genome — 38.0-39.9% "stiffer" than the plain mesh
@@ -412,7 +412,7 @@ def test_the_axle_drop_meets_the_stroke_target(filleted_res):
     both fillet junctions clamp), 2.03x apart. A per-design factor this wide is the same
     finding §109 made for the hub-share bound, more extreme.
     """
-    assert 1.4 < filleted_res["axle_drop_mm"] < 2.0, filleted_res["axle_drop_mm"]
+    assert 1.4 < standin_filleted_drop < 2.0, standin_filleted_drop
 
 
 def test_the_beam_to_wheel_ratio_is_not_a_constant(genes):
@@ -862,3 +862,18 @@ def test_total_mass_matches_the_step_manifest_within_the_embed_difference(mesh):
     assert 0.5 < per_spoke_mm2 < 2.0, (
         f"implied gusset {per_spoke_mm2:.3f} mm^2 per spoke — the leftover is not the "
         f"shape of an embed allowance, so something else is unaccounted for")
+
+
+# THE MODEL THE SHIPPED RECORD NAMES (CROWN_PLAN R21, R20 successor 0), at the end of the file
+# so no anchor above moves.  For `test_the_axle_drop_meets_the_stroke_target` ONLY, for the
+# reason `filleted_mesh` is a second fixture and not a flag on `mesh`: the other tests here
+# were calibrated on the flat band and are claims about mechanisms, not about the part.  A
+# record naming no stand-in gets the flat band and a factor of 1.0, the fixture it replaced.
+@pytest.fixture(scope="module")
+def standin_filleted_drop(genes):
+    import wheel_objective as wo
+    with open(os.path.join(REPO, "best_solution.json")) as fh:
+        model = wo.descent_model(json.load(fh))
+    mesh = ww.build_wheel(genes, CFG, fillet=True,
+                          rim_outer=model.get("rim_outer", ww.RIM_OUTER_RADIUS_MM))
+    return fem.solve_wheel(mesh)["axle_drop_mm"] * model.get("drop_factor", 1.0)
