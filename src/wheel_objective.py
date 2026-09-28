@@ -837,9 +837,9 @@ def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
                                            num_points=W.N_CURVE_PTS, xp=jnp)
     fold = soft_barrier(geom.MIN_FOLD_MARGIN_MM - margin, w["fold"])
 
-    # -- arrival: spoke meeting its ring too close to radially.
-    a_hub, a_rim = WW.arrival_angles(genes, cfgo, span_mm=span_mm, xp=jnp)
-    worst = jnp.maximum(a_hub, a_rim)
+    # -- arrival: spoke meeting its ring too close to radially.  EXACT, see `_arrival_exact_deg`.
+    a_hub, _ = WW.arrival_angles(genes, cfgo, span_mm=span_mm, xp=jnp)   # the cap's, below
+    worst = jnp.max(_arrival_exact_deg(ctrl))
     arrival = soft_barrier((worst - WW.MAX_ARRIVAL_DEG) / 10.0, w["arrival"])
 
     # -- smoothness, REWRITTEN.  See the module docstring: the old `400*n_infl` had no
@@ -879,9 +879,9 @@ def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
     # wrong model by a number.  The conservatism now lives in the fit, where it is
     # measurable: 0.827-0.979 of the worst measured corner across those five.
     #
-    # `a_hub` is the one computed for the `arrival` barrier above, passed rather than
-    # re-derived: the cap's square-on branch is a function of it, and a barrier and a cap
-    # disagreeing about the same angle is a class of bug worth making impossible.
+    # `a_hub` is `arrival_angles`' SAMPLED hub angle, the variable `study_arrival_cap` fitted the
+    # law on; since CROWN_PLAN R22 the barrier above reads the EXACT one, 0.062 deg apart at
+    # `coarse` on `240d5a2`'s hub, O(h) and shrinking per rung.  See `_arrival_exact_deg`.
     fillet_cap = soft_barrier(g[12] - hub_fillet_cap_mm(genes, cfgo, span_mm,
                                                         W.HUB_RADIUS_MM, flanks,
                                                         a_hub_deg=a_hub),
@@ -1864,3 +1864,30 @@ def descent_model(record):
     price wheels nobody measured.  A record without the key gets `{}`, so every committed
     number on such a record is the call it always was."""
     return dict((record.get("search") or {}).get("crown_standin") or {})
+
+
+def _arrival_exact_deg(ctrl):
+    """`[hub, rim]` arrival in degrees from the ring TANGENT, off the EXACT end tangents.
+
+    CROWN_PLAN R22.  A Bezier's end tangents are its first and last control-polygon edges,
+    and both endpoints sit on the +x axis of their ring (P0 at the origin, P5 at `span_mm`,
+    shifted by `hub_radius`), so the radial direction is x-hat and the angle is
+    `asin(|dx| / |d|)` -- the construction `wheel_fea.arrival_penalty` has always used.
+
+    WHY THE `arrival` BARRIER STOPPED READING `WW.arrival_angles`.  That function takes the
+    tangent as `sample(1e-5) - sample(0)` on the centerline sampled at `cfg.n_curve`, which
+    is the first CHORD of the polyline, not the tangent: O(h), halving per rung.  On
+    `240d5a2`'s rim, n_curve 600 / 1200 / 2400 / 4800 / 9600 / 19200 read 64.922 / 64.984 /
+    65.015 / 65.031 / 65.039 / 65.043 against the exact 65.046.  So the wall sat 0.062 deg
+    further out at `coarse`, where descents run, than at the limit, and the crown descent
+    parked on it: `make svk` (medium) read the shipped genome over it (`arrival` 0.00714)
+    while every coarse record said 0.  Exact, the barrier reads one value at every rung.
+
+    Only the barrier moves.  `hub_fillet_cap_mm`'s law is fitted on the sampled hub angle
+    and keeps it, so `Kt_hub` is bit-identical.  Of 66 distinct genomes in the root and
+    `studies/` records, five read over 65 exact, all the crown arc's (worst 65.066); no
+    other reads over 64.955, so every other committed `arrival` stays 0.0 at every rung.
+    """
+    edges = (ctrl[1] - ctrl[0], ctrl[-1] - ctrl[-2])
+    return jnp.stack([jnp.degrees(jnp.arcsin(jnp.clip(
+        jnp.abs(e[0]) / jnp.sqrt(e[0] ** 2 + e[1] ** 2), 0.0, 1.0))) for e in edges])

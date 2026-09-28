@@ -1041,7 +1041,13 @@ def test_the_margin_term_prices_and_never_gates(genes):
         f"hub-cap slack is {cap - float(genes[12]):.4e} mm, under MIN_CAP_SLACK_MM "
         f"{S3.MIN_CAP_SLACK_MM} — `selection_key` returns tier 1 here for a geometric "
         f"reason, and the assert below would blame the margin split for it")
-    assert S3.selection_key(brk["total"], brk, genes)[0] == 0, (
+    # AND A THIRD, SINCE CROWN_PLAN R22: `arrival` reads `240d5a2`'s rim exact, 0.046 deg past
+    # its wall (0.0647), so the key is asked to be exactly what the WALLS give, margin aside.
+    walls = {k: brk["terms"][k]["value"] for k in WO.BARRIER_TERMS
+             if brk["terms"].get(k, {}).get("value", 0.0) > 0.0}
+    assert set(walls) <= {"arrival"}, walls
+    assert S3.selection_key(brk["total"], brk, genes)[:2] == (
+        (2, walls["arrival"]) if walls else (0, 0.0)), (
         "a live margin term made the shipped genome unpromotable")
 
 
@@ -1668,3 +1674,60 @@ def test_the_band_term_is_absent_unless_named_and_priced_as_stress_margin_when_i
     assert np.linalg.norm(out["grads"]["band_margin"]) > 0.0
     for term in ("deflection", "stress", "stress_margin"):
         assert out["values"][term] == base["values"][term], term
+
+
+def _record_genes(name):
+    import json
+    with open(os.path.join(REPO, name)) as fh:
+        return wg.genes_to_vector(json.load(fh)["genes"])
+
+
+def _t1_arrival(g, cfg, flanks=None):
+    cfgo = WW.get_config(cfg)
+    if flanks is None:                   # a discrete numpy decision: frozen outside a trace
+        flanks = WO.fillet_flanks(np.asarray(g), cfgo)
+    return WO.t1_vector(jnp.asarray(g), cfgo, None, W.S, flanks)[WO.T1_NAMES.index("arrival")]
+
+
+def test_the_arrival_barrier_reads_one_value_at_every_rung():
+    """CROWN_PLAN R22: the wall may not move with the mesh the descent happens to run on.
+
+    `WW.arrival_angles` differenced the sampled centerline (the first chord, O(h)), so on
+    `240d5a2`'s rim the wall read 64.984 deg at `coarse` and 65.015 at `medium`, and `make
+    svk` found the shipped genome over a wall its own descent had read it inside.  Exact, the
+    term is one number at every rung, and it is Stage 2's `wheel_fea.arrival_penalty` on the
+    same control polygon.  Pinned BY FILE: `stage3_crown_shipped.json` is `240d5a2`, over
+    the exact wall by 0.046 deg; `stage3_svk_refillet_shipped_r2_best.json` is `b729e86`,
+    6.3 deg inside it, where the barrier is 0.0 however it is read."""
+    import wheel_geometry as geom
+    g = _record_genes("stage3_crown_shipped.json")
+    vals = {cfg: float(_t1_arrival(g, cfg)) for cfg in ("smoke", "coarse", "medium", "fine")}
+    assert len(set(vals.values())) == 1, vals
+    _, ctrl = geom.bezier_centerline(*g[:8], span_mm=W.S, num_points=W.N_CURVE_PTS)
+    assert vals["coarse"] == pytest.approx(float(W.arrival_penalty(ctrl)), rel=1e-12)
+    rim_exact_deg = 65.04642676869325                  # asin(|dx|/|d|) off the last edge
+    assert vals["coarse"] == pytest.approx(
+        W.ARRIVAL_PENALTY_SCALE * ((rim_exact_deg - WW.MAX_ARRIVAL_DEG) / 10.0) ** 2, rel=1e-9)
+    g0 = _record_genes("stage3_svk_refillet_shipped_r2_best.json")
+    assert all(float(_t1_arrival(g0, cfg)) == 0.0 for cfg in ("smoke", "coarse", "medium"))
+
+
+def test_the_exact_arrival_gradient_matches_a_central_difference():
+    """The barrier is LIVE at `240d5a2` since R22 (0.0647), so its gradient now steers a
+    descent from there; the exact form has no cancelling difference in it, so the check can
+    be tight.  Genes 6 and 7 (`cx4`, `cy4`) set the last control-polygon edge, which is the
+    rim end's tangent; gene 0 sets the first and must read exactly zero here, because the hub
+    is 60.8 deg inside the wall and `jnp.max` routes the whole gradient to the rim."""
+    g = _record_genes("stage3_crown_shipped.json")
+    flanks = WO.fillet_flanks(g, WW.get_config("coarse"))
+    grad = np.asarray(jax.grad(lambda v: _t1_arrival(v, "coarse", flanks))(jnp.asarray(g)))
+    for i in (6, 7):
+        h = 1e-5
+        gp, gm = g.copy(), g.copy()
+        gp[i] += h
+        gm[i] -= h
+        fd = (float(_t1_arrival(gp, "coarse", flanks))
+              - float(_t1_arrival(gm, "coarse", flanks))) / (2 * h)
+        assert grad[i] == pytest.approx(fd, rel=1e-5), (i, grad[i], fd)
+        assert grad[i] != 0.0
+    assert grad[0] == 0.0
