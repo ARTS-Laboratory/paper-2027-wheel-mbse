@@ -1,5 +1,9 @@
 # `gui/` — an optional control surface
 
+> **DONE — and a for-fun portion of this project.** It is finished, it is not an arc, and
+> it is not in any successor ranking; `PLAN.md` §158 says so and says nothing else about
+> it. The pipeline does not depend on it in either direction.
+
     make gui                 # the desktop app
     make gui-browser         # the same thing in a browser, on http://127.0.0.1:8731/
 
@@ -48,25 +52,53 @@ in an unpackaged tree, and it is a property of the checkout rather than of this 
 
 Packaged builds do not have the problem. `--no-sandbox` also silences it and is not the fix.
 
-### The shell and the pipeline can be on different machines
+### It drives the machine it is running on, and only that one
 
-    ssh -N -L 8731:127.0.0.1:8731 you@the-box          # on the laptop, left running
-    WHEEL_SERVER_URL=http://127.0.0.1:8731 npm start   # a native window, remote pipeline
+There is no attach mode, no remote URL and no tunnel. The window, the server, the venvs and
+the runs are all on this computer: the Mac build drives the Mac, the Windows build drives
+the Windows box, and each one is the interface to the machine it was opened on rather than
+a viewer onto some other machine's pipeline. `server.py` binds `127.0.0.1` and nothing here
+re-binds it.
 
-`WHEEL_SERVER_URL` is **attach mode**: the shell skips finding a checkout and skips
-starting anything, and just points its window at a server that is already running. This is
-how you drive the pipeline from a machine that has no checkout — which is not a
-convenience, it is the only way, because the venv interpreters are Linux ELF and an sshfs
-mount of the repo would hand macOS a `python` it cannot exec.
+That is a stronger constraint than it sounds, because **it removes the escape hatch.** A
+machine with no `.venv-opt` used to be answerable by pointing the window at a machine that
+had one. It is not any more, so the app has to be able to build one — and it can:
 
-**Point it at a loopback tunnel.** That is the server's rule rather than the shell's:
-`server.py` binds `127.0.0.1` because the endpoint starts processes and has no
-authentication, and its docstring says to tunnel rather than move the bind address. Nothing
-in the shell re-binds anything.
+**`Set up this machine` runs what `make env` runs, from the window.** A checkout with no
+`.venv-opt` gets a page saying so and a button, and the button creates both virtualenvs and
+pip-installs `requirements-opt.txt` and `requirements-cad.txt` into them, with pip's output
+streaming into the page as it goes. `desktop/setup.js` is that, and it is deliberately three
+commands per env and no opinion about their contents — the requirements files stay the
+single source of what gets installed.
 
-In attach mode the three File-menu verbs that reach for a local path are greyed, and
-nothing answering at the URL gets the failure page with the tunnel command on it rather
-than Chromium's.
+It does not shell out to `make` to do it. Windows has no `make`, and macOS only has one
+once the Xcode command line tools are installed; both are machines this is meant to work
+on, and re-typing a three-line recipe is cheaper than requiring a build tool in order to
+install a package manager.
+
+**That leaves one honest gap on Windows, and it is in `catalog.py` rather than here.** Most
+run targets are launched as `make <target> VAR=value`, deliberately — the Makefile exports
+the five thread pins that make the adjoint reproducible, and shelling out to it inherits
+them and cannot forget. Setting this machine up works on Windows; the targets that go
+through `make` will not, until either those pins move into `jobs.py`'s environment for
+every target the way `stage3` already does it, or the app ships its own `make`. macOS has
+`make` with the command line tools, so this is a Windows-only gap.
+
+**Finding a Python to build FROM is the part that is not obvious**, and macOS is why. An app
+opened from Finder inherits a `PATH` of `/usr/bin:/bin:/usr/sbin:/sbin` and nothing else —
+no Homebrew, no pyenv, no python.org — and the `/usr/bin/python3` that *is* there is Apple's
+own, which has trailed these pins by several minor versions on every recent release (3.9.6).
+So `setup.js` probes the usual install locations by absolute path as well as the `PATH`,
+prefers 3.12 (what both requirements files are written for), takes the newest 3.10-or-later
+it finds otherwise, and says in the log which one it chose rather than deciding silently.
+
+**A directory is not an environment.** `python -m venv` succeeds in a second; the pip install
+after it takes minutes and can fail, leaving a `bin/python` that exists and imports nothing.
+So "built" means *the packages import*, checked by running one — otherwise the next launch
+calls the machine set up and hands the window a `ModuleNotFoundError` instead. Only
+`.venv-opt` is required: without it there is no server to open a window onto. A `.venv-cad`
+that will not build is reported and stepped over, because the one thing it costs you is the
+STEP exporter.
 
 **Where the repo is** is the one question a packaged app has that `npm start` does not.
 Unpacked, the answer is two directories up. Installed from a `.dmg` or an `.exe`, the app is
@@ -110,7 +142,8 @@ CREATE_NEW_PROCESS_GROUP` on Windows.
 
 Because only the first can cap memory, `plan()` **refuses** on total RAM — which every
 platform reports exactly — and only **warns** on available RAM, which off Linux is an
-approximation. The hard guard does not rest on the soft number.
+approximation. The hard guard does not rest on the soft number. An estimate is refused above
+85% of total; a pool priced from `wheel_pool.POOL_GIB`, an upper bound, only above all of it.
 
 User units die at logout (`Linger=no` on this box). `loginctl enable-linger` if you want a
 descent to survive logging out; closing the app does not need it.
@@ -134,13 +167,19 @@ descent to survive logging out; closing the app does not need it.
 ## Costs are shown with their basis
 
 Before launching, the panel prints the estimated wall time and peak RSS against free
-memory, and blocks what does not fit — a `medium` descent prices at ~84 GiB on a 61 GiB
-box. Every constant behind those numbers is either measured and cited or extrapolated and
-labelled; see the cost-model block at the top of `catalog.py`. Two of them were measured
-here rather than inherited:
+memory, and blocks what does not fit. A pool (`workers` 2 or more, or `-1` at the width
+`wheel_pool.default_workers` picks) is priced `parent + workers × worker` from the pair
+`--workers -1` sizes itself by, measured on live descents (PLAN.md §167–§174): 55 GiB for
+four `coarse` workers, whose pool held 49.7. A SERIAL descent is still the affine estimate
+below, and a serial `medium` one prices at ~84 GiB on a 61 GiB box and is refused while three
+`medium` workers at 47 GiB are admitted — the serial figure predates §164's compile collapse
+and is unmeasured since (§173 successor 2), not evidence that serial costs more. Every
+constant behind those numbers is either measured and cited or extrapolated and labelled; see
+the cost-model block at the top of `catalog.py`. Two of them were measured here rather than
+inherited:
 
 - a `smoke` descent exceeded **22.9 GiB** and had not reached step 0 after six minutes, so
-  the memory model is affine on a large mesh-independent baseline rather than proportional
+  the serial memory model is affine on a large mesh-independent baseline rather than proportional
   to element count — a proportional model priced it at 7.2 GiB and the resulting cgroup cap
   put the run into swap;
 - the first evaluation is a **~1180 s** one-off jit trace (step 0 took 1391 s against a
@@ -157,10 +196,11 @@ here rather than inherited:
 | `model.py` | mission → requirements → compliance table, all via `wheel_requirements` |
 | `preview.py` | genome → polygons, via the project's own geometry kernel |
 | `static/` | the page. No framework, no build |
-| `desktop/main.js` | starts the server, owns the window, finds the checkout — or attaches to a remote one |
+| `desktop/main.js` | starts the server, owns the window, finds the checkout |
+| `desktop/setup.js` | builds `.venv-opt` and `.venv-cad` **on this machine** — what `make env` runs, minus the `make` |
 | `desktop/menu.js` | the native menubar; its View items drive the page's own tabs over IPC |
 | `desktop/preload.js` | the whole bridge: what platform, and a tab callback. Nothing else |
-| `desktop/shell.html` | the first paint and the last resort — splash, and the failure page |
+| `desktop/shell.html` | the first paint and the last resort — splash, failure page, and the install log |
 | `desktop/build/make_icon.py` | draws `icon.png` from the shipped genome, stdlib PNG. Re-run it after a promotion and the icon follows the part |
 
 It runs under `.venv-opt/bin/python` because that env can import the pipeline modules; the

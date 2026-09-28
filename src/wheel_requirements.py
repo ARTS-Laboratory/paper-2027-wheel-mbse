@@ -35,15 +35,15 @@ requirement.  There are two input surfaces and they never mix:
 five names in the same order.  Points move `should`s.  **Points never reach
 `BARRIER_TERMS`** — you cannot buy your way out of a mesh that does not integrate, a
 spoke that folds through itself, or a fillet that does not fit in its sector.  Those are
-`shall`s and their only admissible value is zero, which `wheel_objective.py:394-401`
+`shall`s and their only admissible value is zero, which `wheel_objective.py:399-406`
 already asserts and this module reuses rather than re-inventing.
 
 WHAT THIS FILE DELIBERATELY CANNOT REACH
 -----------------------------------------
 **Ø100 is frozen.**  Ground clearance and prop clearance are real requirements and they
-want `RIM_RADIUS_MM`; `wheel_fea.py:113-137` states the price — changing it
-*"REINTERPRETS every gene on disk"* — so every axis here leaves the genome frame intact.
-That is what lets `best_solution.json` and `tests/test_golden.py` stay meaningful while
+want `RIM_RADIUS_MM`, the genome frame (the part's crown adds 1 mm above it, Ø102, §206).
+`wheel_fea.py:113-137` prices changing it — *"REINTERPRETS every gene on disk"* — so every
+axis here keeps it, and `best_solution.json` and `tests/test_golden.py` stay meaningful while
 requirements move.  `NUMBER_OF_SPOKES = 12` is likewise not a parameter: it is baked into
 `SECTOR_DEG`, the mesh's twelve-fold periodicity and the `/3` in
 `FORCE_PER_SPOKE_NEWTONS`.
@@ -171,7 +171,7 @@ STROKE_EFFICIENCY = 0.5
 # knockdown is monotone in life and roughly log-linear over a few decades, and that is all
 # this claims.
 #
-# NOT TO BE CONFUSED WITH `studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25`,
+# NOT TO BE CONFUSED WITH `studies/study_deflection_gci.py:73`'s `SAFETY_FACTOR = 1.25`,
 # which is ROACHE'S GCI factor and has nothing to do with structural margin.  Two
 # different `SAFETY_FACTOR`s live in this repo; a global rename would silently corrupt a
 # convergence gate.
@@ -897,7 +897,7 @@ def load(path):
 # THE COMPLIANCE TABLE'S TWO HALVES ARE `wheel_objective`'s OWN, READ AND NOT RETYPED.
 # `BARRIER_TERMS` are the `shall`s and `OBJECTIVE_TERMS` are the `should`s — that split
 # is already in the code, already asserted disjoint and exhaustive
-# (`wheel_objective.py:394-401`), and already load-bearing: it exists because defect 6
+# (`wheel_objective.py:399-406`), and already load-bearing: it exists because defect 6
 # promoted an infeasible design on 2026-08-11 by selecting on loss alone.  Reusing it is
 # what stops this file inventing a second requirements taxonomy that can drift from the
 # one the optimiser actually enforces.

@@ -68,12 +68,12 @@ IS_MACOS = sys.platform == "darwin"
 ROOT = catalog.ROOT
 RUNS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs")
 
-# What fraction of physical RAM a job is allowed to ask for before we refuse outright.
+# What fraction of physical RAM an ESTIMATE may ask for before we refuse outright; a pool
+# priced from `wheel_pool.POOL_GIB` is an upper bound and is refused only above the machine.
 # The box has been taken down twice by two concurrent descents; 43.4 GiB of a 61 GiB
-# machine is one descent's measured peak, so the ceiling has to sit above that and well
-# below two of them.
+# machine is one descent's measured peak, so the ceiling sits above that and well below two.
 MEMORY_CEILING_FRACTION = 0.85
-MEMORY_HEADROOM = 1.35          # cap = estimate x this, so a good estimate is not fatal
+MEMORY_HEADROOM = 1.35          # cap = ESTIMATE x this; a pool's upper bound is its own cap
 # A cap is a guard against runaway, not a budget to hold a run to. Set below what a
 # run genuinely needs it turns a working job into a swapping one -- measured here on
 # 2026-09-09, when a 9 GiB cap put a `smoke` descent into 1.5 GiB of swap.
@@ -377,19 +377,32 @@ def plan(target_key, params):
     target = catalog.resolve(target_key)
     rundir = os.path.join(RUNS, "PREVIEW")
     argv = target.argv(params, rundir)
-    cost = target.cost(params) if target.cost else None
+    refused = None
+    try:
+        cost = target.cost(params) if target.cost else None
+    except ValueError as err:
+        # `-1` at a config `wheel_pool.default_workers` has no measured pair for.  The run
+        # raises the same thing at launch; the preview says it before anything is spent.
+        # A parameter that is not a number lands here too, and reaches the user the same way.
+        cost, refused = None, str(err)
     avail = available_gib()
     total = _total_gib()
     out = {"key": target_key, "label": target.label, "heavy": target.heavy,
            "argv": argv, "command": " ".join(shlex.quote(a) for a in argv),
            "available_gib": round(avail, 1), "total_gib": round(total, 1),
-           "blockers": [], "warnings": []}
+           "blockers": [refused] if refused else [], "warnings": []}
     if cost:
-        seconds, gib, basis = cost
-        cap = max(MEMORY_FLOOR_GIB, gib * MEMORY_HEADROOM)
+        seconds, gib, basis, *bound = cost
+        # AN UPPER BOUND IS ITS OWN HEADROOM.  A pool priced from `wheel_pool.POOL_GIB` is
+        # whole GiB above each process's largest kernel mark, and x1.35 on top of it put a
+        # four-worker `coarse` cap at 74 GiB on a 61 GiB box -- a cap that cannot bind.  It
+        # is refused only above the machine, exact on every platform, and warned above what
+        # is free: `-1` is sized inside what is free, and an explicit count is the caller's.
+        upper = bool(bound) and bound[0]
+        cap = max(MEMORY_FLOOR_GIB, gib if upper else gib * MEMORY_HEADROOM)
         out.update(seconds=seconds, peak_gib=gib, basis=basis,
                    memory_max_gib=round(cap, 1))
-        if gib > total * MEMORY_CEILING_FRACTION:
+        if gib > total * (1.0 if upper else MEMORY_CEILING_FRACTION):
             out["blockers"].append(
                 f"needs about {gib:.1f} GiB and this box has {total:.0f} GiB -- "
                 f"reduce workers, or drop a mesh rung")

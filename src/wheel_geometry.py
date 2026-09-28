@@ -169,7 +169,7 @@ def bezier_curvature(ctrl_pts, num_points, xp=np):
     The mesh needs this: the offset band self-intersects where the radius of curvature
     |1/kappa| drops below half the local thickness, which is the dominant way a genome
     produces an inverted element.  `wheel_fea`'s `smoothness` loss term was an implicit
-    and rather indirect guard against the same thing (wheel_fea.py:596-598).
+    and rather indirect guard against the same thing (wheel_fea.py:745-747).
     """
     D1 = xp.asarray(forward_difference_matrix(BEZIER_DEGREE, 1))
     D2 = xp.asarray(forward_difference_matrix(BEZIER_DEGREE, 2))
@@ -197,8 +197,8 @@ def arc_fractions(curve, xp=np, at="nodes"):
 
     Both exist because the two callers genuinely need different ones, and conflating
     them silently shifts the taper by half a segment: `thicken_3taper_curve` samples
-    thickness at nodes (wheel_fea.py:746) while `generalized_spoke_mechanics` samples
-    at segment midpoints (wheel_fea.py:355).
+    thickness at nodes (wheel_fea.py:1037-1039) while `generalized_spoke_mechanics` samples
+    at segment midpoints (wheel_fea.py:446).
     """
     seg = segment_lengths(curve, xp=xp)
     cum = xp.concatenate([xp.zeros(1, dtype=seg.dtype), xp.cumsum(seg)])
@@ -217,7 +217,7 @@ def arc_fractions(curve, xp=np, at="nodes"):
 def thickness_at_arc_length(s, t0, t1, t2, t3, xp=np):
     """Piecewise-linear thickness over three taper zones, branch-free.
 
-    The original (wheel_fea.py:252) selected each zone with a boolean mask and wrote
+    The original (wheel_fea.py:344) selected each zone with a boolean mask and wrote
     through it.  That has no JAX equivalent — `s[mask]` has a data-dependent shape —
     so the same function is written as a base value plus three clipped ramps:
 
@@ -261,7 +261,7 @@ def thickness_at_arc_length(s, t0, t1, t2, t3, xp=np):
 def offset_normals(curve, xp=np):
     """Unit normals from finite differences of the sampled centerline.
 
-    This is exactly what `thicken_3taper_curve` does (wheel_fea.py:750-752), kept
+    This is exactly what `thicken_3taper_curve` does (wheel_fea.py:1037-1039), kept
     bit-for-bit because the STEP on disk was built from it.
 
     NOT suitable for the mesh — see `normals_from_tangents`.  `xp.gradient` is
@@ -314,7 +314,7 @@ def outline_edges(curve, t0, t1, t2, t3, xp=np, normals=None):
     """(top, bot) flank point arrays, each [N,2] running hub->rim.
 
     The exact contract `wheel_fea.thicken_3taper_curve(..., return_edges=True)` and
-    `wheel_step_export.spoke_edges_global` (wheel_step_export.py:153) depend on.
+    `wheel_step_export.spoke_edges_global` (wheel_step_export.py:216) depend on.
     """
     band = offset_band(curve, t0, t1, t2, t3, n_across=1, xp=xp, normals=normals)
     return band[:, 1, :], band[:, 0, :]
@@ -427,10 +427,172 @@ def self_intersection_margin(curve, ctrl_pts, t0, t1, t2, t3, num_points, xp=np)
     a barrier term rather than discovered as a crash.
 
     This is the explicit form of what the `smoothness` loss term was implicitly
-    protecting (wheel_fea.py:596-598).
+    protecting (wheel_fea.py:745-747).
     """
     kappa = bezier_curvature(ctrl_pts, num_points, xp=xp)
     radius = 1.0 / (xp.abs(kappa) + 1e-30)
     s = arc_fractions(curve, xp=xp, at="nodes")
     half_t = thickness_at_arc_length(s, t0, t1, t2, t3, xp=xp) / 2.0
     return xp.min(radius - half_t)
+
+
+# ---------------------------------------------------------------------------
+# TRANSVERSE CROWN ON THE RIM OD
+# ---------------------------------------------------------------------------
+
+# Sagitta of the rim's transverse crown, in mm: how much larger the rim's radius is at
+# the mid-width apex than at the axial EDGES of the face.  The outer surface becomes a
+# circular arc across the face instead of a cylinder, which is what a real wheel has.
+#
+# EDGES AT THE GENE FRAME'S O100, APEX ADDED OUTWARD TO O102 (§206).  Until §206 the crown
+# was CUT into the band -- apex at O100, edges relieved to R49, band 1.5 -> 0.5 mm at the
+# side faces -- and §205 measured that part's band at 1.14-1.79x allowable at every
+# readable phase, the crown raising it 1.28-1.71x over the flat twin.  So the crown now
+# sits ON TOP of the full 1.5 mm band.  `wheel_requirements.py:43`'s O100 stays the GENE
+# frame: this moves neither `RIM_RADIUS_MM` nor the span, so every gene on disk means what
+# it meant (`wheel_fea.py:113-137`); the part's apex is O102 by decision, and clearance
+# only grows.  `test_export_contract.py` holds the bounding box to 102 x 102 x 22.4.
+#
+# Lives here for the same reason `MIN_JUNCTION_BITE` does: the producer is the STEP
+# exporter (CadQuery env) and the consumer is a test in `make test` (jax env), and this
+# module is the only one both can import.  It is spelled ONCE.  `RIM_OUTER_RADIUS_MM` is
+# already spelled twice -- `wheel_wheel.py:183` and `wheel_step_export.py:95`, with no
+# test pinning them equal -- and that is a trap to avoid repeating, not a pattern.
+#
+# WHAT IT COSTS, at 1.0 mm on the 22.4 mm face above a 50.0 mm outer radius:
+#
+#     crown arc radius                     63.220000 mm
+#     material added                     4736.533448 mm^3  =  5.873301 g PLA
+#     against the flat solid's 47962.7 mm^3                   ( +9.88% )
+#     rim band                        1.500 mm at the side faces, 2.500 mm at the apex
+#
+# THE FEA CANNOT SEE ANY OF IT, AND THAT IS NOT A DEFECT TO BE FIXED HERE.  `wheel_fem` is
+# a plane-stress kernel: node arrays are [n, 2], the face width enters as a scalar
+# multiplier on element energies (`wheel_fem.py:255`), and contact is against a rigid
+# horizontal LINE (`wheel_fem.py:652`).  A crown varies along the one axis the solver does
+# not have.  So the 2D mesh keeps `RIM_OUTER_RADIUS_MM` = 50.0, which is now the SIDE-FACE
+# section -- the band's minimum -- and not the apex the ground touches.  The 2D band is a
+# lower bound on the part's; what the crown does to the contact strip, the drop and the
+# band stress is unmeasured by anything here and is §206's 3D run to measure.
+#
+# THE MASS IS STILL NOT CHARGED, AND THAT NOW CUTS THE OTHER WAY.  `wheel_objective.py:979`
+# scores the flat-rim region and is deliberately left alone; the 5.87 g is reconciled as an
+# as-built term against the STEP instead, the way `_embed`'s gusset and the fillets already
+# are.  While the crown was a relief, not crediting its 2.88 g saving was conservative.  As
+# an addition, the objective's mass UNDER-states the part by 5.87 g the optimiser never
+# sees -- stiffness it cannot price either way (`wheel_fea.py:118-131`).
+#
+# THE BAND CLEARS `MIN_WALL_MM` OVER THE WHOLE FACE.  `wheel_fea.MIN_WALL_MM` = 1.2 is a
+# floor on the thickness GENES and has never been a check on the rim band, which is a
+# fixed 1.5 mm of fixed constants.  The cut crown thinned it to 0.500 mm at the side faces,
+# 45.08% of the width below the floor; on top, its thinnest point is the uncrowned 1.5 mm.
+# `tests/test_geometry_kernel.py` pins that so a later change back is met there, not on a
+# print.
+CROWN_HEIGHT_MM = 1.0
+
+
+def crown_radius_mm(width_mm, height_mm=CROWN_HEIGHT_MM):
+    """Radius of the transverse crown arc, from its sagitta.
+
+    `R = (w/2)**2 / (2h) + h/2`, the exact inverse of `h = R - sqrt(R**2 - (w/2)**2)`.
+    At w = 22.4 and h = 1.0 it is 63.22 mm exactly, and the round trip returns the
+    sagitta to 1e-12.
+    """
+    half = 0.5 * width_mm
+    return half * half / (2.0 * height_mm) + 0.5 * height_mm
+
+
+def crown_relief_area_mm2(width_mm, height_mm=CROWN_HEIGHT_MM):
+    """Cross-section the crown removes, in mm^2, in the axial-radial half-plane.
+
+    THE RELIEF IS NOT THE CIRCULAR SEGMENT, AND CONFUSING THE TWO DOUBLES THE ANSWER.
+    The segment is the material UNDER the arc, between it and the chord joining the two
+    relieved edges.  What a crown removes is the material ABOVE the arc, between it and
+    the cylinder it used to be -- the bounding rectangle minus that segment:
+
+        segment   R**2 * (th - sin th cos th)         14.957116 mm^2
+        relief    w*h - segment                        7.442884 mm^2
+
+    Written here in the equivalent single-term form `a(R + h) - R**2 asin(a/R)`, which is
+    `2aR - integral(sqrt(R**2 - z**2))` with `sqrt(R**2 - a**2)` folded to `R - h`.  It
+    agrees with an 8-million-point quadrature to 2.4e-13.
+    """
+    half = 0.5 * width_mm
+    radius = crown_radius_mm(width_mm, height_mm)
+    return half * (radius + height_mm) - radius * radius * math.asin(half / radius)
+
+
+def crown_relief_volume_mm3(width_mm, rim_outer_mm, height_mm=CROWN_HEIGHT_MM):
+    """Material the crown removes from the rim band, in mm^3.
+
+    The relief of `crown_relief_area_mm2` swept once around the axle.  Taken as the washer
+    integral rather than as Pappus times a centroid radius -- it is the same quantity and
+    has one fewer closed form to get wrong:
+
+        V = pi * integral (rim_outer**2 - r(z)**2) dz,
+        r(z) = (rim_outer - R) + sqrt(R**2 - z**2),   z in [-w/2, +w/2]
+
+    At w = 22.4, h = 1.0 and rim_outer = 50.0 that is 2324.240751 mm^3 -- 2.882059 g of
+    PLA, 4.85% of the shipped solid.  `tests/test_geometry_kernel.py` checks it against
+    the same 8-million-point quadrature, which agrees to 7.8e-11.
+
+    The STEP manifest published this beside OCC's before-minus-after while the crown was
+    a cut; since §206 the crown is added on top, and `crown_added_volume_mm3` -- which
+    the manifest publishes now -- is built from this one taken at the apex radius, so
+    it is still the closed form under the shipped figure.
+    """
+    half = 0.5 * width_mm
+    radius = crown_radius_mm(width_mm, height_mm)
+    offset = rim_outer_mm - radius
+    sweep = (half * math.sqrt(radius * radius - half * half)
+             + radius * radius * math.asin(half / radius))
+    return math.pi * (2.0 * half * (rim_outer_mm * rim_outer_mm - offset * offset
+                                    - radius * radius)
+                      + 2.0 * half ** 3 / 3.0
+                      - 2.0 * offset * sweep)
+
+
+def crown_min_wall_span_mm(width_mm, rim_outer_mm, rim_inner_mm, min_wall_mm,
+                           height_mm=CROWN_HEIGHT_MM):
+    """Width of face, in mm, over which the crowned rim band still clears `min_wall_mm`.
+
+    The band is `r(z) - rim_inner`, thickest at the apex and thinnest at the side faces.
+    This returns the length of the axial interval where it is at least `min_wall_mm`,
+    which is `2 * sqrt(R**2 - (R - d)**2)` for `d = rim_outer - rim_inner - min_wall`,
+    clamped to the face at both ends: 0.0 when even the apex is too thin, `width_mm` when
+    even the edges clear.
+
+    `rim_outer_mm` is the APEX radius.  The shipped crown is added on top (§206), so its
+    apex is 51.0 and at 22.4 / 51.0 / 48.5 / 1.2 this returns the full 22.4 mm face; the
+    cut crown it replaced, apex 50.0, returned 12.303 mm -- 45.08% of the face under the
+    floor.  A printability fact and not an FEA one: see `CROWN_HEIGHT_MM` above.
+    """
+    apex_band = rim_outer_mm - rim_inner_mm
+    if apex_band < min_wall_mm:
+        return 0.0
+    if apex_band - height_mm >= min_wall_mm:
+        return float(width_mm)
+    radius = crown_radius_mm(width_mm, height_mm)
+    drop = apex_band - min_wall_mm
+    return 2.0 * math.sqrt(radius * radius - (radius - drop) ** 2)
+
+
+def crown_added_volume_mm3(width_mm, rim_outer_mm, height_mm=CROWN_HEIGHT_MM):
+    """Material a crown built ON TOP of the `rim_outer_mm` cylinder adds, in mm^3 (§206).
+
+    The apex sits at `rim_outer_mm + height_mm` and the side faces at `rim_outer_mm`.  That
+    solid's washer out to the apex radius, minus the relief a crown CUT from that apex
+    radius would remove, is exactly what lies above the cylinder -- so this reuses
+    `crown_relief_volume_mm3` and adds no second closed form to get wrong:
+
+        V = pi * w * ((rim_outer + h)**2 - rim_outer**2)  -  relief(w, rim_outer + h, h)
+
+    At w = 22.4, h = 1.0 and rim_outer = 50.0 that is 4736.533448 mm^3 -- 5.873301 g of
+    PLA -- the circular segment's 14.957116 mm^2 swept around the axle.  It agrees with an
+    8-million-point quadrature to 1.7e-14, and `tests/test_geometry_kernel.py` checks it
+    over a decade of heights.  The STEP manifest publishes it as
+    `crown.volume_added_closed_form_mm3` beside OCC's own after-minus-before.
+    """
+    outer = rim_outer_mm + height_mm
+    return (math.pi * width_mm * (outer * outer - rim_outer_mm * rim_outer_mm)
+            - crown_relief_volume_mm3(width_mm, outer, height_mm))

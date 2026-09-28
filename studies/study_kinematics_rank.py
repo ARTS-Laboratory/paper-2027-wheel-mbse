@@ -527,13 +527,37 @@ def main():
     ap.add_argument("--config", default=DEFAULT_CONFIG)
     ap.add_argument("--n-phase", type=int, default=N_PHASE)
     ap.add_argument("--workers", type=int, default=0)
-    ap.add_argument("--out", default="study_kinematics_rank.json")
+    ap.add_argument("--out", default="study_kinematics_rank_filleted.json")
     ap.add_argument("--no-elites", action="store_true",
                     help="committed genomes only; the 15 stage-2 elites are GA/beam-era "
                          "2.0 mm designs and most land infeasible under today's objective")
     ap.add_argument("--skip-rank", action="store_true")
     ap.add_argument("--skip-grad", action="store_true")
     args = ap.parse_args()
+
+    # TWO NAMES FROM ONE PATH, AND ONE OF THEM IS CLOSED — PLAN.md §176, deciding §130
+    # successor 0 in the shape §132 §5 left room for.  `study_kinematics_rank_filleted.json`
+    # is the gate: the mesh `wheel_objective` has solved since §103, and a four-worker re-run
+    # reproduces it bit for bit (§175 §2(c)).  `study_kinematics_rank.json` is §32's evidence
+    # on the unfilleted mesh, which no run at this commit can reproduce, so EVERY run is
+    # refused under that name — and the rho -0.83 `wheel_stage3`'s `--kinematics` default
+    # cites exists only there.  `--workers` is a scheduling knob and is not guarded, for
+    # `_gate_guard`'s `--seed` reason.  Imported here, not at the top, so no line above
+    # moves: `PLAN.md` cites this file by line.
+    import _gate_guard
+    _gate_guard.refuse_degraded_out(ap, args, "study_kinematics_rank.json", [
+        (True, "§32's closed evidence, measured on the unfilleted mesh, which no run on "
+               "this tree reproduces (PLAN.md §176)"),
+    ])
+    _gate_guard.refuse_degraded_out(ap, args, "study_kinematics_rank_filleted.json", [
+        (args.config != DEFAULT_CONFIG,
+         "--config %s, not the gate's %s" % (args.config, DEFAULT_CONFIG)),
+        (args.n_phase != N_PHASE,
+         "--n-phase %d, not the gate's %d" % (args.n_phase, N_PHASE)),
+        (args.no_elites, "--no-elites, which drops the 15 stage-2 elite rows from the pool"),
+        (args.skip_rank, "--skip-rank, which drops R1 and R2"),
+        (args.skip_grad, "--skip-grad, which drops R3"),
+    ])
 
     t0 = time.time()
     rep = {}

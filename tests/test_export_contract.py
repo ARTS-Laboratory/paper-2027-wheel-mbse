@@ -517,3 +517,200 @@ def test_the_solid_report_finds_a_mass_from_either_optimizer():
     # next to a label claiming the optimizer reported it.
     assert empty[0] != empty[0], "expected nan"
     assert "no mass key" in empty[1]
+
+# ---------------------------------------------------------------------------
+# THE TRANSVERSE CROWN
+# ---------------------------------------------------------------------------
+# The crown is a CAD-ONLY feature: `wheel_fem` is plane-stress and cannot represent a
+# variation along the face width at all, so the manifest is the only place its geometry is
+# ever written down.  That makes these the same kind of check as the bite above — a
+# quantity produced in the CadQuery env, re-derived here in the jax env from the one
+# constant both interpreters import.
+
+
+def test_the_manifest_publishes_the_crown_this_tree_would_build(manifest):
+    """THE STALENESS TRIPWIRE FOR A CONSTANT NO GENOME HASH CAN SEE.
+
+    `genome_hash` hashes the genes and nothing else, so raising `CROWN_HEIGHT_MM` leaves
+    every hash in the tree unchanged while the committed STEP becomes a solid nobody
+    asked for.  `tests/test_promotion.py`'s checklist is the right precedent and the
+    wrong tripwire: it fires on a promotion, and a design-constant change is not one.
+
+    If this fails the fix is `make export`, not an edit here.
+    """
+    import wheel_fea as W
+    import wheel_geometry as G
+
+    crown = manifest["crown"]
+    assert crown["height_mm"] == pytest.approx(G.CROWN_HEIGHT_MM), (
+        f"the committed STEP was built with a {crown['height_mm']} mm crown but "
+        f"wheel_geometry now says {G.CROWN_HEIGHT_MM} — re-run `make export`")
+    assert crown["radius_mm"] == pytest.approx(
+        G.crown_radius_mm(W.SPOKE_WIDTH_MM), abs=5e-5)
+
+
+def test_the_two_kernels_agree_on_how_much_the_crown_added(manifest):
+    """OCC's after-minus-before against `wheel_geometry`'s closed form.
+
+    The point of publishing both is that they are different constructions of one
+    quantity: the exporter subtracts two measured solid volumes, the kernel evaluates an
+    antiderivative.  Agreement is evidence that the solid carries the crown the constant
+    describes; one number printed twice would be evidence of nothing.
+
+    The tolerance is the rounding of the two published figures, not a fitted band.  The
+    fused tool overlaps the solid band from r = 49.75 to 50.0 by construction, which is
+    band either way; a real disagreement means it reached something that is not band —
+    the side faces' axial extent, or a rim fillet, which springs from r = 48.5 — and that
+    is a finding, not a tolerance to widen.
+    """
+    import wheel_fea as W
+    import wheel_geometry as G
+    import wheel_wheel as WW
+
+    crown = manifest["crown"]
+    closed = G.crown_added_volume_mm3(W.SPOKE_WIDTH_MM, WW.RIM_OUTER_RADIUS_MM,
+                                      crown["height_mm"])
+    assert crown["volume_added_closed_form_mm3"] == pytest.approx(closed, abs=0.01)
+    assert crown["volume_added_mm3"] == pytest.approx(
+        crown["volume_added_closed_form_mm3"], abs=0.02), (
+        f"OCC added {crown['volume_added_mm3']} mm^3 where the closed form says "
+        f"{crown['volume_added_closed_form_mm3']} — the tool reached something else")
+
+
+def test_the_crown_grew_the_od_by_its_height_and_nowhere_else(manifest):
+    """§206: THE CROWN SITS ON TOP OF THE BAND, SO THE PART IS Ø102 AT ITS APEX.
+
+    `wheel_requirements.py:43`'s Ø100 is the GENE frame and stays frozen; the crown adds
+    `CROWN_HEIGHT_MM` above it by decision.  Until §206 the crown was cut INTO the band and
+    this gate held the box at Ø100.  Two independent statements of the new geometry.  THE
+    BOUNDING BOX is the direct one: 2(R_out + h) across both radial axes — a crown grown
+    past its height, or cut back into the band, moves it — and the face width untouched.
+
+    The band at the side faces is the second: an added crown leaves it the full uncrowned
+    `rim_outer - RIM_RADIUS_MM`, 1.5 mm, where the cut one left 0.5.  The apex band is
+    that plus the height.
+    """
+    import wheel_fea as W
+    import wheel_geometry as G
+    import wheel_wheel as WW
+
+    crown = manifest["crown"]
+    uncrowned_band = WW.RIM_OUTER_RADIUS_MM - W.RIM_RADIUS_MM
+    apex_d = 2 * (WW.RIM_OUTER_RADIUS_MM + G.CROWN_HEIGHT_MM)
+
+    x, y, z = manifest["solid"]["bbox_mm"]
+    assert x == pytest.approx(apex_d, abs=1e-3), (
+        f"the solid is {x} mm across — the crowned apex is Ø{apex_d}: Ø"
+        f"{2 * WW.RIM_OUTER_RADIUS_MM} plus the crown's {G.CROWN_HEIGHT_MM} mm each side")
+    assert y == pytest.approx(apex_d, abs=1e-3)
+    assert z == pytest.approx(W.SPOKE_WIDTH_MM, abs=1e-3), (
+        f"the face is {z} mm wide, not {W.SPOKE_WIDTH_MM} — the crown is a RADIAL "
+        f"addition and must not touch the axial extent")
+
+    assert crown["volume_added_mm3"] > 0, "a crown on top adds material; this one removed it"
+    assert crown["side_face_band_mm"] == pytest.approx(uncrowned_band, abs=1e-6)
+    assert crown["apex_band_mm"] == pytest.approx(
+        uncrowned_band + G.CROWN_HEIGHT_MM, abs=1e-6)
+
+
+def test_the_crown_did_not_reach_the_rim_fillets(manifest):
+    """The fillet volume is measured as crowned-minus-crowned, so the crown must cancel.
+
+    `crown_rim` runs on BOTH solids, which is what keeps `fillets.volume_mm3` a fillet.
+    Crowning only the finished wheel would fold 4737 mm^3 of crown into a number whose
+    job is to report ~970 mm^3 of fillet, and the mass budget in
+    `test_total_mass_matches_the_step_manifest_within_the_embed_difference` would then be
+    reconciling against a fillet term that is mostly crown.
+
+    The tool starts at r = 49.75 and the rim fillets end at r = 48.5, so the fillet volume
+    should not move when the crown does; pinned as an ORDER OF MAGNITUDE against the crown
+    rather than as the figure, which moves with the genome.
+    """
+    fil, crown = manifest["fillets"], manifest["crown"]
+    assert fil["volume_mm3"] > 0
+    assert fil["volume_mm3"] < 0.5 * crown["volume_added_mm3"], (
+        f"fillets {fil['volume_mm3']} mm^3 is a sizeable fraction of the crown's "
+        f"{crown['volume_added_mm3']} — the likeliest cause is the crown being added to "
+        f"only one of the two solids, which would fold it into this number")
+
+
+def test_no_swept_surface_survives_into_the_shipped_step(manifest):
+    """THE CROWN PUT ONE BACK, AND THIS IS WHY `despecialize` CONVERTS REVOLUTIONS NOW.
+
+    The crown's OD face is a `Geom_SurfaceOfRevolution`: OCC does not see it as a torus,
+    because the arc's centre sits 13.22 mm the far side of the axle while its own radius
+    is 63.22.  Under `despecialize`'s old `revolution=False` that face shipped as-is and
+    `step_health` raised the Parasolid/Onshape risk banner — the defect that made Onshape
+    reject this part once already.
+
+    This pins the empty census rather than the flag, so it also covers whatever future
+    construction reintroduces one.  The cylinder count is the other side of the same
+    check: `despecialize` must convert the crown WITHOUT splining the bore.
+    """
+    health = manifest["step_health"]
+    assert health["swept_surfaces_remaining"] == {}, (
+        f"{health['swept_surfaces_remaining']} survive in the shipped solid — Parasolid "
+        f"has no native equivalent and must approximate them on import")
+    assert health["surface_census"].get("CylindricalSurface", 0) > 0, (
+        "the hub bore and the remaining cylinders must stay analytic — if they have all "
+        "become B-splines, `despecialize` is converting more than it was asked to")
+
+
+_RIM_BASE_PROBE = r"""
+import json, math
+import wheel_step_export as X
+genes = json.load(open("best_solution.json"))["genes"]
+shipped, j_shipped = X.build_profile(genes)
+thin, j_thin = X.build_profile(genes, 49.0)
+solid = X.extrude_profile(thin)
+refused = []
+for r in (X.RIM_RADIUS_MM, X.RIM_EMBED_RADIUS_MM):
+    try:
+        X.build_profile(genes, r)
+    except ValueError:
+        refused.append(r)
+print("RESULT:" + json.dumps({
+    "area_shipped": shipped.Area(), "area_thin": thin.Area(),
+    "hub_same": j_shipped["hub"] == j_thin["hub"],
+    "rim_mm3": [j_shipped["rim"]["mm3"], j_thin["rim"]["mm3"]],
+    "flat_is_identity": X.crown_rim(solid, 49.0, 0.0) is solid,
+    "refused": refused}))
+"""
+
+
+@pytest.mark.skipif(not os.path.exists(CAD_PY), reason="no .venv-cad on this machine")
+def test_a_thinner_rim_base_is_the_shipped_face_cut_by_a_circle():
+    """CROWN_PLAN.md Step 1: the rim's base b is an argument, and moving it moves NOTHING
+    but the band.
+
+    `build_profile(genes, rim_outer_mm)` keeps the spoke wire as it is — its tip still runs
+    out to RIM_EMBED_RADIUS_MM — and clips at the new OD.  So inside r 49.0 the b 0.5 face
+    must BE the shipped face, and the whole difference between them is the annulus 49-50:
+    pi (50^2 - 49^2) = 311.0177 mm^2.  Measured 2026-09-24 on `b729e86`: 311.017672 against
+    311.017673, 2.9e-7 mm^2 apart.  A spoke wire that moved with the OD, or a clip that
+    reached inside it, would miss by the area of a spoke tip.  The same geometry built to a
+    STEP reproduced §200's cut-crown part to the printed 0.1 mm^3, 45638.5.
+
+    The hub junction cannot see the rim, so its overlap must not move; the rim's is measured
+    against the band it meets, 97.26 -> 32.39 mm^3 (bite 0.721 -> 0.240, under the 0.25
+    floor), so it must shrink — a band left at r 50 inside a clip at 49 builds the same face
+    and only this sees it.  The refusals are the
+    two ends where the clip stops cutting a spoke tip that reaches past it.  A zero crown is
+    the flat rim, and `crown_rim` hands the solid back rather than building a degenerate arc.
+    """
+    import math
+
+    proc = subprocess.run(
+        [CAD_PY, "-c", _RIM_BASE_PROBE], cwd=HERE,
+        env={**os.environ, "PYTHONPATH": os.path.join(HERE, "src")},
+        capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 0, proc.stderr[-3000:]
+    line = next(ln for ln in proc.stdout.splitlines() if ln.startswith("RESULT:"))
+    got = json.loads(line[len("RESULT:"):])
+
+    annulus = math.pi * (50.0 ** 2 - 49.0 ** 2)
+    assert got["area_shipped"] - got["area_thin"] == pytest.approx(annulus, abs=1e-5)
+    assert got["hub_same"]
+    assert got["rim_mm3"][1] < got["rim_mm3"][0]
+    assert got["flat_is_identity"]
+    assert got["refused"] == [48.5, 50.25]

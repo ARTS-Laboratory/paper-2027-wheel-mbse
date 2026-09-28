@@ -1,9 +1,12 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Wheel</title>
-<!-- The window's first paint, and its last resort.
-     Two states, chosen by whether the location carries a hash: no hash is the splash
-     shown while gui/server.py binds a port; a hash is a URI-encoded failure message.
+<!-- The window's first paint, its last resort, and the only page in this app that runs
+     anything on the machine directly.
+     Three states, chosen by the location's fragment: no hash is the splash shown while
+     gui/server.py binds a port; a hash is a URI-encoded JSON `{msg, setup}`, which draws
+     the failure page and -- when `setup` is set, which main.js sets from a measurement
+     rather than from the text -- the button that builds this machine's virtualenvs.
      It repeats the palette from static/style.css rather than linking it, because this
      page has to render before there is a server to serve that file from -- which is
      exactly the case where it is showing an error about there being no server. -->
@@ -34,6 +37,7 @@
   .bar { height:42px; flex:0 0 42px; -webkit-app-region:drag; }
   main { flex:1; display:flex; align-items:center; justify-content:center; padding:0 34px 42px; }
   .box { max-width:560px; width:100%; }
+  .box.wide { max-width:780px; }
 
   .mark { display:block; margin:0 auto 22px; width:76px; height:76px; }
   .mark .ring { fill:none; stroke:var(--rule-strong); stroke-width:1.6; }
@@ -45,16 +49,33 @@
   h1 { font-size:15px; font-weight:600; letter-spacing:-.01em; margin:0 0 6px; text-align:center; }
   p.sub { color:var(--muted); text-align:center; margin:0; }
 
-  .fail h1 { text-align:left; color:var(--fail); }
-  .fail p.sub { text-align:left; }
+  .doc h1 { text-align:left; }
+  .doc p.sub { text-align:left; }
+  .fail h1 { color:var(--fail); }
   pre {
     margin:14px 0 0; padding:11px 13px; background:var(--sunk);
     border:1px solid var(--rule); border-left:2px solid var(--fail); border-radius:0 2px 2px 0;
     font:11.5px/1.5 var(--mono); white-space:pre-wrap; word-break:break-word;
     max-height:46vh; overflow:auto; user-select:text; -webkit-user-select:text;
   }
+  /* The left rule is the page's one colour-coded claim, so it has to track what the block
+     actually IS.  On the failure page it is evidence of something that went wrong; on the
+     setup page it is a description of what has not happened yet, and on the install log it
+     is the subject rather than the evidence.  Only the first of those is a fault. */
+  .doc:not(.fail) pre { border-left-color:var(--accent); }
+  pre.log { max-height:56vh; }
   .hint { margin-top:16px; color:var(--faint); font-size:11.5px; }
   .hint code { font-family:var(--mono); color:var(--muted); }
+
+  .actions { margin-top:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  button {
+    font:inherit; font-weight:500; color:#fff; background:var(--accent);
+    border:1px solid transparent; border-radius:5px; padding:7px 14px; cursor:pointer;
+  }
+  button:hover:not(:disabled) { filter:brightness(1.08); }
+  button:disabled { opacity:.5; cursor:default; }
+  button.quiet { color:var(--ink); background:transparent; border-color:var(--rule-strong); }
+  .note { color:var(--faint); font-size:11.5px; flex:1; min-width:180px; }
 </style>
 
 <div class="bar"></div>
@@ -62,11 +83,13 @@
 
 <script>
   /* RENDERED ON `hashchange` AS WELL AS ON LOAD, and that is a bug fix rather than
-     thoroughness.  main.js moves between the two states with `loadFile(shell.html,
-     {hash})`, and a navigation to the same document with only a different fragment is
-     not a load at all -- the browser fires `hashchange` and leaves the DOM alone. Render
-     once at the bottom of this script and the splash would sit there spinning forever
-     while the failure it was replaced by was never drawn. */
+     thoroughness.  main.js moves between the states with `loadFile(shell.html, {hash})`,
+     and a navigation to the same document with only a different fragment is not a load at
+     all -- the browser fires `hashchange` and leaves the DOM alone. Render once at the
+     bottom of this script and the splash would sit there spinning forever while the
+     failure it was replaced by was never drawn. */
+  const box = document.getElementById('box');
+
   const svgMark = spin => `
     <svg class="mark ${spin ? 'spin' : ''}" viewBox="-50 -50 100 100" aria-hidden="true">
       <circle class="ring" r="46"/><circle class="ring" r="14"/>
@@ -75,22 +98,102 @@
                d="M0 -14 C 10 -24, 14 -34, 6 -45"/>`).join('')}
     </svg>`;
 
+  /* ------------------------------------------------------------------
+     THE INSTALL LOG
+     The lines arrive from the main process whether or not this page is currently drawing
+     them, so they are kept in an array and the element is filled from it. A `hashchange`
+     that swapped the DOM out mid-install would otherwise lose everything printed so far.
+     ------------------------------------------------------------------ */
+  const log = [];
+  let logEl = null;
+
+  function paintLog() {
+    if (!logEl) return;
+    logEl.textContent = log.join('\n');
+    logEl.scrollTop = logEl.scrollHeight;      // follow the tail, like a terminal
+  }
+  function appendLog(line) {
+    log.push(line);
+    if (log.length > 5000) log.splice(0, log.length - 5000);
+    paintLog();
+  }
+  if (window.wheel && window.wheel.onSetupLine) window.wheel.onSetupLine(appendLog);
+
+  async function runSetup() {
+    log.length = 0;
+    box.className = 'box wide';
+    box.innerHTML = `
+      <div class="doc">
+        <h1>Setting up this machine…</h1>
+        <p class="sub">Creating the virtualenvs and installing the pinned requirements.
+           Leave this window open; nothing else has to be running.</p>
+        <pre class="log"></pre>
+        <p class="hint">The same work <code>make env</code> does, run here. The first time
+           it downloads a few hundred MB.</p>
+      </div>`;
+    logEl = box.querySelector('pre');
+    paintLog();
+
+    let result;
+    try {
+      result = await window.wheel.setup();
+    } catch (e) {
+      result = { ok: false, error: e && e.message ? e.message : String(e) };
+    }
+    /* ok: main.js is about to navigate this window at the server it just became able to
+       start, so leave the finished log on screen until it does. */
+    if (result && result.ok) return;
+
+    box.querySelector('h1').textContent = 'Setup did not finish.';
+    box.querySelector('h1').style.color = 'var(--fail)';
+    box.querySelector('.sub').textContent =
+      (result && result.error) || 'The setup stopped without saying why.';
+    box.querySelector('.hint').insertAdjacentHTML('beforebegin', `
+      <div class="actions">
+        <button id="again">Try again</button>
+        <span class="note">Nothing was removed. A re-run picks up where pip left off.</span>
+      </div>`);
+    box.querySelector('#again').addEventListener('click', runSetup);
+  }
+
   function render() {
-    const msg = decodeURIComponent(location.hash.slice(1));
-    document.getElementById('box').innerHTML = msg
-      ? `<div class="fail">
-           <h1>The control surface could not start.</h1>
-           <p class="sub">Nothing was launched, and no running job was affected.</p>
-           <pre></pre>
-           <p class="hint">Retry with <code>View → Reload</code>, or point the app at a
-              different checkout with <code>File → Choose checkout…</code>.</p>
-         </div>`
-      : `${svgMark(true)}
-         <h1>Wheel</h1>
-         <p class="sub">Starting the control surface…</p>`;
+    const raw = decodeURIComponent(location.hash.slice(1));
+    if (!raw) {
+      box.className = 'box';
+      box.innerHTML = `${svgMark(true)}
+        <h1>Wheel</h1>
+        <p class="sub">Starting the control surface…</p>`;
+      logEl = null;
+      return;
+    }
+    /* A plain string rather than JSON is not a shape main.js sends, but showing the text
+       beats showing a blank window if one ever reaches here. */
+    let st;
+    try { st = JSON.parse(raw); } catch { st = { msg: raw }; }
+
+    const canSetup = st.setup && window.wheel && window.wheel.setup;
+    box.className = 'box';
+    box.innerHTML = `
+      <div class="doc ${st.setup ? '' : 'fail'}">
+        <h1>${st.setup ? 'This machine is not set up yet.'
+                       : 'The control surface could not start.'}</h1>
+        <p class="sub">${st.setup ? 'Nothing has been installed and nothing was launched.'
+                                  : 'Nothing was launched, and no running job was affected.'}</p>
+        <pre></pre>
+        ${canSetup ? `<div class="actions">
+             <button id="go">Set up this machine</button>
+             <span class="note">Builds .venv-opt and .venv-cad inside the checkout, on
+               this computer. A few minutes, and it can be re-run safely.</span>
+           </div>` : ''}
+        <p class="hint">Retry with <code>View → Reload</code>, or point the app at a
+           different checkout with <code>File → Choose checkout…</code>.</p>
+      </div>`;
     /* textContent, not innerHTML: the message carries a subprocess's stderr, and a
        traceback holding a `<` is not markup. */
-    if (msg) document.querySelector('pre').textContent = msg;
+    box.querySelector('pre').textContent = st.msg;
+    logEl = null;
+    const go = box.querySelector('#go');
+    if (go) go.addEventListener('click', runSetup);
   }
   addEventListener('hashchange', render);
   render();

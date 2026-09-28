@@ -183,3 +183,47 @@ def test_a_start_below_a_raised_floor_is_projected_up_onto_it():
     # and the genes that were already inside are untouched by the projection
     np.testing.assert_allclose(lifted[list(CENTERLINE)], genes[list(CENTERLINE)],
                                rtol=0, atol=1e-12)
+
+
+def test_the_rim_fillet_floor_moves_r_rim_low_and_nothing_else():
+    """CROWN_PLAN.md R15 step 1: `R_rim`'s floor, 1.35 mm, measured in 3D (R13), set per
+    run.  Same three properties the wall floor has: the one bound moves, nothing else does,
+    and the snapshot arrays the GA clips to follow it."""
+    before = [(g["low"], g["high"]) for g in W.GENE_SPACE]
+    W.set_rim_fillet_floor(1.35)
+
+    assert W.GENE_SPACE[13]["low"] == 1.35
+    assert W.GENE_SPACE[13]["high"] == before[13][1], "the ceiling moved"
+    for idx in range(len(W.GENE_SPACE)):
+        if idx != 13:
+            assert (W.GENE_SPACE[idx]["low"], W.GENE_SPACE[idx]["high"]) == before[idx], \
+                f"gene {idx} moved and only R_rim should have"
+    assert W._GENE_LOW[13] == 1.35
+    np.testing.assert_array_equal(W._GENE_RANGE, W._GENE_HIGH - W._GENE_LOW)
+    assert wg.bounds_arrays(W.GENE_SPACE)[0][13] == 1.35
+
+
+@pytest.mark.parametrize("bad", [0.0, -1.0, 3.0, 4.0])
+def test_a_rim_fillet_floor_that_empties_the_box_is_refused(bad):
+    before = W.GENE_SPACE[13]["low"]
+    with pytest.raises(ValueError, match="R_rim floor"):
+        W.set_rim_fillet_floor(bad)
+    assert W.GENE_SPACE[13]["low"] == before, "a refused floor must not half-apply"
+
+
+def test_a_start_below_the_rim_fillet_floor_is_projected_up_onto_it():
+    """`64e5068` has `R_rim` 0.886, under the 1.35 floor; a descent started there must begin
+    ON the floor, not outside the box."""
+    low0, high0, _ = wg.bounds_arrays(W.GENE_SPACE)
+    genes = 0.5 * (low0 + high0)
+    genes[13] = 0.8857
+
+    W.set_rim_fillet_floor(1.35)
+    low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+    z_raw = wg.normalize(genes, low, high)
+    assert z_raw[13] < 0.0, "the start must be outside the new box"
+
+    lifted = wg.denormalize(S3.project(z_raw), low, high)
+    assert lifted[13] == pytest.approx(1.35, abs=1e-12)
+    np.testing.assert_allclose(np.delete(lifted, 13), np.delete(genes, 13),
+                               rtol=0, atol=1e-12)

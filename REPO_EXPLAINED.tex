@@ -1183,7 +1183,7 @@ variable, not a quadrature nuisance, and \code{phase\_ripple} is a real objectiv
 \code{phase\_stencil} (\at{wheel\_objective.py}{995}) offers three schemes. The default
 is \code{rqmc}: an 8-point uniform stencil shifted by a random offset \emph{drawn from
 an 8-point sub-lattice}. This is a quantized randomized-QMC design, and the
-quantization is a performance fact rather than statistical taste.
+quantization was a performance fact, retired since \S162 (below).
 
 \begin{itemize}
 \item \emph{Randomizing at all} matters because the rim's contact faceting lives at
@@ -1191,12 +1191,12 @@ quantization is a performance fact rather than statistical taste.
   \textbf{aliases}. Under a fixed stencil the aliased artefact is a deterministic
   function of the genes with a nonzero gradient---precisely what an optimizer chases. A
   random shift makes it zero-mean noise instead.
-\item \emph{Quantizing} matters because \code{wheel\_wheel.coord\_fn} keys its JIT
-  cache on \code{float(phase)}. A \emph{continuously} random offset misses on every
-  phase of every step and pays a measured 0.774\,s re-trace eight times per
-  step---roughly doubling the actual solving. The union of all reachable phases is a
-  fixed $8\times8 = 64$-point lattice, and \code{\_COORD\_FN\_CACHE\_MAX = 128} is sized
-  to hold it.
+\item \emph{Quantizing} mattered because \code{wheel\_wheel.coord\_fn} keyed its JIT
+  cache on \code{float(phase)}: a \emph{continuously} random offset missed on every
+  phase of every step and paid a measured 0.774\,s re-trace eight times per step. Since
+  \S162 successor 1 the phase is a traced argument, one cache entry serves every phase,
+  and \code{\_COORD\_FN\_CACHE\_MAX = 128} is headroom for recipes, not phases. The
+  $8\times8 = 64$-point lattice stays because it is what the recorded runs were drawn on.
 \end{itemize}
 
 \subsection{Projected Adam}

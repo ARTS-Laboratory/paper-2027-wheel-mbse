@@ -78,11 +78,11 @@ def stub(tmp_path):
 
 def test_default_workers_never_exceeds_the_phase_count_or_the_core_count(monkeypatch):
     monkeypatch.setattr(WP.os, "cpu_count", lambda: 4)
-    assert WP.default_workers(8) == 4, "must not exceed the cores it has"
-    assert WP.default_workers(2) == 2, "must not exceed the phases there are — a worker "\
-                                       "with no slot is a jax import for nothing"
+    assert WP.default_workers(8, "coarse") == 4, "must not exceed the cores it has"
+    assert WP.default_workers(2, "coarse") == 2, "must not exceed the phases there are — "\
+                                                 "a worker with no slot is a jax import"
     monkeypatch.setattr(WP.os, "cpu_count", lambda: 64)
-    assert WP.default_workers(8) == 8
+    assert WP.default_workers(8, "coarse") == 8
 
 
 def test_default_workers_survives_a_machine_that_cannot_count_its_cores(monkeypatch):
@@ -92,7 +92,7 @@ def test_default_workers_survives_a_machine_that_cannot_count_its_cores(monkeypa
     it runs everywhere.
     """
     monkeypatch.setattr(WP.os, "cpu_count", lambda: None)
-    assert WP.default_workers(8) == 1
+    assert WP.default_workers(8, "coarse") == 1
 
 
 def test_the_worker_env_pins_every_thread_count():
@@ -160,8 +160,8 @@ def test_every_slot_lands_on_its_own_pinned_worker(stub):
     """Slot `i` goes to worker `i % n_workers` and nowhere else.
 
     This is the whole reason the pool is hand-rolled rather than `multiprocessing.Pool`:
-    `coord_fn` keys its jit cache on `float(phase)` and M7 measured a miss at 0.774 s, so
-    a phase that wanders between workers pays that on every step forever.
+    `coord_fn` keyed its jit cache on `float(phase)` (M7: 0.774 s a miss; filleted, 128 s),
+    so a wandering phase paid that every step -- until PLAN.md §162 successor 1 traced it.
     """
     with WP.PhasePool(3, script=stub) as pool:
         out = pool.map_phases([{} for _ in range(7)])
@@ -301,7 +301,7 @@ def test_wheel_pool_imports_without_jax():
 # THE CLAIM
 # ---------------------------------------------------------------------------
 
-def _pooled_equals_serial(**problem_kw):
+def _pooled_equals_serial(rim_outer=None, **problem_kw):
     """The comparison itself, so the two kinematics cannot drift into two standards.
 
     Extracted rather than copied for the same reason `_split_diffs` is imported from
@@ -321,13 +321,13 @@ def _pooled_equals_serial(**problem_kw):
                         WW.flank_orientation(genes, WW.get_config(cfg)))
     probe = (4.0, 30.0)
 
-    meshes = WO.phase_meshes(genes, cfg, phases, orientation=orientation)
-    serial = WO.t3_terms(genes, cfg, phases=phases, meshes=meshes,
+    meshes = WO.phase_meshes(genes, cfg, phases, orientation, rim_outer)
+    serial = WO.t3_terms(genes, cfg, phases=phases, meshes=meshes, rim_outer=rim_outer,
                          stress_p_probe=probe, **problem_kw)
     with WP.PhasePool(2) as pool:
         pooled = WO.t3_terms(genes, cfg, phases=phases, pool=pool,
                              orientation=orientation, stress_p_probe=probe,
-                             **problem_kw)
+                             rim_outer=rim_outer, **problem_kw)
 
     vdiffs, gdiffs = so3._split_diffs(serial, pooled)
     assert not vdiffs, (
@@ -388,3 +388,89 @@ def test_a_pooled_SVK_evaluation_matches_the_serial_one():
         f"SVK and linear returned the SAME mean axle drop ({d_svk} mm), so `kinematics` "
         f"is reaching neither solver and the equivalence above would hold no matter what "
         f"the pool did with the key")
+
+
+@pytest.fixture(autouse=True)
+def _memory_to_spare_unless_a_test_says_otherwise(monkeypatch):
+    """Every test in this file sees a machine with more free memory than any pool needs.
+
+    `default_workers` consults `MemAvailable` since PLAN.md §167, so the sizing tests above
+    -- written before the RAM term, and asserting what cores and phases allow -- would
+    otherwise answer to whatever this box has free.  With memory to spare, cores and phases
+    are what bind, exactly as before.  A test about the memory term sets its own reading.
+    """
+    monkeypatch.setattr(WP, "_available_gib", lambda: 1.0e6)
+
+
+def test_default_workers_is_capped_by_measured_memory_and_refuses_unmeasured_configs(
+        monkeypatch):
+    """PLAN.md §105 successor 4, closed at §167.
+
+    §113's live pool at `--workers 2` reached 60/61 GiB.  After §164's collapse a `coarse`
+    worker's kernel high-water mark reaches 10.24 GiB by a descent's step 60 (§171), the
+    parent's 10.27, and `POOL_GIB` carries the pool they sum to.  This pins the
+    arithmetic and its edges: memory binds below the cores, too little for one worker is
+    serial and never zero, cores and phases still bind when memory is plentiful, a config
+    nobody measured (or none at all) is refused rather than sized on `coarse`, and a box
+    that cannot report free memory gets one worker -- serial -- rather than its cores.
+    """
+    worker, parent = WP.POOL_GIB["coarse"]
+    monkeypatch.setattr(WP.os, "cpu_count", lambda: 64)
+    monkeypatch.setattr(WP, "_available_gib", lambda: parent + 4.5 * worker)
+    assert WP.default_workers(8, "coarse") == 4, "memory must bind below the core count"
+    monkeypatch.setattr(WP, "_available_gib", lambda: parent + 0.5 * worker)
+    assert WP.default_workers(8, "coarse") == 1, "too little for one worker is serial"
+    monkeypatch.setattr(WP, "_available_gib", lambda: 10_000.0)
+    assert WP.default_workers(8, "coarse") == 8, "with memory to spare the phases bind"
+    monkeypatch.setattr(WP.os, "cpu_count", lambda: 4)
+    assert WP.default_workers(8, "coarse") == 4, "and so do the cores"
+    for unmeasured in ("fine", None):
+        with pytest.raises(ValueError, match="no measured pool memory"):
+            WP.default_workers(8, unmeasured)
+    monkeypatch.setattr(WP, "_available_gib", lambda: None)
+    assert WP.default_workers(8, "coarse") == 1, "no memory reading is serial, not cores"
+
+
+def test_every_pool_pair_bounds_its_marks_and_admits_the_pool_measured_to_fit(
+        monkeypatch):
+    """PLAN.md §167 successor 1, closed at §169: `medium` measured before its pair.
+
+    Largest kernel high-water marks on a live 8-phase pool, per config and role, GiB.
+    `coarse`'s worker is a DESCENT's: 10.512 by step 300 at `svk-shipped`'s argv (§181),
+    10.242 by step 60 (§171); one call marked 9.440 under §167's probe, which named no
+    `kinematics` so ran `linear`, 9.500 under svk (§169).  Its parent is §181's 10.435.
+    `medium`'s 11.754 is §173's 100-step descent, 12.023 `make knee`'s (§180), FLAT from
+    step 40; one call marked 10.649.  A pair below a mark is the silent direction: it
+    admits a pool the box cannot hold -- `medium`'s (11, 11) gave four, one past 11.0 by 3.
+
+    The other direction is pinned too.  `coarse`'s four workers summed 49.72 GiB with 57.05
+    available and `medium`'s three 45.00 with 57.76, over 60 and 100 steps.  A pair that
+    refuses those counts on those readings has stopped describing the box they ran on.
+    """
+    marks = {"coarse": (10.512, 10.435), "medium": (12.023, 10.508)}
+    for cfg, (worker_mark, parent_mark) in marks.items():
+        worker, parent = WP.POOL_GIB[cfg]
+        assert worker > worker_mark, f"{cfg}: a worker was measured at {worker_mark} GiB"
+        assert parent > parent_mark, f"{cfg}: a parent was measured at {parent_mark} GiB"
+    monkeypatch.setattr(WP.os, "cpu_count", lambda: 24)
+    monkeypatch.setattr(WP, "_available_gib", lambda: 57.76)
+    assert WP.default_workers(8, "medium") == 3, "the pool measured to fit is refused"
+    monkeypatch.setattr(WP, "_available_gib", lambda: 57.05)
+    assert WP.default_workers(8, "coarse") == 4, "the pool measured to fit is refused"
+
+
+def test_a_pooled_evaluation_matches_the_serial_one_on_the_crown_standin():
+    """The same gate on CROWN_PLAN.md's stand-in band (Step 6).  The worker builds its own
+    mesh from the task, so a `rim_outer` lost on the way to it would solve the shipped
+    Ø100 band in the pool and the stand-in in the parent — no error, two wheels.  Serial
+    and pooled must agree to the bit on the whole stand-in, the band term's QoI included,
+    and the serial run must be ON it."""
+    import wheel_objective as WO
+    serial = _pooled_equals_serial(**WO.CROWN_STANDIN, kinematics="svk")
+    base = WO.t3_terms(
+        np.array(list(json.load(open(os.path.join(HERE, "best_solution.json")))
+                      ["genes"].values()), dtype=float),
+        "smoke", phases=WO.phase_stencil(n_phase=2, scheme="uniform"), kinematics="svk")
+    assert serial["report"]["axle_drop_mean_mm"] < base["report"]["axle_drop_mean_mm"], (
+        "the stand-in's thicker band did not stiffen the wheel — it never reached a mesh")
+    assert "band_margin" in serial["values"], "the stand-in's band term never reached T3"

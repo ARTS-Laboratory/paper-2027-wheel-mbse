@@ -76,7 +76,7 @@ help:
 	@echo "              multi-start set Stage 3 begins from"
 	@echo "make stage3   Stage-3 descent from best_solution.json, writing"
 	@echo "              stage3_run.json as it goes and stage3_best.json at the end"
-	@echo "              (add --workers -1 to run the phase loop across processes)"
+	@echo "              ~3.8 h serial (add --workers -1 to run the phase loop across processes)"
 	@echo "make m8bi5    the two sections that QUALIFY M8b-i's infeasibility verdict:"
 	@echo "              the stress QoI up the mesh ladder, and the same feasibility"
 	@echo "              question asked from all 16 Stage-2 elites (~2 h at coarse)"
@@ -89,11 +89,11 @@ help:
 	@echo "make hubcap   the analytic hub-fillet cap against what OCC accepts: the"
 	@echo "              inter-spoke void by ring classification, and the fillet"
 	@echo "              acceptance threshold by bisection.  Needs BOTH envs, ~8 min"
-	@echo "make prod9    PLAN.md 0(b): the production descent from elite 9.  ~4 h"
-	@echo "make prod10   the same from elite 10.  RUN THE TWO SEQUENTIALLY, and on a"
-	@echo "              memory-bound box launch each under a systemd-run cap: one"
-	@echo "              descent holds ~12.7 GB anon and two do not fit in 31 GB."
-	@echo "              Override PROD_STEPS/PROD_WORKERS/PROD_FIDELITY"
+	@echo "make prod9    PLAN.md 0(b): the production descent from elite 9, as run 2026-08-01"
+	@echo "make prod10   the same from elite 10.  BOTH REFUSE AT THE START in ~40 s: all"
+	@echo "              sixteen stage2_elites.json ranks refuse the filleted mesh"
+	@echo "              (PLAN.md §170 §3), so neither re-runs.  Kept as the milestone's"
+	@echo "              argv; minwall-% and svk-elite10 start from prod10's committed output"
 	@echo "make svk      SVK_PLAN.md step 3: re-scores the shipped genome and its"
 	@echo "              rivals under BOTH kinematics with no optimizer, and reports"
 	@echo "              the utilisation the CONSTRAINT computes rather than §14's"
@@ -107,12 +107,12 @@ help:
 	@echo "make knee     DEFECT8_PLAN.md step 4: the production descent under the"
 	@echo "              knee'd stress_margin. Every knob is §19's, so §19's own run"
 	@echo "              (stage3_margin_medium.json) is an exact control and the"
-	@echo "              objective is the only difference. ~6.3 h, capped as prod9"
+	@echo "              objective is the only difference. 11.7 h at 3 workers, 55G cap"
 	@echo "make kinrank  KINEMATICS_PLAN.md step 1: scores every distinct committed"
 	@echo "              genome under BOTH kinematics and asks whether linear RANKS"
 	@echo "              designs the way SVK does — argmin identity, Spearman rho and"
 	@echo "              the gradient cosine, against bars registered before the run."
-	@echo "              ~1 h at coarse. Override KINRANK_CONFIG/KINRANK_WORKERS"
+	@echo "              ~1 h at 4 workers, coarse. Override KINRANK_CONFIG/KINRANK_WORKERS"
 	@echo "make contact  CONTACT_PLAN.md step 2: ONE cell of the patch-resolution"
 	@echo "              matrix — is the axle drop the objective steers by still"
 	@echo "              mesh-convergent on the genome that ships? Override"
@@ -271,14 +271,14 @@ elites:
 	$(PY_OPT) src/wheel_fea.py --dump-population
 
 # Stage 3 proper: projected Adam on the FEA objective.  Serial, so the cost is
-# roughly (steps x phases x 18.9 s) at `coarse` — see study_stage3.py's S10.
+# roughly (steps x phases x 27.5 s) at `coarse`, and step 0, traces included, ~495 s.
 #
-# 18.9 s IS MEASURED ON THE FILLETED MESH (2026-09-03, S10 re-run after PLAN.md §103's
-# switch): 151.42 s for a full 8-phase evaluation, 50.47 h projected for 300 steps x 4
-# starts, 43.4 GiB peak RSS in one process.  The `0.7 s` this line carried from 2026-07-27
-# never matched ANY S10 reading — the oldest on record is 18.05 s (2026-07-29) — so it
-# priced the run 27x under from the day it was written.  Note `--steps` defaults to 60,
-# not the 300 the S10 projection is quoted at.
+# 27.5 s IS THIS RECIPE'S OWN ARGV (2026-09-15, 3 steps, svk, rqmc; PLAN.md §175): 211-230 s
+# a steady step, ~3.8 h for the default 60.  S10's 18.9 s (151.42 s for 8 phases, 2026-09-03)
+# is LINEAR, as S10 still is.  Its 43.4 GiB RSS predates §164; 16.97 GiB by step 3, a FLOOR.
+# The `0.7 s` this line carried from 2026-07-27 never matched ANY S10 reading — the oldest
+# on record is 18.05 s (2026-07-29) — so it priced the run 27x under from the day it was
+# written.  S10's 50.47 h projects 300 steps x 4 starts; `--steps` defaults to 60, 1 start.
 stage3:
 	$(PY_OPT) src/wheel_stage3.py
 
@@ -359,8 +359,8 @@ m9buck:
 # opposite — S13 measures 4 workers at 2.93x / 0.73 efficiency against 8 at 3.95x / 0.49,
 # so two quarter-box runs look like they beat two half-box runs on the same 8 cores.  That
 # is CPU arithmetic on a box that runs out of MEMORY first, and it was tried: one descent
-# at `coarse` with 4 workers sits flat at ~12.7 GB anon (parent ~4.5 GB, four workers
-# ~2 GB each), so two of them is ~25 GB against 31 GB of RAM and a 2 GB swapfile.  What
+# at `coarse` with 4 workers sat flat at ~12.7 GB anon (parent ~4.5 GB, four workers ~2 GB
+# each; linear, unfilleted, `b13cba3`), so two were ~25 GB against 31 GB and 2 GB swap.  What
 # that costs is not a slow run, it is the DESKTOP — `systemd-oomd` kills the whole
 # `user@1000.service` slice at 50% pressure for 20 s, dropping the user to the login
 # screen and taking every terminal with it.  Launch each capped and detached instead:
@@ -368,7 +368,7 @@ m9buck:
 #   systemd-run --user --unit=wheel-prod9 -p MemoryMax=20G --collect \
 #       --working-directory=$$PWD /usr/bin/make prod9
 #
-# ~4.0 h of descent each (300 steps x 47.6 s), plus the fidelity checks below.
+# ~4.0 h of descent each (300 steps x 47.6 s) at `b13cba3`; both starts now refuse (§172).
 #
 # Out of `studies` for the m8bi5 reason: this is a SEARCH, not a gate.  Nothing here has a
 # pass/fail verdict, and it is hours.
@@ -394,14 +394,14 @@ m9buck:
 PROD_STEPS ?= 300
 PROD_WORKERS ?= 4
 
-# `uniform`, NOT the `rqmc` default, and this is a MEMORY constraint rather than a
-# statistical preference.  `rqmc` redraws the stencil every step from an `n_sub`-point
-# sub-lattice, so a 300-step run visits `n_phase * n_sub` = 64 distinct phase values —
-# and `wheel_wheel.coord_fn` keys its jit cache on `float(phase)` with FIFO eviction only
-# at 128 entries, so all 64 traces are RETAINED.  Measured: ~0.4 GB per trace, and the
-# pool holds all 64 no matter how the slots are split across workers, so `--workers` is
-# not a lever on it.  A run at the defaults peaked at 18.9 GB and was OOM-killed at step 3.
-# `uniform` fixes the 8 phases, so the cache saturates at 8 traces after step 0.
+# `uniform`, NOT the `rqmc` default.  It was chosen as a MEMORY constraint that is RETIRED:
+# `rqmc` visits `n_phase * n_sub` = 64 phases, `wheel_wheel.coord_fn` keyed its jit cache
+# on `float(phase)`, and all 64 traces were retained at ~0.4 GB each — a run at the
+# defaults was OOM-killed at step 3 on the 31 GB box.  Since `6aa84ca` the phase is a
+# traced argument and one entry serves every phase; a 60-step `rqmc` pool peaked inside
+# `uniform`'s run-to-run scatter (PLAN.md §171 §2).  What keeps `uniform` is COMPARABILITY:
+# all 31 committed prod, `minwall-` and `svk-` descent records were drawn under it.  Nothing
+# measured says it descends better, and `phase_stencil`'s docstring argues the other way.
 PROD_SCHEME ?= uniform
 
 # OFF, and that default is a MEASUREMENT rather than a preference.  The check is a PURE
@@ -475,17 +475,17 @@ export:
 # wheel still feasible under SVK, at the utilisation the CONSTRAINT computes rather than
 # the p99-scaled figure §14 quoted.
 #
-# DELIBERATELY NOT IN `studies`, for the reason `m8bi5`, `m9buck` and `hubcap` are not:
-# it measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the code changes,
-# it is the better part of an hour at `medium`, and a gate nobody can afford to run stops
-# being run.  SVK_WORKERS is the memory cap and nothing else sizes it — see PLAN.md §1.
+# DELIBERATELY NOT IN `studies`, for the reason `m8bi5`, `m9buck` and `hubcap` are not: it
+# measures THE WHEEL, NOT THE COMMIT.  Its answer does not move when the code changes, it is
+# TWO HOURS at `medium` (2.52 h at the artifact, 2.05 h now), and a gate nobody can afford to
+# run stops being run.  SVK_WORKERS is the memory cap and nothing else sizes it — PLAN.md §1.
 SVK_CONFIG ?= medium
 # 4 UNTIL 2026-09-06, AND IT NO LONGER FITS THIS BOX — PLAN.md §115.4/§116.  On the
 # filleted mesh §103 made unconditional, four workers read 11.5–12.7 GiB RSS each beside a
 # 10.8 GiB parent and had available memory at 1.4 GiB with swap growing, fifteen minutes in
 # and still inside JIT compilation, before the solve loop was reached at all.  Serial is
-# the configuration §105/§113 measured safe for the same box on the same mesh, and it is
-# what the committed artifact was regenerated with; 2 workers has never been measured here.
+# the configuration §105/§113 measured safe here, and what the committed artifact was
+# regenerated with.  2 IS NOW MEASURED — §184: 1.630x, 31.512 GiB summed, bit-identical.
 SVK_WORKERS ?= 0
 # Step 6 re-scores the descent winner at `medium` before promoting it, because Step 5
 # descended at `coarse` and the two rungs differ by ~1.1% on this wheel.  SVK_EXTRA is
@@ -512,15 +512,15 @@ svk:
 #
 # NOT IN `studies`, for the reason `svk`, `m8bi5`, `m9buck` and `hubcap` are not: it
 # measures THE WHEEL, NOT THE COMMIT.  KINRANK_WORKERS is the memory cap and nothing else
-# sizes it, exactly as SVK_WORKERS.
+# sizes it: 4 held 49.3 GiB against `coarse`'s `POOL_GIB` 55; 8 budgets 99 (PLAN.md §175).
 #
 # `coarse` is the default rung and it is a choice, not a saving: §14 measured the GNL
 # correction converged by `coarse` and mesh-independent to three digits on both the shipped
 # and the GA/beam genome, so the quantity this driver ranks on does not move by going to
 # `medium` — and `medium` costs ~5x.  Re-run with KINRANK_CONFIG=medium to check that.
 KINRANK_CONFIG ?= coarse
-KINRANK_WORKERS ?= 8
-KINRANK_OUT ?= study_kinematics_rank.json
+KINRANK_WORKERS ?= 4
+KINRANK_OUT ?= study_kinematics_rank_filleted.json
 
 kinrank:
 	$(PY_OPT) -u studies/study_kinematics_rank.py --config $(KINRANK_CONFIG) \
@@ -540,7 +540,7 @@ kinrank:
 #
 #   systemd-run --user --unit=contact-s2 -p MemoryMax=20G --collect \
 #       make contact CONTACT_GENOME=best_solution.json CONTACT_KIN=svk \
-#            CONTACT_OUT=study_contact_e126cc3_svk.json
+#            CONTACT_OUT=study_contact_b729e86_svk.json   # name it for the genome in force
 #
 CONTACT_GENOME ?= best_solution.json
 CONTACT_KIN ?= linear
@@ -556,15 +556,15 @@ contact:
 #
 # TWO STARTS, RUN SEQUENTIALLY, for the reason the `prod9`/`prod10` block above argues at
 # length and which SVK does not soften: the box runs out of MEMORY before it runs out of
-# cores.  Step 2 measured a 4-worker SVK descent at 13.16 GiB peak anon against linear's
-# 12.56 — only 1.05x, but two at once is still ~26 GB against 31, which is how the desktop
-# got taken down twice.  Launch each capped and detached:
+# cores.  Step 2 measured a 4-worker SVK descent, unfilleted, at 13.16 GiB peak anon against
+# linear's 12.56; on the filleted mesh these flags' pool holds 49.6 GiB by step 40 (PLAN.md
+# §170); two at once took the desktop down twice.  Launch each capped and detached:
 #
-#   systemd-run --user --unit=wheel-svk-shipped -p MemoryMax=16G --collect \
-#       --working-directory=$$PWD /usr/bin/make svk-shipped
+#   systemd-run --user --unit=wheel-svk-shipped -p MemoryMax=55G -p MemorySwapMax=0 \
+#       --collect --working-directory=$$PWD /usr/bin/make svk-shipped
 #
-# 16G, not Step 2's measured 13.16: the cap is a KILL SWITCH, not a budget, and it wants
-# enough headroom that a normal run never touches it.
+# 55G, not 16G (until §174), still a KILL SWITCH a normal run never touches: 11 + 4 x 11,
+# `POOL_GIB`'s bound on 4 `coarse` workers, over 49.6-49.7 GiB held to step 60, not 300.
 #
 # ~5.3 h each (300 steps x 62.3 s), against ~3.9 h for the same descent under linear.
 # That 1.36x is Step 2's measurement and it is NOT extra Newton iterations — those go
@@ -613,7 +613,7 @@ svk-elite10:
 # move the gate.  See the STEP 6 block in SVK_PLAN.md.
 #
 # 100 steps, not 300: this warm-starts 1.65% from target, not 19.7%.  One value+grad at
-# medium/4-workers measured 273 s against coarse's 58.6 s (4.7x), so this is ~7.6 h.
+# medium/4-workers measured 273 s against coarse's 58.6 s (4.7x), so ~7.6 h then; ~12 h now.
 #
 # FIDELITY CHECK ON, pointing back at `coarse`: step 5 ran it off and that is exactly why
 # the rung gap was found after 9.8 h of descending instead of at step 0.  It is a pure
@@ -624,7 +624,7 @@ svk-medium:
 	$(PY_OPT) -u src/wheel_stage3.py --start best \
 	    --genome stage3_svk_best_shipped.json \
 	    --config medium --kinematics svk --min-wall $(SVK_MIN_WALL) \
-	    --steps $(SVK_MEDIUM_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --steps $(SVK_MEDIUM_STEPS) --workers $(SVK_MEDIUM_WORKERS) \
 	    --phase-scheme uniform \
 	    --fidelity-check-every 25 --fidelity-check-config coarse \
 	    --out stage3_svk_medium.json --best-out stage3_svk_best_medium.json
@@ -646,7 +646,7 @@ svk-medium:
 # DISTINCT --out AND --best-out, load-bearing for the reason prod9/prod10's are, and doubly
 # so here: clobbering `stage3_svk_best_medium.json` would destroy the control.
 #
-# ~226 s/step measured on the `svk-medium` run this mirrors (22627.5 s / 100), so ~6.3 h.
+# ~226 s/step on the `svk-medium` run this mirrors (22627.5 s / 100), ~6.3 h; ~12 h now.
 BUILDCAP_STEPS ?= 100
 # Variables, not literals, ONLY so step 5 can be re-run against a moved gene box without
 # editing the recipe — the warm start stays the control either way.  BUILD_PLAN.md step 5b.
@@ -658,7 +658,7 @@ buildcap:
 	$(PY_OPT) -u src/wheel_stage3.py --start best \
 	    --genome $(BUILDCAP_GENOME) \
 	    --config medium --kinematics svk --min-wall $(SVK_MIN_WALL) \
-	    --steps $(BUILDCAP_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --steps $(BUILDCAP_STEPS) --workers $(SVK_MEDIUM_WORKERS) \
 	    --phase-scheme uniform \
 	    --fidelity-check-every 25 --fidelity-check-config coarse \
 	    --out $(BUILDCAP_OUT) --best-out $(BUILDCAP_BEST)
@@ -666,9 +666,9 @@ buildcap:
 # DEFECT8_PLAN.md step 4 / PLAN.md §23 successor 1.  THE PRODUCTION DESCENT UNDER THE
 # KNEE'D `stress_margin`.
 #
-# EVERY KNOB IS §19'S, DELIBERATELY: `medium`, SVK, 100 steps, uniform 8-phase, seed 0,
-# 4 workers, `--fidelity-check-every 25 --fidelity-check-config coarse`, from the shipped
-# genome, `--min-wall 1.2`.  §19's own run (`stage3_margin_medium.json`, 101 objective
+# EVERY KNOB IS §19'S, DELIBERATELY: `medium`, SVK, 100 steps, uniform 8-phase, seed 0, 4
+# workers (3 since §174), `--fidelity-check-every 25 --fidelity-check-config coarse`, from
+# the shipped genome, `--min-wall 1.2`.  §19's run (`stage3_margin_medium.json`, 101 objective
 # calls, 6 h 20 m) is therefore an exact control and the ONLY difference between the two
 # is the objective — `w * util**2` there, `soft_barrier(util_j - 0.80)` here.  That is the
 # same discipline `buildcap` above applies to `svk-medium`, and for the same reason: a run
@@ -683,19 +683,19 @@ buildcap:
 # DISTINCT --out AND --best-out, load-bearing for the reason prod9/prod10's and buildcap's
 # are: `stage3_margin_medium.json` is the control and clobbering it would destroy it.
 #
-# ~226 s/step on the three `medium`/SVK/100-step runs this mirrors, so ~6.3 h.  Launch it
-# capped and detached, exactly as prod9/prod10 and svk-shipped —
+# ~226 s/step on the three `medium`/SVK/100-step runs this mirrors, ~6.3 h; 11.7 h now.
+# Launch it capped and detached, exactly as prod9/prod10 and svk-shipped —
 #
-#   systemd-run --user --unit=wheel-knee -p MemoryMax=32G --collect \
+#   systemd-run --user --unit=wheel-knee -p MemoryMax=55G -p MemorySwapMax=0 --collect \
 #       --working-directory=$$PWD /usr/bin/make knee
 #
-# 32G, NOT the 16G every block above uses, and this is measured rather than inherited.  The
+# 32G UNTIL §174, WHOSE 52G FOLLOWED THE RECIPE; 55G SINCE §180; not the 16G above.  The
 # 2026-08-13 run was launched at 16G and sat at the ceiling: `memory.current` 15.3 GiB,
 # `memory.events` max = 2936 forced direct reclaims, `oom_kill` 0.  It survived and held the
 # control's pace (224-239 s/step against §19's 236/191/227), so nothing in this file's timings
 # moves — but a `medium` SVK descent WANTS more than 16 GiB and spends five hours one
 # allocation from the kill switch.  The cap was raised to 32G on the live unit with
-# `systemctl --user set-property`.  The 16G above it was sized against a 31 GB box; this one
+# `systemctl --user set-property`.  The 16G then above it was sized for a 31 GB box; this one
 # now reports 61 GiB total with 49 free, so the "two descents do not fit" arithmetic that
 # every other block here inherits is worth re-deriving before it is trusted again.
 KNEE_STEPS ?= 100
@@ -707,10 +707,30 @@ knee:
 	$(PY_OPT) -u src/wheel_stage3.py --start best \
 	    --genome $(KNEE_GENOME) \
 	    --config medium --kinematics svk --min-wall $(SVK_MIN_WALL) \
-	    --steps $(KNEE_STEPS) --workers $(SVK_DESCENT_WORKERS) \
+	    --steps $(KNEE_STEPS) --workers $(SVK_MEDIUM_WORKERS) \
 	    --phase-scheme uniform \
 	    --fidelity-check-every 25 --fidelity-check-config coarse \
 	    --out $(KNEE_OUT) --best-out $(KNEE_BEST)
+
+# THE `medium` RECIPES' POOL: 3 WORKERS UNDER 55G, NOT 4 UNDER 32G.  `svk-medium`,
+# `buildcap` and `knee` above share these pool flags.  PLAN.md §173-§174, filleted mesh.
+#
+# 4 until 2026-09-15, through SVK_DESCENT_WORKERS, which `svk-shipped` and `svk-elite10`
+# still read at `coarse`, where four fit.  At `medium` they do not: four workers summed
+# 51.3 GiB of kernel marks after step 0 with no fidelity check, and by step 3 one had
+# passed 11.0 GiB with the box at 57.75 of 61.4 used (§173 §2).  These recipes' check
+# builds a second, serial `coarse` Evaluator in the PARENT: `knee`'s own flags at 3 workers
+# took the parent from 10.42 to 15.47 GiB across the step-0 check and held it there
+# (§174).  By `wheel_pool.POOL_GIB`'s rule, whole GiB above each mark, that parent is 16,
+# and a worker is §180's 13, so four is 68 GiB and cannot fit this box; three is 55.  It
+# summed 46.9 GiB by step 2.  `knee` ran the 100 steps under 52G: three workers summed
+# 35.094, the parent held 15.874 across all five checks, and `memory.current` peaked at
+# 49.231 -- 2.8 under the cap that ran and 5.8 under this budget.  No swap: a pool past
+# it is killed rather than left swapping for hours.  At three workers a step is ~400 s,
+# so 100 steps and five checks are 11.7 h measured.  The count moves no value: a pool
+# returns serial's values bit for bit and its gradient within 1e-14 (`tests/test_pool.py`),
+# and every control these recipes name was drawn on the unfilleted mesh.
+SVK_MEDIUM_WORKERS ?= 3
 
 # The milestone gates.  These are not tests — they produce measured reports whose
 # numbers are quoted in CLAUDE.md — but they do exit nonzero when a gate fails, so

@@ -1,0 +1,36 @@
+{
+  "what": "CROWN_PLAN Step 0.5 interlayer coupon: one geometry, printed flat (xy) and on end (z)",
+  "files": [
+    "export/coupon_step05.step",
+    "export/coupon_step05.stl"
+  ],
+  "gauge_w_mm": 3.0,
+  "gauge_l_mm": 10.0,
+  "thick_mm": 3.0,
+  "grip_w_mm": 20.0,
+  "grip_l_mm": 16.0,
+  "arc_r_mm": 12.7,
+  "arc_run_mm": 11.985407794480754,
+  "hole_d_mm": 4.4,
+  "hole_from_end_mm": 8.0,
+  "overall_l_mm": 65.9708155889615,
+  "volume_mm3": 2465.1079387743703,
+  "gauge_area_mm2": 9.0,
+  "hole_net_area_mm2": 46.8,
+  "hole_net_stress_ratio": 0.19230769230769232,
+  "ultimate_mpa": 40.0,
+  "allowable_mpa": 25.0,
+  "s_zz_mpa": {
+    "be96531": 17.12,
+    "b729e86": 16.78
+  },
+  "ratio_needed": {
+    "be96531": 0.6848000000000001,
+    "b729e86": 0.6712
+  },
+  "xy_break_at_ultimate_kgf": 36.70978366720542,
+  "z_break_at_needed_kgf": {
+    "be96531": 25.13885985530227,
+    "b729e86": 24.63960679742828
+  }
+}

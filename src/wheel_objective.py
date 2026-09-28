@@ -98,11 +98,11 @@ Not moot: M6 measured 7.0% std/mean and 19.7% peak-to-peak in axle drop over the
 degree period, against the master plan's 2% "phase is nearly moot" threshold.  So
 `phase_ripple` is a design term, not just a quadrature nuisance.
 
-The stencil is a FIXED LATTICE and that is a performance fact.  `wheel_wheel.coord_fn`
-keys its jit cache on phase, so a continuously-random RQMC offset misses on every phase
-of every step and pays M7's measured 0.774 s re-trace eight times per step — roughly
-double the actual solving.  `phase_stencil` therefore quantizes the random offset onto an
-`n_phase x n_sub` lattice: genuinely stochastic, unbiased, and cached after one pass.
+The stencil is a FIXED LATTICE, and the performance fact that made it one is RETIRED.
+`wheel_wheel.coord_fn` keyed its jit cache on phase, so a continuously-random RQMC offset
+missed on every phase of every step (M7's 0.774 s re-trace; 128 s of vjp compile on the
+filleted mesh) until PLAN.md §162 successor 1 made the phase a traced argument.  The
+`n_phase x n_sub` lattice stays: genuinely stochastic, unbiased, and what runs were drawn on.
 
 Randomizing at all buys something specific.  M7 found the contact facets on the rim
 discretisation (3.8% of the slope at `coarse`, 17.6% at `smoke`), an artefact that
@@ -357,15 +357,15 @@ DEFAULT_WEIGHTS = {
     # This is the one weight in the table that sets an exchange rate rather than a scale:
     # `w = mass_term / (2*(util_ref - knee)*util_ref)`, PLAN.md §99.  89.21 is that
     # formula at `util_ref` = 1.0 (the wall — §99's reason for pinning it there rather
-    # than at a design's own reading: it needs no design to stand on) and the shipped
-    # genome's FILLETED mass term, 35.6822 g — the mesh this term now actually reads,
-    # since §103 wired `util_j` onto the region-p-norm QoI rather than `Kt * agg`.  A
-    # 3.6x cut from the old 325.0, which was calibrated at `util_ref` = 0.855 against the
-    # `Kt`-surrogate's own reading — a reference point §99 found no design occupies any
-    # more under the replacement quantity.  `b029622` gives 88.61 from its own filleted
-    # mass term, 0.665% apart on an unrelated genome — the corroboration a wall-anchored
-    # rate should produce, since it depends on the reference genome's own mass rather
-    # than on where that genome's utilisation happens to sit.
+    # than at a design's own reading: it needs no design to stand on) and the FILLETED
+    # mass term of `09e8188` — THE GENOME THAT SHIPPED WHEN §99 RAN, not the one that
+    # ships now: 35.6822, a loss-term value and not the grams both comments said until
+    # §189.  That mesh is what §103 wired `util_j` onto, the region-p-norm QoI rather
+    # than `Kt * agg`; the 3.6x cut is from 325.0 at `util_ref` = 0.855, an anchor §99
+    # found unoccupied.  `b029622`'s 88.61 tests only that it and `09e8188` weigh nearly
+    # the same.  FROZEN HERE ON PURPOSE, DECIDED 2026-09-20 — PLAN.md §189, which carries
+    # the argument and the blast radius: `b729e86` ships and returns 111.196, so this is
+    # 19.77% under its own policy, and §189 §4 says why following it is the wrong repair.
     "stress_margin": 89.21,
     "buckling":    2000.0,      # soft_barrier scale on ratio - 1   [NO GRADIENT]
     "x_order":     80.0,        # per control-point pair
@@ -419,7 +419,7 @@ SMOOTHNESS_REVERSAL_W = 60.0
 def soft_barrier(violation, scale=1.0):
     """`wheel_fea.soft_barrier` in jnp.
 
-    The original uses the Python builtin `max` (`wheel_fea.py:538`) and so cannot be
+    The original uses the Python builtin `max` (`wheel_fea.py:584`) and so cannot be
     traced.  Same function, C^1 at the knee — which is what an FD plateau needs, and why
     the barrier is quadratic rather than linear in the first place.
     """
@@ -477,7 +477,7 @@ KT_DEGENERATE_R_MM = 0.1
 def stress_concentration_kt(fillet_radius_mm, thickness_mm, c_factor=1.0):
     """`wheel_fea.stress_concentration_kt` in jnp.  Kt = 1 + C*(t/2R)^0.65, clamped.
 
-    The original (`wheel_fea.py:315-325`) is untraceable three ways — a data-dependent
+    The original (`wheel_fea.py:360-370`) is untraceable three ways — a data-dependent
     `if fillet_radius_mm < 0.1`, `np.clip`, and a `float()` cast — and `wheel_fea` must
     stay numpy-only, because `tests/test_import_hygiene.py` imports it in an interpreter
     with no jax (the CadQuery env has none).  So the twin lives here, for the same reason
@@ -555,7 +555,7 @@ def junction_kt(genes, cfg="coarse", span_mm=W.S, flanks=None):
 
     The pairing — `R_hub` with `t0`, `R_rim` with `t3` — is not a choice made here.  It is
     asserted in three independent places already: `wheel_fea.py:494-495` (the beam model),
-    `wheel_step_export.py:810-812` (the built-geometry report) and `tests/test_golden.py`.
+    `wheel_step_export.py:979-980` (the built-geometry report) and `tests/test_golden.py`.
 
     `jax.grad` rather than a hand-written derivative gets the clamp's zero-gradient region
     right for free, and the clamp IS reachable in-box (`t0=10.0` with `R_hub=0.5` gives
@@ -666,8 +666,8 @@ def _fillet_margins(genes, cfg, span_mm, hub_radius, flanks, xp=jnp):
     second promotion they have outlived, and a figure that is re-fitted every promotion
     stops being evidence of anything.]
 
-    `tangent_fillet_arc` refuses a radius at four places (`wheel_fea.py:948`, `:955`,
-    `:959`, `:964`) and `fillet_junctions` then walks the radius ladder DOWN, so the
+    `tangent_fillet_arc` refuses a radius at four places (`wheel_fea.py:1101`, `:1108`,
+    `:1112`, `:1117`) and `fillet_junctions` then walks the radius ladder DOWN, so the
     optimizer silently receives a smaller fillet than it asked for and is never told —
     the discrepancy `kt_report` prices.  Measured since the hub fillet milestone: the
     void between adjacent spokes at the hub circle is 2.196 mm of arc, so ANY hub fillet
@@ -837,9 +837,9 @@ def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
                                            num_points=W.N_CURVE_PTS, xp=jnp)
     fold = soft_barrier(geom.MIN_FOLD_MARGIN_MM - margin, w["fold"])
 
-    # -- arrival: spoke meeting its ring too close to radially.
-    a_hub, a_rim = WW.arrival_angles(genes, cfgo, span_mm=span_mm, xp=jnp)
-    worst = jnp.maximum(a_hub, a_rim)
+    # -- arrival: spoke meeting its ring too close to radially.  EXACT, see `_arrival_exact_deg`.
+    a_hub, _ = WW.arrival_angles(genes, cfgo, span_mm=span_mm, xp=jnp)   # the cap's, below
+    worst = jnp.max(_arrival_exact_deg(ctrl))
     arrival = soft_barrier((worst - WW.MAX_ARRIVAL_DEG) / 10.0, w["arrival"])
 
     # -- smoothness, REWRITTEN.  See the module docstring: the old `400*n_infl` had no
@@ -879,9 +879,9 @@ def t1_vector(genes, cfg="coarse", weights=None, span_mm=W.S, flanks=None):
     # wrong model by a number.  The conservatism now lives in the fit, where it is
     # measurable: 0.827-0.979 of the worst measured corner across those five.
     #
-    # `a_hub` is the one computed for the `arrival` barrier above, passed rather than
-    # re-derived: the cap's square-on branch is a function of it, and a barrier and a cap
-    # disagreeing about the same angle is a class of bug worth making impossible.
+    # `a_hub` is `arrival_angles`' SAMPLED hub angle, the variable `study_arrival_cap` fitted the
+    # law on; since CROWN_PLAN R22 the barrier above reads the EXACT one, 0.062 deg apart at
+    # `coarse` on `240d5a2`'s hub, O(h) and shrinking per rung.  See `_arrival_exact_deg`.
     fillet_cap = soft_barrier(g[12] - hub_fillet_cap_mm(genes, cfgo, span_mm,
                                                         W.HUB_RADIUS_MM, flanks,
                                                         a_hub_deg=a_hub),
@@ -996,10 +996,10 @@ def phase_stencil(n_phase=8, n_sub=8, scheme="rqmc", rng=None):
     """The phase angles [deg] one objective evaluation is averaged over.
 
     `rqmc`     an `n_phase`-point uniform stencil shifted by a random offset drawn from
-               the `n_sub`-point sub-lattice.  Unbiased and genuinely stochastic, but the
-               union of all reachable phases is the fixed `n_phase * n_sub` grid, so
-               `coord_fn`'s jit cache and any mesh cache hit after the first pass.  See
-               the module docstring for what a continuous offset costs (roughly double).
+               the `n_sub`-point sub-lattice.  Unbiased and genuinely stochastic, and the
+               union of all reachable phases is the fixed `n_phase * n_sub` grid.  That
+               grid was a jit-cache fact until the phase became a traced argument; the
+               module docstring records it as RETIRED, and the lattice as what runs used.
     `uniform`  the same stencil with no shift.  Deterministic, cheapest, and the one that
                lets the rim's contact faceting alias into a chaseable bias.
     `iid`      independent uniform draws.  Present because the master plan asks for it to
@@ -1021,7 +1021,7 @@ def phase_stencil(n_phase=8, n_sub=8, scheme="rqmc", rng=None):
                      f"expected one of 'rqmc', 'uniform', 'iid'")
 
 
-def phase_meshes(genes, cfg, phases, orientation=None):
+def phase_meshes(genes, cfg, phases, orientation=None, rim_outer=None):
     """One mesh per phase, rebuilt at the current genes.
 
     `orientation` is passed through so a caller can PIN the flank orientation across an
@@ -1034,7 +1034,7 @@ def phase_meshes(genes, cfg, phases, orientation=None):
     needs the fillet arc's own nodes, which an unfilleted mesh does not have.
     """
     return [WW.build_wheel(genes, cfg, phase_deg=float(p), orientation=orientation,
-                           fillet=True)
+                           fillet=True, rim_outer=_rim_outer(rim_outer))
             for p in phases]
 
 
@@ -1113,9 +1113,9 @@ def _pnorm_and_grad(values, grads, p):
 
 
 def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
-             force=SERVICE_FORCE_N, target_deflection_mm=None,
-             allowable_stress_mpa=None, stress_phase_p=8.0, warm=None,
-             stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None,
+             force=SERVICE_FORCE_N, target_deflection_mm=None, rim_outer=None,
+             allowable_stress_mpa=None, stress_phase_p=8.0, warm=None, drop_factor=None,
+             stress_gauss_p=STRESS_NOMINAL_P, stress_p_probe=(), pool=None, band=None,
              orientation=None, span_mm=W.S, flanks=None, **problem_kw):
     """`deflection`, `stress` and `phase_ripple`, phase-aggregated, with gradients.
 
@@ -1168,7 +1168,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     because `force`, `E` and `nu` already thread — `force` here, the other two on
     `**problem_kw` and through the process pool (`wheel_objective.py:1151`) — and the
     asymmetry was arbitrary: three of the five quantities a MISSION sets could be varied
-    inside one interpreter and two could not.  `tests/test_objective.py:1257` had to
+    inside one interpreter and two could not.  `tests/test_objective.py:1459` had to
     `monkeypatch.setattr(WO, "ALLOWABLE_STRESS_MPA", 2.0)` to move one of them, which is
     the tell.  See `wheel_requirements.py` and MBSE_PLAN.md Step 3.
 
@@ -1190,8 +1190,8 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     if phases is None:
         phases = phase_stencil(scheme="uniform")
     if meshes is None and pool is None:
-        meshes = phase_meshes(genes, cfg, phases, orientation=orientation)
-
+        meshes = phase_meshes(genes, cfg, phases, orientation, rim_outer)
+    _check_mesh_rim_outer(meshes, rim_outer)
     probe_p = [float(v) for v in stress_p_probe]
     # The name stays "pnorm_stress" so every downstream key is unchanged; only the factory
     # differs from `QOI["pnorm_stress"]`, and only in `p`.
@@ -1201,18 +1201,18 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     probe_pn = {v: [] for v in probe_p}
     pooled = None if pool is None else pool.map_phases([
         {"genes": np.asarray(genes, dtype=float), "cfg": cfg, "phase": float(p),
-         "orientation": orientation, "force": force,
+         "orientation": orientation, "force": force, "rim_outer": _rim_outer(rim_outer),
          "delta0": None if warm is None else warm[i],
-         "stress_gauss_p": stress_gauss_p, "probe_p": tuple(probe_p),
+         "stress_gauss_p": stress_gauss_p, "probe_p": tuple(probe_p), "band": band,
          "problem_kw": problem_kw}
         for i, p in enumerate(phases)])
 
     pn_hub, pgrads_hub, pn_rim, pgrads_rim = [], [], [], []
     for i, p in enumerate(phases):
         if pooled is None:
-            hub_qoi, rim_qoi = _region_qois(meshes[i])
+            hub_qoi, rim_qoi, *bq = _region_qois(meshes[i]) + _band_qoi(meshes[i], band)
             o = WA.service_qoi_value_and_grad(
-                genes, cfg, (qoi, hub_qoi, rim_qoi), force=force, mesh=meshes[i],
+                genes, cfg, (qoi, hub_qoi, rim_qoi, *bq), force=force, mesh=meshes[i],
                 delta0=None if warm is None else warm[i], **problem_kw)
             # The same field the adjoint above differentiated, at a different exponent.
             probes = _probe_values(o["_meta"]["prob"], o["_meta"]["res"]["u"], probe_p)
@@ -1233,16 +1233,16 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                      "pnorm_stress_mpa": float(o["pnorm_stress"]["value"]),
                      "max_stress_mpa": float(o["_meta"]["max_stress_mpa"]),
                      "contact_force_n": float(o["_meta"]["contact_force_n"]),
-                     "coupling_frac": float(
+                     "rim_band_od_vm_mpa": float(o["_meta"]["rim_band_od_vm_mpa"]),
+                     **_band_row(o, band), "coupling_frac": float(
                          np.linalg.norm(o["pnorm_stress"]["coupling_grad"])
                          / max(np.linalg.norm(o["pnorm_stress"]["grad"]), 1e-30))})
 
-    drops = np.asarray(drops)
-    dgrads = np.asarray(dgrads)
+    drops, dgrads = _scaled_drops(np.asarray(drops), np.asarray(dgrads),
+                                  drop_factor)
     pn = np.asarray(pn)
     pgrads = np.asarray(pgrads)
     n = len(drops)
-
     # -- deflection: mean drop against the target, two-sided.  For a compliant mechanism
     # the travel IS the feature, so being too stiff is penalised exactly as hard as being
     # too soft — `wheel_fea`'s reasoning, unchanged.
@@ -1332,9 +1332,9 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
     #
     # THE WEIGHT IS AN EXCHANGE RATE AND IT IS A POLICY, SO IT IS STATED — PLAN.md §99.
     # `w = mass_term / (2*(util_ref - knee)*util_ref)` at `util_ref` = 1.0 (the wall) and
-    # the shipped genome's FILLETED mass term, 35.6822 g: `w` = 89.21.  See
-    # `DEFAULT_WEIGHTS["stress_margin"]`'s own comment for why `util_ref` moved to the
-    # wall rather than staying at a design's own reading.
+    # `09e8188`'s FILLETED mass term, 35.6822 — a loss-term value, not grams: `w` = 89.21.
+    # That genome stopped shipping at §115 and §189 froze the weight there on purpose.
+    # See `DEFAULT_WEIGHTS["stress_margin"]`'s own comment for that and for `util_ref`.
     #
     # Quadratic rather than linear is deliberate and is the second half of the policy: the
     # exchange rate steepens as margin disappears, so the last 10% of utilisation costs far
@@ -1385,7 +1385,7 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                          "stress_utilisation_kt": kt_max * a_v / allowable_stress_mpa,
                          "pnorm_stress_mpa": [float(x) for x in probe_pn[v]]}
 
-    return {
+    return _with_band({
         "values": {"deflection": float(deflection), "stress": float(stress),
                    "stress_margin": float(stress_margin),
                    "phase_ripple": float(phase_ripple)},
@@ -1422,8 +1422,8 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
                    "target_deflection_mm": float(target_deflection_mm),
                    "allowable_stress_mpa": float(allowable_stress_mpa),
                    "service_force_n": float(force),
-                   "n_phase": n, "rows": rows},
-    }
+                   "n_phase": n, "rows": rows, **_rim_band(rows, allowable_stress_mpa)},
+    }, rows, band, allowable_stress_mpa, stress_phase_p)
 
 
 # ---------------------------------------------------------------------------
@@ -1431,8 +1431,8 @@ def t3_terms(genes, cfg="coarse", *, phases=None, meshes=None, weights=None,
 # ---------------------------------------------------------------------------
 
 def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
-              normalized=False, force=None, tiers=("t1", "t2", "t3"),
-              span_mm=W.S, pool=None, orientation=None, req=None,
+              normalized=False, force=None, tiers=("t1", "t2", "t3"), drop_factor=None,
+              span_mm=W.S, pool=None, orientation=None, req=None, rim_outer=None,
               target_deflection_mm=None, allowable_stress_mpa=None, **problem_kw):
     """`(value, grad, breakdown)` — the scalar Stage 3 descends, and its gradient.
 
@@ -1565,7 +1565,7 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
         # parent even when pooled and passing it down; its comment names the phase half.
         # This is that guard moved to where every caller gets it instead of one.
         mesh0 = (meshes[0] if meshes
-                 else phase_meshes(genes, cfg, phases[:1], orientation=orientation)[0])
+                 else phase_meshes(genes, cfg, phases[:1], orientation, rim_outer)[0])
         v2, mass_g = t2_vector(gj, mesh0, weights)
         j2 = np.asarray(jax.jacrev(lambda v: t2_vector(v, mesh0, weights)[0])(gj))
         v2 = np.asarray(v2)
@@ -1578,8 +1578,8 @@ def objective(genes, cfg="coarse", *, weights=None, phases=None, meshes=None,
     if "t3" in tiers:
         t3 = t3_terms(genes, cfg, phases=phases, meshes=meshes, weights=weights,
                       force=force, target_deflection_mm=target_deflection_mm,
-                      allowable_stress_mpa=allowable_stress_mpa,
-                      pool=pool, orientation=orientation,
+                      allowable_stress_mpa=allowable_stress_mpa, rim_outer=rim_outer,
+                      pool=pool, orientation=orientation, drop_factor=drop_factor,
                       span_mm=span_mm, flanks=flanks, **problem_kw)
         values.update(t3["values"])
         grads.update(t3["grads"])
@@ -1677,7 +1677,217 @@ def print_loss_breakdown(breakdown, title="STAGE-3 OBJECTIVE"):
     if r:
         print()
         for k in ("axle_drop_mean_mm", "phase_ripple_std_over_mean", "max_stress_mpa",
-                  "stress_utilisation", "mesh_mass_g", "min_scaled_jacobian",
-                  "buckling_ratio"):
+                  "stress_utilisation", "rim_band_utilisation", "mesh_mass_g",
+                  "min_scaled_jacobian", "buckling_ratio"):
             if k in r:
                 print(f"    {k:<32s}{r[k]:12.5f}")
+
+
+def _rim_band(rows, allowable_stress_mpa):
+    """The rim band's surface stress over the stencil — READ AND NOT SCORED (PLAN.md §203).
+
+    No term prices the band and no barrier walls it; both stress terms read the fillet
+    arcs.  This is the number that says whether one should: the worst phase's
+    `wheel_adjoint.rim_band_surface_stress`, and that over the same allowable
+    `stress_utilisation` is a fraction of.  It changes no loss, no gradient and no verdict.
+    """
+    worst = max(rows, key=lambda r: r["rim_band_od_vm_mpa"])
+    return {"rim_band_od_vm_max_mpa": worst["rim_band_od_vm_mpa"],
+            "rim_band_worst_phase_deg": worst["phase_deg"],
+            "rim_band_utilisation": worst["rim_band_od_vm_mpa"] / allowable_stress_mpa}
+
+
+# ---------------------------------------------------------------------------
+# THE CROWN STAND-IN — CROWN_PLAN.md Step 6, decided at R5 (D1-D3)
+# ---------------------------------------------------------------------------
+
+def _rim_outer(rim_outer):
+    """`rim_outer` resolved IN THE BODY, never bound in a signature (memory: a global in a
+    signature binds at import and disarms every monkeypatch of it).  `None` is the shipped
+    Ø100 band, `WW.RIM_OUTER_RADIUS_MM`, which is exactly what `build_wheel` defaults to,
+    so passing the resolved value is the default call and not a new one."""
+    return WW.RIM_OUTER_RADIUS_MM if rim_outer is None else float(rim_outer)
+
+
+def _check_mesh_rim_outer(meshes, rim_outer):
+    """Refuse caller-built meshes whose band is not the band the caller NAMED.
+
+    The half-threaded stand-in is the failure this exists for: `wheel_stage3.Evaluator`
+    builds the meshes and hands them down, so an evaluator that forgot `rim_outer` would
+    score the shipped band while its record claimed the stand-in — no error, a plausible
+    number, the wrong wheel.  Checked only when `rim_outer` is named: a caller that names
+    none keeps whatever meshes it built, as it always has."""
+    if rim_outer is None or not meshes:
+        return
+    bad = sorted({float(m.rim_outer) for m in meshes} - {_rim_outer(rim_outer)})
+    if bad:
+        raise ValueError(
+            f"meshes built with rim_outer {bad} handed to a call that names rim_outer "
+            f"{_rim_outer(rim_outer)} — the objective would score a band it was not asked "
+            f"to.  Build them with the same rim_outer (`phase_meshes(..., rim_outer=)`).")
+
+
+def _scaled_drops(drops, dgrads, drop_factor):
+    """`drops` and `dgrads` times `drop_factor`, or untouched when it is `None`.
+
+    CROWN_PLAN.md decision 0.4 / R5 D2: the 3D and junction offsets enter as ONE measured
+    factor on the 2D drop, here, before anything aggregates it — so `deflection`, the
+    report's drop figures and `phase_ripple` (which is scale-free and does not move) all
+    read the same predicted-3D millimetres.  NOT through `target_deflection_mm` via the
+    requirements layer: there the stroke also sets the landing load (`Mission.stroke_mm`).
+    `None` skips the multiply rather than multiplying by 1.0, so the default path is the
+    code path every committed number was measured on, not merely an equal one."""
+    if drop_factor is None:
+        return drops, dgrads
+    return drops * float(drop_factor), dgrads * float(drop_factor)
+
+
+# THE STAND-IN, AS ONE RECORD (R5 D3).  Applied together or not at all —
+# `wheel_stage3 --crown-standin` — because a rim thickened without its factor, or a factor
+# without its rim, scores a wheel nobody measured.
+#
+#   rim_outer    RIM_RADIUS_MM + t_eq.  t_eq = 2.144207067698175 mm is
+#                `study_crown_standin.json`'s `t_eq_mean_mm["1.5"]`: the 2D band thickness
+#                whose `coarse`/SVK drop ratio to t 1.5 reproduces the 3D ratio of the
+#                crown on top (b 1.5, h 1) to the flat exported part (b 1.5, h 0), fitted at
+#                phases 0 and 3.75.  Held out at the other six (R4): +1.53% / +1.55% at
+#                7.5 / 11.25, the eight-phase MEAN +0.45%.  R5 D1 judges it on the mean,
+#                because that is all `deflection` reads and `phase_ripple` is weighted 0.0.
+#                Kept, not refitted to the mean: the +0.45% is the only held-out evidence
+#                the stand-in has.  It over-reads ripple 1.17x (4.41% vs 3.77% std/mean);
+#                weighting `phase_ripple` under the stand-in re-opens D1.
+#   drop_factor  3D / 2D for the FLAT EXPORTED part, eight phases (R4): the fe3d SVK mean
+#                1.770258638948604 mm (1.7230894388 / 1.9362363646 / 2.0280665169 /
+#                1.8928400489 / 1.7400655620 / 1.6318341549 / 1.5924394297 / 1.6174975958,
+#                h 2.0 / hc 0.25, default box) over `best_solution.json`'s
+#                `axle_drop_mean_mm` 1.9920260119553344.  The stand-in carries the crown's
+#                ratio only; this carries the plane-stress -> 3D offset and the exported
+#                junctions' stiffening (R5 D2).  Predicted at `b729e86` on the stand-in:
+#                0.88867 x 1.48280 = 1.31773 mm against the measured 1.31186 (+0.45%).
+#   band         the band term (Step 5, R5 D4-D6 as amended by R6), all four from
+#                `study_band_tension.json`: `exclude_mm` 0.5 drops the one coarse face
+#                node beside each junction (0.188 mm off it; the next is 1.154) where the
+#                tension is a corner reading -- 27.05 / 30.43 / 36.35 MPa coarse / medium /
+#                fine at phase 3.75 -- and keeps the node R3's 3D peaks map to (1.154).
+#                `c_band` 1.5277 is the max over the eight phases of R1's 3D inner-face
+#                tension over the stand-in's 2D max beyond 0.5 mm (spread 1.185, under D5's
+#                1.3).  `node_p` 64 is the smallest of 8 / 16 / 32 / 64 whose p-norm is
+#                within 2% of that max at every phase (1.3%).  `weight` is `stress_margin`'s
+#                exchange rate, copied at import.  At `b729e86`: util 1.592, term 55.9 --
+#                17.7% over the 3D worst phase's 1.352, by the max-c (5%) and the phase
+#                p-norm at `stress_phase_p` 8 (11.7%), conservative by construction.
+CROWN_STANDIN = {
+    "rim_outer": W.RIM_RADIUS_MM + 2.144207067698175,
+    "drop_factor": 0.8886724512251485,
+    "band": {"weight": DEFAULT_WEIGHTS["stress_margin"], "c_band": 1.5276838666230264,
+             "node_p": 64.0, "exclude_mm": 0.5},
+}
+
+
+# ---------------------------------------------------------------------------
+# THE BAND TERM — CROWN_PLAN.md Step 5, decided at R5 D4-D6
+# ---------------------------------------------------------------------------
+#
+# `band` is None (no term, no QoI, nothing in the breakdown: every committed number is
+# the call it always was) or `{"weight", "c_band", "node_p", "exclude_mm"}`, and it is `CROWN_STANDIN`'s
+# third value.  It rides `problem_kw` into `t3_terms`, which names it, so it never reaches
+# the solver.  NOT IN `OBJECTIVE_TERMS` OR `DEFAULT_WEIGHTS`, against R5 D6's wording:
+# that tuple is the requirements layer's priority-axis list (`wheel_requirements.
+# priority_axes`), and adding an axis reshapes its SHOULD rows, reference deviations and
+# weight derivation, which Step 5 did not ask for.  The term exists where the stand-in is.
+
+def _band_qoi(mesh, band):
+    """`()`, or the one QoI the band term needs, appended to T3's by both the serial loop
+    and `wheel_pool_worker.run_phase` -- one definition, `_region_qois`' reason."""
+    if band is None:
+        return ()
+    return (("band_tension", lambda prob: WA._qoi_band_tension(
+        prob, *WA.band_inner_pairs(prob, mesh, band["exclude_mm"]), p=band["node_p"])),)
+
+
+def _band_leaf(o, band):
+    """The band QoI's leaves off a solve, for the pool's reply."""
+    if band is None:
+        return {}
+    return {"band_tension": {"value": o["band_tension"]["value"],
+                             "grad": o["band_tension"]["grad"]}}
+
+
+def _band_row(o, band):
+    """The phase row's band fields; `_band_grad` is taken back out by `_with_band`."""
+    if band is None:
+        return {}
+    return {"band_tension_pnorm_mpa": float(o["band_tension"]["value"]),
+            "_band_grad": np.asarray(o["band_tension"]["grad"])}
+
+
+def _with_band(out, rows, band, allowable_stress_mpa, stress_phase_p):
+    """`t3_terms`' return, plus `band_margin` when `band` is given (R5 D6).
+
+        util_band    = c_band * phase_pnorm(node_pnorm(sigma_tt+)) / allowable
+        band_margin  = soft_barrier(util_band - MARGIN_KNEE_UTIL, weight)
+
+    `stress_margin`'s form and knee, phase-aggregated by the same `_pnorm_and_grad` the two
+    junction terms use.  No wall (decision 0.3: the band is priced, not forbidden).  `c_band`
+    calibrates the stand-in's 2D tension to the crowned part's 3D reading (D5), read beyond
+    `exclude_mm` of every spoke junction, where the 2D face has a corner (R6)."""
+    if band is None:
+        return out
+    grads = [r.pop("_band_grad") for r in rows]
+    agg, dagg = _pnorm_and_grad(np.asarray([r["band_tension_pnorm_mpa"] for r in rows]),
+                                np.asarray(grads), stress_phase_p)
+    util = band["c_band"] * agg / allowable_stress_mpa
+    d_util = band["c_band"] * dagg / allowable_stress_mpa
+    out["values"]["band_margin"] = float(soft_barrier(util - MARGIN_KNEE_UTIL,
+                                                      band["weight"]))
+    out["grads"]["band_margin"] = (2.0 * band["weight"] * max(0.0, util - MARGIN_KNEE_UTIL)
+                                   * d_util)
+    out["report"].update({"band_tension_agg_mpa": float(agg),
+                          "band_utilisation": float(util),
+                          "band_c": float(band["c_band"]),
+                          "band_node_p": float(band["node_p"])})
+    return out
+
+
+def descent_model(record):
+    """The stand-in a genome record was descended under, as `objective`'s kwargs: the
+    record's own `search.crown_standin`, or `{}` for a record that names none.
+
+    CROWN_PLAN R21 (R20 successor 0).  Every bare `best_solution.json` read scores the flat
+    1.5 mm band, and since R20 that is not the part that ships: `240d5a2` reads 2.945 mm /
+    util 1.186 on it against 1.938 / 0.949 on the stand-in it was descended under.  The
+    record already says which model describes it (`wheel_stage3.search_block` writes
+    `crown_standin`), so a gate that makes a claim about a genome reads the model from the
+    genome's own record, not from a module default.  NOT made the default instead, because
+    the stand-in's `drop_factor` and `c_band` are calibrations measured on `b729e86`'s and
+    this family's spokes (R4-R6), not physics: applied to every genome on disk they would
+    price wheels nobody measured.  A record without the key gets `{}`, so every committed
+    number on such a record is the call it always was."""
+    return dict((record.get("search") or {}).get("crown_standin") or {})
+
+
+def _arrival_exact_deg(ctrl):
+    """`[hub, rim]` arrival in degrees from the ring TANGENT, off the EXACT end tangents.
+
+    CROWN_PLAN R22.  A Bezier's end tangents are its first and last control-polygon edges,
+    and both endpoints sit on the +x axis of their ring (P0 at the origin, P5 at `span_mm`,
+    shifted by `hub_radius`), so the radial direction is x-hat and the angle is
+    `asin(|dx| / |d|)` -- the construction `wheel_fea.arrival_penalty` has always used.
+
+    WHY THE `arrival` BARRIER STOPPED READING `WW.arrival_angles`.  That function takes the
+    tangent as `sample(1e-5) - sample(0)` on the centerline sampled at `cfg.n_curve`, which
+    is the first CHORD of the polyline, not the tangent: O(h), halving per rung.  On
+    `240d5a2`'s rim, n_curve 600 / 1200 / 2400 / 4800 / 9600 / 19200 read 64.922 / 64.984 /
+    65.015 / 65.031 / 65.039 / 65.043 against the exact 65.046.  So the wall sat 0.062 deg
+    further out at `coarse`, where descents run, than at the limit, and the crown descent
+    parked on it: `make svk` (medium) read the shipped genome over it (`arrival` 0.00714)
+    while every coarse record said 0.  Exact, the barrier reads one value at every rung.
+
+    Only the barrier moves.  `hub_fillet_cap_mm`'s law is fitted on the sampled hub angle
+    and keeps it, so `Kt_hub` is bit-identical.  Of 66 distinct genomes in the root and
+    `studies/` records, five read over 65 exact, all the crown arc's (worst 65.066); no
+    other reads over 64.955, so every other committed `arrival` stays 0.0 at every rung.
+    """
+    edges = (ctrl[1] - ctrl[0], ctrl[-1] - ctrl[-2])
+    return jnp.stack([jnp.degrees(jnp.arcsin(jnp.clip(
+        jnp.abs(e[0]) / jnp.sqrt(e[0] ** 2 + e[1] ** 2), 0.0, 1.0))) for e in edges])

@@ -138,6 +138,42 @@ def parse_sections(spec):
     return names
 
 
+def solver_is_correct(solver):
+    """`all(solver)` — no solver verdict FAILED.  Empty is correct, not incorrect.
+
+    PLAN.md §182 §3 ran `make contact` at its documented argv — `--sections patch`, which
+    `Makefile:547` defaults — and it **exited 1 on a wheel with nothing wrong with it**,
+    as it would have on any wheel.  `patch` carries neither a `pass` nor a `solver_pass`
+    key: its keys are `rows`, `convergence` and seven scalar characterisation figures.  So
+    `solver` came back EMPTY, and the expression here was `bool(solver) and all(solver)`,
+    which is False by emptiness.  The driver printed the fact in words — *"verdict over
+    those that carry one: no verdict"* — and then returned 1 anyway.
+
+    THE EMPTY CASE IS THE ONE `:1177-1181` DID NOT CONSIDER, and the two neighbouring
+    lines want opposite answers to it, which is why one idiom served both for so long:
+
+        `rep["pass"]`          False by emptiness is RIGHT.  Nothing was checked, so
+                               nothing may be reported green.  It keeps `bool(...) and
+                               all(...)` and the printed line still says "no verdict".
+        `solver_is_correct`    False by emptiness is WRONG.  It answers "did a solver
+                               verdict fail?", and no verdict failing is the true answer
+                               when none was taken.  The SOLVER is not broken by a run
+                               that never asked it anything.
+
+    An empty `solver` cannot arrive by accident: `parse_sections` above rejects both an
+    empty `--sections` and an unknown name, with a `ValueError` and before any solving, so
+    emptiness only ever means a caller deliberately chose a valid, verdict-free section
+    set.  A real FAIL still returns 1 — `all()` is unchanged on a non-empty list.
+
+    Giving `patch` a `solver_pass` of its own was the other door §182 §7.1 named, and it
+    is the wrong one: `solver_pass` asserts that a SOLVE converged — ":229", *"every
+    admissible decade converged, the drop sequence is monotone and contracting"* — and
+    `patch` characterises a mesh-convergent quantity rather than certifying a solve.  A
+    section with no solve to certify should report no verdict, not a manufactured one.
+    """
+    return all(solver)
+
+
 def load_genes(path="best_solution.json"):
     with open(os.path.join(PP.ROOT, path)) as fh:
         return wg.genes_to_vector(json.load(fh)["genes"])
@@ -1181,7 +1217,7 @@ def main():
     # verdict.  `rep["pass"]` above keeps its meaning and is still reported.
     solver = [rep[n].get("solver_pass", rep[n]["pass"])
               for n in sections if "pass" in rep.get(n, {})]
-    rep["solver_is_correct"] = bool(solver) and all(solver)
+    rep["solver_is_correct"] = solver_is_correct(solver)
     rep["settings"] = {"config": cfg, "genome": args.genome, "quick": args.quick,
                        "kinematics": kin, "sections": sections,
                        "eps_n_default": float(fem.DEFAULT_CONTACT_EPS_N),

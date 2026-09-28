@@ -131,16 +131,21 @@ def test_the_end_cap_refused_the_fillet_at_both_rings(report):
     1.588 mm — not a near thing). The rim has not: `T/leg` 4.89 against the shipped
     1.680 mm radius (`R_max` 0.344 mm), still refused, though the margin has shrunk
     from 8.49 to 4.89.
+
+    CROWN_PLAN R20, `240d5a2`: both verdicts hold, and the legs moved.  The hub fits capped
+    (leg 1.4547 mm, `T/leg` 0.3375, `R_max` 1.351 against the shipped 0.456).  The rim is
+    refused by more (leg 0.9375, `T/leg` 8.10, `R_max` 0.207).  The leg floors below follow
+    the measurement; the verdicts did not move.
     """
     hub = _corner(report, "hub", "mesh (uncap=False)", "P_c")["fillet_fit"]
     assert hub["fits"] is True
     assert hub["t_over_leg"] < 0.5
-    assert hub["spoke_side_leg_mm"] > 1.5
+    assert hub["spoke_side_leg_mm"] > 1.4
 
     rim = _corner(report, "rim", "mesh (uncap=False)", "P_c")["fillet_fit"]
     assert rim["fits"] is False
     assert rim["t_over_leg"] > 4.5
-    assert rim["spoke_side_leg_mm"] > 1.0
+    assert rim["spoke_side_leg_mm"] > 0.9
 
 
 def test_uncapping_FLIPPED_the_hub_verdict_and_did_not_flip_the_rim(report):
@@ -200,10 +205,15 @@ def test_the_faithful_rim_would_buy_a_factor_of_FOUR_on_the_admissible_radius(re
     carries the peak; it still does not buy it AT THE SHIPPED RADIUS, and that
     distinction is still the whole of the ranking: see PLAN §46. Pinned as a ratio and a
     direction, not as millimetres.
+
+    CROWN_PLAN R20: SMALLER AGAIN ON `240d5a2`, AND THE CONCLUSION STILL HOLDS.  0.3813 ->
+    0.6510 mm, a factor of 1.71, and the faithful rim still refuses the shipped 1.6802 mm.
+    The factor has fallen 4.6 -> 2.03 -> 1.71 across three promotions, so the name's
+    "FOUR" is history.  The ratio floor is 1.5.
     """
     built = _corner(report, "rim", "mesh (SHIPPED DEFAULT)", "P_c")["fillet_fit"]
     faithful = _corner(report, "rim", "mesh (uncap=True)", "P_c")["fillet_fit"]
-    assert faithful["r_max_on_this_leg_mm"] > 1.9 * built["r_max_on_this_leg_mm"]
+    assert faithful["r_max_on_this_leg_mm"] > 1.5 * built["r_max_on_this_leg_mm"]
     assert faithful["fits"] is False, (
         "the faithful rim now admits the SHIPPED R_rim — that would retire PLAN §46's "
         "central qualifier and the ranking that rests on it")

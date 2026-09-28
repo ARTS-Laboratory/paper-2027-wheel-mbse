@@ -669,3 +669,30 @@ def test_the_region_pnorm_wakes_the_two_genes_defect_1_measured_at_zero(genes, f
             assert entry != 0.0, (
                 f"{label}: d(fillet stress)/d({name}) came back exactly 0.0 — that is "
                 "§15 DEFECT 1's dead gene, which this term exists to wake")
+
+
+def test_the_band_tension_gradient_matches_a_central_difference(genes, filleted):
+    """CROWN_PLAN.md Step 5: `_qoi_band_tension`'s adjoint closes, on the gene that sets
+    the spoke's rim end (`t3`), by the ladder `test_the_region_pnorms_gradient_matches_a_
+    central_difference` uses.  The pairs are re-derived on each perturbed mesh, as the
+    objective does, so the check covers the face lookup as well as the stress."""
+    def qoi_for(m):
+        return lambda prob: WA._qoi_band_tension(prob, *WA.band_inner_pairs(prob, m), p=8.0)
+
+    def value_at(g):
+        m = WW.build_wheel(g, CFG, fillet=True)
+        return WA.solve_and_grad(g, CFG, qoi_for(m), indentation_mm=INDENT_MM,
+                                 mesh=m)["value"]
+
+    out = WA.solve_and_grad(genes, CFG, qoi_for(filleted), indentation_mm=INDENT_MM,
+                            mesh=filleted)
+    gid = wg.GENE_NAMES.index("t3")
+    grad = out["grad"][gid]
+    assert grad != 0.0, "the band's tension does not see the spoke's rim end at all"
+    rng = sg._ranges()
+    best = min(
+        abs((value_at(_bump(genes, gid, rng[gid] * h))
+             - value_at(_bump(genes, gid, -rng[gid] * h)))
+            / (2.0 * rng[gid] * h) - grad) / abs(grad)
+        for h in (1e-3, 1e-4, 1e-5))
+    assert best < 1e-6, f"d(band tension)/d(t3) is out by {best:.2e} on its whole FD ladder"

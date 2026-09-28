@@ -98,7 +98,7 @@ import numpy as np
 
 # The shared geometry kernel.  numpy-only at import (it takes its array module as an
 # argument rather than importing jax), which is what keeps this file importable from
-# the CadQuery environment — see wheel_step_export.py:60-69.
+# the CadQuery environment — see wheel_step_export.py:72-81.
 import wheel_geometry as _geom
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -1680,7 +1680,7 @@ if __name__ == "__main__":
     sys.stdout.flush()
     if args.no_export or args.smoke:
         # The exporter reads best_solution.json unconditionally (load_genome,
-        # wheel_step_export.py:125).  A smoke run wrote its genome elsewhere, so
+        # wheel_step_export.py:162).  A smoke run wrote its genome elsewhere, so
         # exporting here would rebuild the STEP from the *previous* real genome and
         # stamp it with a fresh timestamp — destroying exactly the staleness signal
         # warn_if_stale() exists to give.
@@ -1711,3 +1711,28 @@ if __name__ == "__main__":
             print(f"\n  Could not launch the CAD env ({exc}).\n  Retry with:\n    {manual_cmd}")
 
     print("\nDone.")
+
+
+def set_rim_fillet_floor(mm):
+    """Move the LOW bound on `R_rim` (gene 13), per run, in `set_min_wall`'s pattern.
+
+    CROWN_PLAN.md R12-R14.  The 2D sector builds `R_rim` on one flank of each rim junction
+    and the exported part on both, and the 3D band tension peaks at the toe on the flank
+    2D leaves square — so no 2D term can price that toe, and the 2D descent that produced
+    `64e5068` spent `R_rim` down to 0.886 mm, where 3D reads 39.30 MPa against the 40 MPa
+    printed ultimate (R10).  R13 measured the floor instead: at 1.35 mm the phase-0 toe
+    reads 33.67 MPa, under the 33.85 bar `b729e86` sets; at 1.10 it reads 38.71.  1.35 is
+    the solved point, not the interpolated 1.341.
+
+    A per-run setter, not an edit of the 0.5 literal: that literal is the box every
+    committed genome was descended in, and the comment above it says why it stayed put.
+    The floor is a 3D measurement on one genome, and it travels with the run that uses it.
+    """
+    floor = float(mm)
+    ceiling = GENE_SPACE[13]["high"]
+    if not floor > 0.0 or floor >= ceiling:
+        raise ValueError(
+            f"R_rim floor {floor} mm must be positive and strictly below its ceiling "
+            f"({ceiling} mm) — otherwise the gene's box is empty or inverted.")
+    GENE_SPACE[13]["low"] = floor
+    _refresh_gene_arrays()

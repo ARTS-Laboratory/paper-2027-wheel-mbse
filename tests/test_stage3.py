@@ -116,11 +116,11 @@ def test_the_cosine_schedule_starts_at_lr_and_ends_at_zero():
 
 @pytest.mark.parametrize("n_phase,n_sub", [(8, 8), (4, 4), (2, 8)])
 def test_the_rqmc_offset_always_lands_on_the_fixed_lattice(n_phase, n_sub):
-    """The whole performance argument for `rqmc` over a continuous shift.
+    """What was the whole performance argument for `rqmc` over a continuous shift.
 
-    `coord_fn` keys its jit cache on `float(phase)`, so if a draw could land off the
-    `n_phase * n_sub` grid it would re-trace on every step forever.  Checked over many
-    draws because a scheme that is usually on the lattice is not on the lattice.
+    `coord_fn` keyed its jit cache on `float(phase)`, so a draw off the `n_phase * n_sub`
+    grid re-traced every step; PLAN.md §162 successor 1 made the phase traced.  Checked over
+    many draws because a scheme that is usually on the lattice is not on the lattice.
     """
     cell = WO.SECTOR_DEG / n_phase
     lattice = np.arange(n_phase * n_sub) * (cell / n_sub)
@@ -128,8 +128,8 @@ def test_the_rqmc_offset_always_lands_on_the_fixed_lattice(n_phase, n_sub):
     for _ in range(50):
         for p in WO.phase_stencil(n_phase, n_sub, "rqmc", rng):
             assert np.min(np.abs(lattice - p)) < 1e-12, (
-                f"phase {p} is off the {n_phase}x{n_sub} lattice; coord_fn's cache "
-                f"would miss on every step — see wheel_stage3's module docstring")
+                f"phase {p} is off the {n_phase}x{n_sub} lattice every recorded rqmc "
+                f"run was drawn on — see wheel_stage3's module docstring")
 
 
 def test_the_warm_vector_is_the_previous_drops_and_nothing_else():
@@ -868,9 +868,9 @@ def test_fidelity_check_evaluator_shares_the_pinned_orientation(genes, z0, monke
     seen = []
     real = WO.phase_meshes
 
-    def spy(g, cfg, phases, orientation=None):
+    def spy(g, cfg, phases, orientation=None, rim_outer=None):
         seen.append(orientation)
-        return real(g, cfg, phases, orientation=orientation)
+        return real(g, cfg, phases, orientation=orientation, rim_outer=rim_outer)
 
     monkeypatch.setattr(WO, "phase_meshes", spy)
     S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", verbose=False,
@@ -959,9 +959,9 @@ def test_every_mesh_a_step_builds_is_built_with_the_pinned_orientation(genes, z0
     seen = []
     real = WO.phase_meshes
 
-    def spy(g, cfg, phases, orientation=None):
+    def spy(g, cfg, phases, orientation=None, rim_outer=None):
         seen.append(orientation)
-        return real(g, cfg, phases, orientation=orientation)
+        return real(g, cfg, phases, orientation=orientation, rim_outer=rim_outer)
 
     monkeypatch.setattr(WO, "phase_meshes", spy)
     rec = S3.descend(z0, CFG, steps=1, n_phase=N_PHASE, scheme="uniform", verbose=False)
@@ -1513,7 +1513,8 @@ def test_an_elite_that_will_not_solve_is_recorded_and_the_screen_carries_on(monk
 # S13 — the two pure functions the phase-pool section is built on
 # ---------------------------------------------------------------------------
 
-def test_the_worker_ladder_is_derived_from_the_host_not_written_down(monkeypatch):
+def test_the_worker_ladder_is_derived_from_the_host_not_written_down(monkeypatch,
+                                                                   memory_to_spare):
     """A hardcoded ladder measures oversubscription on a machine smaller than it.
 
     Every rung past the core count is workers queueing for a core, and the "speedup" such
@@ -1592,3 +1593,150 @@ def test_a_structural_mismatch_can_never_be_excused_by_the_tolerance():
     # ... including when the missing leaf is a gradient, where a tolerance exists to abuse.
     g = {"grad": np.array([1.0, 2.0])}
     assert so3._split_diffs(g, {"grad": np.array([1.0])})[1]
+
+
+@pytest.fixture
+def memory_to_spare(monkeypatch):
+    """Far more free memory than any pool needs, so `_worker_ladder` sizes on cores alone.
+
+    The ladder test predates `default_workers`' RAM term (PLAN.md §167) and asserts what the
+    core count allows; on a real box the memory cap would answer first.
+    """
+    monkeypatch.setattr(so3.WP, "_available_gib", lambda: 1.0e6)
+
+
+def test_s13_records_the_memory_reading_that_sized_its_ladder(genes, monkeypatch):
+    """PLAN.md §167's successor 0: a ladder sized on free memory records that reading.
+
+    Since §167 the same box derives `[1, 2, 4]` idle and `[1, 2, 3]` busy, and before this
+    the artifact kept the ladder and not the load that chose it.  Free memory here FALLS as
+    soon as the first evaluation runs, the way a real run's does, so a reading taken
+    anywhere after the ladder was sized records a number that did not size it.  No physics
+    and no processes: the evaluator and the pool are stand-ins, and the claim is about what
+    the result dict says.
+    """
+    worker, parent = so3.WP.POOL_GIB[CFG]
+    idle = parent + 3.5 * worker
+    running = []
+
+    class Evaluator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __call__(self, *args, **kwargs):
+            running.append(True)
+            return 1.0, np.zeros(3), {"terms": {}, "report": {}}
+
+    class PhasePool:
+        def __init__(self, n):
+            pass
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(so3.S3, "Evaluator", Evaluator)
+    monkeypatch.setattr(so3.WP, "PhasePool", PhasePool)
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: 16)
+    monkeypatch.setattr(so3.WP, "_available_gib",
+                        lambda: idle - 2.0 * worker if running else idle)
+
+    m = so3.run_phase_pool(genes, CFG, n_phase=8, n_rep=1)
+    assert m["worker_counts"] == [1, 2, 3], "memory, not the 16 cores, must size this ladder"
+    assert m["mem_available_gib"] == idle, "the recorded reading is not the one that sized it"
+    assert m["pool_gib"] == (worker, parent)
+    assert m["worker_counts_given"] is False
+
+    # The recorded fields alone reproduce the ladder, which is what makes two runs comparable.
+    running.clear()
+    monkeypatch.setattr(so3.WP.os, "cpu_count", lambda: m["cpu_count"])
+    monkeypatch.setattr(so3.WP, "_available_gib", lambda: m["mem_available_gib"])
+    assert so3._worker_ladder(m["n_phase"], m["config"]) == m["worker_counts"]
+
+    # A pinned ladder says so, or a reading that does not reproduce it reads as a wrong one.
+    pinned = so3.run_phase_pool(genes, CFG, n_phase=8, n_rep=1, worker_counts=[2])
+    assert pinned["worker_counts"] == [2] and pinned["worker_counts_given"] is True
+
+
+def test_the_search_block_names_the_crown_standin_or_none():
+    """A genome descended on the stand-in is the optimum of a different wheel, and its
+    genes alone do not say so (CROWN_PLAN.md R5 D3).  None is the shipped band."""
+    assert S3.search_block(_Args, "l", 1)["crown_standin"] is None
+    blk = S3.search_block(_Args, "l", 1, crown_standin=WO.CROWN_STANDIN)
+    assert blk["crown_standin"] == WO.CROWN_STANDIN
+
+
+def test_the_crown_standin_switch_is_both_values_or_neither(monkeypatch):
+    """`--crown-standin` yields `WO.CROWN_STANDIN`'s three values together, and its absence
+    yields none: they splat into `descend` / `descend_lbfgsb` as keywords, so a missing
+    one would descend a thickened band without its factor (R5 D3)."""
+    import argparse
+    for argv, want in ((["wheel_stage3.py", "--crown-standin"], dict(WO.CROWN_STANDIN)),
+                       (["wheel_stage3.py"], {})):
+        monkeypatch.setattr(sys, "argv", argv)
+        _, sk = S3._parse_args(argparse.ArgumentParser())
+        assert sk == want
+    assert set(WO.CROWN_STANDIN) == {"rim_outer", "drop_factor", "band"}
+
+
+def test_the_standin_reaches_the_run_record_off_the_evaluator():
+    """The run record reads the stand-in off the evaluator's own `problem_kw`, as it reads
+    the mission, so it says what reached the objective rather than what was asked for."""
+    ev = S3.Evaluator(CFG, **WO.CROWN_STANDIN)
+    assert S3._standin_settings(ev) == {"rim_outer_mm": WO.CROWN_STANDIN["rim_outer"],
+                                        "drop_factor": WO.CROWN_STANDIN["drop_factor"],
+                                        "band": WO.CROWN_STANDIN["band"]}
+    assert S3._standin_settings(S3.Evaluator(CFG)) == {"rim_outer_mm": None,
+                                                        "drop_factor": None, "band": None}
+
+
+def test_an_evaluator_on_the_standin_scores_the_standin(genes):
+    """The descent's own path, end to end: an `Evaluator` carrying the stand-in builds its
+    meshes on the stand-in's band (else `objective` refuses them) and scores what a direct
+    `t3_terms` on that band scores, factor included."""
+    low, high, _ = wg.bounds_arrays(W.GENE_SPACE)
+    phases = WO.phase_stencil(n_phase=1, scheme="uniform")
+    _, _, brk = S3.Evaluator(CFG, **WO.CROWN_STANDIN)(
+        wg.normalize(genes, low, high), low, high, phases=phases, tiers=("t3",))
+    direct = WO.t3_terms(genes, CFG, phases=phases, **WO.CROWN_STANDIN)
+    assert brk["report"]["axle_drop_mean_mm"] == pytest.approx(
+        direct["report"]["axle_drop_mean_mm"], rel=1e-12)
+
+
+def test_the_r_rim_floor_flag_moves_the_box_and_both_records_carry_it(monkeypatch):
+    """CROWN_PLAN.md R15: `--r-rim-floor` lands on parse, before `main` reads the bounds,
+    and the floor rides in `search_block` and the run record's settings, read off the box.
+    Absent, the box keeps its 0.5 and the records say so.  Restored by hand: this file's
+    bounds fixture is module-scoped (`test_gene_space.py`'s docstring)."""
+    import argparse
+    saved = [(g["low"], g["high"]) for g in W.GENE_SPACE]
+    try:
+        monkeypatch.setattr(sys, "argv", ["wheel_stage3.py"])
+        S3._parse_args(argparse.ArgumentParser())
+        assert W.GENE_SPACE[13]["low"] == saved[13][0] == 0.5
+        assert S3.search_block(_Args, "l", 1)["r_rim_floor_mm"] == 0.5
+
+        monkeypatch.setattr(sys, "argv", ["wheel_stage3.py", "--r-rim-floor", "1.35"])
+        S3._parse_args(argparse.ArgumentParser())
+        assert W.GENE_SPACE[13]["low"] == 1.35
+        assert wg.bounds_arrays(W.GENE_SPACE)[0][13] == 1.35
+        assert S3.search_block(_Args, "l", 1)["r_rim_floor_mm"] == 1.35
+        assert S3._box_settings() == {"r_rim_floor_mm": 1.35}
+    finally:
+        for g, (lo, hi) in zip(W.GENE_SPACE, saved):
+            g["low"], g["high"] = lo, hi
+        W._refresh_gene_arrays()
+
+
+def test_a_record_names_the_model_every_gate_reads_it_under():
+    """CROWN_PLAN R21 (R20 successor 0): `WO.descent_model` reads back what `search_block`
+    wrote, and `{}` off a record that names none, so a gate scoring a genome from its file
+    scores the wheel the descent saw.  Pinned BY FILE, not to the shipped pointer (the
+    promotion checklist's item 9): `240d5a2` was descended on the stand-in, `b729e86` on the
+    flat band, and `make svk` read the first INFEASIBLE while it scored both on the second."""
+    assert WO.descent_model({"search": S3.search_block(
+        _Args, "l", 1, crown_standin=WO.CROWN_STANDIN)}) == WO.CROWN_STANDIN
+    assert WO.descent_model({"search": S3.search_block(_Args, "l", 1)}) == {}
+    for name, want in (("stage3_crown_shipped.json", WO.CROWN_STANDIN),
+                       ("stage3_svk_refillet_shipped_r2_best.json", {})):
+        with open(os.path.join(REPO, name)) as fh:
+            assert WO.descent_model(json.load(fh)) == want, name

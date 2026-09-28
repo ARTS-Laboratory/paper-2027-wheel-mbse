@@ -12,6 +12,13 @@
  * new session of its own, and closing the app does not touch it.  The next launch reads
  * it back off disk.  Do not "improve" this by keeping the app alive to babysit runs.
  *
+ * IT DRIVES THE MACHINE IT IS RUNNING ON, AND ONLY THAT ONE.  There is no attach mode, no
+ * remote URL and no tunnel: the window, the server, the venvs and the runs are all on this
+ * computer, and the Mac build drives the Mac.  That is a stronger constraint than it
+ * sounds, because it removes the escape hatch -- a machine with no `.venv-opt` cannot be
+ * answered by pointing the window at a machine that has one, so the app has to be able to
+ * BUILD one.  See `setup.js`, which runs what `make env` runs.
+ *
  * WHERE THE REPO IS, is the one question a packaged app has that `npm start` does not.
  * Unpacked, the answer is two directories up.  Installed from a .dmg or an .exe, the app
  * is somewhere else entirely and the checkout it should drive is a thing only the user
@@ -23,28 +30,17 @@ const { app, BrowserWindow, dialog, shell, nativeTheme, ipcMain } = require('ele
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const buildMenu = require('./menu');
+const { ENVS, ensureEnvs, verify } = require('./setup');
 
 const IS_MAC = process.platform === 'darwin';
 const IS_WIN = process.platform === 'win32';
 
-/* ATTACH MODE: drive a server that is ALREADY RUNNING, somewhere else.
- *
- * The normal path spawns `.venv-opt/bin/python gui/server.py` next to a checkout, which is
- * exactly what a second machine does not have -- and cannot fake, because those venv
- * binaries are Linux ELF and an sshfs mount of the repo would hand macOS an interpreter it
- * cannot exec.  So the shell and the pipeline are allowed to sit on different machines:
- *
- *     ssh -N -L 8731:127.0.0.1:8731 you@the-box          # on the laptop
- *     WHEEL_SERVER_URL=http://127.0.0.1:8731 npm start
- *
- * THE URL SHOULD BE A LOOPBACK TUNNEL, and that is the server's rule rather than this
- * file's: `server.py` binds 127.0.0.1 because the endpoint starts processes and has no
- * authentication, and its docstring says to tunnel rather than move the bind address.
- * Nothing here re-binds anything, so pointing this at a non-loopback host only works if
- * someone has already overridden that -- which is their decision to have made, not a
- * default this reaches around. */
-const ATTACH = (process.env.WHEEL_SERVER_URL || '').trim();
+/* The local page: the splash, the failure state and the setup log all live in this one
+ * file, and it is the only thing this window ever loads that the server did not serve. */
+const SHELL = path.join(__dirname, 'shell.html');
+const SHELL_URL = pathToFileURL(SHELL).href;
 
 /* Three colours from static/style.css, repeated here because the window is painted before
  * any stylesheet loads.
@@ -130,7 +126,7 @@ function startServer(root) {
       return reject(new Error(
         `No interpreter at ${py}.\n\n` +
         `The panels import wheel_requirements, wheel_geometry and wheel_fea, so they ` +
-        `need the optimisation env. Build it with:\n\n    make env`));
+        `need the optimisation env.`));
 
     serverLog = [];
     /* `-u`: the ready line has to arrive before the pipe buffer fills, and server.py
@@ -167,8 +163,8 @@ function startServer(root) {
         serverLog.join('\n')));
       /* An exit AFTER we were ready is a crash mid-session, and a window pointed at a
        * dead port shows a browser error page. Say what happened instead. */
-      if (settled && win && !win.isDestroyed()) showFailure(
-        `The server stopped (exit ${code}).\n\n` + serverLog.join('\n'));
+      if (settled && win && !win.isDestroyed()) showShell({
+        msg: `The server stopped (exit ${code}).\n\n` + serverLog.join('\n') });
     });
 
     /* jax is imported lazily, so the port answers long before the MBSE panel costs
@@ -232,75 +228,125 @@ function createWindow() {
   return win;
 }
 
-function showFailure(message) {
-  if (!win || win.isDestroyed()) return;
-  win.loadFile(path.join(__dirname, 'shell.html'),
-               { hash: encodeURIComponent(message) });
+/* Three states, one file, chosen by the fragment: no hash is the splash, and a hash is a
+ * JSON payload `{ msg, setup }`.  `setup` is what puts the "Set up this machine" button on
+ * the page, and it is set from a MEASUREMENT rather than from the shape of the error --
+ * see `showStartFailure`. */
+function showShell(payload) {
+  if (!win || win.isDestroyed()) return Promise.resolve();
+  return win.loadFile(SHELL, payload
+    ? { hash: encodeURIComponent(JSON.stringify(payload)) }
+    : {});
 }
 
-function attachOrigin() {
-  /* `origin + '/'` and not the string as given: `will-navigate` compares with
-   * `startsWith`, so a URL typed without a trailing slash would fail to match the very
-   * page it just loaded and the shell would send its own index to the OS browser. */
-  try {
-    const u = new URL(ATTACH);
-    return /^https?:$/.test(u.protocol) ? u.origin + '/' : null;
-  } catch {
-    return null;
-  }
+/* The server would not start.  Whether that is worth offering to set the machine up for is
+ * not answerable from the message -- a missing interpreter and a half-installed one read
+ * completely differently and want the same button -- so ask the env itself rather than
+ * pattern-matching the text. */
+async function showStartFailure(root, message) {
+  const ok = await verify(root, ENVS[0]);
+  return showShell({ msg: message, setup: !ok });
 }
 
-async function bootAttached() {
-  const url = attachOrigin();
-  if (!url)
-    return showFailure(
-      `WHEEL_SERVER_URL is not an http(s) URL:\n\n    ${ATTACH}\n\n` +
-      `Expected something like http://127.0.0.1:8731 -- the local end of an ssh tunnel ` +
-      `to the machine holding the checkout.`);
-  serverUrl = url;
-  try {
-    await win.loadURL(url);
-  } catch (e) {
-    showFailure(
-      `Nothing answered at ${url}\n\n${e.message}\n\n` +
-      `Attach mode does not start a server; it expects one to be running already. ` +
-      `Check that the tunnel is up and that the far end is serving:\n\n` +
-      `    ssh -N -L 8731:127.0.0.1:8731 you@the-box\n` +
-      `    make gui-browser        # on the box, if nothing is listening yet`);
-  }
-}
-
-async function boot() {
-  createWindow();
-  await win.loadFile(path.join(__dirname, 'shell.html'));   // the splash, painted at once
-
-  if (ATTACH) return bootAttached();
-
-  let root = resolveRepo();
-  if (!root) {
-    showFailure('No wheel checkout found.\n\nThis app is a control surface over a ' +
-                'checkout of the wheel repository: it needs the directory holding gui/, ' +
-                'src/ and the Makefile.\n\nUse File → Choose checkout… to point ' +
-                'it at one.');
-    return;
-  }
+async function launchInto(root) {
   try {
     const url = await startServer(root);
     await win.loadURL(url);
     saveSettings({ repo: root });
   } catch (e) {
-    showFailure(e.message);
+    await showStartFailure(root, e.message);
   }
+}
+
+async function boot() {
+  /* GUARDED, because `boot` is also the retry path.  View → Reload calls this when there
+   * is no server URL to reload, and an unguarded `createWindow()` there would open a
+   * SECOND window onto the same failure and leak the first. */
+  if (!win || win.isDestroyed()) createWindow();
+  await showShell(null);                          // the splash, painted at once
+
+  const root = resolveRepo();
+  if (!root)
+    return showShell({ msg:
+      'No wheel checkout found.\n\nThis app is a control surface over a checkout of ' +
+      'the wheel repository: it needs the directory holding gui/, src/ and the ' +
+      'Makefile.\n\nUse File → Choose checkout… to point it at one.' });
+
+  /* THE CHECK IS `verify`, NOT `fs.existsSync`, AND THAT IS A BUG FIX.  An interrupted
+   * pip leaves a `.venv-opt/bin/python` that exists and has nothing in it, and existence
+   * was passing that -- so `gui/server.py` started (it is stdlib-only by design and
+   * imports the pipeline lazily), the window opened, and the missing packages surfaced
+   * as a panel error minutes later instead of as the one thing that was actually wrong.
+   * `verify` asks pip's own question with `find_spec` and costs 9 ms, so there is no
+   * reason for the launch path to settle for a weaker answer. */
+  const built = await verify(root, ENVS[0]);
+  if (!built) {
+    const py = pythonIn(root);
+    return showShell({
+      setup: true,
+      msg: (fs.existsSync(py)
+        ? `There is an interpreter at ${py}, but numpy, scipy and jax are not all ` +
+          `installed in it -- which is what an interrupted pip install leaves behind.\n\n`
+        : `The checkout at ${root} has no .venv-opt, so there is no interpreter here ` +
+          `that can import wheel_requirements, wheel_geometry and wheel_fea.\n\n`) +
+        `The app can finish this on this machine. It runs what \`make env\` runs: ` +
+        `create the two virtualenvs, then pip-install requirements-opt.txt and ` +
+        `requirements-cad.txt into them. Anything already downloaded is reused.`,
+    });
+  }
+
+  await launchInto(root);
 }
 
 async function relaunchInto(root) {
   stopServer();
   serverUrl = null;
-  await win.loadFile(path.join(__dirname, 'shell.html'));
+  await showShell(null);
+  await launchInto(root);
+}
+
+/* ---------------------------------------------------------------------------
+ * SETTING THIS MACHINE UP
+ * ------------------------------------------------------------------------ */
+let settingUp = false;
+
+/* Reachable ONLY from shell.html, and the check is on the sender rather than on trust.
+ *
+ * This window's preload is shared with everything `gui/server.py` serves -- it has to be,
+ * there is one webPreferences per window -- so without this guard a page delivered over
+ * HTTP could invoke pip.  That page is our own and is already allowed to start 50-hour
+ * descents through the server's API, so this is not the difference between safe and
+ * unsafe; it is the difference between a bridge whose reach is stated and one whose reach
+ * is argued.  `preload.js` says the page can ask what platform it is on and nothing else,
+ * and this keeps that sentence true. */
+async function handleSetup(event) {
+  if (!event.senderFrame || !event.senderFrame.url.startsWith(SHELL_URL))
+    throw new Error('setup is only available from the shell page');
+  if (settingUp) throw new Error('a setup is already running');
+
+  const root = resolveRepo();
+  if (!root) return { ok: false, error: 'No checkout to set up.' };
+
+  settingUp = true;
+  const send = line => {
+    if (win && !win.isDestroyed()) win.webContents.send('wheel:setup-line', line);
+  };
   try {
-    const url = await startServer(root);
-    await win.loadURL(url);
-  } catch (e) { showFailure(e.message); }
+    const ready = await ensureEnvs(root, send);
+    send('');
+    send('# done. Starting the control surface\u2026');
+    /* Navigate AFTER the invoke resolves, not before: loading the server URL destroys the
+     * page that is waiting on this promise, and a renderer that never sees its own result
+     * cannot show the last line of the log it just printed. */
+    setTimeout(() => relaunchInto(root), 500);
+    return { ok: true, ready };
+  } catch (e) {
+    send('');
+    send(`### setup failed: ${e.message}`);
+    return { ok: false, error: e.message };
+  } finally {
+    settingUp = false;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -315,10 +361,6 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     buildMenu({
-      /* In attach mode the checkout is on the other end of a tunnel, so the three verbs
-       * that reach for a local path are greyed rather than left to fail quietly on a
-       * directory this machine does not have. */
-      attached: !!ATTACH,
       onTab: tab => win && win.webContents.send('menu:tab', tab),
       onReload: () => { if (serverUrl) win.loadURL(serverUrl); else boot(); },
       onChooseRepo: async () => {
@@ -343,10 +385,10 @@ if (!app.requestSingleInstanceLock()) {
     ipcMain.handle('wheel:info', () => ({
       platform: process.platform,
       version: app.getVersion(),
-      repo: ATTACH ? null : resolveRepo(),   // null: the checkout is not on this machine
-      attached: ATTACH || null,
+      repo: resolveRepo(),
       electron: process.versions.electron,
     }));
+    ipcMain.handle('wheel:setup', handleSetup);
 
     boot();
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) boot(); });

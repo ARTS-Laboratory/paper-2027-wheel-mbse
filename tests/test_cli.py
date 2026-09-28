@@ -55,7 +55,7 @@ def test_different_seed_gives_different_genome(tmp_path):
 def test_smoke_does_not_touch_real_artifacts(tmp_path):
     """A --smoke run must never rewrite best_solution.json or re-stamp wheel.step.
 
-    The exporter reads best_solution.json unconditionally (wheel_step_export.py:125), so
+    The exporter reads best_solution.json unconditionally (wheel_step_export.py:162), so
     running it after a smoke run would rebuild the STEP from the PREVIOUS real genome
     with a fresh mtime — destroying the staleness signal warn_if_stale() exists to give.
     """
@@ -126,7 +126,7 @@ def test_genome_record_schema(tmp_path, key):
 
 
 def test_genes_block_has_exactly_the_14_keys(tmp_path):
-    """`genome_hash` (wheel_step_export.py:117) hashes sorted(genes.items()), so one
+    """`genome_hash` (wheel_step_export.py:154) hashes sorted(genes.items()), so one
     extra key inside `genes` silently changes every hash in the repo.  This is the
     invariant Stage 3 must also honour when it rewrites the genome."""
     import wheel_fea

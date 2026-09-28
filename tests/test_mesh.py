@@ -311,7 +311,7 @@ def test_the_m2a_acceptance_criterion_is_the_published_one():
     assert smq.ACCEPT_FRACTION == 0.98
 
 
-def test_fold_margin_on_the_shipped_genome_is_the_recorded_value(vec):
+def test_fold_margin_on_the_shipped_genome_is_the_recorded_value():
     """A golden value for the gate's predictor, because calling into the driver is not
     the same as detecting a change in it.
 
@@ -337,10 +337,17 @@ def test_fold_margin_on_the_shipped_genome_is_the_recorded_value(vec):
     shared with the rest of this file, so pointing this test at a fixed genome is its own
     change with its own blast radius.  Filed as a successor at §119 rather than done
     quietly inside an artifact refresh.
+
+    RE-AIMED AT CROWN_PLAN R20, THE PROMOTION THAT ROTTED IT AGAIN: `240d5a2` reads
+    7.154299365831.  The claim is the predictor's ARITHMETIC, not the shipped wheel, so it
+    now reads `b729e86` by FILE (`stage3_svk_refillet_shipped_r2_best.json`), with its own
+    load rather than `vec`, so nothing else in this file moves.
     """
-    margin = smq.fold_margin(vec, M.get_config("coarse"))
+    with open(os.path.join(HERE, "stage3_svk_refillet_shipped_r2_best.json")) as fh:
+        pinned = GN.genes_to_vector(json.load(fh)["genes"])
+    margin = smq.fold_margin(pinned, M.get_config("coarse"))
     assert margin == pytest.approx(9.004243676666, abs=1e-9), (
-        f"the shipped genome's fold margin at `coarse` (n_curve=600) reads {margin:.12f}, "
+        f"b729e86's fold margin at `coarse` (n_curve=600) reads {margin:.12f}, "
         f"not the recorded 9.004243676666 — the gate's predictor has changed")
 
 

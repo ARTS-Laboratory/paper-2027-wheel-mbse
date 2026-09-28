@@ -54,8 +54,8 @@ Four consequences, each of which this arc is meant to end:
    'temperatur|thermal|celsius|glass.trans|\bTg\b|ambient|anneal|creep'` over `src/`
    returns **zero hits — not one**. Over `studies/`, `tests/`, the `Makefile` and the other
    ten `.md` files it returns **four lines, every one a false positive**: a cosine LR
-   schedule that "anneals" (`study_stage3.py:2125-2126`, two lines), "import creep"
-   (`test_pool.py:286`), and "creeping to ~0.808" (`PLAN.md:6599`).
+   schedule that "anneals" (`study_stage3.py:2202-2203`, two lines), "import creep"
+   (`test_pool.py:286`), and "creeping to ~0.808" (`PLAN.md:6657`).
    `YOUNGS_MODULUS_PLA_MPA = 2300.0` and `ULTIMATE_STRESS_MPA = 40.0` are
    single-point values at an **unstated** temperature. A PLA part is a thermoplastic part:
    its modulus is a strong function of ambient well below Tg, and this tree models a
@@ -114,7 +114,7 @@ seconds. Step 6 spends compute.
 ## What is already known — do not re-derive, re-read
 
 **The shall/should distinction is ALREADY IN THE CODE, and it is asserted.**
-`wheel_objective.py:394-401`:
+`wheel_objective.py:399-406`:
 
 ```
   BARRIER_TERMS   = ("stress", "buckling", "x_order", "hub_overlap", "fold",
@@ -325,15 +325,15 @@ moving re-derives the whole column. §115's `b729e86` carries smoothness **4.871
 against the outgoing genome's implied ~0.168:
 
 ```
-  term             c_T (§103)   c_T (§119)     p_cal (§103)   p_cal (§119)
-  --------------  ----------   ----------     ------------   ------------
-  mass              0.300000     0.300000            53.51          49.37
-  deflection        0.250000     0.250000            44.60          41.14
-  stress_margin     0.008921     0.008921             1.59           1.47
-  smoothness        0.001678     0.048716             0.30           8.02
-  phase_ripple      0.000000     0.000000             0.00           0.00
-  --------------------------------------------------------------------
-  sum c             0.560599     0.607637              100            100
+  term             c_T (§103)   c_T (§119)   c_T (CROWN R20)   p_cal (§103)   p_cal (§119)   p_cal (R20)
+  --------------  ----------   ----------   ---------------   ------------   ------------   -----------
+  mass              0.300000     0.300000          0.300000          53.51          49.37         46.84
+  deflection        0.250000     0.250000          0.250000          44.60          41.14         39.04
+  stress_margin     0.008921     0.008921          0.008921           1.59           1.47          1.39
+  smoothness        0.001678     0.048716          0.081492           0.30           8.02         12.72
+  phase_ripple      0.000000     0.000000          0.000000           0.00           0.00          0.00
+  -----------------------------------------------------------------------------------------------------
+  sum c             0.560599     0.607637          0.640413            100            100           100
 ```
 
 `c_smoothness` moves **29x** and every other share falls to pay for it. Smoothness was a
@@ -493,10 +493,10 @@ constants; everything else already threads.
   for bit. A default that moved is a silent re-interpretation of every committed artifact
   and of the five study files that re-alias `SERVICE_FORCE_N` (`study_gnl.py:106`,
   `study_contact.py:94`, `study_gradient.py:120`, `study_fillet_cost.py:115`,
-  `study_svk_rescore.py:75`).
+  `study_svk_rescore.py:76`).
 - **CHECK — the cache audit, BY TEST AND NOT BY READING.** `_T1_CACHE` keys on
-  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:932`);
-  `_KT_CACHE` keys without weights (`:533`); `wheel_wheel._COORD_FN_CACHE` (`:2760`) keys on the
+  `(cfg.name, span_mm, flanks, _t1_weights_key(weights))` (`wheel_objective.py:937`);
+  `_KT_CACHE` keys without weights (`:538`); `wheel_wheel._COORD_FN_CACHE` (`:2838`) keys on the
   static mesh recipe. Two requirement sets differing **only** in `allowable_stress_mpa`
   must give different `stress`/`stress_margin` **in the same interpreter**. A stale jit
   trace returning the old answer is exactly the failure this check exists for.
@@ -513,8 +513,8 @@ derive `p^cal`, implement `weights_from_priorities`, and anchor `phase_ripple` f
   point. The map must be an identity at its own calibration point or it is not a
   re-parameterisation, it is a change.
 - **CHECK — the table above is reproduced from `src/`**, not copied from this file. If
-  `p_cal` does not come back as 49.37 / 41.14 / 1.47 / 8.02 / 0.00 (RE-MEASURED AT PLAN.md
-  §119, after §115's promotion moved the shipped genome's `smoothness` loss term; it was
+  `p_cal` does not come back as 46.84 / 39.04 / 1.39 / 12.72 / 0.00 (CROWN_PLAN R20's `240d5a2`,
+  smoothness 8.1492; 49.37 / 41.14 / 1.47 / 8.02 at §119, after §115's promotion; it was
   53.51 / 44.60 / 1.59 / 0.30 / 0.00 at §103 and 51.35 / 42.80 / 5.56 / 0.29 / 0.00 before
   that), this file is wrong and the driver is right. **THIS CHECK RE-DERIVES AT EVERY
   PROMOTION**, because `c_smoothness` reads the shipped genome — expect to update it in the
@@ -549,7 +549,7 @@ hot day, heavy payload, rough field, long service life.
 
 `--requirements <path>` on `wheel_stage3`, warm-started from `best_solution.json`. The
 output record grows a **top-level** `requirements` block carrying the derived set and
-`req_hash`; `search_block` (`wheel_stage3.py:883`) records `req_hash` beside `min_wall_mm`
+`req_hash`; `search_block` (`wheel_stage3.py:1019`) records `req_hash` beside `min_wall_mm`
 and `cy_bound_mm`.
 
 - **CHECK:** `--requirements baseline.json` at `coarse`, 5 steps, reproduces a plain run's
@@ -586,7 +586,7 @@ Add the arc to `PLAN.md`'s *Open arcs* table as row 9.
   default here turns every silent omission in every driver into a wrong answer.
 
 - **Do not let points reach `BARRIER_TERMS`.** A barrier is a `shall`. Priorities move
-  `OBJECTIVE_TERMS` only, and the disjoint/exhaustive assert at `wheel_objective.py:398-401`
+  `OBJECTIVE_TERMS` only, and the disjoint/exhaustive assert at `wheel_objective.py:403-406`
   must stay green.
 
 - **Do not put diameter, spoke count or face width in the allocation.** Ø100 is frozen for
@@ -594,7 +594,7 @@ Add the arc to `PLAN.md`'s *Open arcs* table as row 9.
   parameter; `SPOKE_WIDTH_MM = 22.4` is the extrude depth the whole 2D plane-stress model
   rests on.
 
-- **Do not touch `studies/study_deflection_gci.py:72`.** It defines its own
+- **Do not touch `studies/study_deflection_gci.py:73`.** It defines its own
   `SAFETY_FACTOR = 1.25` and that is **Roache's GCI safety factor**, entirely unrelated to
   `wheel_fea.SAFETY_FACTOR = 1.6`. Two different `SAFETY_FACTOR`s live in this repo and a
   global rename would silently corrupt a convergence gate.
@@ -721,7 +721,7 @@ of which is a compliance question.
   not a hope: `test_req_baseline_is_bit_identical_to_naming_no_requirements`.
 - **Ø100, `NUMBER_OF_SPOKES = 12` and `SPOKE_WIDTH_MM` were not touched**, and no
   requirement axis reaches any of them.
-- **`studies/study_deflection_gci.py:72`'s `SAFETY_FACTOR = 1.25` was not touched.**  It
+- **`studies/study_deflection_gci.py:73`'s `SAFETY_FACTOR = 1.25` was not touched.**  It
   is Roache's GCI factor and is unrelated to `wheel_fea.SAFETY_FACTOR = 1.6`;
   `wheel_requirements.SAFETY_FACTOR_BASE`'s docstring names the collision so the next
   person to reach for a global rename is warned in the file that would break.

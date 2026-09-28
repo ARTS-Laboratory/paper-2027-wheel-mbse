@@ -209,7 +209,7 @@ def test_the_failing_angle_survives_an_elliptic_interior_solve(genes, junction):
     assert row["angle_is_a_boundary_quantity"]
 
 
-def test_PART_3s_collapsed_corner_reproduces_at_coarse(genes):
+def test_PART_3s_collapsed_corner_reproduces_at_coarse():
     """PART 3 recorded 3.601 deg (hub) and 8.524 (rim) with end cross-sections of 2.759
     and 8.596 mm, on the CAPPED mesh of 2026-08-17.
 
@@ -229,7 +229,12 @@ def test_PART_3s_collapsed_corner_reproduces_at_coarse(genes):
       rim   angle     8.524                      8.185779
       rim   xs        8.596                      5.696027
     ```
+
+    PINNED BY FILE AT CROWN_PLAN R20.  The next promotion moved them again (`240d5a2`'s hub
+    reads 11.104364), which is §124's lesson repeated: the numbers are `b729e86`'s, so they
+    now read `b729e86`'s file and a promotion cannot move them a third time.
     """
+    genes = fb.load_genes("stage3_svk_refillet_shipped_r2_best.json")
     want = {"hub": (10.115877, 4.041122), "rim": (8.185779, 5.696027)}
     for junction, (ang, xs) in want.items():
         R = float(genes[12] if junction == "hub" else genes[13])
@@ -575,18 +580,14 @@ def test_the_cut_at_B_reaches_the_rings_FAR_boundary_exactly(genes, junction):
     assert abs(cross) < 1e-9, cross
 
 
-@pytest.mark.parametrize("junction", (
-    "hub",
-    pytest.param("rim", marks=pytest.mark.xfail(strict=True, reason=(
-        "PLAN §124: FALSE ON THE WHEEL THAT SHIPS.  The rim landing angle grew from "
-        "4.381 deg (09e8188) to 13.300275 deg (b729e86) with §115's promotion, and "
-        "sliver_scaled_jacobian -- sin() of it -- crossed wo.MIN_SJ_TARGET: 0.230054 "
-        "against the floor 0.2, where 09e8188 read 0.076395.  The mechanism (the offset "
-        "lands tangent to the ring circle, so the block between the two is a sliver) is "
-        "unchanged and 13.3 deg is still far from the ~90 deg a real block would need --"
-        " but the specific claim this test makes, that the rim residual clears the "
-        "solver's own quality floor, no longer holds.")))
-))
+# PLAN §124 xfailed the rim half on `b729e86`: its landing angle grew 4.381 -> 13.300275 deg
+# and sliver_scaled_jacobian crossed wo.MIN_SJ_TARGET, 0.230054 against 0.2 (09e8188 read
+# 0.076395).  LIFTED AT CROWN_PLAN R20, where the strict marker XPASSed: `240d5a2` lands the
+# rim at 10.133589 deg, sliver 0.175944, under the floor again.  Hub 16.246895 deg, 0.279777
+# (b729e86: 16.376796, 0.281953).  The claim is back on the wheel that ships, but it is
+# only 0.024 inside the floor, so the next promotion could cross it again.  The mechanism never
+# changed.
+@pytest.mark.parametrize("junction", ("hub", "rim"))
 def test_the_SHALLOW_cut_lands_tangent_which_is_why_it_cannot_close(genes, junction):
     """PART 9's own block, re-measured for the reason it cannot be the sector's.
 
@@ -1204,7 +1205,7 @@ def test_the_recut_does_NOT_rescue_the_faithful_rim(genes, cfg):
                for k, v in good.items() if not k.startswith("_")) > wo.MIN_SJ_TARGET
 
 
-def test_the_filleted_sector_costs_the_unfilleted_one_nothing(genes):
+def test_the_filleted_sector_costs_the_unfilleted_one_nothing():
     """The control: `sector_blocks(fillet=None)` is not touched by any of this.
 
     Everything in STEP 1a is built inside the study from `wheel_wheel`'s primitives, so
@@ -1227,7 +1228,13 @@ def test_the_filleted_sector_costs_the_unfilleted_one_nothing(genes):
     counterexample to it; the bound here is loosened to match rather than re-litigated.
     The "0.36" comparison above is prose from before this promotion and is not itself
     asserted anywhere in this file — left as found rather than re-derived here.
+
+    AND IT MOVED AGAIN AT CROWN_PLAN R20: `240d5a2` reads 0.438175 / 0.437700 (coarse /
+    medium), worst block still `rim_junction`, all seven valid.  Not loosened a second time:
+    the claim is that the control is untouched, a statement about code, so it now reads
+    `b729e86` by FILE and keeps §124's bound.
     """
+    genes = fb.load_genes("stage3_svk_refillet_shipped_r2_best.json")
     for cfg in SECTOR_CFGS:
         ctl = fb.sector_control(genes, cfg)
         assert ctl["n_blocks"] == 7 and ctl["all_valid"]

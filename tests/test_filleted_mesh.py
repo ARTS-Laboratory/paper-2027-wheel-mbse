@@ -248,11 +248,17 @@ def test_the_differentiable_path_REPRODUCES_a_filleted_mesh(genes, filleted_ship
     coordinates gathered through this one's index. That is still exactly what may not
     happen, so the check is the same one gate 3 makes of the unfilleted path — the traced
     coordinates ARE the solved mesh's — rather than an exception type.
+
+    [AMENDED AT CROWN_PLAN R20: `== 0.0` IS FALSE ON `240d5a2`, BY AT MOST 4.3e-14 mm.  The
+    numpy path differs from the built mesh at 3769 rim-region nodes (r 45.46-50.00) at
+    `coarse`, on `240d5a2` and on `be96531`, which share that rim; `b729e86` still reads
+    0.0.  The cause is not measured.  A wrong-mesh gather is millimetres, so the bound is
+    1e-12, still 1000x inside the traced path's 1e-9.]
     """
     for cfg, m in filleted_shipped.items():
         got = np.asarray(ww.mesh_coords(genes, m, xp=np))
         assert got.shape == np.asarray(m.coords).shape
-        assert np.abs(got - np.asarray(m.coords)).max() == 0.0, cfg
+        assert np.abs(got - np.asarray(m.coords)).max() < 1e-12, cfg
         traced = np.asarray(ww.coord_fn(m)(genes))
         assert np.abs(traced - np.asarray(m.coords)).max() < 1e-9, cfg
     # and the unfilleted path is untouched
@@ -376,9 +382,10 @@ def test_the_PER_GENOME_layer_profile_is_differentiable_too(genes, filleted):
         ww.FILLET_LAYER_CLIFF_FACTOR * ww.layer_cliff_entry(genes, "coarse")["entry"])
 
     # the identity first: the traced mesh IS the solved mesh, and the numpy path is
-    # bit-identical because the rule re-runs there through the same closed form
+    # bit-identical because the rule re-runs there through the same closed form -- to
+    # 4.3e-14 on `240d5a2`'s rim, not 0.0 (CROWN_PLAN R20; see the test above)
     assert np.abs(np.asarray(ww.mesh_coords(genes, m, xp=np))
-                  - np.asarray(m.coords)).max() == 0.0
+                  - np.asarray(m.coords)).max() < 1e-12
     assert np.abs(np.asarray(ww.coord_fn(m)(genes))
                   - np.asarray(m.coords)).max() < 1e-9
 
@@ -705,9 +712,15 @@ def test_the_fillet_reference_agrees_with_the_STEP_MANIFEST(genes):
     with open(man_path) as fh:
         man = json.load(fh)
 
-    # The exporter's fillets, as a CROSS-SECTION: the solid is a uniform extrusion of
-    # `SPOKE_WIDTH_MM`, which is the same conversion `test_wheel_fea.py` uses on the
-    # gusset. Both radii must match, or the two are filleting different wheels.
+    # The exporter's fillets, as a CROSS-SECTION: the fillet material is a uniform
+    # extrusion of `SPOKE_WIDTH_MM`, which is the same conversion `test_wheel_fea.py` uses
+    # on the gusset. Both radii must match, or the two are filleting different wheels.
+    #
+    # THE SOLID AS A WHOLE IS NO LONGER A UNIFORM EXTRUSION, WHICH IS WHY THE CROWN IS
+    # TAKEN OFF BELOW.  `wheel_geometry.CROWN_HEIGHT_MM` crowns the rim OD along the
+    # face, so dividing the SOLID's volume by the width stopped being a cross-section the
+    # moment the crown landed.  The fillets themselves are untouched by it -- measured,
+    # 972.6 mm3 with and without -- so this line is still exactly what it says.
     built = {d["junction"]: d["r_built_mm"] for d in man["fillets"]["detail"]}
     assert built["rim"] == pytest.approx(genes[13], rel=1e-9), built
     step_mm2 = man["fillets"]["volume_mm3"] / wf.SPOKE_WIDTH_MM
@@ -726,8 +739,12 @@ def test_the_fillet_reference_agrees_with_the_STEP_MANIFEST(genes):
     # hit this exact fact after `test_the_area_reference_DESCRIBES_the_filleted_region`'s
     # 5-12% -> ~2% and its own `share` bound. 1.5-3% keeps the same margin around the new
     # true value rather than pinning it, matching those two.
-    assert 0.015 < step_mm2 / (man["solid"]["volume_nofillet_mm3"]
-                               / wf.SPOKE_WIDTH_MM) < 0.03
+    # `- crown.volume_added_mm3` restores the prismatic solid this ratio is about.  Without
+    # it the denominator gains 4737 mm3 the mesh does not carry (§206; the cut crown lost
+    # 2324), and the drift would be mistaken for a fillet moving.
+    uncrowned_nofillet = (man["solid"]["volume_nofillet_mm3"]
+                          - man["crown"]["volume_added_mm3"])
+    assert 0.015 < step_mm2 / (uncrowned_nofillet / wf.SPOKE_WIDTH_MM) < 0.03
 
 
 def test_the_area_reference_is_WITHHELD_for_the_SPOKE_blocking(genes):
@@ -930,3 +947,31 @@ def test_the_unfilleted_mesh_reports_no_radii_at_all(genes):
     """
     m = ww.build_wheel(genes, "coarse")
     assert m.fillet_radii_mm is None and m.fillet_clamped is None
+
+
+def test_ONE_trace_serves_every_phase(genes):
+    """PLAN.md §162 successor 1: the phase is a traced argument, not part of the cache key.
+
+    §162 bisected `test_req_baseline_is_bit_identical_to_naming_no_requirements`'s eleven
+    minutes down to ONE XLA COMPILE PER PHASE -- 128.3 s each at `coarse`, linear over 1, 2
+    and 4 phases -- because `float(phase)` was in `_COORD_FN_CACHE`'s key, and it had to be:
+    `_sector_coords` skipped the rotation at sector 0 when the phase was zero, so the phase
+    decided the jaxpr.  `coord_fn` now computes the twelve sector angles in numpy, by the
+    expression `build_wheel` uses, and passes them in; the trace rotates every sector.
+
+    THE GATE WAS BIT-IDENTITY, AND IT WAS MEASURED BEFORE THE CHANGE, NOT AFTER: on `smoke`,
+    filleted, a closure built this way reproduced the old per-phase closures with 0
+    differing bits at phases 0, 3.75, 13.7 and 26.25.  After the change there is no old path
+    to compare against, so this pins the two things the change could still break: ONE cache
+    entry per recipe however many phases it serves, and every phase still reproducing its
+    own eager mesh -- which a trace that closed over the first mesh's phase would fail at
+    the second.
+    """
+    ww._COORD_FN_CACHE.clear()
+    for n_entries, fillet in ((1, True), (2, None)):
+        for p in (0.0, 3.75, 13.7):
+            m = ww.build_wheel(genes, "smoke", phase_deg=p, fillet=fillet)
+            got = np.asarray(ww.coord_fn(m)(genes))
+            assert len(ww._COORD_FN_CACHE) == n_entries, (
+                f"fillet={fillet} phase {p} compiled its own trace")
+            assert np.abs(got - np.asarray(m.coords)).max() < 1e-9, (fillet, p)

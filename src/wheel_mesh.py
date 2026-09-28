@@ -27,7 +27,7 @@ SCOPE: THE SPOKE BLOCK ONLY, FOR NOW
 This module currently meshes ONE spoke, hub-root cross-section to rim-tip
 cross-section.  That is deliberate and it is what the single-spoke verification needs:
 the beam model being checked against clamps at the root and guides the tip
-(`generalized_spoke_mechanics`, wheel_fea.py:308), so the FE model must have exactly
+(`generalized_spoke_mechanics`, wheel_fea.py:398), so the FE model must have exactly
 the same boundary, with no junction, collar, or rim ring in the way.
 
 The full 360 deg wheel needs three more block types (hub junction, hub collar, rim

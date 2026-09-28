@@ -6,9 +6,9 @@ Builds a watertight B-rep solid of the full optimized wheel and writes it to
 `wheel.step` (+ a guaranteed-valid `wheel_nofillet.step` fallback) for import into
 Fusion 360 / Inventor / SolidWorks.
 
-  Full wheel = solid hub disk  +  12 spiral spokes  +  Ø100 rim band,
-  unioned into one solid, with true tangent fillets at the spoke↔hub and
-  spoke↔rim junctions (radii = evolved R_hub / R_rim genes).
+  Full wheel = solid hub disk  +  12 spiral spokes  +  Ø100 rim band with a 1 mm
+  crown ON TOP (Ø102 apex), unioned into one solid, with true tangent fillets at
+  the spoke↔hub and spoke↔rim junctions (radii = evolved R_hub / R_rim genes).
 
 RUN THIS IN THE CadQuery ENV (Python 3.12), e.g.:
     .venv-cad\\Scripts\\python src\\wheel_step_export.py
@@ -81,7 +81,11 @@ from wheel_fea import (
 )
 # numpy-only, so it imports in the CAD env too — which is the point: `junction_bite` and
 # its floor have to be the same object the `make test` side checks the manifest against.
-from wheel_geometry import MIN_JUNCTION_BITE, junction_bite
+# The crown names ride the same contract: this module ADDS the crown and the `make test`
+# side checks the manifest's volume against the same closed form, so both must read one
+# constant rather than two copies that agree today.
+from wheel_geometry import (MIN_JUNCTION_BITE, junction_bite, CROWN_HEIGHT_MM,
+                            crown_radius_mm, crown_added_volume_mm3)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = PP.ROOT
@@ -124,6 +128,12 @@ RIM_OUTER_RADIUS_MM = 50.0     # Ø100 outer rim; spokes merge at RIM_RADIUS_MM 
 # hub.  See PLAN.md §11.
 HUB_EMBED_RADIUS_MM = HUB_RADIUS_MM - 0.5            # 12.20 mm, just inside the hub disk
 RIM_EMBED_RADIUS_MM = RIM_OUTER_RADIUS_MM + 0.25     # 50.25 mm, clipped back to Ø100
+
+# How far INSIDE the OD the crown's fused tool starts.  A construction allowance, not a
+# design parameter: overlapping the solid 48.5-50.0 band keeps the union off a coincident
+# cylinder face, and the overlap is band either way, so nothing about the finished solid
+# depends on the value.  The same 0.25 RIM_EMBED_RADIUS_MM uses.  See `crown_rim`.
+CROWN_TOOL_EMBED_MM = 0.25
 N_OUTLINE_PTS       = 48       # interpolation pts per spoke edge (splined → smooth faces)
 # Vertical-edge screen: a junction edge wanders less than this in XY over its full
 # height.  This is a straightness tolerance, NOT a radial one — see `_junction_edges`
@@ -334,7 +344,7 @@ def _unit_tan(a, b):
 def spoke_profile(genes):
     """
     Closed PLANAR wire of one spoke.  Not a solid — the whole wheel is assembled in 2D
-    and extruded once at the end, because the part is a constant-section prism and
+    and extruded once at the end: the part is a prism until `crown_rim` crowns it, and
     every 3D construction it used to go through (solid booleans, the 3D fillet solver,
     a tangential outer-diameter trim) was a place to produce geometry OCC accepts and
     Parasolid does not.
@@ -466,7 +476,7 @@ def check_junction_overlap(spoke_face, hub_face, rim_face, genes):
     `wheel_geometry.thickness_at_arc_length` returns t0 at s=0 and t3 at s=1.
 
     Returns {"hub": {...}, "rim": {...}} and WARNS below the floor without raising: this
-    runs inside the GA's export hand-off (wheel_fea.py:1658), which only checks the
+    runs inside the GA's export hand-off (wheel_fea.py:1701), which only checks the
     return code, so raising here would throw away a finished optimization run over a
     heuristic.  The number is written to the manifest instead, where a test can see it.
     """
@@ -516,10 +526,18 @@ def _unify_planar(shape):
     return cq.Shape.cast(up.Shape())
 
 
-def build_profile(genes):
+def build_profile(genes, rim_outer_mm=None):
     """The whole wheel as ONE planar face: hub disk + 12 spokes + rim band, clipped to
     the outer diameter.  Returns (face, junctions), where `junctions` is
     `check_junction_overlap`'s per-ring dict.
+
+    `rim_outer_mm` is the band's outer radius, `RIM_OUTER_RADIUS_MM` when None: the BASE
+    b of CROWN_PLAN.md is `rim_outer_mm - RIM_RADIUS_MM`.  Only the band and the clip move
+    with it.  The spoke wire does not: its tip still runs out to RIM_EMBED_RADIUS_MM and is
+    clipped back to whatever OD this is, so inside that OD the face is the shipped face
+    cut by a circle, and no gene means anything new.  That needs the tip to reach PAST the
+    OD, hence the refusal at or beyond RIM_EMBED_RADIUS_MM.  The rim junction's bite is
+    measured against THIS band, so a thinner base reports a smaller one.
 
     Assembled with a single n-ary fuse rather than 14 sequential ones: fusing one at a
     time leaves the pieces unmerged, because each step re-splits what the previous one
@@ -527,10 +545,16 @@ def build_profile(genes):
     ShapeUpgrade_UnifySameDomain to merge the coplanar fragments and the collinear
     outer arcs back into single faces and edges.
     """
+    rim_outer = RIM_OUTER_RADIUS_MM if rim_outer_mm is None else float(rim_outer_mm)
+    if not RIM_RADIUS_MM < rim_outer < RIM_EMBED_RADIUS_MM:
+        raise ValueError(
+            f"rim OD radius {rim_outer} mm must lie strictly between the band's inner "
+            f"radius {RIM_RADIUS_MM} and the spoke tip's run-out {RIM_EMBED_RADIUS_MM}, "
+            f"which the OD clip has to cut")
     circle = lambda r: cq.Wire.makeCircle(r, cq.Vector(0, 0, 0), cq.Vector(0, 0, 1))
     hub = cq.Face.makeFromWires(circle(HUB_RADIUS_MM))
-    rim = cq.Face.makeFromWires(circle(RIM_OUTER_RADIUS_MM), [circle(RIM_RADIUS_MM)])
-    envelope = cq.Face.makeFromWires(circle(RIM_OUTER_RADIUS_MM))
+    rim = cq.Face.makeFromWires(circle(rim_outer), [circle(RIM_RADIUS_MM)])
+    envelope = cq.Face.makeFromWires(circle(rim_outer))
 
     wire = spoke_profile(genes)
     profile_health(wire, "spoke profile")
@@ -560,6 +584,67 @@ def build_profile(genes):
 def extrude_profile(face):
     """One extrusion — the only 3D operation in the whole build."""
     return cq.Workplane(obj=face).toPending().extrude(SPOKE_WIDTH_MM)
+
+
+def crown_rim(solid, rim_outer_mm=None, height_mm=None):
+    """Fuse the transverse crown ON TOP of the rim OD and return the grown solid (§206).
+
+    `rim_outer_mm` (default `RIM_OUTER_RADIUS_MM`) is the OD the crown sits on and
+    `height_mm` (default `CROWN_HEIGHT_MM`) its sagitta: CROWN_PLAN.md's (b, h) grid.  A
+    height of 0 is the flat rim and returns `solid` untouched — a zero-sagitta arc is a
+    degenerate three-point arc, not a crown.
+
+    THIS IS THE SECOND 3D OPERATION, AND IT IS WHAT STOPS THE PART BEING A PRISM.  The
+    docstring above `extrude_profile` and the note at the head of `spoke_profile` both say
+    the wheel is assembled in 2D and extruded once "because the part is a constant-section
+    prism".  That was true until the crown: the rim's radius now varies along z, which is
+    an axis the 2D assembly has no coordinate for.  Everything else still happens in 2D —
+    this runs last, on the finished solid, and adds material outside the Ø100 OD.
+
+    The tool is the crown revolved about the axle: a section in the r-z half-plane bounded
+    above by the crown arc (three points — edge at R50, apex at R50 + CROWN_HEIGHT_MM,
+    edge at R50) and below by CROWN_TOOL_EMBED_MM inside the OD, swept 360 degrees.
+    `cq.Workplane("XZ")` maps local (x, y) to global (x, 0, y), so local x IS the radius
+    and local y IS the axial station; `revolve` reads its axis in LOCAL coordinates, which
+    is why the axle is `(0,1,0)` here and not `(0,0,1)` — passing the global spelling
+    silently revolves about the wrong axis and returns a half-space with an infinite
+    bounding box rather than raising.
+
+    IT RUNS AFTER THE FILLETS, AND THE ORDER IS LOAD-BEARING.  `_junction_edges` selects
+    z-parallel edges that wander less than FILLET_TOL_MM in XY over their full height, and
+    the family table at the head of this module — including `r = 50.0000 x 1 178.0 deg`,
+    the OD trim seam — is what MIN_FILLET_WEDGE_DEG is calibrated against.  Crowning first
+    would bury that seam under the tool and put the selection outside its own calibration.
+    Crowning last leaves the entire 2D pipeline — fuse, planar OD clip, edge
+    classification, fillets — reading exactly the geometry it was measured on, and the tool
+    (r >= 49.75) never reaches a rim fillet (r <= 48.5).
+
+    UNTIL §206 THIS WAS A CUT, apex at Ø100 and the side faces relieved to R49, which
+    thinned the band to 0.5 mm there; §205 measured that band at 1.14-1.79x allowable.
+    Now the band keeps its full 1.5 mm at the side faces and reaches 2.5 mm at the apex,
+    clearing `MIN_WALL_MM` over the whole face.
+    The Ø100 box gate became a Ø102 one: `test_export_contract.py` holds the part to
+    2(R50 + CROWN_HEIGHT_MM) x the same x 22.4, and that is the check the crown grew
+    outward by exactly its height and nowhere else.
+
+    HOW MUCH IT ADDED IS NOT RETURNED, because the tool's own volume is not the answer:
+    it overlaps the band on purpose.  The caller measures it as an after-minus-before
+    difference of the SOLID, the way `fillets.volume_mm3` already is.
+    """
+    rim_outer = RIM_OUTER_RADIUS_MM if rim_outer_mm is None else float(rim_outer_mm)
+    height = CROWN_HEIGHT_MM if height_mm is None else float(height_mm)
+    if height == 0.0:
+        return solid
+    inner = rim_outer - CROWN_TOOL_EMBED_MM
+    tool = (cq.Workplane("XZ")
+            .moveTo(inner, 0.0)
+            .lineTo(rim_outer, 0.0)
+            .threePointArc((rim_outer + height, 0.5 * SPOKE_WIDTH_MM),
+                           (rim_outer, SPOKE_WIDTH_MM))
+            .lineTo(inner, SPOKE_WIDTH_MM)
+            .close()
+            .revolve(360.0, (0, 0, 0), (0, 1, 0)))
+    return solid.union(tool)
 
 
 def _material_wedge_deg(classifier, x, y, z,
@@ -808,19 +893,29 @@ def despecialize(shape):
     """Convert swept surfaces to B-splines, leaving planes and cylinders analytic.
 
     ShapeCustom.ConvertToBSpline_s(shape, extrusion, revolution, offset) touches only
-    the requested surface classes, so the hub bore and the Ø100 OD stay true cylinders
-    and remain selectable as cylindrical faces in Onshape for mates and fillets.  The
+    the requested surface classes, so the hub bore and the remaining cylinders stay
+    analytic and selectable as cylindrical faces in Onshape for mates and fillets.  The
     blunt alternative, BRepBuilderAPI_NurbsConvert, also works and is also exact but
     splines all 25 cylinders as well — not worth the downstream cost.
 
     Verified geometry-exact on the current genome: boolean symmetric difference
     0.00000 mm³ in both directions, shape still valid, tight bbox unchanged.
 
+    REVOLUTION IS CONVERTED TOO, SINCE THE CROWN.  `crown_rim` replaces the Ø100 OD — a
+    `Geom_CylindricalSurface` — with the crown's `Geom_SurfaceOfRevolution`, and OCC does
+    NOT recognise it as a torus: the arc's centre sits 12.22 mm the far side of the axle
+    while its own radius is 63.22, so the would-be torus is the degenerate self-crossing
+    kind and OCC leaves it a generic surface of revolution.  With the old
+    `revolution=False` that face survived into the STEP and `step_health` said so —
+    `swept_surfaces_remaining {'SurfaceOfRevolution': 1}`, the risk banner that names
+    Onshape by name.  The flag is the whole fix; the census goes back to empty and the
+    cylinder count drops by exactly the one face the crown replaced (37 -> 36).
+
     ORDER MATTERS.  Running this on the union *before* filleting yields an invalid
     shape; running it on the final filleted solid is valid.  Call it last.
     """
     return cq.Shape.cast(
-        ShapeCustom.ConvertToBSpline_s(_topo(shape), True, False, False))
+        ShapeCustom.ConvertToBSpline_s(_topo(shape), True, True, False))
 
 
 def _topo(x):
@@ -1036,7 +1131,7 @@ def optimizer_spoke_mass(metrics):
     """The optimizer's own spoke mass, and WHICH optimizer said so.
 
     Returns `(grams, source_key)`.  The two producers name this differently: the GA/beam
-    path writes `total_mass_g` (wheel_fea.py:1393) and a Stage-3 descent writes
+    path writes `total_mass_g` (wheel_fea.py:1436) and a Stage-3 descent writes
     `mesh_mass_g`.  They are the same ROLE — spoke material as the optimizer costed it —
     but not the same MEASUREMENT: one is the beam surrogate's analytic area, the other is
     integrated over the FEA mesh.  So the key is reported alongside the number rather
@@ -1053,7 +1148,7 @@ def optimizer_spoke_mass(metrics):
     return float("nan"), "no mass key in record"
 
 
-def report(part, genes, metrics, ghash, vol=None):
+def report(part, genes, metrics, ghash, vol=None, apex_mm=None):
     """`vol` must be measured BEFORE despecialize().  BRepGProp.VolumeProperties_s
     uses low-order quadrature that is materially inaccurate on B-spline faces: the
     same solid measures 57151 mm³ with analytic spoke flanks and 60199 mm³ once they
@@ -1068,7 +1163,7 @@ def report(part, genes, metrics, ghash, vol=None):
     print(f"  valid (OCC)      : {solid.isValid()}")
     print(f"  solid count      : {len(part.solids().vals())} (expect 1)")
     print(f"  bounding box     : {bb.xlen:.2f} × {bb.ylen:.2f} × {bb.zlen:.2f} mm "
-          f"(expect ≈ {2*RIM_OUTER_RADIUS_MM:.0f} × {2*RIM_OUTER_RADIUS_MM:.0f} × "
+          f"(expect ≈ Ø{2 * (apex_mm or RIM_OUTER_RADIUS_MM + CROWN_HEIGHT_MM):g} across × "
           f"{SPOKE_WIDTH_MM:.1f})")
     print(f"  volume           : {vol:.1f} mm³")
     opt_mass, opt_src = optimizer_spoke_mass(metrics)
@@ -1116,26 +1211,46 @@ def main(argv=None):
     ap.add_argument("--out-prefix", default=None,
                     help="basename stem for the three artifacts, overriding the "
                          "default derived from --genome")
+    ap.add_argument("--base-mm", type=float, default=None,
+                    help="rim band thickness at the side faces, b of CROWN_PLAN.md "
+                         "(default: the shipped RIM_OUTER_RADIUS_MM - RIM_RADIUS_MM)")
+    ap.add_argument("--crown-mm", type=float, default=None,
+                    help="crown sagitta h of CROWN_PLAN.md, 0 for a flat rim "
+                         "(default: wheel_geometry.CROWN_HEIGHT_MM)")
     args = ap.parse_args(argv)
 
     t_start = time.time()
     rec = load_genome(args.genome)
     genes = rec["genes"]
     metrics = rec.get("metrics", {})
-    paths = output_paths(rec, args.out_prefix)
+    # CROWN_PLAN.md's (b, h).  Unset is the shipped rim EXACTLY — the constants
+    # themselves, not 48.5 + 1.5 — so the default build stays byte-identical.  Any other
+    # rim writes under a `_b.._h..` stem unless --out-prefix names one: a map point must
+    # never land in `wheel.step` (see output_paths).
+    rim_outer = (RIM_OUTER_RADIUS_MM if args.base_mm is None
+                 else RIM_RADIUS_MM + args.base_mm)
+    crown_h = CROWN_HEIGHT_MM if args.crown_mm is None else args.crown_mm
+    rim_is_shipped = (rim_outer == RIM_OUTER_RADIUS_MM and crown_h == CROWN_HEIGHT_MM)
+    prefix = args.out_prefix
+    if prefix is None and not rim_is_shipped:
+        stem = os.path.basename(output_paths(rec)["step"])[:-len(".step")]
+        prefix = f"{stem}_b{rim_outer - RIM_RADIUS_MM:g}_h{crown_h:g}"
+    paths = output_paths(rec, prefix)
     print("=" * 68)
     print("  WHEEL STEP EXPORT")
     print("=" * 68)
     print(f"  genome {rec['_hash']}  ← {os.path.basename(rec['_source_path'])}")
     warn_if_stale(rec, paths["step"])
     print(f"  Spokes {NUMBER_OF_SPOKES} | Hub Ø{2*HUB_RADIUS_MM:.1f} (solid) | "
-          f"Rim merge Ø{2*RIM_RADIUS_MM:.1f} → outer Ø{2*RIM_OUTER_RADIUS_MM:.1f} | "
+          f"Rim merge Ø{2*RIM_RADIUS_MM:.1f} → outer Ø{2*rim_outer:.1f} | "
           f"Face {SPOKE_WIDTH_MM:.1f} mm")
     print(f"  R_hub={genes['R_hub']:.3f} mm  R_rim={genes['R_rim']:.3f} mm  "
           f"t0={genes['t0']:.2f} t3={genes['t3']:.2f}")
 
     print("\n  Building 2D profile (hub + 12 spokes + rim)…")
-    profile, junctions = build_profile(genes)
+    print(f"  Rim base {rim_outer - RIM_RADIUS_MM:g} mm, crown {crown_h:g} mm → "
+          f"apex Ø{2 * (rim_outer + crown_h):g}")
+    profile, junctions = build_profile(genes, rim_outer)
 
     # Guaranteed-valid fallback, written before any fillet can complicate it.
     #
@@ -1149,8 +1264,12 @@ def main(argv=None):
     # Measured before `despecialize`, for the same reason `vol_true` is below: the
     # conversion to NURBS is not exactly volume-preserving, and the two numbers are
     # subtracted from each other.
+    # BOTH SOLIDS ARE CROWNED, AND THAT IS WHAT KEEPS `fillets.volume_mm3` A FILLET.  The
+    # difference below is only the material the fillets add while the crown is the same
+    # addition on both sides; crowning just the finished wheel would fold 4737 mm³ of
+    # crown into a number whose whole job is to report ~3000 mm³ of fillet.
     nofillet_path = paths["nofillet"]
-    nofillet = extrude_profile(profile)
+    nofillet = crown_rim(extrude_profile(profile), rim_outer, crown_h)
     vol_nofillet = nofillet.val().Volume()
     _export_with_settings(despecialize(nofillet), nofillet_path)
     print(f"  Saved fallback   → {nofillet_path}")
@@ -1187,9 +1306,34 @@ def main(argv=None):
                         (hub_fams, hub_found, hub_wedge),
                         (rim_fams, rim_found, rim_wedge))
 
+    print("\n  Crowning the rim…")
+    # Measured as an after-minus-before on the SOLID, exactly as the fillet volume is: the
+    # tool's own volume is bigger than the crown because it overlaps the band, so it is
+    # not the answer.  `volume_added_closed_form_mm3` is the same quantity through the
+    # other kernel — `wheel_geometry`'s closed form — and publishing both makes them a
+    # cross-check rather than one number printed twice.  On the real solid a DISAGREEMENT
+    # means the tool has reached something it should not have — the side faces, or past
+    # the band into a rim fillet — which is why this is published rather than asserted
+    # here, and the tests hold it.
+    vol_uncrowned = wheel.val().Volume()
+    wheel = crown_rim(wheel, rim_outer, crown_h)
+
     # Measure BEFORE despecializing — see report()'s docstring.
     vol_true = wheel.val().Volume()
-    vol, valid = report(wheel, genes, metrics, rec["_hash"], vol=vol_true)
+    vol_crown = vol_true - vol_uncrowned
+    vol_crown_closed = (crown_added_volume_mm3(SPOKE_WIDTH_MM, rim_outer, crown_h)
+                        if crown_h else 0.0)
+    # Published so the frozen diameter is CHECKED and not just printed.  `report` has shown
+    # the box since the first export and nothing ever read it, which was tolerable while the
+    # part was a prism whose OD came straight from a 2D circle.  The crown is the first
+    # construction that grows the OD — to Ø102 at its apex since §206, and a slip in
+    # `crown_rim` could grow it further — so the box stops being a diagnostic and becomes
+    # the gate.  Measured before despecialize, like the volumes, so the three agree.
+    bb_true = wheel.val().BoundingBox()
+    print(f"  crown added      : {vol_crown:.2f} mm³ (closed form "
+          f"{vol_crown_closed:.2f}, {vol_crown - vol_crown_closed:+.2f})")
+    vol, valid = report(wheel, genes, metrics, rec["_hash"], vol=vol_true,
+                        apex_mm=rim_outer + crown_h)
 
     print("\n  Converting swept surfaces for Parasolid/Onshape…")
     wheel_out = despecialize(wheel)
@@ -1213,7 +1357,9 @@ def main(argv=None):
                   # The same solid before any fillet was applied.  Additive: nothing reads
                   # it yet except the mass budget, and `volume_mm3`/`mass_g_pla` are
                   # unchanged and still mean the finished part.
-                  "volume_nofillet_mm3": round(vol_nofillet, 1)},
+                  "volume_nofillet_mm3": round(vol_nofillet, 1),
+                  "bbox_mm": [round(bb_true.xlen, 4), round(bb_true.ylen, 4),
+                              round(bb_true.zlen, 4)]},
         # Key kept as `_mm3` for the readers that predate the bite: `hub` and `rim` are
         # still the same volumes in the same units.  `floor` used to be a mm³ number and
         # is now `bite_floor`, in root thicknesses — the two are not comparable, which is
@@ -1234,6 +1380,20 @@ def main(argv=None):
         "fillets": {"hub_edges": hub_n, "rim_edges": rim_n,
                     "volume_mm3": round(vol - vol_nofillet, 2),
                     "detail": kt_rows},
+        # The transverse crown, published as its own addition for the same reason
+        # `fillets.volume_mm3` is (PLAN.md §14): the plane-stress mesh cannot model it, so
+        # `test_total_mass_matches_the_step_manifest_within_the_embed_difference` has no
+        # way to account for 4737 mm³ that nothing published.  `volume_added_mm3` is OCC's
+        # after-minus-before, `..._closed_form_mm3` `wheel_geometry`'s exact integral: two
+        # kernels, one quantity.  Renamed from `volume_mm3` at §206 (the cut's sign).
+        "crown": {"height_mm": crown_h,
+                  "radius_mm": (round(crown_radius_mm(SPOKE_WIDTH_MM, crown_h), 4)
+                                if crown_h else None),
+                  "volume_added_mm3": round(vol_crown, 2),
+                  "volume_added_closed_form_mm3": round(vol_crown_closed, 2),
+                  "mass_g_pla": round(vol_crown * DENSITY_PLA, 3),
+                  "side_face_band_mm": round(rim_outer - RIM_RADIUS_MM, 4),
+                  "apex_band_mm": round(crown_h + rim_outer - RIM_RADIUS_MM, 4)},
         "profile_health": prof_health,
         "step_health": health,
     }

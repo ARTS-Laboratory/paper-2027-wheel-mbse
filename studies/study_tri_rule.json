@@ -1485,7 +1485,7 @@
     },
     "selection": "max fit accuracy; ties: fewer fires, then lexicographic"
   },
-  "seconds": 999.13,
+  "seconds": 1088.88,
   "self_checks": {
     "all_streams_pairwise_disjoint": true,
     "band_streams_reached_their_target": true,

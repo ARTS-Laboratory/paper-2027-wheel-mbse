@@ -329,8 +329,15 @@ def test_the_real_patch_is_far_smaller_than_the_assumed_one(genes, res):
         f"called a LOWER bound and expected to be exceeded by far")
 
 
-def test_the_assumed_patch_no_longer_stands_in_for_contact(mesh, res):
+def test_the_assumed_patch_stands_in_for_contact_again(standin_contact):
     """M6's second half, RENAMED because its answer changed and the old name asserted it.
+
+    RENAMED AGAIN AT CROWN_PLAN R21: FALSE ON THE PART UNDER BOTH MODELS. R20 xfailed it at
+    1.28% (flat band) until the fixture "builds the stand-in rim"; there (the record's
+    `descent_model`, fixture at file end) it reads 0.076%. Signed real/assumed-1, `240d5a2`,
+    flat / stand-in, %: smoke lin -1.275/+0.076, svk -1.743/+0.080; coarse -1.401/+0.044,
+    -1.933/+0.062; medium -1.474/+0.000, -2.041/+0.020. Only the band moved and the gap FELL,
+    against "conforms less" below; the two-sided band below is retired for its 2% edge alone.
 
     M6 measured that the assumed 3.0 deg patch was badly wrong about the patch and close
     to right about the ANSWER — 1.3% on the axle drop — because the drop is dominated by
@@ -362,13 +369,13 @@ def test_the_assumed_patch_no_longer_stands_in_for_contact(mesh, res):
     the two-sided one: this must not silently return to "the assumption was fine", and it
     must not silently get much worse either.
     """
-    assumed = fem.solve_wheel(mesh)["axle_drop_mm"]
-    rel = abs(res["axle_drop_mm"] / assumed - 1.0)
-    assert 0.02 < rel < 0.08, (
-        f"real contact moves the axle drop by {rel:.2%} against the assumed patch, "
-        f"outside the 2-8% band measured across both genomes and three tiers — the "
-        f"legacy assumed-patch records (M4, M5, study_gnl, study_wheel_fea) need "
-        f"re-reading against whichever end this crossed")
+    real, assumed = standin_contact
+    rel = abs(real / assumed - 1.0)
+    assert rel < 0.02, (
+        f"real contact moves the axle drop by {rel:.2%} against the assumed patch on the "
+        f"model the shipped record names: past 2%, the edge where this test drew 'no longer "
+        f"stands in', so the legacy assumed-patch records (M4, M5, study_gnl, "
+        f"study_wheel_fea) need re-reading against it")
 
 
 def test_the_patch_migrates_with_phase(genes):
@@ -626,3 +633,103 @@ def test_the_guard_refuses_a_name_not_a_run(monkeypatch, past_the_guard, argv):
     monkeypatch.setattr(sys, "argv", ["study_contact.py", *argv])
     with pytest.raises(_PastTheGuard):
         sc.main()
+
+
+# ---------------------------------------------------------------------------
+# THE EXIT CODE — PLAN.md §182 §3 / §7.1
+# ---------------------------------------------------------------------------
+
+def test_a_verdict_free_section_set_is_not_a_solver_failure():
+    """`make contact`'s documented argv exited 1 on a wheel with nothing wrong with it.
+
+    §182 §3 measured it: `--sections patch`, which `Makefile:547` defaults, produces an
+    EMPTY solver-verdict list, because `patch` carries neither a `pass` nor a
+    `solver_pass` key.  The old expression was `bool(solver) and all(solver)`, False by
+    emptiness, so the recipe **could not exit 0 on any wheel** — it printed "no verdict"
+    in words and returned 1 anyway.  Nothing about the solver was being reported.
+
+    The three cases are pinned together because the failure was a collision between two
+    of them: emptiness must read like "nothing failed", a real FAIL must still read 1,
+    and the two must not be the same answer.
+    """
+    assert sc.solver_is_correct([]) is True, "no verdict taken is not a solver failure"
+    assert sc.solver_is_correct([True, True]) is True
+    assert sc.solver_is_correct([True, False]) is False, "a real FAIL must still exit 1"
+    assert sc.solver_is_correct([False]) is False
+
+
+def test_emptiness_cannot_arrive_by_accident():
+    """What makes `all([])` safe here is the guard upstream of it, not optimism.
+
+    An empty solver list is only ever a deliberate, valid, verdict-free section set:
+    `parse_sections` rejects an empty `--sections` and an unknown name alike, with a
+    `ValueError` and BEFORE any solving.  If that guard were ever loosened, a typo would
+    become a silent exit 0 — so this test is the other half of the one above, and the
+    reason the fix is one line rather than a special case.
+    """
+    with pytest.raises(ValueError):
+        sc.parse_sections("")
+    with pytest.raises(ValueError):
+        sc.parse_sections("  ,  ")
+    with pytest.raises(ValueError):
+        sc.parse_sections("ptach")
+    assert sc.parse_sections("patch") == ["patch"]
+
+
+def test_the_rim_band_report_reads_the_OD_surface_nodes_of_the_band(mesh, res):
+    """`wheel_adjoint.rim_band_surface_stress`, against an independent numpy recompute.
+
+    The report (PLAN.md §203) is a maximum over (band element, OD node) pairs of the stress
+    each element evaluates AT that node.  Recomputed here from the solved field with plain
+    numpy — the gradient through `J^-1` at the nodal natural coordinates, the linear law,
+    the plane-stress von Mises — so a wrong region, a wrong node set or a Gauss-point
+    evaluation in the kernel each disagree with it.  The last is checked directly too: the
+    band's outer-face Gauss-point maximum is a DIFFERENT, lower number (§203 §4), and a
+    report equal to it would be reading the instrument §203 rejected.
+    """
+    import wheel_adjoint as WA
+    prob = fem.wheel_contact_problem(mesh, indentation_mm=res["axle_drop_mm"])
+    got = WA.rim_band_surface_stress(prob, res["u"], mesh)
+
+    xy, u = np.asarray(mesh.coords), np.asarray(res["u"]).reshape(-1, 2)
+    band = np.where(np.asarray(mesh.element_region) == "rim")[0]
+    conn = np.asarray(mesh.conn)[band]
+    order = mesh.cfg.order
+    ij = fem._NODE_IJ[order]
+    at = np.linspace(-1.0, 1.0, order + 1)
+    dN = []
+    for i, j in ij:
+        nx, dx = fem._lagrange_1d(order, at[i])
+        ny, dy = fem._lagrange_1d(order, at[j])
+        dN.append(np.stack([dx[ij[:, 0]] * ny[ij[:, 1]], nx[ij[:, 0]] * dy[ij[:, 1]]], 1))
+    dN = np.asarray(dN)
+    J = np.einsum("pnk,eni->epik", dN, xy[conn])
+    gu = np.einsum("eni,pnk,epkj->epij", u[conn], dN, np.linalg.inv(J))
+    eps = 0.5 * (gu + np.swapaxes(gu, -1, -2))
+    s = (prob.lam * (eps[..., 0, 0] + eps[..., 1, 1])[..., None, None] * np.eye(2)
+         + 2.0 * prob.mu * eps)
+    vm = np.sqrt(s[..., 0, 0]**2 - s[..., 0, 0] * s[..., 1, 1] + s[..., 1, 1]**2
+                 + 3.0 * s[..., 0, 1]**2)
+    want = vm[np.isin(conn, np.asarray(mesh.node_sets["rim_outer"]))].max()
+    assert got == pytest.approx(want, rel=1e-12)
+
+    st = fem.gauss_stresses(xy, mesh.conn, res["u"], order=order, lam=prob.lam, mu=prob.mu)
+    r = np.hypot(st["xy"][band, :, 0], st["xy"][band, :, 1])
+    outer_gauss = st["von_mises"][band][r > r.mean()].max()
+    assert got > outer_gauss * (1 + 1e-3), (got, outer_gauss)
+
+
+# THE MODEL THE SHIPPED RECORD NAMES (CROWN_PLAN R21, R20 successor 0), at the end of the file
+# so no anchor above moves, and for `test_the_assumed_patch_stands_in_for_contact_again`
+# ONLY: every other test here reads `mesh`, the flat band, as a vehicle for the kernel.  A
+# record naming no stand-in gets the flat band, the fixture it replaced.
+@pytest.fixture(scope="module")
+def standin_contact(genes):
+    """`(real, assumed)` axle drop in mm at `CFG`; the stand-in's `drop_factor` cancels."""
+    import wheel_objective as WO
+    with open(os.path.join(REPO, "best_solution.json")) as fh:
+        model = WO.descent_model(json.load(fh))
+    mesh = WW.build_wheel(genes, CFG,
+                          rim_outer=model.get("rim_outer", WW.RIM_OUTER_RADIUS_MM))
+    return (fem.solve_wheel_contact(mesh)["axle_drop_mm"],
+            fem.solve_wheel(mesh)["axle_drop_mm"])

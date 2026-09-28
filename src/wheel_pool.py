@@ -30,16 +30,16 @@ WHY THIS IS NOT `multiprocessing.Pool`, and all three reasons are load-bearing:
     what this paragraph originally priced it at — read at 0.774 s against "0.05 s for the
     entire rest of the adjoint" it looks like a micro-optimisation safe to trade away for
     load balancing or a work-stealing queue, and it is not: at ~124 s a miss it decides
-    whether a pooled step beats a serial one.  How much of the 124 s is `coord_fn` rather
-    than other phase-keyed retracing was not isolated, so read it as the cost of a COLD
-    PHASE rather than as a new value for this constant alone.  `Pool.map` gives no control
+    whether a pooled step beats a serial one.  PLAN.md §162 successor 1 isolated it: ALL of
+    it was `coord_fn`'s vjp compile (127.97 s a phase at `coarse`), and the phase has left
+    that key since, so a warm worker's NEW phase costs 0.05 s.  `Pool.map` gives no control
     over which worker sees which task, so a phase would land on a cold worker at random
-    and pay that cost — whichever of the two figures above applies to the mesh in hand.
+    and pay that cost — which is now once per WORKER, whichever phases it is handed.
     Here slot `i` goes to worker `i % n_workers` and nowhere else, so worker `k` only ever
     traces the phases of its own slots.  An rqmc stencil draws its offset from the
-    `n_sub`-point sub-lattice, so one slot spans at most `n_sub` = 8 distinct phases:
-    8 cache entries per worker at `workers=8`, 16 at `workers=4`, against
-    `_COORD_FN_CACHE_MAX = 128`.
+    `n_sub`-point sub-lattice, so one slot spans at most `n_sub` = 8 distinct phases --
+    once 8 cache entries per worker; one per recipe now, so pinning no longer saves a
+    `coord_fn` compile, and whether it still buys anything else is unmeasured.
 
 3.  RESULTS MUST COMBINE IN SLOT ORDER.  `map_phases` returns a list indexed by slot
     regardless of which worker finished first.  Floating-point addition is not
@@ -135,35 +135,84 @@ def worker_env(base=None):
     return env
 
 
-def default_workers(n_phase):
-    """How many workers this machine should run for `n_phase` phases.
+# THE RAM TERM, MEASURED ON A LIVE POOL (PLAN.md §167, §169-§171, §173), 8-phase stencil,
+# filleted mesh, after §164's compile collapse.  Each figure is one process's kernel mark
+# (`VmHWM`); SUMMED, they sit 0.3-3.2% above the tree's simultaneous RSS peak in 12 runs.
+#   coarse  worker 10 one-call marks, 8.740-9.500 GiB, sd 0.217 over §167's 8 (`linear`),
+#           FLAT in phases held; svk's 9.500 / 9.290 (§169).  A DESCENT CREEPS PAST THEM:
+#           GiB at 57.05 free (§171); 10.512 by step 300, +1.085 summed from step 60 and
+#           SATURATING (§181).  parent 9.829-10.435, and it CREEPS: +0.170 over 300 steps
+#   medium  worker 8 one-call marks, 10.231-10.649 GiB (§169); parent 8.677-10.508.  TWO
+#           100-step DESCENTS at 3 workers: 11.754 rising (§173), 12.023 FLAT from 40 (§180)
+# Whole GiB above the largest mark each, as `(worker, parent)` per config.  `smoke` carries
+# `coarse`'s pair as an UPPER bound -- every `smoke` figure measured sits below `coarse`'s
+# (§164: 25.67 against 27.35 GiB for the same process; its pooled workers 8.73 / 8.81).
+# `fine` is NOT MEASURED; `medium`'s one-call worker is 12% over `coarse`'s, so a coarser
+# rung's pair under-counts there, the side that fills a box.  `default_workers` refuses.
+POOL_GIB = {"coarse": (11.0, 11.0), "smoke": (11.0, 11.0), "medium": (13.0, 11.0)}
 
-    THE ONLY PLACE CORE COUNT IS CONSULTED.  Everything else takes an explicit integer, so
-    a study can pin a ladder and a test can assert the same thing on every machine.
+
+def _available_gib():
+    """`MemAvailable` in GiB, or `None` on a platform that has no `/proc/meminfo`.
+
+    `None` makes `default_workers` answer ONE worker, which is serial -- the same stance as
+    `os.cpu_count()` returning `None` below, and the one count ever measured to fit (§113).
+    """
+    try:
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                if line.startswith("MemAvailable:"):
+                    return int(line.split()[1]) / 1048576.0
+    except (OSError, ValueError, IndexError):
+        pass
+    return None
+
+
+def default_workers(n_phase, cfg=None):
+    """How many workers this machine should run for `n_phase` phases at config `cfg`.
+
+    THE ONLY PLACE CORE COUNT AND FREE MEMORY ARE CONSULTED.  Everything else takes an
+    explicit integer, so a study can pin a ladder and a test can assert the same thing on
+    every machine.
 
     Capped by `n_phase` as well as by cores, and that half matters just as much: a ninth
     worker for eight phases is a ninth jax import, a ninth interpreter's worth of resident
     memory, and no work.  `os.cpu_count()` returns `None` on platforms that cannot answer,
     which is a one-worker answer rather than a crash.
 
-    IT STILL KNOWS NOTHING ABOUT RAM, AND SINCE §103 THAT MATTERS.  This was sized when a
-    worker cost ~2 GiB.  On the FILLETED mesh a worker holding one phase is 9.1 GiB
-    measured (PLAN.md §105), so the eight workers this returns for an eight-phase stencil
-    on any 8+ core box want ~73 GiB -- more than the 61 GB machine these numbers were taken
-    on.  `wheel_stage3.py --workers` defaults to `0` (serial), so nothing reaches this by
-    default and it is a hazard for `-1` rather than a live bug; but `-1` is documented as
-    "size the pool to the machine", and on memory it does not.  §105's successor 4 is a
-    RAM-aware cap or an outright refusal here.
+    AND CAPPED BY MEMORY, which is PLAN.md §105's successor 4.  Until §167 this counted
+    cores only: sized when a worker cost ~2 GiB, it returned 8 for an 8-phase stencil on any
+    8+ core box, and on the filleted mesh that was ~73 GiB of a 61 GB machine -- a hazard
+    for `--workers -1`, which is documented as "size the pool to the machine".  §113's live
+    pool at `--workers 2` measured 27.6 / 26.0 GiB per worker and was killed at 60/61 GiB;
+    that was four compiles per worker, and §164 made it one.  The pool now gets the largest
+    count that fits `parent + n * worker` from `POOL_GIB` inside `MemAvailable` at the
+    moment of the call, floor 1 -- and `1` is serial in `wheel_stage3.descend`, which never
+    builds a one-worker pool.  On the box §167 measured, ~58 GiB available gives 4, the size
+    whose live peak was 47.0 GiB.  An explicit positive `--workers` stays literal and is the
+    caller's.
 
-    [CORRECTED PLAN.md §113 -- "2 is the largest that fits a 61 GB box" WAS AN ESTIMATE
-    STATED AS A MEASUREMENT, AND A LIVE POOL SHOWED IT WRONG.  --workers 2 on the Stage-3
-    re-run (4 phases held per worker) measured 27.6 / 26.0 GiB RSS per worker -- not the
-    ~20.7 GiB the RSS-vs-phases fit above predicts -- and pushed a 61 GB box to 60/61 GiB
-    used and 7.4/8 GiB swap within ~14 minutes.  Killed before it OOM'd.  No pooled worker
-    count is confirmed safe on this box for the filleted mesh; `--workers 0` (serial, 43.4
-    GiB peak, PLAN.md §105) is the only one actually measured to fit.]
+    `MemAvailable`, NOT `MemTotal`, and the difference is load-bearing rather than tidy: on
+    that 61.4 GiB box `MemTotal` gives four `coarse` workers beside anything resident, and
+    that pool held 49.72 GiB (§171).  A config with no measured pair raises, and so
+    does `cfg=None`: a cap that silently applied `coarse`'s numbers to `fine` would be a
+    threshold applied to an instrument it was never calibrated on.  A machine that cannot
+    report free memory gets 1 -- the caller of a refusal can pass `--workers N`, but nobody
+    can make `/proc/meminfo` exist, so that case takes the one answer known to be safe.
     """
-    return max(1, min(int(n_phase), os.cpu_count() or 1))
+    cores = max(1, min(int(n_phase), os.cpu_count() or 1))
+    available = _available_gib()
+    if available is None:
+        return 1
+    name = getattr(cfg, "name", cfg)
+    if name not in POOL_GIB:
+        raise ValueError(
+            f"no measured pool memory for config {name!r} (only {sorted(POOL_GIB)}); "
+            f"pass an explicit --workers N rather than -1 -- see wheel_pool.POOL_GIB "
+            f"and PLAN.md §167")
+    worker, parent = POOL_GIB[name]
+    fits = int((available - parent) // worker)
+    return max(1, min(cores, fits))
 
 
 def _send(fh, obj):

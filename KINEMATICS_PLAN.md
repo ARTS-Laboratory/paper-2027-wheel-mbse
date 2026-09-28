@@ -670,7 +670,7 @@ Why that line and only that line:
   `test_the_run_record_carries_the_kinematics_it_actually_descended` asserts that a record
   written without the kwarg still reads `linear`, and its stated reason is that records written
   before the key existed must keep meaning what they meant. That reason is still correct, and
-  the record's fallback at `wheel_stage3.py:705` mirrors `wheel_contact_problem`'s real default
+  the record's fallback at `wheel_stage3.py:838` mirrors `wheel_contact_problem`'s real default
   rather than the CLI's preference. The two defaults now differ **on purpose** and the code
   says so in place.
 - **`GATE_SMALL_LOAD_REL` is not moved.** Fourth arc to refuse. It stays red, and it is now red

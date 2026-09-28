@@ -935,10 +935,10 @@ def service_qoi_value_and_grad(genes, cfg="coarse", qois=("pnorm_stress",), *,
                      "d_dindentation": g[name]["d_dindentation"]}
 
     out["_meta"] = {"axle_drop_mm": delta, "contact_force_n": g["contact_force"]["value"],
-                    "d_force_d_indentation": dF_ddelta, "force_grad":
-                    g["contact_force"]["grad"], "res": res, "secant": sec, "mesh": mesh,
-                    "prob": prob, "timings": t, "max_stress_mpa":
-                    max_stress(prob, prob.coords, res["u"])}
+                    "d_force_d_indentation": dF_ddelta, "res": res, "secant": sec,
+                    "force_grad": g["contact_force"]["grad"], "mesh": mesh, "prob": prob,
+                    "timings": t, "max_stress_mpa": max_stress(prob, prob.coords, res["u"]),
+                    "rim_band_od_vm_mpa": rim_band_surface_stress(prob, res["u"], mesh)}
     return out
 
 
@@ -979,3 +979,140 @@ def insensitive_genes(genes, mesh, tol=0.0):
     col = np.asarray(jnp.sqrt(jnp.sum(jac ** 2, axis=(0, 1))))
     names = [wg.GENE_NAMES[i] for i in range(len(col)) if col[i] <= tol]
     return names, col
+
+
+def rim_band_surface_stress(prob, u_full, mesh):
+    """Max von Mises [MPa] on the rim band's OUTER SURFACE — a report, never a term.
+
+    PLAN.md §201 §2 and §202 §5: the band (region `rim`) is where the ground load enters
+    and where nothing in the objective reads stress — both stress terms read the fillet
+    arcs.  This reads it, and scores nothing.
+
+    THE SURFACE, AND NOT THE REGION's GAUSS POINTS, FOR TWO MEASURED REASONS (§203).  The
+    band's inner face meets each rim junction at a re-entrant corner that survives the
+    fillet (§199), so a maximum over the whole band chases a singularity: 30.06 / 34.60 /
+    41.08 MPa at coarse / medium / fine, phase 0.  The outer face is 1.5 mm from it and
+    carries the band's bending peak, but a Gauss-point maximum there under-reads a
+    through-thickness-linear stress by the outermost point's depth — 26.89 / 27.34 / 28.08,
+    climbing.  Evaluated AT the outer-surface nodes it reads 29.10 / 28.63 / 29.08.  Each
+    band element evaluates its own nodes (`fem._stress_kernel(at="nodes")`), and the
+    maximum is taken over (element, node) pairs on `rim_outer` without averaging, so no
+    element's reading is diluted by a neighbour's.
+
+    The plane-stress von Mises form, like `gauss_stresses`: exact under plane stress,
+    an under-read under plane strain.  Cauchy under SVK, like `max_stress`.
+    """
+    band = np.where(np.asarray(mesh.region_mask("rim")))[0]
+    conn = np.asarray(prob.conn)[band]
+    s = fem._stress_kernel(prob.order, prob.nonlinear, True, at="nodes")(
+        jnp.asarray(prob.coords)[conn], jnp.asarray(u_full).reshape(-1, 2)[conn],
+        prob.lam, prob.mu)
+    sxx, syy, sxy = s[..., 0, 0], s[..., 1, 1], s[..., 0, 1]
+    vm = np.sqrt(np.asarray(sxx**2 - sxx * syy + syy**2 + 3.0 * sxy**2))
+    on_od = np.isin(conn, np.asarray(mesh.node_sets["rim_outer"]))
+    return float(vm[on_od].max())
+
+
+# ---------------------------------------------------------------------------
+# THE BAND's INNER-FACE HOOP TENSION — CROWN_PLAN.md Step 5, decided at R5 D4
+# ---------------------------------------------------------------------------
+
+def band_face_distance(mesh):
+    """`{node id: distance [mm]}` from each inner-free-face node to the nearest spoke
+    junction: the nearest node on the band's inner radius that the free face does NOT own,
+    i.e. where a spoke and its fillets meet the band.  Reference coordinates, so the
+    distance is the same at every phase (the roll is rigid)."""
+    free = np.asarray(mesh.node_sets["rim_inner_free"])
+    X = np.asarray(mesh.coords)
+    r = np.hypot(X[:, 0], X[:, 1])
+    on_face = np.where(np.abs(r - WW.RIM_RADIUS_MM) < 1e-6)[0]
+    junction = np.setdiff1d(on_face, free)
+    d = np.linalg.norm(X[free][:, None, :] - X[junction][None, :, :], axis=2).min(axis=1)
+    return dict(zip(free.tolist(), d.tolist()))
+
+
+def band_inner_pairs(prob, mesh, exclude_mm=0.0):
+    """`(elements, local_nodes)`: every (band element, its node) pair on the inner free
+    face whose node is at least `exclude_mm` from a spoke junction.
+
+    The face is `node_sets["rim_inner_free"]` — r = RIM_RADIUS between spokes, the weld
+    blocks excluded by construction.  Pairs, not nodes, for `rim_band_surface_stress`'s
+    reason: each element evaluates its own nodes and nothing is averaged, so no element's
+    reading is diluted by a neighbour's.  Numpy index arrays over `prob.conn`, which is
+    ordered as `mesh.conn` (`rim_band_surface_stress` relies on the same).
+
+    `exclude_mm` IS THERE BECAUSE R5 D4's REGISTERED PREDICTION WAS REFUTED.  At the node
+    next to a junction the hoop tension climbs with refinement — 27.05 / 30.43 / 36.35 MPa
+    at coarse / medium / fine, phase 3.75, on the stand-in, the node 0.188 / 0.117 / 0.067
+    mm from the junction (`study_band_tension.json`) — which is §203's re-entrant corner
+    that survives the fillet, on its tension side.  `study_band_tension` sets it."""
+    band = np.where(np.asarray(mesh.region_mask("rim")))[0]
+    conn = np.asarray(prob.conn)[band]
+    dist = band_face_distance(mesh)
+    keep = np.vectorize(lambda n: dist.get(int(n), -1.0) >= exclude_mm)(conn)
+    e, a = np.nonzero(keep)
+    return band[e], a
+
+
+def _band_hoop(prob, coords, u_full, els, loc):
+    """Tangential (hoop) Cauchy stress [MPa] at each (element, node) pair — traced.
+
+    ON A TRACTION-FREE FACE THIS IS THE IN-PLANE MAX PRINCIPAL (R5 D4): the normal and
+    shear tractions vanish, so the only nonzero surface stress is the one along the face.
+    No square root, no branch.  The direction is circumferential about the hub (tied at
+    the origin), taken at the deformed position x = X + u, where SVK's Cauchy stress
+    lives.  It departs from the face's own tangent by the band's local rotation there."""
+    conn = jnp.asarray(prob.conn)[els]
+    s = fem._stress_kernel(prob.order, prob.nonlinear, True, at="nodes")(
+        coords[conn], u_full.reshape(-1, 2)[conn], prob.lam, prob.mu)
+    s = s[jnp.arange(len(els)), jnp.asarray(loc)]
+    node = conn[jnp.arange(len(els)), jnp.asarray(loc)]
+    X = coords[node] + u_full.reshape(-1, 2)[node]
+    t = jnp.stack([-X[:, 1], X[:, 0]], axis=1) / jnp.linalg.norm(X, axis=1)[:, None]
+    return jnp.einsum("pi,pij,pj->p", t, s, t)
+
+
+def band_face_profile(prob, u_full, mesh):
+    """Every inner-free-face pair's hoop stress with its node's reference x, y and
+    distance to the nearest junction — the raw profile `study_band_tension` reduces."""
+    els, loc = band_inner_pairs(prob, mesh)
+    s = np.asarray(_band_hoop(prob, jnp.asarray(prob.coords), jnp.asarray(u_full),
+                              els, loc))
+    node = np.asarray(prob.conn)[els, loc]
+    X = np.asarray(prob.coords)[node]
+    dist = band_face_distance(mesh)
+    return {"s_tt_mpa": s, "x_mm": X[:, 0], "y_mm": X[:, 1],
+            "d_junction_mm": np.asarray([dist[int(n)] for n in node])}
+
+
+def rim_band_inner_tension(prob, u_full, mesh, exclude_mm=0.0):
+    """Max hoop TENSION [MPa] on the band's inner free face, and where — a report.
+
+    R1 (CROWN_PLAN.md): printed flat, the band's tension that matters is on the INNER face
+    under the load, along the hoop; `rim_band_surface_stress` reads von Mises on the OD,
+    which there is in hoop COMPRESSION.  Both are reported; this one is what Step 5 prices,
+    through `_qoi_band_tension`, beyond `exclude_mm` of any spoke junction."""
+    f = band_face_profile(prob, u_full, mesh)
+    k = int(np.argmax(np.where(f["d_junction_mm"] >= exclude_mm, f["s_tt_mpa"], -np.inf)))
+    return {"max_mpa": float(f["s_tt_mpa"][k]), "x_mm": float(f["x_mm"][k]),
+            "y_mm": float(f["y_mm"][k]), "d_junction_mm": float(f["d_junction_mm"][k])}
+
+
+def _qoi_band_tension(prob, els, loc, p):
+    """`prob -> Q(coords, u_full, y_ground)`: the l_p norm of the inner face's hoop tension.
+
+        Q = ( SUM_pairs max(sigma_tt, 0)^p )^(1/p)   >=   max sigma_tt+
+
+    Un-normalised for `_qoi_region_pnorm`'s reason: it is never below the peak and it
+    converges to it as the peak comes to dominate, so it is conservative in the direction
+    a stress term should be.  The positive part is C1 at zero for p > 1, and compression
+    contributes nothing — the OD's patch compression is not this face, and the inner face's
+    own compression between loaded spokes is harmless (R1 §1).  `els` / `loc` come from
+    `band_inner_pairs` at the exclusion the term uses; `p` is chosen by measurement in
+    `study_band_tension`."""
+    els, loc = np.asarray(els), np.asarray(loc)
+
+    def Q(coords, u_full, y_ground):
+        s = jnp.maximum(_band_hoop(prob, coords, u_full, els, loc), 0.0)
+        return jnp.sum(s ** p) ** (1.0 / p)
+    return Q

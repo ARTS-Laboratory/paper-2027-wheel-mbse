@@ -2,7 +2,7 @@
 
 These lock down the CURRENT behaviour of `wheel_fea.evaluate_design` before any of the
 three-stage refactor touches it.  `wheel_fea.py` is 1310 lines with no other tests and a
-load-bearing import contract (`wheel_step_export.py:60-69` imports from it across an
+load-bearing import contract (`wheel_step_export.py:72-81` imports from it across an
 interpreter boundary), so this file is the safety net for every later milestone.
 
 The expected values are not hand-transcribed — they are read back out of
@@ -33,7 +33,7 @@ import wheel_fea as W
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Machine-precision, not a loose tolerance: `evaluate_design` is deterministic and the
-# recorded values came out of this exact code path (wheel_fea.py:998).  Anything above
+# recorded values came out of this exact code path (wheel_fea.py:1241).  Anything above
 # this is a real behaviour change, not float noise.
 TOL = 1e-9
 
@@ -52,7 +52,7 @@ def scored(record):
 
 
 def test_gene_names_match_json_keys(record):
-    """GENE_NAMES (wheel_fea.py:682) is the ordering contract between the flat 14-vector
+    """GENE_NAMES (wheel_genome.py:35) is the ordering contract between the flat 14-vector
     the GA works in and the dict the exporter reads.  If these ever diverge, every
     genome on disk is silently reinterpreted."""
     assert sorted(W.GENE_NAMES) == sorted(record["genes"])
@@ -106,7 +106,7 @@ def test_metrics_reproduce(record, scored, metric):
 
 
 def test_kt_reproduces(record):
-    """Kt_hub/Kt_rim are computed in __main__ (wheel_fea.py:989) rather than inside
+    """Kt_hub/Kt_rim are computed in __main__ (wheel_fea.py:1340) rather than inside
     evaluate_design, so they need their own check."""
     g = record["genes"]
     assert W.stress_concentration_kt(g["R_hub"], g["t0"]) == pytest.approx(
@@ -116,7 +116,7 @@ def test_kt_reproduces(record):
 
 
 def test_fitness_is_negative_total_loss(record, scored):
-    """pygad maximises, so pygad_fitness must stay the negated sum (wheel_fea.py:629).
+    """pygad maximises, so pygad_fitness must stay the negated sum (wheel_fea.py:784).
     A sign flip here would invert the entire search."""
     _, loss_terms = scored
     vec = [record["genes"][name] for name in W.GENE_NAMES]
@@ -125,7 +125,7 @@ def test_fitness_is_negative_total_loss(record, scored):
 
 
 def _genome_hash(genes):
-    """Byte-identical copy of wheel_step_export.py:117.
+    """Byte-identical copy of wheel_step_export.py:154.
 
     Deliberately duplicated rather than imported: that module needs CadQuery and runs in
     a different interpreter, so importing it here would make this test unrunnable in

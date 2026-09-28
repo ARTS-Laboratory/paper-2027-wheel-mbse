@@ -210,7 +210,7 @@ def test_the_shipped_radii_are_far_outside_anything_usable(genes):
 # BOTH EDGES OF THE USABLE WINDOW BELONG TO THE NODE ALLOCATION
 # ---------------------------------------------------------------------------
 
-def test_the_window_closes_when_the_arc_claims_a_second_cell(genes):
+def test_the_window_closes_when_the_arc_claims_a_second_cell():
     """0.27 mm is usable at `coarse` and 0.28 is not, and the difference is one node.
 
     `k0 = clip(round((s_A - s0) / ds), 1, cap)` steps from 1 to 2 between them.  Nothing
@@ -222,7 +222,11 @@ def test_the_window_closes_when_the_arc_claims_a_second_cell(genes):
     0.25; §115's promotion moved `s_A` and the step now falls between 0.27 and 0.28.  The
     mechanism (`k0` stepping 1 -> 2) and the "barely moved" ratio are unchanged — only the
     two radii that straddle the step are.
+
+    PINNED BY FILE AT CROWN_PLAN R20, where `240d5a2` moved the step again, to between
+    0.25 and 0.26 mm.  The radii below are `b729e86`'s, so it reads that file.
     """
+    genes = ff.load_genes("stage3_svk_refillet_shipped_r2_best.json")
     rows = {r["radius_mm"]: r for r in ff.sweep_one(genes, "coarse", "hub",
                                                     (0.27, 0.28))}
     assert rows[0.27]["arc_cells"] == 1 and rows[0.28]["arc_cells"] == 2
@@ -319,15 +323,26 @@ def test_the_committed_default_path_section_reports_the_blind_spot(report):
 
 def test_the_report_names_which_criterion_each_recorded_table_was(report):
     """The reconciliation is the deliverable, so the artifact has to carry it in a form
-    that survives without the prose around it."""
+    that survives without the prose around it.
+
+    CROWN_PLAN R20: `mechanism` follows the shipped genome, and on `240d5a2` PART 3's
+    block-cell criterion no longer lands ON the fold window's upper edge at the rim.
+    It survives to 0.50 mm against an edge of 0.46 at `coarse`, and 0.38 against 0.23 at
+    `medium`; `b729e86` matched at all four.  What holds on both genomes is the ORDER:
+    the block-cell criterion is never stricter than the fold window.  That order is
+    asserted, and the match only at the hub, where it still holds.
+    """
     rc = report["reconciliation"]
     assert "block_cells" in rc["part3_criterion"]
     assert "build_wheel" in rc["part5_criterion"]
     for key in ("coarse:hub", "coarse:rim", "medium:hub", "medium:rim"):
         assert rc["part3_largest_surviving"][key]["agrees"]
         assert rc["part5_first_fold"][key]["agrees"]
-        assert report["mechanism"][key]["upper_edge_is_arc_cell_step"]
-        assert report["mechanism"][key]["part3_criterion_matches_upper_edge"]
+        m = report["mechanism"][key]
+        assert m["upper_edge_is_arc_cell_step"]
+        assert m["part3_criterion_fine_grid_mm"] >= m["usable_window_mm"][1], (key, m)
+        if key.endswith("hub"):
+            assert m["part3_criterion_matches_upper_edge"], (key, m)
 
 
 # ---------------------------------------------------------------------------

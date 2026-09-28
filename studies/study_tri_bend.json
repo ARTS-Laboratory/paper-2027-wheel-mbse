@@ -3,7 +3,7 @@
   "per_config": {
     "coarse": {
       "B": 10,
-      "bow_over_width_shipped": 0.008758180530866666,
+      "bow_over_width_shipped": 0.005911293722960744,
       "forward": {
         "constant": {
           "holdout_scored_once": {
@@ -24,7 +24,7 @@
           "shipped": {
             "bend": 0.0,
             "clears_target": true,
-            "min_scaled_jacobian": 0.5698029933811283
+            "min_scaled_jacobian": 0.45865583607727967
           }
         },
         "linear": {
@@ -46,7 +46,7 @@
           "shipped": {
             "bend": 0.0,
             "clears_target": true,
-            "min_scaled_jacobian": 0.5698029933811283
+            "min_scaled_jacobian": 0.45865583607727967
           }
         }
       },
@@ -108,7 +108,7 @@
     },
     "medium": {
       "B": 20,
-      "bow_over_width_shipped": 0.00875621965355873,
+      "bow_over_width_shipped": 0.005910285309586149,
       "forward": {
         "constant": {
           "holdout_scored_once": {
@@ -129,7 +129,7 @@
           "shipped": {
             "bend": 0.3,
             "clears_target": true,
-            "min_scaled_jacobian": 0.5702567624464461
+            "min_scaled_jacobian": 0.45901019471235976
           }
         },
         "linear": {
@@ -149,9 +149,9 @@
           },
           "param": 4.0,
           "shipped": {
-            "bend": 0.03502487861423492,
+            "bend": 0.023641141238344595,
             "clears_target": true,
-            "min_scaled_jacobian": 0.5702567624464461
+            "min_scaled_jacobian": 0.45901019471235976
           }
         }
       },
@@ -257,7 +257,7 @@
     "selection": "max n_clear, then n_valid, then worst_min_sj; ties: smaller parameter",
     "w_held_fixed_to": "the tri-block's own published cell (PLAN \u00a755)"
   },
-  "seconds": 23.76,
+  "seconds": 26.62,
   "self_checks": {
     "duplicate_gene_vectors": null,
     "every_config_produced_finite_parameters": true,

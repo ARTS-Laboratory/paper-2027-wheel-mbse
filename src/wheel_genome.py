@@ -15,7 +15,7 @@ THE CONTRACT THIS FILE PROTECTS
 hashes `sorted(genes.items())`, so **adding even one key inside `genes` changes the
 hash of every genome ever recorded** and silently breaks every staleness comparison in
 the repo.  New information belongs in new TOP-LEVEL keys of the record, which
-`wheel_step_export.load_genome` (wheel_step_export.py:125) and `main` (:807)
+`wheel_step_export.load_genome` (wheel_step_export.py:162) and `main` (:1108)
 demonstrably ignore.
 
 numpy + stdlib only.  This module is imported by the numpy-side tooling and must never
@@ -31,7 +31,7 @@ import numpy as np
 
 # Ordering contract between the flat 14-vector the GA and SGD work in, and the dict the
 # exporter reads.  `evaluate_design` unpacks positionally in exactly this order
-# (wheel_fea.py:560), so the two must never drift.
+# (wheel_fea.py:709), so the two must never drift.
 GENE_NAMES = [
     "cx1", "cy1", "cx2", "cy2", "cx3", "cy3", "cx4", "cy4",
     "t0", "t1", "t2", "t3",
@@ -108,9 +108,9 @@ def bound_saturation(vec, low, high, tol_frac=0.01):
 
 
 def clip_to_bounds(vec, low, high, xp=np):
-    """Project into the box.  `evaluate_design` does NOT clip (wheel_fea.py:550), so a
+    """Project into the box.  `evaluate_design` does NOT clip (wheel_fea.py:699), so a
     gradient step that leaves the box is scored without complaint and the thickness is
-    then silently clamped deep inside the physics (wheel_fea.py:359).  Stage 3 projects
+    then silently clamped deep inside the physics (wheel_fea.py:455).  Stage 3 projects
     explicitly instead."""
     return xp.clip(vec, low, high)
 
@@ -122,7 +122,7 @@ def clip_to_bounds(vec, low, high, xp=np):
 def genome_hash(genes):
     """Short stable fingerprint of a gene dict.
 
-    Byte-identical to `wheel_step_export.genome_hash` (wheel_step_export.py:117), and
+    Byte-identical to `wheel_step_export.genome_hash` (wheel_step_export.py:154), and
     deliberately DUPLICATED rather than imported: that module needs CadQuery and runs in
     a different interpreter, so importing it here would make this module unusable in
     env-opt.  `tests/test_golden.py` pins the result against the value recorded in

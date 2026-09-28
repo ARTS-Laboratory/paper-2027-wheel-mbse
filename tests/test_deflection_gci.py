@@ -13,15 +13,29 @@ has no physics in it at all, and neither was caught by running it:
      solved on `wheel_wheel`.  Both modules export configs named smoke/coarse/medium/fine
      and they are DIFFERENT MESHES, so every h was the size of a cell in a mesh nobody
      solved on.  The reported refinement ratios were 1.826/1.789 against a true
-     1.616/1.593, which inflated `p` by 25%.
+     1.616/1.593, which moved `p` by 25%.
+
+  3. AND DEFECT 2 CAME BACK, at the FILLET rather than at the module: §103 gave
+     `WO.phase_meshes` `fillet=True` without touching the study, so from 2026-09-03 to
+     §196 `mesh_counts` again sized a mesh nobody solved on — 4704 elements against 5952.
+     THESE TESTS WERE GREEN THROUGHOUT.  Defect 2's pin compared `mesh_counts` against a
+     BARE `build_wheel`, so it certified the recurrence; that is fixed below and the fix
+     is the whole reason this file gets a third numbered defect instead of a footnote.
 
 Defect 2 is the one worth a permanent test, because it is silent in a way defect 1 is
-not: nothing raises, nothing looks wrong, the ladder is monotone and the GCI barely
-moves.  The extrapolated value and the GCI are ALMOST INVARIANT to a rescaling of h —
-from three points, p and r enter Richardson only through r^p, which the measured phi
-very nearly fix on their own — so the one number that actually goes wrong is `p`, and
-`p` is the number a convergence study exists to produce.  A study can therefore be
-wrong about its own subject while every headline it reports stays right.
+not: nothing raises, nothing looks wrong, and the ladder stays monotone.  The
+EXTRAPOLATED VALUE is almost invariant to an h error, and the number that always goes
+wrong is `p` — which is what a convergence study exists to produce.  A study can
+therefore be wrong about its own subject while its headline stays right.
+
+**BUT NOT THE GCI, AND THIS FILE SAID OTHERWISE UNTIL §196.**  `ext` and `gci` are built
+from one factor, 1/(r32**p - 1); they move by the SAME relative amount, and `ext` looks
+immune only because it adds that term to a ~1.8 mm base.  Measured by replaying
+`analyse` over three count sources on one unchanged `phi`: the GCI moves 1.10%/1.70%
+across defect 2 and **13.88%/23.49% across defect 3**, while the extrapolated value moves
+at most 0.24%.  The invariance needs `r32**p` preserved, which needs the h-error to be a
+UNIFORM rescaling in log space — defect 2 nearly was, defect 3 is not.  What is phi-only
+is `naive_ratio`, which is bit-identical across both.
 """
 
 import math
@@ -36,6 +50,7 @@ sys.path.insert(0, os.path.join(
 
 import wheel_genome as wg          # noqa: E402
 import wheel_mesh as wm            # noqa: E402
+import wheel_objective as WO       # noqa: E402
 import wheel_wheel as ww           # noqa: E402
 import study_deflection_gci as gci  # noqa: E402
 
@@ -59,13 +74,19 @@ def test_mesh_counts_come_from_the_wheel_that_was_actually_solved(genes):
     Not with `wheel_wheel.get_config(...).n_elements` — that is a formula, and a formula
     is what this study already got wrong once.  `n_nodes` in particular cannot be a
     formula: the seven sector blocks share seams and the merged node count is far below
-    the sum of the grids (at `fine`, 132276 against the blocks' raw total).
+    the sum of the grids (at `fine`, 158388 against the blocks' raw total).
+
+    **`fillet=True`, AND THIS TEST'S NAME WAS TRUE OF IT BEFORE ITS BODY WAS** (PLAN.md
+    §196).  From §103 to §196 the body built BARE while `run_ladder` solved filleted, so
+    it certified the very mismatch it is named for — green for nineteen days on 4704
+    against the 5952 the QoI was solved on.  The build below must stay the one
+    `WO.phase_meshes` makes; comparing against anything else re-opens §183 §3.
     """
     for name in gci.LADDER:
         counts = gci.mesh_counts(name, genes)
-        mesh = ww.build_wheel(genes, name)
-        assert counts["n_elements"] == mesh.n_elements
-        assert counts["n_nodes"] == mesh.n_nodes
+        solved = WO.phase_meshes(genes, name, [0.0])[0]
+        assert counts["n_elements"] == solved.n_elements
+        assert counts["n_nodes"] == solved.n_nodes
 
 
 def test_h_is_not_the_spoke_block_ladder(genes):
@@ -85,12 +106,19 @@ def test_h_is_not_the_spoke_block_ladder(genes):
 
 
 def test_the_refinement_ratios_are_the_ones_the_docstring_claims(genes):
-    """The module docstring quotes 1.6162 and 1.5934, and a reader checks `p` against
-    those.  If the ladder is re-tuned they must be updated together, so pin them."""
+    """The module docstring quotes 1.6164 and 1.5556, and a reader checks `p` against
+    those.  If the ladder is re-tuned they must be updated together, so pin them.
+
+    THE SECOND NUMBER IS THE ONE THAT MOVED AT §196, and it is the informative half of
+    §183 §3's half-fired falsifier: filleting leaves `r21` at 1.6162 -> 1.6164 and takes
+    `r32` from 1.5934 to 1.5556, because the fillet's element surcharge is NOT uniform up
+    the ladder (+26.56% at `medium`, +20.62% at `fine`).  A fillet that scaled every rung
+    alike would have left both alone and made the whole defect cosmetic.
+    """
     h = {c: gci._h(gci.mesh_counts(c, genes)) for c in gci.EXTRAPOLATE_FROM}
     coarse, medium, fine = (h[c] for c in gci.EXTRAPOLATE_FROM)
-    assert coarse / medium == pytest.approx(1.6162, abs=5e-4)
-    assert medium / fine == pytest.approx(1.5934, abs=5e-4)
+    assert coarse / medium == pytest.approx(1.6164, abs=5e-4)
+    assert medium / fine == pytest.approx(1.5556, abs=5e-4)
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +146,10 @@ def test_observed_order_recovers_a_synthetic_NON_constant_ratio(p_true):
     r21 != r32, so using the coarse pair as the denominator no longer cancels.  The
     first draft returned 1.2568 here for p_true = 1.3; nothing else in the suite moved.
     """
-    h = [1.0 / 4704 ** 0.5, 1.0 / 12288 ** 0.5, 1.0 / 31200 ** 0.5]  # the real ladder
+    # The BARE ladder's counts, which is what the real one was until §196 filleted it
+    # (5952/15552/37632).  Kept as-is on purpose: what this test needs is r21 != r32, and
+    # re-pointing a synthetic fixture at new counts would silently change what it probes.
+    h = [1.0 / 4704 ** 0.5, 1.0 / 12288 ** 0.5, 1.0 / 31200 ** 0.5]
     exact, C = 2.0, 0.3
     phi = [exact - C * x ** p_true for x in h]
     p, ok = gci.observed_order(phi, h)
@@ -148,6 +179,13 @@ def test_rescaling_h_moves_p_but_essentially_not_the_extrapolation():
     does — and `p` scales inversely while `r32 ** p`, and therefore the extrapolated
     value and the GCI, stay put.  This is the property that let a 25% error in `p`
     survive alongside a correct 2.75% GCI, and it is why `p` needs its own pin.
+
+    **THE SCOPE IS THE WORD "EVERY", AND §196 IS WHERE THAT WAS LEARNED.**  This test
+    rescales all three rungs by ONE exponent, which is uniform in log space and is
+    exactly the case the invariance needs.  A real h-error need not be uniform: §103's
+    fillet moved `r32` by -2.38% and `r21` by +0.01%, `r32 ** p` by 8.36%, and the GCI by
+    13.88% — against the 5e-3 tolerance asserted below.  So this test is a CONTROL for
+    the invariance, not a warrant for it, and nothing may cite it as one.
     """
     phi = [1.97608, 1.99742, 2.01274]           # the measured SVK rungs
     h = [1.0 / 4704 ** 0.5, 1.0 / 12288 ** 0.5, 1.0 / 31200 ** 0.5]
@@ -164,12 +202,26 @@ def test_rescaling_h_moves_p_but_essentially_not_the_extrapolation():
     assert powered["gci_fine_pct"] == pytest.approx(base["gci_fine_pct"], rel=5e-3)
 
 
-def test_the_recorded_report_still_says_the_gate_is_undecidable():
-    """PLAN §29's call rests on GCI(fine) >> the ±0.3% band.  Read it off the artifact.
+def test_the_recorded_report_now_says_the_gate_IS_decidable():
+    """**PLAN §29's CALL IS REVERSED BY THE ARTIFACT, AND §196 IS THE RECORD OF IT.**
 
-    Deliberately NOT a pin on p, the extrapolated value or the GCI to more figures than
-    the conclusion needs — the study is re-runnable and those move. What must not move
-    silently is the comparison the plan retired a gate on.
+    This test asserted the opposite until §196 — `GCI > gate_pct`, and `not
+    gate_decidable` — because §29 retired the ±0.3% deflection gate on a GCI of 1.286%,
+    four times the band it was supposed to adjudicate.  The artifact now reads **0.051%**
+    and the gate is decidable under all four h definitions, with the extrapolated value
+    at -0.048% INSIDE the band.
+
+    **THE CAUSE IS NOT ESTABLISHED AND THIS TEST CLAIMS NONE.**  The two ladders differ
+    in at least two ways: the mesh (§103 filleted it) and the genome (`best_solution.json`
+    moved at `cb4e3dd`, and **12 of its 14 genes differ** from the one §29 read).  Either
+    could produce a tighter ladder, so "the fillet made the gate decidable" is a
+    hypothesis this file must not be read as supporting.  What is asserted is only what
+    was measured: on the wheel that ships, on the mesh the objective solves, the gate
+    this tree spent §29 retiring can be adjudicated at this ladder's resolution.
+
+    Still deliberately NOT a pin on p, the extrapolated value or the GCI to more figures
+    than the conclusion needs — the study is re-runnable and those move.  What must not
+    move silently is the comparison, in whichever direction it currently runs.
     """
     import json
     path = os.path.join(REPO, "studies", "study_deflection_gci.json")
@@ -177,13 +229,14 @@ def test_the_recorded_report_still_says_the_gate_is_undecidable():
         rep = json.load(fh)
     svk = rep["refinement"]["svk"]
     assert svk["monotone"]
-    assert svk["gci_fine_pct"] > rep["gate_pct"], (
-        f"GCI {svk['gci_fine_pct']:.3f}% is no longer wider than the "
-        f"±{rep['gate_pct']}% band — PLAN §29's call needs re-deriving")
-    assert not svk["gate_decidable"] and not svk["gate_decidable_under_all_h"]
-    # And the counts in the artifact are the wheel's, not the spoke block's.
+    assert svk["gci_fine_pct"] < rep["gate_pct"], (
+        f"GCI {svk['gci_fine_pct']:.3f}% is no longer INSIDE the "
+        f"±{rep['gate_pct']}% band — §196's reversal of PLAN §29 needs re-deriving")
+    assert svk["gate_decidable"] and svk["gate_decidable_under_all_h"]
+    # And the counts in the artifact are of the mesh the QoI was SOLVED on (§183 §3,
+    # fixed at §196) — the filleted wheel, which is strictly larger than the formula.
     for row in rep["rows"]:
-        assert row["n_elements"] == ww.get_config(row["config"]).n_elements
+        assert row["n_elements"] > ww.get_config(row["config"]).n_elements
 
 
 def test_observed_p_is_not_the_williams_exponent():

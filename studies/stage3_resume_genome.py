@@ -8,7 +8,7 @@ atomically, precisely so that "a run measured in tens of minutes must survive a 
 (`_persist`/`_write`, wheel_stage3.py:875-896 — tmp file plus `os.replace`, so a kill
 mid-write cannot truncate it). The genome does not get the same treatment: `--best-out` is
 written exactly once, by `wg.save_record`, AFTER the descent loop returns
-(wheel_stage3.py:1299-1310). A run killed at step 299 of 300 therefore leaves a complete
+(wheel_stage3.py:1303-1314). A run killed at step 299 of 300 therefore leaves a complete
 step-by-step history and NO promotable genome at all.
 
 The history is not usable as a restart either, because the two ends disagree on shape:

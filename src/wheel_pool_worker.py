@@ -60,13 +60,13 @@ def run_phase(task):
     # `fillet=True` — PLAN.md §93/§103.  Must match `wheel_objective.phase_meshes`
     # exactly, or `test_pool.py`'s bit-identity gate compares two different meshes.
     mesh = WW.build_wheel(genes, cfg, phase_deg=float(task["phase"]),
-                          orientation=orientation, fillet=True)
+                          orientation=orientation, fillet=True, rim_outer=task["rim_outer"])
 
     qoi = ("pnorm_stress",
            lambda prob: WA._qoi_pnorm_stress(prob, p=task["stress_gauss_p"]))
-    hub_qoi, rim_qoi = WO._region_qois(mesh)
+    hub_qoi, rim_qoi, *bq = WO._region_qois(mesh) + WO._band_qoi(mesh, task["band"])
     o = WA.service_qoi_value_and_grad(
-        genes, cfg, (qoi, hub_qoi, rim_qoi), force=task["force"], mesh=mesh,
+        genes, cfg, (qoi, hub_qoi, rim_qoi, *bq), force=task["force"], mesh=mesh,
         delta0=task["delta0"], **task["problem_kw"])
 
     meta = o["_meta"]
@@ -80,9 +80,9 @@ def run_phase(task):
                              "grad": o["hub_region_pnorm"]["grad"]},
         "rim_region_pnorm": {"value": o["rim_region_pnorm"]["value"],
                              "grad": o["rim_region_pnorm"]["grad"]},
-        "_meta": {"max_stress_mpa": meta["max_stress_mpa"],
-                  "contact_force_n": meta["contact_force_n"]},
-        "_probe": probe,
+        "_meta": {k: meta[k] for k in ("max_stress_mpa", "contact_force_n",
+                                       "rim_band_od_vm_mpa")},
+        "_probe": probe, **WO._band_leaf(o, task["band"]),
     }
 
 

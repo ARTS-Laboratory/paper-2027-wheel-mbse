@@ -40,94 +40,114 @@
    {
     "genome": "shipped (best_solution.json)",
     "file": "best_solution.json",
+    "crown_standin": {
+     "rim_outer": 50.644207067698176,
+     "drop_factor": 0.8886724512251485,
+     "band": {
+      "weight": 89.21,
+      "c_band": 1.5276838666230264,
+      "node_p": 64.0,
+      "exclude_mm": 0.5
+     }
+    },
     "mesh_s": 2.4,
     "linear": {
      "kinematics": "linear",
-     "loss": 76.49031649104258,
-     "axle_drop_mean_mm": 1.8060415598414676,
-     "axle_drop_min_mm": 1.6259009156172648,
-     "axle_drop_max_mm": 2.043151784087024,
-     "deflection_error_mm": -0.19395844015853236,
-     "deflection_error_pct": -9.697922007926618,
-     "kt_hub": 3.1239518081378166,
-     "kt_rim": 1.8153628179850143,
-     "pnorm_stress_agg_mpa": 7.098240064409028,
-     "stress_utilisation": 0.9559481412419902,
-     "stress_utilisation_hub": 0.9559481412419902,
-     "stress_utilisation_rim": 0.9278287087357725,
-     "pnorm_p30_utilisation_kt": 5.897059648166819,
-     "pnorm_p30_agg_mpa": 47.192306494654666,
-     "max_stress_mpa": 69.56111503019363,
-     "mass_g": 54.11616044810215,
-     "phase_ripple_std_over_mean": 0.0837363827083396,
+     "loss": 152.5768226263379,
+     "axle_drop_mean_mm": 1.798389678823028,
+     "axle_drop_min_mm": 1.7452704994259798,
+     "axle_drop_max_mm": 1.8513411170626273,
+     "deflection_error_mm": -0.20161032117697197,
+     "deflection_error_pct": -10.080516058848598,
+     "kt_hub": 3.1258392366330066,
+     "kt_rim": 1.6843962196762787,
+     "pnorm_stress_agg_mpa": 6.461100262411885,
+     "stress_utilisation": 1.005466072097519,
+     "stress_utilisation_hub": 1.005466072097519,
+     "stress_utilisation_rim": 0.8856423805796009,
+     "pnorm_p30_utilisation_kt": 5.408272068380521,
+     "pnorm_p30_agg_mpa": 43.25456028735209,
+     "max_stress_mpa": 67.68151088811165,
+     "mass_g": 57.564994696464886,
+     "phase_ripple_std_over_mean": 0.02106142676647251,
+     "band_utilisation": 1.6676750289639777,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
-      "smoothness": 4.871578951506198,
+      "smoothness": 8.149205318512976,
       "fold": 0.0,
-      "arrival": 0.0,
+      "arrival": 0.007135650103469702,
       "fillet": 0.0,
       "fillet_cap": 0.0,
       "buckling": 0.0,
-      "mass": 44.47903598474149,
+      "mass": 47.31369427106703,
       "min_sj": 0.0,
-      "deflection": 23.51242281795686,
-      "stress": 0.0,
-      "stress_margin": 3.6272787368380293,
-      "phase_ripple": 0.0
+      "deflection": 25.404201003176123,
+      "stress": 0.11951177670110465,
+      "stress_margin": 4.420437942040891,
+      "phase_ripple": 0.0,
+      "band_margin": 67.16263666473631
      },
-     "barriers_breached": {},
-     "worst_barrier": 0.0,
-     "feasible": true,
-     "elapsed_s": 2752.5
+     "barriers_breached": {
+      "arrival": 0.007135650103469702,
+      "stress": 0.11951177670110465
+     },
+     "worst_barrier": 0.11951177670110465,
+     "feasible": false,
+     "elapsed_s": 1005.4
     },
     "svk": {
      "kinematics": "svk",
-     "loss": 54.135523068943705,
-     "axle_drop_mean_mm": 1.9967587514475096,
-     "axle_drop_min_mm": 1.7951701560770774,
-     "axle_drop_max_mm": 2.2733803318605736,
-     "deflection_error_mm": -0.0032412485524904167,
-     "deflection_error_pct": -0.16206242762452083,
-     "kt_hub": 3.1239518081378166,
-     "kt_rim": 1.8153628179850143,
-     "pnorm_stress_agg_mpa": 7.623579107831139,
-     "stress_utilisation": 0.9723447670611012,
-     "stress_utilisation_hub": 0.9544672580405015,
-     "stress_utilisation_rim": 0.9723447670611012,
-     "pnorm_p30_utilisation_kt": 6.698024246608428,
-     "pnorm_p30_agg_mpa": 53.60217328865511,
-     "max_stress_mpa": 77.3107127311832,
-     "mass_g": 54.11616044810215,
-     "phase_ripple_std_over_mean": 0.08622490973952789,
+     "loss": 148.76786608129424,
+     "axle_drop_mean_mm": 1.940287469330795,
+     "axle_drop_min_mm": 1.8805341204742958,
+     "axle_drop_max_mm": 1.9996255415451236,
+     "deflection_error_mm": -0.05971253066920501,
+     "deflection_error_pct": -2.9856265334602505,
+     "kt_hub": 3.1258392366330066,
+     "kt_rim": 1.6843962196762787,
+     "pnorm_stress_agg_mpa": 6.809630708073992,
+     "stress_utilisation": 0.9972700652150799,
+     "stress_utilisation_hub": 0.9972700652150799,
+     "stress_utilisation_rim": 0.9134182271958438,
+     "pnorm_p30_utilisation_kt": 5.8702313673061886,
+     "pnorm_p30_agg_mpa": 46.94924245071941,
+     "max_stress_mpa": 73.27148713252186,
+     "mass_g": 57.564994696464886,
+     "phase_ripple_std_over_mean": 0.021872426582034463,
+     "band_utilisation": 1.7844100276576633,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
-      "smoothness": 4.871578951506198,
+      "smoothness": 8.149205318512976,
       "fold": 0.0,
-      "arrival": 0.0,
+      "arrival": 0.007135650103469702,
       "fillet": 0.0,
       "fillet_cap": 0.0,
       "buckling": 0.0,
-      "mass": 44.47903598474149,
+      "mass": 47.31369427106703,
       "min_sj": 0.0,
-      "deflection": 0.006566057611888263,
+      "deflection": 2.2284914493254684,
       "stress": 0.0,
-      "stress_margin": 4.778342075084128,
-      "phase_ripple": 0.0
+      "stress_margin": 4.619220013535623,
+      "phase_ripple": 0.0,
+      "band_margin": 86.45011937874968
      },
-     "barriers_breached": {},
-     "worst_barrier": 0.0,
-     "feasible": true,
-     "elapsed_s": 922.3
+     "barriers_breached": {
+      "arrival": 0.007135650103469702
+     },
+     "worst_barrier": 0.007135650103469702,
+     "feasible": false,
+     "elapsed_s": 717.1
     },
-    "drop_rel_diff": 0.10559955864071191,
-    "util_rel_diff": 0.017152212668992695
+    "drop_rel_diff": 0.0789026939926798,
+    "util_rel_diff": -0.008151450466490018
    },
    {
     "genome": "36aed36 GA/beam",
     "file": "best_solution_ga_beam.json",
-    "mesh_s": 46.8,
+    "crown_standin": null,
+    "mesh_s": 47.9,
     "refused": {
      "reject_kind": "clamp_reject",
      "error": "FilletClampRefusedError",
@@ -137,6 +157,7 @@
    {
     "genome": "elite10",
     "file": "stage3_prod_best_elite10.json",
+    "crown_standin": null,
     "mesh_s": 2.5,
     "linear": {
      "kinematics": "linear",
@@ -157,6 +178,7 @@
      "max_stress_mpa": 44.556611446693296,
      "mass_g": 70.46995205434206,
      "phase_ripple_std_over_mean": 0.13573069684974565,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -176,7 +198,7 @@
      "barriers_breached": {},
      "worst_barrier": 0.0,
      "feasible": true,
-     "elapsed_s": 360.8
+     "elapsed_s": 725.4
     },
     "svk": {
      "kinematics": "svk",
@@ -197,6 +219,7 @@
      "max_stress_mpa": 45.92025947883626,
      "mass_g": 70.46995205434206,
      "phase_ripple_std_over_mean": 0.13646106253843016,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -216,7 +239,7 @@
      "barriers_breached": {},
      "worst_barrier": 0.0,
      "feasible": true,
-     "elapsed_s": 415.7
+     "elapsed_s": 413.2
     },
     "drop_rel_diff": 0.026436078169675747,
     "util_rel_diff": 0.008929533857714
@@ -224,7 +247,8 @@
    {
     "genome": "minwall 1.2",
     "file": "stage3_minwall_best_1.2.json",
-    "mesh_s": 2.5,
+    "crown_standin": null,
+    "mesh_s": 2.9,
     "linear": {
      "kinematics": "linear",
      "loss": 3252.6978479415084,
@@ -244,6 +268,7 @@
      "max_stress_mpa": 50.63674177651006,
      "mass_g": 42.36187823261533,
      "phase_ripple_std_over_mean": 0.1540558444317031,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -266,7 +291,7 @@
      },
      "worst_barrier": 2679.8903557204167,
      "feasible": false,
-     "elapsed_s": 638.8
+     "elapsed_s": 629.7
     },
     "svk": {
      "kinematics": "svk",
@@ -287,6 +312,7 @@
      "max_stress_mpa": 57.04588542774598,
      "mass_g": 42.36187823261533,
      "phase_ripple_std_over_mean": 0.1431306082771536,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -309,7 +335,7 @@
      },
      "worst_barrier": 3039.3666070393606,
      "feasible": false,
-     "elapsed_s": 803.1
+     "elapsed_s": 795.4
     },
     "drop_rel_diff": 0.1521009814163079,
     "util_rel_diff": 0.020582225794846032
@@ -317,7 +343,8 @@
    {
     "genome": "minwall 1.4",
     "file": "stage3_minwall_best_1.4.json",
-    "mesh_s": 2.5,
+    "crown_standin": null,
+    "mesh_s": 2.9,
     "linear": {
      "kinematics": "linear",
      "loss": 1482.7411603932173,
@@ -337,6 +364,7 @@
      "max_stress_mpa": 47.73639911064658,
      "mass_g": 47.21495256857832,
      "phase_ripple_std_over_mean": 0.16515452969456876,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -358,7 +386,7 @@
      },
      "worst_barrier": 783.6761559239978,
      "feasible": false,
-     "elapsed_s": 558.8
+     "elapsed_s": 556.7
     },
     "svk": {
      "kinematics": "svk",
@@ -379,6 +407,7 @@
      "max_stress_mpa": 51.47230465392717,
      "mass_g": 47.21495256857832,
      "phase_ripple_std_over_mean": 0.1598546752581157,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -400,7 +429,7 @@
      },
      "worst_barrier": 892.5898274253852,
      "feasible": false,
-     "elapsed_s": 670.0
+     "elapsed_s": 667.1
     },
     "drop_rel_diff": 0.09925908470421385,
     "util_rel_diff": 0.011667435481039545
@@ -408,7 +437,8 @@
    {
     "genome": "minwall 1.6",
     "file": "stage3_minwall_best_1.6.json",
-    "mesh_s": 2.5,
+    "crown_standin": null,
+    "mesh_s": 2.9,
     "linear": {
      "kinematics": "linear",
      "loss": 964.7066140473454,
@@ -428,6 +458,7 @@
      "max_stress_mpa": 43.570621687530554,
      "mass_g": 53.183084181915554,
      "phase_ripple_std_over_mean": 0.17384710023959768,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -450,7 +481,7 @@
      },
      "worst_barrier": 11.380878231761425,
      "feasible": false,
-     "elapsed_s": 509.0
+     "elapsed_s": 503.4
     },
     "svk": {
      "kinematics": "svk",
@@ -471,6 +502,7 @@
      "max_stress_mpa": 45.77768776507016,
      "mass_g": 53.183084181915554,
      "phase_ripple_std_over_mean": 0.17082610335586731,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -493,7 +525,7 @@
      },
      "worst_barrier": 18.141689876471567,
      "feasible": false,
-     "elapsed_s": 585.1
+     "elapsed_s": 579.6
     },
     "drop_rel_diff": 0.06458039878877986,
     "util_rel_diff": 0.007790547566407957
@@ -501,7 +533,8 @@
    {
     "genome": "minwall 2.0",
     "file": "stage3_minwall_best_2.0.json",
-    "mesh_s": 2.5,
+    "crown_standin": null,
+    "mesh_s": 2.9,
     "linear": {
      "kinematics": "linear",
      "loss": 1587.76650390683,
@@ -521,6 +554,7 @@
      "max_stress_mpa": 44.59900822816803,
      "mass_g": 70.39251221029562,
      "phase_ripple_std_over_mean": 0.13739610241273345,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -540,7 +574,7 @@
      "barriers_breached": {},
      "worst_barrier": 0.0,
      "feasible": true,
-     "elapsed_s": 372.8
+     "elapsed_s": 367.8
     },
     "svk": {
      "kinematics": "svk",
@@ -561,6 +595,7 @@
      "max_stress_mpa": 45.9722290537401,
      "mass_g": 70.39251221029562,
      "phase_ripple_std_over_mean": 0.13804362104338336,
+     "band_utilisation": null,
      "terms": {
       "x_order": 0.0,
       "hub_overlap": 0.0,
@@ -580,7 +615,7 @@
      "barriers_breached": {},
      "worst_barrier": 0.0,
      "feasible": true,
-     "elapsed_s": 428.4
+     "elapsed_s": 424.9
     },
     "drop_rel_diff": 0.026545139336358048,
     "util_rel_diff": 0.009019224058671949
@@ -623,6 +658,6 @@
   ],
   "service_force_n": 66.7233,
   "min_wall_mm": 1.2,
-  "elapsed_s": 9085.4
+  "elapsed_s": 7456.7
  }
 }

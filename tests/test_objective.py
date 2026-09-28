@@ -726,7 +726,7 @@ def test_R_eff_is_exactly_the_cap_more_than_one_rung_above_it(genes_over_cap):
     assert d2[12] < 0.0, "below the cap a bigger fillet must still lower Kt"
 
 
-def test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively(genes):
+def test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively():
     """§13's genome landed in the smooth-min's blend, where nothing had landed before.
 
     It landed there from ABOVE on 2026-08-10, having landed there from below in §13, and
@@ -750,7 +750,13 @@ def test_the_shipped_genome_is_inside_the_blend_and_is_priced_conservatively(gen
     +0.0%: that number is the EXPORTER comparing its own modelled Kt against its own built
     Kt, and it is correct.  The objective prices the same junction on the blended radius
     instead, and now at Kt 2.0533 against the exporter's 2.0235.
+
+    PINNED BY FILE AT CROWN_PLAN R20.  The shipped `240d5a2` requests `R_hub` 0.455917,
+    the radius OCC builds, 0.179 mm under its 0.634915 cap and out of the 0.095237 blend,
+    so on it this test is vacuous by its own first assertion.  The claim is the blend's
+    DIRECTION, a mechanism, so it reads `b729e86`, the last shipped genome in the blend.
     """
+    genes = so.load_genes("stage3_svk_refillet_shipped_r2_best.json")
     cfgo = WW.get_config(CFG)
     flanks = WO.fillet_flanks(genes, cfgo)
     cap = float(WO.hub_fillet_cap_mm(genes, cfgo, W.S, W.HUB_RADIUS_MM, flanks))
@@ -838,16 +844,16 @@ def test_the_t1_term_lists_stay_in_lockstep(genes):
 
 
 @pytest.mark.xfail(reason=(
-    "PLAN.md §102/§103: the fillet switch replaced `Kt * agg` with the region-p-norm term, "
-    "and under it the shipped genome's hub utilisation is 1.0557 -- ABOVE THE WALL (1.0), "
-    "not merely above the 0.80 knee this test was written to sit below. This is not a "
-    "threshold to move: §99 already predicted the faithful reading would land there "
-    "(\"the shipped hub sits at 1.1415\"), and MARGIN_KNEE_UTIL/the wall are policy, not "
-    "fitted to whichever genome happens to be on disk. It is a fixture -- the shipped "
-    "genome as a below-knee witness -- that no longer exists; finding or descending a "
-    "genome that is faithfully below the knee is future work, not this switch's job. "
-    "strict=True via pyproject.toml, so this reopens itself the day the shipped genome (or "
-    "its replacement) reads below 0.80 again."))
+    "REPLACED 2026-09-18 (PLAN.md §186 §2, FILLET_PLAN.md's 2026-09-17 block §4): the clause "
+    "here promised to reopen \"the day the shipped genome reads below 0.80 again\", and "
+    "`b729e86` has read 0.667478 / 0.708341 on this fixture since 2026-09-06 without it "
+    "clearing. THE CLAIM IS WHAT BROKE, NOT THE PREMISE -- the §103 docstring below says the "
+    "opposite. Assertions 1 and 2 PASS (below the knee, `stress_margin` exactly 0.0); the "
+    "third fails at dL/dR_hub +3.048e+01, dL/dR_rim +5.899e+01. The route is MEASURED, not "
+    "inferred: `stress` and `stress_margin`, the only two MARGIN_KNEE_UTIL gates, carry "
+    "||grad|| of exactly 0.0, and `deflection` and `mass` reach genes 12/13 only through the "
+    "MESH, which §103's own `fillet=True` made a function of both radii. So no genome "
+    "reopens this: the below-knee claim itself has to be re-asked. strict=True stands."))
 def test_the_fillet_radii_are_not_dead_genes(genes):
     """RED SINCE THE FILLET SWITCH, AND THE PREMISE IS WHAT BROKE, NOT THE CLAIM.
 
@@ -902,14 +908,14 @@ def test_the_fillet_radii_are_not_dead_genes(genes):
 
 
 @pytest.mark.xfail(reason=(
-    "PLAN.md §102/§103: under the region-p-norm term `genes_over_knee`'s rim reads "
-    "util 1.21257 -- above the WALL, not merely above the 0.80 knee the fixture was named "
-    "for the hub crossing. This is the same fixture-drift §38's uncap flip already caused "
-    "once (see the sibling xfail two tests down): the region term reads the true fillet "
-    "stress directly rather than diluting it through `Kt * agg`, and every genome measured "
-    "so far moves further from the knee under it, not closer. Not a threshold to move -- a "
-    "fixture that no longer sits where its name says. strict=True, so this reopens itself "
-    "the day some genome's rim reads faithfully below 0.80 again."))
+    "PLAN.md §102/§103, REASON REPLACED 2026-09-19 (§187 §4): this fixture's rim reads "
+    "1.21257 at `coarse`/8 -- above the WALL, not merely above the 0.80 knee it was named "
+    "for -- so assertion 1 fails, unchanged. NOT A THRESHOLD TO MOVE: a fixture that no "
+    "longer sits where its name says. DELETED here is a promise to reopen \"the day some "
+    "genome's rim reads faithfully below 0.80 again\": one has been on disk since "
+    "2026-09-06. The shipped `b729e86` reads rim 0.708341 at `smoke`/2 and dL/dR_rim "
+    "+5.899e+01, so assertion 2 fails there -- THE CLAIM IS WHAT BROKE, NOT THE ABSENCE OF A "
+    "GENOME. Scope: at `coarse`/8 it reads 0.953015. strict=True stands."))
 def test_below_the_knee_the_rim_fillet_radius_is_dead(genes_over_knee):
     """`R_rim` carries no gradient while the rim sits under the knee.  STILL LIVE.
 
@@ -1035,7 +1041,13 @@ def test_the_margin_term_prices_and_never_gates(genes):
         f"hub-cap slack is {cap - float(genes[12]):.4e} mm, under MIN_CAP_SLACK_MM "
         f"{S3.MIN_CAP_SLACK_MM} — `selection_key` returns tier 1 here for a geometric "
         f"reason, and the assert below would blame the margin split for it")
-    assert S3.selection_key(brk["total"], brk, genes)[0] == 0, (
+    # AND A THIRD, SINCE CROWN_PLAN R22: `arrival` reads `240d5a2`'s rim exact, 0.046 deg past
+    # its wall (0.0647), so the key is asked to be exactly what the WALLS give, margin aside.
+    walls = {k: brk["terms"][k]["value"] for k in WO.BARRIER_TERMS
+             if brk["terms"].get(k, {}).get("value", 0.0) > 0.0}
+    assert set(walls) <= {"arrival"}, walls
+    assert S3.selection_key(brk["total"], brk, genes)[:2] == (
+        (2, walls["arrival"]) if walls else (0, 0.0)), (
         "a live margin term made the shipped genome unpromotable")
 
 
@@ -1476,11 +1488,11 @@ def _bump(genes, gid, h):
 
 
 def test_the_phase_stencil_is_a_fixed_lattice(genes):
-    """RQMC's offset is quantized so `coord_fn`'s cache can hit.
+    """RQMC's offset is quantized, which is how `coord_fn`'s cache used to hit.
 
-    A continuously-random offset misses on every phase of every step and pays M7's
-    measured 0.774 s re-trace eight times per step, which is roughly double the actual
-    solving.  Every draw must land on the `n_phase * n_sub` grid.
+    A continuously-random offset missed on every phase of every step (M7's 0.774 s
+    re-trace, eight times per step) until PLAN.md §162 successor 1 made the phase traced.
+    Every draw must still land on the `n_phase * n_sub` grid.
     """
     rng = np.random.default_rng(0)
     grid = np.arange(8 * 8) * (WO.SECTOR_DEG / 64)
@@ -1571,3 +1583,151 @@ def test_t2_reads_the_same_mesh_t3_solves(genes, scheme):
         explicit["report"]["min_scaled_jacobian"], rel=1e-12), (
         f"T2's mesh fallback disagrees with `phase_meshes` on min_scaled_jacobian "
         f"under {scheme!r}")
+
+
+# ---------------------------------------------------------------------------
+# CROWN_PLAN.md STEP 6 — THE STAND-IN IS THREADED, AND THE DEFAULT PATH DID NOT MOVE
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def one_phase_default(genes):
+    """One `smoke` phase on the shipped band, no factor: the baseline Step 6 must not move."""
+    phases = WO.phase_stencil(n_phase=1, scheme="uniform")
+    return phases, WO.t3_terms(genes, CFG, phases=phases)
+
+
+def test_naming_the_shipped_band_is_the_default_call(genes, one_phase_default):
+    """`rim_outer=RIM_OUTER_RADIUS_MM` named and `rim_outer` omitted are ONE call, to the bit.
+
+    Step 6's premise is that threading the band moves nothing until someone names a
+    different one.  Values `==` and gradients `array_equal`: the two meshes are built by
+    the same `build_wheel` call, so anything short of identity is a second code path.
+    """
+    phases, base = one_phase_default
+    named = WO.t3_terms(genes, CFG, phases=phases, rim_outer=WW.RIM_OUTER_RADIUS_MM)
+    assert named["values"] == base["values"]
+    for k in base["grads"]:
+        assert np.array_equal(named["grads"][k], base["grads"][k]), k
+
+
+def test_the_drop_factor_scales_the_drop_and_nothing_else(genes, one_phase_default):
+    """`drop_factor` (R5 D2) multiplies the drop before anything aggregates it: the mean
+    and its gradient scale, the target is untouched, and the stress terms do not move."""
+    phases, base = one_phase_default
+    k = WO.CROWN_STANDIN["drop_factor"]
+    out = WO.t3_terms(genes, CFG, phases=phases, drop_factor=k)
+    rb, ro = base["report"], out["report"]
+    assert ro["axle_drop_mean_mm"] == rb["axle_drop_mean_mm"] * k
+    for key in ("pnorm_stress_agg_mpa", "stress_utilisation", "max_stress_mpa"):
+        assert ro[key] == rb[key], key
+    for term in ("stress", "stress_margin"):
+        assert out["values"][term] == base["values"][term], term
+    t = WO.TARGET_DEFLECTION_MM
+    w = WO.DEFAULT_WEIGHTS["deflection"]
+    assert out["values"]["deflection"] == pytest.approx(
+        w * ((rb["axle_drop_mean_mm"] * k - t) / t) ** 2, rel=1e-12)
+    # Per-phase rows stay the 2D solve's own figure: the factor is on the aggregate.
+    assert ro["rows"][0]["axle_drop_mm"] == rb["rows"][0]["axle_drop_mm"]
+
+
+def test_meshes_on_another_band_are_refused(genes):
+    """A half-threaded caller, meshes on the shipped band handed to a call that names the
+    stand-in, is refused before any solve, rather than scoring the band it was not asked to."""
+    phases = WO.phase_stencil(n_phase=1, scheme="uniform")
+    meshes = WO.phase_meshes(genes, CFG, phases)
+    with pytest.raises(ValueError, match="rim_outer"):
+        WO.t3_terms(genes, CFG, phases=phases, meshes=meshes,
+                    rim_outer=WO.CROWN_STANDIN["rim_outer"])
+
+
+def test_the_standin_band_is_the_band_the_meshes_are_built_on(genes):
+    """`phase_meshes(rim_outer=)` reaches `build_wheel`: the ground-contact nodes sit on the
+    stand-in's radius, not on the shipped Ø100 (the ground is placed from `mesh.rim_outer`,
+    `wheel_fem.solve_wheel_contact`, so a mesh that only CLAIMED the radius would pass a
+    check on the attribute alone)."""
+    r = WO.CROWN_STANDIN["rim_outer"]
+    mesh = WO.phase_meshes(genes, CFG, [0.0], rim_outer=r)[0]
+    od = np.asarray(mesh.coords)[np.asarray(mesh.node_sets["rim_outer"])]
+    assert mesh.rim_outer == r
+    assert np.allclose(np.hypot(od[:, 0], od[:, 1]), r, rtol=0, atol=1e-9)
+
+
+def test_the_band_term_is_absent_unless_named_and_priced_as_stress_margin_when_it_is(
+        genes, one_phase_default):
+    """R5 D6: `band` None adds nothing to the breakdown; given, `band_margin` is
+    `stress_margin`'s soft barrier on c_band x the phase p-norm of the node p-norm over the
+    allowable, and its per-phase value rides the rows without its gradient."""
+    phases, base = one_phase_default
+    assert "band_margin" not in base["values"] and "band_utilisation" not in base["report"]
+    band = {"weight": 10.0, "c_band": 2.0, "node_p": 8.0, "exclude_mm": 0.0}
+    out = WO.t3_terms(genes, CFG, phases=phases, band=band)
+    rep = out["report"]
+    row = rep["rows"][0]
+    assert "_band_grad" not in row
+    agg, _ = WO._pnorm_and_grad(np.asarray([row["band_tension_pnorm_mpa"]]),
+                                np.zeros((1, 14)), 8.0)
+    util = band["c_band"] * agg / WO.ALLOWABLE_STRESS_MPA
+    assert rep["band_utilisation"] == pytest.approx(util, rel=1e-12)
+    assert out["values"]["band_margin"] == pytest.approx(
+        band["weight"] * max(0.0, util - WO.MARGIN_KNEE_UTIL) ** 2, rel=1e-12)
+    assert util > WO.MARGIN_KNEE_UTIL, "the fixture must sit above the knee to test a price"
+    assert np.linalg.norm(out["grads"]["band_margin"]) > 0.0
+    for term in ("deflection", "stress", "stress_margin"):
+        assert out["values"][term] == base["values"][term], term
+
+
+def _record_genes(name):
+    import json
+    with open(os.path.join(REPO, name)) as fh:
+        return wg.genes_to_vector(json.load(fh)["genes"])
+
+
+def _t1_arrival(g, cfg, flanks=None):
+    cfgo = WW.get_config(cfg)
+    if flanks is None:                   # a discrete numpy decision: frozen outside a trace
+        flanks = WO.fillet_flanks(np.asarray(g), cfgo)
+    return WO.t1_vector(jnp.asarray(g), cfgo, None, W.S, flanks)[WO.T1_NAMES.index("arrival")]
+
+
+def test_the_arrival_barrier_reads_one_value_at_every_rung():
+    """CROWN_PLAN R22: the wall may not move with the mesh the descent happens to run on.
+
+    `WW.arrival_angles` differenced the sampled centerline (the first chord, O(h)), so on
+    `240d5a2`'s rim the wall read 64.984 deg at `coarse` and 65.015 at `medium`, and `make
+    svk` found the shipped genome over a wall its own descent had read it inside.  Exact, the
+    term is one number at every rung, and it is Stage 2's `wheel_fea.arrival_penalty` on the
+    same control polygon.  Pinned BY FILE: `stage3_crown_shipped.json` is `240d5a2`, over
+    the exact wall by 0.046 deg; `stage3_svk_refillet_shipped_r2_best.json` is `b729e86`,
+    6.3 deg inside it, where the barrier is 0.0 however it is read."""
+    import wheel_geometry as geom
+    g = _record_genes("stage3_crown_shipped.json")
+    vals = {cfg: float(_t1_arrival(g, cfg)) for cfg in ("smoke", "coarse", "medium", "fine")}
+    assert len(set(vals.values())) == 1, vals
+    _, ctrl = geom.bezier_centerline(*g[:8], span_mm=W.S, num_points=W.N_CURVE_PTS)
+    assert vals["coarse"] == pytest.approx(float(W.arrival_penalty(ctrl)), rel=1e-12)
+    rim_exact_deg = 65.04642676869325                  # asin(|dx|/|d|) off the last edge
+    assert vals["coarse"] == pytest.approx(
+        W.ARRIVAL_PENALTY_SCALE * ((rim_exact_deg - WW.MAX_ARRIVAL_DEG) / 10.0) ** 2, rel=1e-9)
+    g0 = _record_genes("stage3_svk_refillet_shipped_r2_best.json")
+    assert all(float(_t1_arrival(g0, cfg)) == 0.0 for cfg in ("smoke", "coarse", "medium"))
+
+
+def test_the_exact_arrival_gradient_matches_a_central_difference():
+    """The barrier is LIVE at `240d5a2` since R22 (0.0647), so its gradient now steers a
+    descent from there; the exact form has no cancelling difference in it, so the check can
+    be tight.  Genes 6 and 7 (`cx4`, `cy4`) set the last control-polygon edge, which is the
+    rim end's tangent; gene 0 sets the first and must read exactly zero here, because the hub
+    is 60.8 deg inside the wall and `jnp.max` routes the whole gradient to the rim."""
+    g = _record_genes("stage3_crown_shipped.json")
+    flanks = WO.fillet_flanks(g, WW.get_config("coarse"))
+    grad = np.asarray(jax.grad(lambda v: _t1_arrival(v, "coarse", flanks))(jnp.asarray(g)))
+    for i in (6, 7):
+        h = 1e-5
+        gp, gm = g.copy(), g.copy()
+        gp[i] += h
+        gm[i] -= h
+        fd = (float(_t1_arrival(gp, "coarse", flanks))
+              - float(_t1_arrival(gm, "coarse", flanks))) / (2 * h)
+        assert grad[i] == pytest.approx(fd, rel=1e-5), (i, grad[i], fd)
+        assert grad[i] != 0.0
+    assert grad[0] == 0.0
